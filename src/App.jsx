@@ -313,6 +313,9 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .r2-name{font-size:13px;font-weight:600;padding:4px 10px;border-radius:8px;background:rgba(21,39,63,.05);border:1px solid var(--line);color:var(--navy);}
 .r2-name.win{background:linear-gradient(120deg,rgba(236,193,92,.18),rgba(236,193,92,.08));border-color:rgba(184,134,30,.3);color:var(--gold);font-weight:800;}
 .r2-name.mem{font-size:11.5px;padding:3px 8px;background:rgba(30,132,198,.07);border-color:rgba(30,132,198,.18);color:var(--cyan-d);font-weight:600;}
+.round2.champ{background:linear-gradient(90deg,rgba(236,193,92,.11),rgba(236,193,92,0) 72%);box-shadow:inset 3px 0 0 rgba(184,134,30,.42);border-radius:0 7px 7px 0;}
+.round2.champ:hover{background:linear-gradient(90deg,rgba(236,193,92,.18),rgba(236,193,92,.03) 72%);}
+.r2-champ{font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 9px;border-radius:20px;background:linear-gradient(120deg,rgba(236,193,92,.3),rgba(236,193,92,.14));color:var(--gold);border:1px solid rgba(184,134,30,.32);}
 /* news */
 .ann{display:flex;gap:18px;padding:20px 0;border-bottom:1px solid var(--line);}.ann:last-child{border-bottom:none;}
 .ann .date{font-size:12.5px;color:var(--muted2);white-space:nowrap;padding-top:4px;font-weight:700;}
@@ -350,6 +353,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ed-seg{display:inline-flex;background:rgba(21,39,63,.05);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px;align-self:flex-start;}
 .ed-seg button{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:700;padding:6px 16px;border-radius:7px;cursor:pointer;transition:.2s;}
 .ed-seg button.on{background:#fff;color:var(--navy);box-shadow:0 2px 8px -4px rgba(21,39,63,.4);}
+.ed-mv{background:rgba(21,39,63,.05);border:1px solid var(--line);color:var(--muted);border-radius:9px;width:30px;height:34px;cursor:pointer;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;}
+.ed-mv:hover:not(:disabled){background:rgba(30,132,198,.12);color:var(--cyan-d);}
+.ed-mv:disabled{opacity:.3;cursor:default;}
+.ed-auto{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;}
+.ed-auto input{width:15px;height:15px;accent-color:var(--cyan);cursor:pointer;}
 .ed-team{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;background:rgba(255,255,255,.6);border:1px solid var(--line);}
 .ed-rk{font-size:11.5px;font-weight:800;color:var(--muted2);display:flex;align-items:center;gap:8px;}
 .ed-rk.gold{color:var(--gold);}
@@ -550,7 +558,7 @@ function Records({ data, admin, setModal, save }) {
     <Reveal className="subtabs">{[["rank","누적 랭킹"],["season","시즌별 성적"],["tour","대회 회차"]].map(([k,l])=>
       <button key={k} className={"subtab"+(tab===k?" on":"")} onClick={()=>setTab(k)}>{l}</button>)}
     </Reveal>
-    <Reveal tag="p" className="pts-note" style={{margin:"0 0 16px"}}>포인트 기준 — 우승 <b>60</b> · 준우승 <b>40</b> · 4강 <b>20</b>점. 팀전 여부·팀원 수·대회 사정에 따라 변동될 수 있습니다.</Reveal>
+    <Reveal tag="p" className="pts-note" style={{margin:"0 0 16px"}}>우승 <b>60</b>점, 준우승 <b>40</b>점, 4강 <b>20</b>점이 기본 포인트 기준입니다. 팀전 여부, 팀원 수, 대회 사정에 따라 변동될 수 있습니다.</Reveal>
     <div className="swap" key={tab}>
       {tab==="rank"&&<RankView data={data} admin={admin} setModal={setModal}/>}
       {tab==="season"&&<SeasonView data={data} admin={admin} setModal={setModal}/>}
@@ -603,11 +611,12 @@ function TourView({ data, admin, setModal }) {
       {t.rounds.map((r,i)=>{
         const rl=r.round?(/^\d+$/.test(String(r.round))?String(r.round)+"회":r.round):"";
         return (
-        <div className="round2" key={i}>
+        <div className={"round2"+(r.champ?" champ":"")} key={i}>
           <div className="r2-date tnum">{r.date}</div>
           <div className="r2-main">
-            {(rl||r.rule||r.team)&&<div className="r2-head">
+            {(rl||r.rule||r.team||r.champ)&&<div className="r2-head">
               {rl&&<span className="r2-round">{rl}</span>}
+              {r.champ&&<span className="r2-champ">챔피언스 시리즈</span>}
               {r.team&&<span className="r2-mode">팀전</span>}
               {r.rule&&<span className="r2-rule">· {r.rule}</span>}
             </div>}
@@ -743,34 +752,53 @@ function StandingsEditor({ title, rows, onClose, onSave }) {
 }
 function RoundsEditor({ title, rounds, onClose, onSave }) {
   const splitL=(s)=>String(s||"").split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
+  const dkey=(d)=>{const m=String(d||"").match(/\d+/g)||[];return (+(m[0]||0))*1e8+(+(m[1]||0))*1e6+(+(m[2]||0))*1e4;};
+  const rkey=(rd)=>{const n=parseInt(String(rd||""),10);return isNaN(n)?999999:n;};
+  const sortRows=(arr)=>arr.map((r,i)=>({r,i})).sort((a,b)=>(dkey(a.r.date)-dkey(b.r.date))||(rkey(a.r.round)-rkey(b.r.round))||(a.i-b.i)).map(x=>x.r);
   const init=(r)=>({
-    team:!!r.team, date:r.date||"", round:r.round||"", rule:r.rule||"",
+    team:!!r.team, champ:!!r.champ, date:r.date||"", round:r.round||"", rule:r.rule||"",
     win:r.win||"", ru:r.ru||"",
     winM:(r.winMembers||[]).join(", "), ruM:(r.ruMembers||[]).join(", "),
     sfText:r.team?"":(r.sf||[]).join(", "),
     sfTeams:r.team?(r.sf||[]).map((nm,i)=>({name:nm,mem:((r.sfMembers||[])[i]||[]).join(", ")})):[],
   });
   const [list,setList]=useState(rounds.map(init));
+  const [autoSort,setAutoSort]=useState(true);
   const upd=(i,k,v)=>setList(list.map((r,j)=>j===i?{...r,[k]:v}:r));
   const del=(i)=>setList(list.filter((_,j)=>j!==i));
-  const add=()=>setList([init({}),...list]);
+  const add=()=>setList([...list,init({})]);
+  const moveUp=(i)=>{if(i<=0)return;setAutoSort(false);setList(arr=>{const a=[...arr];[a[i-1],a[i]]=[a[i],a[i-1]];return a;});};
+  const moveDown=(i)=>{setAutoSort(false);setList(arr=>{if(i>=arr.length-1)return arr;const a=[...arr];[a[i],a[i+1]]=[a[i+1],a[i]];return a;});};
+  const sortNow=()=>{setAutoSort(true);setList(arr=>sortRows(arr));};
   const sfUpd=(i,k,key,v)=>setList(list.map((r,j)=>j!==i?r:{...r,sfTeams:r.sfTeams.map((t,m)=>m===k?{...t,[key]:v}:t)}));
   const sfAdd=(i)=>setList(list.map((r,j)=>j===i?{...r,sfTeams:[...r.sfTeams,{name:"",mem:""}]}:r));
   const sfDel=(i,k)=>setList(list.map((r,j)=>j===i?{...r,sfTeams:r.sfTeams.filter((_,m)=>m!==k)}:r));
-  const submit=()=>onSave(list.filter(r=>r.team?(String(r.win).trim()||splitL(r.winM).length>0):String(r.win).trim()).map(r=>{
-    const base={date:String(r.date).trim(),round:String(r.round).trim(),rule:String(r.rule).trim(),win:String(r.win).trim(),ru:String(r.ru).trim()};
-    if(r.team){
-      const sfT=r.sfTeams.filter(t=>String(t.name).trim()||splitL(t.mem).length>0);
-      return {...base,team:true,winMembers:splitL(r.winM),ruMembers:splitL(r.ruM),sf:sfT.map(t=>t.name.trim()),sfMembers:sfT.map(t=>splitL(t.mem))};
-    }
-    return {...base,team:false,sf:splitL(r.sfText)};
-  }));
-  return (<Modal title={`${title} 회차 수정`} hint="회차별 결과를 입력하고, 개인전/팀전을 선택하세요." onClose={onClose}>
+  const submit=()=>{
+    let out=list.filter(r=>r.team?(String(r.win).trim()||splitL(r.winM).length>0):String(r.win).trim()).map(r=>{
+      const base={date:String(r.date).trim(),round:String(r.round).trim(),rule:String(r.rule).trim(),win:String(r.win).trim(),ru:String(r.ru).trim()};
+      const champ=r.champ?{champ:true}:{};
+      if(r.team){
+        const sfT=r.sfTeams.filter(t=>String(t.name).trim()||splitL(t.mem).length>0);
+        return {...base,...champ,team:true,winMembers:splitL(r.winM),ruMembers:splitL(r.ruM),sf:sfT.map(t=>t.name.trim()),sfMembers:sfT.map(t=>splitL(t.mem))};
+      }
+      return {...base,...champ,team:false,sf:splitL(r.sfText)};
+    });
+    if(autoSort) out=sortRows(out);
+    onSave(out);
+  };
+  return (<Modal title={`${title} 회차 수정`} hint="개인전/팀전·일반/챔피언스 시리즈를 고르고 결과를 입력하세요. 저장 시 날짜순으로 자동 정렬됩니다(▲▼로 직접 순서 변경 가능)." onClose={onClose}>
     <div className="pts-note" style={{marginBottom:14}}>포인트 기준 — 우승 <b>60</b> · 준우승 <b>40</b> · 4강 <b>20</b>점 (팀전 여부·팀원 수·대회 사정에 따라 변동될 수 있어, 누적 포인트는 랭킹 편집에서 직접 입력합니다.)</div>
-    <button className="btn btn-ghost btn-sm" style={{marginBottom:14}} onClick={add}>+ 회차 추가 (맨 위)</button>
+    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:14}}>
+      <button className="btn btn-ghost btn-sm" onClick={add}>+ 회차 추가 (맨 아래)</button>
+      <button className="btn btn-ghost btn-sm" onClick={sortNow}>↕ 날짜순 정렬</button>
+      <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
+    </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
-      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-del" onClick={()=>del(i)} title="삭제">✕</button></div>
-      <div className="ed-seg"><button type="button" className={!r.team?"on":""} onClick={()=>upd(i,"team",false)}>개인전</button><button type="button" className={r.team?"on":""} onClick={()=>upd(i,"team",true)}>팀전</button></div>
+      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로">▲</button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로">▼</button><button className="ed-del" onClick={()=>del(i)} title="삭제">✕</button></div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div className="ed-seg"><button type="button" className={!r.team?"on":""} onClick={()=>upd(i,"team",false)}>개인전</button><button type="button" className={r.team?"on":""} onClick={()=>upd(i,"team",true)}>팀전</button></div>
+        <div className="ed-seg"><button type="button" className={!r.champ?"on":""} onClick={()=>upd(i,"champ",false)}>일반</button><button type="button" className={r.champ?"on":""} onClick={()=>upd(i,"champ",true)}>챔피언스 시리즈</button></div>
+      </div>
       {!r.team?<>
         <div className="ed-r2"><input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="🏆 우승"/><input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="준우승"/></div>
         <input value={r.sfText} onChange={e=>upd(i,"sfText",e.target.value)} placeholder="4강 (쉼표 구분)"/>
