@@ -613,12 +613,12 @@ function TourView({ data, admin, setModal }) {
             </div>}
             <div className="r2-res">
               <span className="r2-rk gold">우승</span>
-              <span className="r2-name win">{r.win}</span>
+              {r.win&&<span className="r2-name win">{r.win}</span>}
               {r.winMembers&&r.winMembers.length>0&&<NameChips list={r.winMembers} kind="mem"/>}
-              {r.ru&&<><span className="r2-rk">준우승</span>{r.team?<span className="r2-name">{r.ru}</span>:<NameChips list={split(r.ru)}/>}
+              {(r.ru||(r.ruMembers&&r.ruMembers.length>0))&&<><span className="r2-rk">준우승</span>{r.team?(r.ru&&<span className="r2-name">{r.ru}</span>):<NameChips list={split(r.ru)}/>}
                 {r.ruMembers&&r.ruMembers.length>0&&<NameChips list={r.ruMembers} kind="mem"/>}</>}
               {(r.sf||[]).length>0&&<><span className="r2-rk">4강</span>{r.team
-                ?r.sf.map((nm,k)=>(<React.Fragment key={k}><span className="r2-name">{nm}</span>{(r.sfMembers||[])[k]&&(r.sfMembers[k].length>0)&&<NameChips list={r.sfMembers[k]} kind="mem"/>}</React.Fragment>))
+                ?r.sf.map((nm,k)=>(<React.Fragment key={k}>{nm&&<span className="r2-name">{nm}</span>}{(r.sfMembers||[])[k]&&(r.sfMembers[k].length>0)&&<NameChips list={r.sfMembers[k]} kind="mem"/>}</React.Fragment>))
                 :<NameChips list={r.sf}/>}</>}
             </div>
           </div>
@@ -757,10 +757,10 @@ function RoundsEditor({ title, rounds, onClose, onSave }) {
   const sfUpd=(i,k,key,v)=>setList(list.map((r,j)=>j!==i?r:{...r,sfTeams:r.sfTeams.map((t,m)=>m===k?{...t,[key]:v}:t)}));
   const sfAdd=(i)=>setList(list.map((r,j)=>j===i?{...r,sfTeams:[...r.sfTeams,{name:"",mem:""}]}:r));
   const sfDel=(i,k)=>setList(list.map((r,j)=>j===i?{...r,sfTeams:r.sfTeams.filter((_,m)=>m!==k)}:r));
-  const submit=()=>onSave(list.filter(r=>String(r.win).trim()).map(r=>{
+  const submit=()=>onSave(list.filter(r=>r.team?(String(r.win).trim()||splitL(r.winM).length>0):String(r.win).trim()).map(r=>{
     const base={date:String(r.date).trim(),round:String(r.round).trim(),rule:String(r.rule).trim(),win:String(r.win).trim(),ru:String(r.ru).trim()};
     if(r.team){
-      const sfT=r.sfTeams.filter(t=>String(t.name).trim());
+      const sfT=r.sfTeams.filter(t=>String(t.name).trim()||splitL(t.mem).length>0);
       return {...base,team:true,winMembers:splitL(r.winM),ruMembers:splitL(r.ruM),sf:sfT.map(t=>t.name.trim()),sfMembers:sfT.map(t=>splitL(t.mem))};
     }
     return {...base,team:false,sf:splitL(r.sfText)};
@@ -776,13 +776,13 @@ function RoundsEditor({ title, rounds, onClose, onSave }) {
         <input value={r.sfText} onChange={e=>upd(i,"sfText",e.target.value)} placeholder="4강 (쉼표 구분)"/>
       </>:<>
         <div className="ed-team"><span className="ed-rk gold">🏆 우승 팀</span>
-          <input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="팀 이름"/>
+          <input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={r.winM} onChange={e=>upd(i,"winM",e.target.value)} placeholder="팀원 (쉼표 구분, 인원 제한 없음)"/></div>
         <div className="ed-team"><span className="ed-rk">준우승 팀</span>
-          <input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="팀 이름"/>
+          <input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={r.ruM} onChange={e=>upd(i,"ruM",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>
         {r.sfTeams.map((t,k)=>(<div className="ed-team" key={k}><span className="ed-rk">4강 팀 {k+1} <button className="ed-x" onClick={()=>sfDel(i,k)}>✕</button></span>
-          <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름"/>
+          <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>))}
         <button className="btn btn-ghost btn-sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>+ 4강 팀 추가</button>
       </>}
