@@ -17,14 +17,14 @@ const POKE_IMG = {"다투곰(블러드문)": "data:image/webp;base64,UklGRo4lAAB
 
 /* ===== 소개(About) 정적 콘텐츠 ===== */
 const TIMELINE = [
-  { date:"2023.05", title:"PY-CUP 탄생", body:"연세대학교 포켓몬스터 동아리 '포켓몬 센터 연세점(포센연)' 내에서 자체적으로 치러진 대회, PY-CUP (Pokémon Yonsei Cup)이 처음 개최되었습니다." },
-  { date:"2023 – 2025", title:"매월의 도전", body:"PY-CUP이 매월 정규 대회로 자리 잡으며 수많은 트레이너의 성적과 칭호가 쌓여 갔습니다." },
+  { date:"2023.05", title:"파이컵 탄생", body:"연세대학교 포켓몬스터 동아리 '포켓몬 센터 연세점(포센연)' 내에서 자체적으로 치러진 대회, 파이컵이 처음 개최되었습니다." },
+  { date:"2023 – 2025", title:"매월의 도전", body:"파이컵이 매월 정규 대회로 자리 잡으며 수많은 트레이너의 성적과 칭호가 쌓여 갔습니다." },
   { date:"2025.06", title:"대격변 — YPL 체제 확립", body:"2025년 6월 마스터 리그와 루키 리그로의 양분화라는 대격변을 맞이하며, 비로소 YPL (Yonsei Pokémon League) 체제가 확립되었습니다." },
 ];
 const COMPS = [
-  { tag:"매월 정규 대회", name:"PY-CUP", en:"Pokémon Yonsei Cup", accent:"cyan", desc:"매월 펼쳐지는 정규 대회입니다. 이곳에서 획득한 포인트로 챔피언스 시리즈 출전권을 노릴 수 있습니다." },
-  { tag:"번개 이벤트", name:"PY-CUP Lite", en:"Py-Cup Lite", accent:"mint", desc:"포인트 없이 자유롭게 즐기는 번개 형식의 대회입니다. 자체적인 상품을 걸고 가볍게 진행됩니다." },
-  { tag:"최고 권위", name:"CHAMPIONS SERIES", en:"Champions Series", accent:"gold", desc:"한 학기 동아리의 챔피언을 결정짓는 최고 권위의 대회입니다." },
+  { tag:"매월 정규 대회", name:"파이컵", en:"", accent:"cyan", desc:"매월 펼쳐지는 정규 대회입니다. 이곳에서 획득한 포인트로 챔피언스 시리즈 출전권을 노릴 수 있습니다." },
+  { tag:"번개 이벤트", name:"파이컵 라이트", en:"", accent:"mint", desc:"포인트 없이 자유롭게 즐기는 번개 형식의 대회입니다. 자체적인 상품을 걸고 가볍게 진행됩니다." },
+  { tag:"최고 권위", name:"챔피언스 시리즈", en:"", accent:"gold", desc:"한 학기 동아리의 챔피언을 결정짓는 최고 권위의 대회입니다." },
 ];
 const LEAGUES2 = [
   { tier:"상위 정규 리그", name:"마스터 리그", en:"Master League", accent:"cyan", logo:"master", desc:"리그 양분화로 신설된 상위 정규 리그입니다. YPL 시즌의 중심입니다." },
@@ -82,7 +82,7 @@ const SEED = {
       {id:uid(),name:"맨손의 제왕",desc:"모든 포켓몬에게 지닌 물건을 주지 않고 우승",holders:[]},
       {id:uid(),name:"붙박이대장",desc:"포켓몬 교체를 사용하지 않고 우승",holders:[]},
       {id:uid(),name:"돌격대장",desc:"모든 포켓몬에게 변화기를 채용하지 않고 우승",holders:[]} ]},
-    { id:uid(), key:"event", name:"이벤트 칭호", icon:"🎉", desc:"PY-CUP Lite 등 이벤트 대회 특별 칭호", items:[
+    { id:uid(), key:"event", name:"이벤트 칭호", icon:"🎉", desc:"파이컵 라이트 등 이벤트 대회 특별 칭호", items:[
       {id:uid(),name:"끝말잇기",holders:["김지승"]},{id:uid(),name:"몽키매직",holders:["정두호"]},
       {id:uid(),name:"전화기",holders:["정두호","이제빈","류지오"]},{id:uid(),name:"초신성",holders:["송하준"]},
       {id:uid(),name:"메가진화의 계승자",holders:["이종우"]},{id:uid(),name:"RED",holders:["구태욱"]} ]},
@@ -216,10 +216,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .card.hover:hover{transform:translateY(-5px);border-color:rgba(30,132,198,.4);box-shadow:0 26px 54px -28px rgba(30,132,198,.45);}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:8px 18px;box-shadow:0 14px 36px -26px rgba(21,39,63,.4);}
 /* about */
-.about-hero{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;align-items:center;margin-bottom:18px;}
+.about-hero{display:flex;flex-direction:column;gap:16px;margin-bottom:18px;}
 @media(max-width:780px){.about-hero{grid-template-columns:1fr;}}
 .about-hero .lead{font-size:clamp(19px,2.6vw,24px);line-height:1.6;font-weight:600;color:var(--navy);}
 .about-hero .lead .hl{background:linear-gradient(120deg,var(--cyan-d),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;}
+.about-hero .lead-sub{font-size:15.5px;line-height:1.78;color:var(--muted);max-width:760px;}
 .about-hero .logo-wrap{display:flex;justify-content:center;}
 .kick-line{display:block;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan-d);font-weight:700;}
 .timeline{position:relative;margin:14px 0 6px;padding-left:30px;}
@@ -285,6 +286,18 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .tbl tbody tr{transition:.18s;}.tbl tbody tr:hover{background:rgba(30,132,198,.05);}
 .tbl tr:last-child td{border-bottom:none;}
 .tbl td.c,.tbl th.c{text-align:center;}
+@media(max-width:560px){
+  .wrap{padding:0 14px;}
+  .nav-in{padding:11px 14px;gap:12px;}
+  .sec{padding:56px 0 28px;}
+  .panel{padding:6px 14px;border-radius:16px;}
+  .ann{flex-direction:column;gap:5px;padding:18px 0;}
+  .ann .date{padding-top:0;}
+  .round2{grid-template-columns:1fr;gap:7px;padding:14px 2px;}
+  .r2-date{padding-top:0;}
+  .tbl th,.tbl td{padding:10px 6px;font-size:13px;}
+  .tbl th{font-size:10px;letter-spacing:.03em;padding:11px 6px;}
+}
 .rankb{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:9px;font-weight:800;font-size:13px;background:rgba(21,39,63,.06);color:var(--muted);}
 .rankb.r1{background:linear-gradient(135deg,#f0c860,#d09e2e);color:#241803;box-shadow:0 4px 12px -5px rgba(184,134,30,.7);}
 .rankb.r2{background:linear-gradient(135deg,#dde6f1,#aebccf);color:#1a2433;}
@@ -313,13 +326,15 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .r2-name{font-size:13px;font-weight:600;padding:4px 10px;border-radius:8px;background:rgba(21,39,63,.05);border:1px solid var(--line);color:var(--navy);}
 .r2-name.win{background:linear-gradient(120deg,rgba(236,193,92,.18),rgba(236,193,92,.08));border-color:rgba(184,134,30,.3);color:var(--gold);font-weight:800;}
 .r2-name.mem{font-size:11.5px;padding:3px 8px;background:rgba(30,132,198,.07);border-color:rgba(30,132,198,.18);color:var(--cyan-d);font-weight:600;}
-.round2.champ{background:linear-gradient(90deg,rgba(236,193,92,.11),rgba(236,193,92,0) 72%);box-shadow:inset 3px 0 0 rgba(184,134,30,.42);border-radius:0 7px 7px 0;}
+.round2.champ{background:linear-gradient(90deg,rgba(236,193,92,.11),rgba(236,193,92,0) 72%);border-radius:8px;}
 .round2.champ:hover{background:linear-gradient(90deg,rgba(236,193,92,.18),rgba(236,193,92,.03) 72%);}
 .r2-champ{font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 9px;border-radius:20px;background:linear-gradient(120deg,rgba(236,193,92,.3),rgba(236,193,92,.14));color:var(--gold);border:1px solid rgba(184,134,30,.32);}
 /* news */
 .ann{display:flex;gap:18px;padding:20px 0;border-bottom:1px solid var(--line);}.ann:last-child{border-bottom:none;}
 .ann .date{font-size:12.5px;color:var(--muted2);white-space:nowrap;padding-top:4px;font-weight:700;}
-.ann h3{margin:0 0 7px;font-size:18px;font-weight:800;color:var(--navy);}.ann p{margin:0;color:var(--muted);line-height:1.7;font-size:14.5px;white-space:pre-wrap;}
+.ann h3{margin:0 0 7px;font-size:18px;font-weight:800;color:var(--navy);overflow-wrap:break-word;word-break:break-word;}.ann p{margin:0;color:var(--muted);line-height:1.7;font-size:14.5px;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;}
+.ann-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:9px 15px;border-radius:10px;background:linear-gradient(120deg,var(--cyan-d),var(--mint));color:#fff;font-size:13.5px;font-weight:800;text-decoration:none;box-shadow:0 8px 20px -12px rgba(30,132,198,.7);max-width:100%;overflow-wrap:break-word;word-break:break-word;}
+.ann-link:hover{filter:brightness(1.05);}
 .pin{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--cyan-d);margin-left:9px;background:rgba(30,132,198,.13);padding:3px 8px;border-radius:6px;vertical-align:middle;}
 /* admin / misc */
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
@@ -465,14 +480,9 @@ function Home({ data, go }) {
       <p className="home-tag">{data.meta.tagline}</p>
     </Reveal>
     <div className="home-grid">
-      <Reveal tag="button" className="hcard wide" onClick={()=>go("champions")}>
-        <div className="hcard-head"><span className="hc-kick">명예의 전당</span><span className="hc-go">→</span></div>
-        <div className="hcard-champ">
-          <div><div className="hc-cur-label">👑 현 챔피언 · {cur?.gen}</div>
-            <div className="hc-cur-name">{cur?.name}</div>
-            <div className="hc-cur-sub">{champs.length}명의 역대 챔피언</div></div>
-          {cur&&<div className="hc-team">{cur.team.filter(Boolean).slice(0,6).map((m,i)=>{const img=POKE_IMG[m];return <span className="hc-mon" key={i}>{img?<img src={img} alt={m}/>:<i>{m[0]}</i>}</span>;})}</div>}
-        </div>
+      <Reveal tag="button" className="hcard wide" onClick={()=>go("news")}>
+        <div className="hcard-head"><span className="hc-kick">공지</span><span className="hc-go">→</span></div>
+        {news?<div className="hc-news"><div className="hc-ndate tnum">{news.date}</div><div className="hc-ntitle">{news.title}</div></div>:<div className="hc-empty">새 공지가 없습니다.</div>}
       </Reveal>
       <Reveal tag="button" className="hcard" delay={60} onClick={()=>go("records")}>
         <div className="hcard-head"><span className="hc-kick">기록 · YPL 랭킹</span><span className="hc-go">→</span></div>
@@ -485,9 +495,13 @@ function Home({ data, go }) {
         <div className="hc-bignum tnum">{titleCount}<span>개</span></div>
         <div className="hc-sub">트레이너 {awarded}명이 칭호 보유 중</div>
       </Reveal>
-      <Reveal tag="button" className="hcard wide" delay={60} onClick={()=>go("news")}>
-        <div className="hcard-head"><span className="hc-kick">공지</span><span className="hc-go">→</span></div>
-        {news?<div className="hc-news"><div className="hc-ndate tnum">{news.date}</div><div className="hc-ntitle">{news.title}</div></div>:<div className="hc-empty">새 공지가 없습니다.</div>}
+      <Reveal tag="button" className="hcard wide" delay={60} onClick={()=>go("champions")}>
+        <div className="hcard-head"><span className="hc-kick">명예의 전당</span><span className="hc-go">→</span></div>
+        <div className="hcard-champ">
+          <div><div className="hc-cur-label">👑 현 챔피언 · {cur?.gen}</div>
+            <div className="hc-cur-name">{cur?.name}</div></div>
+          {cur&&<div className="hc-team">{cur.team.filter(Boolean).slice(0,6).map((m,i)=>{const img=POKE_IMG[m];return <span className="hc-mon" key={i}>{img?<img src={img} alt={m}/>:<i>{m[0]}</i>}</span>;})}</div>}
+        </div>
       </Reveal>
     </div>
   </section>);
@@ -501,8 +515,8 @@ function About() {
       <p className="sub">연세대학교 포켓몬스터 동아리인 포켓몬 센터 연세점, 일명 포센연에서 시작된 배틀 리그의 발자취입니다.</p>
     </Reveal>
     <div className="about-hero">
-      <Reveal><p className="lead">YPL은 포센연 내에서 자체적으로 치러진 대회, <span className="hl">PY-CUP</span>에서 시작되었습니다. 2023년 5월의 첫 대회 이후 매월의 도전이 쌓여, 2025년 6월 마스터 리그와 루키 리그로의 양분화라는 <span className="hl">대격변</span>을 거쳐 지금의 YPL 체제가 확립되었습니다.</p></Reveal>
-      <Reveal className="logo-wrap" delay={120}><div className="crest about"><img src={LOGO_YPL} alt="YPL"/></div></Reveal>
+      <Reveal><p className="lead">YPL은 포센연 내에서 자체적으로 치러진 대회, <span className="hl">파이컵</span>에서 시작되었습니다. 2023년 5월의 첫 대회 이후 매월의 도전이 쌓여, 2025년 6월 마스터 리그와 루키 리그로의 양분화라는 <span className="hl">대격변</span>을 거쳐 지금의 YPL 체제가 확립되었습니다.</p></Reveal>
+      <Reveal delay={90}><p className="lead-sub">포센연 트레이너들은 매월 열리는 파이컵에서 포인트를 쌓고, 한 학기를 마무리하는 챔피언스 시리즈에서 그 시즌의 챔피언을 가립니다. YPL에는 그동안 치러진 모든 대회의 전적과 역대 챔피언, 그리고 트레이너들이 획득한 칭호가 기록으로 남아 있습니다.</p></Reveal>
     </div>
 
     <Reveal tag="h3" className="" delay={0}><span className="kick-line" style={{margin:"40px 0 18px"}}>연혁</span></Reveal>
@@ -516,7 +530,7 @@ function About() {
       <Reveal key={i} className="card hover comp" delay={i*70}>
         <div className="glow" style={{background:ACC[c.accent]}}/>
         <div className="comp-top"><span className="ribbon" style={{background:ACC_BG[c.accent],color:ACC[c.accent]}}>{c.tag}</span></div>
-        <h3>{c.name}</h3><div className="en">{c.en}</div><p>{c.desc}</p>
+        <h3>{c.name}</h3>{c.en&&<div className="en">{c.en}</div>}<p>{c.desc}</p>
       </Reveal>))}</div>
 
     <Reveal tag="h3"><span className="kick-line" style={{margin:"48px 0 8px"}}>정규 리그</span></Reveal>
@@ -526,7 +540,7 @@ function About() {
         <div className="lg2-glow"/>
         <div className="lg2-logo"><img src={logo} alt={lg.name}/></div>
         <span className="lg2-tier">{lg.tier}</span>
-        <h3>{lg.name}</h3><div className="en">{lg.en}</div><p>{lg.desc}</p>
+        <h3>{lg.name}</h3>{lg.en&&<div className="en">{lg.en}</div>}<p>{lg.desc}</p>
       </Reveal>);})}</div>
   </section>);
 }
@@ -542,7 +556,8 @@ function News({ data, admin, setModal }) {
     <Reveal className="panel" style={{padding:"4px 24px"}}>
       {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>등록된 공지가 없습니다.</div>}
       {list.map(a=>(<div className="ann" key={a.id}>
-      <div className="date">{a.date}</div><div style={{flex:1}}><h3>{a.title}{a.pinned&&<span className="pin">고정</span>}</h3><p>{a.body}</p>
+      <div className="date">{a.date}</div><div style={{flex:1,minWidth:0}}><h3>{a.title}{a.pinned&&<span className="pin">고정</span>}</h3><p>{a.body}</p>
+      {a.link&&<a className="ann-link" href={/^https?:\/\//.test(a.link)?a.link:"https://"+a.link} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"} ↗</a>}
       {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div></div>))}
     </Reveal>
   </section>);
@@ -721,13 +736,15 @@ function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
   </Modal>);
 }
 function AnnEditor({ item, onClose, onSave, onDelete }) {
-  const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false);
+  const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||"");
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
     <div className="field"><label>날짜</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></div>
     <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)}/></div>
     <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:120}}/></div>
+    <div className="field"><label>링크 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
+    <div className="field"><label>링크 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
     <div className="field" style={{display:"flex",alignItems:"center",gap:10}}><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned})}>저장</button></div>
+    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim()})}>저장</button></div>
   </Modal>);
 }
 function StandingsEditor({ title, rows, onClose, onSave }) {
