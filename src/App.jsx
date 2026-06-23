@@ -155,6 +155,9 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .nlink.on{color:var(--navy);}
 .nlink.on::after{content:"";position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--navy),var(--cyan));animation:pop .35s ease;}
 .nlink.admin{margin-left:6px;border:1px solid var(--line2);color:var(--gold);border-radius:9px;}.nlink.admin:hover{background:rgba(184,134,30,.08);}
+.nav-discord{display:inline-flex;align-items:center;gap:7px;flex:none;background:#5865F2;color:#fff;border-radius:10px;padding:8px 14px;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap;box-shadow:0 7px 18px -8px rgba(88,101,242,.85);transition:.2s;}
+.nav-discord:hover{filter:brightness(1.08);transform:translateY(-1px);color:#fff;}
+.nav-discord svg{width:18px;height:18px;fill:currentColor;flex:none;}
 /* buttons */
 .btn{font-family:inherit;font-weight:700;font-size:14px;border-radius:13px;padding:12px 20px;border:1px solid transparent;cursor:pointer;transition:.28s cubic-bezier(.2,.7,.2,1);display:inline-flex;align-items:center;gap:8px;}
 .btn-primary{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;box-shadow:0 12px 28px -12px rgba(30,132,198,.7);}
@@ -307,6 +310,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
   .r2-date{padding-top:0;}
   .tbl th,.tbl td{padding:10px 6px;font-size:13px;}
   .tbl th{font-size:10px;letter-spacing:.03em;padding:11px 6px;}
+  .nav-discord{padding:8px 10px;}.nav-discord .dc-tx{display:none;}
 }
 .rankb{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:9px;font-weight:800;font-size:13px;background:rgba(21,39,63,.06);color:var(--muted);}
 .rankb.r1{background:linear-gradient(135deg,#f0c860,#d09e2e);color:#241803;box-shadow:0 4px 12px -5px rgba(184,134,30,.7);}
@@ -343,8 +347,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ann{display:flex;gap:18px;padding:20px 0;border-bottom:1px solid var(--line);}.ann:last-child{border-bottom:none;}
 .ann .date{font-size:12.5px;color:var(--muted2);white-space:nowrap;padding-top:4px;font-weight:700;}
 .ann h3{margin:0 0 7px;font-size:18px;font-weight:800;color:var(--navy);overflow-wrap:break-word;word-break:break-word;}.ann p{margin:0;color:var(--muted);line-height:1.7;font-size:14.5px;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;}
-.ann-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:9px 15px;border-radius:10px;background:linear-gradient(120deg,var(--cyan-d),var(--mint));color:#fff;font-size:13.5px;font-weight:800;text-decoration:none;box-shadow:0 8px 20px -12px rgba(30,132,198,.7);max-width:100%;overflow-wrap:break-word;word-break:break-word;}
+.ann-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;}
+.ann-link{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:10px;background:linear-gradient(120deg,var(--cyan-d),var(--mint));color:#fff;font-size:13.5px;font-weight:800;text-decoration:none;box-shadow:0 8px 20px -12px rgba(30,132,198,.7);max-width:100%;overflow-wrap:break-word;word-break:break-word;}
 .ann-link:hover{filter:brightness(1.05);}
+.ann-link.alt{background:#fff;color:var(--cyan-d);border:1.5px solid var(--cyan-d);box-shadow:none;}
+.ann-link.alt:hover{filter:none;background:rgba(30,132,198,.07);}
 .pin{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--cyan-d);margin-left:9px;background:rgba(30,132,198,.13);padding:3px 8px;border-radius:6px;vertical-align:middle;}
 /* admin / misc */
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
@@ -448,6 +455,7 @@ export default function App() {
         <div className="brand" onClick={()=>go("home")}><span className="chip"><img src={LOGO_YPL} alt="YPL"/></span><div><span className="disp">YPL</span><small>POKÉMON · CENTER · YONSEI</small></div></div>
         <div className="nav-links">{nav.map(([k,l])=><button key={k} className={"nlink"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}
           <button className="nlink admin" onClick={()=>admin?setAdmin(false):setModal({type:"login"})}>{admin?"로그아웃":"관리자"}</button></div>
+        <a className="nav-discord" href="https://discord.gg/sdZYCvHQn" target="_blank" rel="noopener noreferrer" title="YPL 공식 디스코드 참여"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span className="dc-tx">디스코드</span></a>
       </div></nav>
       {admin&&<div className="admin-bar"><div className="admin-bar-in">⚙ 관리자 모드 — 각 섹션에서 추가·수정·삭제할 수 있습니다.</div></div>}
 
@@ -567,7 +575,10 @@ function News({ data, admin, setModal }) {
       {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>등록된 공지가 없습니다.</div>}
       {list.map(a=>(<div className="ann" key={a.id}>
       <div className="date">{a.date}</div><div style={{flex:1,minWidth:0}}><h3>{a.title}{a.pinned&&<span className="pin">고정</span>}</h3><p>{a.body}</p>
-      {a.link&&<a className="ann-link" href={/^https?:\/\//.test(a.link)?a.link:"https://"+a.link} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"} ↗</a>}
+      {(a.link||a.link2)&&<div className="ann-links">
+        {a.link&&<a className="ann-link" href={/^https?:\/\//.test(a.link)?a.link:"https://"+a.link} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"} ↗</a>}
+        {a.link2&&<a className="ann-link alt" href={/^https?:\/\//.test(a.link2)?a.link2:"https://"+a.link2} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"} ↗</a>}
+      </div>}
       {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div></div>))}
     </Reveal>
   </section>);
@@ -746,15 +757,17 @@ function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
   </Modal>);
 }
 function AnnEditor({ item, onClose, onSave, onDelete }) {
-  const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||"");
+  const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||""),[link2,setLink2]=useState(item?.link2||""),[link2Label,setLink2Label]=useState(item?.link2Label||"");
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
     <div className="field"><label>날짜</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></div>
     <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)}/></div>
     <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:120}}/></div>
-    <div className="field"><label>링크 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
-    <div className="field"><label>링크 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
+    <div className="field"><label>링크 1 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
+    <div className="field"><label>링크 1 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
+    <div className="field"><label>링크 2 (선택) — 추가 링크</label><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></div>
+    <div className="field"><label>링크 2 버튼 문구 (선택)</label><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></div>
     <div className="field" style={{display:"flex",alignItems:"center",gap:10}}><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim()})}>저장</button></div>
+    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim()})}>저장</button></div>
   </Modal>);
 }
 function StandingsEditor({ title, rows, onClose, onSave }) {
