@@ -201,6 +201,14 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .hc-mon img{width:90%;height:90%;object-fit:contain;}
 .hc-mon i{font-style:normal;font-weight:800;color:var(--muted2);}
 @media(max-width:560px){.hc-mon{width:42px;height:42px;}.hc-cur-name{font-size:26px;}}
+.hcard.hof-dark{background:linear-gradient(160deg,#1b2330,#0d1117);border:1px solid rgba(236,193,92,.22);box-shadow:0 18px 40px -26px rgba(0,0,0,.7);}
+.hcard.hof-dark:hover{border-color:rgba(236,193,92,.5);box-shadow:0 26px 54px -28px rgba(236,193,92,.32);}
+.hcard.hof-dark .hc-kick{color:#d9b65e;}
+.hcard.hof-dark .hc-go{color:rgba(255,255,255,.45);}
+.hcard.hof-dark:hover .hc-go{color:#e9c46a;}
+.hcard.hof-dark .hc-cur-label{color:#e9c46a;}
+.hcard.hof-dark .hc-cur-name{color:#f4f8fc;}
+.hcard.hof-dark .hc-mon{border-color:rgba(255,255,255,.1);}
 .hc-rank{display:flex;flex-direction:column;gap:10px;}
 .hc-rrow{display:flex;align-items:center;gap:11px;}
 .hc-rname{font-weight:700;color:var(--navy);flex:1;}
@@ -278,6 +286,15 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .poke .pn{margin-top:7px;font-size:11.5px;font-weight:700;color:var(--navy);text-align:center;line-height:1.25;}
 .poke.noimg .sp{background:rgba(21,39,63,.045);}
 .poke.noimg .ph{font-size:11.5px;font-weight:700;color:var(--muted2);text-align:center;padding:6px;line-height:1.3;}
+.champ.hof-card{background:linear-gradient(160deg,#1b2330,#0d1117);border:1px solid rgba(236,193,92,.22);box-shadow:0 18px 42px -26px rgba(0,0,0,.7);}
+.champ.hof-card.hover:hover{box-shadow:0 28px 58px -26px rgba(236,193,92,.4);}
+.champ.hof-card .gen{color:#e9c46a;}
+.champ.hof-card .nm{color:#f4f8fc;}
+.champ.hof-card .crown{opacity:.16;}
+.champ.hof-card .poke .sp{border-color:rgba(255,255,255,.1);}
+.champ.hof-card .poke .pn{color:rgba(255,255,255,.82);}
+.champ.hof-card .poke.noimg .sp{background:rgba(255,255,255,.05);}
+.champ.hof-card .poke.noimg .ph{color:rgba(255,255,255,.6);}
 /* titles */
 .tgroup{margin-bottom:42px;}
 .tgroup-head{display:flex;align-items:center;gap:11px;margin-bottom:16px;flex-wrap:wrap;}
@@ -513,7 +530,7 @@ function Home({ data, go }) {
         <div className="hc-bignum tnum">{titleCount}<span>개</span></div>
         <div className="hc-sub">트레이너 {awarded}명이 칭호 보유 중</div>
       </Reveal>
-      <Reveal tag="button" className="hcard wide" delay={60} onClick={()=>go("champions")}>
+      <Reveal tag="button" className="hcard wide hof-dark" delay={60} onClick={()=>go("champions")}>
         <div className="hcard-head"><span className="hc-kick">명예의 전당</span><span className="hc-go">→</span></div>
         <div className="hcard-champ">
           <div><div className="hc-cur-label">👑 현 챔피언 · {cur?.gen}</div>
@@ -699,7 +716,7 @@ function Champions({ data, admin, setModal }) {
       <p className="sub">챔피언스 시리즈를 제패한 역대 챔피언과 그 우승 엔트리입니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"champion"})}>+ 챔피언 추가</button></div>}
     </Reveal>
-    <div className="grid g2">{champs.map((c,i)=>(<Reveal key={c.id} delay={(i%2)*80} className="champ hover">
+    <div className="grid g2">{champs.map((c,i)=>(<Reveal key={c.id} delay={(i%2)*80} className="champ hover hof-card">
       <span className="crown">👑</span>
       <div className="gen">👑 {c.gen} 챔피언 · {c.slabel||("SEASON "+c.season)}</div><div className="nm">{c.name}</div>
       <div className="team">{c.team.filter(Boolean).map((m,j)=>{const img=POKE_IMG[m];return (
