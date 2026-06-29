@@ -376,7 +376,8 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
 .admin-bar-in{max-width:1120px;margin:0 auto;padding:10px 22px;font-size:13px;color:var(--gold);font-weight:800;}
 .edit-row{display:flex;gap:7px;margin-top:13px;}.ed-pencil{margin-left:auto;}
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;background:var(--navy);border:1px solid var(--navy2);color:#fff;font-weight:700;padding:13px 24px;border-radius:14px;box-shadow:0 22px 50px -16px rgba(21,39,63,.6);font-size:14px;animation:pop .3s ease;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;background:var(--navy);border:1px solid var(--navy2);color:#fff;font-weight:700;padding:13px 24px;border-radius:14px;box-shadow:0 22px 50px -16px rgba(21,39,63,.6);font-size:14px;animation:toastIn .28s ease;}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 .overlay{position:fixed;inset:0;z-index:100;background:rgba(13,27,46,.4);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;animation:pageIn .25s ease;}
 .modal{width:100%;max-width:560px;background:#fff;border:1px solid var(--line2);border-radius:20px;padding:28px;max-height:88vh;overflow:auto;box-shadow:0 40px 90px -28px rgba(21,39,63,.5);animation:pop .3s cubic-bezier(.2,.7,.2,1);}
 .modal h3{margin:0 0 4px;font-size:22px;font-weight:800;color:var(--navy);}.modal .hint{color:var(--muted);font-size:13px;margin:0 0 18px;line-height:1.5;}
@@ -477,7 +478,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-ace{margin-top:14px;background:linear-gradient(120deg,rgba(236,193,92,.1),rgba(236,193,92,.02));border:1px solid rgba(236,193,92,.32);border-radius:13px;padding:14px;}
 .bk-ace-h{font-weight:800;color:var(--gold);font-size:14px;margin-bottom:10px;text-align:center;}
 .bk-ace-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.bk-ace-pick select,.bk-grow2 select,.field select{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-family:inherit;font-size:14px;color:var(--text);cursor:pointer;}
+.bk-ace-pick select,.bk-grow2 select,.field select{width:100%;appearance:none;-webkit-appearance:none;-moz-appearance:none;background:var(--bg2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235a6b82' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;background-size:12px;border:1px solid var(--line);border-radius:11px;padding:11px 40px 11px 14px;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;transition:.18s;}
+.bk-ace-pick select:hover,.bk-grow2 select:hover,.field select:hover{border-color:rgba(30,132,198,.45);}
+.bk-ace-pick select:focus,.bk-grow2 select:focus,.field select:focus{outline:none;border-color:var(--cyan);background-color:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.13);}
+.subtab.add{border-style:dashed;color:var(--muted2);font-weight:700;}
+.subtab.add:hover{color:var(--cyan-d);border-color:var(--cyan);background:rgba(30,132,198,.05);}
 .bk-cb-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center;}
 @media(max-width:560px){.bk-lineups{grid-template-columns:1fr;}.bk-ace-pick{grid-template-columns:1fr;}.bk-cb-actions{margin-left:0;width:100%;}}
 .bk-board{margin-top:4px;}
@@ -1270,30 +1275,33 @@ function Records({ data, admin, setModal, save }) {
     </Reveal>
     <Reveal tag="p" className="pts-note" style={{margin:"0 0 16px"}}>우승 <b>60</b>점, 준우승 <b>40</b>점, 4강 <b>20</b>점이 기본 포인트 기준입니다. 팀전 여부, 팀원 수, 대회 사정에 따라 변동될 수 있습니다.</Reveal>
     <div className="swap" key={tab}>
-      {tab==="rank"&&<RankView data={data} admin={admin} setModal={setModal}/>}
-      {tab==="season"&&<SeasonView data={data} admin={admin} setModal={setModal}/>}
+      {tab==="rank"&&<RankView data={data} admin={admin} setModal={setModal} save={save}/>}
+      {tab==="season"&&<SeasonView data={data} admin={admin} setModal={setModal} save={save}/>}
       {tab==="tour"&&<TourView data={data} admin={admin} setModal={setModal}/>}
     </div>
   </section>);
 }
-function RankView({ data, admin, setModal }) {
+function RankView({ data, admin, setModal, save }) {
   const eras=data.rankings||[]; const [sel,setSel]=useState(eras[0]?.key);
   const era=eras.find(e=>e.key===sel)||eras[0];
-  if(!era) return <div className="panel none" style={{padding:24}}>데이터 없음</div>;
+  const addEra=()=>{ const name=(prompt("새 누적 랭킹 탭 이름 (예: 클래식)")||"").trim(); if(!name)return; const key="r_"+uid(); save({...data,rankings:[...eras,{key,label:name,rows:[]}]}); setSel(key); };
+  if(!era) return (<>{admin&&<div style={{padding:"4px 0"}}><button className="btn btn-gold btn-sm" onClick={addEra}>+ 랭킹 탭 추가</button></div>}<div className="panel none" style={{padding:24}}>데이터 없음</div></>);
   return (<>
-    <div className="subtabs">{eras.map(e=><button key={e.key} className={"subtab"+(e.key===sel?" on":"")} onClick={()=>setSel(e.key)}>{e.label}</button>)}</div>
+    <div className="subtabs">{eras.map(e=><button key={e.key} className={"subtab"+(e.key===sel?" on":"")} onClick={()=>setSel(e.key)}>{e.label}</button>)}{admin&&<button className="subtab add" onClick={addEra}>+ 추가</button>}</div>
     <div className="panel swap" key={sel}>
       {admin&&<div style={{padding:"12px 0 2px"}}><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"standings",title:era.label+" 랭킹",rows:era.rows,build:(rows)=>({...data,rankings:eras.map(x=>x.key===era.key?{...x,rows}:x)})})}>이 시기 랭킹 수정</button></div>}
       <StandTable rows={era.rows}/>
     </div>
   </>);
 }
-function SeasonView({ data, admin, setModal }) {
+function SeasonView({ data, admin, setModal, save }) {
   const seasons=data.seasons||[]; const [sel,setSel]=useState(0);
-  const s=seasons[sel]; if(!s) return <div className="panel none" style={{padding:24}}>데이터 없음</div>;
+  const addSeason=()=>{ const name=(prompt("새 시즌 이름 (예: YPL 시즌 3)")||"").trim(); if(!name)return; save({...data,seasons:[...seasons,{name,rows:[]}]}); setSel(seasons.length); };
+  const s=seasons[sel];
+  if(!s) return (<>{admin&&<div style={{padding:"4px 0"}}><button className="btn btn-gold btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}<div className="panel none" style={{padding:24}}>데이터 없음</div></>);
   const hasNote=s.rows.some(r=>r.note);
   return (<>
-    <div className="subtabs">{seasons.map((x,i)=><button key={i} className={"subtab"+(i===sel?" on":"")} onClick={()=>setSel(i)}>{x.name}</button>)}</div>
+    <div className="subtabs">{seasons.map((x,i)=><button key={i} className={"subtab"+(i===sel?" on":"")} onClick={()=>setSel(i)}>{x.name}</button>)}{admin&&<button className="subtab add" onClick={addSeason}>+ 추가</button>}</div>
     <div className="panel swap" key={sel}>
       {admin&&<div style={{padding:"12px 0 2px"}}><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"standings",title:s.name,rows:s.rows,build:(rows)=>({...data,seasons:seasons.map((x,i)=>i===sel?{...x,rows}:x)})})}>{s.name} 성적 수정</button></div>}
       <StandTable rows={s.rows} showNote={hasNote}/>
