@@ -548,6 +548,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-open-title{font-size:18px;font-weight:800;color:var(--navy);}
 .bk-applybox{background:rgba(21,39,63,.04);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);}
 .bk-applybox b{color:var(--navy);}
+.bk-ab-meta{display:inline-block;align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:20px;background:rgba(30,132,198,.1);color:var(--cyan-d);margin-bottom:2px;}
 .bk-draw{text-align:center;padding:24px 0;}
 .bk-draw-h{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;letter-spacing:.02em;}
 .bk-draw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-width:640px;margin:0 auto 22px;}
@@ -1052,16 +1053,21 @@ function BracketApply({ b, res, data, onClose, save, flash }){
   const tours=data.tournaments||[]; const seasons=data.seasons||[];
   const [tkey,setTkey]=useState(tours[0]?.key||"");
   const [date,setDate]=useState(new Date().toISOString().slice(0,7).replace("-","."));
+  const [roundStr,setRoundStr]=useState("");
   const [season,setSeason]=useState(seasons[seasons.length-1]?.name||"");
+  const [champ,setChamp]=useState(false);
+  const [rule,setRule]=useState("");
   const [bumpRank,setBumpRank]=useState(b.mode!=="team");
   const [bumpSeason,setBumpSeason]=useState(b.mode!=="team");
   const [rankKey,setRankKey]=useState((data.rankings||[])[0]?.key||"");
   const memListOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?.members||[]; };
+  const curT=tours.find(x=>x.key===tkey);
+  const autoNext=String((curT?.rounds?.reduce((mx,r)=>Math.max(mx,parseInt(r.round)||0),0)||0)+1);
   const apply=()=>{
     const champName=nameOf(res.champ), ruName=res.ru?nameOf(res.ru):"", sfNames=res.sf.map(nameOf);
-    const t=tours.find(x=>x.key===tkey); if(!t){alert("회차를 추가할 대회를 선택하세요.");return;}
-    const nextRound=String((t.rounds?.reduce((mx,r)=>Math.max(mx,parseInt(r.round)||0),0)||0)+1);
-    const round={ id:uid(), date, round:nextRound, win:champName, ru:ruName, sf:sfNames, rule:b.name, team:b.mode==="team", ...(season?{season}:{}) };
+    if(!curT){alert("회차를 추가할 대회를 선택하세요.");return;}
+    const roundNum=roundStr.trim()||autoNext;
+    const round={ id:uid(), date:date.trim(), round:roundNum, win:champName, ru:ruName, sf:sfNames, rule:rule.trim(), team:b.mode==="team", ...(champ?{champ:true}:{}), ...(season?{season}:{}) };
     if(b.mode==="team"){ round.winMembers=memListOf(res.champ); round.ruMembers=res.ru?memListOf(res.ru):[]; round.sfMembers=res.sf.map(memListOf); }
     let nd={...data, tournaments:tours.map(x=>x.key===tkey?{...x,rounds:[...(x.rounds||[]),round]}:x)};
     const bump=(rows,name,f)=>{ const i=rows.findIndex(r=>r.name===name); if(i<0)return [...rows,{name,win:f==="win"?1:0,ru:f==="ru"?1:0,top4:f==="top4"?1:0,points:0}]; return rows.map((r,j)=>j===i?{...r,[f]:(r[f]||0)+1}:r); };
@@ -1071,13 +1077,23 @@ function BracketApply({ b, res, data, onClose, save, flash }){
     nd={...nd, brackets:nd.brackets.map(x=>x.id===b.id?{...x,status:"done",applied:{tournamentKey:tkey,date,season}}:x)};
     save(nd); flash("기록에 반영됨 ✓"); onClose();
   };
-  return (<Modal title="기록에 반영" hint="확정된 성적을 회차·시즌별 성적·누적 랭킹에 함께 반영합니다." onClose={onClose}>
-    <div className="bk-applybox"><div>🏆 우승 <b>{nameOf(res.champ)}</b></div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b></div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}</div>
+  return (<Modal title="기록에 반영" hint="대진표 결과를 회차 기록 형식 그대로 추가합니다. 자동으로 채워지지 않는 항목만 입력하세요." onClose={onClose}>
+    <div className="bk-applybox">
+      <div className="bk-ab-meta">{b.mode==="team"?"팀전":"개인전"}</div>
+      <div>🏆 우승 <b>{nameOf(res.champ)}</b></div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b></div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
+    </div>
+    <div className="field"><label>형식</label>
+      <div className="ed-seg"><button type="button" className={!champ?"on":""} onClick={()=>setChamp(false)}>일반 (파이컵)</button><button type="button" className={champ?"on":""} onClick={()=>setChamp(true)}>챔피언스 시리즈</button></div>
+    </div>
     <div className="bk-grow2">
       <div className="field"><label>추가할 대회(회차 묶음)</label><Dropdown value={tkey} onChange={setTkey} placeholder="대회 선택" options={tours.map(t=>({value:t.key,label:t.label}))}/></div>
       <div className="field"><label>시즌</label><Dropdown value={season} onChange={setSeason} options={[{value:"",label:"(시즌 미지정)"},...seasons.map(s=>({value:s.name,label:s.name}))]}/></div>
     </div>
-    <div className="field"><label>날짜 표기</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2026.07"/></div>
+    <div className="bk-grow2">
+      <div className="field"><label>회차 번호</label><input value={roundStr} onChange={e=>setRoundStr(e.target.value)} placeholder={`자동: ${autoNext}회`}/></div>
+      <div className="field"><label>날짜 표기</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2026.07"/></div>
+    </div>
+    <div className="field"><label>대회 룰 (선택)</label><input value={rule} onChange={e=>setRule(e.target.value)} placeholder="예: 모노타입 / 랜덤 배틀 / 6세대 63"/></div>
     {b.mode!=="team"&&<>
       <label className="bk-check"><input type="checkbox" checked={bumpRank} onChange={e=>setBumpRank(e.target.checked)}/><span>누적 랭킹 성적(승/준/4강) 반영</span></label>
       {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
@@ -1187,7 +1203,7 @@ export default function App() {
       {modal?.type==="title"&&<TitleItemEditor groupKey={modal.groupKey} item={modal.item} onClose={()=>setModal(null)} onSave={(it)=>{const titleGroups=data.titleGroups.map(g=>g.key!==modal.groupKey?g:{...g,items:modal.item?g.items.map(x=>x.id===it.id?it:x):[...g.items,it]});save({...data,titleGroups});setModal(null);}} onDelete={modal.item?()=>{const titleGroups=data.titleGroups.map(g=>g.key!==modal.groupKey?g:{...g,items:g.items.filter(x=>x.id!==modal.item.id)});save({...data,titleGroups});setModal(null);}:null}/>}
       {modal?.type==="ann"&&<AnnEditor item={modal.item} onClose={()=>setModal(null)} onSave={(a)=>{const announcements=modal.item?data.announcements.map(x=>x.id===a.id?a:x):[a,...data.announcements];save({...data,announcements});setModal(null);}} onDelete={modal.item?()=>{save({...data,announcements:data.announcements.filter(x=>x.id!==modal.item.id)});setModal(null);}:null}/>}
       {modal?.type==="standings"&&<StandingsEditor title={modal.title} rows={modal.rows} onClose={()=>setModal(null)} onSave={(rows)=>{save(modal.build(rows));setModal(null);}}/>}
-      {modal?.type==="rounds"&&<RoundsEditor title={modal.title} rounds={modal.rounds} simple={modal.simple} onClose={()=>setModal(null)} onSave={(rounds)=>{save(modal.build(rounds));setModal(null);}}/>}
+      {modal?.type==="rounds"&&<RoundsEditor title={modal.title} rounds={modal.rounds} simple={modal.simple} seasons={modal.seasons} onClose={()=>setModal(null)} onSave={(rounds)=>{save(modal.build(rounds));setModal(null);}}/>}
     </div>
   );
 }
@@ -1355,7 +1371,7 @@ function TourView({ data, admin, setModal }) {
         <span style={{width:11,height:11,borderRadius:4,background:t.color}}/>
         <h3 style={{margin:0,fontSize:18,fontWeight:800,color:"var(--navy)"}}>{t.label}</h3>
         <span style={{fontSize:12.5,color:"var(--muted)",fontWeight:600}} className="tnum">{t.rounds.length}회</span>
-        {admin&&<button className="btn btn-gold btn-sm ed-pencil" onClick={()=>setModal({type:"rounds",title:t.label,rounds:t.rounds,build:(rounds)=>({...data,tournaments:tours.map(x=>x.key===t.key?{...x,rounds}:x)})})}>회차 편집</button>}
+        {admin&&<button className="btn btn-gold btn-sm ed-pencil" onClick={()=>setModal({type:"rounds",title:t.label,rounds:t.rounds,seasons:(data.seasons||[]).map(s=>s.name),build:(rounds)=>({...data,tournaments:tours.map(x=>x.key===t.key?{...x,rounds}:x)})})}>회차 편집</button>}
       </div>
       {t.rounds.map((r,i)=>{
         const rl=r.round?(/^\d+$/.test(String(r.round))?String(r.round)+"회":r.round):"";
@@ -1504,7 +1520,7 @@ function StandingsEditor({ title, rows, onClose, onSave }) {
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
 }
-function RoundsEditor({ title, rounds, onClose, onSave }) {
+function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
   const splitL=(s)=>String(s||"").split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
   const dkey=(d)=>{const m=String(d||"").match(/\d+/g)||[];return (+(m[0]||0))*1e8+(+(m[1]||0))*1e6+(+(m[2]||0))*1e4;};
   const rkey=(rd)=>{const n=parseInt(String(rd||""),10);return isNaN(n)?999999:n;};
@@ -1568,7 +1584,7 @@ function RoundsEditor({ title, rounds, onClose, onSave }) {
           <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>))}
         <button className="btn btn-ghost btn-sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>+ 4강 팀 추가</button>
       </>}
-      <div className="ed-r2"><input value={r.season} onChange={e=>upd(i,"season",e.target.value)} placeholder="시즌 (예: YPL 시즌 2)"/><input value={r.rule} onChange={e=>upd(i,"rule",e.target.value)} placeholder="룰 (예: 모노타입 / 6세대 63 팀전)"/></div>
+      <div className="ed-r2"><Dropdown value={r.season||""} onChange={v=>upd(i,"season",v)} options={[{value:"",label:"(시즌 미지정)"},...((seasons||[]).map(n=>({value:n,label:n}))),...((r.season&&!(seasons||[]).includes(r.season))?[{value:r.season,label:r.season+" (기존)"}]:[])]}/><input value={r.rule} onChange={e=>upd(i,"rule",e.target.value)} placeholder="룰 (예: 모노타입 / 6세대 63 팀전)"/></div>
     </div>))}</div>
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
