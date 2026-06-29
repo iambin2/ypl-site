@@ -1090,7 +1090,7 @@ function BracketApply({ b, res, data, onClose, save, flash }){
       <div className="field"><label>시즌</label><Dropdown value={season} onChange={setSeason} options={[{value:"",label:"(시즌 미지정)"},...seasons.map(s=>({value:s.name,label:s.name}))]}/></div>
     </div>
     <div className="bk-grow2">
-      <div className="field"><label>회차 번호</label><input value={roundStr} onChange={e=>setRoundStr(e.target.value)} placeholder={`자동: ${autoNext}회`}/></div>
+      <div className="field"><label>회차 번호</label><input value={roundStr} onChange={e=>setRoundStr(e.target.value)}/></div>
       <div className="field"><label>날짜 표기</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2026.07"/></div>
     </div>
     <div className="field"><label>대회 룰 (선택)</label><input value={rule} onChange={e=>setRule(e.target.value)} placeholder="예: 모노타입 / 랜덤 배틀 / 6세대 63"/></div>
