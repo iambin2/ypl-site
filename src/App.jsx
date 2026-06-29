@@ -483,6 +483,22 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-ace-pick select:focus,.bk-grow2 select:focus,.field select:focus{outline:none;border-color:var(--cyan);background-color:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.13);}
 .subtab.add{border-style:dashed;color:var(--muted2);font-weight:700;}
 .subtab.add:hover{color:var(--cyan-d);border-color:var(--cyan);background:rgba(30,132,198,.05);}
+/* 커스텀 드롭다운 */
+.dd{position:relative;width:100%;}
+.dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:11px 14px;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;transition:.16s;text-align:left;}
+.dd-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dd-btn.ph{color:var(--muted2);font-weight:500;}
+.dd-btn:hover{border-color:rgba(30,132,198,.45);}
+.dd.open .dd-btn{border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.13);}
+.dd-chev{width:12px;height:8px;flex:none;color:var(--muted2);transition:transform .22s ease;}
+.dd.open .dd-chev{transform:rotate(180deg);color:var(--cyan-d);}
+.dd-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;background:#fff;border:1px solid var(--line2);border-radius:13px;padding:6px;box-shadow:0 22px 50px -18px rgba(21,39,63,.45);max-height:260px;overflow-y:auto;transform-origin:top center;animation:ddIn .16s cubic-bezier(.2,.8,.2,1);}
+@keyframes ddIn{from{opacity:0;transform:translateY(-6px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+.dd-opt{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);text-align:left;padding:10px 12px;border-radius:9px;cursor:pointer;transition:.12s;}
+.dd-opt:hover{background:rgba(30,132,198,.09);color:var(--cyan-d);}
+.dd-opt.sel{background:rgba(30,132,198,.08);color:var(--cyan-d);}
+.dd-tick{color:var(--cyan-d);font-weight:800;flex:none;}
+.dd-none{padding:12px;text-align:center;color:var(--muted2);font-size:13px;}
 .bk-cb-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center;}
 @media(max-width:560px){.bk-lineups{grid-template-columns:1fr;}.bk-ace-pick{grid-template-columns:1fr;}.bk-cb-actions{margin-left:0;width:100%;}}
 .bk-board{margin-top:4px;}
@@ -565,6 +581,21 @@ function CountUp({ to, dur=1100, suffix="" }) {
 /* ============================== 공통 ============================== */
 function Modal({ title, hint, children, onClose }) {
   return <div className="overlay" onClick={onClose}><div className="modal" onClick={(e)=>e.stopPropagation()}><h3>{title}</h3>{hint&&<p className="hint">{hint}</p>}{children}</div></div>;
+}
+function Dropdown({ value, onChange, options, placeholder, className }){
+  const [open,setOpen]=useState(false); const ref=useRef(null);
+  useEffect(()=>{ if(!open)return; const h=(e)=>{ if(ref.current&&!ref.current.contains(e.target))setOpen(false); }; const k=(e)=>{ if(e.key==="Escape")setOpen(false); };
+    document.addEventListener("mousedown",h); document.addEventListener("keydown",k); return ()=>{document.removeEventListener("mousedown",h);document.removeEventListener("keydown",k);}; },[open]);
+  const sel=options.find(o=>o.value===value);
+  return (<div className={"dd"+(open?" open":"")+(className?" "+className:"")} ref={ref}>
+    <button type="button" className={"dd-btn"+(sel?"":" ph")} onClick={()=>setOpen(o=>!o)}>
+      <span>{sel?sel.label:(placeholder||"선택")}</span>
+      <svg className="dd-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    </button>
+    {open&&<div className="dd-menu">{options.length===0&&<div className="dd-none">항목 없음</div>}
+      {options.map(o=>(<button type="button" key={o.value} className={"dd-opt"+(o.value===value?" sel":"")} onClick={()=>{onChange(o.value);setOpen(false);}}>{o.label}{o.value===value&&<span className="dd-tick">✓</span>}</button>))}
+    </div>}
+  </div>);
 }
 function StandTable({ rows, showNote }) {
   const sorted=[...rows].sort((a,b)=>(b.points||0)-(a.points||0));
@@ -925,8 +956,8 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
       {tie&&<div className="bk-ace">
         <div className="bk-ace-h">⚔ 동점 — 에이스 결정전</div>
         <div className="bk-ace-pick">
-          <select value={aceA} onChange={e=>{setAceA(e.target.value);setAceW(null);}}><option value="">{teamA.name} 에이스 선택</option>{(teamA.members||[]).map(mm=><option key={mm} value={mm}>{mm}</option>)}</select>
-          <select value={aceB} onChange={e=>{setAceB(e.target.value);setAceW(null);}}><option value="">{teamB.name} 에이스 선택</option>{(teamB.members||[]).map(mm=><option key={mm} value={mm}>{mm}</option>)}</select>
+          <Dropdown value={aceA} onChange={v=>{setAceA(v);setAceW(null);}} placeholder={teamA.name+" 에이스 선택"} options={(teamA.members||[]).map(mm=>({value:mm,label:mm}))}/>
+          <Dropdown value={aceB} onChange={v=>{setAceB(v);setAceW(null);}} placeholder={teamB.name+" 에이스 선택"} options={(teamB.members||[]).map(mm=>({value:mm,label:mm}))}/>
         </div>
         {aceA&&aceB&&<div className="bk-series-row" style={{marginTop:10}}><span className="bk-series-no">A</span><button type="button" className={"bk-series-p"+(aceW==="a"?" win":"")} onClick={()=>setAceW(aceW==="a"?null:"a")}>{aceA}</button><span className="bk-series-vs">vs</span><button type="button" className={"bk-series-p"+(aceW==="b"?" win":"")} onClick={()=>setAceW(aceW==="b"?null:"b")}>{aceB}</button></div>}
       </div>}
@@ -1043,13 +1074,13 @@ function BracketApply({ b, res, data, onClose, save, flash }){
   return (<Modal title="기록에 반영" hint="확정된 성적을 회차·시즌별 성적·누적 랭킹에 함께 반영합니다." onClose={onClose}>
     <div className="bk-applybox"><div>🏆 우승 <b>{nameOf(res.champ)}</b></div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b></div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}</div>
     <div className="bk-grow2">
-      <div className="field"><label>추가할 대회(회차 묶음)</label><select value={tkey} onChange={e=>setTkey(e.target.value)}>{tours.map(t=><option key={t.key} value={t.key}>{t.label}</option>)}</select></div>
-      <div className="field"><label>시즌</label><select value={season} onChange={e=>setSeason(e.target.value)}><option value="">(시즌 미지정)</option>{seasons.map(s=><option key={s.name} value={s.name}>{s.name}</option>)}</select></div>
+      <div className="field"><label>추가할 대회(회차 묶음)</label><Dropdown value={tkey} onChange={setTkey} placeholder="대회 선택" options={tours.map(t=>({value:t.key,label:t.label}))}/></div>
+      <div className="field"><label>시즌</label><Dropdown value={season} onChange={setSeason} options={[{value:"",label:"(시즌 미지정)"},...seasons.map(s=>({value:s.name,label:s.name}))]}/></div>
     </div>
     <div className="field"><label>날짜 표기</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2026.07"/></div>
     {b.mode!=="team"&&<>
       <label className="bk-check"><input type="checkbox" checked={bumpRank} onChange={e=>setBumpRank(e.target.checked)}/><span>누적 랭킹 성적(승/준/4강) 반영</span></label>
-      {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><select value={rankKey} onChange={e=>setRankKey(e.target.value)}>{(data.rankings||[]).map(r=><option key={r.key} value={r.key}>{r.label}</option>)}</select></div>}
+      {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
       <label className="bk-check"><input type="checkbox" checked={bumpSeason} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season}/><span>시즌별 성적 반영 {season?`(${season})`:"— 시즌을 먼저 선택"}</span></label>
       <div className="bk-hint">포인트는 자동 반영되지 않으니, 기록 탭의 랭킹/시즌 편집에서 조정하세요.</div>
     </>}
