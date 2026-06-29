@@ -704,19 +704,18 @@ const BKF='Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 function downloadChampionPng(b,res,nameOf){
   const S=2,W=1200,H=900; const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S; const ctx=cv.getContext("2d"); ctx.scale(S,S);
   const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,"#171f2e"); g.addColorStop(1,"#0b0e14"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  const rg=ctx.createRadialGradient(W/2,250,30,W/2,250,560); rg.addColorStop(0,"rgba(236,193,92,.20)"); rg.addColorStop(1,"rgba(236,193,92,0)"); ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
-  for(let i=0;i<46;i++){ ctx.fillStyle=`rgba(236,193,92,${.05+Math.random()*.18})`; const x=Math.random()*W,y=Math.random()*H,s=1+Math.random()*3; ctx.beginPath(); ctx.arc(x,y,s,0,7); ctx.fill(); }
+  const rg=ctx.createRadialGradient(W/2,400,40,W/2,400,640); rg.addColorStop(0,"rgba(236,193,92,.22)"); rg.addColorStop(1,"rgba(236,193,92,0)"); ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<54;i++){ ctx.fillStyle=`rgba(236,193,92,${.05+Math.random()*.2})`; const x=Math.random()*W,y=Math.random()*H,s=1+Math.random()*3.2; ctx.beginPath(); ctx.arc(x,y,s,0,7); ctx.fill(); }
   ctx.strokeStyle="rgba(236,193,92,.45)"; ctx.lineWidth=2; bkRR(ctx,30,30,W-60,H-60,28); ctx.stroke();
   ctx.textAlign="center";
-  ctx.fillStyle="#e9c46a"; ctx.font=`800 22px ${BKF}`; bkSpaced(ctx,"YPL · HALL OF CHAMPION",W/2,128,6);
-  ctx.font="118px serif"; ctx.fillText("🏆",W/2,300);
-  ctx.fillStyle="#e9c46a"; ctx.font=`800 30px ${BKF}`; bkSpaced(ctx,"CHAMPION",W/2,372,10);
-  const champ=nameOf(res.champ); const part=(b.participants||[]).find(p=>p.id===res.champ);
-  ctx.fillStyle="#f6f9fc"; ctx.font=`800 74px ${BKF}`; ctx.fillText(bkClip(ctx,champ,W-160),W/2,468);
-  if(b.mode==="team"&&part&&(part.members||[]).length){ ctx.fillStyle="rgba(255,255,255,.62)"; ctx.font=`500 26px ${BKF}`; ctx.fillText(bkClip(ctx,part.members.join("   ·   "),W-180),W/2,524); }
-  ctx.fillStyle="rgba(255,255,255,.9)"; ctx.font=`700 32px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-160),W/2,H-168);
-  if(res.ru){ ctx.fillStyle="rgba(255,255,255,.45)"; ctx.font=`500 21px ${BKF}`; ctx.fillText("준우승 · "+nameOf(res.ru),W/2,H-126); }
-  ctx.fillStyle="rgba(236,193,92,.7)"; ctx.font=`600 19px ${BKF}`; ctx.fillText(b.createdAt,W/2,H-86);
+  ctx.fillStyle="#e9c46a"; ctx.font=`900 30px ${BKF}`; bkSpaced(ctx,"YPL",W/2,150,16);
+  ctx.font="160px serif"; ctx.fillText("🏆",W/2,360);
+  ctx.fillStyle="#e9c46a"; ctx.font=`800 36px ${BKF}`; bkSpaced(ctx,"CHAMPION",W/2,448,16);
+  const champ=nameOf(res.champ);
+  ctx.fillStyle="#f6f9fc"; ctx.font=`900 104px ${BKF}`; ctx.fillText(bkClip(ctx,champ,W-150),W/2,580);
+  ctx.strokeStyle="rgba(236,193,92,.85)"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(W/2-70,628); ctx.lineTo(W/2+70,628); ctx.stroke();
+  ctx.fillStyle="rgba(255,255,255,.92)"; ctx.font=`700 40px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-160),W/2,712);
+  ctx.fillStyle="rgba(236,193,92,.72)"; ctx.font=`600 22px ${BKF}`; ctx.fillText(b.createdAt,W/2,758);
   bkDownload(cv,`${b.name}_우승_${champ}.png`);
 }
 
