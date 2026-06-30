@@ -450,7 +450,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* 팀 시리즈 */
 .bk-slot .bk-tn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bk-slot .bk-sc{font-weight:800;color:var(--muted2);margin-left:8px;font-variant-numeric:tabular-nums;}
-.bk-slot.win .bk-sc{color:var(--cyan-d);}
+.bk-slot.win .bk-sc{color:rgba(255,255,255,.9);}
 .bk-match.team-click{cursor:pointer;}
 .bk-match.team-click:hover{box-shadow:0 0 0 2px rgba(30,132,198,.3);}
 .bk-match .bk-slot{display:flex;align-items:center;}
@@ -503,16 +503,16 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 @media(max-width:560px){.bk-lineups{grid-template-columns:1fr;}.bk-ace-pick{grid-template-columns:1fr;}.bk-cb-actions{margin-left:0;width:100%;}}
 .bk-board{margin-top:4px;}
 .bk-scroll{overflow-x:auto;padding-bottom:8px;}
-.bk-cols{display:flex;gap:30px;align-items:flex-start;min-width:min-content;}
-.bk-col{display:flex;flex-direction:column;justify-content:space-around;gap:14px;min-width:150px;}
+.bk-cols{display:flex;gap:38px;align-items:stretch;min-width:min-content;}
+.bk-col{display:flex;flex-direction:column;justify-content:space-around;gap:16px;min-width:184px;}
 .bk-col-h{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan-d);text-align:center;margin-bottom:2px;}
 .bk-col-h.gf{color:var(--gold);}
-.bk-match{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:0 8px 20px -16px rgba(21,39,63,.4);}
+.bk-match{display:flex;flex-direction:column;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 8px 20px -16px rgba(21,39,63,.4);}
 .bk-match.cmp{box-shadow:none;}
-.bk-slot{display:block;width:100%;text-align:left;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--navy);background:rgba(21,39,63,.03);border:none;border-radius:8px;padding:9px 11px;cursor:default;transition:.16s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bk-slot{display:flex;align-items:center;width:100%;min-height:42px;text-align:left;font-family:inherit;font-size:14px;font-weight:700;color:var(--navy);background:rgba(21,39,63,.035);border:none;border-radius:9px;padding:0 13px;cursor:default;transition:.16s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bk-slot.pick{cursor:pointer;background:rgba(30,132,198,.07);}
 .bk-slot.pick:hover{background:rgba(30,132,198,.16);}
-.bk-slot.win{background:linear-gradient(120deg,rgba(46,196,182,.18),rgba(30,132,198,.14));color:var(--cyan-d);font-weight:800;}
+.bk-slot.win{background:var(--navy);color:#fff;font-weight:800;box-shadow:0 4px 12px -6px rgba(21,39,63,.5);}
 .bk-slot.bye{color:var(--muted2);font-style:italic;font-weight:600;}
 .bk-lb{margin-top:26px;border-top:1px dashed var(--line2);padding-top:18px;}
 .bk-lb-h{font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:12px;}
@@ -549,6 +549,24 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-applybox{background:rgba(21,39,63,.04);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);}
 .bk-applybox b{color:var(--navy);}
 .bk-ab-meta{display:inline-block;align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:20px;background:rgba(30,132,198,.1);color:var(--cyan-d);margin-bottom:2px;}
+.bk-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;}
+.bk-party-list{display:flex;flex-direction:column;gap:12px;max-height:50vh;overflow-y:auto;padding:2px;}
+.bk-party-team{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;}
+.bk-party-tn{font-weight:800;color:var(--navy);font-size:15px;margin-bottom:9px;}
+.bk-party-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.bk-party-row:last-child{margin-bottom:0;}
+.bk-party-mem{flex:none;width:96px;font-weight:700;color:var(--navy);font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bk-party-row input{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13.5px;transition:.16s;}
+.bk-party-row input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(30,132,198,.12);}
+.bk-entries{margin-top:26px;border-top:1px dashed var(--line2);padding-top:20px;}
+.bk-entries-h{font-size:14px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+.bk-entries-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.bk-entry{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:0 8px 22px -18px rgba(21,39,63,.35);}
+.bk-entry-n{font-weight:800;color:var(--navy);font-size:15px;margin-bottom:8px;}
+.bk-entry-p{font-size:13.5px;color:var(--muted);line-height:1.6;}
+.bk-entry-row{display:flex;gap:8px;font-size:13px;margin-bottom:4px;}
+.bk-entry-row b{flex:none;color:var(--cyan-d);font-weight:700;min-width:56px;}
+.bk-entry-row span{color:var(--muted);}
 .bk-draw{text-align:center;padding:24px 0;}
 .bk-draw-h{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;letter-spacing:.02em;}
 .bk-draw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-width:640px;margin:0 auto 22px;}
@@ -748,11 +766,14 @@ function downloadChampionPng(b,res,nameOf){
   ctx.fillStyle="#e9c46a"; ctx.font=`900 30px ${BKF}`; bkSpaced(ctx,"YPL",W/2,150,16);
   ctx.font="160px serif"; ctx.fillText("🏆",W/2,360);
   ctx.fillStyle="#e9c46a"; ctx.font=`800 36px ${BKF}`; bkSpaced(ctx,"CHAMPION",W/2,448,16);
-  const champ=nameOf(res.champ);
-  ctx.fillStyle="#f6f9fc"; ctx.font=`900 104px ${BKF}`; ctx.fillText(bkClip(ctx,champ,W-150),W/2,580);
-  ctx.strokeStyle="rgba(236,193,92,.85)"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(W/2-70,628); ctx.lineTo(W/2+70,628); ctx.stroke();
-  ctx.fillStyle="rgba(255,255,255,.92)"; ctx.font=`700 40px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-160),W/2,712);
-  ctx.fillStyle="rgba(236,193,92,.72)"; ctx.font=`600 22px ${BKF}`; ctx.fillText(b.createdAt,W/2,758);
+  const champ=nameOf(res.champ); const part=(b.participants||[]).find(p=>p.id===res.champ);
+  let party=""; if(b.mode==="team"){ party=(part?.members||[]).join("   ·   "); } else if(part?.party){ party=part.party.split(/[,\n]/).map(s=>s.trim()).filter(Boolean).join("   ·   "); }
+  ctx.fillStyle="#f6f9fc"; ctx.font=`900 104px ${BKF}`; ctx.fillText(bkClip(ctx,champ,W-150),W/2,548);
+  ctx.strokeStyle="rgba(236,193,92,.85)"; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(W/2-70,594); ctx.lineTo(W/2+70,594); ctx.stroke();
+  let ty=690;
+  if(party){ ctx.fillStyle="rgba(255,255,255,.62)"; ctx.font=`500 25px ${BKF}`; ctx.fillText(bkClip(ctx,party,W-150),W/2,652); ty=718; }
+  ctx.fillStyle="rgba(255,255,255,.92)"; ctx.font=`700 40px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-160),W/2,ty);
+  ctx.fillStyle="rgba(236,193,92,.72)"; ctx.font=`600 22px ${BKF}`; ctx.fillText(b.createdAt,W/2,ty+44);
   bkDownload(cv,`${b.name}_우승_${champ}.png`);
 }
 
@@ -1007,10 +1028,36 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam }){
   </div>);
 }
 
+/* ===== 파티/엔트리 기록 ===== */
+function PartyEditor({ b, onClose, onSave }){
+  const team=b.mode==="team";
+  const [parts,setParts]=useState(()=>JSON.parse(JSON.stringify(b.participants||[])));
+  const setIndiv=(i,v)=>setParts(parts.map((p,j)=>j===i?{...p,party:v}:p));
+  const setMem=(i,mem,v)=>setParts(parts.map((p,j)=>j===i?{...p,memberParties:{...(p.memberParties||{}),[mem]:v}}:p));
+  return (<Modal title="파티 · 엔트리 기록" hint="각 참가자(팀)의 포켓몬 엔트리를 기록해 보관합니다. 포켓몬은 쉼표로 구분해 입력하세요." onClose={onClose}>
+    <div className="bk-party-list">
+      {parts.length===0&&<div className="bk-hint">참가자가 없습니다.</div>}
+      {parts.map((p,i)=>team?(
+        <div className="bk-party-team" key={p.id}>
+          <div className="bk-party-tn">{p.name}</div>
+          {(p.members||[]).length===0&&<div className="bk-hint">팀원이 없습니다.</div>}
+          {(p.members||[]).map(mem=>(<div className="bk-party-row" key={mem}><span className="bk-party-mem">{mem}</span><input value={(p.memberParties||{})[mem]||""} onChange={e=>setMem(i,mem,e.target.value)} placeholder="포켓몬 (쉼표 구분)"/></div>))}
+        </div>
+      ):(
+        <div className="bk-party-row" key={p.id}><span className="bk-party-mem">{p.name}</span><input value={p.party||""} onChange={e=>setIndiv(i,e.target.value)} placeholder="포켓몬 (쉼표 구분)"/></div>
+      ))}
+    </div>
+    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave(parts)}>저장</button></div>
+  </Modal>);
+}
+
 function BracketBoard({ b, data, admin, save, flash, onApply }){
   const nameOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
   const teamMode=b.mode==="team";
   const [series,setSeries]=useState(null);
+  const [party,setParty]=useState(false);
+  const savePartyFn=(parts)=>{ save({...data,brackets:data.brackets.map(x=>x.id===b.id?{...x,participants:parts}:x)}); setParty(false); flash("엔트리 저장 ✓"); };
+  const hasParty=(b.participants||[]).some(p=>p.party||(p.memberParties&&Object.values(p.memberParties).some(Boolean)));
   const pick=(matchId,side)=>save({...data,brackets:data.brackets.map(x=>x.id===b.id?withPick(x,matchId,side):x)});
   const openTeam=(m,pa,pb)=>{ const A=(b.participants||[]).find(p=>p.id===pa),B=(b.participants||[]).find(p=>p.id===pb); if(!A||!B)return; setSeries({m,A,B}); };
   const saveSeries=(sObj,winnerSide)=>{ save({...data,brackets:data.brackets.map(x=>x.id===b.id?withSeries(x,series.m.id,sObj,winnerSide):x)}); setSeries(null); };
@@ -1023,6 +1070,7 @@ function BracketBoard({ b, data, admin, save, flash, onApply }){
   };
   const res = b.format==="group" ? (b.knockout?elimResult(b.knockout):null) : elimResult(b.graph);
   return (<div className="bk-board">
+    {admin&&<div className="bk-tools"><button className="btn btn-ghost btn-sm" onClick={()=>setParty(true)}>📋 파티 · 엔트리 기록</button></div>}
     {b.format==="group"&&<>
       <div className="bk-groups">{b.groups.map(gr=>{ const ev=evalGraph({rounds:[gr.matches]}); const st=groupStandings(gr);
         return (<div className="bk-group" key={gr.id}>
@@ -1043,7 +1091,15 @@ function BracketBoard({ b, data, admin, save, flash, onApply }){
         {b.applied&&<span className="bk-applied">✓ 기록 반영됨</span>}
       </div>
     </div>}
+    {hasParty&&<div className="bk-entries"><div className="bk-entries-h">📋 참가 엔트리</div><div className="bk-entries-grid">
+      {(b.participants||[]).map(p=>{
+        if(teamMode){ const mem=(p.members||[]).map(m=>({m,party:(p.memberParties||{})[m]})).filter(x=>x.party); if(mem.length===0)return null;
+          return <div className="bk-entry" key={p.id}><div className="bk-entry-n">{p.name}</div>{mem.map(x=><div className="bk-entry-row" key={x.m}><b>{x.m}</b><span>{x.party}</span></div>)}</div>; }
+        if(!p.party)return null; return <div className="bk-entry" key={p.id}><div className="bk-entry-n">{p.name}</div><div className="bk-entry-p">{p.party}</div></div>;
+      })}
+    </div></div>}
     {series&&<TeamMatchModal teamA={series.A} teamB={series.B} init={series.m.series} onClose={()=>setSeries(null)} onSave={saveSeries}/>}
+    {party&&<PartyEditor b={b} onClose={()=>setParty(false)} onSave={savePartyFn}/>}
   </div>);
 }
 
