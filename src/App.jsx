@@ -1179,7 +1179,7 @@ function BracketApply({ b, res, data, onClose, save, flash }){
       if(i<0)rs=[...rs,{name,win:d.win,ru:d.ru,top4:d.top4,points:d.points}];
       else rs=rs.map((r,j)=>j===i?{...r,win:(r.win||0)+d.win,ru:(r.ru||0)+d.ru,top4:(r.top4||0)+d.top4,points:(r.points||0)+d.points}:r); }); return rs; };
     if(bumpRank&&rankKey){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
-    if(bumpSeason&&season){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
+    if(bumpSeason&&season&&!champ){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
     nd={...nd, brackets:nd.brackets.map(x=>x.id===b.id?{...x,status:"done",applied:{tournamentKey:tkey,date,season}}:x)};
     save(nd); flash("기록에 반영됨 ✓"); onClose();
   };
@@ -1212,7 +1212,8 @@ function BracketApply({ b, res, data, onClose, save, flash }){
     </div>}
     <label className="bk-check"><input type="checkbox" checked={bumpRank} onChange={e=>setBumpRank(e.target.checked)}/><span>누적 랭킹 반영 {team?"(점수 배분)":"(승/준/4강 + 점수)"}</span></label>
     {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
-    <label className="bk-check"><input type="checkbox" checked={bumpSeason} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season}/><span>시즌별 성적 반영 {season?`(${season})`:"— 시즌을 먼저 선택"}</span></label>
+    <label className="bk-check"><input type="checkbox" checked={bumpSeason&&!champ} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season||champ}/><span>시즌별 성적 반영 {champ?"— 챔피언스 시리즈는 제외":(season?`(${season})`:"— 시즌을 먼저 선택")}</span></label>
+    {champ&&<div className="bk-hint">챔피언스 시리즈는 시즌을 마무리하는 대회로, 누적 랭킹에는 반영되지만 시즌별 성적에는 반영되지 않습니다.</div>}
     <div className="bk-hint">{team?"팀전은 각 등수 점수를 팀원 수로 나눠 배분합니다(승/준/4강 횟수는 개인 랭킹에 더하지 않음).":"승/준/4강 횟수와 점수가 함께 누적됩니다."}</div>
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={apply}>반영하기</button></div>
   </Modal>);
