@@ -376,7 +376,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
 .admin-bar-in{max-width:1120px;margin:0 auto;padding:10px 22px;font-size:13px;color:var(--gold);font-weight:800;}
 .edit-row{display:flex;gap:7px;margin-top:13px;}.ed-pencil{margin-left:auto;}
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;background:var(--navy);border:1px solid var(--navy2);color:#fff;font-weight:700;padding:13px 24px;border-radius:14px;box-shadow:0 22px 50px -16px rgba(21,39,63,.6);font-size:14px;animation:toastIn .28s ease;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;background:linear-gradient(120deg,var(--navy2),var(--cyan));border:1px solid rgba(30,132,198,.5);color:#fff;font-weight:700;padding:13px 24px;border-radius:14px;box-shadow:0 22px 50px -16px rgba(30,132,198,.55);font-size:14px;animation:toastIn .28s ease;}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 .overlay{position:fixed;inset:0;z-index:100;background:rgba(13,27,46,.4);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;animation:pageIn .25s ease;}
 .modal{width:100%;max-width:560px;background:#fff;border:1px solid var(--line2);border-radius:20px;padding:28px;max-height:88vh;overflow:auto;box-shadow:0 40px 90px -28px rgba(21,39,63,.5);animation:pop .3s cubic-bezier(.2,.7,.2,1);}
@@ -470,7 +470,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-series-no{width:24px;height:24px;flex:none;border-radius:50%;background:rgba(21,39,63,.06);color:var(--muted);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
 .bk-series-p{flex:1;font-family:inherit;font-size:14px;font-weight:700;color:var(--navy);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;transition:.15s;text-align:center;}
 .bk-series-p:hover{border-color:var(--cyan);}
-.bk-series-p.win{background:linear-gradient(120deg,rgba(46,196,182,.2),rgba(30,132,198,.14));border-color:var(--cyan);color:var(--cyan-d);}
+.bk-series-p.win{background:linear-gradient(120deg,var(--navy2),var(--cyan));border-color:var(--cyan);color:#fff;}
 .bk-series-vs{font-size:11px;color:var(--muted2);font-weight:700;flex:none;}
 .bk-series-score{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0 4px;font-size:18px;font-weight:800;color:var(--muted);}
 .bk-series-score b{color:var(--navy);font-weight:800;}
@@ -503,6 +503,10 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 @media(max-width:560px){.bk-lineups{grid-template-columns:1fr;}.bk-ace-pick{grid-template-columns:1fr;}.bk-cb-actions{margin-left:0;width:100%;}}
 .bk-board{margin-top:4px;}
 .bk-scroll{overflow-x:auto;padding-bottom:8px;}
+.bk-tree{display:flex;gap:38px;align-items:flex-start;min-width:min-content;}
+.bk-col2{position:relative;min-width:184px;display:flex;flex-direction:column;}
+.bk-col-body{position:relative;width:100%;}
+.bk-mpos{position:absolute;left:0;right:0;}
 .bk-cols{display:flex;gap:38px;align-items:stretch;min-width:min-content;}
 .bk-col{display:flex;flex-direction:column;justify-content:space-around;gap:16px;min-width:184px;}
 .bk-col-h{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan-d);text-align:center;margin-bottom:2px;}
@@ -512,7 +516,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-slot{display:flex;align-items:center;width:100%;min-height:42px;text-align:left;font-family:inherit;font-size:14px;font-weight:700;color:var(--navy);background:rgba(21,39,63,.035);border:none;border-radius:9px;padding:0 13px;cursor:default;transition:.16s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bk-slot.pick{cursor:pointer;background:rgba(30,132,198,.07);}
 .bk-slot.pick:hover{background:rgba(30,132,198,.16);}
-.bk-slot.win{background:var(--navy);color:#fff;font-weight:800;box-shadow:0 4px 12px -6px rgba(21,39,63,.5);}
+.bk-slot.win{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;font-weight:800;box-shadow:0 6px 14px -7px rgba(30,132,198,.7);}
 .bk-slot.bye{color:var(--muted2);font-style:italic;font-weight:600;}
 .bk-lb{margin-top:26px;border-top:1px dashed var(--line2);padding-top:18px;}
 .bk-lb-h{font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:12px;}
@@ -549,6 +553,21 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-applybox{background:rgba(21,39,63,.04);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);}
 .bk-applybox b{color:var(--navy);}
 .bk-ab-meta{display:inline-block;align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:20px;background:rgba(30,132,198,.1);color:var(--cyan-d);margin-bottom:2px;}
+.bk-pts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.bk-pt{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:8px 12px;}
+.bk-pt span{font-size:12.5px;font-weight:700;color:var(--muted);flex:none;}
+.bk-pt input{flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:14px;font-weight:800;color:var(--navy);text-align:center;}
+.bk-pt input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(30,132,198,.12);}
+.bk-alloc{display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto;padding:2px;}
+.bk-alloc-row{display:flex;align-items:center;gap:9px;}
+.bk-alloc-tag{flex:none;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:20px;}
+.bk-alloc-tag.w{background:rgba(236,193,92,.18);color:var(--gold);}
+.bk-alloc-tag.r{background:rgba(30,132,198,.12);color:var(--cyan-d);}
+.bk-alloc-tag.s{background:rgba(21,39,63,.07);color:var(--muted);}
+.bk-alloc-row b{font-weight:700;color:var(--navy);font-size:14px;}
+.bk-alloc-team{flex:1;font-size:12px;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bk-alloc-row input{flex:none;width:76px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:14px;font-weight:800;color:var(--navy);text-align:center;}
+.bk-alloc-row input:focus{outline:none;border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.12);}
 .bk-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;}
 .bk-party-list{display:flex;flex-direction:column;gap:12px;max-height:50vh;overflow-y:auto;padding:2px;}
 .bk-party-team{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;}
@@ -1011,12 +1030,25 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
 }
 
 /* ===== 대진표 보드 ===== */
+const BK_SLOT_H=42, BK_MATCH_H=BK_SLOT_H*2+4+10, BK_PITCH0=BK_MATCH_H+26; // 매치높이 98, 1라운드 세로간격
+function treeCenters(rounds){
+  const centers=[];
+  for(let r=0;r<rounds.length;r++){ centers[r]=[];
+    for(let j=0;j<rounds[r].length;j++){ centers[r][j]= r===0 ? (j*BK_PITCH0+BK_MATCH_H/2) : (centers[r-1][2*j]+centers[r-1][2*j+1])/2; } }
+  return { centers, totalH: (rounds[0]?.length||1)*BK_PITCH0 };
+}
 function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam }){
   const ev=evalGraph(g);
   const rlabel=(len)=>{ const names={1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"}; return names[len]||`${len*2}강`; };
-  return (<div className="bk-scroll"><div className="bk-cols">
-    {g.rounds.map((r,ri)=>(<div className="bk-col" key={ri}><div className="bk-col-h">{rlabel(r.length)}</div>
-      {r.map(m=><MatchCard key={m.id} m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/>)}
+  const { centers, totalH }=treeCenters(g.rounds);
+  return (<div className="bk-scroll"><div className="bk-tree">
+    {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
+      <div className="bk-col-h">{rlabel(r.length)}</div>
+      <div className="bk-col-body" style={{height:totalH}}>
+        {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
+          <MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/>
+        </div>))}
+      </div>
     </div>))}
   </div>
   {g.kind==="double"&&<div className="bk-lb"><div className="bk-lb-h">패자부활전 (Lower Bracket)</div><div className="bk-cols">
@@ -1105,7 +1137,9 @@ function BracketBoard({ b, data, admin, save, flash, onApply }){
 
 /* ===== 기록 반영 모달 ===== */
 function BracketApply({ b, res, data, onClose, save, flash }){
-  const nameOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
+  const partOf=(pid)=>(b.participants||[]).find(x=>x.id===pid);
+  const nameOf=(pid)=>{ const p=partOf(pid); return p?p.name:pid; };
+  const team=b.mode==="team";
   const tours=data.tournaments||[]; const seasons=data.seasons||[];
   const [tkey,setTkey]=useState(tours[0]?.key||"");
   const [date,setDate]=useState(new Date().toISOString().slice(0,7).replace("-","."));
@@ -1113,29 +1147,45 @@ function BracketApply({ b, res, data, onClose, save, flash }){
   const [season,setSeason]=useState(seasons[seasons.length-1]?.name||"");
   const [champ,setChamp]=useState(false);
   const [rule,setRule]=useState("");
-  const [bumpRank,setBumpRank]=useState(b.mode!=="team");
-  const [bumpSeason,setBumpSeason]=useState(b.mode!=="team");
+  const [bumpRank,setBumpRank]=useState(true);
+  const [bumpSeason,setBumpSeason]=useState(true);
   const [rankKey,setRankKey]=useState((data.rankings||[])[0]?.key||"");
-  const memListOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?.members||[]; };
+  const [ptWin,setPtWin]=useState("60"); const [ptRu,setPtRu]=useState("40"); const [ptSf,setPtSf]=useState("20");
+  const [override,setOverride]=useState({});
+  const pN=(s)=>{ const v=parseFloat(s); return isNaN(v)?0:v; };
+  const ptWinN=pN(ptWin), ptRuN=pN(ptRu), ptSfN=pN(ptSf);
+  const r1=(n)=>Math.round(n*10)/10;
+  const setPt=(fn)=>(e)=>fn(e.target.value.replace(/[^0-9.]/g,""));
+  const memListOf=(pid)=>partOf(pid)?.members||[];
   const curT=tours.find(x=>x.key===tkey);
   const autoNext=String((curT?.rounds?.reduce((mx,r)=>Math.max(mx,parseInt(r.round)||0),0)||0)+1);
+  const placements=[]; if(res.champ)placements.push({pid:res.champ,pts:ptWinN,label:"우승"});
+  if(res.ru)placements.push({pid:res.ru,pts:ptRuN,label:"준우승"});
+  res.sf.forEach(pid=>placements.push({pid,pts:ptSfN,label:"4강"}));
+  const alloc=[]; if(team){ placements.forEach(pl=>{ const p=partOf(pl.pid); const mem=p?.members||[]; const per=mem.length?r1(pl.pts/mem.length):0; mem.forEach(m=>alloc.push({key:pl.pid+"|"+m,team:p?.name,member:m,label:pl.label,base:per})); }); }
+  const allocVal=(a)=>{ const o=override[a.key]; return (o===undefined||o==="")?a.base:pN(o); };
   const apply=()=>{
     const champName=nameOf(res.champ), ruName=res.ru?nameOf(res.ru):"", sfNames=res.sf.map(nameOf);
     if(!curT){alert("회차를 추가할 대회를 선택하세요.");return;}
     const roundNum=roundStr.trim()||autoNext;
-    const round={ id:uid(), date:date.trim(), round:roundNum, win:champName, ru:ruName, sf:sfNames, rule:rule.trim(), team:b.mode==="team", ...(champ?{champ:true}:{}), ...(season?{season}:{}) };
-    if(b.mode==="team"){ round.winMembers=memListOf(res.champ); round.ruMembers=res.ru?memListOf(res.ru):[]; round.sfMembers=res.sf.map(memListOf); }
+    const round={ id:uid(), date:date.trim(), round:roundNum, win:champName, ru:ruName, sf:sfNames, rule:rule.trim(), team, ...(champ?{champ:true}:{}), ...(season?{season}:{}) };
+    if(team){ round.winMembers=memListOf(res.champ); round.ruMembers=res.ru?memListOf(res.ru):[]; round.sfMembers=res.sf.map(memListOf); }
     let nd={...data, tournaments:tours.map(x=>x.key===tkey?{...x,rounds:[...(x.rounds||[]),round]}:x)};
-    const bump=(rows,name,f)=>{ const i=rows.findIndex(r=>r.name===name); if(i<0)return [...rows,{name,win:f==="win"?1:0,ru:f==="ru"?1:0,top4:f==="top4"?1:0,points:0}]; return rows.map((r,j)=>j===i?{...r,[f]:(r[f]||0)+1}:r); };
-    const bumpRows=(rows)=>{ let rs=[...rows]; if(champName)rs=bump(rs,champName,"win"); if(ruName)rs=bump(rs,ruName,"ru"); sfNames.forEach(n=>n&&(rs=bump(rs,n,"top4"))); return rs; };
-    if(bumpRank&&b.mode!=="team"&&rankKey){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
-    if(bumpSeason&&b.mode!=="team"&&season){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows||[])})}; }
+    const deltas={};
+    const add=(name,d)=>{ if(!name)return; const c=deltas[name]||{win:0,ru:0,top4:0,points:0}; deltas[name]={win:c.win+(d.win||0),ru:c.ru+(d.ru||0),top4:c.top4+(d.top4||0),points:c.points+(d.points||0)}; };
+    if(team){ alloc.forEach(a=>add(a.member,{points:allocVal(a)})); }
+    else { add(champName,{win:1,points:ptWinN}); add(ruName,{ru:1,points:ptRuN}); sfNames.forEach(n=>add(n,{top4:1,points:ptSfN})); }
+    const bumpRows=(rows)=>{ let rs=[...(rows||[])]; Object.entries(deltas).forEach(([name,d])=>{ if(!name)return; const i=rs.findIndex(r=>r.name===name);
+      if(i<0)rs=[...rs,{name,win:d.win,ru:d.ru,top4:d.top4,points:d.points}];
+      else rs=rs.map((r,j)=>j===i?{...r,win:(r.win||0)+d.win,ru:(r.ru||0)+d.ru,top4:(r.top4||0)+d.top4,points:(r.points||0)+d.points}:r); }); return rs; };
+    if(bumpRank&&rankKey){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
+    if(bumpSeason&&season){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
     nd={...nd, brackets:nd.brackets.map(x=>x.id===b.id?{...x,status:"done",applied:{tournamentKey:tkey,date,season}}:x)};
     save(nd); flash("기록에 반영됨 ✓"); onClose();
   };
-  return (<Modal title="기록에 반영" hint="대진표 결과를 회차 기록 형식 그대로 추가합니다. 자동으로 채워지지 않는 항목만 입력하세요." onClose={onClose}>
+  return (<Modal title="기록에 반영" hint="대진표 결과를 회차 형식 그대로 추가하고, 선택 시 랭킹·시즌 점수까지 반영합니다." onClose={onClose}>
     <div className="bk-applybox">
-      <div className="bk-ab-meta">{b.mode==="team"?"팀전":"개인전"}</div>
+      <div className="bk-ab-meta">{team?"팀전":"개인전"}</div>
       <div>🏆 우승 <b>{nameOf(res.champ)}</b></div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b></div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
     </div>
     <div className="field"><label>형식</label>
@@ -1150,13 +1200,20 @@ function BracketApply({ b, res, data, onClose, save, flash }){
       <div className="field"><label>날짜 표기</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2026.07"/></div>
     </div>
     <div className="field"><label>대회 룰 (선택)</label><input value={rule} onChange={e=>setRule(e.target.value)} placeholder="예: 모노타입 / 랜덤 배틀 / 6세대 63"/></div>
-    {b.mode!=="team"&&<>
-      <label className="bk-check"><input type="checkbox" checked={bumpRank} onChange={e=>setBumpRank(e.target.checked)}/><span>누적 랭킹 성적(승/준/4강) 반영</span></label>
-      {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
-      <label className="bk-check"><input type="checkbox" checked={bumpSeason} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season}/><span>시즌별 성적 반영 {season?`(${season})`:"— 시즌을 먼저 선택"}</span></label>
-      <div className="bk-hint">포인트는 자동 반영되지 않으니, 기록 탭의 랭킹/시즌 편집에서 조정하세요.</div>
-    </>}
-    {b.mode==="team"&&<div className="bk-hint">팀전은 개인 누적 랭킹에는 반영되지 않고, 회차 기록(팀·팀원)에만 추가됩니다.</div>}
+    <div className="field"><label>등수별 점수{team?" (총점 — 팀원 수로 균등 분배)":""}</label>
+      <div className="bk-pts">
+        <div className="bk-pt"><span>우승</span><input value={ptWin} onChange={setPt(setPtWin)}/></div>
+        <div className="bk-pt"><span>준우승</span><input value={ptRu} onChange={setPt(setPtRu)}/></div>
+        <div className="bk-pt"><span>4강</span><input value={ptSf} onChange={setPt(setPtSf)}/></div>
+      </div>
+    </div>
+    {team&&alloc.length>0&&<div className="field"><label>팀원별 점수 배분 (개별 수정 가능)</label>
+      <div className="bk-alloc">{alloc.map(a=><div className="bk-alloc-row" key={a.key}><span className={"bk-alloc-tag "+(a.label==="우승"?"w":a.label==="준우승"?"r":"s")}>{a.label}</span><b>{a.member}</b><span className="bk-alloc-team">{a.team}</span><input value={override[a.key]??""} placeholder={String(a.base)} onChange={e=>setOverride({...override,[a.key]:e.target.value.replace(/[^0-9.]/g,"")})}/></div>)}</div>
+    </div>}
+    <label className="bk-check"><input type="checkbox" checked={bumpRank} onChange={e=>setBumpRank(e.target.checked)}/><span>누적 랭킹 반영 {team?"(점수 배분)":"(승/준/4강 + 점수)"}</span></label>
+    {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
+    <label className="bk-check"><input type="checkbox" checked={bumpSeason} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season}/><span>시즌별 성적 반영 {season?`(${season})`:"— 시즌을 먼저 선택"}</span></label>
+    <div className="bk-hint">{team?"팀전은 각 등수 점수를 팀원 수로 나눠 배분합니다(승/준/4강 횟수는 개인 랭킹에 더하지 않음).":"승/준/4강 횟수와 점수가 함께 누적됩니다."}</div>
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={apply}>반영하기</button></div>
   </Modal>);
 }
