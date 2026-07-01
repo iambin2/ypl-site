@@ -586,15 +586,20 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-entry-row{display:flex;gap:8px;font-size:13px;margin-bottom:4px;}
 .bk-entry-row b{flex:none;color:var(--cyan-d);font-weight:700;min-width:56px;}
 .bk-entry-row span{color:var(--muted);}
-.bk-draw{text-align:center;padding:24px 0;}
-.bk-draw-h{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;letter-spacing:.02em;}
-.bk-draw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-width:640px;margin:0 auto 22px;}
-.bk-draw-slot{position:relative;height:46px;border-radius:11px;border:1px dashed var(--line2);background:rgba(21,39,63,.03);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--muted2);overflow:hidden;}
-.bk-draw-slot .bk-draw-g{position:absolute;left:8px;top:6px;font-size:10px;font-style:normal;font-weight:800;color:var(--cyan-d);}
-.bk-draw-slot.active{border-style:solid;border-color:var(--cyan);background:rgba(30,132,198,.08);color:var(--cyan-d);animation:bkroll .12s linear infinite;}
-.bk-draw-slot.set{border-style:solid;border-color:rgba(46,196,182,.5);background:linear-gradient(120deg,rgba(46,196,182,.14),rgba(30,132,198,.1));color:var(--navy);animation:bkpop .3s cubic-bezier(.2,.9,.3,1.4);}
-@keyframes bkpop{0%{transform:scale(.7);opacity:0;}100%{transform:scale(1);opacity:1;}}
-@keyframes bkroll{0%,100%{opacity:.85;}50%{opacity:1;}}
+.bk-drawwrap{padding:6px 0 4px;}
+.bk-draw-h{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;letter-spacing:.02em;text-align:center;}
+.bk-draw-cnt{font-size:13px;font-weight:700;color:var(--muted2);margin-left:6px;}
+.bk-draw-actions{text-align:center;margin-top:20px;}
+.bk-draw-mem{display:flex;flex-direction:column;gap:6px;}
+.bk-draw-mem .bk-slot{min-height:40px;}
+.bk-slot.dwait{background:rgba(21,39,63,.02);color:var(--muted2);}
+.bk-slot.dwait i{display:block;width:26px;height:3px;border-radius:3px;background:var(--line2);opacity:.7;}
+.bk-slot.drolling{background:rgba(30,132,198,.09);color:var(--cyan-d);font-weight:800;box-shadow:inset 0 0 0 1.5px rgba(30,132,198,.35);animation:bkflick .09s steps(1) infinite;}
+.bk-slot.dset{background:rgba(21,39,63,.05);color:var(--navy);font-weight:800;box-shadow:inset 0 0 0 1.5px rgba(30,132,198,.28);}
+.bk-slot.dset.pop{animation:bkpop .34s cubic-bezier(.2,.9,.3,1.5);}
+.bk-match.tbd{opacity:.45;}
+@keyframes bkpop{0%{transform:scale(.72);opacity:.4;}60%{transform:scale(1.06);}100%{transform:scale(1);opacity:1;}}
+@keyframes bkflick{0%{opacity:.78;}100%{opacity:1;}}
 @media(max-width:560px){.bk-fill{grid-template-columns:1fr;}.bk-grow2{grid-template-columns:1fr;}.bk-team-row{grid-template-columns:1fr;}}
 `;
 
@@ -1222,24 +1227,50 @@ function BracketApply({ b, res, data, onClose, save, flash }){
 /* ===== 추첨 애니메이션 ===== */
 function BracketDraw({ b, onDone }){
   const nameOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
-  const seq=[];
-  if(b.format==="group"){ b.groups.forEach(g=>g.members.forEach(m=>seq.push({pid:m,grp:g.name}))); }
-  else { b.graph.rounds[0].forEach(mt=>{ [mt.a,mt.b].forEach(s=>{ if(s.pid)seq.push({pid:s.pid}); else if(s.bye)seq.push({bye:true}); }); }); }
   const allNames=(b.participants||[]).map(p=>p.name);
+  const rlabel=(len)=>{ const names={1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"}; return names[len]||`${len*2}강`; };
+  const group=b.format==="group";
+  // 채울 슬롯 순서(참가자만) 및 각 슬롯의 순번 계산
+  const order={}; let k=0;
+  if(group){ b.groups.forEach((g,gi)=>g.members.forEach((mem,mi)=>{ order["g"+gi+"_"+mi]=k++; })); }
+  else { b.graph.rounds[0].forEach((m,mi)=>["a","b"].forEach((side,si)=>{ const s=m[side]; if(s.pid) order["m"+mi+"_"+si]=k++; })); }
+  const total=k;
   const [n,setN]=useState(0); const [roll,setRoll]=useState("");
   useEffect(()=>{
-    if(n>=seq.length){ const t=setTimeout(onDone,700); return ()=>clearTimeout(t); }
-    if(seq[n]&&seq[n].bye){ const t=setTimeout(()=>setN(x=>x+1),220); return ()=>clearTimeout(t); }
-    let ticks=0; const iv=setInterval(()=>{ setRoll(allNames[Math.floor(Math.random()*allNames.length)]||""); if(++ticks>=6){ clearInterval(iv); setN(x=>x+1); } },70);
+    if(n>=total){ const t=setTimeout(onDone,950); return ()=>clearTimeout(t); }
+    let ticks=0; const iv=setInterval(()=>{ setRoll(allNames[Math.floor(Math.random()*allNames.length)]||""); if(++ticks>=9){ clearInterval(iv); const t=setTimeout(()=>setN(x=>x+1),140); return ()=>clearTimeout(t); } },70);
     return ()=>clearInterval(iv);
   },[n]); // eslint-disable-line
-  return (<div className="bk-draw">
-    <div className="bk-draw-h">🎲 대진 추첨 중…</div>
-    <div className="bk-draw-grid">
-      {seq.map((s,i)=>{ let grp=b.format==="group"&&s.grp?<i className="bk-draw-g">{s.grp}조</i>:null;
-        return (<div className={"bk-draw-slot"+(i<n?" set":"")+(i===n?" active":"")} key={i}>{grp}<span>{i<n?(s.bye?"부전승":nameOf(s.pid)):(i===n?(s.bye?"부전승":roll):"")}</span></div>);})}
-    </div>
-    <button className="btn btn-ghost btn-sm" onClick={onDone}>건너뛰기 →</button>
+  const slotFor=(key,pid,bye)=>{
+    if(bye) return <div className="bk-slot bye">부전승</div>;
+    const ord=order[key];
+    if(ord<n) return <div className={"bk-slot dset"+(ord===n-1?" pop":"")}>{nameOf(pid)}</div>;
+    if(ord===n) return <div className="bk-slot drolling">{roll||"…"}</div>;
+    return <div className="bk-slot dwait"><i/></div>;
+  };
+  const done=n>=total;
+  return (<div className="bk-drawwrap">
+    <div className="bk-draw-h">{done?"✨ 대진 확정!":"🎰 대진 추첨 중…"} <span className="bk-draw-cnt">{Math.min(n,total)} / {total}</span></div>
+    {group ? (
+      <div className="bk-groups">{b.groups.map((g,gi)=>(
+        <div className="bk-group" key={g.id}><div className="bk-group-h">그룹 {g.name}</div>
+          <div className="bk-draw-mem">{g.members.map((mem,mi)=>slotFor("g"+gi+"_"+mi,mem,false))}</div>
+        </div>))}</div>
+    ) : (()=>{ const {centers,totalH}=treeCenters(b.graph.rounds);
+      return (<div className="bk-scroll"><div className="bk-tree">
+        {b.graph.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
+          <div className="bk-col-h">{rlabel(r.length)}</div>
+          <div className="bk-col-body" style={{height:totalH}}>
+            {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
+              {ri===0
+                ? <div className="bk-match">{slotFor("m"+j+"_0",m.a.pid,m.a.bye)}{slotFor("m"+j+"_1",m.b.pid,m.b.bye)}</div>
+                : <div className="bk-match tbd"><div className="bk-slot dwait"><i/></div><div className="bk-slot dwait"><i/></div></div>}
+            </div>))}
+          </div>
+        </div>))}
+      </div></div>);
+    })()}
+    <div className="bk-draw-actions"><button className="btn btn-ghost btn-sm" onClick={onDone}>{done?"완료 →":"건너뛰기 →"}</button></div>
   </div>);
 }
 
