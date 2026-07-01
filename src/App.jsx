@@ -1184,7 +1184,6 @@ function BracketApply({ b, res, data, onClose, save, flash }){
     const bumpRows=(rows)=>{ let rs=[...(rows||[])]; Object.entries(deltas).forEach(([name,d])=>{ if(!name)return; const i=rs.findIndex(r=>r.name===name);
       if(i<0)rs=[...rs,{name,win:d.win,ru:d.ru,top4:d.top4,points:d.points}];
       else rs=rs.map((r,j)=>j===i?{...r,win:(r.win||0)+d.win,ru:(r.ru||0)+d.ru,top4:(r.top4||0)+d.top4,points:(r.points||0)+d.points}:r); }); return rs; };
-    if(bumpRank&&rankKey){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
     if(bumpRank&&rankKey&&!rookie){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
     if(bumpSeason&&season&&!champ&&!rookie){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
     nd={...nd, brackets:nd.brackets.map(x=>x.id===b.id?{...x,status:"done",applied:{tournamentKey:tkey,date,season}}:x)};
