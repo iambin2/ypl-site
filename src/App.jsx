@@ -568,6 +568,16 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-alloc-team{flex:1;font-size:12px;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bk-alloc-row input{flex:none;width:76px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:14px;font-weight:800;color:var(--navy);text-align:center;}
 .bk-alloc-row input:focus{outline:none;border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.12);}
+.bk-exist{flex:none;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.02em;}
+.bk-exist.old{background:rgba(21,39,63,.08);color:var(--muted);}
+.bk-exist.new{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;}
+.bk-chg{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding:2px;}
+.bk-chg-row{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:9px 12px;}
+.bk-chg-row b{font-weight:700;color:var(--navy);font-size:14px;}
+.bk-chg-pts{display:flex;align-items:center;gap:5px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;margin-left:auto;}
+.bk-chg-pts i{color:var(--muted2);font-style:normal;font-weight:600;}
+.bk-chg-d{flex:none;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(120deg,var(--navy2),var(--cyan));padding:2px 8px;border-radius:20px;}
+.bk-chg-cnt{flex:none;font-size:11px;font-weight:700;color:var(--cyan-d);background:rgba(30,132,198,.1);padding:2px 8px;border-radius:20px;}
 .bk-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;}
 .bk-party-list{display:flex;flex-direction:column;gap:12px;max-height:50vh;overflow-y:auto;padding:2px;}
 .bk-party-team{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;}
@@ -804,8 +814,8 @@ function downloadChampionPng(b,res,nameOf){
 function bkDrawMatch(ctx,x,y,w,h,aTxt,bTxt,aWin,bWin,aBye,bBye){
   bkRR(ctx,x,y,w,h,10); ctx.fillStyle="#ffffff"; ctx.fill(); ctx.strokeStyle="#e2e9f1"; ctx.lineWidth=1; ctx.stroke();
   const rowH=h/2; const drawRow=(ry,txt,win,bye)=>{
-    if(win){ bkRR(ctx,x+4,ry+3,w-8,rowH-6,7); ctx.fillStyle="rgba(46,196,182,.16)"; ctx.fill(); }
-    ctx.textAlign="left"; ctx.fillStyle=win?"#127a8f":(bye?"#aab4c2":"#1b2942"); ctx.font=`${win?700:600} 14px ${BKF}`;
+    if(win){ const gr=ctx.createLinearGradient(x+4,ry,x+w-4,ry+rowH); gr.addColorStop(0,"#1e3a5f"); gr.addColorStop(1,"#1e84c6"); bkRR(ctx,x+4,ry+3,w-8,rowH-6,7); ctx.fillStyle=gr; ctx.fill(); }
+    ctx.textAlign="left"; ctx.fillStyle=win?"#ffffff":(bye?"#aab4c2":"#1b2942"); ctx.font=`${win?800:600} 14px ${BKF}`;
     ctx.fillText(bkClip(ctx,txt||"",w-22),x+12,ry+rowH/2+5);
   };
   drawRow(y,aTxt,aWin,aBye); ctx.strokeStyle="#eef2f7"; ctx.beginPath(); ctx.moveTo(x+8,y+rowH); ctx.lineTo(x+w-8,y+rowH); ctx.stroke(); drawRow(y+rowH,bTxt,bWin,bBye);
@@ -890,7 +900,7 @@ function downloadBracketPng(b,nameOf){
       const gboxH=40+gr.members.length*26+14; const x=padL+c*(gboxW+24); const y=curY+r*( 40+Math.max(...b.groups.map(g=>g.members.length))*26+14 +24);
       bkRR(ctx,x,y,gboxW,gboxH,14); ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="#e2e9f1"; ctx.stroke();
       ctx.fillStyle="#16233a"; ctx.font=`800 15px ${BKF}`; ctx.textAlign="left"; ctx.fillText("그룹 "+gr.name,x+14,y+26);
-      st.forEach((s,i)=>{ const ry=y+44+i*26; const adv=i<b.groupCfg.adv; if(adv){ bkRR(ctx,x+8,ry-15,gboxW-16,24,7); ctx.fillStyle="rgba(46,196,182,.12)"; ctx.fill(); }
+      st.forEach((s,i)=>{ const ry=y+44+i*26; const adv=i<b.groupCfg.adv; if(adv){ const gr=ctx.createLinearGradient(x+8,ry-15,x+gboxW-8,ry+9); gr.addColorStop(0,"rgba(30,58,95,.16)"); gr.addColorStop(1,"rgba(30,132,198,.16)"); bkRR(ctx,x+8,ry-15,gboxW-16,24,7); ctx.fillStyle=gr; ctx.fill(); }
         ctx.fillStyle=adv?"#127a8f":"#56657c"; ctx.font=`${adv?700:500} 13px ${BKF}`; ctx.fillText(`${i+1}. ${nameOf(s.name)}`,x+16,ry+2); ctx.textAlign="right"; ctx.fillText(s.wins+"승",x+gboxW-16,ry+2); ctx.textAlign="left"; });
     });
     const rows=Math.ceil(b.groups.length/cols); curY=curY+rows*(40+Math.max(...b.groups.map(g=>g.members.length))*26+14+24)+40;
@@ -1163,36 +1173,67 @@ function BracketApply({ b, res, data, onClose, save, flash }){
   const setPt=(fn)=>(e)=>fn(e.target.value.replace(/[^0-9.]/g,""));
   const memListOf=(pid)=>partOf(pid)?.members||[];
   const curT=tours.find(x=>x.key===tkey);
-  const rookie=!!curT&&(curT.key==="rookie"||(curT.label||"").includes("루키"));
+  const [preview,setPreview]=useState(null);
+  const excluded=!!curT&&(["rookie","pylite"].includes(curT.key)||/루키|라이트/.test(curT.label||""));
   const autoNext=String((curT?.rounds?.reduce((mx,r)=>Math.max(mx,parseInt(r.round)||0),0)||0)+1);
   const placements=[]; if(res.champ)placements.push({pid:res.champ,pts:ptWinN,label:"우승"});
   if(res.ru)placements.push({pid:res.ru,pts:ptRuN,label:"준우승"});
   res.sf.forEach(pid=>placements.push({pid,pts:ptSfN,label:"4강"}));
   const alloc=[]; if(team){ placements.forEach(pl=>{ const p=partOf(pl.pid); const mem=p?.members||[]; const per=mem.length?r1(pl.pts/mem.length):0; mem.forEach(m=>alloc.push({key:pl.pid+"|"+m,team:p?.name,member:m,label:pl.label,base:per})); }); }
   const allocVal=(a)=>{ const o=override[a.key]; return (o===undefined||o==="")?a.base:pN(o); };
-  const apply=()=>{
+  const rankEra=(data.rankings||[]).find(r=>r.key===rankKey);
+  const rankRows=rankEra?.rows||[];
+  const isNew=(name)=>!rankRows.some(r=>r.name===name);
+  const showBadge=bumpRank&&!excluded&&!!rankKey;
+  const badgeFor=(name)=>showBadge?<span className={"bk-exist "+(isNew(name)?"new":"old")}>{isNew(name)?"신규":"기존"}</span>:null;
+  const computeDeltas=()=>{ const deltas={};
+    const add=(name,d)=>{ if(!name)return; const c=deltas[name]||{win:0,ru:0,top4:0,points:0}; deltas[name]={win:c.win+(d.win||0),ru:c.ru+(d.ru||0),top4:c.top4+(d.top4||0),points:c.points+(d.points||0)}; };
+    if(team){ alloc.forEach(a=>add(a.member,{points:allocVal(a)})); }
+    else { add(nameOf(res.champ),{win:1,points:ptWinN}); if(res.ru)add(nameOf(res.ru),{ru:1,points:ptRuN}); res.sf.map(nameOf).forEach(n=>add(n,{top4:1,points:ptSfN})); }
+    return deltas; };
+  const buildResult=()=>{
     const champName=nameOf(res.champ), ruName=res.ru?nameOf(res.ru):"", sfNames=res.sf.map(nameOf);
-    if(!curT){alert("회차를 추가할 대회를 선택하세요.");return;}
     const roundNum=roundStr.trim()||autoNext;
     const round={ id:uid(), date:date.trim(), round:roundNum, win:champName, ru:ruName, sf:sfNames, rule:rule.trim(), team, ...(champ?{champ:true}:{}), ...(season?{season}:{}) };
     if(team){ round.winMembers=memListOf(res.champ); round.ruMembers=res.ru?memListOf(res.ru):[]; round.sfMembers=res.sf.map(memListOf); }
     let nd={...data, tournaments:tours.map(x=>x.key===tkey?{...x,rounds:[...(x.rounds||[]),round]}:x)};
-    const deltas={};
-    const add=(name,d)=>{ if(!name)return; const c=deltas[name]||{win:0,ru:0,top4:0,points:0}; deltas[name]={win:c.win+(d.win||0),ru:c.ru+(d.ru||0),top4:c.top4+(d.top4||0),points:c.points+(d.points||0)}; };
-    if(team){ alloc.forEach(a=>add(a.member,{points:allocVal(a)})); }
-    else { add(champName,{win:1,points:ptWinN}); add(ruName,{ru:1,points:ptRuN}); sfNames.forEach(n=>add(n,{top4:1,points:ptSfN})); }
+    const deltas=computeDeltas();
     const bumpRows=(rows)=>{ let rs=[...(rows||[])]; Object.entries(deltas).forEach(([name,d])=>{ if(!name)return; const i=rs.findIndex(r=>r.name===name);
       if(i<0)rs=[...rs,{name,win:d.win,ru:d.ru,top4:d.top4,points:d.points}];
       else rs=rs.map((r,j)=>j===i?{...r,win:(r.win||0)+d.win,ru:(r.ru||0)+d.ru,top4:(r.top4||0)+d.top4,points:(r.points||0)+d.points}:r); }); return rs; };
-    if(bumpRank&&rankKey&&!rookie){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
-    if(bumpSeason&&season&&!champ&&!rookie){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
+    const willRank=bumpRank&&rankKey&&!excluded, willSeason=bumpSeason&&season&&!champ&&!excluded;
+    if(willRank){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
+    if(willSeason){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
     nd={...nd, brackets:nd.brackets.map(x=>x.id===b.id?{...x,status:"done",applied:{tournamentKey:tkey,date,season}}:x)};
-    save(nd); flash("기록에 반영됨 ✓"); onClose();
+    return { nd, deltas, roundNum, willRank, willSeason };
   };
+  const prepare=()=>{ if(!curT){alert("회차를 추가할 대회를 선택하세요.");return;} setPreview(buildResult()); };
+  const commit=()=>{ if(!preview)return; save(preview.nd); flash("기록에 반영됨 ✓"); onClose(); };
+
+  if(preview){
+    const changes=Object.entries(preview.deltas).map(([name,d])=>{ const cur=rankRows.find(r=>r.name===name); return {name,isNew:!cur,curPts:cur?.points||0,d}; });
+    return (<Modal title="반영 전 확인" hint="아래 내용으로 기록에 반영합니다. 포인트 변동을 확인한 뒤 진행하세요." onClose={()=>setPreview(null)}>
+      <div className="bk-applybox">
+        <div className="bk-ab-meta">{team?"팀전":"개인전"}{champ?" · 챔피언스 시리즈":""}</div>
+        <div>{curT.label} · <b>{preview.roundNum}회</b>{season?` · ${season}`:""}{rule.trim()?` · ${rule.trim()}`:""}</div>
+        <div>🏆 <b>{nameOf(res.champ)}</b>{res.ru?<> · 🥈 {nameOf(res.ru)}</>:null}{res.sf.length?<> · 🎖️ {res.sf.map(nameOf).join(", ")}</>:null}</div>
+      </div>
+      {preview.willRank ? <div className="field"><label>누적 랭킹 「{rankEra?.label}」 포인트 변동</label>
+        <div className="bk-chg">{changes.map(c=><div className="bk-chg-row" key={c.name}>
+          <span className={"bk-exist "+(c.isNew?"new":"old")}>{c.isNew?"신규":"기존"}</span><b>{c.name}</b>
+          <span className="bk-chg-pts">{c.curPts}<i>→</i>{r1(c.curPts+c.d.points)}</span>
+          {c.d.points?<span className="bk-chg-d">+{r1(c.d.points)}</span>:null}
+          {(c.d.win||c.d.ru||c.d.top4)?<span className="bk-chg-cnt">{c.d.win?`승+${c.d.win} `:""}{c.d.ru?`준+${c.d.ru} `:""}{c.d.top4?`4강+${c.d.top4}`:""}</span>:null}
+        </div>)}</div>
+      </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹·시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
+      {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{season}」에도 동일한 점수·성적이 반영됩니다.</div>}
+      <div className="modal-actions"><button className="btn btn-ghost" onClick={()=>setPreview(null)}>← 뒤로</button><button className="btn btn-primary" onClick={commit}>이대로 반영</button></div>
+    </Modal>);
+  }
   return (<Modal title="기록에 반영" hint="대진표 결과를 회차 형식 그대로 추가하고, 선택 시 랭킹·시즌 점수까지 반영합니다." onClose={onClose}>
     <div className="bk-applybox">
       <div className="bk-ab-meta">{team?"팀전":"개인전"}</div>
-      <div>🏆 우승 <b>{nameOf(res.champ)}</b></div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b></div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
+      <div>🏆 우승 <b>{nameOf(res.champ)}</b> {!team&&badgeFor(nameOf(res.champ))}</div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b> {!team&&badgeFor(nameOf(res.ru))}</div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
     </div>
     <div className="field"><label>형식</label>
       <div className="ed-seg"><button type="button" className={!champ?"on":""} onClick={()=>setChamp(false)}>일반 (파이컵)</button><button type="button" className={champ?"on":""} onClick={()=>setChamp(true)}>챔피언스 시리즈</button></div>
@@ -1214,15 +1255,15 @@ function BracketApply({ b, res, data, onClose, save, flash }){
       </div>
     </div>
     {team&&alloc.length>0&&<div className="field"><label>팀원별 점수 배분 (개별 수정 가능)</label>
-      <div className="bk-alloc">{alloc.map(a=><div className="bk-alloc-row" key={a.key}><span className={"bk-alloc-tag "+(a.label==="우승"?"w":a.label==="준우승"?"r":"s")}>{a.label}</span><b>{a.member}</b><span className="bk-alloc-team">{a.team}</span><input value={override[a.key]??""} placeholder={String(a.base)} onChange={e=>setOverride({...override,[a.key]:e.target.value.replace(/[^0-9.]/g,"")})}/></div>)}</div>
+      <div className="bk-alloc">{alloc.map(a=><div className="bk-alloc-row" key={a.key}><span className={"bk-alloc-tag "+(a.label==="우승"?"w":a.label==="준우승"?"r":"s")}>{a.label}</span><b>{a.member}</b>{badgeFor(a.member)}<span className="bk-alloc-team">{a.team}</span><input value={override[a.key]??""} placeholder={String(a.base)} onChange={e=>setOverride({...override,[a.key]:e.target.value.replace(/[^0-9.]/g,"")})}/></div>)}</div>
     </div>}
-    <label className="bk-check"><input type="checkbox" checked={bumpRank&&!rookie} onChange={e=>setBumpRank(e.target.checked)} disabled={rookie}/><span>누적 랭킹 반영 {rookie?"— 루키 리그는 제외":(team?"(점수 배분)":"(승/준/4강 + 점수)")}</span></label>
-    {bumpRank&&!rookie&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
-    <label className="bk-check"><input type="checkbox" checked={bumpSeason&&!champ&&!rookie} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season||champ||rookie}/><span>시즌별 성적 반영 {rookie?"— 루키 리그는 제외":champ?"— 챔피언스 시리즈는 제외":(season?`(${season})`:"— 시즌을 먼저 선택")}</span></label>
-    {rookie&&<div className="bk-hint">루키 리그는 입문 리그로, 누적 랭킹과 시즌별 성적 어디에도 반영되지 않습니다. (회차 기록에만 추가)</div>}
-    {champ&&!rookie&&<div className="bk-hint">챔피언스 시리즈는 시즌을 마무리하는 대회로, 누적 랭킹에는 반영되지만 시즌별 성적에는 반영되지 않습니다.</div>}
+    <label className="bk-check"><input type="checkbox" checked={bumpRank&&!excluded} onChange={e=>setBumpRank(e.target.checked)} disabled={excluded}/><span>누적 랭킹 반영 {excluded?"— 이 대회는 제외":(team?"(점수 배분)":"(승/준/4강 + 점수)")}</span></label>
+    {bumpRank&&!excluded&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
+    <label className="bk-check"><input type="checkbox" checked={bumpSeason&&!champ&&!excluded} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season||champ||excluded}/><span>시즌별 성적 반영 {excluded?"— 이 대회는 제외":champ?"— 챔피언스 시리즈는 제외":(season?`(${season})`:"— 시즌을 먼저 선택")}</span></label>
+    {excluded&&<div className="bk-hint">{curT.label}은(는) 정규 집계에서 제외되어 누적 랭킹·시즌별 성적 어디에도 반영되지 않습니다. (회차 기록에만 추가)</div>}
+    {champ&&!excluded&&<div className="bk-hint">챔피언스 시리즈는 시즌을 마무리하는 대회로, 누적 랭킹에는 반영되지만 시즌별 성적에는 반영되지 않습니다.</div>}
     <div className="bk-hint">{team?"팀전은 각 등수 점수를 팀원 수로 나눠 배분합니다(승/준/4강 횟수는 개인 랭킹에 더하지 않음).":"승/준/4강 횟수와 점수가 함께 누적됩니다."}</div>
-    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={apply}>반영하기</button></div>
+    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={prepare}>반영하기 →</button></div>
   </Modal>);
 }
 
