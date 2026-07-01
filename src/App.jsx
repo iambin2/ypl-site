@@ -1163,6 +1163,7 @@ function BracketApply({ b, res, data, onClose, save, flash }){
   const setPt=(fn)=>(e)=>fn(e.target.value.replace(/[^0-9.]/g,""));
   const memListOf=(pid)=>partOf(pid)?.members||[];
   const curT=tours.find(x=>x.key===tkey);
+  const rookie=!!curT&&(curT.key==="rookie"||(curT.label||"").includes("루키"));
   const autoNext=String((curT?.rounds?.reduce((mx,r)=>Math.max(mx,parseInt(r.round)||0),0)||0)+1);
   const placements=[]; if(res.champ)placements.push({pid:res.champ,pts:ptWinN,label:"우승"});
   if(res.ru)placements.push({pid:res.ru,pts:ptRuN,label:"준우승"});
@@ -1184,7 +1185,8 @@ function BracketApply({ b, res, data, onClose, save, flash }){
       if(i<0)rs=[...rs,{name,win:d.win,ru:d.ru,top4:d.top4,points:d.points}];
       else rs=rs.map((r,j)=>j===i?{...r,win:(r.win||0)+d.win,ru:(r.ru||0)+d.ru,top4:(r.top4||0)+d.top4,points:(r.points||0)+d.points}:r); }); return rs; };
     if(bumpRank&&rankKey){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
-    if(bumpSeason&&season&&!champ){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
+    if(bumpRank&&rankKey&&!rookie){ nd={...nd, rankings:nd.rankings.map(era=>era.key!==rankKey?era:{...era,rows:bumpRows(era.rows)})}; }
+    if(bumpSeason&&season&&!champ&&!rookie){ nd={...nd, seasons:(nd.seasons||[]).map(s=>s.name!==season?s:{...s,rows:bumpRows(s.rows)})}; }
     nd={...nd, brackets:nd.brackets.map(x=>x.id===b.id?{...x,status:"done",applied:{tournamentKey:tkey,date,season}}:x)};
     save(nd); flash("기록에 반영됨 ✓"); onClose();
   };
@@ -1215,10 +1217,11 @@ function BracketApply({ b, res, data, onClose, save, flash }){
     {team&&alloc.length>0&&<div className="field"><label>팀원별 점수 배분 (개별 수정 가능)</label>
       <div className="bk-alloc">{alloc.map(a=><div className="bk-alloc-row" key={a.key}><span className={"bk-alloc-tag "+(a.label==="우승"?"w":a.label==="준우승"?"r":"s")}>{a.label}</span><b>{a.member}</b><span className="bk-alloc-team">{a.team}</span><input value={override[a.key]??""} placeholder={String(a.base)} onChange={e=>setOverride({...override,[a.key]:e.target.value.replace(/[^0-9.]/g,"")})}/></div>)}</div>
     </div>}
-    <label className="bk-check"><input type="checkbox" checked={bumpRank} onChange={e=>setBumpRank(e.target.checked)}/><span>누적 랭킹 반영 {team?"(점수 배분)":"(승/준/4강 + 점수)"}</span></label>
-    {bumpRank&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
-    <label className="bk-check"><input type="checkbox" checked={bumpSeason&&!champ} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season||champ}/><span>시즌별 성적 반영 {champ?"— 챔피언스 시리즈는 제외":(season?`(${season})`:"— 시즌을 먼저 선택")}</span></label>
-    {champ&&<div className="bk-hint">챔피언스 시리즈는 시즌을 마무리하는 대회로, 누적 랭킹에는 반영되지만 시즌별 성적에는 반영되지 않습니다.</div>}
+    <label className="bk-check"><input type="checkbox" checked={bumpRank&&!rookie} onChange={e=>setBumpRank(e.target.checked)} disabled={rookie}/><span>누적 랭킹 반영 {rookie?"— 루키 리그는 제외":(team?"(점수 배분)":"(승/준/4강 + 점수)")}</span></label>
+    {bumpRank&&!rookie&&<div className="field"><label>반영할 누적 랭킹</label><Dropdown value={rankKey} onChange={setRankKey} placeholder="랭킹 선택" options={(data.rankings||[]).map(r=>({value:r.key,label:r.label}))}/></div>}
+    <label className="bk-check"><input type="checkbox" checked={bumpSeason&&!champ&&!rookie} onChange={e=>setBumpSeason(e.target.checked)} disabled={!season||champ||rookie}/><span>시즌별 성적 반영 {rookie?"— 루키 리그는 제외":champ?"— 챔피언스 시리즈는 제외":(season?`(${season})`:"— 시즌을 먼저 선택")}</span></label>
+    {rookie&&<div className="bk-hint">루키 리그는 입문 리그로, 누적 랭킹과 시즌별 성적 어디에도 반영되지 않습니다. (회차 기록에만 추가)</div>}
+    {champ&&!rookie&&<div className="bk-hint">챔피언스 시리즈는 시즌을 마무리하는 대회로, 누적 랭킹에는 반영되지만 시즌별 성적에는 반영되지 않습니다.</div>}
     <div className="bk-hint">{team?"팀전은 각 등수 점수를 팀원 수로 나눠 배분합니다(승/준/4강 횟수는 개인 랭킹에 더하지 않음).":"승/준/4강 횟수와 점수가 함께 누적됩니다."}</div>
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={apply}>반영하기</button></div>
   </Modal>);
