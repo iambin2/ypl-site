@@ -19,7 +19,7 @@ const POKE_IMG = {"다투곰(블러드문)": "data:image/webp;base64,UklGRo4lAAB
 const TIMELINE = [
   { date:"2023.05", title:"파이컵 탄생", body:"연세대학교 포켓몬스터 동아리 '포켓몬 센터 연세점(포센연)' 내에서 자체적으로 치러진 대회, 파이컵이 처음 개최되었습니다." },
   { date:"2023 – 2025", title:"매월의 도전", body:"파이컵이 매월 정규 대회로 자리 잡으며 수많은 트레이너의 성적과 칭호가 쌓여 갔습니다." },
-  { date:"2025.06", title:"대격변 — YPL 체제 확립", body:"2025년 6월 마스터 리그와 루키 리그로의 양분화라는 대격변을 맞이하며, 비로소 YPL (Yonsei Pokémon League) 체제가 확립되었습니다." },
+  { date:"2025.06", title:"YPL 체제 확립", body:"2025년 6월 마스터 리그와 루키 리그로의 양분화라는 대격변을 맞이하며, 비로소 YPL (Yonsei Pokémon League) 체제가 확립되었습니다." },
 ];
 const COMPS = [
   { tag:"매월 정규 대회", name:"파이컵", en:"", accent:"cyan", desc:"매월 펼쳐지는 정규 대회입니다. 이곳에서 획득한 포인트로 챔피언스 시리즈 출전권을 노릴 수 있습니다." },
@@ -241,16 +241,18 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* about */
 .about-hero{display:flex;flex-direction:column;gap:16px;margin-bottom:18px;}
 @media(max-width:780px){.about-hero{grid-template-columns:1fr;}}
-.about-hero .lead{font-size:clamp(19px,2.6vw,24px);line-height:1.6;font-weight:600;color:var(--navy);}
+.about-hero .lead{font-size:clamp(16px,1.9vw,19px);line-height:1.7;font-weight:600;color:var(--navy);}
 .about-hero .lead .hl{background:linear-gradient(120deg,var(--cyan-d),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;}
 .about-hero .lead-sub{font-size:15.5px;line-height:1.78;color:var(--muted);max-width:760px;}
 .about-hero .logo-wrap{display:flex;justify-content:center;}
-.kick-line{display:block;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan-d);font-weight:700;}
-.timeline{position:relative;margin:14px 0 6px;padding-left:30px;}
-.timeline::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--navy),var(--cyan),transparent);}
-.tl-item{position:relative;padding:0 0 26px;}
-.tl-item::before{content:"";position:absolute;left:-30px;top:4px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--cyan);box-shadow:0 0 0 4px rgba(30,132,198,.12);}
-.tl-item:last-child::before{border-color:var(--mint);box-shadow:0 0 0 4px rgba(26,163,134,.14);}
+.kick-line{display:block;font-size:19px;letter-spacing:.02em;color:var(--navy);font-weight:800;position:relative;padding-left:14px;}
+.kick-line::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:5px;border-radius:5px;background:linear-gradient(180deg,var(--navy2),var(--cyan));}
+.timeline{display:flex;flex-direction:column;gap:13px;margin:14px 0 6px;padding-left:0;}
+.timeline::before{display:none;}
+.tl-item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px 20px 17px 24px;box-shadow:0 14px 36px -26px rgba(21,39,63,.4);transition:transform .25s,box-shadow .25s;overflow:hidden;}
+.tl-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,var(--cyan),var(--mint));}
+.tl-item:last-child::before{background:linear-gradient(180deg,var(--gold),#d8a93a);}
+.tl-item:hover{transform:translateY(-2px);box-shadow:0 20px 42px -24px rgba(30,132,198,.4);}
 .tl-date{font-size:12.5px;font-weight:800;color:var(--cyan-d);letter-spacing:.04em;}
 .tl-title{font-size:18px;font-weight:800;margin:3px 0 6px;color:var(--navy);}
 .tl-body{color:var(--muted);font-size:14px;line-height:1.65;}
@@ -371,6 +373,18 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ann-link:hover{filter:brightness(1.05);}
 .ann-link.alt{background:#fff;color:var(--cyan-d);border:1.5px solid var(--cyan-d);box-shadow:none;}
 .ann-link.alt:hover{filter:none;background:rgba(30,132,198,.07);}
+.nb-item{border-bottom:1px solid var(--line);}
+.nb-item:last-child{border-bottom:none;}
+.nb-head{width:100%;display:flex;align-items:center;gap:16px;background:none;border:none;font-family:inherit;cursor:pointer;padding:17px 2px;text-align:left;}
+.nb-head:hover .nb-title{color:var(--cyan-d);}
+.nb-date{font-size:12.5px;color:var(--muted2);white-space:nowrap;font-weight:700;flex:none;width:62px;}
+.nb-title{flex:1;min-width:0;font-size:16.5px;font-weight:800;color:var(--navy);overflow-wrap:break-word;word-break:break-word;transition:color .15s;}
+.nb-chev{flex:none;color:var(--muted2);transition:transform .28s ease,color .2s;font-size:13px;line-height:1;}
+.nb-item.open .nb-chev{transform:rotate(180deg);color:var(--cyan-d);}
+.nb-links{display:flex;flex-wrap:wrap;gap:10px;padding:0 2px 16px 78px;}
+.nb-body{padding:2px 2px 20px 78px;}
+.nb-body p{margin:0;color:var(--muted);line-height:1.7;font-size:14.5px;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;}
+@media(max-width:560px){.nb-head{flex-wrap:wrap;gap:5px 12px;padding:15px 2px;}.nb-date{width:auto;order:2;}.nb-title{order:1;flex-basis:100%;font-size:16px;}.nb-chev{order:3;margin-left:auto;}.nb-links,.nb-body{padding-left:2px;}}
 .pin{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--cyan-d);margin-left:9px;background:rgba(30,132,198,.13);padding:3px 8px;border-radius:6px;vertical-align:middle;}
 /* admin / misc */
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
@@ -941,6 +955,7 @@ function BracketWizard({ onClose, onCreate }){
       participants:parts, graph, groups:grp, knockout:null, status:"active", applied:null });
   };
   return (<Modal title="새 대회 만들기" onClose={onClose}>
+    <div className="swap" key={step}>
     {step===1&&<>
       <div className="field"><label>대회명</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 37회 파이컵"/></div>
       <div className="field"><label>경기 방식</label>
@@ -972,6 +987,7 @@ function BracketWizard({ onClose, onCreate }){
       </div>
       <div className="modal-actions"><button className="btn btn-ghost" onClick={()=>setStep(1)}>← 이전</button><button className="btn btn-primary" onClick={go}>대진표 생성 🎲</button></div>
     </>}
+    </div>
   </Modal>);
 }
 
@@ -993,6 +1009,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const confirm=()=>{ if(!decided||!winnerSide){alert("모든 대결(동점 시 에이스 결정전까지) 결과를 입력하세요.");return;}
     onSave({lineupA:la.slice(0,N),lineupB:lb.slice(0,N),games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null},winnerSide); };
   return (<Modal title="팀 대결 진행" hint={`${teamA.name} vs ${teamB.name} · 선발 순서를 정해 공개하면 같은 번호끼리 대결합니다.`} onClose={onClose}>
+    <div className="swap" key={revealed?"battle":"lineup"}>
     {!revealed?<>
       <div className="bk-lineups">{[["A",teamA,la,setLa],["B",teamB,lb,setLb]].map(([k,t,arr,set])=>(<div className="bk-lineup" key={k}>
         <div className="bk-lineup-h">{t.name}</div>
@@ -1019,6 +1036,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
       </div>}
       <div className="modal-actions"><button className="btn btn-ghost" onClick={()=>setRevealed(false)}>← 선발 수정</button><button className="btn btn-primary" onClick={confirm} disabled={!decided}>대결 확정 ✓</button></div>
     </>}
+    </div>
   </Modal>);
 }
 
@@ -1116,7 +1134,7 @@ function BracketBoard({ b, data, admin, save, flash, onApply }){
     flash("본선 대진 생성 ✓");
   };
   const res = b.format==="group" ? (b.knockout?elimResult(b.knockout):null) : elimResult(b.graph);
-  return (<div className="bk-board">
+  return (<div className="bk-board swap">
     {admin&&<div className="bk-tools"><button className="btn btn-ghost btn-sm" onClick={()=>setParty(true)}>📋 파티 · 엔트리 기록</button></div>}
     {b.format==="group"&&<>
       <div className="bk-groups">{b.groups.map(gr=>{ const ev=evalGraph({rounds:[gr.matches]}); const st=groupStandings(gr);
@@ -1213,6 +1231,7 @@ function BracketApply({ b, res, data, onClose, save, flash }){
   if(preview){
     const changes=Object.entries(preview.deltas).map(([name,d])=>{ const cur=rankRows.find(r=>r.name===name); return {name,isNew:!cur,curPts:cur?.points||0,d}; });
     return (<Modal title="반영 전 확인" hint="아래 내용으로 기록에 반영합니다. 포인트 변동을 확인한 뒤 진행하세요." onClose={()=>setPreview(null)}>
+      <div className="swap" key="pre">
       <div className="bk-applybox">
         <div className="bk-ab-meta">{team?"팀전":"개인전"}{champ?" · 챔피언스 시리즈":""}</div>
         <div>{curT.label} · <b>{preview.roundNum}회</b>{season?` · ${season}`:""}{rule.trim()?` · ${rule.trim()}`:""}</div>
@@ -1228,9 +1247,11 @@ function BracketApply({ b, res, data, onClose, save, flash }){
       </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹·시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
       {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{season}」에도 동일한 점수·성적이 반영됩니다.</div>}
       <div className="modal-actions"><button className="btn btn-ghost" onClick={()=>setPreview(null)}>← 뒤로</button><button className="btn btn-primary" onClick={commit}>이대로 반영</button></div>
+      </div>
     </Modal>);
   }
   return (<Modal title="기록에 반영" hint="대진표 결과를 회차 형식 그대로 추가하고, 선택 시 랭킹·시즌 점수까지 반영합니다." onClose={onClose}>
+    <div className="swap" key="form">
     <div className="bk-applybox">
       <div className="bk-ab-meta">{team?"팀전":"개인전"}</div>
       <div>🏆 우승 <b>{nameOf(res.champ)}</b> {!team&&badgeFor(nameOf(res.champ))}</div>{res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b> {!team&&badgeFor(nameOf(res.ru))}</div>}{res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
@@ -1264,6 +1285,7 @@ function BracketApply({ b, res, data, onClose, save, flash }){
     {champ&&!excluded&&<div className="bk-hint">챔피언스 시리즈는 시즌을 마무리하는 대회로, 누적 랭킹에는 반영되지만 시즌별 성적에는 반영되지 않습니다.</div>}
     <div className="bk-hint">{team?"팀전은 각 등수 점수를 팀원 수로 나눠 배분합니다(승/준/4강 횟수는 개인 랭킹에 더하지 않음).":"승/준/4강 횟수와 점수가 함께 누적됩니다."}</div>
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={prepare}>반영하기 →</button></div>
+    </div>
   </Modal>);
 }
 
@@ -1292,7 +1314,7 @@ function BracketDraw({ b, onDone }){
     return <div className="bk-slot dwait"><i/></div>;
   };
   const done=n>=total;
-  return (<div className="bk-drawwrap">
+  return (<div className="bk-drawwrap swap">
     <div className="bk-draw-h">{done?"✨ 대진 확정!":"🎰 대진 추첨 중…"} <span className="bk-draw-cnt">{Math.min(n,total)} / {total}</span></div>
     {group ? (
       <div className="bk-groups">{b.groups.map((g,gi)=>(
@@ -1333,7 +1355,7 @@ function Brackets({ data, admin, save, flash }){
       <p className="sub">대회 대진을 직접 생성하고 결과를 입력하면, 확정된 성적이 기록에 연동됩니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setWizard(true)}>+ 새 대회 만들기</button></div>}
     </Reveal>
-    {!open&&<div className="bk-list">
+    {!open&&<div className="bk-list swap">
       {list.length===0&&<div className="bk-empty">아직 생성된 대회가 없습니다.{admin&&" 우측 상단에서 새 대회를 만들어보세요."}</div>}
       {list.map(b=>(<button className="bk-card" key={b.id} onClick={()=>setOpenId(b.id)}>
         <div className="bk-card-top"><span className={"bk-badge "+(b.applied?"done":"live")}>{statusTag(b)}</span><span className="bk-card-date tnum">{b.createdAt}</span></div>
@@ -1341,7 +1363,7 @@ function Brackets({ data, admin, save, flash }){
         <div className="bk-card-meta">{b.mode==="team"?"팀전":"개인전"} · {b.format==="group"?"조별예선+본선":(b.double?"더블 엘리미네이션":"싱글 엘리미네이션")} · {b.participants.length}{b.mode==="team"?"팀":"명"}</div>
       </button>))}
     </div>}
-    {open&&<div className="bk-open">
+    {open&&<div className="bk-open swap">
       <div className="bk-open-bar"><button className="btn btn-ghost btn-sm" onClick={()=>{setOpenId(null);setDrawId(null);}}>← 목록</button><div className="bk-open-title">{open.name}</div>{admin&&<button className="btn btn-ghost btn-sm" onClick={()=>del(open)} style={{marginLeft:"auto",color:"var(--loss)"}}>삭제</button>}</div>
       {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(null)}/> : <BracketBoard b={open} data={data} admin={admin} save={save} flash={flash} onApply={(b,res)=>setApply({b,res})}/>}
     </div>}
@@ -1381,7 +1403,6 @@ export default function App() {
         {view==="titles"&&<Titles data={data} admin={admin} setModal={setModal}/>}
         {view==="champions"&&<Champions data={data} admin={admin} setModal={setModal}/>}
       </div>
-      {view!=="home"&&<footer className="footer"><b>{data.meta.fullName}</b> · {data.meta.tagline}<br/>© {new Date().getFullYear()} 포켓몬 센터 연세점 (포센연). 동아리 자체 리그 기록 사이트.</footer>}
       </div>
       {toast&&<div className="toast">{toast}</div>}
 
@@ -1480,20 +1501,29 @@ function About() {
 /* ============================== NEWS ============================== */
 function News({ data, admin, setModal }) {
   const list=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1));
+  const [open,setOpen]=useState(()=>new Set());
+  const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
+  const href=(u)=>/^https?:\/\//.test(u)?u:"https://"+u;
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Announcements</div><h2>공지</h2>
-      <p className="sub">대회 일정과 리그 운영 소식을 안내합니다.</p>
+      <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"ann"})}>+ 공지 작성</button></div>}
     </Reveal>
-    <Reveal className="panel" style={{padding:"4px 24px"}}>
+    <Reveal className="panel" style={{padding:"4px 22px"}}>
       {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>등록된 공지가 없습니다.</div>}
-      {list.map(a=>(<div className="ann" key={a.id}>
-      <div className="date">{a.date}</div><div style={{flex:1,minWidth:0}}><h3>{a.title}{a.pinned&&<span className="pin">고정</span>}</h3><p>{a.body}</p>
-      {(a.link||a.link2)&&<div className="ann-links">
-        {a.link&&<a className="ann-link" href={/^https?:\/\//.test(a.link)?a.link:"https://"+a.link} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"} ↗</a>}
-        {a.link2&&<a className="ann-link alt" href={/^https?:\/\//.test(a.link2)?a.link2:"https://"+a.link2} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"} ↗</a>}
-      </div>}
-      {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div></div>))}
+      {list.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2;
+        return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
+          <button className="nb-head" onClick={()=>toggle(a.id)}>
+            <span className="nb-date tnum">{a.date}</span>
+            <span className="nb-title">{a.title}{a.pinned&&<span className="pin">고정</span>}</span>
+            <span className="nb-chev" aria-hidden="true">▾</span>
+          </button>
+          {hasLink&&<div className="nb-links">
+            {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"} ↗</a>}
+            {a.link2&&<a className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.link2Label||"링크 바로가기"} ↗</a>}
+          </div>}
+          {isOpen&&<div className="nb-body swap"><p>{a.body}</p>{admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div>}
+        </div>);})}
     </Reveal>
   </section>);
 }
