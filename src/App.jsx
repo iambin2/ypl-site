@@ -377,14 +377,17 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .nb-item:last-child{border-bottom:none;}
 .nb-head{width:100%;display:flex;align-items:center;gap:16px;background:none;border:none;font-family:inherit;cursor:pointer;padding:17px 2px;text-align:left;}
 .nb-head:hover .nb-title{color:var(--cyan-d);}
-.nb-date{font-size:12.5px;color:var(--muted2);white-space:nowrap;font-weight:700;flex:none;width:62px;}
-.nb-title{flex:1;min-width:0;font-size:16.5px;font-weight:800;color:var(--navy);overflow-wrap:break-word;word-break:break-word;transition:color .15s;}
+.nb-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+.nb-title{font-size:16.5px;font-weight:800;color:var(--navy);overflow-wrap:break-word;word-break:break-word;transition:color .15s;line-height:1.35;}
+.nb-meta{display:flex;align-items:center;gap:9px;}
+.nb-date{font-size:12.5px;color:var(--muted2);white-space:nowrap;font-weight:700;}
+.nb-meta .pin{margin-left:0;}
 .nb-chev{flex:none;color:var(--muted2);transition:transform .28s ease,color .2s;font-size:13px;line-height:1;}
 .nb-item.open .nb-chev{transform:rotate(180deg);color:var(--cyan-d);}
-.nb-links{display:flex;flex-wrap:wrap;gap:10px;padding:0 2px 16px 78px;}
-.nb-body{padding:2px 2px 20px 78px;}
+.nb-links{display:flex;flex-wrap:wrap;gap:10px;padding:0 2px 16px 2px;}
+.nb-body{padding:2px 2px 20px 2px;}
 .nb-body p{margin:0;color:var(--muted);line-height:1.7;font-size:14.5px;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;}
-@media(max-width:560px){.nb-head{flex-wrap:wrap;gap:5px 12px;padding:15px 2px;}.nb-date{width:auto;order:2;}.nb-title{order:1;flex-basis:100%;font-size:16px;}.nb-chev{order:3;margin-left:auto;}.nb-links,.nb-body{padding-left:2px;}}
+@media(max-width:560px){.nb-head{padding:15px 2px;}.nb-title{font-size:16px;}}
 .pin{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--cyan-d);margin-left:9px;background:rgba(30,132,198,.13);padding:3px 8px;border-radius:6px;vertical-align:middle;}
 /* admin / misc */
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
@@ -1514,8 +1517,10 @@ function News({ data, admin, setModal }) {
       {list.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2;
         return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
           <button className="nb-head" onClick={()=>toggle(a.id)}>
-            <span className="nb-date tnum">{a.date}</span>
-            <span className="nb-title">{a.title}{a.pinned&&<span className="pin">고정</span>}</span>
+            <span className="nb-main">
+              <span className="nb-title">{a.title}</span>
+              <span className="nb-meta"><span className="nb-date tnum">{a.date}</span>{a.pinned&&<span className="pin">고정</span>}</span>
+            </span>
             <span className="nb-chev" aria-hidden="true">▾</span>
           </button>
           {hasLink&&<div className="nb-links">
