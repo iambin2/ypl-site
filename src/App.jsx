@@ -121,7 +121,7 @@ const STYLES = `
   --gold:#B8861E;--gold-l:#D6A63A;--mint:#1AA386;
   --text:#162A45;--muted:#5C6E89;--muted2:#8696AE;--win:#0E9D6A;--loss:#D6455C;
   font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;
-  color:var(--text);background:var(--bg);min-height:100vh;position:relative;overflow-x:hidden;
+  color:var(--text);background:var(--bg);min-height:100vh;position:relative;overflow-x:clip;
   -webkit-font-smoothing:antialiased;letter-spacing:-.01em;scroll-behavior:smooth;
 }
 .ypl *{box-sizing:border-box;}
