@@ -89,6 +89,7 @@ const SEED = {
   ],
   announcements: [],
   brackets: [],
+  board: [],
   ...IMPORTED,
 };
 
@@ -104,7 +105,8 @@ function normalizeData(d){
   const tournaments=Array.isArray(d.tournaments)?d.tournaments.map(t=>t&&labelFix[t.label]?{...t,label:labelFix[t.label]}:t):d.tournaments;
   const titleGroups=Array.isArray(d.titleGroups)?d.titleGroups.map(g=>g&&groupDesc[g.key]?{...g,desc:groupDesc[g.key]}:g):d.titleGroups;
   const brackets=Array.isArray(d.brackets)?d.brackets:[];
-  return {...d,tournaments,titleGroups,brackets};
+  const board=Array.isArray(d.board)?d.board:[];
+  return {...d,tournaments,titleGroups,brackets,board};
 }
 
 /* ============================== 스타일 ============================== */
@@ -388,6 +390,55 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .nb-body{padding:2px 2px 20px 2px;}
 .nb-body p{margin:0;color:var(--muted);line-height:1.7;font-size:14.5px;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;}
 @media(max-width:560px){.nb-head{padding:15px 2px;}.nb-title{font-size:16px;}}
+/* ===== 게시판 ===== */
+.bd-list{display:flex;flex-direction:column;gap:13px;}
+.bd-empty{text-align:center;color:var(--muted2);padding:44px 0;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;}
+.bd-item{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 36px -26px rgba(21,39,63,.4);overflow:hidden;transition:transform .25s,box-shadow .25s;}
+.bd-item:hover{transform:translateY(-2px);box-shadow:0 20px 42px -24px rgba(30,132,198,.34);}
+.bd-item.open{transform:none;}
+.bd-head{width:100%;display:flex;align-items:center;gap:13px;background:none;border:none;font-family:inherit;cursor:pointer;padding:15px 18px;text-align:left;}
+.bd-ava{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--navy2),var(--cyan));box-shadow:0 6px 14px -8px rgba(30,132,198,.7);}
+.bd-ava.sm{width:30px;height:30px;font-size:13px;}
+.bd-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.bd-top{display:flex;align-items:center;gap:9px;}
+.bd-nick{font-size:14.5px;font-weight:800;color:var(--navy);}
+.bd-date{font-size:11.5px;color:var(--muted2);font-weight:600;white-space:nowrap;}
+.bd-prev{font-size:13.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bd-cc{flex:none;font-size:12px;font-weight:800;color:var(--cyan-d);background:rgba(30,132,198,.1);padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.bd-head .nb-chev{flex:none;color:var(--muted2);transition:transform .28s ease,color .2s;font-size:13px;}
+.bd-item.open .nb-chev{transform:rotate(180deg);color:var(--cyan-d);}
+.bd-open{padding:2px 18px 18px;}
+.bd-body{color:var(--navy);font-size:14.5px;line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;padding:6px 0 12px;border-top:1px solid var(--line);}
+.bd-tools{display:flex;justify-content:flex-end;margin-bottom:6px;}
+.bd-del{background:none;border:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted2);cursor:pointer;padding:4px 8px;border-radius:7px;transition:.15s;}
+.bd-del:hover{color:var(--loss);background:rgba(214,69,69,.08);}
+.bd-del.sm{font-size:11.5px;padding:2px 6px;margin-left:auto;}
+.bd-cmts{background:var(--bg2);border-radius:13px;padding:14px;}
+.bd-cmts-h{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:12px;}
+.bd-cmt{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);}
+.bd-cmt:first-of-type{border-top:none;padding-top:0;}
+.bd-cmt-main{flex:1;min-width:0;}
+.bd-cmt-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.bd-cmt-top b{font-size:13px;font-weight:800;color:var(--navy);}
+.bd-cmt-body{font-size:13.5px;color:var(--muted);line-height:1.6;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;}
+.bd-cform{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.bd-cform-row{display:flex;gap:8px;}
+.bd-cform input{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13.5px;transition:.16s;}
+.bd-cform input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(30,132,198,.12);}
+.bd-cform-nick{width:140px;flex:none;}
+.bd-cform-pin{width:110px;flex:none;}
+.bd-cform-body{flex:1;min-width:0;}
+@media(max-width:560px){.bd-prev{display:none;}.bd-cform-row{flex-wrap:wrap;}.bd-cform-nick,.bd-cform-pin{flex:1;width:auto;}}
+.bd-cform-link{width:100%;}
+.bd-mtag{margin-right:6px;}
+.bd-yt{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;margin:10px 0 4px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line);}
+.bd-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.bd-img{display:block;margin:10px 0 4px;}
+.bd-img img{max-width:100%;max-height:440px;border-radius:12px;border:1px solid var(--line);display:block;}
+.bd-cmt-body .bd-img img{max-height:300px;}
+.bd-cmt-body .bd-yt{max-width:400px;}
+.bd-preview{margin-top:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;}
+.bd-preview-h{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted2);text-transform:uppercase;margin-bottom:8px;}
 .pin{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--cyan-d);margin-left:9px;background:rgba(30,132,198,.13);padding:3px 8px;border-radius:6px;vertical-align:middle;}
 /* admin / misc */
 .admin-bar{position:sticky;top:65px;z-index:55;background:rgba(184,134,30,.1);border-bottom:1px solid rgba(184,134,30,.3);backdrop-filter:blur(8px);}
@@ -1385,7 +1436,7 @@ export default function App() {
   const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
   const save=useCallback(async(next)=>{setData(next);const ok=await persist(next);flash(ok?"저장됨 ✓":"메모리에만 반영됨");},[flash]);
   if(!data) return <div className="ypl" style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh"}}><style>{STYLES}</style><span style={{color:"#90A1BD"}}>불러오는 중…</span></div>;
-  const nav=[["about","소개"],["news","공지"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
+  const nav=[["about","소개"],["news","공지"],["board","게시판"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
   return (
     <div className="ypl"><style>{STYLES}</style>
       <div className="aurora"><i className="a1"/><i className="a2"/><i className="a3"/><div className="grid"/></div>
@@ -1401,6 +1452,7 @@ export default function App() {
         {view==="home"&&<Home data={data} go={go}/>}
         {view==="about"&&<About/>}
         {view==="news"&&<News data={data} admin={admin} setModal={setModal}/>}
+        {view==="board"&&<Board data={data} admin={admin} save={save} flash={flash}/>}
         {view==="records"&&<Records data={data} admin={admin} setModal={setModal} save={save}/>}
         {view==="bracket"&&<Brackets data={data} admin={admin} save={save} flash={flash}/>}
         {view==="titles"&&<Titles data={data} admin={admin} setModal={setModal}/>}
@@ -1530,6 +1582,109 @@ function News({ data, admin, setModal }) {
           {isOpen&&<div className="nb-body swap"><p>{a.body}</p>{admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div>}
         </div>);})}
     </Reveal>
+  </section>);
+}
+
+/* ============================== BOARD (자유게시판) ============================== */
+function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
+function initialOf(s){ return (s||"?").trim().charAt(0)||"?"; }
+
+function parseMedia(url){
+  if(!url) return null; const u=String(url).trim(); if(!u) return null;
+  const yt=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+  if(yt) return {type:"youtube",id:yt[1]};
+  const full=/^https?:\/\//i.test(u)?u:"https://"+u;
+  if(/\.(jpe?g|png|gif|webp|bmp|svg)(\?|#|$)/i.test(u)) return {type:"image",url:full};
+  return {type:"link",url:full};
+}
+function MediaEmbed({ url }){
+  const m=parseMedia(url); if(!m) return null;
+  if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
+  if(m.type==="image") return <a className="bd-img" href={m.url} target="_blank" rel="noopener noreferrer"><img src={m.url} alt="첨부 이미지" loading="lazy"/></a>;
+  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url} ↗</a>;
+}
+function mediaIcon(url){ const m=parseMedia(url); return m?(m.type==="youtube"?"🎬":m.type==="image"?"🖼":"🔗"):null; }
+
+function BoardCompose({ onClose, onSubmit }){
+  const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
+  const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!body.trim()&&!link.trim()){alert("내용이나 링크를 입력해주세요.");return;}
+    onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); };
+  return (<Modal title="새 글 작성" hint="로그인 없이 닉네임으로 자유롭게 글을 남길 수 있어요. PIN은 나중에 본인 글을 지울 때 쓰입니다(선택)." onClose={onClose}>
+    <div className="swap" key="compose">
+      <div className="bk-grow2">
+        <div className="field"><label>닉네임</label><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></div>
+        <div className="field"><label>삭제 PIN (선택 · 숫자 4자리)</label><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></div>
+      </div>
+      <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해주세요."/></div>
+      <div className="field"><label>이미지 · 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요"/>
+        {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
+      </div>
+      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>등록</button></div>
+    </div>
+  </Modal>);
+}
+
+function CommentForm({ onSubmit }){
+  const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
+  const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!body.trim()&&!link.trim()){alert("댓글이나 링크를 입력해주세요.");return;}
+    onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
+  return (<div className="bd-cform">
+    <div className="bd-cform-row">
+      <input className="bd-cform-nick" value={nick} onChange={e=>setNick(e.target.value)} placeholder="닉네임" maxLength={20}/>
+      <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="PIN(선택)" inputMode="numeric"/>
+    </div>
+    <div className="bd-cform-row">
+      <input className="bd-cform-body" value={body} onChange={e=>setBody(e.target.value)} placeholder="댓글 달기…" onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
+      <button className="btn btn-primary btn-sm" onClick={submit}>등록</button>
+    </div>
+    <input className="bd-cform-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 · 유튜브 링크 (선택)"/>
+  </div>);
+}
+
+function Board({ data, admin, save, flash }){
+  const list=[...(data.board||[])].sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
+  const [open,setOpen]=useState(()=>new Set());
+  const [compose,setCompose]=useState(false);
+  const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
+  const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글 등록 ✓"); };
+  const delPost=(p)=>{ if(admin){ if(!confirm("이 글을 삭제할까요?"))return; } else { const pin=prompt("본인 글을 삭제하려면 작성 시 입력한 PIN을 입력하세요."); if(pin===null)return; if(!p.pin||pin!==p.pin){alert("PIN이 일치하지 않습니다.");return;} }
+    save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };
+  const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글 등록 ✓"); };
+  const delComment=(p,c)=>{ if(admin){ if(!confirm("이 댓글을 삭제할까요?"))return; } else { const pin=prompt("본인 댓글을 삭제하려면 PIN을 입력하세요."); if(pin===null)return; if(!c.pin||pin!==c.pin){alert("PIN이 일치하지 않습니다.");return;} }
+    save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
+  return (<section className="sec">
+    <Reveal className="sec-head"><div className="kick">Community</div><h2>게시판</h2>
+      <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
+      <div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setCompose(true)}>✏️ 글쓰기</button></div>
+    </Reveal>
+    <div className="bd-list">
+      {list.length===0&&<div className="bd-empty">아직 글이 없습니다. 첫 글을 남겨보세요!</div>}
+      {list.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;
+        return (<div className={"bd-item"+(isOpen?" open":"")} key={p.id}>
+          <button className="bd-head" onClick={()=>toggle(p.id)}>
+            <span className="bd-ava">{initialOf(p.nick)}</span>
+            <span className="bd-main">
+              <span className="bd-top"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
+              <span className="bd-prev">{p.body}</span>
+            </span>
+            <span className="bd-cc">{p.link&&<span className="bd-mtag">{mediaIcon(p.link)}</span>}💬 {cc}</span>
+            <span className="nb-chev" aria-hidden="true">▾</span>
+          </button>
+          {isOpen&&<div className="bd-open swap">
+            <div className="bd-body">{p.body}{p.link&&<MediaEmbed url={p.link}/>}</div>
+            <div className="bd-tools"><button className="bd-del" onClick={()=>delPost(p)}>삭제</button></div>
+            <div className="bd-cmts">
+              <div className="bd-cmts-h">댓글 {cc}</div>
+              {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
+                <span className="bd-ava sm">{initialOf(c.nick)}</span>
+                <div className="bd-cmt-main"><div className="bd-cmt-top"><b>{c.nick}</b><span className="bd-date tnum">{fmtDT(c.createdAt)}</span><button className="bd-del sm" onClick={()=>delComment(p,c)}>삭제</button></div><div className="bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div></div>
+              </div>))}
+              <CommentForm onSubmit={(c)=>addComment(p,c)}/>
+            </div>
+          </div>}
+        </div>);})}
+    </div>
+    {compose&&<BoardCompose onClose={()=>setCompose(false)} onSubmit={addPost}/>}
   </section>);
 }
 
