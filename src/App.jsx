@@ -400,15 +400,16 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bd-ava{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--navy2),var(--cyan));box-shadow:0 6px 14px -8px rgba(30,132,198,.7);}
 .bd-ava.sm{width:30px;height:30px;font-size:13px;}
 .bd-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
-.bd-top{display:flex;align-items:center;gap:9px;}
-.bd-nick{font-size:14.5px;font-weight:800;color:var(--navy);}
+.bd-title{font-size:15.5px;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .15s;}
+.bd-head:hover .bd-title{color:var(--cyan-d);}
+.bd-meta{display:flex;align-items:center;gap:9px;}
+.bd-nick{font-size:12.5px;font-weight:700;color:var(--muted);}
 .bd-date{font-size:11.5px;color:var(--muted2);font-weight:600;white-space:nowrap;}
-.bd-prev{font-size:13.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bd-cc{flex:none;font-size:12px;font-weight:800;color:var(--cyan-d);background:rgba(30,132,198,.1);padding:4px 10px;border-radius:20px;white-space:nowrap;}
 .bd-head .nb-chev{flex:none;color:var(--muted2);transition:transform .28s ease,color .2s;font-size:13px;}
 .bd-item.open .nb-chev{transform:rotate(180deg);color:var(--cyan-d);}
-.bd-open{padding:2px 18px 18px;}
-.bd-body{color:var(--navy);font-size:14.5px;line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;padding:6px 0 12px;border-top:1px solid var(--line);}
+.bd-open{padding:14px 18px 18px;border-top:1px solid var(--line);}
+.bd-body{color:var(--navy);font-size:14.5px;line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;padding:0 0 12px;}
 .bd-tools{display:flex;justify-content:flex-end;margin-bottom:6px;}
 .bd-del{background:none;border:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted2);cursor:pointer;padding:4px 8px;border-radius:7px;transition:.15s;}
 .bd-del:hover{color:var(--loss);background:rgba(214,69,69,.08);}
@@ -428,7 +429,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bd-cform-nick{width:140px;flex:none;}
 .bd-cform-pin{width:110px;flex:none;}
 .bd-cform-body{flex:1;min-width:0;}
-@media(max-width:560px){.bd-prev{display:none;}.bd-cform-row{flex-wrap:wrap;}.bd-cform-nick,.bd-cform-pin{flex:1;width:auto;}}
+@media(max-width:560px){.bd-title{font-size:15px;}.bd-cform-row{flex-wrap:wrap;}.bd-cform-nick,.bd-cform-pin{flex:1;width:auto;}}
 .bd-cform-link{width:100%;}
 .bd-mtag{margin-right:6px;}
 .bd-yt{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;margin:10px 0 4px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line);}
@@ -1606,15 +1607,16 @@ function MediaEmbed({ url }){
 function mediaIcon(url){ const m=parseMedia(url); return m?(m.type==="youtube"?"🎬":m.type==="image"?"🖼":"🔗"):null; }
 
 function BoardCompose({ onClose, onSubmit }){
-  const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
-  const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!body.trim()&&!link.trim()){alert("내용이나 링크를 입력해주세요.");return;}
-    onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); };
-  return (<Modal title="새 글 작성" hint="로그인 없이 닉네임으로 자유롭게 글을 남길 수 있어요. PIN은 나중에 본인 글을 지울 때 쓰입니다(선택)." onClose={onClose}>
+  const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
+  const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!title.trim()){alert("제목을 입력해주세요.");return;}
+    onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim()}); };
+  return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
       <div className="bk-grow2">
         <div className="field"><label>닉네임</label><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></div>
         <div className="field"><label>삭제 PIN (선택 · 숫자 4자리)</label><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></div>
       </div>
+      <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요" maxLength={60}/></div>
       <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해주세요."/></div>
       <div className="field"><label>이미지 · 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요"/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
@@ -1655,7 +1657,7 @@ function Board({ data, admin, save, flash }){
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Community</div><h2>게시판</h2>
       <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
-      <div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setCompose(true)}>✏️ 글쓰기</button></div>
+      <div className="row-actions"><button className="btn btn-primary btn-sm" onClick={()=>setCompose(true)}>✏️ 글쓰기</button></div>
     </Reveal>
     <div className="bd-list">
       {list.length===0&&<div className="bd-empty">아직 글이 없습니다. 첫 글을 남겨보세요!</div>}
@@ -1664,14 +1666,15 @@ function Board({ data, admin, save, flash }){
           <button className="bd-head" onClick={()=>toggle(p.id)}>
             <span className="bd-ava">{initialOf(p.nick)}</span>
             <span className="bd-main">
-              <span className="bd-top"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
-              <span className="bd-prev">{p.body}</span>
+              <span className="bd-title">{p.title||p.body||"(제목 없음)"}</span>
+              <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
             </span>
-            <span className="bd-cc">{p.link&&<span className="bd-mtag">{mediaIcon(p.link)}</span>}💬 {cc}</span>
+            <span className="bd-cc">💬 {cc}</span>
             <span className="nb-chev" aria-hidden="true">▾</span>
           </button>
           {isOpen&&<div className="bd-open swap">
-            <div className="bd-body">{p.body}{p.link&&<MediaEmbed url={p.link}/>}</div>
+            {p.body&&<div className="bd-body">{p.body}</div>}
+            {p.link&&<MediaEmbed url={p.link}/>}
             <div className="bd-tools"><button className="bd-del" onClick={()=>delPost(p)}>삭제</button></div>
             <div className="bd-cmts">
               <div className="bd-cmts-h">댓글 {cc}</div>
