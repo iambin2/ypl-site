@@ -223,6 +223,12 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .hc-ndate{font-size:12px;color:var(--muted2);font-weight:700;}
 .hc-ntitle{font-size:16px;font-weight:700;color:var(--navy);margin-top:5px;line-height:1.4;}
 .hc-empty{font-size:13.5px;color:var(--muted2);padding:6px 0;}
+.hc-posts{display:flex;flex-direction:column;gap:2px;margin-top:8px;}
+.hc-prow{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);}
+.hc-prow:first-child{border-top:none;}
+.hc-lock{flex:none;font-size:12px;}
+.hc-ptitle{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hc-pmeta{flex:none;font-size:12px;color:var(--muted2);font-weight:600;white-space:nowrap;}
 .hc-about{font-size:14px;line-height:1.7;color:var(--muted);}
 .hc-about b{color:var(--navy);font-weight:700;}
 .scrollcue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);width:24px;height:38px;border:2px solid var(--line2);border-radius:14px;display:flex;justify-content:center;padding-top:7px;opacity:.7;}
@@ -406,6 +412,9 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bd-nick{font-size:12.5px;font-weight:700;color:var(--muted);}
 .bd-date{font-size:11.5px;color:var(--muted2);font-weight:600;white-space:nowrap;}
 .bd-cc{flex:none;font-size:12px;font-weight:800;color:var(--cyan-d);background:rgba(30,132,198,.1);padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.bd-lock{display:inline-block;font-size:10.5px;font-weight:800;color:var(--gold);background:rgba(184,134,30,.13);padding:2px 8px;border-radius:6px;margin-right:8px;vertical-align:middle;letter-spacing:.02em;}
+.bd-item.secret{border-color:rgba(184,134,30,.4);background:linear-gradient(180deg,rgba(184,134,30,.05),transparent);}
+.bd-item.secret .bd-ava{background:linear-gradient(135deg,#c79a2f,var(--gold));box-shadow:0 6px 14px -8px rgba(184,134,30,.7);}
 .bd-head .nb-chev{flex:none;color:var(--muted2);transition:transform .28s ease,color .2s;font-size:13px;}
 .bd-item.open .nb-chev{transform:rotate(180deg);color:var(--cyan-d);}
 .bd-open{padding:14px 18px 18px;border-top:1px solid var(--line);}
@@ -1450,7 +1459,7 @@ export default function App() {
       {admin&&<div className="admin-bar"><div className="admin-bar-in">⚙ 관리자 모드 — 각 섹션에서 추가·수정·삭제할 수 있습니다.</div></div>}
 
       <div className="wrap"><div className="page" key={view}>
-        {view==="home"&&<Home data={data} go={go}/>}
+        {view==="home"&&<Home data={data} go={go} admin={admin}/>}
         {view==="about"&&<About/>}
         {view==="news"&&<News data={data} admin={admin} setModal={setModal}/>}
         {view==="board"&&<Board data={data} admin={admin} save={save} flash={flash}/>}
@@ -1474,7 +1483,7 @@ export default function App() {
 }
 
 /* ============================== HOME ============================== */
-function Home({ data, go }) {
+function Home({ data, go, admin }) {
   const eras=data.rankings||[];
   const ypl=eras.find(e=>e.key==="era2")||eras[0];
   const top3=ypl?[...ypl.rows].sort((a,b)=>(b.points||0)-(a.points||0)).slice(0,3):[];
@@ -1483,6 +1492,7 @@ function Home({ data, go }) {
   const titleCount=data.titleGroups.reduce((n,g)=>n+g.items.length,0);
   const awarded=useMemo(()=>{const s=new Set();data.titleGroups.forEach(g=>g.items.forEach(it=>(it.holders||[]).forEach(h=>s.add(h))));return s.size;},[data]);
   const news=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1))[0];
+  const posts=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1)).slice(0,4);
   return (<section className="home">
     <Reveal className="home-hero">
       <h1 className="disp mark">YPL</h1>
@@ -1492,6 +1502,12 @@ function Home({ data, go }) {
       <Reveal tag="button" className="hcard wide" onClick={()=>go("news")}>
         <div className="hcard-head"><span className="hc-kick">공지</span><span className="hc-go">→</span></div>
         {news?<div className="hc-news"><div className="hc-ndate tnum">{news.date}</div><div className="hc-ntitle">{news.title}</div></div>:<div className="hc-empty">새 공지가 없습니다.</div>}
+      </Reveal>
+      <Reveal tag="button" className="hcard wide" delay={30} onClick={()=>go("board")}>
+        <div className="hcard-head"><span className="hc-kick">게시판</span><span className="hc-go">→</span></div>
+        {posts.length?<div className="hc-posts">{posts.map(p=>(
+          <div className="hc-prow" key={p.id}>{p.secret&&<span className="hc-lock">🔒</span>}<span className="hc-ptitle">{p.title||p.body||"(제목 없음)"}</span><span className="hc-pmeta">{p.nick}{(p.comments||[]).length>0?` · 💬${p.comments.length}`:""}</span></div>))}
+        </div>:<div className="hc-empty">아직 글이 없습니다.</div>}
       </Reveal>
       <Reveal tag="button" className="hcard" delay={60} onClick={()=>go("records")}>
         <div className="hcard-head"><span className="hc-kick">기록 · YPL 랭킹</span><span className="hc-go">→</span></div>
@@ -1607,9 +1623,9 @@ function MediaEmbed({ url }){
 function mediaIcon(url){ const m=parseMedia(url); return m?(m.type==="youtube"?"🎬":m.type==="image"?"🖼":"🔗"):null; }
 
 function BoardCompose({ onClose, onSubmit }){
-  const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
+  const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
   const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!title.trim()){alert("제목을 입력해주세요.");return;}
-    onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim()}); };
+    onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
       <div className="bk-grow2">
@@ -1621,6 +1637,8 @@ function BoardCompose({ onClose, onSubmit }){
       <div className="field"><label>이미지 · 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요"/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
+      <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span>🔒 관리자에게만 보이기 <i>(건의 · 비공개)</i></span></label>
+      {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다. 다른 방문자에게는 목록에도 표시되지 않습니다.</div>}
       <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>등록</button></div>
     </div>
   </Modal>);
@@ -1644,7 +1662,7 @@ function CommentForm({ onSubmit }){
 }
 
 function Board({ data, admin, save, flash }){
-  const list=[...(data.board||[])].sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
+  const list=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
   const [open,setOpen]=useState(()=>new Set());
   const [compose,setCompose]=useState(false);
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
@@ -1662,11 +1680,11 @@ function Board({ data, admin, save, flash }){
     <div className="bd-list">
       {list.length===0&&<div className="bd-empty">아직 글이 없습니다. 첫 글을 남겨보세요!</div>}
       {list.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;
-        return (<div className={"bd-item"+(isOpen?" open":"")} key={p.id}>
+        return (<div className={"bd-item"+(isOpen?" open":"")+(p.secret?" secret":"")} key={p.id}>
           <button className="bd-head" onClick={()=>toggle(p.id)}>
             <span className="bd-ava">{initialOf(p.nick)}</span>
             <span className="bd-main">
-              <span className="bd-title">{p.title||p.body||"(제목 없음)"}</span>
+              <span className="bd-title">{p.secret&&<span className="bd-lock">🔒 관리자 전용</span>}{p.title||p.body||"(제목 없음)"}</span>
               <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
             </span>
             <span className="bd-cc">💬 {cc}</span>
