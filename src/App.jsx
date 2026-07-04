@@ -257,9 +257,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .kick-line::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:5px;border-radius:5px;background:linear-gradient(180deg,var(--navy2),var(--cyan));}
 .timeline{display:flex;flex-direction:column;gap:13px;margin:14px 0 6px;padding-left:0;}
 .timeline::before{display:none;}
-.tl-item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px 20px 17px 24px;box-shadow:0 14px 36px -26px rgba(21,39,63,.4);transition:transform .25s,box-shadow .25s;overflow:hidden;}
-.tl-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,var(--cyan),var(--mint));}
-.tl-item:last-child::before{background:linear-gradient(180deg,var(--gold),#d8a93a);}
+.tl-item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px 20px;box-shadow:0 14px 36px -26px rgba(21,39,63,.4);transition:transform .25s,box-shadow .25s;}
 .tl-item:hover{transform:translateY(-2px);box-shadow:0 20px 42px -24px rgba(30,132,198,.4);}
 .tl-date{font-size:12.5px;font-weight:800;color:var(--cyan-d);letter-spacing:.04em;}
 .tl-title{font-size:18px;font-weight:800;margin:3px 0 6px;color:var(--navy);}
@@ -793,7 +791,8 @@ function buildDouble(pids){
   const lbFinal={id:uid(),a:{win:lbPrev[0].id},b:{lose:W[k-1][0].id},winner:null};
   L.push([lbFinal]);
   const gf={id:uid(),a:{win:W[k-1][0].id},b:{win:lbFinal.id},winner:null};
-  return {kind:"double",rounds:W,lb:L,gf,size:single.size,byes:single.byes};
+  const reset={id:uid(),a:{win:W[k-1][0].id},b:{win:lbFinal.id},winner:null};
+  return {kind:"double",rounds:W,lb:L,gf,reset,size:single.size,byes:single.byes};
 }
 function buildGroups(pids,numGroups,adv){
   const sh=shuffleArr(pids);
@@ -810,6 +809,7 @@ function evalGraph(g){
   g.rounds.forEach(r=>r.forEach(m=>all.push(m)));
   if(g.lb) g.lb.forEach(r=>r.forEach(m=>all.push(m)));
   if(g.gf) all.push(g.gf);
+  if(g.reset) all.push(g.reset);
   const sp=(s)=>{ if(!s)return null; if(s.bye)return BYE; if(s.pid)return s.pid; if(s.win)return win[s.win]??null; if(s.lose)return lose[s.lose]??null; return null; };
   for(const m of all){
     const pa=sp(m.a),pb=sp(m.b); let w=null,l=null;
@@ -822,12 +822,23 @@ function evalGraph(g){
 function elimResult(g){
   if(!g) return null;
   const {win,lose}=evalGraph(g);
-  let finalM, semis=[];
-  if(g.kind==="double"){ finalM=g.gf; const lf=g.lb[g.lb.length-1][0]; semis=[lf]; if(g.lb.length>=2) semis.push(g.lb[g.lb.length-2][0]); }
-  else { finalM=g.rounds[g.rounds.length-1][0]; semis=g.rounds.length>=2?g.rounds[g.rounds.length-2]:[]; }
+  const clean=(x)=>x&&x!==BYE?x:null;
+  if(g.kind==="double"){
+    const gf=g.gf, reset=g.reset;
+    const lf=g.lb[g.lb.length-1][0]; const semis=[lf]; if(g.lb.length>=2) semis.push(g.lb[g.lb.length-2][0]);
+    const sf=semis.map(m=>lose[m.id]).filter(x=>x&&x!==BYE);
+    if(gf.winner==="a"){ // 승자조 챔프가 GF 승리 → 즉시 우승
+      return {champ:clean(win[gf.id]), ru:clean(lose[gf.id]), sf, done:!!clean(win[gf.id])};
+    }
+    if(gf.winner==="b"&&reset){ // 패자조 챔프가 GF 승리 → 리셋 매치로 결정
+      return {champ:clean(win[reset.id]), ru:clean(lose[reset.id]), sf, done:!!reset.winner};
+    }
+    return {champ:null, ru:null, sf, done:false};
+  }
+  const finalM=g.rounds[g.rounds.length-1][0]; const semis=g.rounds.length>=2?g.rounds[g.rounds.length-2]:[];
   const champ=win[finalM.id]||null, ru=lose[finalM.id]||null;
   const sf=semis.map(m=>lose[m.id]).filter(x=>x&&x!==BYE);
-  return {champ:champ&&champ!==BYE?champ:null, ru:ru&&ru!==BYE?ru:null, sf, done:!!(champ&&champ!==BYE)};
+  return {champ:clean(champ), ru:clean(ru), sf, done:!!clean(champ)};
 }
 function groupStandings(group){
   const w={}; group.members.forEach(m=>w[m]=0);
@@ -836,7 +847,7 @@ function groupStandings(group){
 }
 function groupDone(g){ return g.groups.every(gr=>gr.matches.every(m=>m.winner)); }
 // 매치 승자 설정(불변 업데이트)
-function collectGraphMatches(g){ const a=[]; if(!g)return a; g.rounds.forEach(r=>r.forEach(m=>a.push(m))); if(g.lb)g.lb.forEach(r=>r.forEach(m=>a.push(m))); if(g.gf)a.push(g.gf); return a; }
+function collectGraphMatches(g){ const a=[]; if(!g)return a; g.rounds.forEach(r=>r.forEach(m=>a.push(m))); if(g.lb)g.lb.forEach(r=>r.forEach(m=>a.push(m))); if(g.gf)a.push(g.gf); if(g.reset)a.push(g.reset); return a; }
 function cascadeClear(all,id){ const seen=new Set(),stack=[id]; while(stack.length){ const cur=stack.pop();
   all.forEach(m=>{ if(seen.has(m.id))return; if([m.a,m.b].some(s=>s&&(s.win===cur||s.lose===cur))){ m.winner=null; seen.add(m.id); stack.push(m.id); } }); } }
 // 승자 선택(토글: 같은 쪽 다시 누르면 취소, 반대쪽 누르면 변경) — 하위 매치 연쇄 초기화
@@ -934,7 +945,7 @@ function downloadBracketPng(b,nameOf){
   let W=900,H=300;
   const estElim=(g)=>{ const wbW=padL+g.rounds.length*(boxW+gapX)-gapX+padL; let h=padT+g.rounds[0].length*pitch0+40;
     if(g.kind==="double"){ h+=70+ (g.lb.reduce((mx,r)=>Math.max(mx,r.length),0))*0+ g.lb.length? 0:0; h+= 60 + Math.max(...g.lb.map(r=>r.length))*(boxH+22)+60; }
-    return {w:Math.max(wbW, g.kind==="double"? padL+(g.lb.length+1)*(boxW+gapX):0), h}; };
+    return {w:Math.max(wbW, g.kind==="double"? padL+(g.lb.length+2)*(boxW+gapX):0), h}; };
   let gW=900,gH=0;
   if(b.format==="group"){
     const cols=Math.min(b.groups.length,3); const rows=Math.ceil(b.groups.length/cols);
@@ -968,6 +979,9 @@ function downloadBracketPng(b,nameOf){
       const gx=padL+g.lb.length*(boxW+gapX); const gy=lbY+boxH/2; const m=g.gf; const aPid=ev.sp(m.a),bPid=ev.sp(m.b),wp=ev.win[m.id];
       ctx.fillStyle="#b8861e"; ctx.font=`700 13px ${BKF}`; ctx.fillText("그랜드 파이널",gx,lbY-12);
       bkDrawMatch(ctx,gx,gy-boxH/2,boxW,boxH, aPid?nameOf(aPid):"", bPid?nameOf(bPid):"", wp&&wp===aPid, wp&&wp===bPid,false,false);
+      if(g.reset&&g.gf.winner==="b"){ const rx=gx+boxW+gapX; const rm=g.reset; const raPid=ev.sp(rm.a),rbPid=ev.sp(rm.b),rwp=ev.win[rm.id];
+        ctx.fillStyle="#b8861e"; ctx.font=`700 13px ${BKF}`; ctx.fillText("최종 결승 (리셋)",rx,lbY-12);
+        bkDrawMatch(ctx,rx,gy-boxH/2,boxW,boxH, raPid?nameOf(raPid):"", rbPid?nameOf(rbPid):"", rwp&&rwp===raPid, rwp&&rwp===rbPid,false,false); }
       bottom=lbY+Math.max(...g.lb.map(r=>r.length))*pitch0;
     }
     return bottom;
@@ -1153,6 +1167,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam }){
       {r.map(m=><MatchCard key={m.id} m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/>)}
     </div>))}
     <div className="bk-col"><div className="bk-col-h gf">그랜드 파이널</div><MatchCard m={g.gf} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/></div>
+    {g.reset&&g.gf.winner==="b"&&<div className="bk-col"><div className="bk-col-h gf">최종 결승 (리셋)</div><MatchCard m={g.reset} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/></div>}
   </div></div>}
   </div>);
 }
