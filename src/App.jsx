@@ -1756,13 +1756,14 @@ function RankView({ data, admin, setModal, save }) {
   </>);
 }
 function SeasonView({ data, admin, setModal, save }) {
-  const seasons=data.seasons||[]; const [sel,setSel]=useState(0);
+  const seasons=data.seasons||[]; const [sel,setSel]=useState(Math.max(0,seasons.length-1));
   const addSeason=()=>{ const name=(prompt("새 시즌 이름 (예: YPL 시즌 3)")||"").trim(); if(!name)return; save({...data,seasons:[...seasons,{name,rows:[]}]}); setSel(seasons.length); };
   const s=seasons[sel];
   if(!s) return (<>{admin&&<div style={{padding:"4px 0"}}><button className="btn btn-gold btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}<div className="panel none" style={{padding:24}}>데이터 없음</div></>);
   const hasNote=s.rows.some(r=>r.note);
+  const ordered=[...seasons.map((x,i)=>({x,i}))].reverse();
   return (<>
-    <div className="subtabs">{seasons.map((x,i)=><button key={i} className={"subtab"+(i===sel?" on":"")} onClick={()=>setSel(i)}>{x.name}</button>)}{admin&&<button className="subtab add" onClick={addSeason}>+ 추가</button>}</div>
+    <div className="subtabs">{ordered.map(({x,i})=><button key={i} className={"subtab"+(i===sel?" on":"")} onClick={()=>setSel(i)}>{x.name}</button>)}{admin&&<button className="subtab add" onClick={addSeason}>+ 추가</button>}</div>
     <div className="panel swap" key={sel}>
       {admin&&<div style={{padding:"12px 0 2px"}}><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"standings",title:s.name,rows:s.rows,build:(rows)=>({...data,seasons:seasons.map((x,i)=>i===sel?{...x,rows}:x)})})}>{s.name} 성적 수정</button></div>}
       <StandTable rows={s.rows} showNote={hasNote}/>
