@@ -441,10 +441,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .ch-slot{display:flex;flex-direction:column;gap:7px;align-items:center;}
 .ch-imgwrap{position:relative;width:100%;}
-.ch-img{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;background:var(--bg2);border:1.5px dashed var(--line2);border-radius:13px;cursor:pointer;overflow:hidden;transition:.16s;}
+.ch-img{position:relative;display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;background:var(--bg2);border:1.5px dashed var(--line2);border-radius:13px;cursor:pointer;overflow:hidden;transition:.16s;}
 .ch-img:hover{border-color:var(--cyan);background:rgba(30,132,198,.06);}
 .ch-img img{width:100%;height:100%;object-fit:contain;}
-.ch-plus{font-size:12px;font-weight:800;color:var(--muted2);text-align:center;line-height:1.4;}
+.ch-plus{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:800;color:var(--muted2);pointer-events:none;text-align:center;}
+.ch-plus-ico{font-size:22px;line-height:1;font-weight:400;}
 .ch-clear{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(21,39,63,.62);color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .ch-clear:hover{background:var(--loss);}
 .ch-name{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13px;font-weight:600;color:var(--navy);text-align:center;transition:.16s;}
@@ -1926,7 +1927,7 @@ function ChampionEditor({ item, onClose, onSave, onDelete }) {
     <div className="field"><label>우승 엔트리 — 이미지 + 이름</label>
       <div className="ch-grid">{mons.map((m,i)=>(<div className="ch-slot" key={i}>
         <div className="ch-imgwrap">
-          <label className="ch-img">{m.img?<img src={m.img} alt=""/>:<span className="ch-plus">＋<br/>이미지</span>}
+          <label className="ch-img">{m.img?<img src={m.img} alt=""/>:<span className="ch-plus"><i className="ch-plus-ico">＋</i>이미지</span>}
             <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{onFile(i,e.target.files&&e.target.files[0]); e.target.value="";}}/>
           </label>
           {m.img&&<button type="button" className="ch-clear" onClick={()=>setMon(i,{img:""})}>✕</button>}
