@@ -1794,7 +1794,11 @@ function TourView({ data, admin, setModal }) {
   const t=tours.find(x=>x.key===sel)||otours[0];
   if(!t) return <div className="panel none" style={{padding:24}}>데이터 없음</div>;
   const split=(s)=>String(s||"").split("/").map(x=>x.trim()).filter(Boolean);
-  const rounds=[...(t.rounds||[])].sort((a,b)=>{ const rn=(parseInt(b.round)||0)-(parseInt(a.round)||0); if(rn) return rn; return (a.date<b.date?1:-1); });
+  const rounds=[...(t.rounds||[])].sort((a,b)=>{
+    if((a.date||"")!==(b.date||"")) return (a.date||"")<(b.date||"")?1:-1;
+    const ca=a.champ?1:0, cb=b.champ?1:0; if(ca!==cb) return cb-ca;
+    return (parseInt(b.round)||0)-(parseInt(a.round)||0);
+  });
   return (<>
     <div className="subtabs">{otours.map(x=><button key={x.key} className={"subtab"+(x.key===sel?" on":"")} onClick={()=>setSel(x.key)}>{x.label}</button>)}</div>
     <div className="panel swap" key={sel} style={{paddingBottom:14}}>
