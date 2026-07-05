@@ -147,7 +147,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* nav */
 .nav{position:sticky;top:0;z-index:60;backdrop-filter:blur(16px) saturate(150%);background:rgba(246,250,254,.78);border-bottom:1px solid var(--line);transition:.3s;}
 .nav.scrolled{background:rgba(246,250,254,.94);box-shadow:0 8px 30px -18px rgba(21,39,63,.4);}
-.nav-in{max-width:1120px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:18px;}
+.nav-in{max-width:1120px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:18px;position:relative;}
 .brand{display:flex;align-items:center;gap:11px;cursor:pointer;flex:none;transition:.25s;}.brand:hover{opacity:.82;}
 .chip{display:flex;align-items:center;justify-content:center;width:42px;height:42px;flex:none;}
 .chip img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(21,39,63,.22));}
@@ -162,6 +162,22 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .nav-discord{display:inline-flex;align-items:center;gap:7px;flex:none;background:#5865F2;color:#fff;border-radius:10px;padding:8px 14px;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap;box-shadow:0 7px 18px -8px rgba(88,101,242,.85);transition:.2s;}
 .nav-discord:hover{filter:brightness(1.08);transform:translateY(-1px);color:#fff;}
 .nav-discord svg{width:18px;height:18px;fill:currentColor;flex:none;}
+.nav-right{display:flex;align-items:center;gap:10px;flex:none;}
+.nav-burger{display:none;width:42px;height:42px;flex:none;border:1px solid var(--line2);background:rgba(255,255,255,.6);border-radius:11px;font-size:19px;line-height:1;color:var(--navy);cursor:pointer;align-items:center;justify-content:center;transition:.2s;}
+.nav-burger:hover{background:#fff;border-color:var(--cyan);}
+.nav-scrim{position:fixed;inset:0;z-index:55;background:rgba(13,27,46,.28);backdrop-filter:blur(2px);animation:pageIn .2s ease;}
+.nav-drawer{position:absolute;top:calc(100% + 8px);right:14px;left:14px;z-index:70;background:#fff;border:1px solid var(--line2);border-radius:16px;padding:8px;box-shadow:0 30px 70px -20px rgba(21,39,63,.5);display:flex;flex-direction:column;gap:2px;animation:ddIn .18s cubic-bezier(.2,.8,.2,1);}
+.nav-ditem{background:none;border:none;font-family:inherit;font-weight:700;font-size:16px;color:var(--navy);text-align:left;padding:14px 16px;border-radius:11px;cursor:pointer;transition:.14s;}
+.nav-ditem:hover{background:rgba(30,132,198,.08);}
+.nav-ditem.on{background:rgba(30,132,198,.1);color:var(--cyan-d);}
+@media(max-width:820px){
+  .nav-links{display:none;}
+  .nav-right{margin-left:auto;}
+  .nav-burger{display:inline-flex;}
+  .nav-discord .dc-tx{display:none;}
+  .nav-discord{padding:9px 11px;}
+  .nlink.admin{margin-left:0;padding:9px 12px;font-size:13.5px;}
+}
 /* buttons */
 .btn{font-family:inherit;font-weight:700;font-size:14px;border-radius:13px;padding:12px 20px;border:1px solid transparent;cursor:pointer;transition:.28s cubic-bezier(.2,.7,.2,1);display:inline-flex;align-items:center;gap:8px;}
 .btn-primary{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;box-shadow:0 12px 28px -12px rgba(30,132,198,.7);}
@@ -339,6 +355,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
   .tbl th{font-size:10px;letter-spacing:.03em;padding:11px 6px;}
   .nav-discord{padding:8px 10px;}.nav-discord .dc-tx{display:none;}
 }
+@media(max-width:430px){ .brand small{display:none;} .nav-in{gap:10px;} .nlink.admin{padding:8px 10px;} }
 .rankb{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:9px;font-weight:800;font-size:13px;background:rgba(21,39,63,.06);color:var(--muted);}
 .rankb.r1{background:linear-gradient(135deg,#f0c860,#d09e2e);color:#241803;box-shadow:0 4px 12px -5px rgba(184,134,30,.7);}
 .rankb.r2{background:linear-gradient(135deg,#dde6f1,#aebccf);color:#1a2433;}
@@ -1468,9 +1485,10 @@ export default function App() {
   const [data,setData]=useState(null); const [view,setView]=useState("home");
   const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(""); const [modal,setModal]=useState(null);
   const [scrolled,setScrolled]=useState(false);
+  const [menuOpen,setMenuOpen]=useState(false);
   useEffect(()=>{(async()=>setData(normalizeData((await loadData())||SEED)))();},[]);
   useEffect(()=>{const f=()=>setScrolled(window.scrollY>20);window.addEventListener("scroll",f);return()=>window.removeEventListener("scroll",f);},[]);
-  const go=useCallback((v)=>{setView(v);window.scrollTo({top:0,behavior:"smooth"});},[]);
+  const go=useCallback((v)=>{setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"smooth"});},[]);
   const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
   const save=useCallback(async(next)=>{setData(next);const ok=await persist(next);flash(ok?"저장됨 ✓":"메모리에만 반영됨");},[flash]);
   if(!data) return <div className="ypl" style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh"}}><style>{STYLES}</style><span style={{color:"#90A1BD"}}>불러오는 중…</span></div>;
@@ -1480,9 +1498,13 @@ export default function App() {
       <div className="aurora"><i className="a1"/><i className="a2"/><i className="a3"/><div className="grid"/></div>
       <nav className={"nav"+(scrolled?" scrolled":"")}><div className="nav-in">
         <div className="brand" onClick={()=>go("home")}><span className="chip"><img src={LOGO_YPL} alt="YPL"/></span><div><span className="disp">YPL</span><small>POKÉMON · CENTER · YONSEI</small></div></div>
-        <div className="nav-links">{nav.map(([k,l])=><button key={k} className={"nlink"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}
-          <button className="nlink admin" onClick={()=>admin?setAdmin(false):setModal({type:"login"})}>{admin?"로그아웃":"관리자"}</button></div>
-        <a className="nav-discord" href="https://discord.gg/sdZYCvHQn" target="_blank" rel="noopener noreferrer" title="YPL 공식 디스코드 참여"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span className="dc-tx">디스코드</span></a>
+        <div className="nav-links">{nav.map(([k,l])=><button key={k} className={"nlink"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}</div>
+        <div className="nav-right">
+          <button className="nlink admin" onClick={()=>{admin?setAdmin(false):setModal({type:"login"});setMenuOpen(false);}}>{admin?"로그아웃":"관리자"}</button>
+          <a className="nav-discord" href="https://discord.gg/sdZYCvHQn" target="_blank" rel="noopener noreferrer" title="YPL 공식 디스코드 참여"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span className="dc-tx">디스코드</span></a>
+          <button className="nav-burger" onClick={()=>setMenuOpen(o=>!o)} aria-label="메뉴 열기">{menuOpen?"✕":"☰"}</button>
+        </div>
+        {menuOpen&&<><div className="nav-scrim" onClick={()=>setMenuOpen(false)}/><div className="nav-drawer">{nav.map(([k,l])=><button key={k} className={"nav-ditem"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}</div></>}
       </div></nav>
       {admin&&<div className="admin-bar"><div className="admin-bar-in">⚙ 관리자 모드 — 각 섹션에서 추가·수정·삭제할 수 있습니다.</div></div>}
 
