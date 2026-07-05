@@ -438,6 +438,18 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bd-cform-body{flex:1;min-width:0;}
 @media(max-width:560px){.bd-title{font-size:15px;}.bd-cform-row{flex-wrap:wrap;}.bd-cform-nick,.bd-cform-pin{flex:1;width:auto;}}
 .bd-cform-link{width:100%;}
+.ch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.ch-slot{display:flex;flex-direction:column;gap:7px;align-items:center;}
+.ch-imgwrap{position:relative;width:100%;}
+.ch-img{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;background:var(--bg2);border:1.5px dashed var(--line2);border-radius:13px;cursor:pointer;overflow:hidden;transition:.16s;}
+.ch-img:hover{border-color:var(--cyan);background:rgba(30,132,198,.06);}
+.ch-img img{width:100%;height:100%;object-fit:contain;}
+.ch-plus{font-size:12px;font-weight:800;color:var(--muted2);text-align:center;line-height:1.4;}
+.ch-clear{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(21,39,63,.62);color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ch-clear:hover{background:var(--loss);}
+.ch-name{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13px;font-weight:600;color:var(--navy);text-align:center;transition:.16s;}
+.ch-name:focus{outline:none;border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.12);}
+@media(max-width:560px){.ch-grid{grid-template-columns:repeat(2,1fr);}}
 .bd-mtag{margin-right:6px;}
 .bd-yt{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;margin:10px 0 4px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line);}
 .bd-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
@@ -1540,7 +1552,7 @@ function Home({ data, go, admin }) {
         <div className="hcard-champ">
           <div><div className="hc-cur-label">👑 현 챔피언 · {cur?.gen}</div>
             <div className="hc-cur-name">{cur?.name}</div></div>
-          {cur&&<div className="hc-team">{cur.team.filter(Boolean).slice(0,6).map((m,i)=>{const img=POKE_IMG[m];return <span className="hc-mon" key={i}>{img?<img src={img} alt={m}/>:<i>{m[0]}</i>}</span>;})}</div>}
+          {cur&&<div className="hc-team">{normTeam(cur.team).filter(m=>m.name||m.img).slice(0,6).map((m,i)=>{const img=m.img;return <span className="hc-mon" key={i}>{img?<img src={img} alt={m.name}/>:<i>{m.name?m.name[0]:"?"}</i>}</span>;})}</div>}
         </div>
       </Reveal>
     </div>
@@ -1775,20 +1787,23 @@ function NameChips({ list, kind }) {
 }
 function TourView({ data, admin, setModal }) {
   const tours=data.tournaments||[];
-  const [sel,setSel]=useState(tours[0]?.key);
-  const t=tours.find(x=>x.key===sel)||tours[0];
+  const rank=(t)=>{ const l=t.label||""; return l.includes("마스터")?0:l.includes("루키")?1:l.includes("라이트")?2:l.includes("클래식")?3:4; };
+  const otours=[...tours].sort((a,b)=>rank(a)-rank(b));
+  const [sel,setSel]=useState(otours[0]?.key);
+  const t=tours.find(x=>x.key===sel)||otours[0];
   if(!t) return <div className="panel none" style={{padding:24}}>데이터 없음</div>;
   const split=(s)=>String(s||"").split("/").map(x=>x.trim()).filter(Boolean);
+  const rounds=[...(t.rounds||[])].sort((a,b)=>{ const rn=(parseInt(b.round)||0)-(parseInt(a.round)||0); if(rn) return rn; return (a.date<b.date?1:-1); });
   return (<>
-    <div className="subtabs">{tours.map(x=><button key={x.key} className={"subtab"+(x.key===sel?" on":"")} onClick={()=>setSel(x.key)}>{x.label}</button>)}</div>
+    <div className="subtabs">{otours.map(x=><button key={x.key} className={"subtab"+(x.key===sel?" on":"")} onClick={()=>setSel(x.key)}>{x.label}</button>)}</div>
     <div className="panel swap" key={sel} style={{paddingBottom:14}}>
       <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 2px 4px",flexWrap:"wrap"}}>
         <span style={{width:11,height:11,borderRadius:4,background:t.color}}/>
         <h3 style={{margin:0,fontSize:18,fontWeight:800,color:"var(--navy)"}}>{t.label}</h3>
-        <span style={{fontSize:12.5,color:"var(--muted)",fontWeight:600}} className="tnum">{t.rounds.length}회</span>
+        <span style={{fontSize:12.5,color:"var(--muted)",fontWeight:600}} className="tnum">{(t.rounds||[]).length}회</span>
         {admin&&<button className="btn btn-gold btn-sm ed-pencil" onClick={()=>setModal({type:"rounds",title:t.label,rounds:t.rounds,seasons:(data.seasons||[]).map(s=>s.name),build:(rounds)=>({...data,tournaments:tours.map(x=>x.key===t.key?{...x,rounds}:x)})})}>회차 편집</button>}
       </div>
-      {t.rounds.map((r,i)=>{
+      {rounds.map((r,i)=>{
         const rl=r.round?(/^\d+$/.test(String(r.round))?String(r.round)+"회":r.round):"";
         return (
         <div className={"round2"+(r.champ?" champ":"")} key={i}>
@@ -1847,10 +1862,10 @@ function Champions({ data, admin, setModal }) {
     <div className="grid g2">{champs.map((c,i)=>(<Reveal key={c.id} delay={(i%2)*80} className="champ hover hof-card">
       <span className="crown">👑</span>
       <div className="gen">👑 {c.gen} 챔피언 · {c.slabel||("SEASON "+c.season)}</div><div className="nm">{c.name}</div>
-      <div className="team">{c.team.filter(Boolean).map((m,j)=>{const img=POKE_IMG[m];return (
+      <div className="team">{normTeam(c.team).filter(m=>m.name||m.img).map((m,j)=>{const img=m.img;return (
         <div className={"poke"+(img?"":" noimg")} key={j}>
-          <div className="sp">{img?<img src={img} alt={m} loading="lazy"/>:<span className="ph">{m}</span>}</div>
-          {img&&<div className="pn">{m}</div>}
+          <div className="sp">{img?<img src={img} alt={m.name} loading="lazy"/>:<span className="ph">{m.name}</span>}</div>
+          {img&&<div className="pn">{m.name}</div>}
         </div>);})}</div>
       {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm ed-pencil" onClick={()=>setModal({type:"champion",item:c})}>수정</button></div>}
     </Reveal>))}</div>
@@ -1879,25 +1894,58 @@ function MetaEditor({ meta, onClose, onSave }) {
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave(m)}>저장</button></div>
   </Modal>);
 }
+function compressImg(file, cb){
+  const r=new FileReader();
+  r.onload=()=>{ const im=new Image(); im.onload=()=>{
+    const max=180; const sc=Math.min(1,max/Math.max(im.width,im.height));
+    const w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc));
+    const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+    cv.getContext("2d").drawImage(im,0,0,w,h);
+    let url; try{ url=cv.toDataURL("image/png"); }catch(e){ url=null; }
+    cb(url);
+  }; im.onerror=()=>cb(null); im.src=r.result; };
+  r.onerror=()=>cb(null); r.readAsDataURL(file);
+}
+function normTeam(team){ return (team||[]).map(m=> typeof m==="string"?{name:m,img:(POKE_IMG[m]||"")}:{name:(m&&m.name)||"",img:(m&&m.img)||POKE_IMG[m&&m.name]||""}); }
+
 function ChampionEditor({ item, onClose, onSave, onDelete }) {
-  const [gen,setGen]=useState(item?.gen||""),[season,setSeason]=useState(item?.season||""),[name,setName]=useState(item?.name||""),[raw,setRaw]=useState((item?.team||[]).join("\n"));
-  const submit=()=>onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,name:name.trim(),team:raw.split("\n").map(s=>s.trim()).filter(Boolean)});
-  return (<Modal title={item?"챔피언 수정":"챔피언 추가"} hint="우승 포켓몬은 한 줄에 한 마리씩." onClose={onClose}>
-    <div className="field"><label>대수</label><input value={gen} onChange={e=>setGen(e.target.value)} placeholder="6대"/></div>
-    <div className="field"><label>시즌 번호</label><input value={season} onChange={e=>setSeason(e.target.value)} placeholder="6"/></div>
+  const [gen,setGen]=useState(item?.gen||""),[season,setSeason]=useState(item?.season||""),[name,setName]=useState(item?.name||""),[slabel,setSlabel]=useState(item?.slabel||"");
+  const [mons,setMons]=useState(()=>{ const t=normTeam(item?.team); const a=[]; for(let i=0;i<6;i++)a.push(t[i]||{name:"",img:""}); return a; });
+  const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));
+  const onFile=(i,file)=>{ if(!file)return; if(file.size>8*1024*1024){alert("이미지가 너무 큽니다(8MB 초과). 더 작은 파일을 사용해주세요.");return;} compressImg(file,(url)=>{ if(!url){alert("이미지를 불러오지 못했습니다.");return;} setMon(i,{img:url}); }); };
+  const submit=()=>{ if(!name.trim()){alert("챔피언 이름을 입력해주세요.");return;}
+    const team=mons.filter(m=>m.name.trim()||m.img).map(m=>({name:m.name.trim(),img:m.img||""}));
+    onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,slabel:slabel.trim()||undefined,name:name.trim(),team}); };
+  return (<Modal title={item?"챔피언 수정":"챔피언 추가"} onClose={onClose}>
+    <div className="bk-grow2">
+      <div className="field"><label>대수</label><input value={gen} onChange={e=>setGen(e.target.value)} placeholder="예: 6대"/></div>
+      <div className="field"><label>시즌 번호</label><input value={season} onChange={e=>setSeason(e.target.value)} placeholder="예: 6"/></div>
+    </div>
     <div className="field"><label>챔피언 이름</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
-    <div className="field"><label>우승 엔트리</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} style={{minHeight:130}}/></div>
+    <div className="field"><label>시즌 라벨 (선택)</label><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL SEASON 2"/></div>
+    <div className="field"><label>우승 엔트리 — 이미지 + 이름</label>
+      <div className="ch-grid">{mons.map((m,i)=>(<div className="ch-slot" key={i}>
+        <div className="ch-imgwrap">
+          <label className="ch-img">{m.img?<img src={m.img} alt=""/>:<span className="ch-plus">＋<br/>이미지</span>}
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{onFile(i,e.target.files&&e.target.files[0]); e.target.value="";}}/>
+          </label>
+          {m.img&&<button type="button" className="ch-clear" onClick={()=>setMon(i,{img:""})}>✕</button>}
+        </div>
+        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value})} placeholder={`이름 ${i+1}`}/>
+      </div>))}</div>
+      <div className="bk-hint">각 칸을 눌러 이미지를 올리고 이름을 입력하세요. 이미지는 자동으로 작게 압축돼 저장됩니다. (투명 배경 PNG 권장)</div>
+    </div>
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
 }
 function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
   const partner=groupKey==="partner";
-  const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[raw,setRaw]=useState((item?.holders||[]).join("\n"));
-  const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders:raw.split("\n").map(s=>s.trim()).filter(Boolean)});
-  return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름=트레이너, 아래엔 파트너 포켓몬을 한 줄에 하나씩.":"해당자를 한 줄에 한 명씩 입력하세요."} onClose={onClose}>
+  const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[raw,setRaw]=useState((item?.holders||[]).join(", "));
+  const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders:raw.split(/[,\n]/).map(s=>s.trim()).filter(Boolean)});
+  return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름=트레이너, 아래엔 파트너 포켓몬을 쉼표(,)로 구분해 입력하세요.":"해당자를 쉼표(,)로 구분해 입력하세요. (예: 정두호, 이제빈)"} onClose={onClose}>
     <div className="field"><label>{partner?"트레이너":"칭호 이름"}</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
     {!partner&&<div className="field"><label>설명 (선택)</label><input value={desc} onChange={e=>setDesc(e.target.value)}/></div>}
-    <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)}/></div>
+    <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></div>
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
 }
