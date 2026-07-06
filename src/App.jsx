@@ -884,6 +884,7 @@ function buildSingle(pids){
   return {kind:"single",rounds,size,byes};
 }
 function buildDouble(pids){
+  if(!pids || pids.length<3) return buildSingle(pids); // 2명 이하는 더블 엘리미가 성립하지 않아 단일 엘리미로 대체
   const single=buildSingle(pids); const W=single.rounds; const k=W.length;
   const L=[]; let lbPrev=[];
   if(W[0].length>=2){
@@ -935,6 +936,7 @@ function evalGraph(g){
     const pa=sp(m.a),pb=sp(m.b); let w=null,l=null;
     if(m.winner==="a"){w=pa;l=pb;} else if(m.winner==="b"){w=pb;l=pa;}
     else if(pa===BYE&&pb&&pb!==BYE){w=pb;l=BYE;} else if(pb===BYE&&pa&&pa!==BYE){w=pa;l=BYE;}
+    else if(pa===BYE&&pb===BYE){w=BYE;l=BYE;}
     win[m.id]=w; lose[m.id]=l;
   }
   return {win,lose,sp};
@@ -969,7 +971,7 @@ function groupDone(g){ return g.groups.every(gr=>gr.matches.every(m=>m.winner));
 // 매치 승자 설정(불변 업데이트)
 function collectGraphMatches(g){ const a=[]; if(!g)return a; g.rounds.forEach(r=>r.forEach(m=>a.push(m))); if(g.lb)g.lb.forEach(r=>r.forEach(m=>a.push(m))); if(g.gf)a.push(g.gf); if(g.reset)a.push(g.reset); return a; }
 function cascadeClear(all,id){ const seen=new Set(),stack=[id]; while(stack.length){ const cur=stack.pop();
-  all.forEach(m=>{ if(seen.has(m.id))return; if([m.a,m.b].some(s=>s&&(s.win===cur||s.lose===cur))){ m.winner=null; seen.add(m.id); stack.push(m.id); } }); } }
+  all.forEach(m=>{ if(seen.has(m.id))return; if([m.a,m.b].some(s=>s&&(s.win===cur||s.lose===cur))){ m.winner=null; m.series=null; seen.add(m.id); stack.push(m.id); } }); } }
 // 승자 선택(토글: 같은 쪽 다시 누르면 취소, 반대쪽 누르면 변경) — 하위 매치 연쇄 초기화
 function withPick(b,matchId,side){
   const nb=JSON.parse(JSON.stringify(b));
@@ -1145,11 +1147,13 @@ function BracketWizard({ onClose, onCreate }){
     const parts=buildParticipants();
     if(parts.length<2){ alert("참가자(팀)를 2개 이상 입력해주세요."); return; }
     if(format==="group"&&parts.length<gN*2){ alert("그룹 수에 비해 참가자가 너무 적습니다."); return; }
+    const useDbl = dbl && parts.length>=3;
+    if(dbl && !useDbl) alert("참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않아, 단일 엘리미네이션으로 생성됩니다.");
     let graph=null,grp=null;
     if(format==="group"){ const G=buildGroups(parts.map(p=>p.id),gN,aN); grp=G.groups; }
-    else graph=dbl?buildDouble(parts.map(p=>p.id)):buildSingle(parts.map(p=>p.id));
+    else graph=useDbl?buildDouble(parts.map(p=>p.id)):buildSingle(parts.map(p=>p.id));
     onCreate({ id:uid(), name:name.trim()||"새 대회", createdAt:new Date().toISOString().slice(0,10),
-      mode, double:dbl, format, groupCfg:format==="group"?{groups:gN,adv:aN}:null,
+      mode, double:useDbl, format, groupCfg:format==="group"?{groups:gN,adv:aN}:null,
       participants:parts, graph, groups:grp, knockout:null, status:"active", applied:null });
   };
   return (<Modal title="새 대회 만들기" onClose={onClose}>
