@@ -165,7 +165,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .nav-right{display:flex;align-items:center;gap:10px;flex:none;}
 .nav-burger{display:none;width:42px;height:42px;flex:none;border:1px solid var(--line2);background:rgba(255,255,255,.6);border-radius:11px;font-size:19px;line-height:1;color:var(--navy);cursor:pointer;align-items:center;justify-content:center;transition:.2s;}
 .nav-burger:hover{background:#fff;border-color:var(--cyan);}
-.nav-scrim{position:fixed;inset:0;z-index:55;background:rgba(13,27,46,.28);backdrop-filter:blur(2px);animation:pageIn .2s ease;}
+.nav-scrim{position:fixed;inset:0;z-index:55;background:transparent;}
 .nav-drawer{position:absolute;top:calc(100% + 8px);right:14px;left:14px;z-index:70;background:#fff;border:1px solid var(--line2);border-radius:16px;padding:8px;box-shadow:0 30px 70px -20px rgba(21,39,63,.5);display:flex;flex-direction:column;gap:2px;animation:ddIn .18s cubic-bezier(.2,.8,.2,1);}
 .nav-ditem{background:none;border:none;font-family:inherit;font-weight:700;font-size:16px;color:var(--navy);text-align:left;padding:14px 16px;border-radius:11px;cursor:pointer;transition:.14s;}
 .nav-ditem:hover{background:rgba(30,132,198,.08);}
@@ -717,6 +717,87 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 @keyframes bkpop{0%{transform:scale(.72);opacity:.4;}60%{transform:scale(1.06);}100%{transform:scale(1);opacity:1;}}
 @keyframes bkflick{0%{opacity:.78;}100%{opacity:1;}}
 @media(max-width:560px){.bk-fill{grid-template-columns:1fr;}.bk-grow2{grid-template-columns:1fr;}.bk-team-row{grid-template-columns:1fr;}}
+
+/* ===== 목록 검색 · 페이지네이션 ===== */
+.list-tools{display:flex;align-items:center;gap:12px;margin:0 0 16px;flex-wrap:wrap;}
+.lsearch{position:relative;flex:1;min-width:200px;}
+.lsearch input{width:100%;background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:12px 40px 12px 42px;font-family:inherit;font-size:14px;color:var(--text);transition:.2s;box-shadow:0 4px 14px -12px rgba(21,39,63,.5);}
+.lsearch input:focus{outline:none;border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.12);}
+.lsearch .ls-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none;font-size:15px;}
+.lsearch .ls-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;background:var(--bg2);border-radius:8px;color:var(--muted);cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.lsearch .ls-clear:hover{background:rgba(214,69,92,.12);color:var(--loss);}
+.list-count{font-size:12.5px;color:var(--muted2);font-weight:700;white-space:nowrap;}
+.pager{display:flex;align-items:center;justify-content:center;gap:6px;margin:22px 0 4px;flex-wrap:wrap;}
+.pg-btn{min-width:38px;height:38px;padding:0 10px;border:1px solid var(--line2);background:var(--card);border-radius:11px;font-family:inherit;font-weight:700;font-size:14px;color:var(--navy);cursor:pointer;transition:.16s;display:inline-flex;align-items:center;justify-content:center;}
+.pg-btn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan-d);transform:translateY(-1px);}
+.pg-btn:disabled{opacity:.4;cursor:default;}
+.pg-btn.on{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;border-color:transparent;box-shadow:0 10px 22px -12px rgba(30,132,198,.7);}
+.pg-dots{color:var(--muted2);padding:0 2px;font-weight:700;}
+
+/* ===== 공지 폼(신청서) 버튼 ===== */
+.ann-formbtns{display:flex;flex-wrap:wrap;gap:10px;padding:0 2px 16px;}
+.ann-apply{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border:none;border-radius:11px;background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 12px 26px -14px rgba(30,132,198,.75);transition:.24s cubic-bezier(.2,.7,.2,1);}
+.ann-apply:hover{transform:translateY(-2px);box-shadow:0 18px 34px -14px rgba(30,132,198,.8);}
+.ann-resp{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border:1px solid var(--line2);border-radius:11px;background:#fff;color:var(--navy);font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;transition:.2s;}
+.ann-resp:hover{border-color:var(--gold);color:var(--gold);}
+.ann-resp .rc{background:var(--gold);color:#fff;border-radius:20px;padding:1px 8px;font-size:12px;font-variant-numeric:tabular-nums;}
+
+/* ===== 폼 빌더(관리자) ===== */
+.fb-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:15px;}
+.fb-q{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px;}
+.fb-q-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.fb-qn{flex:none;width:26px;height:26px;border-radius:8px;background:var(--bg2);color:var(--muted);font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.fb-q-top .dd{min-width:158px;}
+.fb-q-move{margin-left:auto;display:flex;gap:4px;}
+.fb-ic{width:28px;height:28px;border:1px solid var(--line);background:var(--bg2);border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.fb-ic:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan-d);}
+.fb-ic.del:hover:not(:disabled){border-color:rgba(214,69,92,.4);color:var(--loss);background:rgba(214,69,92,.07);}
+.fb-ic:disabled{opacity:.35;cursor:default;}
+.fb-label{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;color:var(--text);margin-bottom:10px;}
+.fb-label:focus{outline:none;border-color:var(--cyan);background:#fff;}
+.fb-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:8px;}
+.fb-opt{display:flex;align-items:center;gap:8px;}
+.fb-dot{color:var(--muted2);font-size:13px;flex:none;min-width:16px;}
+.fb-opt input{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13.5px;color:var(--text);}
+.fb-opt input:focus{outline:none;border-color:var(--cyan);background:#fff;}
+.fb-addopt{align-self:flex-start;background:none;border:none;color:var(--cyan-d);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:4px 2px;}
+.fb-addopt:hover{text-decoration:underline;}
+.fb-q-foot{display:flex;align-items:center;justify-content:flex-end;border-top:1px solid var(--line);padding-top:10px;}
+.fb-req{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;}
+.fb-req input{width:16px;height:16px;min-width:16px;accent-color:var(--cyan);cursor:pointer;}
+.fb-addq{width:100%;border:1.5px dashed var(--line2);background:none;border-radius:11px;padding:12px;color:var(--cyan-d);font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;transition:.18s;}
+.fb-addq:hover{border-color:var(--cyan);background:rgba(30,132,198,.05);}
+
+/* ===== 폼 작성(참가자) ===== */
+.ff-q{margin-bottom:18px;}
+.ff-q-label{display:block;font-size:14px;font-weight:800;color:var(--navy);margin-bottom:9px;line-height:1.45;}
+.ff-q-label .req{color:var(--loss);margin-left:3px;}
+.ff-q input[type=text],.ff-q textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-family:inherit;font-size:14px;color:var(--text);transition:.2s;}
+.ff-q input[type=text]:focus,.ff-q textarea:focus{outline:none;border-color:var(--cyan);background:#fff;}
+.ff-q textarea{min-height:92px;line-height:1.5;resize:vertical;}
+.ff-choices{display:flex;flex-direction:column;gap:8px;}
+.ff-choice{display:flex;align-items:center;gap:11px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;cursor:pointer;transition:.16s;font-size:14px;color:var(--text);font-weight:600;}
+.ff-choice:hover{border-color:rgba(30,132,198,.4);}
+.ff-choice.sel{border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(30,132,198,.1);}
+.ff-choice input{width:18px;height:18px;min-width:18px;accent-color:var(--cyan);cursor:pointer;}
+.ff-done{text-align:center;padding:12px 6px 4px;}
+.ff-done .ff-ok{font-size:44px;line-height:1;margin-bottom:14px;}
+.ff-done h4{margin:0 0 8px;font-size:19px;color:var(--navy);}
+.ff-done p{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.5;}
+
+/* ===== 응답 보기(관리자) ===== */
+.fr-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.fr-tot{font-size:13px;font-weight:800;color:var(--muted);}
+.fr-empty{text-align:center;color:var(--muted2);padding:36px 0;font-size:14px;}
+.fr-scroll{overflow-x:auto;margin:0 0 4px;border:1px solid var(--line);border-radius:13px;}
+.fr-tbl{border-collapse:collapse;width:100%;font-size:13px;}
+.fr-tbl th,.fr-tbl td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;white-space:pre-wrap;}
+.fr-tbl th{background:var(--bg2);color:var(--muted);font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+.fr-tbl td.fr-idx{color:var(--muted2);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.fr-tbl td.fr-dt{color:var(--muted2);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.fr-tbl tr:last-child td{border-bottom:none;}
+.fr-del{border:none;background:none;color:var(--muted2);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px;}
+.fr-del:hover{background:rgba(214,69,92,.12);color:var(--loss);}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -1491,6 +1572,13 @@ export default function App() {
   const go=useCallback((v)=>{setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"smooth"});},[]);
   const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
   const save=useCallback(async(next)=>{setData(next);const ok=await persist(next);flash(ok?"저장됨 ✓":"메모리에만 반영됨");},[flash]);
+  const submitForm=useCallback(async(annId,answers)=>{
+    const fresh=normalizeData((await loadData())||data);
+    const resp={id:uid(),createdAt:new Date().toISOString(),answers};
+    const announcements=(fresh.announcements||[]).map(a=>a.id!==annId?a:{...a,form:{...(a.form||{}),responses:[...(((a.form||{}).responses)||[]),resp]}});
+    const next={...fresh,announcements};
+    setData(next); const ok=await persist(next); flash(ok?"신청 완료 ✓":"메모리에만 반영됨"); return ok;
+  },[data,flash]);
   if(!data) return <div className="ypl" style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh"}}><style>{STYLES}</style><span style={{color:"#90A1BD"}}>불러오는 중…</span></div>;
   const nav=[["about","소개"],["news","공지"],["board","게시판"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
   return (
@@ -1511,7 +1599,7 @@ export default function App() {
       <div className="wrap"><div className="page" key={view}>
         {view==="home"&&<Home data={data} go={go} admin={admin}/>}
         {view==="about"&&<About/>}
-        {view==="news"&&<News data={data} admin={admin} setModal={setModal}/>}
+        {view==="news"&&<News data={data} admin={admin} setModal={setModal} save={save} submitForm={submitForm}/>}
         {view==="board"&&<Board data={data} admin={admin} save={save} flash={flash}/>}
         {view==="records"&&<Records data={data} admin={admin} setModal={setModal} save={save}/>}
         {view==="bracket"&&<Brackets data={data} admin={admin} save={save} flash={flash}/>}
@@ -1621,19 +1709,55 @@ function About() {
 }
 
 /* ============================== NEWS ============================== */
-function News({ data, admin, setModal }) {
-  const list=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1));
+const PAGE_SIZE=10;
+function ListSearch({ q, setQ, placeholder, count }){
+  return (<div className="list-tools">
+    <div className="lsearch">
+      <span className="ls-ico" aria-hidden="true">🔍</span>
+      <input value={q} onChange={e=>setQ(e.target.value)} placeholder={placeholder} aria-label="검색"/>
+      {q&&<button className="ls-clear" onClick={()=>setQ("")} aria-label="검색어 지우기">✕</button>}
+    </div>
+    {q&&<span className="list-count">{count}건</span>}
+  </div>);
+}
+function Pager({ page, pages, onGo }){
+  if(pages<=1) return null;
+  const span=2; let lo=Math.max(1,page-span), hi=Math.min(pages,page+span);
+  if(page<=span) hi=Math.min(pages,1+span*2);
+  if(page>pages-span) lo=Math.max(1,pages-span*2);
+  const win=[]; for(let p=lo;p<=hi;p++) win.push(p);
+  return (<div className="pager">
+    <button className="pg-btn" onClick={()=>onGo(page-1)} disabled={page<=1} aria-label="이전">‹</button>
+    {lo>1&&<><button className="pg-btn" onClick={()=>onGo(1)}>1</button>{lo>2&&<span className="pg-dots">…</span>}</>}
+    {win.map(p=>(<button key={p} className={"pg-btn"+(p===page?" on":"")} onClick={()=>onGo(p)}>{p}</button>))}
+    {hi<pages&&<>{hi<pages-1&&<span className="pg-dots">…</span>}<button className="pg-btn" onClick={()=>onGo(pages)}>{pages}</button></>}
+    <button className="pg-btn" onClick={()=>onGo(page+1)} disabled={page>=pages} aria-label="다음">›</button>
+  </div>);
+}
+function News({ data, admin, setModal, save, submitForm }) {
+  const [q,setQ]=useState(""); const [page,setPage]=useState(1);
+  const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
   const [open,setOpen]=useState(()=>new Set());
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
   const href=(u)=>/^https?:\/\//.test(u)?u:"https://"+u;
+  const all=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1));
+  const kw=q.trim().toLowerCase();
+  const list=kw?all.filter(a=>[a.title,a.body,a.date].some(t=>String(t||"").toLowerCase().includes(kw))):all;
+  const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+  const cur=Math.min(page,pages);
+  const shown=list.slice((cur-1)*PAGE_SIZE,cur*PAGE_SIZE);
+  useEffect(()=>{setPage(1);},[q]);
+  const respAnn=respId?data.announcements.find(a=>a.id===respId):null;
+  const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Announcements</div><h2>공지</h2>
       <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"ann"})}>+ 공지 작성</button></div>}
     </Reveal>
+    <ListSearch q={q} setQ={setQ} placeholder="공지 제목·내용 검색" count={list.length}/>
     <Reveal className="panel" style={{padding:"4px 22px"}}>
-      {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>등록된 공지가 없습니다.</div>}
-      {list.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2;
+      {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
+      {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled;
         return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
           <button className="nb-head" onClick={()=>toggle(a.id)}>
             <span className="nb-main">
@@ -1646,10 +1770,69 @@ function News({ data, admin, setModal }) {
             {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"} ↗</a>}
             {a.link2&&<a className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.link2Label||"링크 바로가기"} ↗</a>}
           </div>}
+          {hasForm&&<div className="ann-formbtns">
+            <button className="ann-apply" onClick={e=>{e.stopPropagation();setFill(a);}}>📝 {a.form.buttonLabel||"참가 신청하기"}</button>
+            {admin&&<button className="ann-resp" onClick={e=>{e.stopPropagation();setRespId(a.id);}}>응답 보기 <span className="rc">{(a.form.responses||[]).length}</span></button>}
+          </div>}
           {isOpen&&<div className="nb-body swap"><p>{a.body}</p>{admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div>}
         </div>);})}
     </Reveal>
+    <Pager page={cur} pages={pages} onGo={setPage}/>
+    {fill&&<FormFillModal ann={fill} onClose={()=>setFill(null)} onSubmit={(answers)=>submitForm(fill.id,answers)}/>}
+    {respAnn&&<FormResponsesModal ann={respAnn} onClose={()=>setRespId(null)} onDeleteResp={delResp}/>}
   </section>);
+}
+
+/* ===== 자체 폼 — 참가자 작성 / 관리자 응답 보기 ===== */
+function FormFillModal({ ann, onClose, onSubmit }){
+  const form=ann.form||{}; const fields=form.fields||[];
+  const [ans,setAns]=useState({}); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
+  const set=(id,v)=>setAns(a=>({...a,[id]:v}));
+  const toggleMulti=(id,opt)=>setAns(a=>{ const cur=Array.isArray(a[id])?a[id]:[]; return {...a,[id]:cur.includes(opt)?cur.filter(x=>x!==opt):[...cur,opt]}; });
+  const submit=async()=>{
+    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ alert(`'${f.label||"질문"}'은(는) 필수 응답입니다.`); return; } } }
+    setBusy(true); const ok=await onSubmit(ans); setBusy(false); if(ok!==false) setDone(true);
+  };
+  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true">✅</div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과·안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
+  return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해주세요." onClose={onClose}>
+    <div className="swap" key="fill">
+      {fields.length===0&&<p style={{color:"var(--muted)",fontSize:14}}>등록된 질문이 없습니다.</p>}
+      {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
+        <label className="ff-q-label">{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
+        {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요"/>}
+        {f.type==="long"&&<textarea value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요"/>}
+        {f.type==="single"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+(ans[f.id]===op?" sel":"")} key={oi}><input type="radio" name={f.id} checked={ans[f.id]===op} onChange={()=>set(f.id,op)}/><span>{op}</span></label>))}</div>}
+        {f.type==="multi"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+((Array.isArray(ans[f.id])&&ans[f.id].includes(op))?" sel":"")} key={oi}><input type="checkbox" checked={Array.isArray(ans[f.id])&&ans[f.id].includes(op)} onChange={()=>toggleMulti(f.id,op)}/><span>{op}</span></label>))}</div>}
+        {f.type==="dropdown"&&<Dropdown value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택하세요"/>}
+      </div>))}
+      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose} disabled={busy}>취소</button><button className="btn btn-primary" onClick={submit} disabled={busy}>{busy?"제출 중…":"제출하기"}</button></div>
+    </div>
+  </Modal>);
+}
+function FormResponsesModal({ ann, onClose, onDeleteResp }){
+  const form=ann.form||{}; const fields=form.fields||[]; const resp=[...(form.responses||[])].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const cell=(v)=>Array.isArray(v)?v.join(", "):(v==null?"":String(v));
+  const csv=()=>{
+    const esc=(s)=>{ s=String(s==null?"":s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+    const header=["번호","제출시각",...fields.map(f=>f.label||"질문")];
+    const rows=resp.map((r,i)=>[i+1,fmtDT(r.createdAt),...fields.map(f=>cell(r.answers&&r.answers[f.id]))]);
+    const text="\ufeff"+[header,...rows].map(row=>row.map(esc).join(",")).join("\r\n");
+    const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
+  };
+  return (<Modal title="신청 응답" hint={ann.title} onClose={onClose}>
+    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<button className="btn btn-ghost btn-sm" onClick={csv}>⬇ CSV(엑셀) 다운로드</button>}</div>
+    {resp.length===0?<div className="fr-empty">아직 접수된 신청이 없습니다.</div>:
+      <div className="fr-scroll"><table className="fr-tbl">
+        <thead><tr><th>#</th><th>제출시각</th>{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
+        <tbody>{resp.map((r,i)=>(<tr key={r.id}>
+          <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
+          {fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
+          <td><button className="fr-del" onClick={()=>{if(confirm("이 응답을 삭제할까요?"))onDeleteResp(r.id);}} title="삭제">🗑</button></td>
+        </tr>))}</tbody>
+      </table></div>}
+    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button></div>
+  </Modal>);
 }
 
 /* ============================== BOARD (자유게시판) ============================== */
@@ -1712,7 +1895,14 @@ function CommentForm({ onSubmit }){
 }
 
 function Board({ data, admin, save, flash }){
-  const list=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
+  const [q,setQ]=useState(""); const [page,setPage]=useState(1);
+  const all=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
+  const kw=q.trim().toLowerCase();
+  const list=kw?all.filter(p=>[p.title,p.body,p.nick].some(t=>String(t||"").toLowerCase().includes(kw))):all;
+  const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+  const cur=Math.min(page,pages);
+  const shown=list.slice((cur-1)*PAGE_SIZE,cur*PAGE_SIZE);
+  useEffect(()=>{setPage(1);},[q]);
   const [open,setOpen]=useState(()=>new Set());
   const [compose,setCompose]=useState(false);
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
@@ -1727,9 +1917,10 @@ function Board({ data, admin, save, flash }){
       <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
       <div className="row-actions"><button className="btn btn-primary btn-sm" onClick={()=>setCompose(true)}>✏️ 글쓰기</button></div>
     </Reveal>
+    <ListSearch q={q} setQ={setQ} placeholder="제목·내용·글쓴이 검색" count={list.length}/>
     <div className="bd-list">
-      {list.length===0&&<div className="bd-empty">아직 글이 없습니다. 첫 글을 남겨보세요!</div>}
-      {list.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;
+      {list.length===0&&<div className="bd-empty">{kw?"검색 결과가 없습니다.":"아직 글이 없습니다. 첫 글을 남겨보세요!"}</div>}
+      {shown.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;
         return (<div className={"bd-item"+(isOpen?" open":"")+(p.secret?" secret":"")} key={p.id}>
           <button className="bd-head" onClick={()=>toggle(p.id)}>
             <span className="bd-ava">{initialOf(p.nick)}</span>
@@ -1755,6 +1946,7 @@ function Board({ data, admin, save, flash }){
           </div>}
         </div>);})}
     </div>
+    <Pager page={cur} pages={pages} onGo={setPage}/>
     {compose&&<BoardCompose onClose={()=>setCompose(false)} onSubmit={addPost}/>}
   </section>);
 }
@@ -1976,8 +2168,59 @@ function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
 }
+const Q_TYPES=[
+  {value:"short",label:"단답형"},
+  {value:"long",label:"장문형"},
+  {value:"single",label:"객관식 (한 개 선택)"},
+  {value:"multi",label:"체크박스 (여러 개 선택)"},
+  {value:"dropdown",label:"드롭다운"},
+];
+const isChoice=(t)=>t==="single"||t==="multi"||t==="dropdown";
+function FormBuilder({ form, setForm }){
+  const enabled=!!(form&&form.enabled);
+  const fields=(form&&form.fields)||[];
+  const patchForm=(p)=>setForm({buttonLabel:"참가 신청하기",fields:[],responses:[],...(form||{}),...p});
+  const setFields=(next)=>patchForm({fields:next});
+  const addField=()=>setFields([...fields,{id:uid(),type:"short",label:"",required:false,options:[]}]);
+  const patch=(id,p)=>setFields(fields.map(f=>f.id===id?{...f,...p}:f));
+  const del=(id)=>setFields(fields.filter(f=>f.id!==id));
+  const move=(i,d)=>{ const j=i+d; if(j<0||j>=fields.length)return; const a=[...fields]; [a[i],a[j]]=[a[j],a[i]]; setFields(a); };
+  const changeType=(f,v)=>patch(f.id,{type:v,options:isChoice(v)?((f.options&&f.options.length)?f.options:["옵션 1"]):[]});
+  return (<div className="fb-wrap">
+    <label className="bk-check" style={{marginBottom:enabled?15:0}}>
+      <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
+      <span>📝 자체 신청서(폼) 첨부 <i>(사이트에서 바로 신청받기)</i></span>
+    </label>
+    {enabled&&<>
+      <div className="field"><label>신청 버튼 문구</label><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></div>
+      {fields.map((f,i)=>(<div className="fb-q" key={f.id}>
+        <div className="fb-q-top">
+          <span className="fb-qn">{i+1}</span>
+          <Dropdown value={f.type} onChange={v=>changeType(f,v)} options={Q_TYPES}/>
+          <div className="fb-q-move">
+            <button type="button" className="fb-ic" onClick={()=>move(i,-1)} disabled={i===0} title="위로">↑</button>
+            <button type="button" className="fb-ic" onClick={()=>move(i,1)} disabled={i===fields.length-1} title="아래로">↓</button>
+            <button type="button" className="fb-ic del" onClick={()=>del(f.id)} title="질문 삭제">✕</button>
+          </div>
+        </div>
+        <input className="fb-label" value={f.label} onChange={e=>patch(f.id,{label:e.target.value})} placeholder={`질문 ${i+1} (예: 참가자 이름)`}/>
+        {isChoice(f.type)&&<div className="fb-opts">
+          {(f.options||[]).map((op,oi)=>(<div className="fb-opt" key={oi}>
+            <span className="fb-dot">{f.type==="multi"?"☐":f.type==="dropdown"?`${oi+1}.`:"○"}</span>
+            <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`옵션 ${oi+1}`}/>
+            <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="옵션 삭제">✕</button>
+          </div>))}
+          <button type="button" className="fb-addopt" onClick={()=>patch(f.id,{options:[...(f.options||[]),""]})}>+ 옵션 추가</button>
+        </div>}
+        <div className="fb-q-foot"><label className="fb-req"><input type="checkbox" checked={!!f.required} onChange={e=>patch(f.id,{required:e.target.checked})}/> 필수 응답</label></div>
+      </div>))}
+      <button type="button" className="fb-addq" onClick={addField}>+ 질문 추가</button>
+    </>}
+  </div>);
+}
 function AnnEditor({ item, onClose, onSave, onDelete }) {
   const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||""),[link2,setLink2]=useState(item?.link2||""),[link2Label,setLink2Label]=useState(item?.link2Label||"");
+  const [form,setForm]=useState(item?.form||{enabled:false,buttonLabel:"참가 신청하기",fields:[],responses:[]});
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
     <div className="field"><label>날짜</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></div>
     <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)}/></div>
@@ -1987,7 +2230,8 @@ function AnnEditor({ item, onClose, onSave, onDelete }) {
     <div className="field"><label>링크 2 (선택) — 추가 링크</label><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></div>
     <div className="field"><label>링크 2 버튼 문구 (선택)</label><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></div>
     <div className="field" style={{display:"flex",alignItems:"center",gap:10}}><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim()})}>저장</button></div>
+    <FormBuilder form={form} setForm={setForm}/>
+    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form})}>저장</button></div>
   </Modal>);
 }
 function StandingsEditor({ title, rows, onClose, onSave }) {
