@@ -745,9 +745,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* ===== 폼 빌더(관리자) ===== */
 .fb-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:15px;}
 .fb-q{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px;}
-.fb-q-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.fb-q-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
 .fb-qn{flex:none;width:26px;height:26px;border-radius:8px;background:var(--bg2);color:var(--muted);font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
-.fb-q-top .dd{min-width:158px;}
+.fb-q-top .dd{flex:1 1 150px;min-width:0;}
+.fb-q-top .dd-btn{overflow:hidden;}
+.fb-q-top .dd-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fb-q-move{margin-left:auto;display:flex;gap:4px;}
 .fb-ic{width:28px;height:28px;border:1px solid var(--line);background:var(--bg2);border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s;}
 .fb-ic:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan-d);}
@@ -758,7 +760,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .fb-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:8px;}
 .fb-opt{display:flex;align-items:center;gap:8px;}
 .fb-dot{color:var(--muted2);font-size:13px;flex:none;min-width:16px;}
-.fb-opt input{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13.5px;color:var(--text);}
+.fb-opt input{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13.5px;color:var(--text);}
 .fb-opt input:focus{outline:none;border-color:var(--cyan);background:#fff;}
 .fb-addopt{align-self:flex-start;background:none;border:none;color:var(--cyan-d);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:4px 2px;}
 .fb-addopt:hover{text-decoration:underline;}
@@ -889,9 +891,16 @@ function buildDouble(pids){
     for(let i=0;i<W[0].length;i+=2) r.push({id:uid(),a:{lose:W[0][i].id},b:{lose:W[0][i+1].id},winner:null});
     L.push(r); lbPrev=r;
   } else { lbPrev=[W[0][0]]; }
+  /* 승자조에서 떨어진 사람이 방금/이미 붙었던 상대를 패자조에서 곧바로 다시 만나는
+     리매치를 최소화하기 위해, 드롭 라운드마다 승자조 패자의 배치 순서를 바꾼다.
+     (홀수 번째 드롭=역순, 짝수 번째 드롭=반쪽 회전 — 시뮬레이션상 리매치 최소) */
+  let drop=0;
   for(let wr=1;wr<k-1;wr++){
+    drop++;
+    const len=lbPrev.length, half=Math.floor(len/2);
+    const dropIdx=(i)=> (drop%2===1) ? (len-1-i) : ((i+half)%len);
     const major=[];
-    for(let i=0;i<lbPrev.length;i++) major.push({id:uid(),a:{win:lbPrev[i].id},b:{lose:W[wr][i].id},winner:null});
+    for(let i=0;i<len;i++) major.push({id:uid(),a:{win:lbPrev[i].id},b:{lose:W[wr][dropIdx(i)].id},winner:null});
     L.push(major);
     if(major.length>1){
       const minor=[];
@@ -1783,7 +1792,7 @@ function News({ data, admin, setModal, save, submitForm }) {
   </section>);
 }
 
-/* ===== 자체 폼 — 참가자 작성 / 관리자 응답 보기 ===== */
+/* ===== 신청서 폼 — 참가자 작성 / 관리자 응답 보기 ===== */
 function FormFillModal({ ann, onClose, onSubmit }){
   const form=ann.form||{}; const fields=form.fields||[];
   const [ans,setAns]=useState({}); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
@@ -2189,7 +2198,7 @@ function FormBuilder({ form, setForm }){
   return (<div className="fb-wrap">
     <label className="bk-check" style={{marginBottom:enabled?15:0}}>
       <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
-      <span>📝 자체 신청서(폼) 첨부 <i>(사이트에서 바로 신청받기)</i></span>
+      <span>📝 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
     </label>
     {enabled&&<>
       <div className="field"><label>신청 버튼 문구</label><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></div>
@@ -2225,12 +2234,12 @@ function AnnEditor({ item, onClose, onSave, onDelete }) {
     <div className="field"><label>날짜</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></div>
     <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)}/></div>
     <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:120}}/></div>
+    <FormBuilder form={form} setForm={setForm}/>
     <div className="field"><label>링크 1 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
     <div className="field"><label>링크 1 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
     <div className="field"><label>링크 2 (선택) — 추가 링크</label><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></div>
     <div className="field"><label>링크 2 버튼 문구 (선택)</label><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></div>
     <div className="field" style={{display:"flex",alignItems:"center",gap:10}}><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <FormBuilder form={form} setForm={setForm}/>
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form})}>저장</button></div>
   </Modal>);
 }
