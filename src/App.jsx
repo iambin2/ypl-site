@@ -763,6 +763,21 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .fb-addq{width:100%;border:1.5px dashed var(--line2);background:none;border-radius:11px;padding:12px;color:var(--cyan-d);font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;transition:.18s;}
 .fb-addq:hover{border-color:var(--cyan);background:rgba(30,132,198,.05);}
 
+/* 공개 목록 제목 등장 애니메이션 */
+.fb-reveal{animation:fbReveal .3s cubic-bezier(.2,.8,.3,1);}
+@keyframes fbReveal{0%{opacity:0;transform:translateY(-6px);}100%{opacity:1;transform:translateY(0);}}
+
+/* 접이식 섹션(링크 첨부) */
+.fold{border:1px solid var(--line);border-radius:14px;background:var(--bg2);margin-bottom:15px;overflow:hidden;}
+.fold-head{width:100%;display:flex;align-items:center;gap:9px;background:none;border:none;padding:13px 15px;cursor:pointer;font-family:inherit;text-align:left;transition:.18s;}
+.fold-head:hover{background:rgba(30,132,198,.05);}
+.fold-title{font-size:14px;font-weight:800;color:var(--navy);}
+.fold-note{font-size:12px;font-weight:600;color:var(--muted2);}
+.fold-badge{background:var(--cyan);color:#fff;border-radius:20px;padding:1px 8px;font-size:11.5px;font-weight:800;}
+.fold-chev{margin-left:auto;color:var(--muted2);font-size:13px;transition:transform .25s cubic-bezier(.2,.8,.3,1);}
+.fold.open .fold-chev{transform:rotate(180deg);}
+.fold-body{padding:2px 15px 15px;}
+
 /* ===== 폼 작성(참가자) ===== */
 .ff-q{margin-bottom:18px;}
 .ff-q-label{display:block;font-size:14px;font-weight:800;color:var(--navy);margin-bottom:9px;line-height:1.45;}
@@ -2293,7 +2308,7 @@ function FormBuilder({ form, setForm }){
     </label>
     {enabled&&<>
       <div className="field"><label>신청 버튼 문구</label><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></div>
-      {fields.some(f=>f.public)&&<div className="field"><label>공개 목록 제목</label><input value={(form&&form.publicTitle)||""} onChange={e=>patchForm({publicTitle:e.target.value})} placeholder="예: 현재까지 밴 리스트"/></div>}
+      {fields.some(f=>f.public)&&<div className="field fb-reveal"><label>공개 목록 제목</label><input value={(form&&form.publicTitle)||""} onChange={e=>patchForm({publicTitle:e.target.value})} placeholder="예: 현재까지 밴 리스트"/></div>}
       {fields.map((f,i)=>(<div className="fb-q" key={f.id}>
         <div className="fb-q-top">
           <span className="fb-qn">{i+1}</span>
@@ -2325,15 +2340,25 @@ function FormBuilder({ form, setForm }){
 function AnnEditor({ item, onClose, onSave, onDelete }) {
   const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||""),[link2,setLink2]=useState(item?.link2||""),[link2Label,setLink2Label]=useState(item?.link2Label||"");
   const [form,setForm]=useState(item?.form||{enabled:false,buttonLabel:"참가 신청하기",fields:[],responses:[]});
+  const [linkOpen,setLinkOpen]=useState(!!(item?.link||item?.link2)); // 이미 링크가 있으면 펼친 상태로 시작
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
     <div className="field"><label>날짜</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></div>
     <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)}/></div>
     <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:120}}/></div>
     <FormBuilder form={form} setForm={setForm}/>
-    <div className="field"><label>링크 1 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
-    <div className="field"><label>링크 1 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
-    <div className="field"><label>링크 2 (선택) — 추가 링크</label><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></div>
-    <div className="field"><label>링크 2 버튼 문구 (선택)</label><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></div>
+    <div className={"fold"+(linkOpen?" open":"")}>
+      <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>
+        <span className="fold-title">🔗 링크 첨부 <span className="fold-note">(구글폼 등 외부 링크 · 선택)</span></span>
+        {(link||link2)&&!linkOpen&&<span className="fold-badge">{[link,link2].filter(Boolean).length}</span>}
+        <span className="fold-chev" aria-hidden="true">▾</span>
+      </button>
+      {linkOpen&&<div className="fold-body swap">
+        <div className="field"><label>링크 1 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
+        <div className="field"><label>링크 1 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
+        <div className="field"><label>링크 2 (선택) — 추가 링크</label><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></div>
+        <div className="field" style={{marginBottom:0}}><label>링크 2 버튼 문구 (선택)</label><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></div>
+      </div>}
+    </div>
     <div className="field" style={{display:"flex",alignItems:"center",gap:10}}><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form})}>저장</button></div>
   </Modal>);
