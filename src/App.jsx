@@ -756,9 +756,10 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .fb-opt input:focus{outline:none;border-color:var(--cyan);background:#fff;}
 .fb-addopt{align-self:flex-start;background:none;border:none;color:var(--cyan-d);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:4px 2px;}
 .fb-addopt:hover{text-decoration:underline;}
-.fb-q-foot{display:flex;align-items:center;justify-content:flex-end;border-top:1px solid var(--line);padding-top:10px;}
-.fb-req{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;}
+.fb-q-foot{display:flex;align-items:center;flex-wrap:wrap;gap:10px 20px;border-top:1px solid var(--line);padding-top:11px;margin-top:2px;}
+.fb-req{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;}
 .fb-req input{width:16px;height:16px;min-width:16px;accent-color:var(--cyan);cursor:pointer;}
+.fb-note{font-size:12px;font-weight:600;color:var(--muted2);}
 .fb-addq{width:100%;border:1.5px dashed var(--line2);background:none;border-radius:11px;padding:12px;color:var(--cyan-d);font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;transition:.18s;}
 .fb-addq:hover{border-color:var(--cyan);background:rgba(30,132,198,.05);}
 
@@ -794,23 +795,23 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .fr-del:hover{background:rgba(214,69,92,.12);color:var(--loss);}
 
 /* ===== 공개 응답 목록(실시간 밴 리스트) ===== */
-.pr-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 2px 16px;animation:pageIn .3s ease;}
+.pr-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:0 2px 16px;animation:pageIn .3s ease;}
 .pr-wrap.compact{margin-bottom:20px;}
-.pr-head{display:flex;align-items:center;gap:9px;margin-bottom:11px;}
-.pr-title{font-size:13.5px;font-weight:800;color:var(--navy);}
-.pr-n{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;}
-.pr-refresh{margin-left:auto;width:28px;height:28px;border:1px solid var(--line2);background:var(--card);border-radius:9px;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;transition:.18s;}
+.pr-head{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.pr-title{font-size:16px;font-weight:800;color:var(--navy);}
+.pr-n{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;border-radius:20px;padding:3px 11px;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;}
+.pr-refresh{margin-left:auto;width:32px;height:32px;border:1px solid var(--line2);background:var(--card);border-radius:9px;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;transition:.18s;}
 .pr-refresh:hover{border-color:var(--cyan);color:var(--cyan-d);transform:rotate(90deg);}
-.pr-empty{color:var(--muted2);font-size:13.5px;padding:14px 0;text-align:center;}
-.pr-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
-.pr-row{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 13px;}
-.pr-name{flex:none;min-width:74px;max-width:110px;font-size:13px;font-weight:800;color:var(--cyan-d);word-break:break-all;}
-.pr-vals{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
-.pr-val{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
-.pr-flabel{font-size:11px;font-weight:800;color:var(--muted2);}
-.pr-vtext{font-size:13.5px;color:var(--text);line-height:1.5;word-break:break-word;}
-.pr-foot{margin-top:10px;font-size:11.5px;color:var(--muted2);text-align:right;}
-@media(max-width:560px){.pr-row{flex-direction:column;gap:5px;}.pr-name{max-width:none;}}
+.pr-empty{color:var(--muted);font-size:15px;padding:18px 0;text-align:center;}
+.pr-list{display:flex;flex-direction:column;gap:9px;max-height:420px;overflow-y:auto;}
+.pr-row{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px;}
+.pr-name{flex:none;width:28px;height:28px;border-radius:9px;background:var(--bg2);color:var(--cyan-d);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;}
+.pr-vals{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;padding-top:2px;}
+.pr-val{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;}
+.pr-flabel{font-size:12.5px;font-weight:800;color:var(--muted2);}
+.pr-vtext{font-size:16px;font-weight:700;color:var(--navy);line-height:1.55;word-break:break-word;}
+.pr-foot{margin-top:11px;font-size:12.5px;color:var(--muted2);text-align:right;}
+@media(max-width:560px){.pr-vtext{font-size:15px;}}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -1854,9 +1855,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt }){
   const fields=(form.fields||[]).filter(f=>f.public);
   if(!fields.length) return null;
   const resp=[...(form.responses||[])].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
-  const nameField=(form.fields||[]).find(f=>f.isName);
   const val=(r,f)=>{ const v=(r.answers||{})[f.id]; return Array.isArray(v)?v.join(", "):String(v||""); };
-  const nameOf=(r,i)=>{ const n=nameField?val(r,nameField).trim():""; return n||`신청자 ${i+1}`; };
   return (<div className={"pr-wrap"+(compact?" compact":"")}>
     <div className="pr-head">
       <span className="pr-title">📋 {form.publicTitle||"현재까지 신청 현황"}</span>
@@ -1867,7 +1866,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt }){
       ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자가 되어보세요!</div>
       : <div className="pr-list">
           {resp.map((r,i)=>(<div className="pr-row" key={r.id}>
-            <span className="pr-name">{nameOf(r,i)}</span>
+            <span className="pr-name">{i+1}</span>
             <div className="pr-vals">
               {fields.map(f=>{ const v=val(r,f); if(!v) return null;
                 return (<div className="pr-val" key={f.id}>
@@ -1893,7 +1892,7 @@ function FormFillModal({ ann, onClose, onSubmit }){
     if(ok===false){ alert("신청 저장을 확인하지 못했습니다. 잠시 후 다시 제출해주세요."); return; }
     setDone(true);
   };
-  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true">✅</div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과·안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
+  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true">✅</div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과 및 안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해주세요." onClose={onClose}>
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact/>}
@@ -2316,8 +2315,7 @@ function FormBuilder({ form, setForm }){
         </div>}
         <div className="fb-q-foot">
           <label className="fb-req"><input type="checkbox" checked={!!f.required} onChange={e=>patch(f.id,{required:e.target.checked})}/> 필수 응답</label>
-          <label className="fb-req"><input type="checkbox" checked={!!f.public} onChange={e=>patch(f.id,{public:e.target.checked})}/> 답변 공개 <i>(모두에게 실시간 표시)</i></label>
-          <label className="fb-req"><input type="checkbox" checked={!!f.isName} onChange={e=>setFields(fields.map(x=>({...x,isName:x.id===f.id?e.target.checked:false})))}/> 이름으로 사용</label>
+          <label className="fb-req"><input type="checkbox" checked={!!f.public} onChange={e=>patch(f.id,{public:e.target.checked})}/> 답변 공개 <span className="fb-note">(모두에게 실시간 표시)</span></label>
         </div>
       </div>))}
       <button type="button" className="fb-addq" onClick={addField}>+ 질문 추가</button>
