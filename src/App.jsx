@@ -810,14 +810,16 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .fr-del:hover{background:rgba(214,69,92,.12);color:var(--loss);}
 
 /* ===== 공개 응답 목록(실시간 밴 리스트) ===== */
-.pr-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:0 2px 16px;animation:pageIn .3s ease;}
+.pr-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:14px;margin:0 2px 16px;overflow:hidden;}
 .pr-wrap.compact{margin-bottom:20px;}
-.pr-head{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.pr-fold-head{gap:10px;padding:14px 16px;}
 .pr-title{font-size:16px;font-weight:800;color:var(--navy);}
 .pr-n{background:linear-gradient(120deg,var(--navy2),var(--cyan));color:#fff;border-radius:20px;padding:3px 11px;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;}
-.pr-refresh{margin-left:auto;width:32px;height:32px;border:1px solid var(--line2);background:var(--card);border-radius:9px;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;transition:.18s;}
+.pr-body{padding:0 16px 14px;animation:prOpen .32s cubic-bezier(.2,.8,.3,1);}
+@keyframes prOpen{0%{opacity:0;transform:translateY(-8px);}100%{opacity:1;transform:translateY(0);}}
+.pr-refresh{width:30px;height:30px;border:1px solid var(--line2);background:var(--card);border-radius:9px;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;transition:.18s;}
 .pr-refresh:hover{border-color:var(--cyan);color:var(--cyan-d);transform:rotate(90deg);}
-.pr-empty{color:var(--muted);font-size:15px;padding:18px 0;text-align:center;}
+.pr-empty{color:var(--muted);font-size:15px;padding:14px 0 6px;text-align:center;}
 .pr-list{display:flex;flex-direction:column;gap:9px;max-height:420px;overflow-y:auto;}
 .pr-row{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px;}
 .pr-name{flex:none;width:28px;height:28px;border-radius:9px;background:var(--bg2);color:var(--cyan-d);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;}
@@ -825,7 +827,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .pr-val{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;}
 .pr-flabel{font-size:12.5px;font-weight:800;color:var(--muted2);}
 .pr-vtext{font-size:16px;font-weight:700;color:var(--navy);line-height:1.55;word-break:break-word;}
-.pr-foot{margin-top:11px;font-size:12.5px;color:var(--muted2);text-align:right;}
+.pr-foot{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:11px;font-size:12.5px;color:var(--muted2);}
 @media(max-width:560px){.pr-vtext{font-size:15px;}}
 `;
 
@@ -1868,30 +1870,36 @@ function News({ data, admin, setModal, save, submitForm, refresh }) {
 function PublicResponses({ ann, compact, onRefresh, updatedAt }){
   const form=ann.form||{};
   const fields=(form.fields||[]).filter(f=>f.public);
+  const [open,setOpen]=useState(false); // 기본은 접힘 — 응답이 쌓여도 화면이 길어지지 않도록
   if(!fields.length) return null;
   const resp=[...(form.responses||[])].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
   const val=(r,f)=>{ const v=(r.answers||{})[f.id]; return Array.isArray(v)?v.join(", "):String(v||""); };
-  return (<div className={"pr-wrap"+(compact?" compact":"")}>
-    <div className="pr-head">
+  return (<div className={"pr-wrap fold"+(open?" open":"")+(compact?" compact":"")}>
+    <button type="button" className="fold-head pr-fold-head" onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}>
       <span className="pr-title">📋 {form.publicTitle||"현재까지 신청 현황"}</span>
       <span className="pr-n">{resp.length}명</span>
-      {onRefresh&&<button className="pr-refresh" onClick={onRefresh} title="새로고침">↻</button>}
-    </div>
-    {resp.length===0
-      ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자가 되어보세요!</div>
-      : <div className="pr-list">
-          {resp.map((r,i)=>(<div className="pr-row" key={r.id}>
-            <span className="pr-name">{i+1}</span>
-            <div className="pr-vals">
-              {fields.map(f=>{ const v=val(r,f); if(!v) return null;
-                return (<div className="pr-val" key={f.id}>
-                  {fields.length>1&&<span className="pr-flabel">{f.label||"응답"}</span>}
-                  <span className="pr-vtext">{v}</span>
-                </div>); })}
-            </div>
-          </div>))}
-        </div>}
-    {updatedAt&&<div className="pr-foot">자동 갱신 중 · 마지막 확인 {updatedAt}</div>}
+      <span className="fold-chev" aria-hidden="true">▾</span>
+    </button>
+    {open&&<div className="pr-body swap">
+      {resp.length===0
+        ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자가 되어보세요!</div>
+        : <div className="pr-list">
+            {resp.map((r,i)=>(<div className="pr-row" key={r.id}>
+              <span className="pr-name">{i+1}</span>
+              <div className="pr-vals">
+                {fields.map(f=>{ const v=val(r,f); if(!v) return null;
+                  return (<div className="pr-val" key={f.id}>
+                    {fields.length>1&&<span className="pr-flabel">{f.label||"응답"}</span>}
+                    <span className="pr-vtext">{v}</span>
+                  </div>); })}
+              </div>
+            </div>))}
+          </div>}
+      <div className="pr-foot">
+        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} title="새로고침">↻</button>}
+        {updatedAt&&<span>자동 갱신 중 · 마지막 확인 {updatedAt}</span>}
+      </div>
+    </div>}
   </div>);
 }
 
