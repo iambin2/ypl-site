@@ -129,14 +129,6 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl ::selection{background:rgba(30,132,198,.22);}
 .disp{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.02em;}
 .tnum{font-variant-numeric:tabular-nums;}
-/* light aurora: 옅은 시안/민트 + 짙은 남색 그라데이션 포인트 */
-.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
-.aurora i{position:absolute;border-radius:50%;filter:blur(90px);}
-.aurora .a1{width:680px;height:680px;top:-260px;right:-140px;background:radial-gradient(circle,rgba(30,132,198,.26),transparent 68%);animation:drift 20s ease-in-out infinite;}
-.aurora .a2{width:560px;height:560px;top:240px;left:-200px;background:radial-gradient(circle,rgba(26,163,134,.16),transparent 70%);animation:drift 25s ease-in-out infinite reverse;}
-.aurora .a3{width:620px;height:620px;bottom:-280px;right:8%;background:radial-gradient(circle,rgba(21,39,63,.14),transparent 68%);animation:drift 30s ease-in-out infinite;}
-.aurora .grid{position:absolute;inset:0;background:linear-gradient(rgba(21,39,63,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(21,39,63,.04) 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(circle at 50% 26%,#000,transparent 78%);}
-@keyframes drift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(4%,5%) scale(1.08);}}
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-15px);}}
 @keyframes pageIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
 @keyframes pop{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:scale(1);}}
@@ -1596,7 +1588,6 @@ export default function App() {
   const nav=[["about","소개"],["news","공지"],["board","게시판"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
   return (
     <div className="ypl"><style>{STYLES}</style>
-      <div className="aurora"><i className="a1"/><i className="a2"/><i className="a3"/><div className="grid"/></div>
       <nav className={"nav"+(scrolled?" scrolled":"")}><div className="nav-in">
         <div className="brand" onClick={()=>go("home")}><span className="chip"><img src={LOGO_YPL} alt="YPL"/></span><div><span className="disp">YPL</span><small>POKÉMON · CENTER · YONSEI</small></div></div>
         <div className="nav-links">{nav.map(([k,l])=><button key={k} className={"nlink"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}</div>
