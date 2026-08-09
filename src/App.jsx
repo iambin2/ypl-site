@@ -118,12 +118,13 @@ const STYLES = `@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@
 @import url('https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:wght@600&display=swap');
 
 .ypl{
-  --bg:#FFFFFF;--bg2:#F7F7F8;--card:#FFFFFF;
-  --line:#E5E8EF;--line2:#D3D9E4;
-  --navy:#1B3F86;--navy2:#24509F;--ink:#0D0D0D;
-  --cyan:#1B3F86;--cyan-d:#1B3F86;--cyan-l:#24509F;
-  --gold:#1B3F86;--gold-l:#24509F;--mint:#4A5568;
-  --text:#0D0D0D;--muted:#6B6B73;--muted2:#9A9AA2;--win:#0D0D0D;--loss:#9A9AA2;
+  --bg:var(--s-page);--bg2:var(--s-soft);--card:var(--s-card);
+  --line:var(--ln-1);--line2:var(--ln-2);
+  --navy:var(--ac-text);--navy2:var(--ac-hover);--ink:var(--t-1);
+  --cyan:var(--ac-fill);--cyan-d:var(--ac-text);--cyan-l:var(--ac-hover);
+  --gold:var(--ac-text);--gold-l:var(--ac-hover);--mint:var(--t-4);
+  --text:var(--t-1);--muted:var(--t-4);--muted2:var(--t-5);
+  --win:var(--t-1);--loss:var(--danger);
   font-family:'Wanted Sans Variable','Wanted Sans','Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;
   color:var(--text);background:var(--bg);min-height:100vh;position:relative;overflow-x:clip;
   -webkit-font-smoothing:antialiased;
@@ -705,7 +706,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-draw-mem{display:flex;flex-direction:column;gap:6px;}
 .bk-draw-mem .bk-slot{min-height:40px;}
 .bk-slot.dwait{background:rgba(43,43,48,.02);color:var(--muted2);}
-.bk-slot.dwait i{display:block;width:26px;height:3px;border-radius:12px;background:var(--line2);opacity:.7;}
+.bk-slot.dwait i{display:block;width:26px;height:3px;border-radius:12px;background:var(--ln-3);opacity:.7;}
 .bk-slot.drolling{background:rgba(107,107,115,.09);color:var(--cyan-d);font-weight:800;box-shadow:none;animation:bkflick .09s steps(1) infinite;}
 .bk-slot.dset{background:rgba(43,43,48,.05);color:var(--navy);font-weight:800;box-shadow:none;}
 .bk-slot.dset.pop{animation:bkpop .34s cubic-bezier(.2,.9,.3,1.5);}
@@ -736,7 +737,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ann-apply:hover{transform:none;box-shadow:none;}
 .ann-resp{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border:1px solid var(--line2);border-radius:12px;background:var(--s-card);color:var(--navy);font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;transition:.2s;}
 .ann-resp:hover{border-color:var(--gold);color:var(--gold);}
-.ann-resp .rc{background:var(--gold);color:#fff;border-radius:18px;padding:1px 8px;font-size:12px;font-variant-numeric:tabular-nums;}
+.ann-resp .rc{background:var(--ac-fill);color:#fff;border-radius:18px;padding:1px 8px;font-size:12px;font-variant-numeric:tabular-nums;}
 
 /* ===== 폼 빌더(관리자) ===== */
 .fb-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:15px;}
@@ -777,7 +778,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .fold-head:hover{background:rgba(107,107,115,.05);}
 .fold-title{font-size:14px;font-weight:800;color:var(--navy);}
 .fold-note{font-size:12px;font-weight:600;color:var(--muted2);}
-.fold-badge{background:var(--cyan);color:#fff;border-radius:18px;padding:1px 8px;font-size:11.5px;font-weight:800;}
+.fold-badge{background:var(--ac-fill);color:#fff;border-radius:18px;padding:1px 8px;font-size:11.5px;font-weight:800;}
 .fold-chev{margin-left:auto;color:var(--muted2);font-size:13px;transition:transform .25s cubic-bezier(.2,.8,.3,1);}
 .fold.open .fold-chev{transform:rotate(180deg);}
 .fold-body{padding:2px 15px 15px;}
@@ -1309,6 +1310,73 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .hofm-pn{font-size:14px;font-weight:700;color:var(--t-2);}
 .ypl .hofm-ph{font-size:19px;font-weight:800;color:var(--ac-text);}
 @media(max-width:520px){.ypl .hofm-team{grid-template-columns:repeat(2,1fr);gap:12px;}}
+
+
+/* ============================================================
+   테마 마감 — 단일 배경, 부드러운 경계, 무채색 제목
+   ============================================================ */
+
+/* 1) 배경을 완전한 단일 톤으로 (라이트=순백 / 다크=순검정 계열) */
+.ypl{--danger:#C0392B;}
+.ypl.dark{--danger:#FF9A9A;}
+.ypl.dark{--s-page:#000000;--s-card:#14181F;--s-soft:#1C222B;--s-soft2:#1B2536;
+  --s-fill:#2A3242;--s-deep:#14181F;
+  --ln-1:#232A34;--ln-2:#2C3542;--ln-3:#38424F;}
+.ypl,.ypl .wrap,.ypl .page,.ypl .home,.ypl .sec{background:var(--s-page);}
+.ypl .nav,.ypl .nav.scrolled{background:var(--s-page);}
+.ypl.dark body,body:has(.ypl.dark){background:var(--s-page);}
+
+/* 2) 다크모드 경계선: 밝은 윤곽선 대신 은은한 면으로 구분 */
+.ypl.dark .card,.ypl.dark .hcard,.ypl.dark .panel,.ypl.dark .tl-item,.ypl.dark .champ,
+.ypl.dark .rec-card,.ypl.dark .st-card,.ypl.dark .flow-step,.ypl.dark .hs,.ypl.dark .hq,
+.ypl.dark .home-champ,.ypl.dark .bd-item,.ypl.dark .ann-item,.ypl.dark .bk-card,
+.ypl.dark .comp,.ypl.dark .modal,.ypl.dark .nav-drawer,.ypl.dark .keep,
+.ypl.dark .fold,.ypl.dark .hofm-sp,.ypl.dark .lsearch,.ypl.dark .list-tools,
+.ypl.dark .ttl-card,.ypl.dark .r2-row,.ypl.dark .round2,.ypl.dark .pr-box,
+.ypl.dark input,.ypl.dark textarea,.ypl.dark select,.ypl.dark .dd-head,.ypl.dark .dd-list,
+.ypl.dark .btn-ghost,.ypl.dark .nav-theme,.ypl.dark .nav-burger,.ypl.dark .nav-discord,
+.ypl.dark .nlink.admin,.ypl.dark .subtab,.ypl.dark .pg-btn,.ypl.dark .bk-slot,
+.ypl.dark .bk-ace,.ypl.dark .bk-champ-banner,.ypl.dark .tag,.ypl.dark .chip{
+  background:var(--s-card);border-color:transparent;}
+.ypl.dark .card:hover,.ypl.dark .hcard:hover,.ypl.dark .tl-item:hover,.ypl.dark .champ:hover,
+.ypl.dark .rec-card:hover,.ypl.dark .flow-step:hover,.ypl.dark .hs:hover,.ypl.dark .hq:hover,
+.ypl.dark .home-champ:hover,.ypl.dark .bd-item:hover,.ypl.dark .ann-item:hover,
+.ypl.dark .btn-ghost:hover,.ypl.dark .nav-theme:hover,.ypl.dark .nav-burger:hover,
+.ypl.dark .nav-discord:hover,.ypl.dark .subtab:hover,.ypl.dark .pg-btn:hover{
+  background:var(--s-soft);border-color:transparent;}
+.ypl.dark .keep,.ypl.dark .bk-ace,.ypl.dark .bk-champ-banner,.ypl.dark .pts-note,
+.ypl.dark .bk-hint{background:var(--s-soft);border-color:transparent;}
+.ypl.dark .nav{border-bottom:1px solid var(--ln-1);}
+.ypl.dark hr,.ypl.dark .divider{border-color:var(--ln-1);}
+
+/* 3) 공지·게시판 제목은 무채색으로 (가독성 우선) */
+.ypl .ann-title,.ypl .nb-title,.ypl .bd-title,.ypl .bd-t,.ypl .ann-t,
+.ypl .hc-ntitle,.ypl .hc-ptitle,.ypl .bd-item .t,.ypl .ann-item .t{
+  color:var(--t-1);}
+.ypl .ann-title:hover,.ypl .bd-title:hover{color:var(--t-1);}
+
+/* 4) 기록 탭 가독성: 회색·남색 글씨 보정 */
+.ypl .r2-name,.ypl .r2-rule,.ypl .r2-meta,.ypl .r2-date,.ypl .rk-name,
+.ypl .season-name,.ypl .st-cell{color:var(--t-2);}
+.ypl .r2-name.win{color:var(--t-1);font-weight:800;}
+.ypl .tnum,.ypl .pts{color:var(--t-1);}
+.ypl .r2-tag,.ypl .season-tag{color:var(--ac-text);}
+
+/* 5) 모든 남색 글씨는 다크에서 밝은 하늘색으로 (--ac-text가 자동 전환) */
+.ypl.dark .kick,.ypl.dark .hc-kick,.ypl.dark .sec-head .kick{color:var(--t-5);}
+.ypl.dark .hofm-congrat,.ypl.dark .keep-t{color:var(--ac-text);}
+
+/* 6) 남색 면 위 텍스트는 두 테마 모두 흰색 유지 */
+.ypl .lg2 h3,.ypl .lg2-tier,.ypl .hof-nm,.ypl .hof-cta,
+.ypl .btn-primary,.ypl .btn-gold,.ypl .ann-link,.ypl .ann-apply,
+.ypl .subtab.on,.ypl .pg-btn.on,.ypl .rankb.r1,.ypl .toast,
+.ypl .bk-slot.win,.ypl .r2-champ,.ypl .bd-ava,.ypl .pr-n,
+.ypl .bk-pin-no,.ypl .bk-lu-no,.ypl .fold-badge{color:#FFFFFF;}
+.ypl.dark .subtab.on,.ypl.dark .pg-btn.on,.ypl.dark .bk-slot.win{background:var(--ac-fill);}
+
+/* 반투명 흰 배경 보정 (남색 면 위가 아닌 요소) */
+.ypl.dark .nav-burger,.ypl.dark .ed-team{background:var(--s-card);}
+.ypl.dark .champ.hof-card .poke.noimg .sp{background:rgba(255,255,255,.08);}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -2146,7 +2214,7 @@ export default function App() {
         <div className="nav-links">{nav.map(([k,l])=><button key={k} className={"nlink"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}</div>
         <div className="nav-right">
           <button className="nav-theme" onClick={()=>setDark(d=>!d)} aria-label={dark?"밝은 모드로 전환":"어두운 모드로 전환"} title={dark?"밝은 모드":"어두운 모드"}>{dark?"☀":"☾"}</button><button className="nlink admin" onClick={()=>{admin?setAdmin(false):setModal({type:"login"});setMenuOpen(false);}}>{admin?"로그아웃":"관리자"}</button>
-          <a className="nav-discord" href="https://discord.gg/sdZYCvHQn" target="_blank" rel="noopener noreferrer" title="YPL 공식 디스코드 참여"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span className="dc-tx">디스코드</span></a>
+          <a className="nav-discord" href="https://discord.gg/T7UZHhGvUh" target="_blank" rel="noopener noreferrer" title="YPL 공식 디스코드 참여"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span className="dc-tx">디스코드</span></a>
           <button className={"nav-burger"+(menuOpen?" open":"")} onClick={()=>setMenuOpen(o=>!o)} aria-label={menuOpen?"메뉴 닫기":"메뉴 열기"} aria-expanded={menuOpen}><span className="bg-ico" aria-hidden="true"><i/><i/><i/></span></button>
         </div>
         <div className={"nav-drawer"+(menuOpen?" open":"")} aria-hidden={!menuOpen}>{nav.map(([k,l],di)=><button key={k} className={"nav-ditem"+(view===k?" on":"")} tabIndex={menuOpen?0:-1} style={{transitionDelay:(menuOpen?di*32:0)+"ms"}} onClick={()=>go(k)}>{l}</button>)}</div>
