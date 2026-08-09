@@ -1433,6 +1433,30 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl.dark .bk-alloc,.ypl.dark .bk-alloc-row,.ypl.dark .pts-note{
   border-color:transparent;}
 .ypl.dark .holder{background:var(--s-fill);color:var(--t-1);}
+
+
+/* ============================================================
+   테마 전환 즉시 반영 + 남은 가독성 보정
+   ============================================================ */
+
+/* 1) 전환 순간에는 모든 애니메이션을 멈춰 한 번에 바뀌게 함 */
+.ypl.no-anim,.ypl.no-anim *,.ypl.no-anim *::before,.ypl.no-anim *::after{
+  transition:none !important;animation:none !important;
+  transition-delay:0s !important;animation-delay:0s !important;}
+
+/* 2) 공지 본문 가독성 */
+.ypl .nb-body,.ypl .nb-body p,.ypl .ann-body,.ypl .ann-body p{
+  color:var(--t-2);font-size:15px;line-height:1.75;}
+.ypl .nb-body b,.ypl .nb-body strong{color:var(--t-1);}
+.ypl.dark .nb-body,.ypl.dark .ann-body{border-color:transparent;}
+
+/* 3) 참가 엔트리: 이름과 포켓몬 목록 */
+.ypl .bk-entry-n{color:var(--t-1);font-size:15.5px;}
+.ypl .bk-entry-p{color:var(--t-2);font-size:14px;line-height:1.7;}
+.ypl .bk-entry-row b{color:var(--ac-text);}
+.ypl .bk-entry-row span{color:var(--t-2);}
+.ypl.dark .bk-entry{background:var(--s-card);border-color:transparent;}
+.ypl.dark .bk-entries{border-top-color:var(--ln-2);}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -2214,6 +2238,13 @@ export default function App() {
   const [scrolled,setScrolled]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
   useEffect(()=>{(async()=>setData(normalizeData((await loadData())||SEED)))();},[]);
+  const [noAnim,setNoAnim]=useState(false);
+  const switchTheme=useCallback(()=>{
+    // 테마 전환 렌더에 no-anim 클래스를 함께 적용해 모든 요소가 동시에 바뀌도록 함
+    setNoAnim(true);
+    setDark(d=>!d);
+    window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>setNoAnim(false)));
+  },[]);
   const [dark,setDark]=useState(()=>{
     try{ const v=localStorage.getItem("ypl-theme");
       if(v==="dark") return true; if(v==="light") return false;
@@ -2264,12 +2295,12 @@ export default function App() {
   if(!data) return <div className={"ypl"+(dark?" dark":"")} style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",width:"100%",background:"var(--s-page)"}}><style>{STYLES}</style><span className="loading-txt">불러오는 중…</span></div>;
   const nav=[["about","소개"],["news","공지"],["board","게시판"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
   return (
-    <div className={"ypl"+(dark?" dark":"")}><style>{STYLES}</style>
+    <div className={"ypl"+(dark?" dark":"")+(noAnim?" no-anim":"")}><style>{STYLES}</style>
       <nav className={"nav"+(scrolled?" scrolled":"")}><div className="nav-in">
         <div className="brand" onClick={()=>go("home")}><div><span className="disp">YPL</span><small>POKÉMON CENTER YONSEI</small></div></div>
         <div className="nav-links">{nav.map(([k,l])=><button key={k} className={"nlink"+(view===k?" on":"")} onClick={()=>go(k)}>{l}</button>)}</div>
         <div className="nav-right">
-          <button className="nav-theme" onClick={()=>setDark(d=>!d)} aria-label={dark?"밝은 모드로 전환":"어두운 모드로 전환"} title={dark?"밝은 모드":"어두운 모드"}>{dark?"☀":"☾"}</button><button className="nlink admin" onClick={()=>{admin?setAdmin(false):setModal({type:"login"});setMenuOpen(false);}}>{admin?"로그아웃":"관리자"}</button>
+          <button className="nav-theme" onClick={switchTheme} aria-label={dark?"밝은 모드로 전환":"어두운 모드로 전환"} title={dark?"밝은 모드":"어두운 모드"}>{dark?"☀":"☾"}</button><button className="nlink admin" onClick={()=>{admin?setAdmin(false):setModal({type:"login"});setMenuOpen(false);}}>{admin?"로그아웃":"관리자"}</button>
           <a className="nav-discord" href="https://discord.gg/T7UZHhGvUh" target="_blank" rel="noopener noreferrer" title="YPL 공식 디스코드 참여"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span className="dc-tx">디스코드</span></a>
           <button className={"nav-burger"+(menuOpen?" open":"")} onClick={()=>setMenuOpen(o=>!o)} aria-label={menuOpen?"메뉴 닫기":"메뉴 열기"} aria-expanded={menuOpen}><span className="bg-ico" aria-hidden="true"><i/><i/><i/></span></button>
         </div>
