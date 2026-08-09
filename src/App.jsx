@@ -846,6 +846,8 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 
 
 
+
+
 /* ============================================================
    YPL — 미니멀 (흰 바탕 · 포인트 = 로고 남색 #1B3F86)
    글꼴: 본문 Wanted Sans / 로고 Anton
@@ -994,7 +996,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* [3] 작은 칩 */
 .ypl .rankb,.ypl .bd-ava,.ypl .pr-n,.ypl .bk-pin-no,.ypl .bk-lu-no,
 .ypl .bk-series-no,.ypl .ch-clear,.ypl .r2-champ,.ypl .champ-tag,
-
+.ypl .lg2 .lg2-logo,.ypl .tag,.ypl .chip,.ypl .badge{border-radius:10px;}
 
 
 /* ── 세컨드 로고(POKEMON CENTER YONSEI): 동아리 공식 서체 유지 ── */
@@ -1048,7 +1050,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .flow-step.last .flow-n{background:#1B3F86;color:#FFFFFF;}
 .ypl .flow-t{font-size:15.5px;font-weight:700;color:#0D0D0D;margin:12px 0 4px;letter-spacing:-.015em;}
 .ypl .flow-d{font-size:13px;color:#4E5666;line-height:1.55;}
-.ypl .flow-arw{display:flex;align-items:center;color:#B9C2D0;font-size:16px;flex:0 0 auto;}
+.ypl .flow-arw{display:flex;align-items:center;color:#6B7383;font-size:16px;flex:0 0 auto;}
 @media(max-width:720px){.ypl .flow-arw{display:none;}}
 
 .ypl .keep{margin:34px 0 0;background:#F5F7FB;border:1px solid var(--line);
@@ -1058,6 +1060,103 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .keep-i{display:flex;flex-direction:column;gap:3px;}
 .ypl .keep-i b{font-size:16px;color:#0D0D0D;font-weight:700;}
 .ypl .keep-i span{font-size:13px;color:#4E5666;}
+
+/* ============================================================
+   가독성 전면 개선 — 제목 확대, 도형 속 텍스트 중앙·확대·고대비
+   ============================================================ */
+
+/* ── 제목 위계 확대 ── */
+.ypl .sec-head h2{font-size:clamp(30px,4.4vw,46px);line-height:1.12;letter-spacing:-.035em;font-weight:800;}
+.ypl .sec-head .kick{font-size:13px;letter-spacing:.12em;font-weight:700;color:#6B7383;}
+.ypl .sec-head .sub{font-size:16px;line-height:1.7;color:#4E5666;}
+.ypl .kick-line{font-size:clamp(21px,2.6vw,27px);font-weight:800;color:#0D0D0D;letter-spacing:-.025em;display:block;}
+.ypl .card h3,.ypl .comp h3{font-size:21px;font-weight:700;letter-spacing:-.02em;color:#0D0D0D;}
+.ypl .lg2 h3{font-size:25px;font-weight:800;letter-spacing:-.025em;}
+.ypl .lg2 p,.ypl .comp p{font-size:14.5px;line-height:1.65;}
+.ypl .lg2-tier{font-size:12.5px;font-weight:700;letter-spacing:.08em;}
+.ypl .tl-date{font-size:13px;font-weight:700;letter-spacing:.04em;color:#6B7383;}
+.ypl .tl-title{font-size:20px;font-weight:700;color:#0D0D0D;letter-spacing:-.02em;margin:5px 0 7px;}
+.ypl .tl-body{font-size:14.5px;line-height:1.68;color:#4E5666;}
+.ypl .st-name{font-size:21px;}
+.ypl .flow-t{font-size:17.5px;}
+.ypl .flow-d{font-size:14px;}
+.ypl .keep-t{font-size:15px;}
+.ypl .keep-i b{font-size:19px;}
+.ypl .keep-i span{font-size:14px;}
+.ypl .modal h3{font-size:22px;font-weight:800;letter-spacing:-.02em;}
+.ypl .field label{font-size:14px;font-weight:600;color:#2C3444;}
+.ypl .bk-hint,.ypl .hint{font-size:14px;line-height:1.65;}
+
+/* ── 홈: 로고와 문구를 크게 ── */
+.ypl .home-hero{margin-bottom:44px;padding-top:30px;}
+.ypl .home .mark{font-size:clamp(72px,13vw,150px);line-height:.94;letter-spacing:.005em;color:#1B3F86;}
+.ypl .home-tag{font-size:clamp(16px,2vw,20px);color:#3C4454;font-weight:600;margin:14px 0 0;letter-spacing:-.01em;}
+.ypl .home-champ{display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  margin-top:22px;padding:11px 20px;border-radius:12px;background:#FFFFFF;
+  border:1px solid var(--line2);cursor:pointer;font-family:inherit;
+  transition:box-shadow .34s cubic-bezier(.22,.61,.36,1),border-color .34s cubic-bezier(.22,.61,.36,1);}
+.ypl .home-champ:hover{border-color:#B9C2D0;box-shadow:0 0 0 1px rgba(27,63,134,.07),0 6px 20px -8px rgba(27,63,134,.32);}
+.ypl .hch-k{font-size:13px;color:#5B6473;font-weight:600;}
+.ypl .hch-n{font-size:18px;color:#0D0D0D;font-weight:800;letter-spacing:-.02em;}
+.ypl .hch-g{font-size:12.5px;color:#FFFFFF;background:#1B3F86;border-radius:8px;
+  padding:4px 9px;font-weight:700;line-height:1;}
+
+/* ── 홈: 숫자 지표 3종 ── */
+.ypl .home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:0 0 18px;}
+.ypl .hs{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:24px 14px;background:#FFFFFF;border:1px solid var(--line);border-radius:18px;
+  cursor:pointer;font-family:inherit;
+  transition:box-shadow .34s cubic-bezier(.22,.61,.36,1),border-color .34s cubic-bezier(.22,.61,.36,1);}
+.ypl .hs:hover{border-color:#B9C2D0;box-shadow:0 0 0 1px rgba(27,63,134,.06),0 8px 28px -10px rgba(27,63,134,.30);}
+.ypl .hs b{font-size:clamp(32px,4.6vw,44px);font-weight:800;color:#1B3F86;line-height:1;letter-spacing:-.02em;}
+.ypl .hs span{font-size:13.5px;color:#4E5666;font-weight:600;}
+@media(max-width:560px){.ypl .home-stats{grid-template-columns:1fr;gap:10px;}
+  .ypl .hs{flex-direction:row;justify-content:space-between;padding:18px 20px;}}
+
+/* ── 홈: 카드 내부 글자 확대 ── */
+.ypl .hc-kick{font-size:13px;letter-spacing:.1em;font-weight:700;color:#5B6473;text-transform:none;}
+.ypl .hc-go{font-size:19px;}
+.ypl .hc-ndate{font-size:13.5px;color:#6B7383;font-weight:600;}
+.ypl .hc-ntitle{font-size:clamp(19px,2.4vw,24px);font-weight:700;color:#0D0D0D;
+  letter-spacing:-.025em;line-height:1.35;margin-top:7px;}
+.ypl .hc-empty{font-size:14.5px;color:#6B7383;}
+.ypl .hc-rrow{gap:13px;padding:9px 0;}
+.ypl .hc-rname{font-size:16.5px;font-weight:700;color:#0D0D0D;letter-spacing:-.015em;}
+.ypl .hc-rpts{font-size:19px;font-weight:800;color:#1B3F86;letter-spacing:-.02em;}
+.ypl .hc-cur-label{font-size:13.5px;font-weight:600;}
+.ypl .hc-cur-name{font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.03em;}
+.ypl .hcard.hof-dark .hc-cur-label{color:#B9C6DE;}
+.ypl .hcard.hof-dark .hc-kick{color:#B9C6DE;}
+.ypl .hcard.hof-dark .hc-go{color:#B9C6DE;}
+
+/* ── 홈: 빠른 이동 ── */
+.ypl .home-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px;}
+.ypl .hq{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:18px 20px;background:#FFFFFF;border:1px solid var(--line);border-radius:18px;
+  cursor:pointer;font-family:inherit;
+  transition:box-shadow .34s cubic-bezier(.22,.61,.36,1),border-color .34s cubic-bezier(.22,.61,.36,1);}
+.ypl .hq:hover{border-color:#B9C2D0;box-shadow:0 0 0 1px rgba(27,63,134,.06),0 8px 28px -10px rgba(27,63,134,.30);}
+.ypl .hq span{font-size:16px;font-weight:700;color:#0D0D0D;letter-spacing:-.02em;}
+.ypl .hq i{font-style:normal;font-size:17px;color:#6B7383;}
+.ypl .hq:hover i{color:#1B3F86;}
+@media(max-width:640px){.ypl .home-quick{grid-template-columns:repeat(2,1fr);}}
+
+/* ── 도형 속 텍스트: 정중앙 + 확대 + 고대비 ── */
+.ypl .rankb{width:34px;height:34px;font-size:15px;font-weight:800;letter-spacing:0;}
+.ypl .rankb.r1{background:#1B3F86;color:#FFFFFF;}
+.ypl .rankb.r2{background:#C2CDE3;color:#132C5E;}
+.ypl .rankb.r3{background:#DDE3EE;color:#233457;}
+.ypl .bd-ava{width:38px;height:38px;font-size:15px;font-weight:700;}
+.ypl .pr-n,.ypl .bk-pin-no,.ypl .bk-lu-no,.ypl .bk-series-no{font-size:14.5px;font-weight:700;}
+.ypl .flow-n{width:30px;height:30px;font-size:15px;}
+.ypl .r2-champ{font-size:12px;font-weight:700;padding:5px 12px;}
+.ypl .champ-tag{font-size:14px;}
+.ypl .btn{font-size:14.5px;}
+.ypl .subtab{font-size:14.5px;font-weight:600;}
+.ypl .pg-btn{font-size:14.5px;font-weight:600;}
+.ypl .nlink{font-size:15px;font-weight:600;}
+.ypl .nlink.on{font-weight:700;}
+.ypl .bk-slot{font-size:14.5px;}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -1927,45 +2026,52 @@ function Home({ data, go, admin }) {
   const champs=[...data.champions].sort((a,b)=>b.season-a.season);
   const cur=champs[0];
   const titleCount=data.titleGroups.reduce((n,g)=>n+g.items.length,0);
-  const awarded=useMemo(()=>{const s=new Set();data.titleGroups.forEach(g=>g.items.forEach(it=>(it.holders||[]).forEach(h=>s.add(h))));return s.size;},[data]);
+  const roundCount=useMemo(()=>(data.tournaments||[]).reduce((n,t)=>n+((t.rounds||[]).length),0),[data]);
   const news=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1))[0];
-  const posts=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1)).slice(0,4);
+  const quick=[["about","소개"],["board","게시판"],["bracket","대진표"],["titles","칭호"]];
   return (<section className="home">
     <Reveal className="home-hero">
       <h1 className="disp mark">YPL</h1>
       <p className="home-tag">{data.meta.tagline}</p>
+      {cur&&<button className="home-champ" onClick={()=>go("champions")}>
+        <span className="hch-k">현 챔피언</span>
+        <span className="hch-n">{cur.name}</span>
+        <span className="hch-g">{cur.gen}</span>
+      </button>}
     </Reveal>
+
+    <Reveal className="home-stats" delay={40}>
+      <button className="hs" onClick={()=>go("records")}><b className="tnum">{roundCount}</b><span>누적 대회 회차</span></button>
+      <button className="hs" onClick={()=>go("champions")}><b className="tnum">{champs.length}</b><span>역대 챔피언</span></button>
+      <button className="hs" onClick={()=>go("titles")}><b className="tnum">{titleCount}</b><span>칭호</span></button>
+    </Reveal>
+
     <div className="home-grid">
-      <Reveal tag="button" className="hcard wide" onClick={()=>go("news")}>
-        <div className="hcard-head"><span className="hc-kick">공지</span><span className="hc-go">→</span></div>
+      <Reveal tag="button" className="hcard wide" delay={60} onClick={()=>go("news")}>
+        <div className="hcard-head"><span className="hc-kick">최신 공지</span><span className="hc-go">→</span></div>
         {news?<div className="hc-news"><div className="hc-ndate tnum">{news.date}</div><div className="hc-ntitle">{news.title}</div></div>:<div className="hc-empty">새 공지가 없습니다.</div>}
       </Reveal>
-      <Reveal tag="button" className="hcard wide" delay={30} onClick={()=>go("board")}>
-        <div className="hcard-head"><span className="hc-kick">게시판</span><span className="hc-go">→</span></div>
-        {posts.length?<div className="hc-posts">{posts.map(p=>(
-          <div className="hc-prow" key={p.id}>{p.secret&&<span className="hc-lock">🔒</span>}<span className="hc-ptitle">{p.title||p.body||"(제목 없음)"}</span><span className="hc-pmeta">{p.nick}{(p.comments||[]).length>0?`  💬${p.comments.length}`:""}</span></div>))}
-        </div>:<div className="hc-empty">아직 글이 없습니다.</div>}
-      </Reveal>
-      <Reveal tag="button" className="hcard" delay={60} onClick={()=>go("records")}>
-        <div className="hcard-head"><span className="hc-kick">YPL 랭킹 기록</span><span className="hc-go">→</span></div>
+
+      <Reveal tag="button" className="hcard" delay={90} onClick={()=>go("records")}>
+        <div className="hcard-head"><span className="hc-kick">YPL 랭킹</span><span className="hc-go">→</span></div>
         <div className="hc-rank">{top3.map((r,i)=>(
-          <div className="hc-rrow" key={i}><span className={"rankb "+(i<3?"r"+(i+1):"")}>{i+1}</span><span className="hc-rname">{r.name}</span><span className="hc-rpts tnum">{r.points}</span></div>))}
+          <div className="hc-rrow" key={i}><span className={"rankb r"+(i+1)}>{i+1}</span><span className="hc-rname">{r.name}</span><span className="hc-rpts tnum">{r.points}</span></div>))}
           {top3.length===0&&<div className="hc-empty">데이터 없음</div>}</div>
       </Reveal>
-      <Reveal tag="button" className="hcard" delay={120} onClick={()=>go("titles")}>
-        <div className="hcard-head"><span className="hc-kick">칭호</span><span className="hc-go">→</span></div>
-        <div className="hc-bignum tnum">{titleCount}<span>개</span></div>
-        <div className="hc-sub">트레이너 {awarded}명이 칭호 보유 중</div>
-      </Reveal>
-      <Reveal tag="button" className="hcard wide hof-dark" delay={60} onClick={()=>go("champions")}>
+
+      <Reveal tag="button" className="hcard hof-dark" delay={120} onClick={()=>go("champions")}>
         <div className="hcard-head"><span className="hc-kick">명예의 전당</span><span className="hc-go">→</span></div>
         <div className="hcard-champ">
-          <div><div className="hc-cur-label">👑 {cur?.gen} 현 챔피언</div>
+          <div><div className="hc-cur-label">{cur?.gen} 챔피언</div>
             <div className="hc-cur-name">{cur?.name}</div></div>
-          {cur&&<div className="hc-team">{normTeam(cur.team).filter(m=>m.name||m.img).slice(0,6).map((m,i)=>{const img=m.img;return <span className="hc-mon" key={i}>{img?<img src={img} alt={m.name} loading="lazy" decoding="async"/>:<i>{m.name?m.name[0]:"?"}</i>}</span>;})}</div>}
+          {cur&&<div className="hc-team">{normTeam(cur.team).filter(m=>m.name||m.img).slice(0,6).map((m,i)=>{const img=m.img;return <span className="hc-mon" key={i}>{img?<img src={img} alt={m.name} loading="lazy" decoding="async"/>:<i>{(m.name||"").slice(0,2)}</i>}</span>;})}</div>}
         </div>
       </Reveal>
     </div>
+
+    <Reveal className="home-quick" delay={150}>
+      {quick.map(([k,l])=><button key={k} className="hq" onClick={()=>go(k)}><span>{l}</span><i>→</i></button>)}
+    </Reveal>
   </section>);
 }
 
@@ -1975,24 +2081,6 @@ function About() {
     <Reveal className="sec-head"><div className="kick">About</div><h2>YPL 이야기</h2>
       <p className="sub">연세대학교 포켓몬스터 동아리인 포켓몬 센터 연세점, 일명 포센연에서 시작된 배틀 리그의 발자취입니다.</p>
     </Reveal>
-    <div className="st-grid">
-      <Reveal className="st-card">
-        <div className="st-year">2023.05</div>
-        <div className="st-name">파이컵에서 출발</div>
-        <p className="st-body">포센연 안에서 자체적으로 치러진 첫 대회, 파이컵이 열렸습니다.</p>
-      </Reveal>
-      <Reveal className="st-card" delay={80}>
-        <div className="st-year">2023 – 2025</div>
-        <div className="st-name">매월의 도전</div>
-        <p className="st-body">파이컵이 매월 정규 대회로 자리 잡으며 전적과 칭호가 쌓였습니다.</p>
-      </Reveal>
-      <Reveal className="st-card accent" delay={160}>
-        <div className="st-year">2025.06</div>
-        <div className="st-name">YPL 체제 확립</div>
-        <p className="st-body">마스터 리그와 루키 리그로 나뉘는 대격변을 거쳐 지금에 이르렀습니다.</p>
-      </Reveal>
-    </div>
-
     <Reveal tag="h3"><span className="kick-line" style={{margin:"46px 0 16px"}}>시즌은 이렇게 흘러갑니다</span></Reveal>
     <div className="flow">
       <Reveal className="flow-step"><span className="flow-n">1</span>
