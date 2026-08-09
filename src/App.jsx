@@ -848,6 +848,8 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 
 
 
+
+
 /* ============================================================
    YPL — 미니멀 (흰 바탕 · 포인트 = 로고 남색 #1B3F86)
    글꼴: 본문 Wanted Sans / 로고 Anton
@@ -1006,7 +1008,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* ── 회색 글씨 대비 강화 (흰 바탕에서 또렷하게) ── */
 .ypl{--muted:#4E5666;--muted2:#6B7383;}
 .ypl .sec-head .sub,.ypl .sub,.ypl .tl-body,.ypl .hint,.ypl .lead-sub,
-.ypl .bk-hint,.ypl .en,.ypl .comp p,.ypl .lg2 p{color:#4E5666;}
+.ypl .bk-hint,.ypl .comp p{color:#4E5666;}
 .ypl .kick,.ypl .hc-kick,.ypl .tl-date,.ypl .list-count,.ypl .fold-note{color:#6B7383;}
 .ypl .nlink{color:#4E5666;}
 .ypl ::placeholder{color:#6B7383;opacity:1;}
@@ -1157,6 +1159,71 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .nlink{font-size:15px;font-weight:600;}
 .ypl .nlink.on{font-weight:700;}
 .ypl .bk-slot{font-size:14.5px;}
+
+/* ============================================================
+   정렬 · 가시성 · 명예의 전당 개선
+   ============================================================ */
+
+/* ── 소제목과 본문 왼쪽 끝 정렬 (제목 들여쓰기 제거) ── */
+.ypl .kick-line{padding-left:0;}
+.ypl .kick-line::before{display:none;}
+
+/* ── 리그 타일 본문 가시성 (남색 위 밝은 글씨) ── */
+.ypl .lg2 p{color:#E6EBF3;font-size:15px;line-height:1.7;}
+.ypl .lg2 .en{color:#B9C6DE;font-size:11.5px;letter-spacing:.2em;}
+.ypl .comp .en{color:#5B6473;}
+.ypl .lg2 .lg2-tier{color:#FFFFFF;background:rgba(255,255,255,.16);
+  border-radius:10px;padding:6px 12px;}
+
+/* ── "YPL이 기록하는 것" 강조 ── */
+.ypl .keep{padding:26px 28px;}
+.ypl .keep-t{font-size:clamp(18px,2.1vw,22px);font-weight:800;color:#0D0D0D;
+  letter-spacing:-.02em;margin-bottom:18px;}
+.ypl .keep-i b{font-size:20px;}
+.ypl .keep-i span{font-size:14.5px;}
+
+/* ── 카운트 뱃지: 글자가 도형을 넘지 않도록 ── */
+.ypl .pr-n{width:auto;min-width:28px;height:26px;padding:0 10px;
+  font-size:13px;font-weight:700;border-radius:10px;line-height:1;}
+
+/* ── 명예의 전당: 이름 강조 타일 ── */
+.ypl .hof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+.ypl .hof-tile{position:relative;}
+.ypl .hof-btn{display:flex;flex-direction:column;align-items:center;text-align:center;
+  width:100%;gap:6px;padding:34px 22px 26px;background:#1B3F86;border:1px solid #1B3F86;
+  border-radius:18px;cursor:pointer;font-family:inherit;
+  transition:box-shadow .34s cubic-bezier(.22,.61,.36,1),background-color .34s cubic-bezier(.22,.61,.36,1);}
+.ypl .hof-btn:hover{background:#24509F;box-shadow:0 10px 34px -12px rgba(27,63,134,.72);}
+.ypl .hof-crown{font-size:22px;line-height:1;}
+.ypl .hof-gen{font-size:13px;font-weight:600;color:#B9C6DE;letter-spacing:.02em;}
+.ypl .hof-nm{font-size:clamp(30px,4vw,42px);font-weight:800;color:#FFFFFF;
+  letter-spacing:-.035em;line-height:1.1;}
+.ypl .hof-season{font-size:12px;font-weight:600;color:#AFBFDA;letter-spacing:.12em;}
+.ypl .hof-cta{margin-top:12px;font-size:13px;font-weight:600;color:#FFFFFF;
+  background:rgba(255,255,255,.14);border-radius:10px;padding:8px 14px;line-height:1;}
+.ypl .hof-tile .edit-row{position:absolute;top:10px;right:10px;}
+
+/* ── 명예의 전당 축하 팝업 ── */
+.ypl .hof-modal{text-align:center;max-width:560px;}
+.ypl .hofm-top{padding:6px 0 4px;}
+.ypl .hofm-congrat{font-size:clamp(20px,2.6vw,26px);font-weight:800;color:#1B3F86;
+  letter-spacing:-.025em;animation:hofPop .5s cubic-bezier(.22,.61,.36,1) both;}
+.ypl .hofm-gen{font-size:13.5px;color:#5B6473;font-weight:600;margin-top:10px;}
+.ypl .hofm-nm{font-size:clamp(32px,4.6vw,46px);font-weight:800;color:#0D0D0D;
+  letter-spacing:-.04em;line-height:1.1;margin-top:2px;
+  animation:hofPop .5s .08s cubic-bezier(.22,.61,.36,1) both;}
+.ypl .hofm-team{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 6px;}
+.ypl .hofm-poke{display:flex;flex-direction:column;align-items:center;gap:6px;width:84px;
+  animation:hofPop .45s cubic-bezier(.22,.61,.36,1) both;}
+.ypl .hofm-sp{display:flex;align-items:center;justify-content:center;width:72px;height:72px;
+  background:#F2F5FA;border:1px solid var(--line);border-radius:18px;overflow:hidden;}
+.ypl .hofm-sp img{width:100%;height:100%;object-fit:contain;image-rendering:auto;}
+.ypl .hofm-ph{font-size:15px;font-weight:700;color:#1B3F86;}
+.ypl .hofm-pn{font-size:12.5px;color:#3C4454;font-weight:600;line-height:1.3;word-break:keep-all;}
+@keyframes hofPop{from{opacity:0;transform:translateY(10px) scale(.96);}
+  to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){
+  .ypl .hofm-congrat,.ypl .hofm-nm,.ypl .hofm-poke{animation:none;}}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -2059,14 +2126,6 @@ function Home({ data, go, admin }) {
           {top3.length===0&&<div className="hc-empty">데이터 없음</div>}</div>
       </Reveal>
 
-      <Reveal tag="button" className="hcard hof-dark" delay={120} onClick={()=>go("champions")}>
-        <div className="hcard-head"><span className="hc-kick">명예의 전당</span><span className="hc-go">→</span></div>
-        <div className="hcard-champ">
-          <div><div className="hc-cur-label">{cur?.gen} 챔피언</div>
-            <div className="hc-cur-name">{cur?.name}</div></div>
-          {cur&&<div className="hc-team">{normTeam(cur.team).filter(m=>m.name||m.img).slice(0,6).map((m,i)=>{const img=m.img;return <span className="hc-mon" key={i}>{img?<img src={img} alt={m.name} loading="lazy" decoding="async"/>:<i>{(m.name||"").slice(0,2)}</i>}</span>;})}</div>}
-        </div>
-      </Reveal>
     </div>
 
     <Reveal className="home-quick" delay={150}>
@@ -2078,7 +2137,7 @@ function Home({ data, go, admin }) {
 /* ============================== ABOUT ============================== */
 function About() {
   return (<section className="sec">
-    <Reveal className="sec-head"><div className="kick">About</div><h2>YPL 이야기</h2>
+    <Reveal className="sec-head"><div className="kick">About</div><h2>우리들의 이야기</h2>
       <p className="sub">연세대학교 포켓몬스터 동아리인 포켓몬 센터 연세점, 일명 포센연에서 시작된 배틀 리그의 발자취입니다.</p>
     </Reveal>
     <Reveal tag="h3"><span className="kick-line" style={{margin:"46px 0 16px"}}>시즌은 이렇게 흘러갑니다</span></Reveal>
@@ -2548,21 +2607,42 @@ function Titles({ data, admin, setModal }) {
 /* ============================== CHAMPIONS ============================== */
 function Champions({ data, admin, setModal }) {
   const champs=[...data.champions].sort((a,b)=>a.season-b.season);
+  const [pop,setPop]=useState(null);
+  useEffect(()=>{ if(!pop) return;
+    const f=(e)=>{ if(e.key==="Escape") setPop(null); };
+    window.addEventListener("keydown",f); return()=>window.removeEventListener("keydown",f); },[pop]);
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Hall of Fame</div><h2>명예의 전당</h2>
-      <p className="sub">챔피언스 시리즈를 제패한 역대 챔피언과 그 우승 엔트리입니다.</p>
+      <p className="sub">챔피언스 시리즈를 제패한 역대 챔피언입니다. 전당을 누르면 우승 엔트리를 볼 수 있습니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"champion"})}>+ 챔피언 추가</button></div>}
     </Reveal>
-    <div className="grid g2">{champs.map((c,i)=>(<Reveal key={c.id} delay={(i%2)*80} className="champ hover hof-card">
-      <span className="crown">👑</span>
-      <div className="gen">👑 {c.gen} 챔피언, {c.slabel||("SEASON "+c.season)}</div><div className="nm">{c.name}</div>
-      <div className="team">{normTeam(c.team).filter(m=>m.name||m.img).map((m,j)=>{const img=m.img;return (
-        <div className={"poke"+(img?"":" noimg")} key={j}>
-          <div className="sp">{img?<img src={img} alt={m.name} loading="lazy" decoding="async"/>:<span className="ph">{m.name}</span>}</div>
-          {img&&<div className="pn">{m.name}</div>}
-        </div>);})}</div>
-      {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm ed-pencil" onClick={()=>setModal({type:"champion",item:c})}>수정</button></div>}
-    </Reveal>))}</div>
+    <div className="hof-grid">{champs.map((c,i)=>(
+      <Reveal key={c.id} delay={(i%2)*70} className="hof-tile">
+        <button className="hof-btn" onClick={()=>setPop(c)} aria-label={c.name+" 우승 엔트리 보기"}>
+          <span className="hof-crown">👑</span>
+          <span className="hof-gen">{c.gen} 챔피언</span>
+          <span className="hof-nm">{c.name}</span>
+          <span className="hof-season">{c.slabel||("SEASON "+c.season)}</span>
+          <span className="hof-cta">우승 엔트리 보기 →</span>
+        </button>
+        {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm ed-pencil" onClick={()=>setModal({type:"champion",item:c})}>수정</button></div>}
+      </Reveal>))}</div>
+
+    {pop&&<div className="overlay" onClick={()=>setPop(null)}>
+      <div className="modal hof-modal" onClick={(e)=>e.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="hofm-top">
+          <div className="hofm-congrat">전당 등록을 축하합니다!</div>
+          <div className="hofm-gen">{pop.gen} 챔피언, {pop.slabel||("SEASON "+pop.season)}</div>
+          <div className="hofm-nm">{pop.name}</div>
+        </div>
+        <div className="hofm-team">{normTeam(pop.team).filter(m=>m.name||m.img).map((m,j)=>{const img=m.img;return (
+          <div className={"hofm-poke"+(img?"":" noimg")} key={j} style={{animationDelay:(j*70)+"ms"}}>
+            <div className="hofm-sp">{img?<img src={img} alt={m.name} loading="lazy" decoding="async"/>:<span className="hofm-ph">{(m.name||"").slice(0,2)}</span>}</div>
+            <div className="hofm-pn">{m.name}</div>
+          </div>);})}</div>
+        <div className="modal-actions"><button className="btn btn-primary" onClick={()=>setPop(null)}>닫기</button></div>
+      </div>
+    </div>}
   </section>);
 }
 
