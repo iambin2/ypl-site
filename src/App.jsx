@@ -1377,6 +1377,62 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* 반투명 흰 배경 보정 (남색 면 위가 아닌 요소) */
 .ypl.dark .nav-burger,.ypl.dark .ed-team{background:var(--s-card);}
 .ypl.dark .champ.hof-card .poke.noimg .sp{background:rgba(255,255,255,.08);}
+
+
+/* ============================================================
+   마감 수정 — 로딩, 화살표 통일, 다크 가독성, 무채색 본문
+   ============================================================ */
+
+/* 1) 로딩 화면: 단색 배경 + 화면 정중앙 */
+.ypl .loading-txt{font-size:16px;font-weight:600;color:var(--t-4);letter-spacing:-.01em;}
+
+/* 2) 화살표 애니메이션 통일 (모든 화살표 동일하게 오른쪽으로 4px) */
+.ypl .hc-go,.ypl .hq i,.ypl .arw,.ypl .go-arw{
+  color:var(--t-5);font-weight:700;
+  transition:transform .3s cubic-bezier(.22,.61,.36,1),color .3s cubic-bezier(.22,.61,.36,1);}
+.ypl .hcard:hover .hc-go,.ypl .hq:hover i,.ypl .hs:hover .hc-go,
+.ypl .home-champ:hover .hc-go,.ypl a:hover .arw,.ypl button:hover .arw{
+  color:var(--ac-text);transform:translateX(4px) !important;}
+.ypl .hcard.hof-dark:hover .hc-go{color:#FFFFFF;transform:translateX(4px) !important;}
+
+/* 3) 공지 "추가 링크": 흰 글씨/흰 배경 문제 해결 (보조 버튼 스타일) */
+.ypl .ann-link.alt{background:var(--s-card);color:var(--ac-text);
+  border:1px solid var(--ln-2);}
+.ypl .ann-link.alt:hover{background:var(--s-soft);color:var(--ac-text);
+  border-color:var(--ln-3);}
+.ypl.dark .ann-link.alt{background:var(--s-soft);border-color:transparent;color:var(--ac-text);}
+.ypl.dark .ann-link.alt:hover{background:var(--s-fill);border-color:transparent;}
+
+/* 4) 다크에서 흐리던 설명 텍스트를 본문과 같은 밝기로 */
+.ypl .pts-note,.ypl .bk-card-meta,.ypl .bk-hint,.ypl .bk-lb-h,.ypl .bk-cb-ru,
+.ypl .bk-entries-h,.ypl .lead-sub,.ypl .sub,.ypl .gdesc,.ypl .td,
+.ypl .bd-cmts-h,.ypl .bk-entries,.ypl .bk-alloc-row,.ypl .tgroup-head .gdesc{
+  color:var(--t-2);}
+.ypl .pts-note b,.ypl .bk-cb-n,.ypl .tn{color:var(--t-1);}
+.ypl .none{color:var(--t-4);}
+
+/* 5) 게시판: 제목·내용·글쓴이·댓글 모두 무채색 */
+.ypl .bd-body,.ypl .bd-cmt-text,.ypl .bd-ctext{color:var(--t-2);}
+.ypl .bd-nick,.ypl .bd-cmt-top b,.ypl .bd-cmt b{color:var(--t-1);font-weight:700;}
+.ypl .bd-date{color:var(--t-5);}
+.ypl .bd-cmts-h{color:var(--t-1);font-weight:700;}
+
+/* 6) 칭호: 이름·설명·조건 가독성 */
+.ypl .titem .tn{color:var(--t-1);font-weight:700;}
+.ypl .titem .td{color:var(--t-2);}
+.ypl .tgroup-head h3{color:var(--t-1);}
+.ypl .tgroup-head .cnt{color:var(--ac-text);}
+.ypl.dark .titem,.ypl.dark .titem.empty{background:var(--s-card);border-color:transparent;}
+.ypl.dark .titem.empty{background:var(--s-soft);}
+.ypl.dark .titem.empty .tn,.ypl.dark .titem.empty .td{color:var(--t-3);}
+
+/* 7) 다크에서 남은 외곽선 정리 */
+.ypl.dark .ann-item,.ypl.dark .ann-body,.ypl.dark .bd-cmt,.ypl.dark .bd-cmts,
+.ypl.dark .bk-entries,.ypl.dark .bk-lb,.ypl.dark .tgroup,.ypl.dark .titem,
+.ypl.dark .holder,.ypl.dark .none,.ypl.dark .ann-link.alt,.ypl.dark .bd-cform,
+.ypl.dark .bk-alloc,.ypl.dark .bk-alloc-row,.ypl.dark .pts-note{
+  border-color:transparent;}
+.ypl.dark .holder{background:var(--s-fill);color:var(--t-1);}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -2205,7 +2261,7 @@ export default function App() {
     return false;
   },[data,flash]);
   const refresh=useCallback(async()=>{ const fresh=await loadData(); if(fresh) setData(normalizeData(fresh)); },[]);
-  if(!data) return <div className="ypl" style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh"}}><style>{STYLES}</style><span style={{color:"#90A1BD"}}>불러오는 중…</span></div>;
+  if(!data) return <div className={"ypl"+(dark?" dark":"")} style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",width:"100%",background:"var(--s-page)"}}><style>{STYLES}</style><span className="loading-txt">불러오는 중…</span></div>;
   const nav=[["about","소개"],["news","공지"],["board","게시판"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
   return (
     <div className={"ypl"+(dark?" dark":"")}><style>{STYLES}</style>
@@ -2348,7 +2404,7 @@ function About() {
       </Reveal>))}</div>
 
     <Reveal tag="h3"><span className="kick-line" style={{margin:"48px 0 8px"}}>정규 리그</span></Reveal>
-    <Reveal tag="p" className="sub" style={{margin:"0 0 20px",color:"var(--muted)",fontSize:14}}>2025년 6월 양분화 이후, YPL은 두 개의 정규 리그 체제로 운영됩니다.</Reveal>
+    <Reveal tag="p" className="sub" style={{margin:"0 0 20px"}}>2025년 6월 양분화 이후, YPL은 두 개의 정규 리그 체제로 운영됩니다.</Reveal>
     <div className="grid g2">{LEAGUES2.map((lg,i)=>(
       <Reveal key={i} className={"lg2 "+lg.logo} delay={i*90}>
         <div className="lg2-glow"/>
