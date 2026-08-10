@@ -1210,13 +1210,11 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 
 /* ── 명예의 전당 축하 팝업 ── */
 .ypl .hof-modal{text-align:center;max-width:560px;}
-.ypl .hofm-top{padding:6px 0 4px;}
-.ypl .hofm-congrat{font-size:clamp(20px,2.6vw,26px);font-weight:800;color:var(--ac-text);
+.ypl .hofm-top{padding:8px 0 2px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.ypl .hofm-congrat{font-size:clamp(20px,2.6vw,26px);font-weight:800;color:var(--ac-text);margin:0;line-height:1.2;
   letter-spacing:-.025em;animation:hofPop .5s cubic-bezier(.22,.61,.36,1) both;}
-.ypl .hofm-gen{font-size:13.5px;color:var(--t-3);font-weight:600;margin-top:10px;}
-.ypl .hofm-nm{font-size:clamp(32px,4.6vw,46px);font-weight:800;color:var(--t-1);
-  letter-spacing:-.04em;line-height:1.1;margin-top:2px;
-  animation:hofPop .5s .08s cubic-bezier(.22,.61,.36,1) both;}
+.ypl .hofm-gen{font-size:14px;color:var(--t-3);font-weight:600;margin:0;letter-spacing:.06em;}
+.ypl .hofm-nm{font-size:clamp(32px,4.6vw,46px);font-weight:800;color:var(--t-1);letter-spacing:-.04em;line-height:1.1;margin:0;animation:hofPop .5s .08s cubic-bezier(.22,.61,.36,1) both;}
 .ypl .hofm-team{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 6px;}
 .ypl .hofm-poke{display:flex;flex-direction:column;align-items:center;gap:6px;width:84px;
   animation:hofPop .45s cubic-bezier(.22,.61,.36,1) both;}
@@ -2996,8 +2994,8 @@ function Champions({ data, admin, setModal }) {
     {pop&&<div className="overlay" onClick={()=>setPop(null)}>
       <div className="modal hof-modal" onClick={(e)=>e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="hofm-top">
-          <div className="hofm-congrat">전당 등록을 축하합니다!</div>
-          <div className="hofm-gen">{pop.gen} 챔피언, {pop.slabel||("SEASON "+pop.season)}</div>
+          <div className="hofm-congrat">전당등록을 축하합니다!</div>
+          <div className="hofm-gen">{pop.slabel||("SEASON "+pop.season)}</div>
           <div className="hofm-nm">{pop.name}</div>
         </div>
         <div className="hofm-team">{normTeam(pop.team).filter(m=>m.name||m.img).map((m,j)=>{const img=m.img;return (
