@@ -1485,6 +1485,15 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
   .ypl .nlink.admin{padding:7px 9px;font-size:12.5px;}
   .ypl .nav-discord{padding:7px 9px;}
 }
+
+
+/* ============================================================
+   검색창 모서리 — 가로로 넓은 요소라 카드와 같은 18px 적용
+   ============================================================ */
+.ypl .lsearch input{border-radius:18px;}
+.ypl .lsearch .ls-clear{border-radius:10px;}
+/* 여러 줄 입력도 같은 기준으로 */
+.ypl textarea{border-radius:16px;}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
