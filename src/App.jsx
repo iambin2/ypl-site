@@ -1457,6 +1457,34 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .bk-entry-row span{color:var(--t-2);}
 .ypl.dark .bk-entry{background:var(--s-card);border-color:transparent;}
 .ypl.dark .bk-entries{border-top-color:var(--ln-2);}
+
+
+/* ============================================================
+   모바일 상단바 잘림 수정
+   ============================================================ */
+/* 브랜드가 줄어들 수 있게 하고, 오른쪽 버튼은 절대 밀리지 않게 고정 */
+.ypl .nav-in{min-width:0;flex-wrap:nowrap;}
+.ypl .brand{min-width:0;flex:0 1 auto;overflow:hidden;}
+.ypl .brand>div{min-width:0;overflow:hidden;}
+.ypl .brand small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.ypl .nav-right{flex:0 0 auto;min-width:0;}
+
+@media(max-width:820px){
+  /* 세컨드 로고는 좁은 화면에서 숨겨 오른쪽 버튼 자리를 확보 */
+  .ypl .brand small{display:none;}
+  .ypl .nav-right{gap:7px;}
+  .ypl .nav-theme,.ypl .nav-burger{width:38px;height:38px;}
+  .ypl .nlink.admin{padding:8px 11px;font-size:13px;}
+  .ypl .nav-discord{padding:8px 10px;}
+  .ypl .brand .disp{font-size:20px;}
+}
+@media(max-width:400px){
+  .ypl .nav-in{padding:10px 12px;gap:8px;}
+  .ypl .nav-right{gap:5px;}
+  .ypl .nav-theme,.ypl .nav-burger{width:36px;height:36px;}
+  .ypl .nlink.admin{padding:7px 9px;font-size:12.5px;}
+  .ypl .nav-discord{padding:7px 9px;}
+}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
