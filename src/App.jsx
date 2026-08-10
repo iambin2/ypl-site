@@ -1331,8 +1331,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl.dark .rec-card,.ypl.dark .st-card,.ypl.dark .flow-step,.ypl.dark .hs,.ypl.dark .hq,
 .ypl.dark .home-champ,.ypl.dark .bd-item,.ypl.dark .ann-item,.ypl.dark .bk-card,
 .ypl.dark .comp,.ypl.dark .modal,.ypl.dark .nav-drawer,.ypl.dark .keep,
-.ypl.dark .fold,.ypl.dark .hofm-sp,.ypl.dark .lsearch,.ypl.dark .list-tools,
-.ypl.dark .ttl-card,.ypl.dark .r2-row,.ypl.dark .round2,.ypl.dark .pr-box,
+.ypl.dark .fold,.ypl.dark .hofm-sp,.ypl.dark .ttl-card,.ypl.dark .r2-row,.ypl.dark .round2,.ypl.dark .pr-box,
 .ypl.dark input,.ypl.dark textarea,.ypl.dark select,.ypl.dark .dd-head,.ypl.dark .dd-list,
 .ypl.dark .btn-ghost,.ypl.dark .nav-theme,.ypl.dark .nav-burger,.ypl.dark .nav-discord,
 .ypl.dark .nlink.admin,.ypl.dark .subtab,.ypl.dark .pg-btn,.ypl.dark .bk-slot,
@@ -1494,6 +1493,21 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .lsearch .ls-clear{border-radius:10px;}
 /* 여러 줄 입력도 같은 기준으로 */
 .ypl textarea{border-radius:16px;}
+
+
+/* 검색창: 감싸는 컨테이너는 배경 없이 두고, 실제 입력칸만 둥근 면으로 */
+.ypl .lsearch,.ypl .list-tools{background:transparent;border:none;box-shadow:none;}
+.ypl.dark .lsearch,.ypl.dark .list-tools{background:transparent;border:none;}
+.ypl .lsearch input{border-radius:18px;background:var(--s-card);border:1px solid var(--ln-2);}
+.ypl.dark .lsearch input{background:var(--s-card);border-color:transparent;}
+.ypl .lsearch input:focus{border-color:var(--ac-fill);}
+.ypl.dark .lsearch input:focus{border-color:var(--ac-text);}
+
+
+/* 다크모드에서 면 배경만 받고 모서리가 없던 요소 보정 */
+.ypl .comp,.ypl .ttl-card,.ypl .r2-row{border-radius:18px;}
+.ypl .bk-hint{border-radius:12px;}
+.ypl .btn-ghost{border-radius:12px;}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
