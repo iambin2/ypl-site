@@ -10,6 +10,7 @@ import "./shared-ui.css";
 
 const UNDO_MS = 10000;
 const TICK_MS = 100;
+const RING_R = 15.5;
 
 const AdminActionsContext = createContext(null);
 
@@ -81,15 +82,26 @@ function UndoBar({ undo, onUndo, onDismiss }) {
 
   const seconds = Math.max(1, Math.ceil(left / 1000));
   const ratio = Math.max(0, Math.min(1, left / UNDO_MS));
+  const circumference = 2 * Math.PI * RING_R;
 
   return (
     <div className="undo-bar" role="status">
       <div className="undo-bar-in">
         <span className="undo-bar-text">{undo.label}</span>
-        <span className="undo-bar-count tnum">{seconds}초</span>
+        <span className="undo-ring" aria-label={`${seconds}초 남음`}>
+          <svg viewBox="0 0 36 36" aria-hidden="true">
+            <circle className="undo-ring-track" cx="18" cy="18" r={RING_R} />
+            <circle
+              className="undo-ring-fill"
+              cx="18" cy="18" r={RING_R}
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - ratio)}
+            />
+          </svg>
+          <b className="tnum">{seconds}</b>
+        </span>
         <button className="undo-bar-btn" onClick={onUndo}>되돌리기</button>
       </div>
-      <div className="undo-bar-track"><div className="undo-bar-fill" style={{ transform: `scaleX(${ratio})` }} /></div>
     </div>
   );
 }
