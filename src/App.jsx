@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { loadSiteData, saveSiteData } from "./services/index.js";
 import { AboutPage, BoardPage, BracketsPage, ChampionsPage, HomePage, NewsPage, RecordsPage, TeamBuilderPage, TitlesPage } from "./pages/index.js";
-import { SiteHeader } from "./components/index.js";
+import { AdminActionsProvider, SiteHeader } from "./components/index.js";
 import { AdminModeBar, AdminModalHost } from "./admin/index.js";
 
 /* =========================================================================
@@ -1542,7 +1542,7 @@ export default function App() {
   useEffect(()=>{let last=null,raf=0;const f=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const v=window.scrollY>20;if(v!==last){last=v;setScrolled(v);}});};f();window.addEventListener("scroll",f,{passive:true});return()=>{window.removeEventListener("scroll",f);if(raf)cancelAnimationFrame(raf);};},[]);
   const go=useCallback((v)=>{setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"smooth"});},[]);
   const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
-  const save=useCallback(async(next)=>{setData(next);const ok=await saveSiteData(next);flash(ok?"저장됨 ✓":"메모리에만 반영됨");},[flash]);
+  const save=useCallback(async(next,opts)=>{setData(next);const ok=await saveSiteData(next);if(!(opts&&opts.silent))flash(ok?"저장됨 ✓":"메모리에만 반영됨");return ok;},[flash]);
   const submitForm=useCallback(async(annId,answers)=>{
     // 동시 제출로 인한 응답 유실 방지:
     // 최신 데이터를 다시 읽어 내 응답을 덧붙여 저장한 뒤, 저장 결과를 재확인.
@@ -1595,6 +1595,7 @@ export default function App() {
       />
       {admin&&<AdminModeBar/>}
 
+      <AdminActionsProvider data={data} save={save} flash={flash}>
       <div className="wrap"><div className="page" key={view}>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage/>}
@@ -1618,6 +1619,7 @@ export default function App() {
         flash={flash}
         normTeam={normTeam}
       />
+      </AdminActionsProvider>
     </div>
   );
 }

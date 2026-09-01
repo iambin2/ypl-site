@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Dropdown, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Dropdown, ListSearch, Modal, Pager, Reveal, useAdminActions } from "../components/index.js";
 
 function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
 
 const PAGE_SIZE=10;
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh }) {
+  const {confirmAction,deleteWithUndo}=useAdminActions();
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
   const [open,setOpen]=useState(()=>new Set());
@@ -30,7 +31,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   useEffect(()=>{setPage(1);},[q]);
   const respAnn=respId?data.announcements.find(a=>a.id===respId):null;
   const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
-  const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
+  const delResp=async(rid)=>{
+    const ok=await confirmAction({title:"응답을 삭제할까요?",message:"제출된 신청 내용이 사라집니다. 삭제 후 10초 안에는 되돌릴 수 있습니다.",danger:true});
+    if(!ok)return;
+    const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}});
+    deleteWithUndo({label:"응답을 삭제했습니다",next:{...data,announcements}}); };
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Announcements</div><h2>공지</h2>
       <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
@@ -151,7 +156,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp }){
         <tbody>{resp.map((r,i)=>(<tr key={r.id}>
           <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
           {fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
-          <td><button className="fr-del" onClick={()=>{if(confirm("이 응답을 삭제할까요?"))onDeleteResp(r.id);}} title="삭제">🗑</button></td>
+          <td><button className="fr-del" onClick={()=>onDeleteResp(r.id)} title="삭제">🗑</button></td>
         </tr>))}</tbody>
       </table></div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button></div>

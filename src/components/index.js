@@ -1,5 +1,6 @@
 export { default as Dropdown } from "./common/Dropdown.jsx";
 export { default as ListSearch } from "./common/ListSearch.jsx";
+export { AdminActionsProvider, useAdminActions } from "./common/AdminActions.jsx";
 export { default as BetaNotice } from "./common/BetaNotice.jsx";
 export { default as Modal } from "./common/Modal.jsx";
 export { default as Pager } from "./common/Pager.jsx";

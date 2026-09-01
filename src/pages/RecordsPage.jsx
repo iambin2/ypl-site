@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Dropdown, PanelSearch, Reveal, StandTable } from "../components/index.js";
+import { Dropdown, PanelSearch, Reveal, StandTable, useAdminActions } from "../components/index.js";
 import { buildRecordsSnapshot } from "../services/recordsAnalytics.js";
 import { syncTournamentRounds } from "../services/recordSync.js";
 import "../records.css";
@@ -511,8 +511,9 @@ function RankView({ data, admin, setModal, save }) {
   const eras = data.rankings || [];
   const [sel, setSel] = useState(eras[0]?.key);
   const era = eras.find((e) => e.key === sel) || eras[0];
-  const addEra = () => {
-    const name = (prompt("새 누적 랭킹 탭 이름 (예: 클래식)") || "").trim();
+  const { promptAction } = useAdminActions();
+  const addEra = async () => {
+    const name = (await promptAction({ title: "누적 랭킹 탭 추가", message: "새로 만들 탭의 이름을 입력해 주세요.", label: "탭 이름", placeholder: "예: 클래식", confirmLabel: "추가" }) || "").trim();
     if (!name) return;
     const key = "r_" + uid();
     save({ ...data, rankings: [...eras, { key, label: name, rows: [] }] });
@@ -561,8 +562,9 @@ function RankView({ data, admin, setModal, save }) {
 function SeasonView({ data, admin, setModal, save }) {
   const seasons = data.seasons || [];
   const [sel, setSel] = useState(Math.max(0, seasons.length - 1));
-  const addSeason = () => {
-    const name = (prompt("새 시즌 이름 (예: YPL 시즌 3)") || "").trim();
+  const { promptAction } = useAdminActions();
+  const addSeason = async () => {
+    const name = (await promptAction({ title: "시즌 추가", message: "새로 만들 시즌의 이름을 입력해 주세요.", label: "시즌 이름", placeholder: "예: YPL 시즌 3", confirmLabel: "추가" }) || "").trim();
     if (!name) return;
     save({ ...data, seasons: [...seasons, { name, rows: [] }] });
     setSel(seasons.length);

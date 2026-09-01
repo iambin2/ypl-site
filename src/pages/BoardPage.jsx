@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { ListSearch, Modal, Pager, Reveal, useAdminActions } from "../components/index.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
@@ -74,13 +74,30 @@ export default function BoardPage({ data, admin, save, flash }){
   useEffect(()=>{setPage(1);},[q]);
   const [open,setOpen]=useState(()=>new Set());
   const [compose,setCompose]=useState(false);
+  const {confirmAction,promptAction,alertAction,deleteWithUndo}=useAdminActions();
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
   const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글 등록 ✓"); };
-  const delPost=(p)=>{ if(admin){ if(!confirm("이 글을 삭제할까요?"))return; } else { const pin=prompt("본인 글을 삭제하려면 작성 시 입력한 PIN을 입력하세요."); if(pin===null)return; if(!p.pin||pin!==p.pin){alert("PIN이 일치하지 않습니다.");return;} }
-    save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };
+  const delPost=async(p)=>{
+    if(admin){
+      const ok=await confirmAction({title:"글을 삭제할까요?",message:`“${p.title||"제목 없음"}” 글과 달린 댓글이 함께 사라집니다. 삭제 후 10초 안에는 되돌릴 수 있습니다.`,danger:true});
+      if(!ok)return;
+    }else{
+      const pin=await promptAction({title:"본인 확인",message:"작성할 때 입력한 PIN을 넣어주세요.",label:"삭제 PIN",placeholder:"숫자 4자리",numeric:true,maxLength:4,confirmLabel:"확인"});
+      if(pin===null)return;
+      if(!p.pin||pin!==p.pin){ await alertAction({title:"PIN이 일치하지 않습니다",message:"작성할 때 입력한 PIN을 다시 확인해 주세요."}); return; }
+    }
+    deleteWithUndo({label:"글을 삭제했습니다",next:{...data,board:(data.board||[]).filter(x=>x.id!==p.id)}}); };
   const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글 등록 ✓"); };
-  const delComment=(p,c)=>{ if(admin){ if(!confirm("이 댓글을 삭제할까요?"))return; } else { const pin=prompt("본인 댓글을 삭제하려면 PIN을 입력하세요."); if(pin===null)return; if(!c.pin||pin!==c.pin){alert("PIN이 일치하지 않습니다.");return;} }
-    save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
+  const delComment=async(p,c)=>{
+    if(admin){
+      const ok=await confirmAction({title:"댓글을 삭제할까요?",message:"삭제 후 10초 안에는 되돌릴 수 있습니다.",danger:true});
+      if(!ok)return;
+    }else{
+      const pin=await promptAction({title:"본인 확인",message:"댓글을 남길 때 입력한 PIN을 넣어주세요.",label:"삭제 PIN",placeholder:"숫자 4자리",numeric:true,maxLength:4,confirmLabel:"확인"});
+      if(pin===null)return;
+      if(!c.pin||pin!==c.pin){ await alertAction({title:"PIN이 일치하지 않습니다",message:"댓글을 남길 때 입력한 PIN을 다시 확인해 주세요."}); return; }
+    }
+    deleteWithUndo({label:"댓글을 삭제했습니다",next:{...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}}); };
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Community</div><h2>게시판</h2>
       <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Dropdown, Modal, Reveal } from "../components/index.js";
+import { Dropdown, Modal, Reveal, useAdminActions } from "../components/index.js";
 import { revertBracketRecord } from "../services/recordSync.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -510,6 +510,7 @@ function PartyEditor({ b, onClose, onSave }){
 }
 
 function BracketBoard({ b, data, admin, save, flash, onApply }){
+  const {confirmAction,alertAction,deleteWithUndo}=useAdminActions();
   const nameOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
   const teamMode=b.mode==="team";
   const locked=!!b.applied;
@@ -530,12 +531,13 @@ function BracketBoard({ b, data, admin, save, flash, onApply }){
     flash("본선 대진 생성 ✓");
   };
   const res = b.format==="group" ? (b.knockout?elimResult(b.knockout):null) : elimResult(b.graph);
-  const undoApplied=()=>{
+  const undoApplied=async()=>{
     if(!b.applied)return;
-    if(!confirm("이 대진표의 기록 반영을 취소할까요? 회차와 랭킹, 시즌 성적이 함께 원복됩니다."))return;
+    const ok=await confirmAction({title:"기록 반영을 취소할까요?",message:"회차와 랭킹, 시즌 성적이 함께 원복됩니다. 취소 후 10초 안에는 되돌릴 수 있습니다.",confirmLabel:"반영 취소",danger:true});
+    if(!ok)return;
     const result=revertBracketRecord(data,b.id);
-    if(!result.changed){alert(result.reason||"자동 원복할 수 없는 기록입니다.");return;}
-    save(result.data); flash("기록 반영 취소 ✓");
+    if(!result.changed){ await alertAction({title:"자동으로 원복할 수 없습니다",message:result.reason||"이 기록은 직접 수정해 주세요."}); return; }
+    deleteWithUndo({label:"기록 반영을 취소했습니다",next:result.data});
   };
   return (<div className="bk-board swap">
     {editAdmin&&<div className="bk-tools"><button className="btn btn-ghost btn-sm" onClick={()=>setParty(true)}>📋 파티 엔트리 기록</button></div>}
@@ -750,6 +752,7 @@ function BracketDraw({ b, onDone }){
 
 /* ===== 대진표 메인 ===== */
 export default function BracketsPage({ data, admin, save, flash }){
+  const {confirmAction,alertAction,deleteWithUndo}=useAdminActions();
   const list=data.brackets||[];
   const [openId,setOpenId]=useState(null);
   const [wizard,setWizard]=useState(false);
@@ -757,7 +760,12 @@ export default function BracketsPage({ data, admin, save, flash }){
   const [drawId,setDrawId]=useState(null);
   const open=list.find(b=>b.id===openId);
   const create=(b)=>{ save({...data,brackets:[b,...list]}); setWizard(false); setOpenId(b.id); setDrawId(b.id); flash("대회 생성 ✓"); };
-  const del=(b)=>{ if(b.applied){alert("기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;} if(!confirm(`'${b.name}' 대회를 삭제할까요?`))return; save({...data,brackets:list.filter(x=>x.id!==b.id)}); setOpenId(null); };
+  const del=async(b)=>{
+    if(b.applied){ await alertAction({title:"먼저 기록 반영을 취소해 주세요",message:"기록에 반영된 대진표는 반영을 취소한 뒤에 삭제할 수 있습니다."}); return; }
+    const ok=await confirmAction({title:"대회를 삭제할까요?",message:`“${b.name}” 대진표와 입력한 결과가 사라집니다. 삭제 후 10초 안에는 되돌릴 수 있습니다.`,danger:true});
+    if(!ok)return;
+    deleteWithUndo({label:"대회를 삭제했습니다",next:{...data,brackets:list.filter(x=>x.id!==b.id)}});
+    setOpenId(null); };
   const statusTag=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); if(b.applied)return"기록 반영됨"; if(r&&r.done)return"종료"; return"진행 중"; };
   return (<section className="sec">
     <Reveal className="sec-head"><div className="kick">Bracket</div><h2>대진표</h2>

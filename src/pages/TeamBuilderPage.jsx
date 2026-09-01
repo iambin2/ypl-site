@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BetaNotice, Dropdown, Modal, PanelSearch, Reveal } from "../components/index.js";
+import { BetaNotice, Dropdown, Modal, PanelSearch, Reveal, useAdminActions } from "../components/index.js";
 import { CUP_RULES, KO, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData } from "../services/index.js";
 import {
@@ -286,6 +286,7 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
 }
 
 export default function TeamBuilderPage() {
+  const { confirmAction, undoable } = useAdminActions();
   const initialRuleStateRef = useRef(null);
   if (!initialRuleStateRef.current) initialRuleStateRef.current = readInitialRuleState();
   const [regulationId, setRegulationId] = useState(initialRuleStateRef.current.regulationId);
@@ -561,8 +562,8 @@ export default function TeamBuilderPage() {
     markDirty();
   }, [assignedTypeId, markDirty]);
 
-  const resetTeam = useCallback(() => {
-    if (team.length && !window.confirm("현재 팀 구성을 모두 초기화할까요?")) return;
+  const resetTeam = useCallback(async () => {
+    if (team.length && !(await confirmAction({ title: "팀 구성을 초기화할까요?", message: "지금 편집 중인 포켓몬과 세팅이 모두 지워집니다.", confirmLabel: "초기화", danger: true }))) return;
     setTeam([]);
     setSelectedUid(null);
     setActiveSavedTeamId(null);
@@ -642,8 +643,8 @@ export default function TeamBuilderPage() {
     setSaveMessage("저장되었습니다.");
   }, [storageAvailable, saveName, savedTeams, activeSavedTeamId, regulationId, cupRuleId, cupRule.kind, assignedTypeId, team]);
 
-  const loadSavedTeam = useCallback(saved => {
-    if (dirty && !window.confirm("저장되지 않은 변경사항이 있습니다. 저장하지 않고 다른 팀을 불러올까요?")) return;
+  const loadSavedTeam = useCallback(async saved => {
+    if (dirty && !(await confirmAction({ title: "저장하지 않은 변경사항이 있습니다", message: "저장하지 않고 다른 팀을 불러오면 지금 편집 내용이 사라집니다.", confirmLabel: "그대로 불러오기", danger: true }))) return;
     const reg = REGULATIONS[saved.regulationId];
     if (!reg) {
       window.alert(`저장된 Regulation(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
@@ -685,8 +686,8 @@ export default function TeamBuilderPage() {
     setSavedTeams(next);
   }, [savedTeams]);
 
-  const deleteSavedTeam = useCallback(saved => {
-    if (!window.confirm(`“${saved.name}” 팀을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+  const deleteSavedTeam = useCallback(async saved => {
+    if (!(await confirmAction({ title: "저장한 팀을 삭제할까요?", message: `“${saved.name}” 팀이 이 브라우저에서 사라집니다. 삭제 후 10초 안에는 되돌릴 수 있습니다.`, danger: true }))) return;
     const next = savedTeams.filter(item => item.id !== saved.id);
     if (!writeSavedTeams(next)) {
       setStorageAvailable(false);
@@ -694,10 +695,20 @@ export default function TeamBuilderPage() {
     }
     setStorageAvailable(true);
     setSavedTeams(next);
-    if (activeSavedTeamId === saved.id) {
+    const wasActive = activeSavedTeamId === saved.id;
+    if (wasActive) {
       setActiveSavedTeamId(null);
       setDirty(team.length > 0);
     }
+    undoable({
+      label: `“${saved.name}” 팀을 삭제했습니다`,
+      onUndo: () => {
+        const restored = [...next, saved].sort((x, y) => (y.updatedAt || "").localeCompare(x.updatedAt || ""));
+        if (!writeSavedTeams(restored)) { setStorageAvailable(false); return; }
+        setSavedTeams(restored);
+        if (wasActive) setActiveSavedTeamId(saved.id);
+      },
+    });
   }, [savedTeams, activeSavedTeamId, team.length]);
 
   useEffect(() => {
