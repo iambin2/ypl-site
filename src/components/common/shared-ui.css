@@ -1,0 +1,34 @@
+/* 베타 안내 배너. 사이트 디자인 시스템(18px 면, 10px 칩, 남색 단색)을 따른다. */
+.ypl .beta-note{
+  display:flex;align-items:flex-start;gap:12px;
+  margin:0 0 18px;padding:14px 16px;
+  background:var(--s-soft);border:1px solid var(--ln-1);border-radius:18px;
+}
+.ypl.dark .beta-note{background:var(--s-soft);border-color:transparent;}
+.ypl .beta-note-tag{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;
+  padding:4px 9px;border-radius:10px;
+  background:var(--ac-fill);color:#FFFFFF;
+  font-size:10px;font-weight:800;letter-spacing:.1em;line-height:1;
+}
+.ypl .beta-note-body{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.ypl .beta-note-body b{font-size:13.5px;font-weight:700;color:var(--t-2);}
+.ypl .beta-note-body span{font-size:12.5px;line-height:1.6;color:var(--t-4);}
+
+@media (max-width:640px){
+  .ypl .beta-note{flex-direction:column;gap:9px;}
+}
+
+/* 공통 모달 닫기 버튼 — 사이트 칩 규격(10px), 남색 단색 */
+.ypl .modal{position:relative;}
+.ypl .modal .md-close{
+  position:absolute;top:18px;right:18px;z-index:2;
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--ln-2);background:var(--s-card);color:var(--t-4);
+  border-radius:10px;font-size:14px;line-height:1;cursor:pointer;
+  transition:background .3s cubic-bezier(.22,.61,.36,1),color .3s cubic-bezier(.22,.61,.36,1),border-color .3s cubic-bezier(.22,.61,.36,1);
+}
+.ypl .modal .md-close:hover{background:var(--s-soft);color:var(--ac-text);border-color:var(--ln-3);}
+.ypl.dark .modal .md-close{background:var(--s-soft);border-color:transparent;}
+.ypl.dark .modal .md-close:hover{background:var(--s-fill);border-color:transparent;}
+.ypl .modal h3{padding-right:44px;}

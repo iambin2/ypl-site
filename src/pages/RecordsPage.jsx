@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Dropdown, Reveal, StandTable } from "../components/index.js";
+import { Dropdown, PanelSearch, Reveal, StandTable } from "../components/index.js";
 import { buildRecordsSnapshot } from "../services/recordsAnalytics.js";
 import { syncTournamentRounds } from "../services/recordSync.js";
 import "../records.css";
@@ -106,10 +106,7 @@ function TrainerView({ snapshot }) {
   return (
     <div className="records-trainer-layout">
       <aside className="panel records-trainer-list">
-        <div className="records-search">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="트레이너 검색" />
-          <span>{visible.length}명</span>
-        </div>
+        <PanelSearch value={query} onChange={setQuery} placeholder="트레이너 검색" countLabel={`${visible.length}명`} />
         <div className="records-trainer-scroll">
           {visible.map((trainer) => (
             <button
@@ -375,10 +372,7 @@ function TournamentArchiveView({ data, admin, setModal }) {
       </div>
     ) : (
       <>
-        <div className="records-toolbar">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" />
-          <span>전체 {allRows.length}회차</span>
-        </div>
+        <PanelSearch value={query} onChange={setQuery} placeholder="대회명, 시즌, 룰, 입상자 검색" countLabel={`전체 ${allRows.length}회차`} />
         <div className="panel swap" style={{ paddingBottom: 14 }}>
           {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
           {!allRows.length && <div className="none" style={{ padding: 24 }}>표시할 대회 기록이 없습니다.</div>}
@@ -409,10 +403,7 @@ function PokemonView({ snapshot }) {
   return (
     <div className="records-pokemon-layout">
       <aside className="panel records-pokemon-list">
-        <div className="records-search">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="포켓몬 검색" />
-          <span>{visible.length}종</span>
-        </div>
+        <PanelSearch value={query} onChange={setQuery} placeholder="포켓몬 검색" countLabel={`${visible.length}종`} />
         <div className="records-pokemon-scroll">
           {visible.map((pokemon, index) => (
             <button

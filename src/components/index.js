@@ -3,6 +3,7 @@ export { default as ListSearch } from "./common/ListSearch.jsx";
 export { default as BetaNotice } from "./common/BetaNotice.jsx";
 export { default as Modal } from "./common/Modal.jsx";
 export { default as Pager } from "./common/Pager.jsx";
+export { default as PanelSearch } from "./common/PanelSearch.jsx";
 export { default as Reveal } from "./common/Reveal.jsx";
 export { default as StandTable } from "./common/StandTable.jsx";
 export { default as SiteHeader } from "./layout/SiteHeader.jsx";

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BetaNotice, Dropdown, Modal, Reveal } from "../components/index.js";
+import { BetaNotice, Dropdown, Modal, PanelSearch, Reveal } from "../components/index.js";
 import { CUP_RULES, KO, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData } from "../services/index.js";
 import {
@@ -226,7 +226,7 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
   return (
     <button type="button" className={"tb-slot" + (active ? " active" : "")} onClick={onSelect}>
       <span className="tb-slot-no">{index + 1}</span>
-      <img src={spriteUrl(member.pokemon.name)} alt="" className="tb-slot-sprite" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
+      <img src={spriteUrl(member.pokemon.name)} alt="" className="tb-slot-sprite" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
       <span className="tb-slot-copy">
         <strong>{displayName}</strong>
         <small>{itemLabel || "도구 없음"}, 기술 {moveCount}/4</small>
@@ -869,10 +869,12 @@ export default function TeamBuilderPage() {
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {regulation.pokemon.length}</small></strong>
           </div>
           <div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{dataStatusText}<span className="tb-data-sep" aria-hidden="true" />{localizationText}</div>
-          <div className="tb-search-row">
-            <input className="tb-input" value={query} onChange={event => setQuery(event.target.value)} placeholder="포켓몬 이름 검색 (한글/영문)" />
-            {query && <button className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기">×</button>}
-          </div>
+          <PanelSearch
+            value={query}
+            onChange={setQuery}
+            placeholder="포켓몬 이름 검색 (한글/영문)"
+            countLabel={query ? `${filteredPool.length}종` : ""}
+          />
           {cupRule.kind === "monotype" && !assignedTypeId ? (
             <div className="tb-pool-empty">모노타입 챌린지의 배정 타입을 먼저 선택해 주세요.</div>
           ) : cupRule.kind === "monotype" && !detailData && detailStatus === "loading" ? (
@@ -887,7 +889,7 @@ export default function TeamBuilderPage() {
                 const already = team.some(member => speciesIdentity(detailData, member.pokemon) === identity);
                 return (
                   <button key={pokemon.name} className="tb-pokemon-row" onClick={() => addPokemon(pokemon)} disabled={already}>
-                    <img src={spriteUrl(pokemon.name)} alt="" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
+                    <img src={spriteUrl(pokemon.name)} alt="" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
                     <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{displayPokemon(pokemon) !== pokemon.name ? pokemon.name : ""}{details?.num ? `${displayPokemon(pokemon) !== pokemon.name ? " " : ""}#${String(details.num).padStart(4, "0")}` : ""}</small></span>
                     <TypeBadges types={details?.types || []} />
                     <span className="tb-add-mark">{already ? "✓" : "+"}</span>
@@ -899,8 +901,7 @@ export default function TeamBuilderPage() {
           )}
         </Reveal>
 
-        <div className="tb-main-column">
-          <Reveal className="tb-panel" delay={75}>
+        <Reveal className="tb-panel tb-team-panel" delay={75}>
             <div className="tb-panel-head tb-team-head">
               <div>
                 <span className="tb-panel-kicker">YOUR TEAM</span>
@@ -926,7 +927,7 @@ export default function TeamBuilderPage() {
             ) : (
               <>
                 <div className="tb-editor-head">
-                  <img src={spriteUrl(selectedMember.pokemon.name)} alt="" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
+                  <img src={spriteUrl(selectedMember.pokemon.name)} alt="" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
                   <div className="tb-editor-title">
                     <h2>{displayPokemon(selectedMember.pokemon)}</h2>
                     {displayPokemon(selectedMember.pokemon) !== selectedMember.pokemon.name && <span>{selectedMember.pokemon.name}</span>}
@@ -1024,11 +1025,9 @@ export default function TeamBuilderPage() {
             )}
           </Reveal>
 
-        </div>
       </div>
 
       {libraryOpen && <Modal title="내 팀" hint="불러오기 후 수정하고 다시 저장하면 기존 팀을 덮어씁니다." onClose={() => setLibraryOpen(false)}>
-        <button className="tb-modal-close" type="button" onClick={() => setLibraryOpen(false)} aria-label="내 팀 닫기">×</button>
         <div className="tb-library-save">
           <label className="tb-field"><span>현재 팀 저장</span><input className="tb-input tb-team-name" maxLength={40} value={saveName} onChange={event => setSaveName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(); } }} placeholder="팀 이름" /></label>
           <div className="tb-library-save-meta"><span>{regulation.name}, {currentCupRuleSummary}, {team.length}/6마리</span><span>이 브라우저에 저장됩니다.</span><span>Incomplete / Invalid 팀도 초안 저장 가능</span></div>
@@ -1044,7 +1043,7 @@ export default function TeamBuilderPage() {
                 <button type="button" className="tb-saved-main tb-saved-load" onClick={() => loadSavedTeam(saved)}>
                   <strong>{saved.name}{saved.id === activeSavedTeamId && <span className="tb-active-saved">현재</span>}</strong>
                   <span>{savedReg?.shortName || saved.regulationId}{saved.cupRuleId !== "none" ? `, ${(CUP_RULES[saved.cupRuleId]?.shortName || "룰")}${type ? ` ${type.korean}` : ""}` : ""}, {saved.members.length}/6마리, {formatSavedDate(saved.updatedAt)} 수정</span>
-                  <div className="tb-saved-icons">{saved.members.map((member, index) => <img key={`${member.pokemonName}-${index}`} src={spriteUrl(member.pokemonName)} alt="" title={member.pokemonName} onError={event => { event.currentTarget.style.visibility = "hidden"; }} />)}</div>
+                  <div className="tb-saved-icons">{saved.members.map((member, index) => <img key={`${member.pokemonName}-${index}`} src={spriteUrl(member.pokemonName)} alt="" title={member.pokemonName} loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />)}</div>
                 </button>
                 <div className="tb-saved-actions">
                   <button className="btn btn-ghost btn-sm" onClick={() => duplicateSavedTeam(saved)}>복제</button>

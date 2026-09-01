@@ -1,5 +1,5 @@
 import React from "react";
-import "./beta-notice.css";
+import "./shared-ui.css";
 
 /* 새로 도입한 기능이 시험 운영 중임을 알리는 배너. */
 export default function BetaNotice({ title, children }) {

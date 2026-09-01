@@ -256,7 +256,7 @@ export function bilingualName(korean, english) {
 }
 
 export function alignmentDisplay(alignment) {
-  const effect = alignment?.plus ? ` ${STAT_LABELS[alignment.plus]}↑ ${STAT_LABELS[alignment.minus]}↓` : " · 보정 없음";
+  const effect = alignment?.plus ? ` ${STAT_LABELS[alignment.plus]}↑ ${STAT_LABELS[alignment.minus]}↓` : " 보정 없음";
   return `${bilingualName(natureName(alignment), alignment?.name)}${effect}`;
 }
 
@@ -329,7 +329,7 @@ export function moveMetadata(detailData, id) {
   if (!move) return moveName(detailData, id);
   const power = move.category === "Status" ? "—" : move.basePower || "—";
   const accuracy = move.accuracy === true ? "—" : move.accuracy ?? "—";
-  return `${TYPE_KO[move.type] || move.type || "—"} ${CATEGORY_KO[move.category] || move.category || "—"} · 위력 ${power} · 명중 ${accuracy} · PP ${move.pp ?? "—"}`;
+  return `${TYPE_KO[move.type] || move.type || "—"} ${CATEGORY_KO[move.category] || move.category || "—"}, 위력 ${power}, 명중 ${accuracy}, PP ${move.pp ?? "—"}`;
 }
 
 export function pokemonMatchesCupRule({ pokemon, cupRuleId, assignedTypeId, detailData }) {
