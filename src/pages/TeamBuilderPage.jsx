@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BetaNotice, Modal, Reveal } from "../components/index.js";
+import { BetaNotice, Dropdown, Modal, Reveal } from "../components/index.js";
 import { CUP_RULES, KO, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData } from "../services/index.js";
 import {
@@ -830,22 +830,18 @@ export default function TeamBuilderPage() {
         <div className="tb-rule-grid">
           <label className="tb-field">
             <span>Regulation</span>
-            <select className="tb-select" value={regulationId} onChange={event => switchRegulation(event.target.value)}>
-              {Object.values(REGULATIONS).map(reg => <option key={reg.id} value={reg.id}>{reg.name}{reg.status === "current" ? " (현행)" : ""}</option>)}
-            </select>
+            <Dropdown className="tb-dd" value={regulationId} onChange={switchRegulation}
+              options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, label: reg.name + (reg.status === "current" ? " (현행)" : "") }))} />
           </label>
           <label className="tb-field">
             <span>파이컵 추가 룰</span>
-            <select className="tb-select" value={cupRuleId} onChange={event => switchCupRule(event.target.value)}>
-              {Object.values(CUP_RULES).map(rule => <option key={rule.id} value={rule.id}>{rule.name}</option>)}
-            </select>
+            <Dropdown className="tb-dd" value={cupRuleId} onChange={switchCupRule}
+              options={Object.values(CUP_RULES).map(rule => ({ value: rule.id, label: rule.name }))} />
           </label>
           {cupRule.kind === "monotype" && <label className="tb-field">
             <span>배정 타입</span>
-            <select className="tb-select" value={assignedTypeId} onChange={event => switchCupRuleType(event.target.value)}>
-              <option value="">타입을 선택하세요</option>
-              {TYPE_OPTIONS.map(type => <option key={type.id} value={type.id}>{type.korean} ({type.english})</option>)}
-            </select>
+            <Dropdown className="tb-dd" value={assignedTypeId} onChange={switchCupRuleType} placeholder="타입을 선택하세요"
+              options={TYPE_OPTIONS.map(type => ({ value: type.id, label: type.korean + " (" + type.english + ")" }))} />
           </label>}
         </div>
         <div className="tb-rule-meta">
@@ -941,15 +937,15 @@ export default function TeamBuilderPage() {
 
                 <div className="tb-editor-grid two">
                   <label className="tb-field"><span>특성</span>
-                    <select className="tb-select" value={selectedMember.ability || ""} disabled={!selectedDetails?.abilities?.length} onChange={event => updateMember(selectedMember.uid, { ability: event.target.value })}>
-                      {!selectedDetails?.abilities?.length && <option value="">{detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…"}</option>}
-                      {(selectedDetails?.abilities || []).map(ability => <option key={ability} value={ability}>{bilingualName(abilityName(ability), ability)}</option>)}
-                    </select>
+                    <Dropdown className="tb-dd" value={selectedMember.ability || ""}
+                      onChange={value => updateMember(selectedMember.uid, { ability: value })}
+                      placeholder={detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…"}
+                      options={(selectedDetails?.abilities || []).map(ability => ({ value: ability, label: bilingualName(abilityName(ability), ability) }))} />
                   </label>
                   <label className="tb-field"><span>성격</span>
-                    <select className="tb-select" value={selectedMember.alignment || "serious"} onChange={event => updateMember(selectedMember.uid, { alignment: event.target.value })}>
-                      {ALIGNMENTS.map(alignment => <option key={alignment.id} value={alignment.id}>{alignmentDisplay(alignment)}</option>)}
-                    </select>
+                    <Dropdown className="tb-dd" value={selectedMember.alignment || "serious"}
+                      onChange={value => updateMember(selectedMember.uid, { alignment: value })}
+                      options={ALIGNMENTS.map(alignment => ({ value: alignment.id, label: alignmentDisplay(alignment) }))} />
                   </label>
                 </div>
 

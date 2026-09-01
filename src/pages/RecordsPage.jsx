@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Reveal, StandTable } from "../components/index.js";
+import { Dropdown, Reveal, StandTable } from "../components/index.js";
 import { buildRecordsSnapshot } from "../services/recordsAnalytics.js";
 import { syncTournamentRounds } from "../services/recordSync.js";
 import "../records.css";
@@ -132,12 +132,13 @@ function TrainerView({ snapshot }) {
               <span className="records-eyebrow">YPL TRAINER</span>
               <h3>{profile.name}</h3>
             </div>
-            <select value={season} onChange={(e) => setSeason(e.target.value)} aria-label="시즌 필터">
-              <option value="">전체 기록</option>
-              {snapshot.seasons.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
+            <Dropdown
+              className="records-season-dd"
+              value={season}
+              onChange={setSeason}
+              options={[{ value: "", label: "전체 기록" }, ...snapshot.seasons.map((name) => ({ value: name, label: name }))]}
+              placeholder="전체 기록"
+            />
           </div>
 
           <div className="records-stat-grid">

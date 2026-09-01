@@ -225,3 +225,42 @@
 
 /* 데이터 상태줄 구분자: 가운데점 대신 얇은 선 */
 .tb-data-sep{display:inline-block;width:1px;height:10px;background:var(--ln-2);margin:0 2px;flex:none;}
+
+/* ============================================================
+   다른 탭과 통일 — 글자색, 여백, 글자 크기
+   App.jsx의 STYLES가 body에 나중에 주입되므로 .ypl 접두사로 우선순위 확보
+   ============================================================ */
+
+/* 1) 여백: 제목이 카드 위쪽에 붙지 않도록 */
+.ypl .tb-panel{padding:22px 20px;}
+.ypl .tb-rule-card{padding:22px 20px;}
+.ypl .tb-panel-head{margin-bottom:16px;}
+.ypl .tb-subhead{margin-bottom:14px;}
+.ypl .tb-validation{padding:16px 18px;}
+.ypl .tb-saved-team{padding:14px;}
+.ypl .tb-move-field{padding:14px;}
+
+/* 2) 글자색: 다른 탭의 가독성 보정과 동일하게 */
+.ypl .tb-hero h1,.ypl .tb-panel-head h2,.ypl .tb-subhead strong{color:var(--t-1);}
+.ypl .tb-hero p,.ypl .tb-rule-meta span,.ypl .tb-field>span,
+.ypl .tb-subhead>b,.ypl .tb-data-line,.ypl .tb-slot small,
+.ypl .tb-library-save-meta span,.ypl .tb-saved-team span,
+.ypl .tb-validation li,.ypl .tb-pokemon-copy small{color:var(--t-2);}
+.ypl .tb-kicker,.ypl .tb-panel-kicker,.ypl .tb-field-meta,
+.ypl .tb-subhead span,.ypl .tb-pool-count small{color:var(--t-5);}
+.ypl .tb-slot strong,.ypl .tb-pokemon-copy strong,
+.ypl .tb-saved-team b,.ypl .tb-pool-count{color:var(--t-1);}
+
+/* 3) 글자 크기: 다른 탭 규격에 맞춤 */
+.ypl .tb-hero h1{font-size:clamp(30px,4.4vw,46px);line-height:1.12;letter-spacing:-.035em;font-weight:800;}
+.ypl .tb-hero p{font-size:16px;line-height:1.7;}
+.ypl .tb-kicker,.ypl .tb-panel-kicker{font-size:13px;font-weight:700;letter-spacing:.12em;}
+.ypl .tb-panel-head h2{font-size:22px;font-weight:800;}
+.ypl .tb-subhead strong{font-size:14px;font-weight:800;}
+.ypl .tb-subhead span,.ypl .tb-field-meta{font-size:12px;line-height:1.6;}
+.ypl .tb-field>span,.ypl .tb-rule-meta span,
+.ypl .tb-data-line,.ypl .tb-saved-team span{font-size:13px;}
+
+/* 4) 규정 선택: 사이트 드롭다운 규격 */
+.ypl .tb-dd{width:100%;}
+.ypl .tb-field .tb-dd .dd-btn{font-size:14px;}
