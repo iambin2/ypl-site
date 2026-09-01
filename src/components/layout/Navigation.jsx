@@ -50,7 +50,7 @@ export function DesktopNavigation({ view, onNavigate }) {
           aria-haspopup="menu"
           aria-expanded={toolsOpen}
         >
-          <span>YPL Tools</span><span className="nav-tools-chevron" aria-hidden="true">⌄</span>
+          <span>도구</span><span className="nav-tools-chevron" aria-hidden="true">⌄</span>
         </button>
         <div className="nav-tools-menu" role="menu" aria-hidden={!toolsOpen}>
           {TOOL_ITEMS.map(([key, label, beta]) => (
@@ -93,7 +93,7 @@ export function MobileNavigation({ view, onNavigate, open }) {
         onClick={() => setToolsOpen(value => !value)}
         aria-expanded={toolsOpen}
       >
-        <span>YPL Tools</span><span className="nav-tools-chevron" aria-hidden="true">⌄</span>
+        <span>도구</span><span className="nav-tools-chevron" aria-hidden="true">⌄</span>
       </button>
       <div className={"nav-tools-mobile-menu" + (toolsOpen ? " open" : "")}>
         {TOOL_ITEMS.map(([key, label, beta]) => (

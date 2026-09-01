@@ -252,15 +252,15 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   let message;
   let icon;
   if (result.status === "invalid") {
-    title = "Team Invalid";
+    title = "규정 위반";
     message = `${result.errors.length}개의 규정 위반을 확인했습니다.`;
     icon = "×";
   } else if (result.status === "valid") {
-    title = "Team Valid";
+    title = "검증 통과";
     message = `${regulationName}, ${cupRuleSummary} 기준으로 로스터와 세팅의 최종 검증을 통과했습니다.`;
     icon = "✓";
   } else {
-    title = teamLength || configuredSpecialRule ? "Team Incomplete" : "팀을 구성해 주세요";
+    title = teamLength || configuredSpecialRule ? "미완성" : "팀을 구성해 주세요";
     message = teamLength || configuredSpecialRule
       ? "규정 위반은 확인되지 않았지만 최종 검증에 필요한 룰 설정 또는 팀 세팅이 아직 완료되지 않았습니다."
       : "포켓몬을 선택하고 각 포켓몬의 세팅을 완료해 주세요.";
@@ -810,7 +810,7 @@ export default function TeamBuilderPage() {
       <Reveal className="tb-hero">
         <div>
           <span className="tb-kicker">YPL TOOLS</span>
-          <h1>Team Builder</h1>
+          <h1>팀 빌더</h1>
           <p>Pokémon Champions 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
         </div>
         <div className="tb-hero-actions">
@@ -829,7 +829,7 @@ export default function TeamBuilderPage() {
       <Reveal className="tb-rule-card" delay={35}>
         <div className="tb-rule-grid">
           <label className="tb-field">
-            <span>Regulation</span>
+            <span>레규레이션</span>
             <Dropdown className="tb-dd" value={regulationId} onChange={switchRegulation}
               options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, label: reg.name + (reg.status === "current" ? " (현행)" : "") }))} />
           </label>
@@ -845,7 +845,7 @@ export default function TeamBuilderPage() {
           </label>}
         </div>
         <div className="tb-rule-meta">
-          <span className={`tb-status-chip ${regulation.status}`}>{regulation.status === "current" ? "CURRENT" : "PAST"}</span>
+          <span className={`tb-status-chip ${regulation.status}`}>{regulation.status === "current" ? "현행" : "지난"}</span>
           <span>{regulation.period}</span>
           <span>{regulation.description}</span>
           {cupRule.kind !== "none" && <span>{cupRule.description}</span>}
@@ -951,7 +951,7 @@ export default function TeamBuilderPage() {
                 </div>
 
                 <div className="tb-editor-section">
-                  <div className="tb-subhead"><div><strong>Stat Point</strong><span>개별 최대 32, 총합 최대 66</span></div><b className={STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0) > 66 ? "over" : ""}>{STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0)} / 66</b></div>
+                  <div className="tb-subhead"><div><strong>능력치 배분</strong><span>개별 최대 32, 총합 최대 66</span></div><b className={STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0) > 66 ? "over" : ""}>{STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0)} / 66</b></div>
                   <div className="tb-stats">
                     {STAT_KEYS.map(key => {
                       const nature = alignmentFor(selectedMember);
@@ -960,7 +960,7 @@ export default function TeamBuilderPage() {
                       const final = calculatedStat(base, point, key, nature);
                       return (
                         <div className="tb-stat-row" key={key}>
-                          <div className="tb-stat-label"><strong>{STAT_LABELS[key]}{nature.plus === key ? " ↑" : nature.minus === key ? " ↓" : ""}</strong><span>Base {base ?? "—"}</span></div>
+                          <div className="tb-stat-label"><strong>{STAT_LABELS[key]}{nature.plus === key ? " ↑" : nature.minus === key ? " ↓" : ""}</strong><span>종족값 {base ?? "—"}</span></div>
                           <input type="range" min="0" max="32" step="1" value={point} onChange={event => updateStat(selectedMember, key, event.target.value)} />
                           <input className="tb-stat-number" type="number" min="0" max="32" step="1" value={point} onChange={event => updateStat(selectedMember, key, event.target.value)} aria-label={`${STAT_LABELS[key]} Stat Point`} />
                           <div className="tb-final-stat"><span>최종</span><strong>{final}</strong></div>
