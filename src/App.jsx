@@ -1334,6 +1334,8 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .hc-ntitle,.ypl .hc-ptitle,.ypl .bd-item .t,.ypl .ann-item .t{
   color:var(--t-1);}
 .ypl .ann-title:hover,.ypl .bd-title:hover{color:var(--t-1);}
+/* 대진표 대회 이름은 다른 탭 제목과 동일하게 무채색 (목록 카드와 상세 상단) */
+.ypl .bk-card-name,.ypl .bk-open-title{color:var(--t-1);}
 
 /* 4) 기록 탭 가독성: 회색·남색 글씨 보정 */
 .ypl .r2-name,.ypl .r2-rule,.ypl .r2-meta,.ypl .r2-date,.ypl .rk-name,
