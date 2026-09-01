@@ -1,0 +1,51 @@
+/* YPL Tools navigation group. Uses the same visual tokens as the existing YPL navigation. */
+.ypl .nav-links{overflow:visible;}
+.ypl .nav-tools{position:relative;display:flex;align-items:center;margin-left:4px;}
+.ypl .nav-tools-trigger{
+  display:inline-flex;align-items:center;gap:4px;
+  /* Deliberately inherit .nlink colors/backgrounds so Tools does not look like a separate CTA. */
+  font-size:13.5px !important;
+  padding-left:11px !important;padding-right:11px !important;
+}
+.ypl .nav-tools-trigger:hover,.ypl .nav-tools.open .nav-tools-trigger{
+  color:var(--ac-text);background:var(--s-soft);
+}
+.ypl .nav-tools-trigger.on{color:var(--ac-text);font-weight:700;}
+.ypl .nav-tools-trigger.on::after{background:var(--ac-fill);}
+.ypl .nav-tools-chevron{display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;opacity:.72;transition:transform .16s ease;}
+.ypl .nav-tools.open .nav-tools-chevron,.ypl .nav-tools-mobile-trigger[aria-expanded="true"] .nav-tools-chevron{transform:rotate(180deg);}
+.ypl .nav-tools-menu{
+  position:absolute;top:calc(100% + 8px);right:0;left:auto;z-index:90;min-width:150px;
+  padding:6px;background:var(--s-card);border:1px solid var(--line2);border-radius:18px;
+  box-shadow:none;
+  opacity:0;visibility:hidden;transform:translateY(-5px);pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease,visibility .14s ease;
+}
+.ypl .nav-tools.open .nav-tools-menu{opacity:1;visibility:visible;transform:none;pointer-events:auto;}
+.ypl .nav-tools-item{
+  width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:13.5px;font-weight:600;
+  text-align:left;padding:9px 10px;border-radius:12px;cursor:pointer;
+}
+.ypl .nav-tools-item:hover{background:var(--s-soft);color:var(--ac-text);}
+.ypl .nav-tools-item.on{background:var(--s-soft2);color:var(--ac-text);}
+
+.ypl .nav-tools-mobile-trigger{
+  display:flex;align-items:center;justify-content:space-between;
+  /* Same color system as the rest of the mobile drawer in both themes. */
+  background:transparent;color:var(--ac-text);font-size:15px;
+}
+.ypl .nav-tools-mobile-trigger:hover{background:var(--s-soft);}
+.ypl .nav-tools-mobile-trigger.on{background:var(--s-soft2);color:var(--ac-text);}
+.ypl .nav-tools-mobile-menu{display:none;padding:2px 0 4px 12px;}
+.ypl .nav-tools-mobile-menu.open{display:flex;flex-direction:column;gap:2px;}
+.ypl .nav-tools-mobile-item{font-size:14px;padding:11px 14px;color:var(--text);}
+.ypl .nav-tools-mobile-item.on{background:var(--s-soft2);color:var(--ac-text);}
+
+/* 베타 표시 배지: 사이트 칩 규격(10px 모서리, 남색 단색) */
+.ypl .nav-tools-item,.ypl .nav-tools-mobile-item{display:flex;align-items:center;gap:7px;}
+.ypl .nav-tools-beta{
+  flex:none;padding:2px 6px;border-radius:10px;
+  background:var(--ac-fill);color:#FFFFFF;
+  font-size:9px;font-weight:800;letter-spacing:.08em;line-height:1.35;
+}
+.ypl .nav-tools-item.on .nav-tools-beta,.ypl .nav-tools-mobile-item.on .nav-tools-beta{background:var(--ac-fill);}

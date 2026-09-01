@@ -1,0 +1,20 @@
+/* 베타 안내 배너. 사이트 디자인 시스템(18px 면, 10px 칩, 남색 단색)을 따른다. */
+.ypl .beta-note{
+  display:flex;align-items:flex-start;gap:12px;
+  margin:0 0 18px;padding:14px 16px;
+  background:var(--s-soft);border:1px solid var(--ln-1);border-radius:18px;
+}
+.ypl.dark .beta-note{background:var(--s-soft);border-color:transparent;}
+.ypl .beta-note-tag{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;
+  padding:4px 9px;border-radius:10px;
+  background:var(--ac-fill);color:#FFFFFF;
+  font-size:10px;font-weight:800;letter-spacing:.1em;line-height:1;
+}
+.ypl .beta-note-body{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.ypl .beta-note-body b{font-size:13.5px;font-weight:700;color:var(--t-2);}
+.ypl .beta-note-body span{font-size:12.5px;line-height:1.6;color:var(--t-4);}
+
+@media (max-width:640px){
+  .ypl .beta-note{flex-direction:column;gap:9px;}
+}
