@@ -61,6 +61,17 @@ test("snapshot submission requires exact Event registration and eligibility, the
   assert.equal(payload.snapshot.schema_version, 1);
   assert.equal(payload.members[0].pokemon_id, "pikachu");
   assert.equal(payload.submittedAt, "2026-09-05T01:02:03.000Z");
+  const manualFinalPayload = buildTeamSnapshotSubmission({
+    event: { ...event, id: "final-event" },
+    registration: { ...registration, id: "final-manual-registration", event_id: "final-event", registration_source: "manual" },
+    registrationName: "홍길동",
+    eligibility: { eligible: true },
+    team,
+    regulationId: "m-b",
+    cupRuleId: "none",
+    detailData,
+  });
+  assert.equal(manualFinalPayload.registrationId, "final-manual-registration");
   assert.throws(() => buildTeamSnapshotSubmission({
     event,
     registration: { ...registration, registration_name: "다른 이름" },

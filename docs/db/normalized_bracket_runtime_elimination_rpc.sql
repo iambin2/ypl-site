@@ -40,6 +40,12 @@ declare
     v_slot_count integer;
     v_size integer := 1;
     v_existing boolean := false;
+    v_qualifier ypl_schema_validation.events%rowtype;
+    v_qualifier_advancement_count integer;
+    v_ranking_advancement_count integer;
+    v_final_advancement_count integer;
+    v_direct_count integer;
+    v_final_capacity integer;
 begin
     if p_runtime_id is null or p_event_id is null
        or p_topology_kind not in ('single_elimination', 'double_elimination')
@@ -62,6 +68,85 @@ begin
     end if;
     if p_topology_kind = 'single_elimination' and not v_event.is_team_event then
         raise exception using errcode = 'P0001', message = '개인전 Single은 기존 Single runtime RPC를 사용해야 합니다.';
+    end if;
+    if v_event.event_type = 'champions' and v_event.championship_phase = 'final' then
+        select * into v_qualifier
+          from ypl_schema_validation.events q
+         where q.championship_final_event_id = p_event_id
+           and q.event_type = 'champions'
+           and q.championship_phase = 'qualifier'
+         for update;
+        if not found then
+            raise exception using errcode = 'P0001', message = '연결된 선발전 Event를 찾을 수 없습니다.';
+        end if;
+        if v_qualifier.status <> 'completed' then
+            raise exception using errcode = 'P0001', message = '선발전이 아직 종료되지 않아 본선 대진표를 생성할 수 없습니다.';
+        end if;
+        select count(*)::integer into v_qualifier_advancement_count
+          from ypl_schema_validation.championship_advancements ca
+          join ypl_schema_validation.event_registrations r on r.id = ca.final_registration_id
+         where r.event_id = p_event_id and ca.advancement_type = 'qualifier';
+        select count(*)::integer into v_ranking_advancement_count
+          from ypl_schema_validation.championship_advancements ca
+          join ypl_schema_validation.event_registrations r on r.id = ca.final_registration_id
+         where r.event_id = p_event_id and ca.advancement_type = 'ranking';
+        if v_qualifier_advancement_count <> v_qualifier.qualification_slots then
+            raise exception using errcode = 'P0001', message = format('선발전 본선 진출자가 %s/%s명만 확정되어 있습니다.', v_qualifier_advancement_count, v_qualifier.qualification_slots);
+        end if;
+        v_final_capacity := (v_event.competition_settings #>> '{championship,finalCapacity}')::integer;
+        select count(*)::integer into v_final_advancement_count
+          from ypl_schema_validation.championship_advancements ca
+          join ypl_schema_validation.event_registrations r on r.id = ca.final_registration_id
+         where r.event_id = p_event_id;
+        select count(*)::integer into v_direct_count
+          from ypl_schema_validation.championship_qualifier_direct_selections ds
+         where ds.qualifier_event_id = v_qualifier.id;
+        if v_final_capacity is null
+           or v_qualifier.qualification_slots is distinct from v_final_capacity - v_direct_count
+           or v_ranking_advancement_count <> v_direct_count
+           or v_final_advancement_count < v_final_capacity then
+            raise exception using errcode = 'P0001', message = '본선 직행/선발전 진출 provenance가 finalCapacity와 일치하지 않습니다.';
+        end if;
+        if exists (
+            select 1
+              from jsonb_to_recordset(p_participants) as p(
+                participant_key text, display_name text, entry_type text,
+                player_id uuid, registration_id uuid, entry_id uuid,
+                entry_participant_id uuid, member_order smallint, role text,
+                player_was_created boolean, registration_was_created boolean,
+                registration_player_was_changed boolean, previous_registration_player_id uuid,
+                entry_was_created boolean, entry_participant_was_created boolean
+              )
+              left join ypl_schema_validation.championship_advancements ca on ca.final_registration_id = p.registration_id
+             where ca.id is null
+        ) then
+            raise exception using errcode = 'P0001', message = '본선 진출 경로가 확인되지 않는 참가자가 있어 대진표를 생성할 수 없습니다.';
+        end if;
+    end if;
+
+    if v_event.event_type = 'champions' and v_event.championship_phase = 'qualifier' then
+        select count(*)::integer into v_direct_count
+          from ypl_schema_validation.championship_qualifier_direct_selections ds
+         where ds.qualifier_event_id = p_event_id;
+        select (f.competition_settings #>> '{championship,finalCapacity}')::integer into v_final_capacity
+          from ypl_schema_validation.events f
+         where f.id = v_event.championship_final_event_id;
+        if v_final_capacity is null
+           or v_event.qualification_slots is distinct from v_final_capacity - v_direct_count then
+            raise exception using errcode = 'P0001', message = 'Qualifier 직행자/qualification_slots derived state가 올바르지 않습니다.';
+        end if;
+        if exists (
+            select 1
+              from jsonb_to_recordset(p_participants) as p(registration_id uuid)
+              join ypl_schema_validation.event_registrations r on r.id = p.registration_id
+              left join ypl_schema_validation.championship_qualifier_direct_selections ds
+                on ds.qualifier_event_id = p_event_id and ds.qualifier_registration_id = r.id
+             where r.event_id <> p_event_id
+                or r.registration_source not in ('application','manual')
+                or ds.id is not null
+        ) then
+            raise exception using errcode = 'P0001', message = 'Qualifier actual participant는 직행자를 제외한 유효 Event Registration이어야 합니다.';
+        end if;
     end if;
 
     select count(*)::integer into v_row_count
@@ -362,23 +447,10 @@ begin
     if v_runtime.topology_kind <> v_event.competition_format
        or (v_runtime.topology_kind = 'single_elimination' and not v_event.is_team_event)
        or v_event.record_applied_at is not null
-       or (
-         v_event.status not in ('open', 'running')
-         and not (
-           v_event.status = 'completed'
-           and v_event.event_type = 'champions'
-           and v_event.championship_phase = 'qualifier'
-         )
-       ) then
+       or v_event.status not in ('open', 'running') then
         raise exception using errcode = 'P0001', message = '기록 반영 전 허용된 Team/Double runtime만 삭제할 수 있습니다.';
     end if;
 
-    perform ypl_schema_validation.cancel_championship_advancement(ca.id)
-      from ypl_schema_validation.championship_advancements ca
-      join ypl_schema_validation.entries source_entry
-        on source_entry.id = ca.source_entry_id
-     where source_entry.event_id = p_event_id
-     order by ca.created_at;
     if exists (select 1 from ypl_schema_validation.results r0 where r0.event_id = p_event_id)
        or exists (select 1 from ypl_schema_validation.ranking_awards a0 where a0.event_id = p_event_id) then
         raise exception using errcode = 'P0001', message = 'Result 또는 RankingAward가 있어 runtime 삭제를 중단했습니다.';

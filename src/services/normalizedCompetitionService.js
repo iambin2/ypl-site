@@ -31,6 +31,13 @@ import {
   buildAnnouncementDeletionPreflight,
   emptyAnnouncementDeletionCounts,
 } from "./announcementDeletionPolicy.js";
+import {
+  championshipFinalCreatePreflight,
+  buildChampionshipRecordApplyCompletionOptions,
+  deriveQualifierSurvivorState,
+  isChampionshipFinal,
+  isChampionshipQualifier,
+} from "./championsCore.js";
 
 const DATA_SCHEMA = import.meta.env.VITE_YPL_DATA_SCHEMA || "public";
 const CHAMPIONS_EVENT_SELECT_FIELDS = DATA_SCHEMA === "ypl_schema_validation"
@@ -234,7 +241,37 @@ export function buildNormalizedRuntimeCreateAttempt(participants = [], { runtime
   return { runtimeId, participants: actual, slots };
 }
 
+async function assertChampionshipFinalRuntimePreflight(eventId) {
+  const finalEvent = await getEvent(eventId);
+  if (!isChampionshipFinal(finalEvent)) return;
+  const [qualifiers, finalRegistrations, runtimes] = await Promise.all([
+    db().from("events").select(`id, event_type, championship_phase, championship_final_event_id, qualification_slots, status`).eq("championship_final_event_id", eventId),
+    db().from("event_registrations").select("id").eq("event_id", eventId),
+    db().from("bracket_runtimes").select("id").eq("event_id", eventId),
+  ]);
+  const failed = [qualifiers, finalRegistrations, runtimes].find(result => result.error);
+  if (failed) fail(failed.error, "Champions 본선 대진표 생성 조건을 확인하지 못했습니다.");
+  const qualifierEvent = (qualifiers.data || []).find(row => row.event_type === "champions" && row.championship_phase === "qualifier") || null;
+  const finalRegistrationRows = finalRegistrations.data || [];
+  const registrationIds = finalRegistrationRows.map(row => row.id);
+  const { data: advancements, error: advancementError } = registrationIds.length
+    ? await db().from("championship_advancements").select("final_registration_id, advancement_type").in("final_registration_id", registrationIds)
+    : { data: [], error: null };
+  if (advancementError) fail(advancementError, "Champions 본선 진출 경로를 확인하지 못했습니다.");
+  const state = championshipFinalCreatePreflight({
+    finalEvent,
+    qualifierEvent,
+    qualifierAdvancementCount: (advancements || []).filter(row => row.advancement_type === "qualifier").length,
+    directAdvancementCount: (advancements || []).filter(row => row.advancement_type === "ranking").length,
+    finalRegistrations: finalRegistrationRows,
+    advancements: advancements || [],
+    runtimeCount: (runtimes.data || []).length,
+  });
+  if (!state.ok) throw new Error(state.error);
+}
+
 export async function createNormalizedSingleBracketRuntime({ runtimeId, eventId, participants, slots } = {}) {
+  await assertChampionshipFinalRuntimePreflight(eventId);
   const { data, error } = await db().rpc("create_normalized_single_bracket_runtime", {
     p_runtime_id: runtimeId,
     p_event_id: eventId,
@@ -246,6 +283,7 @@ export async function createNormalizedSingleBracketRuntime({ runtimeId, eventId,
 }
 
 export async function createNormalizedBracketRuntime({ runtimeId, eventId, topologyKind, participants, slots } = {}) {
+  await assertChampionshipFinalRuntimePreflight(eventId);
   const { data, error } = await db().rpc("create_normalized_bracket_runtime", {
     p_runtime_id: runtimeId,
     p_event_id: eventId,
@@ -488,8 +526,25 @@ async function syncNormalizedBracketMatchesNow(eventId, bracket, source = NORMAL
     }
   }
 
-  const desiredRows = buildEventBracketMatchSnapshot(bracket);
+  let desiredRows = buildEventBracketMatchSnapshot(bracket);
   const previousRows = await readEventRuntimeMatchesNow(eventId, source);
+  if (isChampionshipQualifier(event) && source === NORMALIZED_BRACKET_RUNTIME_SOURCE) {
+    const qualifierEntries = identityState.participants.map(participant => ({ id: participant.entryId, status: "active" }));
+    const currentState = deriveQualifierSurvivorState({
+      entries: qualifierEntries,
+      matches: previousRows.filter(row => row.match_kind === "bracket"),
+      qualificationSlots: event.qualification_slots,
+    });
+    const previousByNode = new Map(previousRows.filter(row => row.match_kind === "bracket").map(row => [row.source_node_key, row]));
+    const startsNewPlayedMatch = desiredRows.some(row => row.match_kind === "bracket" && row.winner_entry_id && !previousByNode.get(row.source_node_key)?.winner_entry_id);
+    if (currentState.aliveCount <= currentState.targetCount && startsNewPlayedMatch) {
+      throw new Error("본선 진출 인원이 확정되어 선발전 경기를 더 진행할 수 없습니다.");
+    }
+    const desiredState = deriveQualifierSurvivorState({ entries: qualifierEntries, matches: desiredRows.filter(row => row.match_kind === "bracket"), qualificationSlots: event.qualification_slots });
+    if (desiredState.readyToFinalize) {
+      desiredRows = desiredRows.filter(row => row.winner_entry_id || previousByNode.has(row.source_node_key));
+    }
+  }
   const now = new Date().toISOString();
   const desiredParents = desiredRows.filter(row => row.match_kind === "bracket");
   const desiredChildren = desiredRows.filter(row => row.match_kind !== "bracket");
@@ -1027,6 +1082,7 @@ export async function getEvent(eventId) {
       cup_rule_settings,
       registration_settings,
       season_id,
+      round_number,
       status,
       submission_target_at,
       team_reveal_mode,
@@ -1288,6 +1344,7 @@ export async function saveApplicationEvent({
     date_precision: eventDraft.heldOn ? "exact" : "unknown",
     status: eventDraft.status || existingEvent?.status || "open",
     submission_target_at: eventDraft.submissionTargetAt ? new Date(eventDraft.submissionTargetAt).toISOString() : null,
+    team_reveal_mode: eventDraft.teamRevealMode || existingEvent?.team_reveal_mode || "on_record_apply",
     updated_at: now,
   };
 
@@ -1548,36 +1605,62 @@ export async function restoreEventFinalSubmissions(eventId, snapshot = []) {
 
 export async function releaseEventFinalSubmissions(eventId) {
   if (!eventId) return null;
-  const { data, error } = await db().rpc("release_event_final_submissions", {
-    p_event_id: eventId,
-  });
+  const event = await getEvent(eventId);
+  const isChampionshipFinal = event?.event_type === "champions" && event?.championship_phase === "final";
+  const { data, error } = await db().rpc(
+    isChampionshipFinal ? "release_championship_final_record_application" : "release_event_final_submissions",
+    isChampionshipFinal ? { p_final_event_id: eventId } : { p_event_id: eventId },
+  );
   if (error) fail(error, "final submission과 Event 기록 상태를 원복하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
-export async function completeApplicationEvent(eventId, { revealFinalTeams = false } = {}) {
+export async function completeApplicationEvent(eventId, {
+  revealOfficialRosters = false,
+  // Compatibility for older callers. Roster publication is not team-only.
+  revealFinalTeams = false,
+  championshipOrdinal = null,
+} = {}) {
   if (!eventId) return null;
 
+  if (championshipOrdinal !== null && championshipOrdinal !== undefined) {
+    const ordinal = Number(championshipOrdinal);
+    if (!Number.isInteger(ordinal) || ordinal < 1) {
+      throw new Error("Champions 공식 회차는 1 이상의 정수여야 합니다.");
+    }
+    const { data, error } = await db().rpc("complete_championship_final_record_application", {
+      p_final_event_id: eventId,
+      p_ordinal: ordinal,
+    });
+    if (error) fail(error, "Champions Final 기록 반영 상태를 저장하지 못했습니다.");
+    const row = Array.isArray(data) ? data[0] || null : data || null;
+    if (!row?.id || row.status !== "completed" || !row.record_applied_at || !row.team_revealed_at || Number(row.round_number) !== ordinal) {
+      throw new Error("Champions Final 기록 반영 결과를 확인하지 못했습니다.");
+    }
+    return row;
+  }
+
+  const shouldRevealOfficialRosters = Boolean(revealOfficialRosters || revealFinalTeams);
   const now = new Date().toISOString();
   const completion = {
     status: "completed",
     record_applied_at: now,
     updated_at: now,
   };
-  if (revealFinalTeams) completion.team_revealed_at = now;
+  if (shouldRevealOfficialRosters) completion.team_revealed_at = now;
 
   let query = db()
     .from("events")
     .update(completion)
     .eq("id", eventId)
     .is("record_applied_at", null);
-  if (revealFinalTeams) query = query.eq("team_reveal_mode", "on_record_apply");
+  if (shouldRevealOfficialRosters) query = query.eq("team_reveal_mode", "on_record_apply");
   const { data, error } = await query
     .select("id, status, record_applied_at, team_revealed_at")
     .maybeSingle();
 
   if (error) fail(error, "대회 기록 반영 상태를 저장하지 못했습니다.");
-  if (!data) throw new Error(revealFinalTeams
+  if (!data) throw new Error(shouldRevealOfficialRosters
     ? "대회가 이미 완료되었거나 on_record_apply 공개 상태를 확인할 수 없습니다."
     : "대회가 이미 완료되었거나 기록 반영 상태를 변경할 수 없습니다.");
   return data;

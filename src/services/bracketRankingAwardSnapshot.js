@@ -66,13 +66,19 @@ function getPlacementPointPolicy(event, isTeamEvent) {
     };
   }
 
-  const championsFinal = String(event.event_type || "").toLowerCase() === "champions"
-    && event.championship_phase === "final";
-  if (String(event.event_type || "").toLowerCase() === "champions" && !championsFinal) {
-    return { enabled: false, division: null, reason: "champions_qualifier", points: null };
+  // Champions placement is an official record, never a ranking payout. This
+  // must precede division inference and stale configuration checks: old Final
+  // rows may still carry rankingEnabled=true.
+  if (String(event.event_type || "").toLowerCase() === "champions") {
+    return {
+      enabled: false,
+      division: null,
+      reason: "champions",
+      points: { win: 0, ru: 0, sf: 0 },
+    };
   }
 
-  const division = championsFinal ? "master" : eventDivision(event);
+  const division = eventDivision(event);
   if (!division) {
     return { enabled: false, division: null, reason: "unsupported_division", points: null };
   }

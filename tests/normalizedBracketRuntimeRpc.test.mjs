@@ -20,7 +20,9 @@ test("RPC draft is schema-qualified, invoker-only, and does not read legacy grap
   assert.match(rpcSql, /security invoker/i);
   assert.match(rpcSql, /set search_path = ''/i);
   assert.doesNotMatch(rpcSql, /ypl_data_v4/i);
-  assert.doesNotMatch(rpcSql, /competition_settings/i);
+  assert.match(rpcSql, /competition_settings #>> '\{championship,finalCapacity\}'/i);
+  assert.match(rpcSql, /v_final_advancement_count < v_final_capacity/i);
+  assert.match(rpcSql, /v_ranking_advancement_count <> v_direct_count/i);
   assert.doesNotMatch(rpcSql, /\bseed\b/i);
   assert.match(rpcSql, /participant_key is an input correlation key only/i);
 });

@@ -20,15 +20,11 @@ test("individual Single deletion preserves durable Registration history but remo
   assert.match(singleDelete, /delete from ypl_schema_validation\.players[\s\S]*event_registrations[\s\S]*entry_participants[\s\S]*matches[\s\S]*ranking_awards[\s\S]*hall_of_fame_entries/);
 });
 
-test("generic deletion allows unapplied completed Champions qualifier and cancels only qualifier-derived advancements", () => {
-  assert.match(genericSql, /v_event\.status = 'completed'/);
-  assert.match(genericSql, /v_event\.event_type = 'champions'/);
-  assert.match(genericSql, /v_event\.championship_phase = 'qualifier'/);
+test("completed Champions qualifier must reopen before generic runtime deletion", () => {
+  assert.match(genericSql, /v_event\.status not in \('open', 'running'\)/);
   assert.match(genericSql, /v_event\.record_applied_at is not null/);
-  assert.match(genericSql, /perform ypl_schema_validation\.cancel_championship_advancement\(ca\.id\)/);
-  assert.match(genericSql, /join ypl_schema_validation\.entries source_entry\s+on source_entry\.id = ca\.source_entry_id/);
-  assert.match(genericSql, /where source_entry\.event_id = p_event_id/);
-  assert.ok(!genericSql.includes("본선 진출 확정 기록이 남아 있어 선발전 대진표를 삭제할 수 없습니다."));
+  assert.doesNotMatch(genericSql, /perform ypl_schema_validation\.cancel_championship_advancement\(ca\.id\)/);
+  assert.match(genericSql, /기록 반영 전 허용된 Team\/Double runtime만 삭제할 수 있습니다/);
 });
 
 test("generic deletion snapshots identity and rolls it back in FK-safe order", () => {

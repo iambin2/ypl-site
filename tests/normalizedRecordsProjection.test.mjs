@@ -394,6 +394,68 @@ test("revealed P2-6 Event excludes partial legacy parties and uses only the froz
   assert.equal(archive.partyPreviews.ru[0], null);
 });
 
+test("ordinary individual record apply reveals only actual participants' frozen rosters for Light, Master, and Rookie", () => {
+  for (const [eventType, division] of [
+    ["light", "light"],
+    ["pokecup", "master"],
+    ["rookie", "rookie"],
+  ]) {
+    const raw = rawData();
+    raw.events[0] = {
+      ...raw.events[0],
+      event_type: eventType,
+      division,
+      team_reveal_mode: "on_record_apply",
+      team_revealed_at: "2026-09-08T00:00:00Z",
+    };
+    raw.eventRegistrations = [
+      { id: "reg-a", event_id: EVENT_ID, player_id: "player-a", final_submission_id: "submission-a" },
+      { id: "reg-b", event_id: EVENT_ID, player_id: "player-b", final_submission_id: null },
+      { id: "reg-no-show", event_id: EVENT_ID, player_id: "player-no-show", final_submission_id: "submission-no-show" },
+    ];
+    raw.players.push({ id: "player-no-show", display_name: "No Show" });
+    raw.registrationSubmissions = [
+      { id: "submission-a", registration_id: "reg-a", snapshot_id: "snapshot-a", revision: 1 },
+      { id: "submission-no-show", registration_id: "reg-no-show", snapshot_id: "snapshot-no-show", revision: 1 },
+    ];
+    raw.teamSnapshots = [{ id: "snapshot-a" }, { id: "snapshot-no-show" }];
+    raw.teamSnapshotMembers = [
+      "pikachu", "raichu", "eevee", "vaporeon", "jolteon", "flareon",
+    ].map((pokemon_id, index) => ({
+      id: `member-a-${pokemon_id}`,
+      snapshot_id: "snapshot-a",
+      slot: index + 1,
+      pokemon_id,
+      pokemon_name_snapshot: pokemon_id,
+    })).concat([{
+      id: "member-no-show",
+      snapshot_id: "snapshot-no-show",
+      slot: 1,
+      pokemon_id: "mew",
+      pokemon_name_snapshot: "Mew",
+    }]);
+
+    const applied = buildNormalizedRecordsProjection(legacyData(), raw);
+    assert.equal(applied.rosters.length, 1, `${eventType}: submitted no-show and unsubmitted participant are excluded`);
+    assert.equal(applied.rosters[0].snapshotId, "snapshot-a");
+    assert.equal(applied.rosters[0].pokemon.length, 6);
+    assert.equal(applied.pokemon.length, 6);
+    assert.equal(applied.pokemon.some((row) => row.name === "Mew"), false);
+
+    const reverted = structuredClone(raw);
+    reverted.events[0].status = "running";
+    reverted.events[0].record_applied_at = null;
+    reverted.events[0].team_revealed_at = null;
+    reverted.eventRegistrations[0].final_submission_id = null;
+    assert.equal(
+      buildNormalizedRecordsProjection(legacyData(), reverted).rosters.filter((row) => row.snapshotId === "snapshot-a").length,
+      0,
+      `${eventType}: revert hides the normalized official roster`
+    );
+    assert.equal(reverted.registrationSubmissions.length, 2, `${eventType}: revert preserves immutable submission history`);
+  }
+});
+
 test("individual archive accordion includes every actual participant and labels missing final parties", () => {
   const raw = rawData();
   raw.events[0].team_revealed_at = "2026-09-05T01:00:00Z";

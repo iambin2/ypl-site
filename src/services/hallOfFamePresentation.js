@@ -1,4 +1,4 @@
-import { loadRecordsPokemonDirectory } from "./recordsPokemon.js";
+import { loadRecordsPokemonDirectory, resolveRecordsPokemonName } from "./recordsPokemon.js";
 
 const clean = (value) => String(value || "").trim();
 const key = (value) => clean(value).toLowerCase();
@@ -62,4 +62,15 @@ export function resolveHallOfFameArtwork(member = {}, lookup) {
     if (image) return image;
   }
   return "";
+}
+
+export function buildChampionshipHallOfFameParty(members = [], pokemonDirectory = new Map(), artworkLookup = new Map()) {
+  return (Array.isArray(members) ? members : [])
+    .slice()
+    .sort((a, b) => Number(a?.slot || 0) - Number(b?.slot || 0))
+    .map((member) => ({
+      name: resolveRecordsPokemonName(member?.pokemon_id, member?.pokemon_name_snapshot, pokemonDirectory),
+      pokemonId: member?.pokemon_id || "",
+      img: resolveHallOfFameArtwork({ pokemonId: member?.pokemon_id, name: member?.pokemon_name_snapshot }, artworkLookup),
+    }));
 }

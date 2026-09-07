@@ -123,14 +123,24 @@ function FormBuilder({ form, setForm }){
         <div className="field"><label>배틀 형식</label><select value={(form?.eventDraft?.battleFormat)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:e.target.value||null}})}><option value="">선택</option><option value="singles">싱글</option><option value="doubles">더블</option></select></div>
         <div className="field"><label>대진 방식</label>{isChampions?<div className="bk-applybox"><div><b>선발전</b> · {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} · 고정</div><div><b>본선</b> · {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} · 고정</div></div>:<select value={(form?.eventDraft?.competitionFormat)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:e.target.value||null}})}><option value="">선택</option><option value="double_elimination">더블 엘리미네이션</option><option value="single_elimination">싱글 엘리미네이션</option><option value="round_robin">리그전</option></select>}</div>
         {isChampions&&<div className="bk-grow2">
-          <div className="field"><label>Champions generation</label><input type="number" min="1" value={form?.eventDraft?.generation||""} onChange={e=>patchForm({eventDraft:{...eventDraft,generation:e.target.value}})} placeholder="예: 7"/></div>
+          <div className="field"><label>Champions 회차 / 대</label><input type="number" min="1" value={form?.eventDraft?.generation||""} onChange={e=>patchForm({eventDraft:{...eventDraft,generation:e.target.value}})} placeholder="예: 7"/></div>
           <div className="field"><label>본선 정원</label><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="예: 8"/></div>
-          <div className="field"><label>선발전 진출 인원</label><input type="number" min="1" value={form?.eventDraft?.qualificationSlots||""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualificationSlots:e.target.value}})} placeholder="예: 4"/></div>
         </div>}
         <div className="field"><label>Regulation</label><select value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:e.target.value}})}>{Object.values(REGULATIONS).map(reg=><option key={reg.id} value={reg.id}>{reg.name}</option>)}</select></div>
         <div className="field"><label>파이컵 추가 룰</label><select value={(form?.eventDraft?.cupRuleId)||"none"} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:e.target.value}})}>{Object.values(CUP_RULES).map(rule=><option key={rule.id} value={rule.id}>{rule.name}</option>)}</select></div>
-        <div className="field"><label>대회일</label><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></div>
-        <div className="field" style={{marginBottom:0}}><label>파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={(form?.eventDraft?.submissionTargetAt)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),submissionTargetAt:e.target.value}})}/></div>
+        {isChampions? <>
+          <div className="bk-grow2">
+            <div className="field"><label>선발전 날짜</label><input type="date" value={eventDraft.qualifierHeldOn??eventDraft.heldOn??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierHeldOn:e.target.value}})}/></div>
+            <div className="field"><label>본선 날짜</label><input type="date" value={eventDraft.finalHeldOn||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalHeldOn:e.target.value}})}/></div>
+          </div>
+          <div className="bk-grow2" style={{marginBottom:0}}>
+            <div className="field"><label>선발전 파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={eventDraft.qualifierSubmissionTargetAt??eventDraft.submissionTargetAt??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierSubmissionTargetAt:e.target.value}})}/></div>
+            <div className="field"><label>본선 파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={eventDraft.finalSubmissionTargetAt||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalSubmissionTargetAt:e.target.value}})}/></div>
+          </div>
+        </> : <>
+          <div className="field"><label>대회일</label><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></div>
+          <div className="field" style={{marginBottom:0}}><label>파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={(form?.eventDraft?.submissionTargetAt)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),submissionTargetAt:e.target.value}})}/></div>
+        </>}
       </div>
       {fields.some(f=>f.public)&&<div className="field fb-reveal"><label>공개 목록 제목</label><input value={(form&&form.publicTitle)||""} onChange={e=>patchForm({publicTitle:e.target.value})} placeholder="예: 현재까지 밴 리스트"/></div>}
       {fields.map((f,i)=>(<div className="fb-q" key={f.id}>

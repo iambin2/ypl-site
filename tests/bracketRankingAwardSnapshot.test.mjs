@@ -351,22 +351,24 @@ test("changed placement delta updates the existing runtime Award", () => {
   assert.equal(plan.updates[0].id, "award-a");
 });
 
-test("Champions Qualifier creates no Award, but an individual Final uses Master placement policy", () => {
-  assert.equal(getIndividualPlacementPointPolicy({
+test("Champions Qualifier and Final are ranking-disabled even with stale enabled settings", () => {
+  const qualifier = {
     event_type: "champions",
     division: "master",
     is_team_event: false,
     competition_settings: { rankingEnabled: true },
-  }).enabled, false);
-  assert.deepEqual(
-    getIndividualPlacementPointPolicy({
-      event_type: "champions",
-      championship_phase: "final",
-      is_team_event: false,
-      competition_settings: { rankingEnabled: true },
-    }).points,
-    { win: 60, ru: 40, sf: 20 }
-  );
+  };
+  const final = { ...qualifier, championship_phase: "final" };
+  for (const championsEvent of [qualifier, final]) {
+    const policy = getIndividualPlacementPointPolicy(championsEvent);
+    assert.equal(policy.enabled, false);
+    assert.equal(policy.reason, "champions");
+    assert.deepEqual(policy.points, { win: 0, ru: 0, sf: 0 });
+    assert.deepEqual(
+      buildEventRankingAwardSnapshot(championsEvent, runtimeResults, entryParticipants),
+      { skipped: true, reason: "champions", rows: [] }
+    );
+  }
   assert.equal(getIndividualPlacementPointPolicy({
     ...event("master"),
     is_team_event: true,

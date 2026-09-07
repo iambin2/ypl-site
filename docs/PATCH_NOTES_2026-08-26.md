@@ -2747,3 +2747,80 @@ pristine ordinary Event는 Event row를 물리 삭제하지 않고 cancelled + `
 pristine Champions pair도 두 Event를 cancelled로 바꾸고 Qualifier `announcementId`만 clear한다. Test
 `announcement_deletion_champions_pristine_guard` migration과 A-I fixture smoke를 적용해 허용 A/F, 차단 B-E/G-I,
 blocked mutation 0 및 fixture cleanup을 확인했다. Browser E2E, Production Supabase 접근, commit/push는 하지 않았다.
+
+---
+
+## 2026-09-07 Champions phase UX / Final provenance guard
+
+Champions 공지의 canonical Event link는 Qualifier 하나다. Final ID를 announcement에 저장하지 않고
+`Qualifier.championship_final_event_id`로 resolve해 공지에 `선발전 파티 제출`과 `본선 파티 제출`을
+따로 제공한다. Final은 Qualifier 제출을 복사하지 않으며, Final EventRegistration이 없는 이름은 기존
+exact registration lookup에서 그대로 차단된다.
+
+새 저장은 `qualifierHeldOn`, `finalHeldOn`, `qualifierSubmissionTargetAt`,
+`finalSubmissionTargetAt`을 phase별 authoritative field로 쓴다. 기존 `heldOn`과
+`submissionTargetAt`은 old draft compatibility로 Qualifier에만 fallback한다. Test pair RPC도 두 Event에
+각각의 `held_on` / `submission_target_at`을 저장하고, 이전 공유 schedule RPC signature는 제거했다.
+
+Final 운영 후보는 기존 Champions snapshot에 이미 있던 선수만 사용하지 않는다. 전체 active Player에서
+이미 Final advancement가 있는 선수를 제외해 운영자가 직행 또는 운영 대체로 수동 선택한다. Final 참가자
+목록에는 이름, provenance(직행 / 선발전 통과 / 운영 대체), 파티 제출 완료/미제출을 함께 보인다.
+
+Final bracket의 create preflight는 다음을 BracketsPage, normalized service, Single/generic runtime RPC에서
+같이 검증한다.
+
+- Qualifier가 `completed`
+- qualifier advancement 수가 `qualification_slots`와 정확히 일치
+- 모든 Final Registration에 ChampionshipAdvancement provenance가 존재
+- Final Event가 open/running, unapplied, runtime 없음
+
+`finalCapacity`는 진출권 정원으로만 사용한다. 실제 당일 참가자는 더 적을 수 있으며 Final party 제출
+완료 여부도 대진 생성 prerequisite가 아니다. Final generic `+ 참가자 추가` bypass는 제거했다.
+Qualifier는 기록 반영 버튼을 render하지 않고 기존 backend fail-closed guard를 유지한다.
+
+Test Supabase `nmqrmvnjenjqityuhngb` / `ypl_schema_validation` transaction smoke에서 phase schedule 저장,
+Qualifier 완료 전 Final 생성 차단, unprovenanced Final 차단, finalCapacity 4에서 actual participant 3명
+생성, runtime delete 후 Final Registration/Advancement 보존과 regenerate를 확인했다. Qualifier Result /
+RankingAward / HallOfFameEntry는 0건이었고 smoke fixture Event는 rollback 후 0건이다.
+
+Production Supabase / `.env.production`에는 접근하지 않았고 Browser E2E, commit, push는 수행하지 않았다.
+
+## 2026-09-07 Champions Qualifier survivor semantics correction
+
+`qualification_slots`는 운영자가 checkbox로 선택할 인원 수가 아니다. Qualifier는 normalized Double
+Elimination의 canonical Match winner facts에서 loss count를 계산하고, 2패 미만 Entry가 정확히
+`qualification_slots`명 남는 순간 종료한다. 그 survivor set만 `finalize_championship_qualifier`가
+atomic하게 `qualifier` Advancement와 새 Final EventRegistration으로 만든다. Qualifier는 champion을
+결정하지 않으며 Result, RankingAward, HallOfFameEntry를 만들지 않는다.
+
+목표 도달 뒤에는 추가 Match winner/materialization을 fail closed하고, finalization은 unplayed future
+Match만 정리하며 played Match는 보존한다. Final downstream fact가 없을 때만 reopen이 survivor
+Advancement와 Final advancement Registration을 되돌린다. Qualifier/Final submission은 계속 완전히
+독립적이며, Final freeze/release는 Final Submission만 사용한다.
+
+Test Supabase transaction smoke에서 12→5 finalization 차단, 12→4 survivor finalization, direct qualifier
+Advancement 차단, post-target Match 차단, idempotent retry, reopen, Final downstream reopen 차단,
+Qualifier X / Final Y submission-snapshot 분리와 Final Y freeze/release를 확인했고 fixture Event는 rollback
+후 0건이었다. Production 접근, Browser E2E, commit, push는 수행하지 않았다.
+
+---
+
+## 2026-09-08 Champions direct-selection Qualifier canonical correction
+
+기존 `qualification_slots` 수동 입력과 Final 화면의 별도 직행자 추가는 canonical flow에서 제거했다. Champions 공지에는 `finalCapacity`만 저장하고, Qualifier setup에서 신청 Registration 중 direct entrant를 선택해 normalized `championship_qualifier_direct_selections`에 영속한다. 이때 `qualification_slots`는 `finalCapacity - directCount`로 derived 저장되며 setup 전에는 NULL provisional 상태다.
+
+직행자를 제외한 신청자 중 실제 참가자를 확정해 Double runtime에 넣는다. `A` actual participant, `C` final capacity, `D` direct count에 대해 survivor target은 `C-D`, 필요한 탈락자는 `A-(C-D)`다. 2패 탈락 Match facts가 그 목표에 도달해도 Final fact는 자동으로 생기지 않는다. 운영자가 `선발전 기록 반영`을 실행할 때 direct set의 ranking Advancement와 survivor set의 qualifier Advancement, 대응 Final Registration을 원자적으로 만든다. Qualifier는 계속 champion/placement/Result/Award/HOF를 만들지 않는다.
+
+ready 상태는 새 Match winner/materialization만 막고 이미 played된 결정 Match correction/cancel은 apply 전 허용한다. apply 후 reopen은 Final downstream이 없을 때만 이번 apply의 두 Advancement set/Final Registration을 되돌리며 direct selection과 played Qualifier Match는 보존한다. apply 전 Qualifier runtime 삭제는 direct selection도 정리한다. Qualifier/Final party submission, Final party freeze source, phase schedule은 종전대로 완전히 독립이다.
+
+---
+
+## 2026-09-08 Champions Final Records / HOF ordinal and roster correction
+
+Final `기록에 반영`의 회차 입력은 이제 미리보기 문자열에만 남지 않고 Test-schema 전용 completion RPC로 전달된다. 이 RPC는 paired Qualifier/Final의 `round_number`와 compatibility `championship.generation`을 같은 ordinal로 정렬하고, Final의 `status=completed`, `record_applied_at`, `team_revealed_at`을 한 transaction에서 확정한다. HOF의 `generation_number`도 Final `round_number`를 사용한다.
+
+Final roster는 Final `EntryParticipant → EventRegistration.final_submission_id → RegistrationSubmission → TeamSnapshot`만 사용하며, `team_revealed_at` 이후 Records trainer entry/Pokémon statistics에 같은 frozen Final snapshot이 나타난다. HOF 이름 표시는 Records Pokémon directory를 재사용해 현지화하되, immutable snapshot 원문과 `pokemon_id` artwork identity는 바꾸지 않는다. record revert는 completion 전 ordinal/config snapshot을 paired Event에 저장했다가 Final submission release와 함께 복원한다.
+
+## 2026-09-08 Champions ranking exclusion correction
+
+Champions Qualifier와 Final은 공식 placement Result / Records / Hall of Fame 대상이지만 랭킹 산정 대상은 아니다. ranking policy는 `event_type=champions`에서 phase와 stale `rankingEnabled=true` 설정보다 먼저 fail closed하여 RankingAward와 누적·시즌 delta를 만들지 않는다. pair 저장도 `competition_settings.rankingEnabled=false`를 강제한다.

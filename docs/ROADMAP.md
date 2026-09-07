@@ -501,25 +501,25 @@ Champions Series N
 
 - Qualifier와 Final은 Player identity만 공유하며 EventRegistration, Entry, EntryParticipant,
   RegistrationSubmission, TeamSnapshot, Match, Result는 각각 독립적으로 보존한다.
-- Qualifier와 Final의 실제 참가자는 모두 운영자가 수동 확정한다. 시즌 랭킹 Top N, qualifier Top N,
+- Qualifier 참가자는 운영자가 확정하되, Qualifier 통과자는 Double Elimination의 2패 탈락 survivor로 도출한다. 시즌 랭킹 Top N,
   불참자에 대한 자동 차순위 승계·substitute는 사용하지 않는다.
-- `ChampionshipAdvancement`의 source는 `ranking`, `qualifier`, `manual`이며 자동 판정 결과가 아니라
-  운영자가 선택·확정한 실제 진출 경로를 기록한다.
+- `ChampionshipAdvancement`의 source는 `ranking`, `qualifier`, `manual`이며, `qualifier`는 survivor finalize만
+  생성하고 ranking/manual만 운영자 선택 경로를 기록한다.
 - advancement 확정 시 `ChampionshipAdvancement`와 `Final EventRegistration(registration_source=advancement)`만
   만들고 Final Entry는 만들지 않는다. Final Entry / EntryParticipant는 실제 Final bracket 생성 시 만든다.
 - 불참 시 기존 advancement를 운영자가 취소하고 새 대상자를 직접 등록한다. downstream Submission, Entry,
   EntryParticipant, Match, Result, RankingAward 또는 runtime state가 있으면 cascade delete하지 않고 fail closed한다.
   Player와 Qualifier source facts는 보존한다.
-- Qualifier는 `qualification_slots`만큼 advancement가 확정되면 종료할 수 있으며, 종료는 선발 과정 종료를
+- Qualifier는 2패 미만 Entry가 정확히 `qualification_slots`명이 되면 survivor advancement를 생성해 종료하며, 종료는 선발 과정 종료를
   의미한다. Qualifier의 Event, 등록·Entry·참가자·Submission·TeamSnapshot, 실제 Match와 winner facts,
   advancement, Records 참가 이력은 보존하지만 Result, RankingAward, HallOfFameEntry는 만들지 않는다.
 - Final은 기존 normalized Event 흐름인 `EventRegistration → Entry / EntryParticipant → Match → Result →
-  RankingAward → final_submission_id freeze → Records → Event completed`를 사용한다. `battle_format`과
+  final_submission_id freeze → Records → Event completed`를 사용한다. Champions Final은 placement Result와
+  Hall of Fame을 보존하지만 `RankingAward`와 누적/시즌 ranking delta를 만들지 않는다. `battle_format`과
   `competition_format`은 별도 필드다.
-- Final champion Result가 공식 확정되면 `HallOfFameEntry`를 연결한다. `generation`은
-  `competition_settings.championship.generation`을 authoritative source로 사용하고, 기존
-  `generationNumber`는 compatibility 용도로만 읽는다. 서비스 전역 hardcoded generation default는 제거했으며,
-  현재 YPL 시즌 3 Champions Event 설정은 generation 7이다.
+- Final champion Result가 공식 확정되면 `HallOfFameEntry`를 연결한다. Final record apply의 ordinal은 paired
+  Qualifier/Final `round_number`와 `HallOfFameEntry.generation_number`에 동일하게 반영한다. 기존
+  `competition_settings.championship.generation` / `generationNumber`는 draft compatibility로만 읽는다.
 - 신규 Champion party는 Final의 official TeamSnapshot에서 `pokemon_id`를 읽어 sprite로 렌더링하며,
   기존 `image_ref`는 legacy compatibility로 유지한다.
 
@@ -732,7 +732,7 @@ semifinalist Result
 RankingAward
 HallOfFameEntry
 
-qualification_slots만큼 운영자가 본선 진출자를 확정하면 Qualifier를 종료할 수 있다.
+Double Elimination 2패 탈락 결과로 생존자가 qualification_slots명이 되면 Qualifier를 종료할 수 있다.
 
 일반적인 8인 Final 구성은 다음과 같다.
 
@@ -756,7 +756,7 @@ Final EventRegistration
 → Final Team Builder 제출
 → BracketRuntime 생성
 → Match 진행
-→ Result / RankingAward
+→ Result (RankingAward 없음)
 → final_submission_id freeze
 → Records
 → Champion Hall of Fame
@@ -782,7 +782,9 @@ HallOfFameEntry
 
 신규 HOF에서는 legacy image_ref를 Pokémon party source of truth로 사용하지 않는다.
 
-generation은 competition_settings.championship.generation을 authoritative source로 사용한다.
+공식 Champions ordinal은 Final `round_number`이며, Final record apply에서 paired Qualifier/Final와
+`HallOfFameEntry.generation_number`를 같은 값으로 정렬한다. `competition_settings.championship.generation`은
+draft compatibility로만 유지한다.
 
 같은 generation에 Singles champion과 Doubles champion이 각각 존재할 수 있다.
 
@@ -836,12 +838,12 @@ Final 기록 반영 취소
 Champions Final 기록 반영 취소는 다음 순서를 따른다.
 
 HallOfFameEntry
-→ RankingAward
 → Result
 → final submission freeze release
 → Event record application revert
 
-실패 시 기존 Result / Award / HallOfFameEntry를 compensation restore한다.
+실패 시 기존 Result / HallOfFameEntry를 compensation restore한다. Champions Final에는 RankingAward와
+랭킹 delta가 없다.
 
 HallOfFameEntry는 기존 ID까지 복원 가능하게 유지한다.
 
@@ -918,3 +920,19 @@ concurrent-safe
 rollover 이후 신규 Event만 새 current Season 연결
 Classic 등 다른 series에는 적용하지 않음
 Production 적용은 별도 cutover 단계에서 수행
+
+2026-09-07 Champions 운영 UX 보강 완료
+
+Champions core DB/runtime을 바꾸지 않고 Final 독립 제출 route, 전체 active Player 기반 수동 후보 선택,
+phase별 schedule 저장, Final provenance creation guard와 Final 운영 상태 표시를 완성했다. Test DB
+transaction smoke는 Qualifier/Final pair 저장, guard 차단, 정원보다 적은 actual Final bracket 생성,
+runtime delete와 동일 Final Registration 재생성을 확인한 뒤 fixture를 rollback했다.
+
+남은 운영 범위는 Browser E2E가 아니라 별도 운영자 수동 검증 단계로 유지한다. Production cutover와
+Auth/RLS hardening은 이 Test-only Champions UX 범위에 포함하지 않는다.
+
+2026-09-08 Champions Qualifier canonical workflow update
+
+공지에는 `finalCapacity`만 입력하며 `qualification_slots`는 setup에서 본선 직행자 수를 뺀 derived value다. 운영자는 Qualifier 신청 Registration에서 direct entrant를 먼저 고르고, 그들을 제외한 신청자 중 실제 Qualifier 참가자를 확정한다. direct selection은 normalized DB에 저장되고 Final fact는 선발전 기록 반영 전까지 생기지 않는다. Double Elimination은 필요한 탈락자 수까지만 진행하며, ready state의 새 경기는 차단하되 played 결정 Match correction/cancel은 apply 전 허용한다.
+
+선발전 기록 반영이 direct=`ranking`과 survivor=`qualifier` Advancement 및 Final Registration을 한 transaction으로 확정한다. Final 운영 화면에는 직행자를 별도 추가하는 경로가 없고 manual replacement만 남는다. phase별 Qualifier/Final Submission과 schedule은 계속 독립적이다.

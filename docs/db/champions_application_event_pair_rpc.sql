@@ -17,8 +17,10 @@ create or replace function ypl_schema_validation.save_championship_application_e
     p_cup_rule_settings jsonb,
     p_registration_settings jsonb,
     p_competition_settings jsonb,
-    p_held_on date,
-    p_submission_target_at timestamptz
+    p_qualifier_held_on date,
+    p_final_held_on date,
+    p_qualifier_submission_target_at timestamptz,
+    p_final_submission_target_at timestamptz
 )
 returns table (
     qualifier_event_id uuid,
@@ -48,10 +50,8 @@ begin
         raise exception using errcode = 'P0001', message = 'Champions battle_format은 singles 또는 doubles여야 합니다.';
     end if;
     if p_generation is null or p_generation < 1
-       or p_final_capacity is null or p_final_capacity < 2
-       or p_qualification_slots is null or p_qualification_slots < 1
-       or p_qualification_slots > p_final_capacity then
-        raise exception using errcode = 'P0001', message = 'generation, final capacity, qualification slots가 올바르지 않습니다.';
+       or p_final_capacity is null or p_final_capacity < 2 then
+        raise exception using errcode = 'P0001', message = 'generation과 final capacity가 올바르지 않습니다.';
     end if;
     if p_round_number is not null and p_round_number < 1 then
         raise exception using errcode = 'P0001', message = '회차 번호는 1 이상이어야 합니다.';
@@ -74,6 +74,7 @@ begin
 
     v_settings := coalesce(p_competition_settings, '{}'::jsonb)
       || jsonb_build_object(
+           'rankingEnabled', false,
            'championship', jsonb_build_object(
              'generation', p_generation,
              'finalCapacity', p_final_capacity
@@ -93,7 +94,7 @@ begin
             p_final_event_id, p_season_id, btrim(p_base_name) || ' · 본선', p_round_number,
             'champions', null, p_battle_format, 'single_elimination', v_settings, false,
             p_regulation_id, p_cup_rule_id, coalesce(p_cup_rule_settings, '{}'::jsonb), '{}'::jsonb,
-            p_held_on, case when p_held_on is null then 'unknown' else 'exact' end, 'open', p_submission_target_at,
+            p_final_held_on, case when p_final_held_on is null then 'unknown' else 'exact' end, 'open', p_final_submission_target_at,
             'final', null, null
         );
         insert into ypl_schema_validation.events (
@@ -106,8 +107,8 @@ begin
             p_qualifier_event_id, p_season_id, btrim(p_base_name) || ' · 선발전', p_round_number,
             'champions', null, p_battle_format, 'double_elimination', v_settings, false,
             p_regulation_id, p_cup_rule_id, coalesce(p_cup_rule_settings, '{}'::jsonb), v_qualifier_registration_settings,
-            p_held_on, case when p_held_on is null then 'unknown' else 'exact' end, 'open', p_submission_target_at,
-            'qualifier', p_final_event_id, p_qualification_slots
+            p_qualifier_held_on, case when p_qualifier_held_on is null then 'unknown' else 'exact' end, 'open', p_qualifier_submission_target_at,
+            'qualifier', p_final_event_id, null
         );
         return query select p_qualifier_event_id, p_final_event_id, true;
         return;
@@ -125,7 +126,6 @@ begin
         or v_final.battle_format is distinct from p_battle_format
         or v_qualifier.competition_format is distinct from 'double_elimination'
         or v_final.competition_format is distinct from 'single_elimination'
-        or v_qualifier.qualification_slots is distinct from p_qualification_slots
         or (v_qualifier.competition_settings #>> '{championship,generation}')::integer is distinct from p_generation
         or (v_final.competition_settings #>> '{championship,generation}')::integer is distinct from p_generation
         or (v_final.competition_settings #>> '{championship,finalCapacity}')::integer is distinct from p_final_capacity;
@@ -157,9 +157,9 @@ begin
         regulation_id = p_regulation_id,
         cup_rule_id = p_cup_rule_id,
         cup_rule_settings = coalesce(p_cup_rule_settings, '{}'::jsonb),
-        held_on = p_held_on,
-        date_precision = case when p_held_on is null then 'unknown' else 'exact' end,
-        submission_target_at = p_submission_target_at,
+        held_on = p_final_held_on,
+        date_precision = case when p_final_held_on is null then 'unknown' else 'exact' end,
+        submission_target_at = p_final_submission_target_at,
         updated_at = now()
     where e.id = p_final_event_id;
 
@@ -176,9 +176,9 @@ begin
         cup_rule_id = p_cup_rule_id,
         cup_rule_settings = coalesce(p_cup_rule_settings, '{}'::jsonb),
         registration_settings = v_qualifier_registration_settings,
-        held_on = p_held_on,
-        date_precision = case when p_held_on is null then 'unknown' else 'exact' end,
-        submission_target_at = p_submission_target_at,
+        held_on = p_qualifier_held_on,
+        date_precision = case when p_qualifier_held_on is null then 'unknown' else 'exact' end,
+        submission_target_at = p_qualifier_submission_target_at,
         updated_at = now()
     where e.id = p_qualifier_event_id;
 
@@ -206,12 +206,16 @@ declare
     v_player ypl_schema_validation.players%rowtype;
     v_capacity integer;
     v_generation integer;
-    v_count integer;
+    v_qualifier_count integer;
+    v_ranking_count integer;
 begin
     if p_advancement_id is null or p_registration_id is null
        or p_final_event_id is null or p_player_id is null
        or p_advancement_type not in ('ranking', 'qualifier', 'manual') then
         raise exception using errcode = 'P0001', message = 'Champions advancement identity와 source가 필요합니다.';
+    end if;
+    if p_advancement_type in ('qualifier', 'ranking') then
+        raise exception using errcode = 'P0001', message = '직행/qualifier advancement는 Qualifier 기록 반영 RPC에서만 생성할 수 있습니다.';
     end if;
     if (p_advancement_type = 'qualifier') <> (p_source_entry_id is not null) then
         raise exception using errcode = 'P0001', message = 'qualifier advancement만 source Entry를 가져야 합니다.';
@@ -236,12 +240,22 @@ begin
     if v_capacity is null or v_capacity < 2 or v_generation is null or v_generation < 1 then
         raise exception using errcode = 'P0001', message = 'Final capacity 또는 generation 설정이 없습니다.';
     end if;
-    select count(*)::integer into v_count
+    select * into v_qualifier from ypl_schema_validation.events e
+     where e.championship_final_event_id = p_final_event_id
+       and e.event_type = 'champions' and e.championship_phase = 'qualifier'
+     for update;
+    if not found or v_qualifier.status <> 'completed' or v_qualifier.qualification_slots is null then
+        raise exception using errcode = 'P0001', message = '선발전 기록 반영 완료 후에만 본선 수동 참가자를 추가할 수 있습니다.';
+    end if;
+    select (count(*) filter (where ca.advancement_type = 'qualifier'))::integer,
+           (count(*) filter (where ca.advancement_type = 'ranking'))::integer
+      into v_qualifier_count, v_ranking_count
       from ypl_schema_validation.championship_advancements ca
       join ypl_schema_validation.event_registrations r on r.id = ca.final_registration_id
      where r.event_id = p_final_event_id;
-    if v_count >= v_capacity then
-        raise exception using errcode = 'P0001', message = '본선 정원이 모두 확정되었습니다.';
+    if v_qualifier_count <> v_qualifier.qualification_slots
+       or v_ranking_count <> v_capacity - v_qualifier.qualification_slots then
+        raise exception using errcode = 'P0001', message = '직행/선발전 통과 Final entrant set이 확정되지 않았습니다.';
     end if;
     if exists (select 1 from ypl_schema_validation.event_registrations r where r.event_id = p_final_event_id and r.player_id = p_player_id) then
         raise exception using errcode = 'P0001', message = '이미 본선에 등록된 Player입니다.';
@@ -359,9 +373,9 @@ begin
        or v_event.status <> 'completed' or v_event.record_applied_at is null then
         raise exception using errcode = 'P0001', message = '공식 완료된 Champions Final만 Hall of Fame에 등록할 수 있습니다.';
     end if;
-    v_generation := (v_event.competition_settings #>> '{championship,generation}')::integer;
+    v_generation := v_event.round_number;
     if v_generation is null or v_generation < 1 then
-        raise exception using errcode = 'P0001', message = 'Final Event의 Champions generation 설정이 없습니다.';
+        raise exception using errcode = 'P0001', message = 'Final Event의 공식 Champions 회차가 없습니다.';
     end if;
     select * into v_existing from ypl_schema_validation.hall_of_fame_entries h where h.event_id = p_event_id;
     if found then
@@ -501,9 +515,13 @@ begin
 end;
 $$;
 
-revoke all on function ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, timestamptz) from public;
-revoke all on function ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, timestamptz) from authenticated, service_role;
-grant execute on function ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, timestamptz) to anon;
+-- The previous shared schedule signature must not remain callable: a new
+-- Champions save always owns phase-specific schedule fields.
+drop function if exists ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, timestamptz);
+
+revoke all on function ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, date, timestamptz, timestamptz) from public;
+revoke all on function ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, date, timestamptz, timestamptz) from authenticated, service_role;
+grant execute on function ypl_schema_validation.save_championship_application_event_pair(uuid, uuid, uuid, text, text, integer, text, integer, integer, integer, text, text, jsonb, jsonb, jsonb, date, date, timestamptz, timestamptz) to anon;
 revoke all on function ypl_schema_validation.cancel_championship_application_event_pair(uuid, uuid) from public;
 revoke all on function ypl_schema_validation.cancel_championship_application_event_pair(uuid, uuid) from authenticated, service_role;
 grant execute on function ypl_schema_validation.cancel_championship_application_event_pair(uuid, uuid) to anon;

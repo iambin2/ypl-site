@@ -14,10 +14,15 @@ test("Champions notice RPC atomically owns a fixed Qualifier/Final pair", () => 
     /set search_path = ''/i,
     /'champions', null, p_battle_format, 'double_elimination'/i,
     /'champions', null, p_battle_format, 'single_elimination'/i,
-    /'qualifier', p_final_event_id, p_qualification_slots/i,
+    /'qualifier', p_final_event_id, null/i,
     /'final', null, null/i,
+    /p_qualifier_held_on date/i,
+    /p_final_held_on date/i,
+    /p_qualifier_submission_target_at timestamptz/i,
+    /p_final_submission_target_at timestamptz/i,
     /'generation', p_generation/i,
     /'finalCapacity', p_final_capacity/i,
+    /'rankingEnabled', false/i,
     /Event pair가 부분 생성 상태/i,
   ]) assert.match(sql, pattern);
   assert.doesNotMatch(sql, /'champions', 'master'/i);
@@ -34,6 +39,10 @@ test("Champions pair editing preserves IDs and fails closed after downstream fac
   ]) assert.match(sql, new RegExp(`ypl_schema_validation\\.${table}`, "i"));
   assert.match(sql, /where e\.id = p_final_event_id/i);
   assert.match(sql, /where e\.id = p_qualifier_event_id/i);
+  assert.match(sql, /held_on = p_final_held_on/i);
+  assert.match(sql, /submission_target_at = p_final_submission_target_at/i);
+  assert.match(sql, /held_on = p_qualifier_held_on/i);
+  assert.match(sql, /submission_target_at = p_qualifier_submission_target_at/i);
 });
 
 test("Champions pair cancellation is a pristine-only guard and clears the Qualifier announcement reference", () => {

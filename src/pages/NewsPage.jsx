@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Dropdown, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
-import { builderRouteSearch, listEventApplications } from "../services/index.js";
+import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
 
@@ -9,6 +9,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
   const [eventResponses,setEventResponses]=useState({});
+  const [championshipSubmissionEvents,setChampionshipSubmissionEvents]=useState({});
   useEffect(()=>{
     if(!admin) return;
     const targets=(data.announcements||[]).filter(a=>a.form?.enabled&&a.form?.eventId);
@@ -23,6 +24,16 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     });
     return ()=>{cancelled=true;};
   },[admin,data.announcements]);
+  useEffect(()=>{
+    const targets=(data.announcements||[]).filter(a=>a.form?.eventId&&a.form?.eventDraft?.eventType==="champions");
+    if(!targets.length){ setChampionshipSubmissionEvents({}); return; }
+    let cancelled=false;
+    Promise.all(targets.map(async announcement=>{
+      try{return [announcement.id,await resolveChampionshipSubmissionEvents(announcement.form.eventId)];}
+      catch(error){ console.error(error); return [announcement.id,{error:error?.message||"Champions Event pair를 확인하지 못했습니다."}]; }
+    })).then(rows=>{if(!cancelled)setChampionshipSubmissionEvents(Object.fromEntries(rows));});
+    return ()=>{cancelled=true;};
+  },[data.announcements]);
   const [open,setOpen]=useState(()=>new Set());
   const [seen,setSeen]=useState("");
   const hasPublic=(data.announcements||[]).some(a=>a.form&&a.form.enabled&&(a.form.fields||[]).some(f=>f.public));
@@ -55,7 +66,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
     <Reveal className="panel" style={{padding:"4px 22px"}}>
       {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
-      {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled;
+      {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id]; const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
         return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
           <button className="nb-head" onClick={()=>toggle(a.id)}>
             <span className="nb-main">
@@ -70,7 +81,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
           </div>}
           {(hasForm||a.form?.eventId)&&<div className="ann-formbtns">
             {hasForm&&<button className="ann-apply" onClick={e=>{e.stopPropagation();setFill(a.id);}}>📝 {a.form.buttonLabel||"참가 신청하기"}</button>}
-            {a.form?.eventId&&<button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();if(go)go("builder",{eventId:a.form.eventId});else window.location.search=builderRouteSearch(a.form.eventId,window.location.search);}}>파티 제출</button>}
+            {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(a.form.eventId);}}>파티 제출</button>}
+            {championshipSubmission?.isChampionship&&<>
+              <button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(championshipSubmission.qualifierEvent.id);}}>선발전 파티 제출</button>
+              <button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(championshipSubmission.finalEvent.id);}}>본선 파티 제출</button>
+            </>}
             {admin&&<button className="ann-resp" onClick={e=>{e.stopPropagation();setRespId(a.id);}}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
           </div>}
           {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses ann={a} onRefresh={doRefresh} updatedAt={seen}/>}
