@@ -469,12 +469,12 @@ Team Builder
 - P2-2 Event context + submission eligibility + applicant lookup + operator submission-status read UX ✅
 - P2-5 실제 공식 파티 제출 ✅
 - P2-6 final_submission_id freeze + Records integration ✅
-- P2-7 Event-linked Bracket normalized cutover ✅ Test 기준 완료
+- P2-7 Event-linked Bracket normalized-only hardening — COMPLETE (Test DB full-cycle 및 final audit 완료)
 
 P2-1의 serializer / loader는 local과 official Snapshot 경계를 준비하는 pure foundation이며,
 개인 localStorage 저장본과 공식 제출 Snapshot은 분리한다.
 
-P2-7 — Event-linked Bracket normalized cutover ✅ Test 기준 완료
+P2-7 — Event-linked Bracket normalized-only hardening 완료
 
 - Single Elimination: pure projection, persisted draw, stable node key, winner lifecycle,
   BYE advancement, stale invalidation, normalized Result apply
@@ -483,6 +483,9 @@ P2-7 — Event-linked Bracket normalized cutover ✅ Test 기준 완료
 - Double Elimination: Winners/Losers Bracket, Grand Final, Reset Final projection/runtime 및
   upstream winner 변경에 따른 downstream stale cleanup
 - malformed normalized runtime은 fail closed하며 historical / legacy-only bracket은 compatibility path로 유지
+- Test DB full-cycle: ordinary Single / Double / reset / Team, Champions Qualifier / Final / HOF,
+  notice deletion 4-case, delete → regenerate, durable fact preservation까지 완료
+- 다음 작업: YPL Season 자동 rollover
 - Production migration은 별도 후속 단계이며 아직 수행하지 않음
 
 P3. Champions core runtime — Test 기준 완료

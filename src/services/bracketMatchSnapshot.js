@@ -1,6 +1,10 @@
 import { getConfirmedTeamMemberIdentities } from "./bracketTeamParticipants.js";
 
-export const LEGACY_BRACKET_RUNTIME_SOURCE = "legacy_bracket_runtime";
+// Active Event-linked brackets are persisted exclusively through the
+// normalized runtime tables.  This value is intentionally shared by Match,
+// Result, and RankingAward synchronization so a lifecycle can never create a
+// second legacy runtime ledger.
+export const NORMALIZED_BRACKET_RUNTIME_SOURCE = "normalized_bracket_runtime";
 
 const BYE = "\u2205BYE";
 const MATCH_FIELDS = [

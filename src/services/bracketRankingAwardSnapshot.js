@@ -1,4 +1,4 @@
-import { LEGACY_BRACKET_RUNTIME_SOURCE } from "./bracketMatchSnapshot.js";
+import { NORMALIZED_BRACKET_RUNTIME_SOURCE } from "./bracketMatchSnapshot.js";
 
 export const RUNTIME_PLACEMENT_AWARD_REASON = "normalized bracket placement";
 
@@ -66,11 +66,13 @@ function getPlacementPointPolicy(event, isTeamEvent) {
     };
   }
 
-  if (String(event.event_type || "").toLowerCase() === "champions") {
-    return { enabled: false, division: null, reason: "champions_event", points: null };
+  const championsFinal = String(event.event_type || "").toLowerCase() === "champions"
+    && event.championship_phase === "final";
+  if (String(event.event_type || "").toLowerCase() === "champions" && !championsFinal) {
+    return { enabled: false, division: null, reason: "champions_qualifier", points: null };
   }
 
-  const division = eventDivision(event);
+  const division = championsFinal ? "master" : eventDivision(event);
   if (!division) {
     return { enabled: false, division: null, reason: "unsupported_division", points: null };
   }
@@ -114,7 +116,7 @@ export function buildEventRankingAwardSnapshot(event, resultRows = [], entryPart
   if (!policy.enabled) return { skipped: true, reason: policy.reason, rows: [] };
 
   const runtimeResults = (resultRows || [])
-    .filter(row => row?.source === LEGACY_BRACKET_RUNTIME_SOURCE);
+    .filter(row => row?.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
   const participantsByEntryId = new Map();
   for (const participant of entryParticipants || []) {
     if (!participant?.entry_id) continue;
@@ -209,10 +211,10 @@ export function samePlacementAwardValues(left, right) {
 
 export function buildBracketRankingAwardSyncPlan(existingRows = [], desiredRows = []) {
   const runtimeRows = (existingRows || []).filter(row =>
-    row?.source === LEGACY_BRACKET_RUNTIME_SOURCE && row?.award_kind === "placement"
+    row?.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && row?.award_kind === "placement"
   );
   const protectedPlacementRows = (existingRows || []).filter(row =>
-    row?.award_kind === "placement" && row?.source !== LEGACY_BRACKET_RUNTIME_SOURCE
+    row?.award_kind === "placement" && row?.source !== NORMALIZED_BRACKET_RUNTIME_SOURCE
   );
 
   const protectedByKey = new Map(protectedPlacementRows.map(row => [awardKey(row), row]));
@@ -237,7 +239,7 @@ export function buildBracketRankingAwardSyncPlan(existingRows = [], desiredRows 
     if (desired.award_kind && desired.award_kind !== "placement") {
       throw new Error("runtime RankingAward snapshot에는 placement만 포함할 수 있습니다.");
     }
-    if (desired.source && desired.source !== LEGACY_BRACKET_RUNTIME_SOURCE) {
+    if (desired.source && desired.source !== NORMALIZED_BRACKET_RUNTIME_SOURCE) {
       throw new Error("runtime RankingAward snapshot에 다른 source가 포함되어 있습니다.");
     }
 

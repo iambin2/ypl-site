@@ -1,5 +1,5 @@
 import React from "react";
-import { cancelApplicationEvent, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
+import { announcementDeletionBlockedMessage, cancelApplicationEvent, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
 import {
   AnnEditor,
   ChampionEditor,
@@ -141,6 +141,19 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
         }}
         onDelete={modal.item ? async () => {
           const eventId = modal.item.form?.eventId || null;
+          let preflight = null;
+          if (eventId) {
+            try {
+              preflight = await preflightAnnouncementDeletion(eventId);
+            } catch (error) {
+              flash?.(`공지 삭제 가능 여부를 확인하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
+              return;
+            }
+            if (!preflight.allowed) {
+              flash?.(announcementDeletionBlockedMessage(preflight));
+              return;
+            }
+          }
 
           const nextData = {
             ...data,
@@ -155,14 +168,9 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
 
           if (eventId) {
             try {
-              await cancelApplicationEvent(eventId);
+              await cancelApplicationEvent(eventId, { preflight });
             } catch (error) {
-              const restored = await save(data);
-              flash?.(
-                restored
-                  ? `연결 대회 정리에 실패해 공지 삭제를 되돌렸습니다: ${error?.message || "알 수 없는 오류"}`
-                  : `연결 대회 정리와 공지 복구에 모두 실패했습니다: ${error?.message || "알 수 없는 오류"}`
-              );
+              flash?.(`공지 삭제 후 연결 Event 취소에 실패했습니다: ${error?.message || "알 수 없는 오류"}`);
               return;
             }
           }

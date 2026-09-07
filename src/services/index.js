@@ -7,6 +7,7 @@ export * from "./bracketRankingAwardSnapshot.js";
 export * from "./normalizedRecordsService.js";
 export * from "./normalizedRecordsProjection.js";
 export * from "./teamSubmission.js";
+export * from "./announcementDeletionPolicy.js";
 export * from "./appRouting.js";
 export * from "./championsCore.js";
 export * from "./championsService.js";

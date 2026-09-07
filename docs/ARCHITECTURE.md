@@ -1566,7 +1566,7 @@ reversal -20
 ```
 
 위 ledger capability와 Bracket의 operational rollback은 구분한다. P0-6의 기록 반영 취소는 아직
-최종화되지 않은 runtime 반영을 원복하는 작업이므로 `source = legacy_bracket_runtime`인 placement
+최종화되지 않은 active normalized runtime 반영을 원복하는 작업이므로 `source = normalized_bracket_runtime`인 placement
 Award를 먼저 삭제한 뒤 runtime Result를 삭제한다. `adjustment` / `reversal` 및 다른 source Award는
 이 cleanup 대상이 아니며, 별도의 사후 보정 UI는 이번 단계에서 구현하지 않는다.
 
@@ -2018,7 +2018,7 @@ legacy participant pid
 ```
 
 - `match_kind = bracket`
-- `source = legacy_bracket_runtime`
+- `source = normalized_bracket_runtime`
 - `source_node_key = legacy match node id`
 - 개인전이므로 `player_a_id / player_b_id / winner_player_id = NULL`
 - 승자 확정은 `resolution = played`, 미확정은 `unknown`
@@ -2048,7 +2048,7 @@ elimResult
 → results.entry_id
 ```
 
-- `source = legacy_bracket_runtime`
+- `source = normalized_bracket_runtime`
 - 우승: `champion`, rank 1~1, `우승`
 - 준우승: `runner_up`, rank 2~2, `준우승`
 - 실제 4강 진출자: `semifinalist`, rank 3~4, `4강`
@@ -2081,7 +2081,7 @@ results.id / results.entry_id
 ```
 
 이름 문자열로 Player를 찾지 않으며 개인 Entry에 EntryParticipant가 0명 또는 2명 이상이면 반영을
-중단한다. 생성 row는 `award_kind = placement`, `source = legacy_bracket_runtime`,
+중단한다. 생성 row는 `award_kind = placement`, `source = normalized_bracket_runtime`,
 `reason = normalized bracket placement`이고 Master / Light 모두 series와 season count를 켠다.
 
 Event의 Award 전체를 읽되 sync와 cleanup은 runtime placement만 대상으로 한다. `(result_id, player_id)`를
@@ -2548,3 +2548,62 @@ LF → CRLF 메시지는 Windows working-copy line-ending warning이며 whitespa
 Test Supabase에서 Qualifier deletion 실제 smoke PASS
 
 Production Supabase migration / read / write는 수행하지 않았다.
+
+2026-09-07 P2-7 final verification
+
+active Event-linked bracket runtime의 canonical path는 normalized only다.
+
+Event → BracketRuntime → BracketEntrySlot → Entry / EntryParticipant → Match → pure projection
+
+`site_data.brackets`는 active runtime graph의 source가 아니며 active dependency는 0이다. Match, Result,
+RankingAward의 active runtime source도 `normalized_bracket_runtime`만 사용한다. Single은 specialized
+RPC, Double / Team은 generic normalized RPC를 사용한다.
+
+Test DB `nmqrmvnjenjqityuhngb` / `ypl_schema_validation`에서 ordinary Single / Double / reset / Team과
+Champions Qualifier / Final lifecycle을 실제 service/RPC로 확인했다. Qualifier는 Result / RankingAward /
+HOF 0건이며, Final은 independent Final submission을 freeze해 Result, Master placement RankingAward와
+HOF canonical chain을 생성한다. Final record revert는 HOF → Award → Result → final submission release
+순서를 사용한다.
+
+공지 삭제는 site_data announcement 삭제와 Event lifecycle을 분리한다. pristine ordinary / Champions pair는
+cancelled, downstream이 있는 ordinary / Champions pair는 `{ cancelled: false, preserved: true }`로 Event와
+facts를 보존하며 announcement를 복원하지 않는다. Qualifier의 `registration_settings.announcementId`는
+historical provenance이며 Final은 canonical pair relation으로 연결한다.
+
+최종 Test audit: active BracketRuntime 0, 이번 smoke의 legacy runtime Match 0, active Event-linked
+site_data graph 0. 제7회 파이컵라이트는 open이며 Registration 6 / Submission 6 / Snapshot 6 / SnapshotMember
+27을 보존했다. Browser E2E와 Production Supabase 접근은 수행하지 않았다.
+
+Historical completed bracket read-only boundary
+
+P2-7 normalized-only invariant는 active Event-linked runtime에만 적용한다. `eventId`가 없고 `status=done`
+이며 `projection.source`가 없는 pre-normalized `site_data.brackets` graph는 historical read-only display source로
+허용한다. 이 row는 normalized list 뒤에만 표시되고 `readOnly`로 잠긴다.
+
+historical display는 create, winner/series save, delete, Match sync, Entry/party edit, Result/Award apply/revert와
+어떤 Event lifecycle도 호출하지 않는다. 따라서 active Event-linked legacy runtime dependency는 계속 0이다.
+
+Single runtime durable Registration deletion boundary
+
+`delete_normalized_single_bracket_runtime`은 generic runtime delete와 같은 durable Registration contract를
+사용한다. `registration_submissions`가 하나라도 있거나 `final_submission_id`가 있는 Registration은 runtime이
+만들었더라도 삭제하지 않고, runtime이 연결한 기존 Registration의 `player_id`도 되돌리지 않는다. 따라서
+Submission → TeamSnapshot → TeamSnapshotMember와 그 Registration이 참조하는 Player는 보존된다.
+
+삭제 대상은 여전히 runtime-owned Match → Slot → Identity → EntryParticipant → Entry 순서다. durable 사실이
+없는 runtime-created Registration은 삭제하고, durable 사실이 없는 기존 Registration의 Player link만 이전 값으로
+복구한다. runtime-created Player도 Registration / EntryParticipant / Match / RankingAward / HallOfFame 참조가
+전혀 없을 때만 삭제한다.
+
+2026-09-07 announcement deletion preflight boundary
+
+active 공지 삭제는 더 이상 announcement를 먼저 저장한 뒤 Event를 보존하거나 복구하지 않는다.
+`preflightAnnouncementDeletion(eventId)`가 EventRegistration, RegistrationSubmission, Entry,
+EntryParticipant, BracketRuntime, Match, Result, RankingAward, HallOfFameEntry, `record_applied_at`을
+읽기 전용으로 검사한다. 하나라도 있으면 UI는 announcement와 Event를 그대로 둔 채 가장 진행된 reason을
+표시한다: record applied → result/award/HOF → bracket/runtime → submission → registration.
+
+Champions는 Qualifier/Final pair 전체를 같은 preflight로 검사하고, 선택된 가장 진행된 fact의 phase를
+메시지에 포함한다. pristine Event만 announcement 제거 뒤 cancelled가 되며 Event physical delete는 없다.
+허용된 취소에서만 `registration_settings.announcementId`를 clear한다. Test-only Champions pair RPC도 같은
+pristine guard와 announcementId clear를 원자적으로 수행한다.

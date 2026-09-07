@@ -767,19 +767,6 @@ begin
     end if;
     if exists (
         select 1
-          from ypl_schema_validation.event_registrations r
-          join ypl_schema_validation.bracket_identity_changes c
-            on c.bracket_runtime_id = p_runtime_id and c.registration_id = r.id
-         where c.registration_was_created
-           and (
-             r.final_submission_id is not null
-             or exists (select 1 from ypl_schema_validation.registration_submissions s where s.registration_id = r.id)
-           )
-    ) then
-        raise exception using errcode = 'P0001', message = '대진 생성 과정에서 만든 Registration에 Submission/history가 있어 자동 삭제할 수 없습니다.';
-    end if;
-    if exists (
-        select 1
           from ypl_schema_validation.matches as m0
           where m0.event_id = p_event_id
              and (m0.source <> 'normalized_bracket_runtime'
@@ -876,7 +863,21 @@ begin
               entry_participant_was_created boolean
           )
     loop
-        if v_change.registration_was_created then
+        if v_change.registration_was_created
+           and not exists (
+               select 1
+                 from ypl_schema_validation.event_registrations durable_registration
+                where durable_registration.id = v_change.registration_id
+                  and durable_registration.event_id = p_event_id
+                  and (
+                    durable_registration.final_submission_id is not null
+                    or exists (
+                      select 1
+                        from ypl_schema_validation.registration_submissions durable_submission
+                       where durable_submission.registration_id = durable_registration.id
+                    )
+                  )
+           ) then
             delete from ypl_schema_validation.event_registrations as er0
              where er0.id = v_change.registration_id
                and er0.event_id = p_event_id
@@ -885,7 +886,21 @@ begin
             if v_deleted <> 1 then
                 raise exception using errcode = 'P0001', message = 'Registration 삭제 ownership이 일치하지 않습니다.';
             end if;
-        elsif v_change.registration_player_was_changed then
+        elsif v_change.registration_player_was_changed
+          and not exists (
+              select 1
+                from ypl_schema_validation.event_registrations durable_registration
+               where durable_registration.id = v_change.registration_id
+                 and durable_registration.event_id = p_event_id
+                 and (
+                   durable_registration.final_submission_id is not null
+                   or exists (
+                     select 1
+                       from ypl_schema_validation.registration_submissions durable_submission
+                      where durable_submission.registration_id = durable_registration.id
+                   )
+                 )
+          ) then
             update ypl_schema_validation.event_registrations as er0
                set player_id = v_change.previous_registration_player_id,
                    updated_at = now()
@@ -899,25 +914,40 @@ begin
         end if;
     end loop;
 
-    for v_change in
-        select *
-          from jsonb_to_recordset(v_identity_snapshot) as c(
-              entry_participant_id uuid, entry_id uuid, registration_id uuid,
-              player_id uuid, player_was_created boolean,
-              registration_was_created boolean, registration_player_was_changed boolean,
-              previous_registration_player_id uuid, entry_was_created boolean,
-              entry_participant_was_created boolean
-          )
-    loop
-        if v_change.player_was_created then
-            delete from ypl_schema_validation.players as p0
-             where p0.id = v_change.player_id;
-            get diagnostics v_deleted = row_count;
-            if v_deleted <> 1 then
-                raise exception using errcode = 'P0001', message = '생성된 Player exact deletion ownership이 일치하지 않습니다.';
-            end if;
-        end if;
-    end loop;
+    delete from ypl_schema_validation.players as p0
+     where p0.id in (
+         select distinct c.player_id
+           from jsonb_to_recordset(v_identity_snapshot) as c(
+               entry_participant_id uuid, entry_id uuid, registration_id uuid,
+               player_id uuid, player_was_created boolean,
+               registration_was_created boolean, registration_player_was_changed boolean,
+               previous_registration_player_id uuid, entry_was_created boolean,
+               entry_participant_was_created boolean
+           )
+          where c.player_was_created
+     )
+       and not exists (
+           select 1 from ypl_schema_validation.event_registrations er0
+            where er0.player_id = p0.id
+       )
+       and not exists (
+           select 1 from ypl_schema_validation.entry_participants ep0
+            where ep0.player_id = p0.id
+       )
+       and not exists (
+           select 1 from ypl_schema_validation.matches m0
+            where m0.player_a_id = p0.id
+               or m0.player_b_id = p0.id
+               or m0.winner_player_id = p0.id
+       )
+       and not exists (
+           select 1 from ypl_schema_validation.ranking_awards ra0
+            where ra0.player_id = p0.id
+       )
+       and not exists (
+           select 1 from ypl_schema_validation.hall_of_fame_entries hof0
+            where hof0.player_id = p0.id
+       );
 
     delete from ypl_schema_validation.bracket_runtimes as br0
      where br0.id = p_runtime_id and br0.event_id = p_event_id;

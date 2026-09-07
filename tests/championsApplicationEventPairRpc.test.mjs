@@ -36,10 +36,15 @@ test("Champions pair editing preserves IDs and fails closed after downstream fac
   assert.match(sql, /where e\.id = p_qualifier_event_id/i);
 });
 
-test("Champions pair cancellation only marks unused owned Events cancelled", () => {
+test("Champions pair cancellation is a pristine-only guard and clears the Qualifier announcement reference", () => {
   assert.match(sql, /cancel_championship_application_event_pair/i);
-  assert.match(sql, /downstream 사실이 있어 공지 삭제 시 Event를 보존/i);
-  assert.match(sql, /set status = 'cancelled'/i);
+  assert.match(sql, /return query select p_qualifier_event_id, p_final_event_id, false/i);
+  assert.match(sql, /set\s+status = 'cancelled'/i);
+  for (const table of ["registration_submissions", "entry_participants", "ranking_awards", "hall_of_fame_entries"]) {
+    assert.match(sql, new RegExp(`ypl_schema_validation\\.${table}`, "i"));
+  }
+  assert.match(sql, /registration_settings = case when e\.id = p_qualifier_event_id/i);
+  assert.match(sql, /- 'announcementId'/i);
   assert.doesNotMatch(sql, /delete from ypl_schema_validation\.events/i);
 });
 

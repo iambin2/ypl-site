@@ -481,14 +481,22 @@ begin
     if v_qualifier.record_applied_at is not null or v_final.record_applied_at is not null
        or v_qualifier.status not in ('open', 'cancelled') or v_final.status not in ('open', 'cancelled')
        or exists (select 1 from ypl_schema_validation.event_registrations r where r.event_id in (p_qualifier_event_id, p_final_event_id))
+       or exists (select 1 from ypl_schema_validation.registration_submissions s join ypl_schema_validation.event_registrations r on r.id = s.registration_id where r.event_id in (p_qualifier_event_id, p_final_event_id))
        or exists (select 1 from ypl_schema_validation.entries e where e.event_id in (p_qualifier_event_id, p_final_event_id))
+       or exists (select 1 from ypl_schema_validation.entry_participants ep where ep.event_id in (p_qualifier_event_id, p_final_event_id))
        or exists (select 1 from ypl_schema_validation.matches m where m.event_id in (p_qualifier_event_id, p_final_event_id))
        or exists (select 1 from ypl_schema_validation.results r where r.event_id in (p_qualifier_event_id, p_final_event_id))
+       or exists (select 1 from ypl_schema_validation.ranking_awards ra where ra.event_id in (p_qualifier_event_id, p_final_event_id))
+       or exists (select 1 from ypl_schema_validation.hall_of_fame_entries h where h.event_id in (p_qualifier_event_id, p_final_event_id))
        or exists (select 1 from ypl_schema_validation.bracket_runtimes br where br.event_id in (p_qualifier_event_id, p_final_event_id)) then
-        raise exception using errcode = 'P0001', message = 'Champions pair에 downstream 사실이 있어 공지 삭제 시 Event를 보존합니다.';
+        return query select p_qualifier_event_id, p_final_event_id, false;
+        return;
     end if;
-    update ypl_schema_validation.events e set status = 'cancelled', updated_at = now()
-     where e.id in (p_qualifier_event_id, p_final_event_id);
+    update ypl_schema_validation.events e set
+      status = 'cancelled',
+      registration_settings = case when e.id = p_qualifier_event_id then coalesce(e.registration_settings, '{}'::jsonb) - 'announcementId' else e.registration_settings end,
+      updated_at = now()
+    where e.id in (p_qualifier_event_id, p_final_event_id);
     return query select p_qualifier_event_id, p_final_event_id, true;
 end;
 $$;

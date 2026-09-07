@@ -1,6 +1,6 @@
 import { supa as client } from "../storage.js";
 import {
-  LEGACY_BRACKET_RUNTIME_SOURCE,
+  NORMALIZED_BRACKET_RUNTIME_SOURCE,
   buildBracketMatchSyncPlan,
   buildEventBracketMatchSnapshot,
   resolveBracketMatchParentIds,
@@ -20,7 +20,6 @@ import {
   buildTeamMemberCandidates,
   getConfirmedTeamMemberIdentities,
 } from "./bracketTeamParticipants.js";
-import { isInterruptedBracketCleanupState, validateBracketParticipantConfirmation } from "./bracketLifecycle.js";
 import { buildSubmissionStatusRows, selectSubmissionRegistration } from "./teamBuilderCore.js";
 import { buildTeamSnapshotSubmission } from "./teamSubmission.js";
 import { normalizeFinalSubmissionFreezeSnapshot } from "./finalSubmissionLifecycle.js";
@@ -28,6 +27,10 @@ import {
   projectNormalizedDoubleEliminationBracket,
   projectNormalizedSingleEliminationBracket,
 } from "./bracketProjection.js";
+import {
+  buildAnnouncementDeletionPreflight,
+  emptyAnnouncementDeletionCounts,
+} from "./announcementDeletionPolicy.js";
 
 const DATA_SCHEMA = import.meta.env.VITE_YPL_DATA_SCHEMA || "public";
 const CHAMPIONS_EVENT_SELECT_FIELDS = DATA_SCHEMA === "ypl_schema_validation"
@@ -110,7 +113,7 @@ async function readNormalizedBracketRuntimeFacts(eventId, runtimeId = null) {
     : { data: [], error: null };
   if (registrationsError) fail(registrationsError, "normalized bracket 참가자 이름을 불러오지 못했습니다.");
   if ((matchesResult.data || []).some(row => row?.source !== "normalized_bracket_runtime")) {
-    throw new Error("normalized runtime에 foreign-source Match가 있어 legacy fallback을 중단했습니다.");
+    throw new Error("normalized runtime에 foreign-source Match가 있어 동기화를 중단했습니다.");
   }
   const registrationNames = new Map((registrations || []).map(row => [row.id, row.registration_name]));
   const entryParticipants = (participantsResult.data || []).map(row => ({
@@ -371,14 +374,7 @@ const EVENT_RUNTIME_MATCH_SELECT = `
   played_at
 `;
 
-function sameRuntimeMatchSnapshot(left, right) {
-  const normalize = rows => (Array.isArray(rows) ? rows : [])
-    .map(row => JSON.stringify(row))
-    .sort();
-  return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right));
-}
-
-async function readEventRuntimeMatchesNow(eventId, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function readEventRuntimeMatchesNow(eventId, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   const { data, error } = await db()
     .from("matches")
     .select(EVENT_RUNTIME_MATCH_SELECT)
@@ -399,7 +395,7 @@ async function readEventAllMatchesNow(eventId) {
   return data || [];
 }
 
-async function updateEventRuntimeMatchesNow(eventId, updates, now, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function updateEventRuntimeMatchesNow(eventId, updates, now, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   for (const update of updates) {
     const { data, error } = await db()
       .from("matches")
@@ -415,7 +411,7 @@ async function updateEventRuntimeMatchesNow(eventId, updates, now, source = LEGA
   }
 }
 
-async function insertEventRuntimeMatchesNow(eventId, rows, now, preserveIds = false, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function insertEventRuntimeMatchesNow(eventId, rows, now, preserveIds = false, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   if (!rows.length) return;
   const payloads = rows.map(row => {
     const { id, ...values } = row;
@@ -439,7 +435,7 @@ async function insertEventRuntimeMatchesNow(eventId, rows, now, preserveIds = fa
   }
 }
 
-async function deleteEventRuntimeMatchIdsNow(eventId, ids, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function deleteEventRuntimeMatchIdsNow(eventId, ids, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   if (!ids.length) return;
   const { data, error } = await db()
     .from("matches")
@@ -455,14 +451,14 @@ async function deleteEventRuntimeMatchIdsNow(eventId, ids, source = LEGACY_BRACK
   }
 }
 
-async function deleteEventRuntimeMatchRowsNow(eventId, rows, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function deleteEventRuntimeMatchRowsNow(eventId, rows, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   const children = rows.filter(row => row?.id && row.match_kind !== "bracket").map(row => row.id);
   const parents = rows.filter(row => row?.id && row.match_kind === "bracket").map(row => row.id);
   await deleteEventRuntimeMatchIdsNow(eventId, children, source);
   await deleteEventRuntimeMatchIdsNow(eventId, parents, source);
 }
 
-async function replaceEventRuntimeMatchesNow(eventId, rows, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function replaceEventRuntimeMatchesNow(eventId, rows, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   const snapshot = Array.isArray(rows) ? rows : [];
   const currentRows = await readEventRuntimeMatchesNow(eventId, source);
   await deleteEventRuntimeMatchRowsNow(eventId, currentRows, source);
@@ -474,7 +470,7 @@ async function replaceEventRuntimeMatchesNow(eventId, rows, source = LEGACY_BRAC
   await insertEventRuntimeMatchesNow(eventId, children, now, true, source);
 }
 
-async function syncEventBracketMatchesNow(eventId, bracket, source = LEGACY_BRACKET_RUNTIME_SOURCE) {
+async function syncNormalizedBracketMatchesNow(eventId, bracket, source = NORMALIZED_BRACKET_RUNTIME_SOURCE) {
   const identityState = bracketMatchIdentityState(eventId, bracket);
   if (!identityState.eligible) {
     return { skipped: true, reason: identityState.reason, inserted: 0, updated: 0, deleted: 0 };
@@ -534,175 +530,9 @@ async function syncEventBracketMatchesNow(eventId, bracket, source = LEGACY_BRAC
   }
 }
 
-export async function syncEventBracketMatches(eventId, bracket) {
-  if (!eventId) return { skipped: true, reason: "event_unlinked", inserted: 0, updated: 0, deleted: 0 };
-  return queueEventMatchMutation(eventId, () => syncEventBracketMatchesNow(eventId, bracket));
-}
-
 export async function syncNormalizedBracketMatches(eventId, bracket) {
   if (!eventId) return { skipped: true, reason: "event_unlinked", inserted: 0, updated: 0, deleted: 0 };
-  return queueEventMatchMutation(eventId, () => syncEventBracketMatchesNow(eventId, bracket, "normalized_bracket_runtime"));
-}
-
-export async function deleteEventBracketMatches(eventId, expectedRows = null) {
-  if (!eventId) return { deleted: 0 };
-
-  return queueEventMatchMutation(eventId, async () => {
-    const rows = await readEventRuntimeMatchesNow(eventId);
-    if (Array.isArray(expectedRows) && !sameRuntimeMatchSnapshot(rows, expectedRows)) {
-      throw new Error("삭제 Phase A 이후 normalized Match 상태가 변경되어 삭제를 중단했습니다.");
-    }
-    try {
-      await deleteEventRuntimeMatchRowsNow(eventId, rows);
-      return { deleted: rows.length, previousRows: rows };
-    } catch (error) {
-      try {
-        await replaceEventRuntimeMatchesNow(eventId, rows);
-      } catch (restoreError) {
-        throw new Error(
-          `${error?.message || "normalized Match 삭제에 실패했습니다."} (삭제 전 Match snapshot 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
-        );
-      }
-      throw error;
-    }
-  });
-}
-
-function unsafeBracketCleanup(message) {
-  const error = new Error(message);
-  error.code = "YPL_UNSAFE_BRACKET_CLEANUP";
-  return error;
-}
-
-/**
- * Read the rows that a bracket deletion is allowed to remove. This is also
- * the guard for Event-linked brackets: an existing normalized artifact must
- * never be hidden by deleting only the legacy JSON bracket.
- */
-export async function inspectEventBracketCleanup(eventId, bracket, identityChanges = []) {
-  if (!eventId) return { safe: true, event: null, matchRows: [], entries: [], entryParticipants: [], registrations: [], players: [] };
-
-  if (!bracket?.eventId || bracket.eventId !== eventId) {
-    throw unsafeBracketCleanup("대진표의 eventId와 삭제 대상 Event가 일치하지 않아 삭제를 중단했습니다.");
-  }
-
-  const event = await getEvent(eventId);
-  if (!event) throw new Error("대진표를 삭제할 Event를 찾을 수 없습니다.");
-  if (Boolean(event.is_team_event) !== (bracket?.mode === "team")) {
-    throw unsafeBracketCleanup("Event의 팀전 구분과 대진표 모드가 일치하지 않아 삭제를 중단했습니다.");
-  }
-  if (event.record_applied_at || event.status === "completed") {
-    throw new Error("기록이 반영된 Event의 대진표는 먼저 기록 반영을 취소해야 합니다.");
-  }
-  if (!["open", "running"].includes(event.status)) {
-    throw new Error("현재 Event 상태에서는 대진표를 삭제할 수 없습니다.");
-  }
-
-  const allMatchRows = await readEventAllMatchesNow(eventId);
-  const foreignMatchRows = allMatchRows.filter(row => row.source !== LEGACY_BRACKET_RUNTIME_SOURCE);
-  if (foreignMatchRows.length) {
-    throw unsafeBracketCleanup("다른 source의 normalized Match가 존재해 대진표 삭제를 중단했습니다.");
-  }
-  const matchRows = allMatchRows.filter(row => row.source === LEGACY_BRACKET_RUNTIME_SOURCE);
-  const confirmationState = validateBracketParticipantConfirmation(bracket);
-  if (!confirmationState.ok) {
-    throw unsafeBracketCleanup(
-      "참가 확정 metadata가 없거나 불완전해 대진표 삭제를 중단했습니다."
-    );
-  }
-
-  const changes = confirmationState.identityChanges;
-  const entryIds = [...new Set(changes.map(change => change.entryId).filter(Boolean))];
-  const entryParticipantIds = [...new Set(changes.map(change => change.entryParticipantId).filter(Boolean))];
-  const registrationIds = [...new Set(changes.map(change => change.registrationId).filter(Boolean))];
-  const playerIds = [...new Set(changes.map(change => change.playerId).filter(Boolean))];
-  const [entryResult, entryParticipantResult, registrationResult, playerResult] = await Promise.all([
-    db().from("entries").select("id, event_id, entry_type, display_name, status").eq("event_id", eventId),
-    db().from("entry_participants").select("id, event_id, entry_id, registration_id, player_id, member_order, role").eq("event_id", eventId),
-    db().from("event_registrations").select("id, event_id, player_id, registration_name, registration_data, registration_source, registered_at, final_submission_id, updated_at").eq("event_id", eventId).in("id", registrationIds),
-    playerIds.length
-      ? db().from("players").select("id, display_name, status").in("id", playerIds)
-      : Promise.resolve({ data: [], error: null }),
-  ]);
-  if (entryResult.error) fail(entryResult.error, "대진표 삭제 전에 Entry ownership을 확인하지 못했습니다.");
-  if (entryParticipantResult.error) fail(entryParticipantResult.error, "대진표 삭제 전에 EntryParticipant ownership을 확인하지 못했습니다.");
-  if (registrationResult.error) fail(registrationResult.error, "대진표 삭제 전에 Registration ownership을 확인하지 못했습니다.");
-  if (playerResult.error) fail(playerResult.error, "대진표 삭제 전에 Player ownership을 확인하지 못했습니다.");
-
-  const entries = entryResult.data || [];
-  const entryParticipants = entryParticipantResult.data || [];
-  const registrations = registrationResult.data || [];
-  const players = playerResult.data || [];
-  const expectedEntryIdSet = new Set(entryIds);
-  const expectedEntryParticipantIdSet = new Set(entryParticipantIds);
-  const unexpectedEntries = entries.filter(row => !expectedEntryIdSet.has(row.id));
-  const unexpectedEntryParticipants = entryParticipants.filter(row => !expectedEntryParticipantIdSet.has(row.id));
-  if (isInterruptedBracketCleanupState({ matchRows, entries, entryParticipants })) {
-    if (registrations.length !== registrationIds.length || players.length !== playerIds.length) {
-      throw unsafeBracketCleanup("interrupted deletion의 Registration/Player identity가 현재 Event와 일치하지 않아 복구를 중단했습니다.");
-    }
-    const registrationById = new Map(registrations.map(row => [row.id, row]));
-    const playerById = new Map(players.map(row => [row.id, row]));
-    for (const change of changes) {
-      const registration = registrationById.get(change.registrationId);
-      if (!registration || registration.event_id !== eventId || registration.player_id !== change.playerId || !playerById.has(change.playerId)) {
-        throw unsafeBracketCleanup("interrupted deletion의 Registration/Player identity가 metadata와 일치하지 않아 복구를 중단했습니다.");
-      }
-    }
-    return {
-      safe: true,
-      interrupted: true,
-      event,
-      previousEventStatus: confirmationState.previousEventStatus,
-      matchRows,
-      entries,
-      entryParticipants,
-      registrations,
-      players,
-      identityChanges: changes,
-    };
-  }
-  const ownedEntries = entries.filter(row => expectedEntryIdSet.has(row.id));
-  const ownedEntryParticipants = entryParticipants.filter(row => expectedEntryParticipantIdSet.has(row.id));
-  const expectedEntryCount = (bracket.participants || []).length;
-  if (unexpectedEntries.length || unexpectedEntryParticipants.length || ownedEntries.length !== expectedEntryCount || ownedEntryParticipants.length !== changes.length || registrations.length !== registrationIds.length || players.length !== playerIds.length) {
-    throw unsafeBracketCleanup("참가 확정 metadata와 normalized identity row 수가 일치하지 않아 대진표 삭제를 중단했습니다.");
-  }
-
-  const entryById = new Map(ownedEntries.map(row => [row.id, row]));
-  const entryParticipantById = new Map(ownedEntryParticipants.map(row => [row.id, row]));
-  const registrationById = new Map(registrations.map(row => [row.id, row]));
-  for (const change of changes) {
-    const entry = entryById.get(change.entryId);
-    const entryParticipant = entryParticipantById.get(change.entryParticipantId);
-    const registration = registrationById.get(change.registrationId);
-    if (!entry || entry.entry_type !== (bracket.mode === "team" ? "team" : "individual") || entry.status !== "active" ||
-      !registration || registration.player_id !== change.playerId ||
-      !entryParticipant || entryParticipant.event_id !== eventId || entryParticipant.entry_id !== change.entryId || entryParticipant.registration_id !== change.registrationId ||
-      entryParticipant.player_id !== change.playerId ||
-      (bracket.mode === "team" && entryParticipant.member_order !== change.memberOrder) ||
-      bracket.mode !== "team" && entryParticipant.member_order !== 1) {
-      throw unsafeBracketCleanup("참가 확정 metadata가 현재 normalized Entry/EntryParticipant와 일치하지 않아 대진표 삭제를 중단했습니다.");
-    }
-  }
-
-  return { safe: true, event, previousEventStatus: confirmationState.previousEventStatus, matchRows, entries: ownedEntries, entryParticipants: ownedEntryParticipants, registrations, players, identityChanges: changes };
-}
-
-export async function preflightEventBracketDeletion(eventId, bracket) {
-  const ownership = await inspectEventBracketCleanup(eventId, bracket);
-  await assertEventHasNoResults(eventId);
-  await assertEventHasNoRankingAwards(eventId);
-  return ownership;
-}
-
-export async function restoreEventBracketMatches(eventId, previousRows) {
-  if (!eventId) return { restored: 0 };
-  const snapshot = Array.isArray(previousRows) ? previousRows : [];
-  return queueEventMatchMutation(eventId, async () => {
-    await replaceEventRuntimeMatchesNow(eventId, snapshot);
-    return { restored: snapshot.length };
-  });
+  return queueEventMatchMutation(eventId, () => syncNormalizedBracketMatchesNow(eventId, bracket));
 }
 
 async function readEventResults(eventId) {
@@ -735,7 +565,7 @@ async function applyEventResultSyncPlan(eventId, plan, now) {
       })
       .eq("id", update.id)
       .eq("event_id", eventId)
-      .eq("source", LEGACY_BRACKET_RUNTIME_SOURCE)
+      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
       .select("id")
       .maybeSingle();
 
@@ -749,7 +579,7 @@ async function applyEventResultSyncPlan(eventId, plan, now) {
       .insert(plan.inserts.map(row => ({
         ...row,
         event_id: eventId,
-        source: LEGACY_BRACKET_RUNTIME_SOURCE,
+        source: NORMALIZED_BRACKET_RUNTIME_SOURCE,
         updated_at: row.updated_at || now,
       })))
       .select("id");
@@ -765,7 +595,7 @@ async function applyEventResultSyncPlan(eventId, plan, now) {
       .from("results")
       .delete()
       .eq("event_id", eventId)
-      .eq("source", LEGACY_BRACKET_RUNTIME_SOURCE)
+      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
       .in("id", plan.deleteIds)
       .select("id");
 
@@ -833,7 +663,7 @@ async function syncEventBracketResultsNow(eventId, bracket, result) {
 
   await validateResultEntries(eventId, snapshot.rows, event.is_team_event ? "team" : "individual");
   const existingRows = await readEventResults(eventId);
-  const previousRows = existingRows.filter(row => row.source === LEGACY_BRACKET_RUNTIME_SOURCE);
+  const previousRows = existingRows.filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
   const plan = buildBracketResultSyncPlan(existingRows, snapshot.rows);
 
   try {
@@ -887,7 +717,7 @@ export async function deleteEventBracketResults(eventId, bracket) {
     }
 
     const existingRows = await readEventResults(eventId);
-    const previousRows = existingRows.filter(row => row.source === LEGACY_BRACKET_RUNTIME_SOURCE);
+    const previousRows = existingRows.filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
     const plan = buildBracketResultSyncPlan(existingRows, []);
     const counts = await applyEventResultSyncPlan(eventId, plan, new Date().toISOString());
     return { skipped: false, ...counts, previousRows };
@@ -988,7 +818,7 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
       .eq("id", update.id)
       .eq("event_id", eventId)
       .eq("award_kind", "placement")
-      .eq("source", LEGACY_BRACKET_RUNTIME_SOURCE)
+      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
       .select("id")
       .maybeSingle();
 
@@ -1001,7 +831,7 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
     const payload = {
       ...row,
       event_id: eventId,
-      source: LEGACY_BRACKET_RUNTIME_SOURCE,
+      source: NORMALIZED_BRACKET_RUNTIME_SOURCE,
     };
     const { data, error } = await db()
       .from("ranking_awards")
@@ -1017,7 +847,7 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
     if (String(error?.code || "") === "23505") {
       const concurrent = await readPlacementAwardByIdentity(eventId, row.result_id, row.player_id);
       if (
-        concurrent?.source === LEGACY_BRACKET_RUNTIME_SOURCE &&
+        concurrent?.source === NORMALIZED_BRACKET_RUNTIME_SOURCE &&
         samePlacementAwardValues(concurrent, row)
       ) {
         continue;
@@ -1033,7 +863,7 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
       .delete()
       .eq("event_id", eventId)
       .eq("award_kind", "placement")
-      .eq("source", LEGACY_BRACKET_RUNTIME_SOURCE)
+      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
       .in("id", plan.deleteIds)
       .select("id");
 
@@ -1080,7 +910,7 @@ async function syncEventBracketRankingAwardsNow(eventId, bracket) {
   }
 
   const resultRows = await readEventResults(eventId);
-  const runtimeResults = resultRows.filter(row => row.source === LEGACY_BRACKET_RUNTIME_SOURCE);
+  const runtimeResults = resultRows.filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
   const entryParticipants = await readEventResultParticipants(eventId, runtimeResults);
   const snapshot = buildEventRankingAwardSnapshot(event, runtimeResults, entryParticipants);
   if (!snapshot.skipped && !runtimeResults.length) {
@@ -1088,7 +918,7 @@ async function syncEventBracketRankingAwardsNow(eventId, bracket) {
   }
   const existingRows = await readEventRankingAwards(eventId);
   const previousRows = existingRows.filter(row =>
-    row.source === LEGACY_BRACKET_RUNTIME_SOURCE && row.award_kind === "placement"
+    row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && row.award_kind === "placement"
   );
   const plan = buildBracketRankingAwardSyncPlan(existingRows, snapshot.rows);
 
@@ -1147,7 +977,7 @@ export async function deleteEventBracketRankingAwards(eventId, bracket) {
 
     const existingRows = await readEventRankingAwards(eventId);
     const previousRows = existingRows.filter(row =>
-      row.source === LEGACY_BRACKET_RUNTIME_SOURCE && row.award_kind === "placement"
+      row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && row.award_kind === "placement"
     );
     const plan = buildBracketRankingAwardSyncPlan(existingRows, []);
     const counts = await applyEventRankingAwardSyncPlan(eventId, plan);
@@ -1592,8 +1422,72 @@ export async function listEventRegistrationSubmissionStatuses(eventId) {
   return buildSubmissionStatusRows(registrationRows, submissions || []);
 }
 
-export async function cancelApplicationEvent(eventId) {
+async function countAnnouncementDeletionFacts(event) {
+  const eventId = event?.id;
+  const empty = emptyAnnouncementDeletionCounts();
+  if (!eventId) return { phase: event?.championship_phase || null, recordApplied: false, counts: empty };
+  const [registrations, entries, entryParticipants, matches, results, rankingAwards, runtimes, hallOfFame] = await Promise.all([
+    // Registration ids are required for the Submission count; keep this one
+    // non-head query while every unrelated fact stays count-only.
+    db().from("event_registrations").select("id", { count: "exact" }).eq("event_id", eventId),
+    db().from("entries").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    db().from("entry_participants").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    db().from("matches").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    db().from("results").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    db().from("ranking_awards").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    db().from("bracket_runtimes").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    db().from("hall_of_fame_entries").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+  ]);
+  const checks = [registrations, entries, entryParticipants, matches, results, rankingAwards, runtimes, hallOfFame];
+  const failed = checks.find(result => result.error);
+  if (failed?.error) fail(failed.error, "공지 삭제 전 Event downstream 상태를 확인하지 못했습니다.");
+
+  const registrationIds = (registrations.data || []).map(row => row.id).filter(Boolean);
+  const { count: submissionCount, error: submissionError } = registrationIds.length
+    ? await db().from("registration_submissions").select("id", { count: "exact", head: true }).in("registration_id", registrationIds)
+    : { count: 0, error: null };
+  if (submissionError) fail(submissionError, "공지 삭제 전 파티 제출 상태를 확인하지 못했습니다.");
+  return {
+    phase: event.championship_phase || null,
+    recordApplied: Boolean(event.record_applied_at),
+    counts: {
+      registrations: Number(registrations.count || 0),
+      submissions: Number(submissionCount || 0),
+      entries: Number(entries.count || 0),
+      entryParticipants: Number(entryParticipants.count || 0),
+      bracketRuntimes: Number(runtimes.count || 0),
+      matches: Number(matches.count || 0),
+      results: Number(results.count || 0),
+      rankingAwards: Number(rankingAwards.count || 0),
+      hallOfFame: Number(hallOfFame.count || 0),
+    },
+  };
+}
+
+export async function preflightAnnouncementDeletion(eventId) {
+  if (!eventId) return { allowed: true, reason: null, phase: null, counts: emptyAnnouncementDeletionCounts(), byPhase: {} };
+  const event = await getEvent(eventId);
+  if (!event) throw new Error("연결된 Event를 찾을 수 없습니다.");
+  const events = [event];
+  if (event.event_type === "champions" && event.championship_phase === "qualifier" && event.championship_final_event_id) {
+    const finalEvent = await getEvent(event.championship_final_event_id);
+    if (!finalEvent || finalEvent.event_type !== "champions" || finalEvent.championship_phase !== "final") {
+      throw new Error("Champions Qualifier/Final Event pair ownership이 일치하지 않습니다.");
+    }
+    events.push(finalEvent);
+  }
+  return buildAnnouncementDeletionPreflight(await Promise.all(events.map(countAnnouncementDeletionFacts)));
+}
+
+export async function cancelApplicationEvent(eventId, { preflight = null } = {}) {
   if (!eventId) return null;
+  const deletionPreflight = preflight || await preflightAnnouncementDeletion(eventId);
+  if (!deletionPreflight.allowed) {
+    const error = new Error("downstream Event fact가 있어 공지 삭제를 취소할 수 없습니다.");
+    error.code = "YPL_ANNOUNCEMENT_DELETION_BLOCKED";
+    error.preflight = deletionPreflight;
+    throw error;
+  }
 
   const event = await getEvent(eventId);
   if (event?.event_type === "champions" && event?.championship_phase === "qualifier" && event?.championship_final_event_id) {
@@ -1602,14 +1496,19 @@ export async function cancelApplicationEvent(eventId) {
       p_final_event_id: event.championship_final_event_id,
     });
     if (error) fail(error, "연결된 Champions Event pair를 정리하지 못했습니다.");
-    return Array.isArray(data) ? data[0] || null : data || null;
+    const result = Array.isArray(data) ? data[0] || null : data || null;
+    if (!result?.cancelled) throw new Error("Champions Event pair에 새 downstream fact가 생겨 취소하지 못했습니다.");
+    return result;
   }
 
   const now = new Date().toISOString();
+  const registrationSettings = { ...(event?.registration_settings || {}) };
+  delete registrationSettings.announcementId;
   const { data, error } = await db()
     .from("events")
     .update({
       status: "cancelled",
+      registration_settings: registrationSettings,
       updated_at: now,
     })
     .eq("id", eventId)
@@ -1618,7 +1517,8 @@ export async function cancelApplicationEvent(eventId) {
     .maybeSingle();
 
   if (error) fail(error, "연결된 대회를 정리하지 못했습니다.");
-  return data;
+  if (!data) throw new Error("Event 상태가 변경되어 취소하지 못했습니다.");
+  return { event_id: data.id, cancelled: data.status === "cancelled" };
 }
 
 export async function freezeEventFinalSubmissions(eventId) {
@@ -1879,7 +1779,7 @@ function rollbackFailure(originalError, rollbackErrors) {
   return combined;
 }
 
-export async function rollbackEventParticipantConfirmation(
+export async function rollbackEventParticipantIdentityChanges(
   eventId,
   identityChanges = [],
   { requireUnappliedEvent = false, requireExactRows = false } = {}
@@ -1986,111 +1886,6 @@ export async function rollbackEventParticipantConfirmation(
     throw error;
   }
 
-  return null;
-}
-
-export async function restoreEventParticipantConfirmation(eventId, snapshot) {
-  if (!eventId || !snapshot) return null;
-
-  const players = Array.isArray(snapshot.players) ? snapshot.players : [];
-  if (players.length) {
-    const playerIds = players.map(row => row.id).filter(Boolean);
-    const { data: existingPlayers, error: existingError } = await db()
-      .from("players")
-      .select("id")
-      .in("id", playerIds);
-    if (existingError) fail(existingError, "참가 확정 보상 과정에서 기존 Player를 확인하지 못했습니다.");
-    const existingPlayerIds = new Set((existingPlayers || []).map(row => row.id));
-    const missingPlayers = players.filter(row => !existingPlayerIds.has(row.id));
-    const { error } = missingPlayers.length
-      ? await db().from("players").insert(missingPlayers)
-      : { error: null };
-    if (error) fail(error, "참가 확정 보상 과정에서 Player를 복구하지 못했습니다.");
-  }
-
-  const registrations = Array.isArray(snapshot.registrations) ? snapshot.registrations : [];
-  const registrationIds = registrations.map(row => row.id).filter(Boolean);
-  if (registrationIds.length) {
-    const { data: existingRegistrations, error: existingError } = await db()
-      .from("event_registrations")
-      .select("id, event_id, player_id")
-      .in("id", registrationIds);
-    if (existingError) fail(existingError, "참가 확정 보상 과정에서 기존 Registration을 확인하지 못했습니다.");
-    const existingById = new Map((existingRegistrations || []).map(row => [row.id, row]));
-    if ([...existingById.values()].some(row => row.event_id !== eventId)) {
-      throw new Error("참가 확정 보상 대상 Registration의 Event ownership이 일치하지 않습니다.");
-    }
-    const missingRegistrations = registrations
-      .filter(row => !existingById.has(row.id))
-      .map(row => ({
-        id: row.id,
-        event_id: row.event_id,
-        player_id: row.player_id,
-        registration_name: row.registration_name,
-        registration_data: row.registration_data || {},
-        registration_source: row.registration_source,
-        registered_at: row.registered_at,
-        final_submission_id: row.final_submission_id || null,
-        updated_at: row.updated_at,
-      }));
-    if (missingRegistrations.length) {
-      const { error } = await db().from("event_registrations").insert(missingRegistrations);
-      if (error) fail(error, "참가 확정 보상 과정에서 Registration을 복구하지 못했습니다.");
-    }
-  }
-
-  const registrationById = new Map(registrations.map(row => [row.id, row]));
-  for (const change of (snapshot.identityChanges || []).filter(row => row.registrationId)) {
-    const registration = registrationById.get(change.registrationId);
-    if (!registration) throw new Error(`${change.name || "참가자"}의 Registration snapshot이 없습니다.`);
-    const { data, error } = await db()
-      .from("event_registrations")
-      .update({ player_id: registration.player_id, updated_at: new Date().toISOString() })
-      .eq("id", registration.id)
-      .eq("event_id", eventId)
-      .select("id")
-      .maybeSingle();
-    if (error) fail(error, `${change.name || "참가자"}의 Registration 연결을 복구하지 못했습니다.`);
-    if (!data) throw new Error(`${change.name || "참가자"}의 Registration 연결 복구 대상이 없습니다.`);
-  }
-
-  const entries = Array.isArray(snapshot.entries) ? snapshot.entries : [];
-  if (entries.length) {
-    const entryIds = entries.map(row => row.id).filter(Boolean);
-    const { data: existingEntries, error: existingError } = await db()
-      .from("entries")
-      .select("id, event_id, entry_type, display_name, status")
-      .in("id", entryIds);
-    if (existingError) fail(existingError, "참가 확정 보상 과정에서 기존 Entry를 확인하지 못했습니다.");
-    if ((existingEntries || []).some(row => row.event_id !== eventId)) {
-      throw new Error("참가 확정 보상 대상 Entry의 Event ownership이 일치하지 않습니다.");
-    }
-    const existingEntryIds = new Set((existingEntries || []).map(row => row.id));
-    const missingEntries = entries.filter(row => !existingEntryIds.has(row.id));
-    if (missingEntries.length) {
-      const { error } = await db().from("entries").insert(missingEntries);
-      if (error) fail(error, "참가 확정 보상 과정에서 Entry를 복구하지 못했습니다.");
-    }
-  }
-
-  const entryParticipants = Array.isArray(snapshot.entryParticipants) ? snapshot.entryParticipants : [];
-  if (entryParticipants.length) {
-    const entryParticipantIds = entryParticipants.map(row => row.id).filter(Boolean);
-    const { data: existingEntryParticipants, error: existingError } = await db()
-      .from("entry_participants")
-      .select("id, event_id, entry_id, registration_id, player_id, member_order, role")
-      .in("id", entryParticipantIds);
-    if (existingError) fail(existingError, "참가 확정 보상 과정에서 기존 EntryParticipant를 확인하지 못했습니다.");
-    if ((existingEntryParticipants || []).some(row => row.event_id !== eventId)) {
-      throw new Error("참가 확정 보상 대상 EntryParticipant의 Event ownership이 일치하지 않습니다.");
-    }
-    const existingEntryParticipantIds = new Set((existingEntryParticipants || []).map(row => row.id));
-    const missingEntryParticipants = entryParticipants.filter(row => !existingEntryParticipantIds.has(row.id));
-    if (missingEntryParticipants.length) {
-      const { error } = await db().from("entry_participants").insert(missingEntryParticipants);
-      if (error) fail(error, "참가 확정 보상 과정에서 EntryParticipant를 복구하지 못했습니다.");
-    }
-  }
   return null;
 }
 
@@ -2210,7 +2005,7 @@ async function writeEventParticipantIdentities(eventId, plans, { createEntries =
     }
   } catch (error) {
     try {
-      await rollbackEventParticipantConfirmation(eventId, resolved);
+      await rollbackEventParticipantIdentityChanges(eventId, resolved);
     } catch (rollbackError) {
       throw rollbackFailure(error, rollbackError.rollbackErrors || [rollbackError]);
     }
@@ -2236,7 +2031,7 @@ export async function confirmEventParticipantsForBracket(eventId, participants =
   ) {
     const error = new Error("모든 실제 참가자의 Player/Registration/Entry identity를 확정하지 못했습니다.");
     try {
-      await rollbackEventParticipantConfirmation(eventId, resolved);
+      await rollbackEventParticipantIdentityChanges(eventId, resolved);
     } catch (rollbackError) {
       throw rollbackFailure(error, rollbackError.rollbackErrors || [rollbackError]);
     }
@@ -2357,7 +2152,7 @@ export async function confirmEventTeamsForBracket(eventId, participants = []) {
     };
   } catch (error) {
     try {
-      await rollbackEventParticipantConfirmation(eventId, resolved);
+      await rollbackEventParticipantIdentityChanges(eventId, resolved);
     } catch (rollbackError) {
       throw rollbackFailure(error, rollbackError.rollbackErrors || [rollbackError]);
     }
@@ -2627,7 +2422,7 @@ export async function resolveEventParticipantsForRecord(eventId, participants = 
   if (resolved.length !== actualParticipants.length || resolved.some(row => !row.playerId || !row.registrationId)) {
     const error = new Error("모든 실제 참가자의 Player/Registration identity를 확정하지 못했습니다.");
     try {
-      await rollbackEventParticipantConfirmation(eventId, resolved);
+      await rollbackEventParticipantIdentityChanges(eventId, resolved);
     } catch (rollbackError) {
       throw rollbackFailure(error, rollbackError.rollbackErrors || [rollbackError]);
     }
@@ -2769,7 +2564,7 @@ export async function revertEventRecordApplication(eventId, identityChanges = []
   if (!eventId) return null;
 
   const changes = Array.isArray(identityChanges) ? identityChanges : [];
-  await rollbackEventParticipantConfirmation(eventId, changes);
+  await rollbackEventParticipantIdentityChanges(eventId, changes);
 
   if (!reopenEvent) return null;
 

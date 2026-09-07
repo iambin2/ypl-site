@@ -12,7 +12,7 @@ import {
 } from "../src/services/bracketResultSnapshot.js";
 import { buildDeltasFromRound, revertBracketRecord } from "../src/services/recordSync.js";
 
-const runtimeSource = "legacy_bracket_runtime";
+const runtimeSource = "normalized_bracket_runtime";
 
 const teamParticipants = ["a", "b", "c", "d"].map(id => ({
   id: `team-${id}`,

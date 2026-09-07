@@ -1,4 +1,4 @@
-import { LEGACY_BRACKET_RUNTIME_SOURCE } from "./bracketMatchSnapshot.js";
+import { NORMALIZED_BRACKET_RUNTIME_SOURCE } from "./bracketMatchSnapshot.js";
 
 const RESULT_FIELDS = [
   "placement_code",
@@ -91,9 +91,9 @@ export function buildEventBracketResultSnapshot(bracket, result) {
 
 export function buildBracketResultSyncPlan(existingRows = [], desiredRows = []) {
   const runtimeRows = (existingRows || [])
-    .filter(row => row?.source === LEGACY_BRACKET_RUNTIME_SOURCE);
+    .filter(row => row?.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
   const protectedRows = (existingRows || [])
-    .filter(row => row?.source !== LEGACY_BRACKET_RUNTIME_SOURCE);
+    .filter(row => row?.source !== NORMALIZED_BRACKET_RUNTIME_SOURCE);
 
   const protectedByEntryId = new Map(
     protectedRows.filter(row => row?.entry_id).map(row => [row.entry_id, row])
@@ -114,7 +114,7 @@ export function buildBracketResultSyncPlan(existingRows = [], desiredRows = []) 
   for (const desired of desiredRows || []) {
     const entryId = desired?.entry_id;
     if (!entryId) throw new Error("normalized Result snapshot에 entry_id가 없습니다.");
-    if (desired.source && desired.source !== LEGACY_BRACKET_RUNTIME_SOURCE) {
+    if (desired.source && desired.source !== NORMALIZED_BRACKET_RUNTIME_SOURCE) {
       throw new Error("runtime Result snapshot에 다른 source가 포함되어 있습니다.");
     }
     if (desiredEntryIds.has(entryId)) {

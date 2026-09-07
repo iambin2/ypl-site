@@ -112,9 +112,9 @@ function rawData() {
       { id: "result-running", event_id: "event-running", entry_id: "entry-running", placement_code: "champion", placement_label: "우승", rank_min: 1 },
     ],
     matches: [
-      { id: "match-a", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: "entry-b", winner_entry_id: "entry-a", resolution: "played", source: "legacy_bracket_runtime", source_node_key: "gf" },
-      { id: "match-bye", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: null, winner_entry_id: "entry-a", resolution: "played", source: "legacy_bracket_runtime", source_node_key: "bye" },
-      { id: "match-unknown", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: "entry-b", winner_entry_id: null, resolution: "unknown", source: "legacy_bracket_runtime", source_node_key: "future" },
+      { id: "match-a", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: "entry-b", winner_entry_id: "entry-a", resolution: "played", source: "normalized_bracket_runtime", source_node_key: "gf" },
+      { id: "match-bye", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: null, winner_entry_id: "entry-a", resolution: "played", source: "normalized_bracket_runtime", source_node_key: "bye" },
+      { id: "match-unknown", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: "entry-b", winner_entry_id: null, resolution: "unknown", source: "normalized_bracket_runtime", source_node_key: "future" },
     ],
     rankingBaselines: [
       { id: "base-series", player_id: "player-a", scope: "series", series: "ypl", points: 100, wins: 0, runner_ups: 0, top4s: 0 },
@@ -222,7 +222,7 @@ function teamRawData() {
       entry_b_id: "team-entry-b",
       winner_entry_id: "team-entry-a",
       resolution: "played",
-      source: "legacy_bracket_runtime",
+      source: "normalized_bracket_runtime",
       source_node_key: "gf",
     },
     {
@@ -234,7 +234,7 @@ function teamRawData() {
       entry_b_id: "team-entry-b",
       winner_entry_id: "team-entry-a",
       resolution: "played",
-      source: "legacy_bracket_runtime",
+      source: "normalized_bracket_runtime",
       source_node_key: "gf:bout:1",
     },
     {
@@ -246,7 +246,7 @@ function teamRawData() {
       entry_b_id: "team-entry-b",
       winner_entry_id: "team-entry-a",
       resolution: "played",
-      source: "legacy_bracket_runtime",
+      source: "normalized_bracket_runtime",
       source_node_key: "gf:ace",
     }
   );

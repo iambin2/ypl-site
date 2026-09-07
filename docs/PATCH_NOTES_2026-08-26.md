@@ -2648,3 +2648,102 @@ idempotent / concurrent-safe
 rollover 이후 신규 Event만 새 current Season에 연결
 Classic 등 다른 series에는 적용하지 않음
 Production 적용은 별도 cutover 단계에서 수행
+
+---
+
+2026-09-07 P2-7 normalized-only active runtime hardening
+
+Test Supabase `nmqrmvnjenjqityuhngb` / `ypl_schema_validation`에
+`normalized_bracket_runtime_elimination_rpc.sql`의 durable Registration 삭제 계약을 적용했다.
+
+`제7회 파이컵라이트` (`ff330027-4a92-450b-9c72-ccbf313ade7c`)의 active legacy artifact를 정리했다.
+
+- legacy Match 11 → 0
+- legacy Entry / EntryParticipant 6 / 6 → 0 / 0
+- `site_data.ypl_data_v4.brackets`의 해당 Event graph 제거
+- Event `running` → `open`
+- EventRegistration 6, RegistrationSubmission 6, TeamSnapshot 6, TeamSnapshotMember 27과 참조 Player는 보존
+
+동일 Event의 Double Elimination runtime은 실제 generic RPC로 create → delete → regenerate했다.
+삭제 시 runtime-owned Entry / EntryParticipant 및 normalized Match만 제거되고 durable Registration / Submission / Snapshot chain은 유지되는 것을 Test DB에서 재확인했다.
+
+현재 active BracketsPage 목록은 normalized runtime만 사용하며 Result / RankingAward runtime source도
+`normalized_bracket_runtime`으로 통일했다. Browser E2E와 Production 접근은 수행하지 않았다.
+
+검증 경계:
+
+- Node test suite: 193/193 PASS
+- production build PASS
+- `git diff --check` PASS
+- Test DB: fixture cleanup, generic Double create/delete/regenerate PASS
+
+Champions와 모든 topology의 complete/apply/revert full-cycle Test DB smoke는 이 기록만으로 완료를 주장하지 않는다.
+
+---
+
+2026-09-07 P2-7 final Test DB verification
+
+P2-7의 실제 Test DB full-cycle을 마쳤다. ordinary Single / Double / reset / Team과 Champions Qualifier /
+Final / HOF를 실제 service/RPC로 create → progress → apply(or qualifier completion) → revert/delete →
+regenerate했다. Qualifier는 Result / RankingAward / HOF 0건, Final은 independent Final submission 4건을
+freeze해 Result 4건, Master placement RankingAward 4건 및 Final frozen submission 기반 HOF chain을 확인했다.
+
+Qualifier runtime delete는 qualifier advancement만 제거하고 ranking/manual advancement와 durable Qualifier
+Registration / Submission / Snapshot을 보존했다. Final runtime delete는 모든 advancement Final Registration,
+Submission, Snapshot을 보존했고 Final regenerate도 통과했다.
+
+공지 삭제 Test DB 4-case도 완료했다. pristine ordinary와 Champions pair는 cancelled, downstream ordinary와
+Champions pair는 announcement만 삭제하고 `{ cancelled: false, preserved: true }`로 Event와 downstream fact를
+유지한다. business preservation은 DB failure가 아니며 announcement를 restore하지 않는다.
+
+최종 fixture cleanup 후 active BracketRuntime 0, 이번 smoke legacy runtime Match 0, active Event-linked
+site_data graph 0이다. 제7회 파이컵라이트는 open, Registration 6 / Submission 6 / Snapshot 6 /
+SnapshotMember 27을 유지한다.
+
+- Node test suite: 190/190 PASS
+- production build PASS
+- `git diff --check` PASS
+- Browser E2E 미수행
+- Production Supabase / `.env.production` 미접근, migration/read/write 미수행
+- commit / push 미수행
+
+---
+
+2026-09-07 historical completed bracket read-only regression repair
+
+P2-7 active normalized-only 목록 전환으로 `eventId`가 없는 과거 완료 graph까지 숨겨진 회귀를 수정했다.
+`36회 파이컵`, `36회 파이컵 | 마스터리그`, `6회 챔피언스 시리즈`는 Test `site_data.brackets`에서 그대로
+읽어 BracketsPage에 다시 표시한다.
+
+대상은 `eventId` 없음, `status=done`, `projection.source` 없음의 pre-normalized graph로 한정한다. `readOnly`
+잠금으로 승자/팀전/파티 수정, 삭제, 기록 반영/취소, runtime sync를 모두 차단한다. active Event-linked path는
+여전히 normalized runtime만 사용하며 historical Match와 site_data graph는 변경하거나 cleanup하지 않았다.
+
+---
+
+2026-09-07 P2-7 Single durable Registration delete regression
+
+Test DB audit에서 `delete_normalized_single_bracket_runtime`에 남아 있던 Submission/history hard-block과
+unconditional Registration/Player rollback을 제거했다. local
+`normalized_bracket_runtime_rpc.sql`과 Test migration
+`p2_7_single_runtime_durable_registration_delete`를 같은 durable contract로 맞췄다.
+
+독립 Test fixture `6e2cdf57-d950-4a14-9cf2-a6fdfc3d2341`에서 runtime-created Registration → immutable
+RegistrationSubmission / TeamSnapshot / TeamSnapshotMember 생성 → Single delete → 동일 Registration regenerate
+→ final delete를 실제 RPC로 검증했다. 최종 Registration 1 / Submission 1 / Snapshot 1 / SnapshotMember 1 /
+Player link 1은 보존되고 Runtime / Match / Slot / Identity / Entry / EntryParticipant는 모두 0이며 FK orphan도
+0이다. durable 사실이 없는 다른 runtime-created Registration 및 Player는 삭제됨을 함께 확인했다.
+
+---
+
+2026-09-07 announcement deletion preflight policy
+
+공지 삭제를 delete-then-restore에서 preflight-first로 전환했다. ordinary Event와 Champions
+Qualifier/Final pair는 Registration 1건부터 삭제가 차단되며 Submission, Entry/EntryParticipant,
+Runtime/Match, Result/RankingAward/HOF, record applied를 순서대로 더 강한 차단 사유로 보고한다.
+차단 시 site_data announcement, Event status, downstream fact는 전혀 변경하지 않는다.
+
+pristine ordinary Event는 Event row를 물리 삭제하지 않고 cancelled + `announcementId` clear만 수행한다.
+pristine Champions pair도 두 Event를 cancelled로 바꾸고 Qualifier `announcementId`만 clear한다. Test
+`announcement_deletion_champions_pristine_guard` migration과 A-I fixture smoke를 적용해 허용 A/F, 차단 B-E/G-I,
+blocked mutation 0 및 fixture cleanup을 확인했다. Browser E2E, Production Supabase 접근, commit/push는 하지 않았다.

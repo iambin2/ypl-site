@@ -12,14 +12,12 @@ test("normalized deletion routes by competition topology, not Pokémon battle fo
   assert.match(page, /\? deleteNormalizedSingleBracketRuntime\s*: deleteNormalizedBracketRuntime/);
 });
 
-test("individual single-elimination deletion preserves existing Registration submissions", () => {
-  const guard = singleSql.slice(
-    singleSql.indexOf("대진 생성 과정에서 만든 Registration에 Submission/history"),
-    singleSql.indexOf("대진 생성 과정에서 만든 Registration에 Submission/history") + 1200
-  );
-  assert.match(singleSql, /where c\.registration_was_created/);
-  assert.match(singleSql, /registration_submissions/);
-  assert.ok(!guard.includes("Submission/history가 연결된 Registration은 자동 삭제할 수 없습니다."));
+test("individual Single deletion preserves durable Registration history but removes non-durable runtime identity", () => {
+  const singleDelete = singleSql.slice(singleSql.indexOf("delete_normalized_single_bracket_runtime"));
+  assert.doesNotMatch(singleDelete, /Submission\/history가 있어 자동 삭제할 수 없습니다/);
+  assert.match(singleDelete, /if v_change\.registration_was_created\s+and not exists \([\s\S]*registration_submissions/);
+  assert.match(singleDelete, /elsif v_change\.registration_player_was_changed\s+and not exists \([\s\S]*final_submission_id is not null/);
+  assert.match(singleDelete, /delete from ypl_schema_validation\.players[\s\S]*event_registrations[\s\S]*entry_participants[\s\S]*matches[\s\S]*ranking_awards[\s\S]*hall_of_fame_entries/);
 });
 
 test("generic deletion allows unapplied completed Champions qualifier and cancels only qualifier-derived advancements", () => {
@@ -61,10 +59,13 @@ test("generic deletion snapshots identity and rolls it back in FK-safe order", (
 
 test("generic runtime creation failure does not double-rollback participant identity", () => {
   assert.match(page, /if\(confirmation&&!cleanupError&&!createdRuntime\)/);
-  assert.ok(!page.includes("if(confirmation&&!cleanupError){"));
+  assert.match(page, /await deleteNormalizedBracketRuntime\(\{runtimeId,eventId:b\.eventId\}\)/);
+  assert.doesNotMatch(page, /executeBracketDeletionLifecycle/);
 });
 
-test("normalized brackets never persist or reappear through legacy site_data", () => {
+test("normalized runtime never persists through site_data while historical read-only display stays separate", () => {
   assert.match(app, /brackets:Array\.isArray\(next\?\.brackets\)\?next\.brackets\.filter\(b=>b\?\.projection\?\.source!=="normalized"\)/);
-  assert.match(page, /\(data\.brackets\|\|\[\]\)\.filter\(b=>b\?\.projection\?\.source!=="normalized"/);
+  assert.match(page, /const list=buildBracketPageList\(normalizedBrackets,data\?\.brackets\|\|\[\]\)/);
+  assert.match(page, /Active Event-linked brackets are normalized-only/);
+  assert.doesNotMatch(page, /data\.brackets.*syncNormalizedBracketMatches/);
 });

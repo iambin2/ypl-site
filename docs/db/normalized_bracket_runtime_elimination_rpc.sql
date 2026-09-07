@@ -467,28 +467,6 @@ begin
      where bic0.bracket_runtime_id = p_runtime_id
        and bic0.event_id = p_event_id;
 
-    if exists (
-        select 1
-          from ypl_schema_validation.bracket_identity_changes bic0
-          join ypl_schema_validation.event_registrations er0
-            on er0.id = bic0.registration_id
-           and er0.event_id = p_event_id
-         where bic0.bracket_runtime_id = p_runtime_id
-           and bic0.event_id = p_event_id
-           and bic0.registration_was_created
-           and (
-             er0.final_submission_id is not null
-             or exists (
-                 select 1
-                   from ypl_schema_validation.registration_submissions rs0
-                  where rs0.registration_id = er0.id
-             )
-           )
-    ) then
-        raise exception using errcode = 'P0001',
-          message = '대진 생성 과정에서 만든 Registration에 Submission/history가 있어 자동 삭제할 수 없습니다.';
-    end if;
-
     select coalesce(jsonb_agg(jsonb_build_object(
         'entry_participant_id', bic0.entry_participant_id,
         'entry_id', bic0.entry_id,
@@ -557,8 +535,25 @@ begin
                previous_registration_player_id uuid, entry_was_created boolean,
                entry_participant_was_created boolean
             )
-           where c.registration_player_was_changed
-             and not c.registration_was_created
+            where c.registration_player_was_changed
+              and not c.registration_was_created
+              -- A submitted Registration is a durable Event fact. Bracket
+              -- deletion must remove only runtime artifacts, never undo its
+              -- Player link, even when that link was created by this runtime.
+              and not exists (
+                  select 1
+                    from ypl_schema_validation.event_registrations durable_registration
+                   where durable_registration.id = c.registration_id
+                     and durable_registration.event_id = p_event_id
+                     and (
+                       durable_registration.final_submission_id is not null
+                       or exists (
+                         select 1
+                           from ypl_schema_validation.registration_submissions durable_submission
+                          where durable_submission.registration_id = durable_registration.id
+                       )
+                     )
+              )
            order by c.registration_id, c.entry_participant_id
       ) restore
      where er0.id = restore.registration_id
@@ -575,7 +570,24 @@ begin
                previous_registration_player_id uuid, entry_was_created boolean,
                entry_participant_was_created boolean
              )
-            where c.registration_was_created
+             where c.registration_was_created
+               -- Runtime-created does not mean disposable once a Team Builder
+               -- submission exists. Preserve Registration plus its immutable
+               -- Submission/Snapshot chain in that case.
+               and not exists (
+                   select 1
+                     from ypl_schema_validation.event_registrations durable_registration
+                    where durable_registration.id = c.registration_id
+                      and durable_registration.event_id = p_event_id
+                      and (
+                        durable_registration.final_submission_id is not null
+                        or exists (
+                          select 1
+                            from ypl_schema_validation.registration_submissions durable_submission
+                           where durable_submission.registration_id = durable_registration.id
+                        )
+                      )
+               )
        );
     delete from ypl_schema_validation.players pl0
      where pl0.id = any(v_created_player_ids)

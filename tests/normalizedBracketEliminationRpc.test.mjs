@@ -23,7 +23,7 @@ test("Team/Double runtime RPC is additive, invoker-only, and topology-discrimina
   assert.doesNotMatch(sql, /grant (all|select,?\s*insert,?\s*update|.*delete on table)/i);
 });
 
-test("runtime delete is exact, fail-closed, and removes only runtime artifacts", () => {
+test("runtime delete is exact, fail-closed, and preserves durable Registration history", () => {
   assert.match(sql, /create or replace function ypl_schema_validation\.delete_normalized_bracket_runtime\(/i);
   assert.match(sql, /from ypl_schema_validation\.events[\s\S]*where id = p_event_id[\s\S]*for update/i);
   assert.match(sql, /pg_advisory_xact_lock/i);
@@ -33,7 +33,11 @@ test("runtime delete is exact, fail-closed, and removes only runtime artifacts",
   assert.match(sql, /runtime identity ownership exact-match/i);
   assert.match(sql, /normalized Match shape\/source ownership/i);
   assert.match(sql, /source_node_key가 중복/i);
-  assert.match(sql, /Only runtime artifacts are removed/i);
-  assert.doesNotMatch(sql, /delete from ypl_schema_validation\.(players|event_registrations|entries|entry_participants)/i);
+  assert.match(sql, /delete from ypl_schema_validation\.entry_participants/i);
+  assert.match(sql, /delete from ypl_schema_validation\.entries/i);
+  assert.match(sql, /registration_submissions durable_submission/i);
+  assert.match(sql, /final_submission_id is not null/i);
+  assert.match(sql, /delete from ypl_schema_validation\.event_registrations/i);
+  assert.match(sql, /delete from ypl_schema_validation\.players/i);
   assert.match(sql, /revoke all on function ypl_schema_validation\.delete_normalized_bracket_runtime\(uuid,\s*uuid\) from public/i);
 });

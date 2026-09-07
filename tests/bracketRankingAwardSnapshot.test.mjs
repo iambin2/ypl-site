@@ -9,9 +9,9 @@ import {
 } from "../src/services/bracketRankingAwardSnapshot.js";
 
 const runtimeResults = [
-  { id: "result-a", entry_id: "entry-a", placement_code: "champion", source: "legacy_bracket_runtime" },
-  { id: "result-b", entry_id: "entry-b", placement_code: "runner_up", source: "legacy_bracket_runtime" },
-  { id: "result-c", entry_id: "entry-c", placement_code: "semifinalist", source: "legacy_bracket_runtime" },
+  { id: "result-a", entry_id: "entry-a", placement_code: "champion", source: "normalized_bracket_runtime" },
+  { id: "result-b", entry_id: "entry-b", placement_code: "runner_up", source: "normalized_bracket_runtime" },
+  { id: "result-c", entry_id: "entry-c", placement_code: "semifinalist", source: "normalized_bracket_runtime" },
 ];
 
 const entryParticipants = [
@@ -38,7 +38,7 @@ const teamResult = (id, entryId, placement_code) => ({
   id,
   entry_id: entryId,
   placement_code,
-  source: "legacy_bracket_runtime",
+  source: "normalized_bracket_runtime",
 });
 
 const teamMembers = (entryId, count = 4) => Array.from({ length: count }, (_, index) => ({
@@ -268,7 +268,7 @@ const desiredAward = {
 };
 
 test("same desired snapshot is idempotent", () => {
-  const existing = [{ id: "award-a", source: "legacy_bracket_runtime", ...desiredAward }];
+  const existing = [{ id: "award-a", source: "normalized_bracket_runtime", ...desiredAward }];
   assert.deepEqual(
     buildBracketRankingAwardSyncPlan(existing, [desiredAward]),
     { inserts: [], updates: [], deleteIds: [] }
@@ -283,7 +283,7 @@ test("team Result/Player keyed Award snapshot remains idempotent", () => {
   ).rows;
   const existing = desired.map((row, index) => ({
     id: `team-award-${index + 1}`,
-    source: "legacy_bracket_runtime",
+    source: "normalized_bracket_runtime",
     ...row,
   }));
 
@@ -295,8 +295,8 @@ test("team Result/Player keyed Award snapshot remains idempotent", () => {
 
 test("stale runtime placement is deleted", () => {
   const existing = [
-    { id: "award-a", source: "legacy_bracket_runtime", ...desiredAward },
-    { id: "award-b", source: "legacy_bracket_runtime", ...desiredAward, result_id: "result-b", player_id: "player-b" },
+    { id: "award-a", source: "normalized_bracket_runtime", ...desiredAward },
+    { id: "award-b", source: "normalized_bracket_runtime", ...desiredAward, result_id: "result-b", player_id: "player-b" },
   ];
   assert.deepEqual(
     buildBracketRankingAwardSyncPlan(existing, [desiredAward]).deleteIds,
@@ -317,7 +317,7 @@ test("adjustment and reversal Awards are never cleanup targets", () => {
   const existing = [
     { id: "adjustment", source: "manual", award_kind: "adjustment", result_id: "result-a", player_id: "player-a" },
     { id: "reversal", source: "manual", award_kind: "reversal", result_id: "result-a", player_id: "player-a" },
-    { id: "runtime", source: "legacy_bracket_runtime", ...desiredAward },
+    { id: "runtime", source: "normalized_bracket_runtime", ...desiredAward },
   ];
   const plan = buildBracketRankingAwardSyncPlan(existing, []);
   assert.deepEqual(plan.deleteIds, ["runtime"]);
@@ -338,7 +338,7 @@ test("duplicate Result/Player placement in one desired snapshot is rejected", ()
 });
 
 test("changed placement delta updates the existing runtime Award", () => {
-  const existing = [{ id: "award-a", source: "legacy_bracket_runtime", ...desiredAward }];
+  const existing = [{ id: "award-a", source: "normalized_bracket_runtime", ...desiredAward }];
   const changed = {
     ...desiredAward,
     points_delta: 40,
@@ -351,13 +351,22 @@ test("changed placement delta updates the existing runtime Award", () => {
   assert.equal(plan.updates[0].id, "award-a");
 });
 
-test("unsupported Champions and team Events create no Award", () => {
+test("Champions Qualifier creates no Award, but an individual Final uses Master placement policy", () => {
   assert.equal(getIndividualPlacementPointPolicy({
     event_type: "champions",
     division: "master",
     is_team_event: false,
     competition_settings: { rankingEnabled: true },
   }).enabled, false);
+  assert.deepEqual(
+    getIndividualPlacementPointPolicy({
+      event_type: "champions",
+      championship_phase: "final",
+      is_team_event: false,
+      competition_settings: { rankingEnabled: true },
+    }).points,
+    { win: 60, ru: 40, sf: 20 }
+  );
   assert.equal(getIndividualPlacementPointPolicy({
     ...event("master"),
     is_team_event: true,

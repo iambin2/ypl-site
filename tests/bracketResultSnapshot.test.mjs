@@ -84,7 +84,7 @@ test("team runtime Result rows are idempotent and update in place when placement
   const existing = initialRows.map(row => ({
     ...row,
     id: `result-${row.entry_id}`,
-    source: "legacy_bracket_runtime",
+    source: "normalized_bracket_runtime",
   }));
 
   assert.deepEqual(
@@ -109,8 +109,8 @@ test("team runtime Result rows are idempotent and update in place when placement
 
 test("team stale runtime Results are cleaned while historical Results remain protected", () => {
   const existing = [
-    { id: "runtime-team-a", entry_id: "team-entry-a", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "legacy_bracket_runtime" },
-    { id: "runtime-team-d", entry_id: "team-entry-d", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승", source: "legacy_bracket_runtime" },
+    { id: "runtime-team-a", entry_id: "team-entry-a", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "normalized_bracket_runtime" },
+    { id: "runtime-team-d", entry_id: "team-entry-d", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승", source: "normalized_bracket_runtime" },
     { id: "historical-team-x", entry_id: "team-entry-x", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "legacy_tournament" },
   ];
   const plan = buildBracketResultSyncPlan(existing, [{
@@ -223,8 +223,8 @@ test("rejects duplicate Team Entry identity", () => {
 
 test("updates changed placements and keeps unchanged Result row IDs", () => {
   const existing = [
-    { id: "result-a", entry_id: "entry-a", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "legacy_bracket_runtime" },
-    { id: "result-d", entry_id: "entry-d", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승", source: "legacy_bracket_runtime" },
+    { id: "result-a", entry_id: "entry-a", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "normalized_bracket_runtime" },
+    { id: "result-d", entry_id: "entry-d", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승", source: "normalized_bracket_runtime" },
   ];
   const desired = [
     { entry_id: "entry-a", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승" },
@@ -245,7 +245,7 @@ test("is idempotent when the runtime Result snapshot is unchanged", () => {
     rank_min: 1,
     rank_max: 1,
     placement_label: "우승",
-    source: "legacy_bracket_runtime",
+    source: "normalized_bracket_runtime",
   }];
   const desired = [{
     entry_id: "entry-a",
@@ -263,8 +263,8 @@ test("is idempotent when the runtime Result snapshot is unchanged", () => {
 
 test("removes stale runtime rows without touching historical Result", () => {
   const existing = [
-    { id: "runtime-a", entry_id: "entry-a", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "legacy_bracket_runtime" },
-    { id: "runtime-b", entry_id: "entry-b", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승", source: "legacy_bracket_runtime" },
+    { id: "runtime-a", entry_id: "entry-a", placement_code: "champion", rank_min: 1, rank_max: 1, placement_label: "우승", source: "normalized_bracket_runtime" },
+    { id: "runtime-b", entry_id: "entry-b", placement_code: "runner_up", rank_min: 2, rank_max: 2, placement_label: "준우승", source: "normalized_bracket_runtime" },
     { id: "historical-c", entry_id: "entry-c", placement_code: "semifinalist", rank_min: 3, rank_max: 4, placement_label: "4강", source: "legacy_tournament" },
   ];
 
