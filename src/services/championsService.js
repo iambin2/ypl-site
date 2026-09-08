@@ -1,6 +1,7 @@
 import { supa as client } from "../storage.js";
 import {
   NORMALIZED_DATA_SCHEMA,
+  getCurrentSeason,
   resolveAutomaticRoundNumber,
 } from "./normalizedCompetitionService.js";
 import {
@@ -64,12 +65,7 @@ function databaseUuid() {
 }
 
 async function currentSeasonId() {
-  const seasons = await rows(
-    db().from("seasons").select("id").eq("series", "ypl").eq("status", "current").order("sort_order", { ascending: true }),
-    "현재 시즌을 확인하지 못했습니다."
-  );
-  if (seasons.length !== 1) throw new Error(`현재 시즌은 정확히 1개여야 하지만 ${seasons.length}개입니다.`);
-  return seasons[0].id;
+  return (await getCurrentSeason()).id;
 }
 
 export async function saveChampionshipApplicationEventPair({
@@ -85,6 +81,9 @@ export async function saveChampionshipApplicationEventPair({
   }
   const finalEventId = existingQualifier?.championship_final_event_id || databaseUuid();
   const qualifierId = existingQualifier?.id || databaseUuid();
+  if (existingQualifier && !existingQualifier.season_id) {
+    throw new Error("기존 Champions Event의 season_id가 없어 현재 Season으로 변경하지 않습니다.");
+  }
   const seasonId = existingQualifier?.season_id || await currentSeasonId();
   const existingOrdinal = Number(existingQualifier?.round_number);
   const legacyDraftOrdinal = Number(draft.generation);

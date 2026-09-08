@@ -1364,7 +1364,9 @@ export async function saveApplicationEvent({
   if (eventId) {
     existingEvent = await getEvent(eventId);
     if (!existingEvent) throw new Error("수정할 대회를 찾을 수 없습니다.");
-    seasonId = existingEvent.season_id || (await getCurrentSeason()).id;
+    // Historical ownership is immutable. A legacy Event without a Season stays
+    // unassigned instead of being silently moved into the current YPL Season.
+    seasonId = existingEvent.season_id;
   } else {
     seasonId = (await getCurrentSeason()).id;
   }
@@ -1442,20 +1444,16 @@ export async function saveApplicationEvent({
 }
 
 export async function getCurrentSeason() {
-  const { data, error } = await db()
-    .from("seasons")
-    .select("id, code, name, series, number, starts_on, ends_on, sort_order, status")
-    .eq("status", "current")
-    .order("sort_order", { ascending: true });
+  const { data, error } = await db().rpc("ensure_current_ypl_season");
 
   if (error) fail(error, "현재 시즌을 확인하지 못했습니다.");
 
-  if ((data || []).length !== 1) {
-    const count = (data || []).length;
-    throw new Error(`현재 시즌은 정확히 1개여야 하지만 ${count}개입니다. 시즌 설정을 먼저 확인해 주세요.`);
+  const season = Array.isArray(data) ? data[0] || null : data || null;
+  if (!season?.id || season.series !== "ypl" || season.status !== "current") {
+    throw new Error("현재 YPL Season을 원자적으로 확인하지 못했습니다.");
   }
 
-  return data[0];
+  return season;
 }
 
 export async function getEventRecordContext(eventId) {

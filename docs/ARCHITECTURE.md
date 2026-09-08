@@ -305,12 +305,11 @@ Team Event는 Master sequence를 참조하지만 자체가 Master sequence를 �
 
 ### Season rollover
 
-자동 Season rollover는 아직 구현/Production 적용 전이다.
+`resolve_ypl_season_for_date(p_at)`가 Asia/Seoul 날짜를 반기 window로 계산하고, 비공개 날짜 주입 함수 `ensure_current_ypl_season_for_date(p_at)`가 advisory transaction lock 안에서 canonical Season row와 YPL-only current 상태를 만든다. 앱은 DB `now()`만 쓰는 `ensure_current_ypl_season()` wrapper를 호출하므로 anon caller가 임의 날짜로 rollover할 수 없다. anchor는 `2026-09-01 KST = YPL 시즌 3`이며 이후 매년 3월 1일/9월 1일에 전환한다. anchor 이전 날짜는 fail closed로 자동 생성하지 않는다.
 
-- Asia/Seoul 기준 매년 3월 1일과 9월 1일에 YPL series만 전환한다.
-- exactly one current YPL Season, idempotency, concurrency safety를 보장해야 한다.
-- existing `Event.season_id`는 immutable이고 rollover 뒤 신규 Event만 새 Season을 참조한다.
-- Classic과 historical reconstruction에는 적용하지 않는다.
+- partial unique index는 `series='ypl' AND status='current'`만 보호한다. Classic row와 기존 Event 연결은 rollover가 변경하지 않는다.
+- 신규 ordinary Event와 Champions Qualifier/Final pair는 생성 직전에 ensure RPC를 호출해 같은 YPL Season을 사용한다. 기존 Event/pair 수정은 현재 Season으로 이동하지 않고 기존 `season_id`를 유지한다.
+- Test project에는 `pg_cron`이 설치되어 있지 않아 scheduler를 만들지 않았다. 대신 idempotent ensure RPC를 current-season 진입점에서 호출한다. Production에는 적용하지 않았다.
 
 ## 9. Production migration / cutover
 

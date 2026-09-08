@@ -57,10 +57,10 @@ create table if not exists seasons (
 create index if not exists idx_seasons_sort_order
     on seasons (sort_order);
 
--- Application code also validates this invariant and reports 0/multiple rows.
-create unique index if not exists uq_seasons_one_current
+-- YPL automatic rollover owns this invariant. Classic current/planned policy is independent.
+create unique index if not exists uq_seasons_one_current_ypl
     on seasons ((status))
-    where status = 'current';
+    where series = 'ypl' and status = 'current';
 
 
 -- =========================================================

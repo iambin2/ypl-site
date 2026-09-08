@@ -6,6 +6,7 @@
 
 - Test 환경의 normalized application, official submission, bracket runtime, Records, Champions 운영 흐름은 완료됐다.
 - P2-7은 완료 상태다. 신규 active Event-linked bracket은 normalized runtime만 사용한다.
+- YPL Season automatic rollover는 Test Supabase의 canonical RPC와 current-season 진입점 fallback으로 완료됐다.
 - historical legacy data는 read-only compatibility 경계로만 남아 있다.
 - Production normalized cutover는 아직 시작하지 않았다. Production 데이터와 Test fixture는 별개의 대상이다.
 
@@ -61,23 +62,7 @@
 
 ## 3. 현재 남은 작업
 
-### 최우선: YPL Season 자동 rollover
-
-YPL series에 한해 Asia/Seoul 기준으로 다음 boundary에서 Season을 자동 전환한다.
-
-- 매년 3월 1일 00:00 KST
-- 매년 9월 1일 00:00 KST
-
-정책:
-
-- `series = ypl`에만 적용하고 Classic은 변경하지 않는다.
-- 정확히 하나의 current YPL Season을 유지한다.
-- 기존 Event의 `season_id`는 immutable historical fact다.
-- operation은 server/DB-side에서 idempotent하고 concurrency-safe해야 한다.
-- 2026-09-01은 YPL 시즌 3, 2027-03-01은 시즌 4, 2027-09-01은 시즌 5다.
-- Production 적용은 Production cutover 단계에서만 검토한다.
-
-### 그 다음 순서
+### 다음 순서
 
 1. 신청·제출·대진·결과 변경·apply/revert·삭제를 묶은 integrated QA
 2. 운영에 필요한 작은 UI polish와 Test fixture 정리
