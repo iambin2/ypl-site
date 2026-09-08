@@ -1197,6 +1197,7 @@ export default function TeamBuilderPage() {
           </div>
           <div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{dataStatusText}<span>·</span>{localizationText}</div>
           <div className="tb-search-row">
+            <span className="search-input-icon" aria-hidden="true">🔍</span>
             <input className="tb-input" value={query} onChange={event => setQuery(event.target.value)} placeholder="포켓몬 이름 검색 (한글/영문)" />
             {query && <button className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기">×</button>}
           </div>

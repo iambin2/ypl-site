@@ -45,7 +45,7 @@
 .tb-dot.ready{background:#24a36c;}
 .tb-dot.error{background:var(--danger);}
 .tb-search-row{position:relative;margin-bottom:11px;}
-.tb-search-row .tb-input{padding-right:38px;}
+.tb-search-row .tb-input{padding-left:42px;padding-right:38px;}
 .tb-clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:0;background:transparent;border-radius:9px;color:var(--muted);font-size:19px;cursor:pointer;}
 .tb-clear:hover{background:var(--s-soft);color:var(--text);}
 .tb-pokemon-list{overflow:auto;min-height:160px;padding-right:3px;scrollbar-width:thin;}

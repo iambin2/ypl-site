@@ -1,6 +1,6 @@
 /* YPL Tools navigation group. Uses the same visual tokens as the existing YPL navigation. */
 .ypl .nav-links{overflow:visible;}
-.ypl .nav-tools{position:relative;display:flex;align-items:center;margin-left:4px;}
+.ypl .nav-tools{position:relative;display:flex;align-items:center;flex:0 0 auto;width:fit-content;margin-left:4px;}
 .ypl .nav-tools-trigger{
   display:inline-flex;align-items:center;gap:4px;
   /* Deliberately inherit .nlink colors/backgrounds so Tools does not look like a separate CTA. */
@@ -57,7 +57,7 @@
 
 .ypl .nav-tools-menu{
   top:calc(100% + 10px);
-  min-width:190px;
+  min-width:112px;
   padding:8px;
   border-radius:14px;
 }

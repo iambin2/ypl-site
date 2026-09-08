@@ -171,7 +171,10 @@ function TrainerView({ snapshot }) {
     <div className="records-trainer-layout">
       <aside className="panel records-trainer-list">
         <div className="records-search">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="트레이너 검색" />
+          <div className="records-search-field">
+            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="트레이너 검색" />
+          </div>
           <span>{visible.length}명</span>
         </div>
         <div className="records-trainer-scroll">
@@ -543,7 +546,10 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     ) : (
       <>
         <div className="records-toolbar">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" />
+          <div className="records-search-field">
+            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" />
+          </div>
           <span>전체 {allRows.length}회차</span>
         </div>
         <div className="panel swap" style={{ paddingBottom: 14 }}>
@@ -577,7 +583,10 @@ function PokemonView({ snapshot }) {
     <div className="records-pokemon-layout">
       <aside className="panel records-pokemon-list">
         <div className="records-search">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="포켓몬 검색" />
+          <div className="records-search-field">
+            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="포켓몬 검색" />
+          </div>
           <span>{visible.length}종</span>
         </div>
         <div className="records-pokemon-scroll">
