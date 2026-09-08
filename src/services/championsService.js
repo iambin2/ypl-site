@@ -1,5 +1,8 @@
 import { supa as client } from "../storage.js";
-import { NORMALIZED_DATA_SCHEMA } from "./normalizedCompetitionService.js";
+import {
+  NORMALIZED_DATA_SCHEMA,
+  resolveAutomaticRoundNumber,
+} from "./normalizedCompetitionService.js";
 import {
   isNormalizedChampionsHallOfFame,
   buildChampionshipHallOfFameParty,
@@ -83,13 +86,36 @@ export async function saveChampionshipApplicationEventPair({
   const finalEventId = existingQualifier?.championship_final_event_id || databaseUuid();
   const qualifierId = existingQualifier?.id || databaseUuid();
   const seasonId = existingQualifier?.season_id || await currentSeasonId();
+  const existingOrdinal = Number(existingQualifier?.round_number);
+  const legacyDraftOrdinal = Number(draft.generation);
+  const ordinal = existingQualifier
+    ? (
+        Number.isInteger(existingOrdinal) && existingOrdinal > 0
+          ? existingOrdinal
+          : Number.isInteger(legacyDraftOrdinal) && legacyDraftOrdinal > 0
+            ? legacyDraftOrdinal
+            : await resolveAutomaticRoundNumber({ eventType: "champions" })
+      )
+    : await resolveAutomaticRoundNumber({ eventType: "champions" });
+
+  if (!Number.isInteger(ordinal) || ordinal < 1) {
+    throw new Error("Champions round number could not be resolved.");
+  }
   const registrationSettings = {
     ...(existingQualifier?.registration_settings || {}),
     ...(draft.registrationSettings || {}),
     ...(announcementId ? { announcementId } : {}),
   };
+  const recordRuleLabel = String(
+    draft.recordRuleLabel ??
+    draft.competitionSettings?.recordRuleLabel ??
+    existingQualifier?.competition_settings?.recordRuleLabel ??
+    ""
+  ).trim();
+
   const competitionSettings = {
     ...(draft.competitionSettings || existingQualifier?.competition_settings || {}),
+    recordRuleLabel,
     // Champions placement is recorded through Result/HOF, not the ranking ledger.
     rankingEnabled: false,
   };
@@ -99,9 +125,9 @@ export async function saveChampionshipApplicationEventPair({
     p_season_id: seasonId,
     p_announcement_id: announcementId,
     p_base_name: draft.name,
-    p_round_number: draft.roundNumber ? Number(draft.roundNumber) : draft.generation,
+    p_round_number: ordinal,
     p_battle_format: draft.battleFormat,
-    p_generation: draft.generation,
+    p_generation: ordinal,
     p_final_capacity: draft.finalCapacity,
     p_qualification_slots: null,
     p_regulation_id: draft.regulationId || null,

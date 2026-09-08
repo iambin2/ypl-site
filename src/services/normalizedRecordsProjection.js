@@ -5,6 +5,26 @@ const cleanName = (value) => String(value || "").trim();
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const number = (value) => Number(value || 0);
 
+function seasonSeriesOrder(series) {
+  if (series === "ypl") return 0;
+  if (series === "classic") return 1;
+  return 2;
+}
+
+function compareSeasonDisplayOrder(a, b) {
+  const seriesDelta =
+    seasonSeriesOrder(a?.series) - seasonSeriesOrder(b?.series);
+  if (seriesDelta) return seriesDelta;
+
+  const numberDelta = number(b?.number) - number(a?.number);
+  if (numberDelta) return numberDelta;
+
+  const sortDelta = number(b?.sort_order) - number(a?.sort_order);
+  if (sortDelta) return sortDelta;
+
+  return cleanName(a?.name).localeCompare(cleanName(b?.name), "ko");
+}
+
 const PLACEMENT = {
   champion: "win",
   runner_up: "ru",
@@ -132,8 +152,10 @@ function normalizedModels(data, raw) {
       season: season?.name || "",
       seasonId: season?.id || null,
       series: season?.series || "",
-      rule: [event.regulation_id, event.cup_rule_id].filter(Boolean).join(" · "),
+      rule: cleanName(event.competition_settings?.recordRuleLabel),
       championSeries: event.event_type === "champions",
+      championshipPhase: event.championship_phase || "",
+      championshipFinalEventId: event.championship_final_event_id || null,
       team: Boolean(event.is_team_event),
       mode: event.is_team_event ? "team" : "single",
       format: event.competition_format || "",
@@ -547,7 +569,12 @@ function rankingRows(raw, models, legacyData) {
     ...asArray(raw?.rankingBaselines).filter((row) => row.scope === "series").map((row) => row.series),
     ...models.seasons.map((season) => season.series),
   ].filter(Boolean));
-  const series = [...seriesNames].map((seriesName) => {
+  const series = [...seriesNames]
+    .sort((a, b) =>
+      seasonSeriesOrder(a) - seasonSeriesOrder(b) ||
+      String(a).localeCompare(String(b))
+    )
+    .map((seriesName) => {
     const legacy = legacySeries.find((item) =>
       seriesName === "classic" ? String(item.label || "").includes("클래식") : String(item.label || "").toLowerCase() === seriesName.toLowerCase()
     );
@@ -560,14 +587,12 @@ function rankingRows(raw, models, legacyData) {
         .map(([, row]) => row),
     };
   });
-  for (const legacy of legacySeries) {
-    if (!series.some((item) => item.key === legacy.key)) series.push({ ...legacy, source: "legacy" });
-  }
+
 
   const normalizedSeasonIds = new Set(models.seasons.map((season) => season.id));
   const seasons = models.seasons
     .slice()
-    .sort((a, b) => number(a.sort_order) - number(b.sort_order))
+    .sort(compareSeasonDisplayOrder)
     .map((season) => ({
       id: season.id,
       code: season.code,
@@ -577,11 +602,7 @@ function rankingRows(raw, models, legacyData) {
         .filter(([key, row]) => key.startsWith(`${season.id}:`) && row.name)
         .map(([, row]) => row),
     }));
-  for (const legacy of asArray(legacyData?.seasons)) {
-    if (!seasons.some((season) => season.name === legacy.name)) {
-      seasons.push({ ...legacy, source: "legacy" });
-    }
-  }
+
 
   return { series, seasons, awardRows: awards, normalizedSeasonIds };
 }
@@ -639,7 +660,7 @@ export function buildNormalizedRecordsProjection(legacyData = {}, raw = {}, poke
   const ranking = rankingRows(raw, models, legacyData);
   const compatibilityTeamBrackets = asArray(filteredLegacyData.brackets)
     .filter((bracket) => bracket?.applied && normalizedTeamEventIds.has(bracket.eventId)).length;
-  const normalizedArchives = models.archives.map((archive) => {
+  const enrichedNormalizedArchives = models.archives.map((archive) => {
     if (archive.team) return archive;
     const rosterByEntryId = new Map(
       normalizedRosterRows
@@ -661,10 +682,62 @@ export function buildNormalizedRecordsProjection(legacyData = {}, raw = {}, poke
       },
     };
   });
+
+  const qualifierArchiveByFinalEventId = new Map(
+    enrichedNormalizedArchives
+      .filter((archive) =>
+        archive.eventType === "champions" &&
+        archive.championshipPhase === "qualifier" &&
+        archive.championshipFinalEventId
+      )
+      .map((archive) => [archive.championshipFinalEventId, archive])
+  );
+
+  const normalizedArchives = enrichedNormalizedArchives
+    .filter((archive) =>
+      !(archive.eventType === "champions" && archive.championshipPhase === "qualifier")
+    )
+    .map((archive) => {
+      if (
+        archive.team ||
+        archive.eventType !== "champions" ||
+        archive.championshipPhase !== "final"
+      ) {
+        return archive;
+      }
+
+      const qualifierArchive = qualifierArchiveByFinalEventId.get(archive.eventId);
+      if (!qualifierArchive) return archive;
+
+      const finalPlayerIds = new Set(
+        asArray(archive.individualParticipants)
+          .map((participant) => participant.playerId)
+          .filter(Boolean)
+      );
+
+      const qualifierOnlyParticipants = asArray(qualifierArchive.individualParticipants)
+        .filter((participant) =>
+          !participant.playerId || !finalPlayerIds.has(participant.playerId)
+        )
+        .map((participant) => ({
+          ...participant,
+          placement: "participant",
+          hasResult: false,
+        }));
+
+      return {
+        ...archive,
+        individualParticipants: [
+          ...asArray(archive.individualParticipants),
+          ...qualifierOnlyParticipants,
+        ],
+      };
+    });
+
   const archives = [...legacySnapshot.archives.map((row) => ({ ...row, source: "legacy" })), ...normalizedArchives]
     .sort((a, b) => (a.date === b.date ? String(b.round || "").localeCompare(String(a.round || ""), "ko") : a.date < b.date ? 1 : -1));
   const seasons = [...new Set([
-    ...models.seasons.slice().sort((a, b) => number(b.sort_order) - number(a.sort_order)).map((season) => season.name),
+    ...models.seasons.slice().sort(compareSeasonDisplayOrder).map((season) => season.name),
     ...legacySnapshot.seasons,
   ].filter(Boolean))];
 
@@ -687,7 +760,7 @@ export function buildNormalizedRecordsProjection(legacyData = {}, raw = {}, poke
       awards: ranking.awardRows,
     },
     coverage: {
-      appliedBrackets: legacySnapshot.coverage.appliedBrackets - compatibilityTeamBrackets + models.events.length,
+      appliedBrackets: legacySnapshot.coverage.appliedBrackets - compatibilityTeamBrackets + normalizedArchives.length,
       officialMatches: legacySnapshot.coverage.officialMatches + models.matches.length,
       savedRosters: rosters.length,
       archiveEvents: archives.length,

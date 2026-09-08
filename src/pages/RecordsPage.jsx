@@ -410,6 +410,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     const toggleable = r.source === "normalized" && !r.team && partyRows.length > 0;
     const expanded = openRoundKey === key;
     const toggle = () => setOpenRoundKey((current) => current === key ? null : key);
+    const championshipEmphasis =
+      Boolean(r.championSeries || r.champ) && r.championshipPhase !== "qualifier";
     const individualResults = () => (
       <div className="r2-res">
         {[
@@ -425,18 +427,17 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       </div>
     );
     return (
-      <div className={"round2" + (r.championSeries || r.champ ? " champ" : "")} key={key}>
+      <div className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
         <div className="r2-date tnum">{r.date}</div>
         <div className="r2-main">
           {toggleable ? (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
               <div className="records-round-summary">
-                {(showCompetition || r.eventName || rl || rule || r.team || r.championSeries || r.champ || r.season) && <span className="r2-head">
+                {(showCompetition || rl || rule || r.team || championshipEmphasis || r.season) && <span className="r2-head">
                   {showCompetition && <span className="r2-rule">{tour.label}</span>}
-                  {r.eventName && <span className="r2-event-name">{r.eventName}</span>}
                   {rl && <span className="r2-round">{rl}</span>}
                   {r.season && <span className="r2-season">{r.season}</span>}
-                  {(r.championSeries || r.champ) && <span className="r2-champ">챔피언스 시리즈</span>}
+                  {championshipEmphasis && <span className="r2-champ">챔피언스 시리즈</span>}
                   {r.team && <span className="r2-mode">팀전</span>}
                   {rule && <span className="r2-rule">{rule}</span>}
                 </span>}
@@ -445,12 +446,11 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
               <span className="records-round-chevron" aria-hidden="true">{expanded ? "⌃" : "⌄"}</span>
             </button>
           ) : <>
-          {(showCompetition || r.eventName || rl || rule || r.team || r.championSeries || r.champ || r.season) && <div className="r2-head">
+          {(showCompetition || rl || rule || r.team || championshipEmphasis || r.season) && <div className="r2-head">
             {showCompetition && <span className="r2-rule">{tour.label}</span>}
-            {r.eventName && <span className="r2-event-name">{r.eventName}</span>}
             {rl && <span className="r2-round">{rl}</span>}
             {r.season && <span className="r2-season">{r.season}</span>}
-            {(r.championSeries || r.champ) && <span className="r2-champ">챔피언스 시리즈</span>}
+            {championshipEmphasis && <span className="r2-champ">챔피언스 시리즈</span>}
             {r.team && <span className="r2-mode">팀전</span>}
             {rule && <span className="r2-rule">{rule}</span>}
           </div>}
@@ -681,6 +681,7 @@ function RankingHub({ snapshot, data, admin, setModal, save }) {
 function RankView({ rankings, data, admin, setModal, save }) {
   const eras = rankings || [];
   const legacyEras = data.rankings || [];
+  const normalizedMode = eras.some((row) => row.source === "normalized");
   const [sel, setSel] = useState(eras[0]?.key);
   const era = eras.find((e) => e.key === sel) || eras[0];
   const addEra = () => {
@@ -694,7 +695,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
   if (!era) {
     return (
       <>
-        {admin && <div style={{ padding: "4px 0" }}><button className="btn btn-gold btn-sm" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
+        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-gold btn-sm" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
         <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>
       </>
     );
@@ -706,7 +707,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
         {eras.map((e) => (
           <button key={e.key} className={"subtab" + (e.key === sel ? " on" : "")} onClick={() => setSel(e.key)}>{e.label}</button>
         ))}
-        {admin && <button className="subtab add" onClick={addEra}>+ 추가</button>}
+        {admin && !normalizedMode && <button className="subtab add" onClick={addEra}>+ 추가</button>}
       </div>
       <div className="panel swap" key={sel}>
         {admin && era.source !== "normalized" && (
@@ -733,7 +734,14 @@ function RankView({ rankings, data, admin, setModal, save }) {
 function SeasonView({ seasons, data, admin, setModal, save }) {
   seasons = seasons || [];
   const legacySeasons = data.seasons || [];
-  const [sel, setSel] = useState(Math.max(0, seasons.length - 1));
+  const normalizedMode = seasons.some((row) => row.source === "normalized");
+  const [sel, setSel] = useState(
+    normalizedMode ? 0 : Math.max(0, seasons.length - 1)
+  );
+
+  useEffect(() => {
+    setSel(normalizedMode ? 0 : Math.max(0, seasons.length - 1));
+  }, [normalizedMode, seasons.length]);
   const addSeason = () => {
     const name = (prompt("새 시즌 이름 (예: YPL 시즌 3)") || "").trim();
     if (!name) return;
@@ -745,14 +753,16 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
   if (!s) {
     return (
       <>
-        {admin && <div style={{ padding: "4px 0" }}><button className="btn btn-gold btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}
+        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-gold btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}
         <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>
       </>
     );
   }
 
   const hasNote = s.rows.some((r) => r.note);
-  const ordered = [...seasons.map((x, i) => ({ x, i }))].reverse();
+  const ordered = normalizedMode
+    ? seasons.map((x, i) => ({ x, i }))
+    : [...seasons.map((x, i) => ({ x, i }))].reverse();
 
   return (
     <>
@@ -760,7 +770,7 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
         {ordered.map(({ x, i }) => (
           <button key={i} className={"subtab" + (i === sel ? " on" : "")} onClick={() => setSel(i)}>{x.name}</button>
         ))}
-        {admin && <button className="subtab add" onClick={addSeason}>+ 추가</button>}
+        {admin && !normalizedMode && <button className="subtab add" onClick={addSeason}>+ 추가</button>}
       </div>
       <div className="panel swap" key={sel}>
         {admin && s.source !== "normalized" && (

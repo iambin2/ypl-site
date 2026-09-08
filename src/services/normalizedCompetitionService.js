@@ -1292,6 +1292,63 @@ export async function submitEventTeamSnapshot({
   };
 }
 
+
+export async function resolveAutomaticRoundNumber({
+  eventType = "pokecup",
+  division = null,
+  isTeamEvent = false,
+} = {}) {
+  const { data, error } = await db()
+    .from("events")
+    .select("event_type, division, is_team_event, round_number, status")
+    .not("round_number", "is", null)
+    .neq("status", "cancelled");
+
+  if (error) fail(error, "Event round number history could not be loaded.");
+
+  const candidates = (data || []).filter((row) => {
+    const rowRound = Number(row.round_number);
+    if (!Number.isInteger(rowRound) || rowRound < 1) return false;
+
+    if (eventType === "champions") {
+      return row.event_type === "champions";
+    }
+
+    // Team events borrow the ordinary individual Master sequence,
+    // but do not advance that sequence themselves.
+    if (isTeamEvent) {
+      return (
+        !Boolean(row.is_team_event) &&
+        row.event_type !== "champions" &&
+        row.division === "master"
+      );
+    }
+
+    // Historical Light events used both:
+    // event_type="light" and division="light".
+    if (division === "light" || eventType === "light") {
+      return (
+        !Boolean(row.is_team_event) &&
+        row.event_type !== "champions" &&
+        (row.division === "light" || row.event_type === "light")
+      );
+    }
+
+    return (
+      !Boolean(row.is_team_event) &&
+      row.event_type !== "champions" &&
+      row.division === division
+    );
+  });
+
+  const maxRound = candidates.reduce(
+    (max, row) => Math.max(max, Number(row.round_number) || 0),
+    0
+  );
+
+  return maxRound + 1;
+}
+
 export async function saveApplicationEvent({
   eventId = null,
   announcementId = null,
@@ -1312,6 +1369,14 @@ export async function saveApplicationEvent({
     seasonId = (await getCurrentSeason()).id;
   }
 
+  const roundNumber = existingEvent
+    ? existingEvent.round_number
+    : await resolveAutomaticRoundNumber({
+        eventType: eventDraft.eventType || "pokecup",
+        division: eventDraft.division || null,
+        isTeamEvent: Boolean(eventDraft.isTeamEvent),
+      });
+
   const registrationSettings = {
     ...(existingEvent?.registration_settings || {}),
     ...(eventDraft.registrationSettings || {}),
@@ -1319,8 +1384,14 @@ export async function saveApplicationEvent({
   };
 
   const requestedCompetitionSettings = eventDraft.competitionSettings || existingEvent?.competition_settings || {};
+  const recordRuleLabel = String(
+    eventDraft.recordRuleLabel ??
+    requestedCompetitionSettings.recordRuleLabel ??
+    ""
+  ).trim();
   const competitionSettings = {
     ...requestedCompetitionSettings,
+    recordRuleLabel,
     rankingEnabled: typeof requestedCompetitionSettings.rankingEnabled === "boolean"
       ? requestedCompetitionSettings.rankingEnabled
       : Boolean(eventDraft.isTeamEvent) || eventDraft.division !== "rookie",
@@ -1329,7 +1400,7 @@ export async function saveApplicationEvent({
   const payload = {
     season_id: seasonId,
     name,
-    round_number: eventDraft.roundNumber || null,
+    round_number: roundNumber,
     event_type: eventDraft.eventType || "pokecup",
     division: eventDraft.division || null,
     battle_format: eventDraft.battleFormat || null,

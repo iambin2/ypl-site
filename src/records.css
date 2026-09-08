@@ -187,3 +187,22 @@
   opacity:.72;
 }
 .records-history-row.is-champions b{color:var(--navy);font-weight:800}
+
+
+/* 2026-09 records archive toggle polish */
+.ypl .records-round-chevron{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:34px;
+  height:34px;
+  flex:0 0 34px;
+  border-radius:10px;
+  font-size:18px;
+  line-height:1;
+  background:var(--soft);
+  transition:transform .16s ease, background .16s ease;
+}
+.ypl .records-round-toggle:hover .records-round-chevron{
+  background:var(--line);
+}

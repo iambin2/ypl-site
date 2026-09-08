@@ -41,11 +41,16 @@ export function buildChampionshipRecordApplyCompletionOptions({
 export function normalizeChampionshipApplicationDraft(eventDraft = {}) {
   const name = String(eventDraft.name || "").trim();
   const battleFormat = String(eventDraft.battleFormat || "").trim();
-  const generation = Number(eventDraft.generation);
+  const generation =
+    eventDraft.generation === undefined ||
+    eventDraft.generation === null ||
+    eventDraft.generation === ""
+      ? null
+      : Number(eventDraft.generation);
   const finalCapacity = Number(eventDraft.finalCapacity);
   if (!name) throw new Error("Champions 대회 이름을 입력해 주세요.");
   if (!["singles", "doubles"].includes(battleFormat)) throw new Error("Champions 배틀 형식은 싱글 또는 더블이어야 합니다.");
-  if (!Number.isInteger(generation) || generation < 1) throw new Error("Champions generation을 입력해 주세요.");
+  if (generation !== null && (!Number.isInteger(generation) || generation < 1)) throw new Error("Champions generation을 입력해 주세요.");
   if (!Number.isInteger(finalCapacity) || finalCapacity < 2) throw new Error("본선 정원은 2명 이상이어야 합니다.");
   return {
     ...eventDraft,
