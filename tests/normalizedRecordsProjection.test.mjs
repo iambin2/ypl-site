@@ -610,12 +610,15 @@ test("normalized team Results expand to member history and team archive without 
       tournamentName: "마스터 리그",
       eventName: "YPL 팀전",
       date: "2026.09.06",
+      recordAppliedAt: "2026-09-06T00:00:00Z",
       round: "",
       season: "YPL 시즌 3",
       seasonId: SEASON_ID,
       series: "ypl",
-      rule: "m-b · none",
+      rule: "",
       championSeries: false,
+      championshipPhase: "",
+      championshipFinalEventId: null,
       team: true,
       mode: "team",
       format: "double_elimination",
@@ -750,4 +753,93 @@ test("Records display helpers hide raw metadata and format numeric team names", 
   assert.equal(displayRecordMeta("bo3 · m-b · none"), "bo3");
   assert.equal(displayRecordMeta("single elimination"), "single elimination");
   assert.equal(displayRecordMeta(undefined), "");
+});
+
+test("Champions Trainer history keeps one Final-preferred row and retains qualifier-only participation", () => {
+  const raw = rawData();
+  const qualifierId = "champions-qualifier";
+  const finalId = "champions-final";
+  raw.events.push(
+    {
+      id: qualifierId,
+      season_id: SEASON_ID,
+      name: "챔피언스 선발전",
+      event_type: "champions",
+      championship_phase: "qualifier",
+      championship_final_event_id: finalId,
+      competition_format: "double_elimination",
+      is_team_event: false,
+      held_on: "2026-09-01",
+      status: "completed",
+    },
+    {
+      id: finalId,
+      season_id: SEASON_ID,
+      name: "챔피언스 본선",
+      event_type: "champions",
+      championship_phase: "final",
+      competition_format: "single_elimination",
+      is_team_event: false,
+      held_on: "2026-09-02",
+      status: "completed",
+      record_applied_at: "2026-09-03T00:00:00Z",
+    }
+  );
+  raw.players.push({ id: "player-qualifier-only", display_name: "Qualifier Only" });
+  raw.entries.push(
+    { id: "qualifier-entry-a", event_id: qualifierId, entry_type: "individual", status: "active" },
+    { id: "qualifier-entry-only", event_id: qualifierId, entry_type: "individual", status: "active" },
+    { id: "final-entry-a", event_id: finalId, entry_type: "individual", status: "active" },
+    { id: "final-entry-b", event_id: finalId, entry_type: "individual", status: "active" }
+  );
+  raw.entryParticipants.push(
+    { id: "qualifier-participant-a", event_id: qualifierId, entry_id: "qualifier-entry-a", registration_id: "qualifier-reg-a", player_id: "player-a" },
+    { id: "qualifier-participant-only", event_id: qualifierId, entry_id: "qualifier-entry-only", registration_id: "qualifier-reg-only", player_id: "player-qualifier-only" },
+    { id: "final-participant-a", event_id: finalId, entry_id: "final-entry-a", registration_id: "final-reg-a", player_id: "player-a" },
+    { id: "final-participant-b", event_id: finalId, entry_id: "final-entry-b", registration_id: "final-reg-b", player_id: "player-b" }
+  );
+  raw.results.push({ id: "final-result-a", event_id: finalId, entry_id: "final-entry-a", placement_code: "champion", placement_label: "우승", rank_min: 1 });
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const alpha = snapshot.profiles["player:player-a"].history.filter(row => row.championSeries);
+  const beta = snapshot.profiles["player:player-b"].history.filter(row => row.championSeries);
+  const qualifierOnly = snapshot.profiles["player:player-qualifier-only"].history.filter(row => row.championSeries);
+
+  assert.deepEqual(alpha.map(row => [row.eventId, row.placement]), [[finalId, "win"]]);
+  assert.deepEqual(beta.map(row => [row.eventId, row.placement]), [[finalId, "participant"]]);
+  assert.deepEqual(qualifierOnly.map(row => [row.eventId, row.placement]), [[qualifierId, "participant"]]);
+  assert.deepEqual(snapshot.archives.filter(row => row.championSeries).map(row => row.eventId), [finalId]);
+});
+
+test("official normalized Events retain separate same-day ordinary archive rounds by Event ID", () => {
+  const raw = rawData();
+  raw.events[0] = {
+    ...raw.events[0],
+    name: "마스터 37회",
+    event_type: "pokecup",
+    division: "master",
+    held_on: "2026-09-12",
+    round_number: 37,
+  };
+  raw.events.push({
+    id: "event-master-38",
+    season_id: SEASON_ID,
+    name: "QA 38회 마스터리그",
+    event_type: "pokecup",
+    division: "master",
+    competition_format: "single_elimination",
+    is_team_event: false,
+    held_on: "2026-09-12",
+    date_precision: "exact",
+    status: "completed",
+    record_applied_at: "2026-09-13T00:00:00Z",
+    round_number: 38,
+  });
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const masterRounds = snapshot.archives
+    .filter(row => row.tournamentKey === "master")
+    .map(row => [row.eventId, row.round]);
+
+  assert.deepEqual(masterRounds, [["event-master-38", 38], [EVENT_ID, 37]]);
 });

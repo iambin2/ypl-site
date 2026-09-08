@@ -21,6 +21,33 @@ const placementLabel = (p, team = false) => {
   return "참가";
 };
 
+const compareHistoryRecency = (a, b) => {
+  const aApplied = String(a?.recordAppliedAt || "");
+  const bApplied = String(b?.recordAppliedAt || "");
+
+  // recordAppliedAt is authoritative for normalized records. Legacy rows do
+  // not have that field, so compare them by their display date instead of
+  // permanently pushing them below every normalized result.
+  if (
+    a?.source === "normalized" &&
+    b?.source === "normalized" &&
+    aApplied &&
+    bApplied &&
+    aApplied !== bApplied
+  ) {
+    return aApplied < bApplied ? 1 : -1;
+  }
+
+  const aDate = String(a?.date || "");
+  const bDate = String(b?.date || "");
+  if (aDate !== bDate) return aDate < bDate ? 1 : -1;
+
+  const roundDelta = Number(b?.round || 0) - Number(a?.round || 0);
+  if (roundDelta) return roundDelta;
+
+  return String(a?.id || "").localeCompare(String(b?.id || ""));
+};
+
 /* ============================== RECORDS ============================== */
 export default function RecordsPage({ data, admin, setModal, save }) {
   const [tab, setTab] = useState("trainer");
@@ -97,8 +124,6 @@ export default function RecordsPage({ data, admin, setModal, save }) {
         ))}
       </Reveal>
 
-      <CoverageNote snapshot={snapshot} />
-
       <div className="swap" key={tab}>
         {tab === "trainer" && <TrainerView snapshot={snapshot} />}
         {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} />}
@@ -106,27 +131,6 @@ export default function RecordsPage({ data, admin, setModal, save }) {
         {tab === "rank" && <RankingHub snapshot={snapshot} data={data} admin={admin} setModal={setModal} save={save} />}
       </div>
     </section>
-  );
-}
-
-function CoverageNote({ snapshot }) {
-  const { coverage } = snapshot;
-  return (
-    <Reveal className="records-coverage">
-      <div>
-        <b>현재 저장 자료 기준</b>
-        <span>
-          과거·팀전 기록은 확인 가능한 기존 자료를 유지합니다.
-          <strong>기록 반영이 완료된 공식 개인전·팀전 대회</strong>는 Player ID, Entry, Result, RankingAward를 기준으로 표시합니다.
-          개인 승·패·승률 등 평가성 지표는 기본 공개 화면에 표시하지 않습니다.
-        </span>
-      </div>
-      <div className="records-coverage-stats">
-        <span>공식 대회 <b>{coverage.appliedBrackets}</b></span>
-        <span>보존 경기 <b>{coverage.officialMatches}</b></span>
-        <span>저장 엔트리 <b>{coverage.savedRosters}</b></span>
-      </div>
-    </Reveal>
   );
 }
 
@@ -219,7 +223,7 @@ function TrainerView({ snapshot }) {
             <div className="records-history">
               {history
                 .slice()
-                .sort((a, b) => (a.date < b.date ? 1 : -1))
+                .sort(compareHistoryRecency)
                 .slice(0, 12)
                 .map((event) => {
                   const teamName = displayTeamName(event.teamName);
@@ -235,7 +239,7 @@ function TrainerView({ snapshot }) {
                         )}
                         <b>
                           {event.championSeries
-                            ? `챔피언스 시리즈 ${event.round || ""}회`
+                            ? "챔피언스 시리즈"
                             : event.eventName || `${event.tournamentName}${event.round ? ` ${event.round}회` : ""}`}
                         </b>
                         <span>{[event.date, event.season, teamName, rule].filter(Boolean).join(" · ")}</span>
@@ -404,15 +408,15 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
   };
 
   const renderRound = (tour, r, key, showCompetition = false) => {
-    const rl = r.round ? (/^\d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
+    const championSeries = Boolean(r.championSeries || r.champ);
+    const rl = championSeries ? "" : r.round ? (/^\d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
     const runnerUps = Array.isArray(r.ru) ? r.ru : split(r.ru);
     const rule = displayRecordMeta(r.rule);
     const partyRows = buildIndividualPartyPreviewRows(r);
     const toggleable = r.source === "normalized" && !r.team && partyRows.length > 0;
     const expanded = openRoundKey === key;
     const toggle = () => setOpenRoundKey((current) => current === key ? null : key);
-    const championshipEmphasis =
-      Boolean(r.championSeries || r.champ) && r.championshipPhase !== "qualifier";
+    const championshipEmphasis = championSeries && r.championshipPhase !== "qualifier";
     const individualResults = () => (
       <div className="r2-res">
         {[

@@ -147,6 +147,7 @@ async function readNormalizedBracketRuntimeFacts(eventId, runtimeId = null) {
   bracket.applied = event.record_applied_at
     ? { normalized: true, recordAppliedAt: event.record_applied_at, recordMeta: { eventId } }
     : null;
+  bracket.runtimeCreatedAt = runtime.created_at || null;
   return {
     bracket,
     event,
@@ -168,7 +169,7 @@ export async function fetchNormalizedBracketRuntime(eventId, runtimeId = null) {
 
 export async function listNormalizedSingleBracketRuntimes() {
   if (!normalizedBracketRuntimeEnabled()) return [];
-  const { data, error } = await db().from("bracket_runtimes").select("id, event_id").order("created_at");
+  const { data, error } = await db().from("bracket_runtimes").select("id, event_id").order("created_at", { ascending: false });
   if (error) fail(error, "normalized bracket runtime 목록을 불러오지 못했습니다.");
   const rows = await Promise.all((data || []).map(row => readNormalizedBracketRuntimeFacts(row.event_id, row.id)));
   return rows.filter(Boolean);

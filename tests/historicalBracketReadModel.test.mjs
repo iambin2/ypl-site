@@ -25,6 +25,17 @@ test("Event-linked or non-completed legacy graphs never enter the historical dis
   assert.ok(list.slice(1).every(row => row.readOnly));
 });
 
+test("merged normalized and historical cards use a stable newest-first timestamp", () => {
+  const list = buildBracketPageList(
+    [
+      { id: "runtime-old", eventId: "event-old", runtimeCreatedAt: "2026-09-01T00:00:00Z", projection: { source: "normalized" } },
+      { id: "runtime-new", eventId: "event-new", runtimeCreatedAt: "2026-09-03T00:00:00Z", projection: { source: "normalized" } },
+    ],
+    [{ id: "history-mid", name: "과거", status: "done", createdAt: "2026-09-02T00:00:00Z", projection: { source: null } }]
+  );
+  assert.deepEqual(list.map(row => row.id), ["runtime-new", "history-mid", "runtime-old"]);
+});
+
 test("read-only historical rendering cannot enter active mutation controls", () => {
   const page = readFileSync("src/pages/BracketsPage.jsx", "utf8");
   assert.doesNotMatch(page, /과거 기록/);

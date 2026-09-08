@@ -11,8 +11,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const [eventResponses,setEventResponses]=useState({});
   const [championshipSubmissionEvents,setChampionshipSubmissionEvents]=useState({});
   useEffect(()=>{
-    if(!admin) return;
-    const targets=(data.announcements||[]).filter(a=>a.form?.enabled&&a.form?.eventId);
+    const targets=(data.announcements||[]).filter(a=>
+      a.form?.enabled&&a.form?.eventId&&(
+        admin||(a.form.fields||[]).some(f=>f.public)
+      )
+    );
     if(!targets.length) return;
     let cancelled=false;
     Promise.all(targets.map(async a=>{
@@ -88,23 +91,33 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
             </>}
             {admin&&<button className="ann-resp" onClick={e=>{e.stopPropagation();setRespId(a.id);}}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
           </div>}
-          {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses ann={a} onRefresh={doRefresh} updatedAt={seen}/>}
+          {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
+            ann={a}
+            responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
+            onRefresh={doRefresh}
+            updatedAt={seen}
+          />}
           {isOpen&&<div className="nb-body swap"><p>{a.body}</p>{admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div>}
         </div>);})}
     </Reveal>
     <Pager page={cur} pages={pages} onGo={setPage}/>
-    {fillAnn&&<FormFillModal ann={fillAnn} onClose={()=>setFill(null)} onSubmit={(answers)=>submitForm(fillAnn.id,answers)}/>}
+    {fillAnn&&<FormFillModal
+      ann={fillAnn}
+      responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null}
+      onClose={()=>setFill(null)}
+      onSubmit={(answers)=>submitForm(fillAnn.id,answers)}
+    />}
     {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp}/>}
   </section>);
 }
 
 /* ===== 공개 응답 목록 (예: 실시간 밴 리스트) ===== */
-function PublicResponses({ ann, compact, onRefresh, updatedAt }){
+function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride=null }){
   const form=ann.form||{};
   const fields=(form.fields||[]).filter(f=>f.public);
   const [open,setOpen]=useState(false); // 기본은 접힘 — 응답이 쌓여도 화면이 길어지지 않도록
   if(!fields.length) return null;
-  const resp=[...(form.responses||[])].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const resp=[...(responsesOverride??form.responses??[])].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
   const val=(r,f)=>{ const v=(r.answers||{})[f.id]; return Array.isArray(v)?v.join(", "):String(v||""); };
   return (<div className={"pr-wrap fold"+(open?" open":"")+(compact?" compact":"")}>
     <button type="button" className="fold-head pr-fold-head" onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}>
@@ -136,7 +149,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt }){
 }
 
 /* ===== 신청서 폼 — 참가자 작성 / 관리자 응답 보기 ===== */
-function FormFillModal({ ann, onClose, onSubmit }){
+function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
   const form=ann.form||{}; const fields=form.fields||[];
   const [ans,setAns]=useState({}); const [registrationName,setRegistrationName]=useState(""); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
   const set=(id,v)=>setAns(a=>({...a,[id]:v}));
@@ -151,7 +164,7 @@ function FormFillModal({ ann, onClose, onSubmit }){
   if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true">✅</div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과 및 안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해주세요." onClose={onClose}>
     <div className="swap" key="fill">
-      {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact/>}
+      {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
       {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력하세요" autoComplete="name"/></div>}
       {fields.length===0&&!form.eventId&&<p style={{color:"var(--muted)",fontSize:14}}>등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>(<div className="ff-q" key={f.id}>

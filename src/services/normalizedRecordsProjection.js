@@ -148,6 +148,7 @@ function normalizedModels(data, raw) {
       tournamentName: tournament.label,
       eventName: event.name,
       date: formatEventDate(event),
+      recordAppliedAt: event.record_applied_at || "",
       round: event.round_number || "",
       season: season?.name || "",
       seasonId: season?.id || null,
@@ -399,6 +400,56 @@ function favoritePokemon(rosters) {
     .sort((a, b) => b.entries - a.entries || a.name.localeCompare(b.name, "ko"));
 }
 
+function mergeChampionshipHistory(rows, models) {
+  const regular = [];
+  const pairs = new Map();
+
+  for (const row of asArray(rows)) {
+    if (!row?.championSeries || !row?.championshipPhase) {
+      regular.push(row);
+      continue;
+    }
+
+    const finalEventId = row.championshipPhase === "qualifier"
+      ? row.championshipFinalEventId
+      : row.eventId;
+
+    if (!finalEventId) {
+      regular.push(row);
+      continue;
+    }
+
+    if (!pairs.has(finalEventId)) pairs.set(finalEventId, []);
+    pairs.get(finalEventId).push(row);
+  }
+
+  const merged = [];
+
+  for (const [finalEventId, pairRows] of pairs.entries()) {
+    const finalEvent = models.eventById.get(finalEventId);
+    const finalRow = pairRows.find(row => row.championshipPhase === "final") || null;
+    const qualifierRow = pairRows.find(row => row.championshipPhase === "qualifier") || null;
+    const base = finalRow || qualifierRow;
+    if (!base) continue;
+
+    merged.push({
+      ...base,
+      ...(finalRow && finalEvent ? models.eventMeta(finalEvent) : {}),
+      id: `${finalEventId}:trainer-history:${base.playerId || base.name || "participant"}`,
+      eventId: finalRow?.eventId || qualifierRow?.eventId || finalEventId,
+      entryId: finalRow?.entryId || qualifierRow?.entryId || base.entryId,
+      placement: finalRow?.placement || qualifierRow?.placement || "participant",
+      resultLabel: finalRow?.resultLabel || qualifierRow?.resultLabel || "참가",
+      resultRank: finalRow?.resultRank || qualifierRow?.resultRank || null,
+      championSeries: true,
+      championshipPhase: finalRow ? "final" : "qualifier",
+      championshipFinalEventId: finalEventId,
+    });
+  }
+
+  return [...regular, ...merged];
+}
+
 function mergeProfiles(legacySnapshot, legacyRosterSnapshot, normalizedRosterRows, models, linkedTeamBracketIds = new Set()) {
   const profiles = {};
   const consumedLegacyNames = new Set();
@@ -431,6 +482,7 @@ function mergeProfiles(legacySnapshot, legacyRosterSnapshot, normalizedRosterRow
     if (legacy) consumedLegacyNames.add(name);
     const normalizedPlacements = models.placements.filter((row) => row.playerId === player.id);
     const normalizedParticipations = models.participations.filter((row) => row.playerId === player.id);
+    const normalizedHistory = mergeChampionshipHistory(normalizedParticipations, models);
     const legacyParticipations = asArray(legacy?.participations)
       .filter((row) => !linkedTeamBracketIds.has(row.bracketId));
     const legacyHistory = asArray(legacy?.history)
@@ -449,7 +501,7 @@ function mergeProfiles(legacySnapshot, legacyRosterSnapshot, normalizedRosterRow
       matches: [...asArray(legacy?.matches), ...matchData.rows],
       placements: [...asArray(legacy?.placements), ...normalizedPlacements],
       participations: [...legacyParticipations, ...normalizedParticipations],
-      history: [...legacyHistory, ...normalizedParticipations],
+      history: [...legacyHistory, ...normalizedHistory],
       rosters,
       titles: asArray(legacy?.titles),
       champions: asArray(legacy?.champions),

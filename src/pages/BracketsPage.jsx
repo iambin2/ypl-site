@@ -449,8 +449,18 @@ function BracketWizard({ data, onClose, onCreate }){
   const formatSubmissionTime = value => value ? new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : "";
   const submissionBadge = registrationId => {
     const status = submissionStatusByRegistrationId.get(registrationId);
-    if (!status?.hasSubmission) return <span className="bk-hint" style={{ margin: 0, color: "var(--muted2)" }}>미제출</span>;
-    return <span className="bk-hint" style={{ margin: 0, color: "#18734a", fontWeight: 750 }}>제출 완료{formatSubmissionTime(status.latestSubmittedAt) ? ` · ${formatSubmissionTime(status.latestSubmittedAt)}` : ""}</span>;
+    if (!status?.hasSubmission) {
+      return <span className="bk-hint bk-participant-submission missing">미제출</span>;
+    }
+    const submittedAt = formatSubmissionTime(status.latestSubmittedAt);
+    return (
+      <span
+        className="bk-hint bk-participant-submission submitted"
+        title={submittedAt ? `제출 시간 ${submittedAt}` : undefined}
+      >
+        제출 완료
+      </span>
+    );
   };
   const linkedEvent=events.find(event=>event.id===eventId)||null;
   const linkedAnnouncement=(data?.announcements||[]).find(announcement=>
@@ -591,12 +601,12 @@ function BracketWizard({ data, onClose, onCreate }){
           </div>
         </div>
 
-        <div className="bk-fill">
+        <div className="bk-fill bk-participant-confirm-list">
           {eventRegs.map((reg,i)=>{
             if(linkedEvent?.championship_phase==="qualifier"&&directRegistrationIds.includes(reg.id)) return null;
             const checked=selectedRegistrationIds.includes(reg.id);
             return (
-              <label className="bk-pin" key={reg.id} style={{animationDelay:(i*22)+"ms",cursor:"pointer"}}>
+              <label className="bk-pin bk-participant-confirm-row" key={reg.id} style={{animationDelay:(i*22)+"ms",cursor:"pointer"}}>
                 <span className="bk-pin-no">{i+1}</span>
                 <input
                   type="checkbox"
@@ -608,15 +618,15 @@ function BracketWizard({ data, onClose, onCreate }){
                   }}
                   style={{width:"auto"}}
                 />
-                <span style={{flex:1,fontWeight:700}}>{reg.registration_name}</span>
+                <span className="bk-participant-name">{reg.registration_name}</span>
                 {submissionBadge(reg.id)}
-                {!checked&&<span className="bk-hint" style={{margin:0}}>불참</span>}
+                {!checked&&<span className="bk-hint bk-participant-absent">불참</span>}
               </label>
             );
           })}
 
           {!linkedEvent?.championship_phase && addedParticipants.map((name,i)=>(
-            <div className="bk-pin" key={`added-${i}`}>
+            <div className="bk-pin bk-participant-confirm-row bk-participant-added" key={`added-${i}`}>
               <span className="bk-pin-no gold">+</span>
               <input
                 value={name}
@@ -1090,9 +1100,17 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
   const [linkedContext,setLinkedContext]=useState(null);
   const [linkedContextError,setLinkedContextError]=useState("");
   const [linkedContextBusy,setLinkedContextBusy]=useState(linked);
+  const identityReviewRequired=linked&&!team&&(b.participants||[]).some(participant=>
+    participant?.identityReviewRequired||
+    participant?.identityStatus==="ambiguous"||
+    participant?.identityStatus==="new"||
+    !participant?.playerId||
+    !participant?.registrationId||
+    !participant?.entryId
+  );
   const [identityPreview,setIdentityPreview]=useState([]);
   const [identityPreviewError,setIdentityPreviewError]=useState("");
-  const [identityPreviewBusy,setIdentityPreviewBusy]=useState(linked);
+  const [identityPreviewBusy,setIdentityPreviewBusy]=useState(identityReviewRequired);
   const qualifierEvent=linkedContext?.event?.championship_phase==="qualifier";
   useEffect(()=>{
     if(!b.eventId) return;
@@ -1132,7 +1150,12 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
     return ()=>{ cancelled=true; };
   },[b.eventId]);
   useEffect(()=>{
-    if(!b.eventId || team) return;
+    if(!identityReviewRequired){
+      setIdentityPreview([]);
+      setIdentityPreviewError("");
+      setIdentityPreviewBusy(false);
+      return;
+    }
     let cancelled=false;
     setIdentityPreviewBusy(true);
     setIdentityPreviewError("");
@@ -1149,7 +1172,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
       });
 
     return ()=>{ cancelled=true; };
-  },[b.eventId,b.participants,team]);
+  },[b.eventId,b.participants,identityReviewRequired]);
 
   const pN=(s)=>{ const v=parseFloat(s); return isNaN(v)?0:v; };
   const ptWinN=pN(ptWin), ptRuN=pN(ptRu), ptSfN=pN(ptSf);
@@ -1276,7 +1299,10 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
         <div>{curT.label} <b>{preview.roundNum}회</b>{recordSeason?`, ${recordSeason}`:""}{rule.trim()?`, ${rule.trim()}`:""}</div>
         <div>🏆 <b>{nameOf(res.champ)}</b>{res.ru?<>, 🥈 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 🎖️ {res.sf.map(nameOf).join(", ")}</>:null}</div>
       </div>
-      {linked&&!team&&
+      {linked&&!team&&(
+        !!identityPreviewError ||
+        identityPreview.some(row=>row.status!=="existing")
+      )&&
   <div className="field">
     <label>참가자 Player 확인</label>
     {identityPreviewBusy
@@ -1608,7 +1634,8 @@ function BracketDraw({ b, onDone }){
 export default function BracketsPage({ data, admin, flash, refresh }){
   const [normalizedBrackets,setNormalizedBrackets]=useState([]);
   const [normalizedLoadError,setNormalizedLoadError]=useState("");
-  const loadNormalized=async()=>{
+  const [normalizedInitialReady,setNormalizedInitialReady]=useState(false);
+  const loadNormalized=async({initial=false}={})=>{
     try{
       const rows=await listNormalizedBracketRuntimes();
       setNormalizedBrackets(rows.map(row=>row.bracket));
@@ -1617,13 +1644,17 @@ export default function BracketsPage({ data, admin, flash, refresh }){
     }catch(error){
       setNormalizedLoadError(error?.message||"normalized bracket을 불러오지 못했습니다.");
       return [];
+    }finally{
+      if(initial) setNormalizedInitialReady(true);
     }
   };
-  useEffect(()=>{ void loadNormalized(); },[]);
+  useEffect(()=>{ void loadNormalized({initial:true}); },[]);
   const requestedEventId=new URLSearchParams(window.location.search).get("eventId");
   // Active Event-linked brackets are normalized-only. Completed pre-normalized
   // graphs without an Event id are a separate, display-only historical source.
-  const list=buildBracketPageList(normalizedBrackets,data?.brackets||[]);
+  const list=normalizedInitialReady
+    ? buildBracketPageList(normalizedBrackets,data?.brackets||[])
+    : [];
   const [openId,setOpenId]=useState(null);
   const [wizard,setWizard]=useState(false);
   const [apply,setApply]=useState(null);
@@ -1635,7 +1666,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
     if(!requestedEventId) return;
     const target=list.find(b=>b.eventId===requestedEventId);
     if(target) setOpenId(target.id);
-  },[requestedEventId,normalizedBrackets.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  },[requestedEventId,normalizedInitialReady,normalizedBrackets.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const create=async(b)=>{
     const normalizedCandidate=Boolean(
       b.eventId&&b.format==="elim"&&(b.mode==="single"||b.mode==="team")
@@ -1664,10 +1695,10 @@ export default function BracketsPage({ data, admin, flash, refresh }){
         });
         const loaded=await fetchNormalizedSingleBracketRuntime(b.eventId,attempt.runtimeId);
         if(!loaded) throw new Error("생성된 normalized bracket runtime을 다시 읽지 못했습니다.");
-        await syncNormalizedBracketMatches(b.eventId,loaded.bracket);
-        const materialized=await fetchNormalizedSingleBracketRuntime(b.eventId,attempt.runtimeId);
-        if(!materialized) throw new Error("formed Match materialize 후 normalized bracket runtime을 다시 읽지 못했습니다.");
-        const presentation=beginNormalizedBracketDraw(materialized.bracket);
+        // The Single create RPC already persists its BYE closure and every
+        // formed Match. Do not run the generic sync here: it can overwrite
+        // canonical sequence_no values for formed downstream nodes.
+        const presentation=beginNormalizedBracketDraw(loaded.bracket);
         setNormalizedBrackets(previous=>[
           ...previous.filter(row=>row.eventId!==b.eventId),
           presentation.bracket,
@@ -1825,7 +1856,9 @@ export default function BracketsPage({ data, admin, flash, refresh }){
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" disabled={!!deletingId} onClick={()=>setWizard(true)}>+ 새 대회 만들기</button></div>}
     </Reveal>
     {!open&&<div className="bk-list swap">
-      {list.length===0&&<div className="bk-empty">아직 생성된 대회가 없습니다.{admin&&" 우측 상단에서 새 대회를 만들어보세요."}</div>}
+      {!normalizedInitialReady
+        ? <div className="bk-empty">대진표를 불러오는 중입니다.</div>
+        : list.length===0&&<div className="bk-empty">아직 생성된 대회가 없습니다.{admin&&" 우측 상단에서 새 대회를 만들어보세요."}</div>}
       {list.map(b=>(<button className="bk-card" key={b.id} onClick={()=>setOpenId(b.id)}>
         <div className="bk-card-top"><span className={"bk-badge "+(b.applied?"done":"live")}>{statusTag(b)}</span><span className="bk-card-date tnum">{b.createdAt}</span></div>
         <div className="bk-card-name">{b.name}</div>

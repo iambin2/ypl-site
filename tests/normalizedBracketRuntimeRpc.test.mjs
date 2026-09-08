@@ -13,6 +13,10 @@ const grantSql = readFileSync(
 
 const createSignature = "create_normalized_single_bracket_runtime";
 const deleteSignature = "delete_normalized_single_bracket_runtime";
+const bracketsPage = readFileSync(
+  new URL("../src/pages/BracketsPage.jsx", import.meta.url),
+  "utf8"
+);
 
 test("RPC draft is schema-qualified, invoker-only, and does not read legacy graph", () => {
   assert.match(rpcSql, /create or replace function ypl_schema_validation\.create_normalized_single_bracket_runtime\(/i);
@@ -95,6 +99,16 @@ test("create persists ownership and the complete already-formed BYE closure", ()
   assert.match(create, /'single:r' \|\| round_no::text \|\| ':m' \|\| match_no::text/i);
   assert.match(create, /A BYE is not a Match/i);
   assert.doesNotMatch(create, /insert into ypl_schema_validation\.matches[\s\S]*future/i);
+});
+
+test("Single create keeps RPC-formed BYE Matches and skips generic sync", () => {
+  const singleCreateStart = bracketsPage.indexOf('if(b.mode==="single"&&!b.double)');
+  const genericCreateStart = bracketsPage.indexOf("let confirmation=null", singleCreateStart);
+  assert.ok(singleCreateStart >= 0 && genericCreateStart > singleCreateStart);
+  const singleCreate = bracketsPage.slice(singleCreateStart, genericCreateStart);
+  assert.match(singleCreate, /fetchNormalizedSingleBracketRuntime/);
+  assert.match(singleCreate, /beginNormalizedBracketDraw\(loaded\.bracket\)/);
+  assert.doesNotMatch(singleCreate, /syncNormalizedBracketMatches/);
 });
 
 test("delete contract is locked, fail-closed, submission-safe, and FK-order aware", () => {

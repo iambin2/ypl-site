@@ -653,7 +653,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-card-name{font-size:19px;font-weight:800;color:var(--navy);margin-bottom:5px;}
 .bk-card-meta{font-size:12.5px;color:var(--muted);}
 .bk-open-bar{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
-.bk-open-title{font-size:18px;font-weight:800;color:var(--navy);}
+.bk-open-title{font-size:18px;font-weight:800;color:var(--ink);}
 .bk-applybox{background:rgba(43,43,48,.04);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);}
 .bk-applybox b{color:var(--navy);}
 .bk-ab-meta{display:inline-block;align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:18px;background:rgba(107,107,115,.1);color:var(--cyan-d);margin-bottom:2px;}
@@ -676,12 +676,25 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .bk-exist.old{background:rgba(43,43,48,.08);color:var(--muted);}
 .bk-exist.new{background:transparent;color:#fff;}
 .bk-chg{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding:2px;}
-.bk-chg-row{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;}
-.bk-chg-row b{font-weight:700;color:var(--navy);font-size:14px;}
-.bk-chg-pts{display:flex;align-items:center;gap:5px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;margin-left:auto;}
+.bk-participant-confirm-list{grid-template-columns:1fr;max-height:360px;}
+.bk-participant-confirm-row{display:grid;grid-template-columns:28px 20px minmax(0,1fr) max-content max-content;align-items:center;column-gap:9px;}
+.bk-participant-name{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:keep-all;}
+.bk-participant-submission,.bk-participant-absent{margin:0;white-space:nowrap;}
+.bk-participant-submission.submitted{color:#18734a;font-weight:750;}
+.bk-participant-submission.missing{color:var(--muted2);}
+.bk-participant-added{grid-template-columns:28px minmax(0,1fr) auto;}
+.bk-participant-added input{min-width:0;}
+@media(max-width:620px){
+  .bk-participant-confirm-row{grid-template-columns:26px 18px minmax(0,1fr) max-content max-content;column-gap:7px;padding-left:9px;padding-right:9px;}
+  .bk-participant-submission,.bk-participant-absent{font-size:11px;}
+}
+
+.bk-chg-row{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;min-width:0;}
+.bk-chg-row b{flex:1;min-width:0;font-weight:700;color:var(--navy);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bk-chg-pts{display:flex;align-items:center;gap:5px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;margin-left:auto;flex:0 0 auto;white-space:nowrap;}
 .bk-chg-pts i{color:var(--muted2);font-style:normal;font-weight:600;}
-.bk-chg-d{flex:none;font-size:12px;font-weight:800;color:#fff;background:transparent;padding:2px 8px;border-radius:18px;}
-.bk-chg-cnt{flex:none;font-size:11px;font-weight:700;color:var(--cyan-d);background:rgba(107,107,115,.1);padding:2px 8px;border-radius:18px;}
+.bk-chg-d{flex:none;font-size:12px;font-weight:800;color:#fff;background:transparent;padding:2px 8px;border-radius:18px;min-width:34px;white-space:nowrap;}
+.bk-chg-cnt{flex:none;font-size:11px;font-weight:700;color:var(--cyan-d);background:rgba(107,107,115,.1);padding:2px 8px;border-radius:18px;white-space:nowrap;}
 .bk-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;}
 .bk-submission{margin:0 0 18px;border:1px solid var(--line);border-radius:14px;background:var(--s-soft);overflow:hidden;}
 .bk-submission-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:var(--navy);padding:12px 14px;text-align:left;cursor:pointer;font:inherit;}
@@ -928,7 +941,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .rankb,.bd-ava,.pr-n,.bk-pin-no,.bk-lu-no,.bk-chg-d,.r2-champ,.champ-tag{
   display:inline-flex;align-items:center;justify-content:center;
   line-height:1;text-align:center;box-sizing:border-box;}
-.rankb,.bd-ava,.pr-n,.bk-pin-no,.bk-lu-no,.bk-chg-d{flex:0 0 auto;padding:0;}
+.rankb,.bd-ava,.pr-n,.bk-pin-no,.bk-lu-no{flex:0 0 auto;padding:0;}
 .champ-tag{border:1px solid var(--line);background:var(--s-card);color:var(--muted);gap:6px;}
 .champ-tag b{color:var(--ac-text);}
 
