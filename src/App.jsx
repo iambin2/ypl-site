@@ -590,15 +590,17 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;transition:.16s;text-align:left;}
 .dd-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dd-btn.ph{color:var(--muted2);font-weight:500;}
-.dd-btn:hover{border-color:rgba(107,107,115,.45);}
+.dd-btn:hover:not(:disabled){border-color:rgba(107,107,115,.45);}
+.dd-btn:disabled{opacity:.56;cursor:not-allowed;background:var(--s-soft);}
 .dd.open .dd-btn{border-color:var(--cyan);background:var(--s-card);box-shadow:none;}
 .dd-chev{width:12px;height:8px;flex:none;color:var(--muted2);transition:transform .22s ease;}
 .dd.open .dd-chev{transform:rotate(180deg);color:var(--cyan-d);}
 .dd-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;background:var(--s-card);border:1px solid var(--line2);border-radius:18px;padding:6px;box-shadow:none;max-height:260px;overflow-y:auto;transform-origin:top center;animation:ddIn .16s cubic-bezier(.2,.8,.2,1);}
 @keyframes ddIn{from{opacity:0;transform:none scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
 .dd-opt{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--navy);text-align:left;padding:10px 12px;border-radius:12px;cursor:pointer;transition:.12s;}
-.dd-opt:hover{background:rgba(107,107,115,.09);color:var(--cyan-d);}
+.dd-opt:hover:not(:disabled){background:rgba(107,107,115,.09);color:var(--cyan-d);}
 .dd-opt.sel{background:rgba(107,107,115,.08);color:var(--cyan-d);}
+.dd-opt:disabled{opacity:.52;cursor:not-allowed;}
 .dd-tick{color:var(--cyan-d);font-weight:800;flex:none;}
 .dd-none{padding:12px;text-align:center;color:var(--muted2);font-size:13px;}
 .bk-cb-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center;}

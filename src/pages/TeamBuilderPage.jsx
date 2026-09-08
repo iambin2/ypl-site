@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Reveal } from "../components/index.js";
+import { Dropdown, Modal, Reveal } from "../components/index.js";
 import { CUP_RULES, KO, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
@@ -257,15 +257,15 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   let message;
   let icon;
   if (result.status === "invalid") {
-    title = "Team Invalid";
+    title = "규정 위반";
     message = `${result.errors.length}개의 규정 위반을 확인했습니다.`;
     icon = "×";
   } else if (result.status === "valid") {
-    title = "Team Valid";
+    title = "검증 통과";
     message = `${regulationName} · ${cupRuleSummary} 기준으로 로스터와 세팅의 최종 검증을 통과했습니다.`;
     icon = "✓";
   } else {
-    title = teamLength || configuredSpecialRule ? "Team Incomplete" : "팀을 구성해 주세요";
+    title = teamLength || configuredSpecialRule ? "미완성" : "팀을 구성해 주세요";
     message = teamLength || configuredSpecialRule
       ? "규정 위반은 확인되지 않았지만 최종 검증에 필요한 룰 설정 또는 팀 세팅이 아직 완료되지 않았습니다."
       : "포켓몬을 선택하고 각 포켓몬의 세팅을 완료해 주세요.";
@@ -346,7 +346,7 @@ function OfficialSubmissionPanel({
         </div>
       </div>
       {eventContext && <div className="tb-official-meta">
-        <span>{regulationName || eventContext.regulation_id || "Regulation 확인 필요"}</span>
+        <span>{regulationName || eventContext.regulation_id || "레귤레이션 확인 필요"}</span>
         <span>{cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음"}</span>
         {eventContext.submission_target_at && <span>권장 제출 시각 {new Date(eventContext.submission_target_at).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}</span>}
       </div>}
@@ -1123,39 +1123,35 @@ export default function TeamBuilderPage() {
       <Reveal className="tb-hero">
         <div>
           <span className="tb-kicker">YPL TOOLS</span>
-          <h1>Team Builder</h1>
+          <h1>팀 빌더</h1>
           <p>Pokémon Champions 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
         </div>
         <div className="tb-hero-actions">
           <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀 <span className="tb-count-badge">{savedTeams.length}</span></button>
-          <button className="btn tb-main-btn" disabled={!storageAvailable} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
+          <button className="btn tb-main-btn tb-save-btn" disabled={!storageAvailable} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
         </div>
       </Reveal>
 
       <Reveal className="tb-rule-card" delay={35}>
         <div className="tb-rule-grid">
           <label className="tb-field">
-            <span>Regulation{eventId ? " · Event 기준" : ""}</span>
-            <select className="tb-select" value={regulationId} onChange={event => switchRegulation(event.target.value)} disabled={Boolean(eventId)}>
-              {Object.values(REGULATIONS).map(reg => <option key={reg.id} value={reg.id}>{reg.name}{reg.status === "current" ? " · CURRENT" : ""}</option>)}
-            </select>
+            <span>레귤레이션{eventId ? " · Event 기준" : ""}</span>
+            <Dropdown className="tb-dd" value={regulationId} onChange={switchRegulation} disabled={Boolean(eventId)} ariaLabel="레귤레이션"
+              options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, label: reg.name + (reg.status === "current" ? " · 현행" : reg.status === "past" ? " · 이전" : "") }))} />
           </label>
           <label className="tb-field">
             <span>파이컵 추가 룰{eventId ? " · Event 기준" : ""}</span>
-            <select className="tb-select" value={cupRuleId} onChange={event => switchCupRule(event.target.value)} disabled={Boolean(eventId)}>
-              {Object.values(CUP_RULES).map(rule => <option key={rule.id} value={rule.id}>{rule.name}</option>)}
-            </select>
+            <Dropdown className="tb-dd" value={cupRuleId} onChange={switchCupRule} disabled={Boolean(eventId)} ariaLabel="파이컵 추가 룰"
+              options={Object.values(CUP_RULES).map(rule => ({ value: rule.id, label: rule.name }))} />
           </label>
           {cupRule.kind === "monotype" && <label className="tb-field">
-            <span>배정 타입{eventId ? " · Event 기준" : ""}</span>
-            <select className="tb-select" value={assignedTypeId} onChange={event => switchCupRuleType(event.target.value)}>
-              <option value="">타입을 선택하세요</option>
-              {TYPE_OPTIONS.map(type => <option key={type.id} value={type.id}>{type.korean} ({type.english})</option>)}
-            </select>
+            <span>지정 타입{eventId ? " · Event 기준" : ""}</span>
+            <Dropdown className="tb-dd" value={assignedTypeId} onChange={switchCupRuleType} placeholder="타입을 선택하세요" ariaLabel="지정 타입"
+              options={TYPE_OPTIONS.map(type => ({ value: type.id, label: `${type.korean} (${type.english})` }))} />
           </label>}
         </div>
         <div className="tb-rule-meta">
-          <span className={`tb-status-chip ${regulation.status}`}>{regulation.status === "current" ? "CURRENT" : "PAST"}</span>
+          <span className={`tb-status-chip ${regulation.status}`}>{regulation.status === "current" ? "현행" : "이전"}</span>
           <span>{regulation.period}</span>
           <span>{regulation.description}</span>
           {cupRule.kind !== "none" && <span>{cupRule.description}</span>}
@@ -1234,7 +1230,7 @@ export default function TeamBuilderPage() {
           <Reveal className="tb-panel" delay={75}>
             <div className="tb-panel-head tb-team-head">
               <div>
-                <span className="tb-panel-kicker">YOUR TEAM</span>
+                <span className="tb-panel-kicker">팀 구성</span>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
               </div>
               <div className="tb-team-meta"><strong>{team.length} / {regulation.maxTeamSize || 6}</strong></div>
@@ -1268,15 +1264,14 @@ export default function TeamBuilderPage() {
 
                 <div className="tb-editor-grid two">
                   <label className="tb-field"><span>특성</span>
-                    <select className="tb-select" value={selectedMember.ability || ""} disabled={!selectedDetails?.abilities?.length} onChange={event => updateMember(selectedMember.uid, { ability: event.target.value })}>
-                      {!selectedDetails?.abilities?.length && <option value="">{detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…"}</option>}
-                      {(selectedDetails?.abilities || []).map(ability => <option key={ability} value={ability}>{bilingualName(abilityName(ability), ability)}</option>)}
-                    </select>
+                    <Dropdown className="tb-dd" value={selectedMember.ability || ""} disabled={!selectedDetails?.abilities?.length}
+                      onChange={value => updateMember(selectedMember.uid, { ability: value })} ariaLabel="특성"
+                      placeholder={detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…"}
+                      options={(selectedDetails?.abilities || []).map(ability => ({ value: ability, label: bilingualName(abilityName(ability), ability) }))} />
                   </label>
                   <label className="tb-field"><span>성격</span>
-                    <select className="tb-select" value={selectedMember.alignment || "serious"} onChange={event => updateMember(selectedMember.uid, { alignment: event.target.value })}>
-                      {ALIGNMENTS.map(alignment => <option key={alignment.id} value={alignment.id}>{alignmentDisplay(alignment)}</option>)}
-                    </select>
+                    <Dropdown className="tb-dd" value={selectedMember.alignment || "serious"} onChange={value => updateMember(selectedMember.uid, { alignment: value })} ariaLabel="성격"
+                      options={ALIGNMENTS.map(alignment => ({ value: alignment.id, label: alignmentDisplay(alignment) }))} />
                   </label>
                 </div>
 
@@ -1383,7 +1378,7 @@ export default function TeamBuilderPage() {
         <button className="tb-modal-close" type="button" onClick={() => setLibraryOpen(false)} aria-label="내 팀 닫기">×</button>
         <div className="tb-library-save">
           <label className="tb-field"><span>현재 팀 저장</span><input className="tb-input tb-team-name" maxLength={40} value={saveName} onChange={event => setSaveName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(); } }} placeholder="팀 이름" /></label>
-          <div className="tb-library-save-meta"><span>{regulation.name} · {currentCupRuleSummary} · {team.length}/6마리</span><span>이 브라우저에 저장됩니다.</span><span>Incomplete / Invalid 팀도 초안 저장 가능</span></div>
+          <div className="tb-library-save-meta"><span>{regulation.name} · {currentCupRuleSummary} · {team.length}/6마리</span><span>이 브라우저에 저장됩니다.</span><span>미완성 / 규정 위반 팀도 초안 저장 가능</span></div>
           <div className="tb-library-save-row">
             <div className="tb-library-workspace-actions">
               <button className="btn btn-ghost btn-sm" disabled={!storageAvailable} onClick={startNewTeam}>새 팀</button>

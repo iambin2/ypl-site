@@ -50,7 +50,7 @@ export function DesktopNavigation({ view, onNavigate }) {
           aria-haspopup="menu"
           aria-expanded={toolsOpen}
         >
-          <span>도구</span><span className="nav-tools-chevron" aria-hidden="true">⌄</span>
+          <span>도구</span><span className="nav-tools-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
         </button>
         <div className="nav-tools-menu" role="menu" aria-hidden={!toolsOpen}>
           {TOOL_ITEMS.map(([key, label]) => (
@@ -91,7 +91,7 @@ export function MobileNavigation({ view, onNavigate, open }) {
         onClick={() => setToolsOpen(value => !value)}
         aria-expanded={toolsOpen}
       >
-        <span>도구</span><span className="nav-tools-chevron" aria-hidden="true">⌄</span>
+        <span>도구</span><span className="nav-tools-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
       </button>
       <div className={"nav-tools-mobile-menu" + (toolsOpen ? " open" : "")}>
         {TOOL_ITEMS.map(([key, label]) => (

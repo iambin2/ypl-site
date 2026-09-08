@@ -101,11 +101,22 @@ function FormBuilder({ form, setForm }){
   const move=(i,d)=>{ const j=i+d; if(j<0||j>=fields.length)return; const a=[...fields]; [a[i],a[j]]=[a[j],a[i]]; setFields(a); };
   const changeType=(f,v)=>patch(f.id,{type:v,options:isChoice(v)?((f.options&&f.options.length)?f.options:["옵션 1"]):[]});
   const eventDraft=form?.eventDraft||{};
-  const isChampions=eventDraft.eventType==="champions";
+  const eventTypeValue=eventDraft.eventType||"pokecup";
+  const legacyLightEvent=eventTypeValue==="light";
+  const eventTypeOptions=[
+    ...(legacyLightEvent?[{value:"light",label:`${getApplicationEventTypeLabel("light")} · 기존`,disabled:true}]:[]),
+    {value:"pokecup",label:getApplicationEventTypeLabel("pokecup")},
+    {value:"champions",label:getApplicationEventTypeLabel("champions")},
+  ];
+  const isChampions=eventTypeValue==="champions";
   const isTeamEvent=!isChampions&&Boolean(eventDraft.isTeamEvent);
   const divisionOptions=getApplicationEventDivisionOptions(isTeamEvent);
   const divisionValue=normalizeApplicationEventDivision(eventDraft.division,isTeamEvent,{preserveLegacy:Boolean(form?.eventId)});
   const hasLegacyDivision=!divisionOptions.includes(divisionValue);
+  const divisionDropdownOptions=[
+    ...(hasLegacyDivision?[{value:"__legacy__",label:"기존 미분류",disabled:true}]:[]),
+    ...divisionOptions.map(value=>({value,label:value[0].toUpperCase()+value.slice(1)})),
+  ];
   return (<div className="fb-wrap">
     <label className="bk-check" style={{marginBottom:enabled?15:0}}>
       <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
@@ -117,14 +128,14 @@ function FormBuilder({ form, setForm }){
         <div className="fb-q-top"><strong>대회 연결 설정</strong></div>
         <div className="fb-note" style={{marginBottom:12}}>참가자 이름은 신청 화면에서 시스템 필드로 별도 입력받습니다. 아래 설정은 이 신청서와 연결되는 Event의 공통 규칙입니다.</div>
         <div className="field"><label>대회명</label><input value={(form?.eventDraft?.name)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),name:e.target.value}})} placeholder="예: 제1회 정규 파이컵 A"/></div>
-        <div className="field"><label>대회 종류</label><select value={(form?.eventDraft?.eventType)||"pokecup"} onChange={e=>{const eventType=e.target.value;patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}});}}>{["pokecup","light","champions"].map(value=><option key={value} value={value}>{getApplicationEventTypeLabel(value)}</option>)}</select></div>
-        <div className="field"><label>구분</label>{isChampions?<div className="bk-hint">해당 없음 · Champions canonical division은 비어 있는 값으로 고정됩니다.</div>:<select value={hasLegacyDivision?"__legacy__":divisionValue} onChange={e=>patchForm({eventDraft:{...eventDraft,division:e.target.value}})}>{hasLegacyDivision&&<option value="__legacy__" disabled>기존 미분류</option>}{divisionOptions.map(value=><option key={value} value={value}>{value[0].toUpperCase()+value.slice(1)}</option>)}</select>}</div>
-        <div className="field"><label>참가 단위</label><select value={isTeamEvent?"team":"individual"} disabled={isChampions} onChange={e=>{const nextTeam=e.target.value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}}><option value="individual">개인전{isChampions?" · 고정":""}</option><option value="team">팀전</option></select></div>
-        <div className="field"><label>배틀 형식</label><select value={(form?.eventDraft?.battleFormat)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:e.target.value||null}})}><option value="">선택</option><option value="singles">싱글</option><option value="doubles">더블</option></select></div>
-        <div className="field"><label>대진 방식</label>{isChampions?<div className="bk-applybox"><div><b>선발전</b> · {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} · 고정</div><div><b>본선</b> · {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} · 고정</div></div>:<select value={(form?.eventDraft?.competitionFormat)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:e.target.value||null}})}><option value="">선택</option><option value="double_elimination">더블 엘리미네이션</option><option value="single_elimination">싱글 엘리미네이션</option><option value="round_robin">리그전</option></select>}</div>
+        <div className="field"><label>대회 종류</label><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></div>
+        <div className="field"><label>구분</label>{isChampions?<div className="bk-hint">해당 없음 · Champions canonical division은 비어 있는 값으로 고정됩니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
+        <div className="field"><label>참가 단위</label><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" · 고정":""}`},{value:"team",label:"팀전"}]}/></div>
+        <div className="field"><label>배틀 형식</label><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></div>
+        <div className="field"><label>대진 방식</label>{isChampions?<div className="bk-applybox"><div><b>선발전</b> · {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} · 고정</div><div><b>본선</b> · {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} · 고정</div></div>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</div>
         {isChampions&&<div className="field"><label>본선 정원</label><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8"/><div className="fb-note" style={{marginTop:6}}>회차는 이전 챔피언스 회차를 기준으로 자동 배정됩니다.</div></div>}
-        <div className="field"><label>Regulation</label><select value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:e.target.value}})}>{Object.values(REGULATIONS).map(reg=><option key={reg.id} value={reg.id}>{reg.name}</option>)}</select></div>
-        <div className="field"><label>파이컵 추가 룰</label><select value={(form?.eventDraft?.cupRuleId)||"none"} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:e.target.value}})}>{Object.values(CUP_RULES).map(rule=><option key={rule.id} value={rule.id}>{rule.name}</option>)}</select></div>
+        <div className="field"><label>레귤레이션</label><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></div>
+        <div className="field"><label>파이컵 추가 룰</label><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></div>
         <div className="field"><label>기록 표시 룰 <span className="fb-note">(선택 · 자유입력)</span></label><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></div>
         {isChampions? <>
           <div className="bk-grow2">

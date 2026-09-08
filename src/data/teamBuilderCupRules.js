@@ -35,7 +35,7 @@ export const CUP_RULES = {
     name: '모노타입 챌린지',
     shortName: '모노타입',
     kind: 'monotype',
-    description: '룰렛으로 배정받은 타입을 하나 이상 가진 포켓몬만 파티에 넣을 수 있습니다.',
+    description: '대회에서 지정된 타입을 하나 이상 가진 포켓몬만 파티에 넣을 수 있습니다.',
     selector: {
       id: 'assignedType',
       label: '배정 타입',

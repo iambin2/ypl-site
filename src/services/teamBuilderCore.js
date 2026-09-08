@@ -675,7 +675,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
       }
     }
 
-    // Team Valid는 '규정 위반 없음'이 아니라 제출 가능한 세팅까지 완료된 상태에만 사용한다.
+    // 검증 통과는 '규정 위반 없음'이 아니라 제출 가능한 세팅까지 완료된 상태에만 사용한다.
     if (selectedMoves.length < 4) {
       incomplete.push(`${display(member.pokemon)}의 기술이 ${selectedMoves.length}/4개 설정되었습니다.`);
     }

@@ -1,6 +1,6 @@
 /* Team Builder: scoped to .tb-page, aligned to the existing YPL design tokens. */
 .tb-page{padding:56px 0 96px;}
-.tb-page button,.tb-page input,.tb-page select{font:inherit;}
+.tb-page button,.tb-page input{font:inherit;}
 .tb-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-bottom:24px;padding:8px 2px 2px;}
 .tb-kicker,.tb-panel-kicker{display:block;font-size:10.5px;font-weight:800;letter-spacing:.13em;margin-bottom:7px;}
 .tb-kicker,.tb-panel-kicker{color:var(--muted2);}
@@ -9,6 +9,10 @@
 .tb-hero-actions{display:flex;gap:9px;flex:none;}
 .tb-main-btn{background:var(--s-deep);color:#fff;border-color:var(--s-deep);}
 .tb-main-btn:hover{filter:brightness(1.08);}
+.tb-hero-actions .tb-save-btn{background:var(--ac-hover);border-color:var(--ac-hover);}
+.tb-hero-actions .tb-save-btn:hover:not(:disabled){background:var(--ac-hover);border-color:var(--ac-hover);filter:brightness(1.08);}
+.tb-hero-actions .tb-save-btn:active:not(:disabled){background:var(--ac-fill);border-color:var(--ac-fill);filter:none;}
+.tb-hero-actions .tb-save-btn:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--ac-hover) 28%,transparent);}
 .tb-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:rgba(107,107,115,.1);font-size:11px;}
 
 .tb-rule-card,.tb-panel{background:var(--s-card);border:1px solid var(--line2);border-radius:22px;box-shadow:none;}
@@ -16,10 +20,10 @@
 .tb-rule-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;}
 .tb-field{display:flex;flex-direction:column;gap:7px;min-width:0;}
 .tb-field>span{font-size:12px;font-weight:750;color:var(--muted);}
-.tb-input,.tb-select{width:100%;min-height:44px;border:1px solid var(--line2);background:var(--s-card);color:var(--text);border-radius:13px;padding:10px 12px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s,color .18s;}
-.tb-input:hover:not(:disabled),.tb-select:hover:not(:disabled){border-color:var(--cyan);background:var(--s-card);}
-.tb-input:focus,.tb-select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(107,107,115,.08);}
-.tb-input:disabled,.tb-select:disabled{opacity:.56;cursor:not-allowed;background:var(--s-soft);}
+.tb-input,.tb-field .tb-dd .dd-btn{width:100%;min-height:44px;border:1px solid var(--line2);background:var(--s-card);color:var(--text);border-radius:13px;padding:10px 12px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s,color .18s;}
+.tb-input:hover:not(:disabled),.tb-field .tb-dd .dd-btn:hover:not(:disabled){border-color:var(--cyan);background:var(--s-card);}
+.tb-input:focus,.tb-field .tb-dd .dd-btn:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(107,107,115,.08);}
+.tb-input:disabled,.tb-field .tb-dd .dd-btn:disabled{opacity:.56;cursor:not-allowed;background:var(--s-soft);}
 .tb-field>span{transition:color .16s;}
 .tb-field:focus-within>span,.tb-field:hover>span{color:var(--text);}
 .tb-input.invalid{border-color:var(--danger);box-shadow:0 0 0 3px rgba(178,62,62,.08);}
@@ -234,5 +238,5 @@
 
 /* 6.4 interaction polish: keyboard/touch behavior stays primary; hover is a desktop enhancement only. */
 @media (hover:hover) and (pointer:fine){
-  .tb-rule-card .tb-field:hover .tb-select,.tb-editor .tb-field:hover .tb-select,.tb-editor .tb-field:hover .tb-input{border-color:var(--cyan);}
+  .tb-rule-card .tb-field:hover .tb-dd .dd-btn,.tb-editor .tb-field:hover .tb-dd .dd-btn,.tb-editor .tb-field:hover .tb-input{border-color:var(--cyan);}
 }

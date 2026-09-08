@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Reveal, StandTable } from "../components/index.js";
+import { Dropdown, Reveal, StandTable } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
@@ -188,16 +188,17 @@ function TrainerView({ snapshot }) {
       <div className="records-profile">
         <div className="panel records-profile-hero">
           <div className="records-profile-head">
-            <div>
+            <div className="records-profile-identity">
               <span className="records-eyebrow">YPL TRAINER</span>
-              <h3>{profile.name}</h3>
+              <h3 className="records-profile-name">{profile.name}</h3>
             </div>
-            <select value={season} onChange={(e) => setSeason(e.target.value)} aria-label="시즌 필터">
-              <option value="">전체 기록</option>
-              {snapshot.seasons.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
+            <Dropdown
+              className="records-season-filter records-profile-filter"
+              value={season}
+              onChange={setSeason}
+              ariaLabel="시즌 필터"
+              options={[{ value: "", label: "전체 기록" }, ...snapshot.seasons.map((name) => ({ value: name, label: name }))]}
+            />
           </div>
 
           <div className="records-stat-grid">
@@ -443,7 +444,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
                 </span>}
                 {individualResults()}
               </div>
-              <span className="records-round-chevron" aria-hidden="true">{expanded ? "⌃" : "⌄"}</span>
+              <span className="records-round-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             </button>
           ) : <>
           {(showCompetition || rl || rule || r.team || championshipEmphasis || r.season) && <div className="r2-head">
@@ -593,7 +594,7 @@ function PokemonView({ snapshot }) {
       <div className="records-profile">
         <section className="panel records-profile-hero">
           <span className="records-eyebrow">YPL ENTRY RECORD</span>
-          <h3>{current.name}</h3>
+          <h3 className="records-profile-name">{current.name}</h3>
           <div className="records-stat-grid pokemon">
             <Stat label="등록 엔트리" value={current.entries} suffix="회" />
             <Stat label="엔트리 채용률" value={current.entryRate.toFixed(1)} suffix="%" />
