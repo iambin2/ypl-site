@@ -67,7 +67,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"ann"})}>+ 공지 작성</button></div>}
     </Reveal>
     <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
-    <Reveal className="panel" style={{padding:"4px 22px"}}>
+    <Reveal className="nb-list">
       {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
       {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id]; const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
         return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
@@ -76,7 +76,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
               <span className="nb-title">{a.title}</span>
               <span className="nb-meta"><span className="nb-date tnum">{a.date}</span>{a.pinned&&<span className="pin">고정</span>}</span>
             </span>
-            <span className="nb-chev" aria-hidden="true">▾</span>
+            <span className="nb-chev" aria-hidden="true"><Icon n="chev" size={15}/></span>
           </button>
           {hasLink&&<div className="nb-links">
             {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={14}/></a>}

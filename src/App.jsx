@@ -1768,7 +1768,211 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .nav-drawer{z-index:95;}
 .ypl .wrap{z-index:1;}
 
-/* ── 9) 눌림 피드백 ── */
+/* ── 9) 칭호: 왼쪽 그룹 머리 + 오른쪽 장부형 목록 ── */
+.ypl .tgroup{display:grid;grid-template-columns:300px minmax(0,1fr);gap:40px;
+  margin:0;padding:36px 0;border-top:1px solid var(--ln-1);}
+.ypl .tgroup:first-of-type{border-top:0;padding-top:8px;}
+.ypl .tgroup-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;align-content:flex-start;}
+.ypl .tgroup-head .ic-box{order:1;}
+.ypl .tgroup-head h3{order:2;font-size:21px;font-weight:800;letter-spacing:-.02em;margin:0;}
+.ypl .tgroup-head .cnt{order:3;}
+.ypl .tgroup-head .gdesc{order:4;flex:0 0 100%;min-width:0;margin:2px 0 0 52px;
+  font-size:14px;line-height:1.5;color:var(--t-4);}
+.ypl .tgroup-head .btn{order:5;margin:12px 0 0 52px;}
+.ypl .tgroup .grid.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 28px;}
+.ypl .tgroup .titem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;
+  align-items:center;min-height:52px;padding:12px 2px;
+  background:none;border:0;border-bottom:1px solid var(--ln-1);border-radius:0;}
+.ypl.dark .tgroup .titem,.ypl.dark .tgroup .titem.empty{background:none;border-color:transparent;
+  border-bottom:1px solid var(--ln-1);}
+.ypl .tgroup .titem:hover{background:none;border-color:var(--ln-1);}
+.ypl .tgroup .titem.empty{opacity:1;}
+.ypl .tgroup .titem .tn{grid-column:1;grid-row:1;font-size:15px;font-weight:700;color:var(--t-1);}
+.ypl .tgroup .titem.empty .tn{color:var(--t-5);font-weight:600;}
+.ypl .tgroup .titem .td{grid-column:1;grid-row:2;font-size:12.5px;line-height:1.5;color:var(--t-5);margin:0;}
+.ypl .tgroup .titem .hold{grid-column:2;grid-row:1/3;align-self:center;justify-content:flex-end;margin:0;}
+.ypl .tgroup .titem .none{font-style:normal;font-size:13px;color:var(--t-5);}
+.ypl .tgroup .titem .tn,.ypl .tgroup .titem .td{word-break:keep-all;}
+.ypl .tgroup .titem .hold{min-width:0;flex-wrap:wrap;}
+.ypl .tgroup .titem .holder{white-space:nowrap;}
+.ypl .tg-partner .titem{grid-template-columns:minmax(0,auto) minmax(0,1fr);}
+.ypl .tgroup .titem .edit-row{grid-column:1/-1;margin-top:6px;}
+/* 역대 챔피언은 카드 한 줄 */
+.ypl .tg-champion .grid.g3{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+.ypl .tg-champion .titem{display:block;min-height:0;padding:16px;border:1px solid var(--ln-1);
+  border-radius:12px;background:var(--s-card);}
+.ypl.dark .tg-champion .titem{background:var(--s-card);border-color:transparent;border-bottom-color:transparent;}
+.ypl .tg-champion .titem .hold{margin-top:10px;justify-content:flex-start;}
+/* 파트너는 두 칸, 기타 칭호는 한 칸에 넓게 */
+.ypl .tg-partner .grid.g3{grid-template-columns:repeat(2,minmax(0,1fr));}
+.ypl .tg-etc .grid.g3{grid-template-columns:minmax(0,1fr);}
+.ypl .tg-etc .titem{grid-template-columns:220px minmax(0,1fr);align-items:start;padding:14px 2px;}
+.ypl .tg-etc .titem .hold{justify-content:flex-start;}
+@media(max-width:900px){
+  .ypl .tgroup{grid-template-columns:1fr;gap:16px;}
+  .ypl .tgroup .grid.g3,.ypl .tg-partner .grid.g3{grid-template-columns:minmax(0,1fr);}
+  .ypl .tg-champion .grid.g3{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ypl .tg-etc .titem{grid-template-columns:minmax(0,1fr);}
+  .ypl .tgroup-head .gdesc,.ypl .tgroup-head .btn{margin-left:0;}
+}
+
+/* ── 10) 명예의 전당: 남색 면 대신 테두리 카드, 현 챔피언만 강조 ── */
+.ypl .hof-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.ypl .hof-btn{background:var(--s-card);border:1px solid var(--ln-1);border-radius:12px;
+  padding:26px 22px 22px;box-shadow:none;}
+.ypl.dark .hof-btn{background:var(--s-card);border-color:transparent;}
+.ypl .hof-btn:hover{background:var(--s-soft);border-color:var(--ln-2);box-shadow:none;}
+.ypl.dark .hof-btn:hover{background:var(--s-soft);border-color:transparent;}
+.ypl .hof-tile.now .hof-btn{border-color:var(--ac-text);}
+.ypl.dark .hof-tile.now .hof-btn{border-color:var(--ac-text);}
+.ypl .hof-gen{font-size:13px;font-weight:700;color:var(--t-5);margin-top:10px;}
+.ypl .hof-nm{font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--t-1);margin:4px 0 0;}
+.ypl .hof-tile.now .hof-nm{color:var(--ac-text);}
+.ypl .hof-season{font-size:12.5px;font-weight:700;color:var(--t-5);letter-spacing:.08em;margin-top:6px;}
+.ypl .hof-cta{margin-top:16px;padding:8px 12px;border:1px solid var(--ln-1);border-radius:8px;
+  background:var(--s-card);color:var(--ac-text);font-size:13px;font-weight:700;
+  display:inline-flex;align-items:center;gap:6px;}
+.ypl.dark .hof-cta{background:var(--s-soft);border-color:transparent;}
+@media(max-width:820px){ .ypl .hof-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media(max-width:560px){ .ypl .hof-grid{grid-template-columns:minmax(0,1fr);} }
+
+/* ── 11) 공지 · 게시판: 카드 대신 구분선 목록 ── */
+.ypl .nb-list{border-top:1px solid var(--ln-1);}
+.ypl .nb-item{border-bottom:1px solid var(--ln-1);}
+.ypl .nb-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px;
+  align-items:center;padding:16px 4px;}
+.ypl .nb-head:hover{background:var(--s-soft);}
+.ypl .nb-main{display:contents;}
+.ypl .nb-title{grid-column:1;font-size:16.5px;font-weight:700;letter-spacing:-.01em;}
+.ypl .nb-meta{grid-column:2;gap:8px;}
+.ypl .nb-date{font-size:13.5px;font-weight:600;color:var(--t-5);}
+.ypl .nb-chev{grid-column:3;display:inline-flex;color:var(--t-5);font-size:0;}
+.ypl .nb-item.open .nb-chev{color:var(--ac-text);}
+.ypl .nb-links,.ypl .ann-formbtns{padding-left:4px;padding-right:4px;}
+.ypl .nb-body{padding:2px 4px 24px;}
+
+.ypl .bd-list{display:block;border-top:1px solid var(--ln-1);}
+.ypl .bd-item{background:none;border:0;border-bottom:1px solid var(--ln-1);border-radius:0;overflow:visible;}
+.ypl.dark .bd-item,.ypl.dark .bd-item.secret{background:none;border-color:transparent;
+  border-bottom:1px solid var(--ln-1);}
+.ypl .bd-item.secret{background:none;}
+.ypl .bd-head{padding:16px 4px;}
+.ypl .bd-head:hover{background:var(--s-soft);}
+.ypl .bd-title{font-size:16.5px;}
+.ypl .bd-cc{background:none;color:var(--t-5);padding:0;display:inline-flex;align-items:center;gap:5px;}
+.ypl .bd-chev,.ypl .bd-head .nb-chev{color:var(--t-5);}
+.ypl .bd-open{padding:4px 4px 24px;border-top:0;}
+.ypl .bd-empty{background:none;border:1px dashed var(--ln-2);}
+
+/* ── 12) 기록: 대회 목록도 같은 구분선 규칙 ── */
+.ypl .records-archive-list{gap:0;border-top:1px solid var(--ln-1);}
+.ypl .records-archive-card{background:none;border:0;border-bottom:1px solid var(--ln-1);
+  border-radius:0;overflow:visible;}
+.ypl.dark .records-archive-card{background:none;border-color:transparent;
+  border-bottom:1px solid var(--ln-1);}
+.ypl .records-archive-main{padding:16px 4px;}
+.ypl .records-archive-main:hover{background:var(--s-soft);}
+.ypl .records-archive-detail{padding:0 4px 18px;}
+.ypl .records-tour-panel{background:none;border:0;}
+.ypl.dark .records-tour-panel{background:none;}
+.ypl .records-tour-head{padding:20px 4px 14px;}
+.ypl .records-tour-body{padding:0;}
+
+/* ── 13) 랭킹 표: 면 없이 숫자와 선으로 ── */
+.ypl .tbl th{text-transform:none;letter-spacing:.01em;font-size:12.5px;font-weight:700;
+  color:var(--t-5);border-bottom:1px solid var(--ln-1);padding:12px 8px 10px;}
+.ypl .tbl td{border-bottom:1px solid var(--ln-1);padding:13px 8px;}
+.ypl .tbl tbody tr:hover{background:var(--s-soft);}
+.ypl .rankb{width:auto;min-width:22px;height:auto;background:none;border-radius:0;
+  font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--t-5);justify-content:flex-start;}
+.ypl .rankb.r1{background:none;color:var(--gold);}
+.ypl .rankb.r2,.ypl .rankb.r3{background:none;color:var(--t-5);}
+.ypl.dark .rankb,.ypl.dark .rankb.r1,.ypl.dark .rankb.r2,.ypl.dark .rankb.r3{background:none;}
+.ypl.dark .rankb.r1{color:var(--gold);}
+
+/* ── 14) 소개: 카드 대신 괘선으로 나눈 단과 목록 ── */
+.ypl .flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;
+  border-top:1px solid var(--ln-1);border-bottom:1px solid var(--ln-1);margin:0 0 8px;}
+.ypl .flow-step{flex:none;background:none;border:0;border-left:1px solid var(--ln-1);
+  border-radius:0;padding:22px 24px;}
+.ypl .flow-step:first-of-type{border-left:0;padding-left:4px;}
+.ypl.dark .flow-step{background:none;border-color:transparent;border-left:1px solid var(--ln-1);}
+.ypl.dark .flow-step:first-of-type{border-left:0;}
+.ypl .flow-step:hover{background:none;border-color:var(--ln-1);box-shadow:none;}
+.ypl .flow-arw{display:none;}
+.ypl .flow-n{width:28px;height:28px;border-radius:8px;background:var(--s-soft2);color:var(--ac-text);
+  font-size:13px;font-weight:800;}
+.ypl .flow-step.last .flow-n{background:var(--ac-fill);color:#FFFFFF;}
+.ypl .flow-t{font-size:17px;font-weight:800;letter-spacing:-.015em;margin:14px 0 4px;}
+.ypl .flow-d{font-size:14px;color:var(--t-4);}
+
+.ypl .rec-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.ypl .rec-card{text-align:left;padding:20px;border-radius:12px;}
+.ypl .rec-ico{margin:0 0 12px;width:34px;height:34px;}
+.ypl .rec-t{font-size:19px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;}
+.ypl .rec-d{font-size:14px;line-height:1.6;color:var(--t-4);}
+
+.ypl .timeline{display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 32px;margin:14px 0 6px;}
+.ypl .tl-item{display:contents;}
+.ypl .tl-date{grid-column:1;padding:16px 0;border-bottom:1px solid var(--ln-1);
+  font-size:14px;font-weight:700;color:var(--ac-text);letter-spacing:.02em;}
+.ypl .tl-title{grid-column:2;padding:16px 0 0;font-size:16.5px;font-weight:800;
+  letter-spacing:-.01em;color:var(--t-1);margin:0;}
+.ypl .tl-body{grid-column:2;padding:4px 0 16px;border-bottom:1px solid var(--ln-1);
+  font-size:14.5px;line-height:1.6;color:var(--t-4);max-width:70ch;}
+
+.ypl .comp{padding:20px;}
+.ypl .comp .comp-top{height:auto;}
+.ypl .comp .ribbon{font-size:12.5px;font-weight:700;padding:0;background:none !important;
+  color:var(--ac-text) !important;}
+.ypl .comp h3{margin:8px 0 0;font-size:19px;font-weight:800;letter-spacing:-.01em;}
+.ypl .comp p{margin:8px 0 0;font-size:14px;line-height:1.6;color:var(--t-4);}
+
+.ypl .lg2{background:var(--s-card);border:1px solid var(--ln-1);border-radius:12px;
+  padding:22px 24px;text-align:left;color:var(--t-1);}
+.ypl.dark .lg2,.ypl.dark .lg2.master,.ypl.dark .lg2.rookie{background:var(--s-card);border-color:transparent;}
+.ypl .lg2.master,.ypl .lg2.rookie{background:var(--s-card);}
+.ypl .lg2:hover{border-color:var(--ln-2);box-shadow:none;}
+.ypl .lg2 .lg2-tier{display:block;margin:0;padding:0;background:none;color:var(--t-5);
+  font-size:12.5px;font-weight:700;letter-spacing:.06em;}
+.ypl .lg2 h3{margin:6px 0 0;font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--t-1);}
+.ypl .lg2 .en{font-size:11.5px;letter-spacing:.2em;color:var(--t-5);margin-top:2px;}
+.ypl .lg2 p{margin:10px 0 0;max-width:none;font-size:14.5px;line-height:1.6;color:var(--t-4);}
+@media(max-width:820px){
+  .ypl .flow{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ypl .flow-step:nth-child(odd){border-left:0;padding-left:4px;}
+  .ypl .flow-step:nth-child(n+3){border-top:1px solid var(--ln-1);}
+  .ypl .rec-grid{grid-template-columns:minmax(0,1fr);}
+  .ypl .timeline{grid-template-columns:minmax(0,1fr);gap:0;}
+  .ypl .tl-date{grid-column:1;border-bottom:0;padding:16px 0 0;}
+  .ypl .tl-title,.ypl .tl-body{grid-column:1;}
+}
+
+/* ── 15) 기록: 통계도 괘선으로 나눈 한 줄 ── */
+.ypl .records-stat-grid{gap:0;border-top:1px solid var(--ln-1);border-bottom:1px solid var(--ln-1);}
+.ypl .records-stat{background:none;border:0;border-left:1px solid var(--ln-1);border-radius:0;
+  padding:20px 22px 18px;}
+.ypl .records-stat:first-child{border-left:0;padding-left:4px;}
+.ypl.dark .records-stat{background:none;border-color:transparent;border-left:1px solid var(--ln-1);}
+.ypl.dark .records-stat:first-child{border-left:0;}
+.ypl .records-stat span{order:2;font-size:13px;font-weight:600;color:var(--t-4);margin:8px 0 0;}
+.ypl .records-stat b{order:1;font-size:40px;font-weight:800;letter-spacing:-.03em;color:var(--t-1);line-height:1;}
+.ypl .records-stat small{font-size:16px;font-weight:600;color:var(--t-5);}
+.ypl .records-stat{display:flex;flex-direction:column;}
+.ypl .records-profile-hero{padding:0;background:none;border:0;}
+.ypl.dark .records-profile-hero{background:none;}
+.ypl .records-coverage{background:none;border:0;border-bottom:1px solid var(--ln-1);
+  border-radius:0;padding:0 4px 18px;}
+.ypl.dark .records-coverage{background:none;}
+.ypl .records-block{background:none;border:0;padding:0;}
+.ypl.dark .records-block{background:none;}
+.ypl .records-block-head{padding-bottom:12px;border-bottom:1px solid var(--ln-1);margin-bottom:0;}
+@media(max-width:640px){
+  .ypl .records-stat{border-left:0;padding:16px 4px;border-top:1px solid var(--ln-1);}
+  .ypl .records-stat:first-child{border-top:0;}
+}
+
+/* ── 16) 눌림 피드백 ── */
 .ypl .btn:active,.ypl .subtab:active,.ypl .pg-btn:active,.ypl .nav-discord:active,
 .ypl .ann-apply:active,.ypl .ann-link:active{transform:translateY(1px) !important;}
 `;

@@ -54,7 +54,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"champion"})}>+ 레거시 챔피언 추가</button></div>}
     </Reveal>
     <div className="hof-grid">{champs.map((c,i)=>(
-      <Reveal key={c.id} delay={(i%2)*70} className="hof-tile">
+      <Reveal key={c.id} delay={(i%2)*70} className={"hof-tile"+(i===champs.length-1?" now":"")}>
         <button className="hof-btn" onClick={()=>setPop(c)} aria-label={c.name+" 우승 엔트리 보기"}>
           <span className="hof-crown"><Icon n="crown" size={22}/></span>
           <span className="hof-gen">{c.kind === "normalized" ? c.gen : legacyChampionLabel(c.gen)}</span>

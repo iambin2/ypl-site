@@ -10,7 +10,7 @@ export default function TitlesPage({ data, admin, setModal }) {
     <Reveal className="sec-head"><h2>칭호</h2>
       <p className="sub">특정 조건을 달성한 트레이너에게 주어지는 명예의 칭호 목록입니다.</p>
     </Reveal>
-    {data.titleGroups.map((g,gi)=>(<div className="tgroup" key={g.id}>
+    {data.titleGroups.map((g,gi)=>(<div className={"tgroup tg-"+g.key} key={g.id}>
       <Reveal className="tgroup-head"><span className="ic-box"><Icon n={GROUP_ICON[g.key]||"medal"} size={19}/></span><h3>{g.name}</h3><span className="cnt tnum">{g.items.length}</span><span className="gdesc">{g.desc}</span>{admin&&<button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"title",groupKey:g.key})}>+ 추가</button>}</Reveal>
       <div className="grid g3">{g.items.map((it,i)=>{const mon=g.key==="partner";const empty=(it.holders||[]).length===0;return (
         <Reveal key={it.id} delay={(i%3)*60} className={"titem"+(empty&&!mon?" empty":"")}>

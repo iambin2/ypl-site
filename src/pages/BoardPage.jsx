@@ -98,7 +98,7 @@ export default function BoardPage({ data, admin, save, flash }){
               <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
             </span>
             <span className="bd-cc"><Icon n="msg" size={13}/> {cc}</span>
-            <span className="nb-chev" aria-hidden="true">▾</span>
+            <span className="nb-chev" aria-hidden="true"><Icon n="chev" size={15}/></span>
           </button>
           {isOpen&&<div className="bd-open swap">
             {p.body&&<div className="bd-body">{p.body}</div>}
