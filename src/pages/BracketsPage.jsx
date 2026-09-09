@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Dropdown, Modal, Reveal } from "../components/index.js";
+import { Dropdown, Icon, Modal, Reveal } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
@@ -89,12 +89,16 @@ function bkRR(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,
 function bkSpaced(ctx,text,cx,y,sp){ ctx.save(); ctx.textAlign="left"; const ws=[...text].map(ch=>ctx.measureText(ch).width+sp); const tot=ws.reduce((a,c)=>a+c,0)-sp; let x=cx-tot/2; for(let i=0;i<text.length;i++){ ctx.fillText(text[i],x,y); x+=ws[i]; } ctx.restore(); }
 function bkClip(ctx,t,max){ if(ctx.measureText(t).width<=max)return t; let s=t; while(s.length>1&&ctx.measureText(s+"…").width>max)s=s.slice(0,-1); return s+"…"; }
 const BKF='"Wanted Sans Variable", "Wanted Sans", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+/* 워드마크만 사이트와 같은 Anton을 쓴다. 나머지 모든 글자는 본문 서체 하나로 통일. */
+const BKM='Anton, sans-serif';
+async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await document.fonts.load('400 40px Anton'); await document.fonts.ready; } }catch(e){} }
 /* 이미지 저장용 브랜드 색 — 사이트 디자인 토큰과 동일 */
 const BKC={ navy:"#1B3F86", navyH:"#24509F", ink:"#0D0D0D", t2:"#2C3444",
             t4:"#4E5666", t5:"#6B7383", line:"#E5E8EF", line2:"#D3D9E4",
             soft:"#F5F7FB", soft2:"#EFF3FA", card:"#FFFFFF", white:"#FFFFFF" };
 
-function downloadChampionPng(b,res,nameOf){
+async function downloadChampionPng(b,res,nameOf){
+  await bkFonts();
   const S=2,W=1200,H=820; const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
   const ctx=cv.getContext("2d"); ctx.scale(S,S);
 
@@ -103,9 +107,8 @@ function downloadChampionPng(b,res,nameOf){
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; bkRR(ctx,40,40,W-80,H-80,28); ctx.stroke();
 
   ctx.textAlign="center";
-  // 브랜드 액센트 바 + 워드마크
-  bkRR(ctx,W/2-32,92,64,6,3); ctx.fillStyle=BKC.navy; ctx.fill();
-  ctx.fillStyle=BKC.navy; ctx.font=`800 32px ${BKF}`; bkSpaced(ctx,"YPL",W/2,150,10);
+  // 워드마크 (사이트 로고와 같은 Anton)
+  ctx.fillStyle=BKC.navy; ctx.font=`400 40px ${BKM}`; bkSpaced(ctx,"YPL",W/2,152,6);
   ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`; bkSpaced(ctx,"POKEMON CENTER YONSEI",W/2,178,3);
 
   // CHAMPION 라벨
@@ -177,7 +180,8 @@ function bkDrawTree(ctx,rounds,ev,nameOf,ox,oy,boxW,boxH,gapX,pitch0){
   return {centers,right,bottom};
 }
 
-function downloadBracketPng(b,nameOf){
+async function downloadBracketPng(b,nameOf){
+  await bkFonts();
   const boxW=174,boxH=56,gapX=46,pitch0=boxH+22,padL=34,padT=92;
   const S=2;
   // 측정용 가상 계산
@@ -204,7 +208,9 @@ function downloadBracketPng(b,nameOf){
   const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S; const ctx=cv.getContext("2d"); ctx.scale(S,S);
   ctx.fillStyle=BKC.card; ctx.fillRect(0,0,W,H);
   ctx.textAlign="left"; ctx.fillStyle=BKC.ink; ctx.font=`800 30px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-320),34,50);
-  ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`; bkSpaced(ctx,"YPL",34+8,74,4);
+  ctx.fillStyle=BKC.navy; ctx.font=`400 17px ${BKM}`; bkSpaced(ctx,"YPL",34+13,76,3);
+  ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`;
+  ctx.fillText("POKEMON CENTER YONSEI · "+(b.createdAt||""),34+40,75);
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(34,88); ctx.lineTo(W-34,88); ctx.stroke();
   const res=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph);
   if(res&&res.done){ ctx.font=`700 17px ${BKF}`; const t="우승 "+nameOf(res.champ);
@@ -751,8 +757,8 @@ function BracketWizard({ data, onClose, onCreate }){
       </>}
 
       <div className="modal-actions">
-        <button className="btn btn-ghost" onClick={()=>setStep(1)}>← 이전</button>
-        <button className="btn btn-primary" onClick={go} disabled={creating}>{creating?"생성 중…":"대진표 생성 🎲"}</button>
+        <button className="btn btn-ghost" onClick={()=>setStep(1)}><Icon n="back" size={14}/>이전</button>
+        <button className="btn btn-primary" onClick={go} disabled={creating}>{creating?"생성 중…":"대진표 생성"}</button>
       </div>
     </>}
     </div>
@@ -990,7 +996,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       }
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
-      flash(winnerEntryId?"승자 저장 ✓":"승자 취소 ✓");
+      flash(winnerEntryId?"승자를 저장했습니다":"승자를 취소했습니다");
     }catch(error){
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
@@ -1014,7 +1020,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       await syncNormalizedBracketMatches(b.eventId,withSeries(b,series.m.id,sObj,winnerSide));
       await refreshNormalized?.();
       setSeries(null);
-      flash("팀전 결과 저장 ✓");
+      flash("팀전 결과를 저장했습니다");
     }catch(error){
       await refreshNormalized?.();
       flash(`팀전 결과 저장 실패: ${error?.message||"알 수 없는 오류"}`);
@@ -1040,7 +1046,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       if(!resultCleanup.skipped)previousResultRows=resultCleanup.previousRows;
       await revertEventRecordApplication(b.eventId,[]);
       await onNormalizedReverted?.();
-      flash("기록 반영 취소 ✓");
+      flash("기록 반영을 취소했습니다");
     }catch(error){
       try{
         if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
@@ -1066,12 +1072,12 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
     {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"}/>}
     {res&&res.done&&championshipEvent?.championship_phase!=="qualifier"&&<div className="bk-champ-banner">
-      <span className="bk-cb-k">🏆 우승</span><span className="bk-cb-n">{nameOf(res.champ)}</span>{res.ru&&<span className="bk-cb-ru">준우승 {nameOf(res.ru)}</span>}
+      <span className="bk-cb-k"><Icon n="trophy" size={15}/> 우승</span><span className="bk-cb-n">{nameOf(res.champ)}</span>{res.ru&&<span className="bk-cb-ru">준우승 {nameOf(res.ru)}</span>}
       <div className="bk-cb-actions">
-        <button className="btn btn-ghost btn-sm" onClick={()=>downloadChampionPng(b,res,nameOf)}>🎉 우승 이미지</button>
-        <button className="btn btn-ghost btn-sm" onClick={()=>downloadBracketPng(b,nameOf)}>🖼 대진표 이미지</button>
+        <button className="btn btn-ghost btn-sm" onClick={()=>downloadChampionPng(b,res,nameOf)}><Icon n="image" size={15}/>우승 이미지</button>
+        <button className="btn btn-ghost btn-sm" onClick={()=>downloadBracketPng(b,nameOf)}><Icon n="image" size={15}/>대진표 이미지</button>
         {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="btn btn-gold btn-sm" onClick={()=>onApply(b,res)}>기록에 반영 →</button>}
-        {b.applied&&<><span className="bk-applied">✓ 기록 반영됨</span>{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="btn btn-ghost btn-sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="btn btn-ghost btn-sm" onClick={undoApplied}>반영 취소</button>}</>}
+        {b.applied&&<><span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="btn btn-ghost btn-sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="btn btn-ghost btn-sm" onClick={undoApplied}>반영 취소</button>}</>}
       </div>
     </div>}
     {series&&<TeamMatchModal teamA={series.A} teamB={series.B} init={series.m.series} onClose={()=>setSeries(null)} onSave={saveSeries}/>}
@@ -1264,7 +1270,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
           onClose();
           return;
         }
-        flash("기록에 반영됨 ✓");
+        flash("기록에 반영했습니다");
         onClose();
       }catch(error){
         let currentEvent=null;
@@ -1297,7 +1303,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
       <div className="bk-applybox">
         <div className="bk-ab-meta">{team?"팀전":"개인전"}{champ?" 챔피언스 시리즈":""}</div>
         <div>{curT.label} <b>{preview.roundNum}회</b>{recordSeason?`, ${recordSeason}`:""}{rule.trim()?`, ${rule.trim()}`:""}</div>
-        <div>🏆 <b>{nameOf(res.champ)}</b>{res.ru?<>, 🥈 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 🎖️ {res.sf.map(nameOf).join(", ")}</>:null}</div>
+        <div><Icon n="trophy" size={14}/> <b>{nameOf(res.champ)}</b>{res.ru?<>, 준우승 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 4강 {res.sf.map(nameOf).join(", ")}</>:null}</div>
       </div>
       {linked&&!team&&(
         !!identityPreviewError ||
@@ -1337,14 +1343,14 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
       {preview.willRank ? <div className="field"><label>누적 랭킹 「{rankEra?.label}」 포인트 변동</label>
         <div className="bk-chg">{changes.map(c=><div className="bk-chg-row" key={c.name}>
           <span className={"bk-exist "+(c.isNew?"new":"old")}>{c.isNew?"랭킹 신규":"랭킹 기존"}</span><b>{c.name}</b>
-          <span className="bk-chg-pts">{c.curPts}<i>→</i>{r1(c.curPts+c.d.points)}</span>
+          <span className="bk-chg-pts">{c.curPts}<Icon n="arrow" size={12}/>{r1(c.curPts+c.d.points)}</span>
           {c.d.points?<span className="bk-chg-d">+{r1(c.d.points)}</span>:null}
           {(c.d.win||c.d.ru||c.d.top4)?<span className="bk-chg-cnt">{c.d.win?`승+${c.d.win} `:""}{c.d.ru?`준+${c.d.ru} `:""}{c.d.top4?`4강+${c.d.top4}`:""}</span>:null}
         </div>)}</div>
       </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹과 시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
       {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{recordSeason}」에도 동일한 점수와 성적이 반영됩니다.</div>}
       <div className="modal-actions">
-  <button className="btn btn-ghost" onClick={()=>setPreview(null)}>← 뒤로</button>
+  <button className="btn btn-ghost" onClick={()=>setPreview(null)}><Icon n="back" size={14}/>뒤로</button>
   <button
     className="btn btn-primary"
     onClick={commit}
@@ -1377,9 +1383,9 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
             ? ` · ${linkedContext.event.division==="master"?"Master":linkedContext.event.division==="rookie"?"Rookie":linkedContext.event.division}`
             : ""}
         </div>
-        <div>🏆 우승 <b>{nameOf(res.champ)}</b></div>
-        {res.ru&&<div>🥈 준우승 <b>{nameOf(res.ru)}</b></div>}
-        {res.sf.length>0&&<div>🎖️ 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
+        <div><Icon n="trophy" size={14}/> 우승 <b>{nameOf(res.champ)}</b></div>
+        {res.ru&&<div><Icon n="medal" size={14}/> 준우승 <b>{nameOf(res.ru)}</b></div>}
+        {res.sf.length>0&&<div><Icon n="medal" size={14}/> 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
       </div>
 
       {linked ? <>
@@ -1431,16 +1437,16 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
           <div className="field">
             <label>반영 내용</label>
             <div className="bk-applybox">
-              <div>✓ {curT?.label||"회차"} 기록</div>
+              <div><Icon n="check" size={13}/> {curT?.label||"회차"} 기록</div>
               <div>
                 {excluded
                   ? "— 누적 랭킹 미반영"
-                  : `✓ 누적 랭킹${rankEra?.label?` · ${rankEra.label}`:""}`}
+                  : `누적 랭킹${rankEra?.label?` · ${rankEra.label}`:""}`}
               </div>
               <div>
                 {excluded||champ
                   ? "— 시즌별 성적 미반영"
-                  : `✓ 시즌별 성적 · ${recordSeason}`}
+                  : `시즌별 성적 · ${recordSeason}`}
               </div>
             </div>
           </div>
@@ -1606,7 +1612,7 @@ function BracketDraw({ b, onDone }){
   };
   const done=n>=total;
   return (<div className="bk-drawwrap swap">
-    <div className="bk-draw-h">{done?"✨ 대진 확정!":"🎰 대진 추첨 중…"} <span className="bk-draw-cnt">{Math.min(n,total)} / {total}</span></div>
+    <div className="bk-draw-h">{done?"대진 확정":"대진 추첨 중…"} <span className="bk-draw-cnt">{Math.min(n,total)} / {total}</span></div>
     {group ? (
       <div className="bk-groups">{b.groups.map((g,gi)=>(
         <div className="bk-group" key={g.id}><div className="bk-group-h">그룹 {g.name}</div>
@@ -1626,7 +1632,7 @@ function BracketDraw({ b, onDone }){
         </div>))}
       </div></div>);
     })()}
-    <div className="bk-draw-actions"><button className="btn btn-ghost btn-sm" onClick={onDone}>{done?"완료 →":"건너뛰기 →"}</button></div>
+    <div className="bk-draw-actions"><button className="btn btn-ghost btn-sm" onClick={onDone}>{done?"완료":"건너뛰기"}<Icon n="arrow" size={14}/></button></div>
   </div>);
 }
 
@@ -1705,7 +1711,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
         ]);
         setOpenId(presentation.openId);
         setDrawId(presentation.drawId);
-        flash("normalized 대회 생성 ✓");
+        flash("대회를 생성했습니다");
         return true;
       }catch(error){
         await loadNormalized();
@@ -1783,7 +1789,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
         ]);
         setOpenId(presentation.openId);
         setDrawId(presentation.drawId);
-        flash("normalized 대회 생성 ✓");
+        flash("대회를 생성했습니다");
         return true;
       }catch(error){
         let cleanupError=null;
@@ -1825,7 +1831,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
           });
           setNormalizedBrackets(previous=>previous.filter(row=>row.eventId!==b.eventId));
           setOpenId(null);
-          flash("normalized 대진표 삭제 ✓");
+          flash("대진표를 삭제했습니다");
         }catch(error){
           const rows=await loadNormalized();
           const runtimeStillExists=(rows||[]).some(row=>
@@ -1834,7 +1840,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
           );
           if(!runtimeStillExists){
             setOpenId(null);
-            flash("normalized 대진표 삭제 ✓");
+            flash("대진표를 삭제했습니다");
           }else{
             flash(`normalized 대진표 삭제 실패: ${error?.message||"알 수 없는 오류"}`);
           }
@@ -1850,7 +1856,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
   };
   const statusTag=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); if(b.applied)return"기록 반영됨"; if(r&&r.done)return"종료"; return"진행 중"; };
   return (<section className="sec">
-    <Reveal className="sec-head"><div className="kick">Bracket</div><h2>대진표</h2>
+    <Reveal className="sec-head"><h2>대진표</h2>
       <p className="sub">대회 대진을 직접 생성하고 결과를 입력하면, 확정된 성적이 기록에 연동됩니다.</p>
       {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--loss)"}}>normalized bracket 오류: {normalizedLoadError}</p>}
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" disabled={!!deletingId} onClick={()=>setWizard(true)}>+ 새 대회 만들기</button></div>}

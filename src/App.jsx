@@ -1557,6 +1557,220 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 @media(max-width:820px){ .ypl .theme-ico{width:24px;height:24px;} }
 @media(max-width:400px){ .ypl .theme-ico{width:22px;height:22px;} }
 @media (prefers-reduced-motion:reduce){ .ypl .nav-theme:hover .theme-ico{transform:none;} }
+
+/* ============================================================
+   통일 레이어 — 토큰 · 모서리 · 타이포 · 홈 구성
+   STYLES 맨 끝에 위치하므로 위의 모든 규칙을 덮어씁니다.
+   여기 없는 모양은 사이트에 존재하지 않습니다.
+   ============================================================ */
+
+/* ── 1) 다크 팔레트: 순검정 대신 남색이 섞인 오프블랙 ── */
+.ypl.dark{
+  --s-page:#0B0E15; --s-card:#12161F; --s-soft:#171C26; --s-soft2:#1B2536;
+  --s-fill:#232C3C; --s-deep:#12161F;
+  --ln-1:#242B38; --ln-2:#333C4B; --ln-3:#414C5C;
+}
+
+/* ── 2) 모서리: 두 단계만 사용 (면 12px · 조작 요소 8px) ── */
+.ypl .card,.ypl .hcard,.ypl .panel,.ypl .tl-item,.ypl .champ,.ypl .lg2,
+.ypl .bk-ace,.ypl .bk-champ-banner,.ypl .nav-drawer,.ypl .modal,.ypl .sheet,
+.ypl .fold,.ypl .pr-box,.ypl .pr-wrap,.ypl .bd-item,.ypl .ann-item,.ypl .comp,
+.ypl .ttl-card,.ypl .r2-row,.ypl .titem,.ypl .rec-card,.ypl .st-card,
+.ypl .flow-step,.ypl .keep,.ypl .hs,.ypl .hq,.ypl .home-champ,.ypl .bk-card,
+.ypl .bk-group,.ypl .bk-lineup,.ypl .bk-entry,.ypl .hofm-sp,.ypl .bd-cmts,
+.ypl .fb-wrap,.ypl .fb-q,.ypl .ed-round,.ypl .ed-team,.ypl .bk-applybox,
+.ypl .undo-bar,.ypl .beta-note,.ypl .bk-match,.ypl .bk-preview,.ypl .bd-preview,
+.ypl .empty-box,.ypl .records-coverage,.ypl .records-tour-panel,
+.ypl .records-archive-card,.ypl .records-block,.ypl .records-rival{border-radius:12px;}
+
+.ypl .btn,.ypl .subtab,.ypl .pg-btn,.ypl .nav-discord,.ypl .nav-burger,.ypl .nav-theme,
+.ypl .ann-link,.ypl .ann-apply,.ypl .ann-resp,.ypl .nlink,.ypl .bk-slot,.ypl .r2-name,
+.ypl input,.ypl textarea,.ypl select,.ypl .dd-btn,.ypl .dd-menu,.ypl .dd-opt,
+.ypl .lsearch input,.ypl .ls-clear,.ypl .md-close,.ypl .btn-ghost,.ypl .bk-hint,
+.ypl .rankb,.ypl .bd-ava,.ypl .pr-n,.ypl .bk-pin-no,.ypl .bk-lu-no,.ypl .bk-series-no,
+.ypl .ch-clear,.ypl .r2-champ,.ypl .champ-tag,.ypl .tag,.ypl .chip,.ypl .badge,
+.ypl .holder,.ypl .pin,.ypl .bd-cc,.ypl .bd-lock,.ypl .cnt,.ypl .flow-n,.ypl .hch-g,
+.ypl .nav-tools-menu,.ypl .nav-tools-item,.ypl .nav-tools-beta,.ypl .beta-note-tag,
+.ypl .undo-bar-btn,.ypl .records-stat,.ypl .records-placement,.ypl .r2-comp,
+.ypl .r2-mode,.ypl .r2-season,.ypl .bk-badge,.ypl .bk-alloc-tag,.ypl .bk-exist,
+.ypl .fb-ic,.ypl .fb-qn,.ypl .ed-del,.ypl .ed-mv,.ypl .fr-del,.ypl .pr-refresh,
+.ypl .toast,.ypl .ribbon,.ypl .lg2-tier,.ypl .poke .sp,.ypl .hc-mon,
+.ypl .records-title-chips span,.ypl .records-achievements>div,
+.ypl .records-archive-tags span,.ypl .records-tour-count{border-radius:8px;}
+
+/* 아바타·순번은 원이 아니라 같은 8px 사각형으로 통일 */
+.ypl .bd-ava,.ypl .bd-ava.sm,.ypl .bk-pin-no,.ypl .bk-lu-no,.ypl .bk-series-no,
+.ypl .ch-clear,.ypl .pr-name{border-radius:8px;}
+
+/* ── 3) 그림자 없음: 경계는 선과 면으로만 ── */
+.ypl .card:hover,.ypl .card.hover:hover,.ypl .hcard:hover,.ypl .tl-item:hover,
+.ypl .champ:hover,.ypl .lg2:hover,.ypl .rec-card:hover,.ypl .st-card:hover,
+.ypl .flow-step:hover,.ypl .hs:hover,.ypl .hq:hover,.ypl .home-champ:hover,
+.ypl .btn:hover,.ypl .subtab:hover,.ypl .pg-btn:hover,.ypl .nlink:hover,
+.ypl .nav-discord:hover,.ypl .nav-burger:hover,.ypl .nav-theme:hover,
+.ypl .bk-slot:hover,.ypl .btn-primary:hover,.ypl .btn-gold:hover,
+.ypl .ann-link:hover,.ypl .ann-apply:hover,.ypl .subtab.on:hover,
+.ypl .pg-btn.on:hover,.ypl .bk-card:hover,.ypl .hcard.hof-dark:hover,
+.ypl .champ.hof-card:hover,.ypl .titem:hover,.ypl .bd-item:hover,
+.ypl .lsearch input:focus,.ypl input:focus,.ypl textarea:focus{box-shadow:none;}
+.ypl .card:hover,.ypl .card.hover:hover,.ypl .hcard:hover,.ypl .tl-item:hover,
+.ypl .rec-card:hover,.ypl .st-card:hover,.ypl .flow-step:hover,.ypl .bk-card:hover,
+.ypl .titem:hover,.ypl .bd-item:hover,.ypl .comp:hover{border-color:var(--ln-2);}
+.ypl input:focus,.ypl textarea:focus,.ypl select:focus,.ypl .lsearch input:focus{
+  border-color:var(--ac-text);box-shadow:0 0 0 3px rgba(var(--glow),.20);}
+
+/* ── 4) 제목 위계: 눈썹 라벨 없이 제목이 스스로 말하게 ── */
+.ypl .sec{padding:56px 0 28px;}
+.ypl .sec-head{margin-bottom:24px;}
+.ypl .sec-head .kick{display:none;}
+.ypl .sec-head h2{font-size:clamp(30px,4vw,40px);line-height:1.06;letter-spacing:-.03em;
+  font-weight:800;color:var(--t-1);margin:0;}
+.ypl .sec-head .sub{font-size:15.5px;line-height:1.65;color:var(--t-4);max-width:64ch;margin:10px 0 0;}
+.ypl .kick-line{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--t-1);padding-left:0;}
+.ypl .kick-line::before{display:none;}
+.ypl .records-eyebrow,.ypl .tb-kicker,.ypl .tb-panel-kicker{display:none;}
+
+/* ── 5) 아이콘: 24px 그리드, 선 굵기 2, 이모지 없음 ── */
+.ypl .ic{display:inline-block;vertical-align:-0.16em;flex:none;}
+.ypl .btn .ic,.ypl .ann-link .ic,.ypl .ann-apply .ic,.ypl .ann-resp .ic{margin-right:-1px;}
+.ypl .ic-box{display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:8px;background:var(--s-soft2);color:var(--ac-text);flex:none;}
+.ypl .tgroup-head .ic-box{margin-right:2px;}
+.ypl .rec-ico{display:flex;align-items:center;justify-content:center;
+  width:40px;height:40px;margin:0 auto;border-radius:8px;
+  background:var(--s-soft2);color:var(--ac-text);font-size:0;}
+.ypl .flow-arw{color:var(--t-5);}
+.ypl .comp .glow,.ypl .lg2 .lg2-glow,.ypl .champ .crown{display:none;}
+.ypl .hof-crown{display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:0;}
+
+/* ── 6) 홈 ── */
+.ypl .home{padding:40px 0 40px;}
+.ypl .home-top{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:48px;
+  align-items:end;padding:24px 0 48px;}
+.ypl .home-hero{display:block;text-align:left;margin:0;padding:0;}
+.ypl .home .mark{font-size:clamp(76px,12vw,150px);line-height:.9;letter-spacing:.005em;
+  color:var(--ac-text);margin:0;display:block;}
+.ypl .home-en{display:block;font-size:clamp(13px,1.4vw,18px);letter-spacing:.24em;
+  color:var(--t-5);font-weight:500;margin:14px 0 0;}
+.ypl .home-tag{font-size:clamp(17px,1.9vw,21px);color:var(--t-2);font-weight:600;
+  margin:24px 0 0;letter-spacing:-.01em;}
+
+.ypl .nextev{background:var(--s-card);border:1px solid var(--ln-1);border-radius:12px;padding:24px 26px;
+  text-align:left;width:100%;font-family:inherit;cursor:pointer;display:block;}
+.ypl.dark .nextev{border-color:transparent;}
+.ypl .nextev:hover{border-color:var(--ln-2);}
+.ypl.dark .nextev:hover{background:var(--s-soft);border-color:transparent;}
+.ypl .nextev-k{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.ypl .nextev-k b{font-size:13px;font-weight:700;color:var(--ac-text);}
+.ypl .nextev-k span{font-size:13px;font-weight:600;color:var(--t-5);display:inline-flex;align-items:center;gap:6px;}
+.ypl .nextev-d{display:block;font-size:13px;color:var(--t-5);font-weight:600;margin-top:16px;}
+.ypl .nextev-t{display:block;font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.3;
+  margin-top:4px;color:var(--t-1);}
+.ypl .nextev-b{font-size:14.5px;color:var(--t-4);line-height:1.6;margin-top:10px;white-space:pre-line;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ypl .nextev-cta{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;}
+
+.ypl .sech{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:16px;}
+.ypl .sech h2{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--t-1);margin:0;}
+.ypl .sech h2 small{font-size:14px;font-weight:600;color:var(--t-5);margin-left:10px;}
+.ypl .sech .more{font-size:14px;font-weight:600;color:var(--t-4);background:none;border:0;
+  font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:0;white-space:nowrap;}
+.ypl .sech .more:hover{color:var(--ac-text);}
+
+.ypl .home-sec{margin-top:52px;}
+.ypl .reslist{border-top:1px solid var(--ln-1);}
+.ypl .resrow{width:100%;display:grid;grid-template-columns:100px minmax(0,1fr) 150px 150px 20px;
+  gap:20px;align-items:center;padding:16px 4px;border-bottom:1px solid var(--ln-1);
+  background:none;border-left:0;border-right:0;border-top:0;font-family:inherit;text-align:left;cursor:pointer;}
+.ypl .resrow:hover{background:var(--s-soft);}
+.ypl .resrow .d{font-size:13.5px;color:var(--t-5);font-weight:600;}
+.ypl .resrow .ev b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--t-1);}
+.ypl .resrow .ev span{display:block;font-size:12.5px;color:var(--t-5);font-weight:500;margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ypl .resrow .pl{font-size:14px;color:var(--t-2);font-weight:600;min-width:0;}
+.ypl .resrow .pl small{display:block;font-size:12px;color:var(--t-5);font-weight:600;margin-bottom:2px;}
+.ypl .resrow .pl b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+.ypl .resrow .pl.win b{color:var(--t-1);}
+.ypl .resrow .go{color:var(--t-5);}
+.ypl .resrow:hover .go{color:var(--ac-text);}
+
+.ypl .home-two{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:32px;align-items:start;}
+.ypl .postlist{border-top:1px solid var(--ln-1);}
+.ypl .postrow{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;
+  padding:16px 4px;border-bottom:1px solid var(--ln-1);background:none;border-left:0;border-right:0;border-top:0;
+  font-family:inherit;text-align:left;cursor:pointer;}
+.ypl .postrow:hover{background:var(--s-soft);}
+.ypl .postrow b{font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--t-1);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:7px;}
+.ypl .postrow span{font-size:13px;color:var(--t-5);font-weight:500;white-space:nowrap;}
+.ypl .postrow span em{font-style:normal;color:var(--t-4);font-weight:600;}
+
+.ypl .hrank{border-top:1px solid var(--ln-1);}
+.ypl .hrrow{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;align-items:center;
+  padding:14px 4px 22px;border-bottom:1px solid var(--ln-1);background:none;border-left:0;border-right:0;border-top:0;
+  font-family:inherit;text-align:left;cursor:pointer;position:relative;}
+.ypl .hrrow:hover{background:var(--s-soft);}
+.ypl .hrrow .n{font-size:22px;font-weight:800;color:var(--t-5);letter-spacing:-.02em;line-height:1;}
+.ypl .hrrow.top .n{color:var(--gold);}
+.ypl .hrrow .who{min-width:0;}
+.ypl .hrrow .who b{display:block;font-size:16.5px;font-weight:700;letter-spacing:-.01em;color:var(--t-1);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ypl .hrrow .who span{display:block;font-size:12.5px;color:var(--t-5);font-weight:500;margin-top:2px;}
+.ypl .hrrow .pts{font-size:20px;font-weight:800;color:var(--ac-text);letter-spacing:-.01em;white-space:nowrap;}
+.ypl .hrrow .pts em{font-style:normal;font-size:12px;color:var(--t-5);font-weight:600;margin-left:3px;}
+.ypl .hbar{position:absolute;left:48px;right:4px;bottom:8px;height:3px;background:var(--s-soft2);overflow:hidden;}
+.ypl .hbar i{display:block;height:100%;background:var(--ac-fill);}
+.ypl.dark .hbar{background:var(--s-fill);}
+
+.ypl .hoftl{display:grid;grid-template-columns:repeat(var(--hof-n,6),minmax(0,1fr));position:relative;margin-top:20px;}
+.ypl .hoftl::before{content:"";position:absolute;left:0;right:0;top:5px;height:1px;background:var(--ln-2);}
+.ypl .hofc{padding:22px 14px 0 0;position:relative;text-align:left;background:none;border:0;
+  font-family:inherit;cursor:pointer;}
+.ypl .hofc::before{content:"";position:absolute;left:0;top:0;width:11px;height:11px;border-radius:50%;
+  background:var(--s-page);border:2px solid var(--ln-2);box-sizing:border-box;}
+.ypl .hofc.now::before{background:var(--ac-text);border-color:var(--ac-text);}
+.ypl .hofc .g{display:block;font-size:12.5px;font-weight:700;color:var(--t-5);}
+.ypl .hofc .nm{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--t-1);margin-top:4px;}
+.ypl .hofc.now .nm{color:var(--ac-text);}
+.ypl .hofc .s{display:block;font-size:12.5px;color:var(--t-5);margin-top:4px;font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ypl .hofc:hover .nm{color:var(--ac-text);}
+
+@media(max-width:900px){
+  .ypl .home-top{grid-template-columns:1fr;gap:28px;padding:12px 0 36px;}
+  .ypl .home-two{grid-template-columns:1fr;gap:44px;}
+  .ypl .resrow{grid-template-columns:1fr;gap:6px;padding:14px 2px;}
+  .ypl .resrow .go{display:none;}
+  .ypl .resrow .pl{display:flex;align-items:baseline;gap:8px;}
+  .ypl .resrow .pl small{margin:0;}
+  .ypl .resrow .pl b{display:inline;}
+  .ypl .resrow .ev span{white-space:normal;}
+  .ypl .hoftl{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .ypl .hoftl::before{display:none;}
+  .ypl .hofc::before{display:none;}
+  .ypl .hofc{padding:14px 14px 13px;border:1px solid var(--ln-1);border-radius:12px;}
+  .ypl.dark .hofc{background:var(--s-card);border-color:transparent;}
+  .ypl .hofc .nm{font-size:18px;}
+  .ypl .sech h2 small{display:none;}
+}
+
+/* ── 7) 페이지 머리: 기록·칭호 등 공통 ── */
+.ypl .records-profile-head h3,.ypl .records-profile-hero>h3{letter-spacing:-.03em;}
+.ypl .tgroup-head h3{font-size:21px;font-weight:800;letter-spacing:-.02em;}
+.ypl .tgroup-head .cnt{background:var(--s-soft2);color:var(--ac-text);font-weight:700;
+  padding:4px 9px;font-size:12.5px;}
+.ypl .titem .tn{font-size:15.5px;}
+.ypl .holder{background:var(--s-soft2);color:var(--ac-text);border:1px solid transparent;font-weight:700;}
+.ypl .holder.mon-h{background:var(--s-soft);color:var(--t-2);}
+
+/* ── 8) 쌓기 순서: 모바일 서람은 항상 본문 위에 ── */
+.ypl .nav{z-index:90;}
+.ypl .nav-drawer{z-index:95;}
+.ypl .wrap{z-index:1;}
+
+/* ── 9) 눌림 피드백 ── */
+.ypl .btn:active,.ypl .subtab:active,.ypl .pg-btn:active,.ypl .nav-discord:active,
+.ypl .ann-apply:active,.ypl .ann-link:active{transform:translateY(1px) !important;}
 `;
 
 /* ============================== 모션 헬퍼 ============================== */
@@ -1613,7 +1827,7 @@ export default function App() {
     setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"smooth"});
   },[]);
   const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
-  const save=useCallback(async(next)=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?"저장됨 ✓":"메모리에만 반영됨");return ok;},[flash]);
+  const save=useCallback(async(next)=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?"저장했습니다":"메모리에만 반영됐습니다");return ok;},[flash]);
   const submitForm=useCallback(async(annId,payload)=>{
     const announcement=(data.announcements||[]).find(a=>a.id===annId);
     const form=announcement?.form||{};
@@ -1629,7 +1843,7 @@ export default function App() {
             announcementId:annId,
           },
         });
-        flash("신청 완료 ✓");
+        flash("신청을 접수했습니다");
         return true;
       }catch(error){
         flash(error?.message||"신청 저장에 실패했습니다.");
@@ -1665,7 +1879,7 @@ export default function App() {
       if(hasMine(c1)){
         await new Promise(r=>setTimeout(r,200+Math.random()*250));
         const c2=normalizeData((await loadSiteData())||c1);
-        if(hasMine(c2)){ setData(c2); flash("신청 완료 ✓"); return true; }
+        if(hasMine(c2)){ setData(c2); flash("신청을 접수했습니다"); return true; }
       }
       await new Promise(r=>setTimeout(r,150+Math.random()*400*(attempt+1))); // 랜덤 백오프로 동시 충돌 분산
     }

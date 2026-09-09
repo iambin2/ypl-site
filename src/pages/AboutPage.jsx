@@ -1,5 +1,5 @@
 import React from "react";
-import { Reveal } from "../components/index.js";
+import { Reveal, Icon } from "../components/index.js";
 
 const ACC={cyan:"var(--cyan)",mint:"var(--mint)",gold:"var(--gold)"};
 const ACC_BG={cyan:"rgba(59,182,236,.13)",mint:"rgba(84,207,177,.13)",gold:"rgba(236,193,92,.13)"};
@@ -21,31 +21,31 @@ const LEAGUES2 = [
 /* ============================== ABOUT ============================== */
 export default function AboutPage() {
   return (<section className="sec">
-    <Reveal className="sec-head"><div className="kick">About</div><h2>우리들의 이야기</h2>
+    <Reveal className="sec-head"><h2>우리들의 이야기</h2>
       <p className="sub">연세대학교 포켓몬스터 동아리인 포켓몬 센터 연세점, 일명 포센연에서 시작된 배틀 리그의 발자취입니다.</p>
     </Reveal>
     <Reveal tag="h3"><span className="kick-line" style={{margin:"46px 0 16px"}}>시즌은 이렇게 흘러갑니다</span></Reveal>
     <div className="flow">
       <Reveal className="flow-step"><span className="flow-n">1</span>
         <div className="flow-t">매월 파이컵</div><div className="flow-d">정규 대회에 출전합니다</div></Reveal>
-      <div className="flow-arw" aria-hidden="true">→</div>
+      <div className="flow-arw" aria-hidden="true"><Icon n="arrow" size={16}/></div>
       <Reveal className="flow-step" delay={70}><span className="flow-n">2</span>
         <div className="flow-t">포인트 누적</div><div className="flow-d">성적이 랭킹으로 쌓입니다</div></Reveal>
-      <div className="flow-arw" aria-hidden="true">→</div>
+      <div className="flow-arw" aria-hidden="true"><Icon n="arrow" size={16}/></div>
       <Reveal className="flow-step" delay={140}><span className="flow-n">3</span>
         <div className="flow-t">챔피언스 시리즈</div><div className="flow-d">학기말 최고 권위의 대회</div></Reveal>
-      <div className="flow-arw" aria-hidden="true">→</div>
+      <div className="flow-arw" aria-hidden="true"><Icon n="arrow" size={16}/></div>
       <Reveal className="flow-step last" delay={210}><span className="flow-n">4</span>
         <div className="flow-t">시즌 챔피언</div><div className="flow-d">그 시즌의 주인공이 됩니다</div></Reveal>
     </div>
 
     <Reveal tag="h3"><span className="kick-line" style={{margin:"48px 0 18px"}}>YPL이 기록하는 것</span></Reveal>
     <div className="rec-grid">
-      <Reveal className="rec-card"><div className="rec-ico" aria-hidden="true">⚔️</div>
+      <Reveal className="rec-card"><div className="rec-ico" aria-hidden="true"><Icon n="chart" size={20}/></div>
         <div className="rec-t">전적</div><div className="rec-d">모든 대회의 경기 결과</div></Reveal>
-      <Reveal className="rec-card" delay={80}><div className="rec-ico" aria-hidden="true">👑</div>
+      <Reveal className="rec-card" delay={80}><div className="rec-ico" aria-hidden="true"><Icon n="crown" size={20}/></div>
         <div className="rec-t">챔피언</div><div className="rec-d">역대 시즌의 주인공</div></Reveal>
-      <Reveal className="rec-card" delay={160}><div className="rec-ico" aria-hidden="true">🎖️</div>
+      <Reveal className="rec-card" delay={160}><div className="rec-ico" aria-hidden="true"><Icon n="medal" size={20}/></div>
         <div className="rec-t">칭호</div><div className="rec-d">트레이너가 획득한 기록</div></Reveal>
     </div>
 

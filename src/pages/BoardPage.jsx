@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
@@ -20,9 +20,9 @@ function MediaEmbed({ url }){
   const m=parseMedia(url); if(!m) return null;
   if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
   if(m.type==="image") return <a className="bd-img" href={m.url} target="_blank" rel="noopener noreferrer"><img src={m.url} alt="첨부 이미지" loading="lazy" decoding="async"/></a>;
-  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url} ↗</a>;
+  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url}<Icon n="ext" size={13}/></a>;
 }
-function mediaIcon(url){ const m=parseMedia(url); return m?(m.type==="youtube"?"🎬":m.type==="image"?"🖼":"🔗"):null; }
+function mediaIcon(url){ const m=parseMedia(url); if(!m) return null; const n=m.type==="youtube"?"video":m.type==="image"?"image":"link"; return <Icon n={n} size={13}/>; }
 
 function BoardCompose({ onClose, onSubmit }){
   const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
@@ -39,7 +39,7 @@ function BoardCompose({ onClose, onSubmit }){
       <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요"/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
-      <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span>🔒 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
+      <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={14}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
       {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다. 다른 방문자에게는 목록에도 표시되지 않습니다.</div>}
       <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>등록</button></div>
     </div>
@@ -75,14 +75,14 @@ export default function BoardPage({ data, admin, save, flash }){
   const [open,setOpen]=useState(()=>new Set());
   const [compose,setCompose]=useState(false);
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
-  const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글 등록 ✓"); };
+  const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글을 등록했습니다"); };
   const delPost=(p)=>{ if(admin){ if(!confirm("이 글을 삭제할까요?"))return; } else { const pin=prompt("본인 글을 삭제하려면 작성 시 입력한 PIN을 입력하세요."); if(pin===null)return; if(!p.pin||pin!==p.pin){alert("PIN이 일치하지 않습니다.");return;} }
     save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };
-  const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글 등록 ✓"); };
+  const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글을 등록했습니다"); };
   const delComment=(p,c)=>{ if(admin){ if(!confirm("이 댓글을 삭제할까요?"))return; } else { const pin=prompt("본인 댓글을 삭제하려면 PIN을 입력하세요."); if(pin===null)return; if(!c.pin||pin!==c.pin){alert("PIN이 일치하지 않습니다.");return;} }
     save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
   return (<section className="sec">
-    <Reveal className="sec-head"><div className="kick">Community</div><h2>게시판</h2>
+    <Reveal className="sec-head"><h2>게시판</h2>
       <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
       <div className="row-actions"><button className="btn btn-primary btn-sm" onClick={()=>setCompose(true)}>✏️ 글쓰기</button></div>
     </Reveal>
@@ -94,10 +94,10 @@ export default function BoardPage({ data, admin, save, flash }){
           <button className="bd-head" onClick={()=>toggle(p.id)}>
             <span className="bd-ava">{initialOf(p.nick)}</span>
             <span className="bd-main">
-              <span className="bd-title">{p.secret&&<span className="bd-lock">🔒 관리자 전용</span>}{p.title||p.body||"(제목 없음)"}</span>
+              <span className="bd-title">{p.secret&&<span className="bd-lock"><Icon n="lock" size={12}/> 관리자 전용</span>}{p.title||p.body||"(제목 없음)"}</span>
               <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
             </span>
-            <span className="bd-cc">💬 {cc}</span>
+            <span className="bd-cc"><Icon n="msg" size={13}/> {cc}</span>
             <span className="nb-chev" aria-hidden="true">▾</span>
           </button>
           {isOpen&&<div className="bd-open swap">

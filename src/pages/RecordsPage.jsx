@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Reveal, StandTable } from "../components/index.js";
+import { Dropdown, Icon, Reveal, StandTable } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
@@ -96,7 +96,6 @@ export default function RecordsPage({ data, admin, setModal, save }) {
   return (
     <section className="sec">
       <Reveal className="sec-head">
-        <div className="kick">Records &amp; Stats</div>
         <h2>기록</h2>
         <p className="sub">YPL의 대회 성적과 저장된 대진표를 바탕으로 트레이너·대회·포켓몬 기록을 한곳에 정리합니다.</p>
       </Reveal>
@@ -172,7 +171,7 @@ function TrainerView({ snapshot }) {
       <aside className="panel records-trainer-list">
         <div className="records-search">
           <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="트레이너 검색" />
           </div>
           <span>{visible.length}명</span>
@@ -287,7 +286,7 @@ function TrainerView({ snapshot }) {
                 <div className="records-achievements">
                   {profile.champions.map((c, i) => (
                     <div key={`${c.gen}:${i}`}>
-                      <strong>👑 {c.gen} 챔피언</strong>
+                      <strong><Icon n="crown" size={13}/> {c.gen} 챔피언</strong>
                       <span>{c.season}</span>
                     </div>
                   ))}
@@ -547,7 +546,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       <>
         <div className="records-toolbar">
           <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" />
           </div>
           <span>전체 {allRows.length}회차</span>
@@ -584,7 +583,7 @@ function PokemonView({ snapshot }) {
       <aside className="panel records-pokemon-list">
         <div className="records-search">
           <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="포켓몬 검색" />
           </div>
           <span>{visible.length}종</span>
@@ -658,7 +657,7 @@ function PokemonView({ snapshot }) {
             <div className="records-achievements">
               {current.champions.map((item, index) => (
                 <div key={`${item.gen}:${index}`}>
-                  <strong>👑 {item.gen} · {item.name}</strong>
+                  <strong><Icon n="crown" size={13}/> {item.gen} · {item.name}</strong>
                   <span>{item.season}</span>
                 </div>
               ))}

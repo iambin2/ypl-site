@@ -21,7 +21,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
         onSuccess={() => {
           setAdmin(true);
           close();
-          flash("관리자 로그인 ✓");
+          flash("관리자로 로그인했습니다");
         }}
       />
     );

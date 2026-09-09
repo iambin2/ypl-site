@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Dropdown, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Dropdown, Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
 import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
@@ -62,7 +62,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   return (<section className="sec">
-    <Reveal className="sec-head"><div className="kick">Announcements</div><h2>공지</h2>
+    <Reveal className="sec-head"><h2>공지</h2>
       <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"ann"})}>+ 공지 작성</button></div>}
     </Reveal>
@@ -79,11 +79,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
             <span className="nb-chev" aria-hidden="true">▾</span>
           </button>
           {hasLink&&<div className="nb-links">
-            {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"} ↗</a>}
-            {a.link2&&<a className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.link2Label||"링크 바로가기"} ↗</a>}
+            {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={14}/></a>}
+            {a.link2&&<a className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.link2Label||"링크 바로가기"}<Icon n="ext" size={14}/></a>}
           </div>}
           {(hasForm||a.form?.eventId)&&<div className="ann-formbtns">
-            {hasForm&&<button className="ann-apply" onClick={e=>{e.stopPropagation();setFill(a.id);}}>📝 {a.form.buttonLabel||"참가 신청하기"}</button>}
+            {hasForm&&<button className="ann-apply" onClick={e=>{e.stopPropagation();setFill(a.id);}}><Icon n="form" size={15}/>{a.form.buttonLabel||"참가 신청하기"}</button>}
             {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(a.form.eventId);}}>파티 제출</button>}
             {championshipSubmission?.isChampionship&&<>
               <button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(championshipSubmission.qualifierEvent.id);}}>선발전 파티 제출</button>
@@ -121,7 +121,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
   const val=(r,f)=>{ const v=(r.answers||{})[f.id]; return Array.isArray(v)?v.join(", "):String(v||""); };
   return (<div className={"pr-wrap fold"+(open?" open":"")+(compact?" compact":"")}>
     <button type="button" className="fold-head pr-fold-head" onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}>
-      <span className="pr-title">📋 {form.publicTitle||"현재까지 신청 현황"}</span>
+      <span className="pr-title"><Icon n="list" size={15}/> {form.publicTitle||"현재까지 신청 현황"}</span>
       <span className="pr-n">{resp.length}명</span>
       <span className="fold-chev" aria-hidden="true">▾</span>
     </button>
@@ -141,7 +141,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
             </div>))}
           </div>}
       <div className="pr-foot">
-        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} title="새로고침">↻</button>}
+        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} title="새로고침"><Icon n="refresh" size={15}/></button>}
         {updatedAt&&<span>자동 갱신 중, 마지막 확인 {updatedAt}</span>}
       </div>
     </div>}
@@ -161,7 +161,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     if(ok===false){ alert("신청 저장을 확인하지 못했습니다. 잠시 후 다시 제출해주세요."); return; }
     setDone(true);
   };
-  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true">✅</div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과 및 안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
+  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={30}/></div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과 및 안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해주세요." onClose={onClose}>
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
@@ -191,14 +191,14 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride }){
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
   return (<Modal title="신청 응답" hint={ann.title} onClose={onClose}>
-    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<button className="btn btn-ghost btn-sm" onClick={csv}>⬇ CSV(엑셀) 다운로드</button>}</div>
+    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<button className="btn btn-ghost btn-sm" onClick={csv}><Icon n="download" size={15}/>CSV(엑셀) 다운로드</button>}</div>
     {resp.length===0?<div className="fr-empty">아직 접수된 신청이 없습니다.</div>:
       <div className="fr-scroll"><table className="fr-tbl">
         <thead><tr><th>#</th><th>제출시각</th>{normalized&&<th>참가자 이름</th>}{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
         <tbody>{resp.map((r,i)=>(<tr key={r.id}>
           <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
           {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
-          <td>{onDeleteResp&&<button className="fr-del" onClick={()=>{if(confirm("이 응답을 삭제할까요?"))onDeleteResp(r.id);}} title="삭제">🗑</button>}</td>
+          <td>{onDeleteResp&&<button className="fr-del" onClick={()=>{if(confirm("이 응답을 삭제할까요?"))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={14}/></button>}</td>
         </tr>))}</tbody>
       </table></div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button></div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Reveal } from "../components/index.js";
+import { Reveal, Icon } from "../components/index.js";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
   generationNumberFromLegacyLabel,
@@ -49,18 +49,18 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
     const f=(e)=>{ if(e.key==="Escape") setPop(null); };
     window.addEventListener("keydown",f); return()=>window.removeEventListener("keydown",f); },[pop]);
   return (<section className="sec">
-    <Reveal className="sec-head"><div className="kick">Hall of Fame</div><h2>명예의 전당</h2>
+    <Reveal className="sec-head"><h2>명예의 전당</h2>
       <p className="sub">챔피언스 시리즈를 제패한 역대 챔피언입니다. 전당을 누르면 우승 엔트리를 볼 수 있습니다.</p>
       {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"champion"})}>+ 레거시 챔피언 추가</button></div>}
     </Reveal>
     <div className="hof-grid">{champs.map((c,i)=>(
       <Reveal key={c.id} delay={(i%2)*70} className="hof-tile">
         <button className="hof-btn" onClick={()=>setPop(c)} aria-label={c.name+" 우승 엔트리 보기"}>
-          <span className="hof-crown">👑</span>
+          <span className="hof-crown"><Icon n="crown" size={22}/></span>
           <span className="hof-gen">{c.kind === "normalized" ? c.gen : legacyChampionLabel(c.gen)}</span>
           <span className="hof-nm">{c.name}</span>
           <span className="hof-season">{c.slabel||("SEASON "+c.season)}</span>
-          <span className="hof-cta">우승 엔트리 보기 →</span>
+          <span className="hof-cta">우승 엔트리 보기<Icon n="arrow" size={14}/></span>
         </button>
         {admin&&c.kind !== "normalized"&&<div className="edit-row"><button className="btn btn-ghost btn-sm ed-pencil" onClick={()=>setModal({type:"champion",item:c})}>수정</button></div>}
       </Reveal>))}</div>

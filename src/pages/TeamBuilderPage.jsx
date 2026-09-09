@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Modal, Reveal } from "../components/index.js";
+import { Dropdown, Icon, Modal, Reveal } from "../components/index.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
@@ -1196,7 +1196,7 @@ export default function TeamBuilderPage() {
           </div>
           <div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{dataStatusText}<span>·</span>{localizationText}</div>
           <div className="tb-search-row">
-            <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
             <input className="tb-input" value={query} onChange={event => setQuery(event.target.value)} placeholder="포켓몬 이름 검색 (한글/영문)" />
             {query && <button className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기">×</button>}
           </div>
@@ -1217,7 +1217,7 @@ export default function TeamBuilderPage() {
                     <img src={spriteUrl(pokemon.name)} alt="" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
                     <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{displayPokemon(pokemon) !== pokemon.name ? pokemon.name : ""}{details?.num ? `${displayPokemon(pokemon) !== pokemon.name ? " · " : ""}#${String(details.num).padStart(4, "0")}` : ""}</small></span>
                     <TypeBadges types={details?.types || []} />
-                    <span className="tb-add-mark">{already ? "✓" : "+"}</span>
+                    <span className="tb-add-mark"><Icon n={already ? "check" : "plus"} size={13}/></span>
                   </button>
                 );
               })}

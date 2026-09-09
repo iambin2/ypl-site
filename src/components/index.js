@@ -6,3 +6,4 @@ export { default as Reveal } from "./common/Reveal.jsx";
 export { default as StandTable } from "./common/StandTable.jsx";
 export { default as SiteHeader } from "./layout/SiteHeader.jsx";
 export { NAV_ITEMS, DesktopNavigation, MobileNavigation } from "./layout/Navigation.jsx";
+export { default as Icon } from "./common/Icon.jsx";
