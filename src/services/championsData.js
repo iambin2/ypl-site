@@ -18,7 +18,16 @@ const MB_ONLY_ITEM_IDS = new Set([
   'eelektrossite', 'pyroarite', 'malamarite', 'barbaracite', 'dragalgite', 'falinksite',
 ]);
 
-const CACHE_KEY = 'ypl-champions-data-v3';
+const MC_ONLY_ITEM_IDS = new Set([
+  // Regulation M-C newly added standard held items.
+  'airballoon', 'bindingband', 'ejectbutton', 'electricseed', 'grassyseed', 'leek',
+  'mistyseed', 'normalgem', 'psychicseed', 'redcard', 'rockyhelmet', 'terrainextender',
+  // Mega Stones newly enabled together with the M-C Mega Evolutions.
+  'absolitez', 'baxcalibrite', 'garchompitez', 'golisopite', 'lucarionitez', 'salamencite',
+]);
+
+const CACHE_VERSION = 'v4';
+const CACHE_KEY = `ypl-champions-data-${CACHE_VERSION}`;
 const CACHE_TTL = 12 * 60 * 60 * 1000;
 
 function toID(text) {
@@ -194,7 +203,10 @@ async function fetchText(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(url, { cache: 'force-cache', signal: controller.signal });
+    // The localStorage version alone cannot invalidate a stale browser HTTP
+    // cache entry for the same raw GitHub URL. Version both cache layers.
+    const requestUrl = `${url}${url.includes('?') ? '&' : '?'}ypl-cache=${CACHE_VERSION}`;
+    const response = await fetch(requestUrl, { cache: 'force-cache', signal: controller.signal });
     if (!response.ok) throw new Error(`${response.status} ${url}`);
     return await response.text();
   } finally {
@@ -249,9 +261,10 @@ function legalItems(data, regulationId) {
   const values = Object.values(data?.items || {})
     .filter(item => item.name && (item.isNonstandard === null || item.isNonstandard === undefined))
     .filter(item => regulationId !== 'm-a' || !MB_ONLY_ITEM_IDS.has(item.id))
+    .filter(item => regulationId === 'm-c' || !MC_ONLY_ITEM_IDS.has(item.id))
     .sort((a, b) => a.name.localeCompare(b.name));
   return values;
 }
 
 
-export { load, legalItems, toID, MB_ONLY_ITEM_IDS };
+export { load, legalItems, toID, MB_ONLY_ITEM_IDS, MC_ONLY_ITEM_IDS };

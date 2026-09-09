@@ -7,6 +7,7 @@ export const TEAM_STORAGE_KEY = "ypl-team-builder:saved-teams:v1";
 export const DRAFT_STORAGE_KEY = "ypl-team-builder:working-draft:v1";
 export const TEAM_SCHEMA_VERSION = 3;
 export const DRAFT_SCHEMA_VERSION = 3;
+export const LEGACY_PERSISTED_REGULATION_ID = "m-b";
 export const DRAFT_SAVE_DELAY_MS = 180;
 
 export const ALIGNMENTS = [
@@ -64,6 +65,12 @@ export const DATA_ID_OVERRIDES = {
   "Basculegion [Female]": "basculegionf",
   "Maushold [Family of Four]": "mausholdfour",
   "Sinistcha [Masterpiece Form]": "sinistchamasterpiece",
+  "Persian [Alolan Form]": "persianalola",
+  "Toxtricity [Low Key Form]": "toxtricitylowkey",
+  "Indeedee [Female]": "indeedeef",
+  "Squawkabilly [Blue Plumage]": "squawkabillyblue",
+  "Squawkabilly [Yellow Plumage]": "squawkabillyyellow",
+  "Squawkabilly [White Plumage]": "squawkabillywhite",
 };
 
 export const SPRITE_SLUG_OVERRIDES = {
@@ -96,10 +103,25 @@ export const SPRITE_SLUG_OVERRIDES = {
   "Basculegion [Female]": "basculegion-f",
   "Mr. Rime": "mrrime",
   "Kommo-o": "kommoo",
+  "Persian [Alolan Form]": "persian-alola",
+  "Toxtricity [Low Key Form]": "toxtricity-lowkey",
+  "Indeedee [Female]": "indeedee-f",
+  "Squawkabilly [Blue Plumage]": "squawkabilly-blue",
+  "Squawkabilly [Yellow Plumage]": "squawkabilly-yellow",
+  "Squawkabilly [White Plumage]": "squawkabilly-white",
 };
 
 export const TYPE_KO = Object.fromEntries(TYPE_OPTIONS.map(type => [type.english, type.korean]));
 export const CATEGORY_KO = { Physical: "물리", Special: "특수", Status: "변화" };
+
+const ENGLISH_FALLBACK_FORM_NAMES = new Set([
+  "Persian [Alolan Form]",
+  "Toxtricity [Low Key Form]",
+  "Indeedee [Female]",
+  "Squawkabilly [Blue Plumage]",
+  "Squawkabilly [Yellow Plumage]",
+  "Squawkabilly [White Plumage]",
+]);
 
 export function makeUid(prefix = "team") {
   if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
@@ -111,7 +133,7 @@ export function canonicalBaseName(name = "") {
   if (regional) return regional[1];
   if (name.startsWith("Tauros [")) return "Tauros";
   if (/^(Heat|Wash|Frost|Fan|Mow) Rotom$/.test(name)) return "Rotom";
-  for (const base of ["Florges", "Furfrou", "Meowstic", "Gourgeist", "Lycanroc", "Polteageist", "Alcremie", "Basculegion", "Maushold", "Sinistcha", "Vivillon"]) {
+  for (const base of ["Florges", "Furfrou", "Meowstic", "Gourgeist", "Lycanroc", "Polteageist", "Alcremie", "Basculegion", "Maushold", "Sinistcha", "Vivillon", "Toxtricity", "Indeedee", "Squawkabilly"]) {
     if (name.startsWith(`${base} [`)) return base;
   }
   return name;
@@ -255,7 +277,7 @@ export function migrateSavedTeam(raw) {
 
 export function migrateDraft(raw, regulations) {
   if (!raw || typeof raw !== "object" || !Array.isArray(raw.members)) return null;
-  const regulationId = String(raw.regulationId || "m-b");
+  const regulationId = String(raw.regulationId || LEGACY_PERSISTED_REGULATION_ID);
   if (!regulations?.[regulationId]) return null;
   const sourceVersion = Number(raw.schemaVersion) || 1;
   return {
@@ -276,7 +298,7 @@ export function normalizeSavedTeam(raw) {
     schemaVersion: migrated.schemaVersion,
     id: String(migrated.id),
     name: String(migrated.name || "이름 없는 팀").slice(0, 40),
-    regulationId: String(migrated.regulationId || "m-b"),
+    regulationId: String(migrated.regulationId || LEGACY_PERSISTED_REGULATION_ID),
     cupRuleId,
     cupRuleSettings: { assignedType: CUP_RULES[cupRuleId]?.kind === "monotype" ? assignedType : "" },
     createdAt: String(migrated.createdAt || new Date().toISOString()),
@@ -487,6 +509,7 @@ export function alignmentDisplay(alignment) {
 
 export function localizedPokemonName(pokemon, koreanNames) {
   if (!pokemon) return "";
+  if (ENGLISH_FALLBACK_FORM_NAMES.has(pokemon.name)) return pokemon.name;
   const base = canonicalBaseName(pokemon.name);
   const ko = koreanNames?.get?.(base.toLowerCase());
   if (!ko) return pokemon.name;

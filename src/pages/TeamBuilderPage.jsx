@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown, Modal, Reveal } from "../components/index.js";
-import { CUP_RULES, KO, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
+import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
   ALIGNMENTS,
@@ -52,8 +52,7 @@ const SPECIES_NAMES_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/mas
 function readInitialRuleState() {
   const params = new URLSearchParams(window.location.search);
   const eventId = params.get("eventId") || "";
-  const requestedReg = params.get("reg") || "m-b";
-  const regulationId = REGULATIONS[requestedReg] ? requestedReg : "m-b";
+  const regulationId = resolveRegulationId(params.get("reg"));
   const requestedCup = params.get("cup") || "none";
   const cupRuleId = CUP_RULES[requestedCup] ? requestedCup : "none";
   const requestedType = params.get("type") || "";
@@ -413,7 +412,7 @@ export default function TeamBuilderPage() {
   const restoringDraftRef = useRef(false);
   const unrestoredDraftExistsRef = useRef(false);
 
-  const regulation = REGULATIONS[regulationId] || Object.values(REGULATIONS)[0];
+  const regulation = REGULATIONS[regulationId] || REGULATIONS[DEFAULT_REGULATION_ID];
   const cupRule = CUP_RULES[cupRuleId] || CUP_RULES.none;
   const selectedType = TYPE_OPTIONS.find(type => type.id === assignedTypeId) || null;
   const selectedMember = team.find(member => member.uid === selectedUid) || null;

@@ -1,12 +1,44 @@
 // YPL Team Builder Alpha
 // Regulation data is intentionally isolated from UI/validation logic.
-// Add future regulations (e.g. M-C) by adding another object to REGULATIONS.
+// Add future regulations as deltas from the immediately preceding roster.
 
 const MB_NEW = new Set([
   'Vileplume','Qwilfish','Sceptile','Blaziken','Swampert','Mawile','Metagross','Staraptor',
   'Musharna','Scolipede','Scrafty','Eelektross','Pyroar','Malamar','Barbaracle','Dragalge',
   'Grimmsnarl','Falinks','Overqwil','Houndstone','Annihilape','Gholdengo'
 ]);
+
+const MC_NEW_NAMES = [
+  'Wigglytuff',
+  'Persian',
+  'Persian [Alolan Form]',
+  'Perrserker',
+  "Farfetch'd",
+  "Sirfetch'd",
+  'Mr. Mime',
+  'Swalot',
+  'Salamence',
+  'Gogoat',
+  'Golisopod',
+  'Rillaboom',
+  'Cinderace',
+  'Inteleon',
+  'Thievul',
+  'Toxtricity',
+  'Toxtricity [Low Key Form]',
+  'Grapploct',
+  'Pincurchin',
+  'Indeedee',
+  'Indeedee [Female]',
+  'Arboliva',
+  'Baxcalibur',
+  'Pawmot',
+  'Squawkabilly',
+  'Squawkabilly [Blue Plumage]',
+  'Squawkabilly [Yellow Plumage]',
+  'Squawkabilly [White Plumage]',
+  'Mabosstiff',
+];
 
 const MB_POKEMON = `
 Vileplume
@@ -272,14 +304,36 @@ const MA_POKEMON = MB_POKEMON.filter(p => !p.isNewInMB).map((p, index) => ({
   isNewInMB: false
 }));
 
+const MC_POKEMON = [
+  ...MB_POKEMON.map(pokemon => ({ ...pokemon, isNewInMC: false })),
+  ...MC_NEW_NAMES.map((name, index) => ({
+    id: `mc-${index + 1}`,
+    name,
+    isNewInMB: false,
+    isNewInMC: true,
+  })),
+];
+
+export const DEFAULT_REGULATION_ID = 'm-c';
+
 export const REGULATIONS = {
+  'm-c': {
+    id: 'm-c',
+    name: 'Regulation M-C',
+    shortName: 'M-C',
+    status: 'current',
+    period: '2026.09.09 – 2026.12.02',
+    description: 'Pokémon Champions 현행 Regulation M-C 포켓몬 풀',
+    maxTeamSize: 6,
+    pokemon: MC_POKEMON,
+  },
   'm-b': {
     id: 'm-b',
     name: 'Regulation M-B',
     shortName: 'M-B',
-    status: 'current',
+    status: 'past',
     period: '2026.06.17 – 2026.09.09',
-    description: 'Pokémon Champions 현행 Regulation M-B 포켓몬 풀',
+    description: '이전 Regulation M-B 포켓몬 풀',
     maxTeamSize: 6,
     pokemon: MB_POKEMON,
   },
@@ -294,4 +348,9 @@ export const REGULATIONS = {
     pokemon: MA_POKEMON,
   }
 };
+
+export function resolveRegulationId(value) {
+  const requestedId = String(value || '').toLowerCase();
+  return REGULATIONS[requestedId] ? requestedId : DEFAULT_REGULATION_ID;
+}
 
