@@ -1628,7 +1628,9 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .sec-head .sub{font-size:15.5px;line-height:1.65;color:var(--t-4);max-width:64ch;margin:10px 0 0;}
 .ypl .kick-line{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--t-1);padding-left:0;}
 .ypl .kick-line::before{display:none;}
-.ypl .records-eyebrow,.ypl .tb-kicker,.ypl .tb-panel-kicker{display:none;}
+.ypl .tb-kicker,.ypl .tb-panel-kicker{display:none;}
+/* 기록 프로필 머리글은 프로토타입에 있던 요소라 남긴다 */
+.ypl .records-eyebrow{display:block;font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--t-5);}
 
 /* ── 5) 아이콘: 24px 그리드, 선 굵기 2, 이모지 없음 ── */
 .ypl .ic{display:inline-block;vertical-align:-0.16em;flex:none;}
@@ -1769,51 +1771,79 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .ypl .wrap{z-index:1;}
 
 /* ── 9) 칭호: 왼쪽 그룹 머리 + 오른쪽 장부형 목록 ── */
+.ypl .tt-head{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;}
+.ypl .tt-headmain{min-width:0;}
+.ypl .tt-sum{display:flex;gap:28px;flex:none;padding-top:4px;}
+.ypl .tt-sum div{display:flex;flex-direction:column;align-items:flex-end;}
+.ypl .tt-sum b{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--t-1);}
+.ypl .tt-sum span{font-size:13px;font-weight:600;color:var(--t-4);margin-top:8px;}
+
 .ypl .tgroup{display:grid;grid-template-columns:300px minmax(0,1fr);gap:40px;
   margin:0;padding:36px 0;border-top:1px solid var(--ln-1);}
 .ypl .tgroup:first-of-type{border-top:0;padding-top:8px;}
-.ypl .tgroup-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;align-content:flex-start;}
-.ypl .tgroup-head .ic-box{order:1;}
-.ypl .tgroup-head h3{order:2;font-size:21px;font-weight:800;letter-spacing:-.02em;margin:0;}
-.ypl .tgroup-head .cnt{order:3;}
-.ypl .tgroup-head .gdesc{order:4;flex:0 0 100%;min-width:0;margin:2px 0 0 52px;
-  font-size:14px;line-height:1.5;color:var(--t-4);}
-.ypl .tgroup-head .btn{order:5;margin:12px 0 0 52px;}
-.ypl .tgroup .grid.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 28px;}
-.ypl .tgroup .titem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;
-  align-items:center;min-height:52px;padding:12px 2px;
-  background:none;border:0;border-bottom:1px solid var(--ln-1);border-radius:0;}
-.ypl.dark .tgroup .titem,.ypl.dark .tgroup .titem.empty{background:none;border-color:transparent;
-  border-bottom:1px solid var(--ln-1);}
-.ypl .tgroup .titem:hover{background:none;border-color:var(--ln-1);}
-.ypl .tgroup .titem.empty{opacity:1;}
-.ypl .tgroup .titem .tn{grid-column:1;grid-row:1;font-size:15px;font-weight:700;color:var(--t-1);}
-.ypl .tgroup .titem.empty .tn{color:var(--t-5);font-weight:600;}
-.ypl .tgroup .titem .td{grid-column:1;grid-row:2;font-size:12.5px;line-height:1.5;color:var(--t-5);margin:0;}
-.ypl .tgroup .titem .hold{grid-column:2;grid-row:1/3;align-self:center;justify-content:flex-end;margin:0;}
-.ypl .tgroup .titem .none{font-style:normal;font-size:13px;color:var(--t-5);}
-.ypl .tgroup .titem .tn,.ypl .tgroup .titem .td{word-break:keep-all;}
-.ypl .tgroup .titem .hold{min-width:0;flex-wrap:wrap;}
-.ypl .tgroup .titem .holder{white-space:nowrap;}
-.ypl .tg-partner .titem{grid-template-columns:minmax(0,auto) minmax(0,1fr);}
-.ypl .tgroup .titem .edit-row{grid-column:1/-1;margin-top:6px;}
-/* 역대 챔피언은 카드 한 줄 */
-.ypl .tg-champion .grid.g3{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
-.ypl .tg-champion .titem{display:block;min-height:0;padding:16px;border:1px solid var(--ln-1);
-  border-radius:12px;background:var(--s-card);}
-.ypl.dark .tg-champion .titem{background:var(--s-card);border-color:transparent;border-bottom-color:transparent;}
-.ypl .tg-champion .titem .hold{margin-top:10px;justify-content:flex-start;}
-/* 파트너는 두 칸, 기타 칭호는 한 칸에 넓게 */
-.ypl .tg-partner .grid.g3{grid-template-columns:repeat(2,minmax(0,1fr));}
-.ypl .tg-etc .grid.g3{grid-template-columns:minmax(0,1fr);}
-.ypl .tg-etc .titem{grid-template-columns:220px minmax(0,1fr);align-items:start;padding:14px 2px;}
-.ypl .tg-etc .titem .hold{justify-content:flex-start;}
+.ypl .tg-head{display:flex;align-items:flex-start;gap:14px;margin:0;}
+.ypl .tg-headmain{min-width:0;}
+.ypl .tg-head h3{margin:0;font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.15;color:var(--t-1);}
+.ypl .tg-head h3 small{margin-left:8px;font-size:15px;font-weight:700;color:var(--t-5);}
+.ypl .tg-head p{margin:8px 0 0;font-size:14px;line-height:1.5;color:var(--t-4);}
+.ypl .tg-rate{display:inline-block;margin-top:14px;padding:4px 9px;border-radius:8px;
+  background:var(--s-soft2);color:var(--ac-text);font-size:12.5px;font-weight:700;}
+.ypl .tg-add{margin-top:14px;}
+
+/* 장부형 목록 */
+.ypl .tg-ledger{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 28px;}
+.ypl .tg-partner .tg-ledger{grid-template-columns:repeat(2,minmax(0,1fr));}
+.ypl .tg-etc .tg-ledger{grid-template-columns:minmax(0,1fr);}
+.ypl .tg-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;
+  min-height:52px;padding:12px 2px;border-bottom:1px solid var(--ln-1);}
+.ypl .tg-etc .tg-row{grid-template-columns:200px minmax(0,1fr);align-items:flex-start;padding:14px 2px;}
+.ypl .tg-row .k{display:flex;align-items:center;gap:10px;min-width:0;
+  font-size:15px;font-weight:700;color:var(--t-1);word-break:keep-all;}
+.ypl .tg-etc .tg-row .k{flex-direction:column;align-items:flex-start;gap:2px;}
+.ypl .tg-row .k .ty{width:8px;height:8px;border-radius:2px;flex:none;}
+.ypl .tg-row .k small{font-size:12.5px;font-weight:500;color:var(--t-5);}
+.ypl .tg-row .v{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;
+  font-size:14.5px;font-weight:600;color:var(--t-2);text-align:right;word-break:keep-all;}
+.ypl .tg-etc .tg-row .v{justify-content:flex-start;}
+.ypl .tg-row .v .p{white-space:nowrap;}
+.ypl .tg-row .v .chip{padding:6px 10px;border-radius:8px;background:var(--s-card);
+  border:1px solid var(--ln-1);font-size:13px;font-weight:700;color:var(--t-2);white-space:nowrap;}
+.ypl.dark .tg-row .v .chip{background:var(--s-soft);border-color:transparent;}
+.ypl .tg-row.none .k{color:var(--t-5);font-weight:600;}
+.ypl .tg-row.none .v{color:var(--t-5);font-weight:500;font-size:13px;}
+
+/* 역대 챔피언 카드 */
+.ypl .tg-champs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+.ypl .tg-champ{position:relative;padding:16px;border:1px solid var(--ln-1);border-radius:12px;
+  background:var(--s-card);min-width:0;}
+.ypl.dark .tg-champ{background:var(--s-card);border-color:transparent;}
+.ypl .tg-champ.now{border-color:var(--ac-text);}
+.ypl.dark .tg-champ.now{border-color:var(--ac-text);}
+.ypl .tg-champ .cr{position:absolute;top:13px;right:13px;color:var(--gold);display:flex;}
+.ypl .tg-champ .g{display:block;font-size:12px;font-weight:700;color:var(--t-5);}
+.ypl .tg-champ .nm{display:block;margin-top:6px;font-size:19px;font-weight:800;
+  letter-spacing:-.02em;color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ypl .tg-champ.now .nm{color:var(--ac-text);}
+.ypl .tg-champ .s{display:block;margin-top:6px;font-size:12px;font-weight:500;color:var(--t-5);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* 이벤트 칭호 칩 */
+.ypl .tg-chips{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;}
+.ypl .tg-chip{display:inline-flex;align-items:baseline;gap:6px;padding:7px 11px;border-radius:8px;
+  background:var(--s-card);border:1px solid var(--ln-1);}
+.ypl.dark .tg-chip{background:var(--s-card);border-color:transparent;}
+.ypl .tg-chip b{font-size:13.5px;font-weight:700;color:var(--ac-text);}
+.ypl .tg-chip small{font-size:12.5px;font-weight:500;color:var(--t-5);}
+.ypl .tg-chip.none b{color:var(--t-5);}
+
 @media(max-width:900px){
+  .ypl .tt-head{flex-direction:column;gap:18px;}
+  .ypl .tt-sum{padding-top:0;}
+  .ypl .tt-sum div{align-items:flex-start;}
   .ypl .tgroup{grid-template-columns:1fr;gap:16px;}
-  .ypl .tgroup .grid.g3,.ypl .tg-partner .grid.g3{grid-template-columns:minmax(0,1fr);}
-  .ypl .tg-champion .grid.g3{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .ypl .tg-etc .titem{grid-template-columns:minmax(0,1fr);}
-  .ypl .tgroup-head .gdesc,.ypl .tgroup-head .btn{margin-left:0;}
+  .ypl .tg-ledger,.ypl .tg-partner .tg-ledger{grid-template-columns:minmax(0,1fr);}
+  .ypl .tg-champs{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ypl .tg-etc .tg-row{grid-template-columns:minmax(0,1fr);}
 }
 
 /* ── 10) 명예의 전당: 남색 면 대신 테두리 카드, 현 챔피언만 강조 ── */
@@ -1908,9 +1938,10 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 
 .ypl .rec-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
 .ypl .rec-card{text-align:left;padding:20px;border-radius:12px;}
-.ypl .rec-ico{margin:0 0 12px;width:34px;height:34px;}
-.ypl .rec-t{font-size:19px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;}
-.ypl .rec-d{font-size:14px;line-height:1.6;color:var(--t-4);}
+.ypl .rec-ico{display:none;}
+.ypl .rec-k{display:block;font-size:12.5px;font-weight:700;color:var(--ac-text);}
+.ypl .rec-t{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:8px 0 0;color:var(--t-1);}
+.ypl .rec-d{font-size:14px;line-height:1.6;color:var(--t-4);margin-top:8px;}
 
 .ypl .timeline{display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 32px;margin:14px 0 6px;}
 .ypl .tl-item{display:contents;}

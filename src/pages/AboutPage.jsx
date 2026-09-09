@@ -41,12 +41,15 @@ export default function AboutPage() {
 
     <Reveal tag="h3"><span className="kick-line" style={{margin:"48px 0 18px"}}>YPL이 기록하는 것</span></Reveal>
     <div className="rec-grid">
-      <Reveal className="rec-card"><div className="rec-ico" aria-hidden="true"><Icon n="chart" size={20}/></div>
-        <div className="rec-t">전적</div><div className="rec-d">모든 대회의 경기 결과</div></Reveal>
-      <Reveal className="rec-card" delay={80}><div className="rec-ico" aria-hidden="true"><Icon n="crown" size={20}/></div>
-        <div className="rec-t">챔피언</div><div className="rec-d">역대 시즌의 주인공</div></Reveal>
-      <Reveal className="rec-card" delay={160}><div className="rec-ico" aria-hidden="true"><Icon n="medal" size={20}/></div>
-        <div className="rec-t">칭호</div><div className="rec-d">트레이너가 획득한 기록</div></Reveal>
+      <Reveal className="rec-card"><span className="rec-k">전적</span>
+        <div className="rec-t">모든 대회의 경기 결과</div>
+        <div className="rec-d">대진표에서 확정된 결과가 트레이너·대회·포켓몬 기록으로 자동 연동됩니다.</div></Reveal>
+      <Reveal className="rec-card" delay={80}><span className="rec-k">챔피언</span>
+        <div className="rec-t">역대 시즌의 주인공</div>
+        <div className="rec-d">챔피언스 시리즈 우승자와 우승 엔트리를 명예의 전당에 보관합니다.</div></Reveal>
+      <Reveal className="rec-card" delay={160}><span className="rec-k">칭호</span>
+        <div className="rec-t">트레이너가 획득한 기록</div>
+        <div className="rec-d">타입 엑스퍼트, 지방 엘리트, 파트너 등 조건 달성 칭호를 관리합니다.</div></Reveal>
     </div>
 
     <Reveal tag="h3" className="" delay={0}><span className="kick-line" style={{margin:"40px 0 18px"}}>연혁</span></Reveal>
