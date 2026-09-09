@@ -2824,3 +2824,49 @@ Final roster는 Final `EntryParticipant → EventRegistration.final_submission_i
 ## 2026-09-08 Champions ranking exclusion correction
 
 Champions Qualifier와 Final은 공식 placement Result / Records / Hall of Fame 대상이지만 랭킹 산정 대상은 아니다. ranking policy는 `event_type=champions`에서 phase와 stale `rankingEnabled=true` 설정보다 먼저 fail closed하여 RankingAward와 누적·시즌 delta를 만들지 않는다. pair 저장도 `competition_settings.rankingEnabled=false`를 강제한다.
+
+---
+
+## 2026-09-08 Integrated QA finalization
+
+최종 integrated manual/browser QA를 완료했다.
+
+- ordinary Single / Double / Team, Champions Qualifier / Final, multi-BYE regression PASS
+- apply / revert / delete / regenerate lifecycle과 Records / HOF PASS
+- Test fixture cleanup 완료, production build 및 `git diff --check` PASS
+- production-candidate Test snapshot: current YPL3 Event 0, BracketRuntime 0, RankingAward 0, Result 204, HOF 6, recent QA Player 0, orphan snapshot 0
+- announcement는 실제 공지 3개만 보존했다.
+
+Test DB는 개발 fixture가 남은 dirty DB가 아니라 clean production-candidate / rollback reference 상태로 확정했다.
+
+---
+
+## 2026-09-09 Production database migration / cutover
+
+새 Production Supabase `YPL_DB` (`rqffrogcverfjqzjasax`, Seoul)에 Test normalized schema를 migration하고 application을 cutover했다. 기존 Production은 변경하지 않은 rollback/archive source로 보존했다.
+
+- normalized application table 22개, function 26개, constraint 174개, index 100개, trigger 2개
+- source/destination table row count와 non-empty table data hash exact match
+- function, constraint, index, trigger catalog fingerprint 및 table/function/schema ACL fingerprint exact match
+- orphan Event/Registration/Entry/Submission/Result/HOF와 broken `final_submission_id` 모두 0, current YPL Season 1개, frozen submission 13개
+- `public.site_data / ypl_data_v4`는 기존 site-level data와 historical legacy compatibility를 위해 보존하고, 신규 active Event-linked competition runtime의 canonical facts는 `ypl_schema_validation` normalized schema를 사용
+- custom schema API exposure, `ypl_schema_validation` REST/RPC HTTP 200, production env `VITE_YPL_DATA_SCHEMA=ypl_schema_validation` 확인
+
+RLS/ACL은 compatibility-first 정책으로 Test에서 검증한 상태를 그대로 복제했다. app table과 `public.site_data` RLS 비활성은 migration 누락이 아니며, Auth/RLS 및 RPC privilege hardening은 기능 호환성을 보존하는 별도 후속 작업이다.
+
+---
+
+## 2026-09-09 GitHub main / Pages production release
+
+기존 Production `main` (`06bb20bea602434255db6a2d5a0df9262bdeb0d5`)은 `backup/main-before-season3-cutover-20260909` branch와 `backup-main-before-season3-cutover-20260909` tag로 이중 보존했다.
+
+검증 완료한 `feature/records-system`을 canonical source로 `main`에 deliberate ref cutover했고, 기존 Production을 feature branch에 merge하지 않았다. 이후 schema env 보정과 UI polish를 fast-forward 반영해 현재 `main`은 `0454c097352059354893eca7a92f567352faeed8`이다. Deploy to GitHub Pages run #69는 completed / success 상태이며, 실제 Production은 해당 새 main의 GitHub Pages 배포가 완료된 상태다.
+
+---
+
+## 2026-09-09 Search / Dropdown UI polish
+
+- Records, Trainer, Pokémon, Team Builder 검색창의 돋보기 스타일을 기존 게시판 검색과 통일했다.
+- Dropdown option의 padding/font visual density를 줄이고 header `도구` dropdown의 compact width와 trigger 우측 정렬을 조정했다.
+- 검색과 Dropdown의 기능 로직은 변경하지 않았다.
+- targeted tests 23/23, production build, `git diff --check` PASS.

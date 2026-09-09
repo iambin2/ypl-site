@@ -21,7 +21,11 @@ YPL Records
 └─ ranking
 ```
 
-현재 normalized runtime은 Test schema에서 검증된 구현이다. Production normalized cutover는 완료되지 않았으며, Production 접근·migration·write는 별도 최종 승인 전까지 금지한다.
+Test에서 검증한 normalized architecture는 새 Production `YPL_DB` (`rqffrogcverfjqzjasax`, Seoul)의 `ypl_schema_validation`에도 migration/cutover 완료됐다.
+
+- Production: active Event-linked competition runtime은 `ypl_schema_validation` normalized facts만 사용한다. `public.site_data / ypl_data_v4`는 기존 site-level data 및 historical legacy compatibility를 위해 보존한다.
+- Test: regression과 migration verification reference, clean production-candidate / rollback reference를 유지한다.
+- Old Production: active app source가 아닌 rollback/archive source로 보존한다.
 
 ## 2. Data source boundary
 
@@ -309,20 +313,20 @@ Team Event는 Master sequence를 참조하지만 자체가 Master sequence를 �
 
 - partial unique index는 `series='ypl' AND status='current'`만 보호한다. Classic row와 기존 Event 연결은 rollover가 변경하지 않는다.
 - 신규 ordinary Event와 Champions Qualifier/Final pair는 생성 직전에 ensure RPC를 호출해 같은 YPL Season을 사용한다. 기존 Event/pair 수정은 현재 Season으로 이동하지 않고 기존 `season_id`를 유지한다.
-- Test project에는 `pg_cron`이 설치되어 있지 않아 scheduler를 만들지 않았다. 대신 idempotent ensure RPC를 current-season 진입점에서 호출한다. Production에는 적용하지 않았다.
+- `pg_cron` scheduler는 사용하지 않는다. idempotent ensure RPC를 current-season 진입점에서 호출하며, 이 방식은 Production에도 적용됐다. anchor는 `2026-09-01 = YPL 시즌 3`, `2027-03-01 = YPL 시즌 4`, `2027-09-01 = YPL 시즌 5`다.
 
-## 9. Production migration / cutover
+## 9. Production migration / cutover 완료
 
-Production의 current source는 여전히 legacy `public.site_data / ypl_data_v4`다. Test normalized completion을 Production completion으로 표현하지 않는다.
+Production은 새 `YPL_DB`의 `ypl_schema_validation`을 active normalized schema로 사용한다. `public.site_data / ypl_data_v4`는 기존 site-level data 및 historical legacy compatibility를 위해 보존한다. 특히 `ypl_data_v4.brackets`의 legacy graph는 Event-unlinked pre-normalized completed bracket의 read-only compatibility에만 허용하며 active Event-linked bracket runtime fallback으로 사용하지 않는다.
 
-Production cutover는 기존 Production 보존, normalized schema/RPC 정리, 새 Production DB 준비, historical/business data migration, validation, cutover, rollback source 보존의 순서로 진행한다.
-
-- Test fixture를 Production으로 승격하지 않는다.
-- historical legacy compatibility가 필요한 범위는 새 Production에도 명시적으로 남긴다.
-- Production mutation은 별도 최종 승인과 migration plan 없이는 수행하지 않는다.
+- normalized application table 22개, function 26개, constraint 174개, index 100개, trigger 2개를 migration했다.
+- source/destination의 table row count, non-empty data hash, function/constraint/index/trigger catalog fingerprint, table/function/schema ACL fingerprint parity를 확인했다.
+- orphan Event/Registration/Entry/Submission/Result/HOF, broken `final_submission_id`는 모두 0이며 current YPL Season은 정확히 하나다.
+- custom schema API exposure와 `ypl_schema_validation` REST/RPC HTTP 200을 검증했고 production env는 `VITE_YPL_DATA_SCHEMA=ypl_schema_validation` 경계를 사용한다.
+- 기존 Production은 변경하지 않고 rollback/archive source로 보존했다.
 
 ## 10. Security boundary와 deferred work
 
 Client/UI는 UX guard일 뿐 canonical integrity boundary가 아니다. RPC/service/DB는 Event ownership, phase, lifecycle state, exact Registration/Entry identity, durable downstream fact를 independently validate하고 fail closed 해야 한다.
 
-Auth/RLS hardening과 RPC privilege review는 Production cutover 전의 별도 작업이다. broad table write grant, broad anon mutation, ambiguous cascade cleanup을 도입하지 않는다.
+Production cutover는 compatibility-first 상태로 완료됐다. 현재 app table과 `public.site_data`의 RLS는 활성화하지 않은 상태이며 Test compatibility state를 그대로 사용한다. 이는 migration 누락이 아니다. Auth/RLS hardening과 RPC privilege review는 기능 compatibility를 보존하는 별도 후속 작업이다. broad table write grant, broad anon mutation, ambiguous cascade cleanup을 도입하지 않는다.
