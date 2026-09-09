@@ -8,6 +8,9 @@ export const DRAFT_STORAGE_KEY = "ypl-team-builder:working-draft:v1";
 export const TEAM_SCHEMA_VERSION = 2;
 export const DRAFT_SCHEMA_VERSION = 2;
 export const DRAFT_SAVE_DELAY_MS = 180;
+// Saved teams and drafts created before M-C had no regulationId while M-B was
+// current. Retain that meaning instead of silently reclassifying them as M-C.
+export const LEGACY_PERSISTED_REGULATION_ID = "m-b";
 
 export const ALIGNMENTS = [
   { id: "serious", name: "Serious", plus: null, minus: null },
@@ -64,6 +67,12 @@ export const DATA_ID_OVERRIDES = {
   "Basculegion [Female]": "basculegionf",
   "Maushold [Family of Four]": "mausholdfour",
   "Sinistcha [Masterpiece Form]": "sinistchamasterpiece",
+  "Persian [Alolan Form]": "persianalola",
+  "Toxtricity [Low Key Form]": "toxtricitylowkey",
+  "Indeedee [Female]": "indeedeef",
+  "Squawkabilly [Blue Plumage]": "squawkabillyblue",
+  "Squawkabilly [Yellow Plumage]": "squawkabillyyellow",
+  "Squawkabilly [White Plumage]": "squawkabillywhite",
 };
 
 export const SPRITE_SLUG_OVERRIDES = {
@@ -96,6 +105,12 @@ export const SPRITE_SLUG_OVERRIDES = {
   "Basculegion [Female]": "basculegion-f",
   "Mr. Rime": "mrrime",
   "Kommo-o": "kommoo",
+  "Persian [Alolan Form]": "persian-alola",
+  "Toxtricity [Low Key Form]": "toxtricity-lowkey",
+  "Indeedee [Female]": "indeedee-f",
+  "Squawkabilly [Blue Plumage]": "squawkabilly-blue",
+  "Squawkabilly [Yellow Plumage]": "squawkabilly-yellow",
+  "Squawkabilly [White Plumage]": "squawkabilly-white",
 };
 
 export const TYPE_KO = Object.fromEntries(TYPE_OPTIONS.map(type => [type.english, type.korean]));
@@ -111,7 +126,7 @@ export function canonicalBaseName(name = "") {
   if (regional) return regional[1];
   if (name.startsWith("Tauros [")) return "Tauros";
   if (/^(Heat|Wash|Frost|Fan|Mow) Rotom$/.test(name)) return "Rotom";
-  for (const base of ["Florges", "Furfrou", "Meowstic", "Gourgeist", "Lycanroc", "Polteageist", "Alcremie", "Basculegion", "Maushold", "Sinistcha", "Vivillon"]) {
+  for (const base of ["Florges", "Furfrou", "Meowstic", "Gourgeist", "Lycanroc", "Polteageist", "Alcremie", "Basculegion", "Maushold", "Sinistcha", "Vivillon", "Toxtricity", "Indeedee", "Squawkabilly"]) {
     if (name.startsWith(`${base} [`)) return base;
   }
   return name;
@@ -187,7 +202,7 @@ export function normalizeSavedTeam(raw) {
     schemaVersion: Number(raw.schemaVersion) || TEAM_SCHEMA_VERSION,
     id: String(raw.id),
     name: String(raw.name || "이름 없는 팀").slice(0, 40),
-    regulationId: String(raw.regulationId || "m-b"),
+    regulationId: String(raw.regulationId || LEGACY_PERSISTED_REGULATION_ID),
     cupRuleId,
     cupRuleSettings: { assignedType: CUP_RULES[cupRuleId]?.kind === "monotype" ? assignedType : "" },
     createdAt: String(raw.createdAt || new Date().toISOString()),
@@ -198,7 +213,7 @@ export function normalizeSavedTeam(raw) {
 
 export function normalizeDraft(raw, regulations) {
   if (!raw || typeof raw !== "object" || !Array.isArray(raw.members)) return null;
-  const regulationId = String(raw.regulationId || "m-b");
+  const regulationId = String(raw.regulationId || LEGACY_PERSISTED_REGULATION_ID);
   if (!regulations?.[regulationId]) return null;
   const cupRuleId = CUP_RULES[String(raw.cupRuleId || "none")] ? String(raw.cupRuleId || "none") : "none";
   const assignedType = TYPE_OPTIONS.some(type => type.id === String(raw.cupRuleSettings?.assignedType || "")) ? String(raw.cupRuleSettings?.assignedType || "") : "";
@@ -277,6 +292,10 @@ export function localizedPokemonName(pokemon, koreanNames) {
   if (pokemon.name === "Fan Rotom") return `스핀${ko}`;
   if (pokemon.name === "Mow Rotom") return `커트${ko}`;
   if (pokemon.name === "Meowstic [Female]") return `${ko} (암컷)`;
+  if (pokemon.name === "Indeedee [Female]") return `${ko} (암컷)`;
+  // No verified Korean display strings are available in the local snapshot for
+  // these battle-relevant forms, so retain Showdown's exact English form names.
+  if (["Toxtricity [Low Key Form]", "Squawkabilly [Blue Plumage]", "Squawkabilly [Yellow Plumage]", "Squawkabilly [White Plumage]"].includes(pokemon.name)) return pokemon.name;
   if (pokemon.name === "Lycanroc [Midnight Form]") return `${ko} (한밤중의 모습)`;
   if (pokemon.name === "Lycanroc [Dusk Form]") return `${ko} (황혼의 모습)`;
   if (pokemon.name === "Basculegion [Female]") return `${ko} (암컷)`;

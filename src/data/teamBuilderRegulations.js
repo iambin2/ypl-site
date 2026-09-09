@@ -8,6 +8,38 @@ const MB_NEW = new Set([
   'Grimmsnarl','Falinks','Overqwil','Houndstone','Annihilape','Gholdengo'
 ]);
 
+const MC_NEW = new Set([
+  'Wigglytuff',
+  'Persian',
+  'Persian [Alolan Form]',
+  'Perrserker',
+  "Farfetch'd",
+  "Sirfetch'd",
+  'Mr. Mime',
+  'Swalot',
+  'Salamence',
+  'Gogoat',
+  'Golisopod',
+  'Rillaboom',
+  'Cinderace',
+  'Inteleon',
+  'Thievul',
+  'Toxtricity',
+  'Toxtricity [Low Key Form]',
+  'Grapploct',
+  'Pincurchin',
+  'Indeedee',
+  'Indeedee [Female]',
+  'Arboliva',
+  'Baxcalibur',
+  'Pawmot',
+  'Squawkabilly',
+  'Squawkabilly [Blue Plumage]',
+  'Squawkabilly [Yellow Plumage]',
+  'Squawkabilly [White Plumage]',
+  'Mabosstiff',
+]);
+
 const MB_POKEMON = `
 Vileplume
 Qwilfish
@@ -272,14 +304,39 @@ const MA_POKEMON = MB_POKEMON.filter(p => !p.isNewInMB).map((p, index) => ({
   isNewInMB: false
 }));
 
+// Regulations inherit the prior roster. Keep only the delta above so that a
+// future regulation cannot accidentally omit a Pokémon that was legal before.
+const MC_POKEMON = [...MB_POKEMON.map(p => p.name), ...MC_NEW].map((name, index) => ({
+  id: `mc-${index + 1}`,
+  name,
+  isNewInMB: MB_NEW.has(name),
+  isNewInMC: MC_NEW.has(name),
+}));
+
+export const DEFAULT_REGULATION_ID = 'm-c';
+
+export function resolveRegulationId(regulationId) {
+  return REGULATIONS[regulationId] ? regulationId : DEFAULT_REGULATION_ID;
+}
+
 export const REGULATIONS = {
+  'm-c': {
+    id: 'm-c',
+    name: 'Regulation M-C',
+    shortName: 'M-C',
+    status: 'current',
+    period: '2026.09.09 – 2026.12.02',
+    description: 'Pokémon Champions 현행 Regulation M-C 포켓몬 풀',
+    maxTeamSize: 6,
+    pokemon: MC_POKEMON,
+  },
   'm-b': {
     id: 'm-b',
     name: 'Regulation M-B',
     shortName: 'M-B',
-    status: 'current',
+    status: 'past',
     period: '2026.06.17 – 2026.09.09',
-    description: 'Pokémon Champions 현행 Regulation M-B 포켓몬 풀',
+    description: '이전 Regulation M-B 포켓몬 풀',
     maxTeamSize: 6,
     pokemon: MB_POKEMON,
   },

@@ -18,7 +18,20 @@ const MB_ONLY_ITEM_IDS = new Set([
   'eelektrossite', 'pyroarite', 'malamarite', 'barbaracite', 'dragalgite', 'falinksite',
 ]);
 
-const CACHE_KEY = 'ypl-champions-data-v3';
+const MC_ONLY_ITEM_IDS = new Set([
+  // Regulation M-C newly added standard held items.
+  'airballoon', 'bindingband', 'ejectbutton', 'electricseed', 'grassyseed', 'leek',
+  'mistyseed', 'normalgem', 'psychicseed', 'redcard', 'rockyhelmet', 'terrainextender',
+  // Mega Stones newly enabled together with the M-C Mega Evolutions.
+  'absolitez', 'baxcalibrite', 'garchompitez', 'golisopite', 'lucarionitez', 'salamencite',
+]);
+
+const BLOCKED_ITEM_IDS_BY_REGULATION = {
+  'm-a': new Set([...MB_ONLY_ITEM_IDS, ...MC_ONLY_ITEM_IDS]),
+  'm-b': MC_ONLY_ITEM_IDS,
+};
+
+const CACHE_KEY = 'ypl-champions-data-v4';
 const CACHE_TTL = 12 * 60 * 60 * 1000;
 
 function toID(text) {
@@ -246,12 +259,13 @@ async function load() {
 }
 
 function legalItems(data, regulationId) {
+  const blockedItemIds = BLOCKED_ITEM_IDS_BY_REGULATION[regulationId] || new Set();
   const values = Object.values(data?.items || {})
     .filter(item => item.name && (item.isNonstandard === null || item.isNonstandard === undefined))
-    .filter(item => regulationId !== 'm-a' || !MB_ONLY_ITEM_IDS.has(item.id))
+    .filter(item => !blockedItemIds.has(item.id))
     .sort((a, b) => a.name.localeCompare(b.name));
   return values;
 }
 
 
-export { load, legalItems, toID, MB_ONLY_ITEM_IDS };
+export { load, legalItems, toID, MB_ONLY_ITEM_IDS, MC_ONLY_ITEM_IDS };
