@@ -208,104 +208,75 @@ function TrainerView({ snapshot }) {
           </div>
 
           <div className="records-stat-grid">
-            <Stat label="확인 가능한 참가" value={history.length} suffix="회" />
+            <Stat label="참가" value={history.length} suffix="회" />
             <Stat label="우승" value={championships} suffix="회" />
             <Stat label="준우승" value={runnerUps} suffix="회" />
             <Stat label="4강" value={top4} suffix="회" />
           </div>
 
+          {(profile.champions.length > 0 || profile.titles.length > 0) && (
+            <div className="records-title-chips">
+              {profile.champions.map((c, i) => (
+                <span key={`c${i}`}>{c.gen} 챔피언</span>
+              ))}
+              {profile.titles.map((title, i) => (
+                <span key={`t${i}`}>{title.name}</span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="records-profile-grid">
-          <section className="panel records-block">
+          <section className="records-block">
             <div className="records-block-head">
               <h4>대회 이력</h4>
-              <span>{history.length}건의 대회 기록</span>
+              <span>{history.length}건 · 최근 순</span>
             </div>
-            <div className="records-history">
-              {history
-                .slice()
-                .sort(compareHistoryRecency)
-                .slice(0, 12)
-                .map((event) => {
-                  const teamName = displayTeamName(event.teamName);
-                  const rule = displayRecordMeta(event.rule);
-                  return (
-                    <div
-                      className={"records-history-row" + (event.championSeries ? " is-champions" : "")}
-                      key={`${event.id}:${event.playerId || profile.playerId || profile.key}:${event.placement}`}
-                    >
-                      <div>
-                        {event.championSeries && (
-                          <div className="records-history-kicker">CHAMPIONS SERIES</div>
-                        )}
-                        <b>
-                          {event.championSeries
+            {history.length ? (
+              <table className="records-history-table">
+                <thead><tr><th>대회</th><th>일자</th><th className="r">순위</th></tr></thead>
+                <tbody>
+                  {history.slice().sort(compareHistoryRecency).slice(0, 12).map((event) => {
+                    const teamName = displayTeamName(event.teamName);
+                    const rule = displayRecordMeta(event.rule);
+                    const label = event.resultLabel || placementLabel(event.placement, event.team);
+                    return (
+                      <tr key={`${event.id}:${event.playerId || profile.playerId || profile.key}:${event.placement}`}>
+                        <td className="t">
+                          <b>{event.championSeries
                             ? "챔피언스 시리즈"
-                            : event.eventName || `${event.tournamentName}${event.round ? ` ${event.round}회` : ""}`}
-                        </b>
-                        <span>{[event.date, event.season, teamName, rule].filter(Boolean).join(" · ")}</span>
-                      </div>
-                      <strong className={"records-placement p-" + event.placement}>
-                        {event.resultLabel || placementLabel(event.placement, event.team)}
-                      </strong>
-                    </div>
-                  );
-                })}
-              {!history.length && <div className="none">현재 확인 가능한 대회 기록이 없습니다.</div>}
-            </div>
+                            : event.eventName || `${event.tournamentName}${event.round ? ` ${event.round}회` : ""}`}</b>
+                          <span>{[event.season, teamName, rule].filter(Boolean).join(" · ")}</span>
+                        </td>
+                        <td className="date tnum">{event.date}</td>
+                        <td className={"r " + (event.placement === "win" ? "win" : "")}>{label}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : <div className="none">현재 확인 가능한 대회 기록이 없습니다.</div>}
           </section>
 
-          <section className="panel records-block">
+          <section className="records-block">
             <div className="records-block-head">
               <h4>엔트리 기록</h4>
-              <span>저장된 파티 기준</span>
+              <span>자주 쓴 포켓몬</span>
             </div>
             {favorites.length ? (
-              <div className="records-favorites">
-                {favorites.slice(0, 6).map((item, index) => (
-                  <div key={item.name}>
-                    <span className="tnum">{String(index + 1).padStart(2, "0")}</span>
-                    <b>{item.name}</b>
-                    <em>{item.entries}회</em>
-                  </div>
+              <div className="records-fav-grid">
+                {favorites.slice(0, 6).map((item) => (
+                  <div key={item.name}><b>{item.name}</b><span className="tnum">{item.entries}회</span></div>
                 ))}
               </div>
             ) : (
-              <div className="none">저장된 엔트리가 없습니다.</div>
+              <div className="records-empty-box">
+                <b>저장된 우승 엔트리가 없습니다</b>
+                대진표에서 결과를 확정하면 여기에 자동으로 연동됩니다.
+              </div>
             )}
-
           </section>
         </div>
-
-        {(profile.champions.length > 0 || profile.titles.length > 0) && (
-          <div className="records-profile-grid">
-            {profile.champions.length > 0 && (
-              <section className="panel records-block">
-                <div className="records-block-head"><h4>명예의 전당</h4></div>
-                <div className="records-achievements">
-                  {profile.champions.map((c, i) => (
-                    <div key={`${c.gen}:${i}`}>
-                      <strong><Icon n="crown" size={13}/> {c.gen} 챔피언</strong>
-                      <span>{c.season}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {profile.titles.length > 0 && (
-              <section className="panel records-block">
-                <div className="records-block-head"><h4>칭호</h4></div>
-                <div className="records-title-chips">
-                  {profile.titles.map((title, i) => (
-                    <span key={`${title.name}:${i}`}>{title.icon} {title.name}</span>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -623,11 +594,10 @@ function PokemonView({ snapshot }) {
           <section className="panel records-block">
             <div className="records-block-head"><h4>많이 등록한 트레이너</h4></div>
             <div className="records-favorites">
-              {current.trainers.slice(0, 8).map((item, index) => (
+              {current.trainers.slice(0, 8).map((item) => (
                 <div key={item.name}>
-                  <span className="tnum">{String(index + 1).padStart(2, "0")}</span>
                   <b>{item.name}</b>
-                  <em>{item.entries}회</em>
+                  <em className="tnum">{item.entries}회</em>
                 </div>
               ))}
             </div>
@@ -636,11 +606,10 @@ function PokemonView({ snapshot }) {
           <section className="panel records-block">
             <div className="records-block-head"><h4>함께 많이 등록된 포켓몬</h4></div>
             <div className="records-favorites">
-              {current.partners.slice(0, 8).map((item, index) => (
+              {current.partners.slice(0, 8).map((item) => (
                 <div key={item.name}>
-                  <span className="tnum">{String(index + 1).padStart(2, "0")}</span>
                   <b>{item.name}</b>
-                  <em>{item.entries}회</em>
+                  <em className="tnum">{item.entries}회</em>
                 </div>
               ))}
               {!current.partners.length && <div className="none">동반 엔트리 기록이 없습니다.</div>}

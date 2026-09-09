@@ -67,9 +67,12 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
 
     {pop&&<div className="overlay" onClick={()=>setPop(null)}>
       <div className="modal hof-modal" onClick={(e)=>e.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="hofm-bar">
+          <span className="hofm-k">우승 엔트리</span>
+          <button type="button" className="hofm-x" onClick={()=>setPop(null)} aria-label="닫기"><Icon n="x" size={14}/></button>
+        </div>
         <div className="hofm-top">
-          <div className="hofm-congrat">전당등록을 축하합니다!</div>
-          <div className="hofm-gen">{pop.slabel||("SEASON "+pop.season)}</div>
+          <div className="hofm-gen">{(pop.slabel||("SEASON "+pop.season))} · {pop.kind === "normalized" ? pop.gen : legacyChampionLabel(pop.gen)}</div>
           <div className="hofm-nm">{pop.name}</div>
         </div>
         <div className="hofm-team">{normTeam(pop.team).filter(m=>m.name||m.img||m.pokemonId).map((m,j)=>{const fallback=resolveHallOfFameArtwork(m, artworkLookup);const img=m.img||fallback;return (

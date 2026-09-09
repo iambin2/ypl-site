@@ -120,7 +120,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 
 @keyframes pageIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
 @keyframes pop{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:scale(1);}}
-.wrap{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:0 22px;}
+.wrap{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:0 22px;}
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);}
 .reveal.in{opacity:1;transform:none;}
 .page{animation:pageIn .5s cubic-bezier(.2,.7,.2,1);}
@@ -1040,7 +1040,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 
 
 /* ── 세컨드 로고(POKEMON CENTER YONSEI): 동아리 공식 서체 유지 ── */
-.ypl .brand small{font-family:'Cormorant Garamond',serif;font-size:12.5px;font-weight:600;
+.ypl .brand small{font-family:inherit;font-size:9.5px;font-weight:500;
   letter-spacing:.13em;color:var(--t-2);margin-top:1px;display:block;}
 
 /* ── 회색 글씨 대비 강화 (흰 바탕에서 또렷하게) ── */
@@ -2003,7 +2003,77 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
   .ypl .records-stat:first-child{border-top:0;}
 }
 
-/* ── 16) 눌림 피드백 ── */
+/* ── 16) 배경: 좌상단 남색 글로우 (프로토타입의 배경) ── */
+.ypl{position:relative;}
+.ypl::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(900px 480px at 10% -10%, rgba(var(--glow),.16), transparent 62%);}
+.ypl.dark::before{background:radial-gradient(900px 480px at 10% -10%, rgba(46,93,175,.20), transparent 62%);}
+.ypl .nav{z-index:90;}
+.ypl .wrap{z-index:1;}
+.ypl,.ypl .page,.ypl .home,.ypl .sec{background:transparent;}
+.ypl{background:var(--s-page);}
+.ypl .nav,.ypl .nav.scrolled{background:color-mix(in srgb,var(--s-page) 88%,transparent);
+  backdrop-filter:blur(14px);}
+.ypl .brand small{letter-spacing:.2em;color:var(--t-5);margin-top:4px;}
+
+/* ── 17) 기록 · 트레이너 대회 이력 표 ── */
+.ypl .records-history-table{width:100%;border-collapse:collapse;font-size:14.5px;}
+.ypl .records-history-table th{text-align:left;font-size:12.5px;font-weight:700;color:var(--t-5);
+  padding:12px 8px 10px;border-bottom:1px solid var(--ln-1);}
+.ypl .records-history-table th.r{text-align:right;}
+.ypl .records-history-table td{padding:13px 8px;border-bottom:1px solid var(--ln-1);vertical-align:middle;}
+.ypl .records-history-table td.t b{display:block;font-weight:700;color:var(--t-1);}
+.ypl .records-history-table td.t span{font-size:12.5px;color:var(--t-5);}
+.ypl .records-history-table td.date{color:var(--t-5);white-space:nowrap;font-weight:500;}
+.ypl .records-history-table td.r{text-align:right;font-weight:800;color:var(--t-2);white-space:nowrap;}
+.ypl .records-history-table td.r.win{color:var(--gold);}
+.ypl .records-fav-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px;}
+.ypl .records-fav-grid div{display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:12px 14px;border:1px solid var(--ln-1);border-radius:12px;background:var(--s-card);}
+.ypl.dark .records-fav-grid div{background:var(--s-card);border-color:transparent;}
+.ypl .records-fav-grid b{font-size:14.5px;color:var(--t-1);}
+.ypl .records-fav-grid span{font-size:13px;font-weight:600;color:var(--t-5);}
+.ypl .records-empty-box{margin-top:14px;padding:32px 20px;text-align:center;font-size:14px;
+  color:var(--t-5);border:1px dashed var(--ln-2);border-radius:12px;}
+.ypl .records-empty-box b{display:block;font-size:15px;color:var(--t-4);margin-bottom:4px;}
+.ypl .records-title-chips{margin-top:14px;}
+.ypl .records-title-chips span{background:var(--s-soft2);border-color:transparent;color:var(--ac-text);
+  font-weight:700;font-size:12.5px;padding:7px 10px;}
+.ypl .records-favorites>div{grid-template-columns:minmax(0,1fr) auto;}
+.ypl .records-favorites b{color:var(--t-1);font-size:14px;}
+.ypl .records-favorites em{font-size:13px;color:var(--t-5);font-weight:600;}
+
+/* ── 18) 명예의 전당 우승 엔트리 팝업: 여섯 마리 한 줄 ── */
+.ypl .hof-modal{max-width:760px;}
+.ypl .hofm-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.ypl .hofm-k{font-size:13px;font-weight:700;color:var(--t-5);}
+.ypl .hofm-x{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--ln-1);background:var(--s-card);color:var(--t-4);border-radius:8px;cursor:pointer;}
+.ypl.dark .hofm-x{background:var(--s-soft);border-color:transparent;}
+.ypl .hofm-top{text-align:center;}
+.ypl .hofm-congrat{display:none;}
+.ypl .hofm-gen{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--t-5);}
+.ypl .hofm-nm{font-size:40px;font-weight:800;letter-spacing:-.03em;color:var(--t-1);margin-top:6px;}
+.ypl .hofm-team{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:22px 0 4px;}
+.ypl .hofm-poke{max-width:none;gap:6px;}
+.ypl .hofm-sp{border-radius:8px;padding:6px;background:var(--s-soft);border:1px solid var(--ln-1);}
+.ypl.dark .hofm-sp{background:var(--s-soft);border-color:transparent;}
+.ypl .hofm-pn{font-size:12.5px;font-weight:700;color:var(--t-2);}
+@media(max-width:640px){ .ypl .hofm-team{grid-template-columns:repeat(3,minmax(0,1fr));} }
+
+/* ── 19) 대진표 새로 만들기: 페이지 안의 단계 폼 ── */
+.ypl .bk-create{margin-top:4px;}
+.ypl .bk-head{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.ypl .bk-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--t-1);}
+.ypl .bk-stepper{display:flex;align-items:center;gap:8px;margin-bottom:18px;
+  font-size:13.5px;font-weight:700;color:var(--t-5);}
+.ypl .bk-stepper .on{color:var(--ac-text);}
+.ypl .bk-stepper i{display:block;width:24px;height:1px;background:var(--ln-2);}
+.ypl .form-card{max-width:760px;padding:24px 26px;display:grid;gap:18px;}
+.ypl .form-card .field{margin:0;}
+.ypl .form-card .modal-actions{margin:0;padding-top:16px;border-top:1px solid var(--ln-1);}
+
+/* ── 20) 눌림 피드백 ── */
 .ypl .btn:active,.ypl .subtab:active,.ypl .pg-btn:active,.ypl .nav-discord:active,
 .ypl .ann-apply:active,.ypl .ann-link:active{transform:translateY(1px) !important;}
 `;

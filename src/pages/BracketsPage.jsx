@@ -506,8 +506,16 @@ function BracketWizard({ data, onClose, onCreate }){
     }catch(error){ setEventError(error?.message||"수동 참가자를 추가하지 못했습니다."); }
     finally{ setChampionshipManualBusy(false); }
   };
-  return (<Modal title="새 대회 만들기" onClose={onClose}>
-    <div className="swap" key={step}>
+  return (<div className="bk-create">
+    <div className="bk-head">
+      <button className="btn btn-ghost btn-sm" onClick={onClose}><Icon n="back" size={14}/>목록</button>
+      <h2>새 대진표</h2>
+    </div>
+    <div className="bk-stepper">
+      <span className={step===1?"on":""}>1 대회 설정</span><i/>
+      <span className={step===2?"on":""}>2 참가자 확정</span>
+    </div>
+    <div className="card form-card swap" key={step}>
     {step===1&&<>
       <div className="field">
         <label>신청 대회 선택</label>
@@ -762,7 +770,7 @@ function BracketWizard({ data, onClose, onCreate }){
       </div>
     </>}
     </div>
-  </Modal>);
+  </div>);
 }
 
 /* ===== 팀 대결(실제 lineup + 에이스 결정전) ===== */
@@ -1859,9 +1867,9 @@ export default function BracketsPage({ data, admin, flash, refresh }){
     <Reveal className="sec-head"><h2>대진표</h2>
       <p className="sub">대회 대진을 직접 생성하고 결과를 입력하면, 확정된 성적이 기록에 연동됩니다.</p>
       {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--loss)"}}>normalized bracket 오류: {normalizedLoadError}</p>}
-      {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" disabled={!!deletingId} onClick={()=>setWizard(true)}>+ 새 대회 만들기</button></div>}
+      {admin&&<div className="row-actions"><button className="btn btn-primary btn-sm" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={15}/>새 대진표</button></div>}
     </Reveal>
-    {!open&&<div className="bk-list swap">
+    {!open&&!wizard&&<div className="bk-list swap">
       {!normalizedInitialReady
         ? <div className="bk-empty">대진표를 불러오는 중입니다.</div>
         : list.length===0&&<div className="bk-empty">아직 생성된 대회가 없습니다.{admin&&" 우측 상단에서 새 대회를 만들어보세요."}</div>}
@@ -1871,8 +1879,8 @@ export default function BracketsPage({ data, admin, flash, refresh }){
         <div className="bk-card-meta">{b.mode==="team"?"팀전":"개인전"}, {b.format==="group"?"조별예선+본선":(b.double?"더블 엘리미네이션":"싱글 엘리미네이션")}, {b.participants.length}{b.mode==="team"?"팀":"명"}</div>
       </button>))}
     </div>}
-    {open&&<div className="bk-open swap">
-      <div className="bk-open-bar"><button className="btn btn-ghost btn-sm" disabled={deletingId===open.id} onClick={()=>{setOpenId(null);setDrawId(null);}}>← 목록</button><div className="bk-open-title">{open.name}</div>{!open.readOnly&&admin&&<button className="btn btn-ghost btn-sm" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)} style={{marginLeft:"auto",color:"var(--loss)"}}>{deletingId===open.id?"삭제 중…":"삭제"}</button>}</div>
+    {open&&!wizard&&<div className="bk-open swap">
+      <div className="bk-open-bar"><button className="btn btn-ghost btn-sm" disabled={deletingId===open.id} onClick={()=>{setOpenId(null);setDrawId(null);}}><Icon n="back" size={14}/>목록</button><div className="bk-open-title">{open.name}</div>{!open.readOnly&&admin&&<button className="btn btn-ghost btn-sm" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)} style={{marginLeft:"auto",color:"var(--loss)"}}>{deletingId===open.id?"삭제 중…":"삭제"}</button>}</div>
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
     </div>}
     {wizard&&<BracketWizard data={data} onClose={()=>setWizard(false)} onCreate={create}/>}
