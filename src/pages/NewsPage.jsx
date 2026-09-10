@@ -73,7 +73,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       </div>
     </Reveal>
     <Reveal className="nb-list">
-      {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
+      {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:13.5}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
       {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id]; const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
         return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
           <button className="nb-head" onClick={()=>toggle(a.id)}>
@@ -171,7 +171,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
       {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력하세요" autoComplete="name"/></div>}
-      {fields.length===0&&!form.eventId&&<p style={{color:"var(--muted)",fontSize:14}}>등록된 질문이 없습니다.</p>}
+      {fields.length===0&&!form.eventId&&<p style={{color:"var(--muted)",fontSize:13.5}}>등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
         <label className="ff-q-label">{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
         {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요"/>}

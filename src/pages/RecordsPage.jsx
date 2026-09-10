@@ -519,8 +519,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       <div className="panel swap" key={category} style={{ paddingBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 2px 4px", flexWrap: "wrap" }}>
           <span style={{ width: 11, height: 11, borderRadius: 4, background: selectedTour.color }} />
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--navy)" }}>{selectedTour.label}</h3>
-          <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }} className="tnum">{(selectedTour.rounds || []).length}회</span>
+          <h3 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--navy)" }}>{selectedTour.label}</h3>
+          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 550 }} className="tnum">{(selectedTour.rounds || []).length}회</span>
           {admin && selectedTour.legacy && <button className="btn btn-gold btn-sm ed-pencil" onClick={openRoundEditor}>회차 편집</button>}
         </div>
         {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}

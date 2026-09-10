@@ -139,15 +139,15 @@
 
 /* ---------- 3. 활자 프리미티브 -------------------------------------------- */
 .ypl .y-t1 { font-size: var(--fs-t1); line-height: var(--lh-t1); letter-spacing: var(--tr-t1); font-weight: 750; }
-.ypl .y-t2 { font-size: var(--fs-t2); line-height: var(--lh-t2); letter-spacing: var(--tr-t2); font-weight: 700; }
+.ypl .y-t2 { font-size: var(--fs-t2); line-height: var(--lh-t2); letter-spacing: var(--tr-t2); font-weight: 750; }
 .ypl .y-t3 { font-size: var(--fs-t3); line-height: var(--lh-t3); letter-spacing: var(--tr-t3); font-weight: 650; }
 .ypl .y-body { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--t-4); max-width: 68ch; }
 .ypl .y-sm { font-size: var(--fs-sm); line-height: var(--lh-sm); color: var(--t-4); }
-.ypl .y-label { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--t-5); font-weight: 500; }
+.ypl .y-label { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--t-5); font-weight: 550; }
 /* 시그니처: 트래킹 넣은 대문자 소형 라벨. 한 크기, 한 굵기, 사이트 전체 공통. */
 .ypl .y-micro {
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 
 /* ---------- 4. 셸 · 헤더 --------------------------------------------------- */
 .ypl .wrap { max-width: var(--shell); padding-inline: var(--gutter); }
@@ -166,10 +166,10 @@
   display: flex; align-items: center; gap: var(--s5); }
 
 .ypl .brand .disp {
-  font-size: 19px; font-weight: 850; letter-spacing: -.03em; line-height: 1;
+  font-size: 21px; font-weight: 800; letter-spacing: -.03em; line-height: 1;
   color: var(--ac-text); background: none; -webkit-text-fill-color: currentColor; }
 .ypl .brand small {
-  font-size: 8.5px; letter-spacing: .16em; font-weight: 650;
+  font-size: 10px; letter-spacing: .16em; font-weight: 650;
   color: var(--t-5); margin-top: 2px; }
 
 .ypl .nav-links { gap: 2px; margin-left: var(--s5); overflow: visible; }
@@ -179,7 +179,7 @@
   transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
 .ypl .nlink:hover { color: var(--t-1); background: var(--s-soft); }
 /* 현재 위치 = 2px 밑줄. 채운 알약은 버튼 전용이다. */
-.ypl .nlink.on { color: var(--t-1); font-weight: 700; background: transparent; }
+.ypl .nlink.on { color: var(--t-1); font-weight: 750; background: transparent; }
 .ypl .nlink.on::after {
   content: ""; position: absolute; left: 11px; right: 11px;
   bottom: calc((var(--header-h) - 34px) / -2 - 1px); top: auto;
@@ -187,14 +187,14 @@
   background: var(--ac-text); animation: none; }
 .ypl .nav-right { gap: var(--s2); margin-left: auto; }
 .ypl .nlink.admin {
-  border: 0; color: var(--t-4); font-weight: 600; border-radius: var(--r-ctrl); }
+  border: 0; color: var(--t-4); font-weight: 650; border-radius: var(--r-ctrl); }
 .ypl .nlink.admin:hover { background: var(--s-soft); color: var(--t-1); }
 .ypl .nlink.admin::after { display: none; }
 .ypl .nav-discord {
   height: 34px; padding: 0 14px; border-radius: var(--r-ctrl);
   background: var(--s-soft); color: var(--t-1);
   border: 1px solid var(--hairline-firm);
-  font-size: 13px; font-weight: 650; letter-spacing: -.008em;
+  font-size: 13.5px; font-weight: 650; letter-spacing: -.008em;
   transition: background var(--t-fast) var(--ease); }
 .ypl .nav-discord:hover { background: var(--s-fill); filter: none; color: var(--t-1); }
 .ypl .nav-discord svg { width: 15px; height: 15px; }
@@ -208,10 +208,10 @@
   border-radius: var(--r-panel); border: 1px solid var(--hairline-firm);
   background: var(--s-card); box-shadow: var(--shadow-3); padding: var(--s2); }
 .ypl .nav-ditem {
-  font-size: 15px; font-weight: 600; color: var(--t-2);
+  font-size: 15px; font-weight: 650; color: var(--t-2);
   padding: 12px 14px; border-radius: var(--r-ctrl); }
 .ypl .nav-ditem:hover { background: var(--s-soft); color: var(--t-1); }
-.ypl .nav-ditem.on { background: var(--accent-wash); color: var(--ac-text); font-weight: 700; }
+.ypl .nav-ditem.on { background: var(--accent-wash); color: var(--ac-text); font-weight: 750; }
 
 /* ---------- 5. 페이지 머리 — 모든 탭이 같은 블록으로 시작한다 ------------- */
 .ypl .sec-head, .ypl .y-page-head {
@@ -235,13 +235,13 @@
   gap: var(--s4); margin-bottom: var(--s4); }
 .ypl .sech h2 {
   font-size: var(--fs-t2); line-height: var(--lh-t2);
-  letter-spacing: var(--tr-t2); font-weight: 700; }
+  letter-spacing: var(--tr-t2); font-weight: 750; }
 .ypl .sech h2 small {
   margin-left: var(--s2); font-size: var(--fs-micro);
   letter-spacing: var(--tr-micro); text-transform: uppercase;
-  font-weight: 700; color: var(--t-5); }
+  font-weight: 750; color: var(--t-5); }
 .ypl .more, .ypl .sech .more {
-  font-size: 12.5px; font-weight: 600; color: var(--t-5);
+  font-size: 12px; font-weight: 650; color: var(--t-5);
   white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;
   background: none; border: 0; cursor: pointer;
   transition: color var(--t-fast) var(--ease); }
@@ -277,13 +277,13 @@
   color: var(--t-5); font-size: 12px; font-weight: 650; letter-spacing: .01em; }
 .ypl .y-row-main { min-width: 0; }
 .ypl .y-row-main b {
-  display: block; font-size: 14.5px; font-weight: 650; letter-spacing: -.012em;
+  display: block; font-size: 15px; font-weight: 650; letter-spacing: -.012em;
   color: var(--t-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ypl .y-row-main > span {
   display: block; margin-top: 3px; font-size: 12px; color: var(--t-5); }
 /* 최고 권위 대회는 배지가 아니라 행의 부제로 표시한다. */
 .ypl .y-row-main > span.major {
-  color: var(--laurel); font-weight: 700;
+  color: var(--laurel); font-weight: 750;
   letter-spacing: var(--tr-micro); text-transform: uppercase; font-size: 11px; }
 .ypl .y-row-aside { display: flex; align-items: center; gap: var(--s5); }
 .ypl .y-row-chev {
@@ -294,7 +294,7 @@
 .ypl .y-kv { display: flex; flex-direction: column; gap: 3px; min-width: 68px; }
 .ypl .y-kv small {
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 .ypl .y-kv b { font-size: 13.5px; font-weight: 650; color: var(--t-4); }
 .ypl .y-kv.win b { color: var(--t-1); }
 
@@ -302,7 +302,7 @@
 .ypl .y-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 34px; padding: 0 14px; border-radius: var(--r-ctrl);
-  border: 1px solid transparent; font-family: inherit; font-size: 13px;
+  border: 1px solid transparent; font-family: inherit; font-size: 13.5px;
   font-weight: 650; letter-spacing: -.008em; cursor: pointer;
   transition: background var(--t-fast) var(--ease),
               border-color var(--t-fast) var(--ease),
@@ -322,12 +322,12 @@
   border: 1px solid var(--hairline-lit); border-radius: 12px; }
 .ypl .y-seg button {
   height: 30px; padding: 0 14px; border: 0; border-radius: 9px;
-  background: transparent; font-family: inherit; font-size: 13px;
-  font-weight: 600; color: var(--t-4); cursor: pointer;
+  background: transparent; font-family: inherit; font-size: 13.5px;
+  font-weight: 650; color: var(--t-4); cursor: pointer;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .ypl .y-seg button:hover { color: var(--t-1); }
 .ypl .y-seg button.on {
-  background: var(--s-card); color: var(--t-1); font-weight: 700; box-shadow: var(--shadow-1); }
+  background: var(--s-card); color: var(--t-1); font-weight: 750; box-shadow: var(--shadow-1); }
 
 .ypl .y-field {
   display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 13px;
@@ -344,7 +344,7 @@
 .ypl .y-chip {
   display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px;
   border-radius: var(--r-chip); background: var(--s-fill); color: var(--t-4);
-  font-size: 11.5px; font-weight: 650; letter-spacing: -.004em; max-width: 100%; }
+  font-size: 12px; font-weight: 650; letter-spacing: -.004em; max-width: 100%; }
 .ypl .y-chip-accent {
   background: var(--accent-wash); color: var(--ac-text);
   box-shadow: inset 0 0 0 1px var(--accent-line); }
@@ -361,15 +361,15 @@
   border: 1px solid var(--hairline); border-radius: var(--r-card); overflow: hidden; }
 .ypl .y-stat { background: var(--s-card); padding: 16px 18px; }
 .ypl .y-stat b {
-  display: block; font-size: 27px; font-weight: 780;
+  display: block; font-size: 27px; font-weight: 800;
   letter-spacing: -.03em; line-height: 1.1; color: var(--t-1); }
 .ypl .y-stat b em {
-  font-style: normal; font-size: 14px; font-weight: 600; color: var(--t-5); margin-left: 3px; }
+  font-style: normal; font-size: 13.5px; font-weight: 650; color: var(--t-5); margin-left: 3px; }
 .ypl .y-stat.laurel b { color: var(--laurel); }
 .ypl .y-stat > span {
   margin-top: 5px; display: block; font-size: var(--fs-micro);
   letter-spacing: var(--tr-micro); text-transform: uppercase;
-  font-weight: 700; color: var(--t-5); }
+  font-weight: 750; color: var(--t-5); }
 
 /* ---------- 10. 상태 — 빈 화면 · 로딩 -------------------------------------
    스피너 대신 형태를 먼저 보여 준다.                                       */
@@ -396,7 +396,7 @@
 
 /* ---------- 11. 반응형 — 활자는 고정, 레이아웃만 접는다 ------------------- */
 @media (max-width: 1080px) {
-  .ypl .nlink { padding: 8px 8px; font-size: 13px; }
+  .ypl .nlink { padding: 8px 8px; font-size: 13.5px; }
 }
 @media (max-width: 900px) {
   .ypl { --gutter: 20px; --header-h: 56px; }
@@ -451,14 +451,14 @@
   gap: var(--s9); align-items: center; }
 
 .ypl .home-hero .disp.mark {
-  display: block; font-size: 92px; font-weight: 850;
+  display: block; font-size: 92px; font-weight: 800;
   letter-spacing: -.055em; line-height: .92; color: var(--t-1);
   background: none; -webkit-text-fill-color: currentColor; margin: 0; }
 .ypl .home-en {
-  display: block; margin-top: 12px; font-size: 11.5px;
+  display: block; margin-top: 12px; font-size: 12px;
   letter-spacing: .34em; font-weight: 650; color: var(--ac-text); }
 .ypl .home-tag {
-  margin-top: 26px; font-size: 17px; font-weight: 550;
+  margin-top: 26px; font-size: 16.5px; font-weight: 550;
   color: var(--t-4); letter-spacing: -.014em; }
 /* 콜로폰 — 큰 숫자 타일 대신 등록부의 판권장 한 줄. */
 .ypl .home-colophon {
@@ -466,7 +466,7 @@
   display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
 .ypl .home-colophon span {
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 .ypl .home-colophon span b { color: var(--t-4); font-weight: 800; margin-right: 2px; }
 .ypl .home-colophon > i {
   width: 3px; height: 3px; border-radius: 99px; background: var(--hairline-firm); }
@@ -481,17 +481,17 @@
 .ypl .nextev-live {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--ac-text); }
+  text-transform: uppercase; font-weight: 750; color: var(--ac-text); }
 .ypl .nextev-live i {
   width: 6px; height: 6px; border-radius: 99px; background: var(--ac-text);
   box-shadow: 0 0 0 3px var(--accent-wash); }
 .ypl .nextev-d { font-size: var(--fs-label); color: var(--t-5); margin-bottom: -7px; }
 .ypl .nextev-t {
-  font-size: 20px; font-weight: 720; letter-spacing: -.022em;
+  font-size: 21px; font-weight: 750; letter-spacing: -.022em;
   line-height: 1.3; color: var(--t-1); }
 /* -webkit-box 에 세로 padding 을 주면 잘린 줄이 반쯤 드러난다. 여백은 margin 으로. */
 .ypl .nextev-b {
-  font-size: 13px; line-height: 1.62; color: var(--t-4);
+  font-size: 13.5px; line-height: 1.62; color: var(--t-4);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; margin-block: 12px; padding-block: 0;
   border-block: 0; }
@@ -510,11 +510,11 @@
 .ypl .hrank-n {
   font-size: 15px; font-weight: 750; color: var(--t-5); text-align: center; }
 .ypl .hrank-n.one { color: var(--laurel); }
-.ypl .hrank-pt { font-size: 17px; font-weight: 750; letter-spacing: -.02em; color: var(--t-1); }
+.ypl .hrank-pt { font-size: 16.5px; font-weight: 750; letter-spacing: -.02em; color: var(--t-1); }
 .ypl .hrank-pt.one { color: var(--laurel); }
 .ypl .hrank-pt em {
   font-style: normal; font-size: 11px; color: var(--t-5);
-  font-weight: 600; margin-left: 2px; }
+  font-weight: 650; margin-left: 2px; }
 .ypl .home-empty { padding: var(--s7) var(--s5); }
 
 /* 명예의 전당 띠 */
@@ -529,12 +529,12 @@
 .ypl .hcell:hover { background: var(--s-soft); }
 .ypl .hcell .g {
   display: block; font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 .ypl .hcell .nm {
-  display: block; margin-top: 8px; font-size: 18px; font-weight: 730;
+  display: block; margin-top: 8px; font-size: 16.5px; font-weight: 750;
   letter-spacing: -.022em; color: var(--t-1); }
 .ypl .hcell .s {
-  display: block; margin-top: 6px; font-size: 10.5px; letter-spacing: .1em;
+  display: block; margin-top: 6px; font-size: 11px; letter-spacing: .1em;
   font-weight: 650; color: var(--t-5); }
 .ypl .hcell.now { background: var(--laurel-wash); }
 .ypl .hcell.now .g, .ypl .hcell.now .nm { color: var(--laurel); }
@@ -552,7 +552,7 @@
   .ypl .home-two { grid-template-columns: minmax(0, 1fr); gap: var(--s7); }
   .ypl .home-sec { padding-top: var(--s7); }
   .ypl .nextev { padding: 18px; }
-  .ypl .nextev-t { font-size: 18px; }
+  .ypl .nextev-t { font-size: 16.5px; }
   .ypl .home-champstrip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ypl .hcell:nth-child(3n) { border-right: 0; }
   .ypl .hcell:nth-child(-n+3) { border-bottom: 1px solid var(--hairline); }
@@ -584,16 +584,16 @@ body:has(.ypl.dark) { background: #0A0D13; }
   position: relative; display: inline-flex; align-items: center; gap: 8px; color: var(--laurel); }
 .ypl .reign-mark .y-micro { color: var(--laurel); }
 .ypl .reign-name {
-  position: relative; font-size: 62px; font-weight: 850; letter-spacing: -.045em;
+  position: relative; font-size: 62px; font-weight: 800; letter-spacing: -.045em;
   line-height: 1; margin-top: 20px; color: var(--t-1); }
 .ypl .reign-season {
   position: relative; margin-top: 14px; font-size: 12px; letter-spacing: .18em;
-  font-weight: 700; color: var(--t-5); }
+  font-weight: 750; color: var(--t-5); }
 .ypl .reign-facts {
   position: relative; display: flex; gap: 34px; margin-top: 32px; padding-top: 20px;
   border-top: 1px solid var(--hairline); flex-wrap: wrap; }
 .ypl .reign-facts div b {
-  display: block; font-size: 19px; font-weight: 750;
+  display: block; font-size: 21px; font-weight: 750;
   letter-spacing: -.02em; margin-top: 5px; color: var(--t-1); }
 .ypl .reign-cta { position: relative; margin-top: 26px; }
 .ypl .reign-r {
@@ -605,21 +605,21 @@ body:has(.ypl.dark) { background: #0A0D13; }
   align-items: center; padding: 9px 8px; border-radius: 9px; }
 .ypl .reign-item:nth-child(odd) { background: color-mix(in srgb, var(--s-fill) 55%, transparent); }
 .ypl .reign-item i {
-  font-style: normal; font-size: 10.5px; font-weight: 700;
+  font-style: normal; font-size: 11px; font-weight: 750;
   color: var(--t-5); text-align: center; }
 .ypl .reign-item b { font-size: 13.5px; font-weight: 650; color: var(--t-1); }
 
 .ypl .hof-past { padding-top: var(--s7); }
 .ypl .reg-row { grid-template-columns: 92px 168px minmax(0, 1fr) 18px; align-items: center; }
 .ypl .reg-ord {
-  font-size: 11px; letter-spacing: .12em; font-weight: 700; color: var(--t-5); }
-.ypl .reg-name { display: block; font-size: 21px; font-weight: 720; letter-spacing: -.024em; color: var(--t-1); }
+  font-size: 11px; letter-spacing: .12em; font-weight: 750; color: var(--t-5); }
+.ypl .reg-name { display: block; font-size: 21px; font-weight: 750; letter-spacing: -.024em; color: var(--t-1); }
 .ypl .reg-season {
-  display: block; margin-top: 4px; font-size: 11.5px;
+  display: block; margin-top: 4px; font-size: 12px;
   letter-spacing: .12em; font-weight: 650; color: var(--t-5); }
 .ypl .reg-entry { display: flex; gap: 5px; flex-wrap: wrap; }
 .ypl .reg-entry span {
-  font-size: 11.5px; color: var(--t-4); padding: 3px 7px;
+  font-size: 12px; color: var(--t-4); padding: 3px 7px;
   border-radius: var(--r-chip); background: var(--s-soft); }
 .ypl .reg-entry .rest { color: var(--t-5); }
 .ypl .hof-admin {
@@ -662,7 +662,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tt-cat-main span {
   display: block; margin-top: 2px; font-size: 11px; color: var(--t-5);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ypl .tt-cat-n { font-size: 11.5px; font-weight: 700; color: var(--t-5); }
+.ypl .tt-cat-n { font-size: 12px; font-weight: 750; color: var(--t-5); }
 .ypl .tt-cat.on .tt-cat-n { color: var(--ac-text); }
 
 .ypl .tt-detail { min-width: 0; }
@@ -672,7 +672,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
   flex-wrap: wrap; }
 .ypl .tt-meter { width: 190px; }
 .ypl .tt-meter-k { display: flex; justify-content: space-between; align-items: baseline; }
-.ypl .tt-meter-k .tnum { font-size: 13px; font-weight: 700; color: var(--t-1); }
+.ypl .tt-meter-k .tnum { font-size: 13.5px; font-weight: 750; color: var(--t-1); }
 .ypl .tt-meter-track {
   height: 5px; border-radius: 99px; background: var(--s-fill);
   margin-top: 9px; overflow: hidden; }
@@ -689,13 +689,13 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tt-row:hover { background: var(--s-soft); }
 .ypl .tt-row:nth-child(3n) { border-right: 0; }
 .ypl .tt-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--hairline-firm); }
-.ypl .tt-row b { font-size: 13px; font-weight: 650; color: var(--t-1); }
+.ypl .tt-row b { font-size: 13.5px; font-weight: 650; color: var(--t-1); }
 .ypl .tt-row .who {
-  font-size: 12.5px; font-weight: 600; color: var(--t-4);
+  font-size: 12px; font-weight: 650; color: var(--t-4);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ypl .tt-row.off b { color: var(--t-5); font-weight: 550; }
 .ypl .tt-row.off .tt-dot { opacity: .32; }
-.ypl .tt-row.off .who { color: var(--t-5); font-weight: 500; }
+.ypl .tt-row.off .who { color: var(--t-5); font-weight: 550; }
 
 .ypl .tt-champs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
 .ypl .tt-champ {
@@ -704,9 +704,9 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tt-champ:last-child { border-right: 0; }
 .ypl .tt-champ .g {
   display: block; font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 .ypl .tt-champ .nm {
-  display: block; margin-top: 8px; font-size: 17px; font-weight: 720;
+  display: block; margin-top: 8px; font-size: 16.5px; font-weight: 750;
   letter-spacing: -.02em; color: var(--t-1); }
 .ypl .tt-champ .s {
   display: block; margin-top: 5px; font-size: 11px; color: var(--t-5); }
@@ -769,7 +769,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .nb-head:hover { background: var(--s-soft); }
 .ypl .nb-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .ypl .nb-title {
-  font-size: 14.5px; font-weight: 650; letter-spacing: -.012em; color: var(--t-1); }
+  font-size: 15px; font-weight: 650; letter-spacing: -.012em; color: var(--t-1); }
 .ypl .nb-meta { display: flex; align-items: center; gap: 8px; order: -1; }
 .ypl .nb-title { order: 2; }
 .ypl .nb-date { font-size: 12px; font-weight: 650; color: var(--t-5); }
@@ -793,7 +793,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
   padding: 0 0 16px; margin: -4px 0 0; }
 .ypl .ann-link, .ypl .ann-link.alt, .ypl .ann-resp {
   display: inline-flex; align-items: center; gap: 5px; height: 27px; padding: 0 10px;
-  border-radius: 8px; font-size: 12px; font-weight: 620; cursor: pointer;
+  border-radius: 8px; font-size: 12px; font-weight: 650; cursor: pointer;
   border: 1px solid var(--hairline-firm); background: var(--s-soft);
   color: var(--t-4); text-decoration: none; box-shadow: none;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
@@ -833,18 +833,18 @@ body:has(.ypl.dark) { background: #0A0D13; }
 /* 아바타는 원이 아니라 라운드 스퀘어 — 사이트의 다른 모서리와 같은 계열. */
 .ypl .bd-ava {
   width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
-  background: var(--s-fill); color: var(--t-4); font-size: 12.5px; font-weight: 750;
+  background: var(--s-fill); color: var(--t-4); font-size: 12px; font-weight: 750;
   border: 1px solid var(--hairline); }
 .ypl .bd-ava.sm { width: 26px; height: 26px; border-radius: 8px; font-size: 11px; }
 .ypl .bd-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .ypl .bd-title {
-  font-size: 14.5px; font-weight: 650; letter-spacing: -.012em; color: var(--t-1);
+  font-size: 15px; font-weight: 650; letter-spacing: -.012em; color: var(--t-1);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ypl .bd-meta { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--t-5); }
-.ypl .bd-nick { font-weight: 600; color: var(--t-5); }
+.ypl .bd-nick { font-weight: 650; color: var(--t-5); }
 .ypl .bd-cc {
   display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px;
-  border-radius: var(--r-chip); font-size: 11.5px; font-weight: 650; color: var(--t-5);
+  border-radius: var(--r-chip); font-size: 12px; font-weight: 650; color: var(--t-5);
   background: transparent; box-shadow: inset 0 0 0 1px var(--hairline-firm); }
 .ypl .bd-empty, .ypl .nb-list > div[style] {
   padding: var(--s8) 0; text-align: center; color: var(--t-5); font-size: var(--fs-sm); }
@@ -856,7 +856,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .pg-btn {
   min-width: 34px; height: 34px; border-radius: var(--r-ctrl);
   border: 1px solid var(--hairline-firm); background: var(--s-soft);
-  color: var(--t-4); font-size: 13px; font-weight: 650;
+  color: var(--t-4); font-size: 13.5px; font-weight: 650;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .ypl .pg-btn:hover { background: var(--s-fill); color: var(--t-1); }
 .ypl .pg-btn.on { background: var(--ac-fill); border-color: transparent; color: var(--on-accent); }
@@ -886,12 +886,12 @@ body:has(.ypl.dark) { background: #0A0D13; }
   flex-wrap: wrap; margin-bottom: var(--s4); }
 .ypl .subtab {
   height: 30px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent;
-  font-family: inherit; font-size: 13px; font-weight: 600; color: var(--t-4);
+  font-family: inherit; font-size: 13.5px; font-weight: 650; color: var(--t-4);
   cursor: pointer; white-space: nowrap;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .ypl .subtab:hover { color: var(--t-1); background: transparent; }
 .ypl .subtab.on {
-  background: var(--s-card); color: var(--t-1); font-weight: 700; box-shadow: var(--shadow-1); }
+  background: var(--s-card); color: var(--t-1); font-weight: 750; box-shadow: var(--shadow-1); }
 
 /* 사이드 목록 — 높이를 620px로 못 박지 않고 뷰포트에서 끌어온다. */
 .ypl .records-trainer-list, .ypl .records-pokemon-list {
@@ -917,9 +917,9 @@ body:has(.ypl.dark) { background: #0A0D13; }
   border-radius: var(--r-card); box-shadow: var(--shadow-1); }
 .ypl .records-eyebrow {
   display: block; font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--ac-text); }
+  text-transform: uppercase; font-weight: 750; color: var(--ac-text); }
 .ypl .records-profile-name {
-  margin-top: 6px; font-size: 34px; font-weight: 800;
+  margin-top: 6px; font-size: 30px; font-weight: 800;
   letter-spacing: -.032em; line-height: 1.14; color: var(--t-1); }
 
 /* 지표 — 표 형태 숫자, 한 줄 띠 */
@@ -932,12 +932,12 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .records-stat span {
   display: block; margin-bottom: 0; order: 2; margin-top: 5px;
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 .ypl .records-stat b {
-  font-size: 27px; font-weight: 780; letter-spacing: -.03em;
+  font-size: 27px; font-weight: 800; letter-spacing: -.03em;
   line-height: 1.1; color: var(--t-1); }
 .ypl .records-stat small {
-  font-size: 14px; font-weight: 600; color: var(--t-5); margin-left: 3px; }
+  font-size: 13.5px; font-weight: 650; color: var(--t-5); margin-left: 3px; }
 .ypl .records-stat { display: flex; flex-direction: column; }
 .ypl .records-stat b { order: 1; }
 
@@ -948,17 +948,17 @@ body:has(.ypl.dark) { background: #0A0D13; }
   border-bottom: 1px solid var(--hairline); padding: 15px 20px 14px; }
 .ypl .records-achievements .chip, .ypl .records-block .chip {
   border-radius: var(--r-chip); background: var(--s-fill);
-  color: var(--t-4); border: 0; font-size: 11.5px; font-weight: 650; }
+  color: var(--t-4); border: 0; font-size: 12px; font-weight: 650; }
 
 /* 대회 이력 행 */
 .ypl .r2-row, .ypl .round2 {
   border: 0; border-bottom: 1px solid var(--hairline); border-radius: var(--r-ctrl);
   background: none; transition: background var(--t-fast) var(--ease); }
 .ypl .r2-row:hover, .ypl .round2:hover { background: var(--s-soft); }
-.ypl .r2-name { font-size: 14.5px; font-weight: 650; letter-spacing: -.012em; }
+.ypl .r2-name { font-size: 15px; font-weight: 650; letter-spacing: -.012em; }
 .ypl .r2-date, .ypl .r2-season, .ypl .r2-rule, .ypl .r2-mode {
   font-size: 12px; color: var(--t-5); }
-.ypl .r2-rk { font-size: 12.5px; font-weight: 700; color: var(--t-4); }
+.ypl .r2-rk { font-size: 12px; font-weight: 750; color: var(--t-4); }
 /* 금색은 우승·1위에만 */
 .ypl .r2-rk.gold, .ypl .r2-champ { color: var(--laurel); }
 
@@ -997,7 +997,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .bk-card-date { font-size: 12px; color: var(--t-5); }
 .ypl .bk-badge {
   display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
-  border-radius: var(--r-chip); font-size: 11.5px; font-weight: 650; border: 0;
+  border-radius: var(--r-chip); font-size: 12px; font-weight: 650; border: 0;
   background: var(--accent-wash); color: var(--ac-text);
   box-shadow: inset 0 0 0 1px var(--accent-line); }
 .ypl .bk-badge.done {
@@ -1005,7 +1005,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
   box-shadow: inset 0 0 0 1px var(--hairline-firm); }
 .ypl .y-empty { grid-column: 1 / -1; }
 .ypl .bk-empty { color: var(--t-5); font-size: var(--fs-sm); grid-column: 1 / -1; }
-.ypl .bk-hint { color: var(--t-5); font-size: 12.5px; }
+.ypl .bk-hint { color: var(--t-5); font-size: 12px; }
 
 /* 소개 — 연혁·카드가 같은 면 언어를 쓰도록 */
 .ypl .card, .ypl .hcard, .ypl .tl-item, .ypl .flow-step, .ypl .hs, .ypl .hq {
@@ -1056,7 +1056,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 /* 탭 — 활성 상태는 채운 남색 알약이 아니라 떠 있는 흰 판 */
 .ypl .subtab.on, .ypl.dark .subtab.on {
   background: var(--s-card); color: var(--t-1);
-  border-color: transparent; font-weight: 700; box-shadow: var(--shadow-1); }
+  border-color: transparent; font-weight: 750; box-shadow: var(--shadow-1); }
 .ypl .subtab.on:hover, .ypl.dark .subtab.on:hover { background: var(--s-card); }
 .ypl .pg-btn.on, .ypl.dark .pg-btn.on {
   background: var(--ac-fill); color: var(--on-accent); border-color: transparent; }
@@ -1065,7 +1065,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .records-title-chips span, .ypl.dark .records-title-chips span {
   padding: 0 8px; height: 22px; display: inline-flex; align-items: center;
   border-radius: var(--r-chip); border: 0; background: var(--s-fill);
-  color: var(--t-4); font-size: 11.5px; font-weight: 650; }
+  color: var(--t-4); font-size: 12px; font-weight: 650; }
 .ypl .records-title-chips span.is-champion,
 .ypl.dark .records-title-chips span.is-champion {
   background: var(--laurel-wash); color: var(--laurel);
@@ -1216,10 +1216,10 @@ body:has(.ypl.dark) { background: #0A0D13; }
   max-height: calc(100dvh - var(--header-h) - var(--s7)); }
 .ypl .tb-panel-head h2 {
   font-size: var(--fs-t2); line-height: var(--lh-t2);
-  letter-spacing: var(--tr-t2); font-weight: 700; }
+  letter-spacing: var(--tr-t2); font-weight: 750; }
 .ypl .tb-panel-kicker {
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 
 .ypl .tb-input, .ypl .tb-field .tb-dd .dd-btn {
   min-height: 38px; border-radius: var(--r-ctrl);
@@ -1234,7 +1234,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tb-input.invalid { border-color: var(--danger); box-shadow: none; }
 .ypl .tb-field > span {
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+  text-transform: uppercase; font-weight: 750; color: var(--t-5); }
 .ypl .tb-search-row .tb-input { padding-left: 38px; padding-right: 36px; }
 .ypl .tb-clear { width: 24px; height: 24px; border-radius: 7px; right: 8px; }
 
@@ -1253,14 +1253,14 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tb-count-badge, .ypl .tb-status-chip, .ypl .tb-dirty-badge {
   border-radius: var(--r-chip); background: var(--s-fill);
   color: var(--t-4); font-weight: 650; letter-spacing: -.004em;
-  text-transform: none; font-size: 11.5px; height: 22px;
+  text-transform: none; font-size: 12px; height: 22px;
   display: inline-flex; align-items: center; padding: 0 8px; }
 .ypl .tb-status-chip.current {
   background: var(--ok-wash); color: var(--ok); }
 .ypl .tb-dot { background: var(--hairline-firm); }
 .ypl .tb-dot.ready { background: var(--ok); }
 .ypl .tb-dot.error { background: var(--danger); }
-.ypl .tb-data-line { font-size: 11.5px; color: var(--t-5); }
+.ypl .tb-data-line { font-size: 12px; color: var(--t-5); }
 
 /* 목록 행 — 기록·게시판과 같은 행 감각 */
 .ypl .tb-pokemon-row {
@@ -1291,7 +1291,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
    검증 블록의 호박색은 우승 금색과 눈으로 구별되지 않아 무채색으로 바꿉니다. */
 .ypl .tb-type {
   border-radius: var(--r-chip); height: 20px; min-width: 34px;
-  font-size: 10px; font-weight: 700; letter-spacing: -.01em; }
+  font-size: 11px; font-weight: 750; letter-spacing: -.01em; }
 
 .ypl .tb-validation {
   border: 1px solid var(--hairline); border-radius: var(--r-card);
@@ -1302,7 +1302,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tb-validation.incomplete { border-color: var(--hairline); background: var(--s-soft); }
 .ypl .tb-validation-icon {
   width: 28px; height: 28px; border-radius: 9px;   /* 원이 아니라 사이트의 라운드 사각형 */
-  background: var(--s-fill); color: var(--t-5); font-size: 13px; font-weight: 800; }
+  background: var(--s-fill); color: var(--t-5); font-size: 13.5px; font-weight: 800; }
 .ypl .tb-validation.valid .tb-validation-icon { background: var(--ok-wash); color: var(--ok); }
 .ypl .tb-validation.invalid .tb-validation-icon,
 .ypl .tb-validation.incomplete .tb-validation-icon {
@@ -1327,7 +1327,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .nextev-body { display: flex; flex-direction: column; gap: 8px; }
 .ypl .nextev-d { font-size: var(--fs-label); color: var(--t-5); margin: 0; }
 .ypl .nextev-t {
-  font-size: 23px; font-weight: 730; letter-spacing: -.024em;
+  font-size: 21px; font-weight: 750; letter-spacing: -.024em;
   line-height: 1.32; color: var(--t-1); }
 .ypl .nextev-cta { margin-top: 26px; }
 
@@ -1342,14 +1342,14 @@ body:has(.ypl.dark) { background: #0A0D13; }
   background: none; border-radius: 0; box-shadow: none; }
 .ypl .tl-date {
   grid-column: 1; grid-row: 1 / 3; padding: 0;
-  border-bottom: 0; font-size: 14px; font-weight: 700;
+  border-bottom: 0; font-size: 13.5px; font-weight: 750;
   color: var(--ac-text); letter-spacing: .02em; }
 .ypl .tl-title {
   grid-column: 2; grid-row: 1; padding: 0;
   font-size: 16.5px; font-weight: 750; letter-spacing: -.01em; color: var(--t-1); }
 .ypl .tl-body {
   grid-column: 2; grid-row: 2; padding: 0; border-bottom: 0;
-  font-size: 14.5px; line-height: 1.6; color: var(--t-4); max-width: none; }
+  font-size: 15px; line-height: 1.6; color: var(--t-4); max-width: none; }
 
 /* ── 소개 · 카드 상호작용 통일 ────────────────────────────────────────────
    마스터/루키 리그만 hover 에 반응하지 않았습니다. 이 페이지의 정보 카드는
@@ -1445,7 +1445,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .bk-col2 { min-width: 208px; }
 .ypl .bk-col-h {
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700;
+  text-transform: uppercase; font-weight: 750;
   color: var(--t-5); text-align: center; margin-bottom: var(--s3); }
 .ypl .bk-col-h.gf { color: var(--laurel); }
 
@@ -1457,19 +1457,19 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .bk-match:hover { border-color: var(--hairline-firm); }
 .ypl .bk-match .bk-slot {
   min-height: 49px; border-radius: 0; padding: 0 13px;
-  background: transparent; font-size: 13.5px; font-weight: 600;
+  background: transparent; font-size: 13.5px; font-weight: 650;
   color: var(--t-4); transition: background var(--t-fast) var(--ease); }
 .ypl .bk-match .bk-slot + .bk-slot { border-top: 1px solid var(--hairline); }
-.ypl .bk-slot .bk-tn { font-weight: 600; }
-.ypl .bk-slot .bk-sc { color: var(--t-5); font-weight: 700; }
+.ypl .bk-slot .bk-tn { font-weight: 650; }
+.ypl .bk-slot .bk-sc { color: var(--t-5); font-weight: 750; }
 .ypl .bk-slot.pick { background: transparent; }
 .ypl .bk-slot.pick:hover { background: var(--s-soft); }
 /* 승자 — 채운 남색 대신 옅은 강조면. 이름은 진하게, 점수만 강조색. */
 .ypl .bk-slot.win, .ypl.dark .bk-slot.win {
-  background: var(--accent-wash); color: var(--t-1); font-weight: 720; }
-.ypl .bk-slot.win .bk-tn { font-weight: 720; }
+  background: var(--accent-wash); color: var(--t-1); font-weight: 750; }
+.ypl .bk-slot.win .bk-tn { font-weight: 750; }
 .ypl .bk-slot.win .bk-sc, .ypl.dark .bk-slot.win .bk-sc { color: var(--ac-text); }
-.ypl .bk-slot.bye { color: var(--t-5); font-style: normal; font-weight: 500; }
+.ypl .bk-slot.bye { color: var(--t-5); font-style: normal; font-weight: 550; }
 
 /* 연결선 — 자식의 중심에서 나가 간격의 절반 지점에서 만나고, 부모의 중심으로
    들어갑니다. 형제 간격(--bk-pitch)은 JS 가 라운드마다 넘겨 줍니다. */
@@ -1548,7 +1548,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 /* 승자 행 — 라이트 모드에서 7% 강조면은 흰 카드 위에서 거의 보이지 않았습니다.
    전용 토큰으로 진하게 하고, 안쪽 1px 강조선을 더해 두 테마 모두에서 읽히게 합니다. */
 .ypl .bk-slot.win, .ypl.dark .bk-slot.win {
-  background: var(--win-wash); color: var(--t-1); font-weight: 720;
+  background: var(--win-wash); color: var(--t-1); font-weight: 750;
   box-shadow: inset 1px 0 0 var(--ac-text); }
 
 /* =============================================================================
@@ -1561,7 +1561,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl { --win-wash: rgba(27, 63, 134, .14); }
 .ypl.dark { --win-wash: rgba(78, 124, 214, .17); }
 .ypl .bk-slot.win, .ypl.dark .bk-slot.win {
-  background: var(--win-wash); color: var(--t-1); font-weight: 720;
+  background: var(--win-wash); color: var(--t-1); font-weight: 750;
   box-shadow: none; }
 
 /* ── 소개 · 시즌 흐름 ─────────────────────────────────────────────────────
@@ -1605,7 +1605,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
   border-radius: var(--r-chip); border: 0;
   background: var(--laurel-wash); color: var(--laurel);
   box-shadow: inset 0 0 0 1px var(--laurel-line);
-  font-size: 11.5px; font-weight: 650; letter-spacing: -.004em; }
+  font-size: 12px; font-weight: 650; letter-spacing: -.004em; }
 
 /* ── 목록 hover 범위 ──────────────────────────────────────────────────────
    공지·게시판은 제목 줄(.nb-head/.bd-head)에만 hover 면이 깔려, 바로 아래에
@@ -1628,7 +1628,7 @@ body:has(.ypl.dark) { background: #0A0D13; }
   display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 9px;
   align-items: center; }
 .ypl .bk-seed {
-  font-style: normal; font-size: 10.5px; font-weight: 700;
+  font-style: normal; font-size: 11px; font-weight: 750;
   color: var(--t-5); text-align: center; font-variant-numeric: tabular-nums; }
 .ypl .bk-slot.win .bk-seed { color: var(--ac-text); }
 .ypl .bk-slot .bk-tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1640,12 +1640,41 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .bk-champ-k {
   display: inline-flex; align-items: center; gap: 7px; color: var(--laurel);
   font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
-  text-transform: uppercase; font-weight: 700; }
+  text-transform: uppercase; font-weight: 750; }
 .ypl .bk-champ-node b {
-  display: block; margin-top: 8px; font-size: 25px; font-weight: 800;
+  display: block; margin-top: 8px; font-size: 27px; font-weight: 800;
   letter-spacing: -.028em; color: var(--laurel); }
 /* 결승에서 우승 노드로 들어가는 마지막 연결선 */
 .ypl .bk-champ-col .bk-mpos::before {
   content: ""; position: absolute; right: 100%; top: 49px;
   width: calc(var(--bk-gap) / 2);
   border-top: 1px solid var(--hairline-firm); }
+
+/* =============================================================================
+   규격 스냅 — 측정에서 드러난 것
+   전 탭의 계산된 스타일을 수집해 보니 선언한 척도와 실제 사용이 벌어져
+   있었습니다. 활자 25종·굵기 14종이 쓰이고 있었고, 11px 바닥 아래로 내려간
+   글자가 950곳이 넘었습니다. 원인은 토큰이 아니라 부품이 손으로 쓴 px 였고,
+   그래서 App.jsx / records.css / team-builder.css 의 리터럴 자체를 정규화했습니다
+   (font-size 352곳, font-weight 202곳).
+
+   최종 척도
+     본문  11 · 12 · 13.5 · 15 · 16.5 · 21 · 30
+     수치  27(지표) · 62(챔피언) · 92(워드마크)
+     굵기  400 · 550 · 650 · 750 · 800
+
+   아래는 리터럴 치환으로 덮이지 않는 것들만 남겨 둡니다.
+   ========================================================================== */
+
+/* 11px 바닥 — 타입 배지는 크기까지 함께 올려야 글자가 넘치지 않습니다. */
+.ypl .tb-type {
+  font-size: 11px; height: 22px; min-width: 36px; padding: 0 7px; font-weight: 750; }
+.ypl .brand small { font-size: 11px; }   /* 워드마크 락업 — 비상호작용 식별 문자 */
+
+/* 터치 타깃 — 15px 짜리 텍스트 버튼이 있었습니다. */
+.ypl .more, .ypl .sech .more {
+  min-height: 24px; padding: 0 2px; margin-right: -2px; font-size: 12px; }
+
+/* <b>/<strong> 의 기본값은 bolder 라 부모에 따라 700 또는 900 으로 계산됩니다.
+   척도 밖 굵기가 새어 나오던 마지막 통로라 기준값을 정해 둡니다. */
+.ypl b, .ypl strong { font-weight: 650; }
