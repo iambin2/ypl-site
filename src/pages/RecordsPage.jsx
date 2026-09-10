@@ -218,14 +218,17 @@ function TrainerView({ snapshot }) {
             /* 챔피언 칩과 칭호 목록이 같은 항목을 각각 그리고 있었다.
                (예: "초대 챔피언"이 champions 에서 한 번, titles 에서 또 한 번)
                챔피언 칩이 이미 덮는 이름은 칭호 목록에서 뺀다. */
-            const shown = new Set(profile.champions.map((c) => `${c.gen} 챔피언`));
+            /* c.gen 이 레거시는 "초대", 정규화 행은 "6대 챔피언"으로 들어와
+               그대로 붙이면 "6대 챔피언 챔피언"이 된다. 접미사를 한 번만 붙인다. */
+            const genLabel = (g) => `${String(g || "").replace(/\s*챔피언\s*$/, "")} 챔피언`;
+            const shown = new Set(profile.champions.map((c) => genLabel(c.gen)));
             const rest = profile.titles.filter((t) => !shown.has(t.name));
             if (!profile.champions.length && !rest.length) return null;
             return (
               <div className="records-title-chips">
                 {profile.champions.map((c, i) => (
                   /* 금색은 우승 계열에만. 나머지 칭호는 무채색으로 둔다. */
-                  <span key={`c${i}`} className="is-champion">{c.gen} 챔피언</span>
+                  <span key={`c${i}`} className="is-champion">{genLabel(c.gen)}</span>
                 ))}
                 {rest.map((title, i) => (
                   <span key={`t${i}`}>{title.name}</span>
