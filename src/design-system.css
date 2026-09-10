@@ -29,8 +29,9 @@
   /* 모서리 — 4단계. 섞어 쓰지 않는다. */
   --r-chip: 6px; --r-ctrl: 10px; --r-card: 14px; --r-panel: 20px;
 
-  /* 모션 */
-  --ease: cubic-bezier(.22, 1, .36, 1);
+  /* 모션 — 시간 3단계, 이징 2종 */
+  --ease: cubic-bezier(.22, 1, .36, 1);        /* 등장·정착: 지수형 ease-out */
+  --ease-inout: cubic-bezier(.4, 0, .2, 1);    /* 왕복하는 움직임 */
   --t-fast: 140ms; --t-base: 200ms; --t-slow: 320ms;
 
   /* 레이아웃 */
@@ -56,6 +57,8 @@
   --laurel-line: rgba(138, 100, 16, .24);
 
   --danger: #B23B2C;
+  --ok: #1C7A50;
+  --ok-wash: rgba(28, 122, 80, .09);
   --shadow-1: 0 1px 2px rgba(20, 34, 66, .06);
   --shadow-2: 0 10px 28px -14px rgba(20, 34, 66, .22);
   --shadow-3: 0 24px 56px -22px rgba(20, 34, 66, .28);
@@ -87,6 +90,8 @@
   --laurel-line: rgba(211, 162, 74, .32);
 
   --danger: #E98B8B;
+  --ok: #6FD1A0;
+  --ok-wash: rgba(111, 209, 160, .12);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, .45);
   --shadow-2: 0 10px 28px -12px rgba(0, 0, 0, .72);
   --shadow-3: 0 24px 56px -20px rgba(0, 0, 0, .8);
@@ -1077,3 +1082,233 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl.dark .bd-item { border-color: transparent; border-bottom-color: var(--hairline); }
 .ypl.dark .nav, .ypl.dark .nav.scrolled {
   background: color-mix(in srgb, var(--s-page) 78%, transparent); }
+
+/* =============================================================================
+   교정 · 2차
+   ========================================================================== */
+
+/* ── 1. 세로 경계선 제거 ───────────────────────────────────────────────────
+   레거시 `.ypl::before` 가 좌상단에 파란 그라디언트를 깔고, 그 위를 `.wrap`
+   의 불투명 배경이 덮었습니다. 그래서 콘텐츠 열 바깥(좌·우 여백)에만 글로우가
+   남아 세로 경계선처럼 보였습니다. 글로우를 없애고, 페이지 바탕 위에 다시
+   칠하는 컨테이너도 모두 투명으로 되돌립니다.                                */
+.ypl::before { display: none; }
+.ypl .wrap, .ypl .page, .ypl .home, .ypl .sec,
+.ypl .home-band, .ypl .home-sec { background: transparent; }
+
+/* ── 2. 상단 여백 ─────────────────────────────────────────────────────────
+   .sec(56px) 와 .sec-head(64px) 가 각각 패딩을 줘 120px 이 되던 것을 한 번만. */
+.ypl .sec { padding-top: 0; }
+.ypl .sec-head, .ypl .y-page-head { padding-top: var(--s7); }
+.ypl .tb-page { padding-top: 0; }
+
+/* ── 3. 설명 줄 ───────────────────────────────────────────────────────────
+   60ch 상한이 데스크톱에서 불필요한 줄바꿈을 만들었습니다. 열 너비가 이미
+   제한을 하므로 상한을 풉니다.                                              */
+.ypl .sec-head .sub, .ypl .y-page-head .sub { max-width: none; }
+
+/* ── 4. 모바일 페이지 머리 ────────────────────────────────────────────────
+   .sec-head 의 그리드 정의가 미디어쿼리보다 뒤에 와서 390px 에서도 2열이
+   유지됐고, 우측 검색이 최소 너비를 요구해 제목 열이 0에 가깝게 눌렸습니다.
+   (제목이 한 글자씩 세로로 떨어지던 원인)                                    */
+@media (max-width: 900px) {
+  .ypl .sec-head, .ypl .y-page-head {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: var(--s6); padding-bottom: var(--s4); }
+  .ypl .sec-head > h2,
+  .ypl .sec-head > .sub,
+  .ypl .sec-head > div:first-child,
+  .ypl .sec-head > .y-page-aside,
+  .ypl .sec-head > .row-actions { grid-area: auto; align-self: stretch; }
+  .ypl .sec-head > .y-page-aside,
+  .ypl .sec-head > .row-actions { margin-top: var(--s4); }
+  .ypl .y-page-aside { width: 100%; }
+  .ypl .y-page-aside > .lsearch { flex: 1 1 auto; min-width: 0; }
+  .ypl .sec-head h2, .ypl .y-page-head h1 { font-size: 26px; }
+}
+
+/* ── 5. 모션 체계 ─────────────────────────────────────────────────────────
+   시간 3단계 · 이징 2종만 씁니다. 모션은 상태 변화에만 쓰고, 페이지 로드
+   연출은 두지 않습니다. 콘텐츠는 보이는 상태에서 출발합니다.
+
+   감사 결과: transition 111곳에 지속시간 10종·이징 5종이 섞여 있었고,
+   keyframes 11개가 같은 일(등장)을 서로 다른 값으로 하고 있었습니다.
+   .reveal 은 700ms·26px 라 스크롤이 빠르면 내용이 늦게 따라왔습니다.       */
+@keyframes yFade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes yRise  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes yScale { from { opacity: 0; transform: scale(.975); } to { opacity: 1; transform: none; } }
+
+/* 탭 전환은 미끄러지지 않습니다 — 짧은 페이드 하나. */
+.ypl .page, .ypl .swap { animation: yFade 160ms var(--ease-inout); }
+
+/* 스크롤 등장 — 한 번, 짧게, 6px. */
+.ypl .reveal {
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease); }
+.ypl .reveal.in { opacity: 1; transform: none; }
+
+/* 떠 있는 면은 scale, 목록·항목은 rise, 스크림은 fade — 세 가지뿐. */
+.ypl .modal { animation: yScale var(--t-slow) var(--ease); }
+.ypl .overlay { animation: yFade var(--t-base) var(--ease-inout); }
+.ypl .dd-list, .ypl .nav-drawer, .ypl .nav-tools-menu,
+.ypl .toast, .ypl .pr-box, .ypl .fb-q,
+.ypl .bk-pin, .ypl .bk-team-card {
+  animation: yRise var(--t-base) var(--ease) both; }
+.ypl .hofm-poke { animation: yRise var(--t-base) var(--ease) both; }
+.ypl .bk-champ-banner { animation: yScale var(--t-slow) var(--ease); }
+
+/* 대진 추첨은 이 사이트의 고유한 순간이라 남깁니다. 다만 11Hz 스트로브는
+   광과민성 위험이 있어 느린 맥동으로, 착지의 오버슛도 줄입니다. */
+.ypl .bk-slot.drolling { animation: yPulse 420ms var(--ease-inout) infinite; }
+@keyframes yPulse { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+.ypl .bk-slot.dset.pop { animation: yLand var(--t-slow) var(--ease); }
+@keyframes yLand { 0% { transform: scale(.88); opacity: .5; } 100% { transform: scale(1); opacity: 1; } }
+
+/* 카드가 hover 에 떠오르지 않습니다 — 이동은 셰브론 같은 방향 신호에만. */
+.ypl .card:hover, .ypl .hcard:hover, .ypl .tl-item:hover, .ypl .champ:hover,
+.ypl .rec-card:hover, .ypl .flow-step:hover, .ypl .hs:hover, .ypl .hq:hover,
+.ypl .bd-item:hover, .ypl .ann-item:hover, .ypl .bk-card:hover,
+.ypl .nav-discord:hover, .ypl .tb-panel:hover, .ypl .tb-rule-card:hover {
+  transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ypl *, .ypl *::before, .ypl *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; }
+  .ypl .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* =============================================================================
+   PAGE — 팀 빌더
+   자체 스케일(반경 22/13px, 999px 알약, clamp 제목, 하드코딩 초록)을 쓰고 있어
+   시스템 밖에 있었습니다. 기능(1,400줄의 상태 로직)은 건드리지 않고 표면만
+   같은 체계로 되돌립니다.
+   ========================================================================== */
+.ypl .tb-page { padding-bottom: var(--s9); }
+
+/* 히어로 → 다른 탭과 같은 페이지 머리 */
+.ypl .tb-hero {
+  align-items: flex-end; gap: var(--s5);
+  margin-bottom: var(--s6); padding: var(--s7) 0 var(--s5);
+  border-bottom: 1px solid var(--hairline); }
+.ypl .tb-kicker { display: none; }          /* 제목 위 눈썹 라벨은 쓰지 않습니다 */
+.ypl .tb-hero h1 {
+  font-size: var(--fs-t1); line-height: var(--lh-t1);
+  letter-spacing: var(--tr-t1); font-weight: 750; color: var(--t-1); margin: 0; }
+.ypl .tb-hero p {
+  margin-top: 10px; font-size: var(--fs-sm); line-height: var(--lh-sm);
+  color: var(--t-4); max-width: none; }
+.ypl .tb-hero-actions { gap: var(--s2); padding-bottom: 3px; }
+
+/* 면 · 컨트롤 */
+.ypl .tb-rule-card, .ypl .tb-panel {
+  background: var(--s-card); border: 1px solid var(--hairline);
+  border-radius: var(--r-card); box-shadow: var(--shadow-1); }
+.ypl .tb-rule-card { padding: var(--s5); margin-bottom: var(--s4); }
+.ypl .tb-panel { padding: var(--s5); }
+.ypl .tb-layout { gap: var(--s4); }
+.ypl .tb-main-column { gap: var(--s4); }
+.ypl .tb-pool-panel {
+  top: calc(var(--header-h) + var(--s5));
+  max-height: calc(100dvh - var(--header-h) - var(--s7)); }
+.ypl .tb-panel-head h2 {
+  font-size: var(--fs-t2); line-height: var(--lh-t2);
+  letter-spacing: var(--tr-t2); font-weight: 700; }
+.ypl .tb-panel-kicker {
+  font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
+  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+
+.ypl .tb-input, .ypl .tb-field .tb-dd .dd-btn {
+  min-height: 38px; border-radius: var(--r-ctrl);
+  border: 1px solid var(--hairline); background: var(--s-soft);
+  color: var(--t-1); padding: 9px 12px;
+  transition: border-color var(--t-fast) var(--ease); }
+.ypl .tb-input:hover:not(:disabled),
+.ypl .tb-field .tb-dd .dd-btn:hover:not(:disabled) {
+  border-color: var(--hairline-firm); background: var(--s-soft); }
+.ypl .tb-input:focus, .ypl .tb-field .tb-dd .dd-btn:focus {
+  border-color: var(--ac-text); box-shadow: none; }
+.ypl .tb-input.invalid { border-color: var(--danger); box-shadow: none; }
+.ypl .tb-field > span {
+  font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
+  text-transform: uppercase; font-weight: 700; color: var(--t-5); }
+.ypl .tb-search-row .tb-input { padding-left: 38px; padding-right: 36px; }
+.ypl .tb-clear { width: 24px; height: 24px; border-radius: 7px; right: 8px; }
+
+/* 버튼 — 사이트 공통 위계로 */
+.ypl .tb-main-btn {
+  background: var(--ac-fill); color: var(--on-accent); border-color: transparent; }
+.ypl .tb-main-btn:hover { background: var(--ac-hover); filter: none; }
+.ypl .tb-hero-actions .tb-save-btn {
+  background: var(--ac-fill); border-color: transparent; }
+.ypl .tb-hero-actions .tb-save-btn:hover:not(:disabled) {
+  background: var(--ac-hover); border-color: transparent; filter: none; }
+.ypl .tb-hero-actions .tb-save-btn:focus-visible {
+  box-shadow: none; outline: 2px solid var(--ac-text); outline-offset: 2px; }
+
+/* 칩 · 배지 — 알약(999px)이 아니라 사이트의 칩 모서리 */
+.ypl .tb-count-badge, .ypl .tb-status-chip, .ypl .tb-dirty-badge {
+  border-radius: var(--r-chip); background: var(--s-fill);
+  color: var(--t-4); font-weight: 650; letter-spacing: -.004em;
+  text-transform: none; font-size: 11.5px; height: 22px;
+  display: inline-flex; align-items: center; padding: 0 8px; }
+.ypl .tb-status-chip.current {
+  background: var(--ok-wash); color: var(--ok); }
+.ypl .tb-dot { background: var(--hairline-firm); }
+.ypl .tb-dot.ready { background: var(--ok); }
+.ypl .tb-dot.error { background: var(--danger); }
+.ypl .tb-data-line { font-size: 11.5px; color: var(--t-5); }
+
+/* 목록 행 — 기록·게시판과 같은 행 감각 */
+.ypl .tb-pokemon-row {
+  border-top: 1px solid var(--hairline); border-radius: var(--r-ctrl);
+  transition: background var(--t-fast) var(--ease); }
+.ypl .tb-pokemon-row:hover:not(:disabled) { background: var(--s-soft); }
+.ypl .tb-pokemon-row:hover:not(:disabled) .tb-pokemon-copy strong,
+.ypl .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { color: var(--ac-text); }
+.ypl .tb-pokemon-row:focus-visible {
+  outline: 2px solid var(--ac-text); outline-offset: -2px; border-radius: var(--r-ctrl); }
+.ypl .tb-pokemon-copy strong { font-size: 13.5px; font-weight: 650; color: var(--t-1); }
+
+@media (max-width: 900px) {
+  .ypl .tb-hero {
+    flex-direction: column; align-items: stretch;
+    padding-top: var(--s6); gap: var(--s4); }
+  .ypl .tb-hero h1 { font-size: 26px; }
+  .ypl .tb-hero-actions { padding-bottom: 0; }
+  .ypl .tb-pool-panel { position: static; max-height: none; }
+  .ypl .tb-rule-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* gap 은 열 간격용이었는데 행 간격까지 먹어 제목과 설명이 34px 벌어졌습니다. */
+.ypl .sec-head, .ypl .y-page-head { column-gap: var(--s5); row-gap: 0; }
+
+/* 팀 빌더 — 타입 배지 · 검증 블록
+   타입 색은 포켓몬의 규범이라 그대로 두고, 모양과 크기만 사이트 칩에 맞춥니다.
+   검증 블록의 호박색은 우승 금색과 눈으로 구별되지 않아 무채색으로 바꿉니다. */
+.ypl .tb-type {
+  border-radius: var(--r-chip); height: 20px; min-width: 34px;
+  font-size: 10px; font-weight: 700; letter-spacing: -.01em; }
+
+.ypl .tb-validation {
+  border: 1px solid var(--hairline); border-radius: var(--r-card);
+  background: var(--s-card); padding: var(--s4) var(--s5);
+  transition: border-color var(--t-fast) var(--ease); }
+.ypl .tb-validation.valid { border-color: var(--hairline); background: var(--ok-wash); }
+.ypl .tb-validation.invalid { border-color: var(--hairline); background: var(--s-soft); }
+.ypl .tb-validation.incomplete { border-color: var(--hairline); background: var(--s-soft); }
+.ypl .tb-validation-icon {
+  width: 28px; height: 28px; border-radius: 9px;   /* 원이 아니라 사이트의 라운드 사각형 */
+  background: var(--s-fill); color: var(--t-5); font-size: 13px; font-weight: 800; }
+.ypl .tb-validation.valid .tb-validation-icon { background: var(--ok-wash); color: var(--ok); }
+.ypl .tb-validation.invalid .tb-validation-icon,
+.ypl .tb-validation.incomplete .tb-validation-icon {
+  background: var(--s-fill); color: var(--t-4); }
+.ypl .tb-validation-head strong { font-size: 13.5px; font-weight: 650; color: var(--t-1); }
+.ypl .tb-validation-head span { font-size: 12px; color: var(--t-5); }
+.ypl .tb-validation ul { font-size: 12px; color: var(--t-4); margin-left: 40px; }
+.ypl .tb-validation li.warning, .ypl .tb-validation li.incomplete { color: var(--t-5); }
+.ypl .tb-validation li.error { color: var(--danger); }
+/* 검증 아이콘이 그려진 SVG로 바뀌었으므로 글리프용 크기 규칙을 정리합니다. */
+.ypl .tb-validation-icon svg { display: block; }

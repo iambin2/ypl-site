@@ -261,17 +261,17 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   if (result.status === "invalid") {
     title = "규정 위반";
     message = `${result.errors.length}개의 규정 위반을 확인했습니다.`;
-    icon = "×";
+    icon = <Icon n="x" size={15} />;
   } else if (result.status === "valid") {
     title = "검증 통과";
     message = `${regulationName} · ${cupRuleSummary} 기준으로 로스터와 세팅의 최종 검증을 통과했습니다.`;
-    icon = "✓";
+    icon = <Icon n="check" size={15} />;
   } else {
     title = teamLength || configuredSpecialRule ? "미완성" : "팀을 구성해 주세요";
     message = teamLength || configuredSpecialRule
       ? "규정 위반은 확인되지 않았지만 최종 검증에 필요한 룰 설정 또는 팀 세팅이 아직 완료되지 않았습니다."
       : "포켓몬을 선택하고 각 포켓몬의 세팅을 완료해 주세요.";
-    icon = "!";
+    icon = <Icon n="alert" size={15} />;
   }
 
   const messages = [
