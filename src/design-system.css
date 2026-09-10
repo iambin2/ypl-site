@@ -42,8 +42,8 @@
 .ypl {
   --s-page: #FAFBFD;  --s-card: #FFFFFF;  --s-soft: #F4F7FB;
   --s-soft2: #EFF3FA; --s-fill: #E9EEF6;  --s-deep: #16233A;
-  --ln-1: #E4E9F1;    --ln-2: #D0D8E5;    --ln-3: #C4CDDC;
-  --hairline: #E4E9F1; --hairline-firm: #D0D8E5; --hairline-lit: #EEF2F7;
+  --ln-1: #E0E6EF;    --ln-2: #C9D2E0;    --ln-3: #B9C4D6;
+  --hairline: #E0E6EF; --hairline-firm: #C9D2E0; --hairline-lit: #EDF1F7;
 
   --t-1: #0C1017; --t-2: #2C3444; --t-3: #3C4454; --t-4: #4A5364; --t-5: #6E7787;
 
@@ -52,6 +52,7 @@
   --accent-line: rgba(27, 63, 134, .22);
   --on-accent: #FFFFFF;
 
+  --win-wash: rgba(27, 63, 134, .11);
   --laurel: #8A6410;
   --laurel-wash: rgba(138, 100, 16, .08);
   --laurel-line: rgba(138, 100, 16, .24);
@@ -85,6 +86,7 @@
   --accent-line: rgba(120, 160, 235, .34);
   --on-accent: #FFFFFF;
 
+  --win-wash: rgba(78, 124, 214, .17);
   --laurel: #D3A24A;
   --laurel-wash: rgba(211, 162, 74, .12);
   --laurel-line: rgba(211, 162, 74, .32);
@@ -1542,3 +1544,9 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .comp, .ypl .lg2, .ypl .records-empty-box, .ypl .tb-slot,
 .ypl .tb-editor-section { border-radius: var(--r-card); }
 .ypl .dd-btn, .ypl .tb-current-team { border-radius: var(--r-ctrl); }
+
+/* 승자 행 — 라이트 모드에서 7% 강조면은 흰 카드 위에서 거의 보이지 않았습니다.
+   전용 토큰으로 진하게 하고, 안쪽 1px 강조선을 더해 두 테마 모두에서 읽히게 합니다. */
+.ypl .bk-slot.win, .ypl.dark .bk-slot.win {
+  background: var(--win-wash); color: var(--t-1); font-weight: 720;
+  box-shadow: inset 1px 0 0 var(--ac-text); }
