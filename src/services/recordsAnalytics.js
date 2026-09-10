@@ -778,13 +778,19 @@ function titleRecordsFor(data, name) {
 }
 
 function championRecordsFor(data, name) {
-  return (data.champions || [])
-    .filter((c) => cleanName(c.name) === name)
-    .map((c) => ({
-      gen: c.gen,
-      season: c.slabel || `SEASON ${c.season}`,
-      team: parseParty(c.team),
-    }));
+  /* 레거시 행과 정규화 행이 함께 들어오면 같은 대(代)가 두 번 잡힌다.
+     세대+시즌을 열쇠로 한 번만 남긴다. */
+  const seen = new Set();
+  const out = [];
+  for (const c of data.champions || []) {
+    if (cleanName(c.name) !== name) continue;
+    const season = c.slabel || `SEASON ${c.season}`;
+    const key = `${c.gen}|${season}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ gen: c.gen, season, team: parseParty(c.team) });
+  }
+  return out;
 }
 
 function summarizeMatches(matches) {

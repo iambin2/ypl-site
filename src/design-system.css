@@ -1550,3 +1550,75 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .bk-slot.win, .ypl.dark .bk-slot.win {
   background: var(--win-wash); color: var(--t-1); font-weight: 720;
   box-shadow: inset 1px 0 0 var(--ac-text); }
+
+/* =============================================================================
+   교정 · 4차
+   ========================================================================== */
+
+/* ── 승자 표시 ────────────────────────────────────────────────────────────
+   왼쪽 모서리의 1px 강조선(브릿지)을 걷어냅니다. 강조면만으로 읽히도록
+   라이트 값을 한 단계 더 올립니다.                                          */
+.ypl { --win-wash: rgba(27, 63, 134, .14); }
+.ypl.dark { --win-wash: rgba(78, 124, 214, .17); }
+.ypl .bk-slot.win, .ypl.dark .bk-slot.win {
+  background: var(--win-wash); color: var(--t-1); font-weight: 720;
+  box-shadow: none; }
+
+/* ── 소개 · 시즌 흐름 ─────────────────────────────────────────────────────
+   flex + 화살표 조합이라 카드가 거의 붙어 하나의 큰 테두리처럼 보였습니다.
+   아래 "YPL이 기록하는 것"과 같은 그리드로 맞춥니다.                        */
+.ypl .flow {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s4); margin: 0 0 var(--s2); }
+.ypl .flow-arw { display: none; }
+.ypl .flow-step { border-radius: var(--r-card); padding: 18px 20px 20px; }
+@media (max-width: 900px) {
+  .ypl .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .ypl .flow { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── 햄버거 막대 ──────────────────────────────────────────────────────────
+   1.6px 는 기기 픽셀 격자에 맞아떨어지지 않아 맨 위 줄만 얇게 보였습니다.
+   세 줄 모두 2px 정수로 두고 위치도 정수로 맞춥니다.                        */
+.ypl .bg-ico { width: 16px; height: 12px; }
+.ypl .bg-ico i { height: 2px; border-radius: 1px; }
+.ypl .bg-ico i:nth-child(1) { top: 0; }
+.ypl .bg-ico i:nth-child(2) { top: 5px; }
+.ypl .bg-ico i:nth-child(3) { top: 10px; }
+.ypl .nav-burger.open .bg-ico i:nth-child(1) { top: 5px; transform: rotate(45deg); }
+.ypl .nav-burger.open .bg-ico i:nth-child(3) { top: 5px; transform: rotate(-45deg); }
+
+/* ── 칭호 표 ──────────────────────────────────────────────────────────────
+   이름 칸이 1fr 이라 보유자 목록이 길면 "슈퍼루키"가 한 글자씩 쪼개졌습니다.
+   이름은 제 너비를 갖고, 넘치는 쪽은 보유자 목록이 되도록 바꿉니다.        */
+.ypl .tt-row { grid-template-columns: 9px auto minmax(0, 1fr); }
+.ypl .tt-row b { white-space: nowrap; }
+.ypl .tt-row .who { text-align: right; }
+
+/* ── 기록 · 챔피언스 시리즈 딱지 ──────────────────────────────────────────
+   채운 남색 알약이라 라이트 모드에서 대비가 나빴고, 최고 권위 대회를
+   가리키는 자리이므로 사이트의 우승 색(금색) 칩으로 통일합니다.            */
+.ypl .r2-champ, .ypl.dark .r2-champ {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+  border-radius: var(--r-chip); border: 0;
+  background: var(--laurel-wash); color: var(--laurel);
+  box-shadow: inset 0 0 0 1px var(--laurel-line);
+  font-size: 11.5px; font-weight: 650; letter-spacing: -.004em; }
+
+/* ── 목록 hover 범위 ──────────────────────────────────────────────────────
+   공지·게시판은 제목 줄(.nb-head/.bd-head)에만 hover 면이 깔려, 바로 아래에
+   붙어 있는 동작 버튼·본문을 덮는 것처럼 보였습니다. 항목 전체가 한 덩어리로
+   반응하도록 옮기고 위아래 숨통도 틔웁니다.                                */
+.ypl .nb-item, .ypl .bd-item {
+  margin-inline: calc(var(--s3) * -1); padding-inline: var(--s3);
+  border-radius: var(--r-ctrl);
+  transition: background var(--t-fast) var(--ease); }
+.ypl .nb-item:hover, .ypl .bd-item:hover { background: var(--s-soft); }
+.ypl .nb-head, .ypl .bd-head {
+  margin-inline: 0; width: 100%; padding-inline: 0; }
+.ypl .nb-head:hover, .ypl .bd-head:hover { background: transparent; }
+.ypl .nb-links, .ypl .ann-formbtns { padding-inline: 0; padding-bottom: var(--s4); }
+.ypl .nb-body { padding-inline: 0; }
+.ypl .bd-open { padding-left: 48px; padding-right: 0; }
