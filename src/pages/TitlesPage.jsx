@@ -94,7 +94,7 @@ export default function TitlesPage({ data, admin, setModal }) {
                 <span className="tnum">{done}&thinsp;/&thinsp;{items.length}</span>
               </div>
               <div className="tt-meter-track">
-                <i style={{ width: (items.length ? Math.round(done / items.length * 100) : 0) + "%" }} />
+                <i style={{ "--fill": items.length ? done / items.length : 0 }} />
               </div>
             </div>
             {admin && <button className="y-btn y-btn-secondary tt-add"

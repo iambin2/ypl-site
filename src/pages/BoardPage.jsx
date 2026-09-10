@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Empty, Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
@@ -93,7 +93,9 @@ export default function BoardPage({ data, admin, save, flash }){
       </div>
     </Reveal>
     <div className="bd-list">
-      {list.length===0&&<div className="bd-empty">{kw?"검색 결과가 없습니다.":"아직 글이 없습니다. 첫 글을 남겨보세요!"}</div>}
+      {list.length===0&&(kw
+        ? <Empty icon="search" title="검색 결과가 없습니다" desc={`‘${kw}’ 와(과) 맞는 글을 찾지 못했습니다.`}/>
+        : <Empty icon="list" title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;
         return (<div className={"bd-item"+(isOpen?" open":"")+(p.secret?" secret":"")} key={p.id}>
           <button className="bd-head" onClick={()=>toggle(p.id)}>

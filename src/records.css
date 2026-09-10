@@ -19,7 +19,7 @@
 .records-search span,.records-toolbar span{font-size:12px;color:var(--muted);white-space:nowrap}
 .records-search .search-input-icon,.records-toolbar .search-input-icon{font-size:15px;line-height:1}
 .records-trainer-scroll,.records-pokemon-scroll{display:flex;flex-direction:column;gap:4px;max-height:620px;overflow:auto;padding-top:8px}
-.records-trainer-row,.records-pokemon-row{border:1px solid transparent;background:transparent;color:var(--ink);border-radius:12px;padding:10px 11px;text-align:left;cursor:pointer;transition:border-color .16s,background .16s}
+.records-trainer-row,.records-pokemon-row{border:1px solid transparent;background:transparent;color:var(--ink);border-radius:12px;padding:10px 11px;text-align:left;cursor:pointer;transition:border-color var(--t-fast),background var(--t-fast)}
 .records-trainer-row:hover,.records-pokemon-row:hover{border-color:var(--line);background:var(--s-soft)}
 .records-trainer-row.on,.records-pokemon-row.on{border-color:var(--line2);background:var(--s-soft2)}
 .records-trainer-row{display:flex;flex-direction:column;gap:3px}
@@ -38,7 +38,7 @@
 .records-profile-name{margin:4px 0 18px;font-size:26px;font-weight:800;line-height:1.15;color:var(--ink);letter-spacing:-.02em;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
 .records-eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--muted);white-space:nowrap}
 .records-profile-filter{flex:0 0 190px;width:190px;max-width:190px}
-.records-profile-head .records-season-filter .dd-btn{min-height:38px;border-color:var(--line);background:var(--s-card);color:var(--ink);border-radius:11px;padding:8px 10px}
+.records-profile-head .records-season-filter .dd-btn{min-height:38px;border-color:var(--line);background:var(--s-card);color:var(--ink);border-radius:var(--r-ctrl);padding:8px 10px}
 .records-profile-head .records-season-filter .dd-btn:focus{border-color:var(--navy)}
 .records-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
 .records-stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--s-soft)}
@@ -204,7 +204,7 @@
   flex:0 0 34px;
   border-radius:10px;
   background:var(--soft);
-  transition:transform .22s ease, background .16s ease;
+  transition:transform var(--t-fast) ease, background var(--t-fast) ease;
 }
 .ypl .records-round-chevron svg{
   display:block;

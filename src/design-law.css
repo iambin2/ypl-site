@@ -1,0 +1,337 @@
+/* =============================================================================
+   YPL — 제 5 장.  하나의 법칙 (THE SINGLE LAW)
+   이 파일은 design-system.css 다음에 붙습니다. 따라서 앞의 모든 규칙보다
+   뒤에 적용됩니다.
+
+   앞의 네 차례 교정은 "값을 모으는" 일이었습니다. 이 장은 값이 아니라 법칙을
+   놓습니다. 사이트의 모든 표면·모든 움직임·모든 반응이 아래 다섯 문장에서만
+   나옵니다.
+
+     1. 움직임은 한 곡선에서 나온다.   시간 4단계, 곡선 3종.
+     2. 표면은 세 층뿐이다.            바탕 · 판 · 떠 있는 것(유리).
+     3. 활자는 커질수록 좁아진다.      광학 트래킹. 한국어는 어절로 끊는다.
+     4. 반응은 물리다.                 누르면 들어가고, 스프링으로 돌아온다.
+     5. 등장은 한 번, 같은 거리로.     18px 아래에서, 흐릿함이 걷히며 온다.
+   ========================================================================== */
+
+/* ---------- 5.1 모션 상수 -------------------------------------------------
+   apple.com 이 실제로 쓰는 곡선(.28,.11,.32,1)을 기본으로 둡니다. 시작이
+   조용하고 끝이 길어, 요소가 "멈추는" 게 아니라 "정착"합니다.
+   스프링은 CSS linear() 로 실제 감쇠 곡선을 그립니다. 되돌아오는 동작
+   (누름 해제 · 팝업 등장)에만 쓰고, 오버슛은 1.7% 로 아주 얕게 둡니다.     */
+.ypl {
+  --ease-out: cubic-bezier(.28, .11, .32, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: linear(
+    0, .006, .025 2.8%, .101 6.1%, .539 18.9%, .721 25.3%, .849 31.5%,
+    .937 38.1%, .968 41.8%, .991 45.7%, 1.006 50.1%, 1.015 55%,
+    1.017 63.9%, 1.001 87.2%, 1);
+
+  /* 시간 4단계 — 미세 / 상태 / 표면 / 등장 */
+  --d-micro: 140ms;   /* 색·불투명도만 바뀔 때 */
+  --d-state: 240ms;   /* hover · 선택 · 값 변화 */
+  --d-surface: 400ms; /* 메뉴 · 모달 · 서랍 */
+  --d-enter: 680ms;   /* 스크롤 등장 · 페이지 전환 */
+
+  /* 레거시 토큰을 새 법칙 위로 다시 묶습니다. 파일 전체가 함께 따라옵니다. */
+  --ease: var(--ease-out);
+  --ease-soft: var(--ease-out);
+  --ease-inout: var(--ease-in-out);
+  --t-fast: var(--d-state);
+  --t-base: var(--d-surface);
+  --t-slow: var(--d-enter);
+}
+
+/* ---------- 5.2 표면 · 재질 -----------------------------------------------
+   층은 셋뿐입니다.
+     바탕(page)   — 칠하지 않는다.
+     판(card)     — 불투명 + 헤어라인 + 아주 얕은 그림자.
+     떠 있는 것   — 반투명 유리 + 채도 상승 + 깊은 그림자.
+   그림자는 한 겹이 아니라 세 겹입니다. 가까운 겹은 접지, 먼 겹은 부양을
+   담당합니다. 한 겹짜리 그림자가 싸구려로 읽히는 이유가 이것입니다.        */
+.ypl {
+  --s-page: #F4F5F8;            /* 흰 판이 떠 보이도록 바탕을 한 단 내립니다 */
+  --shadow-1:
+    0 1px 1px rgba(18, 30, 58, .035),
+    0 2px 6px -2px rgba(18, 30, 58, .055);
+  --shadow-2:
+    0 1px 1px rgba(18, 30, 58, .04),
+    0 4px 10px -3px rgba(18, 30, 58, .07),
+    0 14px 34px -12px rgba(18, 30, 58, .13);
+  --shadow-3:
+    0 2px 4px rgba(18, 30, 58, .05),
+    0 12px 28px -8px rgba(18, 30, 58, .13),
+    0 44px 80px -28px rgba(18, 30, 58, .22);
+  --glass: color-mix(in srgb, var(--s-card) 74%, transparent);
+  --glass-quiet: color-mix(in srgb, var(--s-page) 72%, transparent);
+  --glass-fx: saturate(180%) blur(26px);
+  --edge-lit: transparent;      /* 라이트에서는 위쪽 하이라이트를 쓰지 않습니다 */
+  --focus-halo: rgba(var(--glow), .22);
+}
+.ypl.dark {
+  --shadow-1:
+    0 1px 1px rgba(0, 0, 0, .34),
+    0 2px 6px -2px rgba(0, 0, 0, .46);
+  --shadow-2:
+    0 1px 1px rgba(0, 0, 0, .4),
+    0 4px 10px -3px rgba(0, 0, 0, .5),
+    0 16px 36px -12px rgba(0, 0, 0, .66);
+  --shadow-3:
+    0 2px 4px rgba(0, 0, 0, .44),
+    0 14px 30px -8px rgba(0, 0, 0, .6),
+    0 48px 88px -28px rgba(0, 0, 0, .78);
+  --glass: color-mix(in srgb, var(--s-card) 68%, transparent);
+  --glass-quiet: color-mix(in srgb, var(--s-page) 66%, transparent);
+  /* 어두운 판의 윗변에 1px 빛을 얹습니다 — 어둠 속에서 면의 두께를 만드는 방법. */
+  --edge-lit: rgba(255, 255, 255, .055);
+  --focus-halo: rgba(var(--glow), .3);
+}
+
+/* 모서리 — 4단계를 한 단계씩 키웁니다. 같은 비례를 유지해 크기가 달라도
+   같은 곡률로 읽힙니다. */
+.ypl { --r-chip: 8px; --r-ctrl: 12px; --r-card: 18px; --r-panel: 26px; }
+
+/* 문서 바탕 — 스크롤 관성으로 끝을 넘겼을 때 보이는 색까지 맞춥니다. */
+html, body { background: #F4F5F8; }
+body:has(.ypl.dark) { background: #0A0D13; }
+
+/* ---------- 5.3 활자 -------------------------------------------------------
+   커질수록 좁아집니다(광학 트래킹). 그리고 한국어는 어절 중간에서 끊지
+   않습니다 — 이 한 줄이 국문 사이트의 인상을 가장 크게 바꿉니다.           */
+.ypl {
+  --tr-display: -.045em;
+  --tr-t1: -.028em;
+  --tr-t2: -.021em;
+  --tr-t3: -.014em;
+  --tr-body: -.008em;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.ypl {
+  word-break: keep-all;        /* 어절 단위 줄바꿈 — 자식 전체가 상속받는다 */
+  overflow-wrap: break-word;   /* 단, 한 어절이 칸보다 길면 그때만 끊는다 */
+}
+/* 표 형태 숫자와 코드성 문자열은 어절 규칙 밖에 둡니다. */
+.ypl .tnum, .ypl .num, .ypl code, .ypl pre { word-break: normal; }
+
+/* ---------- 5.4 브라우저 표면 ----------------------------------------------
+   스크롤바 · 캐럿 · 선택 · 탭 하이라이트까지 팔레트 안으로 넣습니다.
+   "사소해서 아무도 안 보는 곳"이 실제로는 값싸 보이는 원인입니다.          */
+.ypl {
+  caret-color: var(--ac-text);
+  accent-color: var(--ac-fill);
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-color: var(--hairline-firm) transparent;
+  scrollbar-width: thin;
+}
+.ypl ::selection {
+  background: color-mix(in srgb, var(--ac-text) 22%, transparent);
+  color: var(--t-1); }
+.ypl *::-webkit-scrollbar { width: 10px; height: 10px; }
+.ypl *::-webkit-scrollbar-corner { background: transparent; }
+.ypl *::-webkit-scrollbar-track { background: transparent; }
+.ypl *::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--hairline-firm) 72%, transparent);
+  border-radius: 99px; border: 3px solid transparent; background-clip: padding-box;
+  transition: background-color var(--d-state) var(--ease-out); }
+.ypl *::-webkit-scrollbar-thumb:hover {
+  background: var(--ln-3); background-clip: padding-box; }
+
+/* 앵커·탭 이동이 고정 헤더에 가려지지 않게 */
+.ypl [id] { scroll-margin-top: calc(var(--header-h) + var(--s5)); }
+/* 이미지는 끌려 나오지 않습니다 */
+.ypl img { -webkit-user-drag: none; }
+/* 손가락 입력의 지연 제거 */
+.ypl button, .ypl a, .ypl [role="button"],
+.ypl input, .ypl select, .ypl textarea { touch-action: manipulation; }
+
+/* 조작 요소는 활자를 물려받습니다.
+   전수 점검에서 45개 요소가 13.3333px 로 계산되고 있었습니다 — 브라우저가
+   form control 에 주는 기본값입니다. 부품들이 font-family 만 inherit 하고
+   font-size 는 두고 갔기 때문에, 행·칸 안의 크기 없는 자식들이 전부 척도
+   밖으로 새어 나가 있었습니다. 한 줄로 모두 되돌립니다. */
+.ypl button, .ypl input, .ypl select, .ypl textarea {
+  font-size: inherit; font-family: inherit; letter-spacing: inherit; }
+
+/* 포커스 — 한 종류. 선 하나와 그 바깥의 부드러운 후광. */
+.ypl :focus-visible,
+.ypl a:focus-visible, .ypl button:focus-visible,
+.ypl input:focus-visible, .ypl select:focus-visible, .ypl textarea:focus-visible {
+  outline: 2px solid var(--ac-text);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--focus-halo);
+}
+.ypl :focus:not(:focus-visible) { outline: none; }
+
+/* ---------- 5.5 반응의 물리 ------------------------------------------------
+   누름은 즉각(90ms) 들어가고, 놓으면 스프링으로 되돌아옵니다.
+   되돌아오는 길에만 탄성이 있습니다 — 이것이 물리적으로 느껴지는 이유.     */
+.ypl button, .ypl a, .ypl [role="button"], .ypl .y-row, .ypl .hcell,
+.ypl .bk-card, .ypl .nextev, .ypl .tt-cat, .ypl .nb-head, .ypl .bd-head,
+.ypl .reign-item, .ypl .tt-row, .ypl .tt-champ, .ypl .r2-row, .ypl .round2 {
+  transition:
+    background-color var(--d-state) var(--ease-out),
+    border-color var(--d-state) var(--ease-out),
+    color var(--d-state) var(--ease-out),
+    box-shadow var(--d-state) var(--ease-out),
+    opacity var(--d-micro) var(--ease-out),
+    transform var(--d-surface) var(--ease-spring);
+}
+.ypl button:active, .ypl [role="button"]:active,
+.ypl .y-btn:active, .ypl .btn:active,
+.ypl .hcell:active, .ypl .bk-card:active, .ypl .nextev:active {
+  transform: scale(.978);
+  transition-duration: 90ms;
+  transition-timing-function: var(--ease-out);
+}
+/* 행은 눌러도 줄어들지 않습니다 — 목록이 출렁이면 읽기가 어려워집니다.
+   대신 바탕이 한 단 더 내려앉습니다. */
+.ypl .y-row:active, .ypl .nb-item:active, .ypl .bd-item:active,
+.ypl .r2-row:active, .ypl .round2:active, .ypl .tt-cat:active {
+  transform: none; background: var(--s-fill); }
+
+/* 누를 수 있는 "판"은 아주 얕게 떠오릅니다(1px + 그림자 한 단).
+   목록의 행은 떠오르지 않습니다 — 면과 줄의 차이를 지킵니다. */
+.ypl .bk-card:hover, .ypl .nextev:hover, .ypl .hcard:hover,
+.ypl .comp:hover, .ypl .lg2:hover, .ypl .flow-step:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+  border-color: var(--hairline-firm);
+}
+
+/* 비활성 — 한 가지 표현만 */
+.ypl :disabled, .ypl [aria-disabled="true"] {
+  opacity: .38; cursor: not-allowed;
+  transform: none !important; box-shadow: none !important; }
+
+/* ---------- 5.6 등장 -------------------------------------------------------
+   18px 아래에서, 살짝 흐릿한 채로 올라와 또렷해집니다. 거리·시간·흐림은
+   전 사이트 공통이고, 순서(--reveal-delay)만 부품이 정합니다.
+
+   등장은 transition 이 아니라 animation 으로 겁니다. 이유가 있습니다:
+   목록의 행(.y-row)·머리(.sech)·카드는 .reveal 을 겸하는데, 등장을
+   transition 으로 걸면 그 한 줄이 요소의 transition 을 통째로 덮어써서
+   hover 배경 전환이 사라집니다(전에는 행에 마우스를 올리면 색이 툭 바뀌었습니다).
+   animation 은 transition 과 공존하므로 둘 다 살아 있습니다.                */
+/* 거리와 흐림은 변수로 둡니다. 좁은 화면에서 값을 줄이고 싶을 때 .reveal 의
+   선언을 덮어쓰면, 애니메이션이 끝난 뒤에도 그 값이 남아 화면이 영영 뿌옇게
+   됩니다. 키프레임이 변수를 읽게 해서 그 사고를 구조적으로 막습니다. */
+.ypl { --reveal-y: 18px; --reveal-blur: 6px; }
+@keyframes yRevealIn {
+  from { opacity: 0; transform: translate3d(0, var(--reveal-y), 0); filter: blur(var(--reveal-blur)); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+.ypl .reveal { opacity: 0; }
+/* fill 은 backwards 여야 합니다. both 로 두면 애니메이션이 끝난 뒤에도 마지막
+   키프레임(transform:none)이 계속 적용돼, 등장을 마친 카드가 hover 로 떠오르지도
+   눌리지도 않게 됩니다. backwards 는 지연 구간만 덮고, 끝나면 아래의 평범한
+   선언(opacity:1)으로 돌아갑니다. */
+.ypl .reveal.in {
+  opacity: 1;
+  animation: yRevealIn var(--d-enter) var(--ease-out) var(--reveal-delay, 0ms) backwards;
+}
+
+/* 페이지 전환 — 같은 법칙의 축약판. 짧게, 조금만. */
+@keyframes yPageIn {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+.ypl .page, .ypl .swap { animation: yPageIn 460ms var(--ease-out) both; }
+
+/* 떠 있는 것의 등장 — 스프링으로 앉습니다. */
+@keyframes ySurfaceIn {
+  from { opacity: 0; transform: scale(.965) translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes yRise { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+@keyframes yFade { from { opacity: 0; } to { opacity: 1; } }
+
+.ypl .modal { animation: ySurfaceIn var(--d-surface) var(--ease-spring) both; transform-origin: 50% 46%; }
+.ypl .overlay { animation: yFade var(--d-state) var(--ease-out) both; }
+/* 여닫힐 때 DOM 에서 사라지는 면만 animation 을 씁니다.
+   서랍(.nav-drawer)과 도구 메뉴는 항상 DOM 에 있고 visibility 로 여닫으므로,
+   animation 의 fill 이 닫힌 상태를 덮어써 버립니다 — 그쪽은 transition 으로. */
+.ypl .dd-list, .ypl .dd-menu {
+  animation: ySurfaceIn 300ms var(--ease-spring) both; transform-origin: top center; }
+.ypl .toast, .ypl .pr-box, .ypl .fb-q, .ypl .bk-pin, .ypl .bk-team-card,
+.ypl .hofm-poke { animation: yRise var(--d-surface) var(--ease-spring) both; }
+.ypl .bk-champ-banner { animation: ySurfaceIn var(--d-enter) var(--ease-spring) both; }
+
+/* ---------- 5.7 유리 -------------------------------------------------------
+   떠 있는 모든 면은 뒤를 흐리고 채도를 올립니다. 투명도를 줄이라는 시스템
+   설정(prefers-reduced-transparency)은 존중합니다.                           */
+.ypl .nav,
+.ypl .nav-drawer, .ypl .nav-tools-menu,
+.ypl .dd-menu, .ypl .dd-list,
+.ypl .modal, .ypl .toast {
+  -webkit-backdrop-filter: var(--glass-fx);
+  backdrop-filter: var(--glass-fx);
+}
+.ypl .nav, .ypl.dark .nav {
+  background: var(--glass-quiet);
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background-color var(--d-surface) var(--ease-out),
+    border-color var(--d-surface) var(--ease-out),
+    box-shadow var(--d-surface) var(--ease-out);
+}
+/* 스크롤이 시작되면 헤더가 재질을 얻습니다 — 갑자기가 아니라 400ms 에 걸쳐. */
+.ypl .nav.scrolled, .ypl.dark .nav.scrolled {
+  background: var(--glass);
+  border-bottom-color: var(--hairline);
+  box-shadow: 0 10px 30px -24px rgba(0, 0, 0, .55);
+}
+/* 다크에서 이 면들을 불투명하게 되돌리던 레거시 규칙(.ypl.dark …)이 있어
+   선택자 무게를 같게 맞춰 줍니다. 그러지 않으면 밤에만 유리가 사라집니다. */
+.ypl .nav-drawer, .ypl .nav-tools-menu, .ypl .dd-menu, .ypl .dd-list, .ypl .modal,
+.ypl.dark .nav-drawer, .ypl.dark .nav-tools-menu, .ypl.dark .dd-menu,
+.ypl.dark .dd-list, .ypl.dark .modal {
+  background: var(--glass);
+  border: 1px solid var(--hairline-firm);
+  box-shadow: var(--shadow-3), inset 0 1px 0 var(--edge-lit);
+}
+.ypl .overlay {
+  background: color-mix(in srgb, var(--s-deep) 46%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ypl .nav, .ypl .nav.scrolled, .ypl .nav-drawer, .ypl .nav-tools-menu,
+  .ypl .dd-menu, .ypl .dd-list, .ypl .modal, .ypl .toast {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    background: var(--s-card); }
+  .ypl .nav, .ypl .nav.scrolled { background: var(--s-page); }
+  .ypl .overlay { -webkit-backdrop-filter: none; backdrop-filter: none;
+    background: color-mix(in srgb, var(--s-deep) 78%, transparent); }
+}
+
+/* 불투명한 판은 어둠 속에서 윗변에 빛을 얻습니다. */
+.ypl.dark .y-plate, .ypl.dark .y-plate-raised, .ypl.dark .card, .ypl.dark .hcard,
+.ypl.dark .panel, .ypl.dark .bk-card, .ypl.dark .records-block,
+.ypl.dark .records-profile-hero, .ypl.dark .tb-panel, .ypl.dark .tb-rule-card,
+.ypl.dark .records-trainer-list, .ypl.dark .records-pokemon-list,
+.ypl.dark .bk-match, .ypl.dark .y-stats {
+  box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-lit);
+}
+
+/* ---------- 5.8 접근성 · 시스템 설정 ---------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .ypl *, .ypl *::before, .ypl *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important; }
+  .ypl .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+}
+@media (prefers-contrast: more) {
+  .ypl { --hairline: var(--ln-2); --hairline-lit: var(--ln-1); --hairline-firm: var(--ln-3); }
+  .ypl .y-body, .ypl .y-sm, .ypl .sub { color: var(--t-2); }
+}
+@media (forced-colors: active) {
+  .ypl .nav, .ypl .modal, .ypl .nav-drawer, .ypl .dd-menu, .ypl .dd-list {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: Canvas; }
+  .ypl :focus-visible { outline: 2px solid Highlight; box-shadow: none; }
+}

@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { bracketRouteSearch, loadSiteData, saveSiteData, readInitialAppView, submitEventApplication } from "./services/index.js";
 import { AboutPage, BoardPage, BracketsPage, ChampionsPage, HomePage, NewsPage, RecordsPage, TeamBuilderPage, TitlesPage } from "./pages/index.js";
-import { SiteHeader } from "./components/index.js";
+import { SiteHeader, SiteFooter, NAV_ITEMS } from "./components/index.js";
 import { AdminModeBar, AdminModalHost } from "./admin/index.js";
 /* 디자인 시스템은 STYLES 맨 끝에 붙는다 — 위쪽에 누적된 레거시 규칙보다 항상 뒤. */
 import DESIGN_SYSTEM from "./design-system.css?inline";
+/* 제 5·6 장 — 하나의 법칙. design-system.css 보다 항상 뒤에 붙는다. */
+import DESIGN_LAW from "./design-law.css?inline";
+import DESIGN_SURFACES from "./design-surfaces.css?inline";
 
 /* =========================================================================
    YPL — Yonsei Pokemon League  v5 (미니멀 리디자인 / 남색 포인트)
@@ -911,11 +915,16 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 .brand small{color:var(--muted2);font-size:11px;letter-spacing:.14em;font-weight:650;}
 .about-hero .lead .hl{background:none;-webkit-text-fill-color:initial;color:var(--ac-text);font-weight:750;}
 
-/* ── 부드러운 전환 (클릭 요소 공통) ── */
+/* ── 부드러운 전환 (클릭 요소 공통) ──
+   transform:none !important 이 여기 있었습니다. 카드가 hover 에 떠오르지 않게
+   하려던 것인데, 선택자가 .ypl a / .ypl button 이라 사이트의 모든 링크·버튼에
+   걸렸습니다. 그래서 누름(:active) 축소도, 셰브론 이동도, 화면 밖에 숨겨 두는
+   건너뛰기 링크도 전부 무력화돼 있었습니다.
+   "카드는 떠오르지 않는다"는 규칙은 design-system.css 의 모션 절에 이미
+   명시돼 있으므로, 여기서는 전환만 남기고 !important 봉인을 걷어냅니다. */
 .ypl a,.ypl button,.card.hover,.hcard,.tl-item,.champ,.lg2,.bk-slot,.nlink,.subtab,.pg-btn{
   transition:box-shadow .34s cubic-bezier(.22,.61,.36,1),background-color .34s cubic-bezier(.22,.61,.36,1),
-             border-color .34s cubic-bezier(.22,.61,.36,1),color .34s cubic-bezier(.22,.61,.36,1);
-  transform:none !important;}
+             border-color .34s cubic-bezier(.22,.61,.36,1),color .34s cubic-bezier(.22,.61,.36,1);}
 
 /* ── 호버 백라이트 (유일한 효과) ── */
 .card.hover:hover,.hcard:hover,.tl-item:hover,.champ:hover,.lg2:hover{
@@ -2078,7 +2087,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* ── 20) 눌림 피드백 ── */
 .ypl .btn:active,.ypl .subtab:active,.ypl .pg-btn:active,.ypl .nav-discord:active,
 .ypl .ann-apply:active,.ypl .ann-link:active{transform:translateY(1px) !important;}
-` + DESIGN_SYSTEM;
+` + DESIGN_SYSTEM + DESIGN_LAW + DESIGN_SURFACES;
 
 /* ============================== 모션 헬퍼 ============================== */
 function CountUp({ to, dur=1100, suffix="" }) {
@@ -2102,10 +2111,22 @@ export default function App() {
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||SEED)))();},[]);
   const [noAnim,setNoAnim]=useState(false);
   const switchTheme=useCallback(()=>{
-    // 테마 전환 렌더에 no-anim 클래스를 함께 적용해 모든 요소가 동시에 바뀌도록 함
+    // 낮↔밤은 화면 전체가 한 번에 겹쳐 넘어간다(View Transitions).
+    // 이때는 no-anim 이 필요 없다 — 전환 자체가 화면 전체의 스냅샷을 겹쳐 주므로
+    // 요소들이 각자 다른 속도로 색을 바꾸는 모습이 애초에 보이지 않는다.
+    if(typeof document.startViewTransition==="function"
+       && !(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)){
+      document.startViewTransition(()=>flushSync(()=>setDark(d=>!d)));
+      return;
+    }
+    // View Transitions 가 없는 브라우저에서는 전환을 잠시 끄고 한 번에 바꾼다.
+    // 되돌리는 일을 rAF 에만 맡기면, 탭이 가려져 rAF 가 멈춘 사이에 눌렸을 때
+    // no-anim 이 그대로 굳어 사이트의 모든 움직임이 죽는다. 타이머로 함께 건다.
     setNoAnim(true);
     setDark(d=>!d);
-    window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>setNoAnim(false)));
+    const clear=()=>setNoAnim(false);
+    window.requestAnimationFrame(()=>window.requestAnimationFrame(clear));
+    window.setTimeout(clear,120);
   },[]);
   const [dark,setDark]=useState(()=>{
     try{ const v=localStorage.getItem("ypl-theme");
@@ -2115,6 +2136,12 @@ export default function App() {
   });
   useEffect(()=>{ try{ localStorage.setItem("ypl-theme", dark?"dark":"light"); }catch(e){} },[dark]);
   useEffect(()=>{let last=null,raf=0;const f=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const v=window.scrollY>20;if(v!==last){last=v;setScrolled(v);}});};f();window.addEventListener("scroll",f,{passive:true});return()=>{window.removeEventListener("scroll",f);if(raf)cancelAnimationFrame(raf);};},[]);
+  /* 탭 제목 — 모든 화면이 "YPL" 하나였습니다. 뒤로 가기 목록과 브라우저 탭에서
+     어디에 있었는지 구분되지 않아, 열어 둔 탭이 여러 개면 찾을 수가 없었습니다. */
+  useEffect(()=>{
+    const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
+    document.title=label?`${label} · YPL`:"YPL — Yonsei Pokémon League";
+  },[view]);
   useEffect(()=>{
     const onPopState=()=>setView(readInitialAppView(window.location.search));
     window.addEventListener("popstate",onPopState);
@@ -2131,7 +2158,10 @@ export default function App() {
       url.searchParams.delete("eventId");
       window.history.pushState({},"",url);
     }
-    setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"smooth"});
+    // 탭이 바뀌면 내용이 통째로 교체된다. 부드럽게 "굴러 올라가는" 스크롤은
+    // 새 페이지가 이미 그려진 뒤에 도착해 화면이 두 번 움직이는 것처럼 보인다.
+    // 자리를 먼저 맨 위로 옮겨 두고, 등장 애니메이션이 처음부터 보이게 한다.
+    setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"auto"});
   },[]);
   const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
   const save=useCallback(async(next)=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?"저장했습니다":"메모리에만 반영됐습니다");return ok;},[flash]);
@@ -2197,6 +2227,8 @@ export default function App() {
   if(!data) return <div className={"ypl"+(dark?" dark":"")} style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",width:"100%",background:"var(--s-page)"}}><style>{STYLES}</style><span className="loading-txt">불러오는 중…</span></div>;
   return (
     <div className={"ypl"+(dark?" dark":"")+(noAnim?" no-anim":"")}><style>{STYLES}</style>
+      {/* 키보드로 들어온 사람은 매번 헤더 전체를 지나야 본문에 닿았다. */}
+      <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
       <SiteHeader
         view={view}
         onNavigate={go}
@@ -2210,7 +2242,7 @@ export default function App() {
       />
       {admin&&<AdminModeBar/>}
 
-      <div className="wrap"><div className="page" key={view}>
+      <div className="wrap"><main className="page" id="ypl-main" tabIndex={-1} key={view}>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage/>}
         {view==="news"&&<NewsPage data={data} admin={admin} setModal={setModal} save={save} submitForm={submitForm} refresh={refresh} go={go}/>}
@@ -2220,8 +2252,10 @@ export default function App() {
         {view==="builder"&&<TeamBuilderPage/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} normTeam={normTeam} go={go}/>}
+      </main>
       </div>
-      </div>
+      <SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline}/>
+
       {toast&&<div className="toast">{toast}</div>}
 
       <AdminModalHost

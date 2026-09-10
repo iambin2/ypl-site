@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Reveal, Icon } from "../components/index.js";
+import { Reveal, Icon, Empty } from "../components/index.js";
 
 /* 날짜 문자열을 비교 가능한 숫자로. "2026.05.02" / "2026.05" / "2024년 11월" 모두 처리한다. */
 function dateKey(s) {
@@ -171,13 +171,7 @@ export default function HomePage({ data, go, admin }) {
             <span className="y-row-aside" />
             <span className="y-row-chev"><Icon n="arrow" size={16} /></span>
           </Reveal>))}</div>
-          : <div className="y-empty home-empty">
-            <div className="y-empty-mark"><Icon n="list" size={20} /></div>
-            <div>
-              <h3>아직 글이 없습니다</h3>
-              <p>첫 글을 남기면 이곳에 표시됩니다.</p>
-            </div>
-          </div>}
+          : <Empty className="home-empty" icon="list" title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다." />}
       </div>
 
       <div>
@@ -194,10 +188,7 @@ export default function HomePage({ data, go, admin }) {
             </span>
             <span className={"hrank-pt tnum" + (i === 0 ? " one" : "")}>{r.points}<em>pt</em></span>
           </Reveal>))}</div>
-          : <div className="y-empty home-empty">
-            <div className="y-empty-mark"><Icon n="medal" size={20} /></div>
-            <div><h3>집계된 랭킹이 없습니다</h3><p>대회 결과가 확정되면 점수가 누적됩니다.</p></div>
-          </div>}
+          : <Empty className="home-empty" icon="medal" title="집계된 랭킹이 없습니다" desc="대회 결과가 확정되면 점수가 누적됩니다." />}
       </div>
     </section>
 

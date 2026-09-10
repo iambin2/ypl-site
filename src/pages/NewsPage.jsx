@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Dropdown, Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
 import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
@@ -73,7 +73,9 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       </div>
     </Reveal>
     <Reveal className="nb-list">
-      {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:13.5}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
+      {list.length===0&&(kw
+        ? <Empty icon="search" title="검색 결과가 없습니다" desc={`‘${kw}’ 와(과) 맞는 공지를 찾지 못했습니다.`}/>
+        : <Empty icon="msg" title="등록된 공지가 없습니다" desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)}
       {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id]; const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
         return (<div className={"nb-item"+(isOpen?" open":"")} key={a.id}>
           <button className="nb-head" onClick={()=>toggle(a.id)}>
