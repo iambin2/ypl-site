@@ -482,10 +482,13 @@
 .ypl .nextev-t {
   font-size: 20px; font-weight: 720; letter-spacing: -.022em;
   line-height: 1.3; color: var(--t-1); }
+/* -webkit-box 에 세로 padding 을 주면 잘린 줄이 반쯤 드러난다. 여백은 margin 으로. */
 .ypl .nextev-b {
   font-size: 13px; line-height: 1.62; color: var(--t-4);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; padding-block: 11px; border-block: 1px solid var(--hairline); }
+  overflow: hidden; margin-block: 12px; padding-block: 0;
+  border-block: 0; }
+.ypl .nextev-meta-rule { border-top: 1px solid var(--hairline); }
 .ypl .nextev-cta { display: flex; gap: 8px; }
 
 .ypl .home-sec { max-width: var(--shell); margin: 0 auto; padding: var(--s8) var(--gutter) 0; }
