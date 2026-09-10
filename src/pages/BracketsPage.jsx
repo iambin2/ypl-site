@@ -814,7 +814,8 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
 }
 
 /* ===== 매치 카드 ===== */
-function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam }){
+function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam, seedOf }){
+  const seed=(pid)=>{ const n=seedOf?seedOf(pid):null; return n?<i className="bk-seed tnum">{n}</i>:<i className="bk-seed" aria-hidden="true"/>; };
   if(!m) return null;
   const pa=ev.sp(m.a), pb=ev.sp(m.b);
   const decided=!!m.winner;
@@ -822,14 +823,14 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
   if(teamMode){
     const clickable=admin&&(bothReal||decided);
     const rowT=(side,pid)=>{ const isWin=decided&&m.winner===side; const isBye=pid===BYE;
-      return <div className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")}><span className="bk-tn">{pid===BYE?"부전승":(pid?nameOf(pid):"…")}</span></div>; };
+      return <div className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")}>{seed(pid)}<span className="bk-tn">{pid===BYE?"부전승":(pid?nameOf(pid):"…")}</span></div>; };
     return <div className={"bk-match"+(compact?" cmp":"")+(clickable?" team-click":"")} onClick={()=>clickable&&onOpenTeam(m,pa,pb)} title={clickable?"클릭하여 팀 대결 진행/수정":""}>{rowT("a",pa)}{rowT("b",pb)}</div>;
   }
   const canPick=admin&&bothReal;
   const row=(side,pid)=>{
     const isWin=decided&&m.winner===side; const isBye=pid===BYE;
     const txt=pid===BYE?"부전승":(pid?nameOf(pid):"…");
-    return <button type="button" className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")+(canPick?" pick":"")} disabled={!canPick} onClick={()=>canPick&&onPick(m.id,side)} title={canPick?(decided?"승자 변경 / 같은 쪽 다시 클릭 시 취소":"클릭하여 승자 선택"):""}>{txt}</button>;
+    return <button type="button" className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")+(canPick?" pick":"")} disabled={!canPick} onClick={()=>canPick&&onPick(m.id,side)} title={canPick?(decided?"승자 변경 / 같은 쪽 다시 클릭 시 취소":"클릭하여 승자 선택"):""}>{seed(pid)}<span className="bk-tn">{txt}</span></button>;
   };
   return <div className={"bk-match"+(compact?" cmp":"")}>{row("a",pa)}{row("b",pb)}</div>;
 }
@@ -842,8 +843,9 @@ function treeCenters(rounds){
     for(let j=0;j<rounds[r].length;j++){ centers[r][j]= r===0 ? (j*BK_PITCH0+BK_MATCH_H/2) : (centers[r-1][2*j]+centers[r-1][2*j+1])/2; } }
   return { centers, totalH: (rounds[0]?.length||1)*BK_PITCH0 };
 }
-function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=false }){
+function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=false, seedOf }){
   const ev=evalGraph(g);
+  const finalRes=elimResult(g);
   const rlabel=(len)=>{ const names={1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"}; return names[len]||`${len*2}강`; };
   const { centers, totalH }=treeCenters(g.rounds);
   return (<div className="bk-scroll"><div className="bk-tree">
@@ -851,17 +853,35 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
       <div className="bk-col-h">{g.kind==="double"?("WB R"+(ri+1)):rlabel(r.length)}</div>
       <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
         {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
-          <MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/>
+          <MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>
         </div>))}
       </div>
     </div>))}
+    {g.kind!=="double"&&finalRes&&finalRes.champ&&<div className="bk-col2 bk-champ-col">
+      <div className="bk-col-h gf">우승</div>
+      <div className="bk-col-body" style={{height:totalH}}>
+        <div className="bk-mpos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
+          <div className="bk-champ-node">
+            <span className="bk-champ-k"><Icon n="crown" size={15}/>CHAMPION</span>
+            <b>{nameOf(finalRes.champ)}</b>
+          </div>
+        </div>
+      </div>
+    </div>}
   </div>
   {g.kind==="double"&&<div className="bk-lb"><div className="bk-lb-h">패자부활전 (Lower Bracket)</div><div className="bk-cols">
     {g.lb.map((r,ri)=>(<div className="bk-col" key={ri}><div className="bk-col-h">LB R{ri+1}</div>
-      {r.map(m=><MatchCard key={m.id} m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/>)}
+      {r.map(m=><MatchCard key={m.id} m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>)}
     </div>))}
-    {!qualifier&&<div className="bk-col"><div className="bk-col-h gf">그랜드 파이널</div><MatchCard m={g.gf} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/></div>}
-    {!qualifier&&g.reset&&g.gf.winner==="b"&&<div className="bk-col"><div className="bk-col-h gf">최종 결승 (리셋)</div><MatchCard m={g.reset} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/></div>}
+    {!qualifier&&<div className="bk-col"><div className="bk-col-h gf">그랜드 파이널</div><MatchCard m={g.gf} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/></div>}
+    {!qualifier&&g.reset&&g.gf.winner==="b"&&<div className="bk-col"><div className="bk-col-h gf">최종 결승 (리셋)</div><MatchCard m={g.reset} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/></div>}
+    {!qualifier&&finalRes&&finalRes.champ&&<div className="bk-col bk-champ-col">
+      <div className="bk-col-h gf">우승</div>
+      <div className="bk-champ-node">
+        <span className="bk-champ-k"><Icon n="crown" size={15}/>CHAMPION</span>
+        <b>{nameOf(finalRes.champ)}</b>
+      </div>
+    </div>}
   </div></div>}
   </div>);
 }
@@ -1078,7 +1098,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       onRetry={()=>setSubmissionStatusReloadKey(value=>value+1)}
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
-    {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"}/>}
+    {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"} seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
     {res&&res.done&&championshipEvent?.championship_phase!=="qualifier"&&<div className="bk-champ-banner">
       <span className="bk-cb-k"><Icon n="trophy" size={15}/> 우승</span><span className="bk-cb-n">{nameOf(res.champ)}</span>{res.ru&&<span className="bk-cb-ru">준우승 {nameOf(res.ru)}</span>}
       <div className="bk-cb-actions">

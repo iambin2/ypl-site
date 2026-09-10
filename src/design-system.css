@@ -1622,3 +1622,30 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .nb-links, .ypl .ann-formbtns { padding-inline: 0; padding-bottom: var(--s4); }
 .ypl .nb-body { padding-inline: 0; }
 .ypl .bd-open { padding-left: 48px; padding-right: 0; }
+
+/* ── 대진표 · 시드 번호와 우승 노드 (프로토타입) ─────────────────────────── */
+.ypl .bk-match .bk-slot {
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 9px;
+  align-items: center; }
+.ypl .bk-seed {
+  font-style: normal; font-size: 10.5px; font-weight: 700;
+  color: var(--t-5); text-align: center; font-variant-numeric: tabular-nums; }
+.ypl .bk-slot.win .bk-seed { color: var(--ac-text); }
+.ypl .bk-slot .bk-tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ypl .bk-champ-col { min-width: 218px; }
+.ypl .bk-champ-node {
+  padding: 18px 20px; border-radius: var(--r-card);
+  background: var(--laurel-wash); border: 1px solid var(--laurel-line); }
+.ypl .bk-champ-k {
+  display: inline-flex; align-items: center; gap: 7px; color: var(--laurel);
+  font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
+  text-transform: uppercase; font-weight: 700; }
+.ypl .bk-champ-node b {
+  display: block; margin-top: 8px; font-size: 25px; font-weight: 800;
+  letter-spacing: -.028em; color: var(--laurel); }
+/* 결승에서 우승 노드로 들어가는 마지막 연결선 */
+.ypl .bk-champ-col .bk-mpos::before {
+  content: ""; position: absolute; right: 100%; top: 49px;
+  width: calc(var(--bk-gap) / 2);
+  border-top: 1px solid var(--hairline-firm); }
