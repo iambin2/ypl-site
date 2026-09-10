@@ -82,11 +82,16 @@ export default function BoardPage({ data, admin, save, flash }){
   const delComment=(p,c)=>{ if(admin){ if(!confirm("이 댓글을 삭제할까요?"))return; } else { const pin=prompt("본인 댓글을 삭제하려면 PIN을 입력하세요."); if(pin===null)return; if(!c.pin||pin!==c.pin){alert("PIN이 일치하지 않습니다.");return;} }
     save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
   return (<section className="sec">
-    <Reveal className="sec-head"><h2>게시판</h2>
-      <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
-      <div className="row-actions"><button className="btn btn-primary btn-sm" onClick={()=>setCompose(true)}>✏️ 글쓰기</button></div>
+    <Reveal className="sec-head">
+      <div>
+        <h2>게시판</h2>
+        <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
+      </div>
+      <div className="y-page-aside">
+        <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
+        <button className="y-btn y-btn-primary" onClick={()=>setCompose(true)}><Icon n="plus" size={13}/>글쓰기</button>
+      </div>
     </Reveal>
-    <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
     <div className="bd-list">
       {list.length===0&&<div className="bd-empty">{kw?"검색 결과가 없습니다.":"아직 글이 없습니다. 첫 글을 남겨보세요!"}</div>}
       {shown.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;

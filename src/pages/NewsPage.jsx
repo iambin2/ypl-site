@@ -62,11 +62,16 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   return (<section className="sec">
-    <Reveal className="sec-head"><h2>공지</h2>
-      <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
-      {admin&&<div className="row-actions"><button className="btn btn-gold btn-sm" onClick={()=>setModal({type:"ann"})}>+ 공지 작성</button></div>}
+    <Reveal className="sec-head">
+      <div>
+        <h2>공지</h2>
+        <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
+      </div>
+      <div className="y-page-aside">
+        <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
+        {admin&&<button className="y-btn y-btn-primary" onClick={()=>setModal({type:"ann"})}><Icon n="plus" size={13}/>공지 작성</button>}
+      </div>
     </Reveal>
-    <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
     <Reveal className="nb-list">
       {list.length===0&&<div style={{padding:"40px 0",textAlign:"center",color:"var(--muted2)",fontSize:14}}>{kw?"검색 결과가 없습니다.":"등록된 공지가 없습니다."}</div>}
       {shown.map(a=>{ const isOpen=open.has(a.id); const hasLink=a.link||a.link2; const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id]; const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};

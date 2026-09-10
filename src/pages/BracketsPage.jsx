@@ -1864,15 +1864,32 @@ export default function BracketsPage({ data, admin, flash, refresh }){
   };
   const statusTag=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); if(b.applied)return"기록 반영됨"; if(r&&r.done)return"종료"; return"진행 중"; };
   return (<section className="sec">
-    <Reveal className="sec-head"><h2>대진표</h2>
-      <p className="sub">대회 대진을 직접 생성하고 결과를 입력하면, 확정된 성적이 기록에 연동됩니다.</p>
-      {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--loss)"}}>normalized bracket 오류: {normalizedLoadError}</p>}
-      {admin&&<div className="row-actions"><button className="btn btn-primary btn-sm" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={15}/>새 대진표</button></div>}
+    <Reveal className="sec-head">
+      <div>
+        <h2>대진표</h2>
+        <p className="sub">대회 대진을 직접 생성하고 결과를 입력하면, 확정된 성적이 기록에 연동됩니다.</p>
+        {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--loss)"}}>normalized bracket 오류: {normalizedLoadError}</p>}
+      </div>
+      {admin&&<div className="y-page-aside"><button className="y-btn y-btn-primary" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>새 대진표</button></div>}
     </Reveal>
     {!open&&!wizard&&<div className="bk-list swap">
       {!normalizedInitialReady
-        ? <div className="bk-empty">대진표를 불러오는 중입니다.</div>
-        : list.length===0&&<div className="bk-empty">아직 생성된 대회가 없습니다.{admin&&" 우측 상단에서 새 대회를 만들어보세요."}</div>}
+        /* 스피너 대신 형태를 먼저 — 로딩이 끝나면 같은 자리에 카드가 들어온다. */
+        ? <div className="bk-skeletons" aria-busy="true" aria-label="대진표를 불러오는 중">
+            {[0,1,2].map(i=>(<div className="bk-card bk-card-skel" key={i}>
+              <div className="y-skeleton" style={{height:18,width:74,borderRadius:6}}/>
+              <div className="y-skeleton" style={{height:17,width:"64%",marginTop:14}}/>
+              <div className="y-skeleton" style={{height:12,width:"44%",marginTop:10,opacity:.6}}/>
+            </div>))}
+          </div>
+        : list.length===0&&<div className="y-empty">
+            <div className="y-empty-mark"><Icon n="chart" size={20}/></div>
+            <div>
+              <h3>아직 만들어진 대진표가 없습니다</h3>
+              <p>참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.</p>
+            </div>
+            {admin&&<button className="y-btn y-btn-primary" onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>첫 대진표 만들기</button>}
+          </div>}
       {list.map(b=>(<button className="bk-card" key={b.id} onClick={()=>setOpenId(b.id)}>
         <div className="bk-card-top"><span className={"bk-badge "+(b.applied?"done":"live")}>{statusTag(b)}</span><span className="bk-card-date tnum">{b.createdAt}</span></div>
         <div className="bk-card-name">{b.name}</div>

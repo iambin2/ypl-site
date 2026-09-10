@@ -217,7 +217,8 @@ function TrainerView({ snapshot }) {
           {(profile.champions.length > 0 || profile.titles.length > 0) && (
             <div className="records-title-chips">
               {profile.champions.map((c, i) => (
-                <span key={`c${i}`}>{c.gen} 챔피언</span>
+                /* 금색은 우승 계열에만. 나머지 칭호는 무채색으로 둔다. */
+                <span key={`c${i}`} className="is-champion">{c.gen} 챔피언</span>
               ))}
               {profile.titles.map((title, i) => (
                 <span key={`t${i}`}>{title.name}</span>
