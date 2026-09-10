@@ -849,7 +849,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
   return (<div className="bk-scroll"><div className="bk-tree">
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
       <div className="bk-col-h">{g.kind==="double"?("WB R"+(ri+1)):rlabel(r.length)}</div>
-      <div className="bk-col-body" style={{height:totalH}}>
+      <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
         {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
           <MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam}/>
         </div>))}
@@ -1630,7 +1630,7 @@ function BracketDraw({ b, onDone }){
       return (<div className="bk-scroll"><div className="bk-tree">
         {b.graph.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
           <div className="bk-col-h">{b.graph.kind==="double"?("WB R"+(ri+1)):rlabel(r.length)}</div>
-          <div className="bk-col-body" style={{height:totalH}}>
+          <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
             {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
               {ri===0
                 ? <div className="bk-match">{slotFor("m"+j+"_0",m.a.pid,m.a.bye)}{slotFor("m"+j+"_1",m.b.pid,m.b.bye)}</div>

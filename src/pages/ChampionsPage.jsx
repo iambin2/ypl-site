@@ -115,8 +115,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
       </div>
       <div className="y-rows">
         {past.map((c, i) => {
-          const team = normTeam(c.team).filter(m => m.name).slice(0, 4);
-          const more = normTeam(c.team).filter(m => m.name).length - team.length;
+          const team = normTeam(c.team).filter(m => m.name);
           return (
             <Reveal tag="button" key={c.id || i} delay={i * 40} className="y-row reg-row"
               onClick={() => setPop(c)} aria-label={c.name + " 우승 엔트리 보기"}>
@@ -127,7 +126,6 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
               </span>
               <span className="reg-entry">
                 {team.map((m, j) => <span key={j}>{m.name}</span>)}
-                {more > 0 && <span className="rest">+{more}</span>}
               </span>
               <span className="y-row-chev"><Icon n="arrow" size={16} /></span>
             </Reveal>

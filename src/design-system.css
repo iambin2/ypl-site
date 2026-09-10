@@ -1312,3 +1312,233 @@ body:has(.ypl.dark) { background: #0A0D13; }
 .ypl .tb-validation li.error { color: var(--danger); }
 /* 검증 아이콘이 그려진 SVG로 바뀌었으므로 글리프용 크기 규칙을 정리합니다. */
 .ypl .tb-validation-icon svg { display: block; }
+
+/* =============================================================================
+   교정 · 3차
+   ========================================================================== */
+
+/* ── 홈 공지 카드 ─────────────────────────────────────────────────────────
+   발췌가 "…" 한 줄뿐이라 정보가 없었습니다. 제목까지만 두고 카드 안 요소를
+   다시 배치합니다: 라벨 줄 · 날짜+제목 · 동작.                              */
+.ypl .nextev { gap: 0; padding: 24px; }
+.ypl .nextev-k { margin-bottom: 22px; }
+.ypl .nextev-body { display: flex; flex-direction: column; gap: 8px; }
+.ypl .nextev-d { font-size: var(--fs-label); color: var(--t-5); margin: 0; }
+.ypl .nextev-t {
+  font-size: 23px; font-weight: 730; letter-spacing: -.024em;
+  line-height: 1.32; color: var(--t-1); }
+.ypl .nextev-cta { margin-top: 26px; }
+
+/* ── 소개 · 연혁 ──────────────────────────────────────────────────────────
+   날짜 칸과 본문 칸이 각자 밑줄을 그어 32px 틈이 생기고, 본문은 70ch 로
+   묶여 있었습니다. 한 행이 한 줄을 긋고 폭을 다 쓰도록 바꿉니다.           */
+.ypl .timeline { display: flex; flex-direction: column; margin: var(--s3) 0 var(--s2); }
+.ypl .tl-item {
+  display: grid; grid-template-columns: 120px minmax(0, 1fr);
+  column-gap: var(--s6); row-gap: 4px; align-items: start;
+  padding: var(--s4) 0; border-bottom: 1px solid var(--hairline);
+  background: none; border-radius: 0; box-shadow: none; }
+.ypl .tl-date {
+  grid-column: 1; grid-row: 1 / 3; padding: 0;
+  border-bottom: 0; font-size: 14px; font-weight: 700;
+  color: var(--ac-text); letter-spacing: .02em; }
+.ypl .tl-title {
+  grid-column: 2; grid-row: 1; padding: 0;
+  font-size: 16.5px; font-weight: 750; letter-spacing: -.01em; color: var(--t-1); }
+.ypl .tl-body {
+  grid-column: 2; grid-row: 2; padding: 0; border-bottom: 0;
+  font-size: 14.5px; line-height: 1.6; color: var(--t-4); max-width: none; }
+
+/* ── 소개 · 카드 상호작용 통일 ────────────────────────────────────────────
+   마스터/루키 리그만 hover 에 반응하지 않았습니다. 이 페이지의 정보 카드는
+   모두 같은 반응을 갖도록 맞춥니다.                                        */
+.ypl .card:hover, .ypl .card.hover:hover, .ypl .rec-card:hover,
+.ypl .comp:hover, .ypl .flow-step:hover,
+.ypl .lg2:hover, .ypl.dark .lg2:hover,
+.ypl .lg2.master:hover, .ypl.dark .lg2.master:hover,
+.ypl .lg2.rookie:hover, .ypl.dark .lg2.rookie:hover {
+  background: var(--s-soft); border-color: var(--hairline-firm); box-shadow: none; }
+.ypl .tl-item:hover { background: transparent; }   /* 연혁은 행이라 면이 없습니다 */
+
+/* ── 역대 챔피언 엔트리 ───────────────────────────────────────────────────
+   4마리에서 자르지 않고 전부 놓습니다. 폭이 모자랄 때만 넘치는 항목이
+   가려지도록 한 줄로 고정합니다.                                           */
+.ypl .reg-entry {
+  flex-wrap: nowrap; overflow: hidden; min-width: 0;
+  -webkit-mask-image: linear-gradient(to right, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to right, #000 88%, transparent 100%); }
+.ypl .reg-entry span { flex: 0 0 auto; white-space: nowrap; }
+
+/* ── 햄버거 버튼 ──────────────────────────────────────────────────────────
+   막대가 2px 라 1.6px 아이콘 세트보다 굵고, 여닫는 이징도 사이트와 달랐습니다.
+   상자 배경도 다른 아이콘 버튼과 어긋나 있어 함께 맞춥니다.                 */
+.ypl.dark .nav-theme, .ypl.dark .nav-burger,
+.ypl .nav-theme, .ypl .nav-burger {
+  background: transparent; border: 0; box-shadow: none; }
+.ypl.dark .nav-theme:hover, .ypl.dark .nav-burger:hover,
+.ypl .nav-theme:hover, .ypl .nav-burger:hover {
+  background: var(--s-soft); border: 0; box-shadow: none; }
+.ypl .bg-ico { width: 16px; height: 12px; }
+.ypl .bg-ico i {
+  height: 1.6px; border-radius: 2px; background: currentColor;
+  transition: transform var(--t-base) var(--ease-soft),
+              opacity 120ms var(--ease-soft),
+              top var(--t-base) var(--ease-soft); }
+.ypl .bg-ico i:nth-child(1) { top: 0; }
+.ypl .bg-ico i:nth-child(2) { top: 5.2px; }
+.ypl .bg-ico i:nth-child(3) { top: 10.4px; }
+.ypl .nav-burger.open .bg-ico i:nth-child(1) { top: 5.2px; transform: rotate(45deg); }
+.ypl .nav-burger.open .bg-ico i:nth-child(2) { opacity: 0; transform: scaleX(.5); }
+.ypl .nav-burger.open .bg-ico i:nth-child(3) { top: 5.2px; transform: rotate(-45deg); }
+
+/* ── 모션 재조정 · 흐르는 감각 ────────────────────────────────────────────
+   1차에서는 값을 통일했지만 곡선이 지수형 ease-out(.22,1,.36,1)이라 시작이
+   급해 딱딱하게 느껴졌습니다. 곡선을 부드럽게 시작해 길게 감속하는
+   (.32,.72,0,1)로 바꾸고 시간도 한 단계 늘립니다. --ease 자체를 바꾸므로
+   이 값을 쓰는 모든 규칙이 함께 따라옵니다.                                */
+.ypl {
+  --ease: cubic-bezier(.32, .72, 0, 1);        /* 기본 — 부드럽게 시작, 길게 정착 */
+  --ease-soft: cubic-bezier(.32, .72, 0, 1);
+  --ease-inout: cubic-bezier(.4, .05, .2, 1);  /* 왕복 */
+  --t-fast: 200ms; --t-base: 320ms; --t-slow: 480ms;
+}
+
+/* 등장은 조금 더 멀리서, 더 길게 흘러옵니다. */
+@keyframes yRise  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes yScale { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: none; } }
+
+.ypl .reveal {
+  opacity: 0; transform: translateY(12px);
+  transition: opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--ease); }
+.ypl .reveal.in { opacity: 1; transform: none; }
+
+.ypl .page, .ypl .swap { animation: yRise 300ms var(--ease); }
+
+/* 셰브론·화살표의 미끄러짐도 같은 곡선으로. */
+.ypl .y-row-chev, .ypl .nb-chev, .ypl .row-chev {
+  transition: transform var(--t-base) var(--ease),
+              opacity var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease); }
+.ypl .y-row:hover .y-row-chev, .ypl .reg-row:hover .y-row-chev { transform: translateX(3px); }
+.ypl .more { transition: color var(--t-fast) var(--ease); }
+.ypl .more svg { transition: transform var(--t-base) var(--ease); }
+.ypl .more:hover svg { transform: translateX(3px); }
+
+/* 버튼은 눌림만 물리적으로 — 짧게 들어가고 부드럽게 돌아옵니다. */
+.ypl .y-btn, .ypl .btn, .ypl .ann-apply, .ypl .ann-link, .ypl .mini {
+  transition: background var(--t-fast) var(--ease),
+              border-color var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease),
+              transform var(--t-base) var(--ease); }
+.ypl .y-btn:active, .ypl .btn:active { transform: scale(.97) !important; transition-duration: 90ms; }
+
+/* =============================================================================
+   PAGE — 대진표 (프로토타입 적용)
+   매치는 헤어라인으로 나뉜 두 줄, 승자는 채운 남색이 아니라 옅은 강조면,
+   라운드는 트래킹 캡스, 그리고 프로토타입의 핵심이던 연결선을 그립니다.
+   높이(98px)는 JS 가 좌표를 계산하는 값이라 그대로 유지합니다.
+   ========================================================================== */
+.ypl { --bk-gap: 38px; }
+.ypl .bk-tree { gap: var(--bk-gap); align-items: flex-start; }
+.ypl .bk-col2 { min-width: 208px; }
+.ypl .bk-col-h {
+  font-size: var(--fs-micro); letter-spacing: var(--tr-micro);
+  text-transform: uppercase; font-weight: 700;
+  color: var(--t-5); text-align: center; margin-bottom: var(--s3); }
+.ypl .bk-col-h.gf { color: var(--laurel); }
+
+.ypl .bk-match {
+  display: flex; flex-direction: column; gap: 0; padding: 0;
+  background: var(--s-card); border: 1px solid var(--hairline);
+  border-radius: var(--r-ctrl); overflow: hidden; box-shadow: var(--shadow-1);
+  transition: border-color var(--t-fast) var(--ease); }
+.ypl .bk-match:hover { border-color: var(--hairline-firm); }
+.ypl .bk-match .bk-slot {
+  min-height: 49px; border-radius: 0; padding: 0 13px;
+  background: transparent; font-size: 13.5px; font-weight: 600;
+  color: var(--t-4); transition: background var(--t-fast) var(--ease); }
+.ypl .bk-match .bk-slot + .bk-slot { border-top: 1px solid var(--hairline); }
+.ypl .bk-slot .bk-tn { font-weight: 600; }
+.ypl .bk-slot .bk-sc { color: var(--t-5); font-weight: 700; }
+.ypl .bk-slot.pick { background: transparent; }
+.ypl .bk-slot.pick:hover { background: var(--s-soft); }
+/* 승자 — 채운 남색 대신 옅은 강조면. 이름은 진하게, 점수만 강조색. */
+.ypl .bk-slot.win, .ypl.dark .bk-slot.win {
+  background: var(--accent-wash); color: var(--t-1); font-weight: 720; }
+.ypl .bk-slot.win .bk-tn { font-weight: 720; }
+.ypl .bk-slot.win .bk-sc, .ypl.dark .bk-slot.win .bk-sc { color: var(--ac-text); }
+.ypl .bk-slot.bye { color: var(--t-5); font-style: normal; font-weight: 500; }
+
+/* 연결선 — 자식의 중심에서 나가 간격의 절반 지점에서 만나고, 부모의 중심으로
+   들어갑니다. 형제 간격(--bk-pitch)은 JS 가 라운드마다 넘겨 줍니다. */
+.ypl .bk-mpos { position: absolute; left: 0; right: 0; }
+.ypl .bk-col2:not(:last-child) .bk-mpos::after {
+  content: ""; position: absolute; left: 100%;
+  width: calc(var(--bk-gap) / 2); height: calc(var(--bk-pitch, 124px) / 2);
+  border-right: 1px solid var(--hairline-firm); pointer-events: none; }
+.ypl .bk-col2:not(:last-child) .bk-mpos:nth-child(odd)::after {
+  top: 49px; border-top: 1px solid var(--hairline-firm); }
+.ypl .bk-col2:not(:last-child) .bk-mpos:nth-child(even)::after {
+  bottom: calc(100% - 49px); border-bottom: 1px solid var(--hairline-firm); }
+.ypl .bk-col2:not(:first-child) .bk-mpos::before {
+  content: ""; position: absolute; right: 100%; top: 49px;
+  width: calc(var(--bk-gap) / 2);
+  border-top: 1px solid var(--hairline-firm); pointer-events: none; }
+
+/* 추첨 슬롯 */
+.ypl .bk-slot.dwait { background: var(--s-soft); color: var(--t-5); }
+.ypl .bk-slot.drolling { background: var(--accent-wash); color: var(--ac-text); font-weight: 750; }
+
+@media (max-width: 900px) {
+  .ypl { --bk-gap: 26px; }
+  .ypl .bk-col2 { min-width: 176px; }
+}
+
+/* 연혁 행은 카드가 아니라 표의 한 줄이라 좌·우·위 테두리가 남으면 안 됩니다. */
+.ypl .tl-item, .ypl.dark .tl-item {
+  border: 0; border-bottom: 1px solid var(--hairline);
+  background: transparent; border-radius: 0; box-shadow: none; }
+.ypl .timeline .tl-item:last-child { border-bottom: 0; }
+
+/* 챔피언 이름 아래 여백이 h3 기본 마진 때문에 벌어져 있었습니다. */
+.ypl .reign-name { margin: 20px 0 0; }
+
+/* =============================================================================
+   통일성 정규화 — 전수 점검에서 남은 값들
+   페이지별로 computed style 을 수집해 보니 모서리 반경이 8/9/11/12/16/999px 로,
+   전이 시간이 .12/.14/.15/.16/.22/.25/.28/.3/.34s 로 흩어져 있었습니다.
+   ========================================================================== */
+
+/* 곡선 하나로 — 지속시간은 각 규칙의 것을 두되 곡선만 사이트 공통으로 맞춥니다.
+   이것만으로도 남아 있는 레거시 전이가 같은 감각으로 움직입니다. */
+.ypl *, .ypl *::before, .ypl *::after { transition-timing-function: var(--ease); }
+
+/* 레거시가 카드류에 걸어 둔 .34s 를 토큰으로 되돌립니다. */
+.ypl a, .ypl button, .ypl .card, .ypl .card.hover, .ypl .hcard, .ypl .tl-item,
+.ypl .champ, .ypl .lg2, .ypl .bk-slot, .ypl .nlink, .ypl .subtab, .ypl .pg-btn {
+  transition-duration: var(--t-fast); }
+
+/* 모서리 — 4단계(6·10·14·20) 밖의 값을 가장 가까운 단계로 모읍니다. */
+.ypl .nlink, .ypl .nlink.admin, .ypl .nav-discord, .ypl .nav-burger,
+.ypl .nav-ditem, .ypl .btn-sm, .ypl .hc-mon, .ypl .tgroup-head .cnt,
+.ypl .ch-clear, .ypl .tag, .ypl .badge, .ypl .holder, .ypl .cnt,
+.ypl .records-placement, .ypl .r2-comp, .ypl .bk-alloc-tag, .ypl .bk-exist,
+.ypl .undo-bar-btn, .ypl .lg2-tier, .ypl .ribbon {
+  border-radius: var(--r-ctrl); }
+.ypl .tb-panel, .ypl .tb-rule-card, .ypl .modal, .ypl .nav-drawer,
+.ypl .dd-list, .ypl .y-empty { border-radius: var(--r-panel); }
+.ypl .y-seg button, .ypl .subtab, .ypl .reign-item,
+.ypl .tb-validation-icon, .ypl .entry-item { border-radius: 8px; }
+
+/* 장식용 원형 글로우 — 이 시스템은 그라디언트 워시를 쓰지 않습니다. */
+.ypl .comp .glow, .ypl .lg2 .lg2-glow { display: none; }
+
+/* 링크·버튼의 포커스 링도 한 종류로. */
+.ypl a:focus-visible, .ypl button:focus-visible,
+.ypl input:focus-visible, .ypl select:focus-visible, .ypl textarea:focus-visible {
+  outline: 2px solid var(--ac-text); outline-offset: 2px; }
+
+/* 남은 반경 예외를 마저 모읍니다. (.tb-dot 은 상태 점이라 원형이 맞습니다) */
+.ypl .comp, .ypl .lg2, .ypl .records-empty-box, .ypl .tb-slot,
+.ypl .tb-editor-section { border-radius: var(--r-card); }
+.ypl .dd-btn, .ypl .tb-current-team { border-radius: var(--r-ctrl); }

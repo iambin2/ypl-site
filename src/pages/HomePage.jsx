@@ -108,9 +108,10 @@ export default function HomePage({ data, go, admin }) {
             <span className="nextev-live"><i />{accepting ? "다음 대회" : "최신 공지"}</span>
             <span className="more">공지 전체<Icon n="arrow" size={13} /></span>
           </span>
-          <span className="nextev-d tnum">{news.date}</span>
-          <span className="nextev-t">{news.title}</span>
-          {news.body && <span className="nextev-b">{news.body}</span>}
+          <span className="nextev-body">
+            <span className="nextev-d tnum">{news.date}</span>
+            <span className="nextev-t">{news.title}</span>
+          </span>
           <span className="nextev-cta">
             <span className="y-btn y-btn-primary">
               {accepting ? (news.form.buttonLabel || "참가 신청하기") : "공지 읽기"}
