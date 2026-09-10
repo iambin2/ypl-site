@@ -214,17 +214,25 @@ function TrainerView({ snapshot }) {
             <Stat label="4강" value={top4} suffix="회" />
           </div>
 
-          {(profile.champions.length > 0 || profile.titles.length > 0) && (
-            <div className="records-title-chips">
-              {profile.champions.map((c, i) => (
-                /* 금색은 우승 계열에만. 나머지 칭호는 무채색으로 둔다. */
-                <span key={`c${i}`} className="is-champion">{c.gen} 챔피언</span>
-              ))}
-              {profile.titles.map((title, i) => (
-                <span key={`t${i}`}>{title.name}</span>
-              ))}
-            </div>
-          )}
+          {(() => {
+            /* 챔피언 칩과 칭호 목록이 같은 항목을 각각 그리고 있었다.
+               (예: "초대 챔피언"이 champions 에서 한 번, titles 에서 또 한 번)
+               챔피언 칩이 이미 덮는 이름은 칭호 목록에서 뺀다. */
+            const shown = new Set(profile.champions.map((c) => `${c.gen} 챔피언`));
+            const rest = profile.titles.filter((t) => !shown.has(t.name));
+            if (!profile.champions.length && !rest.length) return null;
+            return (
+              <div className="records-title-chips">
+                {profile.champions.map((c, i) => (
+                  /* 금색은 우승 계열에만. 나머지 칭호는 무채색으로 둔다. */
+                  <span key={`c${i}`} className="is-champion">{c.gen} 챔피언</span>
+                ))}
+                {rest.map((title, i) => (
+                  <span key={`t${i}`}>{title.name}</span>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         <div className="records-profile-grid">
