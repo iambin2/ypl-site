@@ -3,6 +3,8 @@ import { bracketRouteSearch, loadSiteData, saveSiteData, readInitialAppView, sub
 import { AboutPage, BoardPage, BracketsPage, ChampionsPage, HomePage, NewsPage, RecordsPage, TeamBuilderPage, TitlesPage } from "./pages/index.js";
 import { SiteHeader } from "./components/index.js";
 import { AdminModeBar, AdminModalHost } from "./admin/index.js";
+/* 디자인 시스템은 STYLES 맨 끝에 붙는다 — 위쪽에 누적된 레거시 규칙보다 항상 뒤. */
+import DESIGN_SYSTEM from "./design-system.css?inline";
 
 /* =========================================================================
    YPL — Yonsei Pokemon League  v5 (미니멀 리디자인 / 남색 포인트)
@@ -2076,7 +2078,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable;}
 /* ── 20) 눌림 피드백 ── */
 .ypl .btn:active,.ypl .subtab:active,.ypl .pg-btn:active,.ypl .nav-discord:active,
 .ypl .ann-apply:active,.ypl .ann-link:active{transform:translateY(1px) !important;}
-`;
+` + DESIGN_SYSTEM;
 
 /* ============================== 모션 헬퍼 ============================== */
 function CountUp({ to, dur=1100, suffix="" }) {
