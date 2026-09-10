@@ -26,7 +26,7 @@ import {
   localizedPokemonName,
   makeMember,
   makeUid,
-  matchesLocalizedSearch,
+  matchesPokemonSearch,
   memberFromSaved,
   moveDisplay,
   moveEnglishName,
@@ -36,6 +36,9 @@ import {
   normalizeSavedTeam,
   membersRemovedByRuleChange,
   pokemonMatchesCupRule,
+  pokemonPoolForRegulation,
+  replaceMemberPokemon,
+  requiredItemForPokemon,
   formatSavedDate,
   serializeMembers,
   speciesIdentity,
@@ -418,6 +421,11 @@ export default function TeamBuilderPage() {
   const selectedMember = team.find(member => member.uid === selectedUid) || null;
   const selectedDetails = dexRecord(detailData, selectedMember?.pokemon);
   const legalItems = useMemo(() => detailData ? championsData.legalItems(detailData, regulationId) : [], [detailData, regulationId]);
+  const selectablePokemonPool = useMemo(
+    () => pokemonPoolForRegulation(regulation, detailData, legalItems),
+    [regulation, detailData, legalItems],
+  );
+  const selectedRequiredItem = requiredItemForPokemon(detailData, selectedMember?.pokemon);
 
   const displayPokemon = useCallback(pokemon => localizedPokemonName(pokemon, koreanNames), [koreanNames]);
   const markDirty = useCallback(() => {
@@ -495,6 +503,24 @@ export default function TeamBuilderPage() {
     }
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!detailData) return;
+    setTeam(current => current.map(member => {
+      if (member.resolutionState === "unresolved") {
+        const savedMember = serializeMembers([member])[0];
+        const restored = memberFromSaved(savedMember, regulation, { detailData });
+        if (restored.resolutionState === "resolved") return { ...restored, uid: member.uid };
+      }
+      const details = dexRecord(detailData, member.pokemon);
+      const requiredItem = requiredItemForPokemon(detailData, member.pokemon);
+      const ability = member.ability && details?.abilities?.includes(member.ability)
+        ? member.ability
+        : details?.abilities?.[0] || member.ability;
+      const item = requiredItem || member.item;
+      return ability !== member.ability || item !== member.item ? { ...member, ability, item } : member;
+    }));
+  }, [detailData, regulation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -688,14 +714,14 @@ export default function TeamBuilderPage() {
   }, [eventContext, registration, submissionEligibility, submissionBusy, eventId, registrationName, team, regulationId, cupRuleId, cupRule.kind, assignedTypeId, detailData]);
 
   const eligiblePool = useMemo(() => {
-    const base = regulation?.pokemon || [];
+    const base = selectablePokemonPool;
     if (cupRule.kind !== "monotype") return base;
     if (!assignedTypeId || !detailData) return [];
     return base.filter(pokemon => pokemonMatchesCupRule({ pokemon, cupRuleId, assignedTypeId, detailData }));
-  }, [regulation, cupRule.kind, assignedTypeId, detailData, cupRuleId]);
+  }, [selectablePokemonPool, cupRule.kind, assignedTypeId, detailData, cupRuleId]);
 
   const filteredPool = useMemo(() => eligiblePool
-    .filter(pokemon => matchesLocalizedSearch(displayPokemon(pokemon), pokemon.name, query))
+    .filter(pokemon => matchesPokemonSearch(pokemon, displayPokemon(pokemon), query))
     .sort((a, b) => displayPokemon(a).localeCompare(displayPokemon(b), "ko")), [eligiblePool, displayPokemon, query]);
 
   const updateMember = useCallback((uid, patch) => {
@@ -711,17 +737,24 @@ export default function TeamBuilderPage() {
   }, [updateMember]);
 
   const addPokemon = useCallback(pokemon => {
-    if (team.length >= (regulation.maxTeamSize || 6)) return;
     if (!pokemonMatchesCupRule({ pokemon, cupRuleId, assignedTypeId, detailData })) return;
     const identity = speciesIdentity(detailData, pokemon);
-    if (team.some(member => speciesIdentity(detailData, member.pokemon) === identity)) return;
-    const member = makeMember(pokemon);
+    const sameSpeciesMember = team.find(member => speciesIdentity(detailData, member.pokemon) === identity);
+    if (sameSpeciesMember) {
+      if (sameSpeciesMember.uid !== selectedUid || sameSpeciesMember.pokemon.name === pokemon.name) return;
+      const replacement = replaceMemberPokemon(sameSpeciesMember, pokemon, { detailData });
+      setTeam(current => current.map(member => member.uid === sameSpeciesMember.uid ? replacement : member));
+      markDirty();
+      return;
+    }
+    if (team.length >= (regulation.maxTeamSize || 6)) return;
+    const member = makeMember(pokemon, { detailData });
     const details = dexRecord(detailData, pokemon);
     if (details?.abilities?.length) member.ability = details.abilities[0];
     setTeam(current => [...current, member]);
     setSelectedUid(member.uid);
     markDirty();
-  }, [team, regulation.maxTeamSize, detailData, cupRuleId, assignedTypeId, markDirty]);
+  }, [team, regulation.maxTeamSize, detailData, cupRuleId, assignedTypeId, selectedUid, markDirty]);
 
   const removeMember = useCallback(uid => {
     const index = team.findIndex(member => member.uid === uid);
@@ -761,7 +794,7 @@ export default function TeamBuilderPage() {
     // Preserve the existing regulation-change semantics: only the new
     // regulation's Pokémon pool removes members. Cup legality remains the
     // validator's responsibility until its own rule is changed.
-    const removedMembers = membersRemovedByRuleChange({ team, regulation: next, cupRuleId: "none" });
+    const removedMembers = membersRemovedByRuleChange({ team, regulation: next, cupRuleId: "none", detailData });
     requestRuleChange({ regulationId: nextId, cupRuleId, assignedTypeId, removedMembers });
   }, [regulationId, team, cupRuleId, assignedTypeId, detailData, requestRuleChange]);
 
@@ -913,7 +946,7 @@ export default function TeamBuilderPage() {
       window.alert(`저장된 Regulation(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
       return;
     }
-    const restored = saved.members.map(member => memberFromSaved(member, reg));
+    const restored = saved.members.map(member => memberFromSaved(member, reg, { detailData }));
     const unresolvedCount = restored.filter(member => member.resolutionState === "unresolved").length;
     setRegulationId(saved.regulationId);
     setCupRuleId(CUP_RULES[saved.cupRuleId] ? saved.cupRuleId : "none");
@@ -926,7 +959,7 @@ export default function TeamBuilderPage() {
     setSaveMessage("");
     setLibraryOpen(false);
     if (unresolvedCount) window.alert(`${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
-  }, []);
+  }, [detailData]);
 
   const requestTeamChange = useCallback(change => {
     if (change.kind === "load" && change.saved.id === activeSavedTeamId) {
@@ -1192,7 +1225,7 @@ export default function TeamBuilderPage() {
         <Reveal className="tb-panel tb-pool-panel" delay={55}>
           <div className="tb-panel-head">
             <div><span className="tb-panel-kicker">POKÉMON</span><h2>포켓몬 선택</h2></div>
-            <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {regulation.pokemon.length}</small></strong>
+            <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
           </div>
           <div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{dataStatusText}<span>·</span>{localizationText}</div>
           <div className="tb-search-row">
@@ -1211,13 +1244,17 @@ export default function TeamBuilderPage() {
               {filteredPool.map(pokemon => {
                 const details = dexRecord(detailData, pokemon);
                 const identity = speciesIdentity(detailData, pokemon);
-                const already = team.some(member => speciesIdentity(detailData, member.pokemon) === identity);
+                const sameSpeciesMember = team.find(member => speciesIdentity(detailData, member.pokemon) === identity);
+                const already = Boolean(sameSpeciesMember);
+                const canReplaceSelected = sameSpeciesMember?.uid === selectedUid && sameSpeciesMember.pokemon.name !== pokemon.name;
                 return (
-                  <button key={pokemon.name} className="tb-pokemon-row" onClick={() => addPokemon(pokemon)} disabled={already}>
+                  <button key={pokemon.name} className="tb-pokemon-row" onClick={() => addPokemon(pokemon)} disabled={already && !canReplaceSelected}>
                     <img src={spriteUrl(pokemon.name)} alt="" onError={event => { event.currentTarget.style.visibility = "hidden"; }} />
                     <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{displayPokemon(pokemon) !== pokemon.name ? pokemon.name : ""}{details?.num ? `${displayPokemon(pokemon) !== pokemon.name ? " · " : ""}#${String(details.num).padStart(4, "0")}` : ""}</small></span>
                     <TypeBadges types={details?.types || []} />
-                    <span className="tb-add-mark"><Icon n={already ? "check" : "plus"} size={13}/></span>
+                    <span className="tb-add-mark">
+                      {canReplaceSelected ? "↔" : <Icon n={already ? "check" : "plus"} size={13} />}
+                    </span>
                   </button>
                 );
               })}
@@ -1297,20 +1334,29 @@ export default function TeamBuilderPage() {
 
                 <div className="tb-editor-section">
                   <div className="tb-subhead"><div><strong>도구</strong><span>{regulation.shortName} 사용 가능 · Item Clause 적용</span></div></div>
-                  <ComboInput
-                    key={`${selectedMember.uid}-item`}
-                    value={selectedMember.item}
-                    options={itemOptions}
-                    display={id => itemDisplay(detailData, id)}
-                    resolve={resolveItem}
-                    validateMatch={itemId => itemId && team.some(member => member.uid !== selectedMember.uid && member.item === itemId) ? "같은 도구는 팀에서 한 번만 사용할 수 있습니다." : ""}
-                    onCommit={id => updateMember(selectedMember.uid, { item: id })}
-                    placeholder={!detailData ? (detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…") : "도구 없음 · 검색 또는 선택 (한글/영문)"}
-                    disabled={!detailData}
-                    ariaLabel="도구 · Held Item"
-                    invalidMessage="목록에 있는 사용 가능 도구를 선택해 주세요."
-                    revertOnInvalid
-                  />
+                  {selectedRequiredItem ? (
+                    <>
+                      <div className="tb-locked-item" role="textbox" aria-readonly="true" aria-label="메가폼 전용 도구">
+                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><b aria-hidden="true">🔒</b>
+                      </div>
+                      <div className="tb-field-meta">선택한 메가폼에 필요한 도구로 자동 지정되며 변경할 수 없습니다.</div>
+                    </>
+                  ) : (
+                    <ComboInput
+                      key={`${selectedMember.uid}-item`}
+                      value={selectedMember.item}
+                      options={itemOptions}
+                      display={id => itemDisplay(detailData, id)}
+                      resolve={resolveItem}
+                      validateMatch={itemId => itemId && team.some(member => member.uid !== selectedMember.uid && member.item === itemId) ? "같은 도구는 팀에서 한 번만 사용할 수 있습니다." : ""}
+                      onCommit={id => updateMember(selectedMember.uid, { item: id })}
+                      placeholder={!detailData ? (detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…") : "도구 없음 · 검색 또는 선택 (한글/영문)"}
+                      disabled={!detailData}
+                      ariaLabel="도구 · Held Item"
+                      invalidMessage="목록에 있는 사용 가능 도구를 선택해 주세요."
+                      revertOnInvalid
+                    />
+                  )}
                 </div>
 
                 <div className="tb-editor-section">

@@ -26,7 +26,7 @@ const MC_ONLY_ITEM_IDS = new Set([
   'absolitez', 'baxcalibrite', 'garchompitez', 'golisopite', 'lucarionitez', 'salamencite',
 ]);
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_KEY = `ypl-champions-data-${CACHE_VERSION}`;
 const CACHE_TTL = 12 * 60 * 60 * 1000;
 
@@ -108,6 +108,8 @@ function parsePokedex(source) {
       num,
       name,
       baseSpecies: parseQuoted(raw, 'baseSpecies') || name,
+      forme: parseQuoted(raw, 'forme'),
+      requiredItem: parseQuoted(raw, 'requiredItem'),
       baseStats,
       abilities,
       types,
@@ -267,4 +269,4 @@ function legalItems(data, regulationId) {
 }
 
 
-export { load, legalItems, toID, MB_ONLY_ITEM_IDS, MC_ONLY_ITEM_IDS };
+export { load, legalItems, parsePokedex, toID, MB_ONLY_ITEM_IDS, MC_ONLY_ITEM_IDS };

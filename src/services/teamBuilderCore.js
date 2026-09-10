@@ -129,6 +129,8 @@ export function makeUid(prefix = "team") {
 }
 
 export function canonicalBaseName(name = "") {
+  const mega = name.match(/^(.+?)-Mega(?:-[A-Z])?$/i);
+  if (mega) return mega[1];
   const regional = name.match(/^(.+?) \[(Alolan|Hisuian|Galarian) Form\]$/);
   if (regional) return regional[1];
   if (name.startsWith("Tauros [")) return "Tauros";
@@ -177,6 +179,55 @@ function formIdentityCandidates(pokemon) {
   return [...new Set(candidates)];
 }
 
+function isMegaRecord(record) {
+  return Boolean(record?.requiredItem && /^Mega(?:-|$)/i.test(String(record?.forme || "")));
+}
+
+export function isMegaPokemon(detailData, pokemon) {
+  return isMegaRecord(dexRecord(detailData, pokemon));
+}
+
+export function requiredItemForPokemon(detailData, pokemon) {
+  const record = dexRecord(detailData, pokemon);
+  return isMegaRecord(record) ? toID(record.requiredItem) : "";
+}
+
+function megaPokemonEntry(record) {
+  return {
+    id: `mega-${record.id}`,
+    name: record.name,
+    baseSpecies: record.baseSpecies,
+    battleFormId: record.id,
+    requiredItemId: toID(record.requiredItem),
+    isMegaForm: true,
+    isNewInMB: false,
+  };
+}
+
+export function pokemonPoolForRegulation(regulation, detailData, legalItems = [], { includeUnavailableMega = false } = {}) {
+  const basePool = regulation?.pokemon || [];
+  if (!detailData?.pokedex) return [...basePool];
+  const allowedBaseNames = new Set(basePool.map(pokemon => pokemon.name));
+  const existingNames = new Set(basePool.map(pokemon => pokemon.name));
+  const legalItemIds = new Set((legalItems || []).map(item => item.id));
+  const megaForms = Object.values(detailData.pokedex)
+    .filter(record => isMegaRecord(record))
+    .filter(record => allowedBaseNames.has(record.baseSpecies))
+    .filter(record => !existingNames.has(record.name))
+    .filter(record => includeUnavailableMega || legalItemIds.has(toID(record.requiredItem)))
+    .map(megaPokemonEntry);
+  return [...basePool, ...megaForms];
+}
+
+export function pokemonAllowedInRegulation({ pokemon, regulation, detailData, legalItems = [] } = {}) {
+  const allowedNames = new Set(regulation?.pokemon?.map(entry => entry.name) || []);
+  if (!isMegaPokemon(detailData, pokemon)) return allowedNames.has(pokemon?.name);
+  const details = dexRecord(detailData, pokemon);
+  if (!allowedNames.has(details?.baseSpecies)) return false;
+  const legalItemIds = new Set((legalItems || []).map(item => item.id));
+  return legalItemIds.has(requiredItemForPokemon(detailData, pokemon));
+}
+
 /**
  * Resolve only IDs that are present in the loaded Pokédex. Regulation ids
  * such as mb-1 are list indexes, not official form identities, so they are
@@ -184,7 +235,7 @@ function formIdentityCandidates(pokemon) {
  */
 export function resolveCanonicalPokemonId(detailData, pokemon) {
   if (!detailData?.pokedex || !pokemon?.name) return null;
-  const isForm = /\[[^\]]+\]/.test(String(pokemon.name)) || / Rotom$/.test(String(pokemon.name));
+  const isForm = /\[[^\]]+\]/.test(String(pokemon.name)) || / Rotom$/.test(String(pokemon.name)) || /-Mega(?:-[A-Z])?$/i.test(String(pokemon.name));
   const baseId = toID(canonicalBaseName(pokemon.name));
   for (const candidate of formIdentityCandidates(pokemon)) {
     const record = detailData.pokedex[candidate];
@@ -205,7 +256,10 @@ export function resolveCanonicalPokemonId(detailData, pokemon) {
 
 export function dexRecord(detailData, pokemon) {
   if (!detailData || !pokemon) return null;
-  return detailData.pokedex?.[dataId(pokemon)] || detailData.pokedex?.[speciesFallbackKey(pokemon)] || null;
+  const exact = detailData.pokedex?.[dataId(pokemon)];
+  if (exact) return exact;
+  if (/-Mega(?:-[A-Z])?$/i.test(String(pokemon.name || ""))) return null;
+  return detailData.pokedex?.[speciesFallbackKey(pokemon)] || null;
 }
 
 export function speciesIdentity(detailData, pokemon) {
@@ -215,6 +269,7 @@ export function speciesIdentity(detailData, pokemon) {
 
 export function spriteSlug(name = "") {
   if (SPRITE_SLUG_OVERRIDES[name]) return SPRITE_SLUG_OVERRIDES[name];
+  if (/-Mega(?:-[A-Z])?$/i.test(name)) return name.toLowerCase().replace(/-mega-([a-z])$/, "-mega$1");
   return name.toLowerCase().replace(/\[.*?\]/g, "").replace(/[.'’]/g, "").replace(/[^a-z0-9]+/g, "").trim();
 }
 
@@ -222,7 +277,7 @@ export function spriteUrl(name) {
   return `https://play.pokemonshowdown.com/sprites/gen5/${spriteSlug(name)}.png`;
 }
 
-export function makeMember(pokemon) {
+export function makeMember(pokemon, { detailData } = {}) {
   return {
     uid: makeUid("member"),
     pokemon,
@@ -231,8 +286,21 @@ export function makeMember(pokemon) {
     ability: "",
     alignment: "serious",
     statPoints: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
-    item: "",
+    item: requiredItemForPokemon(detailData, pokemon),
     moves: ["", "", "", ""],
+  };
+}
+
+export function replaceMemberPokemon(member, pokemon, { detailData } = {}) {
+  const details = dexRecord(detailData, pokemon);
+  return {
+    ...member,
+    pokemon,
+    pokemonId: resolveCanonicalPokemonId(detailData, pokemon) || "",
+    resolutionState: "resolved",
+    originalPokemonName: pokemon?.name || "",
+    ability: details?.abilities?.[0] || "",
+    item: requiredItemForPokemon(detailData, pokemon) || member?.item || "",
   };
 }
 
@@ -246,7 +314,7 @@ export function serializeMembers(team, { detailData } = {}) {
     ability: member.ability || "",
     alignment: member.alignment || "serious",
     statPoints: Object.fromEntries(STAT_KEYS.map(key => [key, Number(member.statPoints?.[key] || 0)])),
-    item: member.item || "",
+    item: requiredItemForPokemon(detailData, member.pokemon) || member.item || "",
     moves: Array.from({ length: 4 }, (_, index) => member.moves?.[index] || ""),
   })).filter(member => member.pokemonName || member.resolutionState === "unresolved");
 }
@@ -327,8 +395,10 @@ export function normalizeDraft(raw, regulations) {
   };
 }
 
-export function memberFromSaved(savedMember, regulation) {
-  const pokemon = regulation?.pokemon?.find(entry => entry.name === savedMember?.pokemonName);
+export function memberFromSaved(savedMember, regulation, { detailData = null, legalItems = [] } = {}) {
+  const restorationPool = pokemonPoolForRegulation(regulation, detailData, legalItems, { includeUnavailableMega: true });
+  const pokemon = restorationPool.find(entry => savedMember?.pokemonId && resolveCanonicalPokemonId(detailData, entry) === savedMember.pokemonId)
+    || restorationPool.find(entry => entry.name === savedMember?.pokemonName);
   const unresolved = !pokemon;
   const fallbackPokemon = pokemon || {
     id: savedMember?.pokemonId || "",
@@ -343,7 +413,7 @@ export function memberFromSaved(savedMember, regulation) {
     ability: savedMember?.ability || "",
     alignment: ALIGNMENTS.some(n => n.id === savedMember?.alignment) ? savedMember.alignment : "serious",
     statPoints: Object.fromEntries(STAT_KEYS.map(key => [key, Math.max(0, Math.min(32, Number(savedMember?.statPoints?.[key]) || 0))])),
-    item: savedMember?.item || "",
+    item: requiredItemForPokemon(detailData, pokemon) || savedMember?.item || "",
     moves: Array.from({ length: 4 }, (_, index) => savedMember?.moves?.[index] || ""),
   };
 }
@@ -402,7 +472,7 @@ export function toTeamSnapshotV1({
       stat_spa: Number(points.spa || 0),
       stat_spd: Number(points.spd || 0),
       stat_spe: Number(points.spe || 0),
-      item_id: member.item || null,
+      item_id: requiredItemForPokemon(detailData, member.pokemon) || member.item || null,
       move_1_id: moves[0],
       move_2_id: moves[1],
       move_3_id: moves[2],
@@ -436,8 +506,9 @@ export function fromTeamSnapshotV1({ snapshot, members = [], regulation, detailD
     return { ok: false, errors: ["지원하지 않는 TeamSnapshot schema입니다."] };
   }
   const team = members.slice().sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0)).map(member => {
-    const pokemon = regulation?.pokemon?.find(entry => member.pokemon_id && resolveCanonicalPokemonId(detailData, entry) === member.pokemon_id)
-      || regulation?.pokemon?.find(entry => entry.name === member.pokemon_name_snapshot);
+    const restorationPool = pokemonPoolForRegulation(regulation, detailData, [], { includeUnavailableMega: true });
+    const pokemon = restorationPool.find(entry => member.pokemon_id && resolveCanonicalPokemonId(detailData, entry) === member.pokemon_id)
+      || restorationPool.find(entry => entry.name === member.pokemon_name_snapshot);
     const resolvedId = pokemon ? resolveCanonicalPokemonId(detailData, pokemon) : null;
     const canonicalMismatch = Boolean(member.pokemon_id && detailData && resolvedId !== member.pokemon_id);
     const savedMember = {
@@ -456,7 +527,7 @@ export function fromTeamSnapshotV1({ snapshot, members = [], regulation, detailD
       item: member.item_id || "",
       moves: [member.move_1_id, member.move_2_id, member.move_3_id, member.move_4_id],
     };
-    const restored = memberFromSaved(savedMember, regulation);
+    const restored = memberFromSaved(savedMember, regulation, { detailData });
     if (canonicalMismatch) restored.resolutionState = "unresolved";
     return restored;
   });
@@ -467,7 +538,10 @@ export function membersRemovedByRuleChange({ team = [], regulation, cupRuleId = 
   const allowedNames = new Set(regulation?.pokemon?.map(pokemon => pokemon.name) || []);
   const rule = CUP_RULES[cupRuleId] || CUP_RULES.none;
   return team.filter(member => {
-    if (!allowedNames.has(member.pokemon?.name)) return true;
+    const details = dexRecord(detailData, member.pokemon);
+    const allowedByName = allowedNames.has(member.pokemon?.name);
+    const allowedMegaBase = isMegaRecord(details) && allowedNames.has(details.baseSpecies);
+    if (!allowedByName && !allowedMegaBase) return true;
     if (rule.kind === "monotype" && assignedTypeId && detailData) {
       return !pokemonMatchesCupRule({ pokemon: member.pokemon, cupRuleId, assignedTypeId, detailData });
     }
@@ -513,6 +587,8 @@ export function localizedPokemonName(pokemon, koreanNames) {
   const base = canonicalBaseName(pokemon.name);
   const ko = koreanNames?.get?.(base.toLowerCase());
   if (!ko) return pokemon.name;
+  const mega = pokemon.name.match(/-Mega(?:-([A-Z]))?$/i);
+  if (mega) return `${ko}-메가${mega[1]?.toUpperCase() || ""}`;
   if (pokemon.name.endsWith("[Alolan Form]")) return `알로라 ${ko}`;
   if (pokemon.name.endsWith("[Hisuian Form]")) return `히스이 ${ko}`;
   if (pokemon.name.endsWith("[Galarian Form]")) return `가라르 ${ko}`;
@@ -539,6 +615,24 @@ export function matchesLocalizedSearch(korean, english, query) {
   return String(korean || "").toLowerCase().includes(q)
     || String(english || "").toLowerCase().includes(q)
     || (compact && (toID(korean).includes(compact) || toID(english).includes(compact)));
+}
+
+export function pokemonSearchAliases(pokemon, localizedName = "") {
+  const match = String(pokemon?.name || "").match(/^(.+?)-Mega(?:-([A-Z]))?$/i);
+  if (!match) return [];
+  const variant = match[2]?.toUpperCase() || "";
+  const localizedBase = String(localizedName || "").replace(/-메가[A-Z]?$/i, "");
+  return [
+    `Mega ${match[1]}${variant ? ` ${variant}` : ""}`,
+    `${match[1]} Mega${variant ? ` ${variant}` : ""}`,
+    localizedBase ? `메가 ${localizedBase}${variant ? ` ${variant}` : ""}` : "",
+    localizedBase ? `${localizedBase} 메가${variant ? ` ${variant}` : ""}` : "",
+  ].filter(Boolean);
+}
+
+export function matchesPokemonSearch(pokemon, localizedName, query) {
+  return [localizedName, pokemon?.name, ...pokemonSearchAliases(pokemon, localizedName)]
+    .some(value => matchesLocalizedSearch(value, value, query));
 }
 
 export function itemEnglishName(detailData, id) {
@@ -585,7 +679,10 @@ export function pokemonMatchesCupRule({ pokemon, cupRuleId, assignedTypeId, deta
   if (rule.kind === "none") return true;
   if (rule.kind === "monotype") {
     if (!assignedTypeId || !detailData) return false;
-    const details = dexRecord(detailData, pokemon);
+    const selectedDetails = dexRecord(detailData, pokemon);
+    const details = isMegaRecord(selectedDetails)
+      ? detailData?.pokedex?.[toID(selectedDetails.baseSpecies)] || selectedDetails
+      : selectedDetails;
     return Boolean(details?.types?.some(type => toID(type) === assignedTypeId));
   }
   return true;
@@ -625,7 +722,6 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
   const errors = [];
   const incomplete = [];
   const warnings = [];
-  const allowedNames = new Set(regulation?.pokemon?.map(p => p.name) || []);
   const cupRule = CUP_RULES[cupRuleId] || CUP_RULES.none;
   const assignedType = TYPE_OPTIONS.find(type => type.id === assignedTypeId) || null;
   const display = pokemon => displayPokemon?.(pokemon) || pokemon?.name || "";
@@ -643,8 +739,12 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
   }
 
   for (const member of team) {
-    if (!allowedNames.has(member.pokemon.name)) {
+    if (!pokemonAllowedInRegulation({ pokemon: member.pokemon, regulation, detailData, legalItems })) {
       errors.push(`${display(member.pokemon)}은(는) ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
+    }
+    const requiredItem = requiredItemForPokemon(detailData, member.pokemon);
+    if (requiredItem && member.item !== requiredItem) {
+      errors.push(`${display(member.pokemon)}은(는) ${itemName(detailData, requiredItem)}을(를) 반드시 지녀야 합니다.`);
     }
   }
 
