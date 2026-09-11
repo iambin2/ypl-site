@@ -16,8 +16,9 @@
   display: inline-flex; align-items: center; gap: 10px; flex: none;
   padding: 4px 6px 4px 0; border: 0; background: none;
 }
-.brand-mark { display: block; transition: transform var(--d3) var(--ease); }
-.brand:hover .brand-mark { transform: rotate(-10deg); }
+/* the mark is an app-icon tile: rounded by clip-path so the artwork never needs its own clip id */
+.brand-mark { display: block; clip-path: inset(0 round 23%); transition: transform var(--d3) var(--ease); }
+.brand:hover .brand-mark { transform: scale(1.06); }
 .brand-word {
   font-family: var(--font-display); font-stretch: 88%; font-weight: 800;
   font-size: 22px; line-height: 1; letter-spacing: -0.01em; color: var(--ink);
