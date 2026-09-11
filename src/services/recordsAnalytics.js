@@ -26,10 +26,10 @@ export function displayTeamName(value) {
 export function displayRecordMeta(value) {
   if (value == null) return "";
   return String(value)
-    .split("·")
+    .split("\u00B7") // 데이터에 저장된 규칙 문자열의 구분자
     .map(cleanDisplayValue)
     .filter((token) => token && !INTERNAL_RECORD_CODES.has(token.toLowerCase()))
-    .join(" · ");
+    .join(", ");
 }
 
 export function parseParty(value) {
@@ -189,8 +189,8 @@ function countsForOfficialWL(season) {
 function buildMatchRecords(data) {
   const records = [];
 
-  // YPL 시즌 3부터 기록에 반영된 개인전·팀전 대진표의 실제 경기 원본을 보존한다.
-  // BYE는 경기로 보지 않는다. 공개 화면에서는 개인 승/패·승률을 기본 노출하지 않는다.
+  // YPL 시즌 3부터 기록에 반영된 개인전과 팀전 대진표의 실제 경기 원본을 보존한다.
+  // BYE는 경기로 보지 않는다. 공개 화면에서는 개인 승패와 승률을 기본 노출하지 않는다.
   for (const bracket of data.brackets || []) {
     if (!bracket?.applied) continue;
 
@@ -253,7 +253,7 @@ function buildMatchRecords(data) {
 
         pushRecord({
           id: `${bracket.id}:${match.id}:team:${i}`,
-          stage: `${stage} · ${i + 1}경기`,
+          stage: `${stage} ${i + 1}경기`,
           winner: side === "a" ? a : b,
           loser: side === "a" ? b : a,
           extra: {
@@ -272,7 +272,7 @@ function buildMatchRecords(data) {
         if (a && b) {
           pushRecord({
             id: `${bracket.id}:${match.id}:ace`,
-            stage: `${stage} · 에이스 결정전`,
+            stage: `${stage} 에이스 결정전`,
             winner: ace.winner === "a" ? a : b,
             loser: ace.winner === "a" ? b : a,
             extra: {

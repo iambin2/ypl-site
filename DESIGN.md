@@ -1,24 +1,12 @@
 ---
 name: YPL — Yonsei Pokémon League
-description: "A league site of record: next event, results, standings and champions, set in black and white with one Yonsei Blue and a trophy gold."
+description: "A league site of record: next event, results, standings and champions, set entirely in black, white and grey."
 colors:
-  brand: "#003876"
-  brand-fill: "#003876"
-  brand-hover: "#002B5C"
-  dark-brand: "#7AA8F0"
-  dark-brand-fill: "#1F5AB5"
-  dark-brand-hover: "#2A68C8"
-  gold: "#8F6508"
-  gold-fill: "#C99A2E"
-  dark-gold: "#E8BD55"
-  dark-gold-fill: "#D6A83A"
-  gold-soft: "rgba(201, 154, 46, .13)"
-  brand-soft: "rgba(0, 56, 118, .08)"
-  gold-ink: "#1A1300"
   ink: "#1D1D1F"
   text-2: "#424245"
   text-3: "#6E6E73"
   text-4: "#A1A1A6"
+  on-ink: "#FFFFFF"
   bg: "#FFFFFF"
   bg-2: "#F5F5F7"
   bg-3: "#EBEBEF"
@@ -206,25 +194,15 @@ components:
     padding: "0 20px"
     height: "44px"
     typography: "{typography.control}"
-  button-brand:
-    backgroundColor: "{colors.brand-fill}"
-    textColor: "#FFFFFF"
-    rounded: "{rounded.pill}"
-    padding: "0 26px"
-    height: "52px"
-  button-brand-hover:
-    backgroundColor: "{colors.brand-hover}"
   button-admin:
-    backgroundColor: "{colors.brand-fill}"
-    textColor: "#FFFFFF"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.bg}"
     rounded: "{rounded.pill}"
     padding: "0 14px"
     height: "36px"
-  button-admin-hover:
-    backgroundColor: "{colors.brand-hover}"
   admin-strip:
-    backgroundColor: "{colors.brand-fill}"
-    textColor: "#FFFFFF"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.bg}"
     padding: "9px 0"
   schedule-panel:
     backgroundColor: "{colors.bg-2}"
@@ -257,8 +235,8 @@ components:
     height: "28px"
     typography: "{typography.label}"
   chip-laurel:
-    backgroundColor: "{colors.gold-soft}"
-    textColor: "{colors.gold}"
+    backgroundColor: "{colors.fill-2}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.pill}"
     padding: "0 12px"
     height: "28px"
@@ -303,14 +281,14 @@ components:
     textColor: "{colors.bg}"
     height: "49px"
   champion-node:
-    backgroundColor: "{colors.gold-fill}"
-    textColor: "{colors.gold-ink}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.bg}"
     rounded: "{rounded.md}"
     padding: "0 16px"
     height: "98px"
   rank-badge-first:
-    backgroundColor: "{colors.gold-fill}"
-    textColor: "{colors.gold-ink}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.bg}"
     rounded: "{rounded.pill}"
     size: "30px"
   nav:
@@ -335,14 +313,14 @@ components:
 
 **Creative North Star: "The League of Record"**
 
-YPL is the esports-league canon (next event, results, standings, champions) played straight and held to the craft bar of an Apple or Nike brand site. The world is black and white: true neutral grounds, ink type, grey tiles, hairline rules. Two colours carry meaning. One Yonsei Blue marks the league itself and anything happening now. A trophy gold marks the people and events that won. Everything else is type, space and numbers, set so a record reads as an official fact.
+YPL is the esports-league canon (next event, results, standings, champions) played straight and held to the craft bar of an Apple or Nike brand site. The world is black and white and nothing else: true neutral grounds, ink type, grey tiles, hairline rules. There is no brand colour. Emphasis comes from weight, size, inversion (an ink fill with paper text) and position, so a record reads as an official fact rather than a decorated one.
 
-Density follows the phone at the venue. Lists are hairline rows tall enough for a thumb (74–82px), controls are 44–52px pills, and the home page opens clean and official: a condensed uppercase wordmark headline with the tagline, two pill actions and a facts line, beside the league's schedule panel (the next notice as one lead tile). Party artwork is kept for the Hall of Fame page; the home never stages it. On desktop the same pieces spread into grids of flat tiles with 12px gaps. Both themes are first-class. Light mode is white with grey tiles, and a small set of lead tiles go black. Dark mode is pure black with graphite tiles, and those lead tiles step up one level of elevation.
+Density follows the phone at the venue. Lists are hairline rows tall enough for a thumb (74–82px), controls are 44–52px pills, and the home page opens clean and official: a condensed uppercase wordmark headline with the tagline, two pill actions and a one-sentence facts line, beside the league's schedule panel (the next notice as one lead tile). Party artwork is kept for the Hall of Fame page; the home never stages it. On desktop the same pieces spread into grids of flat tiles with 12px gaps. Both themes are first-class. Light mode is white with grey tiles, and a small set of lead tiles go black. Dark mode is pure black with graphite tiles, and those lead tiles step up one level of elevation.
 
 The build explicitly turns away from the dark-navy dashboard of pill badges and nested cards. Surfaces are flat and never nested inside other cards. Division comes from hairlines, and the one thing that floats is a layer that actually floats: menus, dialogs, toasts.
 
 **Key Characteristics:**
-- True neutrals in both themes; colour means something, it is never decoration.
+- True neutrals in both themes and no brand hue; the only colours are status signals (valid, caution, error) and Pokémon type badges in the team builder.
 - Archivo condensed 800 for the wordmark, dates, scores and ranks; Pretendard for all Korean text.
 - Ink pill primary buttons (black on light, white on dark).
 - Flat grey tiles (28px, or 22px in grids) and hairline lists, with no cards inside cards.
@@ -351,13 +329,16 @@ The build explicitly turns away from the dark-navy dashboard of pill badges and 
 
 ## Colors
 
-Near-monochrome Apple-style neutrals, one pinned Yonsei Blue, and a trophy gold that shows up only where someone won. A separate set of Pokémon type colours is data, not brand.
+Neutrals only, by the user's decision of 2026-09-11 ("extreme simplicity"): Yonsei Blue and trophy gold were removed. What they used to mark is now carried by ink, weight and inversion. Status colours and the Pokémon type palette remain because they carry information, not brand.
 
-### Primary
-- **Yonsei Blue** (`brand` for text and indicators, `brand-fill` for filled surfaces; `dark-brand` / `dark-brand-fill` in dark mode): the brand mark (a one-color Wooloo silhouette in `brand`: eight wool curls around a round body, the face and two short legs set apart from the wool by a thin knockout gap, eyes knocked out; the favicon is the same figure in white on a `#003876` rounded tile), the sliding active-nav indicator and the active item in the mobile menu, live states (the pinging dot on the schedule panel while applications are open, the "live" badge on bracket cards, the draw's rolling slot), attention tags (pinned notice, locked post, admin-on), the admin strip and admin write actions, and the home page's Discord join CTA. `brand-hover` deepens every blue fill on hover. Selection highlight is `brand` at 22% over the ground. In dark mode the text-weight blue lifts to a light sky tone while fills keep a mid blue, so white text on a fill always holds contrast. The blue is a user-pinned brand commitment (2026-09-11).
+### Emphasis without colour
+- **Ink as the signal**: the brand mark, the sliding active-nav indicator, the active mobile-menu item, live states (the pinging dot, the bracket "live" badge, the draw's rolling slot), attention tags (pinned, locked, admin-on), the admin strip and every write action all use `ink`. Winners and trophy positions (the champion node, rank #1 badge, the winner chip in round records, the HOF reign crown disc) are inverted: an `ink` fill with `on-ink` text. Soft highlights that used to be tinted (the Champions series result tile, achievement rows, the ace panel) use `fill-2`. Selection highlight is `ink` at 22%.
+- **Brand mark**: a one-colour Braviary (워글) head facing left, as in its artwork: three long crest feathers swept back, an open hooked beak and a fierce eye. The eye, the beak line and two feather seams are knocked out through a mask. It is drawn in `ink`, so it inverts with the theme. The favicon is the same figure in white on a `#1D1D1F` rounded tile.
 
-### Secondary
-- **Trophy Gold** (text `gold` / fill `gold-fill`; `dark-gold` / `dark-gold-fill` in dark mode): trophy positions and the title event. That covers champions (the HOF reign tile's crown disc and glow, the Hall of Fame current cell's crown after the name and its gold season line, the titles grid's current holder, the HOF dialog's season line under the name, the bracket champion node), 우승 event winners (the result-tile winner row, history "win" cells, the champion banner label), rank #1 (the rank badge and home ranking numeral), and Champions series events (the result tile tinted `gold-soft`, the event label, the grand-final column heading). Solid gold fills always carry **Gold Ink** (`gold-ink`) text, never white.
+### Retired (kept for history)
+- **Yonsei Blue** (`brand` for text and indicators, `brand-fill` for filled surfaces; `dark-brand` / `dark-brand-fill` in dark mode): the sliding active-nav indicator and the active item in the mobile menu, live states (the pinging dot on the schedule panel while applications are open, the "live" badge on bracket cards, the draw's rolling slot), attention tags (pinned notice, locked post, admin-on), the admin strip and admin write actions, and the home page's Discord join CTA. `brand-hover` deepens every blue fill on hover. Selection highlight is `brand` at 22% over the ground. In dark mode the text-weight blue lifts to a light sky tone while fills keep a mid blue, so white text on a fill always holds contrast. Retired on 2026-09-11; no token remains.
+
+- **Trophy Gold** (text `gold` / fill `gold-fill`; `dark-gold` / `dark-gold-fill` in dark mode): trophy positions and the title event. That covers champions (the HOF reign tile's crown disc and glow, the Hall of Fame current cell's crown after the name and its gold season line, the titles grid's current holder, the HOF dialog's season line under the name, the bracket champion node), 우승 event winners (the result-tile winner row, history "win" cells, the champion banner label), rank #1 (the rank badge and home ranking numeral), and Champions series events (the result tile tinted `gold-soft`, the event label, the grand-final column heading). Retired on 2026-09-11; those places are now ink or inverted ink.
 
 ### Neutral
 - **Ink** (`ink`; `dark-ink` in dark mode): body text, headings, the primary pill, the bracket winner slot, active pager and stepper, focus outline, and the icons in the tools menu's neutral tiles.
@@ -370,19 +351,17 @@ Near-monochrome Apple-style neutrals, one pinned Yonsei Blue, and a trophy gold 
 - **Surface** (`bg` light; `dark-surface` in dark mode): floating menus, dialogs and sheets.
 - **Fills** (`fill`, `fill-2`; hover `rgba(118,118,128,.18)`): translucent grey behind tonal buttons, inputs, segmented tracks, chips and icon tiles. Dark mode doubles the alpha (.24 / .14 / .32).
 - **Hairlines** (`line`, `line-2`; white at .10 / .19 in dark mode): all rules, row dividers, ghost-button borders and bracket connectors.
-- **Status** (`ok`, `warn`, `danger`, each with a ~10% soft tint; dark mode `#3DD17A`, `#FFB340`, `#FF6961`): submission state, validation, destructive actions. Status colours never stand in for gold or the brand blue. Danger is the only red in the system.
+- **Status** (`ok`, `warn`, `danger`, each with a ~10% soft tint; dark mode `#3DD17A`, `#FFB340`, `#FF6961`): submission state, validation, destructive actions. Status colours never stand in for emphasis. Danger is the only red in the system.
 
 ### Data (Pokémon types)
 - **Type palette** (`type-normal` … `type-fairy`, 18 entries): the official Pokémon type colours, used as the fill of the team builder's type badges (22px tall, 8px radius, 12.5px 700). Most carry white text. The five light types (electric, ice, flying, rock, fairy) carry a deep same-hue text colour instead (`type-electric-text`, `type-ice-text`, `type-flying-text`, `type-rock-text`, `type-fairy-text`). The palette is the same in both themes, because it names game data rather than YPL surfaces.
 
 ### Named Rules
-**The Pinned Blue Rule.** Yonsei Blue is the brand colour by the user's standing commitment. It is never swapped for another hue, re-tuned toward a trend colour, or joined by a second brand accent. Red survives only as `danger`, for errors and destructive actions.
+**The Neutral Rule.** The site has no brand colour. Nothing is tinted to look important: emphasis is weight, size, inversion or position. Red survives only as `danger`, for errors and destructive actions, and green and orange only as validation states in tools.
 
-**The Fill Token Rule.** Filled blue surfaces (the favicon tile, the Discord join button, the admin strip, admin action buttons) use `brand-fill` with white text. Blue text, indicators, dots and tag text use `brand`. The two differ in dark mode, so swapping them breaks contrast.
+**The Inversion Rule.** A filled emphasis surface is `ink` with `on-ink` text, never a hard-coded white or black, so it flips correctly with the theme (black on light, white on dark).
 
-**The Two Signals Rule.** Blue means "YPL" or "now". Gold means "won". Neither appears as decoration, as a section accent, or on a surface that carries no meaning.
-
-**The Ink Button Rule.** Primary actions are ink pills, not blue. Blue fills are kept for joining the community (the Discord CTA) and for admin write actions. Every other button is ink, tonal grey, ghost or quiet. Gold is never a button fill.
+**The Ink Button Rule.** Primary actions, including the Discord CTA and admin write actions, are ink pills. Every other button is tonal grey, ghost or quiet.
 
 **The Lead Tile Rule.** Theme lives on `<html data-theme>`. In light mode the lead tiles (the home schedule panel, the Hall of Fame reign tile, bracket champion banner, master league, the last step of the flow, the Hall of Fame current cell) re-declare the full dark palette locally, so they render black inside a white page with every token intact. In dark mode they stay dark and step up to Raised Grey. A new lead tile joins that selector list. It never hard-codes black.
 
@@ -404,12 +383,12 @@ Fixed sizes sit on one ramp: 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px
 - **Dialog title** (Pretendard 800, 24px, 1.25, -0.038em): every dialog heading. The mobile menu's links use the same 24px at 700.
 - **Card title** (Pretendard 800, 22px, 1.3, -0.035 to -0.04em): bracket cards, panel heads in the team builder, the draw heading, HOF and titles-grid names, the result tile's 우승 name, the done state of forms.
 - **Small title** (Pretendard 700–800, 20px, 1.3, -0.03 to -0.032em): result-tile event names, the bracket champion node's name, flow steps, record and timeline items, block heads in records, empty-state headings.
-- **Lead** (Pretendard 400–500, `clamp(17px, 1.5vw, 20px)`, 1.5, Pewter): page subtitles, max 58ch. News titles use a bolder fluid step (`clamp(17px, 1.8vw, 20px)`, 700, 1.38).
+- **Lead** (Pretendard 400–500, `clamp(17px, 1.5vw, 20px)`, 1.5, Pewter): page subtitles, uncapped so an intro sentence sits on one line at laptop width (only the team-builder hero keeps 58ch). News titles use a bolder fluid step (`clamp(17px, 1.8vw, 20px)`, 700, 1.38).
 - **List title** (Pretendard 700, 17px, -0.022em): the bold line of a hairline row: list rows, ranking names, board and home post titles, record rounds.
 - **Body** (Pretendard 400, 16px (17px at 1024px and up), 1.6, -0.011em, ss06/ss08, `word-break: keep-all`): long text caps at 72ch with line-height 1.8.
 - **Body small** (Pretendard 400, 15px, 1.55): table text, dropdown options, comments, empty-state and dialog hints, section-head counts.
 - **Control** (Pretendard 600, 15px, 1.2, -0.012em): buttons, segmented tabs, nav links (500 at rest, 700 active), pager buttons, "더 보기" links, match slots, the toast. Small buttons and the nav Discord pill step down to 14px.
-- **Meta** (Pretendard 400–600, 14px, 1.55, Pewter): meta lines under list titles, field labels (600, Graphite), hints, footer links, gold champion lines (700, gold).
+- **Meta** (Pretendard 400–600, 14px, 1.55, Pewter): meta lines under list titles, field labels (600, Graphite), hints, footer links, champion lines (700, ink).
 - **Label** (Pretendard 600, 13px, 1.4, -0.005em, Pewter): table headers, chips, card dates, column heads, units beside figures.
 - **Caption** (Archivo 600, wdth 85%, 12.5px, +0.07em, uppercase): English season lines placed *under* a name (HOF cells, reign history). League cards use 14px at +0.06em, and the bracket champion node's "CHAMPION" line is 12.5px 700 at +0.1em. Plain 12.5px Pretendard serves seeds, badge counts, pin and lock tags and fine print.
 - **Numeral** (Archivo 800, tabular, `clamp(38px, 4.6vw, 62px)`, 1): profile stats. The schedule panel's date is the large step (Archivo 800, wdth 72%, `clamp(56px, 7vw, 104px)`, .86), capped at the display ceiling.
@@ -421,7 +400,7 @@ Fixed sizes sit on one ramp: 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px
 
 **The Numbers Are Archivo Rule.** Any figure a member compares (date, points, rank, record, count) is set in condensed Archivo with tabular numerals. Korean words next to it stay in Pretendard.
 
-**The No Eyebrow Rule.** No small label sits above a heading. Context goes after the name (the HOF season line, the HOF dialog's gold season line and the bracket "CHAMPION" line all sit under the name) or beside it (a section head's link).
+**The No Eyebrow Rule.** No small label sits above a heading. Context goes after the name (the HOF season line, the HOF dialog's season line and the bracket "CHAMPION" line all sit under the name) or beside it (a section head's link).
 
 **The One Ramp Rule.** A new fixed size picks a step from 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px. Half-steps (14.5, 19, 21) are not part of the system.
 
@@ -465,19 +444,18 @@ Confident, quiet pills.
 - **Tonal (default):** `fill` grey with Ink text. Hover goes to the stronger fill.
 - **Ghost / Secondary:** transparent with a `line-2` 1px border. Hover adds `fill-2` and a Mist border.
 - **Quiet:** transparent, Graphite text.
-- **Brand:** `brand-fill` with white text, hover `brand-hover`. Kept for the Discord join CTA.
-- **Admin:** the same blue fill and white text as a small 36px pill, for admin write actions (회차 편집, 기록에 반영, 선발전 기록 반영, adding ranking tabs and seasons). The class is still named `.btn-gold` for legacy reasons; gold stays trophy-only and is never a button fill.
+- **Admin:** admin write actions (회차 편집, 기록에 반영, 선발전 기록 반영, adding ranking tabs and seasons) use the primary ink pill at the small 36px size.
 - **Danger:** danger-soft with danger text, filling solid on hover.
 - **Press / Disabled:** press scales to .97 in 90ms. Disabled drops to 38% opacity.
 
 ### Chips
 - **Style:** 28px pill, `fill-2`, Graphite 13px 600. The ghost variant is a 36px pill with an inset hairline ring and 14px text.
-- **Variants:** the laurel chip (`gold-soft` with gold text) for titles and champion tags. Pin and lock tags (`brand-soft` with Yonsei Blue text, 22px, 12.5px) mark pinned or locked posts.
+- **Variants:** the laurel chip (`fill-2` with ink text) for titles and champion tags. Pin and lock tags (`fill` with ink text, 22px, 12.5px) mark pinned or locked posts.
 - **Type badges:** 22px, 8px radius, 12.5px 700, filled with the type's data colour (see Data). They sit in a wrapping row with 4px gaps, in the team builder only.
 
 ### Cards / Containers
 - **Corner Style:** 28px for panels and lead tiles, 22px for grid tiles.
-- **Background:** Tile Grey, hover Raised Grey. Champions series tiles tint gold-soft.
+- **Background:** Tile Grey, hover Raised Grey. Champions series tiles use `fill-2`.
 - **Shadow Strategy:** none (see Elevation & Depth).
 - **Border:** none. Internal division is hairline.
 - **Internal Padding:** 22px for grid tiles, `clamp(22px, 3vw, 32px)` for cards, up to 60px on the reign tile.
@@ -492,35 +470,35 @@ Confident, quiet pills.
 - **Disabled:** 50% opacity.
 
 ### Navigation
-- **Desktop:** a sticky 56px bar. Its translucent background (`rgba(255,255,255,.78)` / `rgba(10,10,12,.72)`) is blurred at `saturate(180%) blur(20px)` on `::before`, and a hairline appears once the page scrolls. The brand mark and the Archivo "YPL" wordmark (22px, wdth 88%) sit left. Links are 40px pills at 15px 500 Graphite, turning Ink and 700 when active. A 2px Yonsei Blue (`brand`) indicator slides under the active link on the one ease curve. A "도구" tools popover (280px, 18px radius, Float shadow) lists tools as 12px-radius rows, each led by a neutral 36px icon tile (`fill-2` ground, Ink icon) with a 15px name and a 13px Pewter description. On the right sit the theme and admin icon buttons plus an ink Discord pill (36px, 14px).
-- **Mobile (at 1080px and below):** a two-line burger morphs into an X. A full-screen menu reveals with `clip-path`, with 24px 700 hairline-ruled links that stagger in. The active link is Yonsei Blue. Grey 18px-radius link tiles for Discord and admin sit at the foot. The page behind stops scrolling, and Esc closes the menu.
-- **Admin strip:** a `brand-fill` band under the nav with white 14px text and a white 8px status dot in a 25% white ring. Admin-on in the nav is a `brand-soft` pill with blue text.
+- **Desktop:** a sticky 56px bar. Its translucent background (`rgba(255,255,255,.78)` / `rgba(10,10,12,.72)`) is blurred at `saturate(180%) blur(20px)` on `::before`, and a hairline appears once the page scrolls. The brand mark and the Archivo "YPL" wordmark (22px, wdth 88%) sit left. Links are 40px pills at 15px 500 Graphite, turning Ink and 700 when active. A 2px ink indicator slides under the active link on the one ease curve. A "도구" tools popover (280px, 18px radius, Float shadow) lists tools as 12px-radius rows, each led by a neutral 36px icon tile (`fill-2` ground, Ink icon) with a 15px name and a 13px Pewter description. On the right sit the theme and admin icon buttons plus an ink Discord pill (36px, 14px).
+- **Mobile (at 1080px and below):** a two-line burger morphs into an X. A full-screen menu reveals with `clip-path`, with 24px 700 hairline-ruled links that stagger in. The active link is Ink. Grey 18px-radius link tiles for Discord and admin sit at the foot. The page behind stops scrolling, and Esc closes the menu.
+- **Admin strip:** an inverted `ink` band under the nav with `on-ink` 14px text and an 8px `currentColor` status dot in a 25% ring. Admin-on in the nav is a `fill` pill with ink text.
 
 ### Segmented Control
 A `fill-2` pill track with 3px padding. The 36px segments are Pewter 15px 600, and the selected segment becomes a Paper (dark: Raised Grey) thumb with the Thumb shadow. It scrolls horizontally without a scrollbar when it overflows.
 
 ### Lists and Tables
-Hairline rows on the page ground: 76px minimum, a 96px left rail for date or order (14px 600), a 17px 700 List title with a 14px Pewter meta line, and a chevron that nudges 3px right on hover. The row hover is `fill-2`. Tables set 15px text, 13px Pewter headers, 14px cell padding, hairline rows and 20px Archivo point figures. Home ranking rows put a 28px Archivo rank beside a 17px name and 28px Archivo points. Rank badges are 30px circles: gold for #1, `fill` for #2, `fill-2` for #3.
+Hairline rows on the page ground: 76px minimum, a 96px left rail for date or order (14px 600), a 17px 700 List title with a 14px Pewter meta line, and a chevron that nudges 3px right on hover. The row hover is `fill-2`. Tables set 15px text, 13px Pewter headers, 14px cell padding, hairline rows and 20px Archivo point figures. Home ranking rows put a 28px Archivo rank beside a 17px name and 28px Archivo points. Rank badges are 30px circles: inverted ink for #1, `fill` for #2, `fill-2` for #3.
 
 ### Dialog / Sheet
-A Surface panel (580px, 28px radius, Float shadow) over a 45% black scrim with an 8px blur. Titles are 24px 800. The circular close button is 36px. The action bar sticks to the bottom and is divided by a hairline. At 640px and below it becomes a bottom sheet rising from the bottom (`y-sheet`), with 28px top corners only, a grab handle, and full-width actions. The Hall of Fame dialog (760px) leads with the champion's name at Headline size, then the gold season line under it, then the party on 22px tiles.
+A Surface panel (580px, 28px radius, Float shadow) over a 45% black scrim with an 8px blur. Titles are 24px 800. The circular close button is 36px. The action bar sticks to the bottom and is divided by a hairline. At 640px and below it becomes a bottom sheet rising from the bottom (`y-sheet`), with 28px top corners only, a grab handle, and full-width actions. The Hall of Fame dialog (760px) leads with the champion's name at Headline size, then the season line under it, then the party on 22px tiles.
 
 ### Bracket Match Card (signature)
-Exactly 98px tall: two 49px slots, because the bracket page positions every card numerically and the connectors meet at 49px. It is a Paper card (dark: Raised Grey) with a hairline ring and a 14px radius. The slots are 15px 600 with 12.5px Mist seed numbers. The winning slot turns solid Ink with Paper text, 800. Connectors are 1.5px `line-2` elbows with 8px rounded corners, and the connector into the champion goes gold. The champion node is a 98px, 18px-radius gold-fill tile with Gold Ink text: the name first (20px 800), then the crown and the Archivo "CHAMPION" caption under it. Undecided matches sit at 45% opacity. Double-elimination lower-bracket columns are 176px wide with 16px gaps (the upper tree's columns are 212px, 176px below 900px), so the grand final and champion node fit the 1200px container.
+Exactly 98px tall: two 49px slots, because the bracket page positions every card numerically and the connectors meet at 49px. It is a Paper card (dark: Raised Grey) with a hairline ring and a 14px radius. The slots are 15px 600 with 12.5px Mist seed numbers. The winning slot turns solid Ink with Paper text, 800. Connectors are 1.5px `line-2` elbows with 8px rounded corners, and the connector into the champion goes ink. The champion node is a 98px, 18px-radius inverted ink tile with `on-ink` text: the name first (20px 800), then the crown and the Archivo "CHAMPION" caption under it. Undecided matches sit at 45% opacity. Double-elimination lower-bracket columns are 176px wide with 16px gaps (the upper tree's columns are 212px, 176px below 900px), so the grand final and champion node fit the 1200px container.
 
 ### Home Hero (signature)
-The first viewport is two columns (1.12fr / .88fr, 28–72px gap, centred). Left is the title block: the Display wordmark on three lines, the tagline (Lead, 500, Graphite), two 52px pills (ink 기록 보기 with an arrow, ghost 리그 소개) and a 14px Pewter facts line whose items are split by 3px Mist dots. Right is the schedule panel, a lead tile (28px radius, `clamp(26px, 3vw, 40px)` padding, 360px minimum): the next notice's date in large Archivo over its year and weekday, a `line-2` hairline, the notice title, then either a pinging blue live state (참가 신청 접수 중) or the notice kind (고정 공지 / 최신 공지), and one 48px ink pill action at the foot. The whole panel is one button and presses to .99. At 860px it stacks under the title block. No Pokémon artwork appears here.
+The first viewport is two columns (1.12fr / .88fr, 28–72px gap, centred). Left is the title block: the Display wordmark on three lines, the tagline (Lead, 500, Graphite), two 52px pills (ink 기록 보기 with an arrow, ghost 리그 소개) and a 14px Pewter facts line written as one plain sentence. Right is the schedule panel, a lead tile (28px radius, `clamp(26px, 3vw, 40px)` padding, 360px minimum): the next notice's date in large Archivo over its year and weekday, a `line-2` hairline, the notice title, then either a pinging ink live state (참가 신청 접수 중) or the notice kind (고정 공지 / 최신 공지), and one 48px ink pill action at the foot. The whole panel is one button and presses to .99. At 860px it stacks under the title block. No Pokémon artwork appears here.
 
 ### Community Band
-The home page closes on a hairline-topped band: a Headline line, a Lead supporting line (Pewter, 46ch) and the 52px blue Discord join pill aligned to the bottom right.
+The home page closes on a hairline-topped band: a Headline line, a Lead supporting line (Pewter) and the 52px ink Discord join pill aligned to the bottom right.
 
 **The Channel Roles Rule.** The site is the league's first and official source for notices and records; Discord is where battles are played and streamed. Copy that points to Discord says so ("배틀과 중계는 디스코드에서 열립니다.") and never calls Discord the first place for news.
 
 ### Result Tile (signature)
-A 22px-radius Tile Grey card, 244px minimum: a 13px meta line, a 20px 800 event name, a 14px meta line, then a hairline-topped podium where the 우승 row is gold-labelled and 22px 800. Champions series tiles tint gold-soft. On phones the row becomes an 80%-wide snap rail.
+A 22px-radius Tile Grey card, 244px minimum: a 13px meta line, a 20px 800 event name, a 14px meta line, then a hairline-topped podium where the 우승 row is labelled in ink and set at 22px 800. Champions series tiles use `fill-2`. On phones the row becomes an 80%-wide snap rail.
 
 ### Hall of Fame Strip
-Hairline cells on one 28px Tile Grey strip, each with the name at 22px 800 and the uppercase Archivo season caption under it. The current cell is a lead tile: black in light mode, Raised Grey in dark. Its name is followed by a filled gold crown (with screen-reader text "현 챔피언"), and its season line turns gold.
+Hairline cells on one 28px Tile Grey strip, each with the name at 22px 800 and the uppercase Archivo season caption under it. The current cell is a lead tile: black in light mode, Raised Grey in dark. Its name is followed by a filled crown (with screen-reader text "현 챔피언"), and its season line turns ink.
 
 ### Icons
 A single in-house SVG set on a 24px grid with a 2px stroke, round caps and joins, and `currentColor`. `crown`, `handshake` and `discord` render filled. Sizes are 14–18px inline. No emoji and no glyph characters are used as icons.
@@ -533,8 +511,8 @@ One ease, `cubic-bezier(.2,.8,.2,1)`, and `cubic-bezier(.65,0,.35,1)` for loops 
 ### Do:
 - **Do** set every surface from the tokens (`--bg`, `--bg-2`, `--bg-3`, `--surface`, `--ink`, `--text-2…4`, `--line`, `--fill`) so both themes and the dark lead tiles resolve automatically.
 - **Do** add a new dark lead tile by joining the `[data-theme="light"] :is(...)` selector list in `tokens.css`, and give it Raised Grey in dark mode.
-- **Do** use gold only for trophy positions: champions, 우승 winners, rank #1, and the Champions series. Put Gold Ink (`#1A1300`) on any solid gold fill.
-- **Do** keep Yonsei Blue to the brand mark, the active indicator, live states, attention tags, the admin strip and admin actions, and the Discord join CTA. Blue fills use `brand-fill` with white text.
+- **Do** mark winners and trophy positions by inversion (an ink fill with `on-ink` text) or weight, never by a hue.
+- **Do** write meta lines as plain Korean: commas and particles, not middle-dot (·) separators.
 - **Do** make primary actions ink pills at 44px or more (52px for hero actions), with a .97 press.
 - **Do** divide groups with hairline cells and rows rather than separate cards.
 - **Do** set dates, points, ranks and stats in Archivo condensed 800 with tabular numerals.
@@ -548,8 +526,8 @@ One ease, `cubic-bezier(.2,.8,.2,1)`, and `cubic-bezier(.65,0,.35,1)` for loops 
 - **Don't** track type tighter than -0.04em or set display type above 104px.
 - **Don't** nest a card inside a card, or build the dark-navy dashboard of pill badges and boxed widgets.
 - **Don't** put a shadow on an in-flow surface. Only menus, dialogs, sheets, toasts and the segmented thumb lift.
-- **Don't** swap Yonsei Blue for another hue or add a second brand accent, and don't use red anywhere but `danger`.
-- **Don't** use blue for primary buttons, section accents or decoration, and don't use gold for anything that isn't a win or the Champions series (never as a button fill).
+- **Don't** reintroduce a brand hue, a trophy gold or a tinted accent, and don't use red anywhere but `danger`.
+- **Don't** join facts with `·` or draw dot separators in CSS; write the sentence out.
 - **Don't** stage Pokémon party artwork on the home page. It belongs on the Hall of Fame page.
 - **Don't** write copy that calls Discord the first place for news. The site is the official source; Discord hosts battles and streams.
 - **Don't** use Pokémon type colours anywhere but type badges.

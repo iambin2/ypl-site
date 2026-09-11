@@ -55,7 +55,7 @@ export function ChampionsBracketControls({ eventId, placement = "qualifier", onC
     } finally { setBusy(false); }
   };
   const reopenQualifier = async () => {
-    if (!window.confirm("본선의 제출·대진·결과가 없는 경우에만 선발전 종료를 취소합니다. 계속할까요?")) return;
+    if (!window.confirm("본선에 제출, 대진, 결과가 하나도 없을 때만 선발전 종료를 취소합니다. 계속할까요?")) return;
     setBusy(true); setMessage("");
     try { await reopenChampionshipQualifier(event.id); await load(); await onChanged?.(); setMessage("선발전 종료를 취소했습니다. 기존 경기 결과를 수정할 수 있습니다.");
     } catch (error) { setMessage(error?.message || "선발전 종료 취소 조건을 확인해 주세요.");
@@ -67,11 +67,11 @@ export function ChampionsBracketControls({ eventId, placement = "qualifier", onC
     .filter(row=>row.qualifier_event_id===eventId)
     .map(row=>({ ...row, registration:(snapshot?.registrations||[]).find(registration=>registration.id===row.qualifier_registration_id) }));
   return <section className="bk-submission" aria-label="본선 진출 현황">
-    <div className="records-block-head"><div><h4 style={{margin:0}}>선발전 현황</h4><span>본선 직행 {directRows.length}명 · 선발전 생존 {qualifierState?.aliveCount ?? "-"}명 / 목표 {qualifierState?.qualifierTarget ?? event.qualification_slots}명</span></div><button className="btn btn-ghost btn-sm" onClick={()=>void load()} disabled={busy}>새로고침</button></div>
+    <div className="records-block-head"><div><h4 style={{margin:0}}>선발전 현황</h4><span>본선 직행 {directRows.length}명, 선발전 생존 {qualifierState?.aliveCount ?? "-"}명 (목표 {qualifierState?.qualifierTarget ?? event.qualification_slots}명)</span></div><button className="btn btn-ghost btn-sm" onClick={()=>void load()} disabled={busy}>새로고침</button></div>
     {message&&<div className="bk-hint" role="alert" style={{color:"var(--loss)",marginTop:8}}>{message}</div>}
-    {!qualifierState?.invalid&&!qualifierState?.readyToFinalize&&!completed&&<div className="bk-hint" style={{marginTop:10}}>탈락 {qualifierState?.eliminatedCount ?? "-"} / {qualifierState?.requiredEliminations ?? "-"}명 · 앞으로 {qualifierState?.remainingEliminations ?? "-"}명 더 탈락해야 합니다.</div>}
+    {!qualifierState?.invalid&&!qualifierState?.readyToFinalize&&!completed&&<div className="bk-hint" style={{marginTop:10}}>탈락 {qualifierState?.eliminatedCount ?? "-"} / {qualifierState?.requiredEliminations ?? "-"}명. 앞으로 {qualifierState?.remainingEliminations ?? "-"}명 더 탈락해야 합니다.</div>}
     {qualifierState?.invalid&&<div className="bk-hint" role="alert" style={{color:"var(--loss)",marginTop:10}}>생존자 계산이 유효하지 않습니다. 경기 결과를 확인해 주세요.</div>}
-    {(qualifierState?.readyToFinalize||completed)&&<div className="bk-fill" style={{marginTop:10}}><div className="bk-hint">본선 직행 {directRows.length}명 · 선발전 생존 {qualifierState?.qualifierTarget ?? event.qualification_slots}명</div>{directRows.map(row=><div className="bk-pin" key={row.id}><span style={{fontWeight:700}}>{playerName(row.player_id)}</span><span className="bk-hint" style={{margin:0}}>직행</span></div>)}{survivorRows.map(entry=><div className="bk-pin" key={entry.id}><span style={{fontWeight:700}}>{entry.display_name || playerName(entry.participant.player_id)}</span><span className="bk-hint" style={{margin:0}}>선발전 통과</span></div>)}</div>}
-    <div className="row-actions" style={{justifyContent:"flex-end",marginTop:10}}>{!completed&&qualifierState?.readyToFinalize&&<button className="btn btn-gold btn-sm" disabled={busy} onClick={()=>void completeQualifier()}>선발전 기록 반영</button>}{completed&&<button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>void reopenQualifier()}>선발전 기록 반영 취소</button>}</div>
+    {(qualifierState?.readyToFinalize||completed)&&<div className="bk-fill" style={{marginTop:10}}><div className="bk-hint">본선 직행 {directRows.length}명, 선발전 생존 {qualifierState?.qualifierTarget ?? event.qualification_slots}명</div>{directRows.map(row=><div className="bk-pin" key={row.id}><span style={{fontWeight:700}}>{playerName(row.player_id)}</span><span className="bk-hint" style={{margin:0}}>직행</span></div>)}{survivorRows.map(entry=><div className="bk-pin" key={entry.id}><span style={{fontWeight:700}}>{entry.display_name || playerName(entry.participant.player_id)}</span><span className="bk-hint" style={{margin:0}}>선발전 통과</span></div>)}</div>}
+    <div className="row-actions" style={{justifyContent:"flex-end",marginTop:10}}>{!completed&&qualifierState?.readyToFinalize&&<button className="btn btn-primary btn-sm" disabled={busy} onClick={()=>void completeQualifier()}>선발전 기록 반영</button>}{completed&&<button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>void reopenQualifier()}>선발전 기록 반영 취소</button>}</div>
   </section>;
 }

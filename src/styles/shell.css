@@ -54,7 +54,7 @@
 }
 .nav-links::after {
   content: ""; position: absolute; left: 0; bottom: 0; width: 100px; height: 2px;
-  background: var(--brand); border-radius: var(--r-pill) var(--r-pill) 0 0;
+  background: var(--ink); border-radius: var(--r-pill) var(--r-pill) 0 0;
   transform-origin: left center;
   transform: translateX(var(--ind-x)) scaleX(var(--ind-s));
   opacity: var(--ind-o);
@@ -100,7 +100,7 @@
   transition: background var(--d1) var(--ease), color var(--d1) var(--ease);
 }
 .gnav-icon:hover { background: var(--fill-2); color: var(--ink); }
-.gnav-admin.on { background: var(--brand-soft); color: var(--brand); }
+.gnav-admin.on { background: var(--fill); color: var(--ink); }
 .gnav-admin-tx { font-size: 14px; font-weight: 700; }
 .gnav-discord {
   height: 36px; margin-left: 6px; padding: 0 14px; display: inline-flex; align-items: center; gap: 7px;
@@ -157,8 +157,8 @@
   }
   .nav-ditem .ic { color: var(--text-4); transition: transform var(--d2) var(--ease), color var(--d1); }
   .nav-ditem:active .ic, .nav-ditem:hover .ic { color: var(--ink); transform: translateX(3px); }
-  .nav-ditem.on { color: var(--brand); }
-  .nav-ditem.on .ic { color: var(--brand); }
+  .nav-ditem.on { color: var(--ink); }
+  .nav-ditem.on .ic { color: var(--ink); }
   .nav-dlabel { margin: 28px 0 2px; font-size: 13px; font-weight: 600; color: var(--text-3); }
   .nav-dfoot { display: flex; flex-direction: column; gap: 8px; margin-top: 32px; }
   .nav-dlink {
@@ -173,12 +173,12 @@
 }
 
 /* ---------- admin strip ---------- */
-.admin-bar { background: var(--brand-fill); color: #fff; }
+.admin-bar { background: var(--ink); color: var(--on-ink); }
 .admin-bar-in {
   max-width: calc(var(--container) + var(--gutter) * 2); margin: 0 auto; padding: 9px var(--gutter);
   display: flex; align-items: center; gap: 10px; font-size: 14px;
 }
-.admin-bar-in i { width: 8px; height: 8px; border-radius: 50%; background: #fff; flex: none; box-shadow: 0 0 0 3px rgba(255, 255, 255, .25); }
+.admin-bar-in i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent); }
 .admin-bar-in b { font-weight: 700; }
 .admin-bar-in span { opacity: .7; }
 @media (max-width: 560px) { .admin-bar-in span { display: none; } }

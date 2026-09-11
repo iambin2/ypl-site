@@ -17,7 +17,7 @@
 .bk-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .bk-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
 .bk-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.bk-badge.live { color: var(--brand); }
+.bk-badge.live { color: var(--ink); }
 .bk-badge.done { color: var(--ok); }
 .bk-card-date { font-size: 13px; color: var(--text-3); }
 .bk-card-name { margin-top: auto; padding-top: 24px; font-size: 22px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.3; }
@@ -68,7 +68,7 @@
   margin-bottom: 14px; text-align: center;
   font-size: 13px; font-weight: 700; color: var(--text-3); letter-spacing: -0.005em;
 }
-.bk-col-h.gf { color: var(--gold); }
+.bk-col-h.gf { color: var(--ink); }
 .bk-col-body { position: relative; width: 100%; }
 .bk-mpos { position: absolute; left: 0; right: 0; }
 
@@ -110,11 +110,11 @@
   content: ""; position: absolute; right: 100%; top: 49px; pointer-events: none;
   width: calc(var(--bk-gap) / 2); border-top: 1.5px solid var(--line-2);
 }
-.bk-champ-col .bk-mpos::before { border-top-color: var(--gold-fill); }
+.bk-champ-col .bk-mpos::before { border-top-color: var(--ink); }
 
 .bk-champ-node {
   height: 98px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  padding: 0 16px; border-radius: var(--r-md); background: var(--gold-fill); color: #1A1300; text-align: center;
+  padding: 0 16px; border-radius: var(--r-md); background: var(--ink); color: var(--on-ink); text-align: center;
   animation: y-pop var(--d4) var(--ease) backwards;
 }
 .bk-champ-k { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-display); font-stretch: 85%; font-size: 12.5px; font-weight: 700; letter-spacing: .1em; }
@@ -136,7 +136,7 @@
   display: flex; align-items: center; flex-wrap: wrap; gap: 10px 20px;
   padding: 22px 26px; border-radius: 22px; background: var(--bg-2); color: var(--ink);
 }
-.bk-cb-k { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--gold); }
+.bk-cb-k { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--ink); }
 .bk-cb-n { font-size: var(--fs-h2); font-weight: 800; letter-spacing: -0.04em; }
 .bk-cb-ru { font-size: 15px; color: var(--text-3); }
 .bk-cb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
@@ -148,10 +148,10 @@
 .bk-draw-cnt { font-family: var(--font-display); font-stretch: 80%; font-size: 20px; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .bk-slot.dwait { color: var(--text-4); }
 .bk-slot.dwait i { display: block; width: 28px; height: 3px; border-radius: var(--r-pill); background: var(--line-2); }
-.bk-slot.drolling { background: var(--brand-soft); color: var(--brand); font-weight: 800; animation: y-pulse 420ms var(--ease-io) infinite; }
+.bk-slot.drolling { background: var(--fill); color: var(--ink); font-weight: 800; animation: y-pulse 420ms var(--ease-io) infinite; }
 .bk-slot.dset { color: var(--ink); font-weight: 700; }
 .bk-slot.dset.pop { animation: bk-land var(--d3) var(--ease); }
-@keyframes bk-land { from { background: var(--brand-soft); transform: scale(1.04); } to { background: transparent; transform: none; } }
+@keyframes bk-land { from { background: var(--fill); transform: scale(1.04); } to { background: transparent; transform: none; } }
 .bk-draw-actions { display: flex; justify-content: flex-end; }
 .bk-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .bk-group { padding: 16px; border-radius: 18px; background: var(--bg-2); }
@@ -181,7 +181,7 @@
   width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%;
   background: var(--fill-2); font-size: 12.5px; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums;
 }
-.bk-pin-no.gold { background: var(--gold-soft); color: var(--gold); }
+.bk-pin-no.gold { background: var(--fill-2); color: var(--ink); }
 .bk-participant-name { flex: 1; min-width: 0; font-weight: 700; }
 .bk-participant-submission { flex: none; padding: 3px 10px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 700; }
 .bk-participant-submission.submitted { background: var(--ok-soft); color: var(--ok); }
@@ -221,7 +221,7 @@
 .bk-alloc-row { display: flex; align-items: center; gap: 10px; }
 .bk-alloc-row input { max-width: 110px; text-align: center; }
 .bk-alloc-tag { flex: none; min-width: 52px; padding: 3px 8px; border-radius: var(--r-pill); text-align: center; font-size: 12.5px; font-weight: 700; background: var(--fill); }
-.bk-alloc-tag.w { background: var(--gold-soft); color: var(--gold); }
+.bk-alloc-tag.w { background: var(--fill-2); color: var(--ink); }
 .bk-alloc-team { font-size: 14px; color: var(--text-3); }
 
 /* ---------- team match (lineup + tiebreaker) ---------- */
@@ -243,8 +243,8 @@
 }
 .bk-bout-win:hover { color: var(--ink); border-color: var(--text-4); }
 .bk-bout-win.is-win { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
-.bk-ace { margin-top: 16px; padding: 14px; border-radius: var(--r-md); background: var(--gold-soft); }
-.bk-ace-h { margin-bottom: 10px; font-size: 14px; font-weight: 800; color: var(--gold); }
+.bk-ace { margin-top: 16px; padding: 14px; border-radius: var(--r-md); background: var(--fill-2); }
+.bk-ace-h { margin-bottom: 10px; font-size: 14px; font-weight: 800; color: var(--ink); }
 .bk-ace .bk-series-row { background: transparent; padding: 0; }
 @media (max-width: 640px) {
   .bk-bout-columns { display: none; }

@@ -35,14 +35,8 @@
   --line: rgba(0, 0, 0, .085);
   --line-2: rgba(0, 0, 0, .16);
 
-  /* the one colour (Yonsei Blue), and the trophy */
-  --brand: #003876;
-  --brand-fill: #003876;
-  --brand-hover: #002B5C;
-  --brand-soft: rgba(0, 56, 118, .08);
-  --gold: #8F6508;
-  --gold-fill: #C99A2E;
-  --gold-soft: rgba(201, 154, 46, .13);
+  /* no brand colour: the site is built from the neutral ramp above.
+     The three below are status signals only (valid, caution, error). */
   --ok: #1B7F45;
   --ok-soft: rgba(27, 127, 69, .1);
   --warn: #A45A00;
@@ -123,13 +117,6 @@
   --line: rgba(255, 255, 255, .1);
   --line-2: rgba(255, 255, 255, .19);
 
-  --brand: #7AA8F0;
-  --brand-fill: #1F5AB5;
-  --brand-hover: #2A68C8;
-  --brand-soft: rgba(122, 168, 240, .16);
-  --gold: #E8BD55;
-  --gold-fill: #D6A83A;
-  --gold-soft: rgba(232, 189, 85, .14);
   --ok: #3DD17A;
   --ok-soft: rgba(61, 209, 122, .13);
   --warn: #FFB340;
@@ -190,7 +177,7 @@ i, em { font-style: normal; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* ---------- browser surfaces ---------- */
-::selection { background: color-mix(in srgb, var(--brand) 22%, transparent); color: var(--ink); }
+::selection { background: color-mix(in srgb, var(--ink) 22%, transparent); color: var(--ink); }
 :focus { outline: none; }
 :focus-visible {
   outline: 2px solid var(--ink);

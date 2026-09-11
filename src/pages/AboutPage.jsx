@@ -8,7 +8,7 @@ const FLOW = [
   { t: "시즌 챔피언", d: "그 시즌의 주인공이 됩니다" },
 ];
 const RECORDS = [
-  { k: "전적", icon: "chart", t: "모든 대회의 경기 결과", d: "대진표에서 확정된 결과가 트레이너·대회·포켓몬 기록으로 자동 연동됩니다." },
+  { k: "전적", icon: "chart", t: "모든 대회의 경기 결과", d: "대진표에서 확정된 결과가 트레이너, 대회, 포켓몬 기록으로 자동 연동됩니다." },
   { k: "챔피언", icon: "crown", t: "역대 시즌의 주인공", d: "챔피언스 시리즈 우승자와 우승 엔트리를 명예의 전당에 보관합니다." },
   { k: "칭호", icon: "medal", t: "트레이너가 획득한 기록", d: "타입 엑스퍼트, 지방 엘리트, 파트너 등 조건 달성 칭호를 관리합니다." },
 ];
@@ -96,7 +96,7 @@ export default function AboutPage() {
         {LEAGUES.map((lg, i) => (
           <Reveal key={lg.key} delay={i * 90} className={"ab-league " + lg.key}>
             <b>{lg.name}</b>
-            <span className="ab-league-en">{lg.en} · {lg.tier}</span>
+            <span className="ab-league-en">{lg.en}</span>
             <p>{lg.desc}</p>
           </Reveal>
         ))}

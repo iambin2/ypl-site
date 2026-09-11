@@ -99,7 +99,7 @@
 .ed-r2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .ed-team { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: var(--fill-2); }
 .ed-rk { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--text-2); }
-.ed-rk.gold { color: var(--gold); }
+.ed-rk.gold { color: var(--ink); }
 .ed-auto { min-height: 36px; font-size: 14px; }
 @media (max-width: 560px) {
   .ch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Icon, Reveal, StandTable } from "../components/index.js";
+import { Dropdown, Icon, Pager, Reveal, StandTable } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
@@ -96,7 +96,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
     <section className="sec">
       <Reveal className="sec-head">
         <h2>기록</h2>
-        <p className="sub">YPL의 대회 성적과 저장된 대진표를 바탕으로 트레이너·대회·포켓몬 기록을 한곳에 정리합니다.</p>
+        <p className="sub">YPL의 대회 성적과 저장된 대진표를 바탕으로 트레이너, 대회, 포켓몬 기록을 한곳에 정리합니다.</p>
       </Reveal>
 
       {normalizedRead.loading && (
@@ -137,6 +137,7 @@ function TrainerView({ snapshot }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(snapshot.trainers[0]?.key || snapshot.trainers[0]?.name || "");
   const [season, setSeason] = useState("");
+  const [histPage, setHistPage] = useState(1);
 
   const visible = snapshot.trainers.filter((t) => t.name.includes(query.trim()));
   const currentKey = snapshot.profiles[selected]
@@ -149,6 +150,9 @@ function TrainerView({ snapshot }) {
   const seasonMatch = (value) => !season || value === season;
   const placements = profile.placements.filter((p) => seasonMatch(p.season));
   const history = profile.history.filter((p) => seasonMatch(p.season));
+  const HIST_PER_PAGE = 12;
+  const histPages = Math.max(1, Math.ceil(history.length / HIST_PER_PAGE));
+  const histCur = Math.min(histPage, histPages);
   const rosters = profile.rosters.filter((r) => seasonMatch(r.season));
 
   const countablePlacements = placements.filter((p) => p.team !== true);
@@ -180,10 +184,10 @@ function TrainerView({ snapshot }) {
             <button
               key={trainer.key || trainer.name}
               className={"records-trainer-row" + ((trainer.key || trainer.name) === currentKey ? " on" : "")}
-              onClick={() => setSelected(trainer.key || trainer.name)}
+              onClick={() => { setSelected(trainer.key || trainer.name); setHistPage(1); }}
             >
               <b>{trainer.name}</b>
-              <span>우승 {trainer.wins} · 준우승 {trainer.runnerUps} · 4강 {trainer.top4}</span>
+              <span>우승 {trainer.wins}, 준우승 {trainer.runnerUps}, 4강 {trainer.top4}</span>
             </button>
           ))}
           {!visible.length && <div className="none records-list-none">검색 결과 없음</div>}
@@ -199,7 +203,7 @@ function TrainerView({ snapshot }) {
             <Dropdown
               className="records-season-filter records-profile-filter"
               value={season}
-              onChange={setSeason}
+              onChange={(value) => { setSeason(value); setHistPage(1); }}
               ariaLabel="시즌 필터"
               options={[{ value: "", label: "전체 기록" }, ...snapshot.seasons.map((name) => ({ value: name, label: name }))]}
             />
@@ -240,13 +244,13 @@ function TrainerView({ snapshot }) {
           <section className="records-block">
             <div className="records-block-head">
               <h4>대회 이력</h4>
-              <span>{history.length}건 · 최근 순</span>
+              <span>최근 순으로 {history.length}건</span>
             </div>
             {history.length ? (
               <table className="records-history-table">
                 <thead><tr><th>대회</th><th>일자</th><th className="r">순위</th></tr></thead>
                 <tbody>
-                  {history.slice().sort(compareHistoryRecency).slice(0, 12).map((event) => {
+                  {history.slice().sort(compareHistoryRecency).slice((histCur - 1) * HIST_PER_PAGE, histCur * HIST_PER_PAGE).map((event) => {
                     const teamName = displayTeamName(event.teamName);
                     const rule = displayRecordMeta(event.rule);
                     const label = event.resultLabel || placementLabel(event.placement, event.team);
@@ -256,7 +260,7 @@ function TrainerView({ snapshot }) {
                           <b>{event.championSeries
                             ? "챔피언스 시리즈"
                             : event.eventName || `${event.tournamentName}${event.round ? ` ${event.round}회` : ""}`}</b>
-                          <span>{[event.season, teamName, rule].filter(Boolean).join(" · ")}</span>
+                          <span>{[event.season, teamName, rule].filter(Boolean).join(", ")}</span>
                         </td>
                         <td className="date tnum">{event.date}</td>
                         <td className={"r " + (event.placement === "win" ? "win" : "")}>{label}</td>
@@ -266,6 +270,7 @@ function TrainerView({ snapshot }) {
                 </tbody>
               </table>
             ) : <div className="none">현재 확인 가능한 대회 기록이 없습니다.</div>}
+            <Pager page={histCur} pages={histPages} onGo={setHistPage} />
           </section>
 
           <section className="records-block">
@@ -519,7 +524,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
           <span style={{ width: 11, height: 11, borderRadius: 4, background: selectedTour.color }} />
           <h3 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--navy)" }}>{selectedTour.label}</h3>
           <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 550 }} className="tnum">{(selectedTour.rounds || []).length}회</span>
-          {admin && selectedTour.legacy && <button className="btn btn-gold btn-sm ed-pencil" onClick={openRoundEditor}>회차 편집</button>}
+          {admin && selectedTour.legacy && <button className="btn btn-primary btn-sm ed-pencil" onClick={openRoundEditor}>회차 편집</button>}
         </div>
         {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}
       </div>
@@ -635,7 +640,7 @@ function PokemonView({ snapshot }) {
             <div className="records-achievements">
               {current.champions.map((item, index) => (
                 <div key={`${item.gen}:${index}`}>
-                  <strong><Icon n="crown" size={13}/> {item.gen} · {item.name}</strong>
+                  <strong><Icon n="crown" size={13}/> {item.gen} {item.name}</strong>
                   <span>{item.season}</span>
                 </div>
               ))}
@@ -657,8 +662,8 @@ function RankingHub({ snapshot, data, admin, setModal, save }) {
         <button className={"subtab" + (sub === "season" ? " on" : "")} onClick={() => setSub("season")}>시즌별 성적</button>
       </div>
       <p className="pts-note records-points-note">
-        누적·시즌 랭킹은 이전 기록의 <b>RankingBaseline</b>과 Event별 <b>RankingAward</b> 원장을 합산합니다.
-        Master와 Light 등 대회 정책에 따라 실제 지급값이 달라질 수 있습니다.
+        누적 랭킹과 시즌별 성적은 이전 기록에서 넘어온 점수에 대회마다 얻은 점수를 더해 매깁니다.
+        등수별 점수는 마스터 리그, 파이컵 라이트처럼 대회 종류에 따라 다를 수 있습니다.
       </p>
       {sub === "rank" ? (
         <RankView rankings={snapshot.ranking?.series || data.rankings || []} data={data} admin={admin} setModal={setModal} save={save} />
@@ -686,7 +691,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
   if (!era) {
     return (
       <>
-        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-gold btn-sm" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
+        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-primary btn-sm" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
         <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>
       </>
     );
@@ -704,7 +709,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
         {admin && era.source !== "normalized" && (
           <div style={{ padding: "12px 0 2px" }}>
             <button
-              className="btn btn-gold btn-sm"
+              className="btn btn-primary btn-sm"
               onClick={() => setModal({
                 type: "standings",
                 title: era.label + " 랭킹",
@@ -744,7 +749,7 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
   if (!s) {
     return (
       <>
-        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-gold btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}
+        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-primary btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}
         <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>
       </>
     );
@@ -767,7 +772,7 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
         {admin && s.source !== "normalized" && (
           <div style={{ padding: "12px 0 2px" }}>
             <button
-              className="btn btn-gold btn-sm"
+              className="btn btn-primary btn-sm"
               onClick={() => setModal({
                 type: "standings",
                 title: s.name,

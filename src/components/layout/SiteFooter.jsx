@@ -20,7 +20,7 @@ export default function SiteFooter({ onNavigate, tagline }) {
         <div className="site-foot-top">
           <div className="site-foot-mark">
             <button className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
-              <BrandMark size={26} /><span className="brand-word">YPL</span>
+              <BrandMark size={30} /><span className="brand-word">YPL</span>
             </button>
             {tagline && <p className="site-foot-tag">{tagline}</p>}
             <a className="btn btn-ghost btn-sm site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
@@ -44,7 +44,7 @@ export default function SiteFooter({ onNavigate, tagline }) {
           <span>© {span} Yonsei Pokémon League</span>
           <span className="site-foot-fine">
             연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점의 비공식 기록 사이트입니다.
-            Pokémon 및 포켓몬스터는 Nintendo · Creatures · GAME FREAK 의 상표입니다.
+            Pokémon 및 포켓몬스터는 Nintendo, Creatures, GAME FREAK의 상표입니다.
           </span>
         </div>
       </div>

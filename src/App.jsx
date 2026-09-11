@@ -144,7 +144,7 @@ export default function App() {
      어디에 있었는지 구분되지 않아, 열어 둔 탭이 여러 개면 찾을 수가 없었습니다. */
   useEffect(()=>{
     const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
-    document.title=label?`${label} · YPL`:"YPL — Yonsei Pokémon League";
+    document.title=label?`${label} | YPL`:"YPL — Yonsei Pokémon League";
   },[view]);
   useEffect(()=>{
     const onPopState=()=>setView(readInitialAppView(window.location.search));
@@ -157,7 +157,7 @@ export default function App() {
       url.search= v==="builder" ? `view=builder&eventId=${encodeURIComponent(options.eventId)}` : bracketRouteSearch(options.eventId, window.location.search).slice(1);
       window.history.pushState({view:v,eventId:options.eventId},"",url);
     }else{
-      // 모든 탭이 주소에 남는다 — 새로고침·뒤로 가기·링크 공유가 같은 화면으로 돌아온다.
+      // 모든 탭이 주소에 남는다 — 새로고침, 뒤로 가기, 링크 공유 모두 같은 화면으로 돌아온다.
       const url=new URL(window.location.href);
       url.searchParams.delete("eventId");
       if(v==="home") url.searchParams.delete("view"); else url.searchParams.set("view",v);

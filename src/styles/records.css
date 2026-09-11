@@ -71,7 +71,7 @@
   border-radius: var(--r-pill); background: var(--bg); font-size: 13px; font-weight: 600;
 }
 [data-theme="dark"] .records-title-chips span { background: var(--bg-3); }
-.records-title-chips span.is-champion { background: var(--gold-soft); color: var(--gold); }
+.records-title-chips span.is-champion { background: var(--fill-2); color: var(--ink); }
 .records-pokemon-note { margin-top: 22px; max-width: 64ch; font-size: 14px; line-height: 1.65; color: var(--text-3); }
 
 .records-profile-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
@@ -93,7 +93,7 @@
 .records-history-table td.t span { font-size: 13px; color: var(--text-3); }
 .records-history-table td.date { padding: 0 14px; white-space: nowrap; font-size: 14px; color: var(--text-3); }
 .records-history-table td.r { white-space: nowrap; font-weight: 700; }
-.records-history-table td.r.win { color: var(--gold); }
+.records-history-table td.r.win { color: var(--ink); }
 
 .records-fav-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .records-fav-grid div { display: flex; justify-content: space-between; gap: 8px; padding: 14px; border-radius: 14px; background: var(--bg); }
@@ -107,8 +107,8 @@
 .records-favorites b { font-size: 15px; }
 .records-favorites em { font-size: 14px; color: var(--text-3); }
 .records-achievements { display: flex; flex-direction: column; gap: 8px; }
-.records-achievements div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--gold-soft); }
-.records-achievements strong { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--gold); }
+.records-achievements div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--fill-2); }
+.records-achievements strong { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--ink); }
 .records-achievements span { font-size: 13px; color: var(--text-3); }
 .records-empty { padding: 40px 24px; }
 
@@ -120,22 +120,21 @@
 .round2:last-child { border-bottom: 0; }
 .r2-date { padding-top: 2px; font-size: 14px; font-weight: 600; color: var(--text-3); }
 .r2-main { min-width: 0; }
-.r2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin-bottom: 12px; }
-.r2-head > span + span::before { content: "·"; margin: 0 9px; color: var(--text-4); font-weight: 400; }
+.r2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 12px; }
 .r2-round { font-size: 17px; font-weight: 800; letter-spacing: -0.028em; }
 .r2-head > .r2-rule:first-child { font-size: 17px; font-weight: 800; letter-spacing: -0.028em; color: var(--ink); }
 .r2-rule, .r2-season, .r2-mode { font-size: 14px; color: var(--text-3); }
-.r2-champ { font-size: 14px; font-weight: 700; color: var(--gold); }
+.r2-champ { font-size: 14px; font-weight: 700; color: var(--ink); }
 .r2-res { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .r2-rk { margin-left: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-3); }
 .r2-res > .r2-rk:first-child { margin-left: 0; }
-.r2-rk.gold { color: var(--gold); }
+.r2-rk.gold { color: var(--ink); }
 .r2-name {
   display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
   border-radius: var(--r-pill); background: var(--bg); font-size: 14px; font-weight: 600;
 }
 [data-theme="dark"] .r2-name { background: var(--bg-3); }
-.r2-name.win { background: var(--gold-fill); color: #1A1300; font-weight: 700; }
+.r2-name.win { background: var(--ink); color: var(--on-ink); font-weight: 700; }
 .r2-name.mem { height: 26px; padding: 0 10px; background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); font-size: 13px; font-weight: 500; }
 .records-round-toggle { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; }
 .records-round-summary { flex: 1; min-width: 0; }
@@ -155,7 +154,7 @@
 }
 .records-round-party-row:last-child { border-bottom: 0; }
 .records-round-party-row .r2-name { background: transparent; padding: 0; height: auto; }
-.records-round-party-row .r2-name.win { color: var(--gold); background: transparent; }
+.records-round-party-row .r2-name.win { color: var(--ink); background: transparent; }
 .records-party-sprites { display: flex; flex-wrap: wrap; gap: 2px; }
 .records-party-sprites img { width: 40px; height: 40px; object-fit: contain; }
 .records-party-missing { font-size: 13px; color: var(--text-3); }

@@ -78,7 +78,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
       <div className="reign-l">
         <span className="reign-crown" aria-hidden="true"><Icon n="crown" size={22} /></span>
         <h3 className="reign-name">{reigning.name}</h3>
-        <div className="reign-season">현 챔피언 · {genLabel(reigning)} · {seasonLabel(reigning)}</div>
+        <div className="reign-season">{genLabel(reigning)}, {seasonLabel(reigning)} 우승</div>
         <button className="btn btn-primary reign-cta" onClick={() => setPop(reigning)}>
           우승 엔트리 크게 보기<Icon n="arrow" size={15} />
         </button>
@@ -101,7 +101,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
     {past.length > 0 && <section className="hof-past">
       <div className="sech">
         <h2>역대 챔피언</h2>
-        <span className="y-label">즉위 순 · 최신 → 초대</span>
+        <span className="y-label">최근 챔피언부터</span>
       </div>
       <div className="y-rows">
         {past.map((c, i) => {
@@ -138,7 +138,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
         </div>
         <div className="hofm-top">
           <div className="hofm-nm">{pop.name}</div>
-          <div className="hofm-gen">{genLabel(pop)} · {seasonLabel(pop)} 우승 엔트리</div>
+          <div className="hofm-gen">{genLabel(pop)}의 {seasonLabel(pop)} 우승 엔트리</div>
         </div>
         <div className="hofm-team">{normTeam(pop.team).filter(m => m.name || m.img || m.pokemonId).map((m, j) => {
           const fallback = resolveHallOfFameArtwork(m, artworkLookup); const img = m.img || fallback; return (

@@ -4,14 +4,6 @@ import { Reveal, Icon } from "../components/index.js";
 /* 칭호 그룹 아이콘 — 데이터의 이모지 대신 사이트 아이콘 세트를 쓴다. */
 const GROUP_ICON = { champion: "crown", type: "bolt", region: "map", partner: "handshake", etc: "medal", event: "spark" };
 
-/* 타입 색 — 사이트의 포켓몬 타입 색과 같은 값 */
-const TYPE_COLOR = {
-  "노말": "#9FA19F", "불꽃": "#E62829", "물": "#2980EF", "전기": "#FAC000", "풀": "#3FA129",
-  "얼음": "#3FD8FF", "격투": "#FF8000", "독": "#9141CB", "땅": "#915121", "비행": "#81B9EF",
-  "에스퍼": "#EF4179", "벌레": "#91A119", "바위": "#AFA981", "고스트": "#704170",
-  "드래곤": "#5060E1", "악": "#624D4E", "강철": "#60A1B8", "페어리": "#EF70EF",
-};
-
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
 function shortName(name, key) {
   if (key === "type") return String(name).replace(/\s*엑스퍼트$/, "");
@@ -110,7 +102,7 @@ export default function TitlesPage({ data, admin, setModal }) {
               return (
                 <div className={"tt-champ" + (now ? " now" : "")} key={it.id} onClick={edit(it)}>
                   <span className="nm">{(it.holders || [])[0] || "미달성"}</span>
-                  <span className="s">{gen}{now ? " · 현 챔피언" : ""} · {championSeason(it.name)}</span>
+                  <span className="s">{gen}{now ? " 현 챔피언" : ""}, {championSeason(it.name)}</span>
                 </div>
               );
             })}
@@ -121,12 +113,11 @@ export default function TitlesPage({ data, admin, setModal }) {
               const holders = it.holders || [];
               const empty = holders.length === 0;
               const label = shortName(it.name, g.key);
-              const dot = g.key === "type" ? TYPE_COLOR[label] : null;
               return (
                 <div className={"tt-row" + (empty ? " off" : "")} key={it.id} onClick={edit(it)}>
-                  <i className="tt-dot" style={dot ? { background: dot } : undefined} />
+                  <i className="tt-dot" />
                   <b>{label}</b>
-                  <span className="who">{empty ? "미달성" : holders.join(" · ")}</span>
+                  <span className="who">{empty ? "미달성" : holders.join(", ")}</span>
                 </div>
               );
             })}

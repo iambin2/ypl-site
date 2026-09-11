@@ -93,7 +93,7 @@ const BKF='"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Got
 const BKM='Archivo, sans-serif';
 async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await document.fonts.load('800 40px Archivo'); await document.fonts.load('800 40px "Pretendard Variable"'); await document.fonts.ready; } }catch(e){} }
 /* 이미지 저장용 브랜드 색 — 사이트 디자인 토큰과 동일 */
-const BKC={ navy:"#1D1D1F", brand:"#003876", ink:"#1D1D1F", t2:"#424245",
+const BKC={ navy:"#1D1D1F", brand:"#1D1D1F", ink:"#1D1D1F", t2:"#424245",
             t4:"#515154", t5:"#6E6E73", line:"#E5E5EA", line2:"#D2D2D7",
             soft:"#F5F5F7", soft2:"#EBEBEF", card:"#FFFFFF", white:"#FFFFFF" };
 
@@ -102,7 +102,7 @@ async function downloadChampionPng(b,res,nameOf){
   const S=2,W=1200,H=820; const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
   const ctx=cv.getContext("2d"); ctx.scale(S,S);
 
-  // 배경: 순백 + 얇은 테두리 한 겹 (그라데이션·반짝이 없음)
+  // 배경: 순백 + 얇은 테두리 한 겹 (그라데이션과 반짝이 없음)
   ctx.fillStyle=BKC.card; ctx.fillRect(0,0,W,H);
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; bkRR(ctx,40,40,W-80,H-80,28); ctx.stroke();
 
@@ -135,7 +135,7 @@ async function downloadChampionPng(b,res,nameOf){
   ctx.fillText(bkClip(ctx,b.name,W-200),W/2,ty);
   ctx.fillStyle=BKC.t5; ctx.font=`600 19px ${BKF}`; ctx.fillText(b.createdAt,W/2,ty+38);
 
-  // 하단 준우승·4강 (구분선 위)
+  // 하단 준우승과 4강 (구분선 위)
   const subs=[];
   if(res.ru) subs.push("준우승 "+nameOf(res.ru));
   if(res.sf&&res.sf.length) subs.push("4강 "+res.sf.map(nameOf).join(", "));
@@ -210,7 +210,7 @@ async function downloadBracketPng(b,nameOf){
   ctx.textAlign="left"; ctx.fillStyle=BKC.ink; ctx.font=`800 30px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-320),34,50);
   ctx.fillStyle=BKC.brand; ctx.font=`800 18px ${BKM}`; bkSpaced(ctx,"YPL",34+13,76,2);
   ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`;
-  ctx.fillText("POKEMON CENTER YONSEI · "+(b.createdAt||""),34+40,75);
+  ctx.fillText("POKEMON CENTER YONSEI   "+(b.createdAt||""),34+40,75);
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(34,88); ctx.lineTo(W-34,88); ctx.stroke();
   const res=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph);
   if(res&&res.done){ ctx.font=`700 17px ${BKF}`; const t="우승 "+nameOf(res.champ);
@@ -542,7 +542,7 @@ function BracketWizard({ data, onClose, onCreate }){
         {eventError&&<div className="bk-hint" style={{color:"var(--loss)"}}>{eventError}</div>}
         {eventId&&!eventBusy&&
           <div className="bk-hint">
-            신청자 {eventRegs.length}명 · 공지에 설정된 대회 정보와 참가자 명단을 사용합니다.
+            공지에 설정된 대회 정보와 신청자 {eventRegs.length}명의 명단을 사용합니다.
             {mode!=="team"&&submissionStatusError&&<span style={{display:"block",color:"var(--loss)",marginTop:4}}>파티 제출 상태: {submissionStatusError}</span>}
           </div>
         }
@@ -710,7 +710,7 @@ function BracketWizard({ data, onClose, onCreate }){
             <button type="button" className="btn btn-primary btn-sm" disabled={!championshipManualPlayerId||championshipManualBusy} onClick={addChampionshipManualParticipant}>추가</button>
           </div>
         </div>}
-        {linkedEvent?.championship_phase==="qualifier"&&(()=>{const capacity=Number(linkedEvent?.competition_settings?.championship?.finalCapacity)||0;const actual=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;const target=capacity-directRegistrationIds.length;const eliminated=actual-target;return <div className="bk-hint" style={{marginTop:10}}>본선 정원 {capacity}명 · 본선 직행 {directRegistrationIds.length}명 · 선발전 실제 참가 {actual}명 · 선발전 통과 필요 {target}명 · 필요 탈락 {Math.max(0,eliminated)}명{actual<target&&<span style={{color:"var(--loss)"}}> — 신청/참가 인원이 부족해 본선 정원을 채울 수 없습니다.</span>}</div>;})()}
+        {linkedEvent?.championship_phase==="qualifier"&&(()=>{const capacity=Number(linkedEvent?.competition_settings?.championship?.finalCapacity)||0;const actual=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;const target=capacity-directRegistrationIds.length;const eliminated=actual-target;return <div className="bk-hint" style={{marginTop:10}}>본선 정원은 {capacity}명이고 본선 직행은 {directRegistrationIds.length}명입니다. 선발전에는 {actual}명이 참가해 {target}명이 통과하므로 {Math.max(0,eliminated)}명이 탈락해야 합니다.{actual<target&&<span style={{color:"var(--loss)"}}> 참가 인원이 부족해 본선 정원을 채울 수 없습니다.</span>}</div>;})()}
       </> : <>
         {eventId&&mode==="team"&&<div className="field">
           <label>신청자 / 팀 지망</label>
@@ -725,7 +725,7 @@ function BracketWizard({ data, onClose, onCreate }){
                   <b>{reg.registration_name}</b>
                   <div className="bk-hint" style={{marginTop:3}}>
                     {answers.length
-                      ? answers.map(answer=>`${answer.label}: ${answer.value||"-"}`).join(" · ")
+                      ? answers.map(answer=>`${answer.label}: ${answer.value||"-"}`).join(", ")
                       : "저장된 팀 지망 답변 없음"}
                   </div>
                 </div>
@@ -903,7 +903,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRetry
       <span className="bk-submission-member-name">{member.name}</span>
       <span className={`bk-submission-state${member.hasSubmission ? " submitted" : ""}`}>
         {member.hasSubmission
-          ? `제출 완료${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` · ${formatBracketSubmissionTime(member.latestSubmittedAt)}` : ""}`
+          ? `제출 완료${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
           : "미제출"}
       </span>
     </div>
@@ -1061,7 +1061,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const undoApplied=async()=>{
     if(readOnly)return;
     if(!b.applied)return;
-    if(!confirm("이 대진표의 기록 반영을 취소할까요? 회차·랭킹·시즌 성적과 연결된 Event 기록 상태가 함께 원복됩니다."))return;
+    if(!confirm("이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 Event 기록 상태가 함께 원복됩니다."))return;
     let previousHallOfFame=null;
     let previousAwardRows=null;
     let previousResultRows=null;
@@ -1088,7 +1088,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     }
   };
   return (<div className="bk-board swap">
-    {readOnly&&<p className="bk-hint">과거 완료 대진표입니다. 조회만 가능하며 수정·삭제·기록 반영은 지원하지 않습니다.</p>}
+    {readOnly&&<p className="bk-hint">과거 완료 대진표입니다. 조회만 가능하며 수정, 삭제, 기록 반영은 지원하지 않습니다.</p>}
     {b.eventId&&<SubmissionStatusPanel
       model={submissionStatusModel}
       busy={submissionStatusBusy}
@@ -1104,7 +1104,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       <div className="bk-cb-actions">
         <button className="btn btn-ghost btn-sm" onClick={()=>downloadChampionPng(b,res,nameOf)}><Icon n="image" size={15}/>우승 이미지</button>
         <button className="btn btn-ghost btn-sm" onClick={()=>downloadBracketPng(b,nameOf)}><Icon n="image" size={15}/>대진표 이미지</button>
-        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="btn btn-gold btn-sm" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
+        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="btn btn-primary btn-sm" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
         {b.applied&&<><span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="btn btn-ghost btn-sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="btn btn-ghost btn-sm" onClick={undoApplied}>반영 취소</button>}</>}
       </div>
     </div>}
@@ -1360,7 +1360,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
                     : row.status==="new"
                       ? "기록 반영 시 Player 생성"
                       : "동일 이름 Player가 여러 명 존재"}
-                  {row.willCreateRegistration ? " · 참가 등록 생성 예정" : ""}
+                  {row.willCreateRegistration ? ", 참가 등록 생성 예정" : ""}
                 </span>
               </div>
             ))}
@@ -1408,7 +1408,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
         <div className="bk-ab-meta">
           {team?"팀전":"개인전"}
           {linked&&linkedContext?.event?.division
-            ? ` · ${linkedContext.event.division==="master"?"Master":linkedContext.event.division==="rookie"?"Rookie":linkedContext.event.division}`
+            ? `, ${linkedContext.event.division==="master"?"Master":linkedContext.event.division==="rookie"?"Rookie":linkedContext.event.division}`
             : ""}
         </div>
         <div><Icon n="trophy" size={14}/> 우승 <b>{nameOf(res.champ)}</b></div>
@@ -1430,14 +1430,14 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
             <div className="field">
               <label>기록 분류</label>
               <div className="bk-hint">
-                {curT?.label||"분류 확인 필요"} · 연결 Event 기준
+                {curT?.label||"분류 확인 필요"} (연결된 Event 기준)
               </div>
             </div>
 
             <div className="field">
               <label>시즌</label>
               <div className="bk-hint">
-                {recordSeason||"시즌 정보 없음"} · 연결 Event 기준
+                {recordSeason||"시즌 정보 없음"} (연결된 Event 기준)
               </div>
             </div>
           </div>
@@ -1469,12 +1469,12 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
               <div>
                 {excluded
                   ? "— 누적 랭킹 미반영"
-                  : `누적 랭킹${rankEra?.label?` · ${rankEra.label}`:""}`}
+                  : `누적 랭킹${rankEra?.label?` (${rankEra.label})`:""}`}
               </div>
               <div>
                 {excluded||champ
                   ? "— 시즌별 성적 미반영"
-                  : `시즌별 성적 · ${recordSeason}`}
+                  : `시즌별 성적 (${recordSeason})`}
               </div>
             </div>
           </div>
@@ -1484,8 +1484,8 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
               <label>등수별 점수</label>
               <div className="bk-hint">
                 {team
-                  ? `우승 ${ptWinN} · 준우승 ${ptRuN}`
-                  : `우승 ${ptWinN} · 준우승 ${ptRuN} · 4강 ${ptSfN}`}
+                  ? `우승 ${ptWinN}점, 준우승 ${ptRuN}점`
+                  : `우승 ${ptWinN}점, 준우승 ${ptRuN}점, 4강 ${ptSfN}점`}
               </div>
             </div>
           }

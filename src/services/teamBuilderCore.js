@@ -577,7 +577,7 @@ export function bilingualName(korean, english) {
 }
 
 export function alignmentDisplay(alignment) {
-  const effect = alignment?.plus ? ` · ${STAT_LABELS[alignment.plus]}↑ ${STAT_LABELS[alignment.minus]}↓` : " · 보정 없음";
+  const effect = alignment?.plus ? `, ${STAT_LABELS[alignment.plus]}↑ ${STAT_LABELS[alignment.minus]}↓` : ", 보정 없음";
   return `${bilingualName(natureName(alignment), alignment?.name)}${effect}`;
 }
 
@@ -592,9 +592,9 @@ export function localizedPokemonName(pokemon, koreanNames) {
   if (pokemon.name.endsWith("[Alolan Form]")) return `알로라 ${ko}`;
   if (pokemon.name.endsWith("[Hisuian Form]")) return `히스이 ${ko}`;
   if (pokemon.name.endsWith("[Galarian Form]")) return `가라르 ${ko}`;
-  if (pokemon.name.includes("Combat Breed")) return "켄타로스 (팔데아의 모습·컴뱃종)";
-  if (pokemon.name.includes("Blaze Breed")) return "켄타로스 (팔데아의 모습·블레이즈종)";
-  if (pokemon.name.includes("Aqua Breed")) return "켄타로스 (팔데아의 모습·워터종)";
+  if (pokemon.name.includes("Combat Breed")) return "켄타로스 (팔데아의 모습, 컴뱃종)";
+  if (pokemon.name.includes("Blaze Breed")) return "켄타로스 (팔데아의 모습, 블레이즈종)";
+  if (pokemon.name.includes("Aqua Breed")) return "켄타로스 (팔데아의 모습, 워터종)";
   if (pokemon.name === "Heat Rotom") return `히트${ko}`;
   if (pokemon.name === "Wash Rotom") return `워시${ko}`;
   if (pokemon.name === "Frost Rotom") return `프로스트${ko}`;
@@ -671,7 +671,7 @@ export function moveMetadata(detailData, id) {
   if (!move) return moveName(detailData, id);
   const power = move.category === "Status" ? "—" : move.basePower || "—";
   const accuracy = move.accuracy === true ? "—" : move.accuracy ?? "—";
-  return `${TYPE_KO[move.type] || move.type || "—"} · ${CATEGORY_KO[move.category] || move.category || "—"} · 위력 ${power} · 명중 ${accuracy} · PP ${move.pp ?? "—"}`;
+  return `${TYPE_KO[move.type] || move.type || "—"}, ${CATEGORY_KO[move.category] || move.category || "—"}, 위력 ${power}, 명중 ${accuracy}, PP ${move.pp ?? "—"}`;
 }
 
 export function pokemonMatchesCupRule({ pokemon, cupRuleId, assignedTypeId, detailData }) {
@@ -813,7 +813,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
     incomplete.push("Champions 상세 데이터를 불러오는 중이라 최종 검증이 아직 완료되지 않았습니다.");
   }
   if (detailStatus === "error") {
-    incomplete.push("상세 배틀 데이터 연결에 실패해 기술·도구 legality를 최종 검증할 수 없습니다.");
+    incomplete.push("상세 배틀 데이터 연결에 실패해 기술과 도구의 사용 가능 여부를 최종 검증할 수 없습니다.");
   }
 
   const complete = team.length === (regulation?.maxTeamSize || 6) && incomplete.length === 0;

@@ -10,7 +10,7 @@ function dateKey(s) {
   return y * 10000 + m * 100 + d;
 }
 const genOf = g => String(g || "").replace(/\s*챔피언\s*$/, "");
-/* YPL 시즌은 3월 1일·9월 1일에 넘어간다. 2026-09-01 = 시즌 3 (ARCHITECTURE.md §8). */
+/* YPL 시즌은 3월 1일과 9월 1일에 넘어간다. 2026-09-01 = 시즌 3 (ARCHITECTURE.md §8). */
 function currentYplSeason(now = new Date()) {
   const y = now.getFullYear(), m = now.getMonth() + 1;
   const half = y * 2 + (m >= 9 ? 1 : m >= 3 ? 0 : -1);
@@ -90,15 +90,16 @@ export default function HomePage({ data, go, admin }) {
           <button className="btn btn-primary hm-btn" onClick={() => go("records")}>기록 보기<Icon n="arrow" size={16} /></button>
           <button className="btn btn-ghost hm-btn" onClick={() => go("about")}>리그 소개</button>
         </div>
-        <div className="hm-facts"><p className="tnum">
-          {season && <span>YPL 시즌 {season} 진행 중</span>}<span>2023.05 창설</span><span>기록된 대회 {rounds}회</span>{champs.length > 0 && <span>역대 챔피언 {champs.length}명</span>}
-        </p></div>
+        <p className="hm-facts tnum">
+          2023년 5월 창설 이후 {champs.length > 0 ? `대회 ${rounds}회와 챔피언 ${champs.length}명을` : `대회 ${rounds}회를`} 기록했습니다.
+          {season && ` 지금은 YPL 시즌 ${season} 진행 중입니다.`}
+        </p>
       </Reveal>
 
       {news && <Reveal tag="button" delay={120} className="hm-event" onClick={() => go("news")}>
         <span className="hm-event-date tnum">
           <b>{nd.m}.{nd.d}</b>
-          <small>{nd.y}{nd.weekday && ` · ${nd.weekday}`}</small>
+          <small>{nd.y}년{nd.weekday && ` ${nd.weekday}`}</small>
         </span>
         <span className="hm-event-body">
           <span className="hm-event-t">{news.title}</span>
@@ -122,7 +123,7 @@ export default function HomePage({ data, go, admin }) {
         {recent.map(({ t, r }, i) => {
           const win = (r.winMembers || []).length ? r.win || "우승 팀" : r.win;
           const ru = (r.ruMembers || []).length ? r.ru || "준우승 팀" : r.ru;
-          const meta = [r.rule || "", r.team ? "팀전" : ""].filter(Boolean).join(" · ");
+          const meta = [r.rule || "", r.team ? "팀전" : ""].filter(Boolean).join(", ");
           return (
             <Reveal tag="button" key={i} delay={i * 60} className={"hm-result" + (r.champ ? " major" : "")} onClick={() => go("records")}>
               <span className="hm-result-top tnum">
@@ -154,7 +155,7 @@ export default function HomePage({ data, go, admin }) {
               <span className="hm-rank-n">{i + 1}</span>
               <span className="hm-rank-who">
                 <b>{r.name}</b>
-                <span className="tnum">우승 {r.win || 0} · 준우승 {r.ru || 0} · 4강 {r.top4 || 0}</span>
+                <span className="tnum">우승 {r.win || 0}, 준우승 {r.ru || 0}, 4강 {r.top4 || 0}</span>
               </span>
               <span className="hm-rank-pt">{r.points}<em>pt</em></span>
             </button>
@@ -194,7 +195,7 @@ export default function HomePage({ data, go, admin }) {
           return (
             <button key={c.id} className={"hm-hof-cell" + (now ? " now" : "")} onClick={() => go("champions")}>
               <span className="nm">{c.name}{now && <><Icon n="crown" size={16} /><span className="sr-only">현 챔피언</span></>}</span>
-              <span className="s">{genOf(c.gen)} · {c.slabel}</span>
+              <span className="s">{genOf(c.gen)}, {c.slabel}</span>
             </button>
           );
         })}
@@ -207,7 +208,7 @@ export default function HomePage({ data, go, admin }) {
         <h2>배틀과 중계는<br />디스코드에서 열립니다.</h2>
         <p>대진이 확정되면 경기는 YPL 디스코드에서 진행되고 실시간으로 중계됩니다.</p>
       </div>
-      <a className="btn btn-brand hm-btn" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+      <a className="btn btn-primary hm-btn" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
         <Icon n="discord" size={17} />디스코드 참여
       </a>
     </Reveal>
