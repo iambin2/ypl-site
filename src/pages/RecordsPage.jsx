@@ -10,7 +10,6 @@ import {
   normalizedRecordsReadEnabled,
 } from "../services/normalizedRecordsService.js";
 import { syncTournamentRounds } from "../services/recordSync.js";
-import "../records.css";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -195,7 +194,6 @@ function TrainerView({ snapshot }) {
         <div className="panel records-profile-hero">
           <div className="records-profile-head">
             <div className="records-profile-identity">
-              <span className="records-eyebrow">YPL TRAINER</span>
               <h3 className="records-profile-name">{profile.name}</h3>
             </div>
             <Dropdown
@@ -338,7 +336,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     return {
       key,
       label: legacy?.label || first?.tournamentName || first?.eventName || key,
-      color: legacy?.color || first?.color || "#9FB3C8",
+      color: legacy?.color || first?.color || "#A1A1A6",
       rounds: (snapshot.archives || []).filter((row) => row.tournamentKey === key),
       legacy,
     };
@@ -588,7 +586,6 @@ function PokemonView({ snapshot }) {
 
       <div className="records-profile">
         <section className="panel records-profile-hero">
-          <span className="records-eyebrow">YPL ENTRY RECORD</span>
           <h3 className="records-profile-name">{current.name}</h3>
           <div className="records-stat-grid pokemon">
             <Stat label="등록 엔트리" value={current.entries} suffix="회" />

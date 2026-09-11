@@ -130,7 +130,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
     <button type="button" className="fold-head pr-fold-head" onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}>
       <span className="pr-title"><Icon n="list" size={15}/> {form.publicTitle||"현재까지 신청 현황"}</span>
       <span className="pr-n">{resp.length}명</span>
-      <span className="fold-chev" aria-hidden="true">▾</span>
+      <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
     </button>
     {open&&<div className="pr-body swap">
       {resp.length===0

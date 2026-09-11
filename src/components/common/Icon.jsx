@@ -41,9 +41,16 @@ const S = {
   moon: <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M22 12h-2M4 12H2M18.4 5.6l-1.4 1.4M7 17l-1.4 1.4M18.4 18.4L17 17M7 7L5.6 5.6" /></>,
   sort: <><path d="M8 5v14M4 15l4 4 4-4" /><path d="M16 19V5M12 9l4-4 4 4" /></>,
+  chevl: <path d="M15 6l-6 6 6 6" />,
+  chevr: <path d="M9 6l6 6-6 6" />,
+  calendar: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M4 10h16M9 3v4M15 3v4" /></>,
+  pin: <><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3z" /><path d="M12 15v6" /></>,
+  minus: <path d="M5 12h14" />,
+  team: <><circle cx="6" cy="8" r="2.2" /><circle cx="12" cy="8" r="2.2" /><circle cx="18" cy="8" r="2.2" /><circle cx="6" cy="16" r="2.2" /><circle cx="12" cy="16" r="2.2" /><circle cx="18" cy="16" r="2.2" /></>,
+  discord: <path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 2.9l-.6 1.2a18.3 18.3 0 0 0-5.5 0l-.6-1.2a19.7 19.7 0 0 0-4.9 1.5C.7 9-.2 13.6.1 18.1a19.9 19.9 0 0 0 6 3l1.2-2a13 13 0 0 1-1.9-.9l.4-.3a14.2 14.2 0 0 0 12.1 0l.4.3a12.3 12.3 0 0 1-1.9.9l1.2 2a19.8 19.8 0 0 0 6-3c.5-5.2-.8-9.7-3.5-13.7zM8 15.3c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z" />,
 };
 
-const FILLED = { crown: true, handshake: true, bolt: false };
+const FILLED = { crown: true, handshake: true, bolt: false, discord: true };
 
 export default function Icon({ n, size = 16, className = "", style }) {
   const d = S[n];

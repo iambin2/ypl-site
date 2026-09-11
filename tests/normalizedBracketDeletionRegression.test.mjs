@@ -61,7 +61,8 @@ test("generic runtime creation failure does not double-rollback participant iden
 
 test("normalized runtime never persists through site_data while historical read-only display stays separate", () => {
   assert.match(app, /brackets:Array\.isArray\(next\?\.brackets\)\?next\.brackets\.filter\(b=>b\?\.projection\?\.source!=="normalized"\)/);
-  assert.match(page, /const list=buildBracketPageList\(normalizedBrackets,data\?\.brackets\|\|\[\]\)/);
+  // The list waits for the first normalized load (skeletons first), then merges the historical read-only brackets.
+  assert.match(page, /const list=normalizedInitialReady\s*\?\s*buildBracketPageList\(normalizedBrackets,data\?\.brackets\|\|\[\]\)/);
   assert.match(page, /Active Event-linked brackets are normalized-only/);
   assert.doesNotMatch(page, /data\.brackets.*syncNormalizedBracketMatches/);
 });

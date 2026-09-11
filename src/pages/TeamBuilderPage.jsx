@@ -47,7 +47,6 @@ import {
   validateTeam,
   resolveEventRuleSelection,
 } from "../services/teamBuilderCore.js";
-import "../team-builder.css";
 
 const SPECIES_NAMES_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv";
 
@@ -249,7 +248,7 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
             event.preventDefault(); event.stopPropagation(); onRemove();
           }
         }}
-      >×</span>
+      ><Icon n="x" size={13} /></span>
     </button>
   );
 }
@@ -326,7 +325,7 @@ function OfficialSubmissionPanel({
     : state === "invalid"
       ? "제출 불가"
       : !registration ? "신청자 확인 필요" : "Event 확인 필요";
-  const icon = state === "valid" ? "✓" : state === "invalid" ? "×" : "!";
+  const icon = <Icon n={state === "valid" ? "check" : state === "invalid" ? "x" : "alert"} size={15} />;
   const messages = [
     ...(eventContextError ? [eventContextError] : []),
     ...(eventGate && !eventGate.allowed && !eligibility?.errors?.includes(eventGate.error) ? [eventGate.error] : []),
@@ -1154,7 +1153,6 @@ export default function TeamBuilderPage() {
     <section className="tb-page">
       <Reveal className="tb-hero">
         <div>
-          <span className="tb-kicker">YPL TOOLS</span>
           <h1>팀 빌더</h1>
           <p>Pokémon Champions 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
         </div>
@@ -1211,7 +1209,7 @@ export default function TeamBuilderPage() {
         />
       </Reveal>
 
-      <Reveal className="tb-validation-wrap" delay={45}>
+      {(team.length > 0 || cupRule.kind !== "none") && <Reveal className="tb-validation-wrap" delay={45}>
         <ValidationPanel
           result={validation}
           regulationName={regulation.name}
@@ -1219,19 +1217,19 @@ export default function TeamBuilderPage() {
           teamLength={team.length}
           configuredSpecialRule={cupRule.kind !== "none"}
         />
-      </Reveal>
+      </Reveal>}
 
       <div className="tb-layout">
         <Reveal className="tb-panel tb-pool-panel" delay={55}>
           <div className="tb-panel-head">
-            <div><span className="tb-panel-kicker">POKÉMON</span><h2>포켓몬 선택</h2></div>
+            <div><h2>포켓몬 선택</h2></div>
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
           </div>
           <div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{dataStatusText}<span>·</span>{localizationText}</div>
           <div className="tb-search-row">
             <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
             <input className="tb-input" value={query} onChange={event => setQuery(event.target.value)} placeholder="포켓몬 이름 검색 (한글/영문)" />
-            {query && <button className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기">×</button>}
+            {query && <button className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={12} /></button>}
           </div>
           {cupRule.kind === "monotype" && !assignedTypeId ? (
             <div className="tb-pool-empty">모노타입 챌린지의 타입을 선택해 주세요.</div>
@@ -1253,7 +1251,7 @@ export default function TeamBuilderPage() {
                     <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{displayPokemon(pokemon) !== pokemon.name ? pokemon.name : ""}{details?.num ? `${displayPokemon(pokemon) !== pokemon.name ? " · " : ""}#${String(details.num).padStart(4, "0")}` : ""}</small></span>
                     <TypeBadges types={details?.types || []} />
                     <span className="tb-add-mark">
-                      {canReplaceSelected ? "↔" : <Icon n={already ? "check" : "plus"} size={13} />}
+                      <Icon n={canReplaceSelected ? "refresh" : already ? "check" : "plus"} size={14} />
                     </span>
                   </button>
                 );
@@ -1267,7 +1265,6 @@ export default function TeamBuilderPage() {
           <Reveal className="tb-panel" delay={75}>
             <div className="tb-panel-head tb-team-head">
               <div>
-                <span className="tb-panel-kicker">팀 구성</span>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
               </div>
               <div className="tb-team-meta"><strong>{team.length} / {regulation.maxTeamSize || 6}</strong></div>
@@ -1337,7 +1334,7 @@ export default function TeamBuilderPage() {
                   {selectedRequiredItem ? (
                     <>
                       <div className="tb-locked-item" role="textbox" aria-readonly="true" aria-label="메가폼 전용 도구">
-                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><b aria-hidden="true">🔒</b>
+                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><Icon n="lock" size={15} />
                       </div>
                       <div className="tb-field-meta">선택한 메가폼에 필요한 도구로 자동 지정되며 변경할 수 없습니다.</div>
                     </>
@@ -1421,7 +1418,6 @@ export default function TeamBuilderPage() {
       </Modal>}
 
       {libraryOpen && <Modal title="내 팀" hint="불러오기 후 수정하고 다시 저장하면 기존 팀을 덮어씁니다." onClose={() => setLibraryOpen(false)}>
-        <button className="tb-modal-close" type="button" onClick={() => setLibraryOpen(false)} aria-label="내 팀 닫기">×</button>
         <div className="tb-library-save">
           <label className="tb-field"><span>현재 팀 저장</span><input className="tb-input tb-team-name" maxLength={40} value={saveName} onChange={event => setSaveName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(); } }} placeholder="팀 이름" /></label>
           <div className="tb-library-save-meta"><span>{regulation.name} · {currentCupRuleSummary} · {team.length}/6마리</span><span>이 브라우저에 저장됩니다.</span><span>미완성 / 규정 위반 팀도 초안 저장 가능</span></div>

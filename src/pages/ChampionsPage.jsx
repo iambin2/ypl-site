@@ -74,38 +74,28 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
       </div>
     </Reveal>
 
-    {reigning && <Reveal className="y-plate-raised reign">
-      <div className="reign-in">
-        <div className="reign-l">
-          <div className="reign-glow" aria-hidden="true" />
-          <span className="reign-mark"><Icon n="crown" size={20} />
-            <span className="y-micro">현 챔피언 · {genLabel(reigning)}</span></span>
-          <h3 className="reign-name">{reigning.name}</h3>
-          <div className="reign-season">{seasonLabel(reigning)} CHAMPION</div>
-          <div className="reign-facts">
-            <div><span className="y-micro">세대</span><b>{genLabel(reigning)}</b></div>
-            <div><span className="y-micro">시즌</span><b>{seasonLabel(reigning)}</b></div>
-            <div><span className="y-micro">우승 엔트리</span><b className="tnum">{reigningTeam.length}마리</b></div>
-          </div>
-          <button className="y-btn y-btn-primary reign-cta" onClick={() => setPop(reigning)}>
-            우승 엔트리 보기<Icon n="arrow" size={13} />
-          </button>
-        </div>
-        <div className="reign-r">
-          <div className="reign-rhead">
-            <span className="y-micro">우승 엔트리</span>
-            <span className="y-label tnum">{reigningTeam.length}마리</span>
-          </div>
-          <div className="reign-list">
-            {reigningTeam.map((m, j) => (
-              <div className="reign-item" key={j}>
-                <i className="tnum">{String(j + 1).padStart(2, "0")}</i>
-                <b>{m.name}</b>
-              </div>
-            ))}
-          </div>
-        </div>
+    {reigning && <Reveal className="reign">
+      <div className="reign-l">
+        <span className="reign-crown" aria-hidden="true"><Icon n="crown" size={22} /></span>
+        <h3 className="reign-name">{reigning.name}</h3>
+        <div className="reign-season">현 챔피언 · {genLabel(reigning)} · {seasonLabel(reigning)}</div>
+        <button className="btn btn-primary reign-cta" onClick={() => setPop(reigning)}>
+          우승 엔트리 크게 보기<Icon n="arrow" size={15} />
+        </button>
       </div>
+      <ol className="reign-team" aria-label="우승 엔트리">
+        {reigningTeam.map((m, j) => {
+          const fallback = resolveHallOfFameArtwork(m, artworkLookup); const img = m.img || fallback;
+          return (
+            <li className="reign-mon" key={j} style={{ "--i": j }}>
+              <span className="reign-mon-art">{img
+                ? <img src={img} alt="" loading="lazy" decoding="async" onError={event => { if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback; else event.currentTarget.style.visibility = "hidden"; }} />
+                : <em>{(m.name || "").slice(0, 2)}</em>}</span>
+              <b>{m.name}</b>
+            </li>
+          );
+        })}
+      </ol>
     </Reveal>}
 
     {past.length > 0 && <section className="hof-past">
@@ -142,14 +132,13 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
     </section>}
 
     {pop && <div className="overlay" onClick={() => setPop(null)}>
-      <div className="modal hof-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div className="modal hof-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`${pop.name} 우승 엔트리`}>
         <div className="hofm-bar">
-          <span className="hofm-k">우승 엔트리</span>
           <button type="button" className="hofm-x" onClick={() => setPop(null)} aria-label="닫기"><Icon n="x" size={14} /></button>
         </div>
         <div className="hofm-top">
-          <div className="hofm-gen">{seasonLabel(pop)} · {genLabel(pop)}</div>
           <div className="hofm-nm">{pop.name}</div>
+          <div className="hofm-gen">{genLabel(pop)} · {seasonLabel(pop)} 우승 엔트리</div>
         </div>
         <div className="hofm-team">{normTeam(pop.team).filter(m => m.name || m.img || m.pokemonId).map((m, j) => {
           const fallback = resolveHallOfFameArtwork(m, artworkLookup); const img = m.img || fallback; return (

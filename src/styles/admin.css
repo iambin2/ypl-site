@@ -1,0 +1,109 @@
+/* =============================================================================
+   YPL — admin editors: champion, form builder, standings, rounds
+   ========================================================================== */
+
+/* inputs sitting on a grey card take the page ground so they stay visible */
+:is(.ed-round, .card.form-card) :is(input:not([type="checkbox"]):not([type="radio"]), textarea, .dd-btn) { background: var(--bg); }
+[data-theme="dark"] :is(.ed-round, .card.form-card) :is(input:not([type="checkbox"]):not([type="radio"]), textarea, .dd-btn) { background: var(--bg-3); }
+
+/* ---------- champion editor ---------- */
+.ch-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ch-slot { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ch-imgwrap { position: relative; }
+.ch-img {
+  aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; cursor: pointer;
+  border-radius: var(--r-md); background: var(--bg-2); box-shadow: inset 0 0 0 1.5px var(--line-2);
+  transition: box-shadow var(--d1) var(--ease), background var(--d1) var(--ease);
+}
+.ch-img:hover { background: var(--bg-3); box-shadow: inset 0 0 0 1.5px var(--text-4); }
+.ch-img img { width: 82%; height: 82%; object-fit: contain; }
+.ch-plus { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--text-3); }
+.ch-clear {
+  position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: var(--ink); color: var(--on-ink);
+}
+.ch-name { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+.ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: 10px; }
+
+/* ---------- form builder ---------- */
+.fb-wrap { margin: 20px 0; padding: 18px; border-radius: var(--r-md); background: var(--bg-2); }
+.fb-wrap > .bk-check { font-weight: 600; }
+.fb-q { margin-bottom: 10px; padding: 16px; border-radius: var(--r-md); background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line); }
+.fb-wrap .fb-q { background: var(--bg); box-shadow: none; }
+[data-theme="dark"] .fb-wrap .fb-q { background: var(--bg-3); }
+[data-theme="dark"] .fb-wrap .fb-q :is(input:not([type="checkbox"]), .dd-btn) { background: var(--bg-2); }
+.fb-wrap .fb-q :is(input:not([type="checkbox"]), .dd-btn) { background: var(--fill-2); }
+.fb-q-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.fb-q-top strong { font-size: 15px; }
+.fb-q-top .dd { width: 220px; }
+.fb-qn {
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%;
+  background: var(--ink); color: var(--on-ink); font-size: 12.5px; font-weight: 700;
+}
+.fb-q-move { display: flex; gap: 4px; margin-left: auto; }
+.fb-ic {
+  width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: var(--fill-2); color: var(--text-2); transition: background var(--d1) var(--ease), color var(--d1) var(--ease);
+}
+.fb-ic:hover:not(:disabled) { background: var(--fill); color: var(--ink); }
+.fb-ic.del:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
+.fb-ic:disabled { opacity: .3; cursor: default; }
+.fb-label { font-weight: 600; }
+.fb-opts { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.fb-opt { display: flex; align-items: center; gap: 8px; }
+.fb-opt input { min-height: 40px; padding: 8px 12px; }
+.fb-dot {
+  width: 18px; height: 18px; flex: none; display: grid; place-items: center;
+  border: 1.5px solid var(--text-4); border-radius: 50%; font-size: 12.5px; font-weight: 700; color: var(--text-3);
+}
+.fb-dot.multi { border-radius: var(--r-xs); }
+.fb-dot.dropdown { border: 0; width: 20px; }
+.fb-addopt, .fb-addq {
+  align-self: flex-start; padding: 8px 12px; border: 0; border-radius: var(--r-pill); background: transparent;
+  font-size: 14px; font-weight: 600; color: var(--text-2); transition: background var(--d1) var(--ease), color var(--d1);
+}
+.fb-addopt:hover { background: var(--fill-2); color: var(--ink); }
+.fb-addq {
+  width: 100%; min-height: 50px; margin-top: 4px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--line-2);
+}
+.fb-addq:hover { background: var(--fill-2); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--text-4); }
+.fb-q-foot { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; }
+.fb-req { min-height: 34px; font-size: 14px; }
+.fb-note { font-size: 13px; font-weight: 400; color: var(--text-3); }
+.fb-reveal { animation: y-fade var(--d2) var(--ease); }
+
+/* ---------- standings editor ---------- */
+.ed-grid {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, .8fr)) 36px; gap: 6px; align-items: center;
+  margin-bottom: 6px;
+}
+.ed-grid input { min-height: 42px; padding: 8px 10px; text-align: center; }
+.ed-grid input:first-child { text-align: left; }
+.ed-head { margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-3); text-align: center; }
+.ed-head span:first-child { text-align: left; }
+.ed-scroll { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
+.ed-del, .ed-mv, .ed-x {
+  width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: var(--fill-2); color: var(--text-2); transition: background var(--d1) var(--ease), color var(--d1);
+}
+.ed-del:hover, .ed-x:hover { background: var(--danger-soft); color: var(--danger); }
+.ed-mv:hover:not(:disabled) { background: var(--fill); color: var(--ink); }
+.ed-mv:disabled { opacity: .3; }
+.ed-x { width: 22px; height: 22px; margin-left: 6px; }
+
+/* ---------- rounds editor ---------- */
+.ed-round { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding: 14px; border-radius: var(--r-md); background: var(--bg-2); }
+.ed-round input { min-height: 42px; padding: 8px 12px; }
+.ed-rtop { display: flex; align-items: center; gap: 6px; }
+.ed-w { flex: 1 1 130px; min-width: 0; }
+.ed-r2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.ed-team { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: var(--fill-2); }
+.ed-rk { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--text-2); }
+.ed-rk.gold { color: var(--gold); }
+.ed-auto { min-height: 36px; font-size: 14px; }
+@media (max-width: 560px) {
+  .ch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ed-grid { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, .7fr)) 32px; }
+  .ed-r2 { grid-template-columns: 1fr; }
+  .fb-q-top .dd { width: auto; flex: 1; }
+}

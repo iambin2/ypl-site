@@ -1,0 +1,179 @@
+/* =============================================================================
+   YPL — records: trainers, tournament archive, Pokémon usage, rankings
+   ========================================================================== */
+
+.records-read-state {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 20px; padding: 14px 18px; border-radius: var(--r-sm);
+  background: var(--bg-2); font-size: 15px; color: var(--text-3);
+}
+.records-read-state.is-error { background: var(--danger-soft); color: var(--danger); }
+.records-main-tabs { margin-bottom: 28px; }
+.records-main-tabs .subtab { min-height: 40px; padding: 0 20px; font-size: 15px; }
+
+/* ---------- master–detail layouts ---------- */
+/* The list rail runs the full height of the profile beside it: its scroll area
+   has no intrinsic size (contain: size), so the profile sets the row height. */
+.records-trainer-layout, .records-pokemon-layout {
+  display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px;
+}
+.records-trainer-list, .records-pokemon-list {
+  display: flex; flex-direction: column; min-height: 520px; padding: 12px; overflow: hidden;
+}
+.records-trainer-list .records-trainer-scroll, .records-pokemon-list .records-pokemon-scroll { contain: size; }
+.records-search { display: flex; align-items: center; gap: 10px; padding: 2px 2px 12px; }
+.records-search > span { flex: none; font-size: 13px; color: var(--text-3); }
+.records-search-field input, .records-toolbar .records-search-field input { background: var(--bg); }
+.records-trainer-scroll, .records-pokemon-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 2px; margin: 0 -4px; padding: 0 4px 28px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 44px), transparent);
+}
+.records-trainer-row, .records-pokemon-row {
+  width: 100%; padding: 12px 14px; border: 0; border-radius: 14px; background: transparent; text-align: left;
+  transition: background var(--d1) var(--ease), color var(--d1) var(--ease);
+}
+.records-trainer-row { display: flex; flex-direction: column; gap: 2px; }
+.records-trainer-row b { font-size: 16px; letter-spacing: -0.02em; }
+.records-trainer-row span { font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.records-pokemon-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.records-pokemon-row > span { font-size: 13px; color: var(--text-3); }
+.records-pokemon-row b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.records-pokemon-row em { font-size: 13px; color: var(--text-3); }
+.records-trainer-row:hover, .records-pokemon-row:hover { background: var(--fill-2); }
+.records-trainer-row.on, .records-pokemon-row.on { background: var(--ink); color: var(--on-ink); }
+.records-trainer-row.on span, .records-pokemon-row.on > span, .records-pokemon-row.on em { color: color-mix(in srgb, var(--on-ink) 62%, transparent); }
+.records-list-none { padding: 24px 0; }
+
+/* ---------- profile ---------- */
+.records-profile { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.records-profile-hero { padding: clamp(24px, 3vw, 36px); }
+.records-profile-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.records-profile-name { font-size: var(--fs-h1); font-weight: 800; letter-spacing: -0.04em; line-height: 1.04; }
+.records-profile-filter { width: 200px; }
+.records-profile-filter .dd-btn { background: var(--bg); min-height: 44px; }
+.records-stat-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 28px; border-top: 1px solid var(--line);
+}
+.records-stat { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 6px; padding: 20px 0 2px; min-width: 0; }
+.records-stat + .records-stat { padding-left: 20px; border-left: 1px solid var(--line); }
+.records-stat b {
+  font-family: var(--font-display); font-stretch: 72%; font-weight: 800;
+  font-size: clamp(38px, 4.6vw, 62px); line-height: 1; letter-spacing: -0.005em; font-variant-numeric: tabular-nums;
+}
+.records-stat b small { margin-left: 4px; font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--text-3); letter-spacing: 0; }
+.records-stat > span { font-size: 14px; color: var(--text-3); }
+.records-title-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
+.records-title-chips span {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+  border-radius: var(--r-pill); background: var(--bg); font-size: 13px; font-weight: 600;
+}
+[data-theme="dark"] .records-title-chips span { background: var(--bg-3); }
+.records-title-chips span.is-champion { background: var(--gold-soft); color: var(--gold); }
+.records-pokemon-note { margin-top: 22px; max-width: 64ch; font-size: 14px; line-height: 1.65; color: var(--text-3); }
+
+.records-profile-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.records-block { padding: 22px 24px; border-radius: var(--r-lg); background: var(--bg-2); }
+.records-block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.records-block-head h4 { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; }
+.records-block-head > span, .records-block-head div > span { font-size: 13px; color: var(--text-3); }
+.records-block-head > div { display: flex; flex-direction: column; gap: 2px; }
+
+.records-history-table { width: 100%; font-size: 15px; }
+.records-history-table th {
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+  text-align: left; font-size: 12.5px; font-weight: 600; color: var(--text-3);
+}
+.records-history-table td { padding: 14px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.records-history-table tr:last-child td { border-bottom: 0; }
+.records-history-table .r { text-align: right; }
+.records-history-table td.t b { display: block; font-size: 16px; letter-spacing: -0.02em; }
+.records-history-table td.t span { font-size: 13px; color: var(--text-3); }
+.records-history-table td.date { padding: 0 14px; white-space: nowrap; font-size: 14px; color: var(--text-3); }
+.records-history-table td.r { white-space: nowrap; font-weight: 700; }
+.records-history-table td.r.win { color: var(--gold); }
+
+.records-fav-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.records-fav-grid div { display: flex; justify-content: space-between; gap: 8px; padding: 14px; border-radius: 14px; background: var(--bg); }
+[data-theme="dark"] .records-fav-grid div { background: var(--bg-3); }
+.records-fav-grid b { font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.records-fav-grid span { font-size: 14px; color: var(--text-3); }
+.records-empty-box { display: flex; flex-direction: column; gap: 6px; padding: 20px 0 8px; font-size: 14px; color: var(--text-3); }
+.records-empty-box b { font-size: 16px; color: var(--ink); }
+.records-favorites div { display: flex; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.records-favorites div:last-child { border-bottom: 0; }
+.records-favorites b { font-size: 15px; }
+.records-favorites em { font-size: 14px; color: var(--text-3); }
+.records-achievements { display: flex; flex-direction: column; gap: 8px; }
+.records-achievements div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--gold-soft); }
+.records-achievements strong { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--gold); }
+.records-achievements span { font-size: 13px; color: var(--text-3); }
+.records-empty { padding: 40px 24px; }
+
+/* ---------- tournament archive ---------- */
+.records-toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.records-toolbar .records-search-field { max-width: 440px; flex: 1 1 280px; }
+.records-toolbar > span { font-size: 14px; color: var(--text-3); }
+.round2 { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.round2:last-child { border-bottom: 0; }
+.r2-date { padding-top: 2px; font-size: 14px; font-weight: 600; color: var(--text-3); }
+.r2-main { min-width: 0; }
+.r2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin-bottom: 12px; }
+.r2-head > span + span::before { content: "·"; margin: 0 9px; color: var(--text-4); font-weight: 400; }
+.r2-round { font-size: 17px; font-weight: 800; letter-spacing: -0.028em; }
+.r2-head > .r2-rule:first-child { font-size: 17px; font-weight: 800; letter-spacing: -0.028em; color: var(--ink); }
+.r2-rule, .r2-season, .r2-mode { font-size: 14px; color: var(--text-3); }
+.r2-champ { font-size: 14px; font-weight: 700; color: var(--gold); }
+.r2-res { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.r2-rk { margin-left: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-3); }
+.r2-res > .r2-rk:first-child { margin-left: 0; }
+.r2-rk.gold { color: var(--gold); }
+.r2-name {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+  border-radius: var(--r-pill); background: var(--bg); font-size: 14px; font-weight: 600;
+}
+[data-theme="dark"] .r2-name { background: var(--bg-3); }
+.r2-name.win { background: var(--gold-fill); color: #1A1300; font-weight: 700; }
+.r2-name.mem { height: 26px; padding: 0 10px; background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); font-size: 13px; font-weight: 500; }
+.records-round-toggle { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 0; border: 0; background: transparent; text-align: left; }
+.records-round-summary { flex: 1; min-width: 0; }
+.records-round-chevron {
+  flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--bg); color: var(--text-2); transition: transform var(--d3) var(--ease);
+}
+[data-theme="dark"] .records-round-chevron { background: var(--bg-3); }
+.records-round-chevron svg { width: 12px; height: 8px; }
+.records-round-toggle[aria-expanded="true"] .records-round-chevron { transform: rotate(180deg); }
+.records-round-toggle:hover .records-round-chevron { color: var(--ink); }
+.records-round-detail { margin-top: 14px; padding: 6px 16px; border-radius: var(--r-md); background: var(--bg); animation: y-fade var(--d2) var(--ease); }
+[data-theme="dark"] .records-round-detail { background: var(--bg-3); }
+.records-round-party-row {
+  display: grid; grid-template-columns: 56px minmax(72px, 140px) minmax(0, 1fr); align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+.records-round-party-row:last-child { border-bottom: 0; }
+.records-round-party-row .r2-name { background: transparent; padding: 0; height: auto; }
+.records-round-party-row .r2-name.win { color: var(--gold); background: transparent; }
+.records-party-sprites { display: flex; flex-wrap: wrap; gap: 2px; }
+.records-party-sprites img { width: 40px; height: 40px; object-fit: contain; }
+.records-party-missing { font-size: 13px; color: var(--text-3); }
+.records-points-note { margin-bottom: 18px; }
+
+@media (max-width: 960px) {
+  .records-trainer-layout, .records-pokemon-layout { grid-template-columns: 1fr; }
+  .records-trainer-list, .records-pokemon-list { min-height: 0; height: 340px; }
+  .records-profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .records-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .records-stat:nth-child(3) { padding-left: 0; border-left: 0; }
+  .records-stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .records-profile-filter { width: 100%; }
+  .round2 { grid-template-columns: 1fr; gap: 6px; }
+  .records-round-party-row { grid-template-columns: 48px minmax(0, 1fr); }
+  .records-party-sprites, .records-party-missing { grid-column: 1 / -1; }
+  .records-block { padding: 20px; }
+  .records-history-table td.date { padding: 0 8px; font-size: 13px; }
+}

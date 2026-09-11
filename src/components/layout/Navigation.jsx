@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import "./navigation-tools.css";
+import Icon from "../common/Icon.jsx";
 
 export const NAV_ITEMS_BEFORE_TOOLS = [["about","소개"],["news","공지"],["board","게시판"],["records","기록"],["bracket","대진표"],["titles","칭호"],["champions","명예의 전당"]];
 export const TOOL_ITEMS = [["builder","팀 빌더"]];
@@ -23,10 +23,8 @@ function useOutsideClose(ref, close) {
   }, [ref, close]);
 }
 
-/* 현재 위치 지시자 — 링크마다 밑줄을 켜는 대신, 하나의 밑줄이 자리를 옮긴다.
-   위치는 CSS 변수(--ind-x 이동 / --ind-s 신축 배율 / --ind-o)로 넘기고,
-   움직임은 CSS가 맡는다. 폭이 아니라 배율을 넘기는 이유는 레이아웃을 다시
-   계산하지 않고 합성만으로 늘어나게 하기 위해서다(기준 폭 100px).
+/* 현재 위치 지시자 — 링크마다 밑줄을 켜는 대신 하나의 막대가 자리를 옮긴다.
+   위치는 CSS 변수(--ind-x 이동 / --ind-s 배율 / --ind-o)로 넘기고 움직임은 CSS가 맡는다.
    첫 렌더에서는 미끄러지지 않도록 한 프레임 동안 no-slide 를 건다. */
 function useActiveIndicator(view) {
   const boxRef = useRef(null);
@@ -41,8 +39,8 @@ function useActiveIndicator(view) {
       if (!active) { box.style.setProperty("--ind-o", "0"); return; }
       const boxRect = box.getBoundingClientRect();
       const rect = active.getBoundingClientRect();
-      box.style.setProperty("--ind-x", `${rect.left - boxRect.left}px`);
-      box.style.setProperty("--ind-s", `${rect.width / 100}`);
+      box.style.setProperty("--ind-x", `${rect.left - boxRect.left + 12}px`);
+      box.style.setProperty("--ind-s", `${Math.max(0, rect.width - 24) / 100}`);
       box.style.setProperty("--ind-o", "1");
     };
 
@@ -54,7 +52,6 @@ function useActiveIndicator(view) {
       raf = requestAnimationFrame(() => box.classList.remove("no-slide"));
     }
 
-    /* 웹폰트가 늦게 들어오면 링크 폭이 바뀐다 — 그때 한 번 더 맞춘다. */
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(place).catch(() => {});
     const observer = new ResizeObserver(place);
     observer.observe(box);
@@ -88,7 +85,7 @@ export function DesktopNavigation({ view, onNavigate }) {
   };
 
   return (
-    <div className="nav-links" ref={linksRef}>
+    <nav className="nav-links" ref={linksRef} aria-label="주요 메뉴">
       <NavButtons items={NAV_ITEMS_BEFORE_TOOLS} view={view} onNavigate={onNavigate} />
       <div className={"nav-tools" + (toolsOpen ? " open" : "")} ref={toolsRef}>
         <button
@@ -97,57 +94,41 @@ export function DesktopNavigation({ view, onNavigate }) {
           aria-haspopup="menu"
           aria-expanded={toolsOpen}
         >
-          <span>도구</span><span className="nav-tools-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+          <span>도구</span><Icon n="chev" size={14} className="nav-tools-chevron" />
         </button>
         <div className="nav-tools-menu" role="menu" aria-hidden={!toolsOpen}>
           {TOOL_ITEMS.map(([key, label]) => (
-            <button key={key} role="menuitem" className={"nav-tools-item" + (view === key ? " on" : "")} onClick={() => navigateTool(key)}>{label}</button>
+            <button key={key} role="menuitem" tabIndex={toolsOpen ? 0 : -1} className={"nav-tools-item" + (view === key ? " on" : "")} onClick={() => navigateTool(key)}>
+              <span className="nav-tools-ic"><Icon n="team" size={18} /></span>
+              <span><b>{label}</b><small>Pokémon Champions 엔트리 구성</small></span>
+            </button>
           ))}
         </div>
       </div>
       <NavButtons items={NAV_ITEMS_AFTER_TOOLS} view={view} onNavigate={onNavigate} />
-    </div>
+    </nav>
   );
 }
 
-export function MobileNavigation({ view, onNavigate, open }) {
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const toolsActive = TOOL_ITEMS.some(([key]) => view === key);
-
-  useEffect(() => {
-    if (!open) setToolsOpen(false);
-  }, [open]);
-
-  const navigate = key => {
-    setToolsOpen(false);
-    onNavigate(key);
-  };
-
+/* 모바일 메뉴 — 화면 전체를 덮는 큰 목록. 도구도 접지 않고 같은 목록에 둔다. */
+export function MobileNavigation({ view, onNavigate, open, children }) {
   let delayIndex = 0;
-  const buttonStyle = () => ({ transitionDelay: (open ? delayIndex++ * 32 : 0) + "ms" });
+  const itemStyle = () => ({ transitionDelay: (open ? 60 + delayIndex++ * 28 : 0) + "ms" });
+  const item = ([key, label]) => (
+    <button key={key} className={"nav-ditem" + (view === key ? " on" : "")} aria-current={view === key ? "page" : undefined}
+      tabIndex={open ? 0 : -1} style={itemStyle()} onClick={() => onNavigate(key)}>
+      <span>{label}</span><Icon n="arrow" size={18} />
+    </button>
+  );
 
   return (
-    <div className={"nav-drawer" + (open ? " open" : "")} aria-hidden={!open}>
-      {NAV_ITEMS_BEFORE_TOOLS.map(([key, label]) => (
-        <button key={key} className={"nav-ditem" + (view === key ? " on" : "")} aria-current={view === key ? "page" : undefined} tabIndex={open ? 0 : -1} style={buttonStyle()} onClick={() => onNavigate(key)}>{label}</button>
-      ))}
-      <button
-        className={"nav-ditem nav-tools-mobile-trigger" + (toolsActive ? " on" : "")}
-        tabIndex={open ? 0 : -1}
-        style={buttonStyle()}
-        onClick={() => setToolsOpen(value => !value)}
-        aria-expanded={toolsOpen}
-      >
-        <span>도구</span><span className="nav-tools-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
-      </button>
-      <div className={"nav-tools-mobile-menu" + (toolsOpen ? " open" : "")}>
-        {TOOL_ITEMS.map(([key, label]) => (
-          <button key={key} className={"nav-ditem nav-tools-mobile-item" + (view === key ? " on" : "")} tabIndex={open && toolsOpen ? 0 : -1} onClick={() => navigate(key)}>{label}</button>
-        ))}
+    <div className={"nav-drawer" + (open ? " open" : "")} aria-hidden={!open} id="ypl-mobile-menu">
+      <div className="nav-drawer-in">
+        <div className="nav-dgroup">{[["home", "홈"], ...NAV_ITEMS_BEFORE_TOOLS, ...NAV_ITEMS_AFTER_TOOLS].map(item)}</div>
+        <div className="nav-dlabel" style={itemStyle()}>도구</div>
+        <div className="nav-dgroup">{TOOL_ITEMS.map(item)}</div>
+        <div className="nav-dfoot" style={itemStyle()}>{children}</div>
       </div>
-      {NAV_ITEMS_AFTER_TOOLS.map(([key, label]) => (
-        <button key={key} className={"nav-ditem" + (view === key ? " on" : "")} aria-current={view === key ? "page" : undefined} tabIndex={open ? 0 : -1} style={buttonStyle()} onClick={() => onNavigate(key)}>{label}</button>
-      ))}
     </div>
   );
 }

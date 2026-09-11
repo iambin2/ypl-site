@@ -6,10 +6,10 @@ const GROUP_ICON = { champion: "crown", type: "bolt", region: "map", partner: "h
 
 /* 타입 색 — 사이트의 포켓몬 타입 색과 같은 값 */
 const TYPE_COLOR = {
-  "노말": "#9FA19F", "불꽃": "#E62829", "물": "#2980EF", "전기": "#C9A000", "풀": "#3FA129",
-  "얼음": "#2FB8DD", "격투": "#FF8000", "독": "#9141CB", "땅": "#915121", "비행": "#5F9FE0",
-  "에스퍼": "#EF4179", "벌레": "#91A119", "바위": "#8F8A5A", "고스트": "#704170",
-  "드래곤": "#5060E1", "악": "#624D4E", "강철": "#60A1B8", "페어리": "#D855D8",
+  "노말": "#9FA19F", "불꽃": "#E62829", "물": "#2980EF", "전기": "#FAC000", "풀": "#3FA129",
+  "얼음": "#3FD8FF", "격투": "#FF8000", "독": "#9141CB", "땅": "#915121", "비행": "#81B9EF",
+  "에스퍼": "#EF4179", "벌레": "#91A119", "바위": "#AFA981", "고스트": "#704170",
+  "드래곤": "#5060E1", "악": "#624D4E", "강철": "#60A1B8", "페어리": "#EF70EF",
 };
 
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
@@ -109,9 +109,8 @@ export default function TitlesPage({ data, admin, setModal }) {
               const now = gen === lastGen;
               return (
                 <div className={"tt-champ" + (now ? " now" : "")} key={it.id} onClick={edit(it)}>
-                  <span className="g">{gen}{now ? " · 현" : ""}</span>
                   <span className="nm">{(it.holders || [])[0] || "미달성"}</span>
-                  <span className="s">{championSeason(it.name)}</span>
+                  <span className="s">{gen}{now ? " · 현 챔피언" : ""} · {championSeason(it.name)}</span>
                 </div>
               );
             })}

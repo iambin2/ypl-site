@@ -88,14 +88,14 @@ function bkDownload(canvas,filename){ canvas.toBlob(blob=>{ if(!blob)return; con
 function bkRR(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function bkSpaced(ctx,text,cx,y,sp){ ctx.save(); ctx.textAlign="left"; const ws=[...text].map(ch=>ctx.measureText(ch).width+sp); const tot=ws.reduce((a,c)=>a+c,0)-sp; let x=cx-tot/2; for(let i=0;i<text.length;i++){ ctx.fillText(text[i],x,y); x+=ws[i]; } ctx.restore(); }
 function bkClip(ctx,t,max){ if(ctx.measureText(t).width<=max)return t; let s=t; while(s.length>1&&ctx.measureText(s+"…").width>max)s=s.slice(0,-1); return s+"…"; }
-const BKF='"Wanted Sans Variable", "Wanted Sans", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
-/* 워드마크만 사이트와 같은 Anton을 쓴다. 나머지 모든 글자는 본문 서체 하나로 통일. */
-const BKM='Anton, sans-serif';
-async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await document.fonts.load('400 40px Anton'); await document.fonts.ready; } }catch(e){} }
+const BKF='"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+/* 워드마크만 사이트와 같은 Archivo(좁은 폭)를 쓴다. 나머지 모든 글자는 본문 서체 하나로 통일. */
+const BKM='Archivo, sans-serif';
+async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await document.fonts.load('800 40px Archivo'); await document.fonts.load('800 40px "Pretendard Variable"'); await document.fonts.ready; } }catch(e){} }
 /* 이미지 저장용 브랜드 색 — 사이트 디자인 토큰과 동일 */
-const BKC={ navy:"#1B3F86", navyH:"#24509F", ink:"#0D0D0D", t2:"#2C3444",
-            t4:"#4E5666", t5:"#6B7383", line:"#E5E8EF", line2:"#D3D9E4",
-            soft:"#F5F7FB", soft2:"#EFF3FA", card:"#FFFFFF", white:"#FFFFFF" };
+const BKC={ navy:"#1D1D1F", brand:"#003876", ink:"#1D1D1F", t2:"#424245",
+            t4:"#515154", t5:"#6E6E73", line:"#E5E5EA", line2:"#D2D2D7",
+            soft:"#F5F5F7", soft2:"#EBEBEF", card:"#FFFFFF", white:"#FFFFFF" };
 
 async function downloadChampionPng(b,res,nameOf){
   await bkFonts();
@@ -107,14 +107,14 @@ async function downloadChampionPng(b,res,nameOf){
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; bkRR(ctx,40,40,W-80,H-80,28); ctx.stroke();
 
   ctx.textAlign="center";
-  // 워드마크 (사이트 로고와 같은 Anton)
-  ctx.fillStyle=BKC.navy; ctx.font=`400 40px ${BKM}`; bkSpaced(ctx,"YPL",W/2,152,6);
+  // 워드마크 (사이트 로고와 같은 Archivo)
+  ctx.fillStyle=BKC.brand; ctx.font=`800 44px ${BKM}`; bkSpaced(ctx,"YPL",W/2,152,4);
   ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`; bkSpaced(ctx,"POKEMON CENTER YONSEI",W/2,178,3);
 
   // CHAMPION 라벨
   ctx.font=`700 21px ${BKF}`;
   const lw=ctx.measureText("CHAMPION").width+72;
-  bkRR(ctx,W/2-lw/2,252,lw,50,12); ctx.fillStyle=BKC.navy; ctx.fill();
+  bkRR(ctx,W/2-lw/2,252,lw,50,25); ctx.fillStyle=BKC.brand; ctx.fill();
   ctx.fillStyle=BKC.white; bkSpaced(ctx,"CHAMPION",W/2,284,8);
 
   // 챔피언 이름
@@ -208,7 +208,7 @@ async function downloadBracketPng(b,nameOf){
   const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S; const ctx=cv.getContext("2d"); ctx.scale(S,S);
   ctx.fillStyle=BKC.card; ctx.fillRect(0,0,W,H);
   ctx.textAlign="left"; ctx.fillStyle=BKC.ink; ctx.font=`800 30px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-320),34,50);
-  ctx.fillStyle=BKC.navy; ctx.font=`400 17px ${BKM}`; bkSpaced(ctx,"YPL",34+13,76,3);
+  ctx.fillStyle=BKC.brand; ctx.font=`800 18px ${BKM}`; bkSpaced(ctx,"YPL",34+13,76,2);
   ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`;
   ctx.fillText("POKEMON CENTER YONSEI · "+(b.createdAt||""),34+40,75);
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(34,88); ctx.lineTo(W-34,88); ctx.stroke();
@@ -598,7 +598,7 @@ function BracketWizard({ data, onClose, onCreate }){
           onClick={()=>setStep(2)}
           disabled={!manualMode&&!eventId}
         >
-          다음 →
+          다음<Icon n="arrow" size={15}/>
         </button>
       </div>
     </>}    {step===2&&<>
@@ -739,9 +739,9 @@ function BracketWizard({ data, onClose, onCreate }){
 
         <div className="field"><label>{mode==="team"?"팀 수":"참가자 수"}</label>
           <div className="bk-count">
-            <button type="button" onClick={()=>setCnt(Math.max(2,count-1))}>−</button>
+            <button type="button" onClick={()=>setCnt(Math.max(2,count-1))} aria-label="하나 줄이기"><Icon n="minus" size={16}/></button>
             <input type="text" inputMode="numeric" value={countStr} onChange={e=>setCnt(e.target.value)}/>
-            <button type="button" onClick={()=>setCnt(Math.min(64,count+1))}>＋</button>
+            <button type="button" onClick={()=>setCnt(Math.min(64,count+1))} aria-label="하나 늘리기"><Icon n="plus" size={16}/></button>
           </div>
           <div className="bk-hint">{(()=>{
             if(format==="group") return `${gN}개 그룹, 그룹당 약 ${Math.ceil(Math.max(count,1)/gN)}명, 상위 ${aN}명 본선`;
@@ -793,7 +793,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const decided=allPlayers&&allPlayed&&(!tie||(!!aceA&&!!aceB&&!!aceW));
   const confirm=()=>{ if(!decided){alert("모든 실제 lineup 선수와 대결 결과(동점 시 타이브레이커 포함)를 입력하세요.");return;}
     const result=buildTeamMatchSeries(teamA,teamB,{lineupA,lineupB,games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null}); onSave(result.series,result.winnerSide); };
-  const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?"✓ 승":"승"}</button></div>;
+  const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={13}/>승</>:"승"}</button></div>;
   const displayTeamA=teamMatchDisplayName(teamA.name),displayTeamB=teamMatchDisplayName(teamB.name);
   return (<Modal title={`${displayTeamA} vs ${displayTeamB}`} hint="실제 출전 선수를 선택하고 모든 개인전 결과를 입력하세요." onClose={onClose}>
     <div className="swap bk-team-match-modal">
@@ -808,7 +808,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
         <div className="bk-ace-h">타이브레이커</div>
         <div className="bk-series-row bk-bout-row bk-bout-row-ace"><span className="bk-bout-label-spacer" aria-hidden="true"/>{side(aceA,setAceA,optionsA,aceW==="a",()=>setAceW(aceW==="a"?null:"a"),"타이브레이커 A팀 승리")}<span className="bk-series-vs">vs</span>{side(aceB,setAceB,optionsB,aceW==="b",()=>setAceW(aceW==="b"?null:"b"),"타이브레이커 B팀 승리")}</div>
       </div>}
-      <div className="modal-actions bk-team-match-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={confirm} disabled={!decided}>대결 확정 ✓</button></div>
+      <div className="modal-actions bk-team-match-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={confirm} disabled={!decided}>대결 확정</button></div>
     </div>
   </Modal>);
 }
@@ -862,8 +862,8 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
       <div className="bk-col-body" style={{height:totalH}}>
         <div className="bk-mpos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
           <div className="bk-champ-node">
-            <span className="bk-champ-k"><Icon n="crown" size={15}/>CHAMPION</span>
             <b>{nameOf(finalRes.champ)}</b>
+            <span className="bk-champ-k"><Icon n="crown" size={14}/>CHAMPION</span>
           </div>
         </div>
       </div>
@@ -878,8 +878,8 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
     {!qualifier&&finalRes&&finalRes.champ&&<div className="bk-col bk-champ-col">
       <div className="bk-col-h gf">우승</div>
       <div className="bk-champ-node">
-        <span className="bk-champ-k"><Icon n="crown" size={15}/>CHAMPION</span>
         <b>{nameOf(finalRes.champ)}</b>
+        <span className="bk-champ-k"><Icon n="crown" size={14}/>CHAMPION</span>
       </div>
     </div>}
   </div></div>}
@@ -921,7 +921,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRetry
         <span className="bk-submission-title">파티 제출 현황</span>
         <span className="bk-submission-summary">
           {busy && model.total === 0 ? "불러오는 중…" : `${model.submitted} / ${model.total} 제출`}
-          <span className="bk-submission-chevron" aria-hidden="true">{expanded ? "▲" : "▼"}</span>
+          <span className={"bk-submission-chevron"+(expanded?" open":"")} aria-hidden="true"><Icon n="chev" size={16}/></span>
         </span>
       </button>
       {error && <div className="bk-submission-error">
@@ -1104,7 +1104,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       <div className="bk-cb-actions">
         <button className="btn btn-ghost btn-sm" onClick={()=>downloadChampionPng(b,res,nameOf)}><Icon n="image" size={15}/>우승 이미지</button>
         <button className="btn btn-ghost btn-sm" onClick={()=>downloadBracketPng(b,nameOf)}><Icon n="image" size={15}/>대진표 이미지</button>
-        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="btn btn-gold btn-sm" onClick={()=>onApply(b,res)}>기록에 반영 →</button>}
+        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="btn btn-gold btn-sm" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
         {b.applied&&<><span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="btn btn-ghost btn-sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="btn btn-ghost btn-sm" onClick={undoApplied}>반영 취소</button>}</>}
       </div>
     </div>}
@@ -1607,7 +1607,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
       <div className="modal-actions">
         <button className="btn btn-ghost" onClick={onClose}>취소</button>
         <button className="btn btn-primary" onClick={prepare} disabled={linked&&linkedContextBusy}>
-          반영하기 →
+          반영하기<Icon n="arrow" size={15}/>
         </button>
       </div>
     </div>

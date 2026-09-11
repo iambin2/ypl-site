@@ -59,7 +59,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam }) {
     <div className="field"><label>우승 엔트리 — 이미지 + 이름</label>
       <div className="ch-grid">{mons.map((m,i)=>(<div className="ch-slot" key={i}>
         <div className="ch-imgwrap">
-          <label className="ch-img">{m.img?<img src={m.img} alt="" loading="lazy" decoding="async"/>:<span className="ch-plus"><i className="ch-plus-ico">＋</i>이미지</span>}
+          <label className="ch-img">{m.img?<img src={m.img} alt="" loading="lazy" decoding="async"/>:<span className="ch-plus"><Icon n="plus" size={18}/>이미지</span>}
             <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{onFile(i,e.target.files&&e.target.files[0]); e.target.value="";}}/>
           </label>
           {m.img&&<button type="button" className="ch-clear" onClick={()=>setMon(i,{img:""})}><Icon n="x" size={11}/></button>}
@@ -166,7 +166,7 @@ function FormBuilder({ form, setForm }){
         <input className="fb-label" value={f.label} onChange={e=>patch(f.id,{label:e.target.value})} placeholder={`질문 ${i+1} (예: 참가자 이름)`}/>
         {isChoice(f.type)&&<div className="fb-opts">
           {(f.options||[]).map((op,oi)=>(<div className="fb-opt" key={oi}>
-            <span className="fb-dot">{f.type==="multi"?"☐":f.type==="dropdown"?`${oi+1}.`:"○"}</span>
+            <span className={"fb-dot "+f.type} aria-hidden="true">{f.type==="dropdown"?oi+1:null}</span>
             <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`옵션 ${oi+1}`}/>
             <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="옵션 삭제"><Icon n="x" size={12}/></button>
           </div>))}
@@ -196,7 +196,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
       <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>
         <span className="fold-title"><Icon n="link" size={14}/> 링크 첨부 <span className="fold-note">(구글폼 등 외부 링크, 선택)</span></span>
         {(link||link2)&&!linkOpen&&<span className="fold-badge">{[link,link2].filter(Boolean).length}</span>}
-        <span className="fold-chev" aria-hidden="true">▾</span>
+        <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
       </button>
       {linkOpen&&<div className="fold-body swap">
         <div className="field"><label>링크 1 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
@@ -266,7 +266,7 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
     if(autoSort) out=sortRows(out);
     onSave(out);
   };
-  return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력하세요. 저장 시 날짜순으로 자동 정렬됩니다(▲▼로 직접 순서 변경 가능)." onClose={onClose}>
+  return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력하세요. 저장 시 날짜순으로 자동 정렬됩니다(화살표 버튼으로 직접 순서 변경 가능)." onClose={onClose}>
     <div className="pts-note" style={{marginBottom:14}}>포인트 기준 — 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점 (팀전 여부와 팀원 수, 대회 사정에 따라 변동될 수 있어, 누적 포인트는 랭킹 편집에서 직접 입력합니다.)</div>
     <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:14}}>
       <button className="btn btn-ghost btn-sm" onClick={add}>+ 회차 추가 (맨 아래)</button>
@@ -274,7 +274,7 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
     </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
-      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로">▲</button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로">▼</button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={12}/></button></div>
+      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={13}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={13}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={12}/></button></div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <div className="ed-seg"><button type="button" className={!r.team?"on":""} onClick={()=>upd(i,"team",false)}>개인전</button><button type="button" className={r.team?"on":""} onClick={()=>upd(i,"team",true)}>팀전</button></div>
         <div className="ed-seg"><button type="button" className={!r.champ?"on":""} onClick={()=>upd(i,"champ",false)}>일반</button><button type="button" className={r.champ?"on":""} onClick={()=>upd(i,"champ",true)}>챔피언스 시리즈</button></div>
