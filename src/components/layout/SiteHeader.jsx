@@ -4,37 +4,23 @@ import Icon from "../common/Icon.jsx";
 
 export const DISCORD_URL = "https://discord.gg/T7UZHhGvUh";
 
-/* YPL 마크 — 공식 일러스트를 따라 그린 워글(Braviary)의 머리.
-   알아보는 단서는 네 가지다: 위로 솟은 흰 볏(뒤쪽은 복슬한 한 덩어리, 앞쪽은 긴 깃털),
-   이마의 V자 무늬(원화의 빨강)와 부리 위 삼각형(파랑), 벌어진 갈고리 부리(노랑),
-   어두운 얼굴 속 동그란 눈. 사이트가 무채색이라 원화의 색은 밝기 순서대로 회색에 옮겼다.
-   좌표는 원화(475px) 기준이고 viewBox가 머리 부분만 잘라 쓴다. 타일 모서리는 CSS clip-path. */
-export function BrandMark({ size = 34 }) {
+/* YPL 마크 — 날개를 편 워글(Braviary). 사용자가 직접 만든 로고를 벡터로 옮긴 것이다.
+   세 갈래 날개, V자 몸, 머리 위 볏 깃털 세 장, 흰 얼굴 속 눈매, 갈고리 부리.
+   잉크 한 가지 색이고 흰 얼굴은 바탕이 비치는 구멍(evenodd)이라 테마에 따라 반전된다.
+   좌표는 원본 1254px 대지 기준, viewBox는 로고 부분만 잘라 쓴다(가로:세로 = 1094:648). */
+const MARK_BODY = "M627 930C590 860 500 810 425 765C390 785 340 800 290 795C200 780 140 730 125 668C180 690 260 695 322 688C220 672 110 620 85 490C140 540 220 575 292 590C230 570 150 510 125 440C108 390 112 340 130 293C200 390 300 480 380 545C395 610 425 660 462 690C462 640 482 605 525 580L612 574L716 576C762 590 790 625 797 665C800 685 785 702 758 714L740 742C790 700 850 630 873 545C954 480 1054 390 1124 293C1142 340 1146 390 1129 440C1104 510 1024 570 962 590C1034 575 1114 540 1169 490C1144 620 1034 672 932 688C994 695 1074 690 1129 668C1114 730 1054 780 964 795C914 800 864 785 829 765C754 810 664 860 627 930ZM546 588L712 586C752 600 776 628 782 662C785 682 776 695 762 702C750 690 730 680 708 684C690 690 668 700 662 720C660 760 650 815 628 858C600 810 570 760 553 705L540 660L492 688C496 645 512 612 548 594Z";
+const MARK_PARTS = [
+  "M440 502C482 494 512 530 530 582L500 580C462 570 442 540 440 502Z",
+  "M478 420C548 440 600 510 616 578L575 572C525 548 478 490 478 420Z",
+  "M585 383C655 418 712 495 720 580L664 574C615 525 578 455 585 383Z",
+  "M640 594L722 624L700 637Z",
+];
+const MARK_RATIO = 1094 / 648;
+export function BrandMark({ size = 30 }) {
   return (
-    <svg className="brand-mark" width={size} height={size} viewBox="40 196 156 156" aria-hidden="true" focusable="false">
-      <rect x="40" y="196" width="156" height="156" fill="#1D1D1F" />
-      <path fill="#3A3A3C" d="M98 362L104 318L118 300L150 282L176 270L212 260L212 362Z"/>
-      <path fill="#E3E3E8" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M100 284C98 262 97 240 99 222L104 214L108 219L113 203L118 209L122 200L128 207L133 199L138 206L146 198L149 211L157 213L163 219L170 212L174 222L182 225L187 236L181 240L190 247L180 252L187 262L179 266L181 272L150 284L118 292Z"/>
-      <g stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round">
-      <path fill="#FFFFFF" d="M83 289.19Q87.99 250.83 81 212Q77 250.4 73 288.81Z"/>
-      <path fill="#FFFFFF" d="M92.58 285.43Q99.13 246.7 93 207Q86.85 245.76 81.42 284.57Z"/>
-      <path fill="#FFFFFF" d="M105.83 284.74Q117.66 245 113 202Q98.23 241.16 88.17 281.26Z"/>
-      <path fill="#FFFFFF" d="M109.49 289.49Q146.99 264.99 163 219Q128.32 246.32 92.51 272.51Z"/>
-      <path fill="#FFFFFF" d="M114.72 294.81Q149.76 292 181 272Q145.97 274.81 111.28 279.19Z"/>
-      <path fill="#FFFFFF" d="M111.13 299.28Q135.61 306.42 161 311Q139.72 294.81 114.87 288.72Z"/>
-      <path fill="#FFFFFF" d="M107.71 301.27Q118.2 315.43 131 328Q125.45 310.43 114.29 296.73Z"/>
-      </g>
-      <path fill="#48484A" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M92 300C96 292 104 289 112 290C118 291 121 296 119 302C117 309 111 314 104 314C98 314 93 309 92 300Z"/>
-      <path fill="#8E8E93" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M70 266L79 282L90 251L96 278L138 261L141 268L112 290L91 303L75 299C71 290 69 278 70 266Z"/>
-      <path fill="#3A3A3C" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M75 299L82 285C86 290 88.5 296 89.5 303Z"/>
-      <circle cx="101.5" cy="302" r="5.2" fill="#F2F2F7" stroke="#1D1D1F" strokeWidth="1.4"/>
-      <circle cx="101" cy="302.4" r="2.6" fill="#1D1D1F"/>
-      <path fill="#48484A" d="M95.6 299.6C98 296 105 296 107.6 299.4C104.6 298.4 98.8 298.4 95.6 299.6Z"/>
-      <path fill="#636366" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M93 322L108 312C107.6 322 104.6 331 100 337C96.6 333 94 328 93 322Z"/>
-      <path fill="#C7C7CC" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M100 338C103.4 330 106 322 108 313L112 315.6C111.2 324 108.4 332 103.4 340Z"/>
-      <path fill="#C7C7CC" stroke="#1D1D1F" strokeWidth="1.6" strokeLinejoin="round" d="M75 299C84 299 96 302 104 306L112 310C108 315.6 101 318.4 95 320.4C89 323.6 84 328 80 333C77.4 336 75.2 338.2 73 339C69 340.2 65.6 339.2 63.8 336.8C59.6 332.6 58.8 326.6 60 321.6C61.6 313.6 66.4 305.6 75 299Z"/>
-      <path fill="none" stroke="#8E8E93" strokeWidth="1.2" strokeLinecap="round" d="M78 309C83 308 88 309 91 311"/>
-      <rect x="40" y="196" width="156" height="156" rx="36" fill="none" stroke="var(--line-2)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+    <svg className="brand-mark" width={Math.round(size * MARK_RATIO)} height={size} viewBox="80 288 1094 648" fill="var(--ink)" aria-hidden="true" focusable="false">
+      <path fillRule="evenodd" d={MARK_BODY} />
+      {MARK_PARTS.map(d => <path key={d} d={d} />)}
     </svg>
   );
 }

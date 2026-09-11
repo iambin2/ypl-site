@@ -20,7 +20,7 @@ export default function SiteFooter({ onNavigate, tagline }) {
         <div className="site-foot-top">
           <div className="site-foot-mark">
             <button className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
-              <BrandMark size={30} /><span className="brand-word">YPL</span>
+              <BrandMark size={26} /><span className="brand-word">YPL</span>
             </button>
             {tagline && <p className="site-foot-tag">{tagline}</p>}
             <a className="btn btn-ghost btn-sm site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
