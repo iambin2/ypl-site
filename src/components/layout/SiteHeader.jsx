@@ -4,31 +4,25 @@ import Icon from "../common/Icon.jsx";
 
 export const DISCORD_URL = "https://discord.gg/T7UZHhGvUh";
 
-/* YPL 마크 — 워글의 실루엣. 양털 여덟 송이가 둥근 몸을 이루고, 얼굴과 두 다리가
-   가는 틈으로 양털과 떨어진다. 한 가지 색, 눈과 틈은 바탕이 비치는 구멍. */
-const WOOL = [[32, 12], [42.61, 16.39], [47, 27], [42.61, 37.61], [32, 42], [21.39, 37.61], [17, 27], [21.39, 16.39]];
-export function BrandMark({ size = 28 }) {
-  const id = "ypl-mark-" + useId().replace(/:/g, "");
+/* YPL 마크 — 왼쪽을 보는 워글(Braviary)의 머리. 뒤로 길게 넘어간 볏 깃털 세 장,
+   벌린 갈고리 부리, 날카로운 눈. 잉크 한 가지 색이고 눈과 부리선, 깃털 사이 선은
+   바탕이 비치는 구멍이다. 그림의 중심이 (32, 26.5)라 viewBox를 위로 5.5 올려 가운데에 둔다. */
+const MARK_HEAD = "M8 47C1.5 40 2.5 27 19 22.5C29 20 39 11 50 4C45 13 40 19 35 22.5C44 20 54 20 62 22C55 27 47 31 40 32.5C47 35 53 41 55 49C48 45 41 43 34 43.5C27 44 20 44.5 14 42.6C12 41.5 10 43 8 47Z";
+const MARK_CUTS = [
+  "M20.5 30.2L30 27L29 31.2Q24.5 32.6 20.5 30.2Z",
+  "M9.6 42.2Q15.6 38.6 24 38.6L24 40.2Q16.4 40.4 10.6 43.4Z",
+  "M35 22.5Q31.4 24.2 30.2 27.2L31.2 27.8Q32.6 25.2 35.8 23.8Z",
+  "M40 32.5Q35.4 33.6 32.6 36.2L33.4 37Q36.4 34.8 40.6 33.8Z",
+];
+export function BrandMark({ size = 32 }) {
+  const mask = "ypl-mark-" + useId().replace(/:/g, "");
   return (
-    <svg className="brand-mark" width={size} height={size} viewBox="0 0 64 64" fill="var(--brand)" aria-hidden="true" focusable="false">
-      <mask id={id + "w"}>
-        <rect width="64" height="64" fill="#fff" />
-        <rect x="22.1" y="25.6" width="19.8" height="24.8" rx="9.9" fill="#000" />
-        <rect x="19.1" y="48.6" width="9.8" height="14.8" rx="4.9" fill="#000" />
-        <rect x="35.1" y="48.6" width="9.8" height="14.8" rx="4.9" fill="#000" />
+    <svg className="brand-mark" width={size} height={size} viewBox="0 -5.5 64 64" aria-hidden="true" focusable="false">
+      <mask id={mask} maskUnits="userSpaceOnUse" x="0" y="-5.5" width="64" height="64">
+        <rect x="0" y="-5.5" width="64" height="64" fill="#fff" />
+        {MARK_CUTS.map(d => <path key={d} d={d} fill="#000" />)}
       </mask>
-      <mask id={id + "f"}>
-        <rect width="64" height="64" fill="#fff" />
-        <circle cx="28.6" cy="37.5" r="2" fill="#000" />
-        <circle cx="35.4" cy="37.5" r="2" fill="#000" />
-      </mask>
-      <g mask={`url(#${id}w)`}>
-        <circle cx="32" cy="27" r="16" />
-        {WOOL.map(([cx, cy]) => <circle key={cx + "-" + cy} cx={cx} cy={cy} r="10" />)}
-      </g>
-      <rect x="24.5" y="28" width="15" height="20" rx="7.5" mask={`url(#${id}f)`} />
-      <rect x="21.5" y="51" width="5" height="10" rx="2.5" />
-      <rect x="37.5" y="51" width="5" height="10" rx="2.5" />
+      <path fill="var(--ink)" d={MARK_HEAD} mask={`url(#${mask})`} />
     </svg>
   );
 }
