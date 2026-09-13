@@ -1,5 +1,5 @@
 import { buildPokemonStats, buildRecordsSnapshot } from "./recordsAnalytics.js";
-import { resolveRecordsPokemonName } from "./recordsPokemon.js";
+import { resolveRecordsPokemonName, resolveRecordsSpriteName } from "./recordsPokemon.js";
 
 const cleanName = (value) => String(value || "").trim();
 const asArray = (value) => (Array.isArray(value) ? value : []);
@@ -346,6 +346,7 @@ function normalizedRosters(raw, models, pokemonDirectory) {
       .map((member) => ({
         pokemonId: cleanName(member.pokemon_id),
         name: resolveRecordsPokemonName(member.pokemon_id, member.pokemon_name_snapshot, pokemonDirectory),
+        spriteName: resolveRecordsSpriteName(member.pokemon_id, member.pokemon_name_snapshot, pokemonDirectory),
       }))
       .filter((member) => member.name);
     if (!resolvedMembers.length) return [];
@@ -360,6 +361,7 @@ function normalizedRosters(raw, models, pokemonDirectory) {
       owner: cleanName(player.display_name),
       pokemon: resolvedMembers.map((member) => member.name),
       pokemonIds: resolvedMembers.map((member) => member.pokemonId),
+      spriteNames: resolvedMembers.map((member) => member.spriteName),
       placement: PLACEMENT[result?.placement_code] || "participant",
       team: false,
       snapshotId: submission.snapshot_id,

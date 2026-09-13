@@ -10,3 +10,10 @@ test("Records presentation hides only Champions round numbers", () => {
   assert.match(page, /const rl = championSeries \? "" : r\.round/);
   assert.match(page, /String\(r\.round\) \+ "회"/);
 });
+
+test("Records party sprites render from snapshot sprite identity and keep a visible load-error fallback", () => {
+  assert.match(page, /spriteName=\{roster\.spriteNames \? roster\.spriteNames\[index\] : pokemon\}/);
+  assert.doesNotMatch(page, /roster\.pokemonIds\?\.\[index\] \|\| pokemon/);
+  assert.match(page, /records-party-sprite-fallback/);
+  assert.doesNotMatch(page, /style\.visibility = "hidden"/);
+});

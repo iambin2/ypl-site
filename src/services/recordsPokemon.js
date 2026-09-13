@@ -67,6 +67,17 @@ export function resolveRecordsPokemonName(pokemonId, snapshotName, directory) {
   return clean(canonical.displayName || canonical.canonicalName || fallback) || fallback;
 }
 
+function isSpriteName(value) {
+  const candidate = clean(value);
+  return Boolean(candidate && /[a-z0-9]/i.test(candidate) && !/[^\x00-\x7f]/.test(candidate));
+}
+
+export function resolveRecordsSpriteName(pokemonId, snapshotName, directory) {
+  const snapshot = clean(snapshotName);
+  if (isSpriteName(snapshot)) return snapshot;
+  return clean(directory?.get?.(clean(pokemonId))?.canonicalName);
+}
+
 export async function loadRecordsPokemonDirectory() {
   const [detailData, response] = await Promise.all([
     loadChampionsData(),

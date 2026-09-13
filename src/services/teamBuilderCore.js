@@ -111,6 +111,12 @@ export const SPRITE_SLUG_OVERRIDES = {
   "Squawkabilly [White Plumage]": "squawkabilly-white",
 };
 
+const SPRITE_SLUG_BY_DATA_ID = Object.fromEntries(
+  Object.entries(DATA_ID_OVERRIDES)
+    .map(([name, id]) => [id, SPRITE_SLUG_OVERRIDES[name]])
+    .filter(([, slug]) => Boolean(slug))
+);
+
 export const TYPE_KO = Object.fromEntries(TYPE_OPTIONS.map(type => [type.english, type.korean]));
 export const CATEGORY_KO = { Physical: "물리", Special: "특수", Status: "변화" };
 
@@ -288,6 +294,8 @@ export function speciesIdentity(detailData, pokemon) {
 export function spriteSlug(name = "") {
   if (SPRITE_SLUG_OVERRIDES[name]) return SPRITE_SLUG_OVERRIDES[name];
   if (/-Mega(?:-[A-Z])?$/i.test(name)) return name.toLowerCase().replace(/-mega-([a-z])$/, "-mega$1");
+  const canonicalFormSlug = SPRITE_SLUG_BY_DATA_ID[toID(name)];
+  if (canonicalFormSlug) return canonicalFormSlug;
   return name.toLowerCase().replace(/\[.*?\]/g, "").replace(/[.'’]/g, "").replace(/[^a-z0-9]+/g, "").trim();
 }
 

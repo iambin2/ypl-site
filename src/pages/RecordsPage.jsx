@@ -311,17 +311,30 @@ function NameChips({ list, kind }) {
   return <>{(list || []).map((n, i) => <span key={i} className={"r2-name " + (kind || "")}>{n}</span>)}</>;
 }
 
+function PartySprite({ pokemon, spriteName }) {
+  const [failed, setFailed] = useState(false);
+  if (!spriteName || failed) {
+    return <span className="records-party-sprite-fallback" title={`${pokemon} 스프라이트를 불러오지 못했습니다.`}>{pokemon}</span>;
+  }
+  return (
+    <img
+      src={spriteUrl(spriteName)}
+      alt=""
+      title={pokemon}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function PartySprites({ roster }) {
   if (!roster?.pokemon?.length) return null;
   return (
     <span className="records-party-sprites" aria-label={`${roster.owner}의 공식 파티`}>
       {roster.pokemon.map((pokemon, index) => (
-        <img
+        <PartySprite
           key={`${roster.snapshotId || roster.id}:${index}`}
-          src={spriteUrl(roster.pokemonIds?.[index] || pokemon)}
-          alt=""
-          title={pokemon}
-          onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+          pokemon={pokemon}
+          spriteName={roster.spriteNames ? roster.spriteNames[index] : pokemon}
         />
       ))}
     </span>

@@ -157,6 +157,11 @@
 .records-round-party-row .r2-name.win { color: var(--ink); background: transparent; }
 .records-party-sprites { display: flex; flex-wrap: wrap; gap: 2px; }
 .records-party-sprites img { width: 40px; height: 40px; object-fit: contain; }
+.records-party-sprite-fallback {
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  padding: 2px; overflow: hidden; border: 1px dashed var(--line); border-radius: 8px;
+  color: var(--text-3); font-size: 9px; line-height: 1.1; text-align: center;
+}
 .records-party-missing { font-size: 13px; color: var(--text-3); }
 .records-points-note { margin-bottom: 18px; }
 

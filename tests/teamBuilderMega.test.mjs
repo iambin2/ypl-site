@@ -16,6 +16,7 @@ import {
   serializeMembers,
   speciesIdentity,
   spriteSlug,
+  spriteUrl,
   toTeamSnapshotV1,
   validateTeam,
 } from "../src/services/teamBuilderCore.js";
@@ -125,6 +126,7 @@ test("Mega selection and persistence force the required stone and restore form i
 
   const snapshot = toTeamSnapshotV1({ team: [member], regulationId: regulation.id, cupRuleId: "none", detailData });
   assert.equal(snapshot.members[0].pokemon_id, "gyaradosmega");
+  assert.equal(snapshot.members[0].pokemon_name_snapshot, "Gyarados-Mega");
   assert.equal(snapshot.members[0].item_id, "gyaradosite");
   const loaded = fromTeamSnapshotV1({ snapshot: snapshot.snapshot, members: snapshot.members, regulation, detailData });
   assert.equal(loaded.team[0].pokemon.name, "Gyarados-Mega");
@@ -178,7 +180,7 @@ test("regulation changes retain an otherwise allowed Mega as invalid instead of 
   assert.deepEqual(membersRemovedByRuleChange({ team: [member], regulation: noGyarados, cupRuleId: "none", detailData }), [member]);
 });
 
-test("Mega names support Korean and Showdown-style English search and sprites", () => {
+test("Mega names support Korean and Showdown-style English search and exact form sprites", () => {
   const korean = new Map([["gyarados", "갸라도스"], ["charizard", "리자몽"]]);
   const gyaradosMega = pokemon("Gyarados-Mega");
   const charizardX = pokemon("Charizard-Mega-X");
@@ -187,6 +189,23 @@ test("Mega names support Korean and Showdown-style English search and sprites", 
   for (const query of ["갸라도스", "Gyarados", "Mega Gyarados", "Gyarados-Mega", "메가 갸라도스"]) {
     assert.equal(matchesPokemonSearch(gyaradosMega, "갸라도스-메가", query), true, query);
   }
-  assert.equal(spriteSlug("Gyarados-Mega"), "gyarados-mega");
-  assert.equal(spriteSlug("Charizard-Mega-X"), "charizard-megax");
+  const cases = [
+    ["Gyarados", "gyarados"],
+    ["Heat Rotom", "rotom-heat"],
+    ["Wash Rotom", "rotom-wash"],
+    ["Samurott [Hisuian Form]", "samurott-hisui"],
+    ["Goodra [Hisuian Form]", "goodra-hisui"],
+    ["Blaziken-Mega", "blaziken-mega"],
+    ["Mawile-Mega", "mawile-mega"],
+    ["Gallade-Mega", "gallade-mega"],
+    ["Metagross-Mega", "metagross-mega"],
+    ["Charizard-Mega-X", "charizard-megax"],
+    ["Charizard-Mega-Y", "charizard-megay"],
+  ];
+  for (const [name, slug] of cases) {
+    assert.equal(spriteSlug(name), slug, name);
+    assert.equal(spriteUrl(name), `https://play.pokemonshowdown.com/sprites/gen5/${slug}.png`, name);
+  }
+  assert.notEqual(spriteUrl("Charizard-Mega-X"), spriteUrl("Charizard-Mega-Y"));
+  assert.notEqual(spriteUrl("Charizard-Mega-Y"), spriteUrl("Charizard"));
 });

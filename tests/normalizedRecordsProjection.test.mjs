@@ -6,8 +6,9 @@ import {
   isOfficialNormalizedRecordsEvent,
 } from "../src/services/normalizedRecordsProjection.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../src/services/recordsAnalytics.js";
-import { resolveRecordsPokemonName } from "../src/services/recordsPokemon.js";
+import { resolveRecordsPokemonName, resolveRecordsSpriteName } from "../src/services/recordsPokemon.js";
 import { buildIndividualPartyPreviewRows } from "../src/services/recordsPresentation.js";
+import { spriteUrl } from "../src/services/teamBuilderCore.js";
 
 const EVENT_ID = "event-official";
 const SEASON_ID = "season-3";
@@ -394,6 +395,43 @@ test("revealed P2-6 Event excludes partial legacy parties and uses only the froz
   assert.equal(archive.partyPreviews.ru[0], null);
 });
 
+test("normalized rosters keep canonical, display, and snapshot sprite identities separate", () => {
+  const raw = rawData();
+  raw.events[0].team_revealed_at = "2026-09-13T01:00:00Z";
+  raw.eventRegistrations[0].final_submission_id = "submission-forms";
+  raw.registrationSubmissions = [{ id: "submission-forms", registration_id: "reg-a", snapshot_id: "snapshot-forms" }];
+  raw.teamSnapshots = [{ id: "snapshot-forms", schema_version: 1 }];
+  raw.teamSnapshotMembers = [
+    ["rotomheat", "Heat Rotom"],
+    ["rotomwash", "Wash Rotom"],
+    ["samurotthisui", "Samurott [Hisuian Form]"],
+    ["goodrahisui", "Goodra [Hisuian Form]"],
+    ["charizardmegax", "Charizard-Mega-X"],
+    ["charizardmegay", "Charizard-Mega-Y"],
+  ].map(([pokemon_id, pokemon_name_snapshot], index) => ({
+    id: `member-form-${index + 1}`,
+    snapshot_id: "snapshot-forms",
+    slot: index + 1,
+    pokemon_id,
+    pokemon_name_snapshot,
+  }));
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const roster = snapshot.rosters.find((row) => row.snapshotId === "snapshot-forms");
+  assert.equal(roster.pokemon.length, 6);
+  assert.deepEqual(roster.pokemonIds, raw.teamSnapshotMembers.map((member) => member.pokemon_id));
+  assert.deepEqual(roster.spriteNames, raw.teamSnapshotMembers.map((member) => member.pokemon_name_snapshot));
+  assert.equal(spriteUrl(roster.spriteNames[0]).endsWith("/rotom-heat.png"), true);
+  assert.equal(spriteUrl(roster.spriteNames[4]).endsWith("/charizard-megax.png"), true);
+  assert.equal(spriteUrl(roster.spriteNames[5]).endsWith("/charizard-megay.png"), true);
+  assert.notEqual(spriteUrl(roster.spriteNames[5]), spriteUrl("Charizard"));
+
+  const archive = snapshot.archives.find((row) => row.id === EVENT_ID);
+  const partyRows = buildIndividualPartyPreviewRows(archive);
+  assert.equal(partyRows.find((row) => row.entryId === "entry-a").roster.pokemon.length, 6);
+  assert.equal(partyRows.find((row) => row.entryId === "entry-b").roster, null);
+});
+
 test("ordinary individual record apply reveals only actual participants' frozen rosters for Light, Master, and Rookie", () => {
   for (const [eventType, division] of [
     ["light", "light"],
@@ -572,6 +610,22 @@ test("Records Pokémon canonical resolve failure falls back to snapshot name", (
   ]);
   assert.equal(resolveRecordsPokemonName("missing-id", "Snapshot English", directory), "Snapshot English");
   assert.equal(resolveRecordsPokemonName("pikachu", "Snapshot English", directory), "피카츄");
+});
+
+test("Records sprite resolution prefers form-aware snapshots and uses canonical metadata only for localized snapshots", () => {
+  const directory = new Map([
+    ["rotomheat", { canonicalName: "Rotom-Heat", displayName: "히트로토무" }],
+    ["samurotthisui", { canonicalName: "Samurott-Hisui", displayName: "히스이 대검귀" }],
+    ["charizardmegay", { canonicalName: "Charizard-Mega-Y", displayName: "리자몽" }],
+  ]);
+
+  assert.equal(resolveRecordsSpriteName("rotomheat", "Heat Rotom", directory), "Heat Rotom");
+  assert.equal(resolveRecordsSpriteName("charizardmegay", "Charizard-Mega-Y", directory), "Charizard-Mega-Y");
+  assert.equal(resolveRecordsSpriteName("rotomheat", "히트로토무", directory), "Rotom-Heat");
+  assert.equal(resolveRecordsSpriteName("samurotthisui", "히스이 대검귀", directory), "Samurott-Hisui");
+  assert.equal(spriteUrl(resolveRecordsSpriteName("rotomheat", "히트로토무", directory)).endsWith("/rotom-heat.png"), true);
+  assert.equal(spriteUrl(resolveRecordsSpriteName("samurotthisui", "히스이 대검귀", directory)).endsWith("/samurott-hisui.png"), true);
+  assert.equal(spriteUrl(resolveRecordsSpriteName("charizardmegay", "리자몽", directory)).endsWith("/charizard-megay.png"), true);
 });
 
 test("individual tournament party preview rows map final previews by placement and exclude team rows", () => {
