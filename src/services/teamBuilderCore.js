@@ -237,11 +237,21 @@ export function resolveCanonicalPokemonId(detailData, pokemon) {
   if (!detailData?.pokedex || !pokemon?.name) return null;
   const isForm = /\[[^\]]+\]/.test(String(pokemon.name)) || / Rotom$/.test(String(pokemon.name)) || /-Mega(?:-[A-Z])?$/i.test(String(pokemon.name));
   const baseId = toID(canonicalBaseName(pokemon.name));
-  for (const candidate of formIdentityCandidates(pokemon)) {
+  const candidates = formIdentityCandidates(pokemon);
+  for (const candidate of candidates) {
     const record = detailData.pokedex[candidate];
     if (!record) continue;
     if (isForm && candidate === baseId) continue;
     return record.id || candidate;
+  }
+
+  // Showdown intentionally does not create separate Pokédex records for
+  // cosmetic formes. Resolve only variants declared by the base record back
+  // to that stable base ID; unknown or battle-distinct forms still fail closed.
+  const baseRecord = detailData.pokedex[baseId];
+  const candidateSet = new Set(candidates);
+  if (isForm && baseRecord?.cosmeticFormes?.some(form => candidateSet.has(toID(form)))) {
+    return baseRecord.id || baseId;
   }
 
   // Some data snapshots expose a key different from the record id. Accept an
@@ -252,6 +262,14 @@ export function resolveCanonicalPokemonId(detailData, pokemon) {
     return toID(record.name) === normalizedName;
   });
   return match?.id || null;
+}
+
+function findPokemonBySavedIdentity(restorationPool, { pokemonId = "", pokemonName = "" } = {}, detailData = null) {
+  const named = restorationPool.find(entry => entry.name === pokemonName);
+  if (named && (!pokemonId || resolveCanonicalPokemonId(detailData, named) === pokemonId)) return named;
+  return restorationPool.find(entry => pokemonId && resolveCanonicalPokemonId(detailData, entry) === pokemonId)
+    || named
+    || null;
 }
 
 export function dexRecord(detailData, pokemon) {
@@ -397,8 +415,7 @@ export function normalizeDraft(raw, regulations) {
 
 export function memberFromSaved(savedMember, regulation, { detailData = null, legalItems = [] } = {}) {
   const restorationPool = pokemonPoolForRegulation(regulation, detailData, legalItems, { includeUnavailableMega: true });
-  const pokemon = restorationPool.find(entry => savedMember?.pokemonId && resolveCanonicalPokemonId(detailData, entry) === savedMember.pokemonId)
-    || restorationPool.find(entry => entry.name === savedMember?.pokemonName);
+  const pokemon = findPokemonBySavedIdentity(restorationPool, savedMember, detailData);
   const unresolved = !pokemon;
   const fallbackPokemon = pokemon || {
     id: savedMember?.pokemonId || "",
@@ -507,8 +524,10 @@ export function fromTeamSnapshotV1({ snapshot, members = [], regulation, detailD
   }
   const team = members.slice().sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0)).map(member => {
     const restorationPool = pokemonPoolForRegulation(regulation, detailData, [], { includeUnavailableMega: true });
-    const pokemon = restorationPool.find(entry => member.pokemon_id && resolveCanonicalPokemonId(detailData, entry) === member.pokemon_id)
-      || restorationPool.find(entry => entry.name === member.pokemon_name_snapshot);
+    const pokemon = findPokemonBySavedIdentity(restorationPool, {
+      pokemonId: member.pokemon_id,
+      pokemonName: member.pokemon_name_snapshot,
+    }, detailData);
     const resolvedId = pokemon ? resolveCanonicalPokemonId(detailData, pokemon) : null;
     const canonicalMismatch = Boolean(member.pokemon_id && detailData && resolvedId !== member.pokemon_id);
     const savedMember = {

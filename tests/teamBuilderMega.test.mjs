@@ -72,6 +72,11 @@ test("Showdown Pokédex parsing retains Mega form and required-item metadata", (
   assert.deepEqual(parsed.gyaradosmega.abilities, ["Mold Breaker"]);
 });
 
+test("Showdown Pokédex parsing retains cosmetic forme metadata", () => {
+  const parsed = parsePokedex(`export const Pokedex = {\n\tvivillon: {\n\t\tnum: 666,\n\t\tname: "Vivillon",\n\t\ttypes: ["Bug", "Flying"],\n\t\tabilities: { 0: "Shield Dust" },\n\t\tcosmeticFormes: ["Vivillon-High Plains", "Vivillon-Icy Snow"],\n\t},\n};`);
+  assert.deepEqual(parsed.vivillon.cosmeticFormes, ["Vivillon-High Plains", "Vivillon-Icy Snow"]);
+});
+
 test("Mega choices are derived from allowed base species and legal required stones", () => {
   assert.deepEqual(
     pool.filter(entry => entry.isMegaForm).map(entry => entry.name).sort(),
