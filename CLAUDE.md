@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Vite dev server (http://localhost:5173)
 npm run build    # production build → dist/
 npm run preview  # serve the built dist/
-npm test         # full suite: node --test "tests/*.test.mjs"  (249 tests)
+npm test         # full suite: node --test "tests/*.test.mjs"  (255 tests)
 ```
 
 Run one test file directly — each is a standalone `node:test` module with no runner config:

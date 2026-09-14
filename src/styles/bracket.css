@@ -214,6 +214,11 @@
 .bk-chg-pts { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-variant-numeric: tabular-nums; color: var(--text-2); }
 .bk-chg-d { font-weight: 700; color: var(--ok); font-variant-numeric: tabular-nums; }
 .bk-chg-cnt { font-size: 13px; color: var(--text-3); }
+.bk-award { gap: 10px; cursor: pointer; }
+.bk-award > :not(input) { transition: opacity var(--d2) var(--ease); }
+.bk-award > .bk-chg-cnt { margin-left: auto; }
+.bk-award:has(> input:not(:checked)) > :not(input) { opacity: .45; }
+@media (max-width: 560px) { .bk-award > .bk-chg-cnt { flex-basis: 100%; margin-left: 28px; } }
 .bk-pts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .bk-pt { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-3); }
 .bk-pt input { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }

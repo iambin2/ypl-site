@@ -38,6 +38,7 @@ import {
   isChampionshipFinal,
   isChampionshipQualifier,
 } from "./championsCore.js";
+import { normalizeEventTitleAward } from "./titleAwards.js";
 
 const DATA_SCHEMA = import.meta.env.VITE_YPL_DATA_SCHEMA || "public";
 const CHAMPIONS_EVENT_SELECT_FIELDS = DATA_SCHEMA === "ypl_schema_validation"
@@ -1395,6 +1396,9 @@ export async function saveApplicationEvent({
   const competitionSettings = {
     ...requestedCompetitionSettings,
     recordRuleLabel,
+    titleAward: normalizeEventTitleAward(
+      eventDraft.titleAward !== undefined ? eventDraft.titleAward : requestedCompetitionSettings.titleAward
+    ),
     rankingEnabled: typeof requestedCompetitionSettings.rankingEnabled === "boolean"
       ? requestedCompetitionSettings.rankingEnabled
       : Boolean(eventDraft.isTeamEvent) || eventDraft.division !== "rookie",
@@ -1455,6 +1459,63 @@ export async function getCurrentSeason() {
   }
 
   return season;
+}
+
+/* 칭호 판정용 읽기 — Registration 의 고정된 final submission 파티만 본다. */
+export async function fetchRegistrationFinalRosters(registrationIds = []) {
+  const ids = [...new Set(registrationIds.filter(Boolean))];
+  const rosters = new Map();
+  if (!ids.length) return rosters;
+  const read = async (table, select, column, values, fallback) => {
+    if (!values.length) return [];
+    const { data, error } = await db().from(table).select(select).in(column, values);
+    if (error) fail(error, fallback);
+    return data || [];
+  };
+  const registrations = await read("event_registrations", "id, final_submission_id", "id", ids, "칭호 판정용 Registration을 읽지 못했습니다.");
+  const submissions = await read("registration_submissions", "id, snapshot_id", "id", registrations.map((row) => row.final_submission_id).filter(Boolean), "칭호 판정용 Submission을 읽지 못했습니다.");
+  const members = await read(
+    "team_snapshot_members",
+    "snapshot_id, slot, pokemon_id, item_id, move_1_id, move_2_id, move_3_id, move_4_id",
+    "snapshot_id",
+    submissions.map((row) => row.snapshot_id).filter(Boolean),
+    "칭호 판정용 TeamSnapshot을 읽지 못했습니다."
+  );
+  for (const registration of registrations) {
+    const snapshotId = submissions.find((row) => row.id === registration.final_submission_id)?.snapshot_id;
+    const roster = members
+      .filter((row) => snapshotId && row.snapshot_id === snapshotId)
+      .sort((a, b) => Number(a.slot) - Number(b.slot))
+      .map((row) => ({
+        pokemon_id: row.pokemon_id,
+        item_id: row.item_id,
+        moves: [row.move_1_id, row.move_2_id, row.move_3_id, row.move_4_id].filter(Boolean),
+      }));
+    if (roster.length) rosters.set(registration.id, roster);
+  }
+  return rosters;
+}
+
+/* 한 Player 의 공식 우승 파티들 (Result champion 기준, 기록 반영 취소 시 Result 가 사라지므로 함께 빠진다). */
+export async function fetchPlayerChampionRosters(playerId) {
+  if (!playerId) return [];
+  const { data: participants, error } = await db()
+    .from("entry_participants")
+    .select("entry_id, registration_id")
+    .eq("player_id", playerId);
+  if (error) fail(error, "칭호 판정용 참가 이력을 읽지 못했습니다.");
+  const entryIds = [...new Set((participants || []).map((row) => row.entry_id).filter(Boolean))];
+  if (!entryIds.length) return [];
+  const { data: results, error: resultError } = await db()
+    .from("results")
+    .select("entry_id")
+    .eq("placement_code", "champion")
+    .in("entry_id", entryIds);
+  if (resultError) fail(resultError, "칭호 판정용 우승 기록을 읽지 못했습니다.");
+  const championEntries = new Set((results || []).map((row) => row.entry_id));
+  const registrationIds = (participants || []).filter((row) => championEntries.has(row.entry_id)).map((row) => row.registration_id);
+  const rosters = await fetchRegistrationFinalRosters(registrationIds);
+  return [...rosters.values()].map((roster) => roster.map((member) => member.pokemon_id).filter(Boolean));
 }
 
 export async function getEventRecordContext(eventId) {

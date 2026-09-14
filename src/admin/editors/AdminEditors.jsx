@@ -4,6 +4,7 @@ import { Dropdown, Modal } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, normalizeApplicationEventDivision } from "../../services/bracketTeamParticipants.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
+import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { verifyAdminCredentials } from "../adminAuth.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -80,6 +81,7 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
     <div className="field"><label>{partner?"트레이너":"칭호 이름"}</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
     {!partner&&<div className="field"><label>설명 (선택)</label><input value={desc} onChange={e=>setDesc(e.target.value)}/></div>}
     <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></div>
+    {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
 }
@@ -138,6 +140,10 @@ function FormBuilder({ form, setForm }){
         <div className="field"><label>레귤레이션</label><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></div>
         <div className="field"><label>파이컵 추가 룰</label><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></div>
         <div className="field"><label>기록 표시 룰 <span className="fb-note">(선택, 자유 입력)</span></label><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></div>
+        {!isChampions&&<div className="bk-grow2">
+          <div className="field"><label>칭호 보상 <span className="fb-note">(선택)</span></label><input value={eventDraft.titleAward?.name||""} onChange={e=>patchForm({eventDraft:{...eventDraft,titleAward:{scope:"champion",...(eventDraft.titleAward||{}),name:e.target.value}}})} placeholder="예: 초신성"/></div>
+          <div className="field"><label>칭호 부여 대상</label><Dropdown value={eventDraft.titleAward?.scope||"champion"} disabled={!eventDraft.titleAward?.name?.trim()} ariaLabel="칭호 부여 대상" onChange={scope=>patchForm({eventDraft:{...eventDraft,titleAward:{...(eventDraft.titleAward||{}),scope}}})} options={[{value:"champion",label:"우승자"},{value:"top4",label:"4강 이상"}]}/></div>
+        </div>}
         {isChampions? <>
           <div className="bk-grow2">
             <div className="field"><label>선발전 날짜</label><input type="date" value={eventDraft.qualifierHeldOn??eventDraft.heldOn??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierHeldOn:e.target.value}})}/></div>

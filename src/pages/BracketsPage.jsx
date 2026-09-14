@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Dropdown, Icon, Modal, Reveal } from "../components/index.js";
-import { addChampionshipQualifierManualRegistration, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
 import { buildBracketPageList } from "../services/historicalBracketReadModel.js";
 import { beginNormalizedBracketDraw, completeNormalizedBracketDraw } from "../services/bracketDrawLifecycle.js";
 import { ChampionsBracketControls } from "../components/ChampionsBracketControls.jsx";
+import { applyTitleAwards, evaluateTitleAwards } from "../services/titleAwards.js";
+import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -1115,7 +1117,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
 }
 
 /* ===== 기록 반영 모달 ===== */
-function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedApplied }){
+function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalizedApplied }){
   const partOf=(pid)=>(b.participants||[]).find(x=>x.id===pid);
   const nameOf=(pid)=>{ const p=partOf(pid); return p?p.name:pid; };
   const team=b.mode==="team";
@@ -1217,6 +1219,9 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
   const memListOf=(pid)=>partOf(pid)?.members||[];
   const curT=tours.find(x=>x.key===tkey);
   const [preview,setPreview]=useState(null);
+  const [awards,setAwards]=useState(null);
+  const [awardPicks,setAwardPicks]=useState(()=>new Set());
+  const [awardBusy,setAwardBusy]=useState(false);
   const manualExcluded=!!curT&&(curT.key==="rookie"||/루키/.test(curT.label||""));
   const linkedPointPolicy=linkedContext
     ? (team
@@ -1254,6 +1259,45 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
     if(linkedContextError){alert(linkedContextError);return;}
     if(!recordSeason){alert("기록을 반영할 시즌을 선택하세요.");return;}
     setPreview(buildResult());
+  };
+  // 기록 반영이 끝난 뒤, 고정된 공식 파티로 칭호 조건을 확인한다. 판정 실패는 기록 반영을 막지 않는다.
+  const findTitleAwards=async(event)=>{
+    const placements=[
+      ...(res.champ?[{pid:res.champ,placement:"champion"}]:[]),
+      ...(res.ru?[{pid:res.ru,placement:"runner_up"}]:[]),
+      ...(team?[]:res.sf.map(pid=>({pid,placement:"semifinalist"}))),
+    ].map(({pid,placement})=>{ const p=partOf(pid); return {placement,playerId:p?.playerId||null,registrationId:p?.registrationId||null,names:team?(memListOf(pid).length?memListOf(pid):[nameOf(pid)]):[nameOf(pid)]}; });
+    const [rosters,detailData,directory]=await Promise.all([
+      team?new Map():fetchRegistrationFinalRosters(placements.map(p=>p.registrationId)).catch(()=>new Map()),
+      team?null:championsData.load().catch(()=>null),
+      team?null:loadRecordsPokemonDirectory().catch(()=>null),
+    ]);
+    const champion=placements.find(p=>p.placement==="champion");
+    const partnerWins=champion?.playerId&&directory
+      ? {[champion.playerId]:await fetchPlayerChampionRosters(champion.playerId).catch(()=>[])}
+      : {};
+    return evaluateTitleAwards({
+      titleGroups:data.titleGroups||[],
+      event,
+      placements:placements.map(p=>({...p,roster:rosters.get(p.registrationId)||null})),
+      detailData,
+      partnerWins,
+      championOrdinal:preview?.roundNum,
+      pokemonName:directory?(id=>directory.get(id)?.displayName||""):null,
+    });
+  };
+  const finishWithTitles=async(event)=>{
+    const found=await findTitleAwards(event||linkedContext?.event).catch(()=>[]);
+    if(!found.length){ onClose(); return; }
+    setAwardPicks(new Set(found.map(a=>a.key)));
+    setAwards(found);
+  };
+  const grantTitles=async()=>{
+    setAwardBusy(true);
+    const chosen=awards.filter(a=>awardPicks.has(a.key));
+    await save({...data,titleGroups:applyTitleAwards(data.titleGroups||[],chosen)});
+    setAwardBusy(false);
+    onClose();
   };
   const commit=async()=>{
     if(!preview) return;
@@ -1301,7 +1345,7 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
           return;
         }
         flash("기록에 반영했습니다");
-        onClose();
+        await finishWithTitles(linkedContext?.event);
       }catch(error){
         let currentEvent=null;
         try{ currentEvent=await getEvent(b.eventId); }catch{}
@@ -1324,6 +1368,25 @@ function BracketApply({ b, res, data, onClose, flash, refresh, onNormalizedAppli
         }
       }
   };
+  if(awards){
+    const toggle=(key)=>setAwardPicks(cur=>{ const next=new Set(cur); next.has(key)?next.delete(key):next.add(key); return next; });
+    return (<Modal title="칭호 획득" hint="이번 대회로 칭호 조건을 만족한 트레이너가 있습니다. 칭호에도 반영할까요?" onClose={onClose}>
+      <div className="swap" key="titles">
+        <div className="bk-chg">{awards.map(a=>(
+          <label className="bk-chg-row bk-award" key={a.key}>
+            <input type="checkbox" checked={awardPicks.has(a.key)} onChange={()=>toggle(a.key)}/>
+            <b>{a.groupKey==="partner"?a.title:a.holder}</b>
+            <span className="bk-exist old">{a.label}</span>
+            <span className="bk-chg-cnt">{a.reason}</span>
+          </label>
+        ))}</div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onClose} disabled={awardBusy}>나중에</button>
+          <button className="btn btn-primary" onClick={grantTitles} disabled={awardBusy||!awardPicks.size}>{awardBusy?"반영 중…":"칭호에 반영"}</button>
+        </div>
+      </div>
+    </Modal>);
+  }
   if(preview){
     const changes=Object.entries(preview.deltas).map(([name,d])=>{ const cur=rankRows.find(r=>r.name===name); return {name,isNew:!cur,curPts:cur?.points||0,d}; });
     return (<Modal title="반영 전 확인" hint={excluded
@@ -1923,6 +1986,6 @@ export default function BracketsPage({ data, admin, flash, refresh }){
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
     </div>}
     {wizard&&<BracketWizard data={data} onClose={()=>setWizard(false)} onCreate={create}/>}
-     {apply&&<BracketApply b={apply.b} res={apply.res} data={data} flash={flash} refresh={refresh} onNormalizedApplied={loadNormalized} onClose={()=>{setApply(null);void loadNormalized();}}/>}
+     {apply&&<BracketApply b={apply.b} res={apply.res} data={data} save={save} flash={flash} refresh={refresh} onNormalizedApplied={loadNormalized} onClose={()=>{setApply(null);void loadNormalized();}}/>}
   </section>);
 }

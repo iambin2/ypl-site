@@ -99,10 +99,11 @@ export default function TitlesPage({ data, admin, setModal }) {
             {items.map(it => {
               const gen = genOf(it.name);
               const now = gen === lastGen;
+              const season = championSeason(it.name);
               return (
                 <div className={"tt-champ" + (now ? " now" : "")} key={it.id} onClick={edit(it)}>
                   <span className="nm">{(it.holders || [])[0] || "미달성"}</span>
-                  <span className="s">{gen}{now ? " 현 챔피언" : ""}, {championSeason(it.name)}</span>
+                  <span className="s">{gen}{now ? " 현 챔피언" : ""}{season ? `, ${season}` : ""}</span>
                 </div>
               );
             })}
