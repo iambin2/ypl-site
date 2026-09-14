@@ -1222,6 +1222,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   const [awards,setAwards]=useState(null);
   const [awardPicks,setAwardPicks]=useState(()=>new Set());
   const [awardBusy,setAwardBusy]=useState(false);
+  const [applying,setApplying]=useState(false);
   const manualExcluded=!!curT&&(curT.key==="rookie"||/루키/.test(curT.label||""));
   const linkedPointPolicy=linkedContext
     ? (team
@@ -1288,19 +1289,25 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   };
   const finishWithTitles=async(event)=>{
     const found=await findTitleAwards(event||linkedContext?.event).catch(()=>[]);
-    if(!found.length){ onClose(); return; }
+    if(!found.length){ flash("기록에 반영했습니다"); onClose(); return; }
     setAwardPicks(new Set(found.map(a=>a.key)));
     setAwards(found);
   };
   const grantTitles=async()=>{
     setAwardBusy(true);
     const chosen=awards.filter(a=>awardPicks.has(a.key));
-    await save({...data,titleGroups:applyTitleAwards(data.titleGroups||[],chosen)});
+    const ok=await save({...data,titleGroups:applyTitleAwards(data.titleGroups||[],chosen)});
     setAwardBusy(false);
+    flash(ok?"기록과 칭호에 반영했습니다":"기록은 반영됐고 칭호는 메모리에만 반영됐습니다");
     onClose();
   };
+  const skipTitles=()=>{ if(awardBusy) return; flash("기록에 반영했습니다"); onClose(); };
   const commit=async()=>{
-    if(!preview) return;
+    if(!preview||applying) return;
+    setApplying(true);
+    try{ await commitRecords(); }finally{ setApplying(false); }
+  };
+  const commitRecords=async()=>{
     let previousResultRows=null;
     let previousAwardRows=null;
     let finalSubmissionFreeze=null;
@@ -1344,7 +1351,6 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           onClose();
           return;
         }
-        flash("기록에 반영했습니다");
         await finishWithTitles(linkedContext?.event);
       }catch(error){
         let currentEvent=null;
@@ -1370,7 +1376,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   };
   if(awards){
     const toggle=(key)=>setAwardPicks(cur=>{ const next=new Set(cur); next.has(key)?next.delete(key):next.add(key); return next; });
-    return (<Modal title="칭호 획득" hint="이번 대회로 칭호 조건을 만족한 트레이너가 있습니다. 칭호에도 반영할까요?" onClose={onClose}>
+    return (<Modal title="칭호 획득" hint="이번 대회로 칭호 조건을 만족한 트레이너가 있습니다. 칭호에도 반영할까요?" onClose={skipTitles}>
       <div className="swap" key="titles">
         <div className="bk-chg">{awards.map(a=>(
           <label className="bk-chg-row bk-award" key={a.key}>
@@ -1381,7 +1387,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           </label>
         ))}</div>
         <div className="modal-actions">
-          <button className="btn btn-ghost" onClick={onClose} disabled={awardBusy}>나중에</button>
+          <button className="btn btn-ghost" onClick={skipTitles} disabled={awardBusy}>나중에</button>
           <button className="btn btn-primary" onClick={grantTitles} disabled={awardBusy||!awardPicks.size}>{awardBusy?"반영 중…":"칭호에 반영"}</button>
         </div>
       </div>
@@ -1391,7 +1397,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     const changes=Object.entries(preview.deltas).map(([name,d])=>{ const cur=rankRows.find(r=>r.name===name); return {name,isNew:!cur,curPts:cur?.points||0,d}; });
     return (<Modal title="반영 전 확인" hint={excluded
       ? "아래 내용으로 공식 기록에 반영합니다. Champions 성적은 랭킹에 반영되지 않습니다."
-      : "아래 내용으로 기록에 반영합니다. 포인트 변동을 확인한 뒤 진행하세요."} onClose={()=>setPreview(null)}>
+      : "아래 내용으로 기록에 반영합니다. 포인트 변동을 확인한 뒤 진행하세요."} onClose={()=>{ if(!applying) setPreview(null); }}>
       <div className="swap" key="pre">
       <div className="bk-applybox">
         <div className="bk-ab-meta">{team?"팀전":"개인전"}{champ?" 챔피언스 시리즈":""}</div>
@@ -1443,11 +1449,12 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹과 시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
       {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{recordSeason}」에도 동일한 점수와 성적이 반영됩니다.</div>}
       <div className="modal-actions">
-  <button className="btn btn-ghost" onClick={()=>setPreview(null)}><Icon n="back" size={14}/>뒤로</button>
+  <button className="btn btn-ghost" onClick={()=>setPreview(null)} disabled={applying}><Icon n="back" size={14}/>뒤로</button>
   <button
     className="btn btn-primary"
     onClick={commit}
     disabled={
+      applying||
       linked&&!team&&(
         identityPreviewBusy||
         !!identityPreviewError||
@@ -1455,7 +1462,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       )
     }
   >
-    이대로 반영
+    {applying?"반영 중…":"이대로 반영"}
   </button>
 </div>
       </div>

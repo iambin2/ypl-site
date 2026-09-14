@@ -81,7 +81,7 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
     <div className="field"><label>{partner?"트레이너":"칭호 이름"}</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
     {!partner&&<div className="field"><label>설명 (선택)</label><input value={desc} onChange={e=>setDesc(e.target.value)}/></div>}
     <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></div>
-    {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
+    {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
 }
