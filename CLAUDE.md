@@ -64,7 +64,3 @@ Client-side checks are UX guards only. The RPC/DB layer is the integrity boundar
 - Korean copy uses plain prose with **no middle-dot (·) separators**.
 - Phone-first: the venue phone is the primary screen.
 - Direction is the category standard (professional league site) played straight at an Apple/Nike craft bar — no novelty concept worlds.
-
-## Note
-
-`README.md` is a stale onboarding doc: it describes Netlify deployment (the project moved to GitHub Pages) and an `App.jsx` monolith (the code was split into `pages/`, `services/`, `components/`, `styles/`). Trust `docs/ARCHITECTURE.md`, `PRODUCT.md`, and `DESIGN.md` over it.
