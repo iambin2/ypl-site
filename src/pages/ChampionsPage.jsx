@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Reveal, Icon } from "../components/index.js";
+import React, { useEffect, useRef, useState } from "react";
+import { Reveal, Icon, useExitAnimation } from "../components/index.js";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
   generationNumberFromLegacyLabel,
@@ -131,7 +131,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
       </div>}
     </section>}
 
-    {pop && <div className="overlay" onClick={() => setPop(null)}>
+    {pop && <HofOverlay onClose={() => setPop(null)}>
       <div className="modal hof-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`${pop.name} 우승 엔트리`}>
         <div className="hofm-bar">
           <button type="button" className="hofm-x" onClick={() => setPop(null)} aria-label="닫기"><Icon n="x" size={14} /></button>
@@ -149,6 +149,13 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
         })}</div>
         <div className="modal-actions"><button className="y-btn y-btn-primary" onClick={() => setPop(null)}>닫기</button></div>
       </div>
-    </div>}
+    </HofOverlay>}
   </section>);
+}
+
+/* 명예의 전당 엔트리 창도 다른 대화상자와 같은 닫힘 애니메이션을 쓴다. */
+function HofOverlay({ onClose, children }) {
+  const ref = useRef(null);
+  useExitAnimation(ref);
+  return <div className="overlay" ref={ref} onClick={onClose}>{children}</div>;
 }

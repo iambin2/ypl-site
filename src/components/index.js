@@ -1,7 +1,7 @@
 export { default as Empty } from "./common/Empty.jsx";
 export { default as Dropdown } from "./common/Dropdown.jsx";
 export { default as ListSearch } from "./common/ListSearch.jsx";
-export { default as Modal } from "./common/Modal.jsx";
+export { default as Modal, useExitAnimation } from "./common/Modal.jsx";
 export { default as Pager } from "./common/Pager.jsx";
 export { default as Reveal } from "./common/Reveal.jsx";
 export { default as StandTable } from "./common/StandTable.jsx";
