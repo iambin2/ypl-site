@@ -1274,6 +1274,12 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       team?null:loadRecordsPokemonDirectory().catch(()=>null),
     ]);
     const champion=placements.find(p=>p.placement==="champion");
+    // 팀전 우승 팀이 치른 경기(BYE 제외)와 각 경기의 세트 결과
+    const championTeamSeries=team&&res.champ&&b.graph?(()=>{
+      const g=b.graph; const {sp}=evalGraph(g);
+      const all=[...g.rounds.flat(),...(g.lb||[]).flat(),...(g.gf?[g.gf]:[]),...(g.reset?[g.reset]:[])];
+      return all.flatMap(m=>{ const a=sp(m.a), z=sp(m.b); if(!m.winner||!a||!z||a===BYE||z===BYE||(a!==res.champ&&z!==res.champ)) return []; return [{side:a===res.champ?"a":"b",series:m.series||null}]; });
+    })():null;
     const partnerWins=champion?.playerId&&directory
       ? {[champion.playerId]:await fetchPlayerChampionRosters(champion.playerId).catch(()=>[])}
       : {};
@@ -1285,6 +1291,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       partnerWins,
       championOrdinal:preview?.roundNum,
       pokemonName:directory?(id=>directory.get(id)?.displayName||""):null,
+      championTeamSeries,
     });
   };
   const finishWithTitles=async(event)=>{

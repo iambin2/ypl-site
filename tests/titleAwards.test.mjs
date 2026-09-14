@@ -91,6 +91,33 @@ test("team events only get the event award, for every team member", () => {
   assert.deepEqual(out.map((a) => a.holder), ["가", "나"]);
 });
 
+test("bus driver goes to champion-team members who won every bout they played", () => {
+  const series = (lineupA, lineupB, games, ace = null) => ({ lineupA, lineupB, games, ace });
+  const out = evaluateTitleAwards({
+    titleGroups: groups(),
+    event: { name: "팀전", is_team_event: true },
+    placements: [{ placement: "champion", names: ["송수아", "김철수", "이원준"], roster: null }],
+    championTeamSeries: [
+      // 우승 팀이 a 쪽: 송수아 승, 김철수 패, 동점이라 에이스 송수아 승
+      { side: "a", series: series(["송수아", "김철수"], ["x", "y"], ["a", "b"], { a: "송수아", b: "x", winner: "a" }) },
+      // 우승 팀이 b 쪽: 이원준 승, 송수아 승
+      { side: "b", series: series(["p", "q"], ["이원준", "송수아"], ["b", "b"]) },
+    ],
+  });
+  assert.deepEqual(out.map((a) => [a.title, a.holder, a.reason]), [
+    ["버스드라이버", "송수아", "우승, 개인 경기 3전 전승"],
+    ["버스드라이버", "이원준", "우승, 개인 경기 1전 전승"],
+  ]);
+
+  const unknown = evaluateTitleAwards({
+    titleGroups: groups(),
+    event: { name: "팀전", is_team_event: true },
+    placements: [{ placement: "champion", names: ["송수아"], roster: null }],
+    championTeamSeries: [{ side: "a", series: series(["송수아"], ["x"], ["a"]) }, { side: "b", series: null }],
+  });
+  assert.equal(unknown.length, 0, "a match without recorded bouts fails closed");
+});
+
 test("empty title award is not stored", () => {
   assert.equal(normalizeEventTitleAward({ name: "  " }), null);
   assert.deepEqual(normalizeEventTitleAward({ name: " RED ", scope: "x" }), { name: "RED", scope: "champion" });

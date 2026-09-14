@@ -4,8 +4,7 @@ import { normalizedChampionLabel } from "./hallOfFamePresentation.js";
 /* ============================== 칭호 자동 판정 ==============================
    기록 반영이 끝난 대회의 성적과 고정된 공식 파티로 칭호 조건을 확인한다.
    칭호는 site_data 의 titleGroups 에 사는 이름 기반 기록이라, 여기서는 후보만 만들고
-   부여 여부는 운영자가 확인한다. 팀전 승패로 정해지는 버스드라이버는 판정하지 않고
-   수동 기입으로 남긴다.                                                              */
+   부여 여부는 운영자가 확인한다.                                                     */
 
 const toID = (text) => String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 const clean = (value) => String(value || "").trim();
@@ -18,7 +17,7 @@ const REGIONAL_FORMES = [["Alola", "알로라"], ["Galar", "가라르"], ["Hisui
 /* 이벤트 칭호는 대회에 칭호 보상을 정한 경우에만 부여되므로 그룹 전체를 자동으로 보지 않는다. */
 export function isAutoCheckedTitle(groupKey, name) {
   if (["champion", "type", "region", "partner"].includes(groupKey)) return true;
-  return groupKey === "etc" && clean(name) === "슈퍼루키";
+  return groupKey === "etc" && ["슈퍼루키", "버스드라이버"].includes(clean(name));
 }
 
 export function normalizeEventTitleAward(value) {
@@ -62,6 +61,8 @@ const PLACEMENT_REASON = { champion: "우승", runner_up: "준우승", semifinal
  * placements: [{ placement: "champion"|"runner_up"|"semifinalist", names: [표시 이름],
  *               roster: [{ pokemon_id }] | null, playerId }]
  * partnerWins: { [playerId]: [[pokemon_id, ...] per 우승] } — 이번 우승을 포함한 공식 우승 파티
+ * championTeamSeries: [{ side: "a"|"b", series }] — 팀전 우승 팀이 치른 경기마다 대진표에 기록된 세트 결과
+ *                     (series 는 { lineupA, lineupB, games, ace }, 결과가 없는 경기는 series: null)
  */
 export function evaluateTitleAwards({
   titleGroups = [],
@@ -71,6 +72,7 @@ export function evaluateTitleAwards({
   partnerWins = {},
   championOrdinal = null,
   pokemonName = null,
+  championTeamSeries = null,
 } = {}) {
   const candidates = [];
   const groupOf = (key) => titleGroups.find((group) => group?.key === key) || null;
@@ -113,6 +115,26 @@ export function evaluateTitleAwards({
     const title = normalizedChampionLabel(Number(championOrdinal), event.battle_format);
     for (const row of champions) {
       push({ groupKey: "champion", title, holder: clean(row.names?.[0]), reason: `${eventName} 우승`, createDesc: "" });
+    }
+  }
+
+  // 버스드라이버: 전승으로 팀전 우승. 우승 팀에서 자기가 치른 모든 경기(에이스 결정전 포함)를 이긴 팀원.
+  // 세트 결과가 비어 있는 경기가 하나라도 있으면 전승을 확인할 수 없으므로 판정하지 않는다.
+  if (team && Array.isArray(championTeamSeries) && championTeamSeries.length && championTeamSeries.every((row) => row?.series)) {
+    const tally = new Map();
+    const record = (name, won) => {
+      const holder = clean(name);
+      if (!holder) return;
+      const current = tally.get(holder) || { played: 0, won: 0 };
+      tally.set(holder, { played: current.played + 1, won: current.won + (won ? 1 : 0) });
+    };
+    for (const { side, series } of championTeamSeries) {
+      const lineup = side === "a" ? series.lineupA : series.lineupB;
+      (series.games || []).forEach((winner, index) => record(lineup?.[index], winner === side));
+      if (series.ace) record(side === "a" ? series.ace.a : series.ace.b, series.ace.winner === side);
+    }
+    for (const [holder, { played, won }] of tally) {
+      if (played > 0 && won === played) push({ groupKey: "etc", title: "버스드라이버", holder, reason: `우승, 개인 경기 ${played}전 전승` });
     }
   }
 
