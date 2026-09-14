@@ -87,6 +87,8 @@ function withSeries(b,matchId,series,winnerSide){
 function bkDownload(canvas,filename){ canvas.toBlob(blob=>{ if(!blob)return; const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500); },"image/png"); }
 function bkRR(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function bkSpaced(ctx,text,cx,y,sp){ ctx.save(); ctx.textAlign="left"; const ws=[...text].map(ch=>ctx.measureText(ch).width+sp); const tot=ws.reduce((a,c)=>a+c,0)-sp; let x=cx-tot/2; for(let i=0;i<text.length;i++){ ctx.fillText(text[i],x,y); x+=ws[i]; } ctx.restore(); }
+/* 왼쪽 정렬용 자간 그리기 — 시작 x가 곧 왼쪽 끝이라 제목과 같은 선에서 시작한다. 그린 너비를 돌려준다. */
+function bkSpacedLeft(ctx,text,x,y,sp){ ctx.save(); ctx.textAlign="left"; let cur=x; for(const ch of text){ ctx.fillText(ch,cur,y); cur+=ctx.measureText(ch).width+sp; } ctx.restore(); return cur-x-sp; }
 function bkClip(ctx,t,max){ if(ctx.measureText(t).width<=max)return t; let s=t; while(s.length>1&&ctx.measureText(s+"…").width>max)s=s.slice(0,-1); return s+"…"; }
 const BKF='"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 /* 워드마크만 사이트와 같은 Archivo(좁은 폭)를 쓴다. 나머지 모든 글자는 본문 서체 하나로 통일. */
@@ -208,9 +210,9 @@ async function downloadBracketPng(b,nameOf){
   const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S; const ctx=cv.getContext("2d"); ctx.scale(S,S);
   ctx.fillStyle=BKC.card; ctx.fillRect(0,0,W,H);
   ctx.textAlign="left"; ctx.fillStyle=BKC.ink; ctx.font=`800 30px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-320),34,50);
-  ctx.fillStyle=BKC.brand; ctx.font=`800 18px ${BKM}`; bkSpaced(ctx,"YPL",34+13,76,2);
+  ctx.fillStyle=BKC.brand; ctx.font=`800 18px ${BKM}`; const wmW=bkSpacedLeft(ctx,"YPL",34,76,2);
   ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`;
-  ctx.fillText("POKEMON CENTER YONSEI   "+(b.createdAt||""),34+40,75);
+  ctx.fillText("POKEMON CENTER YONSEI   "+(b.createdAt||""),34+wmW+12,76);
   ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(34,88); ctx.lineTo(W-34,88); ctx.stroke();
   const res=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph);
   if(res&&res.done){ ctx.font=`700 17px ${BKF}`; const t="우승 "+nameOf(res.champ);
