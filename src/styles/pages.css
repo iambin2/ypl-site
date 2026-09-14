@@ -492,8 +492,10 @@
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   animation: y-rise var(--d4) var(--ease) backwards; animation-delay: calc(var(--i) * 70ms + 200ms);
 }
-.reign-mon-art { width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
-.reign-mon-art img { width: 90%; height: 90%; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .3)); transition: transform var(--d4) var(--ease); }
+/* The art box is a fixed square and the artwork is placed inside it absolutely, so a tall or
+   wide sprite can never stretch the box: every name then sits on the same line. */
+.reign-mon-art { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
+.reign-mon-art img { position: absolute; inset: 5%; width: 90%; height: 90%; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .3)); transition: transform var(--d4) var(--ease); }
 .reign-mon:hover .reign-mon-art img { transform: scale(1.08) translateY(-3px); }
 .reign-mon-art em, .hofm-ph {
   width: 64%; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
@@ -529,8 +531,8 @@
   display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px 16px;
   border-radius: var(--r-tile); background: var(--bg-2); animation: y-pop var(--d3) var(--ease) backwards;
 }
-.hofm-sp { width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
-.hofm-sp img { width: 88%; height: 88%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .14)); }
+.hofm-sp { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
+.hofm-sp img { position: absolute; inset: 6%; width: 88%; height: 88%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .14)); }
 .hofm-pn { font-size: 15px; font-weight: 700; text-align: center; }
 
 @media (max-width: 860px) {
