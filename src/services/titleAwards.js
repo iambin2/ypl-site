@@ -34,7 +34,13 @@ function speciesRecord(pokedex, pokemonId) {
   return record;
 }
 
+/* 폼 이름만으로는 정할 수 없는 경우: 흰줄 배쓰나이는 이름에 지방이 없는 히스이 리전폼이고,
+   알로라 모자 피카츄는 리전폼이 아닌 관동 피카츄다. 다투곰 붉은달의 모습은 처음 나온
+   팔데아(북신의 고장)로 본다(운영진 결정). */
+const REGION_OVERRIDES = { basculinwhitestriped: "히스이", pikachualola: "관동", ursalunabloodmoon: "팔데아" };
+
 export function pokemonRegion(record) {
+  if (REGION_OVERRIDES[record?.id]) return REGION_OVERRIDES[record.id];
   const forme = String(record?.forme || "");
   const regional = REGIONAL_FORMES.find(([prefix]) => forme.startsWith(prefix));
   if (regional) return regional[1];

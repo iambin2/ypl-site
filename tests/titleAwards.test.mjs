@@ -26,6 +26,11 @@ const member = (pokemon_id) => ({ pokemon_id });
 test("region uses regional forms and dex generations", () => {
   assert.equal(pokemonRegion(pokedex.totodile), "성도");
   assert.equal(pokemonRegion(pokedex.vulpixalola), "알로라");
+  assert.equal(pokemonRegion({ id: "basculinwhitestriped", num: 550, forme: "White-Striped" }), "히스이");
+  assert.equal(pokemonRegion({ id: "pikachualola", num: 25, forme: "Alola" }), "관동");
+  assert.equal(pokemonRegion({ id: "ursalunabloodmoon", num: 901, forme: "Bloodmoon" }), "팔데아");
+  assert.equal(pokemonRegion({ id: "ursaluna", num: 901 }), "히스이");
+  assert.equal(pokemonRegion({ id: "taurospaldeacombat", num: 128, forme: "Paldea-Combat" }), "팔데아");
 });
 
 test("monotype top4 roster earns type and region titles, existing holders are skipped", () => {
