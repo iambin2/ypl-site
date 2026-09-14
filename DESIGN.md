@@ -446,7 +446,7 @@ Confident, quiet pills.
 - **Quiet:** transparent, Graphite text.
 - **Admin:** admin write actions (회차 편집, 기록에 반영, 선발전 기록 반영, adding ranking tabs and seasons) use the primary ink pill at the small 36px size.
 - **Danger:** danger-soft with danger text, filling solid on hover.
-- **Press / Disabled:** press scales to .97 in 90ms. Disabled drops to 38% opacity.
+- **Press / Disabled:** press scales to .97 in 90ms and releases over 260ms. Disabled drops to 38% opacity, shows a not-allowed cursor, and neither hovers nor presses (see Interaction States).
 
 ### Chips
 - **Style:** 28px pill, `fill-2`, Graphite 13px 600. The ghost variant is a 36px pill with an inset hairline ring and 14px text.
@@ -459,15 +459,15 @@ Confident, quiet pills.
 - **Shadow Strategy:** none (see Elevation & Depth).
 - **Border:** none. Internal division is hairline.
 - **Internal Padding:** 22px for grid tiles, `clamp(22px, 3vw, 32px)` for cards, up to 60px on the reign tile.
-- **Press:** clickable tiles scale to .985–.99.
+- **Press:** clickable tiles scale to .985.
 
 ### Inputs / Fields
 - **Style:** 48px tall, `fill-2` background, transparent 1px border, 12px radius, 16px text (so iOS never zooms). Textareas start at 128px. Search fields are 44px pills with a leading search icon at 16px and a circular 28px clear button.
-- **Focus:** the ground switches to Paper, the border to Ink, plus a 4px ink halo at 9%. Non-field focus uses a 2px Ink outline at 2px offset with an 8px radius.
-- **Dropdown:** the same field shape with a rotating chevron. The menu is an 18px-radius Surface with the Float shadow and 42px, 12px-radius options at 15px, and the selected option goes bold.
+- **Focus:** the ground switches to Paper, the border to Ink, plus a 4px ink halo at 9%. Non-field focus uses a 2px Ink outline at 2px offset that follows the control's own shape, so a pill stays a pill.
+- **Dropdown:** the same field shape with a rotating chevron that turns Ink on hover. The menu is an 18px-radius Surface with the Float shadow and 42px, 12px-radius options at 15px, and the selected option goes bold. The menu pops in and sinks out.
 - **Choice rows:** 50px `fill-2` rows. The selected row goes to Paper with an Ink border.
 - **Checkbox fields:** a field holding a checkbox lays the 18px ink-accent box and its label in one row (10px gap, 40px minimum height). The label is 15px 500 Ink and is clickable.
-- **Disabled:** 50% opacity.
+- **Disabled:** 38% opacity, the same as buttons.
 
 ### Navigation
 - **Desktop:** a sticky 56px bar. Its translucent background (`rgba(255,255,255,.78)` / `rgba(10,10,12,.72)`) is blurred at `saturate(180%) blur(20px)` on `::before`, and a hairline appears once the page scrolls. The brand mark and the Archivo "YPL" wordmark (22px, wdth 88%) sit left. Links are 40px pills at 15px 500 Graphite, turning Ink and 700 when active. A 2px ink indicator slides under the active link on the one ease curve. A "도구" tools popover (280px, 18px radius, Float shadow) lists tools as 12px-radius rows, each led by a neutral 36px icon tile (`fill-2` ground, Ink icon) with a 15px name and a 13px Pewter description. On the right sit the theme and admin icon buttons plus an ink Discord pill (36px, 14px).
@@ -478,10 +478,10 @@ Confident, quiet pills.
 A `fill-2` pill track with 3px padding. The 36px segments are Pewter 15px 600, and the selected segment becomes a Paper (dark: Raised Grey) thumb with the Thumb shadow. It scrolls horizontally without a scrollbar when it overflows.
 
 ### Lists and Tables
-Hairline rows on the page ground: 76px minimum, a 96px left rail for date or order (14px 600), a 17px 700 List title with a 14px Pewter meta line, and a chevron that nudges 3px right on hover. The row hover is `fill-2`. Tables set 15px text, 13px Pewter headers, 14px cell padding, hairline rows and 20px Archivo point figures. Home ranking rows put a 28px Archivo rank beside a 17px name and 28px Archivo points. Rank badges are 30px circles: inverted ink for #1, `fill` for #2, `fill-2` for #3.
+Hairline rows on the page ground: 76px minimum, a 96px left rail for date or order (14px 600), a 17px 700 List title with a 14px Pewter meta line, and a chevron that nudges 3px right on hover. The row hover is `fill-2`. Tables set 15px text, 13px Pewter headers, 14px cell padding, hairline rows and 20px Archivo point figures. Home ranking rows put a 28px Archivo rank beside a 17px name and 28px Archivo points. Rank badges are 30px circles: inverted ink for #1, `fill` for #2, `fill-2` for #3. In a master and detail layout (records trainers and Pokémon, title categories) the selected side-list row lifts to Paper (dark: Raised Grey) with the Thumb shadow, the same as a segmented thumb.
 
 ### Dialog / Sheet
-A Surface panel (580px, 28px radius, Float shadow) over a 45% black scrim with an 8px blur. Titles are 24px 800. The circular close button is 36px. The action bar sticks to the bottom and is divided by a hairline. At 640px and below it becomes a bottom sheet rising from the bottom (`y-sheet`), with 28px top corners only, a grab handle, and full-width actions. The Hall of Fame dialog (760px) leads with the champion's name at Headline size, then the season line under it, then the party on 22px tiles.
+A Surface panel (580px, 28px radius, Float shadow) over a 45% black scrim with an 8px blur. Titles are 24px 800. The circular close button is 36px. The action bar sticks to the bottom and is divided by a hairline. At 640px and below it becomes a bottom sheet rising from the bottom (`y-sheet`), with 28px top corners only, a grab handle, and full-width actions. Closing plays the entrance in reverse: the scrim and blur lift while the panel sinks and fades, or the sheet slides down opaque. Esc closes only the topmost dialog. Every alert, confirmation and short input on the site uses this dialog (never the browser's `alert`, `confirm` or `prompt`); destructive confirmations use the danger button. The Hall of Fame dialog (760px) leads with the champion's name at Headline size, then the season line under it, then the party on 22px tiles.
 
 ### Bracket Match Card (signature)
 Exactly 98px tall: two 49px slots, because the bracket page positions every card numerically and the connectors meet at 49px. It is a Paper card (dark: Raised Grey) with a hairline ring and a 14px radius. The slots are 15px 600 with 12.5px Mist seed numbers. The winning slot turns solid Ink with Paper text, 800. Connectors are 1.5px `line-2` elbows with 8px rounded corners, and the connector into the champion goes ink. The champion node is a 98px, 18px-radius inverted ink tile with `on-ink` text: the name first (20px 800), then the crown and the Archivo "CHAMPION" caption under it. Undecided matches sit at 45% opacity. Double-elimination lower-bracket columns are 176px wide with 16px gaps (the upper tree's columns are 212px, 176px below 900px), so the grand final and champion node fit the 1200px container.
@@ -504,7 +504,25 @@ Hairline cells on one 28px Tile Grey strip, each with the name at 22px 800 and t
 A single in-house SVG set on a 24px grid with a 2px stroke, round caps and joins, and `currentColor`. `crown`, `handshake` and `discord` render filled. Sizes are 14–18px inline. No emoji and no glyph characters are used as icons.
 
 ### Motion
-One ease, `cubic-bezier(.2,.8,.2,1)`, and `cubic-bezier(.65,0,.35,1)` for loops and theme swaps. Durations are 160 / 260 / 480 / 720ms. Reveals rise 14px and fade over 720ms, triggered by an observer. The page swap is a 260ms fade. Theme changes use a 420ms view transition. Press scale is .97. Reduced motion collapses every animation and transition to 1ms.
+One ease, `cubic-bezier(.2,.8,.2,1)`, for entrances and state changes, and `cubic-bezier(.65,0,.35,1)` for exits, loops and theme swaps. Every transition names its curve. Reveals rise 14px and fade over 720ms, triggered by an observer. The page swap is a 260ms fade. Theme changes use a 480ms view transition. Reduced motion collapses every animation and transition to 1ms.
+
+| Duration | Token | Used for |
+| --- | --- | --- |
+| 160ms | `--d1` | colour, background and border feedback on hover |
+| 260ms | `--d2` | small movement (chevrons, arrow nudges, press release), menus, fades and every exit |
+| 480ms | `--d3` | panel entrances (dialog, sheet, toast), the nav indicator and the mobile menu |
+| 720ms | `--d4` | page reveals, the meter fill and hero artwork |
+
+Staggered entrances use two steps only: 30ms between list rows (`STAGGER.row`, `--stagger-row`) and 70ms between cards and tiles (`STAGGER.tile`, `--stagger-tile`).
+
+### Interaction States
+One rule per state, for every control on the site:
+- **Hover:** everything clickable answers on hover. Rows and tiles change their ground, circles and pills step their fill, chevrons turn Ink, arrows nudge 3px. A disabled control never hovers.
+- **Press:** controls (pills, circles, segments, icon buttons) scale to `--press` (.97); tiles scale to `--press-tile` (.985). The press lands in 90ms (`--press-in`) and releases over 260ms. Press uses the standalone `scale` property so it composes with any positioning transform.
+- **Disabled:** `--o-disabled` (38%) with a not-allowed cursor, on buttons, fields, dropdowns, options and icon buttons alike.
+- **Dimmed:** `--o-dim` (45%) marks something present but not active (an undecided match, an unticked award row). It is not a disabled state.
+- **Selected:** a raised Paper thumb with the Thumb shadow (`--shadow-raised`) for segments and side-list rows; an ink inversion for pager pages, stepper steps, winners and #1.
+- **Floating layers:** dialogs, sheets, dropdown menus, the tools menu, the mobile menu and the toast animate both in and out. A layer that replaces another of its kind swaps without an exit, so two scrims never stack.
 
 ## Do's and Don'ts
 
@@ -514,6 +532,7 @@ One ease, `cubic-bezier(.2,.8,.2,1)`, and `cubic-bezier(.65,0,.35,1)` for loops 
 - **Do** mark winners and trophy positions by inversion (an ink fill with `on-ink` text) or weight, never by a hue.
 - **Do** write meta lines as plain Korean: commas and particles, not middle-dot (·) separators.
 - **Do** make primary actions ink pills at 44px or more (52px for hero actions), with a .97 press.
+- **Do** take press, disabled, dim, stagger and raised-selection values from their tokens, and give every hoverable element a hover state.
 - **Do** divide groups with hairline cells and rows rather than separate cards.
 - **Do** set dates, points, ranks and stats in Archivo condensed 800 with tabular numerals.
 - **Do** pick fixed type sizes from 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px and radii from the `--r-*` scale (8 / 12 / 14 / 18 / 22 / 28px, pill).
@@ -534,3 +553,5 @@ One ease, `cubic-bezier(.2,.8,.2,1)`, and `cubic-bezier(.65,0,.35,1)` for loops 
 - **Don't** use `animation-fill-mode: both` on reveals, and don't put `backdrop-filter` on the nav element itself.
 - **Don't** use emoji or text glyphs as icons. Use the 24px 2px-stroke SVG set.
 - **Don't** hard-code black or white on lead tiles. Re-declare tokens instead.
+- **Don't** call the browser's `alert`, `confirm` or `prompt`. Use `siteAlert`, `siteConfirm` and `sitePrompt`.
+- **Don't** let a floating layer vanish without its exit animation.

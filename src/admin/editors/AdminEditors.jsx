@@ -1,6 +1,6 @@
 import Icon from "../../components/common/Icon.jsx";
 import React, { useState } from "react";
-import { Dropdown, Modal } from "../../components/index.js";
+import { Dropdown, Modal, siteAlert } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, normalizeApplicationEventDivision } from "../../services/bracketTeamParticipants.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
@@ -15,7 +15,7 @@ export function LoginModal({ onClose, onSuccess }) {
   return (<Modal title="관리자 로그인" hint="운영진 전용. 관리자 계정으로 로그인합니다." onClose={onClose}>
     <div className="field"><label>아이디</label><input value={id} onChange={e=>setId(e.target.value)} placeholder="yplofficial"/></div>
     <div className="field"><label>비밀번호</label><input type="password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
-    {err&&<div style={{color:"var(--loss)",fontSize:13,marginTop:-6}}>{err}</div>}
+    {err&&<div className="bk-hint" style={{color:"var(--danger)",marginTop:-6}}>{err}</div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>로그인</button></div>
   </Modal>);
 }
@@ -46,8 +46,8 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam }) {
   const [gen,setGen]=useState(item?.gen||""),[season,setSeason]=useState(item?.season||""),[name,setName]=useState(item?.name||""),[slabel,setSlabel]=useState(item?.slabel||"");
   const [mons,setMons]=useState(()=>{ const t=normTeam(item?.team); const a=[]; for(let i=0;i<6;i++)a.push(t[i]||{name:"",img:""}); return a; });
   const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));
-  const onFile=(i,file)=>{ if(!file)return; if(file.size>8*1024*1024){alert("이미지가 너무 큽니다(8MB 초과). 더 작은 파일을 사용해주세요.");return;} compressImg(file,(url)=>{ if(!url){alert("이미지를 불러오지 못했습니다.");return;} setMon(i,{img:url}); }); };
-  const submit=()=>{ if(!name.trim()){alert("챔피언 이름을 입력해주세요.");return;}
+  const onFile=(i,file)=>{ if(!file)return; if(file.size>8*1024*1024){siteAlert("이미지가 너무 큽니다.","8MB를 넘는 파일은 올릴 수 없습니다. 더 작은 파일을 사용해 주세요.");return;} compressImg(file,(url)=>{ if(!url){siteAlert("이미지를 불러오지 못했습니다.","다른 이미지 파일로 다시 시도해 주세요.");return;} setMon(i,{img:url}); }); };
+  const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요.");return;}
     const team=mons.filter(m=>m.name.trim()||m.img).map(m=>({name:m.name.trim(),img:m.img||""}));
     onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,slabel:slabel.trim()||undefined,name:name.trim(),team}); };
   return (<Modal title={item?"챔피언 수정":"챔피언 추가"} onClose={onClose}>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Icon, Modal, Reveal } from "../components/index.js";
+import { Dropdown, Icon, Modal, Reveal, STAGGER, siteAlert, siteConfirm } from "../components/index.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
@@ -842,8 +842,8 @@ export default function TeamBuilderPage() {
     });
   }, [eventRuleSelection, regulationId, cupRuleId, assignedTypeId, team, detailData, requestRuleChange]);
 
-  const resetTeam = useCallback(() => {
-    if (team.length && !window.confirm("현재 팀 구성을 모두 초기화할까요?")) return;
+  const resetTeam = useCallback(async () => {
+    if (team.length && !(await siteConfirm({ title: "팀 초기화", body: "현재 팀 구성을 모두 초기화할까요?", confirmLabel: "초기화", danger: true }))) return;
     setTeam([]);
     setSelectedUid(null);
     setActiveSavedTeamId(null);
@@ -942,7 +942,7 @@ export default function TeamBuilderPage() {
     const saved = change.saved;
     const reg = REGULATIONS[saved.regulationId];
     if (!reg) {
-      window.alert(`저장된 Regulation(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
+      siteAlert("팀을 불러올 수 없습니다.", `저장된 Regulation(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
       return;
     }
     const restored = saved.members.map(member => memberFromSaved(member, reg, { detailData }));
@@ -957,7 +957,7 @@ export default function TeamBuilderPage() {
     setSaveName(saved.name);
     setSaveMessage("");
     setLibraryOpen(false);
-    if (unresolvedCount) window.alert(`${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
+    if (unresolvedCount) siteAlert("일부 포켓몬을 확인할 수 없습니다.", `${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
   }, [detailData]);
 
   const requestTeamChange = useCallback(change => {
@@ -1029,8 +1029,8 @@ export default function TeamBuilderPage() {
     setSavedTeams(next);
   }, [savedTeams]);
 
-  const deleteSavedTeam = useCallback(saved => {
-    if (!window.confirm(`“${saved.name}” 팀을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+  const deleteSavedTeam = useCallback(async saved => {
+    if (!(await siteConfirm({ title: "팀 삭제", body: `“${saved.name}” 팀을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`, confirmLabel: "삭제", danger: true }))) return;
     const next = savedTeams.filter(item => item.id !== saved.id);
     if (!writeSavedTeams(next)) {
       setStorageAvailable(false);
@@ -1162,7 +1162,7 @@ export default function TeamBuilderPage() {
         </div>
       </Reveal>
 
-      <Reveal className="tb-rule-card" delay={35}>
+      <Reveal className="tb-rule-card" delay={STAGGER.row * 1}>
         <div className="tb-rule-grid">
           <label className="tb-field">
             <span>레귤레이션{eventId ? " (Event 기준)" : ""}</span>
@@ -1188,7 +1188,7 @@ export default function TeamBuilderPage() {
         </div>
       </Reveal>
 
-      <Reveal className="tb-validation-wrap" delay={40}>
+      <Reveal className="tb-validation-wrap" delay={STAGGER.row * 2}>
         <OfficialSubmissionPanel
           eventId={eventId}
           eventContext={eventContext}
@@ -1209,7 +1209,7 @@ export default function TeamBuilderPage() {
         />
       </Reveal>
 
-      {(team.length > 0 || cupRule.kind !== "none") && <Reveal className="tb-validation-wrap" delay={45}>
+      {(team.length > 0 || cupRule.kind !== "none") && <Reveal className="tb-validation-wrap" delay={STAGGER.row * 2}>
         <ValidationPanel
           result={validation}
           regulationName={regulation.name}
@@ -1220,7 +1220,7 @@ export default function TeamBuilderPage() {
       </Reveal>}
 
       <div className="tb-layout">
-        <Reveal className="tb-panel tb-pool-panel" delay={55}>
+        <Reveal className="tb-panel tb-pool-panel" delay={STAGGER.row * 3}>
           <div className="tb-panel-head">
             <div><h2>포켓몬 선택</h2></div>
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
@@ -1262,7 +1262,7 @@ export default function TeamBuilderPage() {
         </Reveal>
 
         <div className="tb-main-column">
-          <Reveal className="tb-panel" delay={75}>
+          <Reveal className="tb-panel" delay={STAGGER.row * 4}>
             <div className="tb-panel-head tb-team-head">
               <div>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
@@ -1281,7 +1281,7 @@ export default function TeamBuilderPage() {
             </div>
           </Reveal>
 
-          <Reveal className="tb-panel tb-editor" delay={95}>
+          <Reveal className="tb-panel tb-editor" delay={STAGGER.row * 5}>
             {!selectedMember ? (
               <div className="tb-editor-empty"><strong>세팅할 포켓몬을 선택하세요.</strong><span>왼쪽 목록에서 추가하거나 위 팀 슬롯을 선택하면 상세 설정을 편집할 수 있습니다.</span></div>
             ) : (

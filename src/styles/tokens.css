@@ -80,6 +80,15 @@
   --d2: 260ms;
   --d3: 480ms;
   --d4: 720ms;
+  /* one press, one disabled state, one raised selection for every control on the site */
+  --stagger-row: 30ms;
+  --stagger-tile: 70ms;
+  --press: .97;
+  --press-tile: .985;
+  --press-in: 90ms;
+  --o-disabled: .38;
+  --o-dim: .45;
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, .07), 0 3px 10px -3px rgba(0, 0, 0, .14);
 
   /* aliases still read by inline styles in components */
   --loss: var(--danger);
@@ -179,10 +188,10 @@ i, em { font-style: normal; }
 /* ---------- browser surfaces ---------- */
 ::selection { background: color-mix(in srgb, var(--ink) 22%, transparent); color: var(--ink); }
 :focus { outline: none; }
+/* the ring follows the control's own shape, so a pill stays a pill */
 :focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
-  border-radius: var(--r-xs);
 }
 input:focus-visible, textarea:focus-visible { outline: none; }
 ::placeholder { color: var(--text-3); opacity: 1; }
@@ -218,7 +227,7 @@ iframe { border: 0; }
 .reveal.in { animation: y-rise var(--d4) var(--ease) backwards; animation-delay: var(--reveal-delay, 0ms); }
 .swap, .page { animation: y-fade var(--d2) var(--ease) backwards; }
 
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 420ms; animation-timing-function: var(--ease-io); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--d3); animation-timing-function: var(--ease-io); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

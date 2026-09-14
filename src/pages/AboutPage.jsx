@@ -1,5 +1,5 @@
 import React from "react";
-import { Reveal, Icon } from "../components/index.js";
+import { Reveal, Icon, STAGGER } from "../components/index.js";
 
 const FLOW = [
   { t: "매월 파이컵", d: "정규 대회에 출전합니다" },
@@ -41,7 +41,7 @@ export default function AboutPage() {
       <Reveal tag="h3" className="ab-h">시즌은 이렇게 흘러갑니다</Reveal>
       <ol className="ab-flow">
         {FLOW.map((s, i) => (
-          <Reveal tag="li" key={s.t} delay={i * 70} className={i === FLOW.length - 1 ? "last" : ""}>
+          <Reveal tag="li" key={s.t} delay={i * STAGGER.tile} className={i === FLOW.length - 1 ? "last" : ""}>
             <span className="ab-flow-n">{i + 1}</span>
             <b>{s.t}</b>
             <span>{s.d}</span>
@@ -54,7 +54,7 @@ export default function AboutPage() {
       <Reveal tag="h3" className="ab-h">YPL이 기록하는 것</Reveal>
       <div className="ab-records">
         {RECORDS.map((r, i) => (
-          <Reveal key={r.k} delay={i * 70} className="ab-rec">
+          <Reveal key={r.k} delay={i * STAGGER.tile} className="ab-rec">
             <span className="ab-rec-ic"><Icon n={r.icon} size={20} /></span>
             <div>
               <b>{r.t}</b>
@@ -69,7 +69,7 @@ export default function AboutPage() {
       <Reveal tag="h3" className="ab-h">연혁</Reveal>
       <ol className="ab-timeline">
         {TIMELINE.map((t, i) => (
-          <Reveal tag="li" key={t.date} delay={i * 80}>
+          <Reveal tag="li" key={t.date} delay={i * STAGGER.tile}>
             <time className="tnum">{t.date}</time>
             <div><b>{t.title}</b><p>{t.body}</p></div>
           </Reveal>
@@ -81,7 +81,7 @@ export default function AboutPage() {
       <Reveal tag="h3" className="ab-h">대회</Reveal>
       <div className="ab-comps">
         {COMPS.map((c, i) => (
-          <Reveal key={c.name} delay={i * 70} className={"ab-comp" + (c.major ? " major" : "")}>
+          <Reveal key={c.name} delay={i * STAGGER.tile} className={"ab-comp" + (c.major ? " major" : "")}>
             <div className="ab-comp-h"><b>{c.name}</b><span className={"y-chip" + (c.major ? " y-chip-laurel" : "")}>{c.major && <Icon n="trophy" size={13} />}{c.tag}</span></div>
             <p>{c.desc}</p>
           </Reveal>
@@ -94,7 +94,7 @@ export default function AboutPage() {
       <Reveal tag="p" className="ab-lead">2025년 6월 양분화 이후, YPL은 두 개의 정규 리그 체제로 운영됩니다.</Reveal>
       <div className="ab-leagues">
         {LEAGUES.map((lg, i) => (
-          <Reveal key={lg.key} delay={i * 90} className={"ab-league " + lg.key}>
+          <Reveal key={lg.key} delay={i * STAGGER.tile} className={"ab-league " + lg.key}>
             <b>{lg.name}</b>
             <span className="ab-league-en">{lg.en}</span>
             <p>{lg.desc}</p>

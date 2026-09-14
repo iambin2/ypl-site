@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 
+/* 연속 등장 간격은 두 가지뿐이다: 목록 행 30ms, 카드와 타일 70ms. */
+export const STAGGER = { row: 30, tile: 70 };
+
 /* 스크롤 등장.
    내용은 보이지 않는 상태에서 출발하므로, 관찰자가 어떤 이유로든 한 번도
    울리지 않으면 화면이 비어 버립니다(백그라운드 탭에서 열기, 프리렌더,

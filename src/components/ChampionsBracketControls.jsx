@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { siteConfirm } from "./common/SiteDialog.jsx";
 import {
   completeChampionshipQualifier,
   deriveQualifierSurvivorState,
@@ -55,7 +56,7 @@ export function ChampionsBracketControls({ eventId, placement = "qualifier", onC
     } finally { setBusy(false); }
   };
   const reopenQualifier = async () => {
-    if (!window.confirm("본선에 제출, 대진, 결과가 하나도 없을 때만 선발전 종료를 취소합니다. 계속할까요?")) return;
+    if (!(await siteConfirm({ title: "선발전 종료 취소", body: "본선에 제출, 대진, 결과가 하나도 없을 때만 선발전 종료를 취소합니다. 계속할까요?", confirmLabel: "종료 취소", danger: true }))) return;
     setBusy(true); setMessage("");
     try { await reopenChampionshipQualifier(event.id); await load(); await onChanged?.(); setMessage("선발전 종료를 취소했습니다. 기존 경기 결과를 수정할 수 있습니다.");
     } catch (error) { setMessage(error?.message || "선발전 종료 취소 조건을 확인해 주세요.");

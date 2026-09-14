@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Reveal, siteAlert, siteConfirm } from "../components/index.js";
 import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
@@ -162,10 +162,10 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
   const set=(id,v)=>setAns(a=>({...a,[id]:v}));
   const toggleMulti=(id,opt)=>setAns(a=>{ const cur=Array.isArray(a[id])?a[id]:[]; return {...a,[id]:cur.includes(opt)?cur.filter(x=>x!==opt):[...cur,opt]}; });
   const submit=async()=>{
-    if(form.eventId&&!registrationName.trim()){ alert("참가자 이름을 입력해 주세요."); return; }
-    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ alert(`'${f.label||"질문"}'은(는) 필수 응답입니다.`); return; } } }
+    if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요."); return; }
+    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답이 비어 있습니다.",`'${f.label||"질문"}'은(는) 필수 응답입니다.`); return; } } }
     setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
-    if(ok===false){ alert("신청 저장을 확인하지 못했습니다. 잠시 후 다시 제출해주세요."); return; }
+    if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
     setDone(true);
   };
   if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={30}/></div><h4>신청이 접수되었습니다</h4><p>소중한 신청 감사합니다.<br/>결과 및 안내는 공지를 통해 전달됩니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
@@ -173,7 +173,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
       {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력하세요" autoComplete="name"/></div>}
-      {fields.length===0&&!form.eventId&&<p style={{color:"var(--muted)",fontSize:13.5}}>등록된 질문이 없습니다.</p>}
+      {fields.length===0&&!form.eventId&&<p className="bk-hint">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
         <label className="ff-q-label">{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
         {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요"/>}
@@ -205,7 +205,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride }){
         <tbody>{resp.map((r,i)=>(<tr key={r.id}>
           <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
           {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
-          <td>{onDeleteResp&&<button className="fr-del" onClick={()=>{if(confirm("이 응답을 삭제할까요?"))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={14}/></button>}</td>
+          <td>{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={14}/></button>}</td>
         </tr>))}</tbody>
       </table></div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button></div>

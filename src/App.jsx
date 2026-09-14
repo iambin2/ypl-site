@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, loadSiteData, saveSiteData, readInitialAppView, submitEventApplication } from "./services/index.js";
 import { AboutPage, BoardPage, BracketsPage, ChampionsPage, HomePage, NewsPage, RecordsPage, TeamBuilderPage, TitlesPage } from "./pages/index.js";
-import { SiteHeader, SiteFooter, NAV_ITEMS } from "./components/index.js";
+import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost, useExitAnimation } from "./components/index.js";
 import { BrandMark } from "./components/layout/SiteHeader.jsx";
 import { AdminModeBar, AdminModalHost } from "./admin/index.js";
 
@@ -98,10 +98,17 @@ function normalizeData(d){
 /* ============================== 공통 ============================== */
 function normTeam(team){ return (team||[]).map(m=> typeof m==="string"?{name:m,img:pokeImg(m),pokemonId:""}:{name:(m&&m.name)||"",img:(m&&m.img)||pokeImg(m&&m.name),pokemonId:(m&& (m.pokemonId||m.pokemon_id))||""}); }
 
+/* 토스트 — 떠 있는 층의 공통 규칙대로 나타날 때처럼 사라질 때도 움직인다. */
+function Toast({ text }){
+  const ref=useRef(null);
+  useExitAnimation(ref,{ replacedBy:".toast" });
+  return <div className="toast" ref={ref} role="status" aria-live="polite">{text}</div>;
+}
+
 /* ============================== 앱 ============================== */
 export default function App() {
   const [data,setData]=useState(null); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
-  const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(""); const [modal,setModal]=useState(null);
+  const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(null); const [modal,setModal]=useState(null); const toastTimer=useRef(0);
   const [scrolled,setScrolled]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||SEED)))();},[]);
@@ -168,7 +175,8 @@ export default function App() {
     // 자리를 먼저 맨 위로 옮겨 두고, 등장 애니메이션이 처음부터 보이게 한다.
     setView(v);setMenuOpen(false);window.scrollTo({top:0,behavior:"auto"});
   },[]);
-  const flash=useCallback((m)=>{setToast(m);setTimeout(()=>setToast(""),1800);},[]);
+  // 토스트는 매번 온전히 1.8초 보인다. 앞 토스트의 타이머가 새 토스트를 일찍 지우지 않게 하나만 둔다.
+  const flash=useCallback((m)=>{window.clearTimeout(toastTimer.current);setToast({id:Date.now()+Math.random(),text:m});toastTimer.current=window.setTimeout(()=>setToast(null),1800);},[]);
   const save=useCallback(async(next)=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?"저장했습니다":"메모리에만 반영됐습니다");return ok;},[flash]);
   const submitForm=useCallback(async(annId,payload)=>{
     const announcement=(data.announcements||[]).find(a=>a.id===annId);
@@ -261,7 +269,8 @@ export default function App() {
       </div>
       <SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline}/>
 
-      {toast&&<div className="toast">{toast}</div>}
+      {toast&&<Toast key={toast.id} text={toast.text}/>}
+      <SiteDialogHost/>
 
       <AdminModalHost
         modal={modal}

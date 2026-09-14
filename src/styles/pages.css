@@ -30,9 +30,8 @@
   position: relative; width: 100%; min-height: 360px; display: flex; flex-direction: column;
   padding: clamp(26px, 3vw, 40px); border: 0; border-radius: var(--r-lg);
   background: var(--bg-2); color: var(--ink); text-align: left;
-  transition: transform var(--d3) var(--ease);
+  transition: scale var(--d2) var(--ease);
 }
-.hm-event:active { transform: scale(.99); }
 .hm-event-date { display: flex; flex-direction: column; gap: 10px; padding-bottom: 24px; border-bottom: 1px solid var(--line-2); }
 .hm-event-date b {
   font-family: var(--font-display); font-stretch: 72%; font-weight: 800;
@@ -52,7 +51,6 @@
   align-self: flex-start; margin-top: auto; display: inline-flex; align-items: center; gap: 8px;
   min-height: 48px; padding: 0 22px; border-radius: var(--r-pill);
   background: var(--ink); color: var(--bg-2); font-size: 15px; font-weight: 600;
-  transition: gap var(--d2) var(--ease);
 }
 .hm-event:hover .hm-event-go .ic { transform: translateX(3px); }
 .hm-event-go .ic { transition: transform var(--d2) var(--ease); }
@@ -62,11 +60,10 @@
 .hm-results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .hm-result {
   min-height: 244px; display: flex; flex-direction: column;
-  padding: 22px; border: 0; border-radius: 22px; background: var(--bg-2); text-align: left;
-  transition: background var(--d2) var(--ease), transform var(--d3) var(--ease);
+  padding: 22px; border: 0; border-radius: var(--r-tile); background: var(--bg-2); text-align: left;
+  transition: background var(--d2) var(--ease), scale var(--d2) var(--ease);
 }
 .hm-result:hover { background: var(--bg-3); }
-.hm-result:active { transform: scale(.985); }
 .hm-result.major { background: var(--fill-2); }
 .hm-result-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-3); }
 .hm-major { color: var(--ink); }
@@ -166,7 +163,7 @@
   .hm-result { scroll-snap-align: start; min-height: 220px; }
   .hm-hof {
     display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
-    border-radius: 22px;
+    border-radius: var(--r-tile);
   }
   .hm-hof::-webkit-scrollbar { display: none; }
   .hm-hof-cell, .hm-hof-cell:nth-child(n) { flex: 0 0 44%; min-height: 136px; padding: 18px; scroll-snap-align: start; border-top: 0; border-right: 1px solid var(--line); }
@@ -183,7 +180,7 @@
 .ab-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .ab-flow li {
   position: relative; min-height: 210px; display: flex; flex-direction: column; gap: 6px;
-  padding: 24px; border-radius: 22px; background: var(--bg-2);
+  padding: 24px; border-radius: var(--r-tile); background: var(--bg-2);
 }
 .ab-flow li:not(.last)::after {
   content: ""; position: absolute; z-index: 1; top: 50%; right: -10px; width: 8px; height: 8px;
@@ -260,23 +257,22 @@
 }
 .nb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .nb-title { font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; letter-spacing: -0.032em; line-height: 1.38; }
-.nb-head:hover .nb-title { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+.nb-head:hover .nb-title { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 .nb-meta { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-3); }
 .nb-chev {
   flex: none; width: 34px; height: 34px; margin-top: 2px; display: grid; place-items: center;
   border-radius: 50%; background: var(--fill-2); color: var(--text-2);
-  transition: transform var(--d3) var(--ease), background var(--d1) var(--ease);
+  transition: transform var(--d2) var(--ease), background var(--d1) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
-.nb-head:hover .nb-chev, .bd-head:hover .nb-chev { background: var(--fill); }
+.nb-head:hover .nb-chev, .bd-head:hover .nb-chev { background: var(--fill); color: var(--ink); }
 .nb-item.open .nb-chev, .bd-item.open .nb-chev { transform: rotate(180deg); }
 .nb-links, .ann-formbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .ann-link, .ann-apply, .ann-resp {
   display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 16px;
   border: 1px solid transparent; border-radius: var(--r-pill);
   font-size: 15px; font-weight: 600; white-space: nowrap;
-  transition: background var(--d1) var(--ease), border-color var(--d1) var(--ease), color var(--d1) var(--ease), transform var(--d2) var(--ease);
+  transition: background var(--d1) var(--ease), border-color var(--d1) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
-.ann-link:active, .ann-apply:active, .ann-resp:active { transform: scale(.97); }
 .ann-apply { background: var(--ink); color: var(--on-ink); }
 .ann-apply:hover { background: color-mix(in srgb, var(--ink) 84%, var(--bg)); }
 .ann-apply.ann-submit, .ann-link { background: transparent; border-color: var(--line-2); color: var(--ink); }
@@ -306,7 +302,8 @@
 .pr-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; color: var(--text-3); }
 .pr-refresh {
   width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 50%;
-  background: var(--bg); color: var(--text-2); transition: transform var(--d3) var(--ease);
+  background: var(--bg); color: var(--text-2);
+  transition: transform var(--d3) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
 .pr-refresh:hover { transform: rotate(90deg); color: var(--ink); }
 .pr-empty { padding: 16px 0; font-size: 15px; color: var(--text-3); }
@@ -346,6 +343,7 @@
 .fr-del {
   width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%;
   background: transparent; color: var(--text-3);
+  transition: background var(--d1) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
 .fr-del:hover { background: var(--danger-soft); color: var(--danger); }
 .fr-empty { padding: 36px 0; text-align: center; color: var(--text-3); }
@@ -386,7 +384,7 @@
 .bd-del {
   padding: 6px 12px; border: 0; border-radius: var(--r-pill); background: transparent;
   font-size: 14px; font-weight: 600; color: var(--text-3);
-  transition: background var(--d1) var(--ease), color var(--d1) var(--ease);
+  transition: background var(--d1) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
 .bd-del:hover { background: var(--danger-soft); color: var(--danger); }
 .bd-del.sm { margin-left: auto; padding: 2px 8px; font-size: 12.5px; }
@@ -421,7 +419,7 @@
   transition: background var(--d1) var(--ease), box-shadow var(--d2) var(--ease);
 }
 .tt-cat:hover { background: var(--fill-2); }
-.tt-cat.on { background: var(--bg); box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 6px 18px -8px rgba(0, 0, 0, .16); }
+.tt-cat.on { background: var(--bg); box-shadow: var(--shadow-raised); }
 [data-theme="dark"] .tt-cat.on { background: var(--bg-3); }
 .tt-cat-ic { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r-pill); background: var(--fill-2); color: var(--text-2); transition: background var(--d2) var(--ease), color var(--d2) var(--ease); }
 .tt-cat.on .tt-cat-ic { background: var(--ink); color: var(--on-ink); }
@@ -490,7 +488,7 @@
 .reign-team { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .reign-mon {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  animation: y-rise var(--d4) var(--ease) backwards; animation-delay: calc(var(--i) * 70ms + 200ms);
+  animation: y-rise var(--d4) var(--ease) backwards; animation-delay: calc(var(--i) * var(--stagger-tile) + 200ms);
 }
 /* The art box is a fixed square and the artwork is placed inside it absolutely, so a tall or
    wide sprite can never stretch the box: every name then sits on the same line. */
@@ -518,11 +516,6 @@
 
 .hof-modal { width: min(760px, 100%); }
 .hofm-bar { display: flex; align-items: center; justify-content: flex-end; }
-.hofm-x {
-  width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%;
-  background: var(--fill-2); color: var(--text-2);
-}
-.hofm-x:hover { background: var(--fill); color: var(--ink); }
 .hofm-top { margin-top: 14px; }
 .hofm-gen { margin-top: 6px; font-size: 14px; font-weight: 700; color: var(--ink); }
 .hofm-nm { font-size: var(--fs-h1); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Reveal, Icon, useExitAnimation } from "../components/index.js";
+import { Reveal, Icon, STAGGER, useExitAnimation } from "../components/index.js";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
   generationNumberFromLegacyLabel,
@@ -49,7 +49,11 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
   const [pop, setPop] = useState(null);
   useEffect(() => {
     if (!pop) return;
-    const f = (e) => { if (e.key === "Escape") setPop(null); };
+    const f = (e) => {
+      if (e.key !== "Escape") return;
+      const live = document.querySelectorAll(".overlay:not(.is-closing)");
+      if (live[live.length - 1]?.querySelector(".hof-modal")) setPop(null);
+    };
     window.addEventListener("keydown", f); return () => window.removeEventListener("keydown", f);
   }, [pop]);
 
@@ -107,7 +111,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
         {past.map((c, i) => {
           const team = normTeam(c.team).filter(m => m.name);
           return (
-            <Reveal tag="button" key={c.id || i} delay={i * 40} className="y-row reg-row"
+            <Reveal tag="button" key={c.id || i} delay={i * STAGGER.row} className="y-row reg-row"
               onClick={() => setPop(c)} aria-label={c.name + " 우승 엔트리 보기"}>
               <span className="reg-ord">{genLabel(c)}</span>
               <span className="reg-id">
@@ -142,7 +146,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
         </div>
         <div className="hofm-team">{normTeam(pop.team).filter(m => m.name || m.img || m.pokemonId).map((m, j) => {
           const fallback = resolveHallOfFameArtwork(m, artworkLookup); const img = m.img || fallback; return (
-            <div className={"hofm-poke" + (img ? "" : " noimg")} key={j} style={{ animationDelay: (j * 70) + "ms" }}>
+            <div className={"hofm-poke" + (img ? "" : " noimg")} key={j} style={{ animationDelay: (j * STAGGER.tile) + "ms" }}>
               <div className="hofm-sp">{img ? <img src={img} alt={m.name} loading="lazy" decoding="async" onError={event => { if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback; }} /> : <span className="hofm-ph">{(m.name || "").slice(0, 2)}</span>}</div>
               <div className="hofm-pn">{m.name}</div>
             </div>);
@@ -153,9 +157,15 @@ export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
   </section>);
 }
 
-/* 명예의 전당 엔트리 창도 다른 대화상자와 같은 닫힘 애니메이션을 쓴다. */
+/* 명예의 전당 엔트리 창도 다른 대화상자와 같은 닫힘 애니메이션과 스크롤 잠금을 쓴다. */
 function HofOverlay({ onClose, children }) {
   const ref = useRef(null);
-  useExitAnimation(ref);
+  useExitAnimation(ref, { replacedBy: ".overlay" });
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    return () => { root.style.overflow = previous; };
+  }, []);
   return <div className="overlay" ref={ref} onClick={onClose}>{children}</div>;
 }

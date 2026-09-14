@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Reveal, Icon, Empty } from "../components/index.js";
+import { Reveal, Icon, Empty, STAGGER } from "../components/index.js";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
 
 /* 날짜 문자열을 비교 가능한 숫자로. "2026.05.02" / "2026.05" / "2024년 11월" 모두 처리한다. */
@@ -96,7 +96,7 @@ export default function HomePage({ data, go, admin }) {
         </p>
       </Reveal>
 
-      {news && <Reveal tag="button" delay={120} className="hm-event" onClick={() => go("news")}>
+      {news && <Reveal tag="button" delay={STAGGER.row * 4} className="hm-event" onClick={() => go("news")}>
         <span className="hm-event-date tnum">
           <b>{nd.m}.{nd.d}</b>
           <small>{nd.y}년{nd.weekday && ` ${nd.weekday}`}</small>
@@ -125,7 +125,7 @@ export default function HomePage({ data, go, admin }) {
           const ru = (r.ruMembers || []).length ? r.ru || "준우승 팀" : r.ru;
           const meta = [r.rule || "", r.team ? "팀전" : ""].filter(Boolean).join(", ");
           return (
-            <Reveal tag="button" key={i} delay={i * 60} className={"hm-result" + (r.champ ? " major" : "")} onClick={() => go("records")}>
+            <Reveal tag="button" key={i} delay={i * STAGGER.tile} className={"hm-result" + (r.champ ? " major" : "")} onClick={() => go("records")}>
               <span className="hm-result-top tnum">
                 <span>{r.date}</span>
                 {r.champ && <span className="hm-major">챔피언스 시리즈</span>}
@@ -150,7 +150,7 @@ export default function HomePage({ data, go, admin }) {
           <button className="more" onClick={() => go("records")}>전체 랭킹<Icon n="chevr" size={15} /></button>
         </Reveal>
         {top.length ? <ol className="hm-rank">{top.map((r, i) => (
-          <Reveal tag="li" key={i} delay={i * 40}>
+          <Reveal tag="li" key={i} delay={i * STAGGER.row}>
             <button className={"hm-rank-row" + (i === 0 ? " one" : "")} onClick={() => go("records")}>
               <span className="hm-rank-n">{i + 1}</span>
               <span className="hm-rank-who">
@@ -169,7 +169,7 @@ export default function HomePage({ data, go, admin }) {
           <button className="more" onClick={() => go("board")}>전체 보기<Icon n="chevr" size={15} /></button>
         </Reveal>
         {posts.length ? <ul className="hm-posts">{posts.map((p, i) => (
-          <Reveal tag="li" key={p.id} delay={i * 40}>
+          <Reveal tag="li" key={p.id} delay={i * STAGGER.row}>
             <button className="hm-post" onClick={() => go("board")}>
               <span className="hm-post-t">{p.secret && <Icon n="lock" size={13} />}{p.title || p.body || "(제목 없음)"}</span>
               <span className="hm-post-m tnum">

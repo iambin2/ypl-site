@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Empty, Icon, ListSearch, Modal, Pager, Reveal } from "../components/index.js";
+import { Empty, Icon, ListSearch, Modal, Pager, Reveal, siteAlert, siteConfirm, sitePrompt } from "../components/index.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
@@ -26,7 +26,7 @@ function mediaIcon(url){ const m=parseMedia(url); if(!m) return null; const n=m.
 
 function BoardCompose({ onClose, onSubmit }){
   const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
-  const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!title.trim()){alert("제목을 입력해주세요.");return;}
+  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
@@ -48,7 +48,7 @@ function BoardCompose({ onClose, onSubmit }){
 
 function CommentForm({ onSubmit }){
   const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
-  const submit=()=>{ if(!nick.trim()){alert("닉네임을 입력해주세요.");return;} if(!body.trim()&&!link.trim()){alert("댓글이나 링크를 입력해주세요.");return;}
+  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
   return (<div className="bd-cform">
     <div className="bd-cform-row">
@@ -76,10 +76,10 @@ export default function BoardPage({ data, admin, save, flash }){
   const [compose,setCompose]=useState(false);
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
   const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글을 등록했습니다"); };
-  const delPost=(p)=>{ if(admin){ if(!confirm("이 글을 삭제할까요?"))return; } else { const pin=prompt("본인 글을 삭제하려면 작성 시 입력한 PIN을 입력하세요."); if(pin===null)return; if(!p.pin||pin!==p.pin){alert("PIN이 일치하지 않습니다.");return;} }
+  const delPost=async(p)=>{ if(admin){ if(!(await siteConfirm({title:"글 삭제",body:"이 글을 삭제할까요? 삭제한 글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"글 삭제",body:"본인 글을 삭제하려면 작성할 때 입력한 PIN을 입력하세요.",label:"삭제 PIN",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!p.pin||pin!==p.pin){siteAlert("PIN이 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
     save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };
   const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글을 등록했습니다"); };
-  const delComment=(p,c)=>{ if(admin){ if(!confirm("이 댓글을 삭제할까요?"))return; } else { const pin=prompt("본인 댓글을 삭제하려면 PIN을 입력하세요."); if(pin===null)return; if(!c.pin||pin!==c.pin){alert("PIN이 일치하지 않습니다.");return;} }
+  const delComment=async(p,c)=>{ if(admin){ if(!(await siteConfirm({title:"댓글 삭제",body:"이 댓글을 삭제할까요? 삭제한 댓글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"댓글 삭제",body:"본인 댓글을 삭제하려면 작성할 때 입력한 PIN을 입력하세요.",label:"삭제 PIN",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!c.pin||pin!==c.pin){siteAlert("PIN이 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
     save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
   return (<section className="sec">
     <Reveal className="sec-head">

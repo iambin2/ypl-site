@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Icon, Pager, Reveal, StandTable } from "../components/index.js";
+import { Dropdown, Icon, Pager, Reveal, StandTable, sitePrompt } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
@@ -533,10 +533,9 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
 
     {selectedTour ? (
       <div className="panel swap" key={category} style={{ paddingBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 2px 4px", flexWrap: "wrap" }}>
-          <span style={{ width: 11, height: 11, borderRadius: 4, background: selectedTour.color }} />
-          <h3 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--navy)" }}>{selectedTour.label}</h3>
-          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 550 }} className="tnum">{(selectedTour.rounds || []).length}회</span>
+        <div className="records-archive-head">
+          <h3>{selectedTour.label}</h3>
+          <span className="tnum">{(selectedTour.rounds || []).length}회</span>
           {admin && selectedTour.legacy && <button className="btn btn-primary btn-sm ed-pencil" onClick={openRoundEditor}>회차 편집</button>}
         </div>
         {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}
@@ -693,8 +692,8 @@ function RankView({ rankings, data, admin, setModal, save }) {
   const normalizedMode = eras.some((row) => row.source === "normalized");
   const [sel, setSel] = useState(eras[0]?.key);
   const era = eras.find((e) => e.key === sel) || eras[0];
-  const addEra = () => {
-    const name = (prompt("새 누적 랭킹 탭 이름 (예: 클래식)") || "").trim();
+  const addEra = async () => {
+    const name = (await sitePrompt({ title: "누적 랭킹 탭 추가", label: "탭 이름", placeholder: "예: 클래식", confirmLabel: "추가" })) || "";
     if (!name) return;
     const key = "r_" + uid();
     save({ ...data, rankings: [...legacyEras, { key, label: name, rows: [] }] });
@@ -751,8 +750,8 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
   useEffect(() => {
     setSel(normalizedMode ? 0 : Math.max(0, seasons.length - 1));
   }, [normalizedMode, seasons.length]);
-  const addSeason = () => {
-    const name = (prompt("새 시즌 이름 (예: YPL 시즌 3)") || "").trim();
+  const addSeason = async () => {
+    const name = (await sitePrompt({ title: "시즌 추가", label: "시즌 이름", placeholder: "예: YPL 시즌 3", confirmLabel: "추가" })) || "";
     if (!name) return;
     save({ ...data, seasons: [...legacySeasons, { name, rows: [] }] });
     setSel(seasons.length);

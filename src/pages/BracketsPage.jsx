@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Dropdown, Icon, Modal, Reveal } from "../components/index.js";
+import { Dropdown, Icon, Modal, Reveal, STAGGER, siteAlert, siteConfirm } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
@@ -423,7 +423,7 @@ function BracketWizard({ data, onClose, onCreate }){
       }catch(error){ setEventError(error?.message||"본선 대진표 생성 조건을 확인하지 못했습니다."); return; }
     }
     const useDbl = dbl && parts.length>=3;
-    if(dbl && !useDbl) alert("참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않아, 단일 엘리미네이션으로 생성됩니다.");
+    if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다.","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
     let normalizedAttempt=null;
     if(eventId&&mode==="single"){
       const attemptKey=JSON.stringify(parts.map(p=>[p.registrationId||null,p.name]));
@@ -537,7 +537,7 @@ function BracketWizard({ data, onClose, onCreate }){
             setManualMode(false);
             selectLinkedEvent(v);
           }}
-          placeholder={eventBusy?"불러오는 중...":"대회를 선택하세요"}
+          placeholder={eventBusy?"불러오는 중…":"대회를 선택하세요"}
           options={[
             ...events.map(ev=>({value:ev.id,label:championshipEventPickerLabel(ev)})),
             {value:"__manual__",label:"연결하지 않고 새로 만들기"}
@@ -610,7 +610,7 @@ function BracketWizard({ data, onClose, onCreate }){
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
           <label>본선 직행자 선택</label>
           <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표 참가자에서 제외되며, 아직 본선 Registration은 만들지 않습니다.</div>
-          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*18)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight:700}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
+          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight:700}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
         </div>}
         <div className="field">
           <label>참가자 확정</label>
@@ -624,7 +624,7 @@ function BracketWizard({ data, onClose, onCreate }){
             if(linkedEvent?.championship_phase==="qualifier"&&directRegistrationIds.includes(reg.id)) return null;
             const checked=selectedRegistrationIds.includes(reg.id);
             return (
-              <label className="bk-pin bk-participant-confirm-row" key={reg.id} style={{animationDelay:(i*22)+"ms",cursor:"pointer"}}>
+              <label className="bk-pin bk-participant-confirm-row" key={reg.id} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}>
                 <span className="bk-pin-no">{i+1}</span>
                 <input
                   type="checkbox"
@@ -723,7 +723,7 @@ function BracketWizard({ data, onClose, onCreate }){
             {eventRegs.map((reg,i)=>{
               const answers=getTeamRegistrationAnswerEntries(reg,linkedFields);
               const assigned=assignedTeamsFor(reg.registration_name);
-              return <div className="bk-pin" key={reg.id} style={{animationDelay:(i*22)+"ms"}}>
+              return <div className="bk-pin" key={reg.id} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
                 <span className="bk-pin-no">{i+1}</span>
                 <div style={{flex:1,minWidth:0}}>
                   <b>{reg.registration_name}</b>
@@ -756,12 +756,12 @@ function BracketWizard({ data, onClose, onCreate }){
 
         <div className="bk-fill">
           {mode==="team"
-            ? teams.map((t,i)=>(<div className="bk-team-card" key={i} style={{animationDelay:(i*28)+"ms"}}>
+            ? teams.map((t,i)=>(<div className="bk-team-card" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
                 <span className="bk-pin-no gold">{i+1}</span>
                 <input className="bk-tc-name" value={t.name} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder={`팀 ${i+1} 이름`}/>
                 <input className="bk-tc-mem" value={t.members} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,members:e.target.value}:x))} placeholder="팀원 (쉼표로 구분)"/>
               </div>))
-            : names.map((n,i)=>(<div className="bk-pin" key={i} style={{animationDelay:(i*22)+"ms"}}>
+            : names.map((n,i)=>(<div className="bk-pin" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
                 <span className="bk-pin-no">{i+1}</span>
                 <input value={n} onChange={e=>setNames(names.map((x,j)=>j===i?e.target.value:x))} placeholder={`참가자 ${i+1}`}/>
               </div>))}
@@ -795,7 +795,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const allPlayed=N>0&&games.every(w=>w); const tie=allPlayed&&a===b;
   const allPlayers=lineupA.every(Boolean)&&lineupB.every(Boolean);
   const decided=allPlayers&&allPlayed&&(!tie||(!!aceA&&!!aceB&&!!aceW));
-  const confirm=()=>{ if(!decided){alert("모든 실제 lineup 선수와 대결 결과(동점 시 타이브레이커 포함)를 입력하세요.");return;}
+  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요.","모든 실제 lineup 선수와 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력하세요.");return;}
     const result=buildTeamMatchSeries(teamA,teamB,{lineupA,lineupB,games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null}); onSave(result.series,result.winnerSide); };
   const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={13}/>승</>:"승"}</button></div>;
   const displayTeamA=teamMatchDisplayName(teamA.name),displayTeamB=teamMatchDisplayName(teamB.name);
@@ -1065,7 +1065,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const undoApplied=async()=>{
     if(readOnly)return;
     if(!b.applied)return;
-    if(!confirm("이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 Event 기록 상태가 함께 원복됩니다."))return;
+    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 Event 기록 상태가 함께 원복됩니다.",confirmLabel:"반영 취소",danger:true})))return;
     let previousHallOfFame=null;
     let previousAwardRows=null;
     let previousResultRows=null;
@@ -1254,11 +1254,11 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     return { deltas, roundNum, willRank, willSeason };
   };
   const prepare=()=>{
-    if(qualifierEvent){alert("qualifier는 Placement Result/Award를 만들지 않습니다. Champions 운영에서 필요한 진출자를 확정한 뒤 qualifier를 종료하세요.");return;}
-    if(!curT){alert("회차를 추가할 대회를 선택하세요.");return;}
-    if(linkedContextBusy){alert("연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
-    if(linkedContextError){alert(linkedContextError);return;}
-    if(!recordSeason){alert("기록을 반영할 시즌을 선택하세요.");return;}
+    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다.","qualifier는 Placement Result/Award를 만들지 않습니다. Champions 운영에서 필요한 진출자를 확정한 뒤 qualifier를 종료하세요.");return;}
+    if(!curT){siteAlert("대회를 선택해 주세요.","회차를 추가할 대회를 먼저 선택하세요.");return;}
+    if(linkedContextBusy){siteAlert("잠시만 기다려 주세요.","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
+    if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다.",linkedContextError);return;}
+    if(!recordSeason){siteAlert("시즌을 선택해 주세요.","기록을 반영할 시즌을 먼저 선택하세요.");return;}
     setPreview(buildResult());
   };
   // 기록 반영이 끝난 뒤, 고정된 공식 파티로 칭호 조건을 확인한다. 판정 실패는 기록 반영을 막지 않는다.
@@ -1912,13 +1912,14 @@ export default function BracketsPage({ data, admin, flash, refresh }){
   };
   const del=async(b)=>{
     if(b.readOnly){ flash("과거 완료 대진표는 조회 전용입니다."); return; }
-    if(b.applied){alert("기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
+    if(b.applied){siteAlert("기록 반영을 먼저 취소해 주세요.","기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
+    if(deletingRef.current)return;
+    if(!(await siteConfirm({title:"대진표 삭제",body:`'${b.name}' 대회를 삭제할까요?`,confirmLabel:"삭제",danger:true})))return;
     if(deletingRef.current)return;
     deletingRef.current=true;
     setDeletingId(b.id);
 
     try{
-      if(!confirm(`'${b.name}' 대회를 삭제할까요?`))return;
 
       if(b.projection?.source==="normalized"){
         try{
@@ -1969,7 +1970,7 @@ export default function BracketsPage({ data, admin, flash, refresh }){
         /* 스피너 대신 형태를 먼저 — 로딩이 끝나면 같은 자리에 카드가 들어온다. */
         ? <div className="bk-skeletons" aria-busy="true" aria-label="대진표를 불러오는 중">
             {[0,1,2].map(i=>(<div className="bk-card bk-card-skel" key={i}>
-              <div className="y-skeleton" style={{height:18,width:74,borderRadius:6}}/>
+              <div className="y-skeleton" style={{height:18,width:74}}/>
               <div className="y-skeleton" style={{height:17,width:"64%",marginTop:14}}/>
               <div className="y-skeleton" style={{height:12,width:"44%",marginTop:10,opacity:.6}}/>
             </div>))}

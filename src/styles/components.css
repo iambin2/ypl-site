@@ -49,22 +49,30 @@
   font-size: 15px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.2;
   white-space: nowrap; user-select: none; -webkit-tap-highlight-color: transparent;
   transition: background var(--d1) var(--ease), color var(--d1) var(--ease),
-    border-color var(--d1) var(--ease), opacity var(--d1) var(--ease), transform var(--d2) var(--ease);
+    border-color var(--d1) var(--ease), opacity var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
-.btn:hover, .y-btn:hover { background: var(--fill-hover); }
-.btn:active:not(:disabled), .y-btn:active:not(:disabled) { transform: scale(.97); transition-duration: 90ms; }
-.btn:disabled, .y-btn:disabled { opacity: .38; cursor: not-allowed; }
+.btn:hover:not(:disabled), .y-btn:hover:not(:disabled) { background: var(--fill-hover); }
 
 .btn-primary, .y-btn-primary, .tb-main-btn { background: var(--ink); color: var(--on-ink); }
-.btn-primary:hover, .y-btn-primary:hover, .tb-main-btn:hover {
+.btn-primary:hover:not(:disabled), .y-btn-primary:hover:not(:disabled), .tb-main-btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--ink) 84%, var(--bg));
 }
 .btn-ghost, .y-btn-secondary { background: transparent; border-color: var(--line-2); }
-.btn-ghost:hover, .y-btn-secondary:hover { background: var(--fill-2); border-color: var(--text-4); }
+.btn-ghost:hover:not(:disabled), .y-btn-secondary:hover:not(:disabled) { background: var(--fill-2); border-color: var(--text-4); }
 .y-btn-quiet { background: transparent; color: var(--text-2); }
-.y-btn-quiet:hover { background: var(--fill-2); color: var(--ink); }
+.y-btn-quiet:hover:not(:disabled) { background: var(--fill-2); color: var(--ink); }
 .btn-danger { background: var(--danger-soft); color: var(--danger); }
-.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: var(--danger); color: #fff; }
+
+/* ---------- press + disabled: one rule for every control ----------
+   Controls (pills, circles, segments) press to --press, tiles to --press-tile.
+   `scale` is its own property, so it composes with any positioning transform. */
+:is(.btn, .y-btn, .ann-link, .ann-apply, .ann-resp, .gnav-icon, .gnav-discord, .gnav-burger, .modal-x, .hofm-x,
+  .pg-btn, .fb-ic, .fb-addopt, .ed-del, .ed-mv, .ed-x, .ch-clear, .bk-count button, .ls-clear, .tb-clear,
+  .subtab, .bk-seg button, .ed-seg button, .y-seg button, .bk-bout-win, .pr-refresh, .fr-del, .bd-del,
+  .tb-slot-remove):active:not(:disabled) { scale: var(--press); transition-duration: var(--press-in); }
+:is(.hm-event, .hm-result, .bk-card, .tb-slot:not(.empty), .fb-addq):active:not(:disabled) { scale: var(--press-tile); transition-duration: var(--press-in); }
+:is(.btn, .y-btn, .pg-btn, .fb-ic, .ed-mv, .ed-del, .dd-btn, .dd-opt, .tb-pokemon-row, .gnav-icon):disabled { opacity: var(--o-disabled); cursor: not-allowed; }
 .btn-sm { min-height: 36px; padding: 0 14px; gap: 6px; font-size: 14px; }
 
 /* ---------- fields ---------- */
@@ -78,15 +86,15 @@
   border: 1px solid transparent; border-radius: var(--r-sm);
   background: var(--fill-2); color: var(--ink);
   font-size: 16px; line-height: 1.4;
-  transition: background var(--d1) var(--ease), border-color var(--d1) var(--ease), box-shadow var(--d2) var(--ease);
+  transition: background var(--d1) var(--ease), border-color var(--d1) var(--ease), box-shadow var(--d2) var(--ease), opacity var(--d1) var(--ease);
   -webkit-appearance: none; appearance: none;
 }
-:where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea):hover { background: var(--fill); }
+:where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea):hover:not(:disabled) { background: var(--fill); }
 :where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea):focus {
   background: var(--bg); border-color: var(--ink);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 9%, transparent);
 }
-:where(.ypl) :where(input, textarea):disabled { opacity: .5; cursor: not-allowed; }
+:where(.ypl) :where(input, textarea):disabled { opacity: var(--o-disabled); cursor: not-allowed; }
 :where(.ypl) :where(textarea) { min-height: 128px; resize: vertical; line-height: 1.6; }
 :where(.ypl) :where(input[type="number"]) { font-variant-numeric: tabular-nums; }
 
@@ -116,14 +124,14 @@
   width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 0 14px 0 16px; border: 1px solid transparent; border-radius: var(--r-sm);
   background: var(--fill-2); text-align: left; font-size: 16px; font-weight: 500;
-  transition: background var(--d1) var(--ease), border-color var(--d1) var(--ease);
+  transition: background var(--d1) var(--ease), border-color var(--d1) var(--ease), opacity var(--d1) var(--ease);
 }
 .dd-btn:hover:not(:disabled) { background: var(--fill); }
-.dd-btn:disabled { opacity: .5; cursor: not-allowed; }
 .dd.open .dd-btn { background: var(--bg); border-color: var(--ink); }
 .dd-btn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-btn.ph > span { color: var(--text-3); }
-.dd-chev { width: 12px; height: 8px; flex: none; color: var(--text-3); transition: transform var(--d2) var(--ease); }
+.dd-chev { width: 12px; height: 8px; flex: none; color: var(--text-3); transition: transform var(--d2) var(--ease), color var(--d1) var(--ease); }
+.dd-btn:hover:not(:disabled) .dd-chev { color: var(--ink); }
 .dd.open .dd-chev { transform: rotate(180deg); }
 .dd-menu {
   position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; right: 0; min-width: 180px;
@@ -131,14 +139,15 @@
   padding: 6px; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-float);
   animation: y-pop var(--d2) var(--ease);
 }
+.dd-menu.is-closing { pointer-events: none; animation: y-pop-out var(--d2) var(--ease-io) both; }
 .dd-opt {
   width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 8px 12px; border: 0; border-radius: var(--r-sm); background: transparent;
   text-align: left; font-size: 15px; line-height: 1.35;
+  transition: background var(--d1) var(--ease);
 }
 .dd-opt:hover:not(:disabled) { background: var(--fill-2); }
 .dd-opt.sel { font-weight: 700; }
-.dd-opt:disabled { color: var(--text-4); cursor: not-allowed; }
 .dd-tick { display: flex; color: var(--ink); }
 .dd-none { padding: 12px; font-size: 14px; color: var(--text-3); }
 
@@ -158,6 +167,7 @@
   width: 28px; height: 28px; display: grid; place-items: center;
   border: 0; border-radius: 50%; background: var(--fill); color: var(--text-2);
   font-size: 16px; line-height: 1;
+  transition: background var(--d1) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
 .ls-clear:hover, .tb-clear:hover { background: var(--fill-hover); color: var(--ink); }
 .list-count { font-size: 14px; color: var(--text-3); white-space: nowrap; }
@@ -174,12 +184,12 @@
   flex: none; min-height: 36px; padding: 0 16px;
   border: 0; border-radius: var(--r-pill); background: transparent;
   font-size: 15px; font-weight: 600; color: var(--text-3); white-space: nowrap;
-  transition: background var(--d2) var(--ease), color var(--d1) var(--ease), box-shadow var(--d2) var(--ease);
+  transition: background var(--d2) var(--ease), color var(--d1) var(--ease), box-shadow var(--d2) var(--ease), scale var(--d2) var(--ease);
 }
-.subtab:hover, .bk-seg button:hover, .ed-seg button:hover { color: var(--ink); }
+.subtab:hover, .bk-seg button:hover, .ed-seg button:hover, .y-seg button:hover { color: var(--ink); }
 .subtab.on, .bk-seg button.on, .ed-seg button.on, .y-seg button.on {
   background: var(--bg); color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .07), 0 3px 10px -3px rgba(0, 0, 0, .14);
+  box-shadow: var(--shadow-raised);
 }
 [data-theme="dark"] :is(.subtab, .bk-seg button, .ed-seg button, .y-seg button).on { background: var(--bg-3); }
 .subtab.add { color: var(--text-3); font-weight: 500; }
@@ -255,11 +265,10 @@
   min-width: 40px; height: 40px; padding: 0 10px; display: inline-grid; place-items: center;
   border: 0; border-radius: var(--r-pill); background: transparent;
   font-size: 15px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums;
-  transition: background var(--d1) var(--ease), color var(--d1) var(--ease);
+  transition: background var(--d1) var(--ease), color var(--d1) var(--ease), opacity var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
 .pg-btn:hover:not(:disabled) { background: var(--fill-2); color: var(--ink); }
 .pg-btn.on { background: var(--ink); color: var(--on-ink); }
-.pg-btn:disabled { opacity: .3; cursor: default; }
 .pg-dots { padding: 0 4px; color: var(--text-4); }
 
 /* ---------- empty + loading ---------- */
@@ -271,7 +280,7 @@
 .y-empty h3 { font-size: 20px; letter-spacing: -0.025em; }
 .y-empty p { margin-top: 6px; font-size: 15px; color: var(--text-3); }
 .y-skeleton {
-  border-radius: 8px;
+  border-radius: var(--r-xs);
   background: linear-gradient(90deg, var(--fill-2) 25%, var(--fill) 50%, var(--fill-2) 75%);
   background-size: 200% 100%;
   animation: y-shimmer 1.4s linear infinite;
@@ -286,7 +295,9 @@
   font-size: 15px; font-weight: 600; text-align: center;
   animation: y-toast var(--d3) var(--ease) both;
 }
+.toast.is-closing { pointer-events: none; animation: y-toast-out var(--d2) var(--ease-io) both; }
 @keyframes y-toast { from { opacity: 0; transform: translate(-50%, 16px) scale(.96); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes y-toast-out { to { opacity: 0; transform: translate(-50%, 16px) scale(.96); } }
 
 /* ---------- dialog / sheet ---------- */
 .overlay {
@@ -311,13 +322,14 @@
 .modal > h3 { padding-right: 44px; font-size: 24px; font-weight: 800; letter-spacing: -0.038em; line-height: 1.25; }
 .modal > .hint { margin-top: 8px; font-size: 15px; }
 .modal > h3 + *:not(.hint), .modal > .hint + * { margin-top: 24px; }
-.modal-x {
-  position: absolute; top: 20px; right: 20px; z-index: 2;
+.modal-x { position: absolute; top: 20px; right: 20px; z-index: 2; }
+/* every dialog close button is the same 36px circle */
+.modal-x, .hofm-x {
   width: 36px; height: 36px; display: grid; place-items: center;
   border: 0; border-radius: 50%; background: var(--fill-2); color: var(--text-2);
-  transition: background var(--d1) var(--ease), color var(--d1) var(--ease);
+  transition: background var(--d1) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
 }
-.modal-x:hover { background: var(--fill); color: var(--ink); }
+.modal-x:hover, .hofm-x:hover { background: var(--fill); color: var(--ink); }
 .modal-actions {
   position: sticky; bottom: 0; z-index: 3;
   display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -355,6 +367,7 @@
   min-width: 22px; height: 22px; padding: 0 7px; display: grid; place-items: center;
   border-radius: var(--r-pill); background: var(--ink); color: var(--on-ink); font-size: 12.5px; font-weight: 700;
 }
-.fold-chev { display: flex; color: var(--text-3); transition: transform var(--d2) var(--ease); }
+.fold-chev { display: flex; color: var(--text-3); transition: transform var(--d2) var(--ease), color var(--d1) var(--ease); }
+.fold-head:hover .fold-chev { color: var(--ink); }
 .fold.open .fold-chev { transform: rotate(180deg); }
 .fold-body { padding: 2px 18px 18px; }

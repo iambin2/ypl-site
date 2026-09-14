@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import Icon from "./Icon.jsx";
+import { useExitAnimation } from "./Modal.jsx";
+
+/* 메뉴는 열릴 때처럼 닫힐 때도 움직인다(떠 있는 층의 공통 규칙). */
+function DropdownMenu({ children, ariaLabel }){
+  const ref=useRef(null);
+  useExitAnimation(ref,{ inPlace:true });
+  return <div className="dd-menu" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
+}
 
 export default function Dropdown({ value, onChange, options = [], placeholder, className, disabled = false, ariaLabel, width }){
   const [open,setOpen]=useState(false); const ref=useRef(null);
@@ -12,8 +20,8 @@ export default function Dropdown({ value, onChange, options = [], placeholder, c
       <span>{sel?sel.label:(placeholder||"선택")}</span>
       <svg className="dd-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
     </button>
-    {open&&<div className="dd-menu" role="listbox" aria-label={ariaLabel}>{options.length===0&&<div className="dd-none">항목 없음</div>}
+    {open&&<DropdownMenu ariaLabel={ariaLabel}>{options.length===0&&<div className="dd-none">항목 없음</div>}
       {options.map(o=>(<button type="button" key={o.value} className={"dd-opt"+(o.value===value?" sel":"")} onClick={()=>{onChange(o.value);setOpen(false);}} disabled={Boolean(o.disabled)} role="option" aria-selected={o.value===value}>{o.label}{o.value===value&&<span className="dd-tick"><Icon n="check" size={15}/></span>}</button>))}
-    </div>}
+    </DropdownMenu>}
   </div>);
 }
