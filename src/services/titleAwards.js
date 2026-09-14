@@ -4,8 +4,8 @@ import { normalizedChampionLabel } from "./hallOfFamePresentation.js";
 /* ============================== 칭호 자동 판정 ==============================
    기록 반영이 끝난 대회의 성적과 고정된 공식 파티로 칭호 조건을 확인한다.
    칭호는 site_data 의 titleGroups 에 사는 이름 기반 기록이라, 여기서는 후보만 만들고
-   부여 여부는 운영자가 확인한다. 경기 중에만 알 수 있는 조건(퍼펙트게임, 붙박이대장,
-   언더독, 팀전 승패)은 판정하지 않고 수동 기입으로 남긴다.                         */
+   부여 여부는 운영자가 확인한다. 팀전 승패로 정해지는 버스드라이버는 판정하지 않고
+   수동 기입으로 남긴다.                                                              */
 
 const toID = (text) => String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 const clean = (value) => String(value || "").trim();
@@ -15,15 +15,10 @@ const GENERATION_REGIONS = [
   [721, "칼로스"], [809, "알로라"], [898, "가라르"], [905, "히스이"], [1025, "팔데아"],
 ];
 const REGIONAL_FORMES = [["Alola", "알로라"], ["Galar", "가라르"], ["Hisui", "히스이"], ["Paldea", "팔데아"]];
-// 세대별 첫 스타팅 포켓몬의 도감 번호. 각 세대의 스타팅 3종과 진화형이 뒤이어 9칸을 차지한다.
-const STARTER_LINE_STARTS = [1, 152, 252, 387, 495, 650, 722, 810, 906];
-
-const AUTO_ETC_TITLES = ["슈퍼루키", "프라임스타터", "핑거 마에스트로", "맨손의 제왕", "돌격대장"];
-
 /* 이벤트 칭호는 대회에 칭호 보상을 정한 경우에만 부여되므로 그룹 전체를 자동으로 보지 않는다. */
 export function isAutoCheckedTitle(groupKey, name) {
   if (["champion", "type", "region", "partner"].includes(groupKey)) return true;
-  return groupKey === "etc" && AUTO_ETC_TITLES.includes(clean(name));
+  return groupKey === "etc" && clean(name) === "슈퍼루키";
 }
 
 export function normalizeEventTitleAward(value) {
@@ -49,11 +44,6 @@ export function pokemonRegion(record) {
   return GENERATION_REGIONS.find(([max]) => num <= max)?.[1] || null;
 }
 
-export function isStarterPokemon(record) {
-  const num = Number(record?.num);
-  return STARTER_LINE_STARTS.some((start) => num >= start && num < start + 9);
-}
-
 /* roster 의 모든 포켓몬이 도감에서 확인될 때만 판정한다. 하나라도 모르면 fail closed. */
 function resolvedRoster(roster, pokedex) {
   if (!Array.isArray(roster) || !roster.length) return null;
@@ -70,7 +60,7 @@ const PLACEMENT_REASON = { champion: "우승", runner_up: "준우승", semifinal
 
 /**
  * placements: [{ placement: "champion"|"runner_up"|"semifinalist", names: [표시 이름],
- *               roster: [{ pokemon_id, item_id, moves: [] }] | null, playerId }]
+ *               roster: [{ pokemon_id }] | null, playerId }]
  * partnerWins: { [playerId]: [[pokemon_id, ...] per 우승] } — 이번 우승을 포함한 공식 우승 파티
  */
 export function evaluateTitleAwards({
@@ -152,21 +142,6 @@ export function evaluateTitleAwards({
     }
 
     if (row.placement !== "champion") continue;
-    const roster = row.roster;
-    if (records.every(isStarterPokemon)) {
-      push({ groupKey: "etc", title: "프라임스타터", holder, reason: "우승, 스타팅 포켓몬만 사용" });
-    }
-    if (roster.every((member) => (member.moves || []).includes("metronome"))) {
-      push({ groupKey: "etc", title: "핑거 마에스트로", holder, reason: "우승, 모든 포켓몬이 손가락흔들기 채용" });
-    }
-    if (roster.every((member) => !clean(member.item_id))) {
-      push({ groupKey: "etc", title: "맨손의 제왕", holder, reason: "우승, 지닌 물건 없음" });
-    }
-    const moves = roster.flatMap((member) => (member.moves || []).filter(Boolean));
-    const moveData = moves.map((id) => detailData?.moves?.[id]);
-    if (moves.length && moveData.every(Boolean) && moveData.every((move) => move.category !== "Status")) {
-      push({ groupKey: "etc", title: "돌격대장", holder, reason: "우승, 변화기 없음" });
-    }
 
     // 파트너: 같은 포켓몬(도감 번호 기준)으로 2회 이상 우승
     const wins = partnerWins?.[row.playerId] || [];

@@ -11,18 +11,17 @@ const pokedex = {
   gyarados: { id: "gyarados", num: 130, name: "Gyarados", types: ["Water", "Flying"] },
   gyaradosmega: { id: "gyaradosmega", num: 130, name: "Gyarados-Mega", baseSpecies: "Gyarados", forme: "Mega", requiredItem: "Gyaradosite", types: ["Water", "Dark"] },
 };
-const moves = { metronome: { category: "Status" }, surf: { category: "Special" }, waterfall: { category: "Physical" } };
-const detailData = { pokedex, moves };
+const detailData = { pokedex };
 
 const groups = () => [
   { key: "champion", items: [] },
   { key: "type", items: [{ id: "t1", name: "물 엑스퍼트", holders: ["기존"] }, { id: "t2", name: "비행 엑스퍼트", holders: [] }] },
   { key: "region", items: [{ id: "r1", name: "성도 엘리트", holders: [] }, { id: "r2", name: "관동 엘리트", holders: [] }] },
   { key: "partner", items: [] },
-  { key: "etc", items: [{ id: "e1", name: "슈퍼루키", holders: [] }, { id: "e2", name: "맨손의 제왕", holders: [] }, { id: "e3", name: "돌격대장", holders: [] }, { id: "e4", name: "프라임스타터", holders: [] }] },
+  { key: "etc", items: [{ id: "e1", name: "슈퍼루키", holders: [] }, { id: "e2", name: "버스드라이버", holders: [] }] },
   { key: "event", items: [] },
 ];
-const member = (pokemon_id, extra = {}) => ({ pokemon_id, item_id: null, moves: ["surf"], ...extra });
+const member = (pokemon_id) => ({ pokemon_id });
 
 test("region uses regional forms and dex generations", () => {
   assert.equal(pokemonRegion(pokedex.totodile), "성도");
@@ -59,21 +58,21 @@ test("mega evolution counts as its base species, unknown pokemon fails closed", 
   assert.ok(!out.some((a) => a.holder === "나"));
 });
 
-test("champion roster rules, rookie, event award and partner", () => {
+test("rookie, event award and partner", () => {
   const titleGroups = groups();
   const out = evaluateTitleAwards({
     titleGroups,
     event: { name: "제2회 파이컵 라이트", division: "rookie", competition_settings: { titleAward: { name: "초신성", scope: "top4" } } },
     detailData,
     placements: [
-      { placement: "champion", names: ["정두호"], playerId: "p1", roster: [member("squirtle", { moves: ["surf", "waterfall"] }), member("totodile")] },
+      { placement: "champion", names: ["정두호"], playerId: "p1", roster: [member("squirtle"), member("totodile")] },
       { placement: "runner_up", names: ["이종우"], roster: null },
     ],
     partnerWins: { p1: [["squirtle", "gyarados"], ["squirtle", "totodile"]] },
     pokemonName: (id) => ({ squirtle: "꼬부기" })[id] || "",
   });
   const keys = out.map((a) => a.key);
-  for (const key of ["etc|슈퍼루키|정두호", "etc|맨손의 제왕|정두호", "etc|돌격대장|정두호", "etc|프라임스타터|정두호", "event|초신성|정두호", "event|초신성|이종우", "partner|정두호|꼬부기"]) {
+  for (const key of ["etc|슈퍼루키|정두호", "event|초신성|정두호", "event|초신성|이종우", "partner|정두호|꼬부기"]) {
     assert.ok(keys.includes(key), key);
   }
 

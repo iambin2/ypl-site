@@ -1476,7 +1476,7 @@ export async function fetchRegistrationFinalRosters(registrationIds = []) {
   const submissions = await read("registration_submissions", "id, snapshot_id", "id", registrations.map((row) => row.final_submission_id).filter(Boolean), "칭호 판정용 Submission을 읽지 못했습니다.");
   const members = await read(
     "team_snapshot_members",
-    "snapshot_id, slot, pokemon_id, item_id, move_1_id, move_2_id, move_3_id, move_4_id",
+    "snapshot_id, slot, pokemon_id",
     "snapshot_id",
     submissions.map((row) => row.snapshot_id).filter(Boolean),
     "칭호 판정용 TeamSnapshot을 읽지 못했습니다."
@@ -1486,11 +1486,7 @@ export async function fetchRegistrationFinalRosters(registrationIds = []) {
     const roster = members
       .filter((row) => snapshotId && row.snapshot_id === snapshotId)
       .sort((a, b) => Number(a.slot) - Number(b.slot))
-      .map((row) => ({
-        pokemon_id: row.pokemon_id,
-        item_id: row.item_id,
-        moves: [row.move_1_id, row.move_2_id, row.move_3_id, row.move_4_id].filter(Boolean),
-      }));
+      .map((row) => ({ pokemon_id: row.pokemon_id }));
     if (roster.length) rosters.set(registration.id, roster);
   }
   return rosters;

@@ -62,16 +62,8 @@ const SEED = {
       {id:uid(),name:"정두호",holders:["이어롭","픽시","해피너스","다투곰"]},
       {id:uid(),name:"이종우",holders:["마릴리","이어롭","텅비드"]} ]},
     { id:uid(), key:"etc", name:"기타 칭호", icon:"🎖️", desc:"특수 조건을 달성한 트레이너에게 주어지는 칭호", items:[
-      {id:uid(),name:"언더독",desc:"RU 포켓몬만 사용해 우승",holders:[]},
       {id:uid(),name:"슈퍼루키",desc:"루키 리그 우승",holders:["천승은","김원의","이원준","이상준","김호연","손우진"]},
-      {id:uid(),name:"프라임스타터",desc:"스타팅 포켓몬만 사용해 우승",holders:[]},
-      {id:uid(),name:"무임승차자",desc:"승리 없이 팀전 우승",holders:[]},
-      {id:uid(),name:"버스드라이버",desc:"전승으로 팀전 우승",holders:["송수아"]},
-      {id:uid(),name:"퍼펙트게임",desc:"한 마리도 쓰러지지 않고 우승",holders:[]},
-      {id:uid(),name:"핑거 마에스트로",desc:"모든 포켓몬에게 손가락흔들기를 채용하고 우승",holders:[]},
-      {id:uid(),name:"맨손의 제왕",desc:"모든 포켓몬에게 지닌 물건을 주지 않고 우승",holders:[]},
-      {id:uid(),name:"붙박이대장",desc:"포켓몬 교체를 사용하지 않고 우승",holders:[]},
-      {id:uid(),name:"돌격대장",desc:"모든 포켓몬에게 변화기를 채용하지 않고 우승",holders:[]} ]},
+      {id:uid(),name:"버스드라이버",desc:"전승으로 팀전 우승",holders:["송수아"]} ]},
     { id:uid(), key:"event", name:"이벤트 칭호", icon:"🎉", desc:"파이컵 라이트 등 이벤트 대회 우승", items:[
       {id:uid(),name:"끝말잇기",holders:["김지승"]},{id:uid(),name:"몽키매직",holders:["정두호"]},
       {id:uid(),name:"전화기",holders:["정두호","이제빈","류지오"]},{id:uid(),name:"초신성",holders:["송하준"]},
