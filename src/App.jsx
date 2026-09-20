@@ -1,10 +1,22 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import React, { lazy, useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
-import { bracketRouteSearch, loadSiteData, saveSiteData, readInitialAppView, submitEventApplication } from "./services/index.js";
-import { AboutPage, BoardPage, BracketsPage, ChampionsPage, HomePage, NewsPage, RecordsPage, TeamBuilderPage, TitlesPage } from "./pages/index.js";
+import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
+import { loadSiteData, saveSiteData } from "./services/siteDataService.js";
+import HomePage from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost, useExitAnimation } from "./components/index.js";
 import { BrandMark } from "./components/layout/SiteHeader.jsx";
-import { AdminModeBar, AdminModalHost } from "./admin/index.js";
+import AdminModeBar from "./admin/AdminModeBar.jsx";
+import LazyContent from "./components/common/LazyContent.jsx";
+
+const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
+const BoardPage = lazy(() => import("./pages/BoardPage.jsx"));
+const BracketsPage = lazy(() => import("./pages/BracketsPage.jsx"));
+const ChampionsPage = lazy(() => import("./pages/ChampionsPage.jsx"));
+const NewsPage = lazy(() => import("./pages/NewsPage.jsx"));
+const RecordsPage = lazy(() => import("./pages/RecordsPage.jsx"));
+const TeamBuilderPage = lazy(() => import("./pages/TeamBuilderPage.jsx"));
+const TitlesPage = lazy(() => import("./pages/TitlesPage.jsx"));
+const AdminModalHost = lazy(() => import("./admin/AdminModalHost.jsx"));
 
 /* =========================================================================
    YPL — Yonsei Pokemon League  v5 (미니멀 리디자인 / 남색 포인트)
@@ -177,6 +189,7 @@ export default function App() {
 
     if(form.eventId){
       try{
+        const { submitEventApplication } = await import("./services/normalizedCompetitionService.js");
         await submitEventApplication({
           eventId:form.eventId,
           registrationName:payload?.registrationName||"",
@@ -248,6 +261,7 @@ export default function App() {
       {admin&&<AdminModeBar/>}
 
       <div className="wrap"><main className="page" id="ypl-main" tabIndex={-1} key={view}>
+        <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage/>}
         {view==="news"&&<NewsPage data={data} admin={admin} setModal={setModal} save={save} submitForm={submitForm} refresh={refresh} go={go}/>}
@@ -257,6 +271,7 @@ export default function App() {
         {view==="builder"&&<TeamBuilderPage/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} normTeam={normTeam} go={go}/>}
+        </LazyContent>
       </main>
       </div>
       <SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline}/>
@@ -264,7 +279,7 @@ export default function App() {
       {toast&&<Toast key={toast.id} text={toast.text}/>}
       <SiteDialogHost/>
 
-      <AdminModalHost
+      {modal&&<LazyContent key={modal.type} onClose={()=>setModal(null)}><AdminModalHost
         modal={modal}
         data={data}
         setModal={setModal}
@@ -272,7 +287,7 @@ export default function App() {
         setAdmin={setAdmin}
         flash={flash}
         normTeam={normTeam}
-      />
+      /></LazyContent>}
     </div>
   );
 }
