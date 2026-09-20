@@ -1,5 +1,6 @@
 import Icon from "../../components/common/Icon.jsx";
 import React, { useState } from "react";
+import { normTeam as normalizeLegacyParty } from "../../services/legacyPartyImages.js";
 import { Dropdown, Modal, siteAlert } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, normalizeApplicationEventDivision } from "../../services/bracketTeamParticipants.js";
@@ -42,7 +43,7 @@ function compressImg(file, cb){
   }; im.onerror=()=>cb(null); im.src=r.result; };
   r.onerror=()=>cb(null); r.readAsDataURL(file);
 }
-export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam }) {
+export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = normalizeLegacyParty }) {
   const [gen,setGen]=useState(item?.gen||""),[season,setSeason]=useState(item?.season||""),[name,setName]=useState(item?.name||""),[slabel,setSlabel]=useState(item?.slabel||"");
   const [mons,setMons]=useState(()=>{ const t=normTeam(item?.team); const a=[]; for(let i=0;i<6;i++)a.push(t[i]||{name:"",img:""}); return a; });
   const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));

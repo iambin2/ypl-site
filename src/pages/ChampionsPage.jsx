@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { normTeam as normalizeLegacyParty } from "../services/legacyPartyImages.js";
 import { Reveal, Icon, STAGGER, useExitAnimation } from "../components/index.js";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
@@ -10,7 +11,7 @@ import {
 
 /* ============================== CHAMPIONS ==============================
    현 챔피언은 여섯 장 중 한 장이 아니다. 큰 판 하나 + 역대 등록부 목록.       */
-export default function ChampionsPage({ data, admin, setModal, normTeam, go }) {
+export default function ChampionsPage({ data, admin, setModal, normTeam = normalizeLegacyParty, go }) {
   const [normalizedChamps, setNormalizedChamps] = useState(null);
   const [artworkLookup, setArtworkLookup] = useState(null);
   const normalizedEnabled = championsOperationsEnabled();

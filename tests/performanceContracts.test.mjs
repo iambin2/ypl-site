@@ -1,22 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import vm from "node:vm";
 import test from "node:test";
 import { APP_VIEWS, readInitialAppView, builderRouteSearch, bracketRouteSearch } from "../src/services/appRouting.js";
+import * as images from "../src/services/legacyPartyImages.js";
 
 // Capture the original App helpers before relocating them. The golden digest
 // covers all names and complete data URLs, not only image count or dimensions.
-const imageModule = new URL("../src/services/legacyPartyImages.js", import.meta.url);
-async function imageHelpers() {
-  if (existsSync(imageModule)) return import(imageModule.href);
-  const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
-  const table = app.slice(app.indexOf("let __POKE_CACHE"), app.indexOf("/* ============================== 시드"));
-  const normalize = app.match(/^function normTeam\(team\).*$/m)?.[0];
-  const context = {};
-  vm.runInNewContext(`${table}\n${normalize}\nglobalThis.helpers={pokeImgTable,pokeImg,normTeam};`, context);
-  return context.helpers;
-}
 
 test("all nine direct views and invalid view fallback preserve routing", () => {
   assert.deepEqual([...APP_VIEWS].sort(), ["about", "board", "bracket", "builder", "champions", "home", "news", "records", "titles"]);
@@ -32,7 +21,7 @@ test("all nine direct views and invalid view fallback preserve routing", () => {
 });
 
 test("legacy image lookup preserves all 30 original data URLs and singleton identity", async () => {
-  const { pokeImgTable, pokeImg } = await imageHelpers();
+  const { pokeImgTable, pokeImg } = images;
   const table = pokeImgTable();
   assert.equal(table, pokeImgTable());
   assert.equal(Object.keys(table).length, 30);
@@ -43,7 +32,7 @@ test("legacy image lookup preserves all 30 original data URLs and singleton iden
 });
 
 test("legacy party normalization preserves custom images, aliases, and editor save payload", async () => {
-  const { normTeam, pokeImg } = await imageHelpers();
+  const { normTeam, pokeImg } = images;
   const input = ["픽시", { name: "픽시", img: "data:image/png;base64,custom", pokemon_id: "clefable" }, null, { name: "missing" }];
   const before = JSON.stringify(input);
   const normalized = JSON.parse(JSON.stringify(normTeam(input)));
