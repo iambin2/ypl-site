@@ -243,18 +243,22 @@ function saveCache(data) {
   }
 }
 
+let pendingSources = null;
+
 async function load() {
   const cached = readCache();
   if (cached) return cached;
 
-  const [pokedexSrc, movesSrc, itemsSrc, learnsetsSrc, championsMovesSrc, championsItemsSrc] = await Promise.all([
+  // Share only pending immutable source text. Each caller still gets its own
+  // parsed objects, and the existing persisted-cache lifetime is unchanged.
+  const [pokedexSrc, movesSrc, itemsSrc, learnsetsSrc, championsMovesSrc, championsItemsSrc] = await (pendingSources ||= Promise.all([
     fetchText(URLS.pokedex),
     fetchText(URLS.moves),
     fetchText(URLS.items),
     fetchText(URLS.championsLearnsets),
     fetchText(URLS.championsMoves),
     fetchText(URLS.championsItems),
-  ]);
+  ]).finally(() => { pendingSources = null; }));
 
   const pokedex = parsePokedex(pokedexSrc);
   const learnsets = parseLearnsets(learnsetsSrc);

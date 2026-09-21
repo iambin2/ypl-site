@@ -78,11 +78,18 @@ export function resolveRecordsSpriteName(pokemonId, snapshotName, directory) {
   return clean(directory?.get?.(clean(pokemonId))?.canonicalName);
 }
 
+let speciesNamesRequest = null;
+
 export async function loadRecordsPokemonDirectory() {
-  const [detailData, response] = await Promise.all([
+  const [detailData, csv] = await Promise.all([
     loadChampionsData(),
-    fetch(SPECIES_NAMES_URL, { cache: "force-cache" }),
+    // Consume the Response once; share text, never mutable Maps or Response bodies.
+    speciesNamesRequest ||= fetch(SPECIES_NAMES_URL, { cache: "force-cache" })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      })
+      .finally(() => { speciesNamesRequest = null; }),
   ]);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return buildRecordsPokemonDirectory(detailData, parseSpeciesNames(await response.text()));
+  return buildRecordsPokemonDirectory(detailData, parseSpeciesNames(csv));
 }

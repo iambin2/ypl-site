@@ -50,3 +50,13 @@ test("details work with blocked storage and retry after failure", async t => {
   await loader.load();
   assert.equal(loader.count() - before, 6);
 });
+
+test("concurrent cold callers retain independent mutable detail objects", async t => {
+  const loader = await setup(t, { blocked: true });
+  const [first, second] = await Promise.all([loader.load(), loader.load()]);
+  assert.equal(loader.count(), 6);
+  assert.deepEqual(first, second);
+  assert.notEqual(first, second);
+  first.pokedex.pikachu.name = "caller mutation";
+  assert.equal(second.pokedex.pikachu.name, "Pikachu");
+});
