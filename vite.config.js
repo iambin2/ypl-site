@@ -60,7 +60,5 @@ export default defineConfig(({ command }) => {
     // 저장소 이름을 바꾸면 이 값도 "/새이름/" 으로 바꾸세요.
     base: "/ypl-site/",
     plugins: [react(), isProductionBuild && productionVersionPlugin()].filter(Boolean),
-    // 이미지(움짤)가 많아 청크 경고 한도를 올려둡니다.
-    build: { chunkSizeWarningLimit: 4000 },
   };
 });
