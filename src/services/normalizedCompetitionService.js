@@ -1540,7 +1540,6 @@ export async function listEventApplications(eventId) {
       id,
       registration_name,
       registration_data,
-      registration_source,
       registered_at,
       created_at
     `)
@@ -1581,19 +1580,21 @@ export async function listEventRegistrations(eventId) {
   return data || [];
 }
 
-export async function listEventRegistrationSubmissionStatuses(eventId) {
+export async function listEventRegistrationSubmissionStatuses(eventId, knownRegistrations = null) {
   if (!eventId) return [];
 
-  const { data: registrations, error: registrationError } = await db()
-    .from("event_registrations")
-    .select("id, registration_name, registration_source")
-    .eq("event_id", eventId)
-    .in("registration_source", ["application", "advancement", "manual"])
-    .order("registered_at", { ascending: true });
+  let registrationRows=knownRegistrations;
+  if(!Array.isArray(registrationRows)){
+    const { data: registrations, error: registrationError } = await db()
+      .from("event_registrations")
+      .select("id, registration_name, registration_source")
+      .eq("event_id", eventId)
+      .in("registration_source", ["application", "advancement", "manual"])
+      .order("registered_at", { ascending: true });
 
-  if (registrationError) fail(registrationError, "대회 참가자 제출 상태를 불러오지 못했습니다.");
-
-  const registrationRows = registrations || [];
+    if (registrationError) fail(registrationError, "대회 참가자 제출 상태를 불러오지 못했습니다.");
+    registrationRows=registrations || [];
+  }
   if (!registrationRows.length) return [];
   const registrationIds = registrationRows.map(registration => registration.id).filter(Boolean);
   const { data: submissions, error: submissionError } = await db()

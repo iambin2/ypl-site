@@ -32,10 +32,16 @@
 .bk-submission { padding: 4px 20px; border-radius: var(--r-tile); background: var(--bg-2); }
 .bk-submission > .records-block-head { padding-top: 16px; }
 .bk-submission > .row-actions:last-child { padding-bottom: 16px; }
+.bk-submission-head { display: flex; align-items: center; gap: 10px; }
 .bk-submission-toggle {
-  width: 100%; min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex: 1; min-width: 0; min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 0; border: 0; background: transparent; text-align: left;
 }
+.bk-submission-refresh {
+  width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: var(--bg); color: var(--text-2); transition: transform var(--d3) var(--ease), color var(--d1) var(--ease), scale var(--d2) var(--ease);
+}
+.bk-submission-refresh:hover:not(:disabled) { transform: rotate(90deg); color: var(--ink); }
 .bk-submission-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
 .bk-submission-summary { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .bk-submission-chevron { display: flex; color: var(--text-3); transition: transform var(--d2) var(--ease), color var(--d1) var(--ease); }

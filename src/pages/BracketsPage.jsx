@@ -334,15 +334,15 @@ function BracketWizard({ data, onClose, onCreate }){
 
     setEventBusy(true);
     try{
-      const [registrationResult, statusResult, directSelectionResult] = await Promise.allSettled([
+      const [registrationResult, directSelectionResult] = await Promise.allSettled([
         listEventRegistrations(id),
-        listEventRegistrationSubmissionStatuses(id),
         event.championship_phase === "qualifier" ? listChampionshipQualifierDirectSelectionIds(id) : Promise.resolve([]),
       ]);
       if (registrationResult.status === "rejected") throw registrationResult.reason;
       const regs = registrationResult.value || [];
-      const statuses = statusResult.status === "fulfilled" ? statusResult.value : [];
-      if (statusResult.status === "rejected") setSubmissionStatusError(statusResult.reason?.message || "제출 상태를 불러오지 못했습니다.");
+      let statuses=[];
+      try{ statuses=await listEventRegistrationSubmissionStatuses(id,regs); }
+      catch(statusError){ setSubmissionStatusError(statusError?.message || "제출 상태를 불러오지 못했습니다."); }
       setEventRegs(regs);
       setSubmissionStatuses(statuses || []);
       const directIds = directSelectionResult.status === "fulfilled" ? directSelectionResult.value : [];
@@ -901,7 +901,7 @@ function formatBracketSubmissionTime(value) {
     : "";
 }
 
-function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRetry }) {
+function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefresh }) {
   const renderMember = member => (
     <div className="bk-submission-member" key={member.registrationId}>
       <span className="bk-submission-member-name">{member.name}</span>
@@ -915,22 +915,27 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRetry
 
   return (
     <section className="bk-submission" aria-label="파티 제출 현황">
-      <button
-        type="button"
-        className="bk-submission-toggle"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        disabled={busy && model.total === 0}
-      >
-        <span className="bk-submission-title">파티 제출 현황</span>
-        <span className="bk-submission-summary">
-          {busy && model.total === 0 ? "불러오는 중…" : `${model.submitted} / ${model.total} 제출`}
-          <span className={"bk-submission-chevron"+(expanded?" open":"")} aria-hidden="true"><Icon n="chev" size={16}/></span>
-        </span>
-      </button>
+      <div className="bk-submission-head">
+        <button
+          type="button"
+          className="bk-submission-toggle"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          disabled={busy && model.total === 0}
+        >
+          <span className="bk-submission-title">파티 제출 현황</span>
+          <span className="bk-submission-summary">
+            {busy && model.total === 0 ? "불러오는 중…" : `${model.submitted} / ${model.total} 제출`}
+            <span className={"bk-submission-chevron"+(expanded?" open":"")} aria-hidden="true"><Icon n="chev" size={16}/></span>
+          </span>
+        </button>
+        <button type="button" className="bk-submission-refresh" onClick={onRefresh} disabled={busy} aria-label="파티 제출 현황 새로고침" title="새로고침">
+          <Icon n="refresh" size={15}/>
+        </button>
+      </div>
       {error && <div className="bk-submission-error">
         <span>{error}</span>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onRetry}>다시 불러오기</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onRefresh}>다시 불러오기</button>
       </div>}
       {expanded && !busy && !error && model.total > 0 && (
         <div className="bk-submission-detail">
@@ -999,10 +1004,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       .catch(error=>{ if(!cancelled) setSubmissionStatusError(error?.message||"파티 제출 현황을 불러오지 못했습니다."); })
       .finally(()=>{ if(!cancelled) setSubmissionStatusBusy(false); });
     loadStatuses();
-    const interval=setInterval(()=>{ if(!document.hidden) loadStatuses(); },10000);
-    const onFocus=()=>loadStatuses();
-    window.addEventListener("focus",onFocus);
-    return ()=>{ cancelled=true; clearInterval(interval); window.removeEventListener("focus",onFocus); };
+    return ()=>{ cancelled=true; };
   },[b.eventId,submissionStatusReloadKey]);
   const submissionStatusModel=buildBracketSubmissionStatusModel(b,submissionStatuses);
   const pickNormalized=async(matchId,side)=>{
@@ -1099,7 +1101,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       error={submissionStatusError}
       expanded={submissionStatusExpanded}
       onToggle={()=>setSubmissionStatusExpanded(value=>!value)}
-      onRetry={()=>setSubmissionStatusReloadKey(value=>value+1)}
+      onRefresh={()=>setSubmissionStatusReloadKey(value=>value+1)}
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
     {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"} seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}

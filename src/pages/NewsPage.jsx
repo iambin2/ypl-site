@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Reveal, siteAlert, siteConfirm } from "../components/index.js";
 import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
@@ -10,6 +10,26 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
   const [eventResponses,setEventResponses]=useState({});
   const [championshipSubmissionEvents,setChampionshipSubmissionEvents]=useState({});
+  const [seen,setSeen]=useState({});
+  const refreshEventApplications=useCallback(async announcement=>{
+    if(!announcement?.form?.eventId) return false;
+    try{
+      const rows=await listEventApplications(announcement.form.eventId);
+      setEventResponses(previous=>({...previous,[announcement.id]:rows}));
+      setSeen(previous=>({...previous,[announcement.id]:new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}));
+      return true;
+    }catch(error){
+      console.error(error);
+      return false;
+    }
+  },[]);
+  const refreshPublicResponses=async announcement=>{
+    if(announcement?.form?.eventId) return refreshEventApplications(announcement);
+    if(!refresh) return false;
+    await refresh();
+    setSeen(previous=>({...previous,[announcement.id]:new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}));
+    return true;
+  };
   useEffect(()=>{
     const targets=(data.announcements||[]).filter(a=>
       a.form?.enabled&&a.form?.eventId&&(
@@ -38,17 +58,6 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     return ()=>{cancelled=true;};
   },[data.announcements]);
   const [open,setOpen]=useState(()=>new Set());
-  const [seen,setSeen]=useState("");
-  const hasPublic=(data.announcements||[]).some(a=>a.form&&a.form.enabled&&(a.form.fields||[]).some(f=>f.public));
-  // 공개 응답이 있는 공지가 있으면 10초마다 자동 갱신(폴링) — 서버 push가 없어 주기적 재조회 방식
-  useEffect(()=>{
-    if(!hasPublic||!refresh) return;
-    const tick=async()=>{ await refresh(); setSeen(new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})); };
-    tick();
-    const t=setInterval(()=>{ if(!document.hidden) tick(); },10000);
-    return ()=>clearInterval(t);
-  },[hasPublic,refresh]);
-  const doRefresh=async()=>{ if(refresh){ await refresh(); setSeen(new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})); } };
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
   const href=(u)=>/^https?:\/\//.test(u)?u:"https://"+u;
   const all=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1));
@@ -101,8 +110,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
           {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
             ann={a}
             responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
-            onRefresh={doRefresh}
-            updatedAt={seen}
+            onRefresh={()=>refreshPublicResponses(a)}
+            updatedAt={seen[a.id]||""}
           />}
           {isOpen&&<div className="nb-body swap"><p>{a.body}</p>{admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}</div>}
         </div>);})}
@@ -112,7 +121,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       ann={fillAnn}
       responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null}
       onClose={()=>setFill(null)}
-      onSubmit={(answers)=>submitForm(fillAnn.id,answers)}
+      onSubmit={async answers=>{
+        const ok=await submitForm(fillAnn.id,answers);
+        if(ok!==false&&fillAnn.form?.eventId) await refreshEventApplications(fillAnn);
+        return ok;
+      }}
     />}
     {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp}/>}
   </section>);
@@ -148,8 +161,8 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
             </div>))}
           </div>}
       <div className="pr-foot">
-        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} title="새로고침"><Icon n="refresh" size={15}/></button>}
-        {updatedAt&&<span>자동 갱신 중, 마지막 확인 {updatedAt}</span>}
+        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} aria-label="공개 응답 새로고침" title="새로고침"><Icon n="refresh" size={15}/></button>}
+        {updatedAt&&<span>마지막 확인 {updatedAt}</span>}
       </div>
     </div>}
   </div>);
