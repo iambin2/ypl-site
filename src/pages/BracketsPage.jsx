@@ -1746,7 +1746,7 @@ function BracketDraw({ b, onDone }){
 }
 
 /* ===== 대진표 메인 ===== */
-export default function BracketsPage({ data, admin, flash, refresh }){
+export default function BracketsPage({ data, admin, save, flash, refresh }){
   const [normalizedBrackets,setNormalizedBrackets]=useState([]);
   const [normalizedLoadError,setNormalizedLoadError]=useState("");
   const [normalizedInitialReady,setNormalizedInitialReady]=useState(false);
