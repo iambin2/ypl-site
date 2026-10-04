@@ -318,6 +318,7 @@ function normalizedModels(data, raw) {
 }
 
 function normalizedRosters(raw, models, pokemonDirectory) {
+  const entryById = new Map(models.entries.map((entry) => [entry.id, entry]));
   const registrationById = new Map(
     asArray(raw?.eventRegistrations).map((registration) => [registration.id, registration])
   );
@@ -335,8 +336,11 @@ function normalizedRosters(raw, models, pokemonDirectory) {
 
   return models.participants.flatMap((participant) => {
     const event = models.eventById.get(participant.event_id);
-    if (!event || event.is_team_event || !event.team_revealed_at) return [];
+    if (!event || !event.team_revealed_at) return [];
+    const entry = entryById.get(participant.entry_id);
+    if (entry?.event_id !== event.id || entry.entry_type !== (event.is_team_event ? "team" : "individual")) return [];
     const registration = registrationById.get(participant.registration_id);
+    if (registration?.event_id !== event.id) return [];
     const submission = submissionById.get(registration?.final_submission_id);
     if (!submission || submission.registration_id !== registration?.id || !snapshotById.has(submission.snapshot_id)) return [];
     const members = asArray(membersBySnapshotId.get(submission.snapshot_id))
@@ -354,16 +358,19 @@ function normalizedRosters(raw, models, pokemonDirectory) {
     const result = models.resultByEntryId.get(participant.entry_id);
     if (!event || !player) return [];
     return [{
-      id: `${event.id}:${participant.entry_id}:${submission.snapshot_id}`,
+      id: `${event.id}:${event.is_team_event ? participant.id : participant.entry_id}:${submission.snapshot_id}`,
       ...models.eventMeta(event),
       entryId: participant.entry_id,
       playerId: participant.player_id,
+      entryParticipantId: participant.id,
+      registrationId: participant.registration_id,
+      teamName: event.is_team_event ? cleanName(entry.display_name) : "",
       owner: cleanName(player.display_name),
       pokemon: resolvedMembers.map((member) => member.name),
       pokemonIds: resolvedMembers.map((member) => member.pokemonId),
       spriteNames: resolvedMembers.map((member) => member.spriteName),
       placement: PLACEMENT[result?.placement_code] || "participant",
-      team: false,
+      team: Boolean(event.is_team_event),
       snapshotId: submission.snapshot_id,
     }];
   });
@@ -715,7 +722,19 @@ export function buildNormalizedRecordsProjection(legacyData = {}, raw = {}, poke
   const compatibilityTeamBrackets = asArray(filteredLegacyData.brackets)
     .filter((bracket) => bracket?.applied && normalizedTeamEventIds.has(bracket.eventId)).length;
   const enrichedNormalizedArchives = models.archives.map((archive) => {
-    if (archive.team) return archive;
+    if (archive.team) {
+      const rosters = normalizedRosterRows.filter((roster) => roster.eventId === archive.eventId);
+      const rosterByParticipantId = new Map(rosters.map((roster) => [
+        `${roster.eventId}:${roster.entryParticipantId}`, roster,
+      ]));
+      return {
+        ...archive,
+        rosters,
+        teamParticipants: models.participations
+          .filter((participant) => participant.eventId === archive.eventId)
+          .map((participant) => ({ ...participant, roster: rosterByParticipantId.get(participant.id) || null })),
+      };
+    }
     const rosterByEntryId = new Map(
       normalizedRosterRows
         .filter((roster) => roster.eventId === archive.eventId)

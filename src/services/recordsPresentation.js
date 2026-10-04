@@ -2,6 +2,23 @@ const asArray = (value) => (Array.isArray(value) ? value : []);
 const clean = (value) => String(value || "").trim();
 const LABELS = { win: "우승", ru: "준우승", sf: "4강", participant: "참가" };
 
+export function buildTeamPartyPreviewRows(round) {
+  if (!round?.team) return [];
+  const rows = asArray(round.teamParticipants).map((participant) => {
+    const placement = ["win", "ru", "sf"].includes(participant.placement) ? participant.placement : "participant";
+    return {
+      placement,
+      label: `팀 ${LABELS[placement]}`,
+      name: clean(participant.name),
+      teamName: clean(participant.teamName),
+      entryId: participant.entryId,
+      playerId: participant.playerId,
+      roster: participant.roster || null,
+    };
+  }).filter((row) => row.name);
+  return ["win", "ru", "sf", "participant"].flatMap((placement) => rows.filter((row) => row.placement === placement));
+}
+
 export function buildIndividualPartyPreviewRows(round) {
   if (!round || round.team) return [];
   if (Array.isArray(round.individualParticipants)) {

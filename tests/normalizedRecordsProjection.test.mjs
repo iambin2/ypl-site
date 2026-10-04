@@ -7,7 +7,7 @@ import {
 } from "../src/services/normalizedRecordsProjection.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../src/services/recordsAnalytics.js";
 import { resolveRecordsPokemonName, resolveRecordsSpriteName } from "../src/services/recordsPokemon.js";
-import { buildIndividualPartyPreviewRows } from "../src/services/recordsPresentation.js";
+import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows } from "../src/services/recordsPresentation.js";
 import { spriteUrl } from "../src/services/teamBuilderCore.js";
 
 const EVENT_ID = "event-official";
@@ -722,6 +722,60 @@ test("normalized team Results expand to member history and team archive without 
   assert.ok(snapshot.pokemon.find((row) => row.name === "피카츄").trainers.some((row) => row.name === "A1"));
   assert.ok(snapshot.matches.some((row) => row.bracketId === "linked-team-bracket" && row.teamMatch === true));
   assert.equal(snapshot.matches.some((row) => row.eventId === TEAM_EVENT_ID), false);
+});
+
+test("revealed team rosters belong to each member and feed archives, profiles and Pokemon usage", () => {
+  const raw = teamRawData();
+  const event = raw.events.find((row) => row.id === TEAM_EVENT_ID);
+  event.team_revealed_at = "2026-10-04T10:09:21Z";
+  const members = [
+    ["a-1", "pikachu", "피카츄"],
+    ["a-2", "raichu", "라이츄"],
+    ["b-1", "pikachu", "피카츄"],
+  ];
+  for (const [key, pokemonId, name] of members) {
+    const registration = raw.eventRegistrations.find((row) => row.id === `registration-team-${key}`);
+    registration.final_submission_id = `submission-${key}`;
+    raw.registrationSubmissions.push({ id: registration.final_submission_id, registration_id: registration.id, snapshot_id: `snapshot-${key}`, revision: 2 });
+    raw.teamSnapshots.push({ id: `snapshot-${key}` });
+    raw.teamSnapshotMembers.push({ id: `member-${key}`, snapshot_id: `snapshot-${key}`, slot: 1, pokemon_id: pokemonId, pokemon_name_snapshot: name });
+  }
+  // An older revision and a submission without an actual participant must not enter Records.
+  raw.registrationSubmissions.push({ id: "old-submission", registration_id: "registration-team-a-1", snapshot_id: "old-snapshot", revision: 1 });
+  raw.teamSnapshots.push({ id: "old-snapshot" }, { id: "no-show-snapshot" });
+  raw.teamSnapshotMembers.push(
+    { id: "old-member", snapshot_id: "old-snapshot", slot: 1, pokemon_id: "eevee", pokemon_name_snapshot: "이브이" },
+    { id: "no-show-member", snapshot_id: "no-show-snapshot", slot: 1, pokemon_id: "eevee", pokemon_name_snapshot: "이브이" },
+  );
+  raw.eventRegistrations.push({ id: "no-show-registration", event_id: TEAM_EVENT_ID, final_submission_id: "no-show-submission" });
+  raw.registrationSubmissions.push({ id: "no-show-submission", registration_id: "no-show-registration", snapshot_id: "no-show-snapshot" });
+
+  const snapshot = buildNormalizedRecordsProjection(teamLegacyData(), raw);
+  const rosters = snapshot.rosters.filter((row) => row.eventId === TEAM_EVENT_ID);
+  assert.equal(rosters.length, 3);
+  assert.equal(new Set(rosters.map((row) => row.id)).size, 3);
+  assert.ok(rosters.every((row) => row.team));
+  assert.equal(rosters.some((row) => row.bracketId === "linked-team-bracket"), false);
+  assert.deepEqual(snapshot.profiles["player:player-team-a-1"].rosters.map((row) => row.pokemonIds), [["pikachu"]]);
+  assert.deepEqual(snapshot.profiles["player:player-team-a-2"].rosters.map((row) => row.pokemonIds), [["raichu"]]);
+  assert.equal(snapshot.trainers.find((row) => row.playerId === "player-team-a-1").wins, 0);
+  assert.equal(snapshot.pokemon.find((row) => row.name === "피카츄").entries, 2);
+  const archive = snapshot.archives.find((row) => row.eventId === TEAM_EVENT_ID);
+  assert.equal(archive.rosters.length, 3);
+  const previews = buildTeamPartyPreviewRows(archive);
+  assert.equal(previews.length, 8);
+  assert.equal(previews.filter((row) => !row.roster).length, 5);
+  assert.equal(previews.find((row) => row.name === "A1").roster.snapshotId, "snapshot-a-1");
+  assert.equal(previews.find((row) => row.name === "A2").roster.snapshotId, "snapshot-a-2");
+  assert.equal(previews.find((row) => row.name === "A2").teamName, "Team Alpha");
+  assert.equal(previews.find((row) => row.name === "A2").label, "팀 우승");
+
+  raw.registrationSubmissions.find((row) => row.id === "submission-a-1").registration_id = "registration-team-a-2";
+  const malformed = buildNormalizedRecordsProjection(teamLegacyData(), raw);
+  assert.equal(malformed.rosters.filter((row) => row.eventId === TEAM_EVENT_ID).length, 2);
+  event.team_revealed_at = null;
+  const hidden = buildNormalizedRecordsProjection({}, raw);
+  assert.equal(hidden.rosters.filter((row) => row.eventId === TEAM_EVENT_ID).length, 0);
 });
 
 test("team RankingAwards use ledger points and never add placement counts", () => {

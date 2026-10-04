@@ -4,7 +4,7 @@ import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../ser
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
-import { buildIndividualPartyPreviewRows } from "../services/recordsPresentation.js";
+import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows } from "../services/recordsPresentation.js";
 import {
   fetchNormalizedRecordsSnapshot,
   normalizedRecordsReadEnabled,
@@ -413,8 +413,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     const rl = championSeries ? "" : r.round ? (/^\d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
     const runnerUps = Array.isArray(r.ru) ? r.ru : split(r.ru);
     const rule = displayRecordMeta(r.rule);
-    const partyRows = buildIndividualPartyPreviewRows(r);
-    const toggleable = r.source === "normalized" && !r.team && partyRows.length > 0;
+    const partyRows = r.team ? buildTeamPartyPreviewRows(r) : buildIndividualPartyPreviewRows(r);
+    const toggleable = r.source === "normalized" && partyRows.length > 0;
     const expanded = openRoundKey === key;
     const toggle = () => setOpenRoundKey((current) => current === key ? null : key);
     const championshipEmphasis = championSeries && r.championshipPhase !== "qualifier";
@@ -436,7 +436,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       <div className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
         <div className="r2-date tnum">{r.date}</div>
         <div className="r2-main">
-          {toggleable ? (
+          {toggleable && !r.team ? (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
               <div className="records-round-summary">
                 {(showCompetition || rl || rule || r.team || championshipEmphasis || r.season) && <span className="r2-head">
@@ -492,13 +492,22 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
                   ))}
             </>}
           </div>}</>}
+          {toggleable && r.team && (
+            <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
+              <span className="records-round-summary">팀원별 공식 파티</span>
+              <span className="records-round-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
+            </button>
+          )}
           {toggleable && expanded && (
             <div className="records-round-detail">
               <div className="records-round-party-list">
                 {partyRows.map((row, index) => (
                   <div className="records-round-party-row" key={`${row.placement}:${row.name}:${index}`}>
                     <span className={"r2-rk" + (row.placement === "win" ? " gold" : "")}>{row.label}</span>
-                    <span className={"r2-name" + (row.placement === "win" ? " win" : "")}>{row.name}</span>
+                    <div>
+                      <span className={"r2-name" + (row.placement === "win" ? " win" : "")}>{row.name}</span>
+                      {row.teamName && <div className="r2-season">{displayTeamName(row.teamName)}</div>}
+                    </div>
                     {row.roster?.pokemon?.length
                       ? <PartySprites roster={row.roster} />
                       : <span className="records-party-missing">파티 미제출</span>}
