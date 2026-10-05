@@ -784,7 +784,10 @@ test("revealed team rosters belong to each member and feed archives, profiles an
   assert.deepEqual(snapshot.profiles["player:player-team-a-1"].rosters.map((row) => row.pokemonIds), [["pikachu"]]);
   assert.deepEqual(snapshot.profiles["player:player-team-a-2"].rosters.map((row) => row.pokemonIds), [["raichu"]]);
   assert.equal(snapshot.trainers.find((row) => row.playerId === "player-team-a-1").wins, 0);
-  assert.equal(snapshot.pokemon.find((row) => row.name === "피카츄").entries, 2);
+  // Both revealed team rosters count, merged with Alpha's unrelated legacy roster into one row.
+  const pikachuRows = snapshot.pokemon.filter((row) => row.name === "피카츄");
+  assert.equal(pikachuRows.length, 1);
+  assert.deepEqual(pikachuRows[0].trainers.map((row) => row.name).sort(), ["A1", "Alpha", "B1"]);
   const archive = snapshot.archives.find((row) => row.eventId === TEAM_EVENT_ID);
   assert.equal(archive.rosters.length, 3);
   const previews = buildTeamPartyPreviewRows(archive);
