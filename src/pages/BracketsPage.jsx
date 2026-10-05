@@ -1794,6 +1794,24 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     if(open?.eventId) url.searchParams.set("eventId",open.eventId); else url.searchParams.delete("eventId");
     if(url.href!==window.location.href) window.history.replaceState(window.history.state,"",url);
   },[open?.eventId,normalizedInitialReady]);
+  // Opening a bracket is a history entry, so the phone's back button returns
+  // to the list instead of leaving the bracket page.
+  const openBracket=(b)=>{
+    const url=new URL(window.location.href);
+    if(b.eventId) url.searchParams.set("eventId",b.eventId); else url.searchParams.delete("eventId");
+    window.history.pushState({...window.history.state,bracketId:b.id},"",url);
+    setOpenId(b.id);
+  };
+  const closeBracket=()=>{
+    setDrawId(null);
+    if(window.history.state?.bracketId) window.history.back();
+    else setOpenId(null);
+  };
+  useEffect(()=>{
+    const onPopState=()=>{ setOpenId(window.history.state?.bracketId||null); setDrawId(null); };
+    window.addEventListener("popstate",onPopState);
+    return ()=>window.removeEventListener("popstate",onPopState);
+  },[]);
   const create=async(b)=>{
     const normalizedCandidate=Boolean(
       b.eventId&&b.format==="elim"&&(b.mode==="single"||b.mode==="team")
@@ -1952,7 +1970,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             eventId:b.eventId,
           });
           setNormalizedBrackets(previous=>previous.filter(row=>row.eventId!==b.eventId));
-          setOpenId(null);
+          closeBracket();
           flash("대진표를 삭제했습니다");
         }catch(error){
           const rows=await loadNormalized();
@@ -1961,7 +1979,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             && row?.bracket?.projection?.runtimeId===b.projection?.runtimeId
           );
           if(!runtimeStillExists){
-            setOpenId(null);
+            closeBracket();
             flash("대진표를 삭제했습니다");
           }else{
             flash(`normalized 대진표 삭제 실패: ${error?.message||"알 수 없는 오류"}`);
@@ -2004,14 +2022,14 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             </div>
             {admin&&<button className="y-btn y-btn-primary" onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>첫 대진표 만들기</button>}
           </div>}
-      {list.map(b=>(<button className="bk-card" key={b.id} onClick={()=>setOpenId(b.id)}>
+      {list.map(b=>(<button className="bk-card" key={b.id} onClick={()=>openBracket(b)}>
         <div className="bk-card-top"><span className={"bk-badge "+(b.applied?"done":"live")}>{statusTag(b)}</span><span className="bk-card-date tnum">{b.createdAt}</span></div>
         <div className="bk-card-name">{b.name}</div>
         <div className="bk-card-meta">{b.mode==="team"?"팀전":"개인전"}, {b.format==="group"?"조별예선+본선":(b.double?"더블 엘리미네이션":"싱글 엘리미네이션")}, {b.participants.length}{b.mode==="team"?"팀":"명"}</div>
       </button>))}
     </div>}
     {open&&!wizard&&<div className="bk-open swap">
-      <div className="bk-open-bar"><button className="btn btn-ghost btn-sm" disabled={deletingId===open.id} onClick={()=>{setOpenId(null);setDrawId(null);}}><Icon n="back" size={14}/>목록</button><div className="bk-open-title">{open.name}</div>{!open.readOnly&&admin&&<button className="btn btn-ghost btn-sm" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)} style={{marginLeft:"auto",color:"var(--loss)"}}>{deletingId===open.id?"삭제 중…":"삭제"}</button>}</div>
+      <div className="bk-open-bar"><button className="btn btn-ghost btn-sm" disabled={deletingId===open.id} onClick={closeBracket}><Icon n="back" size={14}/>목록</button><div className="bk-open-title">{open.name}</div>{!open.readOnly&&admin&&<button className="btn btn-ghost btn-sm" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)} style={{marginLeft:"auto",color:"var(--loss)"}}>{deletingId===open.id?"삭제 중…":"삭제"}</button>}</div>
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
     </div>}
     {wizard&&<BracketWizard data={data} onClose={()=>setWizard(false)} onCreate={create}/>}
