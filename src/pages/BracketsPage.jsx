@@ -1765,7 +1765,8 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     }
   };
   useEffect(()=>{ void loadNormalized({initial:true}); },[]);
-  const requestedEventId=new URLSearchParams(window.location.search).get("eventId");
+  // A deep link is consumed once; afterwards ?eventId= only mirrors the open bracket.
+  const requestedEventIdRef=useRef(new URLSearchParams(window.location.search).get("eventId"));
   // Active Event-linked brackets are normalized-only. Completed pre-normalized
   // graphs without an Event id are a separate, display-only historical source.
   const list=normalizedInitialReady
@@ -1779,10 +1780,20 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   const deletingRef=useRef(false);
   const open=list.find(b=>b.id===openId);
   useEffect(()=>{
-    if(!requestedEventId) return;
-    const target=list.find(b=>b.eventId===requestedEventId);
-    if(target) setOpenId(target.id);
-  },[requestedEventId,normalizedInitialReady,normalizedBrackets.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    if(!requestedEventIdRef.current) return;
+    const target=list.find(b=>b.eventId===requestedEventIdRef.current);
+    if(!target) return;
+    requestedEventIdRef.current=null;
+    setOpenId(target.id);
+  },[normalizedInitialReady,normalizedBrackets.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Keep ?eventId= in step with the open bracket, so refresh and shared links
+  // match the screen and a closed bracket does not reopen.
+  useEffect(()=>{
+    if(!normalizedInitialReady) return;
+    const url=new URL(window.location.href);
+    if(open?.eventId) url.searchParams.set("eventId",open.eventId); else url.searchParams.delete("eventId");
+    if(url.href!==window.location.href) window.history.replaceState(window.history.state,"",url);
+  },[open?.eventId,normalizedInitialReady]);
   const create=async(b)=>{
     const normalizedCandidate=Boolean(
       b.eventId&&b.format==="elim"&&(b.mode==="single"||b.mode==="team")
