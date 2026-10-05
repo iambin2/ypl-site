@@ -13,7 +13,7 @@ const out = process.argv[2] || join("..", `ypl-backup-${stamp}`);
 mkdirSync(out, { recursive: true });
 
 const TABLES = ["seasons", "players", "events", "event_registrations", "registration_submissions", "team_snapshots",
-  "team_snapshot_members", "entries", "entry_participants", "bracket_runtimes", "bracket_entry_slots", "matches",
+  "team_snapshot_members", "entries", "entry_participants", "bracket_runtimes", "bracket_entry_slots", "bracket_identity_changes", "matches",
   "results", "ranking_awards", "ranking_baselines", "hall_of_fame_entries", "championship_advancements",
   "championship_qualifier_direct_selections"];
 
