@@ -1,3 +1,4 @@
+import { displaySeasonLabel } from "./seasonLabel.js";
 import { loadRecordsPokemonDirectory, resolveRecordsPokemonName } from "./recordsPokemon.js";
 
 const clean = (value) => String(value || "").trim();
@@ -24,7 +25,7 @@ export function normalizedSeasonLabel(season = {}) {
   const series = clean(season?.series).toUpperCase();
   const number = Number(season?.number);
   if (!series || !Number.isInteger(number) || number <= 0) return "";
-  return `${series} SEASON ${number}`;
+  return displaySeasonLabel(`${series} SEASON ${number}`);
 }
 
 export function generationNumberFromLegacyLabel(label) {

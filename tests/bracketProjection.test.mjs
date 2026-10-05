@@ -221,11 +221,11 @@ test("winner changes overlay a different side without changing downstream topolo
 test("rejects a Match whose node key or Entry sides disagree with deterministic topology", () => {
   assert.throws(
     () => project(4, [match("legacy-random-id", "entry-a", "entry-b", "entry-a")]),
-    /알 수 없는 Single bracket node key/
+    /알 수 없는 싱글 토너먼트 경기 키/
   );
   assert.throws(
     () => project(4, [match("single:r1:m1", "entry-a", "entry-c", "entry-a")]),
-    /deterministic topology/
+    /정해진 대진 구조/
   );
 });
 
@@ -299,7 +299,7 @@ test("rejects a missing persisted slot set instead of falling back to Entry ids"
       entryParticipants: base.entryParticipants,
       matches: [],
     }),
-    /persisted entrySlots/
+    /저장된 대진 자리/
   );
 });
 
@@ -343,20 +343,20 @@ test("rejects a first-round double-BYE draw", () => {
       entrySlots: base.entrySlots,
       matches: [],
     }),
-    /double-BYE/
+    /양쪽 부전승/
   );
 });
 
 test("requires normalized Match source and validates its sides against persisted topology", () => {
   assert.throws(
     () => project(2, [match("single:r1:m1", "entry-a", "entry-b", null, { source: "legacy" })]),
-    /source.*일치하지 않습니다/
+    /출처.*일치하지 않습니다/
   );
   assert.throws(
     () => project(3, [match("single:r1:m1", "entry-b", "entry-a")], {
       slotEntryIds: ["entry-a", "entry-b", "entry-c", null],
     }),
-    /deterministic topology/
+    /정해진 대진 구조/
   );
 });
 

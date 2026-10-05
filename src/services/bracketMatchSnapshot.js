@@ -47,7 +47,7 @@ function resolveActualTeamPlayer(members, memberName, matchId, label) {
   const matches = members.filter(member => member.name === memberName);
   if (!memberName || matches.length !== 1 || !matches[0].playerId) {
     throw new Error(
-      `팀전 Match '${matchId}'의 ${label} '${memberName || "(없음)"}' Player identity가 없거나 중복되어 있습니다.`
+      `팀전 경기 '${matchId}'의 ${label} '${memberName || "(없음)"}' 선수 정보가 없거나 중복되어 있습니다.`
     );
   }
   return matches[0].playerId;
@@ -59,7 +59,7 @@ function makeTeamChildRows(match, participantA, participantB, participantById, m
   const teamA = participantById.get(participantA);
   const teamB = participantById.get(participantB);
   if (!teamA || !teamB) {
-    throw new Error(`팀전 Match '${match?.id}'의 참가 팀 identity를 찾을 수 없습니다.`);
+    throw new Error(`팀전 경기 '${match?.id}'의 참가 팀 식별 정보를 찾을 수 없습니다.`);
   }
 
   const series = match.series;
@@ -70,7 +70,7 @@ function makeTeamChildRows(match, participantA, participantB, participantById, m
   const games = Array.isArray(series.games) ? series.games : [];
   const rows = games.map((winner, index) => {
     if (winner !== "a" && winner !== "b" && winner != null) {
-      throw new Error(`팀전 Match '${match.id}'의 ${index + 1}경기 승자 값이 올바르지 않습니다.`);
+      throw new Error(`팀전 경기 '${match.id}'의 ${index + 1}경기 승자 값이 올바르지 않습니다.`);
     }
 
     const playerA = resolveActualTeamPlayer(membersA, lineupA[index], match.id, `${index + 1}경기 A팀 선수`);
@@ -98,7 +98,7 @@ function makeTeamChildRows(match, participantA, participantB, participantById, m
   if (series.ace) {
     const winner = series.ace.winner;
     if (winner !== "a" && winner !== "b" && winner != null) {
-      throw new Error(`팀전 Match '${match.id}'의 에이스 결정전 승자 값이 올바르지 않습니다.`);
+      throw new Error(`팀전 경기 '${match.id}'의 에이스 결정전 승자 값이 올바르지 않습니다.`);
     }
 
     const playerA = resolveActualTeamPlayer(membersA, series.ace.a, match.id, "에이스 A팀 선수");
@@ -312,9 +312,9 @@ export function buildEventBracketMatchSnapshot(bracket) {
 
   const sourceNodeKeys = new Set();
   for (const row of rows) {
-    if (!row.source_node_key) throw new Error("normalized Match에 연결할 legacy match node id가 없습니다.");
+    if (!row.source_node_key) throw new Error("경기에 연결할 이전 경기 ID가 없습니다.");
     if (sourceNodeKeys.has(row.source_node_key)) {
-      throw new Error(`legacy match node id '${row.source_node_key}'가 대진표에 중복되어 있습니다.`);
+      throw new Error(`이전 경기 ID '${row.source_node_key}'가 대진표에 중복되어 있습니다.`);
     }
     sourceNodeKeys.add(row.source_node_key);
   }
@@ -327,7 +327,7 @@ export function resolveBracketMatchParentIds(desiredRows = [], parentRows = []) 
   for (const parent of parentRows || []) {
     if (parent?.match_kind !== "bracket" || !parent?.source_node_key || !parent?.id) continue;
     if (parentByNodeKey.has(parent.source_node_key)) {
-      throw new Error(`normalized parent Match '${parent.source_node_key}'가 중복되어 있습니다.`);
+      throw new Error(`상위 경기 '${parent.source_node_key}'가 중복되어 있습니다.`);
     }
     parentByNodeKey.set(parent.source_node_key, parent.id);
   }
@@ -338,7 +338,7 @@ export function resolveBracketMatchParentIds(desiredRows = [], parentRows = []) 
 
     const parentMatchId = parentByNodeKey.get(parentNodeKey);
     if (!parentMatchId) {
-      throw new Error(`normalized child Match '${row.source_node_key}'의 parent Match를 찾을 수 없습니다.`);
+      throw new Error(`하위 경기 '${row.source_node_key}'의 상위 경기를 찾을 수 없습니다.`);
     }
     return { ...payload, parent_match_id: parentMatchId };
   });
@@ -349,7 +349,7 @@ export function buildBracketMatchSyncPlan(existingRows = [], desiredRows = [], n
   for (const row of existingRows || []) {
     if (!row?.source_node_key) continue;
     if (existingByNodeKey.has(row.source_node_key)) {
-      throw new Error(`runtime Match '${row.source_node_key}'가 DB에 중복되어 있습니다.`);
+      throw new Error(`대진표 경기 '${row.source_node_key}'가 데이터베이스에 중복되어 있습니다.`);
     }
     existingByNodeKey.set(row.source_node_key, row);
   }
@@ -360,9 +360,9 @@ export function buildBracketMatchSyncPlan(existingRows = [], desiredRows = [], n
 
   for (const desired of desiredRows || []) {
     const nodeKey = desired?.source_node_key;
-    if (!nodeKey) throw new Error("normalized Match snapshot에 source_node_key가 없습니다.");
+    if (!nodeKey) throw new Error("경기 기록에 경기 키가 없습니다.");
     if (desiredNodeKeys.has(nodeKey)) {
-      throw new Error(`normalized Match snapshot에 '${nodeKey}'가 중복되어 있습니다.`);
+      throw new Error(`경기 기록에 '${nodeKey}'가 중복되어 있습니다.`);
     }
     desiredNodeKeys.add(nodeKey);
 

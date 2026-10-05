@@ -26,14 +26,14 @@ export function buildFinalSubmissionFreezePlan({
   return targetIds.map((registrationId) => {
     const registration = registrationById.get(registrationId);
     if (!registration) {
-      throw new Error(`실제 참가 Registration ${registrationId}을 찾을 수 없습니다.`);
+      throw new Error(`실제 참가 신청 ${registrationId}을 찾을 수 없습니다.`);
     }
     const candidates = asArray(submissions)
       .filter((submission) => id(submission.registration_id) === registrationId)
       .slice()
       .sort((left, right) => Number(right.revision || 0) - Number(left.revision || 0));
     if (candidates.length > 1 && Number(candidates[0].revision) === Number(candidates[1].revision)) {
-      throw new Error(`${registrationId}의 Submission revision이 중복되었습니다.`);
+      throw new Error(`${registrationId}의 제출 이력이 중복되었습니다.`);
     }
     return {
       registrationId,
@@ -48,7 +48,7 @@ export function normalizeFinalSubmissionFreezeSnapshot(rows = []) {
   return asArray(rows).map((row) => {
     const registrationId = id(row?.registration_id ?? row?.registrationId);
     if (!registrationId || seen.has(registrationId)) {
-      throw new Error("final submission freeze 결과의 Registration을 안전하게 확인할 수 없습니다.");
+      throw new Error("최종 제출 고정 결과의 참가 신청을 안전하게 확인할 수 없습니다.");
     }
     seen.add(registrationId);
     return {
@@ -64,7 +64,7 @@ export function restoreFinalSubmissionPointers(registrations = [], snapshot = []
   return normalizeFinalSubmissionFreezeSnapshot(snapshot).map((change) => {
     const registration = byId.get(change.registrationId);
     if (!registration || (registration.final_submission_id || null) !== change.finalSubmissionId) {
-      throw new Error(`${change.registrationId}의 final submission 보상 대상이 변경되었습니다.`);
+      throw new Error(`${change.registrationId}의 최종 제출 복구 대상이 바뀌었습니다.`);
     }
     return { ...registration, final_submission_id: change.previousFinalSubmissionId };
   });
@@ -98,16 +98,16 @@ export async function compensateFinalSubmissionReleaseFailure({
 } = {}) {
   const failures = [];
   const restorations = [
-    ["legacy", restoreLegacy],
-    ["Result", restoreResults],
-    ["RankingAward", restoreAwards],
+    ["이전 기록", restoreLegacy],
+    ["결과", restoreResults],
+    ["랭킹 포인트", restoreAwards],
   ];
 
   for (const [label, restore] of restorations) {
     if (typeof restore !== "function") continue;
     try {
       const restored = await restore();
-      if (restored === false) throw new Error(`${label} snapshot 복구가 저장되지 않았습니다.`);
+      if (restored === false) throw new Error(`${label} 복구가 저장되지 않았습니다.`);
     } catch (error) {
       failures.push({ label, error });
     }

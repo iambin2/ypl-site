@@ -100,7 +100,7 @@ test("advancement validation reserves direct/ranking and qualifier sources for Q
     existingAdvancements: [],
     playerId: "player-a",
     advancementType: "ranking",
-  }).join(" "), /Qualifier 기록 반영/);
+  }).join(" "), /선발전 기록 반영/);
   assert.deepEqual(validateAdvancementInput({
     finalEvent: final,
     existingAdvancements: [
@@ -116,7 +116,7 @@ test("advancement validation reserves direct/ranking and qualifier sources for Q
     existingAdvancements: [{ player_id: "player-a" }],
     playerId: "player-a",
     advancementType: "ranking",
-  }).join(" "), /이미 본선/);
+  }).join(" "), /본선 진출이 이미/);
   assert.match(validateAdvancementInput({
     finalEvent: final,
     qualifierEvent: qualifier,
@@ -124,7 +124,7 @@ test("advancement validation reserves direct/ranking and qualifier sources for Q
     playerId: "player-a",
     advancementType: "qualifier",
     sourceEntry: { id: "entry-a", event_id: "qualifier", player_id: "player-b" },
-  }).join(" "), /Qualifier 기록 반영/);
+  }).join(" "), /선발전 기록 반영/);
 });
 
 test("final registration is a new advancement registration and contains no Entry", () => {
@@ -182,6 +182,6 @@ test("Final creation requires completed qualifier and the complete persisted ent
 
 test("advancement cancellation fails closed once downstream facts exist", () => {
   assert.equal(advancementCancellationError({}), null);
-  assert.match(advancementCancellationError({ submissions: 1 }), /후속 사실/);
-  assert.match(advancementCancellationError({ matches: 1 }), /후속 사실/);
+  assert.match(advancementCancellationError({ submissions: 1 }), /후속 기록/);
+  assert.match(advancementCancellationError({ matches: 1 }), /후속 기록/);
 });

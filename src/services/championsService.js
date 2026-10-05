@@ -29,7 +29,7 @@ import {
 
 function db() {
   if (!client || NORMALIZED_DATA_SCHEMA !== "ypl_schema_validation") {
-    throw new Error("Champions normalized 운영은 Test Supabase에서만 사용할 수 있습니다.");
+    throw new Error("챔피언스 운영은 테스트 데이터베이스에서만 사용할 수 있습니다.");
   }
   return client.schema(NORMALIZED_DATA_SCHEMA);
 }
@@ -60,7 +60,7 @@ export function championsOperationsEnabled() {
 }
 
 function databaseUuid() {
-  if (!globalThis.crypto?.randomUUID) throw new Error("안전한 UUID 생성을 지원하지 않는 브라우저입니다.");
+  if (!globalThis.crypto?.randomUUID) throw new Error("안전한 고유 ID 생성을 지원하지 않는 브라우저입니다.");
   return globalThis.crypto.randomUUID();
 }
 
@@ -75,14 +75,14 @@ export async function saveChampionshipApplicationEventPair({
 } = {}) {
   const draft = normalizeChampionshipApplicationDraft(eventDraft);
   const existingQualifier = qualifierEventId ? await readEvent(qualifierEventId) : null;
-  if (qualifierEventId && !existingQualifier) throw new Error("수정할 Champions 선발전 Event를 찾을 수 없습니다.");
+  if (qualifierEventId && !existingQualifier) throw new Error("수정할 챔피언스 선발전 대회를 찾을 수 없습니다.");
   if (existingQualifier && !isChampionshipQualifier(existingQualifier)) {
-    throw new Error("기존 공지가 Qualifier/Final pair에 연결되어 있지 않아 자동으로 다시 만들지 않습니다.");
+    throw new Error("기존 공지가 선발전과 본선에 연결되어 있지 않아 자동으로 다시 만들지 않습니다.");
   }
   const finalEventId = existingQualifier?.championship_final_event_id || databaseUuid();
   const qualifierId = existingQualifier?.id || databaseUuid();
   if (existingQualifier && !existingQualifier.season_id) {
-    throw new Error("기존 Champions Event의 season_id가 없어 현재 Season으로 변경하지 않습니다.");
+    throw new Error("기존 챔피언스 대회의 시즌 정보가 없어 현재 시즌으로 변경하지 않습니다.");
   }
   const seasonId = existingQualifier?.season_id || await currentSeasonId();
   const existingOrdinal = Number(existingQualifier?.round_number);
@@ -139,7 +139,7 @@ export async function saveChampionshipApplicationEventPair({
     p_qualifier_submission_target_at: draft.qualifierSubmissionTargetAt ? new Date(draft.qualifierSubmissionTargetAt).toISOString() : null,
     p_final_submission_target_at: draft.finalSubmissionTargetAt ? new Date(draft.finalSubmissionTargetAt).toISOString() : null,
   });
-  if (error) fail(error, "Champions Qualifier/Final Event pair를 저장하지 못했습니다.");
+  if (error) fail(error, "챔피언스 선발전과 본선을 저장하지 못했습니다.");
   const result = Array.isArray(data) ? data[0] : data;
   const [qualifierEvent, finalEvent] = await Promise.all([
     readEvent(result?.qualifier_event_id || qualifierId),
@@ -148,7 +148,7 @@ export async function saveChampionshipApplicationEventPair({
   if (!qualifierEvent || !finalEvent
       || qualifierEvent.competition_format !== CHAMPIONSHIP_QUALIFIER_FORMAT
       || finalEvent.competition_format !== CHAMPIONSHIP_FINAL_FORMAT) {
-    throw new Error("저장된 Champions Event pair를 다시 확인하지 못했습니다.");
+    throw new Error("저장된 챔피언스 선발전과 본선을 다시 확인하지 못했습니다.");
   }
   return { qualifierEvent, finalEvent, created: Boolean(result?.created) };
 }
@@ -162,45 +162,45 @@ export async function getChampionshipManagementSnapshot() {
       team_reveal_mode, team_revealed_at, record_applied_at,
       championship_phase, championship_final_event_id, qualification_slots
     `).eq("event_type", "champions").order("round_number", { ascending: true }),
-    "Champions Event를 불러오지 못했습니다."
+    "챔피언스 대회를 불러오지 못했습니다."
   );
   const eventIds = ids(events);
   const registrations = await rowsFor(
     "event_registrations",
     "id, event_id, player_id, registration_name, registration_data, registration_source, registered_at, final_submission_id",
-    "event_id", eventIds, "Champions Registration을 불러오지 못했습니다."
+    "event_id", eventIds, "챔피언스 참가 신청을 불러오지 못했습니다."
   );
   const registrationIds = ids(registrations);
   const advancements = await rowsFor(
     "championship_advancements",
     "id, final_registration_id, source_entry_id, advancement_type, reason, created_at",
-    "final_registration_id", registrationIds, "Champions advancement를 불러오지 못했습니다."
+    "final_registration_id", registrationIds, "챔피언스 본선 진출을 불러오지 못했습니다."
   );
   const directSelections = await rowsFor(
     "championship_qualifier_direct_selections",
     "id, qualifier_event_id, qualifier_registration_id, player_id, created_at",
-    "qualifier_event_id", eventIds, "Champions 본선 직행 설정을 불러오지 못했습니다."
+    "qualifier_event_id", eventIds, "챔피언스 본선 직행 설정을 불러오지 못했습니다."
   );
   const submissions = await rowsFor(
     "registration_submissions", "id, registration_id, snapshot_id, revision, submitted_at", "registration_id", registrationIds,
-    "Champions Submission을 불러오지 못했습니다."
+    "챔피언스 제출을 불러오지 못했습니다."
   );
   const entries = await rowsFor(
     "entries", "id, event_id, entry_type, display_name, status, seed", "event_id", eventIds,
-    "Champions Entry를 불러오지 못했습니다."
+    "챔피언스 출전 정보를 불러오지 못했습니다."
   );
   const entryParticipants = await rowsFor(
     "entry_participants", "id, event_id, entry_id, registration_id, player_id, member_order, role", "event_id", eventIds,
-    "Champions EntryParticipant를 불러오지 못했습니다."
+    "챔피언스 출전 선수를 불러오지 못했습니다."
   );
   const playerIds = [...new Set([...registrations.map((row) => row.player_id), ...entryParticipants.map((row) => row.player_id)].filter(Boolean))];
-  const players = await rowsFor("players", "id, display_name, status", "id", playerIds, "Champions Player를 불러오지 못했습니다.");
+  const players = await rowsFor("players", "id, display_name, status", "id", playerIds, "챔피언스 선수를 불러오지 못했습니다.");
   const sourceEntryIds = advancements.map((row) => row.source_entry_id).filter(Boolean);
   const sourceEntries = entries.filter((row) => sourceEntryIds.includes(row.id));
-  const results = await rowsFor("results", "id, event_id, entry_id, placement_code, placement_label", "event_id", eventIds, "Champions Result를 불러오지 못했습니다.");
-  const hallOfFame = await rowsFor("hall_of_fame_entries", "id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note", "event_id", eventIds, "Hall of Fame를 불러오지 못했습니다.");
-  const matches = await rowsFor("matches", "id, event_id, match_kind, source, source_node_key, entry_a_id, entry_b_id, winner_entry_id, resolution, played_at", "event_id", eventIds, "Champions Match를 불러오지 못했습니다.");
-  const runtimes = await rowsFor("bracket_runtimes", "id, event_id, topology_kind, projection_version", "event_id", eventIds, "Champions runtime을 불러오지 못했습니다.");
+  const results = await rowsFor("results", "id, event_id, entry_id, placement_code, placement_label", "event_id", eventIds, "챔피언스 결과를 불러오지 못했습니다.");
+  const hallOfFame = await rowsFor("hall_of_fame_entries", "id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note", "event_id", eventIds, "명예의 전당을 불러오지 못했습니다.");
+  const matches = await rowsFor("matches", "id, event_id, match_kind, source, source_node_key, entry_a_id, entry_b_id, winner_entry_id, resolution, played_at", "event_id", eventIds, "챔피언스 경기를 불러오지 못했습니다.");
+  const runtimes = await rowsFor("bracket_runtimes", "id, event_id, topology_kind, projection_version", "event_id", eventIds, "챔피언스 대진표를 불러오지 못했습니다.");
   return { events, registrations, advancements, directSelections, submissions, entries, sourceEntries, entryParticipants, players, results, hallOfFame, matches, runtimes };
 }
 
@@ -211,36 +211,36 @@ async function readEvent(eventId) {
       cup_rule_settings, registration_settings, held_on, submission_target_at, status, team_reveal_at,
     team_revealed_at, record_applied_at, championship_phase,
     championship_final_event_id, qualification_slots
-  `).eq("id", eventId), "Champions Event를 확인하지 못했습니다.");
+  `).eq("id", eventId), "챔피언스 대회를 확인하지 못했습니다.");
   return data[0] || null;
 }
 
 export async function listChampionshipAdvancementCandidates(finalEventId) {
   const snapshot = await getChampionshipManagementSnapshot();
   const finalEvent = snapshot.events.find(event => event.id === finalEventId);
-  if (!isChampionshipFinal(finalEvent)) throw new Error("본선 Event만 후보를 조회할 수 있습니다.");
+  if (!isChampionshipFinal(finalEvent)) throw new Error("본선 대회만 후보를 조회할 수 있습니다.");
   const finalRegistrationIds = new Set(snapshot.registrations.filter(row => row.event_id === finalEvent.id).map(row => row.id));
   const advancedPlayerIds = new Set(snapshot.advancements.filter(row => finalRegistrationIds.has(row.final_registration_id)).map(row => {
     const registration = snapshot.registrations.find(item => item.id === row.final_registration_id);
     return registration?.player_id;
   }).filter(Boolean));
-  const players = await rows(db().from("players").select("id, display_name, status").neq("status", "inactive").order("display_name", { ascending: true }), "Champions 후보 Player를 불러오지 못했습니다.");
+  const players = await rows(db().from("players").select("id, display_name, status").neq("status", "inactive").order("display_name", { ascending: true }), "챔피언스 후보 선수를 불러오지 못했습니다.");
   return players.filter(player => !advancedPlayerIds.has(player.id));
 }
 
 export async function listChampionshipManualParticipantCandidates(eventId) {
   const event = await readEvent(eventId);
   if (!isChampionshipQualifier(event) && !isChampionshipFinal(event)) {
-    throw new Error("Champions Qualifier 또는 Final Event만 수동 참가자를 추가할 수 있습니다.");
+    throw new Error("챔피언스 선발전 또는 본선만 수동 참가자를 추가할 수 있습니다.");
   }
   const [registrations, players] = await Promise.all([
     rows(
       db().from("event_registrations").select("player_id").eq("event_id", event.id),
-      "기존 Champions 참가자를 확인하지 못했습니다."
+      "기존 챔피언스 참가자를 확인하지 못했습니다."
     ),
     rows(
       db().from("players").select("id, display_name, status").neq("status", "inactive").order("display_name", { ascending: true }),
-      "추가할 Player 후보를 불러오지 못했습니다."
+      "추가할 선수 후보를 불러오지 못했습니다."
     ),
   ]);
   const existingPlayerIds = new Set(registrations.map(row => row.player_id).filter(Boolean));
@@ -248,14 +248,14 @@ export async function listChampionshipManualParticipantCandidates(eventId) {
 }
 
 export async function addChampionshipQualifierManualRegistration({ qualifierEventId, playerId } = {}) {
-  if (!qualifierEventId || !playerId) throw new Error("Qualifier Event와 Player를 선택해 주세요.");
+  if (!qualifierEventId || !playerId) throw new Error("선발전과 선수를 선택해 주세요.");
   const { data, error } = await db().rpc("add_championship_qualifier_manual_registration", {
     p_qualifier_event_id: qualifierEventId,
     p_player_id: playerId,
   });
-  if (error) fail(error, "선발전 수동 참가 Registration을 생성하지 못했습니다.");
+  if (error) fail(error, "선발전 수동 참가 신청을 생성하지 못했습니다.");
   const result = Array.isArray(data) ? data[0] : data;
-  if (!result?.registration_id) throw new Error("선발전 수동 참가 Registration 생성 결과를 확인하지 못했습니다.");
+  if (!result?.registration_id) throw new Error("선발전 수동 참가 신청 생성 결과를 확인하지 못했습니다.");
   return { registrationId: result.registration_id, created: Boolean(result.created) };
 }
 
@@ -278,10 +278,10 @@ export async function listChampionshipQualifierDirectSelectionIds(qualifierEvent
 
 export async function resolveChampionshipSubmissionEvents(eventId) {
   const event = await readEvent(eventId);
-  if (!event) throw new Error("연결된 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
   if (!isChampionshipQualifier(event)) return { isChampionship: false, event };
   const finalEvent = event.championship_final_event_id ? await readEvent(event.championship_final_event_id) : null;
-  if (!isChampionshipFinal(finalEvent)) throw new Error("연결된 Champions 본선 Event를 찾을 수 없습니다.");
+  if (!isChampionshipFinal(finalEvent)) throw new Error("연결된 챔피언스 본선 대회를 찾을 수 없습니다.");
   return { isChampionship: true, qualifierEvent: event, finalEvent };
 }
 
@@ -294,14 +294,14 @@ export async function preflightChampionshipFinalBracket(finalEventId) {
   const advancements = snapshot.advancements.filter(row => finalRegistrationIds.has(row.final_registration_id));
   const qualifierAdvancementCount = advancements.filter(row => row.advancement_type === "qualifier").length;
   const directAdvancementCount = advancements.filter(row => row.advancement_type === "ranking").length;
-  const runtimes = await rows(db().from("bracket_runtimes").select("id").eq("event_id", finalEventId), "본선 runtime 상태를 확인하지 못했습니다.");
+  const runtimes = await rows(db().from("bracket_runtimes").select("id").eq("event_id", finalEventId), "본선 대진표 상태를 확인하지 못했습니다.");
   return championshipFinalCreatePreflight({ finalEvent, qualifierEvent, qualifierAdvancementCount, directAdvancementCount, finalRegistrations, advancements, runtimeCount: runtimes.length });
 }
 
 export async function getChampionshipQualifierState(eventId) {
   const snapshot = await getChampionshipManagementSnapshot();
   const qualifierEvent = snapshot.events.find(event => event.id === eventId) || null;
-  if (!isChampionshipQualifier(qualifierEvent)) throw new Error("선발전 Event를 찾을 수 없습니다.");
+  if (!isChampionshipQualifier(qualifierEvent)) throw new Error("선발전 대회를 찾을 수 없습니다.");
   const entries = snapshot.entries.filter(entry => entry.event_id === eventId && entry.entry_type === "individual");
   const matches = snapshot.matches.filter(match => match.event_id === eventId && match.source === "normalized_bracket_runtime" && match.match_kind === "bracket");
   const directCount = snapshot.directSelections.filter(row => row.qualifier_event_id === eventId).length;
@@ -328,7 +328,7 @@ export async function getChampionshipQualifierState(eventId) {
 }
 
 async function updateEvent(eventId, payload) {
-  const data = await rows(db().from("events").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", eventId).select().single(), "Champions Event 설정을 저장하지 못했습니다.");
+  const data = await rows(db().from("events").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", eventId).select().single(), "챔피언스 대회 설정을 저장하지 못했습니다.");
   return data[0] || data;
 }
 
@@ -341,13 +341,13 @@ export async function saveChampionshipEventRelation({
   finalCapacity,
   qualificationSlots,
 } = {}) {
-  if (!qualifierEventId || !finalEventId || qualifierEventId === finalEventId) throw new Error("qualifier와 final Event를 서로 다르게 선택해 주세요.");
+  if (!qualifierEventId || !finalEventId || qualifierEventId === finalEventId) throw new Error("선발전과 본선을 서로 다르게 선택해 주세요.");
   const [qualifier, final] = await Promise.all([readEvent(qualifierEventId), readEvent(finalEventId)]);
-  if (!qualifier || !final || qualifier.event_type !== "champions" || final.event_type !== "champions") throw new Error("Champions Event만 연결할 수 있습니다.");
+  if (!qualifier || !final || qualifier.event_type !== "champions" || final.event_type !== "champions") throw new Error("챔피언스 대회만 연결할 수 있습니다.");
   const slots = Number(qualificationSlots);
   const capacity = Number(finalCapacity);
   const generation = Number(generationNumber);
-  if (!Number.isInteger(generation) || generation < 1 || !Number.isInteger(slots) || slots < 1 || !Number.isInteger(capacity) || capacity < 1) throw new Error("generation, final capacity와 qualification slots를 올바르게 입력해 주세요.");
+  if (!Number.isInteger(generation) || generation < 1 || !Number.isInteger(slots) || slots < 1 || !Number.isInteger(capacity) || capacity < 1) throw new Error("대수, 본선 정원, 선발전 통과 인원을 올바르게 입력해 주세요.");
   const previous = { qualifier, final };
   const common = {
     battle_format: battleFormat || qualifier.battle_format || final.battle_format || null,
@@ -387,7 +387,7 @@ export async function saveChampionshipEventRelation({
         qualification_slots: previous.qualifier.qualification_slots,
       });
     } catch (restoreError) {
-      error.message = `${error.message} / relation 복구 실패: ${restoreError.message}`;
+      error.message = `${error.message} / 연결 복구 실패: ${restoreError.message}`;
     }
     throw error;
   }
@@ -395,10 +395,10 @@ export async function saveChampionshipEventRelation({
 
 export async function createChampionshipAdvancement({ finalEventId, playerId, advancementType, sourceEntryId = null, reason = "" } = {}) {
   if (advancementType !== "manual") {
-    throw new Error("직행/선발전 통과 advancement는 Qualifier 기록 반영에서만 생성할 수 있습니다.");
+    throw new Error("직행/선발전 통과 본선 진출은 선발전 기록 반영에서만 생성할 수 있습니다.");
   }
   const finalEvent = await readEvent(finalEventId);
-  if (!finalEvent) throw new Error("본선 Event를 찾을 수 없습니다.");
+  if (!finalEvent) throw new Error("본선 대회를 찾을 수 없습니다.");
   const snapshot = await getChampionshipManagementSnapshot();
   const qualifierEvent = snapshot.events.find((event) => event.championship_final_event_id === finalEvent.id) || null;
   const existing = snapshot.advancements
@@ -419,9 +419,9 @@ export async function createChampionshipAdvancement({ finalEventId, playerId, ad
   if (!preflight.ok) throw new Error(preflight.error);
   const sourceEntry = snapshot.entries.find((entry) => entry.id === sourceEntryId) || null;
   const player = snapshot.players.find((row) => row.id === playerId)
-    || (await rows(db().from("players").select("id, display_name, status").eq("id", playerId).neq("status", "inactive"), "Champions Player를 확인하지 못했습니다."))[0]
+    || (await rows(db().from("players").select("id, display_name, status").eq("id", playerId).neq("status", "inactive"), "챔피언스 선수를 확인하지 못했습니다."))[0]
     || null;
-  if (!player) throw new Error("활성 Player만 본선 참가자로 추가할 수 있습니다.");
+  if (!player) throw new Error("활성 선수만 본선 참가자로 추가할 수 있습니다.");
   const errors = validateAdvancementInput({
     finalEvent,
     qualifierEvent,
@@ -443,10 +443,10 @@ export async function createChampionshipAdvancement({ finalEventId, playerId, ad
     p_source_entry_id: null,
     p_reason: String(reason || "").trim() || null,
   });
-  if (error) fail(error, "ChampionshipAdvancement와 Final Registration을 생성하지 못했습니다.");
+  if (error) fail(error, "본선 진출 기록과 본선 참가 신청을 생성하지 못했습니다.");
   const result = Array.isArray(data) ? data[0] : data;
   if (result?.advancement_id !== advancementId || result?.registration_id !== registrationId) {
-    throw new Error("Champions advancement 생성 결과를 확인하지 못했습니다.");
+    throw new Error("챔피언스 본선 진출 생성 결과를 확인하지 못했습니다.");
   }
   return { advancementId, registrationId };
 }
@@ -454,20 +454,20 @@ export async function createChampionshipAdvancement({ finalEventId, playerId, ad
 export async function cancelChampionshipAdvancement(advancementId) {
   const snapshot = await getChampionshipManagementSnapshot();
   const advancement = snapshot.advancements.find((row) => row.id === advancementId);
-  if (!advancement) throw new Error("취소할 advancement를 찾을 수 없습니다.");
+  if (!advancement) throw new Error("취소할 본선 진출을 찾을 수 없습니다.");
   const registration = snapshot.registrations.find((row) => row.id === advancement.final_registration_id);
-  if (!registration) throw new Error("advancement의 Final Registration을 찾을 수 없습니다.");
+  if (!registration) throw new Error("본선 진출의 본선 참가 신청을 찾을 수 없습니다.");
   const finalEvent = snapshot.events.find((event) => event.id === registration.event_id);
-  if (!isChampionshipFinal(finalEvent) || finalEvent.status === "completed" || finalEvent.record_applied_at) throw new Error("완료된 본선의 advancement는 취소할 수 없습니다.");
+  if (!isChampionshipFinal(finalEvent) || finalEvent.status === "completed" || finalEvent.record_applied_at) throw new Error("완료된 본선의 본선 진출은 취소할 수 없습니다.");
 
   const [submissions, entries, entryParticipants, matches, results, rankingAwards, runtimes] = await Promise.all([
-    rows(db().from("registration_submissions").select("id").eq("registration_id", registration.id), "Submission 상태를 확인하지 못했습니다."),
-    rows(db().from("entries").select("id").eq("event_id", finalEvent.id), "Entry 상태를 확인하지 못했습니다."),
-    rows(db().from("entry_participants").select("id").eq("registration_id", registration.id), "EntryParticipant 상태를 확인하지 못했습니다."),
-    rows(db().from("matches").select("id").eq("event_id", finalEvent.id), "Match 상태를 확인하지 못했습니다."),
-    rows(db().from("results").select("id").eq("event_id", finalEvent.id), "Result 상태를 확인하지 못했습니다."),
-    rows(db().from("ranking_awards").select("id").eq("event_id", finalEvent.id), "RankingAward 상태를 확인하지 못했습니다."),
-    rows(db().from("bracket_runtimes").select("id").eq("event_id", finalEvent.id), "Bracket runtime 상태를 확인하지 못했습니다."),
+    rows(db().from("registration_submissions").select("id").eq("registration_id", registration.id), "제출 상태를 확인하지 못했습니다."),
+    rows(db().from("entries").select("id").eq("event_id", finalEvent.id), "출전 정보 상태를 확인하지 못했습니다."),
+    rows(db().from("entry_participants").select("id").eq("registration_id", registration.id), "출전 선수 상태를 확인하지 못했습니다."),
+    rows(db().from("matches").select("id").eq("event_id", finalEvent.id), "경기 상태를 확인하지 못했습니다."),
+    rows(db().from("results").select("id").eq("event_id", finalEvent.id), "결과 상태를 확인하지 못했습니다."),
+    rows(db().from("ranking_awards").select("id").eq("event_id", finalEvent.id), "랭킹 포인트 상태를 확인하지 못했습니다."),
+    rows(db().from("bracket_runtimes").select("id").eq("event_id", finalEvent.id), "대진표 상태를 확인하지 못했습니다."),
   ]);
   const blocked = advancementCancellationError({
     submissions: submissions.length,
@@ -484,10 +484,10 @@ export async function cancelChampionshipAdvancement(advancementId) {
   const { data, error } = await db().rpc("cancel_championship_advancement", {
     p_advancement_id: advancement.id,
   });
-  if (error) fail(error, "advancement와 runtime-owned Final Registration을 취소하지 못했습니다.");
+  if (error) fail(error, "본선 진출과 대진표가 만든 본선 참가 신청을 취소하지 못했습니다.");
   const result = Array.isArray(data) ? data[0] : data;
   if (result?.advancement_id !== advancement.id || result?.registration_id !== registration.id) {
-    throw new Error("Champions advancement 취소 결과를 확인하지 못했습니다.");
+    throw new Error("챔피언스 본선 진출 취소 결과를 확인하지 못했습니다.");
   }
   return { advancementId: advancement.id, registrationId: registration.id };
 }
@@ -498,7 +498,7 @@ export async function completeChampionshipQualifier(eventId) {
 
 export async function finalizeChampionshipQualifier(eventId) {
   const { data, error } = await db().rpc("finalize_championship_qualifier", { p_qualifier_event_id: eventId });
-  if (error) fail(error, "선발전 survivor를 본선 진출자로 확정하지 못했습니다.");
+  if (error) fail(error, "선발전 생존자를 본선 진출자로 확정하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -511,27 +511,27 @@ export async function reopenChampionshipQualifier(eventId) {
 export async function ensureChampionshipHallOfFameEntry(eventId, { hallOfFameId = null } = {}) {
   const event = await readEvent(eventId);
   if (!event || !isChampionshipFinal(event)) return null;
-  if (event.status !== "completed" || !event.record_applied_at) throw new Error("본선 Event가 공식 완료되지 않아 Hall of Fame에 등록할 수 없습니다.");
+  if (event.status !== "completed" || !event.record_applied_at) throw new Error("본선 대회가 공식 완료되지 않아 명예의 전당에 등록할 수 없습니다.");
   const ordinal = Number(event.round_number);
-  if (!Number.isInteger(ordinal) || ordinal < 1) throw new Error("Final Event의 공식 Champions 회차가 없어 Hall of Fame에 등록할 수 없습니다.");
+  if (!Number.isInteger(ordinal) || ordinal < 1) throw new Error("본선의 공식 챔피언스 회차가 없어 명예의 전당에 등록할 수 없습니다.");
   const [results, existing] = await Promise.all([
-    rows(db().from("results").select("id, event_id, entry_id, placement_code").eq("event_id", event.id).eq("placement_code", "champion"), "champion Result를 읽지 못했습니다."),
-    rows(db().from("hall_of_fame_entries").select("id, event_id, result_id, player_id, generation_number").eq("event_id", event.id), "기존 Hall of Fame를 읽지 못했습니다."),
+    rows(db().from("results").select("id, event_id, entry_id, placement_code").eq("event_id", event.id).eq("placement_code", "champion"), "우승 결과를 읽지 못했습니다."),
+    rows(db().from("hall_of_fame_entries").select("id, event_id, result_id, player_id, generation_number").eq("event_id", event.id), "기존 명예의 전당을 읽지 못했습니다."),
   ]);
   if (existing.length) return existing[0];
-  if (results.length !== 1) throw new Error(`본선 champion Result가 정확히 1건이 아닙니다 (${results.length}건).`);
+  if (results.length !== 1) throw new Error(`본선 우승 결과가 1건이 아니라 ${results.length}건입니다.`);
   const result = results[0];
-  const participants = await rows(db().from("entry_participants").select("player_id").eq("event_id", event.id).eq("entry_id", result.entry_id), "champion EntryParticipant를 읽지 못했습니다.");
-  if (participants.length !== 1 || !participants[0].player_id) throw new Error("champion Entry의 Player identity를 확인할 수 없습니다.");
+  const participants = await rows(db().from("entry_participants").select("player_id").eq("event_id", event.id).eq("entry_id", result.entry_id), "우승자의 출전 선수 정보를 읽지 못했습니다.");
+  if (participants.length !== 1 || !participants[0].player_id) throw new Error("우승자의 선수 정보를 확인할 수 없습니다.");
   const requestedHallOfFameId = hallOfFameId || databaseUuid();
   const { data, error } = await db().rpc("ensure_championship_final_hall_of_fame", {
     p_event_id: event.id,
     p_hall_of_fame_id: requestedHallOfFameId,
   });
-  if (error) fail(error, "Hall of Fame 등록을 저장하지 못했습니다.");
+  if (error) fail(error, "명예의 전당 등록을 저장하지 못했습니다.");
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.hall_of_fame_id || row.result_id !== result.id || row.player_id !== participants[0].player_id || Number(row.generation_number) !== ordinal) {
-    throw new Error("Hall of Fame 등록 결과를 확인하지 못했습니다.");
+    throw new Error("명예의 전당 등록 결과를 확인하지 못했습니다.");
   }
   return row;
 }
@@ -542,7 +542,7 @@ export async function removeChampionshipHallOfFameEntry(eventId) {
   const { data, error } = await db().rpc("remove_championship_final_hall_of_fame", {
     p_event_id: event.id,
   });
-  if (error) fail(error, "Hall of Fame 등록을 취소하지 못했습니다.");
+  if (error) fail(error, "명예의 전당 등록을 취소하지 못했습니다.");
   const row = Array.isArray(data) ? data[0] : data;
   return {
     hallOfFameId: row?.hall_of_fame_id || null,
@@ -554,29 +554,29 @@ export async function removeChampionshipHallOfFameEntry(eventId) {
 }
 export async function fetchNormalizedChampionsHallOfFame() {
   if (!championsOperationsEnabled()) return [];
-  const hof = await rows(db().from("hall_of_fame_entries").select("id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note").order("generation_number", { ascending: false }), "Hall of Fame를 불러오지 못했습니다.");
+  const hof = await rows(db().from("hall_of_fame_entries").select("id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note").order("generation_number", { ascending: false }), "명예의 전당을 불러오지 못했습니다.");
   if (!hof.length) return [];
   const eventIds = [...new Set(hof.map((row) => row.event_id).filter(Boolean))];
   const playerIds = hof.map((row) => row.player_id).filter(Boolean);
   const resultIds = hof.map((row) => row.result_id).filter(Boolean);
   const [events, players, results, artworkLookup, pokemonDirectory] = await Promise.all([
-    rowsFor("events", "id, season_id, name, round_number, battle_format, competition_format, event_type, championship_phase", "id", eventIds, "HOF Event를 불러오지 못했습니다."),
-    rowsFor("players", "id, display_name", "id", playerIds, "HOF Player를 불러오지 못했습니다."),
-    rowsFor("results", "id, event_id, entry_id, placement_code", "id", resultIds, "HOF Result를 불러오지 못했습니다."),
+    rowsFor("events", "id, season_id, name, round_number, battle_format, competition_format, event_type, championship_phase", "id", eventIds, "명예의 전당 대회를 불러오지 못했습니다."),
+    rowsFor("players", "id, display_name", "id", playerIds, "명예의 전당 선수를 불러오지 못했습니다."),
+    rowsFor("results", "id, event_id, entry_id, placement_code", "id", resultIds, "명예의 전당 결과를 불러오지 못했습니다."),
     loadHallOfFameArtworkLookup().catch(() => new Map()),
     loadRecordsPokemonDirectory().catch(() => new Map()),
   ]);
   const seasonIds = [...new Set(events.map((row) => row.season_id).filter(Boolean))];
-  const seasons = await rowsFor("seasons", "id, series, number, name", "id", seasonIds, "HOF Season을 불러오지 못했습니다.");
+  const seasons = await rowsFor("seasons", "id, series, number, name", "id", seasonIds, "명예의 전당 시즌을 불러오지 못했습니다.");
   const entryIds = results.map((row) => row.entry_id).filter(Boolean);
-  const entries = await rowsFor("entries", "id, event_id, entry_type, display_name", "id", entryIds, "HOF Entry를 불러오지 못했습니다.");
-  const participants = await rowsFor("entry_participants", "id, event_id, entry_id, registration_id, player_id, member_order", "entry_id", entryIds, "HOF EntryParticipant를 불러오지 못했습니다.");
+  const entries = await rowsFor("entries", "id, event_id, entry_type, display_name", "id", entryIds, "명예의 전당 출전 정보를 불러오지 못했습니다.");
+  const participants = await rowsFor("entry_participants", "id, event_id, entry_id, registration_id, player_id, member_order", "entry_id", entryIds, "명예의 전당 출전 선수를 불러오지 못했습니다.");
   const registrationIds = participants.map((row) => row.registration_id).filter(Boolean);
-  const registrations = await rowsFor("event_registrations", "id, event_id, player_id, final_submission_id", "id", registrationIds, "HOF Registration을 불러오지 못했습니다.");
+  const registrations = await rowsFor("event_registrations", "id, event_id, player_id, final_submission_id", "id", registrationIds, "명예의 전당 참가 신청을 불러오지 못했습니다.");
   const submissionIds = registrations.map((row) => row.final_submission_id).filter(Boolean);
-  const submissions = await rowsFor("registration_submissions", "id, registration_id, snapshot_id", "id", submissionIds, "HOF Submission을 불러오지 못했습니다.");
+  const submissions = await rowsFor("registration_submissions", "id, registration_id, snapshot_id", "id", submissionIds, "명예의 전당 제출을 불러오지 못했습니다.");
   const snapshotIds = submissions.map((row) => row.snapshot_id).filter(Boolean);
-  const members = await rowsFor("team_snapshot_members", "id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot", "snapshot_id", snapshotIds, "HOF TeamSnapshot을 불러오지 못했습니다.");
+  const members = await rowsFor("team_snapshot_members", "id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot", "snapshot_id", snapshotIds, "명예의 전당 제출 팀을 불러오지 못했습니다.");
   const eventById = new Map(events.map((row) => [row.id, row]));
   const seasonById = new Map(seasons.map((row) => [row.id, row]));
   const playerById = new Map(players.map((row) => [row.id, row]));

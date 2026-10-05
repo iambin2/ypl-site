@@ -41,7 +41,7 @@ test("read-only historical rendering cannot enter active mutation controls", () 
   assert.doesNotMatch(page, /과거 기록/);
   assert.match(page, /const locked=!!b\.applied\|\|deleting\|\|readOnly/);
   assert.match(page, /if\(readOnly\|\|locked\|\|matchMutationBusyRef\.current\)return/);
-  assert.match(page, /if\(b\.readOnly\)\{ flash\("과거 완료 대진표는 조회 전용입니다\."\); return; \}/);
+  assert.match(page, /if\(b\.readOnly\)\{ flash\("이미 끝난 과거 대진표는 볼 수만 있습니다\."\); return; \}/);
   assert.match(page, /admin&&!readOnly&&!b\.applied/);
   assert.match(page, /readOnly=\{open\.readOnly\}/);
 });

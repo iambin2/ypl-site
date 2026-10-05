@@ -34,7 +34,7 @@ const SEED = {
   meta: {
     fullName: "Yonsei Pokémon League",
     tagline: "포켓몬 센터 연세점 공식 배틀 리그",
-    intro: "포센연이 운영하는 자체 배틀 리그. 모든 트레이너의 성적과 칭호, 명예의 전당을 한 곳에 기록합니다.",
+    intro: "포센연이 운영하는 자체 배틀 리그입니다. 모든 트레이너의 성적과 칭호, 명예의 전당을 한곳에 기록합니다.",
     currentChampion: "정두호", currentChampionGen: "5대",
   },
   champions: [
@@ -178,7 +178,7 @@ export default function App() {
   },[]);
   // 토스트는 매번 온전히 1.8초 보인다. 앞 토스트의 타이머가 새 토스트를 일찍 지우지 않게 하나만 둔다.
   const flash=useCallback((m)=>{window.clearTimeout(toastTimer.current);setToast({id:Date.now()+Math.random(),text:m});toastTimer.current=window.setTimeout(()=>setToast(null),1800);},[]);
-  const save=useCallback(async(next,doneMessage="저장했습니다")=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?doneMessage:"메모리에만 반영됐습니다");return ok;},[flash]);
+  const save=useCallback(async(next,doneMessage="저장했습니다.")=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?doneMessage:"저장하지 못해 이 화면에만 반영됐습니다.");return ok;},[flash]);
   const submitForm=useCallback(async(annId,payload)=>{
     const announcement=(data.announcements||[]).find(a=>a.id===annId);
     const form=announcement?.form||{};
@@ -195,7 +195,7 @@ export default function App() {
             announcementId:annId,
           },
         });
-        flash("신청을 접수했습니다");
+        flash("신청을 접수했습니다.");
         return true;
       }catch(error){
         // 중복 신청, 마감 같은 이유는 신청서가 그대로 보여 준다. 재시도 안내로 덮지 않는다.
@@ -231,11 +231,11 @@ export default function App() {
       if(hasMine(c1)){
         await new Promise(r=>setTimeout(r,200+Math.random()*250));
         const c2=normalizeData((await loadSiteData())||c1);
-        if(hasMine(c2)){ setData(c2); flash("신청을 접수했습니다"); return true; }
+        if(hasMine(c2)){ setData(c2); flash("신청을 접수했습니다."); return true; }
       }
       await new Promise(r=>setTimeout(r,150+Math.random()*400*(attempt+1))); // 랜덤 백오프로 동시 충돌 분산
     }
-    flash(ok?"신청 저장을 확인하지 못했습니다. 다시 시도해주세요.":"메모리에만 반영됨");
+    flash(ok?"신청 저장을 확인하지 못했습니다. 다시 시도해 주세요.":"이 화면에만 반영됨");
     return false;
   },[data,flash]);
   const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);

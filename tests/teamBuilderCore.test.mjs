@@ -79,7 +79,7 @@ test("Event rule resolver fails closed for unsupported cup rules", () => {
     cup_rule_id: "unsupported-test-rule",
     cup_rule_settings: {},
   });
-  assert.match(result.error, /Cup Rule/);
+  assert.match(result.error, /추가 룰/);
 });
 
 function teamOf(...names) {
@@ -206,7 +206,7 @@ test("existing validation semantics remain strict and detect duplicate item", ()
   assert.equal(result.errors.length, 0);
   team.push(...teamOf("Raichu"));
   const duplicate = validateTeam({ team, regulation, regulationId: "test-reg", cupRuleId: "none", assignedTypeId: "", detailData, detailStatus: "ready", legalItems: [{ id: "leftovers" }], displayPokemon: pokemon => pokemon.name });
-  assert.ok(duplicate.errors.some(error => error.includes("Item Clause")));
+  assert.ok(duplicate.errors.some(error => error.includes("같은 도구 중복 금지")));
 });
 
 test("official eligibility allows legal incomplete parties but rejects an empty party", () => {
@@ -262,7 +262,7 @@ test("official eligibility fails closed when detail legality data is unavailable
   const unresolved = memberFromSaved({ pokemonName: "Mew", pokemonId: "mew", moves: [] }, regulation);
   const result = validateSubmissionEligibility({ team: [unresolved], regulation, regulationId: "test-reg", cupRuleId: "none", detailData, detailStatus: "ready", legalItems: [{ id: "leftovers" }] });
   assert.equal(result.eligible, false);
-  assert.ok(result.errors.some(message => message.includes("canonical")));
+  assert.ok(result.errors.some(message => message.includes("포켓몬 정보")));
 });
 
 test("submission status read model uses the highest revision and does not require final_submission_id", () => {

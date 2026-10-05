@@ -202,7 +202,7 @@ test("team Result requires members and a unique Player identity for every member
       { ...members[0], player_id: null },
       members[1],
     ]),
-    /Player identity가 없습니다/
+    /선수 정보가 없습니다/
   );
   assert.throws(
     () => buildEventRankingAwardSnapshot(teamEvent("master"), [result], [

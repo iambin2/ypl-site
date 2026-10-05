@@ -159,7 +159,7 @@ export function revertBracketRecord(data, bracketId) {
     return {
       data,
       changed: false,
-      reason: "이 기록은 동기화 기능 도입 이전에 반영되어 자동 원복 정보를 가지고 있지 않습니다. 테스트 데이터라면 로컬 데이터를 초기화한 뒤 다시 테스트해주세요.",
+      reason: "이 기록은 동기화 기능이 생기기 전에 반영되어 자동으로 되돌릴 정보가 없습니다. 테스트 데이터라면 로컬 데이터를 초기화한 뒤 다시 테스트해 주세요.",
     };
   }
 

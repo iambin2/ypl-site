@@ -54,7 +54,7 @@ test("freeze compensation restores exact previous pointers without altering subm
   assert.deepEqual(restored.map((row) => row.final_submission_id), ["old-a", "old-b"]);
   assert.throws(
     () => restoreFinalSubmissionPointers([{ ...frozen[0], final_submission_id: "changed" }, frozen[1]], snapshot),
-    /보상 대상이 변경/
+    /복구 대상이 바뀌었/
   );
 });
 

@@ -33,7 +33,7 @@ export function buildChampionshipRecordApplyCompletionOptions({
   if (!isFinal) return { revealOfficialRosters: shouldRevealOfficialRosters };
   const championshipOrdinal = Number(roundNumber);
   if (!Number.isInteger(championshipOrdinal) || championshipOrdinal < 1) {
-    throw new Error("Champions 공식 회차는 1 이상의 정수여야 합니다.");
+    throw new Error("챔피언스 공식 회차는 1 이상의 정수여야 합니다.");
   }
   return { revealOfficialRosters: true, championshipOrdinal };
 }
@@ -48,9 +48,9 @@ export function normalizeChampionshipApplicationDraft(eventDraft = {}) {
       ? null
       : Number(eventDraft.generation);
   const finalCapacity = Number(eventDraft.finalCapacity);
-  if (!name) throw new Error("Champions 대회 이름을 입력해 주세요.");
-  if (!["singles", "doubles"].includes(battleFormat)) throw new Error("Champions 배틀 형식은 싱글 또는 더블이어야 합니다.");
-  if (generation !== null && (!Number.isInteger(generation) || generation < 1)) throw new Error("Champions generation을 입력해 주세요.");
+  if (!name) throw new Error("챔피언스 대회 이름을 입력해 주세요.");
+  if (!["singles", "doubles"].includes(battleFormat)) throw new Error("챔피언스 배틀 형식은 싱글 또는 더블이어야 합니다.");
+  if (generation !== null && (!Number.isInteger(generation) || generation < 1)) throw new Error("챔피언스 대수를 입력해 주세요.");
   if (!Number.isInteger(finalCapacity) || finalCapacity < 2) throw new Error("본선 정원은 2명 이상이어야 합니다.");
   return {
     ...eventDraft,
@@ -126,21 +126,21 @@ export function deriveQualifierSurvivorState({ entries = [], matches = [], quali
 }
 
 export function championshipFinalCreatePreflight({ finalEvent, qualifierEvent, qualifierAdvancementCount = 0, directAdvancementCount = 0, finalRegistrations = [], advancements = [], runtimeCount = 0 } = {}) {
-  if (!isChampionshipFinal(finalEvent)) return { ok: false, error: "본선 Event만 대진표를 생성할 수 있습니다." };
-  if (!isChampionshipQualifier(qualifierEvent)) return { ok: false, error: "연결된 선발전 Event를 찾을 수 없습니다." };
+  if (!isChampionshipFinal(finalEvent)) return { ok: false, error: "본선 대회만 대진표를 생성할 수 있습니다." };
+  if (!isChampionshipQualifier(qualifierEvent)) return { ok: false, error: "연결된 선발전 대회를 찾을 수 없습니다." };
   if (qualifierEvent.status !== "completed") return { ok: false, error: "선발전이 아직 종료되지 않아 본선 대진표를 생성할 수 없습니다." };
   const slots = Number(qualifierEvent.qualification_slots);
   if (!Number.isInteger(slots) || slots < 1) return { ok: false, error: "선발전 진출 인원 설정이 올바르지 않습니다." };
   if (Number(qualifierAdvancementCount) !== slots) return { ok: false, error: `선발전 본선 진출자가 ${Number(qualifierAdvancementCount)}/${slots}명만 확정되어 있습니다.` };
   const capacity = championshipFinalCapacity(finalEvent);
   const directTarget = capacity - slots;
-  if (!Number.isInteger(capacity) || directTarget < 0) return { ok: false, error: "본선 정원과 선발전 목표 관계가 올바르지 않습니다." };
+  if (!Number.isInteger(capacity) || directTarget < 0) return { ok: false, error: "본선 정원과 선발전 목표 인원이 맞지 않습니다." };
   if (Number(directAdvancementCount) !== directTarget) return { ok: false, error: `본선 직행자가 ${Number(directAdvancementCount)}/${directTarget}명으로 확정되지 않았습니다.` };
   // finalCapacity is the guaranteed advancement capacity.  A later, exceptional
   // manual advancement is an additional Final candidate, not a corruption of the
   // ranking/qualifier set; ordinary-style absence confirmation decides the field.
   if ((finalRegistrations || []).length < capacity) return { ok: false, error: `본선 진출자가 ${finalRegistrations.length}/${capacity}명으로 확정되지 않았습니다.` };
-  if (!["open", "running"].includes(finalEvent.status) || finalEvent.record_applied_at) return { ok: false, error: "현재 본선 Event 상태에서는 대진표를 생성할 수 없습니다." };
+  if (!["open", "running"].includes(finalEvent.status) || finalEvent.record_applied_at) return { ok: false, error: "현재 본선 대회 상태에서는 대진표를 생성할 수 없습니다." };
   if (Number(runtimeCount) > 0) return { ok: false, error: "이미 본선 대진표가 생성되어 있습니다." };
   const provenance = new Set((advancements || []).map(row => row.final_registration_id));
   if ((finalRegistrations || []).some(registration => !provenance.has(registration.id))) return { ok: false, error: "본선 진출 경로가 확인되지 않는 참가자가 있어 대진표를 생성할 수 없습니다." };
@@ -194,27 +194,27 @@ export function validateAdvancementInput({
   finalCapacity = null,
 } = {}) {
   const errors = [];
-  if (!isChampionshipFinal(finalEvent)) errors.push("본선 Event만 advancement 대상이 될 수 있습니다.");
-  if (!playerId) errors.push("Player를 선택해 주세요.");
-  if (!CHAMPIONS_ADVANCEMENT_TYPES.includes(advancementType)) errors.push("지원되지 않는 advancement source입니다.");
+  if (!isChampionshipFinal(finalEvent)) errors.push("본선 대회만 본선 진출 대상이 될 수 있습니다.");
+  if (!playerId) errors.push("선수를 선택해 주세요.");
+  if (!CHAMPIONS_ADVANCEMENT_TYPES.includes(advancementType)) errors.push("지원하지 않는 본선 진출 경로입니다.");
 
   const duplicate = existingAdvancements.find((row) => row.player_id === playerId);
-  if (duplicate) errors.push("같은 Player가 이미 본선 진출 확정되어 있습니다.");
+  if (duplicate) errors.push("같은 선수의 본선 진출이 이미 확정되어 있습니다.");
   if (finalCapacity && existingAdvancements.length >= finalCapacity && advancementType !== "manual") {
-    errors.push("본선 정원이 이미 충족되었습니다.");
+    errors.push("본선 정원이 이미 찼습니다.");
   }
 
   if (advancementType === "qualifier" || advancementType === "ranking") {
-    errors.push("직행/선발전 통과 advancement는 Qualifier 기록 반영에서만 생성할 수 있습니다.");
+    errors.push("직행/선발전 통과 본선 진출은 선발전 기록 반영에서만 생성할 수 있습니다.");
   }
-  if (advancementType !== "qualifier" && sourceEntry) errors.push("qualifier source가 아닌 advancement에는 source Entry를 연결할 수 없습니다.");
+  if (advancementType !== "qualifier" && sourceEntry) errors.push("선발전을 거치지 않은 본선 진출에는 출전 정보를 연결할 수 없습니다.");
   return errors;
 }
 
 export function buildFinalRegistrationPayload({ finalEvent, player, reason = "" } = {}) {
   const name = String(player?.display_name || player?.registration_name || "").trim();
   const generation = championshipGeneration(finalEvent);
-  if (!finalEvent?.id || !player?.id || !name || !generation) throw new Error("본선 Registration에 필요한 Player identity와 Champions generation이 없습니다.");
+  if (!finalEvent?.id || !player?.id || !name || !generation) throw new Error("본선 참가 신청에 필요한 선수 정보와 챔피언스 대수가 없습니다.");
   return {
     event_id: finalEvent.id,
     player_id: player.id,
@@ -247,19 +247,19 @@ export function downstreamFactsPresent({
 
 export function advancementCancellationError(facts = {}) {
   if (downstreamFactsPresent(facts)) {
-    return "본선 Registration 이후 Submission/Entry/Match/Result 등 후속 사실이 있어 advancement를 취소할 수 없습니다.";
+    return "본선 참가 신청 이후 제출, 출전, 경기, 결과 등 후속 기록이 있어 본선 진출을 취소할 수 없습니다.";
   }
   return null;
 }
 
 export function qualifierCompletionState({ qualifierEvent, survivorState } = {}) {
-  if (!isChampionshipQualifier(qualifierEvent)) return { ok: false, error: "qualifier Event만 종료할 수 있습니다." };
+  if (!isChampionshipQualifier(qualifierEvent)) return { ok: false, error: "선발전만 종료할 수 있습니다." };
   const slots = Number(qualifierEvent.qualification_slots);
   const count = Number(survivorState?.aliveCount);
-  if (!Number.isInteger(slots) || slots < 1) return { ok: false, error: "qualification_slots가 올바르지 않습니다." };
-  if (survivorState?.invalid || count < slots) return { ok: false, error: `현재 생존 ${Number.isFinite(count) ? count : "?"}명 / 목표 ${slots}명이라 qualifier를 종료할 수 없습니다.` };
-  if (count > slots) return { ok: false, error: `현재 생존 ${count}명 / 목표 ${slots}명이라 qualifier를 종료할 수 없습니다.` };
-  if (qualifierEvent.status === "cancelled") return { ok: false, error: "취소된 Event는 종료할 수 없습니다." };
+  if (!Number.isInteger(slots) || slots < 1) return { ok: false, error: "선발전 통과 인원이 올바르지 않습니다." };
+  if (survivorState?.invalid || count < slots) return { ok: false, error: `현재 생존 ${Number.isFinite(count) ? count : "?"}명 / 목표 ${slots}명이라 선발전을 종료할 수 없습니다.` };
+  if (count > slots) return { ok: false, error: `현재 생존 ${count}명 / 목표 ${slots}명이라 선발전을 종료할 수 없습니다.` };
+  if (qualifierEvent.status === "cancelled") return { ok: false, error: "취소된 대회는 종료할 수 없습니다." };
   if (qualifierEvent.status === "completed") return { ok: true, alreadyCompleted: true };
   return { ok: true, alreadyCompleted: false };
 }

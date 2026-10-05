@@ -79,6 +79,6 @@ test("snapshot submission requires exact Event registration and eligibility, the
     eligibility: { eligible: true },
     team,
     detailData,
-  }), /exact match/);
-  assert.throws(() => buildTeamSnapshotSubmission({ event, registration, registrationName: "홍길동", eligibility: { eligible: false }, team, detailData }), /eligibility/);
+  }), /이름을 정확히 확인/);
+  assert.throws(() => buildTeamSnapshotSubmission({ event, registration, registrationName: "홍길동", eligibility: { eligible: false }, team, detailData }), /자격 검증/);
 });

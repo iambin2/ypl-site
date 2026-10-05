@@ -23,12 +23,12 @@ export function bracketResultIdentityState(bracket) {
   const entryLinkedCount = participants.filter(participant => participant?.entryId).length;
   if (!entryLinkedCount) return { eligible: false, reason: "legacy_bracket" };
   if (entryLinkedCount !== participants.length) {
-    throw new Error("일부 참가자에게만 Entry identity가 있어 normalized Result를 동기화할 수 없습니다.");
+    throw new Error("일부 참가자에게만 출전 정보가 있어 결과를 동기화할 수 없습니다.");
   }
 
   const entryIds = participants.map(participant => participant.entryId);
   if (new Set(entryIds).size !== entryIds.length) {
-    throw new Error("동일한 Entry identity가 대진표 참가자 두 명 이상에게 연결되어 있습니다.");
+    throw new Error("동일한 출전 정보가 대진표 참가자 두 명 이상에게 연결되어 있습니다.");
   }
 
   return { eligible: true, participants };
@@ -41,7 +41,7 @@ export function buildEventBracketResultSnapshot(bracket, result) {
   }
 
   if (!result?.champ) {
-    throw new Error("normalized Result를 만들 최종 우승자가 없습니다.");
+    throw new Error("결과를 만들 최종 우승자가 없습니다.");
   }
 
   const participantById = new Map(
@@ -75,10 +75,10 @@ export function buildEventBracketResultSnapshot(bracket, result) {
   const rows = placements.map(placement => {
     const participant = participantById.get(placement.participantId);
     if (!participant?.entryId) {
-      throw new Error(`입상자 '${placement.participantId}'의 Entry identity를 찾을 수 없습니다.`);
+      throw new Error(`입상자 '${placement.participantId}'의 출전 정보를 찾을 수 없습니다.`);
     }
     if (entryIds.has(participant.entryId)) {
-      throw new Error(`입상 결과에 Entry '${participant.entryId}'가 중복되어 있습니다.`);
+      throw new Error(`입상 결과에 출전 정보 '${participant.entryId}'가 중복되어 있습니다.`);
     }
     entryIds.add(participant.entryId);
 
@@ -102,7 +102,7 @@ export function buildBracketResultSyncPlan(existingRows = [], desiredRows = []) 
   for (const row of runtimeRows) {
     if (!row?.entry_id) continue;
     if (existingByEntryId.has(row.entry_id)) {
-      throw new Error(`runtime Result Entry '${row.entry_id}'가 DB에 중복되어 있습니다.`);
+      throw new Error(`대진표 결과 출전 정보 '${row.entry_id}'가 데이터베이스에 중복되어 있습니다.`);
     }
     existingByEntryId.set(row.entry_id, row);
   }
@@ -113,19 +113,19 @@ export function buildBracketResultSyncPlan(existingRows = [], desiredRows = []) 
 
   for (const desired of desiredRows || []) {
     const entryId = desired?.entry_id;
-    if (!entryId) throw new Error("normalized Result snapshot에 entry_id가 없습니다.");
+    if (!entryId) throw new Error("결과 기록에 출전 ID가 없습니다.");
     if (desired.source && desired.source !== NORMALIZED_BRACKET_RUNTIME_SOURCE) {
-      throw new Error("runtime Result snapshot에 다른 source가 포함되어 있습니다.");
+      throw new Error("대진표 결과 기록에 다른 출처가 포함되어 있습니다.");
     }
     if (desiredEntryIds.has(entryId)) {
-      throw new Error(`normalized Result snapshot에 Entry '${entryId}'가 중복되어 있습니다.`);
+      throw new Error(`결과 기록에 출전 정보 '${entryId}'가 중복되어 있습니다.`);
     }
     desiredEntryIds.add(entryId);
 
     const protectedRow = protectedByEntryId.get(entryId);
     if (protectedRow) {
       throw new Error(
-        `Entry '${entryId}'에는 이미 '${protectedRow.source || "unknown"}' source Result가 있어 runtime Result로 덮어쓸 수 없습니다.`
+        `출전 정보 '${entryId}'에는 이미 '${protectedRow.source || "unknown"}' 출처의 결과가 있어 대진표 결과로 덮어쓸 수 없습니다.`
       );
     }
 

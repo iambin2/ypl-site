@@ -22,7 +22,7 @@ test("normalized labels use Event battle format and Season relation", () => {
   assert.equal(isNormalizedChampionsHallOfFame({ event_type: "champions", championship_phase: null }), false);
   assert.equal(normalizedChampionLabel(7, "singles"), "7대 싱글 챔피언");
   assert.equal(normalizedChampionLabel(7, "doubles"), "7대 더블 챔피언");
-  assert.equal(normalizedSeasonLabel({ series: "ypl", number: 3 }), "YPL SEASON 3");
+  assert.equal(normalizedSeasonLabel({ series: "ypl", number: 3 }), "YPL 시즌 3");
 });
 
 test("artwork lookup resolves canonical ids and legacy Korean names without persistence", () => {

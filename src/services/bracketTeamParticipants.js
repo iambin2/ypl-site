@@ -100,7 +100,7 @@ export function attachConfirmedTeamIdentities(teams = [], resolvedMembers = []) 
       member.memberOrder === index + 1 && member.name === team.members[index]
     );
     if (members.length !== team.members.length || entryIds.length !== 1 || !hasCanonicalOrder) {
-      throw new Error(`'${team.name}' 팀의 normalized identity를 모두 연결하지 못했습니다.`);
+      throw new Error(`'${team.name}' 팀의 식별 정보를 모두 연결하지 못했습니다.`);
     }
 
     return {
@@ -134,7 +134,7 @@ export function getConfirmedTeamMemberIdentities(team) {
       (declaredMembers.length > 0 && member.name !== declaredMembers[index])
     )
   ) {
-    throw new Error(`'${team?.name || "알 수 없는 팀"}' 팀의 확정 선수 순서 또는 Player identity가 올바르지 않습니다.`);
+    throw new Error(`'${team?.name || "알 수 없는 팀"}' 팀의 확정 선수 순서 또는 선수 정보가 올바르지 않습니다.`);
   }
 
   const explicitCaptains = members.filter(member => member.role === "captain");
@@ -143,7 +143,7 @@ export function getConfirmedTeamMemberIdentities(team) {
     (explicitCaptains.length === 1 && explicitCaptains[0].memberOrder !== 1) ||
     members.slice(1).some(member => member.role === "captain")
   ) {
-    throw new Error(`'${team?.name || "알 수 없는 팀"}' 팀의 captain 역할이 중복되었거나 선수 순서와 일치하지 않습니다.`);
+    throw new Error(`'${team?.name || "알 수 없는 팀"}' 팀의 팀장 역할이 중복되었거나 선수 순서와 일치하지 않습니다.`);
   }
 
   return members.map(member => ({
@@ -206,7 +206,7 @@ export function buildTeamMatchSeries(
     actualLineupB.some(name => !optionsB.has(name)) ||
     boutGames.some(winner => winner !== "a" && winner !== "b")
   ) {
-    throw new Error("모든 팀전 lineup 선수와 일반 경기 승자를 입력해 주세요.");
+    throw new Error("모든 팀전 출전 선수와 일반 경기 승자를 입력해 주세요.");
   }
 
   const winsA = boutGames.filter(winner => winner === "a").length;

@@ -4,9 +4,9 @@ import { NORMALIZED_DATA_SCHEMA } from "./normalizedCompetitionService.js";
 const CONFIGURED_SCHEMA = import.meta.env.VITE_YPL_DATA_SCHEMA || "";
 
 function db() {
-  if (!client) throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  if (!client) throw new Error("데이터베이스 연결이 설정되지 않았습니다.");
   if (!normalizedRecordsReadEnabled()) {
-    throw new Error("normalized Records read schema가 설정되지 않았습니다.");
+    throw new Error("기록 조회 설정이 없습니다.");
   }
   return client.schema(NORMALIZED_DATA_SCHEMA);
 }
@@ -28,7 +28,7 @@ function inEventIds(table, select, eventIds) {
   if (!eventIds.length) return Promise.resolve([]);
   return rows(
     db().from(table).select(select).in("event_id", eventIds),
-    `${table} Records 데이터를 읽지 못했습니다.`
+    `${table} 기록 데이터를 읽지 못했습니다.`
   );
 }
 
@@ -51,21 +51,21 @@ export async function fetchNormalizedRecordsSnapshot() {
           team_revealed_at, championship_phase, championship_final_event_id
         `)
         .eq("status", "completed"),
-      "공식 normalized Event를 읽지 못했습니다."
+      "공식 대회를 읽지 못했습니다."
     ),
     rows(
       db().from("seasons").select("id, code, name, series, number, sort_order, status"),
-      "normalized Season을 읽지 못했습니다."
+      "시즌을 읽지 못했습니다."
     ),
     rows(
       db().from("players").select("id, display_name, status"),
-      "normalized Player를 읽지 못했습니다."
+      "선수를 읽지 못했습니다."
     ),
     rows(
       db()
         .from("ranking_baselines")
         .select("id, player_id, scope, series, season_id, points, wins, runner_ups, top4s, source, note"),
-      "normalized RankingBaseline을 읽지 못했습니다."
+      "랭킹 기준 점수를 읽지 못했습니다."
     ),
   ]);
 
@@ -122,7 +122,7 @@ export async function fetchNormalizedRecordsSnapshot() {
           .from("registration_submissions")
           .select("id, registration_id, snapshot_id, revision, submitted_at, source")
           .in("id", finalSubmissionIds),
-        "최종 RegistrationSubmission을 읽지 못했습니다."
+        "최종 제출을 읽지 못했습니다."
       )
     : [];
 
@@ -134,14 +134,14 @@ export async function fetchNormalizedRecordsSnapshot() {
             .from("team_snapshots")
             .select("id, schema_version, regulation_id, cup_rule_id, source_type, source_reference")
             .in("id", snapshotIds),
-          "최종 TeamSnapshot을 읽지 못했습니다."
+          "최종 제출 팀을 읽지 못했습니다."
         ),
         rows(
           db()
             .from("team_snapshot_members")
             .select("id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot")
             .in("snapshot_id", snapshotIds),
-          "최종 TeamSnapshotMember를 읽지 못했습니다."
+          "최종 제출 팀 구성원을 읽지 못했습니다."
         ),
       ])
     : [[], []];

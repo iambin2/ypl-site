@@ -28,7 +28,7 @@ export const CUP_RULES = {
     name: '추가 룰 없음',
     shortName: '일반',
     kind: 'none',
-    description: '선택한 Regulation의 기본 규정만 적용합니다.',
+    description: '선택한 레귤레이션의 기본 규정만 적용합니다.',
   },
   'monotype-challenge': {
     id: 'monotype-challenge',
@@ -39,7 +39,7 @@ export const CUP_RULES = {
     selector: {
       id: 'assignedType',
       label: '배정 타입',
-      placeholder: '타입을 선택하세요',
+      placeholder: '타입을 선택하세요.',
       options: TYPE_OPTIONS,
     },
   },

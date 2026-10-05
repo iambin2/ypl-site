@@ -13,7 +13,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 export function LoginModal({ onClose, onSuccess }) {
   const [id,setId]=useState(""),[pw,setPw]=useState(""),[err,setErr]=useState("");
   const submit=()=>verifyAdminCredentials(id,pw)?onSuccess():setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
-  return (<Modal title="관리자 로그인" hint="운영진 전용. 관리자 계정으로 로그인합니다." onClose={onClose}>
+  return (<Modal title="관리자 로그인" hint="운영진 전용입니다. 관리자 계정으로 로그인해 주세요." onClose={onClose}>
     <div className="field"><label>아이디</label><input value={id} onChange={e=>setId(e.target.value)} placeholder="yplofficial"/></div>
     <div className="field"><label>비밀번호</label><input type="password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
     {err&&<div className="bk-hint" style={{color:"var(--danger)",marginTop:-6}}>{err}</div>}
@@ -23,8 +23,8 @@ export function LoginModal({ onClose, onSuccess }) {
 export function MetaEditor({ meta, onClose, onSave }) {
   const [m,setM]=useState({...meta}); const f=k=>e=>setM({...m,[k]:e.target.value});
   return (<Modal title="메인 정보 수정" onClose={onClose}>
-    <div className="field"><label>리그 풀네임</label><input value={m.fullName} onChange={f("fullName")}/></div>
-    <div className="field"><label>태그라인</label><input value={m.tagline} onChange={f("tagline")}/></div>
+    <div className="field"><label>리그 정식 이름</label><input value={m.fullName} onChange={f("fullName")}/></div>
+    <div className="field"><label>한 줄 소개</label><input value={m.tagline} onChange={f("tagline")}/></div>
     <div className="field"><label>현 챔피언 대수</label><input value={m.currentChampionGen} onChange={f("currentChampionGen")} placeholder="5대"/></div>
     <div className="field"><label>현 챔피언</label><input value={m.currentChampion} onChange={f("currentChampion")}/></div>
     <div className="field"><label>홈 소개글</label><textarea value={m.intro} onChange={f("intro")}/></div>
@@ -57,7 +57,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
       <div className="field"><label>시즌 번호</label><input value={season} onChange={e=>setSeason(e.target.value)} placeholder="예: 6"/></div>
     </div>
     <div className="field"><label>챔피언 이름</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
-    <div className="field"><label>시즌 라벨 (선택)</label><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL SEASON 2"/></div>
+    <div className="field"><label>시즌 라벨 (선택)</label><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL 시즌 2"/></div>
     <div className="field"><label>우승 엔트리 — 이미지 + 이름</label>
       <div className="ch-grid">{mons.map((m,i)=>(<div className="ch-slot" key={i}>
         <div className="ch-imgwrap">
@@ -68,7 +68,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
         </div>
         <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value})} placeholder={`이름 ${i+1}`}/>
       </div>))}</div>
-      <div className="bk-hint">각 칸을 눌러 이미지를 올리고 이름을 입력하세요. 이미지는 자동으로 작게 압축돼 저장됩니다. (투명 배경 PNG 권장)</div>
+      <div className="bk-hint">각 칸을 눌러 이미지를 올리고 이름을 입력하세요. 이미지는 자동으로 압축해 저장합니다. 배경이 투명한 PNG 파일을 권장합니다.</div>
     </div>
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
@@ -78,7 +78,7 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
   const partner=groupKey==="partner";
   const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[raw,setRaw]=useState((item?.holders||[]).join(", "));
   const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders:raw.split(/[,\n]/).map(s=>s.trim()).filter(Boolean)});
-  return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름=트레이너, 아래엔 파트너 포켓몬을 쉼표(,)로 구분해 입력하세요.":"해당자를 쉼표(,)로 구분해 입력하세요. (예: 정두호, 이제빈)"} onClose={onClose}>
+  return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름에는 트레이너를, 아래에는 파트너 포켓몬을 쉼표(,)로 구분해 입력하세요.":"해당자를 쉼표(,)로 구분해 입력하세요. 예: 정두호, 이제빈"} onClose={onClose}>
     <div className="field"><label>{partner?"트레이너":"칭호 이름"}</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
     {!partner&&<div className="field"><label>설명 (선택)</label><input value={desc} onChange={e=>setDesc(e.target.value)}/></div>}
     <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></div>
@@ -103,7 +103,7 @@ function FormBuilder({ form, setForm }){
   const patch=(id,p)=>setFields(fields.map(f=>f.id===id?{...f,...p}:f));
   const del=(id)=>setFields(fields.filter(f=>f.id!==id));
   const move=(i,d)=>{ const j=i+d; if(j<0||j>=fields.length)return; const a=[...fields]; [a[i],a[j]]=[a[j],a[i]]; setFields(a); };
-  const changeType=(f,v)=>patch(f.id,{type:v,options:isChoice(v)?((f.options&&f.options.length)?f.options:["옵션 1"]):[]});
+  const changeType=(f,v)=>patch(f.id,{type:v,options:isChoice(v)?((f.options&&f.options.length)?f.options:["선택지 1"]):[]});
   const eventDraft=form?.eventDraft||{};
   const eventTypeValue=eventDraft.eventType||"pokecup";
   const legacyLightEvent=eventTypeValue==="light";
@@ -130,14 +130,14 @@ function FormBuilder({ form, setForm }){
       <div className="field"><label>신청 버튼 문구</label><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></div>
       <div className="fb-q">
         <div className="fb-q-top"><strong>대회 연결 설정</strong></div>
-        <div className="fb-note" style={{marginBottom:12}}>참가자 이름은 신청 화면에서 시스템 필드로 별도 입력받습니다. 아래 설정은 이 신청서와 연결되는 Event의 공통 규칙입니다.</div>
+        <div className="fb-note" style={{marginBottom:12}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
         <div className="field"><label>대회명</label><input value={(form?.eventDraft?.name)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),name:e.target.value}})} placeholder="예: 제1회 정규 파이컵 A"/></div>
         <div className="field"><label>대회 종류</label><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></div>
-        <div className="field"><label>구분</label>{isChampions?<div className="bk-hint">해당 없음. 챔피언스는 구분 값을 비워 둔 채로 고정됩니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
+        <div className="field"><label>구분</label>{isChampions?<div className="bk-hint">해당 없음. 챔피언스는 구분 없이 진행합니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
         <div className="field"><label>참가 단위</label><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></div>
         <div className="field"><label>배틀 형식</label><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></div>
         <div className="field"><label>대진 방식</label>{isChampions?<div className="bk-applybox"><div><b>선발전</b> {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} (고정)</div><div><b>본선</b> {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</div></div>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</div>
-        {isChampions&&<div className="field"><label>본선 정원</label><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8"/><div className="fb-note" style={{marginTop:6}}>회차는 이전 챔피언스 회차를 기준으로 자동 배정됩니다.</div></div>}
+        {isChampions&&<div className="field"><label>본선 정원</label><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8"/><div className="fb-note" style={{marginTop:6}}>회차는 이전 챔피언스 회차에 이어 자동으로 매겨집니다.</div></div>}
         <div className="field"><label>레귤레이션</label><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></div>
         <div className="field"><label>파이컵 추가 룰</label><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></div>
         <div className="field"><label>기록 표시 룰 <span className="fb-note">(선택, 자유 입력)</span></label><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></div>
@@ -174,10 +174,10 @@ function FormBuilder({ form, setForm }){
         {isChoice(f.type)&&<div className="fb-opts">
           {(f.options||[]).map((op,oi)=>(<div className="fb-opt" key={oi}>
             <span className={"fb-dot "+f.type} aria-hidden="true">{f.type==="dropdown"?oi+1:null}</span>
-            <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`옵션 ${oi+1}`}/>
-            <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="옵션 삭제"><Icon n="x" size={12}/></button>
+            <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`선택지 ${oi+1}`}/>
+            <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="선택지 삭제"><Icon n="x" size={12}/></button>
           </div>))}
-          <button type="button" className="fb-addopt" onClick={()=>patch(f.id,{options:[...(f.options||[]),""]})}>+ 옵션 추가</button>
+          <button type="button" className="fb-addopt" onClick={()=>patch(f.id,{options:[...(f.options||[]),""]})}>+ 선택지 추가</button>
         </div>}
         <div className="fb-q-foot">
           <label className="fb-req"><input type="checkbox" checked={!!f.required} onChange={e=>patch(f.id,{required:e.target.checked})}/> 필수 응답</label>
@@ -273,8 +273,8 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
     if(autoSort) out=sortRows(out);
     onSave(out);
   };
-  return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력하세요. 저장 시 날짜순으로 자동 정렬됩니다(화살표 버튼으로 직접 순서 변경 가능)." onClose={onClose}>
-    <div className="pts-note" style={{marginBottom:14}}>포인트 기준 — 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점 (팀전 여부와 팀원 수, 대회 사정에 따라 변동될 수 있어, 누적 포인트는 랭킹 편집에서 직접 입력합니다.)</div>
+  return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력하세요. 저장하면 날짜순으로 자동 정렬되며, 화살표 버튼으로 순서를 직접 바꿀 수도 있습니다." onClose={onClose}>
+    <div className="pts-note" style={{marginBottom:14}}>포인트 기준 — 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
     <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:14}}>
       <button className="btn btn-ghost btn-sm" onClick={add}>+ 회차 추가 (맨 아래)</button>
       <button className="btn btn-ghost btn-sm" onClick={sortNow}><Icon n="sort" size={14}/>날짜순 정렬</button>

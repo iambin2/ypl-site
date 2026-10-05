@@ -18,7 +18,7 @@ function parseMedia(url){
 }
 function MediaEmbed({ url }){
   const m=parseMedia(url); if(!m) return null;
-  if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
+  if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="유튜브 영상" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
   if(m.type==="image") return <a className="bd-img" href={m.url} target="_blank" rel="noopener noreferrer"><img src={m.url} alt="첨부 이미지" loading="lazy" decoding="async"/></a>;
   return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url}<Icon n="ext" size={13}/></a>;
 }
@@ -32,11 +32,11 @@ function BoardCompose({ onClose, onSubmit }){
     <div className="swap" key="compose">
       <div className="bk-grow2">
         <div className="field"><label>닉네임</label><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></div>
-        <div className="field"><label>삭제 PIN (선택, 숫자 4자리)</label><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></div>
+        <div className="field"><label>삭제 비밀번호 (선택, 숫자 4자리)</label><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></div>
       </div>
-      <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요" maxLength={60}/></div>
-      <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해주세요."/></div>
-      <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요"/>
+      <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요." maxLength={60}/></div>
+      <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></div>
+      <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
       <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={14}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
@@ -53,7 +53,7 @@ function CommentForm({ onSubmit }){
   return (<div className="bd-cform">
     <div className="bd-cform-row">
       <input className="bd-cform-nick" value={nick} onChange={e=>setNick(e.target.value)} placeholder="닉네임" maxLength={20}/>
-      <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="PIN(선택)" inputMode="numeric"/>
+      <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="비밀번호(선택)" inputMode="numeric"/>
     </div>
     <div className="bd-cform-row">
       <input className="bd-cform-body" value={body} onChange={e=>setBody(e.target.value)} placeholder="댓글 달기…" onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
@@ -75,11 +75,11 @@ export default function BoardPage({ data, admin, save, flash }){
   const [open,setOpen]=useState(()=>new Set());
   const [compose,setCompose]=useState(false);
   const toggle=(id)=>setOpen(prev=>{ const s=new Set(prev); s.has(id)?s.delete(id):s.add(id); return s; });
-  const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글을 등록했습니다"); };
-  const delPost=async(p)=>{ if(admin){ if(!(await siteConfirm({title:"글 삭제",body:"이 글을 삭제할까요? 삭제한 글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"글 삭제",body:"본인 글을 삭제하려면 작성할 때 입력한 PIN을 입력하세요.",label:"삭제 PIN",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!p.pin||pin!==p.pin){siteAlert("PIN이 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
+  const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글을 등록했습니다."); };
+  const delPost=async(p)=>{ if(admin){ if(!(await siteConfirm({title:"글 삭제",body:"이 글을 삭제할까요? 삭제한 글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"글 삭제",body:"본인 글을 삭제하려면 작성할 때 정한 비밀번호를 입력하세요.",label:"삭제 비밀번호",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!p.pin||pin!==p.pin){siteAlert("비밀번호가 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
     save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };
-  const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글을 등록했습니다"); };
-  const delComment=async(p,c)=>{ if(admin){ if(!(await siteConfirm({title:"댓글 삭제",body:"이 댓글을 삭제할까요? 삭제한 댓글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"댓글 삭제",body:"본인 댓글을 삭제하려면 작성할 때 입력한 PIN을 입력하세요.",label:"삭제 PIN",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!c.pin||pin!==c.pin){siteAlert("PIN이 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
+  const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글을 등록했습니다."); };
+  const delComment=async(p,c)=>{ if(admin){ if(!(await siteConfirm({title:"댓글 삭제",body:"이 댓글을 삭제할까요? 삭제한 댓글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"댓글 삭제",body:"본인 댓글을 삭제하려면 작성할 때 정한 비밀번호를 입력하세요.",label:"삭제 비밀번호",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!c.pin||pin!==c.pin){siteAlert("비밀번호가 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
     save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
   return (<section className="sec">
     <Reveal className="sec-head">
@@ -94,8 +94,8 @@ export default function BoardPage({ data, admin, save, flash }){
     </Reveal>
     <div className="bd-list">
       {list.length===0&&(kw
-        ? <Empty icon="search" title="검색 결과가 없습니다" desc={`‘${kw}’ 와(과) 맞는 글을 찾지 못했습니다.`}/>
-        : <Empty icon="list" title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
+        ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
+        : <Empty icon="list" title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const isOpen=open.has(p.id); const cc=(p.comments||[]).length;
         return (<div className={"bd-item"+(isOpen?" open":"")+(p.secret?" secret":"")} key={p.id}>
           <button className="bd-head" onClick={()=>toggle(p.id)}>

@@ -228,7 +228,7 @@ async function downloadBracketPng(b,nameOf){
     const t=bkDrawTree(ctx,g.rounds,ev,nameOf,padL,oy,boxW,boxH,gapX,pitch0);
     let bottom=t.bottom;
     if(g.kind==="double"){
-      const lbY=t.bottom+50; ctx.fillStyle=BKC.t2; ctx.font=`800 15px ${BKF}`; ctx.fillText("패자부활전 (Lower Bracket)",padL,lbY-12);
+      const lbY=t.bottom+50; ctx.fillStyle=BKC.t2; ctx.font=`800 15px ${BKF}`; ctx.fillText("패자부활전",padL,lbY-12);
       // LB는 단순 컬럼
       for(let r=0;r<g.lb.length;r++){ const x=padL+r*(boxW+gapX);
         for(let j=0;j<g.lb[r].length;j++){ const m=g.lb[r][j]; const cy=lbY+j*pitch0+boxH/2;
@@ -415,8 +415,8 @@ function BracketWizard({ data, onClose, onCreate }){
       }catch(error){ setEventError(error?.message||"본선 직행자를 저장하지 못했습니다."); return; }
     }
     const parts=buildParticipants();
-    if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해주세요."); return; }
-    if(format!=="elim"){ setEventError("active Event 대진표는 normalized elimination runtime만 지원합니다."); return; }
+    if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
+    if(format!=="elim"){ setEventError("진행 중인 대회의 대진표는 토너먼트 방식만 지원합니다."); return; }
     if(linkedEvent?.championship_phase === "final"){
       try{
         const preflight=await preflightChampionshipFinalBracket(linkedEvent.id);
@@ -538,7 +538,7 @@ function BracketWizard({ data, onClose, onCreate }){
             setManualMode(false);
             selectLinkedEvent(v);
           }}
-          placeholder={eventBusy?"불러오는 중…":"대회를 선택하세요"}
+          placeholder={eventBusy?"불러오는 중…":"대회를 선택하세요."}
           options={[
             ...events.map(ev=>({value:ev.id,label:championshipEventPickerLabel(ev)})),
             {value:"__manual__",label:"연결하지 않고 새로 만들기"}
@@ -610,7 +610,7 @@ function BracketWizard({ data, onClose, onCreate }){
       {eventId&&mode!=="team" ? <>
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
           <label>본선 직행자 선택</label>
-          <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표 참가자에서 제외되며, 아직 본선 Registration은 만들지 않습니다.</div>
+          <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.</div>
           <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight:700}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
         </div>}
         <div className="field">
@@ -796,7 +796,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const allPlayed=N>0&&games.every(w=>w); const tie=allPlayed&&a===b;
   const allPlayers=lineupA.every(Boolean)&&lineupB.every(Boolean);
   const decided=allPlayers&&allPlayed&&(!tie||(!!aceA&&!!aceB&&!!aceW));
-  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요.","모든 실제 lineup 선수와 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력하세요.");return;}
+  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요.","실제 출전 선수와 모든 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력하세요.");return;}
     const result=buildTeamMatchSeries(teamA,teamB,{lineupA,lineupB,games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null}); onSave(result.series,result.winnerSide); };
   const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={13}/>승</>:"승"}</button></div>;
   const displayTeamA=teamMatchDisplayName(teamA.name),displayTeamB=teamMatchDisplayName(teamB.name);
@@ -829,13 +829,13 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
     const clickable=admin&&(bothReal||decided);
     const rowT=(side,pid)=>{ const isWin=decided&&m.winner===side; const isBye=pid===BYE;
       return <div className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")}>{seed(pid)}<span className="bk-tn">{pid===BYE?"부전승":(pid?nameOf(pid):"…")}</span></div>; };
-    return <div className={"bk-match"+(compact?" cmp":"")+(clickable?" team-click":"")} onClick={()=>clickable&&onOpenTeam(m,pa,pb)} title={clickable?"클릭하여 팀 대결 진행/수정":""}>{rowT("a",pa)}{rowT("b",pb)}</div>;
+    return <div className={"bk-match"+(compact?" cmp":"")+(clickable?" team-click":"")} onClick={()=>clickable&&onOpenTeam(m,pa,pb)} title={clickable?"눌러서 팀 대결 진행 또는 수정":""}>{rowT("a",pa)}{rowT("b",pb)}</div>;
   }
   const canPick=admin&&bothReal;
   const row=(side,pid)=>{
     const isWin=decided&&m.winner===side; const isBye=pid===BYE;
     const txt=pid===BYE?"부전승":(pid?nameOf(pid):"…");
-    return <button type="button" className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")+(canPick?" pick":"")} disabled={!canPick} onClick={()=>canPick&&onPick(m.id,side)} title={canPick?(decided?"승자 변경 / 같은 쪽 다시 클릭 시 취소":"클릭하여 승자 선택"):""}>{seed(pid)}<span className="bk-tn">{txt}</span></button>;
+    return <button type="button" className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")+(canPick?" pick":"")} disabled={!canPick} onClick={()=>canPick&&onPick(m.id,side)} title={canPick?(decided?"다른 쪽을 누르면 승자 변경, 같은 쪽을 다시 누르면 취소":"눌러서 승자 선택"):""}>{seed(pid)}<span className="bk-tn">{txt}</span></button>;
   };
   return <div className={"bk-match"+(compact?" cmp":"")}>{row("a",pa)}{row("b",pb)}</div>;
 }
@@ -855,7 +855,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
   const { centers, totalH }=treeCenters(g.rounds);
   return (<div className="bk-scroll"><div className="bk-tree">
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
-      <div className="bk-col-h">{g.kind==="double"?("WB R"+(ri+1)):rlabel(r.length)}</div>
+      <div className="bk-col-h">{g.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
       <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
         {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
           <MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>
@@ -868,14 +868,14 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
         <div className="bk-mpos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
           <div className="bk-champ-node">
             <b>{nameOf(finalRes.champ)}</b>
-            <span className="bk-champ-k"><Icon n="crown" size={14}/>CHAMPION</span>
+            <span className="bk-champ-k"><Icon n="crown" size={14}/>챔피언</span>
           </div>
         </div>
       </div>
     </div>}
   </div>
-  {g.kind==="double"&&<div className="bk-lb"><div className="bk-lb-h">패자부활전 (Lower Bracket)</div><div className="bk-cols">
-    {g.lb.map((r,ri)=>(<div className="bk-col" key={ri}><div className="bk-col-h">LB R{ri+1}</div>
+  {g.kind==="double"&&<div className="bk-lb"><div className="bk-lb-h">패자부활전</div><div className="bk-cols">
+    {g.lb.map((r,ri)=>(<div className="bk-col" key={ri}><div className="bk-col-h">패자조 {ri+1}R</div>
       {r.map(m=><MatchCard key={m.id} m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>)}
     </div>))}
     {!qualifier&&<div className="bk-col"><div className="bk-col-h gf">그랜드 파이널</div><MatchCard m={g.gf} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/></div>}
@@ -884,7 +884,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
       <div className="bk-col-h gf">우승</div>
       <div className="bk-champ-node">
         <b>{nameOf(finalRes.champ)}</b>
-        <span className="bk-champ-k"><Icon n="crown" size={14}/>CHAMPION</span>
+        <span className="bk-champ-k"><Icon n="crown" size={14}/>챔피언</span>
       </div>
     </div>}
   </div></div>}
@@ -960,7 +960,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
         </div>
       )}
       {expanded && !busy && !error && model.total === 0 && (
-        <div className="bk-submission-empty">확정된 Registration 연결이 없어 제출 현황을 표시할 수 없습니다.</div>
+        <div className="bk-submission-empty">확정된 참가 신청이 없어 제출 현황을 표시할 수 없습니다.</div>
       )}
     </section>
   );
@@ -1031,11 +1031,11 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       }
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
-      flash(winnerEntryId?"승자를 저장했습니다":"승자를 취소했습니다");
+      flash(winnerEntryId?"승자를 저장했습니다.":"승자를 취소했습니다.");
     }catch(error){
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
-      flash(`normalized 승자 저장 실패: ${error?.message||"알 수 없는 오류"}`);
+      flash(`승자 저장 실패: ${error?.message||"알 수 없는 오류"}`);
     }finally{
       matchMutationBusyRef.current=false;
       setMatchMutationBusy(false);
@@ -1055,7 +1055,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       await syncNormalizedBracketMatches(b.eventId,withSeries(b,series.m.id,sObj,winnerSide));
       await refreshNormalized?.();
       setSeries(null);
-      flash("팀전 결과를 저장했습니다");
+      flash("팀전 결과를 저장했습니다.");
     }catch(error){
       await refreshNormalized?.();
       flash(`팀전 결과 저장 실패: ${error?.message||"알 수 없는 오류"}`);
@@ -1068,7 +1068,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const undoApplied=async()=>{
     if(readOnly)return;
     if(!b.applied)return;
-    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 Event 기록 상태가 함께 원복됩니다.",confirmLabel:"반영 취소",danger:true})))return;
+    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 대회의 기록 상태가 함께 되돌아갑니다.",confirmLabel:"반영 취소",danger:true})))return;
     let previousHallOfFame=null;
     let previousAwardRows=null;
     let previousResultRows=null;
@@ -1081,21 +1081,21 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       if(!resultCleanup.skipped)previousResultRows=resultCleanup.previousRows;
       await revertEventRecordApplication(b.eventId,[]);
       await onNormalizedReverted?.();
-      flash("기록 반영을 취소했습니다");
+      flash("기록 반영을 취소했습니다.");
     }catch(error){
       try{
         if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
         if(previousAwardRows!==null) await restoreEventBracketRankingAwards(b.eventId,previousAwardRows);
         if(previousHallOfFame?.hallOfFameId) await ensureChampionshipHallOfFameEntry(b.eventId,{hallOfFameId:previousHallOfFame.hallOfFameId});
       }catch(restoreError){
-        flash(`normalized 기록 원복과 보상 복구에 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${restoreError?.message||"알 수 없는 오류"}`);
+        flash(`기록 되돌리기와 복구에 모두 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${restoreError?.message||"알 수 없는 오류"}`);
         return;
       }
-      flash(`normalized 기록 반영 취소를 중단하고 이전 상태로 복구했습니다: ${error?.message||"알 수 없는 오류"}`);
+      flash(`기록 반영 취소를 중단하고 이전 상태로 복구했습니다: ${error?.message||"알 수 없는 오류"}`);
     }
   };
   return (<div className="bk-board swap">
-    {readOnly&&<p className="bk-hint">과거 완료 대진표입니다. 조회만 가능하며 수정, 삭제, 기록 반영은 지원하지 않습니다.</p>}
+    {readOnly&&<p className="bk-hint">이미 끝난 과거 대진표입니다. 볼 수만 있고 수정, 삭제, 기록 반영은 할 수 없습니다.</p>}
     {b.eventId&&<SubmissionStatusPanel
       model={submissionStatusModel}
       busy={submissionStatusBusy}
@@ -1206,7 +1206,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         if(!cancelled) setIdentityPreview(rows||[]);
       })
       .catch(error=>{
-        if(!cancelled) setIdentityPreviewError(error?.message||"참가자 Player 상태를 확인하지 못했습니다.");
+        if(!cancelled) setIdentityPreviewError(error?.message||"참가자의 선수 정보를 확인하지 못했습니다.");
       })
       .finally(()=>{
         if(!cancelled) setIdentityPreviewBusy(false);
@@ -1257,7 +1257,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     return { deltas, roundNum, willRank, willSeason };
   };
   const prepare=()=>{
-    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다.","qualifier는 Placement Result/Award를 만들지 않습니다. Champions 운영에서 필요한 진출자를 확정한 뒤 qualifier를 종료하세요.");return;}
+    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다.","선발전은 순위와 포인트를 기록하지 않습니다. 챔피언스 운영에서 본선 진출자를 확정한 뒤 선발전을 종료하세요.");return;}
     if(!curT){siteAlert("대회를 선택해 주세요.","회차를 추가할 대회를 먼저 선택하세요.");return;}
     if(linkedContextBusy){siteAlert("잠시만 기다려 주세요.","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
     if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다.",linkedContextError);return;}
@@ -1299,7 +1299,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   };
   const finishWithTitles=async(event)=>{
     const found=await findTitleAwards(event||linkedContext?.event).catch(()=>[]);
-    if(!found.length){ flash("기록에 반영했습니다"); onClose(); return; }
+    if(!found.length){ flash("기록에 반영했습니다."); onClose(); return; }
     setAwardPicks(new Set(found.map(a=>a.key)));
     setAwards(found);
   };
@@ -1308,10 +1308,10 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     const chosen=awards.filter(a=>awardPicks.has(a.key));
     const ok=await save({...data,titleGroups:applyTitleAwards(data.titleGroups||[],chosen)});
     setAwardBusy(false);
-    flash(ok?"기록과 칭호에 반영했습니다":"기록은 반영됐고 칭호는 메모리에만 반영됐습니다");
+    flash(ok?"기록과 칭호에 반영했습니다.":"기록은 반영했지만 칭호는 저장하지 못해 이 화면에만 반영됐습니다.");
     onClose();
   };
-  const skipTitles=()=>{ if(awardBusy) return; flash("기록에 반영했습니다"); onClose(); };
+  const skipTitles=()=>{ if(awardBusy) return; flash("기록에 반영했습니다."); onClose(); };
   const commit=async()=>{
     if(!preview||applying) return;
     setApplying(true);
@@ -1325,7 +1325,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       const participants=b.participants||[];
       const actualParticipants=team ? participants.filter(p=>Array.isArray(p?.members)) : participants;
       if(!actualParticipants.length || actualParticipants.some(p=>!p.entryId)){
-        throw new Error("normalized Event runtime에 완전한 Entry identity가 없어 기록을 반영할 수 없습니다.");
+        throw new Error("대진표에 참가자 정보가 모두 연결되지 않아 기록을 반영할 수 없습니다.");
       }
       if(team) await validateEventTeamEntries(b.eventId,actualParticipants);
       else await validateEventParticipantEntries(b.eventId,participants);
@@ -1339,10 +1339,10 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         if(previousAwardRows!==null) await restoreEventBracketRankingAwards(b.eventId,previousAwardRows);
         if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
       }catch(restoreError){
-        flash(`기록 반영 사전 검증과 normalized 복구에 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${restoreError?.message||"알 수 없는 오류"}`);
+        flash(`기록 반영 전 검증과 복구에 모두 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${restoreError?.message||"알 수 없는 오류"}`);
         return;
       }
-      flash(`기록 반영 사전 검증에 실패했습니다: ${error?.message||"알 수 없는 오류"}`);
+      flash(`기록 반영 전 검증에 실패했습니다: ${error?.message||"알 수 없는 오류"}`);
       return;
     }
 
@@ -1357,7 +1357,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         try{
           await ensureChampionshipHallOfFameEntry(b.eventId);
         }catch(error){
-          flash(`기록 반영은 완료됐지만 Hall of Fame 등록에 실패했습니다. Champions 운영에서 재시도해 주세요: ${error?.message||"알 수 없는 오류"}`);
+          flash(`기록은 반영했지만 명예의 전당 등록에 실패했습니다. 챔피언스 운영에서 다시 시도해 주세요: ${error?.message||"알 수 없는 오류"}`);
           onClose();
           return;
         }
@@ -1367,7 +1367,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         try{ currentEvent=await getEvent(b.eventId); }catch{}
         if(isRecordApplyCompletionConfirmed(currentEvent,{requireTeamReveal:true})){
           await onNormalizedApplied?.(currentEvent);
-          flash("Event 완료 응답은 실패했지만 재조회 결과 기록 반영이 완료되었습니다.");
+          flash("대회 완료 응답은 실패했지만 다시 확인해 보니 기록 반영이 완료되었습니다.");
           onClose();
           return;
         }
@@ -1378,9 +1378,9 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           if(previousAwardRows!==null) await restoreEventBracketRankingAwards(b.eventId,previousAwardRows);
           if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
           await refresh?.();
-          flash(`normalized 기록 반영 실패로 이전 상태를 복구했습니다: ${error?.message||"알 수 없는 오류"}`);
+          flash(`기록 반영에 실패해 이전 상태로 복구했습니다: ${error?.message||"알 수 없는 오류"}`);
         }catch(restoreError){
-          flash(`normalized 기록 반영과 보상 복구에 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${restoreError?.message||"알 수 없는 오류"}`);
+          flash(`기록 반영과 복구에 모두 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${restoreError?.message||"알 수 없는 오류"}`);
         }
       }
   };
@@ -1406,7 +1406,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   if(preview){
     const changes=Object.entries(preview.deltas).map(([name,d])=>{ const cur=rankRows.find(r=>r.name===name); return {name,isNew:!cur,curPts:cur?.points||0,d}; });
     return (<Modal title="반영 전 확인" hint={excluded
-      ? "아래 내용으로 공식 기록에 반영합니다. Champions 성적은 랭킹에 반영되지 않습니다."
+      ? "아래 내용으로 공식 기록에 반영합니다. 챔피언스 성적은 랭킹에 반영되지 않습니다."
       : "아래 내용으로 기록에 반영합니다. 포인트 변동을 확인한 뒤 진행하세요."} onClose={()=>{ if(!applying) setPreview(null); }}>
       <div className="swap" key="pre">
       <div className="bk-applybox">
@@ -1419,9 +1419,9 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         identityPreview.some(row=>row.status!=="existing")
       )&&
   <div className="field">
-    <label>참가자 Player 확인</label>
+    <label>참가자 선수 정보 확인</label>
     {identityPreviewBusy
-      ? <div className="bk-hint">Player 정보를 확인하는 중입니다.</div>
+      ? <div className="bk-hint">선수 정보를 확인하는 중입니다.</div>
       : identityPreviewError
         ? <div className="bk-hint" style={{color:"var(--loss)"}}>{identityPreviewError}</div>
         : <div className="bk-chg">
@@ -1429,18 +1429,18 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
               <div className="bk-chg-row" key={row.participantId}>
                 <span className={"bk-exist "+(row.status==="existing"?"old":"new")}>
                   {row.status==="existing"
-                    ? "기존 Player"
+                    ? "기존 선수"
                     : row.status==="new"
-                      ? "신규 Player"
+                      ? "신규 선수"
                       : "확인 필요"}
                 </span>
                 <b>{row.name}</b>
                 <span className="bk-hint" style={{marginLeft:"auto"}}>
                   {row.status==="existing"
-                    ? "기존 identity 사용"
+                    ? "기존 선수 정보 사용"
                     : row.status==="new"
-                      ? "기록 반영 시 Player 생성"
-                      : "동일 이름 Player가 여러 명 존재"}
+                      ? "기록 반영 시 선수 등록"
+                      : "같은 이름의 선수가 여러 명 있음"}
                   {row.willCreateRegistration ? ", 참가 등록 생성 예정" : ""}
                 </span>
               </div>
@@ -1481,7 +1481,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   return (<Modal
     title="기록에 반영"
     hint={linked
-      ? "연결된 Event의 대회 정보와 정책을 기준으로 기록을 반영합니다."
+      ? "연결된 대회의 정보와 규칙을 기준으로 기록을 반영합니다."
       : "수동 대회 정보를 설정해 기록에 반영합니다."}
     onClose={onClose}
   >
@@ -1490,7 +1490,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         <div className="bk-ab-meta">
           {team?"팀전":"개인전"}
           {linked&&linkedContext?.event?.division
-            ? `, ${linkedContext.event.division==="master"?"Master":linkedContext.event.division==="rookie"?"Rookie":linkedContext.event.division}`
+            ? `, ${linkedContext.event.division==="master"?"마스터 리그":linkedContext.event.division==="rookie"?"루키 리그":linkedContext.event.division==="light"?"파이컵 라이트":linkedContext.event.division}`
             : ""}
         </div>
         <div><Icon n="trophy" size={14}/> 우승 <b>{nameOf(res.champ)}</b></div>
@@ -1512,14 +1512,14 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
             <div className="field">
               <label>기록 분류</label>
               <div className="bk-hint">
-                {curT?.label||"분류 확인 필요"} (연결된 Event 기준)
+                {curT?.label||"분류 확인 필요"} (연결된 대회 기준)
               </div>
             </div>
 
             <div className="field">
               <label>시즌</label>
               <div className="bk-hint">
-                {recordSeason||"시즌 정보 없음"} (연결된 Event 기준)
+                {recordSeason||"시즌 정보 없음"} (연결된 대회 기준)
               </div>
             </div>
           </div>
@@ -1731,7 +1731,7 @@ function BracketDraw({ b, onDone }){
     ) : (()=>{ const {centers,totalH}=treeCenters(b.graph.rounds);
       return (<div className="bk-scroll"><div className="bk-tree">
         {b.graph.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
-          <div className="bk-col-h">{b.graph.kind==="double"?("WB R"+(ri+1)):rlabel(r.length)}</div>
+          <div className="bk-col-h">{b.graph.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
           <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
             {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
               {ri===0
@@ -1758,7 +1758,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       setNormalizedLoadError("");
       return rows;
     }catch(error){
-      setNormalizedLoadError(error?.message||"normalized bracket을 불러오지 못했습니다.");
+      setNormalizedLoadError(error?.message||"대진표를 불러오지 못했습니다.");
       return [];
     }finally{
       if(initial) setNormalizedInitialReady(true);
@@ -1817,12 +1817,12 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       b.eventId&&b.format==="elim"&&(b.mode==="single"||b.mode==="team")
     );
     if(!normalizedCandidate){
-      flash("Event-linked 단일/더블/팀 대진표만 지원합니다. active bracket은 normalized runtime으로만 생성됩니다.");
+      flash("대회와 연결된 싱글, 더블, 팀전 대진표만 만들 수 있습니다.");
       return false;
     }
     if(normalizedCandidate){
       if(b.eventId&&list.some(existing=>existing.eventId===b.eventId)){
-        flash("이 Event에 연결된 대진표가 이미 있습니다.");
+        flash("이 대회에 연결된 대진표가 이미 있습니다.");
         return false;
       }
 
@@ -1839,7 +1839,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
           slots:attempt.slots,
         });
         const loaded=await fetchNormalizedSingleBracketRuntime(b.eventId,attempt.runtimeId);
-        if(!loaded) throw new Error("생성된 normalized bracket runtime을 다시 읽지 못했습니다.");
+        if(!loaded) throw new Error("만든 대진표를 다시 불러오지 못했습니다.");
         // The Single create RPC already persists its BYE closure and every
         // formed Match. Do not run the generic sync here: it can overwrite
         // canonical sequence_no values for formed downstream nodes.
@@ -1850,11 +1850,11 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         ]);
         setOpenId(presentation.openId);
         setDrawId(presentation.drawId);
-        flash("대회를 생성했습니다");
+        flash("대회를 생성했습니다.");
         return true;
       }catch(error){
         await loadNormalized();
-        flash(`normalized 대진표 생성 실패: ${error?.message||"알 수 없는 오류"}`);
+        flash(`대진표 생성 실패: ${error?.message||"알 수 없는 오류"}`);
         return false;
       }
       }
@@ -1917,10 +1917,10 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         });
         createdRuntime=true;
         let loaded=await fetchNormalizedBracketRuntime(b.eventId,attempt.runtimeId);
-        if(!loaded) throw new Error("생성된 normalized bracket runtime을 다시 읽지 못했습니다.");
+        if(!loaded) throw new Error("만든 대진표를 다시 불러오지 못했습니다.");
         await syncNormalizedBracketMatches(b.eventId,loaded.bracket);
         loaded=await fetchNormalizedBracketRuntime(b.eventId,attempt.runtimeId);
-        if(!loaded) throw new Error("formed Match materialize 후 normalized bracket runtime을 다시 읽지 못했습니다.");
+        if(!loaded) throw new Error("경기를 만든 뒤 대진표를 다시 불러오지 못했습니다.");
         const presentation=beginNormalizedBracketDraw(loaded.bracket);
         setNormalizedBrackets(previous=>[
           ...previous.filter(row=>row.eventId!==b.eventId),
@@ -1928,7 +1928,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         ]);
         setOpenId(presentation.openId);
         setDrawId(presentation.drawId);
-        flash("대회를 생성했습니다");
+        flash("대회를 생성했습니다.");
         return true;
       }catch(error){
         let cleanupError=null;
@@ -1943,14 +1943,14 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         await refresh?.();
         await loadNormalized();
         flash(cleanupError
-          ? `normalized 대진표 생성 실패 후 참가 확정 원복에도 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${cleanupError?.message||"알 수 없는 오류"}`
-          : `normalized 대진표 생성 실패로 참가 확정을 원복했습니다: ${error?.message||"알 수 없는 오류"}`);
+          ? `대진표를 만들지 못했고 참가 확정을 되돌리는 데도 실패했습니다: ${error?.message||"알 수 없는 오류"} / ${cleanupError?.message||"알 수 없는 오류"}`
+          : `대진표를 만들지 못해 참가 확정을 되돌렸습니다: ${error?.message||"알 수 없는 오류"}`);
         return false;
       }
     }
   };
   const del=async(b)=>{
-    if(b.readOnly){ flash("과거 완료 대진표는 조회 전용입니다."); return; }
+    if(b.readOnly){ flash("이미 끝난 과거 대진표는 볼 수만 있습니다."); return; }
     if(b.applied){siteAlert("기록 반영을 먼저 취소해 주세요.","기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
     if(deletingRef.current)return;
     if(!(await siteConfirm({title:"대진표 삭제",body:`'${b.name}' 대회를 삭제할까요?`,confirmLabel:"삭제",danger:true})))return;
@@ -1971,7 +1971,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
           });
           setNormalizedBrackets(previous=>previous.filter(row=>row.eventId!==b.eventId));
           closeBracket();
-          flash("대진표를 삭제했습니다");
+          flash("대진표를 삭제했습니다.");
         }catch(error){
           const rows=await loadNormalized();
           const runtimeStillExists=(rows||[]).some(row=>
@@ -1980,15 +1980,15 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
           );
           if(!runtimeStillExists){
             closeBracket();
-            flash("대진표를 삭제했습니다");
+            flash("대진표를 삭제했습니다.");
           }else{
-            flash(`normalized 대진표 삭제 실패: ${error?.message||"알 수 없는 오류"}`);
+            flash(`대진표 삭제 실패: ${error?.message||"알 수 없는 오류"}`);
           }
         }
         return;
       }
 
-      flash("legacy bracket은 active runtime으로 지원하지 않습니다.");
+      flash("과거 대진표는 진행할 수 없습니다.");
     }finally{
       deletingRef.current=false;
       setDeletingId(null);
@@ -1999,8 +1999,8 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     <Reveal className="sec-head">
       <div>
         <h2>대진표</h2>
-        <p className="sub">대회 대진을 직접 생성하고 결과를 입력하면, 확정된 성적이 기록에 연동됩니다.</p>
-        {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--loss)"}}>normalized bracket 오류: {normalizedLoadError}</p>}
+        <p className="sub">대진을 만들고 결과를 입력하면 확정된 성적이 기록에 반영됩니다.</p>
+        {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--loss)"}}>대진표 오류: {normalizedLoadError}</p>}
       </div>
       {admin&&<div className="y-page-aside"><button className="y-btn y-btn-primary" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>새 대진표</button></div>}
     </Reveal>
@@ -2017,7 +2017,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         : list.length===0&&<div className="y-empty">
             <div className="y-empty-mark"><Icon n="chart" size={20}/></div>
             <div>
-              <h3>아직 만들어진 대진표가 없습니다</h3>
+              <h3>아직 만들어진 대진표가 없습니다.</h3>
               <p>참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.</p>
             </div>
             {admin&&<button className="y-btn y-btn-primary" onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>첫 대진표 만들기</button>}

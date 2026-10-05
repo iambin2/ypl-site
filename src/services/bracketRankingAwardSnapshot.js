@@ -133,7 +133,7 @@ export function buildEventRankingAwardSnapshot(event, resultRows = [], entryPart
 
   const rows = runtimeResults.flatMap(result => {
     if (!result?.id || !result?.entry_id) {
-      throw new Error("runtime Result에 RankingAward 연결용 id 또는 entry_id가 없습니다.");
+      throw new Error("대진표 결과에 랭킹 포인트 연결용 ID 또는 출전 ID가 없습니다.");
     }
 
     if (isTeamEvent && result.placement_code === "semifinalist") return [];
@@ -141,23 +141,23 @@ export function buildEventRankingAwardSnapshot(event, resultRows = [], entryPart
     const participants = participantsByEntryId.get(result.entry_id) || [];
     if (!isTeamEvent && participants.length !== 1) {
       throw new Error(
-        `개인 Result '${result.id}'의 Entry '${result.entry_id}'에는 EntryParticipant가 정확히 1명이어야 하지만 ${participants.length}명입니다.`
+        `개인 결과 '${result.id}'의 출전 정보 '${result.entry_id}'에는 출전 선수가 정확히 1명이어야 하지만 ${participants.length}명입니다.`
       );
     }
 
     if (isTeamEvent) {
       if (!participants.length) {
-        throw new Error(`팀 Result '${result.id}'의 Entry '${result.entry_id}'에는 EntryParticipant가 최소 1명이어야 합니다.`);
+        throw new Error(`팀 결과 '${result.id}'의 출전 정보 '${result.entry_id}'에는 출전 선수가 최소 1명이어야 합니다.`);
       }
 
       const playerIds = new Set();
       for (const participant of participants) {
         const playerId = participant?.player_id;
         if (!playerId) {
-          throw new Error(`팀 Result '${result.id}'의 EntryParticipant에 Player identity가 없습니다.`);
+          throw new Error(`팀 결과 '${result.id}'의 출전 선수에 선수 정보가 없습니다.`);
         }
         if (playerIds.has(playerId)) {
-          throw new Error(`팀 Result '${result.id}'의 Entry '${result.entry_id}'에 Player '${playerId}'가 중복되어 있습니다.`);
+          throw new Error(`팀 결과 '${result.id}'의 출전 정보 '${result.entry_id}'에 선수 '${playerId}'가 중복되어 있습니다.`);
         }
         playerIds.add(playerId);
       }
@@ -165,7 +165,7 @@ export function buildEventRankingAwardSnapshot(event, resultRows = [], entryPart
 
     const placement = policy.placements[result.placement_code];
     if (!placement) {
-      throw new Error(`지원하지 않는 runtime Result placement '${result.placement_code}'입니다.`);
+      throw new Error(`지원하지 않는 대진표 입상 결과 '${result.placement_code}'입니다.`);
     }
 
     if (isTeamEvent) {
@@ -229,7 +229,7 @@ export function buildBracketRankingAwardSyncPlan(existingRows = [], desiredRows 
     const key = awardKey(row);
     if (!row?.result_id || !row?.player_id) continue;
     if (existingByKey.has(key)) {
-      throw new Error(`runtime placement RankingAward '${key}'가 DB에 중복되어 있습니다.`);
+      throw new Error(`대진표 입상 랭킹 포인트 '${key}'가 데이터베이스에 중복되어 있습니다.`);
     }
     existingByKey.set(key, row);
   }
@@ -240,25 +240,25 @@ export function buildBracketRankingAwardSyncPlan(existingRows = [], desiredRows 
 
   for (const desired of desiredRows || []) {
     if (!desired?.result_id || !desired?.player_id) {
-      throw new Error("RankingAward snapshot에 result_id 또는 player_id가 없습니다.");
+      throw new Error("랭킹 포인트 기록에 결과 ID 또는 선수 ID가 없습니다.");
     }
     if (desired.award_kind && desired.award_kind !== "placement") {
-      throw new Error("runtime RankingAward snapshot에는 placement만 포함할 수 있습니다.");
+      throw new Error("대진표 랭킹 포인트 기록에는 입상만 포함할 수 있습니다.");
     }
     if (desired.source && desired.source !== NORMALIZED_BRACKET_RUNTIME_SOURCE) {
-      throw new Error("runtime RankingAward snapshot에 다른 source가 포함되어 있습니다.");
+      throw new Error("대진표 랭킹 포인트 기록에 다른 출처가 포함되어 있습니다.");
     }
 
     const key = awardKey(desired);
     if (desiredKeys.has(key)) {
-      throw new Error(`RankingAward snapshot에 '${key}'가 중복되어 있습니다.`);
+      throw new Error(`랭킹 포인트 기록에 '${key}'가 중복되어 있습니다.`);
     }
     desiredKeys.add(key);
 
     const protectedRow = protectedByKey.get(key);
     if (protectedRow) {
       throw new Error(
-        `Result/Player '${key}'에는 이미 '${protectedRow.source || "unknown"}' source placement Award가 있어 runtime Award로 덮어쓸 수 없습니다.`
+        `결과/선수 '${key}'에는 이미 '${protectedRow.source || "unknown"}' 출처의 입상 포인트가 있어 대진표 포인트로 덮어쓸 수 없습니다.`
       );
     }
 

@@ -116,7 +116,7 @@ test("confirmed member order has exactly one captain at member_order 1", () => {
       ...team,
       memberIdentities: team.memberIdentities.map(member => ({ ...member, role: "captain" })),
     }),
-    /captain 역할이 중복/
+    /팀장 역할이 중복/
   );
 });
 

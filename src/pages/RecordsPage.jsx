@@ -286,8 +286,8 @@ function TrainerView({ snapshot }) {
               </div>
             ) : (
               <div className="records-empty-box">
-                <b>저장된 우승 엔트리가 없습니다</b>
-                대진표에서 결과를 확정하면 여기에 자동으로 연동됩니다.
+                <b>저장된 우승 엔트리가 없습니다.</b>
+                대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다.
               </div>
             )}
           </section>
@@ -314,7 +314,7 @@ function NameChips({ list, kind }) {
 function PartySprite({ pokemon, spriteName }) {
   const [failed, setFailed] = useState(false);
   if (!spriteName || failed) {
-    return <span className="records-party-sprite-fallback" title={`${pokemon} 스프라이트를 불러오지 못했습니다.`}>{pokemon}</span>;
+    return <span className="records-party-sprite-fallback" title={`${pokemon} 이미지를 불러오지 못했습니다.`}>{pokemon}</span>;
   }
   return (
     <img

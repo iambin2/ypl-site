@@ -49,7 +49,7 @@ const CHAMPIONS_EVENT_SELECT_FIELDS = DATA_SCHEMA === "ypl_schema_validation"
   : "";
 
 function db() {
-  if (!client) throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  if (!client) throw new Error("데이터베이스 연결이 설정되지 않았습니다.");
   return client.schema(DATA_SCHEMA);
 }
 
@@ -96,7 +96,7 @@ async function readNormalizedBracketRuntimeFacts(eventId, runtimeId = null) {
   const { data: runtimeRows, error: runtimeError } = await (runtimeId
     ? runtimeQuery.eq("id", runtimeId).eq("event_id", eventId)
     : runtimeQuery.eq("event_id", eventId));
-  if (runtimeError) fail(runtimeError, "normalized bracket runtime을 불러오지 못했습니다.");
+  if (runtimeError) fail(runtimeError, "대진표를 불러오지 못했습니다.");
   const runtime = (runtimeRows || [])[0] || null;
   if (!runtime) return null;
 
@@ -108,20 +108,20 @@ async function readNormalizedBracketRuntimeFacts(eventId, runtimeId = null) {
     db().from("entry_participants").select(NORMALIZED_SINGLE_PARTICIPANT_SELECT).eq("event_id", eventId),
     db().from("matches").select(EVENT_RUNTIME_MATCH_SELECT).eq("event_id", eventId),
   ]);
-  if (!event) throw new Error("normalized bracket Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("대진표의 대회를 찾을 수 없습니다.");
   const failed = [slotsResult, entriesResult, participantsResult, matchesResult].find(result => result.error);
-  if (failed) fail(failed.error, "normalized bracket canonical facts를 불러오지 못했습니다.");
+  if (failed) fail(failed.error, "대진표 기준 데이터를 불러오지 못했습니다.");
 
   if (!["single_elimination", "double_elimination"].includes(runtime.topology_kind) || runtime.projection_version !== 1) {
-    throw new Error("지원하지 않는 normalized bracket runtime topology/version입니다.");
+    throw new Error("지원하지 않는 대진표 구조나 버전입니다.");
   }
   const registrationIds = [...new Set((participantsResult.data || []).map(row => row.registration_id).filter(Boolean))];
   const { data: registrations, error: registrationsError } = registrationIds.length
     ? await db().from("event_registrations").select("id, registration_name").eq("event_id", eventId).in("id", registrationIds)
     : { data: [], error: null };
-  if (registrationsError) fail(registrationsError, "normalized bracket 참가자 이름을 불러오지 못했습니다.");
+  if (registrationsError) fail(registrationsError, "대진표 참가자 이름을 불러오지 못했습니다.");
   if ((matchesResult.data || []).some(row => row?.source !== "normalized_bracket_runtime")) {
-    throw new Error("normalized runtime에 foreign-source Match가 있어 동기화를 중단했습니다.");
+    throw new Error("대진표에 다른 출처의 경기가 있어 동기화를 중단했습니다.");
   }
   const registrationNames = new Map((registrations || []).map(row => [row.id, row.registration_name]));
   const entryParticipants = (participantsResult.data || []).map(row => ({
@@ -171,7 +171,7 @@ export async function fetchNormalizedBracketRuntime(eventId, runtimeId = null) {
 export async function listNormalizedSingleBracketRuntimes() {
   if (!normalizedBracketRuntimeEnabled()) return [];
   const { data, error } = await db().from("bracket_runtimes").select("id, event_id").order("created_at", { ascending: false });
-  if (error) fail(error, "normalized bracket runtime 목록을 불러오지 못했습니다.");
+  if (error) fail(error, "대진표 목록을 불러오지 못했습니다.");
   const rows = await Promise.all((data || []).map(row => readNormalizedBracketRuntimeFacts(row.event_id, row.id)));
   return rows.filter(Boolean);
 }
@@ -181,7 +181,7 @@ export async function listNormalizedBracketRuntimes() {
 }
 
 function databaseUuid() {
-  if (!globalThis.crypto?.randomUUID) throw new Error("안전한 UUID 생성을 지원하지 않는 브라우저입니다.");
+  if (!globalThis.crypto?.randomUUID) throw new Error("안전한 고유 ID 생성을 지원하지 않는 브라우저입니다.");
   return globalThis.crypto.randomUUID();
 }
 
@@ -200,7 +200,7 @@ export function buildNormalizedSingleCreateAttempt(participants = []) {
     entry_id: participant.entryId || participant.entry_id || databaseUuid(),
     entry_participant_id: participant.entryParticipantId || participant.entry_participant_id || databaseUuid(),
   }));
-  if (input.length < 2) throw new Error("normalized Single bracket에는 참가자가 2명 이상 필요합니다.");
+  if (input.length < 2) throw new Error("싱글 토너먼트 대진표에는 참가자가 2명 이상 필요합니다.");
   const size = nextPowerOfTwo(input.length);
   const matchCount = size / 2;
   const byeCount = size - input.length;
@@ -224,7 +224,7 @@ export function buildNormalizedSingleCreateAttempt(participants = []) {
 
 export function buildNormalizedRuntimeCreateAttempt(participants = [], { runtimeId = databaseUuid() } = {}) {
   const actual = (participants || []).filter(Boolean);
-  if (actual.length < 2) throw new Error("normalized bracket에는 참가자 또는 팀이 2개 이상 필요합니다.");
+  if (actual.length < 2) throw new Error("대진표에는 참가자 또는 팀이 2개 이상 필요합니다.");
   const size = nextPowerOfTwo(actual.length);
   const shuffled = [...actual].sort(() => Math.random() - 0.5);
   const matchOrder = Array.from({ length: size / 2 }, (_, index) => index)
@@ -252,14 +252,14 @@ async function assertChampionshipFinalRuntimePreflight(eventId) {
     db().from("bracket_runtimes").select("id").eq("event_id", eventId),
   ]);
   const failed = [qualifiers, finalRegistrations, runtimes].find(result => result.error);
-  if (failed) fail(failed.error, "Champions 본선 대진표 생성 조건을 확인하지 못했습니다.");
+  if (failed) fail(failed.error, "챔피언스 본선 대진표 생성 조건을 확인하지 못했습니다.");
   const qualifierEvent = (qualifiers.data || []).find(row => row.event_type === "champions" && row.championship_phase === "qualifier") || null;
   const finalRegistrationRows = finalRegistrations.data || [];
   const registrationIds = finalRegistrationRows.map(row => row.id);
   const { data: advancements, error: advancementError } = registrationIds.length
     ? await db().from("championship_advancements").select("final_registration_id, advancement_type").in("final_registration_id", registrationIds)
     : { data: [], error: null };
-  if (advancementError) fail(advancementError, "Champions 본선 진출 경로를 확인하지 못했습니다.");
+  if (advancementError) fail(advancementError, "챔피언스 본선 진출 경로를 확인하지 못했습니다.");
   const state = championshipFinalCreatePreflight({
     finalEvent,
     qualifierEvent,
@@ -280,7 +280,7 @@ export async function createNormalizedSingleBracketRuntime({ runtimeId, eventId,
     p_participants: participants,
     p_slots: slots,
   });
-  if (error) fail(error, "normalized Single bracket을 생성하지 못했습니다.");
+  if (error) fail(error, "싱글 토너먼트 대진표를 생성하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -293,7 +293,7 @@ export async function createNormalizedBracketRuntime({ runtimeId, eventId, topol
     p_participants: participants,
     p_slots: slots,
   });
-  if (error) fail(error, "normalized bracket을 생성하지 못했습니다.");
+  if (error) fail(error, "대진표를 생성하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -304,7 +304,7 @@ export async function setNormalizedSingleBracketWinner({ runtimeId, eventId, sou
     p_source_node_key: sourceNodeKey,
     p_winner_entry_id: winnerEntryId,
   });
-  if (error) fail(error, "normalized Single bracket 승자 저장에 실패했습니다.");
+  if (error) fail(error, "싱글 토너먼트 대진표 승자 저장에 실패했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -313,7 +313,7 @@ export async function deleteNormalizedSingleBracketRuntime({ runtimeId, eventId 
     p_runtime_id: runtimeId,
     p_event_id: eventId,
   });
-  if (error) fail(error, "normalized Single bracket을 삭제하지 못했습니다.");
+  if (error) fail(error, "싱글 토너먼트 대진표를 삭제하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -322,7 +322,7 @@ export async function deleteNormalizedBracketRuntime({ runtimeId, eventId } = {}
     p_runtime_id: runtimeId,
     p_event_id: eventId,
   });
-  if (error) fail(error, "normalized bracket을 삭제하지 못했습니다.");
+  if (error) fail(error, "대진표를 삭제하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -372,7 +372,7 @@ function queueEventRankingAwardMutation(eventId, operation) {
 function bracketMatchIdentityState(eventId, bracket) {
   if (!eventId) return { eligible: false, reason: "event_unlinked" };
   if (!bracket || (bracket.eventId && bracket.eventId !== eventId)) {
-    throw new Error("normalized Match 대상 Event와 대진표 연결이 일치하지 않습니다.");
+    throw new Error("경기 대상 대회와 대진표 연결이 일치하지 않습니다.");
   }
   const participants = (bracket.participants || [])
     .filter(participant => bracket.mode === "team"
@@ -383,12 +383,12 @@ function bracketMatchIdentityState(eventId, bracket) {
   const entryLinkedCount = participants.filter(participant => participant?.entryId).length;
   if (!entryLinkedCount) return { eligible: false, reason: "legacy_bracket" };
   if (entryLinkedCount !== participants.length) {
-    throw new Error("일부 참가자에게만 Entry identity가 있어 normalized Match를 동기화할 수 없습니다.");
+    throw new Error("일부 참가자에게만 출전 정보가 있어 경기를 동기화할 수 없습니다.");
   }
 
   const entryIds = participants.map(participant => participant.entryId);
   if (new Set(entryIds).size !== entryIds.length) {
-    throw new Error("동일한 Entry identity가 대진표 참가자 두 명 이상에게 연결되어 있습니다.");
+    throw new Error("동일한 출전 정보가 대진표 참가자 두 명 이상에게 연결되어 있습니다.");
   }
 
   return { eligible: true, participants };
@@ -421,7 +421,7 @@ async function readEventRuntimeMatchesNow(eventId, source = NORMALIZED_BRACKET_R
     .eq("event_id", eventId)
     .eq("source", source);
 
-  if (error) fail(error, "기존 normalized Match를 확인하지 못했습니다.");
+  if (error) fail(error, "기존 경기를 확인하지 못했습니다.");
   return data || [];
 }
 
@@ -431,7 +431,7 @@ async function readEventAllMatchesNow(eventId) {
     .select(EVENT_RUNTIME_MATCH_SELECT)
     .eq("event_id", eventId);
 
-  if (error) fail(error, "Event의 normalized Match ownership을 확인하지 못했습니다.");
+  if (error) fail(error, "대회의 경기 소속을 확인하지 못했습니다.");
   return data || [];
 }
 
@@ -446,8 +446,8 @@ async function updateEventRuntimeMatchesNow(eventId, updates, now, source = NORM
       .select("id")
       .maybeSingle();
 
-    if (error) fail(error, `normalized Match '${update.payload.source_node_key}'를 수정하지 못했습니다.`);
-    if (!data) throw new Error(`normalized Match '${update.payload.source_node_key}'가 동기화 중 변경되었습니다.`);
+    if (error) fail(error, `경기 '${update.payload.source_node_key}'를 수정하지 못했습니다.`);
+    if (!data) throw new Error(`경기 '${update.payload.source_node_key}'가 동기화 중 변경되었습니다.`);
   }
 }
 
@@ -469,9 +469,9 @@ async function insertEventRuntimeMatchesNow(eventId, rows, now, preserveIds = fa
     .insert(payloads)
     .select("id");
 
-  if (error) fail(error, "신규 normalized Match를 생성하지 못했습니다.");
+  if (error) fail(error, "신규 경기를 생성하지 못했습니다.");
   if ((data || []).length !== rows.length) {
-    throw new Error("일부 신규 normalized Match가 저장되지 않았습니다.");
+    throw new Error("일부 신규 경기가 저장되지 않았습니다.");
   }
 }
 
@@ -485,9 +485,9 @@ async function deleteEventRuntimeMatchIdsNow(eventId, ids, source = NORMALIZED_B
     .in("id", ids)
     .select("id");
 
-  if (error) fail(error, "더 이상 성립하지 않는 normalized Match를 정리하지 못했습니다.");
+  if (error) fail(error, "더 이상 성립하지 않는 경기를 정리하지 못했습니다.");
   if ((data || []).length !== ids.length) {
-    throw new Error("일부 stale normalized Match가 삭제되지 않았습니다.");
+    throw new Error("일부 남아 있는 경기가 삭제되지 않았습니다.");
   }
 }
 
@@ -517,14 +517,14 @@ async function syncNormalizedBracketMatchesNow(eventId, bracket, source = NORMAL
   }
 
   const event = await getEvent(eventId);
-  if (!event) throw new Error("normalized Match를 연결할 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("경기를 연결할 대회를 찾을 수 없습니다.");
   if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-    throw new Error("Event의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
+    throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
   }
   if (source === "normalized_bracket_runtime") {
     const allRows = await readEventAllMatchesNow(eventId);
     if (allRows.some(row => row?.source !== source)) {
-      throw new Error("normalized runtime에 foreign-source Match가 있어 동기화를 중단했습니다.");
+      throw new Error("대진표에 다른 출처의 경기가 있어 동기화를 중단했습니다.");
     }
   }
 
@@ -580,7 +580,7 @@ async function syncNormalizedBracketMatchesNow(eventId, bracket, source = NORMAL
       await replaceEventRuntimeMatchesNow(eventId, previousRows, source);
     } catch (restoreError) {
       throw new Error(
-        `${error?.message || "normalized Match 동기화에 실패했습니다."} (이전 Match snapshot 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
+        `${error?.message || "경기 동기화에 실패했습니다."} (이전 경기 기록 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
       );
     }
     throw error;
@@ -608,7 +608,7 @@ async function readEventResults(eventId) {
     `)
     .eq("event_id", eventId);
 
-  if (error) fail(error, "Event의 기존 normalized Result를 확인하지 못했습니다.");
+  if (error) fail(error, "대회의 기존 결과를 확인하지 못했습니다.");
   return data || [];
 }
 
@@ -626,8 +626,8 @@ async function applyEventResultSyncPlan(eventId, plan, now) {
       .select("id")
       .maybeSingle();
 
-    if (error) fail(error, `normalized Result '${update.payload.entry_id}'를 수정하지 못했습니다.`);
-    if (!data) throw new Error(`normalized Result '${update.payload.entry_id}'가 동기화 중 변경되었습니다.`);
+    if (error) fail(error, `결과 '${update.payload.entry_id}'를 수정하지 못했습니다.`);
+    if (!data) throw new Error(`결과 '${update.payload.entry_id}'가 동기화 중 변경되었습니다.`);
   }
 
   if (plan.inserts.length) {
@@ -641,9 +641,9 @@ async function applyEventResultSyncPlan(eventId, plan, now) {
       })))
       .select("id");
 
-    if (error) fail(error, "신규 normalized Result를 생성하지 못했습니다.");
+    if (error) fail(error, "신규 결과를 생성하지 못했습니다.");
     if ((data || []).length !== plan.inserts.length) {
-      throw new Error("일부 신규 normalized Result가 저장되지 않았습니다.");
+      throw new Error("일부 신규 결과가 저장되지 않았습니다.");
     }
   }
 
@@ -656,9 +656,9 @@ async function applyEventResultSyncPlan(eventId, plan, now) {
       .in("id", plan.deleteIds)
       .select("id");
 
-    if (error) fail(error, "더 이상 유효하지 않은 runtime normalized Result를 정리하지 못했습니다.");
+    if (error) fail(error, "더 이상 유효하지 않은 대진표 결과를 정리하지 못했습니다.");
     if ((data || []).length !== plan.deleteIds.length) {
-      throw new Error("일부 stale normalized Result가 삭제되지 않았습니다.");
+      throw new Error("일부 남아 있는 결과가 삭제되지 않았습니다.");
     }
   }
 
@@ -683,21 +683,21 @@ async function validateResultEntries(eventId, desiredRows, entryType = "individu
     .eq("event_id", eventId)
     .in("id", entryIds);
 
-  if (error) fail(error, "입상자의 Entry identity를 확인하지 못했습니다.");
+  if (error) fail(error, "입상자의 출전 정보를 확인하지 못했습니다.");
 
   const entryById = new Map((data || []).map(row => [row.id, row]));
   for (const entryId of entryIds) {
     const entry = entryById.get(entryId);
     if (!entry || entry.event_id !== eventId || entry.entry_type !== entryType || entry.status !== "active") {
       const entryLabel = entryType === "team" ? "팀" : "개인";
-      throw new Error(`입상자 Entry '${entryId}'가 현재 Event의 활성 ${entryLabel} Entry와 일치하지 않습니다.`);
+      throw new Error(`입상자 출전 정보 '${entryId}'가 현재 대회의 활성 ${entryLabel} 출전 정보와 일치하지 않습니다.`);
     }
   }
 }
 
 async function syncEventBracketResultsNow(eventId, bracket, result) {
   if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("normalized Result 대상 Event와 대진표 연결이 일치하지 않습니다.");
+    throw new Error("결과 대상 대회와 대진표 연결이 일치하지 않습니다.");
   }
 
   const snapshot = buildEventBracketResultSnapshot(bracket, result);
@@ -713,9 +713,9 @@ async function syncEventBracketResultsNow(eventId, bracket, result) {
   }
 
   const event = await getEvent(eventId);
-  if (!event) throw new Error("normalized Result를 연결할 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("결과를 연결할 대회를 찾을 수 없습니다.");
   if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-    throw new Error("Event의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
+    throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
   }
 
   await validateResultEntries(eventId, snapshot.rows, event.is_team_event ? "team" : "individual");
@@ -731,7 +731,7 @@ async function syncEventBracketResultsNow(eventId, bracket, result) {
       await replaceEventRuntimeResultsNow(eventId, previousRows);
     } catch (restoreError) {
       const combined = new Error(
-        `${error?.message || "normalized Result 동기화에 실패했습니다."} (이전 Result snapshot 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
+        `${error?.message || "결과 동기화에 실패했습니다."} (이전 결과 기록 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
       );
       combined.code = "YPL_RESULT_ROLLBACK_FAILED";
       combined.cause = error;
@@ -758,7 +758,7 @@ export async function syncEventBracketResults(eventId, bracket, result) {
 export async function deleteEventBracketResults(eventId, bracket) {
   if (!eventId) return { skipped: true, reason: "event_unlinked", deleted: 0, previousRows: [] };
   if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("정리할 normalized Result의 Event와 대진표 연결이 일치하지 않습니다.");
+    throw new Error("정리할 결과의 대회와 대진표 연결이 일치하지 않습니다.");
   }
 
   const identityState = bracketResultIdentityState(bracket);
@@ -768,9 +768,9 @@ export async function deleteEventBracketResults(eventId, bracket) {
 
   return queueEventResultMutation(eventId, async () => {
     const event = await getEvent(eventId);
-    if (!event) throw new Error("runtime normalized Result를 정리할 Event를 찾을 수 없습니다.");
+    if (!event) throw new Error("대진표 결과를 정리할 대회를 찾을 수 없습니다.");
     if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-      throw new Error("Event의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
+      throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
     }
 
     const existingRows = await readEventResults(eventId);
@@ -792,7 +792,7 @@ export async function assertEventHasNoResults(eventId) {
   const rows = await readEventResults(eventId);
   if (rows.length) {
     const sources = [...new Set(rows.map(row => row.source || "unknown"))].join(", ");
-    throw new Error(`Event에 Result가 ${rows.length}건 남아 있습니다 (${sources}). 기록 반영 취소를 먼저 확인해 주세요.`);
+    throw new Error(`대회에 결과가 ${rows.length}건 남아 있습니다 (${sources}). 기록 반영 취소를 먼저 확인해 주세요.`);
   }
   return null;
 }
@@ -819,7 +819,7 @@ async function readEventRankingAwards(eventId) {
     `)
     .eq("event_id", eventId);
 
-  if (error) fail(error, "Event의 기존 RankingAward를 확인하지 못했습니다.");
+  if (error) fail(error, "대회의 기존 랭킹 포인트를 확인하지 못했습니다.");
   return data || [];
 }
 
@@ -833,7 +833,7 @@ async function readEventResultParticipants(eventId, resultRows) {
     .eq("event_id", eventId)
     .in("entry_id", entryIds);
 
-  if (error) fail(error, "Result의 EntryParticipant/Player identity를 확인하지 못했습니다.");
+  if (error) fail(error, "결과의 출전 선수 정보를 확인하지 못했습니다.");
   return data || [];
 }
 
@@ -862,7 +862,7 @@ async function readPlacementAwardByIdentity(eventId, resultId, playerId) {
     .eq("award_kind", "placement")
     .maybeSingle();
 
-  if (error) fail(error, "중복 방지 후 기존 placement RankingAward를 확인하지 못했습니다.");
+  if (error) fail(error, "중복 방지 후 기존 입상 랭킹 포인트를 확인하지 못했습니다.");
   return data || null;
 }
 
@@ -879,8 +879,8 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
       .select("id")
       .maybeSingle();
 
-    if (error) fail(error, `placement RankingAward '${update.id}'를 수정하지 못했습니다.`);
-    if (!data) throw new Error(`placement RankingAward '${update.id}'가 동기화 중 변경되었습니다.`);
+    if (error) fail(error, `입상 랭킹 포인트 '${update.id}'를 수정하지 못했습니다.`);
+    if (!data) throw new Error(`입상 랭킹 포인트 '${update.id}'가 동기화 중 변경되었습니다.`);
   }
 
   let inserted = 0;
@@ -911,7 +911,7 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
       }
     }
 
-    fail(error, "신규 placement RankingAward를 생성하지 못했습니다.");
+    fail(error, "신규 입상 랭킹 포인트를 생성하지 못했습니다.");
   }
 
   if (plan.deleteIds.length) {
@@ -924,9 +924,9 @@ async function applyEventRankingAwardSyncPlan(eventId, plan) {
       .in("id", plan.deleteIds)
       .select("id");
 
-    if (error) fail(error, "더 이상 유효하지 않은 runtime placement RankingAward를 정리하지 못했습니다.");
+    if (error) fail(error, "더 이상 유효하지 않은 대진표 입상 랭킹 포인트를 정리하지 못했습니다.");
     if ((data || []).length !== plan.deleteIds.length) {
-      throw new Error("일부 stale runtime placement RankingAward가 삭제되지 않았습니다.");
+      throw new Error("일부 남아 있는 입상 랭킹 포인트가 삭제되지 않았습니다.");
     }
   }
 
@@ -945,7 +945,7 @@ async function replaceEventRuntimeRankingAwardsNow(eventId, desiredRows) {
 
 async function syncEventBracketRankingAwardsNow(eventId, bracket) {
   if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("RankingAward 대상 Event와 대진표 연결이 일치하지 않습니다.");
+    throw new Error("랭킹 포인트 대상 대회와 대진표 연결이 일치하지 않습니다.");
   }
 
   const identityState = bracketResultIdentityState(bracket);
@@ -961,9 +961,9 @@ async function syncEventBracketRankingAwardsNow(eventId, bracket) {
   }
 
   const event = await getEvent(eventId);
-  if (!event) throw new Error("RankingAward를 연결할 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("랭킹 포인트를 연결할 대회를 찾을 수 없습니다.");
   if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-    throw new Error("Event의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
+    throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
   }
 
   const resultRows = await readEventResults(eventId);
@@ -971,7 +971,7 @@ async function syncEventBracketRankingAwardsNow(eventId, bracket) {
   const entryParticipants = await readEventResultParticipants(eventId, runtimeResults);
   const snapshot = buildEventRankingAwardSnapshot(event, runtimeResults, entryParticipants);
   if (!snapshot.skipped && !runtimeResults.length) {
-    throw new Error("RankingAward를 생성할 runtime Result가 없습니다.");
+    throw new Error("랭킹 포인트를 생성할 대진표 결과가 없습니다.");
   }
   const existingRows = await readEventRankingAwards(eventId);
   const previousRows = existingRows.filter(row =>
@@ -987,7 +987,7 @@ async function syncEventBracketRankingAwardsNow(eventId, bracket) {
       await replaceEventRuntimeRankingAwardsNow(eventId, previousRows);
     } catch (restoreError) {
       const combined = new Error(
-        `${error?.message || "RankingAward 동기화에 실패했습니다."} (이전 RankingAward snapshot 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
+        `${error?.message || "랭킹 포인트 동기화에 실패했습니다."} (이전 랭킹 포인트 기록 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
       );
       combined.code = "YPL_RANKING_AWARD_ROLLBACK_FAILED";
       combined.cause = error;
@@ -1017,7 +1017,7 @@ export async function syncEventBracketRankingAwards(eventId, bracket) {
 export async function deleteEventBracketRankingAwards(eventId, bracket) {
   if (!eventId) return { skipped: true, reason: "event_unlinked", deleted: 0, previousRows: [] };
   if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("정리할 RankingAward의 Event와 대진표 연결이 일치하지 않습니다.");
+    throw new Error("정리할 랭킹 포인트의 대회와 대진표 연결이 일치하지 않습니다.");
   }
 
   const identityState = bracketResultIdentityState(bracket);
@@ -1027,9 +1027,9 @@ export async function deleteEventBracketRankingAwards(eventId, bracket) {
 
   return queueEventRankingAwardMutation(eventId, async () => {
     const event = await getEvent(eventId);
-    if (!event) throw new Error("runtime RankingAward를 정리할 Event를 찾을 수 없습니다.");
+    if (!event) throw new Error("대진표 랭킹 포인트를 정리할 대회를 찾을 수 없습니다.");
     if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-      throw new Error("Event의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
+      throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
     }
 
     const existingRows = await readEventRankingAwards(eventId);
@@ -1059,7 +1059,7 @@ export async function assertEventHasNoRankingAwards(eventId) {
       `${row.award_kind || "unknown"}/${row.source || "unknown"}`
     ))].join(", ");
     throw new Error(
-      `Event에 RankingAward가 ${rows.length}건 남아 있습니다 (${kinds}). 기록 반영 취소를 먼저 확인해 주세요.`
+      `대회에 랭킹 포인트가 ${rows.length}건 남아 있습니다 (${kinds}). 기록 반영 취소를 먼저 확인해 주세요.`
     );
   }
   return null;
@@ -1253,7 +1253,7 @@ export async function submitEventTeamSnapshot({
   now = new Date(),
 } = {}) {
   const event = await getEvent(eventId);
-  if (!event) throw new Error("연결된 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
 
   const payload = buildTeamSnapshotSubmission({
     event,
@@ -1455,7 +1455,7 @@ export async function getCurrentSeason() {
 
   const season = Array.isArray(data) ? data[0] || null : data || null;
   if (!season?.id || season.series !== "ypl" || season.status !== "current") {
-    throw new Error("현재 YPL Season을 원자적으로 확인하지 못했습니다.");
+    throw new Error("현재 YPL 시즌을 확인하지 못했습니다.");
   }
 
   return season;
@@ -1472,14 +1472,14 @@ export async function fetchRegistrationFinalRosters(registrationIds = []) {
     if (error) fail(error, fallback);
     return data || [];
   };
-  const registrations = await read("event_registrations", "id, final_submission_id", "id", ids, "칭호 판정용 Registration을 읽지 못했습니다.");
-  const submissions = await read("registration_submissions", "id, snapshot_id", "id", registrations.map((row) => row.final_submission_id).filter(Boolean), "칭호 판정용 Submission을 읽지 못했습니다.");
+  const registrations = await read("event_registrations", "id, final_submission_id", "id", ids, "칭호 판정용 참가 신청을 읽지 못했습니다.");
+  const submissions = await read("registration_submissions", "id, snapshot_id", "id", registrations.map((row) => row.final_submission_id).filter(Boolean), "칭호 판정용 제출을 읽지 못했습니다.");
   const members = await read(
     "team_snapshot_members",
     "snapshot_id, slot, pokemon_id",
     "snapshot_id",
     submissions.map((row) => row.snapshot_id).filter(Boolean),
-    "칭호 판정용 TeamSnapshot을 읽지 못했습니다."
+    "칭호 판정용 제출 팀을 읽지 못했습니다."
   );
   for (const registration of registrations) {
     const snapshotId = submissions.find((row) => row.id === registration.final_submission_id)?.snapshot_id;
@@ -1625,7 +1625,7 @@ async function countAnnouncementDeletionFacts(event) {
   ]);
   const checks = [registrations, entries, entryParticipants, matches, results, rankingAwards, runtimes, hallOfFame];
   const failed = checks.find(result => result.error);
-  if (failed?.error) fail(failed.error, "공지 삭제 전 Event downstream 상태를 확인하지 못했습니다.");
+  if (failed?.error) fail(failed.error, "공지 삭제 전 대회의 후속 기록을 확인하지 못했습니다.");
 
   const registrationIds = (registrations.data || []).map(row => row.id).filter(Boolean);
   const { count: submissionCount, error: submissionError } = registrationIds.length
@@ -1652,12 +1652,12 @@ async function countAnnouncementDeletionFacts(event) {
 export async function preflightAnnouncementDeletion(eventId) {
   if (!eventId) return { allowed: true, reason: null, phase: null, counts: emptyAnnouncementDeletionCounts(), byPhase: {} };
   const event = await getEvent(eventId);
-  if (!event) throw new Error("연결된 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
   const events = [event];
   if (event.event_type === "champions" && event.championship_phase === "qualifier" && event.championship_final_event_id) {
     const finalEvent = await getEvent(event.championship_final_event_id);
     if (!finalEvent || finalEvent.event_type !== "champions" || finalEvent.championship_phase !== "final") {
-      throw new Error("Champions Qualifier/Final Event pair ownership이 일치하지 않습니다.");
+      throw new Error("챔피언스 선발전과 본선의 연결이 일치하지 않습니다.");
     }
     events.push(finalEvent);
   }
@@ -1668,7 +1668,7 @@ export async function cancelApplicationEvent(eventId, { preflight = null } = {})
   if (!eventId) return null;
   const deletionPreflight = preflight || await preflightAnnouncementDeletion(eventId);
   if (!deletionPreflight.allowed) {
-    const error = new Error("downstream Event fact가 있어 공지 삭제를 취소할 수 없습니다.");
+    const error = new Error("대회의 후속 기록이 있어 공지 삭제를 취소할 수 없습니다.");
     error.code = "YPL_ANNOUNCEMENT_DELETION_BLOCKED";
     error.preflight = deletionPreflight;
     throw error;
@@ -1680,9 +1680,9 @@ export async function cancelApplicationEvent(eventId, { preflight = null } = {})
       p_qualifier_event_id: event.id,
       p_final_event_id: event.championship_final_event_id,
     });
-    if (error) fail(error, "연결된 Champions Event pair를 정리하지 못했습니다.");
+    if (error) fail(error, "연결된 챔피언스 선발전과 본선을 정리하지 못했습니다.");
     const result = Array.isArray(data) ? data[0] || null : data || null;
-    if (!result?.cancelled) throw new Error("Champions Event pair에 새 downstream fact가 생겨 취소하지 못했습니다.");
+    if (!result?.cancelled) throw new Error("챔피언스 선발전과 본선에 새 후속 기록이 생겨 취소하지 못했습니다.");
     return result;
   }
 
@@ -1702,7 +1702,7 @@ export async function cancelApplicationEvent(eventId, { preflight = null } = {})
     .maybeSingle();
 
   if (error) fail(error, "연결된 대회를 정리하지 못했습니다.");
-  if (!data) throw new Error("Event 상태가 변경되어 취소하지 못했습니다.");
+  if (!data) throw new Error("대회 상태가 변경되어 취소하지 못했습니다.");
   return { event_id: data.id, cancelled: data.status === "cancelled" };
 }
 
@@ -1712,7 +1712,7 @@ export async function freezeEventFinalSubmissions(eventId) {
   const { data, error } = await db().rpc("freeze_event_final_submissions", {
     p_event_id: eventId,
   });
-  if (error) fail(error, "참가자의 final submission을 고정하지 못했습니다.");
+  if (error) fail(error, "참가자의 최종 제출을 고정하지 못했습니다.");
   return { snapshot: normalizeFinalSubmissionFreezeSnapshot(data || []) };
 }
 
@@ -1727,7 +1727,7 @@ export async function restoreEventFinalSubmissions(eventId, snapshot = []) {
       final_submission_id: row.finalSubmissionId,
     })),
   });
-  if (error) fail(error, "final submission을 이전 상태로 복구하지 못했습니다.");
+  if (error) fail(error, "최종 제출을 이전 상태로 복구하지 못했습니다.");
   return null;
 }
 
@@ -1739,7 +1739,7 @@ export async function releaseEventFinalSubmissions(eventId) {
     isChampionshipFinal ? "release_championship_final_record_application" : "release_event_final_submissions",
     isChampionshipFinal ? { p_final_event_id: eventId } : { p_event_id: eventId },
   );
-  if (error) fail(error, "final submission과 Event 기록 상태를 원복하지 못했습니다.");
+  if (error) fail(error, "최종 제출과 대회 기록 상태를 되돌리지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -1754,16 +1754,16 @@ export async function completeApplicationEvent(eventId, {
   if (championshipOrdinal !== null && championshipOrdinal !== undefined) {
     const ordinal = Number(championshipOrdinal);
     if (!Number.isInteger(ordinal) || ordinal < 1) {
-      throw new Error("Champions 공식 회차는 1 이상의 정수여야 합니다.");
+      throw new Error("챔피언스 공식 회차는 1 이상의 정수여야 합니다.");
     }
     const { data, error } = await db().rpc("complete_championship_final_record_application", {
       p_final_event_id: eventId,
       p_ordinal: ordinal,
     });
-    if (error) fail(error, "Champions Final 기록 반영 상태를 저장하지 못했습니다.");
+    if (error) fail(error, "챔피언스 본선 기록 반영 상태를 저장하지 못했습니다.");
     const row = Array.isArray(data) ? data[0] || null : data || null;
     if (!row?.id || row.status !== "completed" || !row.record_applied_at || !row.team_revealed_at || Number(row.round_number) !== ordinal) {
-      throw new Error("Champions Final 기록 반영 결과를 확인하지 못했습니다.");
+      throw new Error("챔피언스 본선 기록 반영 결과를 확인하지 못했습니다.");
     }
     return row;
   }
@@ -1789,14 +1789,14 @@ export async function completeApplicationEvent(eventId, {
 
   if (error) fail(error, "대회 기록 반영 상태를 저장하지 못했습니다.");
   if (!data) throw new Error(shouldRevealOfficialRosters
-    ? "대회가 이미 완료되었거나 on_record_apply 공개 상태를 확인할 수 없습니다."
+    ? "대회가 이미 완료되었거나 기록 반영 시 공개 설정을 확인할 수 없습니다."
     : "대회가 이미 완료되었거나 기록 반영 상태를 변경할 수 없습니다.");
   return data;
 }
 
 function newDatabaseId() {
   if (!globalThis.crypto?.randomUUID) {
-    throw new Error("이 브라우저에서는 안전한 UUID 생성을 지원하지 않습니다.");
+    throw new Error("이 브라우저에서는 안전한 고유 ID 생성을 지원하지 않습니다.");
   }
   return globalThis.crypto.randomUUID();
 }
@@ -1813,7 +1813,7 @@ async function createRecordPlayer(displayName, playerId = newDatabaseId()) {
     .select("id, display_name")
     .single();
 
-  if (createError) fail(createError, `${name}의 신규 Player를 생성하지 못했습니다.`);
+  if (createError) fail(createError, `${name}의 신규 선수를 생성하지 못했습니다.`);
   return created;
 }
 
@@ -1876,10 +1876,10 @@ async function preflightEventParticipantIdentities(
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
   if (requireTeamEvent && !event.is_team_event) {
-    throw new Error("개인전 Event에는 팀 참가자를 확정할 수 없습니다.");
+    throw new Error("개인전 대회에는 팀 참가자를 확정할 수 없습니다.");
   }
   if (!requireTeamEvent && event.is_team_event) {
-    throw new Error("팀전 Event에는 개인 참가자를 확정할 수 없습니다.");
+    throw new Error("팀전 대회에는 개인 참가자를 확정할 수 없습니다.");
   }
   if (!["open", "running"].includes(event.status) || event.record_applied_at) {
     throw new Error("현재 참가자를 확정할 수 없는 대회입니다.");
@@ -1901,7 +1901,7 @@ async function preflightEventParticipantIdentities(
 
     if (entryError) fail(entryError, "기존 참가 확정 정보를 확인하지 못했습니다.");
     if (existingEntries?.length) {
-      throw new Error("이 Event에는 이미 확정된 Entry가 있습니다. Event당 대진표는 하나만 생성할 수 있습니다.");
+      throw new Error("이 대회에는 이미 확정된 출전 정보가 있습니다. 대회당 대진표는 하나만 생성할 수 있습니다.");
     }
   }
 
@@ -1914,7 +1914,7 @@ async function preflightEventParticipantIdentities(
     if (participant.registrationId) {
       registration = registrationById.get(participant.registrationId) || null;
       if (!registration) {
-        throw new Error(`${participant.name}의 참가 신청이 이 Event에 속하지 않거나 존재하지 않습니다.`);
+        throw new Error(`${participant.name}의 참가 신청이 이 대회에 속하지 않거나 존재하지 않습니다.`);
       }
     } else {
       const matches = registrationRows.filter(row => row.registration_name === participant.name);
@@ -1945,7 +1945,7 @@ async function preflightEventParticipantIdentities(
       .select("id, display_name")
       .in("display_name", namesToResolve);
 
-    if (error) fail(error, "참가자 Player 정보를 확인하지 못했습니다.");
+    if (error) fail(error, "참가자 선수 정보를 확인하지 못했습니다.");
     players = data || [];
   }
 
@@ -1953,7 +1953,7 @@ async function preflightEventParticipantIdentities(
     if (plan.playerId) continue;
     const matches = players.filter(player => player.display_name === plan.identityName);
     if (matches.length > 1) {
-      throw new Error(`'${plan.identityName}' 이름의 Player가 2명 이상 존재합니다. 관리자가 직접 확인해야 합니다.`);
+      throw new Error(`'${plan.identityName}' 이름의 선수가 2명 이상 존재합니다. 관리자가 직접 확인해야 합니다.`);
     }
     plan.playerId = matches[0]?.id || null;
   }
@@ -1962,7 +1962,7 @@ async function preflightEventParticipantIdentities(
   for (const plan of plans) {
     const key = plan.playerId ? `player:${plan.playerId}` : `new:${plan.identityName}`;
     if (claimedIdentity.has(key)) {
-      throw new Error(`'${plan.identityName}' 참가자가 대진표에 중복되어 있습니다. identity를 자동 확정할 수 없습니다.`);
+      throw new Error(`'${plan.identityName}' 참가자가 대진표에 중복되어 있습니다. 식별 정보를 자동 확정할 수 없습니다.`);
     }
     claimedIdentity.set(key, plan);
 
@@ -1971,7 +1971,7 @@ async function preflightEventParticipantIdentities(
         row.player_id === plan.playerId && row.id !== plan.registration?.id
       );
       if (conflictingRegistration) {
-        throw new Error(`'${plan.identityName}' Player가 이 Event의 다른 Registration에 이미 연결되어 있습니다.`);
+        throw new Error(`'${plan.identityName}' 선수가 이 대회의 다른 참가 신청에 이미 연결되어 있습니다.`);
       }
     }
   }
@@ -1982,7 +1982,7 @@ async function preflightEventParticipantIdentities(
 function rollbackFailure(originalError, rollbackErrors) {
   const rollbackSummary = rollbackErrors.map(error => error.message).join(" / ");
   const combined = new Error(
-    `${originalError?.message || "참가자 확정에 실패했습니다."} (자동 원복 실패: ${rollbackSummary})`
+    `${originalError?.message || "참가자 확정에 실패했습니다."} (자동 되돌리기 실패: ${rollbackSummary})`
   );
   combined.code = "YPL_PARTICIPANT_CONFIRMATION_ROLLBACK_FAILED";
   combined.cause = originalError;
@@ -1999,9 +1999,9 @@ export async function rollbackEventParticipantIdentityChanges(
 
   if (requireUnappliedEvent) {
     const event = await getEvent(eventId);
-    if (!event) throw new Error("참가 확정을 원복할 Event를 찾을 수 없습니다.");
+    if (!event) throw new Error("참가 확정을 되돌릴 대회를 찾을 수 없습니다.");
     if (event.record_applied_at || event.status === "completed") {
-      throw new Error("기록이 반영된 Event의 참가 확정은 Bracket 삭제로 원복할 수 없습니다.");
+      throw new Error("기록이 반영된 대회의 참가 확정은 대진표 삭제로 되돌릴 수 없습니다.");
     }
   }
 
@@ -2022,9 +2022,9 @@ export async function rollbackEventParticipantIdentityChanges(
       .eq("id", change.entryParticipantId)
       .eq("event_id", eventId)
       .select("id");
-    remember(error, `${change.name || "참가자"}의 EntryParticipant를 정리하지 못했습니다.`);
+    remember(error, `${change.name || "참가자"}의 출전 선수를 정리하지 못했습니다.`);
     if (requireExactRows && !error && (data || []).length !== 1) {
-      remember(new Error(`${change.name || "참가자"}의 EntryParticipant가 예상한 ownership과 일치하지 않습니다.`), "EntryParticipant ownership 확인에 실패했습니다.");
+      remember(new Error(`${change.name || "참가자"}의 출전 선수가 예상한 소속과 일치하지 않습니다.`), "출전 선수 소속 확인에 실패했습니다.");
     }
   }
 
@@ -2036,9 +2036,9 @@ export async function rollbackEventParticipantIdentityChanges(
       .eq("id", change.entryId)
       .eq("event_id", eventId)
       .select("id");
-    remember(error, `${change.name || "참가자"}의 Entry를 정리하지 못했습니다.`);
+    remember(error, `${change.name || "참가자"}의 출전 정보를 정리하지 못했습니다.`);
     if (requireExactRows && !error && (data || []).length !== 1) {
-      remember(new Error(`${change.name || "참가자"}의 Entry가 예상한 ownership과 일치하지 않습니다.`), "Entry ownership 확인에 실패했습니다.");
+      remember(new Error(`${change.name || "참가자"}의 출전 정보가 예상한 소속과 일치하지 않습니다.`), "출전 정보 소속 확인에 실패했습니다.");
     }
   }
 
@@ -2054,7 +2054,7 @@ export async function rollbackEventParticipantIdentityChanges(
         .select("id");
       remember(error, `${change.name || "참가자"}의 신규 참가 등록을 정리하지 못했습니다.`);
       if (requireExactRows && !error && (data || []).length !== 1) {
-        remember(new Error(`${change.name || "참가자"}의 신규 Registration이 예상한 ownership과 일치하지 않습니다.`), "Registration ownership 확인에 실패했습니다.");
+        remember(new Error(`${change.name || "참가자"}의 신규 참가 신청이 예상한 소속과 일치하지 않습니다.`), "참가 신청 소속 확인에 실패했습니다.");
       }
       continue;
     }
@@ -2069,7 +2069,7 @@ export async function rollbackEventParticipantIdentityChanges(
         .eq("id", change.registrationId)
         .eq("event_id", eventId)
         .eq("player_id", change.playerId);
-      remember(error, `${change.name || "참가자"}의 Player 연결을 정리하지 못했습니다.`);
+      remember(error, `${change.name || "참가자"}의 선수 연결을 정리하지 못했습니다.`);
     }
   }
 
@@ -2086,7 +2086,7 @@ export async function rollbackEventParticipantIdentityChanges(
       .eq("id", playerId);
 
     if (error && String(error.code || "") !== "23503") {
-      remember(error, "참가 확정 과정에서 생성된 Player를 정리하지 못했습니다.");
+      remember(error, "참가 확정 과정에서 생성된 선수를 정리하지 못했습니다.");
     }
   }
 
@@ -2143,7 +2143,7 @@ async function writeEventParticipantIdentities(eventId, plans, { createEntries =
           .select("id, player_id")
           .single();
 
-        if (error) fail(error, `${identityName}의 Player 연결을 저장하지 못했습니다.`);
+        if (error) fail(error, `${identityName}의 선수 연결을 저장하지 못했습니다.`);
         Object.assign(resolvedParticipant, {
           registrationId: updated.id,
           playerId: updated.player_id,
@@ -2192,7 +2192,7 @@ async function writeEventParticipantIdentities(eventId, plans, { createEntries =
           .select("id")
           .single();
 
-        if (entryError) fail(entryError, `${identityName}의 Entry를 생성하지 못했습니다.`);
+        if (entryError) fail(entryError, `${identityName}의 출전 정보를 생성하지 못했습니다.`);
         resolvedParticipant.entryId = entry.id;
 
         const entryParticipantId = newDatabaseId();
@@ -2210,7 +2210,7 @@ async function writeEventParticipantIdentities(eventId, plans, { createEntries =
           .select("id")
           .single();
 
-        if (participantError) fail(participantError, `${identityName}의 EntryParticipant를 생성하지 못했습니다.`);
+        if (participantError) fail(participantError, `${identityName}의 출전 선수를 생성하지 못했습니다.`);
         resolvedParticipant.entryParticipantId = entryParticipant.id;
       }
     }
@@ -2227,7 +2227,7 @@ async function writeEventParticipantIdentities(eventId, plans, { createEntries =
 }
 
 export async function confirmEventParticipantsForBracket(eventId, participants = []) {
-  if (!eventId) throw new Error("연결된 Event가 없습니다.");
+  if (!eventId) throw new Error("연결된 대회가 없습니다.");
 
   const { event, actualParticipants, plans } = await preflightEventParticipantIdentities(
     eventId,
@@ -2240,7 +2240,7 @@ export async function confirmEventParticipantsForBracket(eventId, participants =
     resolved.length !== actualParticipants.length ||
     resolved.some(row => !row.playerId || !row.registrationId || !row.entryId || !row.entryParticipantId)
   ) {
-    const error = new Error("모든 실제 참가자의 Player/Registration/Entry identity를 확정하지 못했습니다.");
+    const error = new Error("모든 실제 참가자의 선수, 참가 신청, 출전 정보를 확정하지 못했습니다.");
     try {
       await rollbackEventParticipantIdentityChanges(eventId, resolved);
     } catch (rollbackError) {
@@ -2270,7 +2270,7 @@ export async function confirmEventParticipantsForBracket(eventId, participants =
 }
 
 export async function confirmEventTeamsForBracket(eventId, participants = []) {
-  if (!eventId) throw new Error("연결된 Event가 없습니다.");
+  if (!eventId) throw new Error("연결된 대회가 없습니다.");
 
   const { teams, members } = buildTeamMemberCandidates(participants);
   const { event, actualParticipants, plans } = await preflightEventParticipantIdentities(
@@ -2304,7 +2304,7 @@ export async function confirmEventTeamsForBracket(eventId, participants = []) {
         .select("id")
         .single();
 
-      if (entryError) fail(entryError, `'${team.name}' 팀 Entry를 생성하지 못했습니다.`);
+      if (entryError) fail(entryError, `'${team.name}' 팀 출전 정보를 생성하지 못했습니다.`);
 
       for (const member of teamMembers) {
         const entryParticipantId = newDatabaseId();
@@ -2326,7 +2326,7 @@ export async function confirmEventTeamsForBracket(eventId, participants = []) {
           .single();
 
         if (participantError) {
-          fail(participantError, `'${team.name}' 팀의 ${member.name} EntryParticipant를 생성하지 못했습니다.`);
+          fail(participantError, `'${team.name}' 팀의 ${member.name} 출전 선수를 생성하지 못했습니다.`);
         }
         member.entryParticipantId = entryParticipant.id;
       }
@@ -2336,7 +2336,7 @@ export async function confirmEventTeamsForBracket(eventId, participants = []) {
       resolved.length !== actualParticipants.length ||
       resolved.some(row => !row.playerId || !row.registrationId || !row.entryId || !row.entryParticipantId)
     ) {
-      throw new Error("모든 팀 참가자의 Player/Registration/Entry identity를 확정하지 못했습니다.");
+      throw new Error("모든 팀 참가자의 선수, 참가 신청, 출전 정보를 확정하지 못했습니다.");
     }
 
     const confirmedTeams = attachConfirmedTeamIdentities(teams, resolved);
@@ -2372,7 +2372,7 @@ export async function confirmEventTeamsForBracket(eventId, participants = []) {
 }
 
 export async function validateEventParticipantEntries(eventId, participants = []) {
-  if (!eventId) throw new Error("연결된 Event가 없습니다.");
+  if (!eventId) throw new Error("연결된 대회가 없습니다.");
 
   const actualParticipants = actualIndividualParticipants(
     participants,
@@ -2380,22 +2380,22 @@ export async function validateEventParticipantEntries(eventId, participants = []
   );
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
-  if (event.is_team_event) throw new Error("팀전 Event의 Entry identity 검증은 아직 지원하지 않습니다.");
+  if (event.is_team_event) throw new Error("팀전 대회의 출전 정보 검증은 아직 지원하지 않습니다.");
   if (!["open", "running"].includes(event.status) || event.record_applied_at) {
     throw new Error("현재 기록을 반영할 수 없는 대회입니다.");
   }
 
   if (actualParticipants.some(row => !row.registrationId || !row.playerId || !row.entryId)) {
-    throw new Error("일부 참가자에게 Entry identity가 없습니다. 전환 이전 대진표는 기존 identity 확정 경로를 사용해야 합니다.");
+    throw new Error("일부 참가자에게 출전 정보가 없습니다. 전환 이전 대진표는 기존 식별 정보 확정 경로를 사용해야 합니다.");
   }
 
   for (const [label, values] of [
-    ["Registration", actualParticipants.map(row => row.registrationId)],
-    ["Player", actualParticipants.map(row => row.playerId)],
-    ["Entry", actualParticipants.map(row => row.entryId)],
+    ["참가 신청", actualParticipants.map(row => row.registrationId)],
+    ["선수", actualParticipants.map(row => row.playerId)],
+    ["출전", actualParticipants.map(row => row.entryId)],
   ]) {
     if (new Set(values).size !== values.length) {
-      throw new Error(`동일한 ${label} identity가 대진표 참가자 두 명 이상에게 연결되어 있습니다.`);
+      throw new Error(`동일한 ${label} 식별 정보가 대진표 참가자 두 명 이상에게 연결되어 있습니다.`);
     }
   }
 
@@ -2419,9 +2419,9 @@ export async function validateEventParticipantEntries(eventId, participants = []
       .in("entry_id", entryIds),
   ]);
 
-  if (registrationError) fail(registrationError, "참가자의 Registration identity를 확인하지 못했습니다.");
-  if (entryError) fail(entryError, "참가자의 Entry identity를 확인하지 못했습니다.");
-  if (participantError) fail(participantError, "참가자의 EntryParticipant identity를 확인하지 못했습니다.");
+  if (registrationError) fail(registrationError, "참가자의 참가 신청 정보를 확인하지 못했습니다.");
+  if (entryError) fail(entryError, "참가자의 출전 정보를 확인하지 못했습니다.");
+  if (participantError) fail(participantError, "참가자의 출전 선수 정보를 확인하지 못했습니다.");
 
   const registrationById = new Map((registrations || []).map(row => [row.id, row]));
   const entryById = new Map((entries || []).map(row => [row.id, row]));
@@ -2433,10 +2433,10 @@ export async function validateEventParticipantEntries(eventId, participants = []
     const entryParticipant = participantByEntryId.get(participant.entryId);
 
     if (!registration || registration.player_id !== participant.playerId) {
-      throw new Error(`'${participant.name}' 참가자의 Registration/Player 연결이 현재 DB와 일치하지 않습니다.`);
+      throw new Error(`'${participant.name}' 참가자의 참가 신청과 선수 연결이 현재 데이터베이스와 일치하지 않습니다.`);
     }
     if (!entry || entry.entry_type !== "individual" || entry.status !== "active") {
-      throw new Error(`'${participant.name}' 참가자의 활성 개인 Entry를 찾을 수 없습니다.`);
+      throw new Error(`'${participant.name}' 참가자의 활성 개인 출전 정보를 찾을 수 없습니다.`);
     }
     if (
       !entryParticipant ||
@@ -2444,7 +2444,7 @@ export async function validateEventParticipantEntries(eventId, participants = []
       entryParticipant.player_id !== participant.playerId ||
       entryParticipant.member_order !== 1
     ) {
-      throw new Error(`'${participant.name}' 참가자의 EntryParticipant 연결이 현재 DB와 일치하지 않습니다.`);
+      throw new Error(`'${participant.name}' 참가자의 출전 선수 연결이 현재 데이터베이스와 일치하지 않습니다.`);
     }
 
     return { ...participant, entryParticipantId: entryParticipant.id };
@@ -2452,7 +2452,7 @@ export async function validateEventParticipantEntries(eventId, participants = []
 }
 
 export async function validateEventTeamEntries(eventId, teams = []) {
-  if (!eventId) throw new Error("연결된 Event가 없습니다.");
+  if (!eventId) throw new Error("연결된 대회가 없습니다.");
 
   const actualTeams = actualTeamParticipants(
     teams,
@@ -2460,7 +2460,7 @@ export async function validateEventTeamEntries(eventId, teams = []) {
   );
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
-  if (!event.is_team_event) throw new Error("개인전 Event에는 팀 Entry를 검증할 수 없습니다.");
+  if (!event.is_team_event) throw new Error("개인전 대회에는 팀 출전 정보를 검증할 수 없습니다.");
   if (![
     "open",
     "running",
@@ -2470,10 +2470,10 @@ export async function validateEventTeamEntries(eventId, teams = []) {
 
   const entryIds = actualTeams.map(team => team.entryId);
   if (entryIds.some(entryId => !entryId)) {
-    throw new Error("일부 팀에 Entry identity가 없습니다. 참가 확정 이후 대진표를 다시 확인해 주세요.");
+    throw new Error("일부 팀에 출전 정보가 없습니다. 참가 확정 이후 대진표를 다시 확인해 주세요.");
   }
   if (new Set(entryIds).size !== entryIds.length) {
-    throw new Error("동일한 팀 Entry identity가 대진표 팀 두 개 이상에 연결되어 있습니다.");
+    throw new Error("동일한 팀 출전 정보가 대진표 팀 두 개 이상에 연결되어 있습니다.");
   }
 
   const expectedMembersByEntryId = new Map();
@@ -2481,16 +2481,16 @@ export async function validateEventTeamEntries(eventId, teams = []) {
   for (const team of actualTeams) {
     const members = getConfirmedTeamMemberIdentities(team);
     if (members.some(member => !member.registrationId || !member.playerId || !member.entryParticipantId)) {
-      throw new Error(`'${team.name}' 팀의 Registration/Player/EntryParticipant identity가 완전하지 않습니다.`);
+      throw new Error(`'${team.name}' 팀의 참가 신청, 선수, 출전 선수 정보가 완전하지 않습니다.`);
     }
 
     const playerIds = members.map(member => member.playerId);
     if (new Set(playerIds).size !== playerIds.length) {
-      throw new Error(`'${team.name}' 팀의 Player identity가 중복되어 있습니다.`);
+      throw new Error(`'${team.name}' 팀의 선수 정보가 중복되어 있습니다.`);
     }
     const entryParticipantIds = members.map(member => member.entryParticipantId);
     if (new Set(entryParticipantIds).size !== entryParticipantIds.length) {
-      throw new Error(`'${team.name}' 팀의 EntryParticipant identity가 중복되어 있습니다.`);
+      throw new Error(`'${team.name}' 팀의 출전 선수 정보가 중복되어 있습니다.`);
     }
 
     expectedMembersByEntryId.set(team.entryId, members);
@@ -2516,9 +2516,9 @@ export async function validateEventTeamEntries(eventId, teams = []) {
       .in("entry_id", entryIds),
   ]);
 
-  if (registrationError) fail(registrationError, "팀 참가자의 Registration identity를 확인하지 못했습니다.");
-  if (entryError) fail(entryError, "팀의 Entry identity를 확인하지 못했습니다.");
-  if (participantError) fail(participantError, "팀의 EntryParticipant identity를 확인하지 못했습니다.");
+  if (registrationError) fail(registrationError, "팀 참가자의 참가 신청 정보를 확인하지 못했습니다.");
+  if (entryError) fail(entryError, "팀의 출전 정보를 확인하지 못했습니다.");
+  if (participantError) fail(participantError, "팀의 출전 선수 정보를 확인하지 못했습니다.");
 
   const registrationById = new Map((registrations || []).map(row => [row.id, row]));
   const entryById = new Map((entries || []).map(row => [row.id, row]));
@@ -2532,20 +2532,20 @@ export async function validateEventTeamEntries(eventId, teams = []) {
   return actualTeams.map(team => {
     const entry = entryById.get(team.entryId);
     if (!entry || entry.entry_type !== "team" || entry.status !== "active") {
-      throw new Error(`'${team.name}' 팀의 활성 팀 Entry를 찾을 수 없습니다.`);
+      throw new Error(`'${team.name}' 팀의 활성 팀 출전 정보를 찾을 수 없습니다.`);
     }
 
     const members = expectedMembersByEntryId.get(team.entryId) || [];
     const dbMembers = participantsByEntryId.get(team.entryId) || [];
     if (dbMembers.length !== members.length) {
-      throw new Error(`'${team.name}' 팀의 EntryParticipant 구성이 현재 DB와 일치하지 않습니다.`);
+      throw new Error(`'${team.name}' 팀의 출전 선수 구성이 현재 데이터베이스와 일치하지 않습니다.`);
     }
 
     const verifiedMembers = members.map(member => {
       const registration = registrationById.get(member.registrationId);
       const entryParticipant = dbMembers.find(row => row.id === member.entryParticipantId);
       if (!registration || registration.player_id !== member.playerId) {
-        throw new Error(`'${team.name}' 팀원 '${member.name}'의 Registration/Player 연결이 현재 DB와 일치하지 않습니다.`);
+        throw new Error(`'${team.name}' 팀원 '${member.name}'의 참가 신청과 선수 연결이 현재 데이터베이스와 일치하지 않습니다.`);
       }
       if (
         !entryParticipant ||
@@ -2554,7 +2554,7 @@ export async function validateEventTeamEntries(eventId, teams = []) {
         entryParticipant.player_id !== member.playerId ||
         entryParticipant.member_order !== member.memberOrder
       ) {
-        throw new Error(`'${team.name}' 팀원 '${member.name}'의 EntryParticipant 연결이 현재 DB와 일치하지 않습니다.`);
+        throw new Error(`'${team.name}' 팀원 '${member.name}'의 출전 선수 연결이 현재 데이터베이스와 일치하지 않습니다.`);
       }
 
       return { ...member, entryParticipantId: entryParticipant.id };
@@ -2568,12 +2568,12 @@ export async function markApplicationEventRunning(eventId, previousStatus = null
   if (!eventId) return null;
 
   const event = await getEvent(eventId);
-  if (!event) throw new Error("진행 상태로 바꿀 Event를 찾을 수 없습니다.");
+  if (!event) throw new Error("진행 상태로 바꿀 대회를 찾을 수 없습니다.");
   if (event.record_applied_at || !["open", "running"].includes(event.status)) {
-    throw new Error("현재 진행 상태로 바꿀 수 없는 Event입니다.");
+    throw new Error("현재 진행 상태로 바꿀 수 없는 대회입니다.");
   }
   if (previousStatus && event.status !== previousStatus) {
-    throw new Error("Bracket 생성 중 Event 상태가 변경되었습니다. 다시 확인해 주세요.");
+    throw new Error("대진표 생성 중 대회 상태가 변경되었습니다. 다시 확인해 주세요.");
   }
   if (event.status === "running") return event;
 
@@ -2589,23 +2589,23 @@ export async function markApplicationEventRunning(eventId, previousStatus = null
     .select("id, status, record_applied_at")
     .maybeSingle();
 
-  if (error) fail(error, "Event 진행 상태를 저장하지 못했습니다.");
-  if (!data) throw new Error("Bracket 생성 중 Event 상태가 변경되었습니다. 다시 확인해 주세요.");
+  if (error) fail(error, "대회 진행 상태를 저장하지 못했습니다.");
+  if (!data) throw new Error("대진표 생성 중 대회 상태가 변경되었습니다. 다시 확인해 주세요.");
   return data;
 }
 
 export async function restoreApplicationEventStatus(eventId, previousStatus) {
   if (!eventId) return null;
   if (!["open", "running"].includes(previousStatus)) {
-    throw new Error("복구할 수 없는 Event 이전 상태입니다.");
+    throw new Error("복구할 수 없는 대회 이전 상태입니다.");
   }
 
   const event = await getEvent(eventId);
-  if (!event) throw new Error("상태를 복구할 Event를 찾을 수 없습니다.");
-  if (event.record_applied_at) throw new Error("기록이 반영된 Event의 상태는 Bracket 삭제로 복구할 수 없습니다.");
+  if (!event) throw new Error("상태를 복구할 대회를 찾을 수 없습니다.");
+  if (event.record_applied_at) throw new Error("기록이 반영된 대회의 상태는 대진표 삭제로 복구할 수 없습니다.");
   if (event.status === previousStatus) return event;
   if (event.status !== "running") {
-    throw new Error("Bracket 생성 이후 Event 상태가 별도로 변경되어 자동 복구하지 않았습니다.");
+    throw new Error("대진표 생성 이후 대회 상태가 별도로 변경되어 자동 복구하지 않았습니다.");
   }
 
   const { data, error } = await db()
@@ -2620,8 +2620,8 @@ export async function restoreApplicationEventStatus(eventId, previousStatus) {
     .select("id, status, record_applied_at")
     .maybeSingle();
 
-  if (error) fail(error, "Bracket 삭제 후 Event 상태를 복구하지 못했습니다.");
-  if (!data) throw new Error("Event 상태가 변경되어 Bracket 생성 전 상태로 복구하지 못했습니다.");
+  if (error) fail(error, "대진표 삭제 후 대회 상태를 복구하지 못했습니다.");
+  if (!data) throw new Error("대회 상태가 변경되어 대진표 생성 전 상태로 복구하지 못했습니다.");
   return data;
 }
 
@@ -2631,7 +2631,7 @@ export async function resolveEventParticipantsForRecord(eventId, participants = 
   const resolved = await writeEventParticipantIdentities(eventId, plans);
 
   if (resolved.length !== actualParticipants.length || resolved.some(row => !row.playerId || !row.registrationId)) {
-    const error = new Error("모든 실제 참가자의 Player/Registration identity를 확정하지 못했습니다.");
+    const error = new Error("모든 실제 참가자의 선수와 참가 신청 정보를 확정하지 못했습니다.");
     try {
       await rollbackEventParticipantIdentityChanges(eventId, resolved);
     } catch (rollbackError) {
@@ -2661,7 +2661,7 @@ export async function inspectEventParticipantIdentities(eventId, participants = 
     .select("id, event_id, player_id, registration_name, registration_source")
     .eq("event_id", eventId);
 
-  if (registrationError) fail(registrationError, "대회 참가자 identity를 확인하지 못했습니다.");
+  if (registrationError) fail(registrationError, "대회 참가자 식별 정보를 확인하지 못했습니다.");
 
   const registrationById = new Map((registrations || []).map(row => [row.id, row]));
 
@@ -2706,7 +2706,7 @@ export async function inspectEventParticipantIdentities(eventId, participants = 
       .select("id, display_name")
       .in("display_name", namesToCheck);
 
-    if (error) fail(error, "Player identity를 확인하지 못했습니다.");
+    if (error) fail(error, "선수 정보를 확인하지 못했습니다.");
     players = data || [];
   }
 

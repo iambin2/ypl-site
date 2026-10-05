@@ -1,3 +1,5 @@
+import { displaySeasonLabel } from "./seasonLabel.js";
+
 const BYE = "\u2205BYE";
 
 const cleanName = (value) => String(value || "").trim();
@@ -784,7 +786,7 @@ function championRecordsFor(data, name) {
   const out = [];
   for (const c of data.champions || []) {
     if (cleanName(c.name) !== name) continue;
-    const season = c.slabel || `SEASON ${c.season}`;
+    const season = displaySeasonLabel(c.slabel) || `시즌 ${c.season}`;
     const key = `${c.gen}|${season}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -874,7 +876,7 @@ export function buildPokemonStats(rosters, champions) {
       championMap.get(pokemon).push({
         name: cleanName(champion.name),
         gen: champion.gen,
-        season: champion.slabel || `SEASON ${champion.season}`,
+        season: displaySeasonLabel(champion.slabel) || `시즌 ${champion.season}`,
       });
     }
   }

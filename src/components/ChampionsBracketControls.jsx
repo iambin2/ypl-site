@@ -34,7 +34,7 @@ export function ChampionsBracketControls({ eventId, placement = "qualifier", onC
       setMessage("");
       return next;
     } catch (error) {
-      setMessage(error?.message || "Champions 운영 정보를 불러오지 못했습니다.");
+      setMessage(error?.message || "챔피언스 운영 정보를 불러오지 못했습니다.");
       return null;
     }
   };
@@ -51,7 +51,7 @@ export function ChampionsBracketControls({ eventId, placement = "qualifier", onC
 
   const completeQualifier = async () => {
     setBusy(true); setMessage("");
-    try { await completeChampionshipQualifier(event.id); await load(); await onChanged?.(); setMessage("생존 survivor를 본선 진출자로 확정하고 선발전을 종료했습니다.");
+    try { await completeChampionshipQualifier(event.id); await load(); await onChanged?.(); setMessage("선발전 생존자를 본선 진출자로 확정하고 선발전을 마쳤습니다.");
     } catch (error) { setMessage(error?.message || "선발전 종료 조건을 확인해 주세요.");
     } finally { setBusy(false); }
   };

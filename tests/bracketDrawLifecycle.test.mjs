@@ -25,7 +25,7 @@ test("new normalized runtime enters presentation-only draw state with the loaded
 });
 
 test("draw state rejects a projection before a normalized runtime id is available", () => {
-  assert.throws(() => beginNormalizedBracketDraw(null), /normalized bracket id/);
+  assert.throws(() => beginNormalizedBracketDraw(null), /대진표 ID/);
 });
 
 test("only normalized create completion enters draw state; loading and opening stay presentation-neutral", () => {

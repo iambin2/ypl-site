@@ -150,10 +150,10 @@ test("Species Clause rejects base plus Mega and Mega X plus Mega Y", () => {
   const gyaradosMega = megaMember("Gyarados-Mega");
   assert.equal(speciesIdentity(detailData, gyarados.pokemon), speciesIdentity(detailData, gyaradosMega.pokemon));
   const mixed = validateTeam({ team: [gyarados, gyaradosMega], regulation, regulationId: regulation.id, cupRuleId: "none", detailData, detailStatus: "ready", legalItems });
-  assert.ok(mixed.errors.some(error => error.includes("Species Clause")));
+  assert.ok(mixed.errors.some(error => error.includes("같은 포켓몬 중복 금지")));
 
   const variants = validateTeam({ team: [megaMember("Charizard-Mega-X"), megaMember("Charizard-Mega-Y")], regulation, regulationId: regulation.id, cupRuleId: "none", detailData, detailStatus: "ready", legalItems });
-  assert.ok(variants.errors.some(error => error.includes("Species Clause")));
+  assert.ok(variants.errors.some(error => error.includes("같은 포켓몬 중복 금지")));
 });
 
 test("different Mega species coexist without a team-level Mega limit", () => {

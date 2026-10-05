@@ -36,7 +36,7 @@ test("Qualifier controls derive survivors and never expose manual survivor selec
   assert.match(controls, /본선 직행 \{directRows\.length\}명/);
   assert.match(controls, /선발전 기록 반영/);
   assert.doesNotMatch(controls, /type="checkbox"/);
-  assert.match(championsCore, /직행\/선발전 통과 advancement는 Qualifier 기록 반영에서만 생성할 수 있습니다/);
+  assert.match(championsCore, /직행\/선발전 통과 본선 진출은 선발전 기록 반영에서만 생성할 수 있습니다/);
   assert.match(normalizedService, /본선 진출 인원이 확정되어 선발전 경기를 더 진행할 수 없습니다/);
 });
 

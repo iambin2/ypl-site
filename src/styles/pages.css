@@ -22,7 +22,6 @@
 }
 .hm-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px; }
 .hm-btn { min-height: 52px; padding: 0 26px; font-size: 16px; }
-.hm-facts { margin-top: 34px; font-size: 14px; color: var(--text-3); }
 
 /* The hero's right column is the league's schedule: the next notice as one
    lead tile — date large, title, state, one action. */
@@ -226,10 +225,6 @@
   padding: clamp(28px, 4vw, 44px); border-radius: var(--r-lg); background: var(--bg-2);
 }
 .ab-league b { font-size: var(--fs-h1); font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }
-.ab-league-en {
-  margin-top: 12px; font-family: var(--font-display); font-stretch: 85%; font-weight: 600;
-  font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
-}
 .ab-league p { margin-top: 28px; font-size: 16px; line-height: 1.65; color: var(--text-2); }
 .ab-league.master { color: var(--ink); }
 .ab-league.master p { color: var(--text-2); }

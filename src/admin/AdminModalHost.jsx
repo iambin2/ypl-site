@@ -27,7 +27,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
         onSuccess={() => {
           setAdmin(true);
           close();
-          flash("관리자로 로그인했습니다");
+          flash("관리자로 로그인했습니다.");
         }}
       />
     );
@@ -51,7 +51,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
           close();
         }}
         onDelete={confirmDelete(modal.item ? () => {
-          save({ ...data, champions: data.champions.filter((item) => item.id !== modal.item.id) }, "삭제했습니다");
+          save({ ...data, champions: data.champions.filter((item) => item.id !== modal.item.id) }, "삭제했습니다.");
           close();
         } : null, "챔피언 삭제", "이 챔피언 기록을 삭제할까요?")}
       />
@@ -77,7 +77,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
             ...group,
             items: group.items.filter((entry) => entry.id !== modal.item.id),
           });
-          save({ ...data, titleGroups }, "삭제했습니다");
+          save({ ...data, titleGroups }, "삭제했습니다.");
           close();
         } : null, "칭호 삭제", "이 칭호를 삭제할까요?")}
       />
@@ -134,12 +134,12 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
               try {
                 await cancelApplicationEvent(nextAnnouncement.form.eventId);
               } catch (error) {
-                flash?.(`공지 저장 실패 후 신규 Event 정리에도 실패했습니다: ${error?.message || "알 수 없는 오류"}`);
+                flash?.(`공지 저장에 실패했고, 새로 만든 대회를 정리하는 데도 실패했습니다: ${error?.message || "알 수 없는 오류"}`);
                 return;
               }
             }
 
-            flash?.("공지 저장에 실패했습니다. Event 상태를 확인해 주세요.");
+            flash?.("공지 저장에 실패했습니다. 대회 상태를 확인해 주세요.");
             return;
           }
 
@@ -167,9 +167,9 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
             announcements: data.announcements.filter((item) => item.id !== modal.item.id),
           };
 
-          const saved = await save(nextData, "삭제했습니다");
+          const saved = await save(nextData, "삭제했습니다.");
           if (!saved) {
-            flash?.("공지 삭제 저장에 실패했습니다.");
+            flash?.("공지를 삭제하지 못했습니다.");
             return;
           }
 
@@ -177,7 +177,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
             try {
               await cancelApplicationEvent(eventId, { preflight });
             } catch (error) {
-              flash?.(`공지 삭제 후 연결 Event 취소에 실패했습니다: ${error?.message || "알 수 없는 오류"}`);
+              flash?.(`공지는 삭제했지만 연결된 대회를 취소하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
               return;
             }
           }

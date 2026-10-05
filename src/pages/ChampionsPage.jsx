@@ -8,6 +8,7 @@ import {
   loadHallOfFameArtworkLookup,
   resolveHallOfFameArtwork,
 } from "../services/hallOfFamePresentation.js";
+import { displaySeasonLabel } from "../services/seasonLabel.js";
 
 /* ============================== CHAMPIONS ==============================
    현 챔피언은 여섯 장 중 한 장이 아니다. 큰 판 하나 + 역대 등록부 목록.       */
@@ -59,7 +60,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
   }, [pop]);
 
   const genLabel = c => (c.kind === "normalized" ? c.gen : legacyChampionLabel(c.gen));
-  const seasonLabel = c => c.slabel || ("SEASON " + c.season);
+  const seasonLabel = c => displaySeasonLabel(c.slabel) || ("시즌 " + c.season);
 
   const reigning = champs.length ? champs[champs.length - 1] : null;
   const past = champs.slice(0, -1).reverse();
@@ -74,7 +75,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       <div className="y-page-aside">
         <span className="y-chip y-chip-ghost">역대 챔피언 <b className="tnum" style={{ marginLeft: 4 }}>{champs.length}</b>명</span>
         {admin && <button className="y-btn y-btn-secondary" onClick={() => setModal({ type: "champion" })}>
-          <Icon n="plus" size={13} />레거시 챔피언 추가
+          <Icon n="plus" size={13} />이전 챔피언 추가
         </button>}
       </div>
     </Reveal>

@@ -100,7 +100,7 @@ export function DesktopNavigation({ view, onNavigate }) {
           {TOOL_ITEMS.map(([key, label]) => (
             <button key={key} role="menuitem" tabIndex={toolsOpen ? 0 : -1} className={"nav-tools-item" + (view === key ? " on" : "")} onClick={() => navigateTool(key)}>
               <span className="nav-tools-ic"><Icon n="team" size={18} /></span>
-              <span><b>{label}</b><small>Pokémon Champions 엔트리 구성</small></span>
+              <span><b>{label}</b><small>포켓몬 챔피언스 엔트리 구성</small></span>
             </button>
           ))}
         </div>

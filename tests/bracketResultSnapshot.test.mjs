@@ -153,12 +153,12 @@ test("rejects duplicate Entry identities in participants and placements", () => 
   };
   assert.throws(
     () => bracketResultIdentityState(duplicateParticipants),
-    /동일한 Entry identity/
+    /동일한 출전 정보/
   );
 
   assert.throws(
     () => buildEventBracketResultSnapshot(bracket, { champ: "a", ru: "a", sf: [], done: true }),
-    /입상 결과에 Entry 'entry-a'가 중복/
+    /입상 결과에 출전 정보 'entry-a'가 중복/
   );
 });
 
@@ -169,14 +169,14 @@ test("rejects a partially Entry-linked bracket", () => {
   };
   assert.throws(
     () => bracketResultIdentityState(partial),
-    /일부 참가자에게만 Entry identity/
+    /일부 참가자에게만 출전 정보/
   );
 });
 
 test("rejects a placement participant without a matching Entry identity", () => {
   assert.throws(
     () => buildEventBracketResultSnapshot(bracket, { champ: "missing", ru: "b", sf: [], done: true }),
-    /Entry identity를 찾을 수 없습니다/
+    /출전 정보를 찾을 수 없습니다/
   );
 });
 
@@ -206,7 +206,7 @@ test("rejects a partially Entry-linked team bracket", () => {
   };
   assert.throws(
     () => bracketResultIdentityState(partial),
-    /일부 참가자에게만 Entry identity/
+    /일부 참가자에게만 출전 정보/
   );
 });
 
@@ -217,7 +217,7 @@ test("rejects duplicate Team Entry identity", () => {
   };
   assert.throws(
     () => bracketResultIdentityState(duplicate),
-    /동일한 Entry identity/
+    /동일한 출전 정보/
   );
 });
 

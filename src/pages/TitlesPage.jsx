@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Reveal, Icon } from "../components/index.js";
+import { displaySeasonLabel } from "../services/seasonLabel.js";
 
 /* 칭호 그룹 아이콘 — 데이터의 이모지 대신 사이트 아이콘 세트를 쓴다. */
 const GROUP_ICON = { champion: "crown", type: "bolt", region: "map", partner: "handshake", etc: "medal", event: "spark" };
@@ -23,13 +24,10 @@ export default function TitlesPage({ data, admin, setModal }) {
     (n, x) => n + (x.items || []).filter(it => (it.holders || []).length > 0).length, 0);
 
   const genOf = name => String(name).replace(/\s*챔피언$/, "");
-  const shortSeason = label => String(label || "")
-    .replace(/^CLASSIC SEASON\s*/i, "Classic S")
-    .replace(/^YPL SEASON\s*/i, "YPL S")
-    .replace(/^SEASON\s*/i, "Season ");
+  const shortSeason = displaySeasonLabel;
   const championSeason = name => {
     const c = (data.champions || []).find(x => genOf(x.gen) === genOf(name));
-    return c ? shortSeason(c.slabel || ("SEASON " + c.season)) : "";
+    return c ? shortSeason(c.slabel || ("시즌 " + c.season)) : "";
   };
   const lastGen = (() => {
     const sorted = [...(data.champions || [])].sort((a, b) => (a.season || 0) - (b.season || 0));
@@ -44,7 +42,7 @@ export default function TitlesPage({ data, admin, setModal }) {
     <Reveal className="sec-head">
       <div>
         <h2>칭호</h2>
-        <p className="sub">특정 조건을 달성한 트레이너에게 주어지는 명예의 기록. 아직 주인이 없는 칭호는 흐리게 표시됩니다.</p>
+        <p className="sub">특정 조건을 달성한 트레이너에게 주는 명예의 기록입니다. 아직 주인이 없는 칭호는 흐리게 표시됩니다.</p>
       </div>
       <div className="y-page-aside">
         <span className="y-chip y-chip-ghost">

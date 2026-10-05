@@ -471,7 +471,7 @@ export function toTeamSnapshotV1({
   const members = team.map((member, index) => {
     const identity = resolveCanonicalPokemonIdentity(member, { detailData });
     if (!identity.resolved) {
-      errors.push(`${identity.nameSnapshot || `슬롯 ${index + 1}`}의 canonical Pokémon identity를 확인할 수 없습니다.`);
+      errors.push(`${identity.nameSnapshot || `슬롯 ${index + 1}`}의 포켓몬 정보를 확인할 수 없습니다.`);
       return null;
     }
     const points = member.statPoints || {};
@@ -519,7 +519,7 @@ function abilityFromId(detailData, pokemon, id) {
 
 export function fromTeamSnapshotV1({ snapshot, members = [], regulation, detailData = null } = {}) {
   if (!snapshot || Number(snapshot.schema_version) !== 1 || !Array.isArray(members)) {
-    return { ok: false, errors: ["지원하지 않는 TeamSnapshot schema입니다."] };
+    return { ok: false, errors: ["지원하지 않는 제출 팀 형식입니다."] };
   }
   const team = members.slice().sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0)).map(member => {
     const restorationPool = pokemonPoolForRegulation(regulation, detailData, [], { includeUnavailableMega: true });
@@ -766,10 +766,10 @@ export function resolveEventRuleSelection(eventContext) {
   const regulationId = String(eventContext.regulation_id || "");
   const cupRuleId = String(eventContext.cup_rule_id || "none");
   if (!REGULATIONS[regulationId]) {
-    return { error: "Event의 Regulation을 현재 Team Builder에서 확인할 수 없습니다." };
+    return { error: "대회의 레귤레이션을 현재 팀 빌더에서 확인할 수 없습니다." };
   }
   if (!CUP_RULES[cupRuleId]) {
-    return { error: "Event의 Cup Rule을 현재 Team Builder에서 확인할 수 없습니다." };
+    return { error: "대회의 추가 룰을 현재 팀 빌더에서 확인할 수 없습니다." };
   }
 
   return { regulationId, cupRuleId };
@@ -826,7 +826,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
     if (identities.has(identity)) {
       const other = identities.get(identity);
       const dex = dexRecord(detailData, member.pokemon)?.num;
-      errors.push(`Species Clause 위반: ${display(other.pokemon)} / ${display(member.pokemon)}${dex ? ` (#${String(dex).padStart(4, "0")})` : ""}`);
+      errors.push(`같은 포켓몬 중복 금지 위반: ${display(other.pokemon)} / ${display(member.pokemon)}${dex ? ` (#${String(dex).padStart(4, "0")})` : ""}`);
     } else {
       identities.set(identity, member);
     }
@@ -840,7 +840,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
       errors.push(`${display(member.pokemon)}의 ${itemName(detailData, member.item)}은(는) ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
     }
     if (itemOwners.has(member.item)) {
-      errors.push(`Item Clause 위반: ${itemName(detailData, member.item)}을(를) 두 마리가 사용하고 있습니다.`);
+      errors.push(`같은 도구 중복 금지 위반: ${itemName(detailData, member.item)}을(를) 두 마리가 사용하고 있습니다.`);
     } else {
       itemOwners.set(member.item, member.uid);
     }
@@ -849,7 +849,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
   for (const member of team) {
     const total = STAT_KEYS.reduce((sum, key) => sum + Number(member.statPoints?.[key] || 0), 0);
     if (total > 66 || STAT_KEYS.some(key => Number(member.statPoints?.[key] || 0) > 32)) {
-      errors.push(`${display(member.pokemon)}의 Stat Point 배분이 한도를 초과했습니다.`);
+      errors.push(`${display(member.pokemon)}의 능력 포인트 배분이 한도를 초과했습니다.`);
     }
 
     const selectedMoves = (member.moves || []).filter(Boolean);
@@ -882,7 +882,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
 
   // 상세 데이터가 준비되지 않으면 기술/도구 legality를 끝까지 검증할 수 없으므로 Valid 판정을 내리지 않는다.
   if (detailStatus === "loading") {
-    incomplete.push("Champions 상세 데이터를 불러오는 중이라 최종 검증이 아직 완료되지 않았습니다.");
+    incomplete.push("배틀 상세 데이터를 불러오는 중이라 최종 검증이 아직 완료되지 않았습니다.");
   }
   if (detailStatus === "error") {
     incomplete.push("상세 배틀 데이터 연결에 실패해 기술과 도구의 사용 가능 여부를 최종 검증할 수 없습니다.");
@@ -931,11 +931,11 @@ export function validateSubmissionEligibility({
   for (const member of members) {
     const name = displayPokemon?.(member?.pokemon) || member?.pokemon?.name || "알 수 없는 포켓몬";
     if (!member?.pokemon?.name || member.resolutionState === "unresolved") {
-      errors.push(`${name}의 canonical Pokémon identity를 확인할 수 없습니다.`);
+      errors.push(`${name}의 포켓몬 정보를 확인할 수 없습니다.`);
       continue;
     }
     if (dataReady && !resolveCanonicalPokemonIdentity(member, { detailData }).resolved) {
-      errors.push(`${name}의 canonical Pokémon identity를 확인할 수 없습니다.`);
+      errors.push(`${name}의 포켓몬 정보를 확인할 수 없습니다.`);
     }
   }
 
@@ -1069,7 +1069,7 @@ export function selectSubmissionRegistration(registrations = [], registrationNam
     && String(registration?.registration_name || registration?.registrationName || "") === name
   );
   if (matches.length > 1) {
-    const ambiguous = new Error("동일한 이름의 신청자가 있어 자동으로 확인할 수 없습니다. 운영진에게 문의해주세요.");
+    const ambiguous = new Error("동일한 이름의 신청자가 있어 자동으로 확인할 수 없습니다. 운영진에게 문의해 주세요.");
     ambiguous.code = "YPL_AMBIGUOUS_REGISTRATION";
     throw ambiguous;
   }

@@ -462,7 +462,7 @@ test("team series rejects missing or ambiguous stored member identity", () => {
   missing.participants[0] = { ...missing.participants[0], memberIdentities: [] };
   assert.throws(
     () => buildEventBracketMatchSnapshot(missing),
-    /확정 선수 순서 또는 Player identity/
+    /확정 선수 순서 또는 선수 정보/
   );
 
   const ambiguous = teamBracket(match);
@@ -475,6 +475,6 @@ test("team series rejects missing or ambiguous stored member identity", () => {
   };
   assert.throws(
     () => buildEventBracketMatchSnapshot(ambiguous),
-    /확정 선수 순서 또는 Player identity/
+    /확정 선수 순서 또는 선수 정보/
   );
 });

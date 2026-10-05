@@ -2,7 +2,7 @@
 // facts. It intentionally keeps the loaded projection untouched: drawing may
 // never reshuffle slots or write bracket state.
 export function beginNormalizedBracketDraw(bracket) {
-  if (!bracket?.id) throw new Error("추첨을 시작할 normalized bracket id가 없습니다.");
+  if (!bracket?.id) throw new Error("추첨을 시작할 대진표 ID가 없습니다.");
   return {
     bracket,
     openId: bracket.id,

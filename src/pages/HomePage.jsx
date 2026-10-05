@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Reveal, Icon, Empty, STAGGER } from "../components/index.js";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
+import { displaySeasonLabel } from "../services/seasonLabel.js";
 
 /* 날짜 문자열을 비교 가능한 숫자로. "2026.05.02" / "2026.05" / "2024년 11월" 모두 처리한다. */
 function dateKey(s) {
@@ -10,13 +11,6 @@ function dateKey(s) {
   return y * 10000 + m * 100 + d;
 }
 const genOf = g => String(g || "").replace(/\s*챔피언\s*$/, "");
-/* YPL 시즌은 3월 1일과 9월 1일에 넘어간다. 2026-09-01 = 시즌 3 (ARCHITECTURE.md §8). */
-function currentYplSeason(now = new Date()) {
-  const y = now.getFullYear(), m = now.getMonth() + 1;
-  const half = y * 2 + (m >= 9 ? 1 : m >= 3 ? 0 : -1);
-  const season = 3 + half - (2026 * 2 + 1);
-  return season >= 3 ? season : null;
-}
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 function dateParts(s) {
   const n = String(s || "").match(/\d+/g) || [];
@@ -53,13 +47,6 @@ export default function HomePage({ data, go, admin }) {
     return out.sort((a, b) => b.k - a.k).slice(0, 4);
   }, [data.tournaments]);
 
-  /* 기록 탭의 "전체 N회차" 와 같은 수를 센다. */
-  const rounds = useMemo(
-    () => (data.tournaments || []).reduce((n, t) => n + (t.rounds || []).length, 0),
-    [data.tournaments]
-  );
-  const season = currentYplSeason();
-
   /* 다음 대회 / 최신 공지 — 고정 공지를 우선하고, 그 다음 최신순 */
   const news = useMemo(
     () => [...(data.announcements || [])].sort(
@@ -90,10 +77,6 @@ export default function HomePage({ data, go, admin }) {
           <button className="btn btn-primary hm-btn" onClick={() => go("records")}>기록 보기<Icon n="arrow" size={16} /></button>
           <button className="btn btn-ghost hm-btn" onClick={() => go("about")}>리그 소개</button>
         </div>
-        <p className="hm-facts tnum">
-          2023년 5월 창설 이후 {champs.length > 0 ? `대회 ${rounds}회와 챔피언 ${champs.length}명을` : `대회 ${rounds}회를`} 기록했습니다.
-          {season && ` 지금은 YPL 시즌 ${season} 진행 중입니다.`}
-        </p>
       </Reveal>
 
       {news && <Reveal tag="button" delay={STAGGER.row * 4} className="hm-event" onClick={() => go("news")}>
@@ -157,10 +140,10 @@ export default function HomePage({ data, go, admin }) {
                 <b>{r.name}</b>
                 <span className="tnum">우승 {r.win || 0}, 준우승 {r.ru || 0}, 4강 {r.top4 || 0}</span>
               </span>
-              <span className="hm-rank-pt">{r.points}<em>pt</em></span>
+              <span className="hm-rank-pt">{r.points}<em>점</em></span>
             </button>
           </Reveal>))}</ol>
-          : <Empty icon="medal" title="집계된 랭킹이 없습니다" desc="대회 결과가 확정되면 점수가 누적됩니다." />}
+          : <Empty icon="medal" title="집계된 랭킹이 없습니다." desc="대회 결과가 확정되면 점수가 누적됩니다." />}
       </div>
 
       <div>
@@ -179,7 +162,7 @@ export default function HomePage({ data, go, admin }) {
               </span>
             </button>
           </Reveal>))}</ul>
-          : <Empty icon="list" title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다." />}
+          : <Empty icon="list" title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다." />}
       </div>
     </section>
 
@@ -195,7 +178,7 @@ export default function HomePage({ data, go, admin }) {
           return (
             <button key={c.id} className={"hm-hof-cell" + (now ? " now" : "")} onClick={() => go("champions")}>
               <span className="nm">{c.name}{now && <><Icon n="crown" size={16} /><span className="sr-only">현 챔피언</span></>}</span>
-              <span className="s">{genOf(c.gen)}, {c.slabel}</span>
+              <span className="s">{genOf(c.gen)}, {displaySeasonLabel(c.slabel)}</span>
             </button>
           );
         })}

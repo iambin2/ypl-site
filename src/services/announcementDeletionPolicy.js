@@ -55,7 +55,7 @@ export function announcementDeletionBlockedMessage(preflight) {
   const counts = preflight?.counts || emptyAnnouncementDeletionCounts();
   const champions = Boolean(preflight?.phase);
   const phase = preflight?.phase === "qualifier" ? "선발전" : preflight?.phase === "final" ? "본선" : "";
-  const target = champions ? "이 Champions 공지를" : "공지를";
+  const target = champions ? "이 챔피언스 공지를" : "공지를";
   const prefix = champions ? `${phase}에 ` : "";
   switch (preflight?.reason) {
     case "record_applied":
