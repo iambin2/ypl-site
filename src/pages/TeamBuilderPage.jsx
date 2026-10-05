@@ -35,6 +35,7 @@ import {
   normalizeDraft,
   normalizeSavedTeam,
   membersRemovedByRuleChange,
+  parseSpeciesNames,
   pokemonMatchesCupRule,
   pokemonPoolForRegulation,
   replaceMemberPokemon,
@@ -105,29 +106,6 @@ function readDraft() {
     try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch (_) { /* noop */ }
     return null;
   }
-}
-
-function parseSpeciesNames(csv) {
-  const englishById = new Map();
-  const koreanById = new Map();
-  for (const line of String(csv || "").split(/\r?\n/).slice(1)) {
-    if (!line) continue;
-    const firstComma = line.indexOf(",");
-    const secondComma = line.indexOf(",", firstComma + 1);
-    const thirdComma = line.indexOf(",", secondComma + 1);
-    if (firstComma < 0 || secondComma < 0 || thirdComma < 0) continue;
-    const id = line.slice(0, firstComma);
-    const lang = line.slice(firstComma + 1, secondComma);
-    const name = line.slice(secondComma + 1, thirdComma).replace(/^"|"$/g, "").replace(/""/g, '"');
-    if (lang === "9") englishById.set(id, name);
-    if (lang === "3") koreanById.set(id, name);
-  }
-  const result = new Map();
-  for (const [id, english] of englishById) {
-    const korean = koreanById.get(id);
-    if (korean) result.set(english.toLowerCase(), korean);
-  }
-  return result;
 }
 
 function ComboInput({
@@ -1128,6 +1106,10 @@ export default function TeamBuilderPage() {
     const missingAbilities = [...abilityNames]
       .filter(name => !hasTranslation("abilities", name, name))
       .sort();
+    const missingPokemon = koreanNames.size
+      ? [...new Set(Object.values(REGULATIONS).flatMap(reg => reg.pokemon.map(pokemon => pokemon.name)))]
+        .filter(name => localizedPokemonName({ name }, koreanNames) === name)
+      : [];
 
     const result = {
       checkedAt: new Date().toISOString(),
@@ -1138,11 +1120,12 @@ export default function TeamBuilderPage() {
       missingItems,
       missingMoves,
       missingAbilities,
+      missingPokemon,
     };
     window.YPL_LOCALIZATION_AUDIT = result;
-    if (missingItems.length || missingMoves.length || missingAbilities.length) console.warn("[YPL] 한국어 번역 누락 감지", result);
+    if (missingItems.length || missingMoves.length || missingAbilities.length || missingPokemon.length) console.warn("[YPL] 한국어 번역 누락 감지", result);
     else console.info(`[YPL] 한국어 번역 검사 통과: 도구 ${itemIds.size}, 기술 ${moveIds.size}, 특성 ${abilityNames.size}`);
-  }, [detailData]);
+  }, [detailData, koreanNames]);
 
   const dataStatusText = detailStatus === "ready" ? "Champions 데이터 연결됨" : detailStatus === "error" ? "상세 데이터 연결 실패" : "배틀 데이터 불러오는 중";
   const localizationText = localizationStatus === "ready" ? "한국어 이름 사용" : localizationStatus === "error" ? "영문 이름 사용" : "한국어 이름 준비 중…";

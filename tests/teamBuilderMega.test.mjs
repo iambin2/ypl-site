@@ -184,10 +184,13 @@ test("Mega names support Korean and Showdown-style English search and exact form
   const korean = new Map([["gyarados", "갸라도스"], ["charizard", "리자몽"]]);
   const gyaradosMega = pokemon("Gyarados-Mega");
   const charizardX = pokemon("Charizard-Mega-X");
-  assert.equal(localizedPokemonName(gyaradosMega, korean), "갸라도스-메가");
-  assert.equal(localizedPokemonName(charizardX, korean), "리자몽-메가X");
-  for (const query of ["갸라도스", "Gyarados", "Mega Gyarados", "Gyarados-Mega", "메가 갸라도스"]) {
-    assert.equal(matchesPokemonSearch(gyaradosMega, "갸라도스-메가", query), true, query);
+  assert.equal(localizedPokemonName(gyaradosMega, korean), "메가갸라도스");
+  assert.equal(localizedPokemonName(charizardX, korean), "메가리자몽X");
+  for (const query of ["갸라도스", "Gyarados", "Mega Gyarados", "Gyarados-Mega", "메가 갸라도스", "메가갸라도스", "갸라도스 메가"]) {
+    assert.equal(matchesPokemonSearch(gyaradosMega, "메가갸라도스", query), true, query);
+  }
+  for (const query of ["메가리자몽X", "메가 리자몽 X", "리자몽 메가 X"]) {
+    assert.equal(matchesPokemonSearch(charizardX, "메가리자몽X", query), true, query);
   }
   const cases = [
     ["Gyarados", "gyarados"],

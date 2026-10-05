@@ -14,6 +14,7 @@ import {
   localizedPokemonName,
   normalizeDraft,
   normalizeSavedTeam,
+  parseSpeciesNames,
   resolveCanonicalPokemonIdentity,
   speciesIdentity,
   spriteSlug,
@@ -71,12 +72,12 @@ test("M-C additions are illegal in M-B while an inherited M-B entry stays legal"
 });
 
 const formCases = [
-  ["Persian [Alolan Form]", "Persian", "persianalola", "persian-alola", 53],
-  ["Toxtricity [Low Key Form]", "Toxtricity", "toxtricitylowkey", "toxtricity-lowkey", 849],
-  ["Indeedee [Female]", "Indeedee", "indeedeef", "indeedee-f", 876],
-  ["Squawkabilly [Blue Plumage]", "Squawkabilly", "squawkabillyblue", "squawkabilly-blue", 931],
-  ["Squawkabilly [Yellow Plumage]", "Squawkabilly", "squawkabillyyellow", "squawkabilly-yellow", 931],
-  ["Squawkabilly [White Plumage]", "Squawkabilly", "squawkabillywhite", "squawkabilly-white", 931],
+  ["Persian [Alolan Form]", "Persian", "persianalola", "persian-alola", 53, "알로라 페르시온"],
+  ["Toxtricity [Low Key Form]", "Toxtricity", "toxtricitylowkey", "toxtricity-lowkey", 849, "스트린더 (로우한 모습)"],
+  ["Indeedee [Female]", "Indeedee", "indeedeef", "indeedee-f", 876, "에써르 (암컷)"],
+  ["Squawkabilly [Blue Plumage]", "Squawkabilly", "squawkabillyblue", "squawkabilly-blue", 931, "시비꼬 (블루 페더)"],
+  ["Squawkabilly [Yellow Plumage]", "Squawkabilly", "squawkabillyyellow", "squawkabilly-yellow", 931, "시비꼬 (옐로 페더)"],
+  ["Squawkabilly [White Plumage]", "Squawkabilly", "squawkabillywhite", "squawkabilly-white", 931, "시비꼬 (화이트 페더)"],
 ];
 
 const formDetailData = {
@@ -93,7 +94,7 @@ test("M-C forms keep distinct data IDs and shared Species Clause identities", ()
     ["indeedee", "에써르"],
     ["squawkabilly", "시비꼬"],
   ]);
-  for (const [name, baseName, expectedId, expectedSprite, num] of formCases) {
+  for (const [name, baseName, expectedId, expectedSprite, num, korean] of formCases) {
     const pokemon = REGULATIONS["m-c"].pokemon.find(entry => entry.name === name);
     const base = REGULATIONS["m-c"].pokemon.find(entry => entry.name === baseName);
     assert.ok(pokemon);
@@ -104,8 +105,21 @@ test("M-C forms keep distinct data IDs and shared Species Clause identities", ()
     assert.equal(speciesIdentity(formDetailData, pokemon), `dex-${num}`);
     assert.equal(speciesIdentity(formDetailData, pokemon), speciesIdentity(formDetailData, base));
     assert.equal(spriteSlug(name), expectedSprite);
-    assert.equal(localizedPokemonName(pokemon, koreanNames), name);
+    assert.equal(localizedPokemonName(pokemon, koreanNames), korean);
   }
+});
+
+test("PokeAPI curly-apostrophe species names localize Showdown ASCII names", () => {
+  const csv = [
+    "pokemon_species_id,local_language_id,name,genus",
+    "83,3,파오리,청둥오리포켓몬",
+    "83,9,Farfetch’d,Wild Duck Pokémon",
+    "865,3,창파나이트,청둥오리포켓몬",
+    "865,9,Sirfetch’d,Wild Duck Pokémon",
+  ].join("\n");
+  const koreanNames = parseSpeciesNames(csv);
+  assert.equal(localizedPokemonName({ name: "Farfetch'd" }, koreanNames), "파오리");
+  assert.equal(localizedPokemonName({ name: "Sirfetch'd" }, koreanNames), "창파나이트");
 });
 
 test("M-C item delta composes with the existing M-B item delta", () => {

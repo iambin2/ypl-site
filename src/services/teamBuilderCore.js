@@ -120,15 +120,6 @@ const SPRITE_SLUG_BY_DATA_ID = Object.fromEntries(
 export const TYPE_KO = Object.fromEntries(TYPE_OPTIONS.map(type => [type.english, type.korean]));
 export const CATEGORY_KO = { Physical: "물리", Special: "특수", Status: "변화" };
 
-const ENGLISH_FALLBACK_FORM_NAMES = new Set([
-  "Persian [Alolan Form]",
-  "Toxtricity [Low Key Form]",
-  "Indeedee [Female]",
-  "Squawkabilly [Blue Plumage]",
-  "Squawkabilly [Yellow Plumage]",
-  "Squawkabilly [White Plumage]",
-]);
-
 export function makeUid(prefix = "team") {
   if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -608,31 +599,85 @@ export function alignmentDisplay(alignment) {
   return `${bilingualName(natureName(alignment), alignment?.name)}${effect}`;
 }
 
+// Official Korean form names (PokeAPI pokemon_form_names, pokemonkorea.co.kr dex).
+const FORM_NAMES_KO = {
+  "Paldean Form (Combat Breed)": "팔데아의 모습, 컴뱃종",
+  "Paldean Form (Blaze Breed)": "팔데아의 모습, 블레이즈종",
+  "Paldean Form (Aqua Breed)": "팔데아의 모습, 워터종",
+  "Female": "암컷",
+  "Midnight Form": "한밤중의 모습",
+  "Dusk Form": "황혼의 모습",
+  "Family of Four": "4마리 가족",
+  "Low Key Form": "로우한 모습",
+  "Blue Plumage": "블루 페더",
+  "Yellow Plumage": "옐로 페더",
+  "White Plumage": "화이트 페더",
+  "High Plains Pattern": "황야의 모양",
+  "Yellow Flower": "노란 꽃",
+  "Orange Flower": "오렌지색 꽃",
+  "Blue Flower": "파란 꽃",
+  "White Flower": "하얀 꽃",
+  "Matron Trim": "마담컷",
+  "Dandy Trim": "젠틀컷",
+  "Small Variety": "작은 사이즈",
+  "Large Variety": "큰 사이즈",
+  "Jumbo Variety": "특대 사이즈",
+  "Antique Form": "진작폼",
+  "Ruby Cream": "밀키루비",
+  "Matcha Cream": "밀키말차",
+  "Mint Cream": "밀키민트",
+  "Lemon Cream": "밀키레몬",
+  "Salted Cream": "밀키솔트",
+  "Ruby Swirl": "루비믹스",
+  "Caramel Swirl": "캐러멜믹스",
+  "Rainbow Swirl": "트리플믹스",
+  "Masterpiece Form": "걸작의 모습",
+};
+
+// PokeAPI spells Farfetch’d/Sirfetch’d with U+2019; Showdown names use ASCII.
+const speciesNameKey = name => String(name || "").toLowerCase().replace(/’/g, "'");
+
+export function parseSpeciesNames(csv) {
+  const englishById = new Map();
+  const koreanById = new Map();
+  for (const line of String(csv || "").split(/\r?\n/).slice(1)) {
+    if (!line) continue;
+    const firstComma = line.indexOf(",");
+    const secondComma = line.indexOf(",", firstComma + 1);
+    const thirdComma = line.indexOf(",", secondComma + 1);
+    if (firstComma < 0 || secondComma < 0 || thirdComma < 0) continue;
+    const id = line.slice(0, firstComma);
+    const lang = line.slice(firstComma + 1, secondComma);
+    const name = line.slice(secondComma + 1, thirdComma).replace(/^"|"$/g, "").replace(/""/g, '"');
+    if (lang === "9") englishById.set(id, name);
+    if (lang === "3") koreanById.set(id, name);
+  }
+  const result = new Map();
+  for (const [id, english] of englishById) {
+    const korean = koreanById.get(id);
+    if (korean) result.set(speciesNameKey(english), korean);
+  }
+  return result;
+}
+
 export function localizedPokemonName(pokemon, koreanNames) {
   if (!pokemon) return "";
-  if (ENGLISH_FALLBACK_FORM_NAMES.has(pokemon.name)) return pokemon.name;
   const base = canonicalBaseName(pokemon.name);
-  const ko = koreanNames?.get?.(base.toLowerCase());
+  const ko = koreanNames?.get?.(speciesNameKey(base));
   if (!ko) return pokemon.name;
   const mega = pokemon.name.match(/-Mega(?:-([A-Z]))?$/i);
-  if (mega) return `${ko}-메가${mega[1]?.toUpperCase() || ""}`;
+  // Official Korean mega naming, matching legacy record snapshots (메가리자몽X).
+  if (mega) return `메가${ko}${mega[1]?.toUpperCase() || ""}`;
   if (pokemon.name.endsWith("[Alolan Form]")) return `알로라 ${ko}`;
   if (pokemon.name.endsWith("[Hisuian Form]")) return `히스이 ${ko}`;
   if (pokemon.name.endsWith("[Galarian Form]")) return `가라르 ${ko}`;
-  if (pokemon.name.includes("Combat Breed")) return "켄타로스 (팔데아의 모습, 컴뱃종)";
-  if (pokemon.name.includes("Blaze Breed")) return "켄타로스 (팔데아의 모습, 블레이즈종)";
-  if (pokemon.name.includes("Aqua Breed")) return "켄타로스 (팔데아의 모습, 워터종)";
   if (pokemon.name === "Heat Rotom") return `히트${ko}`;
   if (pokemon.name === "Wash Rotom") return `워시${ko}`;
   if (pokemon.name === "Frost Rotom") return `프로스트${ko}`;
   if (pokemon.name === "Fan Rotom") return `스핀${ko}`;
   if (pokemon.name === "Mow Rotom") return `커트${ko}`;
-  if (pokemon.name === "Meowstic [Female]") return `${ko} (암컷)`;
-  if (pokemon.name === "Lycanroc [Midnight Form]") return `${ko} (한밤중의 모습)`;
-  if (pokemon.name === "Lycanroc [Dusk Form]") return `${ko} (황혼의 모습)`;
-  if (pokemon.name === "Basculegion [Female]") return `${ko} (암컷)`;
-  if (pokemon.name === "Maushold [Family of Four]") return `${ko} (4마리 가족)`;
-  return ko;
+  const form = FORM_NAMES_KO[pokemon.name.match(/\[(.+)\]$/)?.[1]];
+  return form ? `${ko} (${form})` : ko;
 }
 
 export function matchesLocalizedSearch(korean, english, query) {
@@ -648,7 +693,7 @@ export function pokemonSearchAliases(pokemon, localizedName = "") {
   const match = String(pokemon?.name || "").match(/^(.+?)-Mega(?:-([A-Z]))?$/i);
   if (!match) return [];
   const variant = match[2]?.toUpperCase() || "";
-  const localizedBase = String(localizedName || "").replace(/-메가[A-Z]?$/i, "");
+  const localizedBase = String(localizedName || "").match(new RegExp(`^메가(.+)${variant}$`))?.[1] || "";
   return [
     `Mega ${match[1]}${variant ? ` ${variant}` : ""}`,
     `${match[1]} Mega${variant ? ` ${variant}` : ""}`,
