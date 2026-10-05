@@ -24,6 +24,13 @@ async function setup(t, { blocked = false } = {}) {
   return { ...module, cache, count: () => requests, setFail(value) { fail = value; } };
 }
 
+test("quoted names keep apostrophes inside double quotes", async () => {
+  const { parsePokedex } = await import("../src/services/championsData.js");
+  const dex = parsePokedex('\toricoriopau: {\n\t\tname: "Oricorio-Pa\'u",\n\t\tnum: 741,\n\t\tabilities: {0: "Mind\'s Eye", 1: \'Static\'},\n\t},');
+  assert.equal(dex.oricoriopau.name, "Oricorio-Pa'u");
+  assert.deepEqual(dex.oricoriopau.abilities, ["Mind's Eye", "Static"]);
+});
+
 test("cold details use six sources, preserve twelve-hour cache and isolated return values", async t => {
   const loader = await setup(t);
   const first = await loader.load();

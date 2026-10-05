@@ -26,7 +26,7 @@ const MC_ONLY_ITEM_IDS = new Set([
   'absolitez', 'baxcalibrite', 'garchompitez', 'golisopite', 'lucarionitez', 'salamencite',
 ]);
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_KEY = `ypl-champions-data-${CACHE_VERSION}`;
 const CACHE_TTL = 12 * 60 * 60 * 1000;
 
@@ -58,9 +58,12 @@ function topLevelEntries(source) {
   return entries;
 }
 
+// Close on the same quote that opened, so "King's Shield" is not cut at the apostrophe.
+const QUOTED = /(["'])(.+?)\1/g;
+
 function parseQuoted(raw, key) {
-  const re = new RegExp(`\\b${key}:\\s*["']([^"']+)["']`);
-  return raw.match(re)?.[1] || '';
+  const re = new RegExp(`\\b${key}:\\s*${QUOTED.source}`);
+  return raw.match(re)?.[2] || '';
 }
 
 function parseNumber(raw, key) {
@@ -90,13 +93,13 @@ function parseStats(raw) {
 function parseAbilities(raw) {
   const body = raw.match(/\babilities:\s*\{([^}]+)\}/)?.[1];
   if (!body) return [];
-  return [...body.matchAll(/["']([^"']+)["']/g)].map(m => m[1]);
+  return [...body.matchAll(QUOTED)].map(m => m[2]);
 }
 
 function parseQuotedArray(raw, key) {
   const body = raw.match(new RegExp(`\\b${key}:\\s*\\[([\\s\\S]*?)\\]`))?.[1];
   if (!body) return [];
-  return [...body.matchAll(/["']([^"']+)["']/g)].map(m => m[1]);
+  return [...body.matchAll(QUOTED)].map(m => m[2]);
 }
 
 function parsePokedex(source) {
