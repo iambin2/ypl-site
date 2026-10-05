@@ -1,4 +1,6 @@
 import { load as loadChampionsData } from "./championsData.js";
+import { REGULATIONS } from "../data/index.js";
+import { canonicalBaseName, localizedPokemonName, pokemonPoolForRegulation, resolveCanonicalPokemonId } from "./teamBuilderCore.js";
 
 const SPECIES_NAMES_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv";
 
@@ -47,10 +49,28 @@ function formDisplayName(record, korean) {
   return korean;
 }
 
+// Records show the exact name the team builder showed when the party was
+// built, so forms such as 루가루암 (한밤중의 모습) stay distinct.
+function builderNamesById(detailData, koreanByEnglish) {
+  const names = new Map();
+  for (const regulation of Object.values(REGULATIONS)) {
+    for (const pokemon of pokemonPoolForRegulation(regulation, detailData, [], { includeUnavailableMega: true })) {
+      const id = resolveCanonicalPokemonId(detailData, pokemon);
+      const record = detailData.pokedex?.[id];
+      // Cosmetic forms resolve to the base record; the base entry names it.
+      if (!record || names.has(id) || (pokemon.name !== canonicalBaseName(pokemon.name) && record.name === record.baseSpecies)) continue;
+      const localized = localizedPokemonName(pokemon, koreanByEnglish);
+      if (localized !== pokemon.name) names.set(id, localized);
+    }
+  }
+  return names;
+}
+
 export function buildRecordsPokemonDirectory(detailData, speciesNames) {
   const directory = new Map();
   const koreanById = speciesNames?.koreanById || new Map();
   const koreanByEnglish = speciesNames?.koreanByEnglish || new Map();
+  const builderNames = builderNamesById(detailData || {}, koreanByEnglish);
   for (const [id, record] of Object.entries(detailData?.pokedex || {})) {
     const canonicalName = clean(record?.name);
     const korean = koreanById.get(String(record?.num)) || koreanByEnglish.get(key(canonicalName));
@@ -58,7 +78,7 @@ export function buildRecordsPokemonDirectory(detailData, speciesNames) {
       pokemonId: id,
       dexNumber: record?.num ?? null,
       canonicalName,
-      displayName: formDisplayName({ ...record, id }, korean),
+      displayName: builderNames.get(id) || formDisplayName({ ...record, id }, korean),
     });
   }
   return directory;

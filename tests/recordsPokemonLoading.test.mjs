@@ -21,7 +21,8 @@ test("concurrent directories preserve localized values and independent maps with
       : pokedex };
   });
   const source = readFileSync(new URL("../src/services/recordsPokemon.js", import.meta.url), "utf8")
-    .replace('"./championsData.js"', JSON.stringify(new URL(`../src/services/championsData.js?directory-test=${Date.now()}`, import.meta.url).href));
+    .replace('"./championsData.js"', JSON.stringify(new URL(`../src/services/championsData.js?directory-test=${Date.now()}`, import.meta.url).href))
+    .replace(/"(\.\.?\/[^"]+\.js)"/g, (_, path) => JSON.stringify(new URL(path, new URL("../src/services/", import.meta.url)).href));
   const { loadRecordsPokemonDirectory: load } = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
   const [first, second] = await Promise.all([load(), load()]);
   assert.equal(requests, 7);

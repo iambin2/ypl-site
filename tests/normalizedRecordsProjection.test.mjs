@@ -644,6 +644,23 @@ test("Records Pokémon directory names mega and Rotom forms distinctly", () => {
   );
 });
 
+test("Records Pokémon directory names forms exactly as the team builder does", () => {
+  const directory = buildRecordsPokemonDirectory({
+    pokedex: {
+      lycanroc: { id: "lycanroc", name: "Lycanroc", baseSpecies: "Lycanroc", num: 745 },
+      lycanrocmidnight: { id: "lycanrocmidnight", name: "Lycanroc-Midnight", baseSpecies: "Lycanroc", forme: "Midnight", num: 745 },
+      florges: { id: "florges", name: "Florges", baseSpecies: "Florges", num: 671, cosmeticFormes: ["Florges-Yellow", "Florges-Orange", "Florges-Blue", "Florges-White"] },
+    },
+  }, {
+    koreanById: new Map([["745", "루가루암"], ["671", "플라제스"]]),
+    koreanByEnglish: new Map([["lycanroc", "루가루암"], ["florges", "플라제스"]]),
+  });
+  assert.equal(directory.get("lycanroc").displayName, "루가루암");
+  assert.equal(directory.get("lycanrocmidnight").displayName, "루가루암 (한밤중의 모습)");
+  // Cosmetic forms share the base record, which keeps the base name.
+  assert.equal(directory.get("florges").displayName, "플라제스");
+});
+
 test("Records Pokémon stats merge legacy name-only and id-backed rosters of the same Pokémon", () => {
   const stats = buildPokemonStats([
     { owner: "A", pokemon: ["아머까오", "따라큐"], placement: "win" },
