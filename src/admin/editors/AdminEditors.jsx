@@ -38,7 +38,7 @@ function compressImg(file, cb){
     const w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc));
     const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
     cv.getContext("2d").drawImage(im,0,0,w,h);
-    let url; try{ url=cv.toDataURL("image/png"); }catch(e){ url=null; }
+    let url; try{ url=cv.toDataURL("image/webp",0.8); }catch(e){ url=null; }
     cb(url);
   }; im.onerror=()=>cb(null); im.src=r.result; };
   r.onerror=()=>cb(null); r.readAsDataURL(file);
