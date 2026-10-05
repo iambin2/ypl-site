@@ -123,7 +123,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       onClose={()=>setFill(null)}
       onSubmit={async answers=>{
         const ok=await submitForm(fillAnn.id,answers);
-        if(ok!==false&&fillAnn.form?.eventId) await refreshEventApplications(fillAnn);
+        if(ok===true&&fillAnn.form?.eventId) await refreshEventApplications(fillAnn);
         return ok;
       }}
     />}
@@ -178,6 +178,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요."); return; }
     for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답이 비어 있습니다.",`'${f.label||"질문"}'은(는) 필수 응답입니다.`); return; } } }
     setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
+    if(typeof ok==="string"){ siteAlert(ok); return; }
     if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
     setDone(true);
   };

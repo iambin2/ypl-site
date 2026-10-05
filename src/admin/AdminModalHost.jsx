@@ -1,4 +1,5 @@
 import React from "react";
+import { siteConfirm } from "../components/index.js";
 import { announcementDeletionBlockedMessage, cancelApplicationEvent, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
 import {
   AnnEditor,
@@ -13,6 +14,11 @@ import {
 export default function AdminModalHost({ modal, data, setModal, save, setAdmin, flash, normTeam }) {
   if (!modal) return null;
   const close = () => setModal(null);
+  // 삭제는 되돌릴 수 없다. 게시판 글 삭제와 같은 확인을 한 번 거친다.
+  const askDelete = (title, body) => siteConfirm({ title, body: `${body} 삭제한 내용은 되돌릴 수 없습니다.`, confirmLabel: "삭제", danger: true });
+  const confirmDelete = (onDelete, title, body) => onDelete && (async () => {
+    if (await askDelete(title, body)) await onDelete();
+  });
 
   if (modal.type === "login") {
     return (
@@ -44,10 +50,10 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
           save({ ...data, champions });
           close();
         }}
-        onDelete={modal.item ? () => {
-          save({ ...data, champions: data.champions.filter((item) => item.id !== modal.item.id) });
+        onDelete={confirmDelete(modal.item ? () => {
+          save({ ...data, champions: data.champions.filter((item) => item.id !== modal.item.id) }, "삭제했습니다");
           close();
-        } : null}
+        } : null, "챔피언 삭제", "이 챔피언 기록을 삭제할까요?")}
       />
     );
   }
@@ -66,14 +72,14 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
           save({ ...data, titleGroups });
           close();
         }}
-        onDelete={modal.item ? () => {
+        onDelete={confirmDelete(modal.item ? () => {
           const titleGroups = data.titleGroups.map((group) => group.key !== modal.groupKey ? group : {
             ...group,
             items: group.items.filter((entry) => entry.id !== modal.item.id),
           });
-          save({ ...data, titleGroups });
+          save({ ...data, titleGroups }, "삭제했습니다");
           close();
-        } : null}
+        } : null, "칭호 삭제", "이 칭호를 삭제할까요?")}
       />
     );
   }
@@ -154,13 +160,14 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
               return;
             }
           }
+          if (!(await askDelete("공지 삭제", "이 공지를 삭제할까요?"))) return;
 
           const nextData = {
             ...data,
             announcements: data.announcements.filter((item) => item.id !== modal.item.id),
           };
 
-          const saved = await save(nextData);
+          const saved = await save(nextData, "삭제했습니다");
           if (!saved) {
             flash?.("공지 삭제 저장에 실패했습니다.");
             return;

@@ -31,7 +31,7 @@ test("Supabase-backed response views load once and expose only explicit refreshe
 
 test("successful Event application creation refetches only that Event registration list", () => {
   assert.match(newsPage, /const ok=await submitForm\(fillAnn\.id,answers\)/);
-  assert.match(newsPage, /if\(ok!==false&&fillAnn\.form\?\.eventId\) await refreshEventApplications\(fillAnn\)/);
+  assert.match(newsPage, /if\(ok===true&&fillAnn\.form\?\.eventId\) await refreshEventApplications\(fillAnn\)/);
   assert.match(newsPage, /listEventApplications\(announcement\.form\.eventId\)/);
 });
 

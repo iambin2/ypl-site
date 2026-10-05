@@ -166,6 +166,8 @@ export default function App() {
       // 모든 탭이 주소에 남는다 — 새로고침, 뒤로 가기, 링크 공유 모두 같은 화면으로 돌아온다.
       const url=new URL(window.location.href);
       url.searchParams.delete("eventId");
+      // 팀 빌더의 룰 설정(reg, cup, type)은 빌더 주소에만 남긴다.
+      if(v!=="builder") ["reg","cup","type"].forEach(key=>url.searchParams.delete(key));
       if(v==="home") url.searchParams.delete("view"); else url.searchParams.set("view",v);
       if(url.href!==window.location.href) window.history.pushState({view:v},"",url);
     }
@@ -176,7 +178,7 @@ export default function App() {
   },[]);
   // 토스트는 매번 온전히 1.8초 보인다. 앞 토스트의 타이머가 새 토스트를 일찍 지우지 않게 하나만 둔다.
   const flash=useCallback((m)=>{window.clearTimeout(toastTimer.current);setToast({id:Date.now()+Math.random(),text:m});toastTimer.current=window.setTimeout(()=>setToast(null),1800);},[]);
-  const save=useCallback(async(next)=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?"저장했습니다":"메모리에만 반영됐습니다");return ok;},[flash]);
+  const save=useCallback(async(next,doneMessage="저장했습니다")=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?doneMessage:"메모리에만 반영됐습니다");return ok;},[flash]);
   const submitForm=useCallback(async(annId,payload)=>{
     const announcement=(data.announcements||[]).find(a=>a.id===annId);
     const form=announcement?.form||{};
@@ -196,8 +198,8 @@ export default function App() {
         flash("신청을 접수했습니다");
         return true;
       }catch(error){
-        flash(error?.message||"신청 저장에 실패했습니다.");
-        return false;
+        // 중복 신청, 마감 같은 이유는 신청서가 그대로 보여 준다. 재시도 안내로 덮지 않는다.
+        return error?.message||"신청 저장에 실패했습니다.";
       }
     }
 
