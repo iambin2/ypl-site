@@ -3,7 +3,8 @@ import { load as loadChampionsData } from "./championsData.js";
 const SPECIES_NAMES_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv";
 
 const clean = (value) => String(value || "").trim();
-const key = (value) => clean(value).toLowerCase();
+// PokeAPI spells Farfetch’d/Sirfetch’d with U+2019; Showdown names use ASCII.
+const key = (value) => clean(value).toLowerCase().replace(/’/g, "'");
 
 function parseSpeciesNames(csv) {
   const englishById = new Map();
@@ -32,14 +33,17 @@ function parseSpeciesNames(csv) {
 function formDisplayName(record, korean) {
   const id = key(record?.id);
   if (!korean) return clean(record?.name);
+  // Official Korean mega naming, matching legacy snapshots such as 메가메타그로스.
+  const mega = clean(record?.forme).match(/^Mega(?:-([A-Z]))?$/);
+  if (mega) return `메가${korean}${mega[1] || ""}`;
   if (id.endsWith("alola")) return `알로라 ${korean}`;
   if (id.endsWith("hisui")) return `히스이 ${korean}`;
   if (id.endsWith("galar")) return `가라르 ${korean}`;
-  if (id === "heatrotom") return `히트${korean}`;
-  if (id === "washrotom") return `워시${korean}`;
-  if (id === "frostrotom") return `프로스트${korean}`;
-  if (id === "fanrotom") return `스핀${korean}`;
-  if (id === "mowrotom") return `커트${korean}`;
+  if (id === "rotomheat") return `히트${korean}`;
+  if (id === "rotomwash") return `워시${korean}`;
+  if (id === "rotomfrost") return `프로스트${korean}`;
+  if (id === "rotomfan") return `스핀${korean}`;
+  if (id === "rotommow") return `커트${korean}`;
   return korean;
 }
 

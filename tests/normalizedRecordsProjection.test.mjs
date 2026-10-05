@@ -5,8 +5,8 @@ import {
   buildNormalizedRecordsProjection,
   isOfficialNormalizedRecordsEvent,
 } from "../src/services/normalizedRecordsProjection.js";
-import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../src/services/recordsAnalytics.js";
-import { resolveRecordsPokemonName, resolveRecordsSpriteName } from "../src/services/recordsPokemon.js";
+import { buildPokemonStats, buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../src/services/recordsAnalytics.js";
+import { buildRecordsPokemonDirectory, resolveRecordsPokemonName, resolveRecordsSpriteName } from "../src/services/recordsPokemon.js";
 import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows } from "../src/services/recordsPresentation.js";
 import { spriteUrl } from "../src/services/teamBuilderCore.js";
 
@@ -626,6 +626,31 @@ test("Records sprite resolution prefers form-aware snapshots and uses canonical 
   assert.equal(spriteUrl(resolveRecordsSpriteName("rotomheat", "히트로토무", directory)).endsWith("/rotom-heat.png"), true);
   assert.equal(spriteUrl(resolveRecordsSpriteName("samurotthisui", "히스이 대검귀", directory)).endsWith("/samurott-hisui.png"), true);
   assert.equal(spriteUrl(resolveRecordsSpriteName("charizardmegay", "리자몽", directory)).endsWith("/charizard-megay.png"), true);
+});
+
+test("Records Pokémon directory names mega and Rotom forms distinctly", () => {
+  const directory = buildRecordsPokemonDirectory({
+    pokedex: {
+      charizard: { name: "Charizard", num: 6 },
+      charizardmegax: { name: "Charizard-Mega-X", num: 6, forme: "Mega-X" },
+      metagrossmega: { name: "Metagross-Mega", num: 376, forme: "Mega" },
+      rotom: { name: "Rotom", num: 479 },
+      rotomheat: { name: "Rotom-Heat", num: 479, forme: "Heat" },
+    },
+  }, { koreanById: new Map([["6", "리자몽"], ["376", "메타그로스"], ["479", "로토무"]]) });
+  assert.deepEqual(
+    ["charizard", "charizardmegax", "metagrossmega", "rotom", "rotomheat"].map((id) => directory.get(id).displayName),
+    ["리자몽", "메가리자몽X", "메가메타그로스", "로토무", "히트로토무"]
+  );
+});
+
+test("Records Pokémon stats merge legacy name-only and id-backed rosters of the same Pokémon", () => {
+  const stats = buildPokemonStats([
+    { owner: "A", pokemon: ["아머까오", "따라큐"], placement: "win" },
+    { owner: "B", pokemon: ["아머까오", "따라큐"], pokemonIds: ["corviknight", "mimikyu"], placement: "ru" },
+  ], []);
+  assert.deepEqual(stats.map((row) => [row.name, row.entries]), [["따라큐", 2], ["아머까오", 2]]);
+  assert.deepEqual(stats[1].partners, [{ name: "따라큐", entries: 2 }]);
 });
 
 test("individual tournament party preview rows map final previews by placement and exclude team rows", () => {

@@ -834,14 +834,12 @@ export function buildPokemonStats(rosters, champions) {
   const totalEntries = rosters.length;
 
   for (const roster of rosters) {
-    const members = [...new Map((roster.pokemon || []).map((name, index) => {
-      const displayName = cleanName(name);
-      const pokemonId = cleanName(roster.pokemonIds?.[index]);
-      return [pokemonId || displayName, { key: pokemonId || displayName, name: displayName }];
-    }).filter(([identity, pokemon]) => identity && pokemon.name)).values()];
-    for (const pokemon of members) {
-      const cur = map.get(pokemon.key) || {
-        name: pokemon.name,
+    // Key by display name: legacy snapshots have no pokemon_id, and an id key
+    // would split the same Pokémon into two rows.
+    const members = [...new Set((roster.pokemon || []).map(cleanName).filter(Boolean))];
+    for (const name of members) {
+      const cur = map.get(name) || {
+        name,
         entries: 0,
         trainers: new Map(),
         wins: 0,
@@ -859,13 +857,13 @@ export function buildPokemonStats(rosters, champions) {
       if (roster.season) cur.seasons.set(roster.season, (cur.seasons.get(roster.season) || 0) + 1);
 
       for (const partner of members) {
-        if (partner.key === pokemon.key) continue;
-        const partnerEntry = cur.partners.get(partner.key) || { name: partner.name, entries: 0 };
+        if (partner === name) continue;
+        const partnerEntry = cur.partners.get(partner) || { name: partner, entries: 0 };
         partnerEntry.entries += 1;
-        cur.partners.set(partner.key, partnerEntry);
+        cur.partners.set(partner, partnerEntry);
       }
 
-      map.set(pokemon.key, cur);
+      map.set(name, cur);
     }
   }
 
