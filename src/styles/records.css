@@ -74,8 +74,10 @@
 /* ---------- lead: the FeatureCard shell (components.css) with a score and cells ----------
    Words sit 8px inside the card's padding; the cells use the full width. */
 .rc-lead > * { margin-inline: var(--space-2); }
-.rc-lead > :is(.rc-lead-head, .rc-lead-figs, .ypl-feature-wm) { margin-inline: 0; }
-.rc-lead-chip { justify-self: start; width: fit-content; }
+.rc-lead > :is(.rc-lead-head, .rc-lead-figs, .ypl-feature-wm, .rc-lead-cta) { margin-inline: 0; }
+/* the lead's one action: full width on phones, its own width from 640 */
+.rc-lead-cta { justify-self: stretch; }
+@media (min-width: 640px) { .rc-lead-cta { justify-self: start; } }
 .rc-lead-who { position: relative; display: grid; gap: 6px; justify-items: start; }
 .rc-lead-head { display: grid; gap: var(--space-4); }
 .rc-lead-head > .rc-lead-who { padding: 0 var(--space-2); }

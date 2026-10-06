@@ -19,3 +19,6 @@ export function Facts({ items }) {
     </dl>
   );
 }
+
+/* 1st, 2nd, 3rd, 11th: 피처 카드 머리말의 회차 표기 */
+export const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"); };

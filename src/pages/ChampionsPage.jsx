@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { normTeam as normalizeLegacyParty } from "../services/legacyPartyImages.js";
-import { Facts, Icon, Poster, Reveal, STAGGER, useExitAnimation } from "../components/index.js";
+import { Icon, PageHead, Reveal, STAGGER, SectionHead, ordinal, useExitAnimation } from "../components/index.js";
+import useCursorLight from "../components/common/useCursorLight.js";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
   generationNumberFromLegacyLabel,
@@ -11,7 +12,7 @@ import {
 import { displaySeasonLabel } from "../services/seasonLabel.js";
 
 /* ============================== CHAMPIONS ==============================
-   현 챔피언은 화면에 하나뿐인 반전 리드 타일, 역대 챔피언은 인셋 그룹 목록.   */
+   현 챔피언은 화면에 하나뿐인 피처 카드(우승 파티 여섯 받침), 역대 챔피언은 유리 목록. */
 export default function ChampionsPage({ data, admin, setModal, normTeam = normalizeLegacyParty, go }) {
   const [normalizedChamps, setNormalizedChamps] = useState(null);
   const [artworkLookup, setArtworkLookup] = useState(null);
@@ -48,6 +49,8 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
   ].sort((a, b) => Number(a.generationNumber || 0) - Number(b.generationNumber || 0)
     || String(a.format || "").localeCompare(String(b.format || "")));
 
+  const leadRef = useRef(null);
+  useCursorLight(leadRef);
   const [pop, setPop] = useState(null);
   useEffect(() => {
     if (!pop) return;
@@ -67,56 +70,46 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
   const reigningTeam = reigning ? normTeam(reigning.team).filter(m => m.name || m.img || m.pokemonId) : [];
   const teamNames = c => normTeam(c.team).filter(m => m.name).map(m => m.name).join(", ");
 
-  return (<section className="sec">
-    <Reveal className="sec-head">
-      <div>
-        <h2>명예의 전당</h2>
-        <p className="sub">챔피언스 시리즈를 제패한 역대 챔피언과 그날의 우승 엔트리를 보관합니다.</p>
-      </div>
-      {admin && <div className="y-page-aside">
-        <button className="ypl-btn ypl-btn--tonal ypl-btn--sm press" onClick={() => setModal({ type: "champion" })}>
-          <Icon n="plus" size={13} />이전 챔피언 추가
-        </button>
-      </div>}
-    </Reveal>
+  const reigningSlots = [...reigningTeam, ...Array(Math.max(0, 6 - reigningTeam.length)).fill(null)];
 
-    {reigning && <Reveal tag="section" className="rc-lead sq hof-lead" aria-labelledby="hof-reigning">
-      <div className="hof-lead-main">
-        <span className="ypl-chip ypl-chip--lead rc-lead-chip">현 챔피언</span>
-        <h3 className="rc-lead-title" id="hof-reigning">{reigning.name}</h3>
-        <div className="rc-lead-figs">
-          {reigning.generationNumber > 0
-            ? <Poster label="챔피언" value={reigning.generationNumber} unit="대" />
-            : <span />}
-          <Facts items={[["우승 시즌", seasonLabel(reigning)], ["역대 챔피언", `${champs.length}명`]]} />
-        </div>
-        <button className="ypl-btn ypl-btn--on-lead press hof-cta" onClick={() => setPop(reigning)}>
-          우승 엔트리 크게 보기<Icon n="arrow" size={15} />
-        </button>
+  return (<section className="sec">
+    <PageHead eyebrow="Hall of Fame" plain="명예의" silver="전당" desc="챔피언스 시리즈를 제패한 역대 챔피언과 그날의 우승 엔트리를 보관합니다.">
+      {admin && <button className="ypl-btn ypl-btn--tonal ypl-btn--sm press" onClick={() => setModal({ type: "champion" })}>
+        <Icon n="plus" size={13} />이전 챔피언 추가
+      </button>}
+    </PageHead>
+
+    {reigning && <section className="ypl-feature glass sq follow" ref={leadRef} aria-labelledby="hof-reigning">
+      {reigning.generationNumber > 0 && <span className="ypl-feature-wm silver-live" aria-hidden="true">{reigning.generationNumber}</span>}
+      <div className="ypl-feature-who">
+        <span className="eyebrow">{reigning.generationNumber > 0 ? `${ordinal(reigning.generationNumber)} Champion` : "Champion"}</span>
+        <h3 className="ypl-feature-name silver-live" id="hof-reigning">{reigning.name}</h3>
+        <span className="ypl-feature-sub">{seasonLabel(reigning)} 챔피언</span>
       </div>
-      <ol className="hof-team" aria-label="우승 엔트리">
-        {reigningTeam.map((m, j) => {
-          const fallback = resolveHallOfFameArtwork(m, artworkLookup); const img = m.img || fallback;
+      <ol className="ypl-pods" aria-label="우승 엔트리">
+        {reigningSlots.map((m, j) => {
+          const fallback = m && resolveHallOfFameArtwork(m, artworkLookup); const img = m && (m.img || fallback);
           return (
-            <li className="hof-mon" key={j} style={{ "--i": j }}>
-              <span className="hof-art">{img
-                ? <img src={img} alt="" loading="lazy" decoding="async" onError={event => { if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback; else event.currentTarget.style.visibility = "hidden"; }} />
-                : <em>{(m.name || "").slice(0, 2)}</em>}</span>
-              <b>{m.name}</b>
+            <li className="ypl-pod sq" key={j}>
+              {img && <img src={img} alt={m.name || ""} loading="lazy" decoding="async" onError={event => { if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback; else event.currentTarget.style.visibility = "hidden"; }} />}
+              {m && !img && <span className="ypl-pod-name">{m.name}</span>}
             </li>
           );
         })}
       </ol>
-    </Reveal>}
+      <button className="ypl-btn ypl-btn--primary press rc-lead-cta" onClick={() => setPop(reigning)}>
+        우승 엔트리 크게 보기<Icon n="arrow" size={15} />
+      </button>
+    </section>}
 
     {past.length > 0 && <section className="hof-past">
-      <div className="ypl-sech"><h2>역대 챔피언</h2></div>
+      <SectionHead eyebrow="Champions" plain="역대" silver="챔피언" />
       <Reveal tag="ol" className="ypl-group sq">
         {past.map((c, i) => (
           <li key={c.id || i}>
             <button className="ypl-row hof-row" onClick={() => setPop(c)} aria-label={c.name + " 우승 엔트리 보기"}>
               <span className="hof-gen">{c.generationNumber > 0
-                ? <><span className="num">{c.generationNumber}</span><span className="unit">대</span></>
+                ? <><span className="fig silver">{c.generationNumber}</span><span className="unit">대</span></>
                 : <span className="unit">{genLabel(c)}</span>}</span>
               <span className="hof-main">
                 <span className="ypl-row__title">{c.name}</span>
@@ -148,7 +141,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
         </div>
         <div className="hofm-team">{normTeam(pop.team).filter(m => m.name || m.img || m.pokemonId).map((m, j) => {
           const fallback = resolveHallOfFameArtwork(m, artworkLookup); const img = m.img || fallback; return (
-            <div className={"hofm-poke" + (img ? "" : " noimg")} key={j} style={{ animationDelay: (j * STAGGER.tile) + "ms" }}>
+            <div className={"hofm-poke sq" + (img ? "" : " noimg")} key={j} style={{ animationDelay: (j * STAGGER.tile) + "ms" }}>
               <div className="hofm-sp">{img ? <img src={img} alt={m.name} loading="lazy" decoding="async" onError={event => { if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback; }} /> : <span className="hofm-ph">{(m.name || "").slice(0, 2)}</span>}</div>
               <div className="hofm-pn">{m.name}</div>
             </div>);

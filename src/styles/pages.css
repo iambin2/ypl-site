@@ -81,20 +81,6 @@
 /* ---------- FeatureCard (components.css): fills the column beside the results ---------- */
 @media (min-width: 1024px) { .hm-duo .ypl-feature { flex: 1; } }
 
-/* ---------- PartyPod: six pods in slot order; concentric 32 - 14 = 18 ---------- */
-.hm-pods { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
-.hm-pod {
-  --r: var(--radius-md);
-  height: 124px; display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(ellipse 70% 26% at 50% 86%, var(--pod-floor), transparent 72%), var(--pod-face);
-}
-.hm-pod img { width: 80px; height: 80px; object-fit: contain; }
-@media (min-width: 1024px) {
-  .hm-pods { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .hm-pod { height: 132px; }
-  .hm-pod img { width: 82px; height: 82px; }
-}
-
 /* ---------- ResultRow: silver round, league and month, winner ---------- */
 .hm-result { grid-template-columns: 44px minmax(0, 1fr) auto; }
 .hm-round { display: flex; align-items: baseline; gap: 1px; white-space: nowrap; }
@@ -374,80 +360,53 @@
 }
 
 /* =========================== TITLES ===========================
-   Segmented groups, then the group's lead tile (achieved count as the
-   poster numeral) and its titles as one inset group. */
+   Segmented groups, then the group's lead card (achieved count as the
+   silver score) and its titles as one glass list. */
 .tt-seg { margin-bottom: var(--space-5); }
 .tt-view { display: grid; gap: var(--space-5); }
-.tt-add { align-self: flex-start; }
+.tt-add { justify-self: start; }
 .tt-row { grid-template-columns: minmax(96px, 160px) minmax(0, 1fr); }
 .tt-who { font-size: 15px; line-height: 1.5; color: var(--text-2); }
 .tt-off > * { opacity: var(--opacity-dim); }
 @media (min-width: 1024px) { .tt-view { gap: var(--space-6); } }
 
 /* ======================= HALL OF FAME =======================
-   The reigning champion is the screen's one lead tile, their winning
-   party beside it; every earlier champion is a row in one inset group. */
-.rc-lead.hof-lead { display: grid; gap: var(--space-6); }
-.hof-lead-main { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
-.hof-cta { align-self: stretch; }
-.hof-team { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2) var(--space-3); }
-.hof-mon {
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
-  animation: y-rise var(--duration-gentle) var(--ease-spring) backwards; animation-delay: calc(var(--i) * var(--stagger-tile) + 200ms);
-}
-/* the art box is a fixed square with the artwork placed inside it, so a tall
-   or wide sprite never stretches the box and every name sits on one line */
-.hof-art { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
-.hof-art img { position: absolute; inset: 6%; width: 88%; height: 88%; object-fit: contain; transition: transform var(--duration-gentle) var(--ease-spring); }
-@media (hover: hover) { .hof-mon:hover .hof-art img { transform: scale(1.06) translateY(-2px); } }
-.hof-art em, .hofm-ph {
-  width: 64%; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
-  background: var(--lead-fill); font-size: 15px; font-weight: 600; color: var(--on-lead-2);
-}
-.hof-mon b { font-size: 13px; font-weight: 600; line-height: 1.35; text-align: center; color: var(--on-lead); }
-
-.hof-past { margin-top: var(--section-gap); }
+   The reigning champion is the screen's one FeatureCard with the winning
+   party on six pods; every earlier champion is a row in one glass list. */
+.hof-past { margin-top: var(--space-9); }
 .hof-row { --inset: 56px; grid-template-columns: 44px minmax(0, 1fr) auto; min-height: 72px; }
-.hof-gen { display: inline-flex; align-items: baseline; white-space: nowrap; }
-.hof-gen .num { font-size: 32px; color: var(--ink); }
-.hof-gen .unit { margin-left: 2px; }
+.hof-gen { display: flex; align-items: baseline; gap: 1px; white-space: nowrap; }
+.hof-gen .unit { margin-left: 1px; font-size: 11px; font-weight: 700; }
 .hof-main { min-width: 0; }
 .hof-entry { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hof-chev { color: var(--text-3); transition: transform var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade); }
 @media (hover: hover) { .hof-row:hover .hof-chev { color: var(--ink); transform: translateX(2px); } }
 .hof-admin { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+@media (min-width: 1024px) {
+  .hof-past { margin-top: var(--space-10); }
+  .hof-row { grid-template-columns: 54px minmax(0, 1fr) auto; }
+}
 
+/* the entry dialog: the same pods, the name under each */
 .hof-modal { width: min(760px, 100%); }
 .hofm-bar { display: flex; align-items: center; justify-content: flex-end; }
-.hofm-top { margin-top: var(--space-3); }
-.hofm-nm { font-size: 36px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
-.hofm-gen { margin-top: var(--space-1); font-size: 15px; font-weight: 600; color: var(--text-3); }
+.hofm-top { display: grid; gap: var(--space-1); margin-top: var(--space-3); }
+.hofm-nm { font-size: 38px; font-weight: 900; letter-spacing: -0.035em; line-height: 1.12; }
+.hofm-gen { font-size: 15px; color: var(--text-2); }
 .hofm-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-6); }
 .hofm-poke {
-  --r: var(--radius-lg);
+  --r: var(--radius-md);
   display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-2) var(--space-4);
-  border-radius: var(--r); background: var(--bg-2); animation: y-pop var(--duration-smooth) var(--ease-spring) backwards;
+  background: radial-gradient(ellipse 70% 22% at 50% 70%, var(--pod-floor), transparent 72%), var(--pod-face);
+  animation: y-pop var(--duration-smooth) var(--ease-spring) backwards;
 }
-@supports (corner-shape: squircle) { .hofm-poke { border-radius: calc(var(--r) * 1.6); corner-shape: superellipse(1.78); } }
 .hofm-sp { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
 .hofm-sp img { position: absolute; inset: 6%; width: 88%; height: 88%; object-fit: contain; }
-.hofm-ph { background: var(--fill); color: var(--text-3); }
-.hofm-pn { font-size: 15px; font-weight: 600; text-align: center; }
-
-@media (min-width: 640px) {
-  .hof-cta { align-self: flex-start; }
-  .hofm-team { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .hofm-nm { font-size: 40px; }
+.hofm-ph {
+  width: 64%; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
+  background: var(--fill); font-size: 15px; font-weight: 700; color: var(--text-3);
 }
-@media (min-width: 1024px) {
-  .rc-lead.hof-lead { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: var(--space-8); }
-  /* the lead's half width is too narrow for facts in a row: keep them stacked */
-  .hof-lead .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); }
-  .hof-lead .rc-poster { order: 0; justify-items: start; }
-  .hof-lead .rc-facts { grid-template-columns: 1fr; gap: 0; }
-  .hof-lead .rc-facts > div { display: flex; padding: var(--space-2) 0; }
-  .hof-lead .rc-facts > div + div { background: linear-gradient(var(--lead-line), var(--lead-line)) no-repeat 0 0 / 100% var(--hair); }
-  .hof-mon b { font-size: 15px; }
-}
+.hofm-pn { font-size: 15px; font-weight: 700; text-align: center; }
+@media (min-width: 640px) { .hofm-team { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .hofm-nm { font-size: 52px; letter-spacing: -0.04em; } }
 
-/* dark mode keeps lead tiles dark; one step of elevation marks them */

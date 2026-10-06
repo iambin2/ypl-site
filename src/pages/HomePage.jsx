@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Reveal, Icon, STAGGER } from "../components/index.js";
+import { Reveal, Icon, STAGGER, SectionHead, ordinal } from "../components/index.js";
 import useCursorLight from "../components/common/useCursorLight.js";
 import { displaySeasonLabel } from "../services/seasonLabel.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../services/hallOfFamePresentation.js";
@@ -31,8 +31,6 @@ function shortDay(s) {
 }
 /* 03: 메타 줄의 날짜는 "2026년 7월" */
 const yearMonth = s => { const n = String(s || "").match(/\d+/g) || []; return n.length >= 2 ? `${n[0]}년 ${+n[1]}월` : ""; };
-const ordinal = n => { const v = n % 100; return n + (["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"); };
-
 /* 홈 첫 화면의 다음 행동. 이미 불러온 공지(site_data)의 대회 정보만 읽는다. 새 조회는 없다. */
 function nextEvent(announcements, now = new Date()) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -61,19 +59,6 @@ const EXPLORE = [
   ["builder", "Tool", "팀 빌더", "현재 레귤레이션으로 파티를 짜고 저장합니다."],
   ["news", "News", "공지", "대회 소식을 읽고 바로 신청합니다."],
 ];
-
-/* 섹션 머리: 라틴 머리말, 두 톤 제목(뒤 낱말이 실버), 오른쪽 링크 */
-function SectionHead({ id, eyebrow, plain, silver, more }) {
-  return (
-    <div className="ypl-sech">
-      <div>
-        <span className="eyebrow">{eyebrow}</span>
-        <h2 id={id}>{plain} <span className="silver">{silver}</span></h2>
-      </div>
-      {more && <button className="ypl-more" onClick={more[1]}>{more[0]} →</button>}
-    </div>
-  );
-}
 
 const Arrow = () => <i className="ypl-arrow" aria-hidden="true"><Icon n="arrow" size={14} /></i>;
 
@@ -109,11 +94,11 @@ function ChampionCard({ reigning }) {
         <span className="ypl-feature-name silver-live">{reigning.name}</span>
         <span className="ypl-feature-sub">{season ? `${season} 챔피언` : gen}</span>
       </div>
-      <ol className="hm-pods" aria-label="우승 파티">
+      <ol className="ypl-pods" aria-label="우승 파티">
         {slots.map((m, i) => (
-          <li className="hm-pod sq" key={i}>
+          <li className="ypl-pod sq" key={i}>
             {m?.img && <img src={m.img} alt={m.name} loading="lazy" decoding="async" onError={e => { e.currentTarget.style.visibility = "hidden"; }} />}
-            {m && !m.img && <span className="sr-only">{m.name}</span>}
+            {m && !m.img && <span className="ypl-pod-name">{m.name}</span>}
           </li>
         ))}
       </ol>

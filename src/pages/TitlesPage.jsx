@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Facts, Icon, Poster, Reveal, Segmented } from "../components/index.js";
+import { Facts, Icon, PageHead, Poster, Segmented } from "../components/index.js";
 import { displaySeasonLabel } from "../services/seasonLabel.js";
 
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
@@ -10,7 +10,7 @@ function shortName(name, key) {
 }
 
 /* ============================== TITLES ==============================
-   분류는 세그먼트, 고른 분류는 리드 타일(달성 수가 포스터 숫자) 아래 인셋 목록. */
+   분류는 세그먼트, 고른 분류는 리드 카드(달성 수가 실버 점수) 아래 유리 목록. */
 export default function TitlesPage({ data, admin, setModal }) {
   const groups = data.titleGroups || [];
   const [openKey, setOpenKey] = useState(groups.length ? groups[0].key : null);
@@ -39,19 +39,17 @@ export default function TitlesPage({ data, admin, setModal }) {
   const edit = it => admin ? () => setModal({ type: "title", groupKey: g.key, item: it }) : undefined;
 
   return (<section className="sec">
-    <Reveal className="sec-head">
-      <div>
-        <h2>칭호</h2>
-        <p className="sub">특정 조건을 달성한 트레이너에게 주는 명예의 기록입니다. 아직 주인이 없는 칭호는 흐리게 표시됩니다.</p>
-      </div>
-    </Reveal>
+    <PageHead eyebrow="Titles" plain="트레이너" silver="칭호" desc="특정 조건을 달성한 트레이너에게 주는 명예의 기록입니다. 아직 주인이 없는 칭호는 흐리게 표시됩니다." />
 
     {groups.length > 1 && <Segmented className="tt-seg" value={g?.key} onChange={setOpenKey} ariaLabel="칭호 분류"
       options={groups.map(x => [x.key, x.name])} />}
 
     {g && <div className="tt-view swap" key={g.key}>
       <section className="rc-lead sq" aria-labelledby="tt-group-name">
-        <h3 className="rc-lead-title" id="tt-group-name">{g.name}</h3>
+        <div className="rc-lead-who">
+          <span className="eyebrow">Category</span>
+          <h3 className="rc-lead-title silver" id="tt-group-name">{g.name}</h3>
+        </div>
         <div className="rc-lead-figs">
           {rate
             ? <Poster label="달성" value={done} unit={`/ ${items.length}`} />
@@ -59,7 +57,7 @@ export default function TitlesPage({ data, admin, setModal }) {
           <Facts items={[["보유 트레이너", `${holderCount}명`], ["전체 부여", `${totalDone} / ${totalTitles}`]]} />
         </div>
         {g.desc && <p className="rc-lead-note">{g.desc}</p>}
-        {admin && <button className="ypl-btn ypl-btn--lead-tonal ypl-btn--sm press tt-add"
+        {admin && <button className="ypl-btn ypl-btn--glass ypl-btn--sm press tt-add"
           onClick={() => setModal({ type: "title", groupKey: g.key })}>
           <Icon n="plus" size={13} />칭호 추가
         </button>}

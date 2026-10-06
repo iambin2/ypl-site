@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Dropdown, Facts, Icon, Modal, Poster, Reveal, STAGGER, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Facts, Icon, Modal, PageHead, Poster, STAGGER, SectionHead, siteAlert, siteConfirm } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
@@ -868,7 +868,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
         <div className="bk-mpos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
           <div className="bk-champ-node sq">
             <span className="bk-champ-k">우승</span>
-            <b>{nameOf(finalRes.champ)}</b>
+            <b className="silver">{nameOf(finalRes.champ)}</b>
           </div>
         </div>
       </div>
@@ -884,7 +884,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
       <div className="bk-col-h gf">우승</div>
       <div className="bk-champ-node sq">
         <span className="bk-champ-k">우승</span>
-        <b>{nameOf(finalRes.champ)}</b>
+        <b className="silver">{nameOf(finalRes.champ)}</b>
       </div>
     </div>}
   </div></div>}
@@ -1097,17 +1097,19 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   return (<div className="bk-board swap">
     {readOnly&&<p className="bk-hint">이미 끝난 과거 대진표입니다. 볼 수만 있고 수정, 삭제, 기록 반영은 할 수 없습니다.</p>}
     {res&&res.done&&championshipEvent?.championship_phase!=="qualifier"&&<section className="rc-lead sq bk-champ-lead" aria-labelledby="bk-champ-name">
-      <span className="ypl-chip ypl-chip--lead rc-lead-chip">우승</span>
-      <h3 className="rc-lead-title" id="bk-champ-name">{nameOf(res.champ)}</h3>
+      <div className="rc-lead-who">
+        <span className="eyebrow">Champion</span>
+        <h3 className="rc-lead-title silver" id="bk-champ-name">{nameOf(res.champ)}</h3>
+      </div>
       <div className="rc-lead-figs">
         <Poster label="참가" value={(b.participants||[]).length} unit={b.mode==="team"?"팀":"명"}/>
         <Facts items={[...(res.ru?[["준우승",nameOf(res.ru)]]:[]),...(res.sf&&res.sf.length?[["4강",res.sf.map(nameOf).join(", ")]]:[]),["날짜",b.createdAt||"-"]]}/>
       </div>
       <div className="bk-cb-actions">
-        <button className="ypl-btn ypl-btn--lead-tonal ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}><Icon n="image" size={15}/>우승 이미지</button>
-        <button className="ypl-btn ypl-btn--lead-tonal ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}><Icon n="image" size={15}/>대진표 이미지</button>
-        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="ypl-btn ypl-btn--on-lead ypl-btn--sm press" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
-        {b.applied&&<><span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="ypl-btn ypl-btn--lead-tonal ypl-btn--sm press" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="ypl-btn ypl-btn--lead-tonal ypl-btn--sm press" onClick={undoApplied}>반영 취소</button>}</>}
+        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}><Icon n="image" size={15}/>우승 이미지</button>
+        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}><Icon n="image" size={15}/>대진표 이미지</button>
+        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
+        {b.applied&&<><span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={undoApplied}>반영 취소</button>}</>}
       </div>
     </section>}
     {b.eventId&&<SubmissionStatusPanel
@@ -2002,14 +2004,10 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   const bracketFormat=(b)=>b.format==="group"?"조별예선과 본선":(b.double?"더블 엘리미네이션":"싱글 엘리미네이션");
   const statusTag=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); if(b.applied)return"기록 반영됨"; if(r&&r.done)return"종료"; return"진행 중"; };
   return (<section className="sec">
-    <Reveal className="sec-head">
-      <div>
-        <h2>대진표</h2>
-        <p className="sub">대진을 만들고 결과를 입력하면 확정된 성적이 기록에 반영됩니다.</p>
-        {normalizedLoadError&&<p className="bk-hint" style={{color:"var(--danger)"}}>대진표 오류: {normalizedLoadError}</p>}
-      </div>
-      {admin&&<div className="y-page-aside"><button className="ypl-btn ypl-btn--primary ypl-btn--sm press" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>새 대진표</button></div>}
-    </Reveal>
+    <PageHead eyebrow="Brackets" plain="대회" silver="대진표" desc="대진을 만들고 결과를 입력하면 확정된 성적이 기록에 반영됩니다.">
+      {normalizedLoadError&&<p className="bk-error">대진표 오류: {normalizedLoadError}</p>}
+      {admin&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>새 대진표</button>}
+    </PageHead>
     {!open&&!wizard&&<div className="bk-list swap">
       {!normalizedInitialReady
         /* 스피너 대신 형태를 먼저: 로딩이 끝나면 같은 자리에 리드 타일과 목록이 들어온다. */
@@ -2024,16 +2022,19 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
           </div>}
       {list.length>0&&(()=>{ const lead=list[0]; const live=statusTag(lead)==="진행 중"; return (
         <section className="rc-lead sq" aria-labelledby="bk-lead-name">
-          <span className="ypl-chip ypl-chip--lead rc-lead-chip">{live&&<i className="ypl-ping" aria-hidden="true"/>}{statusTag(lead)}</span>
-          <h3 className="rc-lead-title" id="bk-lead-name">{lead.name}</h3>
+          <div className="rc-lead-who">
+            <span className="eyebrow bk-lead-eb">{live&&<i className="live-dot" aria-hidden="true"/>}Latest</span>
+            <h3 className="rc-lead-title silver" id="bk-lead-name">{lead.name}</h3>
+            <span className="rc-lead-sub">{statusTag(lead)}</span>
+          </div>
           <div className="rc-lead-figs">
             <Poster label="참가" value={lead.participants.length} unit={lead.mode==="team"?"팀":"명"}/>
             <Facts items={[["방식",lead.mode==="team"?"팀전":"개인전"],["형식",bracketFormat(lead)],["날짜",lead.createdAt||"-"]]}/>
           </div>
-          <button className="ypl-btn ypl-btn--on-lead press bk-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기<Icon n="arrow" size={15}/></button>
+          <button className="ypl-btn ypl-btn--primary press rc-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기<Icon n="arrow" size={15}/></button>
         </section>); })()}
       {list.length>1&&<section>
-        <div className="ypl-sech"><h2>이전 대진표</h2></div>
+        <SectionHead eyebrow="Archive" plain="이전" silver="대진표"/>
         <ul className="ypl-group sq">{list.slice(1).map(b=>(<li key={b.id}>
           <button className="ypl-row" onClick={()=>openBracket(b)}>
             <span>
