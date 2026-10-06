@@ -94,73 +94,67 @@ function bkSpaced(ctx,text,cx,y,sp){ ctx.save(); ctx.textAlign="left"; const ws=
 function bkSpacedLeft(ctx,text,x,y,sp){ ctx.save(); ctx.textAlign="left"; let cur=x; for(const ch of text){ ctx.fillText(ch,cur,y); cur+=ctx.measureText(ch).width+sp; } ctx.restore(); return cur-x-sp; }
 function bkClip(ctx,t,max){ if(ctx.measureText(t).width<=max)return t; let s=t; while(s.length>1&&ctx.measureText(s+"…").width>max)s=s.slice(0,-1); return s+"…"; }
 const BKF='"Wanted Sans Variable", "Wanted Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
-/* 워드마크도 사이트 헤더처럼 본문 서체 800. 이미지의 모든 글자가 서체 하나다. */
-const BKM=BKF;
-async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await document.fonts.load('800 40px "Wanted Sans Variable"'); await document.fonts.load('600 40px "Wanted Sans Variable"'); await document.fonts.ready; } }catch(e){} }
-/* 이미지 저장용 브랜드 색 — 사이트 디자인 토큰과 동일 */
-const BKC={ navy:"#1D1D1F", brand:"#1D1D1F", ink:"#1D1D1F", t2:"#424245",
-            t4:"#515154", t5:"#6E6E73", line:"#E5E5EA", line2:"#D2D2D7",
-            soft:"#F5F5F7", soft2:"#EBEBEF", card:"#FFFFFF", white:"#FFFFFF" };
+/* 워드마크와 라틴 머리말은 사이트 헤더처럼 언바운디드(02 서체). 한글은 원티드 산스 400/700/900. */
+const BKM='"Unbounded", '+BKF;
+async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await Promise.all(['900 40px "Wanted Sans Variable"','700 40px "Wanted Sans Variable"','400 40px "Wanted Sans Variable"','800 40px "Unbounded"','500 40px "Unbounded"'].map(f=>document.fonts.load(f))); await document.fonts.ready; } }catch(e){} }
+/* 이미지 저장용 색 — 사이트 다크 토큰(01 색)을 바탕 위에 섞은 불투명 값 */
+const BKC={ bg:"#0a0a0b", card:"#1c1c1e", ink:"#f2f2f4", t2:"#a1a1a6", t5:"#8e8e93",
+            line2:"rgba(255,255,255,.16)", primary:"#ececef", onPrimary:"#0a0a0b" };
+/* 실버(01 색): 다섯 단계 그라데이션을 x0~x1 폭에 깐다 */
+function bkSilver(ctx,x0,x1){ const g=ctx.createLinearGradient(x0,0,x1,0); [[0,"#ffffff"],[.28,"#dcdce1"],[.54,"#a3a3ac"],[.78,"#efeff2"],[1,"#b2b2ba"]].forEach(([o,c])=>g.addColorStop(o,c)); return g; }
+/* 바탕: bg 위에 오른쪽 위 광원 하나(07 깊이) */
+function bkPage(ctx,W,H){ ctx.fillStyle=BKC.bg; ctx.fillRect(0,0,W,H); const g=ctx.createRadialGradient(W*.72,0,0,W*.72,0,Math.max(W,H)*.6); g.addColorStop(0,"rgba(210,210,220,.13)"); g.addColorStop(1,"rgba(210,210,220,0)"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
 
 async function downloadChampionPng(b,res,nameOf){
   await bkFonts();
   const S=2,W=1200,H=820; const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
   const ctx=cv.getContext("2d"); ctx.scale(S,S);
 
-  // 배경: 순백 + 얇은 테두리 한 겹 (그라데이션과 반짝이 없음)
-  ctx.fillStyle=BKC.card; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle=BKC.line; ctx.lineWidth=1; bkRR(ctx,40,40,W-80,H-80,28); ctx.stroke();
+  // 배경: 사이트와 같은 bg와 광원 하나. 테두리 없음
+  bkPage(ctx,W,H);
 
   ctx.textAlign="center";
-  // 워드마크 (사이트 로고와 같은 Archivo)
-  ctx.fillStyle=BKC.brand; ctx.font=`800 44px ${BKM}`; bkSpaced(ctx,"YPL",W/2,152,4);
-  ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`; bkSpaced(ctx,"POKEMON CENTER YONSEI",W/2,178,3);
+  // 워드마크: 헤더처럼 실버 언바운디드 800
+  ctx.fillStyle=bkSilver(ctx,W/2-70,W/2+70); ctx.font=`800 44px ${BKM}`; bkSpaced(ctx,"YPL",W/2,152,4);
+  ctx.fillStyle=BKC.t5; ctx.font=`500 12px ${BKM}`; bkSpaced(ctx,"YONSEI POKÉMON LEAGUE",W/2,180,3);
 
-  // CHAMPION 라벨
-  ctx.font=`700 21px ${BKF}`;
-  const lw=ctx.measureText("CHAMPION").width+72;
-  bkRR(ctx,W/2-lw/2,252,lw,50,25); ctx.fillStyle=BKC.brand; ctx.fill();
-  ctx.fillStyle=BKC.white; bkSpaced(ctx,"CHAMPION",W/2,284,8);
+  // CHAMPION 머리말
+  ctx.fillStyle=BKC.t2; ctx.font=`500 18px ${BKM}`; bkSpaced(ctx,"CHAMPION",W/2,288,8);
 
   // 챔피언 이름
   const champ=nameOf(res.champ); const part=(b.participants||[]).find(p=>p.id===res.champ);
   let party=""; if(b.mode==="team"){ party=(part?.members||[]).join(", "); }
   else if(part?.party){ party=part.party.split(/[,\n]/).map(x=>x.trim()).filter(Boolean).join(", "); }
-  ctx.fillStyle=BKC.ink; ctx.font=`800 120px ${BKF}`;
-  ctx.fillText(bkClip(ctx,champ,W-180),W/2,420);
-
-  ctx.strokeStyle=BKC.line2; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(W/2-90,470); ctx.lineTo(W/2+90,470); ctx.stroke();
+  ctx.font=`900 120px ${BKF}`; const champTxt=bkClip(ctx,champ,W-180); const cw=ctx.measureText(champTxt).width;
+  ctx.fillStyle=bkSilver(ctx,W/2-cw/2,W/2+cw/2); ctx.fillText(champTxt,W/2,420);
 
   let ty=572;
-  if(party){ ctx.fillStyle=BKC.t4; ctx.font=`500 23px ${BKF}`;
+  if(party){ ctx.fillStyle=BKC.t2; ctx.font=`400 23px ${BKF}`;
     ctx.fillText(bkClip(ctx,party,W-200),W/2,522); ty=596; }
 
-  ctx.fillStyle=BKC.t2; ctx.font=`700 36px ${BKF}`;
+  ctx.fillStyle=BKC.ink; ctx.font=`700 36px ${BKF}`;
   ctx.fillText(bkClip(ctx,b.name,W-200),W/2,ty);
-  ctx.fillStyle=BKC.t5; ctx.font=`600 19px ${BKF}`; ctx.fillText(b.createdAt,W/2,ty+38);
+  ctx.fillStyle=BKC.t5; ctx.font=`400 19px ${BKF}`; ctx.fillText(b.createdAt,W/2,ty+38);
 
-  // 하단 준우승과 4강 (구분선 위)
+  // 하단 준우승과 4강 (선 없이 간격으로 나눔)
   const subs=[];
   if(res.ru) subs.push("준우승 "+nameOf(res.ru));
   if(res.sf&&res.sf.length) subs.push("4강 "+res.sf.map(nameOf).join(", "));
   if(subs.length){
-    ctx.strokeStyle=BKC.line; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(150,H-132); ctx.lineTo(W-150,H-132); ctx.stroke();
-    ctx.fillStyle=BKC.t5; ctx.font=`500 18px ${BKF}`;
+    ctx.fillStyle=BKC.t5; ctx.font=`400 18px ${BKF}`;
     ctx.fillText(bkClip(ctx,subs.join("      "),W-220),W/2,H-96);
   }
   bkDownload(cv,`${b.name}_우승_${champ}.png`);
 }
 
 function bkDrawMatch(ctx,x,y,w,h,aTxt,bTxt,aWin,bWin,aBye,bBye){
-  bkRR(ctx,x,y,w,h,12); ctx.fillStyle=BKC.card; ctx.fill(); ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.stroke();
+  bkRR(ctx,x,y,w,h,12); ctx.fillStyle=BKC.card; ctx.fill();
   const rowH=h/2; const drawRow=(ry,txt,win,bye)=>{
-    if(win){ bkRR(ctx,x+4,ry+3,w-8,rowH-6,8); ctx.fillStyle=BKC.navy; ctx.fill(); }
-    ctx.textAlign="left"; ctx.fillStyle=win?BKC.white:(bye?BKC.t5:BKC.ink); ctx.font=`${win?800:600} 14.5px ${BKF}`;
+    if(win){ bkRR(ctx,x+4,ry+3,w-8,rowH-6,8); ctx.fillStyle=BKC.primary; ctx.fill(); }
+    ctx.textAlign="left"; ctx.fillStyle=win?BKC.onPrimary:(bye?BKC.t5:BKC.ink); ctx.font=`${win?900:400} 14.5px ${BKF}`;
     ctx.fillText(bkClip(ctx,txt||"",w-22),x+12,ry+rowH/2+5);
   };
-  drawRow(y,aTxt,aWin,aBye); ctx.strokeStyle=BKC.line; ctx.beginPath(); ctx.moveTo(x+8,y+rowH); ctx.lineTo(x+w-8,y+rowH); ctx.stroke(); drawRow(y+rowH,bTxt,bWin,bBye);
+  drawRow(y,aTxt,aWin,aBye); drawRow(y+rowH,bTxt,bWin,bBye);
 }
 // 토너먼트 트리 그리기 → {centers: 라운드별 y중심배열, right:오른쪽끝x, bottom}
 function bkDrawTree(ctx,rounds,ev,nameOf,ox,oy,boxW,boxH,gapX,pitch0){
@@ -211,24 +205,23 @@ async function downloadBracketPng(b,nameOf){
   } else { const e=estElim(b.graph); W=Math.max(700,e.w); H=e.h+24; }
   W=Math.ceil(W); H=Math.ceil(H);
   const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S; const ctx=cv.getContext("2d"); ctx.scale(S,S);
-  ctx.fillStyle=BKC.card; ctx.fillRect(0,0,W,H);
-  ctx.textAlign="left"; ctx.fillStyle=BKC.ink; ctx.font=`800 30px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-320),34,50);
-  ctx.fillStyle=BKC.brand; ctx.font=`800 18px ${BKM}`; const wmW=bkSpacedLeft(ctx,"YPL",34,76,2);
-  ctx.fillStyle=BKC.t5; ctx.font=`600 13px ${BKF}`;
-  ctx.fillText("POKEMON CENTER YONSEI   "+(b.createdAt||""),34+wmW+12,76);
-  ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(34,88); ctx.lineTo(W-34,88); ctx.stroke();
+  bkPage(ctx,W,H);
+  ctx.textAlign="left"; ctx.fillStyle=BKC.ink; ctx.font=`900 30px ${BKF}`; ctx.fillText(bkClip(ctx,b.name,W-320),34,50);
+  ctx.fillStyle=bkSilver(ctx,34,84); ctx.font=`800 18px ${BKM}`; const wmW=bkSpacedLeft(ctx,"YPL",34,76,2);
+  ctx.fillStyle=BKC.t5; ctx.font=`400 13px ${BKF}`;
+  ctx.fillText(b.createdAt||"",34+wmW+12,76);
   const res=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph);
   if(res&&res.done){ ctx.font=`700 17px ${BKF}`; const t="우승 "+nameOf(res.champ);
-    const tw=ctx.measureText(t).width+34; bkRR(ctx,W-34-tw,26,tw,38,10); ctx.fillStyle=BKC.navy; ctx.fill();
-    ctx.fillStyle=BKC.white; ctx.textAlign="center"; ctx.fillText(t,W-34-tw/2,51); ctx.textAlign="left"; }
+    const tw=ctx.measureText(t).width+34; bkRR(ctx,W-34-tw,26,tw,38,19); ctx.fillStyle=BKC.primary; ctx.fill();
+    ctx.fillStyle=BKC.onPrimary; ctx.textAlign="center"; ctx.fillText(t,W-34-tw/2,51); ctx.textAlign="left"; }
   let curY=padT;
   const drawElimBlock=(g,oy,label)=>{
-    if(label){ ctx.fillStyle=BKC.ink; ctx.font=`800 17px ${BKF}`; ctx.fillText(label,34,oy-14); }
+    if(label){ ctx.fillStyle=BKC.ink; ctx.font=`900 17px ${BKF}`; ctx.fillText(label,34,oy-14); }
     const ev=evalGraph(g);
     const t=bkDrawTree(ctx,g.rounds,ev,nameOf,padL,oy,boxW,boxH,gapX,pitch0);
     let bottom=t.bottom;
     if(g.kind==="double"){
-      const lbY=t.bottom+50; ctx.fillStyle=BKC.t2; ctx.font=`800 15px ${BKF}`; ctx.fillText("패자부활전",padL,lbY-12);
+      const lbY=t.bottom+50; ctx.fillStyle=BKC.t2; ctx.font=`900 15px ${BKF}`; ctx.fillText("패자부활전",padL,lbY-12);
       // LB는 단순 컬럼
       for(let r=0;r<g.lb.length;r++){ const x=padL+r*(boxW+gapX);
         for(let j=0;j<g.lb[r].length;j++){ const m=g.lb[r][j]; const cy=lbY+j*pitch0+boxH/2;
@@ -237,10 +230,10 @@ async function downloadBracketPng(b,nameOf){
         } }
       // 그랜드 파이널
       const gx=padL+g.lb.length*(boxW+gapX); const gy=lbY+boxH/2; const m=g.gf; const aPid=ev.sp(m.a),bPid=ev.sp(m.b),wp=ev.win[m.id];
-      ctx.fillStyle=BKC.navy; ctx.font=`800 13.5px ${BKF}`; ctx.fillText("그랜드 파이널",gx,lbY-12);
+      ctx.fillStyle=BKC.ink; ctx.font=`900 13.5px ${BKF}`; ctx.fillText("그랜드 파이널",gx,lbY-12);
       bkDrawMatch(ctx,gx,gy-boxH/2,boxW,boxH, aPid?nameOf(aPid):"", bPid?nameOf(bPid):"", wp&&wp===aPid, wp&&wp===bPid,false,false);
       if(g.reset&&g.gf.winner==="b"){ const rx=gx+boxW+gapX; const rm=g.reset; const raPid=ev.sp(rm.a),rbPid=ev.sp(rm.b),rwp=ev.win[rm.id];
-        ctx.fillStyle=BKC.navy; ctx.font=`800 13.5px ${BKF}`; ctx.fillText("최종 결승 (리셋)",rx,lbY-12);
+        ctx.fillStyle=BKC.ink; ctx.font=`900 13.5px ${BKF}`; ctx.fillText("최종 결승 (리셋)",rx,lbY-12);
         bkDrawMatch(ctx,rx,gy-boxH/2,boxW,boxH, raPid?nameOf(raPid):"", rbPid?nameOf(rbPid):"", rwp&&rwp===raPid, rwp&&rwp===rbPid,false,false); }
       bottom=lbY+Math.max(...g.lb.map(r=>r.length))*pitch0;
     }
@@ -250,16 +243,16 @@ async function downloadBracketPng(b,nameOf){
     const cols=Math.min(b.groups.length,3); const gboxW=250;
     b.groups.forEach((gr,gi)=>{ const st=groupStandings(gr); const r=Math.floor(gi/cols),c=gi%cols;
       const gboxH=40+gr.members.length*26+14; const x=padL+c*(gboxW+24); const y=curY+r*( 40+Math.max(...b.groups.map(g=>g.members.length))*26+14 +24);
-      bkRR(ctx,x,y,gboxW,gboxH,18); ctx.fillStyle=BKC.card; ctx.fill(); ctx.strokeStyle=BKC.line; ctx.lineWidth=1; ctx.stroke();
-      ctx.fillStyle=BKC.ink; ctx.font=`800 16px ${BKF}`; ctx.textAlign="left"; ctx.fillText("그룹 "+gr.name,x+14,y+26);
-      st.forEach((s,i)=>{ const ry=y+44+i*26; const adv=i<b.groupCfg.adv; if(adv){ bkRR(ctx,x+8,ry-15,gboxW-16,24,8); ctx.fillStyle=BKC.soft2; ctx.fill(); }
-        ctx.fillStyle=adv?BKC.navy:BKC.t4; ctx.font=`${adv?800:500} 13.5px ${BKF}`; ctx.fillText(`${i+1}. ${nameOf(s.name)}`,x+16,ry+2); ctx.textAlign="right"; ctx.fillText(s.wins+"승",x+gboxW-16,ry+2); ctx.textAlign="left"; });
+      bkRR(ctx,x,y,gboxW,gboxH,18); ctx.fillStyle=BKC.card; ctx.fill();
+      ctx.fillStyle=BKC.ink; ctx.font=`900 16px ${BKF}`; ctx.textAlign="left"; ctx.fillText("그룹 "+gr.name,x+14,y+26);
+      st.forEach((s,i)=>{ const ry=y+44+i*26; const adv=i<b.groupCfg.adv; if(adv){ bkRR(ctx,x+8,ry-15,gboxW-16,24,8); ctx.fillStyle=BKC.primary; ctx.fill(); }
+        ctx.fillStyle=adv?BKC.onPrimary:BKC.t2; ctx.font=`${adv?900:400} 13.5px ${BKF}`; ctx.fillText(`${i+1}. ${nameOf(s.name)}`,x+16,ry+2); ctx.textAlign="right"; ctx.fillText(s.wins+"승",x+gboxW-16,ry+2); ctx.textAlign="left"; });
     });
     const rows=Math.ceil(b.groups.length/cols); curY=curY+rows*(40+Math.max(...b.groups.map(g=>g.members.length))*26+14+24)+40;
     if(b.knockout){ drawElimBlock(b.knockout,curY,"본선 토너먼트"); }
   } else { drawElimBlock(b.graph,curY); }
-  ctx.textAlign="right"; ctx.fillStyle=BKC.t5; ctx.font=`600 12px ${BKF}`;
-  ctx.fillText("YONSEI POKEMON LEAGUE",W-34,H-16); ctx.textAlign="left";
+  ctx.textAlign="right"; ctx.fillStyle=BKC.t5; ctx.font=`500 10px ${BKM}`;
+  ctx.fillText("YONSEI POKÉMON LEAGUE",W-34,H-16); ctx.textAlign="left";
   bkDownload(cv,`${b.name}_대진표.png`);
 }
 
