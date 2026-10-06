@@ -33,22 +33,22 @@ Not a generic club homepage: every record on the site is derived from real, oper
 - Anonymous board posts and comments by nickname; notice search; application and party submission from notices.
 - Client-side admin mode (soft gate) with editors, modals, bracket runtime controls, record apply/revert.
 - React 18 + Vite, deployed to GitHub Pages; data from Supabase normalized schema. Frontend redesign must not change data behavior.
-- Light and dark themes with a user toggle are a required feature.
+- Light and dark themes with a user toggle are a required feature. Dark is the default (2026-10-06).
 
 ## Brand Commitments
 
 - Name: YPL — Yonsei Pokémon League, 포켓몬 센터 연세점. The user explicitly released every visual element (wordmark, color, type) for redesign except the light/dark theme feature.
-- The site is neutral-only (black, white, grey), by the user's decision of 2026-09-11 that replaced the earlier Yonsei Blue commitment. No brand hue and no trophy gold; status colours only where they carry meaning.
+- The site is neutral-only (black, white, grey), by the user's decision of 2026-09-11 that replaced the earlier Yonsei Blue commitment. No brand hue and no trophy gold; status colours only where they carry meaning. Since 2026-10-06 the neutral palette is kept lively by light, glass surfaces, grain and a digital silver gradient (not realistic metal) on key words and big figures.
 - The brand mark is the user's own Braviary (워글) logo, `docs/brand/newlogo.png`, used as an exact potrace vector. Never redraw it.
 - Copy is plain Korean prose: no middle-dot (·) separators, and short intro sentences should sit on one line at laptop width.
-- Tone: an official league site, not a fan site. The home page stays clean and professional; the winning party artwork belongs on the Hall of Fame page, not the home first viewport.
+- Tone: an official league site, not a fan site. The home page stays clean and professional. The home first viewport is a short three-beat headline ("모든 배틀. 모든 기록. 모든 챔피언.") with two buttons, chosen by the user on 2026-10-06; no logo emblem or artwork there. The current champion's party appears lower on home.
 - Channel roles: this site is the league's first and official source of notices and records; Discord is where battles are actually played and streamed. Copy must not call Discord the first place for news.
 - Unofficial fan site: Pokémon trademarks belong to Nintendo · Creatures · GAME FREAK; the footer disclaimer stays.
 - Standing direction preference (2026-09-11): the category standard — a professional league site (esports-league canon: schedule, results, standings, champions) played straight, held to the craft bar of Apple / Nike brand sites (restraint, generous space, confident type, precise motion). No novelty concept worlds.
-- Full visual reset of 2026-10-06 (in progress), neutral palette kept: the category standard as the base, with the tournament-sheet poster numeral for hierarchy (one poster-size figure per screen). The first viewport leads with the member's next action for the current event phase. The rulebook is `docs/design-system/` (also the private "YPL 디자인 법전" artifact); it outranks `DESIGN.md` until `DESIGN.md` is rewritten from the finished build.
-- Type (2026-10-06): Wanted Sans for all Korean and UI text at weights 400, 600 and 800; Sofia Sans Extra Condensed 900 for compared figures only.
+- Second visual reset of 2026-10-06 ("YPL 실버"), replacing the same day's tournament-sheet build: structure taken from the pro league site wolfeydraftleague.com (page head with Latin eyebrow and two-tone title, identical feature cards, Pokémon on pods, aligned record tables), surface language of dark glass and digital silver. The rulebook is `docs/design-system/` (also the private "YPL 디자인 법전" artifact); it outranks `DESIGN.md` until `DESIGN.md` is rewritten from the finished build.
+- Type (2026-10-06): Wanted Sans for all Korean and UI text at weights 400, 700 and 900; Unbounded (500, 700, 800) for Latin eyebrows and figures.
 - Shape (2026-10-06): every corner is continuous curvature (base radius × 1.6 drawn with `corner-shape: superellipse(1.78)`, plain radius where unsupported); capsules keep round ends; nested radii are concentric (inner = outer − padding).
-- Lines (2026-10-06): the user finds hard straight rules sharp and aggressive. Sections are separated by space, never by heavy rules or outlines; lists sit in inset groups with 0.5px separators that never touch a curved edge.
+- Lines (2026-10-06): the user finds hard straight rules sharp and aggressive. Sections are separated by space, never by heavy rules or outlines; lists sit in one glass surface with hairline separators that never touch a curved edge.
 
 ## Evidence on Hand
 

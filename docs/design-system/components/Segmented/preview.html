@@ -1,11 +1,8 @@
-<!-- @dsCard group="기본 요소" height=100 -->
-<div style="padding:24px">
-  <div class="ypl-seg" id="seg" style="--n:4;--i:0" role="tablist" aria-label="기록 보기">
-    <i class="ypl-seg__thumb"></i>
-    <button role="tab" aria-selected="true" class="ypl-press">트레이너</button><button role="tab" aria-selected="false" class="ypl-press">대회</button><button role="tab" aria-selected="false" class="ypl-press">포켓몬</button><button role="tab" aria-selected="false" class="ypl-press">랭킹</button>
+<!-- @dsCard group="기본 요소" height=170 -->
+<div class="ypl-page" style="--logo:url(/_blob/f1a6dfaf32f140ad49a57f4325b25e5e);padding:20px 16px;min-height:100%;box-sizing:border-box"><div style=""><div style="display:grid;gap:16px;max-width:358px">
+  <div class="ypl-seg ypl-glass ypl-sq" role="group" aria-label="기록 종류" style="--w:calc((100% - 14px) / 4);--x:calc(3 * (100% + 2px))">
+    <span class="ypl-seg__thumb"></span>
+    <button aria-pressed="false">트레이너</button><button aria-pressed="false">대회</button><button aria-pressed="false">포켓몬</button><button aria-pressed="true">랭킹</button>
   </div>
-</div>
-<script>
-const seg = document.getElementById('seg');
-seg.querySelectorAll('button').forEach((b, i) => b.onclick = () => { seg.style.setProperty('--i', i); seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', String(x === b))); });
-</script>
+  <div class="ypl-pills"><button class="ypl-pill" aria-pressed="true">YPL</button><button class="ypl-pill" aria-pressed="false">클래식</button></div>
+</div></div></div>

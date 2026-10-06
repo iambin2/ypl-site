@@ -1,0 +1,16 @@
+<!-- @dsCard group="머리와 탐색" height=470 -->
+<div class="ypl-page" style="--logo:url(/_blob/f1a6dfaf32f140ad49a57f4325b25e5e);padding:20px 16px;min-height:100%;box-sizing:border-box"><div style="max-width:720px;"><section class="ypl-hero ypl-follow" style="padding-top:8px">
+  <span class="ypl-eyebrow">Yonsei Pokémon League</span>
+  <h1><span>모든 배틀.</span><span>모든 기록.</span><span class="ypl-silver-live">모든 챔피언.</span></h1>
+  <p>포켓몬 센터 연세점이 운영하는 공식 배틀 리그입니다. 대회 공지부터 대진표, 기록과 명예의 전당까지 이곳에서 확인하세요.</p>
+  <div class="ypl-hero__actions"><a href="#" class="ypl-btn ypl-btn--primary ypl-press">이번 대회 신청하기</a><a href="#" class="ypl-btn ypl-btn--glass ypl-press">리그 소개</a></div>
+</section></div></div><script>
+document.querySelectorAll('.ypl-follow').forEach(function (el) {
+  el.addEventListener('pointermove', function (e) {
+    var r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+  });
+  el.addEventListener('pointerleave', function () { el.style.removeProperty('--mx'); el.style.removeProperty('--my'); });
+});
+</script>

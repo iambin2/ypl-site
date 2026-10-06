@@ -1,34 +1,27 @@
 <!-- @dsCard height=288 -->
-<div class="cover">
+<div class="cover ypl-page" style="--logo:url(/_blob/f1a6dfaf32f140ad49a57f4325b25e5e)">
   <!--
-    blocks: ink slab 232x312 (radius-xl), text-3 block 124x124 (radius-lg), bg-3 block 124x140 (radius-lg), ink capsule 80x40 (radius-pill)
-    arrangement: one tall slab bleeding off top and bottom at the right edge, satellites stacked on its left at space-3 gaps
-    pattern: one oversized numeral, the round number 37, cut from the slab in the ground colour and clipped by it; the league counts its events, so a poster numeral is its signature
-    steps and radii: space-3 12, space-6 24, radius-xl 28, radius-lg 20, capsule half of 40
+    blocks: one glass slab 300x312 (radius-xl) bleeding off top and bottom at the right, a small glass card 140x124 (radius-lg) and a primary capsule 96x40 on its left
+    pattern: an oversized silver numeral 6, the current champion's generation, hung off the slab like the FeatureCard watermark
+    light: the page light source at the upper right, as on the desktop home
   -->
-  <svg viewBox="0 0 960 288" width="960" height="288" aria-hidden="true">
-    <defs><clipPath id="slab"><rect class="r-xl" x="716" y="-12" width="232" height="312"/></clipPath></defs>
-    <rect class="ink r-xl" x="716" y="-12" width="232" height="312"/>
-    <text class="cut" x="700" y="300" clip-path="url(#slab)">37</text>
-    <rect class="mid r-lg" x="580" y="24" width="124" height="124"/>
-    <rect class="soft r-lg" x="580" y="160" width="124" height="104"/>
-    <rect class="ink" x="488" y="224" width="80" height="40" rx="20" ry="20"/>
-  </svg>
+  <div class="slab ypl-glass"><span class="wm ypl-silver" aria-hidden="true">6</span></div>
+  <div class="card ypl-glass"><span class="ypl-eyebrow">Champion</span><b>김현민</b></div>
+  <span class="cap"></span>
   <div class="name">
-    <h1>YPL<br>디자인 법전</h1>
-    <p>표면은 리그 공식 사이트의 정석, 위계는 대회장 게시지처럼.</p>
+    <span class="ypl-eyebrow">Yonsei Pokémon League</span>
+    <h1>YPL <span class="ypl-silver">디자인 법전</span></h1>
+    <p>흑백 바탕 위의 디지털 실버.</p>
   </div>
 </div>
 <style>
-.cover { position: relative; width: 960px; height: 288px; background: var(--bg); overflow: hidden; }
-.cover svg { position: absolute; inset: 0; }
-.ink { fill: var(--ink); }
-.mid { fill: var(--text-3); }
-.soft { fill: var(--bg-3); }
-.r-xl { rx: var(--radius-xl); ry: var(--radius-xl); }
-.r-lg { rx: var(--radius-lg); ry: var(--radius-lg); }
-.cut { fill: var(--bg); font-family: var(--font-num); font-weight: 900; font-size: 300px; letter-spacing: -0.02em; }
-.name { position: absolute; left: 40px; bottom: 36px; width: 420px; }
-.name h1 { margin: 0; font-family: var(--font-sans); font-size: 76px; font-weight: 800; line-height: .95; letter-spacing: -0.04em; color: var(--ink); }
-.name p { margin: 16px 0 0; font-family: var(--font-sans); font-size: 13px; color: var(--text-3); letter-spacing: 0; }
+.cover { position: relative; width: 960px; height: 288px; overflow: hidden; background: radial-gradient(ellipse 60% 420px at 78% 0, var(--page-light), transparent 70%), var(--bg); }
+.slab { position: absolute; right: 24px; top: -12px; width: 300px; height: 312px; border-radius: 51px; overflow: hidden; }
+.wm { position: absolute; right: 14px; top: -64px; font-family: var(--font-latin); font-weight: 800; font-size: 340px; line-height: 1; opacity: .35; }
+.card { position: absolute; right: 340px; top: 24px; width: 140px; height: 124px; border-radius: 38px; padding: 20px; box-sizing: border-box; display: grid; align-content: end; gap: 6px; }
+.card b { font-family: var(--font-sans); font-size: 20px; font-weight: 900; color: var(--ink); letter-spacing: -.02em; }
+.cap { position: absolute; right: 340px; top: 172px; width: 96px; height: 40px; border-radius: 20px; background: linear-gradient(180deg, var(--primary-top), var(--primary-bottom)); box-shadow: var(--shadow-primary); }
+.name { position: absolute; left: 40px; bottom: 36px; width: 420px; display: grid; gap: 14px; }
+.name h1 { margin: 0; font-family: var(--font-sans); font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -.04em; color: var(--ink); }
+.name p { margin: 0; font-family: var(--font-sans); font-size: 14px; color: var(--text-2); }
 </style>
