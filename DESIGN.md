@@ -309,6 +309,8 @@ components:
 
 # Design System: YPL — Yonsei Pokémon League
 
+> **Outgoing system (2026-10-06).** A full visual reset is in progress. For any new or changed UI, `docs/design-system/` (the "YPL 디자인 법전") is the authority; this file describes the system being replaced and will be rewritten from the finished build. Where the two disagree, follow `docs/design-system/`.
+
 ## Overview
 
 **Creative North Star: "The League of Record"**

@@ -1,0 +1,34 @@
+<!-- @dsCard height=288 -->
+<div class="cover">
+  <!--
+    blocks: ink slab 232x312 (radius-xl), text-3 block 124x124 (radius-lg), bg-3 block 124x140 (radius-lg), ink capsule 80x40 (radius-pill)
+    arrangement: one tall slab bleeding off top and bottom at the right edge, satellites stacked on its left at space-3 gaps
+    pattern: one oversized numeral, the round number 37, cut from the slab in the ground colour and clipped by it; the league counts its events, so a poster numeral is its signature
+    steps and radii: space-3 12, space-6 24, radius-xl 28, radius-lg 20, capsule half of 40
+  -->
+  <svg viewBox="0 0 960 288" width="960" height="288" aria-hidden="true">
+    <defs><clipPath id="slab"><rect class="r-xl" x="716" y="-12" width="232" height="312"/></clipPath></defs>
+    <rect class="ink r-xl" x="716" y="-12" width="232" height="312"/>
+    <text class="cut" x="700" y="300" clip-path="url(#slab)">37</text>
+    <rect class="mid r-lg" x="580" y="24" width="124" height="124"/>
+    <rect class="soft r-lg" x="580" y="160" width="124" height="104"/>
+    <rect class="ink" x="488" y="224" width="80" height="40" rx="20" ry="20"/>
+  </svg>
+  <div class="name">
+    <h1>YPL<br>디자인 법전</h1>
+    <p>표면은 리그 공식 사이트의 정석, 위계는 대회장 게시지처럼.</p>
+  </div>
+</div>
+<style>
+.cover { position: relative; width: 960px; height: 288px; background: var(--bg); overflow: hidden; }
+.cover svg { position: absolute; inset: 0; }
+.ink { fill: var(--ink); }
+.mid { fill: var(--text-3); }
+.soft { fill: var(--bg-3); }
+.r-xl { rx: var(--radius-xl); ry: var(--radius-xl); }
+.r-lg { rx: var(--radius-lg); ry: var(--radius-lg); }
+.cut { fill: var(--bg); font-family: var(--font-num); font-weight: 900; font-size: 300px; letter-spacing: -0.02em; }
+.name { position: absolute; left: 40px; bottom: 36px; width: 420px; }
+.name h1 { margin: 0; font-family: var(--font-sans); font-size: 76px; font-weight: 800; line-height: .95; letter-spacing: -0.04em; color: var(--ink); }
+.name p { margin: 16px 0 0; font-family: var(--font-sans); font-size: 13px; color: var(--text-3); letter-spacing: 0; }
+</style>

@@ -1,0 +1,11 @@
+<!-- @dsCard group="기본 요소" height=100 -->
+<div style="padding:24px">
+  <div class="ypl-seg" id="seg" style="--n:4;--i:0" role="tablist" aria-label="기록 보기">
+    <i class="ypl-seg__thumb"></i>
+    <button role="tab" aria-selected="true" class="ypl-press">트레이너</button><button role="tab" aria-selected="false" class="ypl-press">대회</button><button role="tab" aria-selected="false" class="ypl-press">포켓몬</button><button role="tab" aria-selected="false" class="ypl-press">랭킹</button>
+  </div>
+</div>
+<script>
+const seg = document.getElementById('seg');
+seg.querySelectorAll('button').forEach((b, i) => b.onclick = () => { seg.style.setProperty('--i', i); seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', String(x === b))); });
+</script>

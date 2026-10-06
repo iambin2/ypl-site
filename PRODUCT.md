@@ -45,6 +45,10 @@ Not a generic club homepage: every record on the site is derived from real, oper
 - Channel roles: this site is the league's first and official source of notices and records; Discord is where battles are actually played and streamed. Copy must not call Discord the first place for news.
 - Unofficial fan site: Pokémon trademarks belong to Nintendo · Creatures · GAME FREAK; the footer disclaimer stays.
 - Standing direction preference (2026-09-11): the category standard — a professional league site (esports-league canon: schedule, results, standings, champions) played straight, held to the craft bar of Apple / Nike brand sites (restraint, generous space, confident type, precise motion). No novelty concept worlds.
+- Full visual reset of 2026-10-06 (in progress), neutral palette kept: the category standard as the base, with the tournament-sheet poster numeral for hierarchy (one poster-size figure per screen). The first viewport leads with the member's next action for the current event phase. The rulebook is `docs/design-system/` (also the private "YPL 디자인 법전" artifact); it outranks `DESIGN.md` until `DESIGN.md` is rewritten from the finished build.
+- Type (2026-10-06): Wanted Sans for all Korean and UI text at weights 400, 600 and 800; Sofia Sans Extra Condensed 900 for compared figures only.
+- Shape (2026-10-06): every corner is continuous curvature (base radius × 1.6 drawn with `corner-shape: superellipse(1.78)`, plain radius where unsupported); capsules keep round ends; nested radii are concentric (inner = outer − padding).
+- Lines (2026-10-06): the user finds hard straight rules sharp and aggressive. Sections are separated by space, never by heavy rules or outlines; lists sit in inset groups with 0.5px separators that never touch a curved edge.
 
 ## Evidence on Hand
 
