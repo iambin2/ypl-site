@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Empty, Icon, ListSearch, Modal, Pager, Reveal, siteAlert, siteConfirm, sitePrompt } from "../components/index.js";
+import { Empty, Icon, ListSearch, Modal, PageHead, Pager, siteAlert, siteConfirm, sitePrompt } from "../components/index.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
@@ -82,16 +82,12 @@ export default function BoardPage({ data, admin, save, flash }){
   const delComment=async(p,c)=>{ if(admin){ if(!(await siteConfirm({title:"댓글 삭제",body:"이 댓글을 삭제할까요? 삭제한 댓글은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true})))return; } else { const pin=await sitePrompt({title:"댓글 삭제",body:"본인 댓글을 삭제하려면 작성할 때 정한 비밀번호를 입력하세요.",label:"삭제 비밀번호",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"}); if(pin===null)return; if(!c.pin||pin!==c.pin){siteAlert("비밀번호가 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.");return;} }
     save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
   return (<section className="sec">
-    <Reveal className="sec-head">
-      <div>
-        <h2>게시판</h2>
-        <p className="sub">로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.</p>
-      </div>
+    <PageHead eyebrow="Board" plain="자유" silver="게시판" desc="로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.">
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
-        <button className="y-btn y-btn-primary" onClick={()=>setCompose(true)}><Icon n="plus" size={13}/>글쓰기</button>
+        <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setCompose(true)}><Icon n="plus" size={13}/>글쓰기</button>
       </div>
-    </Reveal>
+    </PageHead>
     <div className="bd-list">
       {list.length===0&&(kw
         ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>

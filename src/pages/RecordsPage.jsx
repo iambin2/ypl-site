@@ -421,7 +421,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     );
     return (
       <li className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
-        <div className="r2-date num">{r.date}</div>
+        <div className="r2-date">{r.date}</div>
         <div className="r2-main">
           {toggleable && !r.team ? (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>

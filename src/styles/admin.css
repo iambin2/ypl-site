@@ -1,13 +1,9 @@
 /* =============================================================================
    YPL — admin editors: champion, form builder, standings, rounds
-   Same surfaces as the public site: bg-2 groups, fill controls, no outlines.
+   AdminStrip card: an editor's groups sit on glass, the inputs inside on fill-2.
    Small round tool buttons are 32px circles (36px buttons are the floor for
    text; icon tools inside a dense editor row may sit at 32).
    ========================================================================== */
-
-/* inputs sitting on a grey surface take the page ground so they stay visible */
-:is(.ed-round, .card.form-card, .fb-wrap) :is(input:not([type="checkbox"]):not([type="radio"]), textarea, .dd-btn) { background: var(--bg); }
-[data-theme="dark"] :is(.ed-round, .card.form-card, .fb-wrap) :is(input:not([type="checkbox"]):not([type="radio"]), textarea, .dd-btn) { background: var(--bg-3); }
 
 /* one round tool button for every editor */
 .fb-ic, .ed-del, .ed-mv, .ed-x, .ch-clear {
@@ -28,54 +24,50 @@
 .ch-img {
   --r: var(--radius-lg);
   aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; cursor: pointer;
-  background: var(--bg-2);
+  background: radial-gradient(ellipse 70% 22% at 50% 82%, var(--pod-floor), transparent 72%), var(--pod-face);
   transition: background-color var(--duration-fade) var(--ease-fade);
 }
-@media (hover: hover) { .ch-img:hover { background: var(--bg-3); } }
+@media (hover: hover) { .ch-img:hover { background-color: var(--fill); } }
 .ch-img img { width: 82%; height: 82%; object-fit: contain; }
-.ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 600; color: var(--text-3); }
-.ch-clear { position: absolute; top: var(--space-2); right: var(--space-2); background: var(--ink); color: var(--on-ink); }
-@media (hover: hover) { .ch-clear:hover { background: var(--text-2); } }
+.ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 700; color: var(--text-3); }
+.ch-clear { position: absolute; top: var(--space-2); right: var(--space-2); background: var(--primary); color: var(--on-primary); }
+@media (hover: hover) { .ch-clear:hover { filter: brightness(1.06); } }
 .ch-name { min-height: var(--target); padding: var(--space-2) var(--space-3); font-size: 15px; }
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--space-3); }
 
 /* ---------- form builder ---------- */
-.fb-wrap { --r: var(--radius-xl); margin: var(--space-5) 0; padding: var(--space-4); background: var(--bg-2); }
-.fb-wrap > .bk-check { font-weight: 600; }
-/* a question is one surface step above its ground; concentric with .fb-wrap */
-.fb-q { --r: var(--radius-lg); margin-bottom: var(--space-3); padding: var(--space-4); background: var(--bg-2); }
-.fb-wrap .fb-q { --r: calc(var(--radius-xl) - var(--space-3)); background: var(--bg); }
-[data-theme="dark"] .fb-wrap .fb-q { background: var(--bg-3); }
-.fb-wrap .fb-q :is(input:not([type="checkbox"]), .dd-btn) { background: var(--fill-2); }
-[data-theme="dark"] .fb-wrap .fb-q :is(input:not([type="checkbox"]), .dd-btn) { background: var(--bg-2); }
+.fb-wrap { --r: var(--radius-xl); margin: var(--space-5) 0; padding: var(--space-4); background: var(--glass); box-shadow: var(--shadow-glass); }
+.fb-wrap > .bk-check { font-weight: 700; }
+/* a question is a fill-2 cell inside the glass; concentric 32 - 16 = 16 */
+.fb-q { --r: calc(var(--radius-xl) - var(--space-4)); margin-bottom: var(--space-3); padding: var(--space-4); background: var(--fill-2); }
 .fb-q-top { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
-.fb-q-top strong { font-size: 15px; font-weight: 600; }
+.fb-q-top strong { font-size: 15px; font-weight: 700; }
 .fb-q-top .dd { width: 220px; }
 .fb-qn {
   width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%;
-  background: var(--fill); color: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 900; line-height: 1;
+  background: var(--fill); color: var(--ink); font-family: var(--font-latin); font-size: 11px; font-weight: 700; line-height: 1;
 }
 .fb-q-move { display: flex; gap: var(--space-1); margin-left: auto; }
-.fb-label { font-weight: 600; }
+.fb-label { font-weight: 700; }
 .fb-opts { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3); }
 .fb-opt { display: flex; align-items: center; gap: var(--space-2); }
 .fb-opt input { min-height: var(--target); padding: var(--space-2) var(--space-3); }
 /* option glyph: the shape of the answer (circle, square, list), drawn in fill */
 .fb-dot {
   width: 18px; height: 18px; flex: none; display: grid; place-items: center;
-  border-radius: 50%; background: var(--fill); font-size: 12px; font-weight: 600; color: var(--text-3);
+  border-radius: 50%; background: var(--fill); font-size: 12px; font-weight: 700; color: var(--text-3);
 }
-.fb-dot.multi { border-radius: var(--radius-xs); }
+.fb-dot.multi { border-radius: 30%; }
 .fb-dot.dropdown { background: none; width: 20px; }
 .fb-addopt {
   align-self: flex-start; height: 36px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent;
-  font-size: 15px; font-weight: 600; color: var(--text-2);
+  font-size: 15px; font-weight: 700; color: var(--text-2);
   transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
 }
 .fb-addq {
   --r: var(--radius-lg);
-  width: 100%; min-height: 52px; margin-top: var(--space-1); border: 0; background: var(--fill-2);
-  font-size: 15px; font-weight: 600; color: var(--text-2);
+  width: 100%; min-height: var(--row-min); margin-top: var(--space-1); border: 0; background: var(--fill-2);
+  font-size: 15px; font-weight: 700; color: var(--text-2);
   transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
 }
 @media (hover: hover) {
@@ -94,19 +86,19 @@
 }
 .ed-grid input { min-height: var(--target); padding: var(--space-2) var(--space-3); text-align: center; }
 .ed-grid input:first-child { text-align: left; }
-.ed-head { margin-bottom: var(--space-2); font-size: 13px; font-weight: 600; color: var(--text-3); text-align: center; }
+.ed-head { margin-bottom: var(--space-2); font-size: 12px; font-weight: 700; color: var(--text-3); text-align: center; }
 .ed-head span:first-child { text-align: left; }
 .ed-scroll { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; margin: 0 calc(var(--space-1) * -1); padding: 0 var(--space-1); }
 .ed-x { width: 24px; height: 24px; margin-left: var(--space-2); }
 
 /* ---------- rounds editor ---------- */
-.ed-round { --r: var(--radius-lg); display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-3); padding: var(--space-4); background: var(--bg-2); }
+.ed-round { --r: var(--radius-lg); display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-3); padding: var(--space-4); background: var(--glass); box-shadow: var(--shadow-glass); }
 .ed-round input { min-height: var(--target); padding: var(--space-2) var(--space-3); }
 .ed-rtop { display: flex; align-items: center; gap: var(--space-2); }
 .ed-w { flex: 1 1 130px; min-width: 0; }
 .ed-r2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
-.ed-team { --r: calc(var(--radius-lg) - var(--space-2)); display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); background: var(--fill-2); }
-.ed-rk { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 600; color: var(--text-2); }
+.ed-team { --r: var(--radius-sm); display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); background: var(--fill-2); }
+.ed-rk { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 700; color: var(--text-2); }
 .ed-rk.gold { color: var(--ink); }
 .ed-auto { min-height: 36px; }
 @media (max-width: 560px) {

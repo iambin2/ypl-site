@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Icon, Modal, Reveal, STAGGER, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Icon, Modal, PageHead, Reveal, STAGGER, siteAlert, siteConfirm } from "../components/index.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
@@ -1134,16 +1134,12 @@ export default function TeamBuilderPage() {
 
   return (
     <section className="sec tb-page">
-      <Reveal className="sec-head">
-        <div>
-          <h2>팀 빌더</h2>
-          <p className="sub">포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
-        </div>
+      <PageHead eyebrow="Team Builder" plain="팀" silver="빌더" desc="포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.">
         <div className="tb-hero-actions">
           <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀 <span className="tb-count-badge">{savedTeams.length}</span></button>
           <button className="btn tb-main-btn tb-save-btn" disabled={!storageAvailable} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
         </div>
-      </Reveal>
+      </PageHead>
 
       <Reveal className="tb-rule-card" delay={STAGGER.row * 1}>
         <div className="tb-rule-grid">
@@ -1250,7 +1246,7 @@ export default function TeamBuilderPage() {
               <div>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
               </div>
-              <div className="tb-team-meta"><strong className="num">{team.length}</strong><span className="unit">/ {regulation.maxTeamSize || 6}</span></div>
+              <div className="tb-team-meta"><strong className="fig">{team.length}</strong><span className="unit">/ {regulation.maxTeamSize || 6}</span></div>
             </div>
             <div className="tb-team-slots">
               {Array.from({ length: regulation.maxTeamSize || 6 }, (_, index) => {
@@ -1387,7 +1383,7 @@ export default function TeamBuilderPage() {
         <p className="tb-rule-confirm-copy">계속 변경하시겠습니까?</p>
         <div className="modal-actions">
           <button type="button" className="btn btn-ghost" onClick={() => setPendingRuleChange(null)}>취소</button>
-          <button type="button" className="btn tb-main-btn" onClick={() => applyRuleChange(pendingRuleChange)}>확인</button>
+          <button type="button" className="btn tb-main-btn" onClick={() => applyRuleChange(pendingRuleChange)}>규칙 변경</button>
         </div>
       </Modal>}
 

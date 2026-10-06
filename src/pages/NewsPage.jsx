@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Reveal, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Reveal, siteAlert, siteConfirm } from "../components/index.js";
 import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 function fmtDT(iso){ try{ const d=new Date(iso); const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }catch{ return ""; } }
@@ -71,16 +71,12 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   return (<section className="sec">
-    <Reveal className="sec-head">
-      <div>
-        <h2>공지</h2>
-        <p className="sub">대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.</p>
-      </div>
+    <PageHead eyebrow="News" plain="리그" silver="공지" desc="대회 일정과 리그 운영 소식을 안내합니다. 제목을 누르면 내용이 펼쳐집니다.">
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
-        {admin&&<button className="y-btn y-btn-primary" onClick={()=>setModal({type:"ann"})}><Icon n="plus" size={13}/>공지 작성</button>}
+        {admin&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setModal({type:"ann"})}><Icon n="plus" size={13}/>공지 작성</button>}
       </div>
-    </Reveal>
+    </PageHead>
     <Reveal className="nb-list">
       {list.length===0&&(kw
         ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>

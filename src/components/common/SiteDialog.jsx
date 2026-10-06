@@ -67,7 +67,7 @@ export function SiteDialogHost() {
           onClick={accept}
           autoFocus={current.kind !== "prompt"}
         >
-          {current.kind === "alert" ? "확인" : current.confirmLabel}
+          {current.kind === "alert" ? "닫기" : current.confirmLabel}
         </button>
       </div>
     </Modal>

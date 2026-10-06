@@ -6,7 +6,7 @@
   position: fixed; top: 10px; left: 10px; z-index: 500;
   clip-path: inset(50%); opacity: 0;
   padding: 10px 16px; border-radius: var(--radius-pill);
-  background: var(--ink); color: var(--on-ink); font-size: 15px; font-weight: 600;
+  background: var(--primary); color: var(--on-primary); font-size: 15px; font-weight: 700;
   transform: translateY(-160%); transition: transform var(--duration-snappy) var(--ease-snappy);
 }
 .skip-link:focus { transform: none; clip-path: none; opacity: 1; }
@@ -111,17 +111,16 @@
 }
 
 /* ---------- admin strip ----------
-   A quiet 36px band under the nav: the mode is always visible but never
-   competes with the screen's one inverted lead tile. */
+   AdminStrip card: a quiet 36px bg-sunk band under the nav, an ink dot, no pulse. */
 .admin-bar { background: var(--bg-sunk); color: var(--ink); }
 .admin-bar-in {
   max-width: calc(var(--container) + var(--margin) * 2); min-height: 36px; margin: 0 auto; padding: var(--space-2) var(--margin);
   display: flex; align-items: center; gap: var(--space-2); font-size: 13px; line-height: 1.2;
 }
 .admin-bar-in i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); flex: none; }
-.admin-bar-in b { font-weight: 600; }
+.admin-bar-in b { font-weight: 700; }
 .admin-bar-in span { color: var(--text-3); }
-@media (max-width: 560px) { .admin-bar-in span { display: none; } }
+@media (max-width: 639px) { .admin-bar-in span { display: none; } }
 
 /* ---------- footer ---------- */
 .site-foot { flex: none; margin-top: auto; background: var(--bg-sunk); color: var(--text-3); font-size: 13px; }

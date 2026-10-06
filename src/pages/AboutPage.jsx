@@ -1,5 +1,5 @@
 import React from "react";
-import { Reveal, Icon, STAGGER } from "../components/index.js";
+import { Reveal, Icon, PageHead, STAGGER, SectionHead } from "../components/index.js";
 
 const FLOW = [
   { t: "매월 파이컵", d: "정규 대회에 출전합니다." },
@@ -30,15 +30,10 @@ const LEAGUES = [
 /* ============================== ABOUT ============================== */
 export default function AboutPage() {
   return (<section className="sec about">
-    <Reveal className="sec-head">
-      <div>
-        <h2>우리들의 이야기</h2>
-        <p className="sub">연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점, 줄여서 포센연에서 시작한 배틀 리그의 발자취입니다.</p>
-      </div>
-    </Reveal>
+    <PageHead eyebrow="About" plain="우리들의" silver="이야기" desc="연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점, 줄여서 포센연에서 시작한 배틀 리그의 발자취입니다." />
 
     <section className="ab-block">
-      <Reveal tag="h3" className="ab-h">시즌은 이렇게 흘러갑니다.</Reveal>
+      <SectionHead eyebrow="Season" plain="시즌의" silver="흐름" />
       <ol className="ab-flow">
         {FLOW.map((s, i) => (
           <Reveal tag="li" key={s.t} delay={i * STAGGER.tile} className={i === FLOW.length - 1 ? "last" : ""}>
@@ -51,7 +46,7 @@ export default function AboutPage() {
     </section>
 
     <section className="ab-block ab-split">
-      <Reveal tag="h3" className="ab-h">YPL이 기록하는 것</Reveal>
+      <SectionHead eyebrow="Records" plain="YPL의" silver="기록" />
       <div className="ab-records">
         {RECORDS.map((r, i) => (
           <Reveal key={r.k} delay={i * STAGGER.tile} className="ab-rec">
@@ -66,7 +61,7 @@ export default function AboutPage() {
     </section>
 
     <section className="ab-block">
-      <Reveal tag="h3" className="ab-h">연혁</Reveal>
+      <SectionHead eyebrow="History" plain="리그" silver="연혁" />
       <ol className="ab-timeline">
         {TIMELINE.map((t, i) => (
           <Reveal tag="li" key={t.date} delay={i * STAGGER.tile}>
@@ -78,7 +73,7 @@ export default function AboutPage() {
     </section>
 
     <section className="ab-block">
-      <Reveal tag="h3" className="ab-h">대회</Reveal>
+      <SectionHead eyebrow="Competitions" plain="세 가지" silver="대회" />
       <div className="ab-comps">
         {COMPS.map((c, i) => (
           <Reveal key={c.name} delay={i * STAGGER.tile} className={"ab-comp" + (c.major ? " major" : "")}>
@@ -90,7 +85,7 @@ export default function AboutPage() {
     </section>
 
     <section className="ab-block">
-      <Reveal tag="h3" className="ab-h">정규 리그</Reveal>
+      <SectionHead eyebrow="Leagues" plain="정규" silver="리그" />
       <Reveal tag="p" className="ab-lead">2025년 6월부터 YPL은 두 개의 정규 리그로 운영됩니다.</Reveal>
       <div className="ab-leagues">
         {LEAGUES.map((lg, i) => (

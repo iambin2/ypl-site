@@ -129,18 +129,7 @@
   --glass-lit: linear-gradient(180deg, var(--glass-hover), var(--glass-bottom));
   --primary: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
 
-  /* ---------- legacy aliases ----------
-     Pages not yet rebuilt (phases 2-4) still read the September names.
-     They point at silver values so those pages follow the theme; delete
-     each alias once nothing reads it. */
-  --font-num: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
-  --bg-2: #151517;
-  --bg-3: #232326;
-  --on-ink: var(--on-primary);
-  --lead: var(--bg-2);
-  --on-lead: var(--ink);
-  --on-lead-2: var(--text-2);
-  --radius-xs: 6px;
+  /* ---------- responsive layout values: phone, then 640 / 1024 below ---------- */
   --margin: var(--margin-phone);
   --grid-gap: var(--gutter-phone);
   --section-gap: var(--space-9);
@@ -190,8 +179,6 @@
   --shadow-thumb: 0 2px 8px rgba(0, 0, 0, .12);
   --shadow-pop: 0 1px 2px rgba(0, 0, 0, .06), 0 12px 32px -6px rgba(0, 0, 0, .16);
   --shadow-float: 0 1px 2px rgba(0, 0, 0, .05), 0 24px 60px -12px rgba(0, 0, 0, .22);
-  --bg-2: #f7f7f9;
-  --bg-3: #ffffff;
 }
 
 /* ---------- base ---------- */
@@ -219,7 +206,7 @@ body {
 @media (min-width: 1024px) { body { font-size: 17px; } }
 
 h1, h2, h3, h4, h5, p { margin: 0; }
-h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; text-wrap: balance; }
+h1, h2, h3, h4 { font-weight: 900; letter-spacing: -0.03em; line-height: 1.2; text-wrap: balance; }
 p { text-wrap: pretty; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
@@ -227,7 +214,7 @@ button { font: inherit; color: inherit; letter-spacing: inherit; -webkit-tap-hig
 button:not(:disabled) { cursor: pointer; }
 input, textarea, select { font: inherit; letter-spacing: inherit; color: inherit; }
 table { border-collapse: collapse; }
-b, strong { font-weight: 600; }
+b, strong { font-weight: 700; }
 small { font-size: inherit; }
 i, em { font-style: normal; }
 [hidden] { display: none !important; }
@@ -254,7 +241,6 @@ i, em { font-style: normal; }
 
 .tnum { font-variant-numeric: tabular-nums; }
 .ic { flex: none; display: inline-block; vertical-align: middle; }
-.disp { font-family: var(--font-num); }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* ---------- curvature (04) ----------
@@ -318,8 +304,7 @@ i, em { font-style: normal; }
 .live-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--live); animation: y-live var(--duration-pulse) ease-in-out infinite; }
 @keyframes y-live { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 50%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
 
-/* ---------- numerals (02, 03) ---------- */
-.num { font-family: var(--font-num); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0; }
+/* ---------- unit after a numeral ---------- */
 .unit { font-family: var(--font-sans); font-size: 12px; font-weight: 700; line-height: 1.2; letter-spacing: 0; color: var(--text-3); margin-left: var(--space-1); }
 
 /* ---------- press (09): every control and tile ---------- */
