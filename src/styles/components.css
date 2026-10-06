@@ -9,34 +9,37 @@
    these; the legacy rules further down go away as phases 2–4 land.
    ========================================================================== */
 
-/* ---------- Button: one capsule, five kinds, three sizes ---------- */
+/* ---------- Button: one capsule. primary, glass, quiet, danger; 50 (desktop 54) and 40 ----------
+   --lg, --tonal, --on-lead and --lead-tonal are September names kept for pages
+   not yet rebuilt; they draw as the rulebook kinds. */
 .ypl-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  height: var(--target); padding: 0 var(--space-5); border: 0; border-radius: var(--radius-pill);
-  font-size: 15px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap;
+  height: 50px; padding: 0 22px; border: 0; border-radius: var(--radius-pill);
+  font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap;
 }
-.ypl-btn--lg { height: 52px; padding: 0 var(--space-6); font-size: 17px; }
-.ypl-btn--sm { height: 36px; padding: 0 var(--space-4); }
-.ypl-btn--primary { background: var(--ink); color: var(--on-ink); }
+.ypl-btn--sm { height: 40px; padding: 0 var(--space-4); font-size: 13px; }
+.ypl-btn--primary, .ypl-btn--on-lead { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-primary); }
+.ypl-btn--glass, .ypl-btn--lead-tonal { background: var(--glass); color: var(--ink); box-shadow: var(--shadow-glass); }
 .ypl-btn--tonal { background: var(--fill); color: var(--ink); }
-.ypl-btn--on-lead { background: var(--on-lead); color: var(--lead); }
-.ypl-btn--lead-tonal { background: var(--lead-fill); color: var(--on-lead); }
 .ypl-btn:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 @media (hover: hover) {
-  .ypl-btn--primary:hover:not(:disabled) { background: var(--text-2); }
-  .ypl-btn--tonal:hover:not(:disabled) { background: var(--bg-3); }
-  .ypl-btn--on-lead:hover:not(:disabled) { background: var(--on-lead-2); }
-  .ypl-btn--lead-tonal:hover:not(:disabled) { background: var(--lead-2); }
+  :is(.ypl-btn--primary, .ypl-btn--on-lead):hover:not(:disabled) { filter: brightness(1.06); }
+  :is(.ypl-btn--glass, .ypl-btn--lead-tonal):hover:not(:disabled) { background: var(--glass-lit); }
+  .ypl-btn--tonal:hover:not(:disabled) { background: var(--glass-hover); }
+}
+@media (min-width: 1024px) {
+  .ypl-btn { height: 54px; padding: 0 26px; font-size: 16px; }
+  .ypl-btn--sm { height: 40px; padding: 0 var(--space-4); font-size: 13px; }
 }
 
-/* ---------- Chip: 28px capsule; the ping is the site's one infinite loop ---------- */
+/* ---------- Chip: 28px fill capsule; the live dot rides in front ---------- */
 .ypl-chip {
-  display: inline-flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 var(--space-3);
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--space-3);
   border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
-  font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap;
+  font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap;
 }
-.ypl-chip--lead { background: var(--lead-fill); color: var(--on-lead); }
-.ypl-chip--ink { background: var(--ink); color: var(--on-ink); }
+.ypl-chip--lead { background: var(--fill); color: var(--ink); }
+.ypl-chip--ink { background: var(--primary); color: var(--on-primary); }
 .ypl-ping { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: y-ping 2s var(--ease-spring) infinite; }
 
@@ -61,42 +64,56 @@
 @media (hover: hover) { .ypl-seg button:hover { color: var(--ink); } }
 .ypl-seg button[aria-selected="true"] { color: var(--ink); }
 
-/* ---------- Section head: title-2, then a quiet "more" link ---------- */
-.ypl-sech { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
-.ypl-sech h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.03em; }
-@media (min-width: 1024px) { .ypl-sech h2 { font-size: 30px; } }
+/* ---------- Section head: latin eyebrow over a two-tone title, a quiet link on the right ----------
+   Starts 4px inside the cards so its words share the cards' left axis (05). */
+.ypl-sech { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); padding: 0 var(--space-1); }
+.ypl-sech > div { display: grid; gap: var(--space-2); }
+.ypl-sech h2 { font-size: 28px; font-weight: 900; line-height: 1.15; letter-spacing: -0.03em; }
 .ypl-more {
-  flex: none; display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--target);
-  padding: 0; border: 0; background: none; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-3);
-  transition: color var(--duration-fade) var(--ease-fade);
+  flex: none; display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: 0 0 5px; border: 0; background: none; font-size: 13px; font-weight: 700; letter-spacing: 0; color: var(--text-2);
+  white-space: nowrap; transition: color var(--duration-fade) var(--ease-fade);
 }
 .ypl-more .ic { transition: transform var(--duration-fade) var(--ease-fade); }
 @media (hover: hover) {
   .ypl-more:hover { color: var(--ink); }
   .ypl-more:hover .ic { transform: translateX(2px); }
 }
-
-/* ---------- Inset group: one bg-2 surface, 0.5px inset separators ---------- */
-.ypl-group { --r: var(--radius-lg); list-style: none; margin: 0; padding: 0; overflow: hidden; background: var(--bg-2); }
-.ypl-row {
-  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
-  min-height: var(--row-min); padding: var(--space-2) var(--space-4); border: 0; background-color: transparent; color: inherit; text-align: left;
+@media (min-width: 1024px) {
+  .ypl-sech { margin-bottom: 22px; }
+  .ypl-sech > div { gap: 10px; }
+  .ypl-sech h2 { font-size: 40px; letter-spacing: -0.035em; }
+  .ypl-more { font-size: 14px; padding-bottom: var(--space-2); }
 }
-/* the separator starts where the row's words start and never touches the curved edge */
+
+/* ---------- GlassList: one glass surface, rows with inset hairlines ---------- */
+.ypl-group { --r: var(--radius-lg); list-style: none; margin: 0; padding: 6px 0; overflow: hidden; background: var(--glass); box-shadow: var(--shadow-glass); }
+.ypl-row {
+  --pad-x: 18px;
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  min-height: var(--row-min); padding: 14px var(--pad-x); border: 0; background-color: transparent; color: inherit; text-align: left;
+}
+/* the hairline stops 18px (desktop 24px) short of each curved edge, never above the first row */
 li + li > .ypl-row, .ypl-row + .ypl-row {
   background-image: linear-gradient(var(--line), var(--line)); background-repeat: no-repeat;
-  background-position: calc(var(--space-4) + var(--inset, 0px)) 0;
-  background-size: calc(100% - var(--space-4) * 2 - var(--inset, 0px)) var(--hair);
+  background-position: calc(var(--pad-x) + var(--inset, 0px)) 0;
+  background-size: calc(100% - var(--pad-x) * 2 - var(--inset, 0px)) var(--hair);
 }
-.ypl-row__title { display: block; font-size: 17px; font-weight: 600; line-height: 1.4; letter-spacing: -0.015em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ypl-row__meta { display: block; font-size: 13px; line-height: 1.45; letter-spacing: 0; color: var(--text-3); }
-.ypl-row__end { font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (hover: hover) { button.ypl-row:hover { background-color: var(--fill-2); } }
+.ypl-row__title { display: block; font-size: 15px; font-weight: 700; line-height: 1.4; letter-spacing: -0.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ypl-row__meta { display: block; font-size: 12px; line-height: 1.45; letter-spacing: 0; color: var(--text-3); }
+.ypl-row__end { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (hover: hover) { :is(button, a).ypl-row:hover { background-color: var(--fill-2); } }
+@media (min-width: 1024px) {
+  .ypl-group { padding: var(--space-2) 0; }
+  .ypl-row { --pad-x: 24px; gap: var(--space-4); padding-block: 18px; }
+  .ypl-row__title { font-size: 16px; }
+  .ypl-row__meta, .ypl-row__end { font-size: 13px; }
+}
 
-/* ---------- Empty: bg-2 tile, left axis ---------- */
-.ypl-empty { --r: var(--radius-lg); display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-6) var(--space-5); background: var(--bg-2); }
-.ypl-empty b { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
-.ypl-empty p { font-size: 15px; line-height: 1.5; color: var(--text-3); }
+/* ---------- Empty: inside the glass where the content would sit, left axis ---------- */
+.ypl-empty { --r: var(--radius-lg); display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-6) var(--space-5); background: var(--glass); box-shadow: var(--shadow-glass); }
+.ypl-empty b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.ypl-empty p { font-size: 14px; line-height: 1.5; color: var(--text-2); }
 
 /* ---------- page frame: display title, one-line callout, then space ---------- */
 .sec { padding: var(--space-6) 0 var(--space-11); }
@@ -166,7 +183,7 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
 :is(.btn, .y-btn, .ypl-btn, .modal-x, .hofm-x, .fb-ic, .fb-addopt, .ed-del, .ed-mv, .ed-x, .ch-clear, .bk-count button,
   .ls-clear, .tb-clear, .bk-seg button, .ed-seg button, .bk-bout-win, .pr-refresh, .fr-del, .bd-del, .tb-slot-remove,
   .ann-link, .ann-apply, .ann-resp):active:not(:disabled) { scale: .97; transition: scale var(--duration-press) var(--ease-fade); }
-:is(.hm-event, .hm-result, .bk-card, .tb-slot:not(.empty), .fb-addq, .tb-pokemon-row, .tb-saved-main):active:not(:disabled) {
+:is(.hm-result, .bk-card, .tb-slot:not(.empty), .fb-addq, .tb-pokemon-row, .tb-saved-main):active:not(:disabled) {
   scale: .985; transition: scale var(--duration-press) var(--ease-fade);
 }
 :is(.btn, .y-btn, .ypl-btn, .pg-btn, .fb-ic, .ed-mv, .ed-del, .dd-btn, .dd-opt, .tb-pokemon-row):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }

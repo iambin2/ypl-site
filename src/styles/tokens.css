@@ -1,46 +1,58 @@
 /* =============================================================================
-   YPL — foundation
-   Tokens from docs/design-system/tokens.json (the rulebook), both themes on
-   <html data-theme>, base elements, curvature, springs.
-   Names match the rulebook one to one; nothing outside this list exists.
+   YPL 실버 — foundation
+   Tokens from docs/design-system/tokens.json (the rulebook), dark first:
+   :root holds the dark values, <html data-theme="light"> swaps them.
+   Names match the rulebook one to one.
    ========================================================================== */
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* ---------- type (02) ---------- */
   --font-sans: "Wanted Sans Variable", "Wanted Sans", -apple-system, "Apple SD Gothic Neo",
     "Malgun Gothic", system-ui, sans-serif;
-  --font-num: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
+  --font-latin: "Unbounded", "Wanted Sans Variable", system-ui, sans-serif;
 
-  /* ---------- color (01) ---------- */
-  --bg: #ffffff;
-  --bg-2: #f5f5f7;
-  --bg-3: #ebebef;
-  --surface: #ffffff;
-  --lead: #1d1d1f;
-  --lead-2: #2c2c2e;
-  --ink: #1d1d1f;
-  --text-2: #424245;
-  --text-3: #6e6e73;
-  --on-ink: #ffffff;
-  --on-lead: #f5f5f7;
-  --on-lead-2: #a1a1a6;
-  --line: rgba(0, 0, 0, .12);
-  --lead-line: rgba(255, 255, 255, .12);
-  --fill: rgba(118, 118, 128, .12);
-  --fill-2: rgba(118, 118, 128, .07);
-  --lead-fill: rgba(255, 255, 255, .14);
-  --scrim: rgba(0, 0, 0, .38);
+  /* ---------- color (01), dark ---------- */
+  --bg: #0a0a0b;
+  --bg-sunk: #050506;
+  --page-light: rgba(210, 210, 220, .13);
+  --grain: rgba(255, 255, 255, .016);
+  --glass-top: rgba(255, 255, 255, .075);
+  --glass-bottom: rgba(255, 255, 255, .022);
+  --glass-hover: rgba(255, 255, 255, .11);
+  --surface: #1c1c1e;
+  --ink: #f2f2f4;
+  --text-2: #a1a1a6;
+  --text-3: #8e8e93;
+  --silver-1: #ffffff;
+  --silver-2: #dcdce1;
+  --silver-3: #a3a3ac;
+  --silver-4: #efeff2;
+  --silver-5: #b2b2ba;
+  --silver-glint: #ffffff;
+  --follow-light: rgba(255, 255, 255, .08);
+  --primary-top: #ffffff;
+  --primary-bottom: #e2e2e6;
+  --on-primary: #0a0a0b;
+  --fill: rgba(255, 255, 255, .08);
+  --fill-2: rgba(255, 255, 255, .05);
+  --pod-face: rgba(255, 255, 255, .035);
+  --pod-floor: rgba(255, 255, 255, .14);
+  --line: rgba(255, 255, 255, .07);
+  --scrim: rgba(0, 0, 0, .6);
   --focus: var(--ink);
-  --ok: #1b7f45;
-  --warn: #a45a00;
-  --danger: #d1242f;
+  --live: #ff453a;
+  --ok: #3dd17a;
+  --warn: #ffb340;
+  --danger: #ff6961;
 
-  /* ---------- depth (07) ---------- */
-  --shadow-pop: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px -6px rgba(0, 0, 0, .16);
-  --shadow-float: 0 1px 2px rgba(0, 0, 0, .05), 0 18px 50px -12px rgba(0, 0, 0, .22);
-  --shadow-thumb: 0 1px 2px rgba(0, 0, 0, .07), 0 3px 10px -3px rgba(0, 0, 0, .14);
+  /* ---------- depth (07), dark ---------- */
+  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, .13), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 24px 48px rgba(0, 0, 0, .4);
+  --shadow-primary: 0 10px 28px rgba(0, 0, 0, .35);
+  --shadow-thumb: 0 4px 12px rgba(0, 0, 0, .4);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, .08), 0 12px 32px rgba(0, 0, 0, .55);
+  --shadow-float: 0 0 0 1px rgba(255, 255, 255, .08), 0 24px 64px rgba(0, 0, 0, .6);
 
   /* ---------- space (05) ---------- */
   --space-1: 4px;
@@ -52,43 +64,45 @@
   --space-7: 32px;
   --space-8: 40px;
   --space-9: 56px;
-  --space-10: 80px;
-  --space-11: 120px;
+  --space-10: 72px;
+  --space-11: 96px;
 
   /* ---------- curvature (04): base radii, drawn x1.6 by .sq ---------- */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
   --radius-2xl: 38px;
   --radius-pill: 999px;
 
-  /* ---------- layout (05, 13): phone values, widened below ---------- */
+  /* ---------- layout (05, 13) ---------- */
   --container: 1200px;
-  --margin: 16px;
-  --grid-gap: 12px;
-  --section-gap: var(--space-8);
-  --nav-height: 56px;
+  --margin-phone: 16px;
+  --margin-desktop: 24px;
+  --gutter-phone: 12px;
+  --gutter-desktop: 16px;
+  --nav-height: 60px;
+  --nav-height-desktop: 72px;
   --target: 44px;
   --row-min: 56px;
   --match-card: 98px;
 
   /* ---------- lines, opacity, layers ---------- */
-  --stroke-hairline: .5px;
+  --stroke-hairline: 1px;
   --stroke-connector: 1.5px;
   --stroke-icon: 2px;
   --stroke-focus: 2px;
   --hair: 1px; /* hairline as drawn: 0.5px on 2x screens, 1px on 1x */
   --opacity-disabled: .38;
   --opacity-dim: .45;
+  --opacity-watermark: .3;
   --z-content: 0;
   --z-sticky: 10;
   --z-popover: 20;
   --z-modal: 30;
   --z-toast: 40;
 
-  /* ---------- motion (08): three springs, two curves ---------- */
+  /* ---------- motion (08): three springs, an exit, the cursor light ---------- */
   --duration-press: 90ms;
   --duration-fade: 150ms;
   --duration-snappy: 406ms;
@@ -96,6 +110,8 @@
   --duration-gentle: 741ms;
   --duration-exit: 396ms;
   --duration-exit-gentle: 519ms;
+  --duration-follow: 900ms;
+  --duration-pulse: 2400ms;
   /* damping 1: smooth, gentle and every exit */
   --ease-spring: linear(0, 0.0195, 0.0679, 0.1336, 0.2081, 0.2857, 0.3625, 0.4361, 0.5047, 0.5677, 0.6247, 0.6757, 0.7209, 0.7606, 0.7953, 0.8255, 0.8517, 0.8742, 0.8935, 0.91, 0.9241, 0.9361, 0.9463, 0.9549, 0.9622, 0.9683, 0.9735, 0.9779, 0.9815, 0.9846, 0.9872, 0.9893, 0.9911, 0.9926, 0.9939, 0.9949, 0.9958, 0.9965, 0.9971, 0.9976, 1);
   /* damping 0.72: snappy, overshoots 3.8% */
@@ -103,36 +119,82 @@
   --ease-fade: cubic-bezier(.2, .8, .2, 1);
   --stagger-row: 40ms;
   --stagger-tile: 60ms;
+
+  /* ---------- composed surfaces (01, 07) ---------- */
+  /* silver: a digital gradient that evokes silver, no metal band */
+  --silver: linear-gradient(115deg, var(--silver-1) 0%, var(--silver-2) 28%, var(--silver-3) 54%, var(--silver-4) 78%, var(--silver-5) 100%);
+  /* the cursor-light variant: a bright glint the pointer slides along (08) */
+  --silver-live: linear-gradient(115deg, var(--silver-3) 0%, var(--silver-2) 28%, var(--silver-glint) 44%, var(--silver-2) 52%, var(--silver-3) 70%, var(--silver-5) 100%);
+  --glass: linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  --glass-lit: linear-gradient(180deg, var(--glass-hover), var(--glass-bottom));
+  --primary: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
+
+  /* ---------- legacy aliases ----------
+     Pages not yet rebuilt (phases 2-4) still read the September names.
+     They point at silver values so those pages follow the theme; delete
+     each alias once nothing reads it. */
+  --font-num: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
+  --bg-2: #151517;
+  --bg-3: #232326;
+  --on-ink: var(--on-primary);
+  --lead: var(--bg-2);
+  --lead-2: var(--bg-3);
+  --on-lead: var(--ink);
+  --on-lead-2: var(--text-2);
+  --lead-line: var(--line);
+  --lead-fill: var(--fill);
+  --radius-xs: 6px;
+  --margin: var(--margin-phone);
+  --grid-gap: var(--gutter-phone);
+  --section-gap: var(--space-9);
 }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
-@media (min-width: 640px) { :root { --margin: 32px; --grid-gap: 16px; --section-gap: var(--space-9); } }
-@media (min-width: 1024px) { :root { --margin: 40px; --grid-gap: 24px; --section-gap: var(--space-10); } }
+@media (min-width: 640px) { :root { --margin: var(--margin-desktop); } }
+@media (min-width: 1024px) {
+  :root { --nav-height: var(--nav-height-desktop); --grid-gap: var(--gutter-desktop); --section-gap: var(--space-10); }
+}
 
-/* Dark theme */
-[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #000000;
-  --bg-2: #141416;
-  --bg-3: #202023;
-  --surface: #1c1c1e;
-  --lead: #1c1c1e;
-  --lead-2: #2c2c2e;
-  --ink: #f5f5f7;
-  --text-2: #d1d1d6;
-  --text-3: #a1a1a6;
-  --on-ink: #000000;
-  --line: rgba(255, 255, 255, .14);
-  --lead-fill: rgba(255, 255, 255, .12);
-  --fill: rgba(118, 118, 128, .24);
-  --fill-2: rgba(118, 118, 128, .14);
-  --scrim: rgba(0, 0, 0, .6);
-  --ok: #3dd17a;
-  --warn: #ffb340;
-  --danger: #ff6961;
-  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 30px -8px rgba(0, 0, 0, .6);
-  --shadow-float: 0 0 0 1px rgba(255, 255, 255, .08), 0 24px 60px -12px rgba(0, 0, 0, .7);
-  --shadow-thumb: 0 0 0 .5px rgba(255, 255, 255, .1);
-
+/* Light theme: same structure, only the values change */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ececef;
+  --bg-sunk: #e2e2e6;
+  --page-light: rgba(255, 255, 255, .95);
+  --grain: rgba(0, 0, 0, .018);
+  --glass-top: rgba(255, 255, 255, .96);
+  --glass-bottom: rgba(255, 255, 255, .72);
+  --glass-hover: #ffffff;
+  --surface: #ffffff;
+  --ink: #1c1c1e;
+  --text-2: #4a4a4f;
+  --text-3: #636368;
+  --silver-1: #1c1c1f;
+  --silver-2: #4a4a52;
+  --silver-3: #7a7a83;
+  --silver-4: #2c2c31;
+  --silver-5: #5f5f68;
+  --silver-glint: #9a9aa3;
+  --follow-light: rgba(255, 255, 255, .7);
+  --primary-top: #3a3a3f;
+  --primary-bottom: #1c1c1f;
+  --on-primary: #f7f7f9;
+  --fill: rgba(0, 0, 0, .06);
+  --fill-2: rgba(0, 0, 0, .04);
+  --pod-face: #f1f1f4;
+  --pod-floor: rgba(0, 0, 0, .1);
+  --line: rgba(0, 0, 0, .08);
+  --scrim: rgba(0, 0, 0, .38);
+  --live: #d70015;
+  --ok: #1b7f45;
+  --warn: #a45a00;
+  --danger: #d1242f;
+  --shadow-glass: inset 0 1px 0 #ffffff, 0 1px 2px rgba(0, 0, 0, .05), 0 16px 36px rgba(0, 0, 0, .07);
+  --shadow-primary: 0 10px 24px rgba(0, 0, 0, .16);
+  --shadow-thumb: 0 2px 8px rgba(0, 0, 0, .12);
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, .06), 0 12px 32px -6px rgba(0, 0, 0, .16);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, .05), 0 24px 60px -12px rgba(0, 0, 0, .22);
+  --bg-2: #f7f7f9;
+  --bg-3: #ffffff;
 }
 
 /* ---------- base ---------- */
@@ -148,8 +210,8 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.65;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -173,7 +235,23 @@ small { font-size: inherit; }
 i, em { font-style: normal; }
 [hidden] { display: none !important; }
 
-.ypl { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+.ypl { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* ---------- page: one light source and a faint grain (07) ---------- */
+.ypl {
+  background:
+    radial-gradient(ellipse 110% 420px at 50% 60px, var(--page-light), transparent 70%),
+    repeating-radial-gradient(circle at 30% 20%, var(--grain) 0 1px, transparent 1px 3px),
+    var(--bg);
+}
+@media (min-width: 1024px) {
+  .ypl {
+    background:
+      radial-gradient(ellipse 60% 640px at 72% 120px, var(--page-light), transparent 70%),
+      repeating-radial-gradient(circle at 30% 20%, var(--grain) 0 1px, transparent 1px 3px),
+      var(--bg);
+  }
+}
 .wrap { flex: 1 0 auto; width: 100%; }
 .page { width: 100%; max-width: calc(var(--container) + var(--margin) * 2); margin: 0 auto; padding: 0 var(--margin); outline: none; }
 
@@ -191,6 +269,57 @@ i, em { font-style: normal; }
   .sq { border-radius: calc(var(--r, var(--radius-lg)) * 1.6); corner-shape: superellipse(1.78); }
 }
 .cap { border-radius: var(--radius-pill); }
+
+/* ---------- silver (01): key word, big numerals, logo. 19px+ bold only ---------- */
+.silver { background: var(--silver); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* follows the cursor light where .follow is live; a still gradient everywhere else */
+.silver-live {
+  background: var(--silver-live) 0 0 / 260% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  background-position: calc(100% - var(--mx, 70%)) 0;
+}
+@media (forced-colors: active) { .silver, .silver-live { background: none; color: CanvasText; } }
+
+/* ---------- glass (06, 07): the only card surface, no outline ---------- */
+.glass { background: var(--glass); box-shadow: var(--shadow-glass); }
+/* hover lifts 2px and lights the top on the smooth spring; press .985 */
+.lift {
+  transition: translate var(--duration-smooth) var(--ease-spring), scale var(--duration-snappy) var(--ease-snappy),
+    background var(--duration-fade) var(--ease-fade);
+}
+.lift:active { scale: .985; transition: scale var(--duration-press) var(--ease-fade); }
+@media (hover: hover) { .lift:hover { translate: 0 -2px; background: var(--glass-lit); } }
+
+/* ---------- cursor light (08): hero silver line and the feature card only ----------
+   useCursorLight writes --mx/--my; the registered properties ease after the
+   pointer over duration-follow. Desktop, fine pointer, motion allowed. */
+@property --mx { syntax: "<percentage>"; inherits: true; initial-value: 70%; }
+@property --my { syntax: "<percentage>"; inherits: true; initial-value: 20%; }
+.follow { position: relative; isolation: isolate; transition: --mx var(--duration-follow) var(--ease-fade), --my var(--duration-follow) var(--ease-fade); }
+.follow::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(480px circle at var(--mx) var(--my), var(--follow-light), transparent 62%);
+  opacity: 0; transition: opacity var(--duration-smooth) var(--ease-fade);
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .follow::before { opacity: 1; }
+}
+
+/* ---------- latin eyebrow and numerals (02, 03) ---------- */
+.eyebrow {
+  font-family: var(--font-latin); font-size: 10px; font-weight: 500; line-height: 1.2;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--text-3);
+}
+.fig { font-family: var(--font-latin); font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.meta { font-size: 12px; line-height: 1.45; letter-spacing: 0; color: var(--text-3); }
+@media (min-width: 1024px) {
+  .eyebrow { font-size: 11px; }
+  .fig { font-size: 26px; }
+  .meta { font-size: 13px; }
+}
+
+/* ---------- live dot (01): the site's one red dot, always beside words ---------- */
+.live-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--live); animation: y-live var(--duration-pulse) ease-in-out infinite; }
+@keyframes y-live { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 50%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
 
 /* ---------- numerals (02, 03) ---------- */
 .num { font-family: var(--font-num); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0; }
@@ -255,6 +384,8 @@ iframe { border: 0; }
     scroll-behavior: auto !important;
   }
   .press:active { scale: 1; }
+  .lift:hover { translate: none; }
+  .follow { transition: none; }
   .reveal:not(.in) { opacity: 1; transform: none; }
 }
 .no-anim *, .no-anim *::before, .no-anim *::after { transition: none !important; }

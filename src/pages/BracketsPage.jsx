@@ -2030,7 +2030,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             <Poster label="참가" value={lead.participants.length} unit={lead.mode==="team"?"팀":"명"}/>
             <Facts items={[["방식",lead.mode==="team"?"팀전":"개인전"],["형식",bracketFormat(lead)],["날짜",lead.createdAt||"-"]]}/>
           </div>
-          <button className="ypl-btn ypl-btn--on-lead ypl-btn--lg press bk-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기<Icon n="arrow" size={15}/></button>
+          <button className="ypl-btn ypl-btn--on-lead press bk-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기<Icon n="arrow" size={15}/></button>
         </section>); })()}
       {list.length>1&&<section>
         <div className="ypl-sech"><h2>이전 대진표</h2></div>

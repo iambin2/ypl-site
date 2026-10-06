@@ -11,110 +11,79 @@
 }
 .skip-link:focus { transform: none; clip-path: none; opacity: 1; }
 
-/* ---------- brand (README: logo 30px, phone 26px, "YPL" sans 800) ---------- */
+/* ---------- brand (README 로고): silver mark 24px (desktop 27), latin 800 "YPL" ---------- */
 .brand {
   display: inline-flex; align-items: center; gap: var(--space-2); flex: none;
   min-height: var(--target); padding: 0; border: 0; background: none;
 }
 .brand-mark { display: block; }
-.brand-word { font-size: 20px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--ink); }
-@media (max-width: 639px) {
-  .gnav .brand-mark { height: 26px; width: auto; }
-  .gnav .brand-word { font-size: 17px; }
-}
+.brand-word { font-family: var(--font-latin); font-size: 17px; font-weight: 800; line-height: 1; letter-spacing: .02em; }
 
-/* ---------- global nav ----------
-   56px, translucent. The blur lives on ::before (07): a backdrop-filter on the
-   header itself would become the containing block of the fixed full menu.
+/* ---------- NavBar ----------
+   60px (desktop 72), bg at 72% with the blur on ::before (07): a backdrop-filter
+   on the header itself would become the containing block of the fixed menu.
    No rule under it: the translucent ground is the edge. */
 .gnav { position: sticky; top: 0; z-index: var(--z-sticky); height: var(--nav-height); }
 .gnav::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
   transition: background-color var(--duration-fade) var(--ease-fade);
 }
 .gnav.menu-open::before { background: var(--bg); }
 .gnav-in {
   height: 100%; max-width: calc(var(--container) + var(--margin) * 2); margin: 0 auto;
-  padding: 0 var(--margin);
-  display: flex; align-items: center; gap: var(--space-7);
+  padding: 0 var(--space-3) 0 var(--margin);
+  display: flex; align-items: center; gap: var(--space-2);
 }
+.gnav-in > .brand { margin-right: auto; }
 
-/* links sit on the one left axis after the mark; the current page is a fill capsule (09) */
-.nav-links { display: flex; align-items: center; gap: var(--space-1); margin-right: auto; }
+/* links sit in the middle; the current page is a fill capsule in ink 700 (09) */
+.nav-links { display: flex; align-items: center; gap: 2px; }
 .nlink {
-  height: 36px; display: inline-flex; align-items: center; gap: var(--space-1);
-  padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent;
-  font-size: 15px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--text-2); white-space: nowrap;
+  height: 36px; display: inline-flex; align-items: center;
+  padding: 0 14px; border: 0; border-radius: var(--radius-pill); background: transparent;
+  font-size: 14px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em; color: var(--text-2); white-space: nowrap;
+  transition: background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
 }
-.nlink.on { background: var(--fill); color: var(--ink); }
+.nlink.on { background: var(--fill); color: var(--ink); font-weight: 700; }
 @media (hover: hover) { .nlink:not(.on):hover { background: var(--fill-2); color: var(--ink); } }
 
-/* tools menu: grows from the trigger's corner at 0.9 on the smooth spring, leaves 0.7x faster (08, law 4) */
-.nav-tools { position: relative; display: flex; align-items: center; }
-.nav-tools-chevron { color: var(--text-3); transition: transform var(--duration-snappy) var(--ease-snappy); }
-.nav-tools.open .nav-tools-chevron { transform: rotate(180deg); }
-.nav-tools-menu {
-  --r: var(--radius-lg);
-  position: absolute; top: calc(100% + var(--space-2)); left: 0; z-index: var(--z-popover); width: 280px;
-  padding: var(--space-2); background: var(--surface); box-shadow: var(--shadow-pop);
-  opacity: 0; visibility: hidden; transform: scale(.9); transform-origin: top left;
-  transition: opacity var(--duration-fade) var(--ease-fade), transform var(--duration-exit) var(--ease-spring), visibility 0s linear var(--duration-exit);
+.gnav-actions { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+/* icon-only buttons are 44px fill circles with an 18px icon (10) */
+.iconbtn {
+  width: var(--target); height: var(--target); flex: none; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
 }
-.nav-tools.open .nav-tools-menu {
-  opacity: 1; visibility: visible; transform: none;
-  transition: opacity var(--duration-fade) var(--ease-fade), transform var(--duration-smooth) var(--ease-spring), visibility 0s;
-}
-/* concentric: 20 − 8 padding = 12 */
-.nav-tools-item {
-  --r: 12px;
-  width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2);
-  border: 0; background: transparent; text-align: left;
-}
-.nav-tools-item.on { background: var(--fill-2); }
-@media (hover: hover) { .nav-tools-item:hover { background: var(--fill-2); } }
-.nav-tools-ic {
-  --r: var(--radius-sm);
-  width: 40px; height: 40px; flex: none; display: grid; place-items: center;
-  background: var(--fill); color: var(--ink);
-}
-.nav-tools-item b { display: block; font-size: 15px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
-.nav-tools-item small { display: block; margin-top: var(--space-1); font-size: 13px; line-height: 1.45; color: var(--text-3); }
-
-.gnav-actions { display: flex; align-items: center; gap: var(--space-1); flex: none; }
-/* icon-only buttons are 44px circles (10) */
-.gnav-icon {
-  height: var(--target); min-width: var(--target); padding: 0; display: inline-flex; align-items: center; justify-content: center;
-  border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--text-2);
-}
-@media (hover: hover) { .gnav-icon:hover { background: var(--fill-2); color: var(--ink); } }
-.gnav-admin.on { padding: 0 var(--space-4); background: var(--fill); color: var(--ink); }
-.gnav-admin-tx { font-size: 15px; font-weight: 600; }
-.gnav-discord { margin-left: var(--space-2); }
+@media (hover: hover) { .iconbtn:hover { background: var(--glass-hover); } }
+.gnav-admin.on { width: auto; padding: 0 var(--space-4); }
+.gnav-admin-tx { font-size: 14px; font-weight: 700; }
 
 /* burger: two equal 2px bars that cross into an X on the snappy spring */
-.gnav-burger {
-  display: none; position: relative; width: var(--target); height: var(--target); margin-right: calc(var(--space-3) * -1);
-  border: 0; background: transparent; border-radius: 50%;
-}
+.gnav-burger { display: none; flex-direction: column; gap: 5px; }
 .gnav-burger span {
-  position: absolute; left: 13px; top: 21px; width: 18px; height: var(--stroke-icon); border-radius: var(--radius-pill); background: var(--ink);
-  transition: transform var(--duration-snappy) var(--ease-snappy);
+  display: block; width: 16px; height: var(--stroke-icon); border-radius: 2px; background: currentColor;
+  transition: translate var(--duration-snappy) var(--ease-snappy), rotate var(--duration-snappy) var(--ease-snappy);
 }
-.gnav-burger span:first-child { transform: translateY(-4px); }
-.gnav-burger span:last-child { transform: translateY(4px); }
-.gnav-burger.open span:first-child { transform: rotate(45deg); }
-.gnav-burger.open span:last-child { transform: rotate(-45deg); }
+.gnav-burger.open span:first-child { translate: 0 3.5px; rotate: 45deg; }
+.gnav-burger.open span:last-child { translate: 0 -3.5px; rotate: -45deg; }
 
-/* ---------- full menu (board option A) ----------
+@media (min-width: 1024px) {
+  .gnav-in { padding: 0 var(--margin); gap: var(--space-3); }
+  .gnav-in > .brand { margin-right: 0; flex: 1 0 0; }
+  .gnav-actions { flex: 1 0 0; justify-content: flex-end; }
+  .brand-mark { height: 27px; width: auto; }
+  .brand-word { font-size: 19px; }
+}
+
+/* ---------- MobileMenu ----------
    The ground lays down in 150ms; rows rise 16px in reading order on the
-   smooth spring. Closing is one fade, 0.7x faster, no stagger. */
+   smooth spring. Closing is one fade at duration-exit, no stagger. */
 .nav-menu { display: none; }
 @media (max-width: 1023px) {
   .nav-links, .gnav-admin, .gnav-discord { display: none; }
-  .gnav-in { justify-content: space-between; }
-  .gnav-burger { display: block; }
+  .gnav-burger { display: inline-flex; }
   .nav-menu {
     display: block; position: fixed; left: 0; right: 0; top: var(--nav-height); bottom: 0; z-index: var(--z-modal);
     overflow-y: auto; overscroll-behavior: contain; background: var(--bg);
@@ -122,29 +91,29 @@
     transition: opacity var(--duration-exit) var(--ease-spring), visibility 0s linear var(--duration-exit);
   }
   .nav-menu.open { opacity: 1; visibility: visible; transition: opacity var(--duration-fade) var(--ease-fade), visibility 0s; }
-  .nav-menu-in { padding: var(--space-2) var(--margin) calc(var(--space-8) + env(safe-area-inset-bottom)); }
-  .nav-mlist { list-style: none; margin: 0; padding: 0; }
-  .nav-mlist > li, .nav-mlabel, .nav-mfoot { transform: translateY(16px); transition: transform 0s linear var(--duration-exit); }
+  .nav-menu-in { padding: var(--space-4) var(--margin) calc(var(--space-8) + env(safe-area-inset-bottom)); }
+  .nav-mlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .nav-mlist > li, .nav-mlabel, .nav-mfoot { translate: 0 16px; transition: translate 0s linear var(--duration-exit); }
   .nav-menu.open :is(.nav-mlist > li, .nav-mlabel, .nav-mfoot) {
-    transform: none; transition: transform var(--duration-smooth) var(--ease-spring) var(--menu-delay, 0ms);
+    translate: none; transition: translate var(--duration-smooth) var(--ease-spring) var(--menu-delay, 0ms);
   }
-  /* the capsule reaches 12px past the text, so the words keep the left axis */
+  /* the capsule reaches 12px past the words, so the words keep the left axis */
   .nav-mitem {
-    width: calc(100% + var(--space-3) * 2); height: 48px; display: flex; align-items: center;
+    width: calc(100% + var(--space-3) * 2); height: 52px; display: flex; align-items: center;
     margin: 0 calc(var(--space-3) * -1); padding: 0 var(--space-3);
     border: 0; border-radius: var(--radius-pill); background: transparent;
-    font-size: 24px; font-weight: 800; line-height: 1.2; letter-spacing: -0.03em; color: var(--ink); text-align: left;
+    font-size: 28px; font-weight: 900; line-height: 1.15; letter-spacing: -0.03em; color: var(--ink); text-align: left;
   }
   .nav-mitem.on { background: var(--fill); }
   @media (hover: hover) { .nav-mitem:not(.on):hover { background: var(--fill-2); } }
-  .nav-mlabel { margin: var(--space-6) 0 var(--space-2); font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text-3); }
+  .nav-mlabel { margin: var(--space-6) 0 var(--space-2); }
   .nav-mfoot { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-7); }
 }
 
 /* ---------- admin strip ----------
    A quiet 36px band under the nav: the mode is always visible but never
    competes with the screen's one inverted lead tile. */
-.admin-bar { background: var(--bg-2); color: var(--ink); }
+.admin-bar { background: var(--bg-sunk); color: var(--ink); }
 .admin-bar-in {
   max-width: calc(var(--container) + var(--margin) * 2); min-height: 36px; margin: 0 auto; padding: var(--space-2) var(--margin);
   display: flex; align-items: center; gap: var(--space-2); font-size: 13px; line-height: 1.2;
@@ -155,7 +124,7 @@
 @media (max-width: 560px) { .admin-bar-in span { display: none; } }
 
 /* ---------- footer ---------- */
-.site-foot { flex: none; margin-top: auto; background: var(--bg-2); color: var(--text-3); font-size: 13px; }
+.site-foot { flex: none; margin-top: auto; background: var(--bg-sunk); color: var(--text-3); font-size: 13px; }
 .site-foot-in { max-width: calc(var(--container) + var(--margin) * 2); margin: 0 auto; padding: var(--space-9) var(--margin) calc(var(--space-7) + env(safe-area-inset-bottom)); }
 .site-foot-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr); gap: 40px; padding-bottom: 40px; }
 .site-foot-mark { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
@@ -163,7 +132,7 @@
 .site-foot-dc { margin-top: 6px; }
 .site-foot-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .site-foot-col { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.site-foot-col h3 { margin-bottom: 8px; font-size: 13px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.site-foot-col h3 { margin-bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
 .site-foot-col button {
   padding: 5px 0; border: 0; background: none; font-size: 13px; color: var(--text-3); text-align: left;
   transition: color var(--duration-fade) var(--ease-fade);

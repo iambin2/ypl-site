@@ -90,7 +90,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
             : <span />}
           <Facts items={[["우승 시즌", seasonLabel(reigning)], ["역대 챔피언", `${champs.length}명`]]} />
         </div>
-        <button className="ypl-btn ypl-btn--on-lead ypl-btn--lg press hof-cta" onClick={() => setPop(reigning)}>
+        <button className="ypl-btn ypl-btn--on-lead press hof-cta" onClick={() => setPop(reigning)}>
           우승 엔트리 크게 보기<Icon n="arrow" size={15} />
         </button>
       </div>

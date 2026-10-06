@@ -2,134 +2,123 @@
    YPL — pages: home, about, news, board, titles, hall of fame, forms
    ========================================================================== */
 
-/* =========================== HOME =========================== */
-/* 05: first content 8px under the nav on a phone, 24px on desktop; sections 40, 56, 80 apart */
-.home { padding: var(--space-2) 0 var(--space-11); }
-@media (min-width: 1024px) { .home { padding-top: var(--space-6); } }
+/* =========================== HOME ===========================
+   05: hero, NOW bar, explore cards, then champion and results (7:5 on desktop).
+   First words sit 28px under the nav on a phone, 56px on desktop. */
+.home { padding: var(--space-1) 0 var(--space-9); }
+@media (min-width: 1024px) { .home { padding: var(--space-7) 0 var(--space-11); } }
 .hm-sec { margin-top: var(--section-gap); }
 
-/* ---------- lead tile: the one inverted surface on the screen ----------
-   Phone: chip, title, poster beside the facts, steps, next step, one button.
-   Desktop: everything in 8 columns, the poster in the last 4. */
-.hm-lead {
-  --r: var(--radius-xl);
-  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end;
-  grid-template-areas: "chip chip" "title title" "poster facts" "steps steps" "next next" "act act";
-  gap: var(--space-5) var(--space-4);
-  padding: var(--space-5); background: var(--lead); color: var(--on-lead);
-}
-.hm-lead-main { display: contents; }
-.hm-lead .ypl-chip { grid-area: chip; justify-self: start; }
-.hm-lead-title { grid-area: title; font-size: 24px; line-height: 1.2; letter-spacing: -0.03em; color: var(--on-lead); }
-.hm-poster { grid-area: poster; display: inline-flex; align-items: baseline; white-space: nowrap; }
-.hm-poster .num { font-size: clamp(104px, 14vw, 240px); line-height: .8; letter-spacing: -0.01em; margin-left: -.03em; color: var(--on-lead); }
-.hm-poster .unit { color: var(--on-lead-2); }
-.hm-facts { grid-area: facts; margin: 0; display: grid; }
-.hm-facts > div { padding: var(--space-2) 0; }
-.hm-facts > div + div { background: linear-gradient(var(--lead-line), var(--lead-line)) no-repeat 0 0 / 100% var(--hair); }
-.hm-facts > div:first-child { padding-top: 0; }
-.hm-facts > div:last-child { padding-bottom: 0; }
-.hm-facts dt { font-size: 13px; line-height: 1.45; color: var(--on-lead-2); }
-.hm-facts dd { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.5; letter-spacing: -0.01em; }
-
-.hm-steps { grid-area: steps; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-1); }
-.hm-steps li { display: grid; gap: var(--space-2); font-size: 12px; font-weight: 600; line-height: 1.4; letter-spacing: .01em; color: var(--on-lead-2); }
-.hm-steps i { display: block; height: 4px; border-radius: var(--radius-pill); background: var(--lead-fill); }
-.hm-steps li.on i { background: var(--on-lead); }
-.hm-steps li.now { color: var(--on-lead); }
-
-.hm-next { grid-area: next; display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); font-size: 15px; line-height: 1.5; }
-.hm-next b { font-weight: 600; flex: none; }
-.hm-next span { color: var(--on-lead-2); text-align: right; }
-
-.hm-lead-actions { grid-area: act; display: grid; gap: var(--space-2); }
-/* phone: one full-width action, the next step only */
-.hm-lead-second { display: none; }
-
-@media (min-width: 640px) {
-  .hm-lead-title { font-size: 36px; line-height: 1.1; letter-spacing: -0.04em; }
-  .hm-lead-actions { display: flex; flex-wrap: wrap; }
-  .hm-lead-second { display: inline-flex; }
-}
+/* ---------- Hero: three lines, the last one silver; one intro line, two buttons ---------- */
+.hm-hero { display: grid; gap: 18px; justify-items: start; padding: var(--space-6) var(--space-1) 0; }
+.hm-hero h1 { font-size: 46px; font-weight: 900; line-height: 1.08; letter-spacing: -0.035em; }
+.hm-hero h1 span { display: block; }
+.hm-hero h1 .silver-live { display: inline-block; }
+.hm-hero p { color: var(--text-2); }
+.hm-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 @media (min-width: 1024px) {
-  .hm-lead {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    grid-template-areas: "chip poster" "title poster" "facts poster" "steps poster" "next poster" "act poster";
-    gap: var(--space-6) var(--grid-gap);
-    padding: var(--space-8);
-  }
-  .hm-lead-title { font-size: 56px; }
-  .hm-poster { justify-self: end; }
-  .hm-poster .num { margin-left: 0; }
-  .hm-facts { grid-template-columns: repeat(3, max-content); gap: var(--space-8); }
-  .hm-facts > div, .hm-facts > div + div { padding: 0; background: none; }
-  .hm-steps, .hm-next { max-width: 560px; width: 100%; }
+  .hm-hero { gap: 26px; padding: var(--space-6) var(--space-1) var(--space-2); }
+  .hm-hero h1 { font-size: 104px; line-height: 1.04; letter-spacing: -0.045em; }
+  .hm-hero p { font-size: 18px; max-width: 640px; }
+  .hm-hero-actions { gap: var(--space-3); }
 }
 
-/* ---------- recent results: phone rail, tablet 2, desktop 4 ---------- */
-.hm-results {
-  display: flex; gap: var(--grid-gap);
-  margin: 0 calc(var(--margin) * -1); padding: 0 var(--margin);
-  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--margin);
-  scrollbar-width: none;
+/* ---------- arrow circle: the one "go on" mark on cards and the NOW bar (10) ---------- */
+.ypl-arrow {
+  flex: none; width: 28px; height: 28px; border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: translate var(--duration-snappy) var(--ease-snappy);
 }
-.hm-results::-webkit-scrollbar { display: none; }
-.hm-result {
+@media (hover: hover) { .lift:hover .ypl-arrow { translate: 2px 0; } }
+
+/* ---------- NowBar: one glass line, the whole bar is the link ---------- */
+.hm-now {
   --r: var(--radius-lg);
-  flex: 0 0 80%; scroll-snap-align: start;
-  display: grid; grid-template-rows: auto 1fr auto; gap: var(--space-2); align-items: start;
-  padding: var(--space-4); border: 0; background: var(--bg-2); color: var(--ink); text-align: left;
+  width: 100%; margin-top: var(--space-8); display: flex; align-items: center; gap: 14px;
+  padding: var(--space-4) 18px; border: 0; color: var(--ink); text-align: left;
 }
-.hm-result-date { font-size: 22px; }
-.hm-result-title { font-size: 17px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; }
-.hm-result-win { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); margin-top: var(--space-2); font-size: 15px; line-height: 1.5; }
-.hm-result-win span { flex: none; color: var(--text-3); }
-.hm-result-win b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (hover: hover) { .hm-result:hover { background: var(--bg-3); } }
-@media (min-width: 640px) {
-  .hm-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; padding: 0; overflow: visible; }
-}
+.hm-now-text { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.hm-now-text b { font-size: 15px; font-weight: 700; line-height: 1.4; }
+.hm-now-due { flex: none; font-size: 13px; font-weight: 700; color: var(--text-2); white-space: nowrap; }
+.hm-now .ypl-arrow { display: none; }
 @media (min-width: 1024px) {
-  .hm-results { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .hm-result-date { font-size: 24px; }
-  .hm-result-title { font-size: 20px; }
+  .hm-now { margin-top: var(--space-9); gap: 18px; padding: var(--space-5) var(--space-6); }
+  .hm-now-text { display: flex; align-items: center; gap: 18px; }
+  .hm-now-text b { font-size: 17px; }
+  .hm-now-due { font-size: 14px; }
+  .hm-now .ypl-arrow { display: inline-flex; width: 32px; height: 32px; }
 }
 
-/* ---------- ranking and champion: 8 + 4 on desktop ---------- */
-.hm-rank-grid { display: grid; gap: var(--grid-gap); align-items: start; }
-.hm-rank .ypl-row { grid-template-columns: 36px minmax(0, 1fr) auto; --inset: 48px; }
-.hm-rank-n { font-size: 32px; }
-.hm-rank-pt { display: inline-flex; align-items: baseline; }
-.hm-rank-pt .num { font-size: 32px; color: var(--ink); }
-
-.hm-champ {
+/* ---------- ExploreCard: six identical glass cards ---------- */
+.hm-explore { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hm-xcard {
   --r: var(--radius-lg);
-  align-self: stretch; display: grid; grid-template-rows: auto auto auto auto 1fr; justify-items: start; gap: var(--space-2);
-  padding: var(--space-5); border: 0; background: var(--bg-2); color: var(--ink); text-align: left;
+  min-height: 132px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  padding: 18px var(--space-4) var(--space-4); border: 0; color: var(--ink); text-align: left;
 }
-.hm-champ-gen { display: inline-flex; align-items: baseline; margin-top: var(--space-3); }
-.hm-champ-gen .num { font-size: 32px; }
-.hm-champ-gen-tx { font-size: 17px; font-weight: 600; }
-.hm-champ-name { font-size: 24px; font-weight: 800; line-height: 1.2; letter-spacing: -0.03em; }
-.hm-champ-season { font-size: 13px; line-height: 1.45; color: var(--text-3); }
-.hm-champ-more { align-self: end; min-height: 0; margin-top: var(--space-3); }
-@media (hover: hover) {
-  .hm-champ:hover { background: var(--bg-3); }
-  .hm-champ:hover .hm-champ-more { color: var(--ink); }
-  .hm-champ:hover .hm-champ-more .ic { transform: translateX(2px); }
-}
+.hm-xcard-eb { display: flex; align-items: center; gap: 6px; }
+.hm-xcard b { font-size: 19px; font-weight: 900; line-height: 1.3; letter-spacing: -0.02em; }
+.hm-xcard-desc { flex: 1; font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.hm-xcard .ypl-arrow { align-self: flex-end; }
+@media (min-width: 640px) { .hm-explore { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
 @media (min-width: 1024px) {
-  .hm-rank-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-  .hm-rank-n, .hm-rank-pt .num, .hm-champ-gen .num { font-size: 40px; }
-  .hm-champ-name { font-size: 30px; }
+  .hm-explore { gap: var(--gutter-desktop); }
+  .hm-xcard { min-height: 176px; gap: var(--space-2); padding: 26px 26px 22px; }
+  .hm-xcard b { font-size: 24px; }
+  .hm-xcard-desc { font-size: 15px; }
+  .hm-xcard .ypl-arrow { width: 32px; height: 32px; }
 }
 
-/* ---------- notices and board: 6 + 6 on desktop ---------- */
-.hm-two { display: grid; gap: var(--section-gap); }
-.hm-row-go { color: var(--text-3); }
-.hm-lock { margin-right: var(--space-1); vertical-align: -0.125em; color: var(--text-3); }
-.hm-post-c { display: inline-flex; align-items: center; gap: var(--space-1); }
-@media (min-width: 1024px) { .hm-two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--grid-gap); } }
+/* ---------- champion and results: stacked on a phone, 7:5 on desktop ---------- */
+.hm-duo { display: grid; gap: var(--section-gap); }
+@media (min-width: 1024px) {
+  .hm-duo:not(.solo) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--gutter-desktop); }
+  .hm-duo > section { display: flex; flex-direction: column; }
+  /* the results glass matches the champion card's height; rows share it evenly */
+  .hm-duo:not(.solo) .hm-results { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
+}
+
+/* ---------- FeatureCard: the current champion ---------- */
+.hm-feature { --r: var(--radius-xl); overflow: hidden; display: grid; gap: 18px; padding: var(--space-6) 14px 14px; }
+.hm-feature-wm {
+  position: absolute; right: var(--space-2); top: -26px; pointer-events: none;
+  font-family: var(--font-latin); font-size: 150px; font-weight: 800; line-height: 1; opacity: var(--opacity-watermark);
+}
+.hm-feature-who { position: relative; display: grid; gap: 6px; padding: 0 var(--space-2); }
+.hm-feature-name { justify-self: start; font-size: 38px; font-weight: 900; line-height: 1.12; letter-spacing: -0.035em; }
+.hm-feature-sub { font-size: 13px; color: var(--text-2); }
+@media (min-width: 1024px) {
+  .hm-feature { flex: 1; gap: 22px; padding: 30px 22px 22px; }
+  .hm-feature-wm { font-size: 210px; right: var(--space-5); top: -40px; }
+  .hm-feature-name { font-size: 52px; letter-spacing: -0.04em; }
+  .hm-feature-sub { font-size: 15px; }
+}
+
+/* ---------- PartyPod: six pods in slot order; concentric 32 - 14 = 18 ---------- */
+.hm-pods { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.hm-pod {
+  --r: var(--radius-md);
+  height: 124px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse 70% 26% at 50% 86%, var(--pod-floor), transparent 72%), var(--pod-face);
+}
+.hm-pod img { width: 80px; height: 80px; object-fit: contain; }
+@media (min-width: 1024px) {
+  .hm-pods { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .hm-pod { height: 132px; }
+  .hm-pod img { width: 82px; height: 82px; }
+}
+
+/* ---------- ResultRow: silver round, league and month, winner ---------- */
+.hm-result { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.hm-round { display: flex; align-items: baseline; gap: 1px; white-space: nowrap; }
+.hm-round .unit { margin-left: 1px; font-size: 11px; font-weight: 700; }
+.hm-result-main { min-width: 0; display: grid; gap: 2px; }
+.hm-result-end { display: grid; gap: 2px; justify-items: end; text-align: right; }
+.hm-result-end b { font-size: 15px; font-weight: 900; }
+@media (min-width: 1024px) {
+  .hm-result { grid-template-columns: 54px minmax(0, 1fr) auto; }
+  .hm-result-end b { font-size: 16px; }
+}
 
 /* =========================== ABOUT ===========================
    Story page on the same surfaces: step tiles, inset groups with hairlines,

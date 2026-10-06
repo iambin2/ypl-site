@@ -129,11 +129,9 @@ export default function App() {
     window.requestAnimationFrame(()=>window.requestAnimationFrame(clear));
     window.setTimeout(clear,120);
   },[]);
+  // 다크가 기본이다(01 색). 라이트를 고른 기록이 있을 때만 라이트로 연다.
   const [dark,setDark]=useState(()=>{
-    try{ const v=localStorage.getItem("ypl-theme");
-      if(v==="dark") return true; if(v==="light") return false;
-      return !!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
-    }catch(e){ return false; }
+    try{ return localStorage.getItem("ypl-theme")!=="light"; }catch(e){ return true; }
   });
   /* 테마는 <html> 에 건다 — 페이지, 오버스크롤 영역, 스크롤바, 브라우저 주소창 색이 한 바탕을 쓴다.
      레이아웃 단계에서 바꿔야 View Transition 의 새 스냅샷에 반영된다. */
@@ -141,7 +139,7 @@ export default function App() {
     const root=document.documentElement;
     root.dataset.theme=dark?"dark":"light";
     root.style.colorScheme=dark?"dark":"light";
-    document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#000000":"#FFFFFF"));
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#0a0a0b":"#ececef"));
   },[dark]);
   useEffect(()=>{ try{ localStorage.setItem("ypl-theme", dark?"dark":"light"); }catch(e){} },[dark]);
   /* 탭 제목 — 모든 화면이 "YPL" 하나였습니다. 뒤로 가기 목록과 브라우저 탭에서

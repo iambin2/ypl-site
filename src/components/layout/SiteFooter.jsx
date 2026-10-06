@@ -20,10 +20,10 @@ export default function SiteFooter({ onNavigate, tagline }) {
         <div className="site-foot-top">
           <div className="site-foot-mark">
             <button className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
-              <BrandMark size={26} /><span className="brand-word">YPL</span>
+              <BrandMark /><span className="brand-word silver">YPL</span>
             </button>
             {tagline && <p className="site-foot-tag">{tagline}</p>}
-            <a className="ypl-btn ypl-btn--sm ypl-btn--tonal press site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+            <a className="ypl-btn ypl-btn--sm ypl-btn--glass press site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
               <Icon n="discord" size={16} />디스코드 참여<Icon n="ext" size={16} />
             </a>
           </div>
