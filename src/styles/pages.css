@@ -78,21 +78,8 @@
   .hm-duo:not(.solo) .hm-results { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
 }
 
-/* ---------- FeatureCard: the current champion ---------- */
-.hm-feature { --r: var(--radius-xl); overflow: hidden; display: grid; gap: 18px; padding: var(--space-6) 14px 14px; }
-.hm-feature-wm {
-  position: absolute; right: var(--space-2); top: -26px; pointer-events: none;
-  font-family: var(--font-latin); font-size: 150px; font-weight: 800; line-height: 1; opacity: var(--opacity-watermark);
-}
-.hm-feature-who { position: relative; display: grid; gap: 6px; padding: 0 var(--space-2); }
-.hm-feature-name { justify-self: start; font-size: 38px; font-weight: 900; line-height: 1.12; letter-spacing: -0.035em; }
-.hm-feature-sub { font-size: 13px; color: var(--text-2); }
-@media (min-width: 1024px) {
-  .hm-feature { flex: 1; gap: 22px; padding: 30px 22px 22px; }
-  .hm-feature-wm { font-size: 210px; right: var(--space-5); top: -40px; }
-  .hm-feature-name { font-size: 52px; letter-spacing: -0.04em; }
-  .hm-feature-sub { font-size: 15px; }
-}
+/* ---------- FeatureCard (components.css): fills the column beside the results ---------- */
+@media (min-width: 1024px) { .hm-duo .ypl-feature { flex: 1; } }
 
 /* ---------- PartyPod: six pods in slot order; concentric 32 - 14 = 18 ---------- */
 .hm-pods { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }

@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Facts, Icon, Pager, Poster, Reveal, Segmented, StandTable, sitePrompt } from "../components/index.js";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Dropdown, Facts, Icon, PageHead, Pager, Pills, Poster, Reveal, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
+import useCursorLight from "../components/common/useCursorLight.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
@@ -94,16 +95,13 @@ export default function RecordsPage({ data, admin, setModal, save }) {
 
   return (
     <section className="sec">
-      <Reveal className="sec-head">
-        <h2>기록</h2>
-        <p className="sub">YPL의 대회 성적과 저장된 대진표를 바탕으로 트레이너, 대회, 포켓몬 기록을 한곳에 정리합니다.</p>
-      </Reveal>
+      <PageHead eyebrow="Records" plain="리그" silver="기록" desc="트레이너, 대회, 포켓몬, 랭킹 기록을 한곳에 모았습니다." />
 
       {normalizedRead.loading && (
-        <div className="records-read-state sq">공식 기록을 불러오는 중입니다.</div>
+        <div className="records-read-state glass sq">공식 기록을 불러오는 중입니다.</div>
       )}
       {normalizedRead.error && (
-        <div className="records-read-state sq is-error" role="alert">
+        <div className="records-read-state glass sq is-error" role="alert">
           <span>공식 기록을 읽지 못해 아래에는 기존 기록만 표시됩니다. 다시 시도해 주세요.</span>
           <button type="button" className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={() => setReloadKey((value) => value + 1)}>다시 시도</button>
         </div>
@@ -190,7 +188,7 @@ function TrainerView({ snapshot }) {
                 onClick={() => { setSelected(trainer.key || trainer.name); setHistPage(1); }}
               >
                 <span className="ypl-row__title">{trainer.name}</span>
-                <span className="ypl-row__meta">우승 {trainer.wins}, 준우승 {trainer.runnerUps}, 4강 {trainer.top4}</span>
+                <span className="ypl-row__meta">우승 {trainer.wins} 준우승 {trainer.runnerUps} 4강 {trainer.top4}</span>
               </button>
             );
           })}
@@ -201,9 +199,11 @@ function TrainerView({ snapshot }) {
       <div className="rc-profile">
         <section className="rc-lead sq" aria-labelledby="rc-trainer-name">
           <div className="rc-lead-head">
-          <h3 className="rc-lead-title" id="rc-trainer-name">{profile.name}</h3>
+          <div className="rc-lead-who">
+            <span className="eyebrow">Trainer</span>
+            <h3 className="rc-lead-title silver" id="rc-trainer-name">{profile.name}</h3>
+          </div>
           <Dropdown
-            className="dd--lead"
             value={season}
             onChange={(value) => { setSeason(value); setHistPage(1); }}
             ariaLabel="시즌 필터"
@@ -216,8 +216,8 @@ function TrainerView({ snapshot }) {
           </div>
           {(profile.champions.length > 0 || restTitles.length > 0) && (
             <div className="rc-lead-chips">
-              {profile.champions.map((c, i) => <span key={`c${i}`} className="ypl-chip ypl-chip--lead">{genLabel(c.gen)}</span>)}
-              {restTitles.map((title, i) => <span key={`t${i}`} className="ypl-chip ypl-chip--lead">{title.name}</span>)}
+              {profile.champions.map((c, i) => <span key={`c${i}`} className="ypl-chip">{genLabel(c.gen)}</span>)}
+              {restTitles.map((title, i) => <span key={`t${i}`} className="ypl-chip">{title.name}</span>)}
             </div>
           )}
         </section>
@@ -521,7 +521,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
 
   return (<>
     <div className="rc-filter">
-      <Segmented
+      <Pills
         value={selectedTour ? selectedTour.key : "all"}
         onChange={setCategory}
         ariaLabel="대회 종류"
@@ -599,7 +599,10 @@ function PokemonView({ snapshot }) {
 
       <div className="rc-profile">
         <section className="rc-lead sq" aria-labelledby="rc-pokemon-name">
-          <h3 className="rc-lead-title" id="rc-pokemon-name">{current.name}</h3>
+          <div className="rc-lead-who">
+            <span className="eyebrow">Pokémon</span>
+            <h3 className="rc-lead-title silver" id="rc-pokemon-name">{current.name}</h3>
+          </div>
           <div className="rc-lead-figs">
             <Poster label="등록 엔트리" value={current.entries} unit="회" />
             <Facts items={[["엔트리 채용률", `${current.entryRate.toFixed(1)}%`], ["사용 트레이너", `${current.trainerCount}명`], ["우승 엔트리", `${current.wins}회`]]} />
@@ -649,17 +652,17 @@ function RankingHub({ snapshot, data, admin, setModal, save }) {
   return (
     <>
       <div className="rc-filter">
-        <Segmented value={sub} onChange={setSub} ariaLabel="랭킹 보기" options={[["rank", "누적 랭킹"], ["season", "시즌별 성적"]]} />
+        <Pills value={sub} onChange={setSub} ariaLabel="랭킹 보기" options={[["rank", "누적 랭킹"], ["season", "시즌별 성적"]]} />
       </div>
-      <p className="rc-note">
-        누적 랭킹과 시즌별 성적은 이전 기록에서 넘어온 점수에 대회마다 얻은 점수를 더해 매깁니다.
-        등수별 점수는 마스터 리그, 파이컵 라이트처럼 대회 종류에 따라 다를 수 있습니다.
-      </p>
       {sub === "rank" ? (
         <RankView rankings={snapshot.ranking?.series || data.rankings || []} data={data} admin={admin} setModal={setModal} save={save} />
       ) : (
         <SeasonView seasons={snapshot.ranking?.seasons || data.seasons || []} data={data} admin={admin} setModal={setModal} save={save} />
       )}
+      <p className="rc-note">
+        누적 랭킹과 시즌별 성적은 이전 기록에서 넘어온 점수에 대회마다 얻은 점수를 더해 매깁니다.
+        등수별 점수는 마스터 리그, 파이컵 라이트처럼 대회 종류에 따라 다를 수 있습니다.
+      </p>
     </>
   );
 }
@@ -690,11 +693,11 @@ function RankView({ rankings, data, admin, setModal, save }) {
   return (
     <>
       <div className="rc-filter">
-        <Segmented value={era.key} onChange={setSel} ariaLabel="랭킹 종류" options={eras.map((e) => [e.key, e.label])} />
+        <Pills value={era.key} onChange={setSel} ariaLabel="랭킹 종류" options={eras.map((e) => [e.key, e.label])} />
         {admin && !normalizedMode && <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 추가</button>}
       </div>
       <div className="rc-rank swap" key={sel}>
-        <RankLead rows={era.rows} chip={era.label} />
+        <Podium rows={era.rows} label={`${era.label} 누적 랭킹`} />
         {admin && era.source !== "normalized" && (
           <div className="rc-admin">
             <button
@@ -710,7 +713,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
             </button>
           </div>
         )}
-        <StandTable rows={era.rows} from={2} />
+        <StandTable rows={rankRows(era.rows).slice(3)} total={era.rows.length} />
       </div>
     </>
   );
@@ -752,11 +755,11 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
   return (
     <>
       <div className="rc-filter">
-        <Segmented value={sel} onChange={setSel} ariaLabel="시즌" options={ordered.map(({ x, i }) => [i, x.name])} />
+        <Pills value={sel} onChange={setSel} ariaLabel="시즌" options={ordered.map(({ x, i }) => [i, x.name])} />
         {admin && !normalizedMode && <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 추가</button>}
       </div>
       <div className="rc-rank swap" key={sel}>
-        <RankLead rows={s.rows} chip={s.name} />
+        <Podium rows={s.rows} label={`${s.name} 성적`} />
         {admin && s.source !== "normalized" && (
           <div className="rc-admin">
             <button
@@ -772,24 +775,43 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
             </button>
           </div>
         )}
-        <StandTable rows={s.rows} showNote={hasNote} from={2} />
+        <StandTable rows={rankRows(s.rows).slice(3)} showNote={hasNote} total={s.rows.length} />
       </div>
     </>
   );
 }
 
-/* the ranking's lead tile: the leader, and their points as the screen's poster numeral */
-function RankLead({ rows, chip }) {
-  const leader = [...(rows || [])].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+/* 랭킹의 머리(법전 Table): 1위는 피처 카드, 2~3위는 나란한 순위 카드. */
+function Podium({ rows, label }) {
+  const ref = useRef(null);
+  useCursorLight(ref);
+  const [leader, ...next] = rankRows(rows).slice(0, 3);
   if (!leader) return null;
-  return (
-    <section className="rc-lead sq" aria-label={`${chip} 1위`}>
-      <span className="ypl-chip ypl-chip--lead rc-lead-chip">{chip} 1위</span>
-      <h3 className="rc-lead-title">{leader.name}</h3>
+  const record = (r) => `우승 ${r.win || 0} 준우승 ${r.ru || 0} 4강 ${r.top4 || 0}`;
+  return (<>
+    <section className="rc-lead sq follow" ref={ref} aria-label={`${label} ${leader.rank}위`}>
+      <span className="ypl-feature-wm silver-live" aria-hidden="true">{leader.rank}</span>
+      <div className="rc-lead-who">
+        <span className="eyebrow">Rank {leader.rank}</span>
+        <h3 className="rc-lead-title silver-live">{leader.name}</h3>
+        <span className="rc-lead-sub">{label}</span>
+      </div>
       <div className="rc-lead-figs">
         <Poster label="포인트" value={(leader.points || 0).toLocaleString("ko-KR")} unit="점" />
-        <Facts items={[["우승", `${leader.win || 0}회`], ["준우승", `${leader.ru || 0}회`], ["4강", `${leader.top4 || 0}회`], ...(leader.note ? [["비고", leader.note]] : [])]} />
+        <Facts items={[["우승", leader.win || 0], ["준우승", leader.ru || 0], ["4강", leader.top4 || 0], ...(leader.note ? [["비고", leader.note]] : [])]} />
       </div>
     </section>
-  );
+    {next.length > 0 && (
+      <ol className="rc-podium">
+        {next.map((r) => (
+          <li className="rc-rankcard glass sq" key={r.rank + r.name}>
+            <span className="rc-rankcard-n fig silver">{r.rank}</span>
+            <b>{r.name}</b>
+            <span className="rc-rankcard-pts"><span className="rc-rankcard-score">{(r.points || 0).toLocaleString("ko-KR")}</span><span className="unit">점</span></span>
+            <span className="meta">{record(r)}{r.note ? ` ${r.note}` : ""}</span>
+          </li>
+        ))}
+      </ol>
+    )}
+  </>);
 }

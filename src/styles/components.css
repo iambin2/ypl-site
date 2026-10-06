@@ -43,26 +43,46 @@
 .ypl-ping { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: y-ping 2s var(--ease-spring) infinite; }
 
-/* ---------- Segmented: equal capsule cells, a thumb that slides on the snappy spring ---------- */
+/* ---------- Segmented: a glass capsule track; the chosen cell is the primary surface ----------
+   Cells share the width equally and scroll sideways only when the labels
+   cannot fit. The thumb slides on the snappy spring (Segmented.jsx measures it). */
 .ypl-seg {
-  position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  max-width: 100%; padding: var(--space-1); border-radius: var(--radius-pill); background: var(--fill-2);
+  position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: 2px;
+  width: min(100%, 560px); padding: var(--space-1); border-radius: var(--radius-pill);
+  background: var(--glass); box-shadow: var(--shadow-glass);
   overflow-x: auto; scrollbar-width: none; vertical-align: top;
 }
 .ypl-seg::-webkit-scrollbar { display: none; }
 .ypl-seg__thumb {
   position: absolute; top: var(--space-1); bottom: var(--space-1); left: 0; width: var(--w);
-  border-radius: var(--radius-pill); background: var(--bg); box-shadow: var(--shadow-thumb);
+  border-radius: var(--radius-pill); background: var(--primary); box-shadow: var(--shadow-thumb);
   transform: translateX(var(--x)); transition: transform var(--duration-snappy) var(--ease-snappy);
 }
-[data-theme="dark"] .ypl-seg__thumb { background: var(--bg-3); }
 .ypl-seg button {
-  position: relative; height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: none;
-  font-size: 15px; font-weight: 600; line-height: 1.2; color: var(--text-3); white-space: nowrap;
+  position: relative; height: 40px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: none;
+  font-size: 14px; font-weight: 700; line-height: 1.2; color: var(--text-2); white-space: nowrap;
   transition: color var(--duration-fade) var(--ease-fade);
 }
-@media (hover: hover) { .ypl-seg button:hover { color: var(--ink); } }
-.ypl-seg button[aria-selected="true"] { color: var(--ink); }
+@media (hover: hover) { .ypl-seg button:not([aria-selected="true"]):hover { color: var(--ink); } }
+.ypl-seg button[aria-selected="true"] { color: var(--on-primary); font-weight: 900; }
+
+/* ---------- Pills: the filter one level under a Segmented (season, league) ---------- */
+.ypl-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ypl-pill {
+  height: 34px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--fill-2);
+  font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--text-2); white-space: nowrap;
+}
+@media (hover: hover) { .ypl-pill:not([aria-pressed="true"]):hover { color: var(--ink); } }
+.ypl-pill[aria-pressed="true"] { background: var(--fill); color: var(--ink); }
+
+/* ---------- PageHead: latin eyebrow, two-tone title, one line ---------- */
+.ypl-head { display: grid; gap: var(--space-3); justify-items: start; margin-bottom: var(--space-7); padding: 0 var(--space-1); }
+.ypl-head h1 { font-size: 40px; font-weight: 900; line-height: 1.1; letter-spacing: -0.035em; }
+.ypl-head p { color: var(--text-2); }
+@media (min-width: 1024px) {
+  .ypl-head { gap: var(--space-4); margin-bottom: var(--space-8); }
+  .ypl-head h1 { font-size: 64px; }
+}
 
 /* ---------- Section head: latin eyebrow over a two-tone title, a quiet link on the right ----------
    Starts 4px inside the cards so its words share the cards' left axis (05). */
@@ -114,6 +134,30 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
 .ypl-empty { --r: var(--radius-lg); display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-6) var(--space-5); background: var(--glass); box-shadow: var(--shadow-glass); }
 .ypl-empty b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
 .ypl-empty p { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+
+/* ---------- FeatureCard: the one hero card on a screen ----------
+   Current champion, rank 1, and each records view's lead. .rc-lead is the
+   same card under the name the records, bracket, hall of fame and titles
+   leads use; its words sit 8px inside the 14px padding, cells sit at 14px
+   (concentric 32 - 14 = 18). */
+.ypl-feature, .rc-lead {
+  --r: var(--radius-xl);
+  position: relative; overflow: hidden; display: grid; gap: 18px;
+  padding: var(--space-6) 14px 14px; background: var(--glass); box-shadow: var(--shadow-glass);
+}
+.ypl-feature-wm {
+  position: absolute; right: var(--space-2); top: -26px; margin: 0; pointer-events: none;
+  font-family: var(--font-latin); font-size: 150px; font-weight: 800; line-height: 1; opacity: var(--opacity-watermark);
+}
+.ypl-feature-who { position: relative; display: grid; gap: 6px; padding: 0 var(--space-2); }
+.ypl-feature-name, .rc-lead-title { justify-self: start; font-size: 38px; font-weight: 900; line-height: 1.12; letter-spacing: -0.035em; }
+.ypl-feature-sub { font-size: 13px; color: var(--text-2); }
+@media (min-width: 1024px) {
+  .ypl-feature, .rc-lead { gap: 22px; padding: 30px 22px 22px; }
+  .ypl-feature-wm { font-size: 210px; right: var(--space-5); top: -40px; }
+  .ypl-feature-name, .rc-lead-title { font-size: 52px; letter-spacing: -0.04em; }
+  .ypl-feature-sub { font-size: 15px; }
+}
 
 /* ---------- page frame: display title, one-line callout, then space ---------- */
 .sec { padding: var(--space-6) 0 var(--space-11); }
@@ -281,55 +325,63 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
 .dd-opt.sel { font-weight: 600; }
 .dd-tick { display: flex; color: var(--ink); }
 .dd-none { padding: var(--space-3); font-size: 15px; color: var(--text-3); }
-/* on the inverted lead tile */
-.dd--lead .dd-btn { background: var(--lead-fill); color: var(--on-lead); }
-.dd--lead .dd-chev, .dd--lead .dd-btn:hover:not(:disabled) .dd-chev { color: var(--on-lead-2); }
-@media (hover: hover) { .dd--lead .dd-btn:hover:not(:disabled) { background: var(--lead-2); } }
-.dd--lead.open .dd-btn { background: var(--lead-2); border-color: var(--on-lead); box-shadow: 0 0 0 var(--space-1) var(--lead-fill); }
 
-/* ---------- Table: an inset group whose rows are table rows ---------- */
-.ypl-table-wrap { --r: var(--radius-lg); background: var(--bg-2); overflow: hidden; }
-.ypl-table { width: 100%; font-size: 15px; font-variant-numeric: tabular-nums; }
+/* ---------- Table: ranking from 4th place, a glass list whose rows are table rows ----------
+   Phone folds wins, runner-ups and top 4 into the meta line and hides the
+   header; 640+ spreads them into columns under a quiet header. Hairlines
+   stop 18px (desktop 24px) short of each curved edge, never above the first row. */
+.ypl-table-wrap { --r: var(--radius-lg); --pad-x: 18px; padding: 6px 0; overflow: hidden; background: var(--glass); box-shadow: var(--shadow-glass); }
+.ypl-table { width: 100%; font-variant-numeric: tabular-nums; }
 .ypl-table th {
-  height: 40px; padding: var(--space-3) var(--space-2) 0; text-align: left; vertical-align: middle;
-  font-size: 13px; font-weight: 600; color: var(--text-3); white-space: nowrap;
+  height: 40px; padding: var(--space-2) var(--space-2) 0; text-align: left; vertical-align: middle;
+  font-size: 12px; font-weight: 700; color: var(--text-3); white-space: nowrap;
 }
-.ypl-table td { height: var(--row-min); padding: var(--space-2); vertical-align: middle; }
-.ypl-table :is(th, td):first-child { padding-left: var(--space-4); }
-.ypl-table :is(th, td):last-child { padding-right: var(--space-4); }
-/* 0.5px separators: start after the rank column, stop short of the curved edge */
-.ypl-table tbody td:not(:first-child) { background: linear-gradient(var(--line), var(--line)) no-repeat 0 0 / 100% var(--hair); }
-.ypl-table tbody td:last-child { background-size: calc(100% - var(--space-4)) var(--hair); }
+.ypl-table td { height: var(--row-min); padding: 14px var(--space-2); vertical-align: middle; }
+.ypl-table :is(th, td):first-child { padding-left: var(--pad-x); }
+.ypl-table :is(th, td):last-child { padding-right: var(--pad-x); }
+.ypl-table tbody tr + tr td { background: linear-gradient(var(--line), var(--line)) no-repeat 0 0 / 100% var(--hair); }
+.ypl-table tbody tr + tr td:first-child { background-position: var(--pad-x) 0; background-size: calc(100% - var(--pad-x)) var(--hair); }
+.ypl-table tbody tr + tr td:last-child { background-size: calc(100% - var(--pad-x)) var(--hair); }
 .ypl-table .r { text-align: right; }
 .ypl-table .c { text-align: center; }
-.ypl-table__rank { width: 52px; }
-.ypl-table__rank .num, .ypl-table__pts .num { font-size: 32px; }
-.ypl-table__pts { display: inline-flex; align-items: baseline; }
-.ypl-table__name { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
-.ypl-table__meta { display: block; font-size: 13px; color: var(--text-3); letter-spacing: 0; }
-.ypl-table__n { width: 64px; color: var(--text-2); }
+.ypl-table__rank { width: 46px; }
+td.ypl-table__rank { font-family: var(--font-latin); font-size: 17px; font-weight: 700; line-height: 1; color: var(--text-2); }
+.ypl-table__name { display: block; font-size: 15px; font-weight: 700; line-height: 1.4; letter-spacing: -0.01em; }
+.ypl-table__meta { display: block; font-size: 12px; line-height: 1.45; letter-spacing: 0; color: var(--text-3); }
+.ypl-table__n { width: 72px; }
+td.ypl-table__n { font-family: var(--font-latin); font-size: 15px; font-weight: 700; color: var(--text-2); }
+td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight: 700; line-height: 1; white-space: nowrap; }
 .ypl-table__note { font-size: 13px; color: var(--text-3); }
 .ypl-table .wide { display: none; }
+.ypl-table-more { width: 100%; margin-top: var(--space-3); }
+@media (max-width: 639px) { .ypl-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
 @media (min-width: 640px) {
+  /* fixed columns: the name takes the slack, the numbers sit together at the right */
+  .ypl-table { table-layout: fixed; }
+  .ypl-table th.r:last-child { width: calc(96px + var(--pad-x)); }
   .ypl-table .wide { display: table-cell; }
   .ypl-table .narrow { display: none; }
 }
 @media (min-width: 1024px) {
-  .ypl-table__rank { width: 64px; }
-  .ypl-table__rank .num, .ypl-table__pts .num { font-size: 40px; }
+  .ypl-table-wrap { --pad-x: 24px; padding: var(--space-2) 0; }
+  .ypl-table td { padding-block: 18px; }
+  .ypl-table__rank { width: 56px; }
+  .ypl-table__name { font-size: 16px; }
+  .ypl-table__meta, .ypl-table__note, .ypl-table th { font-size: 13px; }
+  .ypl-table__n { width: 96px; }
 }
 
-/* ---------- Pager: 44px capsules, the current page inverted ---------- */
+/* ---------- Pager: 44px capsules, latin numerals, the current page on the primary surface ---------- */
 .pager { display: flex; justify-content: center; align-items: center; gap: var(--space-1); margin-top: var(--space-6); }
 .pg-btn {
-  min-width: var(--target); height: var(--target); padding: 0 var(--space-3); display: inline-grid; place-items: center;
+  min-width: var(--target); height: var(--target); padding: 0 var(--space-2); display: inline-grid; place-items: center;
   border: 0; border-radius: var(--radius-pill); background: transparent;
-  font-size: 15px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums;
+  font-family: var(--font-latin); font-size: 14px; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums;
   transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
 }
 @media (hover: hover) { .pg-btn:hover:not(:disabled):not(.on) { background: var(--fill-2); color: var(--ink); } }
 .pg-btn:active:not(:disabled) { scale: .97; transition: scale var(--duration-press) var(--ease-fade); }
-.pg-btn.on { background: var(--ink); color: var(--on-ink); }
+.pg-btn.on { background: var(--primary); color: var(--on-primary); }
 .pg-dots { padding: 0 var(--space-1); color: var(--text-3); }
 
 /* ---------- search field: a 44px capsule ---------- */

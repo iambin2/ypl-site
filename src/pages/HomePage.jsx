@@ -102,12 +102,12 @@ function ChampionCard({ reigning }) {
   const season = displaySeasonLabel(reigning.slabel);
   const slots = [...party, ...Array(Math.max(0, 6 - party.length)).fill(null)].slice(0, Math.max(6, party.length));
   return (
-    <div className="hm-feature glass sq follow" ref={ref}>
-      {n > 0 && <span className="hm-feature-wm silver-live" aria-hidden="true">{n}</span>}
-      <div className="hm-feature-who">
+    <div className="ypl-feature glass sq follow" ref={ref}>
+      {n > 0 && <span className="ypl-feature-wm silver-live" aria-hidden="true">{n}</span>}
+      <div className="ypl-feature-who">
         <span className="eyebrow">{n > 0 ? `${ordinal(n)} Champion` : "Champion"}</span>
-        <span className="hm-feature-name silver-live">{reigning.name}</span>
-        <span className="hm-feature-sub">{season ? `${season} 챔피언` : gen}</span>
+        <span className="ypl-feature-name silver-live">{reigning.name}</span>
+        <span className="ypl-feature-sub">{season ? `${season} 챔피언` : gen}</span>
       </div>
       <ol className="hm-pods" aria-label="우승 파티">
         {slots.map((m, i) => (

@@ -323,7 +323,7 @@ i, em { font-style: normal; }
 
 /* ---------- numerals (02, 03) ---------- */
 .num { font-family: var(--font-num); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0; }
-.unit { font-family: var(--font-sans); font-size: 13px; font-weight: 600; line-height: 1.2; letter-spacing: 0; color: var(--text-3); margin-left: var(--space-1); }
+.unit { font-family: var(--font-sans); font-size: 12px; font-weight: 700; line-height: 1.2; letter-spacing: 0; color: var(--text-3); margin-left: var(--space-1); }
 
 /* ---------- press (09): every control and tile ---------- */
 .press {
