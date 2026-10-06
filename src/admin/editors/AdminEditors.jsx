@@ -1,11 +1,12 @@
 import Icon from "../../components/common/Icon.jsx";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { normTeam as normalizeLegacyParty } from "../../services/legacyPartyImages.js";
 import { Dropdown, Modal, siteAlert } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, normalizeApplicationEventDivision } from "../../services/bracketTeamParticipants.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
+import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
 import { verifyAdminCredentials } from "../adminAuth.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -31,25 +32,15 @@ export function MetaEditor({ meta, onClose, onSave }) {
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave(m)}>저장</button></div>
   </Modal>);
 }
-function compressImg(file, cb){
-  const r=new FileReader();
-  r.onload=()=>{ const im=new Image(); im.onload=()=>{
-    const max=180; const sc=Math.min(1,max/Math.max(im.width,im.height));
-    const w=Math.max(1,Math.round(im.width*sc)), h=Math.max(1,Math.round(im.height*sc));
-    const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
-    cv.getContext("2d").drawImage(im,0,0,w,h);
-    let url; try{ url=cv.toDataURL("image/webp",0.8); }catch(e){ url=null; }
-    cb(url);
-  }; im.onerror=()=>cb(null); im.src=r.result; };
-  r.onerror=()=>cb(null); r.readAsDataURL(file);
-}
 export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = normalizeLegacyParty }) {
   const [gen,setGen]=useState(item?.gen||""),[season,setSeason]=useState(item?.season||""),[name,setName]=useState(item?.name||""),[slabel,setSlabel]=useState(item?.slabel||"");
   const [mons,setMons]=useState(()=>{ const t=normTeam(item?.team); const a=[]; for(let i=0;i<6;i++)a.push(t[i]||{name:"",img:""}); return a; });
+  const [artwork,setArtwork]=useState(null);
+  useEffect(()=>{ loadHallOfFameArtworkLookup().then(setArtwork,()=>setArtwork(new Map())); },[]);
   const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));
-  const onFile=(i,file)=>{ if(!file)return; if(file.size>8*1024*1024){siteAlert("이미지가 너무 큽니다.","8MB를 넘는 파일은 올릴 수 없습니다. 더 작은 파일을 사용해 주세요.");return;} compressImg(file,(url)=>{ if(!url){siteAlert("이미지를 불러오지 못했습니다.","다른 이미지 파일로 다시 시도해 주세요.");return;} setMon(i,{img:url}); }); };
   const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요.");return;}
-    const team=mons.filter(m=>m.name.trim()||m.img).map(m=>({name:m.name.trim(),img:m.img||""}));
+    // site_data는 방문할 때마다 통째로 내려받으므로 base64 이미지는 저장하지 않는다. 그림은 이름으로 찾는다.
+    const team=mons.filter(m=>m.name.trim()).map(m=>({name:m.name.trim(),img:m.img&&!m.img.startsWith("data:")?m.img:""}));
     onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,slabel:slabel.trim()||undefined,name:name.trim(),team}); };
   return (<Modal title={item?"챔피언 수정":"챔피언 추가"} onClose={onClose}>
     <div className="bk-grow2">
@@ -58,17 +49,14 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
     </div>
     <div className="field"><label>챔피언 이름</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
     <div className="field"><label>시즌 라벨 (선택)</label><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL 시즌 2"/></div>
-    <div className="field"><label>우승 엔트리 — 이미지 + 이름</label>
-      <div className="ch-grid">{mons.map((m,i)=>(<div className="ch-slot" key={i}>
+    <div className="field"><label>우승 엔트리</label>
+      <div className="ch-grid">{mons.map((m,i)=>{ const img=m.img||resolveHallOfFameArtwork(m,artwork); return (<div className="ch-slot" key={i}>
         <div className="ch-imgwrap">
-          <label className="ch-img">{m.img?<img src={m.img} alt="" loading="lazy" decoding="async"/>:<span className="ch-plus"><Icon n="plus" size={18}/>이미지</span>}
-            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{onFile(i,e.target.files&&e.target.files[0]); e.target.value="";}}/>
-          </label>
-          {m.img&&<button type="button" className="ch-clear" onClick={()=>setMon(i,{img:""})}><Icon n="x" size={11}/></button>}
+          <div className="ch-img">{img?<img src={img} alt="" loading="lazy" decoding="async"/>:<span className="ch-plus">{m.name.trim()?"이미지 없음":""}</span>}</div>
         </div>
-        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value})} placeholder={`이름 ${i+1}`}/>
-      </div>))}</div>
-      <div className="bk-hint">각 칸을 눌러 이미지를 올리고 이름을 입력하세요. 이미지는 자동으로 압축해 저장합니다. 배경이 투명한 PNG 파일을 권장합니다.</div>
+        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value,img:""})} placeholder={`이름 ${i+1}`}/>
+      </div>); })}</div>
+      <div className="bk-hint">포켓몬 이름을 입력하면 이미지가 자동으로 표시됩니다. 폼이 있는 포켓몬은 팀 빌더에 나오는 이름 그대로 입력해 주세요.</div>
     </div>
     <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
   </Modal>);
