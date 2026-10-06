@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Icon, Pager, Reveal, StandTable, sitePrompt } from "../components/index.js";
+import { Dropdown, Facts, Icon, Pager, Poster, Reveal, Segmented, StandTable, sitePrompt } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
@@ -100,26 +100,22 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       </Reveal>
 
       {normalizedRead.loading && (
-        <div className="records-read-state">공식 기록을 불러오는 중입니다.</div>
+        <div className="records-read-state sq">공식 기록을 불러오는 중입니다.</div>
       )}
       {normalizedRead.error && (
-        <div className="records-read-state is-error" role="alert">
+        <div className="records-read-state sq is-error" role="alert">
           <span>공식 기록을 읽지 못해 아래에는 기존 기록만 표시됩니다. 다시 시도해 주세요.</span>
-          <button type="button" className="btn btn-sm" onClick={() => setReloadKey((value) => value + 1)}>다시 시도</button>
+          <button type="button" className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={() => setReloadKey((value) => value + 1)}>다시 시도</button>
         </div>
       )}
 
-      <Reveal className="subtabs records-main-tabs">
-        {[
-          ["trainer", "트레이너"],
-          ["tour", "대회"],
-          ["pokemon", "포켓몬"],
-          ["rank", "랭킹"],
-        ].map(([key, label]) => (
-          <button key={key} className={"subtab" + (tab === key ? " on" : "")} onClick={() => setTab(key)}>
-            {label}
-          </button>
-        ))}
+      <Reveal className="records-main-tabs">
+        <Segmented
+          value={tab}
+          onChange={setTab}
+          ariaLabel="기록 보기"
+          options={[["trainer", "트레이너"], ["tour", "대회"], ["pokemon", "포켓몬"], ["rank", "랭킹"]]}
+        />
       </Reveal>
 
       <div className="swap" key={tab}>
@@ -145,7 +141,7 @@ function TrainerView({ snapshot }) {
     : visible[0]?.key || visible[0]?.name || snapshot.trainers[0]?.key || snapshot.trainers[0]?.name;
   const profile = currentKey ? snapshot.profiles[currentKey] : null;
 
-  if (!profile) return <div className="panel none records-empty">트레이너 기록이 없습니다.</div>;
+  if (!profile) return <EmptyTile title="트레이너 기록이 없습니다." />;
 
   const seasonMatch = (value) => !season || value === season;
   const placements = profile.placements.filter((p) => seasonMatch(p.season));
@@ -169,140 +165,131 @@ function TrainerView({ snapshot }) {
     .map(([name, entries]) => ({ name, entries }))
     .sort((a, b) => b.entries - a.entries || a.name.localeCompare(b.name, "ko"));
 
+  /* 챔피언 칩과 칭호 목록이 같은 항목을 각각 그리고 있었다.
+     (예: "초대 챔피언"이 champions 에서 한 번, titles 에서 또 한 번)
+     챔피언 칩이 이미 덮는 이름은 칭호 목록에서 뺀다.
+     c.gen 이 레거시는 "초대", 정규화 행은 "6대 챔피언"으로 들어와
+     그대로 붙이면 "6대 챔피언 챔피언"이 된다. 접미사를 한 번만 붙인다. */
+  const genLabel = (g) => `${String(g || "").replace(/\s*챔피언\s*$/, "")} 챔피언`;
+  const shownTitles = new Set(profile.champions.map((c) => genLabel(c.gen)));
+  const restTitles = profile.titles.filter((t) => !shownTitles.has(t.name));
+  const historyRows = history.slice().sort(compareHistoryRecency).slice((histCur - 1) * HIST_PER_PAGE, histCur * HIST_PER_PAGE);
+
   return (
-    <div className="records-trainer-layout">
-      <aside className="panel records-trainer-list">
-        <div className="records-search">
-          <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="트레이너 검색" />
-          </div>
-          <span>{visible.length}명</span>
-        </div>
-        <div className="records-trainer-scroll">
-          {visible.map((trainer) => (
-            <button
-              key={trainer.key || trainer.name}
-              className={"records-trainer-row" + ((trainer.key || trainer.name) === currentKey ? " on" : "")}
-              onClick={() => { setSelected(trainer.key || trainer.name); setHistPage(1); }}
-            >
-              <b>{trainer.name}</b>
-              <span>우승 {trainer.wins}, 준우승 {trainer.runnerUps}, 4강 {trainer.top4}</span>
-            </button>
-          ))}
-          {!visible.length && <div className="none records-list-none">검색 결과 없음</div>}
+    <div className="rc-layout">
+      <aside className="rc-rail sq" aria-label="트레이너 목록">
+        <RailSearch value={query} onChange={setQuery} placeholder="트레이너 검색" count={`${visible.length}명`} />
+        <div className="rc-rail-scroll">
+          {visible.map((trainer) => {
+            const on = (trainer.key || trainer.name) === currentKey;
+            return (
+              <button
+                key={trainer.key || trainer.name}
+                className={"rc-rail-row" + (on ? " on" : "")}
+                aria-pressed={on}
+                onClick={() => { setSelected(trainer.key || trainer.name); setHistPage(1); }}
+              >
+                <span className="ypl-row__title">{trainer.name}</span>
+                <span className="ypl-row__meta">우승 {trainer.wins}, 준우승 {trainer.runnerUps}, 4강 {trainer.top4}</span>
+              </button>
+            );
+          })}
+          {!visible.length && <p className="rc-rail-none">검색 결과가 없습니다.</p>}
         </div>
       </aside>
 
-      <div className="records-profile">
-        <div className="panel records-profile-hero">
-          <div className="records-profile-head">
-            <div className="records-profile-identity">
-              <h3 className="records-profile-name">{profile.name}</h3>
-            </div>
-            <Dropdown
-              className="records-season-filter records-profile-filter"
-              value={season}
-              onChange={(value) => { setSeason(value); setHistPage(1); }}
-              ariaLabel="시즌 필터"
-              options={[{ value: "", label: "전체 기록" }, ...snapshot.seasons.map((name) => ({ value: name, label: name }))]}
-            />
+      <div className="rc-profile">
+        <section className="rc-lead sq" aria-labelledby="rc-trainer-name">
+          <div className="rc-lead-head">
+          <h3 className="rc-lead-title" id="rc-trainer-name">{profile.name}</h3>
+          <Dropdown
+            className="dd--lead"
+            value={season}
+            onChange={(value) => { setSeason(value); setHistPage(1); }}
+            ariaLabel="시즌 필터"
+            options={[{ value: "", label: "전체 기록" }, ...snapshot.seasons.map((name) => ({ value: name, label: name }))]}
+          />
           </div>
-
-          <div className="records-stat-grid">
-            <Stat label="참가" value={history.length} suffix="회" />
-            <Stat label="우승" value={championships} suffix="회" />
-            <Stat label="준우승" value={runnerUps} suffix="회" />
-            <Stat label="4강" value={top4} suffix="회" />
+          <div className="rc-lead-figs">
+            <Poster label="우승" value={championships} unit="회" />
+            <Facts items={[["참가", `${history.length}회`], ["준우승", `${runnerUps}회`], ["4강", `${top4}회`]]} />
           </div>
-
-          {(() => {
-            /* 챔피언 칩과 칭호 목록이 같은 항목을 각각 그리고 있었다.
-               (예: "초대 챔피언"이 champions 에서 한 번, titles 에서 또 한 번)
-               챔피언 칩이 이미 덮는 이름은 칭호 목록에서 뺀다. */
-            /* c.gen 이 레거시는 "초대", 정규화 행은 "6대 챔피언"으로 들어와
-               그대로 붙이면 "6대 챔피언 챔피언"이 된다. 접미사를 한 번만 붙인다. */
-            const genLabel = (g) => `${String(g || "").replace(/\s*챔피언\s*$/, "")} 챔피언`;
-            const shown = new Set(profile.champions.map((c) => genLabel(c.gen)));
-            const rest = profile.titles.filter((t) => !shown.has(t.name));
-            if (!profile.champions.length && !rest.length) return null;
-            return (
-              <div className="records-title-chips">
-                {profile.champions.map((c, i) => (
-                  /* 금색은 우승 계열에만. 나머지 칭호는 무채색으로 둔다. */
-                  <span key={`c${i}`} className="is-champion">{genLabel(c.gen)}</span>
-                ))}
-                {rest.map((title, i) => (
-                  <span key={`t${i}`}>{title.name}</span>
-                ))}
-              </div>
-            );
-          })()}
-        </div>
-
-        <div className="records-profile-grid">
-          <section className="records-block">
-            <div className="records-block-head">
-              <h4>대회 이력</h4>
-              <span>최근 순으로 {history.length}건</span>
+          {(profile.champions.length > 0 || restTitles.length > 0) && (
+            <div className="rc-lead-chips">
+              {profile.champions.map((c, i) => <span key={`c${i}`} className="ypl-chip ypl-chip--lead">{genLabel(c.gen)}</span>)}
+              {restTitles.map((title, i) => <span key={`t${i}`} className="ypl-chip ypl-chip--lead">{title.name}</span>)}
             </div>
-            {history.length ? (
-              <table className="records-history-table">
-                <thead><tr><th>대회</th><th>일자</th><th className="r">순위</th></tr></thead>
-                <tbody>
-                  {history.slice().sort(compareHistoryRecency).slice((histCur - 1) * HIST_PER_PAGE, histCur * HIST_PER_PAGE).map((event) => {
-                    const teamName = displayTeamName(event.teamName);
-                    const rule = displayRecordMeta(event.rule);
-                    const label = event.resultLabel || placementLabel(event.placement, event.team);
-                    return (
-                      <tr key={`${event.id}:${event.playerId || profile.playerId || profile.key}:${event.placement}`}>
-                        <td className="t">
-                          <b>{event.championSeries
-                            ? "챔피언스 시리즈"
-                            : event.eventName || `${event.tournamentName}${event.round ? ` ${event.round}회` : ""}`}</b>
-                          <span>{[event.season, teamName, rule].filter(Boolean).join(", ")}</span>
-                        </td>
-                        <td className="date tnum">{event.date}</td>
-                        <td className={"r " + (event.placement === "win" ? "win" : "")}>{label}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            ) : <div className="none">현재 확인 가능한 대회 기록이 없습니다.</div>}
-            <Pager page={histCur} pages={histPages} onGo={setHistPage} />
-          </section>
+          )}
+        </section>
 
-          <section className="records-block">
-            <div className="records-block-head">
-              <h4>엔트리 기록</h4>
-              <span>자주 쓴 포켓몬</span>
-            </div>
-            {favorites.length ? (
-              <div className="records-fav-grid">
-                {favorites.slice(0, 6).map((item) => (
-                  <div key={item.name}><b>{item.name}</b><span className="tnum">{item.entries}회</span></div>
-                ))}
-              </div>
-            ) : (
-              <div className="records-empty-box">
-                <b>저장된 우승 엔트리가 없습니다.</b>
-                대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다.
-              </div>
-            )}
-          </section>
-        </div>
+        <section className="rc-sec" aria-labelledby="rc-hist-h">
+          <div className="rc-sech"><h4 id="rc-hist-h">대회 이력</h4><span>최근 순으로 {history.length}건</span></div>
+          {history.length ? (
+            <ul className="ypl-group sq">
+              {historyRows.map((event) => {
+                const teamName = displayTeamName(event.teamName);
+                const rule = displayRecordMeta(event.rule);
+                const label = event.resultLabel || placementLabel(event.placement, event.team);
+                const meta = [event.season, teamName, rule].filter(Boolean).join(", ");
+                return (
+                  <li key={`${event.id}:${event.playerId || profile.playerId || profile.key}:${event.placement}`}>
+                    <div className="ypl-row rc-hist-row">
+                      <span className="rc-hist-main">
+                        <span className="ypl-row__title">{event.championSeries
+                          ? "챔피언스 시리즈"
+                          : event.eventName || `${event.tournamentName}${event.round ? ` ${event.round}회` : ""}`}</span>
+                        {meta && <span className="ypl-row__meta">{meta}</span>}
+                      </span>
+                      <span className="rc-hist-end">
+                        <span className={"rc-place" + (event.placement === "win" ? " win" : "")}>{label}</span>
+                        <span className="ypl-row__end">{event.date}</span>
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : <EmptyTile title="확인 가능한 대회 기록이 없습니다." />}
+          <Pager page={histCur} pages={histPages} onGo={setHistPage} />
+        </section>
+
+        <section className="rc-sec" aria-labelledby="rc-fav-h">
+          <div className="rc-sech"><h4 id="rc-fav-h">엔트리 기록</h4><span>자주 쓴 포켓몬</span></div>
+          {favorites.length ? (
+            <CountList items={favorites.slice(0, 6)} />
+          ) : (
+            <EmptyTile title="저장된 우승 엔트리가 없습니다." desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
+          )}
+        </section>
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, suffix }) {
+/* ---- shared pieces of the records views ---- */
+function EmptyTile({ title, desc }) {
+  return <div className="ypl-empty sq"><b>{title}</b>{desc && <p>{desc}</p>}</div>;
+}
+
+function RailSearch({ value, onChange, placeholder, count }) {
   return (
-    <div className="records-stat">
-      <span>{label}</span>
-      <b>{value}<small>{suffix}</small></b>
+    <div className="rc-search">
+      <div className="records-search-field">
+        <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={16}/></span>
+        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder} />
+      </div>
+      <span className="tnum">{count}</span>
     </div>
+  );
+}
+
+function CountList({ items }) {
+  return (
+    <ul className="ypl-group sq">
+      {items.map((item) => (
+        <li key={item.name}><div className="ypl-row"><span className="ypl-row__title">{item.name}</span><span className="ypl-row__end">{item.entries}회</span></div></li>
+      ))}
+    </ul>
   );
 }
 
@@ -433,8 +420,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       </div>
     );
     return (
-      <div className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
-        <div className="r2-date tnum">{r.date}</div>
+      <li className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
+        <div className="r2-date num">{r.date}</div>
         <div className="r2-main">
           {toggleable && !r.team ? (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
@@ -517,7 +504,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
             </div>
           )}
         </div>
-      </div>
+      </li>
     );
   };
 
@@ -530,38 +517,43 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     return (parseInt(b.round.round) || 0) - (parseInt(a.round.round) || 0);
   });
 
-  if (!otours.length) return <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>;
+  if (!otours.length) return <EmptyTile title="대회 기록이 없습니다." />;
 
   return (<>
-    <div className="subtabs">
-      <button className={"subtab" + (category === "all" ? " on" : "")} onClick={() => setCategory("all")}>전체</button>
-      {otours.map((tour) => (
-        <button key={tour.key} className={"subtab" + (category === tour.key ? " on" : "")} onClick={() => setCategory(tour.key)}>{tour.label}</button>
-      ))}
+    <div className="rc-filter">
+      <Segmented
+        value={selectedTour ? selectedTour.key : "all"}
+        onChange={setCategory}
+        ariaLabel="대회 종류"
+        options={[["all", "전체"], ...otours.map((tour) => [tour.key, tour.label])]}
+      />
     </div>
 
     {selectedTour ? (
-      <div className="panel swap" key={category} style={{ paddingBottom: 14 }}>
-        <div className="records-archive-head">
-          <h3>{selectedTour.label}</h3>
+      <div className="swap" key={category}>
+        <div className="rc-sech">
+          <h4>{selectedTour.label}</h4>
           <span className="tnum">{(selectedTour.rounds || []).length}회</span>
           {admin && selectedTour.legacy && <button className="btn btn-primary btn-sm ed-pencil" onClick={openRoundEditor}>회차 편집</button>}
         </div>
-        {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}
+        <ul className="ypl-group sq rc-rounds">
+          {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}
+        </ul>
       </div>
     ) : (
       <>
         <div className="records-toolbar">
           <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" />
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={16}/></span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" aria-label="대회 기록 검색" />
           </div>
-          <span>전체 {allRows.length}회차</span>
+          <span className="tnum">전체 {allRows.length}회차</span>
         </div>
-        <div className="panel swap" style={{ paddingBottom: 14 }}>
-          {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
-          {!allRows.length && <div className="none" style={{ padding: 24 }}>표시할 대회 기록이 없습니다.</div>}
-        </div>
+        {allRows.length ? (
+          <ul className="ypl-group sq rc-rounds swap">
+            {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
+          </ul>
+        ) : <EmptyTile title="검색과 맞는 대회 기록이 없습니다." />}
       </>
     )}
   </>);
@@ -578,94 +570,72 @@ function PokemonView({ snapshot }) {
   const current = snapshot.pokemon.find((p) => p.name === currentName);
 
   if (!current) {
-    return (
-      <div className="panel none records-empty">
-        현재 기록에 연결된 파티 엔트리가 없습니다. 대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다.
-      </div>
-    );
+    return <EmptyTile title="기록에 연결된 파티 엔트리가 없습니다." desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
   }
 
   return (
-    <div className="records-pokemon-layout">
-      <aside className="panel records-pokemon-list">
-        <div className="records-search">
-          <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={15}/></span>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="포켓몬 검색" />
-          </div>
-          <span>{visible.length}종</span>
-        </div>
-        <div className="records-pokemon-scroll">
-          {visible.map((pokemon, index) => (
-            <button
-              key={pokemon.name}
-              className={"records-pokemon-row" + (pokemon.name === currentName ? " on" : "")}
-              onClick={() => setSelected(pokemon.name)}
-            >
-              <span className="tnum">{index + 1}</span>
-              <b>{pokemon.name}</b>
-              <em>{pokemon.entries}회</em>
-            </button>
-          ))}
+    <div className="rc-layout">
+      <aside className="rc-rail sq" aria-label="포켓몬 목록">
+        <RailSearch value={query} onChange={setQuery} placeholder="포켓몬 검색" count={`${visible.length}종`} />
+        <div className="rc-rail-scroll">
+          {visible.map((pokemon, index) => {
+            const on = pokemon.name === currentName;
+            return (
+              <button
+                key={pokemon.name}
+                className={"rc-rail-row rc-rail-row--rank" + (on ? " on" : "")}
+                aria-pressed={on}
+                onClick={() => setSelected(pokemon.name)}
+              >
+                <span className="rc-rail-n tnum">{index + 1}</span>
+                <span className="ypl-row__title">{pokemon.name}</span>
+                <span className="ypl-row__end">{pokemon.entries}회</span>
+              </button>
+            );
+          })}
+          {!visible.length && <p className="rc-rail-none">검색 결과가 없습니다.</p>}
         </div>
       </aside>
 
-      <div className="records-profile">
-        <section className="panel records-profile-hero">
-          <h3 className="records-profile-name">{current.name}</h3>
-          <div className="records-stat-grid pokemon">
-            <Stat label="등록 엔트리" value={current.entries} suffix="회" />
-            <Stat label="엔트리 채용률" value={current.entryRate.toFixed(1)} suffix="%" />
-            <Stat label="사용 트레이너" value={current.trainerCount} suffix="명" />
-            <Stat label="우승 엔트리" value={current.wins} suffix="회" />
+      <div className="rc-profile">
+        <section className="rc-lead sq" aria-labelledby="rc-pokemon-name">
+          <h3 className="rc-lead-title" id="rc-pokemon-name">{current.name}</h3>
+          <div className="rc-lead-figs">
+            <Poster label="등록 엔트리" value={current.entries} unit="회" />
+            <Facts items={[["엔트리 채용률", `${current.entryRate.toFixed(1)}%`], ["사용 트레이너", `${current.trainerCount}명`], ["우승 엔트리", `${current.wins}회`]]} />
           </div>
-          <p className="records-pokemon-note">
-            채용률은 현재 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
+          <p className="rc-lead-note">
+            채용률은 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
             실제 경기 선출 여부는 기록하지 않으므로 포켓몬 승률은 표시하지 않습니다.
           </p>
         </section>
 
-        <div className="records-profile-grid">
-          <section className="panel records-block">
-            <div className="records-block-head"><h4>많이 등록한 트레이너</h4></div>
-            <div className="records-favorites">
-              {current.trainers.slice(0, 8).map((item) => (
-                <div key={item.name}>
-                  <b>{item.name}</b>
-                  <em className="tnum">{item.entries}회</em>
-                </div>
-              ))}
-            </div>
+        <div className="rc-two">
+          <section className="rc-sec" aria-labelledby="rc-pk-tr-h">
+            <div className="rc-sech"><h4 id="rc-pk-tr-h">많이 등록한 트레이너</h4></div>
+            <CountList items={current.trainers.slice(0, 8)} />
           </section>
-
-          <section className="panel records-block">
-            <div className="records-block-head"><h4>함께 많이 등록된 포켓몬</h4></div>
-            <div className="records-favorites">
-              {current.partners.slice(0, 8).map((item) => (
-                <div key={item.name}>
-                  <b>{item.name}</b>
-                  <em className="tnum">{item.entries}회</em>
-                </div>
-              ))}
-              {!current.partners.length && <div className="none">동반 엔트리 기록이 없습니다.</div>}
-            </div>
+          <section className="rc-sec" aria-labelledby="rc-pk-pt-h">
+            <div className="rc-sech"><h4 id="rc-pk-pt-h">함께 많이 등록된 포켓몬</h4></div>
+            {current.partners.length
+              ? <CountList items={current.partners.slice(0, 8)} />
+              : <EmptyTile title="동반 엔트리 기록이 없습니다." />}
           </section>
         </div>
 
         {current.champions.length > 0 && (
-          <section className="panel records-block">
-            <div className="records-block-head">
-              <h4>역대 챔피언 엔트리</h4>
-              <span>명예의 전당 데이터</span>
-            </div>
-            <div className="records-achievements">
+          <section className="rc-sec" aria-labelledby="rc-pk-ch-h">
+            <div className="rc-sech"><h4 id="rc-pk-ch-h">역대 챔피언 엔트리</h4><span>명예의 전당 기록</span></div>
+            <ul className="ypl-group sq">
               {current.champions.map((item, index) => (
-                <div key={`${item.gen}:${index}`}>
-                  <strong><Icon n="crown" size={13}/> {item.gen} {item.name}</strong>
-                  <span>{item.season}</span>
-                </div>
+                <li key={`${item.gen}:${index}`}>
+                  <div className="ypl-row">
+                    <span className="ypl-row__title rc-crown"><Icon n="crown" size={16}/>{item.gen} {item.name}</span>
+                    <span className="ypl-row__end">{item.season}</span>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
       </div>
@@ -678,11 +648,10 @@ function RankingHub({ snapshot, data, admin, setModal, save }) {
   const [sub, setSub] = useState("rank");
   return (
     <>
-      <div className="subtabs records-rank-tabs">
-        <button className={"subtab" + (sub === "rank" ? " on" : "")} onClick={() => setSub("rank")}>누적 랭킹</button>
-        <button className={"subtab" + (sub === "season" ? " on" : "")} onClick={() => setSub("season")}>시즌별 성적</button>
+      <div className="rc-filter">
+        <Segmented value={sub} onChange={setSub} ariaLabel="랭킹 보기" options={[["rank", "누적 랭킹"], ["season", "시즌별 성적"]]} />
       </div>
-      <p className="pts-note records-points-note">
+      <p className="rc-note">
         누적 랭킹과 시즌별 성적은 이전 기록에서 넘어온 점수에 대회마다 얻은 점수를 더해 매깁니다.
         등수별 점수는 마스터 리그, 파이컵 라이트처럼 대회 종류에 따라 다를 수 있습니다.
       </p>
@@ -712,23 +681,22 @@ function RankView({ rankings, data, admin, setModal, save }) {
   if (!era) {
     return (
       <>
-        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-primary btn-sm" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
-        <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>
+        {admin && !normalizedMode && <div className="rc-filter"><button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
+        <EmptyTile title="랭킹 기록이 없습니다." />
       </>
     );
   }
 
   return (
     <>
-      <div className="subtabs">
-        {eras.map((e) => (
-          <button key={e.key} className={"subtab" + (e.key === sel ? " on" : "")} onClick={() => setSel(e.key)}>{e.label}</button>
-        ))}
-        {admin && !normalizedMode && <button className="subtab add" onClick={addEra}>+ 추가</button>}
+      <div className="rc-filter">
+        <Segmented value={era.key} onChange={setSel} ariaLabel="랭킹 종류" options={eras.map((e) => [e.key, e.label])} />
+        {admin && !normalizedMode && <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 추가</button>}
       </div>
-      <div className="panel swap" key={sel}>
+      <div className="rc-rank swap" key={sel}>
+        <RankLead rows={era.rows} chip={era.label} />
         {admin && era.source !== "normalized" && (
-          <div style={{ padding: "12px 0 2px" }}>
+          <div className="rc-admin">
             <button
               className="btn btn-primary btn-sm"
               onClick={() => setModal({
@@ -742,7 +710,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
             </button>
           </div>
         )}
-        <StandTable rows={era.rows} />
+        <StandTable rows={era.rows} from={2} />
       </div>
     </>
   );
@@ -770,8 +738,8 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
   if (!s) {
     return (
       <>
-        {admin && !normalizedMode && <div style={{ padding: "4px 0" }}><button className="btn btn-primary btn-sm" onClick={addSeason}>+ 시즌 추가</button></div>}
-        <div className="panel none" style={{ padding: 24 }}>데이터 없음</div>
+        {admin && !normalizedMode && <div className="rc-filter"><button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 시즌 추가</button></div>}
+        <EmptyTile title="시즌 성적이 없습니다." />
       </>
     );
   }
@@ -783,15 +751,14 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
 
   return (
     <>
-      <div className="subtabs">
-        {ordered.map(({ x, i }) => (
-          <button key={i} className={"subtab" + (i === sel ? " on" : "")} onClick={() => setSel(i)}>{x.name}</button>
-        ))}
-        {admin && !normalizedMode && <button className="subtab add" onClick={addSeason}>+ 추가</button>}
+      <div className="rc-filter">
+        <Segmented value={sel} onChange={setSel} ariaLabel="시즌" options={ordered.map(({ x, i }) => [i, x.name])} />
+        {admin && !normalizedMode && <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 추가</button>}
       </div>
-      <div className="panel swap" key={sel}>
+      <div className="rc-rank swap" key={sel}>
+        <RankLead rows={s.rows} chip={s.name} />
         {admin && s.source !== "normalized" && (
-          <div style={{ padding: "12px 0 2px" }}>
+          <div className="rc-admin">
             <button
               className="btn btn-primary btn-sm"
               onClick={() => setModal({
@@ -805,8 +772,24 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
             </button>
           </div>
         )}
-        <StandTable rows={s.rows} showNote={hasNote} />
+        <StandTable rows={s.rows} showNote={hasNote} from={2} />
       </div>
     </>
+  );
+}
+
+/* the ranking's lead tile: the leader, and their points as the screen's poster numeral */
+function RankLead({ rows, chip }) {
+  const leader = [...(rows || [])].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+  if (!leader) return null;
+  return (
+    <section className="rc-lead sq" aria-label={`${chip} 1위`}>
+      <span className="ypl-chip ypl-chip--lead rc-lead-chip">{chip} 1위</span>
+      <h3 className="rc-lead-title">{leader.name}</h3>
+      <div className="rc-lead-figs">
+        <Poster label="포인트" value={(leader.points || 0).toLocaleString("ko-KR")} unit="점" />
+        <Facts items={[["우승", `${leader.win || 0}회`], ["준우승", `${leader.ru || 0}회`], ["4강", `${leader.top4 || 0}회`], ...(leader.note ? [["비고", leader.note]] : [])]} />
+      </div>
+    </section>
   );
 }

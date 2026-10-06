@@ -1,28 +1,43 @@
 ---
 name: YPL — Yonsei Pokémon League
-description: "A league site of record: next event, results, standings and champions, set entirely in black, white and grey."
+description: "The league site of record for Pokémon Center Yonsei: the member's next action first, results as plain facts, set in black, white and grey on continuous-curvature surfaces."
 colors:
-  ink: "#1D1D1F"
-  text-2: "#424245"
-  text-3: "#6E6E73"
-  text-4: "#A1A1A6"
-  on-ink: "#FFFFFF"
   bg: "#FFFFFF"
   bg-2: "#F5F5F7"
   bg-3: "#EBEBEF"
+  surface: "#FFFFFF"
+  lead: "#1D1D1F"
+  lead-2: "#2C2C2E"
+  ink: "#1D1D1F"
+  text-2: "#424245"
+  text-3: "#6E6E73"
+  on-ink: "#FFFFFF"
+  on-lead: "#F5F5F7"
+  on-lead-2: "#A1A1A6"
+  line: "rgba(0, 0, 0, .12)"
+  lead-line: "rgba(255, 255, 255, .12)"
+  fill: "rgba(118, 118, 128, .12)"
+  fill-2: "rgba(118, 118, 128, .07)"
+  lead-fill: "rgba(255, 255, 255, .14)"
+  scrim: "rgba(0, 0, 0, .38)"
+  ok: "#1B7F45"
+  warn: "#A45A00"
+  danger: "#D1242F"
   dark-bg: "#000000"
   dark-bg-2: "#141416"
   dark-bg-3: "#202023"
   dark-surface: "#1C1C1E"
+  dark-lead: "#1C1C1E"
   dark-ink: "#F5F5F7"
+  dark-text-2: "#D1D1D6"
   dark-text-3: "#A1A1A6"
-  fill: "rgba(118, 118, 128, .12)"
-  fill-2: "rgba(118, 118, 128, .07)"
-  line: "rgba(0, 0, 0, .085)"
-  line-2: "rgba(0, 0, 0, .16)"
-  ok: "#1B7F45"
-  warn: "#A45A00"
-  danger: "#D1242F"
+  dark-on-ink: "#000000"
+  dark-line: "rgba(255, 255, 255, .14)"
+  dark-fill: "rgba(118, 118, 128, .24)"
+  dark-fill-2: "rgba(118, 118, 128, .14)"
+  dark-ok: "#3DD17A"
+  dark-warn: "#FFB340"
+  dark-danger: "#FF6961"
   type-normal: "#9FA19F"
   type-fire: "#E62829"
   type-water: "#2980EF"
@@ -41,519 +56,454 @@ colors:
   type-dark: "#624D4E"
   type-steel: "#60A1B8"
   type-fairy: "#EF70EF"
-  type-electric-text: "#403600"
-  type-ice-text: "#17424D"
-  type-flying-text: "#23445F"
-  type-rock-text: "#332F18"
-  type-fairy-text: "#572757"
 typography:
   display:
-    fontFamily: "Archivo, Pretendard Variable, Pretendard, system-ui, sans-serif"
-    fontSize: "clamp(40px, 7.4vw, 104px)"
+    fontFamily: "Wanted Sans Variable, Wanted Sans, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
+    fontSize: "clamp(36px, 4.4vw, 56px)"
     fontWeight: 800
-    lineHeight: 0.94
-    letterSpacing: "-0.01em"
-    fontVariation: "'wdth' 72"
-  headline:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "clamp(34px, 4.4vw, 56px)"
-    fontWeight: 800
-    lineHeight: 1.04
+    lineHeight: 1.1
     letterSpacing: "-0.04em"
-  title:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "clamp(24px, 2.6vw, 34px)"
+  title-1:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "clamp(30px, 3.2vw, 40px)"
+    fontWeight: 800
+    lineHeight: 1.15
+    letterSpacing: "-0.035em"
+  title-2:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "clamp(24px, 2.4vw, 30px)"
     fontWeight: 800
     lineHeight: 1.2
-    letterSpacing: "-0.038em"
-  lead:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "clamp(17px, 1.5vw, 20px)"
-    fontWeight: 400
-    lineHeight: 1.5
-    letterSpacing: "-0.015em"
-  title-dialog:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "24px"
+    letterSpacing: "-0.03em"
+  title-3:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "clamp(20px, 2vw, 24px)"
     fontWeight: 800
     lineHeight: 1.25
-    letterSpacing: "-0.038em"
-  title-card:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "22px"
+    letterSpacing: "-0.025em"
+  title-4:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "clamp(17px, 1.6vw, 20px)"
     fontWeight: 800
     lineHeight: 1.3
-    letterSpacing: "-0.035em"
-  title-sm:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "20px"
-    fontWeight: 800
-    lineHeight: 1.3
-    letterSpacing: "-0.032em"
-  list-title:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
+    letterSpacing: "-0.02em"
+  headline:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
     fontSize: "17px"
-    fontWeight: 700
-    letterSpacing: "-0.022em"
+    fontWeight: 600
+    lineHeight: 1.4
+    letterSpacing: "-0.015em"
   body:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "16px"
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "clamp(16px, 1.4vw, 17px)"
     fontWeight: 400
     lineHeight: 1.6
-    letterSpacing: "-0.011em"
-    fontFeature: "'ss06', 'ss08'"
-  body-sm:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
+    letterSpacing: "-0.01em"
+  callout:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
-    lineHeight: 1.55
-    letterSpacing: "-0.011em"
+    lineHeight: 1.5
+    letterSpacing: "-0.01em"
   control:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 600
     lineHeight: 1.2
-    letterSpacing: "-0.012em"
-  meta:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
-    fontSize: "14px"
+    letterSpacing: "-0.01em"
+  footnote:
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "13px"
     fontWeight: 400
-    lineHeight: 1.55
-    letterSpacing: "-0.011em"
+    lineHeight: 1.45
+    letterSpacing: "0"
   label:
-    fontFamily: "Pretendard Variable, Pretendard, -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif"
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
     fontSize: "13px"
     fontWeight: 600
-    lineHeight: 1.4
-    letterSpacing: "-0.005em"
+    lineHeight: 1.2
+    letterSpacing: "0"
   caption:
-    fontFamily: "Archivo, Pretendard Variable, Pretendard, system-ui, sans-serif"
-    fontSize: "12.5px"
+    fontFamily: "Wanted Sans Variable, Wanted Sans, system-ui, sans-serif"
+    fontSize: "12px"
     fontWeight: 600
     lineHeight: 1.4
-    letterSpacing: "0.07em"
-    fontVariation: "'wdth' 85"
-  numeral:
-    fontFamily: "Archivo, Pretendard Variable, Pretendard, system-ui, sans-serif"
-    fontSize: "clamp(38px, 4.6vw, 62px)"
-    fontWeight: 800
-    lineHeight: 1
-    letterSpacing: "-0.005em"
-    fontFeature: "'tnum'"
-    fontVariation: "'wdth' 72"
-  figure:
-    fontFamily: "Archivo, Pretendard Variable, Pretendard, system-ui, sans-serif"
-    fontSize: "28px"
-    fontWeight: 800
-    lineHeight: 1
+    letterSpacing: "0.01em"
+  poster:
+    fontFamily: "Sofia Sans Extra Condensed, Arial Narrow, sans-serif"
+    fontSize: "clamp(104px, 14vw, 240px)"
+    fontWeight: 900
+    lineHeight: 0.8
     letterSpacing: "-0.01em"
-    fontFeature: "'tnum'"
-    fontVariation: "'wdth' 76"
-  figure-sm:
-    fontFamily: "Archivo, Pretendard Variable, Pretendard, system-ui, sans-serif"
-    fontSize: "20px"
-    fontWeight: 700
+    fontFeature: "\"tnum\""
+  figure:
+    fontFamily: "Sofia Sans Extra Condensed, Arial Narrow, sans-serif"
+    fontSize: "clamp(32px, 3.2vw, 40px)"
+    fontWeight: 900
+    lineHeight: 1
     letterSpacing: "0"
-    fontFeature: "'tnum'"
-    fontVariation: "'wdth' 80"
+    fontFeature: "\"tnum\""
+  date:
+    fontFamily: "Sofia Sans Extra Condensed, Arial Narrow, sans-serif"
+    fontSize: "clamp(22px, 2vw, 24px)"
+    fontWeight: 900
+    lineHeight: 1
+    letterSpacing: "0"
+    fontFeature: "\"tnum\""
 rounded:
-  xs: "8px"
-  sm: "12px"
-  row: "14px"
-  md: "18px"
-  tile: "22px"
-  lg: "28px"
+  xs: "6px"
+  sm: "10px"
+  md: "14px"
+  lg: "20px"
+  xl: "28px"
+  2xl: "38px"
   pill: "999px"
 spacing:
-  container: "1200px"
-  gutter: "clamp(20px, 4.5vw, 44px)"
-  section: "clamp(72px, 9vw, 128px)"
-  nav: "56px"
-  tile-gap: "12px"
-  field: "48px"
-  target: "44px"
+  space-1: "4px"
+  space-2: "8px"
+  space-3: "12px"
+  space-4: "16px"
+  space-5: "20px"
+  space-6: "24px"
+  space-7: "32px"
+  space-8: "40px"
+  space-9: "56px"
+  space-10: "80px"
+  space-11: "120px"
 components:
   button-primary:
     backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
+    textColor: "{colors.on-ink}"
+    typography: "{typography.control}"
     rounded: "{rounded.pill}"
     padding: "0 20px"
     height: "44px"
-    typography: "{typography.control}"
+  button-primary-hover:
+    backgroundColor: "{colors.text-2}"
   button-tonal:
     backgroundColor: "{colors.fill}"
     textColor: "{colors.ink}"
+    typography: "{typography.control}"
     rounded: "{rounded.pill}"
     padding: "0 20px"
     height: "44px"
+  button-tonal-hover:
+    backgroundColor: "{colors.bg-3}"
+  button-quiet:
+    textColor: "{colors.text-2}"
     typography: "{typography.control}"
-  button-secondary:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: "0 12px"
+    height: "44px"
+  button-danger:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.on-ink}"
+    typography: "{typography.control}"
     rounded: "{rounded.pill}"
     padding: "0 20px"
     height: "44px"
+  button-on-lead:
+    backgroundColor: "{colors.on-lead}"
+    textColor: "{colors.lead}"
     typography: "{typography.control}"
-  button-admin:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
     rounded: "{rounded.pill}"
-    padding: "0 14px"
+    height: "52px"
+  button-small:
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
     height: "36px"
-  admin-strip:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
-    padding: "9px 0"
-  schedule-panel:
-    backgroundColor: "{colors.bg-2}"
+  chip:
+    backgroundColor: "{colors.fill}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.lg}"
-    padding: "clamp(26px, 3vw, 40px)"
-    height: "360px"
-  schedule-panel-action:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg-2}"
+    typography: "{typography.label}"
     rounded: "{rounded.pill}"
-    padding: "0 22px"
-    height: "48px"
+    padding: "0 12px"
+    height: "28px"
+  chip-ink:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.on-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.pill}"
+    height: "28px"
+  type-badge:
+    backgroundColor: "{colors.fill}"
+    textColor: "{colors.ink}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.pill}"
+    padding: "0 8px"
+    height: "24px"
   input:
     backgroundColor: "{colors.fill-2}"
     textColor: "{colors.ink}"
+    typography: "{typography.body}"
     rounded: "{rounded.sm}"
     padding: "12px 16px"
     height: "48px"
-  input-search:
-    backgroundColor: "{colors.fill-2}"
-    rounded: "{rounded.pill}"
-    padding: "0 40px 0 44px"
-    height: "44px"
-  chip:
-    backgroundColor: "{colors.fill-2}"
-    textColor: "{colors.text-2}"
-    rounded: "{rounded.pill}"
-    padding: "0 12px"
-    height: "28px"
-    typography: "{typography.label}"
-  chip-laurel:
-    backgroundColor: "{colors.fill-2}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
-    padding: "0 12px"
-    height: "28px"
-  type-badge:
-    backgroundColor: "{colors.type-fire}"
-    textColor: "#FFFFFF"
-    rounded: "{rounded.xs}"
-    padding: "0 8px"
-    height: "22px"
-  type-badge-electric:
-    backgroundColor: "{colors.type-electric}"
-    textColor: "{colors.type-electric-text}"
+  input-focus:
+    backgroundColor: "{colors.bg}"
   segmented:
     backgroundColor: "{colors.fill-2}"
     rounded: "{rounded.pill}"
-    padding: "3px"
+    padding: "4px"
   segmented-thumb:
     backgroundColor: "{colors.bg}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
-    padding: "0 16px"
-    height: "36px"
     typography: "{typography.control}"
-  tile:
-    backgroundColor: "{colors.bg-2}"
-    rounded: "{rounded.lg}"
-    padding: "clamp(22px, 3vw, 32px)"
+    rounded: "{rounded.pill}"
+    height: "36px"
+  nav-link-current:
+    backgroundColor: "{colors.fill}"
+    textColor: "{colors.ink}"
+    typography: "{typography.control}"
+    rounded: "{rounded.pill}"
+    height: "36px"
+  lead-tile:
+    backgroundColor: "{colors.lead}"
+    textColor: "{colors.on-lead}"
+    rounded: "{rounded.xl}"
+    padding: "20px"
   result-tile:
     backgroundColor: "{colors.bg-2}"
-    rounded: "{rounded.tile}"
-    padding: "22px"
-  list-row:
-    backgroundColor: "transparent"
-    padding: "14px 8px"
-    height: "76px"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "16px"
+  inset-group:
+    backgroundColor: "{colors.bg-2}"
+    rounded: "{rounded.lg}"
+    padding: "8px 16px"
   match-card:
     backgroundColor: "{colors.bg}"
-    rounded: "{rounded.row}"
+    rounded: "{rounded.md}"
     height: "98px"
+    width: "212px"
   match-slot-win:
     backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
+    textColor: "{colors.on-ink}"
     height: "49px"
   champion-node:
     backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
+    textColor: "{colors.on-ink}"
     rounded: "{rounded.md}"
-    padding: "0 16px"
     height: "98px"
-  rank-badge-first:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
-    rounded: "{rounded.pill}"
-    size: "30px"
-  nav:
-    textColor: "{colors.text-2}"
-    height: "56px"
-    padding: "0 12px"
-  nav-link:
-    textColor: "{colors.text-2}"
-    rounded: "{rounded.pill}"
-    padding: "0 12px"
-    height: "40px"
-  dialog:
+    width: "160px"
+  pokemon-slot:
+    backgroundColor: "{colors.fill-2}"
+    rounded: "16px"
+    padding: "8px 12px 8px 8px"
+    height: "80px"
+  pokemon-slot-selected:
     backgroundColor: "{colors.bg}"
+  dialog:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.xl}"
+    padding: "32px"
+    width: "580px"
+  sheet:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.2xl}"
+    padding: "8px 20px 20px"
+  toast:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.on-ink}"
+    typography: "{typography.control}"
+    rounded: "{rounded.pill}"
+    height: "48px"
+  admin-strip:
+    backgroundColor: "{colors.bg-2}"
+    textColor: "{colors.ink}"
+    typography: "{typography.footnote}"
+    height: "36px"
+  empty-state:
+    backgroundColor: "{colors.bg-2}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
-    padding: "36px 32px 0"
-    width: "min(580px, 100%)"
+    padding: "24px 20px"
 ---
 
 # Design System: YPL — Yonsei Pokémon League
 
-> **Outgoing system (2026-10-06).** A full visual reset is in progress. For any new or changed UI, `docs/design-system/` (the "YPL 디자인 법전") is the authority; this file describes the system being replaced and will be rewritten from the finished build. Where the two disagree, follow `docs/design-system/`.
+The detailed rulebook is `docs/design-system/` (15 chapters, tokens in `tokens.json`, one card per component with a live `preview.html`, reference CSS in `components/bundle.css`). This file is the portable summary, recorded from the build that shipped on 2026-10-06. When the two disagree, the rulebook wins and this file is the one to fix.
 
 ## Overview
 
-**Creative North Star: "The League of Record"**
+**Creative North Star: "The Official Tournament Sheet"**
 
-YPL is the esports-league canon (next event, results, standings, champions) played straight and held to the craft bar of an Apple or Nike brand site. The world is black and white and nothing else: true neutral grounds, ink type, grey tiles, hairline rules. There is no brand colour. Emphasis comes from weight, size, inversion (an ink fill with paper text) and position, so a record reads as an official fact rather than a decorated one.
+The surfaces are the category standard of a professional league site, played straight at an Apple and Nike level of craft. The hierarchy comes from a printed tournament sheet: on every screen one numeral stands at poster size (a D-day, a date, a winning count), and everything else steps back. A member opens the site on a phone at the venue and sees, first, the current event, its phase, and the one action that phase needs (apply, submit a party, view the bracket, view the result).
 
-Density follows the phone at the venue. Lists are hairline rows tall enough for a thumb (74–82px), controls are 44–52px pills, and the home page opens clean and official: a condensed uppercase wordmark headline with the tagline, two pill actions and a one-sentence facts line, beside the league's schedule panel (the next notice as one lead tile). Party artwork is kept for the Hall of Fame page; the home never stages it. On desktop the same pieces spread into grids of flat tiles with 12px gaps. Both themes are first-class. Light mode is white with grey tiles, and a small set of lead tiles go black. Dark mode is pure black with graphite tiles, and those lead tiles step up one level of elevation.
+The palette is black, white and grey with no brand hue and no trophy gold. Emphasis comes from size, weight, position and inversion, never from colour. Status colours appear only where they carry a meaning, and Pokémon type colours only as a small dot. Sections are separated by space alone; lists sit in rounded inset groups split by half-pixel hairlines. Every corner is continuous curvature, nested concentrically. Motion is three springs, short and precise.
 
-The build explicitly turns away from the dark-navy dashboard of pill badges and nested cards. Surfaces are flat and never nested inside other cards. Division comes from hairlines, and the one thing that floats is a layer that actually floats: menus, dialogs, toasts.
+The rejected directions are a novelty concept world, a flat sea of equal grey tiles, heavy section rules, outlined panels, and a dark dashboard full of pill badges.
 
 **Key Characteristics:**
-- True neutrals in both themes and no brand hue; the only colours are status signals (valid, caution, error) and Pokémon type badges in the team builder.
-- Archivo condensed 800 for the wordmark, dates, scores and ranks; Pretendard for all Korean text.
-- Ink pill primary buttons (black on light, white on dark).
-- Flat grey tiles (28px, or 22px in grids) and hairline lists, with no cards inside cards.
-- Shadows only on floating layers and on the selected thumb of a segmented control.
-- One ease curve, a press scale of .97, and entrance animations that leave nothing behind when they finish.
+- The first viewport is the member's next action, in one inverted lead tile.
+- One poster numeral per screen, set in the condensed figure face.
+- Neutral surfaces stepped one level at a time: bg, bg-2, bg-3.
+- Continuous-curvature corners everywhere (base radius x1.6, superellipse 1.78), concentric nesting, capsule controls.
+- No rules and no outlines: space between sections, inset groups for lists.
+- Three springs for all motion; exits are 0.7x the entrance and never bounce.
+- Phone first. The venue phone is the primary screen.
 
 ## Colors
 
-Neutrals only, by the user's decision of 2026-09-11 ("extreme simplicity"): Yonsei Blue and trophy gold were removed. What they used to mark is now carried by ink, weight and inversion. Status colours and the Pokémon type palette remain because they carry information, not brand.
+A true-neutral palette in two themes, switched by `<html data-theme>`, with three meaning-bearing status colours and the eighteen Pokémon type colours as data.
 
-### Emphasis without colour
-- **Ink as the signal**: the sliding active-nav indicator, the active mobile-menu item, live states (the pinging dot, the bracket "live" badge, the draw's rolling slot), attention tags (pinned, locked, admin-on), the admin strip and every write action all use `ink`. Winners and trophy positions (the champion node, rank #1 badge, the winner chip in round records, the HOF reign crown disc) are inverted: an `ink` fill with `on-ink` text. Soft highlights that used to be tinted (the Champions series result tile, achievement rows, the ace panel) use `fill-2`. Selection highlight is `ink` at 22%.
-- **Brand mark**: Braviary (워글) with spread wings: the user's own logo (`docs/brand/newlogo.png`), vectorised with potrace so the outline matches the original exactly (`docs/brand/newlogo.svg`). One colour in `ink`; the white areas are evenodd holes, so the mark inverts with the theme. It is wide (1092:647), set 30px tall in the header and 26px in the footer. The favicon is the same mark in white on a `#1D1D1F` rounded tile. Never redraw it by hand; re-trace if the original changes.
-
-### Retired (kept for history)
-- **Yonsei Blue** (`brand` for text and indicators, `brand-fill` for filled surfaces; `dark-brand` / `dark-brand-fill` in dark mode): the sliding active-nav indicator and the active item in the mobile menu, live states (the pinging dot on the schedule panel while applications are open, the "live" badge on bracket cards, the draw's rolling slot), attention tags (pinned notice, locked post, admin-on), the admin strip and admin write actions, and the home page's Discord join CTA. `brand-hover` deepens every blue fill on hover. Selection highlight is `brand` at 22% over the ground. In dark mode the text-weight blue lifts to a light sky tone while fills keep a mid blue, so white text on a fill always holds contrast. Retired on 2026-09-11; no token remains.
-
-- **Trophy Gold** (text `gold` / fill `gold-fill`; `dark-gold` / `dark-gold-fill` in dark mode): trophy positions and the title event. That covers champions (the HOF reign tile's crown disc and glow, the Hall of Fame current cell's crown after the name and its gold season line, the titles grid's current holder, the HOF dialog's season line under the name, the bracket champion node), 우승 event winners (the result-tile winner row, history "win" cells, the champion banner label), rank #1 (the rank badge and home ranking numeral), and Champions series events (the result tile tinted `gold-soft`, the event label, the grand-final column heading). Retired on 2026-09-11; those places are now ink or inverted ink.
+### Primary
+- **Ink** (`ink`): all titles and body text, the brand mark, the primary button, the current page in the pager, the winner slot and champion node in a bracket. In dark mode it becomes near-white (`dark-ink`), so filled ink surfaces invert with the theme.
+- **Lead** (`lead`): the background of the screen's single lead tile (next action, reigning champion, the master league). In light it is the ink colour; in dark it is one surface step up (`dark-lead`), so the tile still reads as the most prominent surface. Text on it uses `on-lead` and `on-lead-2`; controls on it use `lead-fill` and `lead-2`.
 
 ### Neutral
-- **Ink** (`ink`; `dark-ink` in dark mode): body text, headings, the primary pill, the bracket winner slot, active pager and stepper, focus outline, and the icons in the tools menu's neutral tiles.
-- **Graphite** (`text-2`): secondary copy, nav links at rest, tonal button text.
-- **Pewter** (`text-3`; `dark-text-3` in dark mode): meta lines, labels, section subtitles, placeholders.
-- **Mist** (`text-4`): disabled text, seeds, chevrons at rest, the "off" state of title rows.
-- **Paper** (`bg`; `dark-bg`, pure black, in dark mode): page ground, the overscroll area and the scrollbar track. Inputs sitting on a grey tile switch to this ground so they stay visible.
-- **Tile Grey** (`bg-2`; `dark-bg-2` in dark mode): every flat tile, panel, footer and empty state.
-- **Raised Grey** (`bg-3`; `dark-bg-3` in dark mode): tile hover, and the one-step-up surface for dark-mode lead tiles, selected thumbs and nested inputs.
-- **Surface** (`bg` light; `dark-surface` in dark mode): floating menus, dialogs and sheets.
-- **Fills** (`fill`, `fill-2`; hover `rgba(118,118,128,.18)`): translucent grey behind tonal buttons, inputs, segmented tracks, chips and icon tiles. Dark mode doubles the alpha (.24 / .14 / .32).
-- **Hairlines** (`line`, `line-2`; white at .10 / .19 in dark mode): all rules, row dividers, ghost-button borders and bracket connectors.
-- **Status** (`ok`, `warn`, `danger`, each with a ~10% soft tint; dark mode `#3DD17A`, `#FFB340`, `#FF6961`): submission state, validation, destructive actions. Status colours never stand in for emphasis. Danger is the only red in the system.
+- **Paper** (`bg`): the page ground. Pure white in light, pure black in dark.
+- **Shelf** (`bg-2`): tiles, inset groups, result tiles, empty states, editor panels. The first step up from the page.
+- **Raised shelf** (`bg-3`): hover on a `bg-2` surface, and inputs that sit inside a `bg-2` surface in dark mode.
+- **Surface** (`surface`): floating layers only: menus, dialogs, sheets.
+- **Graphite** (`text-2`): secondary body text and resting nav links.
+- **Pewter** (`text-3`): meta lines, units, hints, placeholders, inactive segments.
+- **Fill** (`fill`, `fill-2`): translucent greys for tonal buttons, chips, inputs, segmented tracks. They tint correctly on any surface in either theme.
+- **Hairline** (`line`): the half-pixel inset separators between rows, and nothing else.
+- **Scrim** (`scrim`): behind dialogs and sheets, one at a time.
+
+### Status
+- **Confirmed** (`ok`), **Pending** (`warn`), **Error** (`danger`): text and icon colour only, never a chip background. `danger` is also the fill of the destructive button.
 
 ### Data (Pokémon types)
-- **Type palette** (`type-normal` … `type-fairy`, 18 entries): the official Pokémon type colours, used as the fill of the team builder's type badges (22px tall, 8px radius, 12.5px 700). Most carry white text. The five light types (electric, ice, flying, rock, fairy) carry a deep same-hue text colour instead (`type-electric-text`, `type-ice-text`, `type-flying-text`, `type-rock-text`, `type-fairy-text`). The palette is the same in both themes, because it names game data rather than YPL surfaces.
+The eighteen `type-*` colours are the game's own type colours. They appear only as an 8px dot inside a neutral type badge, because the type is information the member reads by colour in the game itself.
 
 ### Named Rules
-**The Neutral Rule.** The site has no brand colour. Nothing is tinted to look important: emphasis is weight, size, inversion or position. Red survives only as `danger`, for errors and destructive actions, and green and orange only as validation states in tools.
+**The Colour Is Not Emphasis Rule.** Nothing is emphasised with a hue. Make it bigger, heavier, earlier, or invert it to ink.
 
-**The Inversion Rule.** A filled emphasis surface is `ink` with `on-ink` text, never a hard-coded white or black, so it flips correctly with the theme (black on light, white on dark).
+**The One Inversion Rule.** A screen has at most one inverted lead surface. The admin strip, chips and tiles stay neutral so the lead tile keeps its weight.
 
-**The Ink Button Rule.** Primary actions, including the Discord CTA and admin write actions, are ink pills. Every other button is tonal grey, ghost or quiet.
-
-**The Lead Tile Rule.** Theme lives on `<html data-theme>`. In light mode the lead tiles (the home schedule panel, the Hall of Fame reign tile, bracket champion banner, master league, the last step of the flow, the Hall of Fame current cell) re-declare the full dark palette locally, so they render black inside a white page with every token intact. In dark mode they stay dark and step up to Raised Grey. A new lead tile joins that selector list. It never hard-codes black.
-
-**The Data Palette Rule.** Type colours appear only on type badges. They never tint a tile, a heading, a chart accent or a brand surface, and a brand or status colour never stands in for a type.
+**The Status in the Glyph Rule.** Status colours colour text and icons; the chip or disc behind them is always `fill`.
 
 ## Typography
 
-**Display Font:** Archivo variable (wdth 62–125, wght 500–900, Google Fonts), with Pretendard Variable as fallback
-**Body Font:** Pretendard Variable (dynamic subset via jsDelivr), with -apple-system, Apple SD Gothic Neo, Malgun Gothic and system-ui as fallbacks
+**Body and UI font:** Wanted Sans (with -apple-system, Apple SD Gothic Neo, Malgun Gothic, system-ui), weights 400, 600 and 800 only.
+**Figure font:** Sofia Sans Extra Condensed 900 (with Arial Narrow), tabular, for every number that is compared or announced.
 
-**Character:** Archivo, condensed and heavy, is the scoreboard voice: the wordmark, the uppercase hero, dates, points, ranks and stats. Pretendard, set tight and bold, carries every Korean heading and sentence. Latin is condensed and Korean is dense. The two meet at weight 800.
+**Character:** A clear, even Korean sans for every sentence, paired with a tall condensed numeral that reads like the figures on a printed draw sheet.
 
 ### Hierarchy
-Fixed sizes sit on one ramp: 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px. Fluid sizes use the role tokens (`--fs-display`, `--fs-h1`, `--fs-h2`, `--fs-lead`) or clamps whose endpoints come from 17 / 20 / 24 / 28 / 34 / 38 / 40 / 56 / 62 / 104px.
-
-- **Display** (Archivo 800, wdth 72%, `clamp(40px, 7.4vw, 104px)`, line-height .94, uppercase): the home hero wordmark only. The HOF reign name reaches the same 104px cap in Pretendard 800 (`clamp(56px, 7.6vw, 104px)`, .98).
-- **Headline** (Pretendard 800, `clamp(34px, 4.4vw, 56px)`, 1.04, -0.04em): page titles, the closing join line, league cards, the profile name and the HOF dialog name.
-- **Title** (Pretendard 800, `clamp(24px, 2.6vw, 34px)`, -0.038 to -0.04em): section heads. It sits beside a quiet "더 보기 →" link, never under a label. The schedule panel's notice title is a smaller step (`clamp(20px, 2.3vw, 28px)`, -0.04em).
-- **Dialog title** (Pretendard 800, 24px, 1.25, -0.038em): every dialog heading. The mobile menu's links use the same 24px at 700.
-- **Card title** (Pretendard 800, 22px, 1.3, -0.035 to -0.04em): bracket cards, panel heads in the team builder, the draw heading, HOF and titles-grid names, the result tile's 우승 name, the done state of forms.
-- **Small title** (Pretendard 700–800, 20px, 1.3, -0.03 to -0.032em): result-tile event names, the bracket champion node's name, flow steps, record and timeline items, block heads in records, empty-state headings.
-- **Lead** (Pretendard 400–500, `clamp(17px, 1.5vw, 20px)`, 1.5, Pewter): page subtitles, uncapped so an intro sentence sits on one line at laptop width (only the team-builder hero keeps 58ch). News titles use a bolder fluid step (`clamp(17px, 1.8vw, 20px)`, 700, 1.38).
-- **List title** (Pretendard 700, 17px, -0.022em): the bold line of a hairline row: list rows, ranking names, board and home post titles, record rounds.
-- **Body** (Pretendard 400, 16px (17px at 1024px and up), 1.6, -0.011em, ss06/ss08, `word-break: keep-all`): long text caps at 72ch with line-height 1.8.
-- **Body small** (Pretendard 400, 15px, 1.55): table text, dropdown options, comments, empty-state and dialog hints, section-head counts.
-- **Control** (Pretendard 600, 15px, 1.2, -0.012em): buttons, segmented tabs, nav links (500 at rest, 700 active), pager buttons, "더 보기" links, match slots, the toast. Small buttons and the nav Discord pill step down to 14px.
-- **Meta** (Pretendard 400–600, 14px, 1.55, Pewter): meta lines under list titles, field labels (600, Graphite), hints, footer links, champion lines (700, ink).
-- **Label** (Pretendard 600, 13px, 1.4, -0.005em, Pewter): table headers, chips, card dates, column heads, units beside figures.
-- **Caption** (Archivo 600, wdth 85%, 12.5px, +0.07em, uppercase): English season lines placed *under* a name (HOF cells, reign history). League cards use 14px at +0.06em, and the bracket champion node's "CHAMPION" line is 12.5px 700 at +0.1em. Plain 12.5px Pretendard serves seeds, badge counts, pin and lock tags and fine print.
-- **Numeral** (Archivo 800, tabular, `clamp(38px, 4.6vw, 62px)`, 1): profile stats. The schedule panel's date is the large step (Archivo 800, wdth 72%, `clamp(56px, 7vw, 104px)`, .86), capped at the display ceiling.
-- **Figure** (Archivo 800, wdth 72–80%, tabular, 28px, line-height 1): home rank numbers and points, the titles meter count, empty team-builder slots. Team-builder counts use 24px.
-- **Small figure** (Archivo 700, wdth 80%, tabular, 20px): table points, the draw counter, team-builder final stats (800).
+- **Display** (800, 36px phone to 56px desktop, 1.1): page titles in the `sec-head` of every view.
+- **Title 1** (800, 30 to 40px, 1.15): the master league name and other single statements.
+- **Title 2** (800, 24 to 30px, 1.2): section heads.
+- **Title 3** (800, 20 to 24px, 1.25): dialog titles, the lead tile title, editor heads.
+- **Title 4** (800, 17 to 20px, 1.3): step tiles, panel heads.
+- **Headline** (600, 17px, 1.4): row titles in inset groups and tables.
+- **Body** (400, 16px phone, 17px desktop, 1.6): notice bodies and prose; keep to about 72ch.
+- **Callout** (400, 15px, 1.5): one-line page intros, hints, dialog descriptions, empty states.
+- **Control** (600, 15px, 1.2): buttons, segments, nav links.
+- **Footnote** and **Label** (13px, 400 and 600): meta lines, field labels, units.
+- **Caption** (600, 12px, +0.01em): type badges and small state chips.
+- **Poster** (Sofia 900, 104px to 240px, 0.8): the one numeral per screen.
+- **Figure** (Sofia 900, 32 to 40px): ranks, points, counts, the team size.
+- **Date** (Sofia 900, 22 to 24px): dates at the head of tiles, timeline years.
 
 ### Named Rules
-**The Tracking Floor Rule.** Nothing goes tighter than -0.04em. Headlines sit at -0.04em, section heads at -0.038 to -0.04em, body at -0.011em. Positive tracking is kept for the uppercase Archivo caption.
+**The Eleven Sizes Rule.** Text sizes are 12, 13, 15, 16, 17, 20, 24, 30, 36, 40 and 56 only; numerals add 22, 32 and the poster clamp. Anything else is a bug.
 
-**The Numbers Are Archivo Rule.** Any figure a member compares (date, points, rank, record, count) is set in condensed Archivo with tabular numerals. Korean words next to it stay in Pretendard.
+**The One Poster Rule.** One poster numeral per screen. Every other number is a figure or a date.
 
-**The No Eyebrow Rule.** No small label sits above a heading. Context goes after the name (the HOF season line, the HOF dialog's season line and the bracket "CHAMPION" line all sit under the name) or beside it (a section head's link).
-
-**The One Ramp Rule.** A new fixed size picks a step from 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px. Half-steps (14.5, 19, 21) are not part of the system.
+**The Plain Korean Rule.** Copy is plain Korean prose. No middle-dot (·) separators between facts, no slogans.
 
 ## Layout
 
-Content sits in a 1200px container with a fluid gutter (`clamp(20px, 4.5vw, 44px)`). Sections breathe at `clamp(72px, 9vw, 128px)`, and page heads close with a hairline and 28–44px of space. The sticky nav is 56px tall, and scroll padding clears it by 16px.
+A 12-column grid inside a 1200px container. Side margins are 16px on phones, 32px from 640px, 40px from 1024px; the grid gap is 12, 16 and 24px at the same steps. Sections are separated by space only: 40px, 56px and 80px at the three steps.
 
-Grids are flat tiles with 12px gaps: 4-up result tiles (2-up below 1000px, and a snap-scrolling rail of 80%-wide cards below 640px), `auto-fill minmax(290px, 1fr)` bracket cards, a 6-cell Hall of Fame strip that becomes 3-up and then a snap rail. Two-column split sections (ranking beside board) separate by a wide 48–88px gap. Master and detail pages (records, titles) use a 300px rail beside the detail, and the rail becomes a horizontal pill scroller below 960px.
+Spacing uses eleven steps (4, 8, 12, 16, 20, 24, 32, 40, 56, 80, 120). Inner spacing is always smaller than the spacing outside the element. Rows are at least 56px tall and every touch target is at least 44px.
 
-Breakpoints the build responds to: 1080px (desktop nav collapses into the full-screen menu), 1024px (body steps to 17px), 960px (master and detail stack), 860px (hero stacks, the schedule panel drops under the title block; the HOF reign tile stacks), 640px (phone: dialogs become bottom sheets, rails snap, CTAs go full width), 480–420px (final tightening).
+Every view opens with the same frame: a display title, one callout sentence that stays on one line on a laptop, then content. On the home page the first viewport is the lead tile: on a phone it holds the status chip, event title, poster D-day beside three facts, a five-step capsule progress, the next step and one full-width 52px button. On desktop the lead spans the grid with the poster in four columns; results follow as four three-column tiles, then ranking in eight columns beside the champion in four.
 
-**The Hairline Cell Rule.** When a group of items needs division, cells share hairlines (`1px` Hairline rules, or a `box-shadow` hairline clipped by the grid), not separate cards. Examples are the titles champion grid, the HOF strip and the profile stat row.
+Breakpoints are 640px (tablet), 1024px (desktop), with page-specific folds at 560, 900 and 1000px. Below 640px a dialog becomes a bottom sheet, tables fold secondary columns into a meta line, and grids drop to one or two columns.
 
 ## Elevation & Depth
 
-The system is flat and tonal. Depth comes from the step between Paper, Tile Grey and Raised Grey, and in light mode from the dark lead tiles. Shadows are reserved for layers that physically float over the page: dropdown menus, the tools menu, dialogs and sheets, the toast. The one at-rest exception is the selected thumb of a segmented control (and the selected title category), which lifts slightly so it reads as a physical switch. Dark-mode shadows add a 1px white ring so floating layers still separate from black. Pokémon artwork on the Hall of Fame page (the reign party, the dialog party) carries a soft drop-shadow. That is lighting on the art, not surface elevation.
+Depth comes from tonal layering: bg, then bg-2, then bg-3, one step at a time; anything placed inside a surface sits one step above it. Shadows exist only on layers that float above the page.
 
 ### Shadow Vocabulary
-- **Float** (`0 1px 2px rgba(0,0,0,.05), 0 18px 50px -12px rgba(0,0,0,.22)`; dark: `0 0 0 1px rgba(255,255,255,.08), 0 24px 60px -12px rgba(0,0,0,.7)`): menus, dialogs, toast.
-- **Pop** (`0 1px 2px rgba(0,0,0,.06), 0 8px 24px -6px rgba(0,0,0,.16)`; dark: ring + `0 10px 30px -8px rgba(0,0,0,.6)`): smaller popovers.
-- **Thumb** (`0 1px 2px rgba(0,0,0,.07), 0 3px 10px -3px rgba(0,0,0,.14)`): the selected segment. In dark mode the thumb turns Raised Grey.
-- **Hairline ring** (`0 0 0 1px` Hairline): bracket match cards and admin boxes, drawn as a ring so it adds no layout.
+- **Pop** (`shadow-pop`): dropdown menus.
+- **Float** (`shadow-float`): dialogs, sheets, toasts.
+- **Thumb** (`shadow-thumb`): the selected cell of a segmented control, and the things that behave like one: the chosen Pokémon slot and the chosen answer in a form.
 
 ### Named Rules
-**The Only-What-Floats Rule.** A surface in the page flow never casts a shadow. If it is not over something, it is flat.
+**The Float Only Rule.** A shadow means the element floats. Tiles, groups and cards are flat.
 
-**The Clean Finish Rule.** In-page entrance animations (scroll reveals, the page swap, the staggered reign party) use `animation-fill-mode: backwards` (never `both`), so a finished reveal leaves no transform or opacity behind and creates no stacking context that could trap a dialog under the nav. The floating layers themselves (scrim, dialog, sheet, toast) already sit on top and may hold their end state. The nav's translucent blur lives on its `::before`, because a backdrop-filter on the header itself would become the containing block of the fixed mobile menu.
+**The No Stacking Context Rule.** A finished entrance leaves no transform or opacity behind (`animation-fill-mode: backwards`), or a dialog ends up under the nav.
 
 ## Shapes
 
-Corners are generous and Apple-soft, and every radius comes from one scale: 8 / 12 / 14 / 18 / 22 / 28px and pill. Large tiles, panels, dialogs and the HOF strip are 28px (`lg`). Grid tiles (results, bracket cards, flow steps, the champion banner, the HOF dialog's party tiles) are 22px (`tile`). The fold, dropdown menus, the tools menu, the menu drawer's link tiles, draw groups and the bracket champion node are 18px (`md`). Match cards, pinned and team rows and small nested boxes are 14px (`row`). Inputs, notes, dropdown options, tools-menu items and icon tiles are 12px (`sm`). The skeleton, type badges and the focus ring are 8px (`xs`), as are the rounded elbows of bracket connectors. Every action that is a pill stays a pill (`999px`): buttons, nav links, search fields, chips, segmented controls, pager buttons, the toast. Icon-only controls are circles. On phones, sheets round only their top corners (28px) and carry a 40×5px grab handle.
+Every corner is continuous curvature: each base radius is drawn at 1.6x with `corner-shape: superellipse(1.78)` where the browser supports it, and falls back to the plain base radius elsewhere. Radii are proportional to size: inputs 10, menus and match cards 14, tiles and groups 20, lead tiles, dialogs and editor panels 28, sheets 38 (concentric with the device corner). Nested surfaces are concentric: the inner radius is the outer radius minus the padding between them. Capsules (buttons, chips, segments, search fields) stay round-ended.
 
-Borders are rare. Division is a 1px hairline rule. Ghost buttons use a 1px `line-2` border. Selected choices get a 1px ink border on the Paper ground.
+Hairlines are 0.5px on retina screens, start where the row text starts, and never touch a curved edge. Bracket connectors are the only other lines (1.5px).
+
+**The No Rule Rule.** No heavy section rules, no rules under the nav, no outline boxes around panels or groups. Separate with space; group with surface tone.
 
 ## Components
 
 ### Buttons
-Confident, quiet pills.
-- **Shape:** full pill (999px), 44px tall, 20px horizontal padding, Control type (Pretendard 600, 15px). Small buttons are 36px / 14px, and hero CTAs 52px / 16px with 26px padding.
-- **Primary:** Ink fill with Paper text (white on light, black on dark). Hover mixes 84% ink into the ground.
-- **Tonal (default):** `fill` grey with Ink text. Hover goes to the stronger fill.
-- **Ghost / Secondary:** transparent with a `line-2` 1px border. Hover adds `fill-2` and a Mist border.
-- **Quiet:** transparent, Graphite text.
-- **Admin:** admin write actions (회차 편집, 기록에 반영, 선발전 기록 반영, adding ranking tabs and seasons) use the primary ink pill at the small 36px size.
-- **Danger:** danger-soft with danger text, filling solid on hover.
-- **Press / Disabled:** press scales to .97 in 90ms and releases over 260ms. Disabled drops to 38% opacity, shows a not-allowed cursor, and neither hovers nor presses (see Interaction States).
+- **Shape:** capsule, three heights: 52px (hero and lead tile), 44px (default), 36px (admin tools and tight rows).
+- **Primary:** ink with on-ink text; hover drops to graphite. One primary per screen or dialog, on the right.
+- **Tonal:** fill with ink text; hover to bg-3. Used for every secondary action, including cancel.
+- **Quiet:** text-2 on nothing; hover to ink.
+- **Danger:** danger fill, only for irreversible actions, on the right of a confirm dialog.
+- **On lead:** on-lead fill inside the lead tile, with a lead-fill tonal partner.
+- **Press:** every control scales to 0.97 (tiles 0.985) in 90ms and returns on the snappy spring.
 
 ### Chips
-- **Style:** 28px pill, `fill-2`, Graphite 13px 600. The ghost variant is a 36px pill with an inset hairline ring and 14px text.
-- **Variants:** the laurel chip (`fill-2` with ink text) for titles and champion tags. Pin and lock tags (`fill` with ink text, 22px, 12.5px) mark pinned or locked posts.
-- **Type badges:** 22px, 8px radius, 12.5px 700, filled with the type's data colour (see Data). They sit in a wrapping row with 4px gaps, in the team builder only.
+- **Style:** 28px capsule, fill background, label type. Inverted (ink) only for the one-of-a-kind thing, such as the reigning champion.
+- **Live state:** an open event carries a 7px ping dot, the site's only infinite animation (2s cycle).
+- **Type badge:** 24px fill capsule, caption type, the type colour as an 8px dot before the name.
 
 ### Cards / Containers
-- **Corner Style:** 28px for panels and lead tiles, 22px for grid tiles.
-- **Background:** Tile Grey, hover Raised Grey. Champions series tiles use `fill-2`.
-- **Shadow Strategy:** none (see Elevation & Depth).
-- **Border:** none. Internal division is hairline.
-- **Internal Padding:** 22px for grid tiles, `clamp(22px, 3vw, 32px)` for cards, up to 60px on the reign tile.
-- **Press:** clickable tiles scale to .985.
+- **Lead tile:** the inverted surface, radius xl, 20px padding, holding the poster numeral and the next action.
+- **Result tile:** bg-2, radius lg, date numeral on top, title, winner line.
+- **Inset group:** bg-2, radius lg, rows of at least 56px split by inset hairlines; hover on a row is fill-2 (or bg-3 when the row sits on bg-2).
+- **Empty state:** the same bg-2 tile, left-aligned title and one callout sentence. No illustration, no large icon, no centred layout.
 
 ### Inputs / Fields
-- **Style:** 48px tall, `fill-2` background, transparent 1px border, 12px radius, 16px text (so iOS never zooms). Textareas start at 128px. Search fields are 44px pills with a leading search icon at 16px and a circular 28px clear button.
-- **Focus:** the ground switches to Paper, the border to Ink, plus a 4px ink halo at 9%. Non-field focus uses a 2px Ink outline at 2px offset that follows the control's own shape, so a pill stays a pill.
-- **Dropdown:** the same field shape with a rotating chevron that turns Ink on hover. The menu is an 18px-radius Surface with the Float shadow and 42px, 12px-radius options at 15px, and the selected option goes bold. The menu pops in and sinks out.
-- **Choice rows:** 50px `fill-2` rows. The selected row goes to Paper with an Ink border.
-- **Checkbox fields:** a field holding a checkbox lays the 18px ink-accent box and its label in one row (10px gap, 40px minimum height). The label is 15px 500 Ink and is clickable.
-- **Disabled:** 38% opacity, the same as buttons.
+- **Style:** 48px, fill-2, radius sm, 16px text (no iOS zoom), 13px label above.
+- **Focus:** background becomes bg, a 1px ink border, and a 4px fill halo.
+- **On a grey surface:** inputs take bg (bg-3 in dark) so they stay visible.
+- **Error / Disabled:** a danger border with the fix in one sentence below; disabled at 0.38 opacity.
+- **Dropdown:** the same 48px field opening a pop menu (surface, shadow-pop, radius md) with concentric options.
 
 ### Navigation
-- **Desktop:** a sticky 56px bar. Its translucent background (`rgba(255,255,255,.78)` / `rgba(10,10,12,.72)`) is blurred at `saturate(180%) blur(20px)` on `::before`, and a hairline appears once the page scrolls. The brand mark and the Archivo "YPL" wordmark (22px, wdth 88%) sit left. Links are 40px pills at 15px 500 Graphite, turning Ink and 700 when active. A 2px ink indicator slides under the active link on the one ease curve. A "도구" tools popover (280px, 18px radius, Float shadow) lists tools as 12px-radius rows, each led by a neutral 36px icon tile (`fill-2` ground, Ink icon) with a 15px name and a 13px Pewter description. On the right sit the theme and admin icon buttons plus an ink Discord pill (36px, 14px).
-- **Mobile (at 1080px and below):** a two-line burger morphs into an X. A full-screen menu reveals with `clip-path`, with 24px 700 hairline-ruled links that stagger in. The active link is Ink. Grey 18px-radius link tiles for Discord and admin sit at the foot. The page behind stops scrolling, and Esc closes the menu.
-- **Admin strip:** an inverted `ink` band under the nav with `on-ink` 14px text and an 8px `currentColor` status dot in a 25% ring. Admin-on in the nav is a `fill` pill with ink text.
+- **Bar:** 56px, translucent with a blur, no rule underneath. The current page is a fill capsule; other links are text-2 and fill-2 on hover.
+- **Phone menu:** a full-screen big-type list (24px, 800) whose rows rise 16px in reading order.
+- **Admin strip:** a quiet 36px bg-2 band under the nav with a 7px ink dot and "관리자 모드". Editor tool buttons are 32px fill-2 circles.
 
 ### Segmented Control
-A `fill-2` pill track with 3px padding. The 36px segments are Pewter 15px 600, and the selected segment becomes a Paper (dark: Raised Grey) thumb with the Thumb shadow. It scrolls horizontally without a scrollbar when it overflows.
+Equal capsule cells on a fill-2 track; the selected cell is a bg thumb with shadow-thumb that slides on the snappy spring.
 
-### Lists and Tables
-Hairline rows on the page ground: 76px minimum, a 96px left rail for date or order (14px 600), a 17px 700 List title with a 14px Pewter meta line, and a chevron that nudges 3px right on hover. The row hover is `fill-2`. Tables set 15px text, 13px Pewter headers, 14px cell padding, hairline rows and 20px Archivo point figures. Home ranking rows put a 28px Archivo rank beside a 17px name and 28px Archivo points. Rank badges are 30px circles: inverted ink for #1, `fill` for #2, `fill-2` for #3. In a master and detail layout (records trainers and Pokémon, title categories) the selected side-list row lifts to Paper (dark: Raised Grey) with the Thumb shadow, the same as a segmented thumb.
-
-### Dialog / Sheet
-A Surface panel (580px, 28px radius, Float shadow) over a 45% black scrim with an 8px blur. Titles are 24px 800. The circular close button is 36px. The action bar sticks to the bottom and is divided by a hairline. At 640px and below it becomes a bottom sheet rising from the bottom (`y-sheet`), with 28px top corners only, a grab handle, and full-width actions. Closing plays the entrance in reverse: the scrim and blur lift while the panel sinks and fades, or the sheet slides down opaque. Esc closes only the topmost dialog. Every alert, confirmation and short input on the site uses this dialog (never the browser's `alert`, `confirm` or `prompt`); destructive confirmations use the danger button. The Hall of Fame dialog (760px) leads with the champion's name at Headline size, then the season line under it, then the party on 22px tiles.
+### Dialog and Sheet
+- **Dialog (640px and up):** 580px (780px for wide team-match tables), surface, radius xl, 32px padding, title 3 with a 36px fill-2 close circle, action row stuck to the bottom with no line above it. Grows from the centre at 0.96 on the smooth spring.
+- **Sheet (phone):** 8px from the device edges, radius 2xl, a 36x5 grabber, rises on the gentle spring and leaves 0.7x faster. Esc and the scrim close it; a dialog opened from a dialog replaces it rather than stacking a second scrim.
+- **Toast:** a 48px ink capsule near the bottom, smooth spring in, exit spring out.
 
 ### Bracket Match Card (signature)
-Exactly 98px tall: two 49px slots, because the bracket page positions every card numerically and the connectors meet at 49px. It is a Paper card (dark: Raised Grey) with a hairline ring and a 14px radius. The slots are 15px 600 with 12.5px Mist seed numbers. The winning slot turns solid Ink with Paper text, 800. Connectors are 1.5px `line-2` elbows with 8px rounded corners, and the connector into the champion goes ink. The champion node is a 98px, 18px-radius inverted ink tile with `on-ink` text: the name first (20px 800), then the crown and the Archivo "CHAMPION" caption under it. Undecided matches sit at 45% opacity. Double-elimination lower-bracket columns are 176px wide with 16px gaps (the upper tree's columns are 212px, 176px below 900px), so the grand final and champion node fit the 1200px container.
+98px tall, two 49px slots, bg on a bg-2 board, radius md, no outline. The winner's slot is inverted to ink. Connectors are 1.5px lines with an 8px rounded fork; the final connector is ink. The champion node is a 160px ink tile with no crown.
 
-### Home Hero (signature)
-The first viewport is two columns (1.12fr / .88fr, 28–72px gap, centred). Left is the title block: the Display wordmark on three lines, the tagline (Lead, 500, Graphite), two 52px pills (ink 기록 보기 with an arrow, ghost 리그 소개) and a 14px Pewter facts line written as one plain sentence. Right is the schedule panel, a lead tile (28px radius, `clamp(26px, 3vw, 40px)` padding, 360px minimum): the next notice's date in large Archivo over its year and weekday, a `line-2` hairline, the notice title, then either a pinging ink live state (참가 신청 접수 중) or the notice kind (고정 공지 / 최신 공지), and one 48px ink pill action at the foot. The whole panel is one button and presses to .99. At 860px it stacks under the title block. No Pokémon artwork appears here.
-
-### Community Band
-The home page closes on a hairline-topped band: a Headline line, a Lead supporting line (Pewter) and the 52px ink Discord join pill aligned to the bottom right.
-
-**The Channel Roles Rule.** The site is the league's first and official source for notices and records; Discord is where battles are played and streamed. Copy that points to Discord says so ("배틀과 중계는 디스코드에서 열립니다.") and never calls Discord the first place for news.
-
-### Result Tile (signature)
-A 22px-radius Tile Grey card, 244px minimum: a 13px meta line, a 20px 800 event name, a 14px meta line, then a hairline-topped podium where the 우승 row is labelled in ink and set at 22px 800. Champions series tiles use `fill-2`. On phones the row becomes an 80%-wide snap rail.
-
-### Hall of Fame Strip
-Hairline cells on one 28px Tile Grey strip, each with the name at 22px 800 and the uppercase Archivo season caption under it. The current cell is a lead tile: black in light mode, Raised Grey in dark. Its name is followed by a filled crown (with screen-reader text "현 챔피언"), and its season line turns ink.
-
-### Icons
-A single in-house SVG set on a 24px grid with a 2px stroke, round caps and joins, and `currentColor`. `crown`, `handshake` and `discord` render filled. Sizes are 14–18px inline. No emoji and no glyph characters are used as icons.
-
-### Motion
-One ease, `cubic-bezier(.2,.8,.2,1)`, for entrances and state changes, and `cubic-bezier(.65,0,.35,1)` for exits, loops and theme swaps. Every transition names its curve. Reveals rise 14px and fade over 720ms, triggered by an observer. The page swap is a 260ms fade. Theme changes use a 480ms view transition. Reduced motion collapses every animation and transition to 1ms.
-
-| Duration | Token | Used for |
-| --- | --- | --- |
-| 160ms | `--d1` | colour, background and border feedback on hover |
-| 260ms | `--d2` | small movement (chevrons, arrow nudges, press release), menus, fades and every exit |
-| 480ms | `--d3` | panel entrances (dialog, sheet, toast), the nav indicator and the mobile menu |
-| 720ms | `--d4` | page reveals, the meter fill and hero artwork |
-
-Staggered entrances use two steps only: 30ms between list rows (`STAGGER.row`, `--stagger-row`) and 70ms between cards and tiles (`STAGGER.tile`, `--stagger-tile`).
-
-### Interaction States
-One rule per state, for every control on the site:
-- **Hover:** everything clickable answers on hover. Rows and tiles change their ground, circles and pills step their fill, chevrons turn Ink, arrows nudge 3px. A disabled control never hovers.
-- **Press:** controls (pills, circles, segments, icon buttons) scale to `--press` (.97); tiles scale to `--press-tile` (.985). The press lands in 90ms (`--press-in`) and releases over 260ms. Press uses the standalone `scale` property so it composes with any positioning transform.
-- **Disabled:** `--o-disabled` (38%) with a not-allowed cursor, on buttons, fields, dropdowns, options and icon buttons alike.
-- **Dimmed:** `--o-dim` (45%) marks something present but not active (an undecided match, an unticked award row). It is not a disabled state.
-- **Selected:** a raised Paper thumb with the Thumb shadow (`--shadow-raised`) for segments and side-list rows; an ink inversion for pager pages, stepper steps, winners and #1.
-- **Floating layers:** dialogs, sheets, dropdown menus, the tools menu, the mobile menu and the toast animate both in and out. A layer that replaces another of its kind swaps without an exit, so two scrims never stack.
+### Pokémon Slot and Stat Row (team builder)
+Six slots in a 3-column (phone 2-column) grid on a bg-2 panel: fill-2 cells concentric with the panel, a 56px sprite, the slot number as a 17px figure. The chosen slot rises to bg with shadow-thumb, never an outline. Stat rows sit in an inset group one step above the panel: name, slider, a 64px number input and the final value as a 24px figure.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** set every surface from the tokens (`--bg`, `--bg-2`, `--bg-3`, `--surface`, `--ink`, `--text-2…4`, `--line`, `--fill`) so both themes and the dark lead tiles resolve automatically.
-- **Do** add a new dark lead tile by joining the `[data-theme="light"] :is(...)` selector list in `tokens.css`, and give it Raised Grey in dark mode.
-- **Do** mark winners and trophy positions by inversion (an ink fill with `on-ink` text) or weight, never by a hue.
-- **Do** write meta lines as plain Korean: commas and particles, not middle-dot (·) separators.
-- **Do** make primary actions ink pills at 44px or more (52px for hero actions), with a .97 press.
-- **Do** take press, disabled, dim, stagger and raised-selection values from their tokens, and give every hoverable element a hover state.
-- **Do** divide groups with hairline cells and rows rather than separate cards.
-- **Do** set dates, points, ranks and stats in Archivo condensed 800 with tabular numerals.
-- **Do** pick fixed type sizes from 12.5 / 13 / 14 / 15 / 16 / 17 / 20 / 22 / 24 / 28px and radii from the `--r-*` scale (8 / 12 / 14 / 18 / 22 / 28px, pill).
-- **Do** use `animation-fill-mode: backwards` for in-page entrance animations, and keep any backdrop-filter off an element that contains fixed children.
-- **Do** keep bracket match cards at exactly 98px (two 49px slots).
-- **Do** run `node scripts/class-coverage.mjs` after adding JSX classes, to catch tokens with no stylesheet rule.
+- **Do** lead every view with its display title and one callout line, and the home page with the next action for the current event phase.
+- **Do** keep exactly one poster numeral and at most one inverted surface per screen.
+- **Do** use tokens for every colour, radius, space, duration and easing; both themes depend on it.
+- **Do** put lists in inset groups with 0.5px inset hairlines.
+- **Do** draw every corner with the curvature law and nest radii concentrically.
+- **Do** move only transform and opacity, on the three springs (snappy 406ms, smooth 566ms, gentle 741ms), and honour reduced motion with a 150ms crossfade.
+- **Do** use the site dialog and sheet for every confirm and prompt.
+- **Do** use the Braviary mark exactly as the vector traced from `docs/brand/newlogo.png`, in ink only.
 
 ### Don't:
-- **Don't** put an eyebrow or kicker label above a heading. Captions go under the name.
-- **Don't** track type tighter than -0.04em or set display type above 104px.
-- **Don't** nest a card inside a card, or build the dark-navy dashboard of pill badges and boxed widgets.
-- **Don't** put a shadow on an in-flow surface. Only menus, dialogs, sheets, toasts and the segmented thumb lift.
-- **Don't** reintroduce a brand hue, a trophy gold or a tinted accent, and don't use red anywhere but `danger`.
-- **Don't** join facts with `·` or draw dot separators in CSS; write the sentence out.
-- **Don't** stage Pokémon party artwork on the home page. It belongs on the Hall of Fame page.
-- **Don't** write copy that calls Discord the first place for news. The site is the official source; Discord hosts battles and streams.
-- **Don't** use Pokémon type colours anywhere but type badges.
-- **Don't** use `animation-fill-mode: both` on reveals, and don't put `backdrop-filter` on the nav element itself.
-- **Don't** use emoji or text glyphs as icons. Use the 24px 2px-stroke SVG set.
-- **Don't** hard-code black or white on lead tiles. Re-declare tokens instead.
-- **Don't** call the browser's `alert`, `confirm` or `prompt`. Use `siteAlert`, `siteConfirm` and `sitePrompt`.
-- **Don't** let a floating layer vanish without its exit animation.
+- **Don't** add a brand hue, trophy gold, gradients, or colour as emphasis.
+- **Don't** put accent stripes on the edge of a card or row.
+- **Don't** draw outline boxes around panels, groups, inputs, slots or buttons, or wrap a group of tiles in another outline.
+- **Don't** use heavy section rules or a rule under the nav.
+- **Don't** use middle-dot (·) separators, slogans, or a fan-site tone.
+- **Don't** truncate a list ("+2") while there is still room.
+- **Don't** use browser-native alert, confirm or prompt.
+- **Don't** add vanity stat strips; use the space for information the member needs.
+- **Don't** bake text into images, or redraw the logo.

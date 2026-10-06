@@ -59,7 +59,7 @@ Client-side checks are UX guards only. The RPC/DB layer is the integrity boundar
 
 `PRODUCT.md` and `DESIGN.md` are binding, not background reading, and a frontend change must not alter data behavior.
 
-A full visual redesign is in progress (started 2026-10-06). Its rulebook is `docs/design-system/` (start at its `README.md`; tokens in `tokens.json`, reference CSS in `components/bundle.css`); it outranks `DESIGN.md` until that file is rewritten from the finished build. The direction contract lives in `.impeccable/surfaces/src-app-jsx.md`.
+The visual system was rebuilt from zero on 2026-10-06. Its rulebook is `docs/design-system/` (start at its `README.md`; tokens in `tokens.json`, reference CSS in `components/bundle.css`) and it is the authority; `DESIGN.md` is the portable summary recorded from the finished build and must be kept in step with it. The direction contract lives in `.impeccable/surfaces/src-app-jsx.md`. A new component gets its card in `docs/design-system/components/` and in the rulebook artifact.
 
 - Neutral-only palette (black / white / grey). No brand hue, no trophy gold; status colors only where they carry meaning.
 - The Braviary logo (`docs/brand/newlogo.png`) is used as an exact potrace vector — never redrawn.

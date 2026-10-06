@@ -22,7 +22,6 @@ export default function SiteHeader({
   onNavigate,
   dark,
   onToggleTheme,
-  scrolled,
   menuOpen,
   onToggleMenu,
   admin,
@@ -43,7 +42,7 @@ export default function SiteHeader({
   const adminLabel = admin ? "관리자 로그아웃" : "관리자 로그인";
 
   return (
-    <header className={"gnav" + (scrolled ? " scrolled" : "") + (menuOpen ? " menu-open" : "")}>
+    <header className={"gnav" + (menuOpen ? " menu-open" : "")}>
       <div className="gnav-in">
         <button className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
           <BrandMark />
@@ -53,16 +52,16 @@ export default function SiteHeader({
         <DesktopNavigation view={view} onNavigate={onNavigate} />
 
         <div className="gnav-actions">
-          <button className="gnav-icon" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
-            <Icon n={dark ? "sun" : "moon"} size={18} />
+          <button className="gnav-icon press" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
+            <Icon n={dark ? "sun" : "moon"} size={20} />
           </button>
-          <button className={"gnav-icon gnav-admin" + (admin ? " on" : "")} onClick={onAdminClick} aria-label={adminLabel} title={adminLabel}>
-            {admin ? <span className="gnav-admin-tx">로그아웃</span> : <Icon n="lock" size={17} />}
+          <button className={"gnav-icon gnav-admin press" + (admin ? " on" : "")} onClick={onAdminClick} aria-label={adminLabel} title={adminLabel}>
+            {admin ? <span className="gnav-admin-tx">로그아웃</span> : <Icon n="lock" size={20} />}
           </button>
-          <a className="gnav-discord" href={DISCORD_URL} target="_blank" rel="noopener noreferrer" aria-label="YPL 공식 디스코드 참여 (새 창)">
-            <Icon n="discord" size={17} /><span>디스코드</span>
+          <a className="gnav-discord ypl-btn ypl-btn--sm ypl-btn--primary press" href={DISCORD_URL} target="_blank" rel="noopener noreferrer" aria-label="YPL 공식 디스코드 참여 (새 창)">
+            <Icon n="discord" size={16} /><span>디스코드</span>
           </a>
-          <button className={"gnav-burger" + (menuOpen ? " open" : "")} onClick={onToggleMenu}
+          <button className={"gnav-burger press" + (menuOpen ? " open" : "")} onClick={onToggleMenu}
             aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"} aria-expanded={menuOpen} aria-controls="ypl-mobile-menu">
             <span /><span />
           </button>
@@ -70,11 +69,11 @@ export default function SiteHeader({
       </div>
 
       <MobileNavigation view={view} onNavigate={onNavigate} open={menuOpen}>
-        <a className="nav-dlink" href={DISCORD_URL} target="_blank" rel="noopener noreferrer" tabIndex={menuOpen ? 0 : -1}>
-          <Icon n="discord" size={18} />디스코드 참여<Icon n="ext" size={14} />
+        <a className="ypl-btn ypl-btn--primary press" href={DISCORD_URL} target="_blank" rel="noopener noreferrer" tabIndex={menuOpen ? 0 : -1}>
+          <Icon n="discord" size={16} />디스코드 참여<Icon n="ext" size={16} />
         </a>
-        <button className="nav-dlink" onClick={onAdminClick} tabIndex={menuOpen ? 0 : -1}>
-          <Icon n="lock" size={17} />{adminLabel}
+        <button className="ypl-btn ypl-btn--tonal press" onClick={onAdminClick} tabIndex={menuOpen ? 0 : -1}>
+          <Icon n="lock" size={16} />{adminLabel}
         </button>
       </MobileNavigation>
     </header>

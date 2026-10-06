@@ -108,7 +108,6 @@ function Toast({ text }){
 export default function App() {
   const [data,setData]=useState(null); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
   const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(null); const [modal,setModal]=useState(null); const toastTimer=useRef(0);
-  const [scrolled,setScrolled]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||SEED)))();},[]);
   const [noAnim,setNoAnim]=useState(false);
@@ -145,7 +144,6 @@ export default function App() {
     document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#000000":"#FFFFFF"));
   },[dark]);
   useEffect(()=>{ try{ localStorage.setItem("ypl-theme", dark?"dark":"light"); }catch(e){} },[dark]);
-  useEffect(()=>{let last=null,raf=0;const f=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const v=window.scrollY>20;if(v!==last){last=v;setScrolled(v);}});};f();window.addEventListener("scroll",f,{passive:true});return()=>{window.removeEventListener("scroll",f);if(raf)cancelAnimationFrame(raf);};},[]);
   /* 탭 제목 — 모든 화면이 "YPL" 하나였습니다. 뒤로 가기 목록과 브라우저 탭에서
      어디에 있었는지 구분되지 않아, 열어 둔 탭이 여러 개면 찾을 수가 없었습니다. */
   useEffect(()=>{
@@ -249,7 +247,6 @@ export default function App() {
         onNavigate={go}
         dark={dark}
         onToggleTheme={switchTheme}
-        scrolled={scrolled}
         menuOpen={menuOpen}
         onToggleMenu={()=>setMenuOpen(o=>!o)}
         admin={admin}

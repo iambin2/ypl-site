@@ -5,6 +5,8 @@ export { default as Modal, useExitAnimation } from "./common/Modal.jsx";
 export { SiteDialogHost, siteAlert, siteConfirm, sitePrompt } from "./common/SiteDialog.jsx";
 export { default as Pager } from "./common/Pager.jsx";
 export { default as Reveal, STAGGER } from "./common/Reveal.jsx";
+export { Poster, Facts } from "./common/LeadFigures.jsx";
+export { default as Segmented } from "./common/Segmented.jsx";
 export { default as StandTable } from "./common/StandTable.jsx";
 export { default as SiteHeader } from "./layout/SiteHeader.jsx";
 export { default as SiteFooter } from "./layout/SiteFooter.jsx";

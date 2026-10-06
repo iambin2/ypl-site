@@ -1,140 +1,138 @@
 /* =============================================================================
    YPL — foundation
-   Tokens, both themes, base elements, browser surfaces, motion.
-   Theme lives on <html data-theme>, so the page, the overscroll area and the
-   scrollbar all share one ground.
-   In light mode the few lead tiles (the hero schedule panel, reigning champion, …) take the
-   dark palette; in dark mode they stay dark and step up one surface (--bg-3).
+   Tokens from docs/design-system/tokens.json (the rulebook), both themes on
+   <html data-theme>, base elements, curvature, springs.
+   Names match the rulebook one to one; nothing outside this list exists.
    ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --font-display: "Archivo", "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  /* ---------- type (02) ---------- */
+  --font-sans: "Wanted Sans Variable", "Wanted Sans", -apple-system, "Apple SD Gothic Neo",
+    "Malgun Gothic", system-ui, sans-serif;
+  --font-num: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
 
-  /* ground and surfaces */
-  --bg: #FFFFFF;
-  --bg-2: #F5F5F7;
-  --bg-3: #EBEBEF;
-  --surface: #FFFFFF;
+  /* ---------- color (01) ---------- */
+  --bg: #ffffff;
+  --bg-2: #f5f5f7;
+  --bg-3: #ebebef;
+  --surface: #ffffff;
+  --lead: #1d1d1f;
+  --lead-2: #2c2c2e;
+  --ink: #1d1d1f;
+  --text-2: #424245;
+  --text-3: #6e6e73;
+  --on-ink: #ffffff;
+  --on-lead: #f5f5f7;
+  --on-lead-2: #a1a1a6;
+  --line: rgba(0, 0, 0, .12);
+  --lead-line: rgba(255, 255, 255, .12);
   --fill: rgba(118, 118, 128, .12);
   --fill-2: rgba(118, 118, 128, .07);
-  --fill-hover: rgba(118, 118, 128, .18);
-  --nav-bg: rgba(255, 255, 255, .78);
+  --lead-fill: rgba(255, 255, 255, .14);
+  --scrim: rgba(0, 0, 0, .38);
+  --focus: var(--ink);
+  --ok: #1b7f45;
+  --warn: #a45a00;
+  --danger: #d1242f;
 
-  /* ink */
-  --ink: #1D1D1F;
-  --text-2: #424245;
-  --text-3: #6E6E73;
-  --text-4: #A1A1A6;
-  --on-ink: #FFFFFF;
-
-  /* lines */
-  --line: rgba(0, 0, 0, .085);
-  --line-2: rgba(0, 0, 0, .16);
-
-  /* no brand colour: the site is built from the neutral ramp above.
-     The three below are status signals only (valid, caution, error). */
-  --ok: #1B7F45;
-  --ok-soft: rgba(27, 127, 69, .1);
-  --warn: #A45A00;
-  --warn-soft: rgba(196, 115, 0, .11);
-  --danger: #D1242F;
-  --danger-soft: rgba(209, 36, 47, .09);
-
-  /* depth: only things that float */
-  --shadow-float: 0 1px 2px rgba(0, 0, 0, .05), 0 18px 50px -12px rgba(0, 0, 0, .22);
+  /* ---------- depth (07) ---------- */
   --shadow-pop: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px -6px rgba(0, 0, 0, .16);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, .05), 0 18px 50px -12px rgba(0, 0, 0, .22);
+  --shadow-thumb: 0 1px 2px rgba(0, 0, 0, .07), 0 3px 10px -3px rgba(0, 0, 0, .14);
 
-  /* shape */
-  --r-xs: 8px;
-  --r-sm: 12px;
-  --r-row: 14px;
-  --r-md: 18px;
-  --r-tile: 22px;
-  --r-lg: 28px;
-  --r-pill: 999px;
+  /* ---------- space (05) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+  --space-10: 80px;
+  --space-11: 120px;
 
-  /* type scale */
-  --fs-display: clamp(40px, 7.4vw, 104px);
-  --fs-h1: clamp(34px, 4.4vw, 56px);
-  --fs-h2: clamp(24px, 2.6vw, 34px);
-  --fs-h3: 20px;
-  --fs-lead: clamp(17px, 1.5vw, 20px);
-  --fs-body: 16px;
-  --fs-sm: 14px;
-  --fs-xs: 12.5px;
+  /* ---------- curvature (04): base radii, drawn x1.6 by .sq ---------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 38px;
+  --radius-pill: 999px;
 
-  /* layout */
+  /* ---------- layout (05, 13): phone values, widened below ---------- */
   --container: 1200px;
-  --gutter: clamp(20px, 4.5vw, 44px);
-  --nav-h: 56px;
-  --section: clamp(72px, 9vw, 128px);
+  --margin: 16px;
+  --grid-gap: 12px;
+  --section-gap: var(--space-8);
+  --nav-height: 56px;
+  --target: 44px;
+  --row-min: 56px;
+  --match-card: 98px;
 
-  /* motion — one curve */
-  --ease: cubic-bezier(.2, .8, .2, 1);
-  --ease-io: cubic-bezier(.65, 0, .35, 1);
-  --d1: 160ms;
-  --d2: 260ms;
-  --d3: 480ms;
-  --d4: 720ms;
-  /* one press, one disabled state, one raised selection for every control on the site */
-  --stagger-row: 30ms;
-  --stagger-tile: 70ms;
-  --press: .97;
-  --press-tile: .985;
-  --press-in: 90ms;
-  --o-disabled: .38;
-  --o-dim: .45;
-  --shadow-raised: 0 1px 2px rgba(0, 0, 0, .07), 0 3px 10px -3px rgba(0, 0, 0, .14);
+  /* ---------- lines, opacity, layers ---------- */
+  --stroke-hairline: .5px;
+  --stroke-connector: 1.5px;
+  --stroke-icon: 2px;
+  --stroke-focus: 2px;
+  --hair: 1px; /* hairline as drawn: 0.5px on 2x screens, 1px on 1x */
+  --opacity-disabled: .38;
+  --opacity-dim: .45;
+  --z-content: 0;
+  --z-sticky: 10;
+  --z-popover: 20;
+  --z-modal: 30;
+  --z-toast: 40;
 
-  /* aliases still read by inline styles in components */
-  --loss: var(--danger);
-  --muted: var(--text-3);
-  --navy: var(--ink);
-  --text: var(--ink);
-  --t-1: var(--ink);
-  --t-fast: var(--d1);
-  --ac-text: var(--ink);
-  --ac-fill: var(--ink);
-  --line2: var(--line-2);
-  --s-card: var(--bg-2);
-  --s-soft: var(--fill-2);
-  --s-soft2: var(--fill);
-  --s-page: var(--bg);
+  /* ---------- motion (08): three springs, two curves ---------- */
+  --duration-press: 90ms;
+  --duration-fade: 150ms;
+  --duration-snappy: 406ms;
+  --duration-smooth: 566ms;
+  --duration-gentle: 741ms;
+  --duration-exit: 396ms;
+  --duration-exit-gentle: 519ms;
+  /* damping 1: smooth, gentle and every exit */
+  --ease-spring: linear(0, 0.0195, 0.0679, 0.1336, 0.2081, 0.2857, 0.3625, 0.4361, 0.5047, 0.5677, 0.6247, 0.6757, 0.7209, 0.7606, 0.7953, 0.8255, 0.8517, 0.8742, 0.8935, 0.91, 0.9241, 0.9361, 0.9463, 0.9549, 0.9622, 0.9683, 0.9735, 0.9779, 0.9815, 0.9846, 0.9872, 0.9893, 0.9911, 0.9926, 0.9939, 0.9949, 0.9958, 0.9965, 0.9971, 0.9976, 1);
+  /* damping 0.72: snappy, overshoots 3.8% */
+  --ease-snappy: linear(0, 0.0161, 0.0586, 0.12, 0.1939, 0.2751, 0.3593, 0.4433, 0.5246, 0.6012, 0.672, 0.7361, 0.7931, 0.843, 0.8859, 0.9221, 0.9522, 0.9766, 0.996, 1.0109, 1.0219, 1.0297, 1.0347, 1.0374, 1.0384, 1.0379, 1.0364, 1.0342, 1.0314, 1.0283, 1.025, 1.0218, 1.0187, 1.0157, 1.013, 1.0105, 1.0082, 1.0063, 1.0046, 1.0032, 1);
+  --ease-fade: cubic-bezier(.2, .8, .2, 1);
+  --stagger-row: 40ms;
+  --stagger-tile: 60ms;
 }
+@media (min-resolution: 2dppx) { :root { --hair: .5px; } }
+@media (min-width: 640px) { :root { --margin: 32px; --grid-gap: 16px; --section-gap: var(--space-9); } }
+@media (min-width: 1024px) { :root { --margin: 40px; --grid-gap: 24px; --section-gap: var(--space-10); } }
 
-[data-theme="dark"], [data-theme="light"] :is(.hm-event, .reign, .bk-champ-banner, .ab-league.master, .ab-flow li.last, .hm-hof-cell.now) {
+/* Dark theme */
+[data-theme="dark"] {
   color-scheme: dark;
   --bg: #000000;
   --bg-2: #141416;
   --bg-3: #202023;
-  --surface: #1C1C1E;
+  --surface: #1c1c1e;
+  --lead: #1c1c1e;
+  --lead-2: #2c2c2e;
+  --ink: #f5f5f7;
+  --text-2: #d1d1d6;
+  --text-3: #a1a1a6;
+  --on-ink: #000000;
+  --line: rgba(255, 255, 255, .14);
+  --lead-fill: rgba(255, 255, 255, .12);
   --fill: rgba(118, 118, 128, .24);
   --fill-2: rgba(118, 118, 128, .14);
-  --fill-hover: rgba(118, 118, 128, .32);
-  --nav-bg: rgba(10, 10, 12, .72);
-
-  --ink: #F5F5F7;
-  --text-2: #D1D1D6;
-  --text-3: #A1A1A6;
-  --text-4: #6E6E73;
-  --on-ink: #000000;
-
-  --line: rgba(255, 255, 255, .1);
-  --line-2: rgba(255, 255, 255, .19);
-
-  --ok: #3DD17A;
-  --ok-soft: rgba(61, 209, 122, .13);
-  --warn: #FFB340;
-  --warn-soft: rgba(255, 179, 64, .13);
-  --danger: #FF6961;
-  --danger-soft: rgba(255, 105, 97, .14);
-
-  --shadow-float: 0 0 0 1px rgba(255, 255, 255, .08), 0 24px 60px -12px rgba(0, 0, 0, .7);
+  --scrim: rgba(0, 0, 0, .6);
+  --ok: #3dd17a;
+  --warn: #ffb340;
+  --danger: #ff6961;
   --shadow-pop: 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 30px -8px rgba(0, 0, 0, .6);
+  --shadow-float: 0 0 0 1px rgba(255, 255, 255, .08), 0 24px 60px -12px rgba(0, 0, 0, .7);
+  --shadow-thumb: 0 0 0 .5px rgba(255, 255, 255, .1);
+
 }
 
 /* ---------- base ---------- */
@@ -143,17 +141,16 @@ html {
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scroll-padding-top: calc(var(--nav-h) + 16px);
+  scroll-padding-top: calc(var(--nav-height) + var(--space-4));
 }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: var(--fs-body);
+  font-size: 16px;
   line-height: 1.6;
-  letter-spacing: -0.011em;
-  font-feature-settings: "ss06", "ss08";
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -163,43 +160,62 @@ body {
 @media (min-width: 1024px) { body { font-size: 17px; } }
 
 h1, h2, h3, h4, h5, p { margin: 0; }
-h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.028em; line-height: 1.2; text-wrap: balance; }
+h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; text-wrap: balance; }
 p { text-wrap: pretty; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; letter-spacing: inherit; }
+button { font: inherit; color: inherit; letter-spacing: inherit; -webkit-tap-highlight-color: transparent; }
 button:not(:disabled) { cursor: pointer; }
 input, textarea, select { font: inherit; letter-spacing: inherit; color: inherit; }
 table { border-collapse: collapse; }
-b, strong { font-weight: 700; }
+b, strong { font-weight: 600; }
 small { font-size: inherit; }
 i, em { font-style: normal; }
 [hidden] { display: none !important; }
 
 .ypl { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
 .wrap { flex: 1 0 auto; width: 100%; }
-.page { width: 100%; max-width: calc(var(--container) + var(--gutter) * 2); margin: 0 auto; padding: 0 var(--gutter); outline: none; }
+.page { width: 100%; max-width: calc(var(--container) + var(--margin) * 2); margin: 0 auto; padding: 0 var(--margin); outline: none; }
 
 .tnum { font-variant-numeric: tabular-nums; }
 .ic { flex: none; display: inline-block; vertical-align: middle; }
-.disp { font-family: var(--font-display); }
+.disp { font-family: var(--font-num); }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- curvature (04) ----------
+   .sq draws the base radius --r as continuous curvature where supported:
+   x1.6 with superellipse(1.78). Elsewhere it falls back to the same base
+   radius, round. Capsules (.cap) stay round-ended on purpose. */
+.sq { border-radius: var(--r, var(--radius-lg)); }
+@supports (corner-shape: squircle) {
+  .sq { border-radius: calc(var(--r, var(--radius-lg)) * 1.6); corner-shape: superellipse(1.78); }
+}
+.cap { border-radius: var(--radius-pill); }
+
+/* ---------- numerals (02, 03) ---------- */
+.num { font-family: var(--font-num); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0; }
+.unit { font-family: var(--font-sans); font-size: 13px; font-weight: 600; line-height: 1.2; letter-spacing: 0; color: var(--text-3); margin-left: var(--space-1); }
+
+/* ---------- press (09): every control and tile ---------- */
+.press {
+  transition: scale var(--duration-snappy) var(--ease-snappy),
+    background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
+}
+.press:active:not(:disabled) { scale: .97; transition: scale var(--duration-press) var(--ease-fade); }
+.press-tile:active:not(:disabled) { scale: .985; }
 
 /* ---------- browser surfaces ---------- */
 ::selection { background: color-mix(in srgb, var(--ink) 22%, transparent); color: var(--ink); }
 :focus { outline: none; }
-/* the ring follows the control's own shape, so a pill stays a pill */
-:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
+/* the ring follows the element's own corner, so a capsule stays a capsule */
+:focus-visible { outline: var(--stroke-focus) solid var(--focus); outline-offset: 2px; }
 input:focus-visible, textarea:focus-visible { outline: none; }
 ::placeholder { color: var(--text-3); opacity: 1; }
-* { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--fill) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: var(--r-sm); border: 3px solid transparent; background-clip: padding-box; }
-::-webkit-scrollbar-thumb:hover { background-color: var(--text-4); }
+::-webkit-scrollbar-thumb { background: var(--fill); border-radius: var(--radius-pill); border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--text-3); }
 input[type="range"] { accent-color: var(--ink); }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 18px; height: 18px; margin: 0; flex: none; }
 input[type="date"], input[type="datetime-local"] { min-height: 48px; }
@@ -208,34 +224,37 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 iframe { border: 0; }
 
 /* ---------- motion ---------- */
-@keyframes y-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes y-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-sheet { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes y-pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes y-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-@keyframes y-ping { 0% { transform: scale(1); opacity: .6; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes y-ping { 0% { transform: scale(1); opacity: .5; } 70%, 100% { transform: scale(3); opacity: 0; } }
 @keyframes y-scrim-out { to { background-color: transparent; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); } }
 @keyframes y-pop-out { to { opacity: 0; transform: translateY(10px) scale(.98); } }
 @keyframes y-sheet-out { to { transform: translateY(100%); } }
 
 /* Reveal waits for its observer (Reveal.jsx has a 1.2s in-viewport safety
    net); reduced motion skips the wait entirely. */
-.reveal:not(.in) { opacity: 0; transform: translateY(14px); }
-/* backwards, never both: a finished animation must leave no transform/opacity
+.reveal:not(.in) { opacity: 0; transform: translateY(16px); }
+/* backwards, never both: a finished entrance must leave no transform/opacity
    behind, or the element stays a stacking context and traps dialogs under the nav. */
-.reveal.in { animation: y-rise var(--d4) var(--ease) backwards; animation-delay: var(--reveal-delay, 0ms); }
-.swap, .page { animation: y-fade var(--d2) var(--ease) backwards; }
+.reveal.in { animation: y-rise var(--duration-smooth) var(--ease-spring) backwards; animation-delay: var(--reveal-delay, 0ms); }
+.swap, .page { animation: y-fade var(--duration-fade) var(--ease-fade) backwards; }
 
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--d3); animation-timing-function: var(--ease-io); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--duration-fade); animation-timing-function: var(--ease-fade); }
 
+/* Reduced motion (08, law 10): every move becomes a 150ms crossfade;
+   staggers, the pulse and the digit roll stop. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-property: opacity, background-color, color !important;
+    transition-duration: var(--duration-fade) !important;
+    animation: none !important;
     scroll-behavior: auto !important;
   }
+  .press:active { scale: 1; }
   .reveal:not(.in) { opacity: 1; transform: none; }
 }
 .no-anim *, .no-anim *::before, .no-anim *::after { transition: none !important; }

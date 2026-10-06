@@ -1133,11 +1133,11 @@ export default function TeamBuilderPage() {
   const hasWorkingState = team.length > 0 || Boolean(activeSavedTeamId) || cupRuleId !== "none" || Boolean(assignedTypeId);
 
   return (
-    <section className="tb-page">
-      <Reveal className="tb-hero">
+    <section className="sec tb-page">
+      <Reveal className="sec-head">
         <div>
-          <h1>팀 빌더</h1>
-          <p>포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
+          <h2>팀 빌더</h2>
+          <p className="sub">포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
         </div>
         <div className="tb-hero-actions">
           <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀 <span className="tb-count-badge">{savedTeams.length}</span></button>
@@ -1250,7 +1250,7 @@ export default function TeamBuilderPage() {
               <div>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
               </div>
-              <div className="tb-team-meta"><strong>{team.length} / {regulation.maxTeamSize || 6}</strong></div>
+              <div className="tb-team-meta"><strong className="num">{team.length}</strong><span className="unit">/ {regulation.maxTeamSize || 6}</span></div>
             </div>
             <div className="tb-team-slots">
               {Array.from({ length: regulation.maxTeamSize || 6 }, (_, index) => {
