@@ -5,14 +5,12 @@ colors:
   bg: "#0a0a0b"
   bg-sunk: "#050506"
   page-light: "rgba(255, 255, 255, .26)"
-  page-light-2: "rgba(255, 255, 255, .1)"
-  page-light-live: "rgba(255, 255, 255, .08)"
+  page-light-2: "rgba(255, 255, 255, .14)"
   page-light-3: "rgba(255, 255, 255, .1)"
   grain: "rgba(255, 255, 255, .016)"
   glass-top: "rgba(255, 255, 255, .06)"
   glass-bottom: "rgba(255, 255, 255, .018)"
   glass-sheen: "rgba(255, 255, 255, .1)"
-  glass-sheen-live: "rgba(255, 255, 255, .06)"
   glass-hover: "rgba(255, 255, 255, .1)"
   surface: "#1c1c1e"
   ink: "#f2f2f4"
@@ -349,7 +347,7 @@ The structure is the formula of a professional league site (taken from Wolfey Dr
 
 The palette stays black, white and grey, but it is not allowed to look monotonous. The page is a dark room with soft pools of light that drift very slowly on a fixed layer, so whatever is on screen always has light behind it. Every surface is clear glass floating over that light: translucent, no outline, no lit rim, only a soft shadow; the light passes through it rather than glinting off it. The key word of a title, the big numerals and the logo carry the light itself, a single falloff from white that never turns back. A metal sheen (silver bands, chrome, mirror floors) was tried and rejected. Dark is the default; light is supported to the same finish, with frosted white glass and the light words turning to graphite. Controls were capsules in the silver build; they are now squircles like everything else.
 
-On desktop the cursor is the light source: the main pool of light follows the pointer about a second behind, and every glass surface brightens by the share of that one light that falls on it, so the panes near the pointer glow and the rest stay dark. The light words (the hero's last line, feature names) carry a bright spot that follows the pointer too. Phones keep the slow drift.
+The light never chases the pointer: the pools drift slowly on their own and every pane keeps its sheen at the top left. On desktop only the light words (the hero's last line, feature names) carry a small bright spot that follows the pointer. A page-wide light that followed the cursor was built and removed on 2026-10-07 because moving the whole background while people read made them dizzy.
 
 **Key Characteristics:**
 - Dark first (`bg` #0a0a0b), light fully supported; the theme lives on `<html data-theme>`.
@@ -358,7 +356,7 @@ On desktop the cursor is the light source: the main pool of light follows the po
 - Two families: Wanted Sans 400/700/900 for Korean, Unbounded 500/700/800 for Latin eyebrows and numerals.
 - Continuous-curvature corners everywhere (base radius x1.6, superellipse 1.78), concentric nesting. No capsules: controls are squircles whose radius follows their height.
 - Lists in one glass surface with inset hairlines; sections separated by space.
-- Three springs plus an exit for all motion, and the cursor as the light source on desktop (1100ms follow).
+- Three springs plus an exit for all motion, and the 900ms bright spot on the light words on desktop.
 - Phone first. The venue phone is the primary screen.
 
 ## Colors
@@ -442,7 +440,7 @@ Depth is light, not stacking. Pools of light sit behind the page over a faint gr
 - **Float** (`shadow-float`): dialogs, sheets, toasts.
 
 ### Named Rules
-**The Light Through Glass Rule.** Light comes from behind the glass, never as a gloss on it. On desktop the pointer moves the one light (`page-light-live`, softer than the resting pool because it sits under what is being read; `glass-sheen-live` on the panes); there is never a second light inside a card.
+**The Light Through Glass Rule.** Light comes from behind the glass, never as a gloss on it. Nothing large moves with the pointer, and there is never a second light inside a card.
 
 **The No Glass on Glass Rule.** Inside a glass surface, cells are `fill-2`. Never nest glass, never wrap a group of cards in another surface.
 
