@@ -60,7 +60,7 @@ Client-side checks are UX guards only. The RPC/DB layer is the integrity boundar
 `PRODUCT.md` and `DESIGN.md` are binding, not background reading, and a frontend change must not alter data behavior.
 
 - Neutral-only palette (black / white / grey). No brand hue, no trophy gold; status colors only where they carry meaning.
-- The Braviary logo (`docs/brand/newlogo.png`) is used as an exact potrace vector — never redrawn.
+- The approved logo is Wing Y (`public/brand/ypl-wing-y.svg`): the C concept with no forehead crest and a curved cutout band across the fan tail. Preserve its proportions. The old `docs/brand/newlogo.*` files are historical.
 - Korean copy uses plain prose with **no middle-dot (·) separators**.
 - Phone-first: the venue phone is the primary screen.
 - Direction is the category standard (professional league site) played straight at an Apple/Nike craft bar — no novelty concept worlds.

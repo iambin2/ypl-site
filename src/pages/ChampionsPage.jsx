@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { normTeam as normalizeLegacyParty } from "../services/legacyPartyImages.js";
-import { Icon, PageHead, Reveal, STAGGER, SectionHead, ordinal, useExitAnimation } from "../components/index.js";
+import { Empty, Icon, PageHead, Reveal, STAGGER, SectionHead, ordinal, useExitAnimation } from "../components/index.js";
 import useCursorLight from "../components/common/useCursorLight.js";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
@@ -79,6 +79,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       </button>}
     </PageHead>
 
+    {!reigning && <Empty title="등록된 챔피언이 없습니다." desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
     {reigning && <section className="ypl-feature glass sq follow" ref={leadRef} aria-labelledby="hof-reigning">
       {reigning.generationNumber > 0 && <span className="ypl-feature-wm silver-live" aria-hidden="true">{reigning.generationNumber}</span>}
       <div className="ypl-feature-who">

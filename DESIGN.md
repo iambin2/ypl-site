@@ -510,7 +510,7 @@ Six slots (2 columns on phones, 3 on desktop) of `fill-2` cells, an Unbounded 11
 - **Do** draw every corner with the curvature law and nest radii concentrically.
 - **Do** move only transform and opacity on the three springs (snappy 406ms, smooth 566ms, gentle 741ms), exit at 396ms without bounce, and honour reduced motion.
 - **Do** stand parties on pods and let the Pokémon be seen before the words.
-- **Do** use the Braviary mark exactly as the vector traced from `docs/brand/newlogo.png`, filled with the light ramp; the favicon is that mark on a `bg` tile and the share image (`public/og-silver.png`) is the mark and "YPL" on the dark page.
+- **Do** use the approved Wing Y vector from `public/brand/ypl-wing-y.svg`, filled with the light ramp. It retains the C concept wings and banded fan tail, with no forehead crest. Preserve its proportions. The favicon uses the same silhouette on a `bg` tile; the share image is `public/og-wing-y.png`.
 
 ### Don't:
 - **Don't** add a brand hue, trophy gold, or colour as emphasis.

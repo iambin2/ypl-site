@@ -137,7 +137,7 @@
 .bk-col { min-width: 200px; display: flex; flex-direction: column; gap: var(--space-3); }
 .bk-col .bk-col-h { margin-bottom: 0; }
 
-@media (max-width: 900px) {
+@media (max-width: 639px) {
   /* phone: the board runs edge to edge so the tree gets the whole width */
   .bk-scroll { --bk-gap: 24px; padding: var(--space-5) var(--margin); margin: 0 calc(var(--margin) * -1); border-radius: 0; }
   .bk-col2, .bk-col { min-width: 176px; }
@@ -160,7 +160,7 @@
 .bk-draw-mem { display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-md); background: var(--fill-2); }
 
 /* ---------- wizard ---------- */
-.bk-create { max-width: 760px; }
+.bk-create { max-width: 639px; }
 .bk-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6); }
 .bk-head h2 { font-size: 24px; font-weight: 900; line-height: 1.25; letter-spacing: -0.025em; }
 @media (min-width: 1024px) { .bk-head h2 { font-size: 30px; letter-spacing: -0.03em; } }
@@ -197,7 +197,7 @@
 .bk-participant-absent { flex: none; font-size: 13px; color: var(--text-3); }
 .bk-participant-added input { flex: 1; }
 .bk-team-card { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1.6fr); }
-@media (max-width: 560px) {
+@media (max-width: 639px) {
   .bk-team-card { grid-template-columns: 28px minmax(0, 1fr); }
   .bk-tc-mem { grid-column: 2; }
 }
@@ -228,7 +228,7 @@
 .bk-award > :not(input) { transition: opacity var(--duration-fade) var(--ease-fade); }
 .bk-award > .bk-chg-cnt { margin-left: auto; }
 .bk-award:has(> input:not(:checked)) > :not(input) { opacity: var(--opacity-dim); }
-@media (max-width: 560px) { .bk-award > .bk-chg-cnt { flex-basis: 100%; margin-left: 28px; } }
+@media (max-width: 639px) { .bk-award > .bk-chg-cnt { flex-basis: 100%; margin-left: 28px; } }
 .bk-pts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .bk-pt { display: flex; flex-direction: column; gap: var(--space-2); font-size: 13px; font-weight: 700; color: var(--text-3); }
 .bk-pt input { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -265,7 +265,7 @@
 .bk-ace { --r: var(--radius-lg); margin-top: var(--space-4); padding: var(--space-4); background: var(--fill-2); }
 .bk-ace-h { margin-bottom: var(--space-3); font-size: 15px; font-weight: 900; color: var(--ink); }
 .bk-ace .bk-series-row { background: transparent; padding: 0; }
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .bk-bout-columns { display: none; }
   .bk-bout-row { grid-template-columns: 1fr; gap: var(--space-2); }
   .bk-series-vs, .bk-bout-label-spacer { display: none; }

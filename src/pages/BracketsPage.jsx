@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Dropdown, Facts, Icon, Modal, PageHead, Poster, STAGGER, SectionHead, Segmented, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Empty, Facts, Icon, Modal, PageHead, Poster, STAGGER, SectionHead, Segmented, siteAlert, siteConfirm } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
@@ -101,7 +101,7 @@ async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await Pr
 const BKC={ bg:"#0a0a0b", card:"#1c1c1e", ink:"#f2f2f4", t2:"#a1a1a6", t5:"#8e8e93",
             line2:"rgba(255,255,255,.16)", primary:"#ececef", onPrimary:"#0a0a0b" };
 /* 실버(01 색): 다섯 단계 그라데이션을 x0~x1 폭에 깐다 */
-function bkSilver(ctx,x0,x1){ const g=ctx.createLinearGradient(x0,0,x1,0); [[0,"#ffffff"],[.28,"#dcdce1"],[.54,"#a3a3ac"],[.78,"#efeff2"],[1,"#b2b2ba"]].forEach(([o,c])=>g.addColorStop(o,c)); return g; }
+function bkSilver(ctx,x0,x1){ const g=ctx.createLinearGradient(x0,0,x1,0); [[0,"#ffffff"],[.3,"#f8f8fa"],[.55,"#ebebef"],[.8,"#d9d9df"],[1,"#bebec6"]].forEach(([o,c])=>g.addColorStop(o,c)); return g; }
 /* 바탕: bg 위에 오른쪽 위 광원 하나(07 깊이) */
 function bkPage(ctx,W,H){ ctx.fillStyle=BKC.bg; ctx.fillRect(0,0,W,H); const g=ctx.createRadialGradient(W*.72,0,0,W*.72,0,Math.max(W,H)*.6); g.addColorStop(0,"rgba(210,210,220,.13)"); g.addColorStop(1,"rgba(210,210,220,0)"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
 
@@ -1999,11 +1999,9 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             <div className="y-skeleton sq bk-skel-lead"/>
             <div className="y-skeleton sq bk-skel-group"/>
           </div>
-        : list.length===0&&<div className="ypl-empty sq">
-            <b>아직 만들어진 대진표가 없습니다.</b>
-            <p>참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.</p>
+        : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다." desc="참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.">
             {admin&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setWizard(true)}><Icon n="plus" size={13}/>첫 대진표 만들기</button>}
-          </div>}
+          </Empty>}
       {list.length>0&&(()=>{ const lead=list[0]; const live=statusTag(lead)==="진행 중"; return (
         <section className="rc-lead sq" aria-labelledby="bk-lead-name">
           <div className="rc-lead-who">

@@ -163,6 +163,10 @@
 .tb-slot:hover .tb-slot-remove, .tb-slot.active .tb-slot-remove, .tb-slot-remove:focus-visible { opacity: 1; }
 @media (hover: hover) { .tb-slot-remove:hover { background: var(--fill); color: var(--danger); } }
 @media (hover: none) { .tb-slot-remove { opacity: 1; } }
+@media (max-width: 639px), (pointer: coarse) {
+  .tb-slot { min-height: 128px; }
+  .tb-slot:not(.empty) { padding-top: 48px; }
+}
 .tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); font-size: 12px; color: var(--text-3); }
 
 /* ---------- editor ---------- */
@@ -244,11 +248,11 @@
 .tb-saved-actions { display: flex; gap: var(--space-2); flex: none; }
 .tb-library-empty { padding: var(--space-5) var(--space-2); font-size: 14px; color: var(--text-2); }
 
-@media (max-width: 1000px) {
+@media (max-width: 1023px) {
   .tb-layout { grid-template-columns: 1fr; }
   .tb-pool-panel { position: static; max-height: 460px; }
 }
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .tb-rule-card, .tb-panel, .tb-validation { padding: var(--space-4); }
   .tb-hero-actions { width: 100%; }
   .tb-hero-actions .btn { flex: 1; }

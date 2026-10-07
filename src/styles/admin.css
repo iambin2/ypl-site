@@ -32,7 +32,7 @@
 .ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 700; color: var(--text-3); }
 .ch-clear { position: absolute; top: var(--space-2); right: var(--space-2); background: var(--primary); color: var(--on-primary); }
 @media (hover: hover) { .ch-clear:hover { filter: brightness(1.06); } }
-.ch-name { min-height: var(--target); padding: var(--space-2) var(--space-3); font-size: 15px; }
+.ch-name { min-height: var(--target); padding: var(--space-2) var(--space-3); font-size: 16px; }
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--space-3); }
 
 /* ---------- form builder ---------- */
@@ -101,9 +101,12 @@
 .ed-rk { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 700; color: var(--text-2); }
 .ed-rk.gold { color: var(--ink); }
 .ed-auto { min-height: 36px; }
-@media (max-width: 560px) {
+@media (max-width: 639px) {
   .ch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ed-grid { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, .7fr)) 32px; gap: var(--space-1); }
+  .ed-grid { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, .7fr)) var(--target); gap: var(--space-1); }
   .ed-r2 { grid-template-columns: 1fr; }
   .fb-q-top .dd { width: auto; flex: 1; }
+}
+@media (pointer: coarse) {
+  .ed-grid { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, .7fr)) var(--target); }
 }

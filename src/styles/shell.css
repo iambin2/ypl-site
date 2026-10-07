@@ -133,7 +133,7 @@
 .site-foot-col { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .site-foot-col h3 { margin-bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
 .site-foot-col button {
-  padding: 5px 0; border: 0; background: none; font-size: 13px; color: var(--text-3); text-align: left;
+  min-height: var(--target); padding: var(--space-2) 0; border: 0; background: none; font-size: 13px; color: var(--text-3); text-align: left;
   transition: color var(--duration-fade) var(--ease-fade);
 }
 .site-foot-col button:hover { color: var(--ink); }
@@ -143,7 +143,7 @@
   font-size: 12px; line-height: 1.6;
 }
 .site-foot-fine { color: var(--text-3); }
-@media (max-width: 760px) {
+@media (max-width: 639px) {
   .site-foot-top { grid-template-columns: 1fr; }
 }
 

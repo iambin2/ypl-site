@@ -37,7 +37,7 @@
 }
 .ypl-chip--ink { background: var(--primary); color: var(--on-primary); }
 .ypl-ping { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: y-ping 2s var(--ease-spring) infinite; }
+.ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: y-ping var(--duration-pulse) var(--ease-spring) infinite; }
 
 /* ---------- Segmented: a glass squircle track, concentric with its cells; the chosen cell is the primary surface ----------
    Cells share the width equally and scroll sideways only when the labels
@@ -78,7 +78,7 @@
 .ypl-sech h2 { font-size: 28px; font-weight: 900; line-height: 1.15; letter-spacing: -0.03em; }
 .ypl-more {
   flex: none; display: inline-flex; align-items: center; gap: var(--space-1);
-  padding: 0 0 5px; border: 0; background: none; font-size: 13px; font-weight: 700; letter-spacing: 0; color: var(--text-2);
+  min-height: var(--target); padding: 0; border: 0; background: none; font-size: 13px; font-weight: 700; letter-spacing: 0; color: var(--text-2);
   white-space: nowrap; transition: color var(--duration-fade) var(--ease-fade);
 }
 .ypl-more .ic { transition: transform var(--duration-fade) var(--ease-fade); }
@@ -87,10 +87,10 @@
   .ypl-more:hover .ic { transform: translateX(2px); }
 }
 @media (min-width: 1024px) {
-  .ypl-sech { margin-bottom: 22px; }
-  .ypl-sech > div { gap: 10px; }
+  .ypl-sech { margin-bottom: var(--space-6); }
+  .ypl-sech > div { gap: var(--space-3); }
   .ypl-sech h2 { font-size: 40px; letter-spacing: -0.035em; }
-  .ypl-more { font-size: 14px; padding-bottom: var(--space-2); }
+  .ypl-more { font-size: 13px; }
 }
 
 /* ---------- GlassList: one glass surface, rows with inset hairlines ---------- */
@@ -226,7 +226,7 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
 .field:has(> input[type="checkbox"]) { flex-direction: row; align-items: center; gap: var(--space-3); min-height: var(--target); }
 .field:has(> input[type="checkbox"]) > label { font-size: 15px; font-weight: 400; color: var(--ink); cursor: pointer; }
 
-:where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea) {
+:where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea) {
   --r: var(--radius-sm);
   width: 100%; min-height: 48px; padding: var(--space-3) var(--space-4);
   border: 1px solid transparent; border-radius: var(--r);
@@ -236,20 +236,20 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
   -webkit-appearance: none; appearance: none;
 }
 @supports (corner-shape: squircle) {
-  :where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea) {
+  :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea) {
     border-radius: calc(var(--r) * 1.6); corner-shape: superellipse(1.78);
   }
 }
 @media (hover: hover) {
-  :where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea):hover:not(:disabled):not(:focus) { background: var(--fill); }
+  :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):hover:not(:disabled):not(:focus) { background: var(--fill); }
 }
-:where(.ypl) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea):focus {
+:where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus {
   background: var(--bg); border-color: var(--ink); box-shadow: 0 0 0 var(--space-1) var(--fill);
 }
 :where(.ypl) :where(input, textarea):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
-:where(.ypl) :where(textarea) { min-height: 128px; resize: vertical; line-height: 1.6; }
+:where(.ypl) textarea { min-height: 128px; resize: vertical; line-height: 1.6; }
 :where(.ypl) :where(input[type="number"]) { font-variant-numeric: tabular-nums; }
-:where(.ypl) :where(input, textarea)[aria-invalid="true"] { border-color: var(--danger); }
+:where(.ypl) :is(input, textarea)[aria-invalid="true"] { border-color: var(--danger); }
 
 .bk-check, .ed-auto, .fb-req {
   display: inline-flex; align-items: center; gap: var(--space-3); min-height: var(--target);
@@ -259,7 +259,7 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
 .bk-check i { color: var(--text-3); }
 .bk-grow2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-3); margin-bottom: 0; }
 .bk-grow2 > .dd, .bk-grow2 > input { margin-bottom: var(--space-3); }
-@media (max-width: 560px) { .bk-grow2 { grid-template-columns: 1fr; } }
+@media (max-width: 639px) { .bk-grow2 { grid-template-columns: 1fr; } }
 .bk-hint, .hint { font-size: 15px; line-height: 1.5; color: var(--text-3); }
 .req { margin-left: var(--space-1); color: var(--danger); }
 .row-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
@@ -471,7 +471,7 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
 /* a dialog without an action row still ends on its own padding */
 .modal > :last-child:not(.modal-actions) { margin-bottom: var(--pad); }
 
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .overlay { align-items: flex-end; padding: var(--space-2); padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom)); }
   .modal {
     --r: var(--radius-2xl);
@@ -509,3 +509,13 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
 @media (hover: hover) { .fold-head:hover .fold-chev { color: var(--ink); } }
 .fold.open .fold-chev { transform: rotate(180deg); }
 .fold-body { padding: 0 var(--space-4) var(--space-4); }
+
+/* Compact desktop controls keep a full touch target on phones and touch screens. */
+@media (max-width: 639px), (pointer: coarse) {
+  .ypl button, .ypl [role="button"], .ypl .ypl-btn,
+  .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp {
+    min-width: var(--target); min-height: var(--target);
+  }
+  .ls-clear, .tb-clear { right: 0; }
+  .lsearch input, .records-search-field input, .tb-search-row input { padding-right: 48px; }
+}

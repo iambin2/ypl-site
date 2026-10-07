@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Facts, Icon, PageHead, Pager, Poster, Reveal, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
+import { Dropdown, Empty, Facts, Icon, PageHead, Pager, Poster, Reveal, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
 import useCursorLight from "../components/common/useCursorLight.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
@@ -139,7 +139,7 @@ function TrainerView({ snapshot }) {
     : visible[0]?.key || visible[0]?.name || snapshot.trainers[0]?.key || snapshot.trainers[0]?.name;
   const profile = currentKey ? snapshot.profiles[currentKey] : null;
 
-  if (!profile) return <EmptyTile title="트레이너 기록이 없습니다." />;
+  if (!profile) return <Empty title="트레이너 기록이 없습니다." />;
 
   const seasonMatch = (value) => !season || value === season;
   const placements = profile.placements.filter((p) => seasonMatch(p.season));
@@ -249,7 +249,7 @@ function TrainerView({ snapshot }) {
                 );
               })}
             </ul>
-          ) : <EmptyTile title="확인 가능한 대회 기록이 없습니다." />}
+          ) : <Empty title="확인 가능한 대회 기록이 없습니다." />}
           <Pager page={histCur} pages={histPages} onGo={setHistPage} />
         </section>
 
@@ -258,7 +258,7 @@ function TrainerView({ snapshot }) {
           {favorites.length ? (
             <CountList items={favorites.slice(0, 6)} />
           ) : (
-            <EmptyTile title="저장된 우승 엔트리가 없습니다." desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
+            <Empty title="저장된 우승 엔트리가 없습니다." desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
           )}
         </section>
       </div>
@@ -267,9 +267,6 @@ function TrainerView({ snapshot }) {
 }
 
 /* ---- shared pieces of the records views ---- */
-function EmptyTile({ title, desc }) {
-  return <div className="ypl-empty sq"><b>{title}</b>{desc && <p>{desc}</p>}</div>;
-}
 
 function RailSearch({ value, onChange, placeholder, count }) {
   return (
@@ -497,7 +494,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     return (parseInt(b.round.round) || 0) - (parseInt(a.round.round) || 0);
   });
 
-  if (!otours.length) return <EmptyTile title="대회 기록이 없습니다." />;
+  if (!otours.length) return <Empty title="대회 기록이 없습니다." />;
 
   return (<>
     <div className="rc-filter">
@@ -533,7 +530,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
           <ul className="ypl-group sq rc-rounds swap">
             {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
           </ul>
-        ) : <EmptyTile title="검색과 맞는 대회 기록이 없습니다." />}
+        ) : <Empty title="검색과 맞는 대회 기록이 없습니다." />}
       </>
     )}
   </>);
@@ -550,7 +547,7 @@ function PokemonView({ snapshot }) {
   const current = snapshot.pokemon.find((p) => p.name === currentName);
 
   if (!current) {
-    return <EmptyTile title="기록에 연결된 파티 엔트리가 없습니다." desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
+    return <Empty title="기록에 연결된 파티 엔트리가 없습니다." desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
   }
 
   return (
@@ -602,7 +599,7 @@ function PokemonView({ snapshot }) {
             <div className="rc-sech"><h4 id="rc-pk-pt-h">함께 많이 등록된 포켓몬</h4></div>
             {current.partners.length
               ? <CountList items={current.partners.slice(0, 8)} />
-              : <EmptyTile title="동반 엔트리 기록이 없습니다." />}
+              : <Empty title="동반 엔트리 기록이 없습니다." />}
           </section>
         </div>
 
@@ -665,7 +662,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
     return (
       <>
         {admin && !normalizedMode && <div className="rc-filter"><button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 랭킹 탭 추가</button></div>}
-        <EmptyTile title="랭킹 기록이 없습니다." />
+        <Empty title="랭킹 기록이 없습니다." />
       </>
     );
   }
@@ -722,7 +719,7 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
     return (
       <>
         {admin && !normalizedMode && <div className="rc-filter"><button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 시즌 추가</button></div>}
-        <EmptyTile title="시즌 성적이 없습니다." />
+        <Empty title="시즌 성적이 없습니다." />
       </>
     );
   }

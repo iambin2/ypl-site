@@ -39,7 +39,7 @@ Not a generic club homepage: every record on the site is derived from real, oper
 
 - Name: YPL — Yonsei Pokémon League, 포켓몬 센터 연세점. The user explicitly released every visual element (wordmark, color, type) for redesign except the light/dark theme feature.
 - The site is neutral-only (black, white, grey), by the user's decision of 2026-09-11 that replaced the earlier Yonsei Blue commitment. No brand hue and no trophy gold; status colours only where they carry meaning. Since 2026-10-06 the neutral palette is kept lively by light, glass surfaces, grain and a digital silver gradient (not realistic metal) on key words and big figures.
-- The brand mark is the user's own Braviary (워글) logo, `docs/brand/newlogo.png`, used as an exact potrace vector. Never redraw it.
+- The brand mark is the user-approved Wing Y (`public/brand/ypl-wing-y.svg`), selected on 2026-10-07: raised wings form Y, with no forehead crest and a curved cutout band across the Braviary-inspired fan tail. Preserve its proportions. The previous `docs/brand/newlogo.*` files are historical.
 - Copy is plain Korean prose: no middle-dot (·) separators, and short intro sentences should sit on one line at laptop width.
 - Tone: an official league site, not a fan site. The home page stays clean and professional. The home first viewport is a short three-beat headline ("모든 배틀. 모든 기록. 모든 챔피언.") with two buttons, chosen by the user on 2026-10-06; no logo emblem or artwork there. The current champion's party appears lower on home.
 - Channel roles: this site is the league's first and official source of notices and records; Discord is where battles are actually played and streamed. Copy must not call Discord the first place for news.

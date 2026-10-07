@@ -19,7 +19,7 @@
 @media (min-width: 1024px) {
   .hm-hero { gap: 26px; padding: var(--space-6) var(--space-1) var(--space-2); }
   .hm-hero h1 { font-size: 104px; line-height: 1.04; letter-spacing: -0.045em; }
-  .hm-hero p { font-size: 18px; max-width: 640px; }
+  .hm-hero p { font-size: 18px; max-width: 639px; }
   .hm-hero-actions { gap: var(--space-3); }
 }
 
@@ -160,12 +160,12 @@
   .ab-league p { font-size: 15px; }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .ab-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ab-timeline li, .ab-comp { grid-template-columns: 1fr; gap: var(--space-2); }
   .ab-leagues { grid-template-columns: 1fr; }
 }
-@media (max-width: 480px) {
+@media (max-width: 639px) {
   .ab-flow { grid-template-columns: 1fr; }
   .ab-flow li { min-height: 0; }
   .ab-flow b { margin-top: var(--space-4); }
@@ -306,7 +306,7 @@
   background: var(--fill); font-size: 15px; font-weight: 700; color: var(--text-2);
 }
 .bd-ava.sm { width: 32px; height: 32px; font-size: 13px; }
-.bd-main { min-width: 0; }
+.bd-main, .bd-cmt-main { min-width: 0; }
 .bd-title {
   display: block; font-size: 15px; font-weight: 700; line-height: 1.4; letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -348,7 +348,7 @@
 .bd-cform-row .btn { flex: none; }
 .bd-preview { --r: var(--radius-sm); margin-top: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--fill-2); }
 .bd-preview-h { margin-bottom: var(--space-1); font-size: 12px; font-weight: 700; color: var(--text-3); }
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .bd-head { grid-template-columns: 40px minmax(0, 1fr) auto; }
   .bd-head .nb-chev { display: none; }
   .bd-open { padding-left: 0; }
