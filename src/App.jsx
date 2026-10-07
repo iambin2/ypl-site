@@ -7,7 +7,6 @@ import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost, useExitAnimation } f
 import { BrandMark } from "./components/layout/SiteHeader.jsx";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import LazyContent from "./components/common/LazyContent.jsx";
-import { useLightSource } from "./components/common/useCursorLight.js";
 
 const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
 const BoardPage = lazy(() => import("./pages/BoardPage.jsx"));
@@ -110,7 +109,6 @@ export default function App() {
   const [data,setData]=useState(null); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
   const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(null); const [modal,setModal]=useState(null); const toastTimer=useRef(0);
   const [menuOpen,setMenuOpen]=useState(false);
-  useLightSource();
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||SEED)))();},[]);
   const [noAnim,setNoAnim]=useState(false);
   const switchTheme=useCallback(()=>{
