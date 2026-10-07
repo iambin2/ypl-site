@@ -8,8 +8,8 @@
 .tb-hero-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .tb-count-badge {
   min-width: 22px; height: 22px; padding: 0 6px; display: inline-grid; place-items: center;
-  border-radius: var(--radius-pill); background: var(--fill);
-  font-family: var(--font-latin); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill);
+  font-family: var(--font-latin); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: normal;
 }
 
 /* ---------- glass panels ---------- */
@@ -22,7 +22,7 @@
 .tb-rule-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); margin-top: var(--space-4); font-size: 13px; color: var(--text-3); }
 .tb-status-chip {
   display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--space-3);
-  border-radius: var(--radius-pill); background: var(--fill); font-size: 12px; font-weight: 700; color: var(--ink);
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); font-size: 12px; font-weight: 700; color: var(--ink); line-height: normal;
 }
 .tb-status-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
 .tb-status-chip.current::before { background: var(--ok); }
@@ -51,7 +51,7 @@
 .tb-official-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-4) 0 0 44px; }
 .tb-official-meta span {
   display: inline-flex; align-items: center; height: 28px; padding: 0 var(--space-3);
-  border-radius: var(--radius-pill); background: var(--fill); font-size: 12px; font-weight: 700; color: var(--text-2);
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); font-size: 12px; font-weight: 700; color: var(--text-2); line-height: normal;
 }
 .tb-official-lookup { display: flex; gap: var(--space-2); margin: var(--space-4) 0 0 44px; max-width: 520px; }
 .tb-official-lookup .btn { height: 48px; }
@@ -99,13 +99,13 @@
 @media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-thumb); } }
 .tb-pool-empty { padding: var(--space-8) var(--space-3); font-size: 14px; color: var(--text-2); }
 
-/* ---------- TypeBadge: a fill capsule; the type's own colour is the dot ---------- */
+/* ---------- TypeBadge: a fill chip; the type's own colour is the dot ---------- */
 .tb-types { display: flex; gap: var(--space-1); flex-wrap: wrap; }
 .tb-type {
   --type: var(--text-3);
   display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
-  border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
-  font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); color: var(--ink);
+  font-size: 12px; font-weight: 700; line-height: normal; white-space: nowrap;
 }
 .tb-type::before { content: ""; width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--type); }
 .type-normal{--type:#9FA19F}.type-fire{--type:#E62829}.type-water{--type:#2980EF}.type-electric{--type:#FAC000}
@@ -118,9 +118,9 @@
 .tb-team-head { align-items: center; }
 .tb-team-title-line { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
 .tb-current-team { font-size: 13px; font-weight: 700; color: var(--text-3); }
-/* state chips: fill capsule, the state in the text colour */
+/* state chips: fill chip, the state in the text colour */
 .tb-dirty-badge, .tb-draft-badge, .tb-active-saved {
-  display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--rc-xs); corner-shape: var(--corner);
   background: var(--fill); font-size: 12px; font-weight: 700; line-height: 1.2; color: var(--text-3);
 }
 .tb-dirty-badge { color: var(--warn); }

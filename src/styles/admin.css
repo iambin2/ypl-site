@@ -60,7 +60,7 @@
 .fb-dot.multi { border-radius: 30%; }
 .fb-dot.dropdown { background: none; width: 20px; }
 .fb-addopt {
-  align-self: flex-start; height: 36px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent;
+  align-self: flex-start; height: 36px; padding: 0 var(--space-3); border: 0; border-radius: var(--rc-sm); corner-shape: var(--corner); background: transparent;
   font-size: 15px; font-weight: 700; color: var(--text-2);
   transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
 }

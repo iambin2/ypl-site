@@ -1,7 +1,7 @@
 import Icon from "../../components/common/Icon.jsx";
 import React, { useEffect, useState } from "react";
 import { normTeam as normalizeLegacyParty } from "../../services/legacyPartyImages.js";
-import { Dropdown, Modal, siteAlert } from "../../components/index.js";
+import { Dropdown, Modal, Segmented, siteAlert } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, normalizeApplicationEventDivision } from "../../services/bracketTeamParticipants.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
@@ -271,8 +271,8 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
       <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={13}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={13}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={12}/></button></div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        <div className="ed-seg"><button type="button" className={!r.team?"on":""} onClick={()=>upd(i,"team",false)}>개인전</button><button type="button" className={r.team?"on":""} onClick={()=>upd(i,"team",true)}>팀전</button></div>
-        <div className="ed-seg"><button type="button" className={!r.champ?"on":""} onClick={()=>upd(i,"champ",false)}>일반</button><button type="button" className={r.champ?"on":""} onClick={()=>upd(i,"champ",true)}>챔피언스 시리즈</button></div>
+        <Segmented value={!!r.team} onChange={v=>upd(i,"team",v)} ariaLabel="경기 방식" options={[[false,"개인전"],[true,"팀전"]]}/>
+        <Segmented value={!!r.champ} onChange={v=>upd(i,"champ",v)} ariaLabel="형식" options={[[false,"일반"],[true,"챔피언스 시리즈"]]}/>
       </div>
       {!r.team?<>
         <div className="ed-r2"><input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="우승"/><input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="준우승"/></div>

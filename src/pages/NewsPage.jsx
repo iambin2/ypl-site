@@ -90,18 +90,16 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
             </span>
             <span className="nb-chev" aria-hidden="true"><Icon n="chev" size={15}/></span>
           </button>
-          {hasLink&&<div className="nb-links">
-            {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={14}/></a>}
-            {a.link2&&<a className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.link2Label||"링크 바로가기"}<Icon n="ext" size={14}/></a>}
-          </div>}
-          {(hasForm||a.form?.eventId)&&<div className="ann-formbtns">
+          {(hasLink||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
             {hasForm&&<button className="ann-apply" onClick={e=>{e.stopPropagation();setFill(a.id);}}><Icon n="form" size={15}/>{a.form.buttonLabel||"참가 신청하기"}</button>}
             {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(a.form.eventId);}}>파티 제출</button>}
             {championshipSubmission?.isChampionship&&<>
               <button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(championshipSubmission.qualifierEvent.id);}}>선발전 파티 제출</button>
               <button className="ann-apply ann-submit" onClick={e=>{e.stopPropagation();openBuilder(championshipSubmission.finalEvent.id);}}>본선 파티 제출</button>
             </>}
-            {admin&&<button className="ann-resp" onClick={e=>{e.stopPropagation();setRespId(a.id);}}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
+            {a.link&&<a className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={14}/></a>}
+            {a.link2&&<a className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{a.link2Label||"링크 바로가기"}<Icon n="ext" size={14}/></a>}
+            {admin&&(hasForm||a.form?.eventId)&&<button className="ann-resp" onClick={e=>{e.stopPropagation();setRespId(a.id);}}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
           </div>}
           {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
             ann={a}

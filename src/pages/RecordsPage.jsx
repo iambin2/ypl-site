@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Facts, Icon, PageHead, Pager, Pills, Poster, Reveal, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
+import { Dropdown, Facts, Icon, PageHead, Pager, Poster, Reveal, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
 import useCursorLight from "../components/common/useCursorLight.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
@@ -405,20 +405,30 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     const expanded = openRoundKey === key;
     const toggle = () => setOpenRoundKey((current) => current === key ? null : key);
     const championshipEmphasis = championSeries && r.championshipPhase !== "qualifier";
-    const individualResults = () => (
+    /* 순위마다 한 줄: 이름표 열 뒤에 이름. 팀전은 팀마다 줄을 나눈다. */
+    const resultLines = (lines) => (
       <div className="r2-res">
-        {[
-          ["win", "우승", partyRows.filter((row) => row.placement === "win")],
-          ["ru", "준우승", partyRows.filter((row) => row.placement === "ru")],
-          ["sf", "4강", partyRows.filter((row) => row.placement === "sf")],
-        ].map(([placement, label, rows]) => rows.length > 0 && (
-          <React.Fragment key={placement}>
-            <span className={"r2-rk" + (placement === "win" ? " gold" : "")}>{label}</span>
-            {rows.map((row) => <span key={`${row.placement}:${row.name}`} className={"r2-name" + (placement === "win" ? " win" : "")}>{row.name}</span>)}
-          </React.Fragment>
-        ))}
+        {lines.map(([placement, label, entries]) => entries.map((entry, k) => (
+          <div className="r2-line" key={`${placement}:${k}`}>
+            <span className={"r2-rk" + (placement === "win" ? " gold" : "")}>{k === 0 ? label : ""}</span>
+            <span className="r2-names">
+              {entry.names.map((name, n) => <span key={`${name}:${n}`} className={"r2-name" + (placement === "win" ? " win" : "")}>{name}</span>)}
+              {entry.members?.length > 0 && <NameChips list={entry.members} kind="mem" />}
+            </span>
+          </div>
+        )))}
       </div>
     );
+    const individualResults = () => resultLines([
+      ["win", "우승", partyRows.filter((row) => row.placement === "win")],
+      ["ru", "준우승", partyRows.filter((row) => row.placement === "ru")],
+      ["sf", "4강", partyRows.filter((row) => row.placement === "sf")],
+    ].filter(([, , rows]) => rows.length > 0).map(([placement, label, rows]) => [placement, label, [{ names: rows.map((row) => row.name) }]]));
+    const teamResults = () => resultLines([
+      ["win", "우승", [{ names: r.win ? [displayTeamName(r.win)] : [], members: r.winMembers }]],
+      ["ru", "준우승", (runnerUps.length > 0 || r.ruMembers?.length > 0) ? [{ names: runnerUps[0] ? [displayTeamName(runnerUps[0])] : [], members: r.ruMembers }] : []],
+      ["sf", "4강", (r.sf || []).map((nm, k) => ({ names: nm ? [displayTeamName(nm)] : [], members: (r.sfMembers || [])[k] }))],
+    ]);
     return (
       <li className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
         <div className="r2-date">{r.date}</div>
@@ -432,7 +442,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
                   {r.season && <span className="r2-season">{r.season}</span>}
                   {championshipEmphasis && <span className="r2-champ">챔피언스 시리즈</span>}
                   {r.team && <span className="r2-mode">팀전</span>}
-                  {rule && <span className="r2-rule">{rule}</span>}
+                  {rule && !(r.team && rule === "팀전") && <span className="r2-rule">{rule}</span>}
                 </span>}
                 {individualResults()}
               </div>
@@ -445,40 +455,10 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
             {r.season && <span className="r2-season">{r.season}</span>}
             {championshipEmphasis && <span className="r2-champ">챔피언스 시리즈</span>}
             {r.team && <span className="r2-mode">팀전</span>}
-            {rule && <span className="r2-rule">{rule}</span>}
+            {rule && !(r.team && rule === "팀전") && <span className="r2-rule">{rule}</span>}
           </div>}
           {!r.team && individualResults()}
-          {r.team && <div className="r2-res">
-            <span className="r2-rk gold">우승</span>
-            {r.win && <span className="r2-name win">{r.team ? displayTeamName(r.win) : r.win}</span>}
-            {r.winMembers && r.winMembers.length > 0 && <NameChips list={r.winMembers} kind="mem" />}
-            {(runnerUps.length > 0 || (r.ruMembers && r.ruMembers.length > 0)) && <>
-              <span className="r2-rk">준우승</span>
-              {r.team
-                ? (runnerUps[0] && <span className="r2-name">{displayTeamName(runnerUps[0])}</span>)
-                : runnerUps.map((name, index) => (
-                    <React.Fragment key={`${name}:${index}`}>
-                      <span className="r2-name">{name}</span>
-                    </React.Fragment>
-                  ))}
-              {r.ruMembers && r.ruMembers.length > 0 && <NameChips list={r.ruMembers} kind="mem" />}
-            </>}
-            {(r.sf || []).length > 0 && <>
-              <span className="r2-rk">4강</span>
-              {r.team
-                ? r.sf.map((nm, k) => (
-                    <React.Fragment key={k}>
-                      {nm && <span className="r2-name">{displayTeamName(nm)}</span>}
-                      {(r.sfMembers || [])[k] && r.sfMembers[k].length > 0 && <NameChips list={r.sfMembers[k]} kind="mem" />}
-                    </React.Fragment>
-                  ))
-                : r.sf.map((name, index) => (
-                    <React.Fragment key={`${name}:${index}`}>
-                      <span className="r2-name">{name}</span>
-                    </React.Fragment>
-                  ))}
-            </>}
-          </div>}</>}
+          {r.team && teamResults()}</>}
           {toggleable && r.team && (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
               <span className="records-round-summary">팀원별 공식 파티</span>
@@ -521,7 +501,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
 
   return (<>
     <div className="rc-filter">
-      <Pills
+      <Segmented
         value={selectedTour ? selectedTour.key : "all"}
         onChange={setCategory}
         ariaLabel="대회 종류"
@@ -652,7 +632,7 @@ function RankingHub({ snapshot, data, admin, setModal, save }) {
   return (
     <>
       <div className="rc-filter">
-        <Pills value={sub} onChange={setSub} ariaLabel="랭킹 보기" options={[["rank", "누적 랭킹"], ["season", "시즌별 성적"]]} />
+        <Segmented value={sub} onChange={setSub} ariaLabel="랭킹 보기" options={[["rank", "누적 랭킹"], ["season", "시즌별 성적"]]} />
       </div>
       {sub === "rank" ? (
         <RankView rankings={snapshot.ranking?.series || data.rankings || []} data={data} admin={admin} setModal={setModal} save={save} />
@@ -693,7 +673,7 @@ function RankView({ rankings, data, admin, setModal, save }) {
   return (
     <>
       <div className="rc-filter">
-        <Pills value={era.key} onChange={setSel} ariaLabel="랭킹 종류" options={eras.map((e) => [e.key, e.label])} />
+        <Segmented value={era.key} onChange={setSel} ariaLabel="랭킹 종류" options={eras.map((e) => [e.key, e.label])} />
         {admin && !normalizedMode && <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 추가</button>}
       </div>
       <div className="rc-rank swap" key={sel}>
@@ -755,7 +735,7 @@ function SeasonView({ seasons, data, admin, setModal, save }) {
   return (
     <>
       <div className="rc-filter">
-        <Pills value={sel} onChange={setSel} ariaLabel="시즌" options={ordered.map(({ x, i }) => [i, x.name])} />
+        <Segmented value={sel} onChange={setSel} ariaLabel="시즌" options={ordered.map(({ x, i }) => [i, x.name])} />
         {admin && !normalizedMode && <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 추가</button>}
       </div>
       <div className="rc-rank swap" key={sel}>

@@ -129,16 +129,19 @@
 .r2-round, .r2-head > .r2-rule:first-child { font-size: 15px; font-weight: 900; letter-spacing: -0.01em; color: var(--ink); }
 .r2-rule, .r2-season, .r2-mode { font-size: 12px; color: var(--text-3); }
 .r2-champ { font-size: 12px; font-weight: 700; color: var(--ink); }
-.r2-res { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.r2-rk { margin-left: var(--space-2); font-size: 12px; font-weight: 700; color: var(--text-3); }
-.r2-res > .r2-rk:first-child { margin-left: 0; }
+/* one line per placement: a fixed label column, then the names */
+.r2-res { display: grid; gap: var(--space-2); }
+.r2-line { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: start; gap: var(--space-3); }
+.r2-line > .r2-rk { line-height: 28px; }
+.r2-names { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.r2-rk { font-size: 12px; font-weight: 700; color: var(--text-2); white-space: nowrap; }
 .r2-rk.gold { color: var(--ink); }
 .r2-name {
   display: inline-flex; align-items: center; height: 28px; padding: 0 var(--space-3);
-  border-radius: var(--radius-pill); background: var(--fill); font-size: 12px; font-weight: 700; white-space: nowrap;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); font-size: 12px; font-weight: 700; white-space: nowrap; line-height: normal;
 }
 .r2-name.win { background: var(--primary); color: var(--on-primary); }
-.r2-name.mem { padding: 0 var(--space-1); background: none; font-weight: 400; color: var(--text-3); }
+.r2-name.mem { padding: 0 var(--space-1); background: none; font-weight: 400; color: var(--text-2); }
 
 .records-round-toggle { width: 100%; display: flex; align-items: flex-start; gap: var(--space-3); padding: 0; border: 0; background: transparent; text-align: left; }
 .records-round-summary { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; }
@@ -156,7 +159,6 @@
   padding: var(--space-2) 0;
 }
 .records-round-party-row + .records-round-party-row { background: linear-gradient(var(--line), var(--line)) no-repeat 0 0 / 100% var(--hair); }
-.records-round-party-row .r2-rk { margin-left: 0; }
 .records-round-party-row .r2-name { height: auto; padding: 0; background: none; font-size: 14px; }
 .records-round-party-row .r2-name.win { color: var(--ink); font-weight: 900; }
 .records-party-sprites, .records-party-missing { grid-column: 1 / -1; }

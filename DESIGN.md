@@ -1,23 +1,28 @@
 ---
 name: YPL — Yonsei Pokémon League
-description: "The league site of record for Pokémon Center Yonsei: digital silver on black and white, one light from above, glass surfaces, Pokémon on pods, dark first."
+description: "The league site of record for Pokémon Center Yonsei: clear glass floating over pools of light on black and white, no outlines, Pokémon on pods, dark first."
 colors:
   bg: "#0a0a0b"
   bg-sunk: "#050506"
-  page-light: "rgba(210, 210, 220, .13)"
+  page-light: "rgba(255, 255, 255, .26)"
+  page-light-2: "rgba(255, 255, 255, .1)"
+  page-light-live: "rgba(255, 255, 255, .08)"
+  page-light-3: "rgba(255, 255, 255, .1)"
   grain: "rgba(255, 255, 255, .016)"
-  glass-top: "rgba(255, 255, 255, .075)"
-  glass-bottom: "rgba(255, 255, 255, .022)"
-  glass-hover: "rgba(255, 255, 255, .11)"
+  glass-top: "rgba(255, 255, 255, .06)"
+  glass-bottom: "rgba(255, 255, 255, .018)"
+  glass-sheen: "rgba(255, 255, 255, .1)"
+  glass-sheen-live: "rgba(255, 255, 255, .06)"
+  glass-hover: "rgba(255, 255, 255, .1)"
   surface: "#1c1c1e"
   ink: "#f2f2f4"
   text-2: "#a1a1a6"
   text-3: "#8e8e93"
   silver-1: "#ffffff"
-  silver-2: "#dcdce1"
-  silver-3: "#a3a3ac"
-  silver-4: "#efeff2"
-  silver-5: "#b2b2ba"
+  silver-2: "#f8f8fa"
+  silver-3: "#ebebef"
+  silver-4: "#d9d9df"
+  silver-5: "#bebec6"
   silver-glint: "#ffffff"
   follow-light: "rgba(255, 255, 255, .08)"
   primary-top: "#ffffff"
@@ -37,18 +42,21 @@ colors:
   light-bg-sunk: "#e2e2e6"
   light-page-light: "rgba(255, 255, 255, .95)"
   light-grain: "rgba(0, 0, 0, .018)"
-  light-glass-top: "rgba(255, 255, 255, .96)"
-  light-glass-bottom: "rgba(255, 255, 255, .72)"
-  light-glass-hover: "#ffffff"
+  light-page-light-2: "rgba(255, 255, 255, .7)"
+  light-page-light-3: "rgba(255, 255, 255, .5)"
+  light-glass-top: "rgba(255, 255, 255, .62)"
+  light-glass-bottom: "rgba(255, 255, 255, .34)"
+  light-glass-hover: "rgba(255, 255, 255, .85)"
+  light-glass-sheen: "rgba(255, 255, 255, .75)"
   light-surface: "#ffffff"
   light-ink: "#1c1c1e"
   light-text-2: "#4a4a4f"
   light-text-3: "#636368"
   light-silver-1: "#1c1c1f"
-  light-silver-2: "#4a4a52"
-  light-silver-3: "#7a7a83"
-  light-silver-4: "#2c2c31"
-  light-silver-5: "#5f5f68"
+  light-silver-2: "#26262b"
+  light-silver-3: "#34343a"
+  light-silver-4: "#47474e"
+  light-silver-5: "#5c5c64"
   light-silver-glint: "#9a9aa3"
   light-follow-light: "rgba(255, 255, 255, .7)"
   light-primary-top: "#3a3a3f"
@@ -189,6 +197,11 @@ rounded:
   xl: "32px"
   2xl: "38px"
   pill: "999px"
+  control-xs: "6px"
+  control-sm: "8px"
+  control-md: "9px"
+  control-lg: "10px"
+  control-track: "14px"
 spacing:
   space-1: "4px"
   space-2: "8px"
@@ -206,14 +219,14 @@ components:
     backgroundColor: "{colors.primary-top}"
     textColor: "{colors.on-primary}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     padding: "0 22px"
     height: "50px"
   button-glass:
     backgroundColor: "{colors.glass-top}"
     textColor: "{colors.ink}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     padding: "0 22px"
     height: "50px"
   button-glass-hover:
@@ -222,57 +235,47 @@ components:
     backgroundColor: "{colors.fill}"
     textColor: "{colors.ink}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     padding: "0 22px"
     height: "50px"
   button-quiet:
     textColor: "{colors.text-2}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     padding: "0 12px"
     height: "44px"
   button-danger:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.on-primary}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     padding: "0 22px"
     height: "50px"
   button-small:
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-md}"
     padding: "0 16px"
     height: "40px"
   chip:
     backgroundColor: "{colors.fill}"
     textColor: "{colors.ink}"
     typography: "{typography.meta}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-xs}"
     padding: "0 12px"
     height: "28px"
   chip-ink:
     backgroundColor: "{colors.primary-top}"
     textColor: "{colors.on-primary}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-xs}"
     height: "28px"
-  pill:
-    backgroundColor: "{colors.fill-2}"
-    textColor: "{colors.text-2}"
-    typography: "{typography.link}"
-    rounded: "{rounded.pill}"
-    padding: "0 16px"
-    height: "34px"
-  pill-selected:
-    backgroundColor: "{colors.fill}"
-    textColor: "{colors.ink}"
   segmented:
     backgroundColor: "{colors.glass-top}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-track}"
     padding: "4px"
   segmented-thumb:
     backgroundColor: "{colors.primary-top}"
     textColor: "{colors.on-primary}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     height: "40px"
   input:
     backgroundColor: "{colors.fill-2}"
@@ -325,7 +328,7 @@ components:
     backgroundColor: "{colors.primary-top}"
     textColor: "{colors.on-primary}"
     typography: "{typography.control}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control-lg}"
     height: "48px"
   empty-state:
     backgroundColor: "{colors.glass-top}"
@@ -336,42 +339,42 @@ components:
 
 # Design System: YPL — Yonsei Pokémon League
 
-The detailed rulebook is `docs/design-system/` (15 chapters, tokens in `tokens.json`, one card per component with a live `preview.html`, reference CSS in `components/bundle.css`). This file is the portable summary, recorded from the "YPL silver" build finished on 2026-10-06. When the two disagree, the rulebook wins and this file is the one to fix. Colour keys without a prefix are the dark theme (the default); `light-*` keys are the same token under `[data-theme="light"]`.
+The detailed rulebook is `docs/design-system/` (15 chapters, tokens in `tokens.json`, one card per component with a live `preview.html`, reference CSS in `components/bundle.css`). This file is the portable summary, recorded from the "YPL silver" build finished on 2026-10-06 and moved to the "YPL light" surfaces on 2026-10-07 (silver gloss became light, glass lost its rim, pills folded into the segmented control). The rulebook chapters still describe the silver build; until they are rewritten, this file is ahead of them on surfaces, depth and filters. When the two disagree, the rulebook wins and this file is the one to fix. Colour keys without a prefix are the dark theme (the default); `light-*` keys are the same token under `[data-theme="light"]`.
 
 ## Overview
 
-**Creative North Star: "Digital Silver on Black and White"**
+**Creative North Star: "Glass Over Light"**
 
 The structure is the formula of a professional league site (taken from Wolfey Draft League): every page opens with a Latin eyebrow, a two-tone title and one line; the home page is a short headline with two buttons, a NOW bar, a grid of identical Explore cards, the reigning champion and recent results; parties stand on pods; records are aligned tables. It is played straight at an Apple and Nike level of craft.
 
-The palette stays black, white and grey, but it is not allowed to look monotonous. Life comes from one light falling from above the page, a faint grain, glass surfaces with a lit top edge, and a digital silver gradient that flows only through the key word of a title, the big numerals and the logo. Silver is a flat five-stop gradient that evokes the metal; realistic chrome (reflection bands, mirror floors, automatic sheen sweeps) was tried and rejected as trend-bound. Dark is the default; light is supported to the same finish, with silver turning into dark steel.
+The palette stays black, white and grey, but it is not allowed to look monotonous. The page is a dark room with soft pools of light that drift very slowly on a fixed layer, so whatever is on screen always has light behind it. Every surface is clear glass floating over that light: translucent, no outline, no lit rim, only a soft shadow; the light passes through it rather than glinting off it. The key word of a title, the big numerals and the logo carry the light itself, a single falloff from white that never turns back. A metal sheen (silver bands, chrome, mirror floors) was tried and rejected. Dark is the default; light is supported to the same finish, with frosted white glass and the light words turning to graphite. Controls were capsules in the silver build; they are now squircles like everything else.
 
-On desktop, two places catch the cursor like light: the last line of the home hero and the feature card (current champion, rank one). Phones stay still.
+On desktop the cursor is the light source: the main pool of light follows the pointer about a second behind, and every glass surface brightens by the share of that one light that falls on it, so the panes near the pointer glow and the rest stay dark. The light words (the hero's last line, feature names) carry a bright spot that follows the pointer too. Phones keep the slow drift.
 
 **Key Characteristics:**
 - Dark first (`bg` #0a0a0b), light fully supported; the theme lives on `<html data-theme>`.
-- Three surfaces: the lit page, glass, and the floating layer. No outlines anywhere.
-- Silver on one key word per title, big numerals and the logo, 19px and up, bold only.
+- Three surfaces: the lit page, glass, and the floating layer. No outlines, rims or edge lines anywhere.
+- Light on one key word per title, big numerals and the logo, 19px and up, bold only.
 - Two families: Wanted Sans 400/700/900 for Korean, Unbounded 500/700/800 for Latin eyebrows and numerals.
-- Continuous-curvature corners everywhere (base radius x1.6, superellipse 1.78), concentric nesting, capsule controls.
+- Continuous-curvature corners everywhere (base radius x1.6, superellipse 1.78), concentric nesting. No capsules: controls are squircles whose radius follows their height.
 - Lists in one glass surface with inset hairlines; sections separated by space.
-- Three springs plus an exit for all motion, and the 900ms cursor light on desktop.
+- Three springs plus an exit for all motion, and the cursor as the light source on desktop (1100ms follow).
 - Phone first. The venue phone is the primary screen.
 
 ## Colors
 
-A neutral palette in two themes, with light, glass and silver doing the work a brand hue would do, and colour reserved for live state, status, and Pokémon types.
+A neutral palette in two themes, with light and glass doing the work a brand hue would do, and colour reserved for live state, status, and Pokémon types.
 
 ### Primary
-- **Digital Silver** (`silver-1` to `silver-5`, gradient at 115deg: 0, 28, 54, 78, 100%): the key word of every title ("리그 **기록**"), the hero's last line, feature names, big numerals, the logo mark and wordmark. In light it becomes dark steel. `silver-glint` is the brightest band, used only where the cursor light moves the gradient.
+- **Light** (`silver-1` to `silver-5`, names kept from the silver build; gradient at 115deg: 0, 30, 55, 80, 100%, one falloff, never turning back): the key word of every title ("리그 **기록**"), the hero's last line, feature names, big numerals, the logo mark and wordmark. In light theme it becomes graphite. `silver-glint` is one soft bright spot, used only where the cursor light moves the gradient.
 - **Primary Face** (`primary-top` to `primary-bottom`, vertical): the primary button, the selected segment, the winner slot in a bracket, the toast. Text on it is `on-primary` (15:1 or better). In light it is a dark graphite face.
 
 ### Neutral
-- **Night** (`bg`): the page ground, with `page-light` spreading from the top (centre on phones, 72% across on desktop) and `grain` over it. **Sunk** (`bg-sunk`) is the footer band.
-- **Glass** (`glass-top` to `glass-bottom`, with `shadow-glass`): cards, lists, the NOW bar, segmented tracks, glass buttons. `glass-hover` lifts the top on hover.
+- **Night** (`bg`): the page ground with `grain`; three pools of light (`page-light` top right, `page-light-2` left, `page-light-3` bottom) on a fixed layer behind the content, drifting over 48s (still under reduced motion). **Sunk** (`bg-sunk`) is where the footer fades to, with no edge.
+- **Glass** (`glass-top` to `glass-bottom`, with `shadow-glass`): cards, lists, the NOW bar, segmented tracks, glass buttons. Translucent and thinning toward the bottom so the light behind shows through, with a wide diffuse sheen (`glass-sheen`) where the light enters at the top left; no rim, no line. `glass-hover` brightens it on hover. In-flow glass never blurs (a backdrop filter would trap fixed dialogs rendered inside it); the nav carries the blur on its own layer.
 - **Surface** (`surface`): floating layers only: menus, dialogs, sheets.
 - **Ink** (`ink`), **Graphite** (`text-2`), **Pewter** (`text-3`): titles and body; secondary text and resting nav; meta lines, units, eyebrows and footer.
-- **Fill** (`fill`, `fill-2`): tonal buttons, chips, the arrow circle, pills; and the cells inside glass (stat cells, inputs, match cards, Pokémon slots).
+- **Fill** (`fill`, `fill-2`): tonal buttons, chips, the arrow circle; and the cells inside glass (stat cells, inputs, match cards, Pokémon slots).
 - **Pod** (`pod-face`, `pod-floor`): the stand under each Pokémon, with floor light in dark and a shadow in light.
 - **Hairline** (`line`): inset separators inside a glass list, nothing else. **Scrim** (`scrim`): behind one dialog or sheet at a time.
 
@@ -383,7 +386,7 @@ A neutral palette in two themes, with light, glass and silver doing the work a b
 The eighteen `type-*` colours are the game's own. They appear only on the team builder's type badges; five light types carry dark text (`type-*-text` in the rulebook).
 
 ### Named Rules
-**The One Silver Word Rule.** A title has exactly one silver word. Everything else is `ink`, `text-2` or `text-3`.
+**The One Light Word Rule.** A title has exactly one light word. Everything else is `ink`, `text-2` or `text-3`.
 
 **The Light Not Hue Rule.** Nothing is emphasised with a colour. Use the light, the glass, size, weight, or the primary face.
 
@@ -429,23 +432,25 @@ Breakpoints are 640px (cards 2 to 3 columns, sheet becomes dialog, table columns
 
 ## Elevation & Depth
 
-Depth is light, not stacking. One light source per page (`page-light`) falls from the top over a faint grain. Glass surfaces catch it: a white inner top edge, a dark inner bottom edge, and a long soft drop shadow (`shadow-glass`). Anything inside glass sits on `fill-2`, never on another glass. Floating layers are opaque `surface` with a pop or float shadow.
+Depth is light, not stacking. Pools of light sit behind the page over a faint grain; glass floats over them and lets them through. A glass surface has no edge of its own: no inner top highlight, no inner bottom line, no ring, only a long soft drop shadow (`shadow-glass`). Anything inside glass sits on `fill-2`, never on another glass. Floating layers are opaque `surface` with a pop or float shadow, also without a ring.
 
 ### Shadow Vocabulary
-- **Glass** (`shadow-glass`, dark: `inset 0 1px 0 rgba(255,255,255,.13), inset 0 -1px 0 rgba(0,0,0,.45), 0 24px 48px rgba(0,0,0,.4)`): every glass surface.
+- **Glass** (`shadow-glass`, dark: `0 2px 6px rgba(0,0,0,.18), 0 30px 70px rgba(0,0,0,.42)`; light: `0 1px 3px rgba(0,0,0,.04), 0 22px 50px -12px rgba(0,0,0,.14)`): every glass surface. Never an inset line.
 - **Primary** (`shadow-primary`, `0 10px 28px rgba(0,0,0,.35)`): the primary button.
 - **Thumb** (`shadow-thumb`, `0 4px 12px rgba(0,0,0,.4)`): the selected segment and the chosen Pokémon slot.
 - **Pop** (`shadow-pop`): menus, dropdowns, tooltips.
 - **Float** (`shadow-float`): dialogs, sheets, toasts.
 
 ### Named Rules
-**The One Light Rule.** One light source per page. The cursor light on desktop is the only second light, and only on the hero line and the feature card.
+**The Light Through Glass Rule.** Light comes from behind the glass, never as a gloss on it. On desktop the pointer moves the one light (`page-light-live`, softer than the resting pool because it sits under what is being read; `glass-sheen-live` on the panes); there is never a second light inside a card.
 
 **The No Glass on Glass Rule.** Inside a glass surface, cells are `fill-2`. Never nest glass, never wrap a group of cards in another surface.
 
 ## Shapes
 
-Every corner is continuous curvature: each base radius is drawn at 1.6x with `corner-shape: superellipse(1.78)` where supported, and falls back to the plain base radius elsewhere. Radii scale with size: inputs and small cells 12, pods, stat cells and match cards 18, cards and lists 24, feature cards and dialogs 32, the phone sheet 38 (concentric with the device corner). Nested surfaces are concentric: inner radius = outer radius − padding (a feature card's 32 − 14 = 18 for its pods). Capsules (buttons, chips, pills, segments, icon buttons) stay round-ended.
+Every corner is continuous curvature: each base radius is drawn at 1.6x with `corner-shape: superellipse(1.78)` where supported, and falls back to the plain base radius elsewhere. Radii scale with size: inputs and small cells 12, pods, stat cells and match cards 18, cards and lists 24, feature cards and dialogs 32, the phone sheet 38 (concentric with the device corner). Nested surfaces are concentric: inner radius = outer radius − padding (a feature card's 32 − 14 = 18 for its pods). Controls are squircles too, with the radius following the height (`--rc-*`, base values, drawn x1.6): 28px chips and badges 6, 36px nav links 8, 40px buttons 9, 44 to 54px buttons, fields, segment cells and the toast 10, the segmented track 14 (drawn 20, concentric with its 16 cells 4px inside). True circles stay circles (the arrow circle, 44px icon buttons, close buttons, dots); thin bars (grabber, progress) stay round-ended.
+
+Single-line controls set `line-height: normal`. Chrome rounds a font's ascent and descent to whole pixels, and a line-height taller than the font splits the leftover unevenly, which lifted the words in a 28px chip 1.25px above centre. With the line box equal to the font box, Wanted Sans Hangul (ink centre 35.5/100 above the baseline, the same as the font box) sits within half a pixel of the centre in every control.
 
 Hairlines are a half pixel on retina, start where the row text starts and stop short of every curved edge. Bracket connectors are the only other lines.
 
@@ -454,21 +459,22 @@ Hairlines are a half pixel on retina, start where the row text starts and stop s
 ## Components
 
 ### Buttons
-- **Shape:** capsule, 50px (54px desktop) and a 40px small size.
+- **Shape:** squircle, 50px (54px desktop) at radius 10 and a 40px small size at 9.
 - **Primary:** the primary face with `on-primary` text and `shadow-primary`; hover brightens it slightly. One per screen or dialog, on the right.
 - **Glass:** glass face with ink text; hover lifts the top to `glass-hover`. The second home button and quiet tools.
 - **Tonal:** `fill` with ink text, for secondary actions and cancel. **Quiet:** `text-2` on nothing. **Danger:** `danger` fill for irreversible actions only.
 - **Press:** controls scale to 0.97 (cards 0.985) in 90ms and return on the snappy spring.
 
-### Chips and Pills
-- **Chip:** 28px `fill` capsule, 12px 700. The primary-face variant marks the one-of-a-kind thing. A live chip carries the 7px pulse dot.
-- **Pill:** the filter one level under a segmented control (season, league): 34px `fill-2` capsule in `text-2`; selected is `fill` with ink.
+### Chips
+- **Chip:** 28px `fill` squircle (radius 6), 12px 700. The primary-face variant marks the one-of-a-kind thing. A live chip carries the 7px pulse dot.
 - **Type badge:** the game's type colour, 700 text, team builder only.
 
 ### Cards / Containers
 - **Feature card:** the one hero card on a screen (current champion, rank one, each records lead): glass, radius 32, a silver name, an Unbounded watermark numeral at opacity 0.3, the cursor light on desktop.
 - **Explore card:** eyebrow, card title, one line, an arrow circle; all six on the home page are this one shape.
 - **Glass list:** one glass surface, rows of 56px or more split by inset hairlines; row hover is `fill-2`.
+- **Result lines:** a tournament result is one line per placement (우승, 준우승, 4강): a 44px label column, then the names. A team takes its own line, team name as a chip and members as plain names after it.
+- **Notice actions:** every action and link of a notice sits in one left-aligned row, the primary apply first.
 - **NowBar:** a glass strip with the live dot and the current event phase.
 - **Empty state:** glass where the content would sit, left-aligned title and one sentence. No illustration.
 
@@ -478,14 +484,14 @@ Hairlines are a half pixel on retina, start where the row text starts and stop s
 - **Dropdown:** the same field opening a `surface` menu with `shadow-pop` and concentric options.
 
 ### Navigation
-- **Bar:** one line of links; the current page is a `fill` capsule. Team builder opens as a fold. On desktop the theme toggle, the admin lock and a glass Discord button sit on the right. The brand is the silver Braviary mark (24px, 27px desktop) and a silver Unbounded 800 "YPL".
+- **Bar:** one line of links; the current page is a `fill` squircle (radius 8). Team builder opens as a fold. On desktop the theme toggle, the admin lock and a glass Discord button sit on the right. The brand is the silver Braviary mark (24px, 27px desktop) and a silver Unbounded 800 "YPL".
 - **Phone menu:** a full-screen list headed by a TOOL eyebrow, rows rising in reading order on the gentle spring; all menu bars the same thickness.
-- **Segmented control:** a glass capsule track; the selected cell is the primary face in 900, sliding on the snappy spring.
+- **Segmented control:** a glass squircle track (radius 14, drawn 20) with cells concentric 4px inside; the selected cell is the primary face in 900, sliding on the snappy spring. It is the only one-of-many picker on the site: records views, competition, ranking kind, season, title groups and the admin form switches (individual or team, format) all use it.
 
 ### Dialog, Sheet and Toast
 - **Dialog (640px and up):** 580px (780px for team-match tables), `surface`, radius 32, 32px padding, a 24px title with a 36px `fill-2` close circle, the action row stuck to the bottom with no line above it. Grows from 0.96 on the smooth spring.
 - **Sheet (phone):** 8px from the device edges, radius 38, rises on the gentle spring and leaves 0.7x faster. One scrim at a time.
-- **Toast:** a 48px primary-face capsule near the bottom.
+- **Toast:** a 48px primary-face squircle near the bottom.
 
 ### PartyPod (signature)
 Six pods in slot order, each a `pod-face` cell (radius 18, 124px, 132px desktop) with floor light under an 80px official artwork. A Pokémon without art shows its name on the pod. Used by the home champion card and the Hall of Fame.
@@ -500,18 +506,18 @@ Six slots (2 columns on phones, 3 on desktop) of `fill-2` cells, an Unbounded 11
 
 ### Do:
 - **Do** open every page with the PageHead (eyebrow, two-tone title, one line) and every section with the shared section head.
-- **Do** keep one silver word per title and one feature card per screen.
+- **Do** keep one light word per title and one feature card per screen.
 - **Do** use tokens for every colour, radius, space, duration and easing; both themes depend on it.
 - **Do** put lists in one glass surface with inset hairlines, and cells inside glass on `fill-2`.
 - **Do** draw every corner with the curvature law and nest radii concentrically.
 - **Do** move only transform and opacity on the three springs (snappy 406ms, smooth 566ms, gentle 741ms), exit at 396ms without bounce, and honour reduced motion.
 - **Do** stand parties on pods and let the Pokémon be seen before the words.
-- **Do** use the Braviary mark exactly as the vector traced from `docs/brand/newlogo.png`, filled with silver; the favicon is that mark on a `bg` tile and the share image (`public/og-silver.png`) is the mark and "YPL" in silver on the dark page.
+- **Do** use the Braviary mark exactly as the vector traced from `docs/brand/newlogo.png`, filled with the light ramp; the favicon is that mark on a `bg` tile and the share image (`public/og-silver.png`) is the mark and "YPL" on the dark page.
 
 ### Don't:
 - **Don't** add a brand hue, trophy gold, or colour as emphasis.
-- **Don't** imitate real chrome: no reflection bands, mirror floors or automatic sheen sweeps.
-- **Don't** put silver on small or light text, or on more than one word of a title.
+- **Don't** add a metal sheen or a lit rim: no silver bands, chrome, mirror floors, sheen sweeps or inner edge highlights.
+- **Don't** put the light gradient on small or light text, or on more than one word of a title.
 - **Don't** draw outlines around panels, inputs, slots or buttons, put accent stripes on an edge, or use heavy section rules.
 - **Don't** nest glass in glass or wrap a group of cards in another surface.
 - **Don't** stand a large logo emblem in the home hero; the three lines and two buttons are the hero.

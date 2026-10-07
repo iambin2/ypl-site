@@ -1,5 +1,10 @@
 /* =============================================================================
-   YPL 실버 — foundation
+   YPL 빛 — foundation
+   2026-10-07: the silver gloss became light. The page is a dark room with
+   soft pools of light; every surface is clear glass floating over them, with
+   no rim and no outline. The light shows through the glass, never a metal
+   sheen. Token names kept from the silver build (--silver-* is now the light
+   ramp on key words and the logo).
    Tokens from docs/design-system/tokens.json (the rulebook), dark first:
    :root holds the dark values, <html data-theme="light"> swaps them.
    Names match the rulebook one to one.
@@ -16,22 +21,26 @@
   /* ---------- color (01), dark ---------- */
   --bg: #0a0a0b;
   --bg-sunk: #050506;
-  --page-light: rgba(210, 210, 220, .13);
+  --page-light: rgba(255, 255, 255, .26);
+  --page-light-2: rgba(255, 255, 255, .1);
+  --page-light-3: rgba(255, 255, 255, .1);
+  --page-light-live: rgba(255, 255, 255, .08); /* the pool that follows the pointer: softer, it sits under what is being read */
   --grain: rgba(255, 255, 255, .016);
-  --glass-top: rgba(255, 255, 255, .075);
-  --glass-bottom: rgba(255, 255, 255, .022);
-  --glass-hover: rgba(255, 255, 255, .11);
+  --glass-top: rgba(255, 255, 255, .06);
+  --glass-bottom: rgba(255, 255, 255, .018);
+  --glass-hover: rgba(255, 255, 255, .1);
+  --glass-sheen: rgba(255, 255, 255, .1);
+  --glass-sheen-live: rgba(255, 255, 255, .06);
   --surface: #1c1c1e;
   --ink: #f2f2f4;
   --text-2: #a1a1a6;
   --text-3: #8e8e93;
   --silver-1: #ffffff;
-  --silver-2: #dcdce1;
-  --silver-3: #a3a3ac;
-  --silver-4: #efeff2;
-  --silver-5: #b2b2ba;
+  --silver-2: #f8f8fa;
+  --silver-3: #ebebef;
+  --silver-4: #d9d9df;
+  --silver-5: #bebec6;
   --silver-glint: #ffffff;
-  --follow-light: rgba(255, 255, 255, .08);
   --primary-top: #ffffff;
   --primary-bottom: #e2e2e6;
   --on-primary: #0a0a0b;
@@ -48,11 +57,12 @@
   --danger: #ff6961;
 
   /* ---------- depth (07), dark ---------- */
-  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, .13), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 24px 48px rgba(0, 0, 0, .4);
+  /* glass casts a soft shadow and nothing else: no rim, no inner line */
+  --shadow-glass: 0 2px 6px rgba(0, 0, 0, .18), 0 30px 70px rgba(0, 0, 0, .42);
   --shadow-primary: 0 10px 28px rgba(0, 0, 0, .35);
   --shadow-thumb: 0 4px 12px rgba(0, 0, 0, .4);
-  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, .08), 0 12px 32px rgba(0, 0, 0, .55);
-  --shadow-float: 0 0 0 1px rgba(255, 255, 255, .08), 0 24px 64px rgba(0, 0, 0, .6);
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, .55);
+  --shadow-float: 0 24px 64px rgba(0, 0, 0, .6);
 
   /* ---------- space (05) ---------- */
   --space-1: 4px;
@@ -73,7 +83,16 @@
   --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-2xl: 38px;
-  --radius-pill: 999px;
+  --radius-pill: 999px; /* thin bars only (grabber, progress); no control is a capsule */
+  /* control corners: radius follows the height, drawn as continuous curvature.
+     Base values here; the drawn values (x1.6) are swapped in under @supports below.
+     The segmented track is concentric with its cells 4px inside (20 - 4 = 16). */
+  --rc-xs: 6px;      /* 22-28px chips and badges */
+  --rc-sm: 8px;      /* 36px nav links */
+  --rc-md: 9px;      /* 40px buttons */
+  --rc-lg: 10px;     /* 44-54px buttons, fields, segment cells, toast */
+  --rc-track: 14px;  /* segmented track (14 - 4 = 10) */
+  --corner: superellipse(1.78);
 
   /* ---------- layout (05, 13) ---------- */
   --container: 1200px;
@@ -111,6 +130,7 @@
   --duration-exit: 396ms;
   --duration-exit-gentle: 519ms;
   --duration-follow: 900ms;
+  --duration-light: 1100ms;
   --duration-pulse: 2400ms;
   /* damping 1: smooth, gentle and every exit */
   --ease-spring: linear(0, 0.0195, 0.0679, 0.1336, 0.2081, 0.2857, 0.3625, 0.4361, 0.5047, 0.5677, 0.6247, 0.6757, 0.7209, 0.7606, 0.7953, 0.8255, 0.8517, 0.8742, 0.8935, 0.91, 0.9241, 0.9361, 0.9463, 0.9549, 0.9622, 0.9683, 0.9735, 0.9779, 0.9815, 0.9846, 0.9872, 0.9893, 0.9911, 0.9926, 0.9939, 0.9949, 0.9958, 0.9965, 0.9971, 0.9976, 1);
@@ -121,12 +141,14 @@
   --stagger-tile: 60ms;
 
   /* ---------- composed surfaces (01, 07) ---------- */
-  /* silver: a digital gradient that evokes silver, no metal band */
-  --silver: linear-gradient(115deg, var(--silver-1) 0%, var(--silver-2) 28%, var(--silver-3) 54%, var(--silver-4) 78%, var(--silver-5) 100%);
-  /* the cursor-light variant: a bright glint the pointer slides along (08) */
-  --silver-live: linear-gradient(115deg, var(--silver-3) 0%, var(--silver-2) 28%, var(--silver-glint) 44%, var(--silver-2) 52%, var(--silver-3) 70%, var(--silver-5) 100%);
-  --glass: linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
-  --glass-lit: linear-gradient(180deg, var(--glass-hover), var(--glass-bottom));
+  /* light: one falloff from the top-left, never turning back (no metal band) */
+  --silver: linear-gradient(115deg, var(--silver-1) 0%, var(--silver-2) 30%, var(--silver-3) 55%, var(--silver-4) 80%, var(--silver-5) 100%);
+  /* the cursor-light variant: one soft bright spot the pointer slides along (08) */
+  --silver-live: linear-gradient(115deg, var(--silver-5) 0%, var(--silver-4) 26%, var(--silver-glint) 46%, var(--silver-4) 66%, var(--silver-5) 100%);
+  /* glass: a clear pane with a wide diffuse sheen where the light enters
+     (top left), thinning toward the bottom so the light behind shows. No line. */
+  --glass: radial-gradient(140% 120% at 0% 0%, var(--glass-sheen), transparent 55%), linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  --glass-lit: radial-gradient(140% 120% at 0% 0%, var(--glass-sheen), transparent 60%), linear-gradient(180deg, var(--glass-hover), var(--glass-bottom));
   --primary: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
 
   /* ---------- responsive layout values: phone, then 640 / 1024 below ---------- */
@@ -135,6 +157,9 @@
   --section-gap: var(--space-9);
 }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
+@supports (corner-shape: squircle) {
+  :root { --rc-xs: 9.6px; --rc-sm: 12.8px; --rc-md: 14.4px; --rc-lg: 16px; --rc-track: 20px; }
+}
 @media (min-width: 640px) { :root { --margin: var(--margin-desktop); } }
 @media (min-width: 1024px) {
   :root { --nav-height: var(--nav-height-desktop); --grid-gap: var(--gutter-desktop); --section-gap: var(--space-10); }
@@ -146,21 +171,25 @@
   --bg: #ececef;
   --bg-sunk: #e2e2e6;
   --page-light: rgba(255, 255, 255, .95);
+  --page-light-2: rgba(255, 255, 255, .7);
+  --page-light-3: rgba(255, 255, 255, .5);
+  --page-light-live: rgba(255, 255, 255, .95);
   --grain: rgba(0, 0, 0, .018);
-  --glass-top: rgba(255, 255, 255, .96);
-  --glass-bottom: rgba(255, 255, 255, .72);
-  --glass-hover: #ffffff;
+  --glass-top: rgba(255, 255, 255, .62);
+  --glass-bottom: rgba(255, 255, 255, .34);
+  --glass-hover: rgba(255, 255, 255, .85);
+  --glass-sheen: rgba(255, 255, 255, .75);
+  --glass-sheen-live: rgba(255, 255, 255, .95);
   --surface: #ffffff;
   --ink: #1c1c1e;
   --text-2: #4a4a4f;
   --text-3: #636368;
   --silver-1: #1c1c1f;
-  --silver-2: #4a4a52;
-  --silver-3: #7a7a83;
-  --silver-4: #2c2c31;
-  --silver-5: #5f5f68;
+  --silver-2: #26262b;
+  --silver-3: #34343a;
+  --silver-4: #47474e;
+  --silver-5: #5c5c64;
   --silver-glint: #9a9aa3;
-  --follow-light: rgba(255, 255, 255, .7);
   --primary-top: #3a3a3f;
   --primary-bottom: #1c1c1f;
   --on-primary: #f7f7f9;
@@ -174,7 +203,7 @@
   --ok: #1b7f45;
   --warn: #a45a00;
   --danger: #d1242f;
-  --shadow-glass: inset 0 1px 0 #ffffff, 0 1px 2px rgba(0, 0, 0, .05), 0 16px 36px rgba(0, 0, 0, .07);
+  --shadow-glass: 0 1px 3px rgba(0, 0, 0, .04), 0 22px 50px -12px rgba(0, 0, 0, .14);
   --shadow-primary: 0 10px 24px rgba(0, 0, 0, .16);
   --shadow-thumb: 0 2px 8px rgba(0, 0, 0, .12);
   --shadow-pop: 0 1px 2px rgba(0, 0, 0, .06), 0 12px 32px -6px rgba(0, 0, 0, .16);
@@ -221,20 +250,44 @@ i, em { font-style: normal; }
 
 .ypl { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 
-/* ---------- page: one light source and a faint grain (07) ---------- */
+/* ---------- page: a dark room with pools of light (07) ----------
+   The pools sit on a fixed layer, so whatever glass is on screen always has
+   light behind it to let through. They drift very slowly; reduced motion
+   holds them still. */
 .ypl {
-  background:
-    radial-gradient(ellipse 110% 420px at 50% 60px, var(--page-light), transparent 70%),
-    repeating-radial-gradient(circle at 30% 20%, var(--grain) 0 1px, transparent 1px 3px),
-    var(--bg);
+  position: relative; isolation: isolate;
+  background: repeating-radial-gradient(circle at 30% 20%, var(--grain) 0 1px, transparent 1px 3px), var(--bg);
 }
-@media (min-width: 1024px) {
-  .ypl {
-    background:
-      radial-gradient(ellipse 60% 640px at 72% 120px, var(--page-light), transparent 70%),
-      repeating-radial-gradient(circle at 30% 20%, var(--grain) 0 1px, transparent 1px 3px),
-      var(--bg);
-  }
+.ypl::before {
+  content: ""; position: fixed; inset: -8%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 46% at 78% 6%, var(--page-light), transparent 70%),
+    radial-gradient(ellipse 40% 38% at 8% 56%, var(--page-light-2), transparent 70%),
+    radial-gradient(ellipse 46% 36% at 62% 100%, var(--page-light-3), transparent 70%);
+  animation: y-drift 48s ease-in-out infinite alternate;
+}
+@keyframes y-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-4%, 3%, 0); } }
+
+/* ---------- the cursor is the light source (08) ----------
+   useLightSource sets .light-live on <html> (desktop, fine pointer, motion
+   allowed) and writes the pointer to --lx/--ly; the registered properties
+   follow it over duration-follow. The main pool moves to the pointer and every
+   glass surface shows the share of that one light that falls on it (a fixed
+   gradient, so each pane is lit by where it sits on screen). */
+@property --lx { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --ly { syntax: "<length>"; inherits: true; initial-value: 0px; }
+.light-live {
+  transition: --lx var(--duration-light) var(--ease-fade), --ly var(--duration-light) var(--ease-fade);
+  --glass: radial-gradient(520px circle at var(--lx) var(--ly), var(--glass-sheen-live), transparent 66%) fixed, linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  --glass-lit: radial-gradient(520px circle at var(--lx) var(--ly), var(--glass-sheen-live), transparent 66%) fixed, linear-gradient(180deg, var(--glass-hover), var(--glass-bottom));
+}
+/* the pool layer sits 8% outside the viewport, so its own origin is offset */
+.light-live .ypl::before {
+  animation: none;
+  background:
+    radial-gradient(ellipse 42% 42% at calc(var(--lx) + 8vw) calc(var(--ly) + 8vh), var(--page-light-live), transparent 70%),
+    radial-gradient(ellipse 40% 38% at 8% 56%, var(--page-light-2), transparent 70%),
+    radial-gradient(ellipse 46% 36% at 62% 100%, var(--page-light-3), transparent 70%);
 }
 .wrap { flex: 1 0 auto; width: 100%; }
 .page { width: 100%; max-width: calc(var(--container) + var(--margin) * 2); margin: 0 auto; padding: 0 var(--margin); outline: none; }
@@ -246,12 +299,11 @@ i, em { font-style: normal; }
 /* ---------- curvature (04) ----------
    .sq draws the base radius --r as continuous curvature where supported:
    x1.6 with superellipse(1.78). Elsewhere it falls back to the same base
-   radius, round. Capsules (.cap) stay round-ended on purpose. */
+   radius, round. Controls take the same curve through --rc-* and --corner. */
 .sq { border-radius: var(--r, var(--radius-lg)); }
 @supports (corner-shape: squircle) {
   .sq { border-radius: calc(var(--r, var(--radius-lg)) * 1.6); corner-shape: superellipse(1.78); }
 }
-.cap { border-radius: var(--radius-pill); }
 
 /* ---------- silver (01): key word, big numerals, logo. 19px+ bold only ---------- */
 .silver { background: var(--silver); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -262,7 +314,10 @@ i, em { font-style: normal; }
 }
 @media (forced-colors: active) { .silver, .silver-live { background: none; color: CanvasText; } }
 
-/* ---------- glass (06, 07): the only card surface, no outline ---------- */
+/* ---------- glass (06, 07): the only card surface ----------
+   Clear glass over the light: no outline, no rim, only a soft shadow.
+   The blur is a floating layer's job (nav, dialogs, menus); an in-flow card
+   never blurs, so a fixed dialog inside it is never trapped. */
 .glass { background: var(--glass); box-shadow: var(--shadow-glass); }
 /* hover lifts 2px and lights the top on the smooth spring; press .985 */
 .lift {
@@ -272,20 +327,14 @@ i, em { font-style: normal; }
 .lift:active { scale: .985; transition: scale var(--duration-press) var(--ease-fade); }
 @media (hover: hover) { .lift:hover { translate: 0 -2px; background: var(--glass-lit); } }
 
-/* ---------- cursor light (08): hero silver line and the feature card only ----------
+/* ---------- light words follow the pointer (08): hero line, feature names ----------
    useCursorLight writes --mx/--my; the registered properties ease after the
-   pointer over duration-follow. Desktop, fine pointer, motion allowed. */
+   pointer over duration-follow. Desktop, fine pointer, motion allowed. The
+   cards themselves are lit by the light source above, never by a light of their own. */
 @property --mx { syntax: "<percentage>"; inherits: true; initial-value: 70%; }
 @property --my { syntax: "<percentage>"; inherits: true; initial-value: 20%; }
 .follow { position: relative; isolation: isolate; transition: --mx var(--duration-follow) var(--ease-fade), --my var(--duration-follow) var(--ease-fade); }
-.follow::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(480px circle at var(--mx) var(--my), var(--follow-light), transparent 62%);
-  opacity: 0; transition: opacity var(--duration-smooth) var(--ease-fade);
-}
-@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-  .follow::before { opacity: 1; }
-}
+
 
 /* ---------- latin eyebrow and numerals (02, 03) ---------- */
 .eyebrow {
@@ -318,7 +367,7 @@ i, em { font-style: normal; }
 /* ---------- browser surfaces ---------- */
 ::selection { background: color-mix(in srgb, var(--ink) 22%, transparent); color: var(--ink); }
 :focus { outline: none; }
-/* the ring follows the element's own corner, so a capsule stays a capsule */
+/* the ring follows the element's own corner and curve */
 :focus-visible { outline: var(--stroke-focus) solid var(--focus); outline-offset: 2px; }
 input:focus-visible, textarea:focus-visible { outline: none; }
 ::placeholder { color: var(--text-3); opacity: 1; }

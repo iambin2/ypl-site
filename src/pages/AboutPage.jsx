@@ -45,7 +45,7 @@ export default function AboutPage() {
       </ol>
     </section>
 
-    <section className="ab-block ab-split">
+    <section className="ab-block">
       <SectionHead eyebrow="Records" plain="YPL의" silver="기록" />
       <div className="ab-records">
         {RECORDS.map((r, i) => (

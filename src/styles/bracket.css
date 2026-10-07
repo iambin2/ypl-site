@@ -164,10 +164,10 @@
 .bk-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6); }
 .bk-head h2 { font-size: 24px; font-weight: 900; line-height: 1.25; letter-spacing: -0.025em; }
 @media (min-width: 1024px) { .bk-head h2 { font-size: 30px; letter-spacing: -0.03em; } }
-/* steps: capsules joined by a short round-ended dash */
+/* steps: chips joined by a short round-ended dash */
 .bk-stepper { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); font-size: 13px; font-weight: 700; color: var(--text-3); }
 .bk-stepper span {
-  display: inline-flex; align-items: center; height: 28px; padding: 0 var(--space-3); border-radius: var(--radius-pill); background: var(--fill);
+  display: inline-flex; align-items: center; height: 28px; padding: 0 var(--space-3); border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill);
   transition: background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
 }
 .bk-stepper span.on { background: var(--primary); color: var(--on-primary); }
@@ -187,10 +187,10 @@
 }
 .bk-pin-no.gold { color: var(--ink); }
 .bk-participant-name { flex: 1; min-width: 0; font-weight: 700; }
-/* submission state: fill capsule, the state in the text colour */
+/* submission state: fill chip, the state in the text colour */
 .bk-participant-submission {
   flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-2);
-  border-radius: var(--radius-pill); background: var(--fill); font-size: 12px; font-weight: 700; letter-spacing: .01em;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); font-size: 12px; font-weight: 700; letter-spacing: .01em; line-height: normal;
 }
 .bk-participant-submission.submitted { color: var(--ok); }
 .bk-participant-submission.missing { color: var(--warn); }
@@ -218,7 +218,7 @@
 .bk-chg-row + .bk-chg-row { background: linear-gradient(var(--line), var(--line)) no-repeat 0 0 / 100% var(--hair); }
 .bk-exist {
   flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-2);
-  border-radius: var(--radius-pill); background: var(--fill); font-size: 12px; font-weight: 700; letter-spacing: .01em; color: var(--text-2);
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); font-size: 12px; font-weight: 700; letter-spacing: .01em; color: var(--text-2); line-height: normal;
 }
 .bk-exist.new { color: var(--ok); }
 .bk-chg-pts { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: auto; font-variant-numeric: tabular-nums; color: var(--text-2); }
@@ -237,7 +237,7 @@
 .bk-alloc-row input { max-width: 110px; text-align: center; }
 .bk-alloc-tag {
   flex: none; min-width: 52px; display: inline-flex; align-items: center; justify-content: center; height: 24px; padding: 0 var(--space-2);
-  border-radius: var(--radius-pill); background: var(--fill); font-size: 12px; font-weight: 700; letter-spacing: .01em; color: var(--text-2);
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); font-size: 12px; font-weight: 700; letter-spacing: .01em; color: var(--text-2); line-height: normal;
 }
 .bk-alloc-tag.w { background: var(--primary); color: var(--on-primary); }
 .bk-alloc-team { font-size: 13px; color: var(--text-3); }

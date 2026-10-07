@@ -8,13 +8,13 @@
    Rulebook components (docs/design-system/components).
    ========================================================================== */
 
-/* ---------- Button: one capsule. primary, glass, tonal, quiet, danger; 50 (desktop 54) and 40 ---------- */
+/* ---------- Button: one squircle. primary, glass, tonal, quiet, danger; 50 (desktop 54) and 40 ---------- */
 .ypl-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  height: 50px; padding: 0 22px; border: 0; border-radius: var(--radius-pill);
-  font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; white-space: nowrap;
+  height: 50px; padding: 0 22px; border: 0; border-radius: var(--rc-lg); corner-shape: var(--corner);
+  font-size: 15px; font-weight: 700; line-height: normal; letter-spacing: -0.01em; white-space: nowrap;
 }
-.ypl-btn--sm { height: 40px; padding: 0 var(--space-4); font-size: 13px; }
+.ypl-btn--sm { height: 40px; padding: 0 var(--space-4); font-size: 13px; border-radius: var(--rc-md); }
 .ypl-btn--primary { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-primary); }
 .ypl-btn--glass { background: var(--glass); color: var(--ink); box-shadow: var(--shadow-glass); }
 .ypl-btn--tonal { background: var(--fill); color: var(--ink); }
@@ -26,50 +26,41 @@
 }
 @media (min-width: 1024px) {
   .ypl-btn { height: 54px; padding: 0 26px; font-size: 16px; }
-  .ypl-btn--sm { height: 40px; padding: 0 var(--space-4); font-size: 13px; }
+  .ypl-btn--sm { height: 40px; padding: 0 var(--space-4); font-size: 13px; border-radius: var(--rc-md); }
 }
 
-/* ---------- Chip: 28px fill capsule; the live dot rides in front ---------- */
+/* ---------- Chip: 28px fill squircle; the live dot rides in front ---------- */
 .ypl-chip {
   display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 var(--space-3);
-  border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
-  font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); color: var(--ink);
+  font-size: 12px; font-weight: 700; line-height: normal; white-space: nowrap;
 }
 .ypl-chip--ink { background: var(--primary); color: var(--on-primary); }
 .ypl-ping { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: y-ping 2s var(--ease-spring) infinite; }
 
-/* ---------- Segmented: a glass capsule track; the chosen cell is the primary surface ----------
+/* ---------- Segmented: a glass squircle track, concentric with its cells; the chosen cell is the primary surface ----------
    Cells share the width equally and scroll sideways only when the labels
    cannot fit. The thumb slides on the snappy spring (Segmented.jsx measures it). */
 .ypl-seg {
   position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: 2px;
-  width: min(100%, 560px); padding: var(--space-1); border-radius: var(--radius-pill);
+  width: min(100%, 560px); padding: var(--space-1); border-radius: var(--rc-track); corner-shape: var(--corner);
   background: var(--glass); box-shadow: var(--shadow-glass);
   overflow-x: auto; scrollbar-width: none; vertical-align: top;
 }
 .ypl-seg::-webkit-scrollbar { display: none; }
 .ypl-seg__thumb {
   position: absolute; top: var(--space-1); bottom: var(--space-1); left: 0; width: var(--w);
-  border-radius: var(--radius-pill); background: var(--primary); box-shadow: var(--shadow-thumb);
+  border-radius: var(--rc-lg); corner-shape: var(--corner); background: var(--primary); box-shadow: var(--shadow-thumb);
   transform: translateX(var(--x)); transition: transform var(--duration-snappy) var(--ease-snappy);
 }
 .ypl-seg button {
-  position: relative; height: 40px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: none;
-  font-size: 14px; font-weight: 700; line-height: 1.2; color: var(--text-2); white-space: nowrap;
+  position: relative; height: 40px; padding: 0 var(--space-4); border: 0; border-radius: var(--rc-lg); corner-shape: var(--corner); background: none;
+  font-size: 14px; font-weight: 700; line-height: normal; color: var(--text-2); white-space: nowrap;
   transition: color var(--duration-fade) var(--ease-fade);
 }
 @media (hover: hover) { .ypl-seg button:not([aria-selected="true"]):hover { color: var(--ink); } }
 .ypl-seg button[aria-selected="true"] { color: var(--on-primary); font-weight: 900; }
-
-/* ---------- Pills: the filter one level under a Segmented (season, league) ---------- */
-.ypl-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.ypl-pill {
-  height: 34px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--fill-2);
-  font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--text-2); white-space: nowrap;
-}
-@media (hover: hover) { .ypl-pill:not([aria-pressed="true"]):hover { color: var(--ink); } }
-.ypl-pill[aria-pressed="true"] { background: var(--fill); color: var(--ink); }
 
 /* ---------- PageHead: latin eyebrow, two-tone title, one line ---------- */
 .ypl-head { display: grid; gap: var(--space-3); justify-items: start; margin-bottom: var(--space-7); padding: 0 var(--space-1); }
@@ -198,13 +189,13 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
   }
 }
 
-/* ---------- Button under its working names: the same capsule as .ypl-btn ----------
+/* ---------- Button under its working names: the same shape as .ypl-btn ----------
    .btn is the tonal kind, .btn-primary the primary, .btn-sm the 40px size. */
 .btn, .btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  height: 50px; padding: 0 22px; border: 0; border-radius: var(--radius-pill);
+  height: 50px; padding: 0 22px; border: 0; border-radius: var(--rc-lg); corner-shape: var(--corner);
   background: var(--fill); color: var(--ink);
-  font-size: 15px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em;
+  font-size: 15px; font-weight: 700; line-height: normal; letter-spacing: -0.01em;
   white-space: nowrap; user-select: none; -webkit-tap-highlight-color: transparent;
   transition: scale var(--duration-snappy) var(--ease-snappy), filter var(--duration-fade) var(--ease-fade),
     background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
@@ -218,11 +209,11 @@ li + li > .ypl-row, .ypl-row + .ypl-row {
   .ypl-btn--quiet:hover:not(:disabled) { color: var(--ink); }
 }
 @media (min-width: 1024px) { .btn { height: 54px; padding: 0 26px; font-size: 16px; } }
-.btn.btn-sm { height: 40px; padding: 0 var(--space-4); gap: var(--space-1); font-size: 13px; }
+.btn.btn-sm { height: 40px; padding: 0 var(--space-4); gap: var(--space-1); font-size: 13px; border-radius: var(--rc-md); }
 
 /* ---------- press + disabled (09): controls .97, tiles .985 ---------- */
 :is(.btn, .ypl-btn, .modal-x, .hofm-x, .fb-ic, .fb-addopt, .ed-del, .ed-mv, .ed-x, .ch-clear, .bk-count button,
-  .ls-clear, .tb-clear, .bk-seg button, .ed-seg button, .bk-bout-win, .pr-refresh, .fr-del, .bd-del, .tb-slot-remove,
+  .ls-clear, .tb-clear, .bk-bout-win, .pr-refresh, .fr-del, .bd-del, .tb-slot-remove,
   .ann-link, .ann-apply, .ann-resp):active:not(:disabled) { scale: .97; transition: scale var(--duration-press) var(--ease-fade); }
 :is(.hm-result, .bk-card, .tb-slot:not(.empty), .fb-addq, .tb-pokemon-row, .tb-saved-main):active:not(:disabled) {
   scale: .985; transition: scale var(--duration-press) var(--ease-fade);
@@ -368,24 +359,24 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
   .ypl-table__n { width: 96px; }
 }
 
-/* ---------- Pager: 44px capsules, latin numerals, the current page on the primary surface ---------- */
+/* ---------- Pager: 44px squircles, latin numerals, the current page on the primary surface ---------- */
 .pager { display: flex; justify-content: center; align-items: center; gap: var(--space-1); margin-top: var(--space-6); }
 .pg-btn {
   min-width: var(--target); height: var(--target); padding: 0 var(--space-2); display: inline-grid; place-items: center;
-  border: 0; border-radius: var(--radius-pill); background: transparent;
+  border: 0; border-radius: var(--rc-lg); corner-shape: var(--corner); background: transparent;
   font-family: var(--font-latin); font-size: 14px; font-weight: 700; color: var(--text-2); font-variant-numeric: tabular-nums;
-  transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade);
+  transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade), color var(--duration-fade) var(--ease-fade); line-height: normal;
 }
 @media (hover: hover) { .pg-btn:hover:not(:disabled):not(.on) { background: var(--fill-2); color: var(--ink); } }
 .pg-btn:active:not(:disabled) { scale: .97; transition: scale var(--duration-press) var(--ease-fade); }
 .pg-btn.on { background: var(--primary); color: var(--on-primary); }
 .pg-dots { padding: 0 var(--space-1); color: var(--text-3); }
 
-/* ---------- search field: a 44px capsule ---------- */
+/* ---------- search field: a 44px squircle ---------- */
 .lsearch, .records-search-field, .tb-search-row { position: relative; width: 100%; }
 .lsearch { width: min(320px, 100%); }
 .lsearch input, .records-search-field input, .tb-search-row input {
-  min-height: var(--target); padding-left: 44px; padding-right: 40px; border-radius: var(--radius-pill); corner-shape: round;
+  min-height: var(--target); padding-left: 44px; padding-right: 40px; border-radius: var(--rc-lg); corner-shape: var(--corner);
 }
 .ls-ico, .search-input-icon {
   position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%);
@@ -401,23 +392,6 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
 .list-tools { display: flex; align-items: center; gap: var(--space-3); }
 .list-count { font-size: 13px; color: var(--text-3); white-space: nowrap; }
 
-/* ---------- segmented (admin editors): the Segmented capsule, without the sliding thumb ---------- */
-.bk-seg, .ed-seg {
-  display: inline-flex; gap: 2px; padding: var(--space-1); max-width: 100%;
-  border-radius: var(--radius-pill); background: var(--glass); box-shadow: var(--shadow-glass);
-  overflow-x: auto; scrollbar-width: none;
-}
-.bk-seg::-webkit-scrollbar, .ed-seg::-webkit-scrollbar { display: none; }
-.bk-seg button, .ed-seg button {
-  flex: none; height: 40px; padding: 0 var(--space-4);
-  border: 0; border-radius: var(--radius-pill); background: transparent;
-  font-size: 14px; font-weight: 700; line-height: 1.2; color: var(--text-2); white-space: nowrap;
-  transition: scale var(--duration-snappy) var(--ease-snappy), background-color var(--duration-fade) var(--ease-fade),
-    color var(--duration-fade) var(--ease-fade), box-shadow var(--duration-fade) var(--ease-fade);
-}
-@media (hover: hover) { :is(.bk-seg, .ed-seg) button:not(.on):hover { color: var(--ink); } }
-:is(.bk-seg, .ed-seg) button.on { background: var(--primary); color: var(--on-primary); font-weight: 900; box-shadow: var(--shadow-thumb); }
-
 /* ---------- surfaces ---------- */
 .card { --r: var(--radius-xl); background: var(--glass); box-shadow: var(--shadow-glass); padding: var(--space-6) var(--space-5); }
 @media (min-width: 640px) { .card { padding: var(--space-7); } }
@@ -426,8 +400,8 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
 /* ---------- chips ---------- */
 .y-chip, .pin {
   display: inline-flex; align-items: center; gap: var(--space-1); height: 28px; padding: 0 var(--space-3);
-  border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
-  font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); color: var(--ink);
+  font-size: 12px; font-weight: 700; line-height: normal; white-space: nowrap;
 }
 .y-chip:not(.y-chip-laurel) { color: var(--text-2); }
 
@@ -435,11 +409,11 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
 .y-skeleton { --r: var(--radius-sm); background: var(--fill); animation: y-breathe 1.2s var(--ease-fade) infinite alternate; }
 @keyframes y-breathe { from { opacity: 1; } to { opacity: .5; } }
 
-/* ---------- Toast: 48px capsule on the primary surface, rises on the smooth spring ---------- */
+/* ---------- Toast: 48px squircle on the primary surface, rises on the smooth spring ---------- */
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); z-index: var(--z-toast);
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: 48px; max-width: calc(100vw - var(--margin) * 2);
-  padding: var(--space-3) var(--space-5); border-radius: var(--radius-pill);
+  padding: var(--space-3) var(--space-5); border-radius: var(--rc-lg); corner-shape: var(--corner);
   background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-float);
   font-size: 15px; font-weight: 700; line-height: 1.4; text-align: center;
   translate: -50% 0;
@@ -528,8 +502,8 @@ td.ypl-table__pts { font-family: var(--font-latin); font-size: 16px; font-weight
 .fold-note { font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--text-3); }
 .fold-badge {
   min-width: 28px; height: 28px; padding: 0 var(--space-2); display: grid; place-items: center;
-  border-radius: var(--radius-pill); background: var(--fill); color: var(--ink);
-  font-family: var(--font-latin); font-size: 11px; font-weight: 700; letter-spacing: 0; font-variant-numeric: tabular-nums;
+  border-radius: var(--rc-xs); corner-shape: var(--corner); background: var(--fill); color: var(--ink);
+  font-family: var(--font-latin); font-size: 11px; font-weight: 700; letter-spacing: 0; font-variant-numeric: tabular-nums; line-height: normal;
 }
 .fold-chev { display: flex; color: var(--text-3); transition: transform var(--duration-snappy) var(--ease-snappy), color var(--duration-fade) var(--ease-fade); }
 @media (hover: hover) { .fold-head:hover .fold-chev { color: var(--ink); } }

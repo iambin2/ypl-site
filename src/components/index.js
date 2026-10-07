@@ -7,7 +7,6 @@ export { default as Pager } from "./common/Pager.jsx";
 export { default as Reveal, STAGGER } from "./common/Reveal.jsx";
 export { Poster, Facts, ordinal } from "./common/LeadFigures.jsx";
 export { default as Segmented } from "./common/Segmented.jsx";
-export { default as Pills } from "./common/Pills.jsx";
 export { default as PageHead, SectionHead } from "./common/PageHead.jsx";
 export { default as StandTable, rankRows } from "./common/StandTable.jsx";
 export { default as SiteHeader } from "./layout/SiteHeader.jsx";

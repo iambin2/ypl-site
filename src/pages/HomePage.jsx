@@ -151,7 +151,7 @@ export default function HomePage({ data, go }) {
     <section className="hm-hero follow" ref={heroRef}>
       <span className="eyebrow">Yonsei Pokémon League</span>
       <h1><span>모든 배틀.</span><span>모든 기록.</span><span className="silver-live">모든 챔피언.</span></h1>
-      <p>포켓몬 센터 연세점이 운영하는 공식 배틀 리그입니다. 대회 공지부터 대진표, 기록과 명예의 전당까지 이곳에서 확인하세요.</p>
+      <p>포켓몬 센터 연세점이 운영하는 공식 배틀 리그입니다.<br />대회 공지부터 대진표, 기록과 명예의 전당까지 이곳에서 확인하세요.</p>
       <div className="hm-hero-actions">
         <button className="ypl-btn ypl-btn--primary press" onClick={() => go(primary[1])}>{primary[0]}</button>
         <button className="ypl-btn ypl-btn--glass press" onClick={() => go("about")}>리그 소개</button>

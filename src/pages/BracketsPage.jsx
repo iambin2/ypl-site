@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Dropdown, Facts, Icon, Modal, PageHead, Poster, STAGGER, SectionHead, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Facts, Icon, Modal, PageHead, Poster, STAGGER, SectionHead, Segmented, siteAlert, siteConfirm } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listNormalizedSingleBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
@@ -554,18 +554,12 @@ function BracketWizard({ data, onClose, onCreate }){
 
         <div className="field">
           <label>경기 방식</label>
-          <div className="bk-seg">
-            <button type="button" className={mode==="single"?"on":""} onClick={()=>setMode("single")}>개인전</button>
-            <button type="button" className={mode==="team"?"on":""} onClick={()=>setMode("team")}>팀전</button>
-          </div>
+          <Segmented value={mode} onChange={setMode} ariaLabel="경기 방식" options={[["single","개인전"],["team","팀전"]]}/>
         </div>
 
         <div className="field">
           <label>대진 형식</label>
-          <div className="bk-seg">
-            <button type="button" className={format==="elim"?"on":""} onClick={()=>setFormat("elim")}>토너먼트</button>
-            <button type="button" className={format==="group"?"on":""} onClick={()=>setFormat("group")}>조별예선 + 본선</button>
-          </div>
+          <Segmented value={format} onChange={setFormat} ariaLabel="대진 형식" options={[["elim","토너먼트"],["group","조별예선 + 본선"]]}/>
         </div>
 
         {format==="elim"&&
@@ -1575,10 +1569,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       </> : <>
         <div className="field">
           <label>형식</label>
-          <div className="ed-seg">
-            <button type="button" className={!champ?"on":""} onClick={()=>setChamp(false)}>일반 (파이컵)</button>
-            <button type="button" className={champ?"on":""} onClick={()=>setChamp(true)}>챔피언스 시리즈</button>
-          </div>
+          <Segmented value={champ} onChange={setChamp} ariaLabel="형식" options={[[false,"일반 (파이컵)"],[true,"챔피언스 시리즈"]]}/>
         </div>
 
         <div className="bk-grow2">
