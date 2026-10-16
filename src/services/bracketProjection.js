@@ -1,0 +1,694 @@
+/**
+ * Pure normalized bracket projection contracts.
+ *
+ * Phase A deliberately supports only an individual single-elimination Event.
+ * The input is normalized domain data; no legacy Bracket graph is accepted or
+ * consulted. The returned graph is an adapter-shaped view model for the
+ * existing bracket components.
+ *
+ * Important boundary:
+ * - Entry.seed is a seeding fact, not a bracket slot in this contract.
+ * - bracket_entry_slots is the canonical persisted operator draw.
+ * - Missing slot rows are deterministic BYEs; future nodes remain projection
+ *   facts and are not persisted Match rows.
+ */
+
+export const SINGLE_BRACKET_PROJECTION_VERSION = 1;
+export const SINGLE_BRACKET_MATCH_SOURCE_NODE_KEY = "single:r{round}:m{match}";
+export const DOUBLE_BRACKET_PROJECTION_VERSION = 1;
+
+export const SINGLE_BRACKET_PROJECTION_CONTRACT = Object.freeze({
+  version: SINGLE_BRACKET_PROJECTION_VERSION,
+  supportedEvent: {
+    isTeamEvent: false,
+    competitionFormat: "single_elimination",
+  },
+  persistentFacts: Object.freeze({
+    event: ["id", "name", "is_team_event", "competition_format", "status"],
+    runtime: ["id", "event_id", "topology_kind", "projection_version"],
+    entry: ["id", "event_id", "entry_type", "display_name", "status", "seed"],
+    entryParticipant: [
+      "id",
+      "event_id",
+      "entry_id",
+      "registration_id",
+      "player_id",
+      "member_order",
+      "role",
+    ],
+    entrySlot: [
+      "bracket_runtime_id",
+      "event_id",
+      "stage_kind",
+      "stage_no",
+      "pool_no",
+      "slot_no",
+      "entry_id",
+    ],
+    match: [
+      "id",
+      "event_id",
+      "match_kind",
+      "source",
+      "source_node_key",
+      "entry_a_id",
+      "entry_b_id",
+      "winner_entry_id",
+      "resolution",
+      "played_at",
+    ],
+  }),
+  generatedFacts: [
+    "round topology",
+    "future match nodes",
+    "BYE slots",
+    "winner-edge slot references",
+  ],
+  seedIsBracketSlot: false,
+  nodeKeyPattern: SINGLE_BRACKET_MATCH_SOURCE_NODE_KEY,
+});
+
+const BYE = "\u2205BYE";
+
+function fail(message) {
+  throw new Error(`대진 계산 오류: ${message}`);
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function requireText(value, label) {
+  if (typeof value !== "string" || !value.trim()) fail(`${label}이(가) 없습니다.`);
+  return value.trim();
+}
+
+function requireSame(value, expected, label) {
+  if (value !== expected) fail(`${label}이(가) 일치하지 않습니다.`);
+}
+
+function nextPowerOfTwo(value) {
+  let result = 1;
+  while (result < value) result *= 2;
+  return result;
+}
+
+// Fisher-Yates. sort(() => Math.random() - 0.5) is not a fair draw: the first registrant
+// lands in slot 1 about twice as often as the others.
+export function shuffle(list, random = Math.random) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function nodeKey(roundNumber, matchNumber) {
+  return `single:r${roundNumber}:m${matchNumber}`;
+}
+
+function normalizeEvent(event, { isTeamEvent = false, competitionFormat = "single_elimination" } = {}) {
+  if (!event || typeof event !== "object") fail("대회가 없습니다.");
+  const id = requireText(event.id, "대회 ID");
+  requireSame(event.is_team_event, isTeamEvent, isTeamEvent ? "팀전 여부" : "개인전 여부");
+  requireSame(event.competition_format, competitionFormat, "대진 방식");
+  return {
+    ...event,
+    id,
+    name: typeof event.name === "string" ? event.name : id,
+  };
+}
+
+function normalizeEntries(eventId, entries, entryType = "individual") {
+  const active = asArray(entries)
+    .filter(entry => entry?.status !== "withdrawn")
+    .map(entry => {
+      if (!entry || typeof entry !== "object") fail("출전 데이터가 올바르지 않습니다.");
+      const id = requireText(entry.id, "출전 정보 ID");
+      requireSame(entry.event_id, eventId, `출전 정보 '${id}'의 대회 소속`);
+      requireSame(entry.entry_type, entryType, `출전 정보 '${id}'의 출전 유형`);
+      if (entry.status && !["active", "withdrawn"].includes(entry.status)) {
+        fail(`출전 정보 '${id}'의 상태가 올바르지 않습니다.`);
+      }
+      return {
+        ...entry,
+        id,
+        display_name: requireText(entry.display_name, `출전 정보 '${id}'의 표시 이름`),
+      };
+    })
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  const ids = new Set();
+  for (const entry of active) {
+    if (ids.has(entry.id)) fail(`출전 정보 '${entry.id}'가 중복되어 있습니다.`);
+    ids.add(entry.id);
+  }
+  if (active.length < 2) fail("싱글 토너먼트 대진에는 출전 정보가 2개 이상 필요합니다.");
+  return active;
+}
+
+function normalizeEntryParticipants(eventId, entries, entryParticipants, entryType = "individual") {
+  const entryIds = new Set(entries.map(entry => entry.id));
+  const byEntryId = new Map();
+
+  for (const row of asArray(entryParticipants)) {
+    if (!row || typeof row !== "object") fail("출전 선수 데이터가 올바르지 않습니다.");
+    const id = requireText(row.id, "출전 선수 ID");
+    requireSame(row.event_id, eventId, `출전 선수 '${id}'의 대회 소속`);
+    if (!entryIds.has(row.entry_id)) {
+      if (row.entry_id) fail(`출전 선수 '${id}'가 대진 출전 정보에 속하지 않습니다.`);
+      fail(`출전 선수 '${id}'의 출전 ID가 없습니다.`);
+    }
+    if (entryType === "individual" && row.member_order !== undefined && row.member_order !== 1) {
+      fail(`출전 선수 '${id}'의 선수 순서는 개인전에서 1이어야 합니다.`);
+    }
+    const rows = byEntryId.get(row.entry_id) || [];
+    rows.push({
+      ...row,
+      id,
+      member_order: row.member_order ?? 1,
+    });
+    byEntryId.set(row.entry_id, rows);
+  }
+
+  return entries.map(entry => {
+    const participants = (byEntryId.get(entry.id) || []).sort((left, right) => left.member_order - right.member_order);
+    if (!participants.length) fail(`출전 정보 '${entry.id}'의 출전 선수가 없습니다.`);
+    if (entryType === "individual") {
+      if (participants.length !== 1) fail(`개인 출전 정보 '${entry.id}'에 출전 선수가 여러 개입니다.`);
+      return participants[0];
+    }
+    if (participants.some((row, index) => row.member_order !== index + 1)) {
+      fail(`팀 출전 정보 '${entry.id}'의 선수 순서가 연속적이지 않습니다.`);
+    }
+    if (participants.filter(row => row.role === "captain").length > 1) {
+      fail(`팀 출전 정보 '${entry.id}'의 팀장 역할이 중복되었습니다.`);
+    }
+    return participants;
+  });
+}
+
+function normalizeEntrySlots(eventId, runtimeId, entries, entrySlots, size) {
+  if (!Array.isArray(entrySlots) || entrySlots.length === 0) {
+    fail("싱글 토너먼트 대진에는 저장된 대진 자리가 필요합니다.");
+  }
+
+  const entryIds = new Set(entries.map(entry => entry.id));
+  const seenEntries = new Set();
+  const seenSlots = new Set();
+  const slotByNo = new Array(size + 1).fill(null);
+
+  for (const row of entrySlots) {
+    if (!row || typeof row !== "object") fail("대진 자리 데이터가 올바르지 않습니다.");
+    const entryId = requireText(row.entry_id, "대진 자리의 출전 ID");
+    requireSame(row.bracket_runtime_id, runtimeId, `출전 정보 '${entryId}'의 대진표 소속`);
+    requireSame(row.event_id, eventId, `출전 정보 '${entryId}'의 대회 소속`);
+    requireSame(row.stage_kind, "elimination", `출전 정보 '${entryId}'의 단계 종류`);
+    requireSame(row.stage_no, 1, `출전 정보 '${entryId}'의 단계 번호`);
+    requireSame(row.pool_no, 0, `출전 정보 '${entryId}'의 조 번호`);
+
+    if (!Number.isInteger(row.slot_no) || row.slot_no < 1 || row.slot_no > size) {
+      fail(`출전 정보 '${entryId}'의 자리 번호가 대진표 범위를 벗어났습니다.`);
+    }
+    if (!entryIds.has(entryId)) fail(`대진 자리의 출전 정보 '${entryId}'가 대진 출전 정보와 일치하지 않습니다.`);
+    if (seenEntries.has(entryId)) fail(`출전 정보 '${entryId}'의 대진 자리가 중복되어 있습니다.`);
+    if (seenSlots.has(row.slot_no)) fail(`자리 번호 '${row.slot_no}'가 중복되어 있습니다.`);
+
+    seenEntries.add(entryId);
+    seenSlots.add(row.slot_no);
+    slotByNo[row.slot_no] = entryId;
+  }
+
+  if (seenEntries.size !== entries.length) {
+    fail("출전 정보마다 저장된 대진 자리가 정확히 하나씩 있어야 합니다.");
+  }
+
+  const slots = [];
+  let byeCount = 0;
+  for (let matchIndex = 0; matchIndex < size / 2; matchIndex += 1) {
+    const left = slotByNo[matchIndex * 2 + 1];
+    const right = slotByNo[matchIndex * 2 + 2];
+    if (!left) byeCount += 1;
+    if (!right) byeCount += 1;
+    if (!left && !right) fail(`1라운드 경기 m${matchIndex + 1}에 양쪽 부전승이 있습니다.`);
+    slots.push([
+      left ? { pid: left } : { bye: true },
+      right ? { pid: right } : { bye: true },
+    ]);
+  }
+
+  return { slots, byeCount };
+}
+
+function normalizeMatches(eventId, generatedNodeKeys, matches, entryIds, topologyLabel = "대진표") {
+  const allowedKeys = new Set(generatedNodeKeys);
+  const entryIdSet = new Set(entryIds);
+  const byNodeKey = new Map();
+
+  for (const row of asArray(matches)) {
+    if (!row || typeof row !== "object") fail("경기 데이터가 올바르지 않습니다.");
+    const id = requireText(row.id, "경기 ID");
+    requireSame(row.event_id, eventId, `경기 '${id}'의 대회 소속`);
+    requireSame(row.match_kind, "bracket", `경기 '${id}'의 경기 종류`);
+    requireSame(row.source, "normalized_bracket_runtime", `경기 '${id}'의 출처`);
+    const key = requireText(row.source_node_key, `경기 '${id}'의 경기 키`);
+    if (!allowedKeys.has(key)) fail(`알 수 없는 ${topologyLabel} 경기 키 '${key}'입니다.`);
+    if (byNodeKey.has(key)) fail(`경기 키 '${key}'가 중복되어 있습니다.`);
+
+    for (const field of ["entry_a_id", "entry_b_id"]) {
+      if (!entryIdSet.has(row[field])) fail(`경기 '${id}'의 ${field}가 대진 출전 정보와 일치하지 않습니다.`);
+    }
+    if (row.entry_a_id === row.entry_b_id) fail(`경기 '${id}'의 양쪽 출전 정보가 같습니다.`);
+    if (row.winner_entry_id !== null && row.winner_entry_id !== undefined && !entryIdSet.has(row.winner_entry_id)) {
+      fail(`경기 '${id}'의 승자가 대진 출전 정보와 일치하지 않습니다.`);
+    }
+    if (
+      row.winner_entry_id !== null &&
+      row.winner_entry_id !== undefined &&
+      row.winner_entry_id !== row.entry_a_id &&
+      row.winner_entry_id !== row.entry_b_id
+    ) {
+      fail(`경기 '${id}'의 승자가 양쪽 출전 정보 중 하나가 아닙니다.`);
+    }
+
+    byNodeKey.set(key, row);
+  }
+
+  return byNodeKey;
+}
+
+function graphWinnerState(graph) {
+  const winnerByNodeKey = new Map();
+  const loserByNodeKey = new Map();
+  const slotValue = slot => {
+    if (!slot) return null;
+    if (slot.bye) return BYE;
+    if (slot.pid) return slot.pid;
+    if (slot.win) return winnerByNodeKey.get(slot.win) ?? null;
+    return null;
+  };
+
+  for (const round of graph.rounds) {
+    for (const match of round) {
+      const entryA = slotValue(match.a);
+      const entryB = slotValue(match.b);
+      let winner = null;
+      let loser = null;
+
+      if (match.winner === "a") {
+        winner = entryA;
+        loser = entryB;
+      } else if (match.winner === "b") {
+        winner = entryB;
+        loser = entryA;
+      } else if (entryA === BYE && entryB && entryB !== BYE) {
+        winner = entryB;
+        loser = BYE;
+      } else if (entryB === BYE && entryA && entryA !== BYE) {
+        winner = entryA;
+        loser = BYE;
+      } else if (entryA === BYE && entryB === BYE) {
+        winner = BYE;
+        loser = BYE;
+      }
+
+      winnerByNodeKey.set(match.id, winner);
+      loserByNodeKey.set(match.id, loser);
+    }
+  }
+
+  return { winnerByNodeKey, loserByNodeKey, slotValue };
+}
+
+/**
+ * Evaluate a projected graph using the same adapter semantics as the current
+ * bracket UI. It is pure and intentionally exported for projection tests and
+ * the future normalized BracketBoard adapter.
+ */
+export function evaluateSingleEliminationGraph(graph) {
+  if (!graph || graph.kind !== "single" || !Array.isArray(graph.rounds)) {
+    fail("평가할 싱글 토너먼트 구조가 올바르지 않습니다.");
+  }
+  return graphWinnerState(graph);
+}
+
+function buildGraph(entries, matchByNodeKey, firstRoundSlots) {
+  const size = nextPowerOfTwo(entries.length);
+  const { slots, byeCount } = firstRoundSlots;
+  const rounds = [];
+  const generatedNodeKeys = [];
+  let previousRound = [];
+
+  for (let roundNumber = 1, roundSize = size / 2; roundSize >= 1; roundNumber += 1, roundSize /= 2) {
+    const round = [];
+    for (let matchIndex = 1; matchIndex <= roundSize; matchIndex += 1) {
+      const id = nodeKey(roundNumber, matchIndex);
+      generatedNodeKeys.push(id);
+      const firstRound = roundNumber === 1;
+      const a = firstRound
+        ? slots[matchIndex - 1][0]
+        : { win: previousRound[(matchIndex - 1) * 2].id };
+      const b = firstRound
+        ? slots[matchIndex - 1][1]
+        : { win: previousRound[(matchIndex - 1) * 2 + 1].id };
+      const persisted = matchByNodeKey.get(id) || null;
+      round.push({
+        id,
+        a,
+        b,
+        winner: null,
+        normalizedMatchId: persisted?.id || null,
+        resolution: persisted?.resolution || null,
+        playedAt: persisted?.played_at || null,
+      });
+    }
+    rounds.push(round);
+    previousRound = round;
+  }
+
+  const graph = { kind: "single", rounds, size, byes: byeCount };
+  const winnerByNodeKey = new Map();
+  const slotValue = slot => {
+    if (!slot) return null;
+    if (slot.bye) return BYE;
+    if (slot.pid) return slot.pid;
+    if (slot.win) return winnerByNodeKey.get(slot.win) ?? null;
+    return null;
+  };
+
+  // Overlay Match facts in topology order so a winner immediately becomes the
+  // resolved participant of its downstream projection node.
+  for (const round of rounds) {
+    for (const match of round) {
+      const persisted = matchByNodeKey.get(match.id) || null;
+      const entryA = slotValue(match.a);
+      const entryB = slotValue(match.b);
+      if (persisted) {
+        if (!entryA || !entryB || entryA === BYE || entryB === BYE) {
+          fail(`경기 '${persisted.id}'가 아직 성립하지 않은 대진 칸에 연결되어 있습니다.`);
+        }
+        if (persisted.entry_a_id !== entryA || persisted.entry_b_id !== entryB) {
+          fail(`경기 '${persisted.id}'의 양쪽 출전 정보가 정해진 대진 구조와 다릅니다.`);
+        }
+        match.winner = persisted.winner_entry_id
+          ? persisted.winner_entry_id === entryA ? "a" : "b"
+          : null;
+      } else if (entryA === BYE && entryB && entryB !== BYE) {
+        match.winner = "b";
+      } else if (entryB === BYE && entryA && entryA !== BYE) {
+        match.winner = "a";
+      } else if (entryA === BYE && entryB === BYE) {
+        match.winner = "a";
+      } else {
+        match.winner = null;
+      }
+
+      if (match.winner === "a") winnerByNodeKey.set(match.id, entryA);
+      else if (match.winner === "b") winnerByNodeKey.set(match.id, entryB);
+      else if (entryA === BYE && entryB && entryB !== BYE) winnerByNodeKey.set(match.id, entryB);
+      else if (entryB === BYE && entryA && entryA !== BYE) winnerByNodeKey.set(match.id, entryA);
+      else if (entryA === BYE && entryB === BYE) winnerByNodeKey.set(match.id, BYE);
+      else winnerByNodeKey.set(match.id, null);
+    }
+  }
+
+  return graph;
+}
+
+function buildParticipants(entries, entryParticipants, { isTeamEvent = false, registrationNames = new Map() } = {}) {
+  const participantByEntryId = new Map();
+  for (const row of entryParticipants) {
+    const rows = participantByEntryId.get(row.entry_id) || [];
+    rows.push(row);
+    participantByEntryId.set(row.entry_id, rows);
+  }
+  return entries.map(entry => {
+    const participantRows = (participantByEntryId.get(entry.id) || []).sort((left, right) => left.member_order - right.member_order);
+    const participant = participantRows[0];
+    if (!participant) fail(`출전 정보 '${entry.id}'의 출전 선수가 없습니다.`);
+    const memberIdentities = participantRows.map(row => ({
+      name: registrationNames.get(row.registration_id) || row.registration_name || row.player_id,
+      memberOrder: row.member_order,
+      role: row.role || (row.member_order === 1 ? "captain" : null),
+      registrationId: row.registration_id,
+      playerId: row.player_id,
+      entryParticipantId: row.id,
+    }));
+    return {
+      id: entry.id,
+      name: entry.display_name,
+      entryId: entry.id,
+      ...(isTeamEvent
+        ? { members: memberIdentities.map(row => row.name), memberIdentities }
+        : {
+            entryParticipantId: participant.id,
+            registrationId: participant.registration_id,
+            playerId: participant.player_id,
+          }),
+      // Deliberately exposed as metadata only; it is not used for slot order.
+      seed: entry.seed ?? null,
+    };
+  });
+}
+
+function doubleNodeKey(branch, roundNumber, matchNumber) {
+  if (branch === "w") return `double:w:r${roundNumber}:m${matchNumber}`;
+  if (branch === "l") return `double:l:r${roundNumber}:m${matchNumber}`;
+  return `double:${branch}:m1`;
+}
+
+export function deterministicDoubleGraph(firstRoundSlots) {
+  const rounds = [];
+  let previousRound = [];
+  for (let roundNumber = 1, roundSize = firstRoundSlots.length; roundSize >= 1; roundNumber += 1, roundSize /= 2) {
+    const round = [];
+    for (let matchNumber = 1; matchNumber <= roundSize; matchNumber += 1) {
+      round.push({
+        id: doubleNodeKey("w", roundNumber, matchNumber),
+        a: roundNumber === 1 ? firstRoundSlots[matchNumber - 1][0] : { win: previousRound[(matchNumber - 1) * 2].id },
+        b: roundNumber === 1 ? firstRoundSlots[matchNumber - 1][1] : { win: previousRound[(matchNumber - 1) * 2 + 1].id },
+        winner: null,
+      });
+    }
+    rounds.push(round);
+    previousRound = round;
+  }
+
+  const lb = [];
+  let lbPrev = [];
+  if (rounds[0].length >= 2) {
+    const initial = [];
+    for (let index = 0; index < rounds[0].length; index += 2) {
+      initial.push({
+        id: doubleNodeKey("l", 1, index / 2 + 1),
+        a: { lose: rounds[0][index].id },
+        b: { lose: rounds[0][index + 1].id },
+        winner: null,
+      });
+    }
+    lb.push(initial);
+    lbPrev = initial;
+  } else {
+    lbPrev = [rounds[0][0]];
+  }
+
+  let drop = 0;
+  for (let winnersRound = 1; winnersRound < rounds.length - 1; winnersRound += 1) {
+    drop += 1;
+    const major = [];
+    const length = lbPrev.length;
+    const half = Math.floor(length / 2);
+    const dropIndex = index => drop % 2 === 1 ? length - 1 - index : (index + half) % length;
+    for (let index = 0; index < length; index += 1) {
+      major.push({
+        id: doubleNodeKey("l", lb.length + 1, index + 1),
+        a: { win: lbPrev[index].id },
+        b: { lose: rounds[winnersRound][dropIndex(index)].id },
+        winner: null,
+      });
+    }
+    lb.push(major);
+    if (major.length > 1) {
+      const minor = [];
+      for (let index = 0; index < major.length; index += 2) {
+        minor.push({
+          id: doubleNodeKey("l", lb.length + 1, index / 2 + 1),
+          a: { win: major[index].id },
+          b: { win: major[index + 1].id },
+          winner: null,
+        });
+      }
+      lb.push(minor);
+      lbPrev = minor;
+    } else {
+      lbPrev = major;
+    }
+  }
+
+  const lbFinal = {
+    id: doubleNodeKey("l", lb.length + 1, 1),
+    a: { win: lbPrev[0].id },
+    b: { lose: rounds[rounds.length - 1][0].id },
+    winner: null,
+  };
+  lb.push([lbFinal]);
+  const gf = { id: doubleNodeKey("gf"), a: { win: rounds.at(-1)[0].id }, b: { win: lbFinal.id }, winner: null };
+  const reset = { id: doubleNodeKey("reset"), a: { win: rounds.at(-1)[0].id }, b: { win: lbFinal.id }, winner: null };
+  return { kind: "double", rounds, lb, gf, reset, size: firstRoundSlots.length * 2, byes: 0 };
+}
+
+function graphMatchOrder(graph) {
+  return [
+    ...(graph?.rounds || []).flat(),
+    ...(graph?.lb || []).flat(),
+    ...(graph?.gf ? [graph.gf] : []),
+    ...(graph?.reset ? [graph.reset] : []),
+  ];
+}
+
+function applyPersistedGraphMatches(graph, matchByNodeKey, entryIds, { resetActiveOnly = false } = {}) {
+  const winnerByNodeKey = new Map();
+  const loserByNodeKey = new Map();
+  const entryIdSet = new Set(entryIds);
+  const slotValue = slot => {
+    if (!slot) return null;
+    if (slot.bye) return BYE;
+    if (slot.pid) return slot.pid;
+    if (slot.win) return winnerByNodeKey.get(slot.win) ?? null;
+    if (slot.lose) return loserByNodeKey.get(slot.lose) ?? null;
+    return null;
+  };
+
+  for (const match of graphMatchOrder(graph)) {
+    const entryA = slotValue(match.a);
+    const entryB = slotValue(match.b);
+    const persisted = matchByNodeKey.get(match.id) || null;
+    const active = !(resetActiveOnly && match.id === graph.reset?.id) || graph.gf?.winner === "b";
+    if (persisted && !active) fail(`비활성 리셋 결승 경기 '${persisted.id}'가 존재합니다.`);
+    if (persisted) {
+      if (!entryA || !entryB || entryA === BYE || entryB === BYE) fail(`경기 '${persisted.id}'가 아직 성립하지 않은 대진 칸에 연결되어 있습니다.`);
+      if (persisted.entry_a_id !== entryA || persisted.entry_b_id !== entryB) fail(`경기 '${persisted.id}'의 양쪽 출전 정보가 정해진 대진 구조와 다릅니다.`);
+      if (persisted.winner_entry_id && !entryIdSet.has(persisted.winner_entry_id)) fail(`경기 '${persisted.id}'의 승자가 출전 정보와 일치하지 않습니다.`);
+      match.winner = persisted.winner_entry_id === entryA ? "a" : persisted.winner_entry_id === entryB ? "b" : null;
+    } else if (entryA === BYE && entryB && entryB !== BYE) {
+      match.winner = "b";
+    } else if (entryB === BYE && entryA && entryA !== BYE) {
+      match.winner = "a";
+    } else if (entryA === BYE && entryB === BYE) {
+      match.winner = "a";
+    } else {
+      match.winner = null;
+    }
+
+    const winner = match.winner === "a" ? entryA : match.winner === "b" ? entryB : null;
+    const loser = match.winner === "a" ? entryB : match.winner === "b" ? entryA : null;
+    winnerByNodeKey.set(match.id, winner);
+    loserByNodeKey.set(match.id, loser);
+  }
+  return { winnerByNodeKey, loserByNodeKey, slotValue };
+}
+
+function attachTeamSeries(graph, matches, participants) {
+  const parentById = new Map(matches.filter(row => row.match_kind === "bracket").map(row => [row.id, row.source_node_key]));
+  const childrenByParent = new Map();
+  for (const row of matches.filter(row => row.match_kind !== "bracket")) {
+    const parentKey = parentById.get(row.parent_match_id);
+    if (!parentKey) fail(`팀전 하위 경기 '${row.id}'의 상위 경기가 없습니다.`);
+    const rows = childrenByParent.get(parentKey) || [];
+    rows.push(row);
+    childrenByParent.set(parentKey, rows);
+  }
+  const playerNames = new Map(participants.flatMap(participant =>
+    (participant.memberIdentities || []).map(member => [member.playerId, member.name])
+  ));
+  for (const match of graphMatchOrder(graph)) {
+    const children = (childrenByParent.get(match.id) || []).sort((left, right) => left.sequence_no - right.sequence_no);
+    if (!children.length) continue;
+    const bouts = children.filter(row => row.match_kind === "team_bout");
+    const ace = children.find(row => row.match_kind === "ace");
+    match.series = {
+      lineupA: bouts.map(row => playerNames.get(row.player_a_id) || row.player_a_id),
+      lineupB: bouts.map(row => playerNames.get(row.player_b_id) || row.player_b_id),
+      games: bouts.map(row => row.winner_player_id === row.player_a_id ? "a" : row.winner_player_id === row.player_b_id ? "b" : null),
+      ace: ace ? {
+        a: playerNames.get(ace.player_a_id) || ace.player_a_id,
+        b: playerNames.get(ace.player_b_id) || ace.player_b_id,
+        winner: ace.winner_player_id === ace.player_a_id ? "a" : ace.winner_player_id === ace.player_b_id ? "b" : null,
+      } : null,
+    };
+  }
+}
+
+function projectNormalizedEliminationBracket({ event, runtimeId, entries, entryParticipants, entrySlots, matches, competitionFormat, isTeamEvent, projectionVersion }) {
+  const normalizedEvent = normalizeEvent(event, { isTeamEvent, competitionFormat });
+  const normalizedRuntimeId = requireText(runtimeId, "대진표 ID");
+  const entryType = isTeamEvent ? "team" : "individual";
+  const normalizedEntries = normalizeEntries(normalizedEvent.id, entries, entryType);
+  const normalizedParticipants = normalizeEntryParticipants(normalizedEvent.id, normalizedEntries, entryParticipants, entryType);
+  const size = nextPowerOfTwo(normalizedEntries.length);
+  const firstRoundSlots = normalizeEntrySlots(normalizedEvent.id, normalizedRuntimeId, normalizedEntries, entrySlots, size);
+  const registrationNames = new Map(entryParticipants.map(row => [row.registration_id, row.registration_name]).filter(row => row[1]));
+  const participants = buildParticipants(normalizedEntries, entryParticipants, { isTeamEvent, registrationNames });
+  const parentMatches = (matches || []).filter(row => row?.match_kind === "bracket");
+
+  if (competitionFormat === "single_elimination") {
+    const generatedNodeKeys = [];
+    for (let roundSize = size / 2, roundNumber = 1; roundSize >= 1; roundSize /= 2, roundNumber += 1) {
+      for (let matchNumber = 1; matchNumber <= roundSize; matchNumber += 1) generatedNodeKeys.push(nodeKey(roundNumber, matchNumber));
+    }
+    const matchByNodeKey = normalizeMatches(normalizedEvent.id, generatedNodeKeys, parentMatches, normalizedEntries.map(entry => entry.id), "싱글 토너먼트");
+    const graph = buildGraph(normalizedEntries, matchByNodeKey, firstRoundSlots);
+    if (isTeamEvent) attachTeamSeries(graph, matches || [], participants);
+    return {
+      id: `normalized:event:${normalizedEvent.id}:single`, name: normalizedEvent.name, eventId: normalizedEvent.id,
+      mode: isTeamEvent ? "team" : "single", format: "elim", double: false,
+      createdAt: normalizedEvent.held_on || normalizedEvent.created_at || null, status: normalizedEvent.status === "completed" ? "done" : "active", applied: null,
+      participants, graph, groups: null, knockout: null,
+      projection: { source: "normalized", version: projectionVersion, topology: "single_elimination", runtimeId: normalizedRuntimeId, seedUsedAsSlot: false },
+    };
+  }
+
+  const graph = deterministicDoubleGraph(firstRoundSlots.slots);
+  const generatedNodeKeys = graphMatchOrder(graph).map(match => match.id);
+  const matchByNodeKey = normalizeMatches(normalizedEvent.id, generatedNodeKeys, parentMatches, normalizedEntries.map(entry => entry.id), "더블 엘리미네이션");
+  applyPersistedGraphMatches(graph, matchByNodeKey, normalizedEntries.map(entry => entry.id), { resetActiveOnly: true });
+  if (isTeamEvent) attachTeamSeries(graph, matches || [], participants);
+  return {
+    id: `normalized:event:${normalizedEvent.id}:double`, name: normalizedEvent.name, eventId: normalizedEvent.id,
+    mode: isTeamEvent ? "team" : "single", format: "elim", double: true,
+    createdAt: normalizedEvent.held_on || normalizedEvent.created_at || null, status: normalizedEvent.status === "completed" ? "done" : "active", applied: null,
+    participants, graph, groups: null, knockout: null,
+    projection: { source: "normalized", version: projectionVersion, topology: "double_elimination", runtimeId: normalizedRuntimeId, seedUsedAsSlot: false },
+  };
+}
+
+/**
+ * Project normalized Event/Entry/EntryParticipant/Match rows into the shape
+ * consumed by the existing bracket UI. The function never reads a legacy
+ * Bracket object and never mutates its input.
+ */
+export function projectNormalizedSingleEliminationBracket({
+  event,
+  runtimeId,
+  entries = [],
+  entryParticipants = [],
+  entrySlots,
+  matches = [],
+} = {}) {
+  return projectNormalizedEliminationBracket({
+    event, runtimeId, entries, entryParticipants, entrySlots, matches,
+    competitionFormat: "single_elimination", isTeamEvent: Boolean(event?.is_team_event),
+    projectionVersion: SINGLE_BRACKET_PROJECTION_VERSION,
+  });
+}
+
+export function projectNormalizedDoubleEliminationBracket({
+  event, runtimeId, entries = [], entryParticipants = [], entrySlots, matches = [],
+} = {}) {
+  return projectNormalizedEliminationBracket({
+    event, runtimeId, entries, entryParticipants, entrySlots, matches,
+    competitionFormat: "double_elimination", isTeamEvent: Boolean(event?.is_team_event),
+    projectionVersion: DOUBLE_BRACKET_PROJECTION_VERSION,
+  });
+}

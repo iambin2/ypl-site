@@ -1,0 +1,214 @@
+import React from "react";
+import { siteConfirm } from "../components/index.js";
+import { announcementDeletionBlockedMessage, isEventLinked, cancelApplicationEvent, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
+import {
+  AnnEditor,
+  ChampionEditor,
+  LoginModal,
+  MetaEditor,
+  RoundsEditor,
+  StandingsEditor,
+  TitleItemEditor,
+} from "./editors/AdminEditors.jsx";
+
+export default function AdminModalHost({ modal, data, setModal, save, setAdmin, flash, normTeam }) {
+  if (!modal) return null;
+  const close = () => setModal(null);
+  // 삭제는 되돌릴 수 없다. 게시판 글 삭제와 같은 확인을 한 번 거친다.
+  const askDelete = (title, body) => siteConfirm({ title, body: `${body} 삭제한 내용은 되돌릴 수 없습니다.`, confirmLabel: "삭제", danger: true });
+  const confirmDelete = (onDelete, title, body) => onDelete && (async () => {
+    if (await askDelete(title, body)) await onDelete();
+  });
+
+  if (modal.type === "login") {
+    return (
+      <LoginModal
+        onClose={close}
+        onSuccess={() => {
+          setAdmin(true);
+          close();
+          flash("관리자로 로그인했습니다.");
+        }}
+      />
+    );
+  }
+
+  if (modal.type === "meta") {
+    return <MetaEditor meta={data.meta} onClose={close} onSave={(meta) => { save({ ...data, meta }); close(); }} />;
+  }
+
+  if (modal.type === "champion") {
+    return (
+      <ChampionEditor
+        item={modal.item}
+        normTeam={normTeam}
+        onClose={close}
+        onSave={(champion) => {
+          const champions = modal.item
+            ? data.champions.map((item) => item.id === champion.id ? champion : item)
+            : [...data.champions, champion];
+          save({ ...data, champions });
+          close();
+        }}
+        onDelete={confirmDelete(modal.item ? () => {
+          save({ ...data, champions: data.champions.filter((item) => item.id !== modal.item.id) }, "삭제했습니다.");
+          close();
+        } : null, "챔피언 삭제", "이 챔피언 기록을 삭제할까요?")}
+      />
+    );
+  }
+
+  if (modal.type === "title") {
+    return (
+      <TitleItemEditor
+        groupKey={modal.groupKey}
+        item={modal.item}
+        onClose={close}
+        onSave={(item) => {
+          const titleGroups = data.titleGroups.map((group) => group.key !== modal.groupKey ? group : {
+            ...group,
+            items: modal.item ? group.items.map((entry) => entry.id === item.id ? item : entry) : [...group.items, item],
+          });
+          save({ ...data, titleGroups });
+          close();
+        }}
+        onDelete={confirmDelete(modal.item ? () => {
+          const titleGroups = data.titleGroups.map((group) => group.key !== modal.groupKey ? group : {
+            ...group,
+            items: group.items.filter((entry) => entry.id !== modal.item.id),
+          });
+          save({ ...data, titleGroups }, "삭제했습니다.");
+          close();
+        } : null, "칭호 삭제", "이 칭호를 삭제할까요?")}
+      />
+    );
+  }
+
+  if (modal.type === "ann") {
+    return (
+      <AnnEditor
+        item={modal.item}
+        onClose={close}
+        onSave={async (announcement) => {
+          let nextAnnouncement = announcement;
+
+          if (announcement.form?.enabled && isEventLinked(announcement.form)) {
+            try {
+              const champions = announcement.form.eventDraft.eventType === "champions";
+              const savedEvent = champions
+                ? await saveChampionshipApplicationEventPair({
+                    qualifierEventId: announcement.form.eventId || null,
+                    announcementId: announcement.id,
+                    eventDraft: { ...announcement.form.eventDraft },
+                  })
+                : await saveApplicationEvent({
+                    eventId: announcement.form.eventId || null,
+                    announcementId: announcement.id,
+                    eventDraft: { ...announcement.form.eventDraft },
+                  });
+              const event = champions ? savedEvent.qualifierEvent : savedEvent;
+
+              nextAnnouncement = {
+                ...announcement,
+                form: {
+                  ...announcement.form,
+                  eventId: event.id,
+                  // 공지 안의 이름 사본은 저장된 대회 이름을 그대로 따른다(챔피언스는 선발전 접미사를 뺀 기본 이름).
+                  eventDraft: {
+                    ...announcement.form.eventDraft,
+                    name: champions ? event.name.replace(/\s*(·\s*)?선발전$/, "") : event.name,
+                  },
+                },
+              };
+            } catch (error) {
+              flash(`대회 연결 실패: ${error.message}`);
+              return;
+            }
+          }
+
+          const announcements = modal.item
+            ? data.announcements.map((item) => item.id === nextAnnouncement.id ? nextAnnouncement : item)
+            : [nextAnnouncement, ...data.announcements];
+
+          const saved = await save({ ...data, announcements });
+
+          if (!saved) {
+            const wasExistingEvent = Boolean(modal.item?.form?.eventId);
+
+            if (!wasExistingEvent && nextAnnouncement.form?.eventId) {
+              try {
+                await cancelApplicationEvent(nextAnnouncement.form.eventId);
+              } catch (error) {
+                flash?.(`공지 저장에 실패했고, 새로 만든 대회를 정리하는 데도 실패했습니다: ${error?.message || "알 수 없는 오류"}`);
+                return;
+              }
+            }
+
+            flash?.("공지 저장에 실패했습니다. 대회 상태를 확인해 주세요.");
+            return;
+          }
+
+          close();
+        }}
+        onDelete={modal.item ? async () => {
+          const eventId = modal.item.form?.eventId || null;
+          let preflight = null;
+          if (eventId) {
+            try {
+              preflight = await preflightAnnouncementDeletion(eventId);
+            } catch (error) {
+              flash?.(`공지 삭제 가능 여부를 확인하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
+              return;
+            }
+            if (!preflight.allowed) {
+              flash?.(announcementDeletionBlockedMessage(preflight));
+              return;
+            }
+          }
+          if (!(await askDelete("공지 삭제", "이 공지를 삭제할까요?"))) return;
+
+          const nextData = {
+            ...data,
+            announcements: data.announcements.filter((item) => item.id !== modal.item.id),
+          };
+
+          const saved = await save(nextData, "삭제했습니다.");
+          if (!saved) {
+            flash?.("공지를 삭제하지 못했습니다.");
+            return;
+          }
+
+          if (eventId) {
+            try {
+              await cancelApplicationEvent(eventId, { preflight });
+            } catch (error) {
+              flash?.(`공지는 삭제했지만 연결된 대회를 취소하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
+              return;
+            }
+          }
+
+          close();
+        } : null}
+      />
+    );
+  }
+
+  if (modal.type === "standings") {
+    return <StandingsEditor title={modal.title} rows={modal.rows} onClose={close} onSave={(rows) => { save(modal.build(rows)); close(); }} />;
+  }
+
+  if (modal.type === "rounds") {
+    return (
+      <RoundsEditor
+        title={modal.title}
+        rounds={modal.rounds}
+        simple={modal.simple}
+        seasons={modal.seasons}
+        onClose={close}
+        onSave={(rounds) => { save(modal.build(rounds)); close(); }}
+      />
+    );
+  }
+
+  return null;
+}

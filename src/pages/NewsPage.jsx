@@ -1,0 +1,252 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, Reveal, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
+import { formatDate } from "../services/dateFormat.js";
+import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
+
+const fmtDT=iso=>formatDate(iso,{time:true});
+
+const PAGE_SIZE=10;
+/* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문의 제목 자리로 이어진다(I2).
+   신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 주소는 그대로(?view=news) 두고 화면 안의 상태로만 바꾼다. */
+/* 목록의 미리보기는 본문의 첫 문장이 뜻을 가질 때만: "1조", "2" 같은 조각은 보이지 않는다. 앞의 기호와 이모지는 뗀다. */
+function excerptOf(body){
+  const line=String(body||"").split("\n").map(l=>l.replace(/^[^\p{L}\p{N}]+/u,"").trim()).find(Boolean)||"";
+  return line.length>=12?line:"";
+}
+
+export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {
+  const [q,setQ]=useState(""); const [page,setPage]=useState(1);
+  const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
+  const [eventResponses,setEventResponses]=useState({});
+  const [championshipSubmissionEvents,setChampionshipSubmissionEvents]=useState({});
+  const [seen,setSeen]=useState({});
+  // ?notice=<id>로 들어오면(홈의 최신 공지) 그 공지를 바로 연다. 닫으면 주소에서도 지운다.
+  const [article,setArticle]=useState(()=>new URLSearchParams(window.location.search).get("notice"));
+  const listScroll=useRef(0);
+  const refreshEventApplications=useCallback(async announcement=>{
+    if(!announcement?.form?.eventId) return false;
+    try{
+      const rows=await listEventApplications(announcement.form.eventId);
+      setEventResponses(previous=>({...previous,[announcement.id]:rows}));
+      setSeen(previous=>({...previous,[announcement.id]:new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}));
+      return true;
+    }catch(error){
+      console.error(error);
+      return false;
+    }
+  },[]);
+  const refreshPublicResponses=async announcement=>{
+    if(announcement?.form?.eventId) return refreshEventApplications(announcement);
+    if(!refresh) return false;
+    await refresh();
+    setSeen(previous=>({...previous,[announcement.id]:new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}));
+    return true;
+  };
+  useEffect(()=>{
+    const targets=(data.announcements||[]).filter(a=>
+      a.form?.enabled&&a.form?.eventId&&(
+        admin||(a.form.fields||[]).some(f=>f.public)
+      )
+    );
+    if(!targets.length) return;
+    let cancelled=false;
+    Promise.all(targets.map(async a=>{
+      try{ return [a.id,await listEventApplications(a.form.eventId)]; }
+      catch(error){ console.error(error); return [a.id,[]]; }
+    })).then(rows=>{
+      if(cancelled) return;
+      setEventResponses(Object.fromEntries(rows));
+    });
+    return ()=>{cancelled=true;};
+  },[admin,data.announcements]);
+  useEffect(()=>{
+    const targets=(data.announcements||[]).filter(a=>a.form?.eventId&&a.form?.eventDraft?.eventType==="champions");
+    if(!targets.length){ setChampionshipSubmissionEvents({}); return; }
+    let cancelled=false;
+    Promise.all(targets.map(async announcement=>{
+      try{return [announcement.id,await resolveChampionshipSubmissionEvents(announcement.form.eventId)];}
+      catch(error){ console.error(error); return [announcement.id,{error:error?.message||"챔피언스 선발전과 본선 정보를 확인하지 못했습니다."}]; }
+    })).then(rows=>{if(!cancelled)setChampionshipSubmissionEvents(Object.fromEntries(rows));});
+    return ()=>{cancelled=true;};
+  },[data.announcements]);
+  const openArticle=id=>{ listScroll.current=window.scrollY; transition(()=>flushSync(()=>setArticle(id)),{shared:"n-"+id}); };
+  const closeArticle=()=>{ const id=article; const url=new URL(window.location.href); if(url.searchParams.has("notice")){ url.searchParams.delete("notice"); window.history.replaceState(window.history.state,"",url); } transition(()=>flushSync(()=>setArticle(null)),{shared:"n-"+id,dir:"back",scrollY:listScroll.current}); };
+  const href=(u)=>/^https?:\/\//.test(u)?u:"https://"+u;
+  const all=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1));
+  const kw=q.trim().toLowerCase();
+  const list=kw?all.filter(a=>[a.title,a.body,a.date].some(t=>String(t||"").toLowerCase().includes(kw))):all;
+  const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+  const cur=Math.min(page,pages);
+  const shown=list.slice((cur-1)*PAGE_SIZE,cur*PAGE_SIZE);
+  useEffect(()=>{setPage(1);},[q]);
+  const respAnn=respId?data.announcements.find(a=>a.id===respId):null;
+  const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
+  const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
+  const a=article?data.announcements.find(x=>x.id===article):null;
+  const modals=<>
+    {fillAnn&&<FormFillModal
+      ann={fillAnn}
+      responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null}
+      onClose={()=>setFill(null)}
+      onSubmit={async answers=>{
+        const ok=await submitForm(fillAnn.id,answers);
+        if(ok===true&&fillAnn.form?.eventId) await refreshEventApplications(fillAnn);
+        return ok;
+      }}
+    />}
+    {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp}/>}
+  </>;
+
+  if(a){
+    const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id];
+    const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
+    return (<section className="sec">
+      <article className="nb-article">
+        <button type="button" className="nb-back press" onClick={closeArticle}><Icon n="back" size={18}/><span>공지</span></button>
+        <header className="nb-a-head">
+          <p className="caption tnum nb-a-meta">{formatDate(a.date)}{a.pinned&&<span className="pin">고정</span>}</p>
+          <h1 className="title nb-a-title" data-vt={"n-"+a.id}>{a.title}</h1>
+        </header>
+        {a.body&&<Reveal className="nb-body card"><Prose text={a.body}/></Reveal>}
+        {(a.link||a.link2||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
+          {hasForm&&<button className="ann-apply ypl-btn ypl-btn--primary press hl" onClick={()=>setFill(a.id)}><Icon n="form" size={18}/>{a.form.buttonLabel||"참가 신청하기"}</button>}
+          {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</button>}
+          {championshipSubmission?.isChampionship&&<>
+            <button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</button>
+            <button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(championshipSubmission.finalEvent.id)}>본선 파티 제출</button>
+          </>}
+          {a.link&&<a className="ann-link ypl-btn ypl-btn--glass press hl" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
+          {a.link2&&<a className="ann-link alt ypl-btn ypl-btn--glass press hl" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
+          {admin&&(hasForm||a.form?.eventId)&&<button className="ann-resp ypl-btn ypl-btn--quiet press" onClick={()=>setRespId(a.id)}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
+        </div>}
+        {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
+          ann={a}
+          responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
+          onRefresh={()=>refreshPublicResponses(a)}
+          updatedAt={seen[a.id]||""}
+        />}
+        {admin&&<div className="edit-row"><button className="btn btn-ghost btn-sm" onClick={()=>setModal({type:"ann",item:a})}>수정</button></div>}
+      </article>
+      {modals}
+    </section>);
+  }
+
+  return (<section className="sec">
+    <PageHead plain="공지">
+      <div className="y-page-aside">
+        <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
+        {admin&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setModal({type:"ann"})}><Icon n="plus" size={16}/>공지 작성</button>}
+      </div>
+    </PageHead>
+    {list.length===0?(kw
+      ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
+      : <Empty icon="msg" title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
+    : <div className="nb-list card">
+      {shown.map(a=>{
+        return (<button type="button" className="nb-item press" key={a.id} onClick={()=>openArticle(a.id)}>
+          <span className="nb-title">{a.pinned&&<span className="pin">고정</span>}<span data-vt={"n-"+a.id}>{a.title}</span></span>
+          <span className="nb-meta caption"><span className="tnum">{formatDate(a.date)}</span>{excerptOf(a.body)&&<span className="nb-excerpt">{excerptOf(a.body)}</span>}</span>
+        </button>);})}
+    </div>}
+    <Pager page={cur} pages={pages} onGo={setPage}/>
+    {modals}
+  </section>);
+}
+
+/* ===== 공개 응답 목록 (예: 실시간 밴 리스트) ===== */
+function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride=null }){
+  const form=ann.form||{};
+  const fields=(form.fields||[]).filter(f=>f.public);
+  const [open,setOpen]=useState(false); // 기본은 접힘 — 응답이 쌓여도 화면이 길어지지 않도록
+  if(!fields.length) return null;
+  const resp=[...(responsesOverride??form.responses??[])].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const val=(r,f)=>{ const v=(r.answers||{})[f.id]; return Array.isArray(v)?v.join(", "):String(v||""); };
+  return (<div className={"pr-wrap fold"+(open?" open":"")+(compact?" compact":"")}>
+    <button type="button" className="fold-head pr-fold-head" onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}>
+      <span className="pr-title"><Icon n="list" size={15}/> {form.publicTitle||"현재까지 신청 현황"}</span>
+      <span className="pr-n">{resp.length}명</span>
+      <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
+    </button>
+    {open&&<div className="pr-body swap">
+      {resp.length===0
+        ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자가 되어 보세요!</div>
+        : <div className="pr-list">
+            {resp.map((r,i)=>(<div className="pr-row" key={r.id}>
+              <span className="pr-name">{i+1}</span>
+              <div className="pr-vals">
+                {fields.map(f=>{ const v=val(r,f); if(!v) return null;
+                  return (<div className="pr-val" key={f.id}>
+                    {fields.length>1&&<span className="pr-flabel">{f.label||"응답"}</span>}
+                    <span className="pr-vtext">{v}</span>
+                  </div>); })}
+              </div>
+            </div>))}
+          </div>}
+      <div className="pr-foot">
+        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} aria-label="공개 응답 새로고침" title="새로고침"><Icon n="refresh" size={15}/></button>}
+        {updatedAt&&<span>마지막 확인 {updatedAt}</span>}
+      </div>
+    </div>}
+  </div>);
+}
+
+/* ===== 신청서 폼 — 참가자 작성 / 관리자 응답 보기 ===== */
+function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
+  const form=ann.form||{}; const fields=form.fields||[];
+  const [ans,setAns]=useState({}); const [registrationName,setRegistrationName]=useState(""); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
+  const set=(id,v)=>setAns(a=>({...a,[id]:v}));
+  const toggleMulti=(id,opt)=>setAns(a=>{ const cur=Array.isArray(a[id])?a[id]:[]; return {...a,[id]:cur.includes(opt)?cur.filter(x=>x!==opt):[...cur,opt]}; });
+  const submit=async()=>{
+    if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요."); return; }
+    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답이 비어 있습니다.",`'${f.label||"질문"}' 항목에 답해 주세요.`); return; } } }
+    setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
+    if(typeof ok==="string"){ siteAlert(ok); return; }
+    if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
+    setDone(true);
+    // L5: 신청이 접수된 순간 흰 빛이 한 번 퍼진다
+    requestAnimationFrame(()=>celebrate?.(...centerOf(document.querySelector(".ff-ok"))));
+  };
+  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={30}/></div><h4>신청이 접수되었습니다.</h4><p>신청해 주셔서 감사합니다.<br/>결과와 안내는 공지로 알려 드립니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
+  return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해 주세요." onClose={onClose}>
+    <div className="swap" key="fill">
+      {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
+      {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력하세요." autoComplete="name"/></div>}
+      {fields.length===0&&!form.eventId&&<p className="bk-hint">등록된 질문이 없습니다.</p>}
+      {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
+        <label className="ff-q-label">{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
+        {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요."/>}
+        {f.type==="long"&&<textarea value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요."/>}
+        {f.type==="single"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+(ans[f.id]===op?" sel":"")} key={oi}><input type="radio" name={f.id} checked={ans[f.id]===op} onChange={()=>set(f.id,op)}/><span>{op}</span></label>))}</div>}
+        {f.type==="multi"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+((Array.isArray(ans[f.id])&&ans[f.id].includes(op))?" sel":"")} key={oi}><input type="checkbox" checked={Array.isArray(ans[f.id])&&ans[f.id].includes(op)} onChange={()=>toggleMulti(f.id,op)}/><span>{op}</span></label>))}</div>}
+        {f.type==="dropdown"&&<Dropdown value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택하세요."/>}
+      </div>))}
+      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose} disabled={busy}>취소</button><button className="btn btn-primary" onClick={submit} disabled={busy}>{busy?"제출 중… 잠시만요.":"제출하기"}</button></div>
+    </div>
+  </Modal>);
+}
+function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride }){
+  const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const resp=[...(normalized?responsesOverride:(form.responses||[]))].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const cell=(v)=>Array.isArray(v)?v.join(", "):(v==null?"":String(v));
+  const csv=()=>{
+    const esc=(s)=>{ s=String(s==null?"":s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+    const header=["번호","제출 시각",...(normalized?["참가자 이름"]:[]),...fields.map(f=>f.label||"질문")];
+    const rows=resp.map((r,i)=>[i+1,fmtDT(r.createdAt),...(normalized?[r.registrationName||""]:[]),...fields.map(f=>cell(r.answers&&r.answers[f.id]))]);
+    const text="\ufeff"+[header,...rows].map(row=>row.map(esc).join(",")).join("\r\n");
+    const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
+  };
+  return (<Modal title="신청 응답" hint={ann.title} onClose={onClose}>
+    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<button className="btn btn-ghost btn-sm" onClick={csv}><Icon n="download" size={15}/>CSV(엑셀) 내려받기</button>}</div>
+    {resp.length===0?<div className="fr-empty">아직 접수된 신청이 없습니다.</div>:
+      <div className="fr-scroll"><table className="fr-tbl">
+        <thead><tr><th>#</th><th>제출 시각</th>{normalized&&<th>참가자 이름</th>}{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
+        <tbody>{resp.map((r,i)=>(<tr key={r.id}>
+          <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
+          {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
+          <td>{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={14}/></button>}</td>
+        </tr>))}</tbody>
+      </table></div>}
+    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button></div>
+  </Modal>);
+}

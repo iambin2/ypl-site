@@ -1,0 +1,1200 @@
+import { CUP_RULES, DEFAULT_REGULATION_ID, REGULATIONS, TYPE_OPTIONS, KO } from "../data/index.js";
+import { toID } from "./championsData.js";
+
+export const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"];
+export const STAT_LABELS = { hp: "HP", atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드" };
+export const TEAM_STORAGE_KEY = "ypl-team-builder:saved-teams:v1";
+export const DRAFT_STORAGE_KEY = "ypl-team-builder:working-draft:v1";
+export const TEAM_SCHEMA_VERSION = 3;
+export const DRAFT_SCHEMA_VERSION = 3;
+export const LEGACY_PERSISTED_REGULATION_ID = "m-b";
+export const DRAFT_SAVE_DELAY_MS = 180;
+
+export const ALIGNMENTS = [
+  { id: "serious", name: "Serious", plus: null, minus: null },
+  { id: "lonely", name: "Lonely", plus: "atk", minus: "def" },
+  { id: "adamant", name: "Adamant", plus: "atk", minus: "spa" },
+  { id: "naughty", name: "Naughty", plus: "atk", minus: "spd" },
+  { id: "brave", name: "Brave", plus: "atk", minus: "spe" },
+  { id: "bold", name: "Bold", plus: "def", minus: "atk" },
+  { id: "impish", name: "Impish", plus: "def", minus: "spa" },
+  { id: "lax", name: "Lax", plus: "def", minus: "spd" },
+  { id: "relaxed", name: "Relaxed", plus: "def", minus: "spe" },
+  { id: "modest", name: "Modest", plus: "spa", minus: "atk" },
+  { id: "mild", name: "Mild", plus: "spa", minus: "def" },
+  { id: "rash", name: "Rash", plus: "spa", minus: "spd" },
+  { id: "quiet", name: "Quiet", plus: "spa", minus: "spe" },
+  { id: "calm", name: "Calm", plus: "spd", minus: "atk" },
+  { id: "gentle", name: "Gentle", plus: "spd", minus: "def" },
+  { id: "careful", name: "Careful", plus: "spd", minus: "spa" },
+  { id: "sassy", name: "Sassy", plus: "spd", minus: "spe" },
+  { id: "timid", name: "Timid", plus: "spe", minus: "atk" },
+  { id: "hasty", name: "Hasty", plus: "spe", minus: "def" },
+  { id: "jolly", name: "Jolly", plus: "spe", minus: "spa" },
+  { id: "naive", name: "Naive", plus: "spe", minus: "spd" },
+];
+
+export const DATA_ID_OVERRIDES = {
+  "Raichu [Alolan Form]": "raichualola",
+  "Ninetales [Alolan Form]": "ninetalesalola",
+  "Arcanine [Hisuian Form]": "arcaninehisui",
+  "Slowbro [Galarian Form]": "slowbrogalar",
+  "Tauros [Paldean Form (Combat Breed)]": "taurospaldeacombat",
+  "Tauros [Paldean Form (Blaze Breed)]": "taurospaldeablaze",
+  "Tauros [Paldean Form (Aqua Breed)]": "taurospaldeaaqua",
+  "Typhlosion [Hisuian Form]": "typhlosionhisui",
+  "Slowking [Galarian Form]": "slowkinggalar",
+  "Heat Rotom": "rotomheat",
+  "Wash Rotom": "rotomwash",
+  "Frost Rotom": "rotomfrost",
+  "Fan Rotom": "rotomfan",
+  "Mow Rotom": "rotommow",
+  "Samurott [Hisuian Form]": "samurotthisui",
+  "Zoroark [Hisuian Form]": "zoroarkhisui",
+  "Stunfisk [Galarian Form]": "stunfiskgalar",
+  "Meowstic [Female]": "meowsticf",
+  "Goodra [Hisuian Form]": "goodrahisui",
+  "Gourgeist [Small Variety]": "gourgeistsmall",
+  "Gourgeist [Large Variety]": "gourgeistlarge",
+  "Gourgeist [Jumbo Variety]": "gourgeistsuper",
+  "Avalugg [Hisuian Form]": "avalugghisui",
+  "Decidueye [Hisuian Form]": "decidueyehisui",
+  "Lycanroc [Midnight Form]": "lycanrocmidnight",
+  "Lycanroc [Dusk Form]": "lycanrocdusk",
+  "Polteageist [Antique Form]": "polteageistantique",
+  "Basculegion [Female]": "basculegionf",
+  "Maushold [Family of Four]": "mausholdfour",
+  "Sinistcha [Masterpiece Form]": "sinistchamasterpiece",
+  "Persian [Alolan Form]": "persianalola",
+  "Toxtricity [Low Key Form]": "toxtricitylowkey",
+  "Indeedee [Female]": "indeedeef",
+  "Squawkabilly [Blue Plumage]": "squawkabillyblue",
+  "Squawkabilly [Yellow Plumage]": "squawkabillyyellow",
+  "Squawkabilly [White Plumage]": "squawkabillywhite",
+};
+
+export const SPRITE_SLUG_OVERRIDES = {
+  "Raichu [Alolan Form]": "raichu-alola",
+  "Ninetales [Alolan Form]": "ninetales-alola",
+  "Arcanine [Hisuian Form]": "arcanine-hisui",
+  "Slowbro [Galarian Form]": "slowbro-galar",
+  "Tauros [Paldean Form (Combat Breed)]": "tauros-paldeacombat",
+  "Tauros [Paldean Form (Blaze Breed)]": "tauros-paldeablaze",
+  "Tauros [Paldean Form (Aqua Breed)]": "tauros-paldeaaqua",
+  "Typhlosion [Hisuian Form]": "typhlosion-hisui",
+  "Slowking [Galarian Form]": "slowking-galar",
+  "Heat Rotom": "rotom-heat",
+  "Wash Rotom": "rotom-wash",
+  "Frost Rotom": "rotom-frost",
+  "Fan Rotom": "rotom-fan",
+  "Mow Rotom": "rotom-mow",
+  "Samurott [Hisuian Form]": "samurott-hisui",
+  "Zoroark [Hisuian Form]": "zoroark-hisui",
+  "Stunfisk [Galarian Form]": "stunfisk-galar",
+  "Meowstic [Female]": "meowstic-f",
+  "Goodra [Hisuian Form]": "goodra-hisui",
+  "Gourgeist [Small Variety]": "gourgeist-small",
+  "Gourgeist [Large Variety]": "gourgeist-large",
+  "Gourgeist [Jumbo Variety]": "gourgeist-super",
+  "Avalugg [Hisuian Form]": "avalugg-hisui",
+  "Decidueye [Hisuian Form]": "decidueye-hisui",
+  "Lycanroc [Midnight Form]": "lycanroc-midnight",
+  "Lycanroc [Dusk Form]": "lycanroc-dusk",
+  "Basculegion [Female]": "basculegion-f",
+  "Mr. Rime": "mrrime",
+  "Kommo-o": "kommoo",
+  "Persian [Alolan Form]": "persian-alola",
+  "Toxtricity [Low Key Form]": "toxtricity-lowkey",
+  "Indeedee [Female]": "indeedee-f",
+  "Squawkabilly [Blue Plumage]": "squawkabilly-blue",
+  "Squawkabilly [Yellow Plumage]": "squawkabilly-yellow",
+  "Squawkabilly [White Plumage]": "squawkabilly-white",
+};
+
+const SPRITE_SLUG_BY_DATA_ID = Object.fromEntries(
+  Object.entries(DATA_ID_OVERRIDES)
+    .map(([name, id]) => [id, SPRITE_SLUG_OVERRIDES[name]])
+    .filter(([, slug]) => Boolean(slug))
+);
+
+export const TYPE_KO = Object.fromEntries(TYPE_OPTIONS.map(type => [type.english, type.korean]));
+export const CATEGORY_KO = { Physical: "물리", Special: "특수", Status: "변화" };
+
+export function makeUid(prefix = "team") {
+  if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function canonicalBaseName(name = "") {
+  const mega = name.match(/^(.+?)-Mega(?:-[A-Z])?$/i);
+  if (mega) return mega[1];
+  const regional = name.match(/^(.+?) \[(Alolan|Hisuian|Galarian) Form\]$/);
+  if (regional) return regional[1];
+  if (name.startsWith("Tauros [")) return "Tauros";
+  if (/^(Heat|Wash|Frost|Fan|Mow) Rotom$/.test(name)) return "Rotom";
+  for (const base of ["Florges", "Furfrou", "Meowstic", "Gourgeist", "Lycanroc", "Polteageist", "Alcremie", "Basculegion", "Maushold", "Sinistcha", "Vivillon", "Toxtricity", "Indeedee", "Squawkabilly"]) {
+    if (name.startsWith(`${base} [`)) return base;
+  }
+  return name;
+}
+
+export function speciesFallbackKey(pokemon) {
+  return toID(canonicalBaseName(pokemon?.name));
+}
+
+export function dataId(pokemon) {
+  if (!pokemon) return "";
+  return DATA_ID_OVERRIDES[pokemon.name] || toID(pokemon.name.replace(/\s*\[.*\]$/, ""));
+}
+
+function formIdentityCandidates(pokemon) {
+  if (!pokemon?.name) return [];
+  const name = String(pokemon.name);
+  const base = toID(canonicalBaseName(name));
+  const candidates = [DATA_ID_OVERRIDES[name], dataId(pokemon), toID(name)].filter(Boolean);
+  const form = name.match(/\[([^\]]+)\]/)?.[1] || "";
+  if (!form) return [...new Set(candidates)];
+
+  const words = form.toLowerCase().match(/[a-z0-9]+/g) || [];
+  const generic = new Set(["form", "breed", "flower", "trim", "pattern", "variety", "cream"]);
+  const meaningful = words.filter(word => !generic.has(word));
+  for (const word of meaningful) candidates.push(`${base}${word}`);
+  for (let length = 2; length <= meaningful.length; length += 1) {
+    candidates.push(`${base}${meaningful.slice(0, length).join("")}`);
+  }
+  if (meaningful.length > 1) candidates.push(`${base}${meaningful[meaningful.length - 1]}`);
+
+  const regionalAliases = {
+    alolan: "alola",
+    hisuian: "hisui",
+    galarian: "galar",
+    female: "f",
+  };
+  for (const word of words) {
+    if (regionalAliases[word]) candidates.push(`${base}${regionalAliases[word]}`);
+  }
+  return [...new Set(candidates)];
+}
+
+function isMegaRecord(record) {
+  return Boolean(record?.requiredItem && /^Mega(?:-|$)/i.test(String(record?.forme || "")));
+}
+
+export function isMegaPokemon(detailData, pokemon) {
+  return isMegaRecord(dexRecord(detailData, pokemon));
+}
+
+export function requiredItemForPokemon(detailData, pokemon) {
+  const record = dexRecord(detailData, pokemon);
+  return isMegaRecord(record) ? toID(record.requiredItem) : "";
+}
+
+function megaPokemonEntry(record) {
+  return {
+    id: `mega-${record.id}`,
+    name: record.name,
+    baseSpecies: record.baseSpecies,
+    battleFormId: record.id,
+    requiredItemId: toID(record.requiredItem),
+    isMegaForm: true,
+    isNewInMB: false,
+  };
+}
+
+export function pokemonPoolForRegulation(regulation, detailData, legalItems = [], { includeUnavailableMega = false } = {}) {
+  const basePool = regulation?.pokemon || [];
+  if (!detailData?.pokedex) return [...basePool];
+  const allowedBaseNames = new Set(basePool.map(pokemon => pokemon.name));
+  const existingNames = new Set(basePool.map(pokemon => pokemon.name));
+  const legalItemIds = new Set((legalItems || []).map(item => item.id));
+  const megaForms = Object.values(detailData.pokedex)
+    .filter(record => isMegaRecord(record))
+    .filter(record => allowedBaseNames.has(record.baseSpecies))
+    .filter(record => !existingNames.has(record.name))
+    .filter(record => includeUnavailableMega || legalItemIds.has(toID(record.requiredItem)))
+    .map(megaPokemonEntry);
+  return [...basePool, ...megaForms];
+}
+
+export function pokemonAllowedInRegulation({ pokemon, regulation, detailData, legalItems = [] } = {}) {
+  const allowedNames = new Set(regulation?.pokemon?.map(entry => entry.name) || []);
+  if (!isMegaPokemon(detailData, pokemon)) return allowedNames.has(pokemon?.name);
+  const details = dexRecord(detailData, pokemon);
+  if (!allowedNames.has(details?.baseSpecies)) return false;
+  const legalItemIds = new Set((legalItems || []).map(item => item.id));
+  return legalItemIds.has(requiredItemForPokemon(detailData, pokemon));
+}
+
+/**
+ * Resolve only IDs that are present in the loaded Pokédex. Regulation ids
+ * such as mb-1 are list indexes, not official form identities, so they are
+ * intentionally never used as a snapshot pokemon_id.
+ */
+export function resolveCanonicalPokemonId(detailData, pokemon) {
+  if (!detailData?.pokedex || !pokemon?.name) return null;
+  const isForm = /\[[^\]]+\]/.test(String(pokemon.name)) || / Rotom$/.test(String(pokemon.name)) || /-Mega(?:-[A-Z])?$/i.test(String(pokemon.name));
+  const baseId = toID(canonicalBaseName(pokemon.name));
+  const candidates = formIdentityCandidates(pokemon);
+  for (const candidate of candidates) {
+    const record = detailData.pokedex[candidate];
+    if (!record) continue;
+    if (isForm && candidate === baseId) continue;
+    return record.id || candidate;
+  }
+
+  // Showdown intentionally does not create separate Pokédex records for
+  // cosmetic formes. Resolve only variants declared by the base record back
+  // to that stable base ID; unknown or battle-distinct forms still fail closed.
+  const baseRecord = detailData.pokedex[baseId];
+  const candidateSet = new Set(candidates);
+  if (isForm && baseRecord?.cosmeticFormes?.some(form => candidateSet.has(toID(form)))) {
+    return baseRecord.id || baseId;
+  }
+
+  // Some data snapshots expose a key different from the record id. Accept an
+  // exact normalized form name only when the record itself exists.
+  const normalizedName = toID(pokemon.name.replace(/\[|\]/g, " "));
+  const match = Object.values(detailData.pokedex).find(record => {
+    if (!record?.id || (isForm && record.id === baseId)) return false;
+    return toID(record.name) === normalizedName;
+  });
+  return match?.id || null;
+}
+
+function findPokemonBySavedIdentity(restorationPool, { pokemonId = "", pokemonName = "" } = {}, detailData = null) {
+  const named = restorationPool.find(entry => entry.name === pokemonName);
+  if (named && (!pokemonId || resolveCanonicalPokemonId(detailData, named) === pokemonId)) return named;
+  return restorationPool.find(entry => pokemonId && resolveCanonicalPokemonId(detailData, entry) === pokemonId)
+    || named
+    || null;
+}
+
+export function dexRecord(detailData, pokemon) {
+  if (!detailData || !pokemon) return null;
+  const exact = detailData.pokedex?.[dataId(pokemon)];
+  if (exact) return exact;
+  if (/-Mega(?:-[A-Z])?$/i.test(String(pokemon.name || ""))) return null;
+  return detailData.pokedex?.[speciesFallbackKey(pokemon)] || null;
+}
+
+export function speciesIdentity(detailData, pokemon) {
+  const dex = dexRecord(detailData, pokemon);
+  return dex?.num != null ? `dex-${dex.num}` : `species-${speciesFallbackKey(pokemon)}`;
+}
+
+export function spriteSlug(name = "") {
+  if (SPRITE_SLUG_OVERRIDES[name]) return SPRITE_SLUG_OVERRIDES[name];
+  if (/-Mega(?:-[A-Z])?$/i.test(name)) {
+    const [base, ...forme] = name.split("-");
+    return `${toID(base)}-${toID(forme.join(""))}`;
+  }
+  const canonicalFormSlug = SPRITE_SLUG_BY_DATA_ID[toID(name)];
+  if (canonicalFormSlug) return canonicalFormSlug;
+  return name.toLowerCase().replace(/\[.*?\]/g, "").replace(/[.'’]/g, "").replace(/[^a-z0-9]+/g, "").trim();
+}
+
+// PokeOS HOME-style 3D renders, self-hosted by scripts/build-sprites.py as base-forme ids.
+export function spriteUrlForSlug(slug) {
+  return `${import.meta.env?.BASE_URL ?? "/"}sprites/pokemon/${slug}.webp`;
+}
+
+export function spriteUrl(name) {
+  return spriteUrlForSlug(spriteSlug(name));
+}
+
+// <img onError>: try the caller's fallback once, then hide.
+export function onSpriteError(fallback = "") {
+  return event => {
+    const img = event.currentTarget;
+    if (fallback && img.getAttribute("src") !== fallback) img.src = fallback;
+    else img.style.visibility = "hidden";
+  };
+}
+
+export function makeMember(pokemon, { detailData } = {}) {
+  return {
+    uid: makeUid("member"),
+    pokemon,
+    pokemonId: "",
+    resolutionState: "resolved",
+    ability: "",
+    alignment: "serious",
+    statPoints: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    item: requiredItemForPokemon(detailData, pokemon),
+    moves: ["", "", "", ""],
+  };
+}
+
+export function replaceMemberPokemon(member, pokemon, { detailData } = {}) {
+  const details = dexRecord(detailData, pokemon);
+  return {
+    ...member,
+    pokemon,
+    pokemonId: resolveCanonicalPokemonId(detailData, pokemon) || "",
+    resolutionState: "resolved",
+    originalPokemonName: pokemon?.name || "",
+    ability: details?.abilities?.[0] || "",
+    item: requiredItemForPokemon(detailData, pokemon) || member?.item || "",
+  };
+}
+
+export function serializeMembers(team, { detailData } = {}) {
+  return (team || []).map(member => ({
+    pokemonName: member.pokemon?.name || "",
+    pokemonId: member.resolutionState === "unresolved"
+      ? member.pokemonId || ""
+      : resolveCanonicalPokemonId(detailData, member.pokemon) || member.pokemonId || "",
+    resolutionState: member.resolutionState || "resolved",
+    ability: member.ability || "",
+    alignment: member.alignment || "serious",
+    statPoints: Object.fromEntries(STAT_KEYS.map(key => [key, Number(member.statPoints?.[key] || 0)])),
+    item: requiredItemForPokemon(detailData, member.pokemon) || member.item || "",
+    moves: Array.from({ length: 4 }, (_, index) => member.moves?.[index] || ""),
+  })).filter(member => member.pokemonName || member.resolutionState === "unresolved");
+}
+
+function normalizeMembers(members) {
+  return (Array.isArray(members) ? members : []).slice(0, 6).map(member => ({
+    ...(member && typeof member === "object" ? member : {}),
+    pokemonName: String(member?.pokemonName || ""),
+    pokemonId: String(member?.pokemonId || ""),
+    resolutionState: member?.resolutionState === "unresolved" ? "unresolved" : "resolved",
+    ability: String(member?.ability || ""),
+    alignment: String(member?.alignment || "serious"),
+    statPoints: Object.fromEntries(STAT_KEYS.map(key => [key, Math.max(0, Math.min(32, Number(member?.statPoints?.[key]) || 0))])),
+    item: String(member?.item || ""),
+    moves: Array.from({ length: 4 }, (_, index) => String(member?.moves?.[index] || "")),
+  }));
+}
+
+export function migrateSavedTeam(raw) {
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.members)) return null;
+  const sourceVersion = Number(raw.schemaVersion) || 1;
+  return {
+    ...raw,
+    schemaVersion: sourceVersion > TEAM_SCHEMA_VERSION ? sourceVersion : TEAM_SCHEMA_VERSION,
+    members: normalizeMembers(raw.members),
+  };
+}
+
+export function migrateDraft(raw, regulations) {
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.members)) return null;
+  const regulationId = String(raw.regulationId || LEGACY_PERSISTED_REGULATION_ID);
+  if (!regulations?.[regulationId]) return null;
+  const sourceVersion = Number(raw.schemaVersion) || 1;
+  return {
+    ...raw,
+    schemaVersion: sourceVersion > DRAFT_SCHEMA_VERSION ? sourceVersion : DRAFT_SCHEMA_VERSION,
+    regulationId,
+    members: normalizeMembers(raw.members),
+  };
+}
+
+export function normalizeSavedTeam(raw) {
+  const migrated = migrateSavedTeam(raw);
+  if (!migrated || !migrated.id) return null;
+  const cupRuleId = CUP_RULES[String(migrated.cupRuleId || "none")] ? String(migrated.cupRuleId || "none") : "none";
+  const assignedType = TYPE_OPTIONS.some(type => type.id === String(migrated.cupRuleSettings?.assignedType || "")) ? String(migrated.cupRuleSettings?.assignedType || "") : "";
+  return {
+    ...migrated,
+    schemaVersion: migrated.schemaVersion,
+    id: String(migrated.id),
+    name: String(migrated.name || "이름 없는 팀").slice(0, 40),
+    regulationId: String(migrated.regulationId || LEGACY_PERSISTED_REGULATION_ID),
+    cupRuleId,
+    cupRuleSettings: { assignedType: CUP_RULES[cupRuleId]?.kind === "monotype" ? assignedType : "" },
+    createdAt: String(migrated.createdAt || new Date().toISOString()),
+    updatedAt: String(migrated.updatedAt || migrated.createdAt || new Date().toISOString()),
+    members: migrated.members,
+  };
+}
+
+export function normalizeDraft(raw, regulations) {
+  const migrated = migrateDraft(raw, regulations);
+  if (!migrated) return null;
+  const regulationId = migrated.regulationId;
+  const cupRuleId = CUP_RULES[String(migrated.cupRuleId || "none")] ? String(migrated.cupRuleId || "none") : "none";
+  const assignedType = TYPE_OPTIONS.some(type => type.id === String(migrated.cupRuleSettings?.assignedType || "")) ? String(migrated.cupRuleSettings?.assignedType || "") : "";
+  return {
+    ...migrated,
+    schemaVersion: migrated.schemaVersion,
+    regulationId,
+    cupRuleId,
+    cupRuleSettings: { assignedType: CUP_RULES[cupRuleId]?.kind === "monotype" ? assignedType : "" },
+    activeSavedTeamId: migrated.activeSavedTeamId ? String(migrated.activeSavedTeamId) : null,
+    dirty: Boolean(migrated.dirty),
+    selectedIndex: Math.max(0, Number(migrated.selectedIndex) || 0),
+    savedAt: String(migrated.savedAt || ""),
+    members: migrated.members,
+  };
+}
+
+export function memberFromSaved(savedMember, regulation, { detailData = null, legalItems = [] } = {}) {
+  const restorationPool = pokemonPoolForRegulation(regulation, detailData, legalItems, { includeUnavailableMega: true });
+  const pokemon = findPokemonBySavedIdentity(restorationPool, savedMember, detailData);
+  const unresolved = !pokemon;
+  const fallbackPokemon = pokemon || {
+    id: savedMember?.pokemonId || "",
+    name: String(savedMember?.pokemonName || "확인할 수 없는 포켓몬"),
+    isNewInMB: false,
+  };
+  return {
+    ...makeMember(fallbackPokemon),
+    pokemonId: String(savedMember?.pokemonId || ""),
+    resolutionState: unresolved ? "unresolved" : "resolved",
+    originalPokemonName: String(savedMember?.pokemonName || ""),
+    ability: savedMember?.ability || "",
+    alignment: ALIGNMENTS.some(n => n.id === savedMember?.alignment) ? savedMember.alignment : "serious",
+    statPoints: Object.fromEntries(STAT_KEYS.map(key => [key, Math.max(0, Math.min(32, Number(savedMember?.statPoints?.[key]) || 0))])),
+    item: requiredItemForPokemon(detailData, pokemon) || savedMember?.item || "",
+    moves: Array.from({ length: 4 }, (_, index) => savedMember?.moves?.[index] || ""),
+  };
+}
+
+export function resolveCanonicalPokemonIdentity(member, { detailData } = {}) {
+  const pokemon = member?.pokemon || member;
+  const nameSnapshot = String(member?.originalPokemonName || pokemon?.name || "");
+  if (!pokemon?.name || member?.resolutionState === "unresolved") {
+    return { pokemonId: null, speciesIdentity: null, nameSnapshot, resolved: false };
+  }
+  const storedId = member?.pokemonId && (!detailData || detailData.pokedex?.[member.pokemonId]) ? member.pokemonId : null;
+  const pokemonId = storedId || resolveCanonicalPokemonId(detailData, pokemon);
+  return {
+    pokemonId: pokemonId || null,
+    speciesIdentity: speciesIdentity(detailData, pokemon),
+    nameSnapshot,
+    resolved: Boolean(pokemonId),
+  };
+}
+
+function snapshotCupRuleSettings(settings = {}) {
+  return Object.fromEntries(Object.entries(settings || {}).filter(([key]) => key !== "assignedType"));
+}
+
+function abilityId(value) {
+  return value ? toID(value) : null;
+}
+
+export function toTeamSnapshotV1({
+  team = [],
+  regulationId = null,
+  cupRuleId = null,
+  cupRuleSettings = {},
+  detailData = null,
+  sourceType = "manual",
+  sourceReference = null,
+} = {}) {
+  const errors = [];
+  const members = team.map((member, index) => {
+    const identity = resolveCanonicalPokemonIdentity(member, { detailData });
+    if (!identity.resolved) {
+      errors.push(`${identity.nameSnapshot || `슬롯 ${index + 1}`}의 포켓몬 정보를 확인할 수 없습니다.`);
+      return null;
+    }
+    const points = member.statPoints || {};
+    const moves = Array.from({ length: 4 }, (_, moveIndex) => member.moves?.[moveIndex] || null);
+    return {
+      slot: index + 1,
+      pokemon_id: identity.pokemonId,
+      pokemon_name_snapshot: identity.nameSnapshot,
+      ability_id: abilityId(member.ability),
+      nature_id: member.alignment || null,
+      stat_hp: Number(points.hp || 0),
+      stat_atk: Number(points.atk || 0),
+      stat_def: Number(points.def || 0),
+      stat_spa: Number(points.spa || 0),
+      stat_spd: Number(points.spd || 0),
+      stat_spe: Number(points.spe || 0),
+      item_id: requiredItemForPokemon(detailData, member.pokemon) || member.item || null,
+      move_1_id: moves[0],
+      move_2_id: moves[1],
+      move_3_id: moves[2],
+      move_4_id: moves[3],
+    };
+  });
+
+  if (errors.length) return { ok: false, errors };
+  return {
+    ok: true,
+    snapshot: {
+      schema_version: 1,
+      regulation_id: regulationId,
+      cup_rule_id: cupRuleId,
+      cup_rule_settings: snapshotCupRuleSettings(cupRuleSettings),
+      source_type: sourceType,
+      source_reference: sourceReference,
+    },
+    members,
+  };
+}
+
+function abilityFromId(detailData, pokemon, id) {
+  if (!id) return "";
+  const details = dexRecord(detailData, pokemon);
+  return details?.abilities?.find(value => toID(value) === id) || id;
+}
+
+export function fromTeamSnapshotV1({ snapshot, members = [], regulation, detailData = null } = {}) {
+  if (!snapshot || Number(snapshot.schema_version) !== 1 || !Array.isArray(members)) {
+    return { ok: false, errors: ["지원하지 않는 제출 팀 형식입니다."] };
+  }
+  const team = members.slice().sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0)).map(member => {
+    const restorationPool = pokemonPoolForRegulation(regulation, detailData, [], { includeUnavailableMega: true });
+    const pokemon = findPokemonBySavedIdentity(restorationPool, {
+      pokemonId: member.pokemon_id,
+      pokemonName: member.pokemon_name_snapshot,
+    }, detailData);
+    const resolvedId = pokemon ? resolveCanonicalPokemonId(detailData, pokemon) : null;
+    const canonicalMismatch = Boolean(member.pokemon_id && detailData && resolvedId !== member.pokemon_id);
+    const savedMember = {
+      pokemonId: member.pokemon_id || "",
+      pokemonName: member.pokemon_name_snapshot || "",
+      ability: abilityFromId(detailData, pokemon, member.ability_id),
+      alignment: member.nature_id || "serious",
+      statPoints: {
+        hp: member.stat_hp,
+        atk: member.stat_atk,
+        def: member.stat_def,
+        spa: member.stat_spa,
+        spd: member.stat_spd,
+        spe: member.stat_spe,
+      },
+      item: member.item_id || "",
+      moves: [member.move_1_id, member.move_2_id, member.move_3_id, member.move_4_id],
+    };
+    const restored = memberFromSaved(savedMember, regulation, { detailData });
+    if (canonicalMismatch) restored.resolutionState = "unresolved";
+    return restored;
+  });
+  return { ok: true, team };
+}
+
+export function membersRemovedByRuleChange({ team = [], regulation, cupRuleId = "none", assignedTypeId = "", detailData = null } = {}) {
+  const allowedNames = new Set(regulation?.pokemon?.map(pokemon => pokemon.name) || []);
+  const rule = CUP_RULES[cupRuleId] || CUP_RULES.none;
+  return team.filter(member => {
+    const details = dexRecord(detailData, member.pokemon);
+    const allowedByName = allowedNames.has(member.pokemon?.name);
+    const allowedMegaBase = isMegaRecord(details) && allowedNames.has(details.baseSpecies);
+    if (!allowedByName && !allowedMegaBase) return true;
+    if (rule.kind === "monotype" && assignedTypeId && detailData) {
+      return !pokemonMatchesCupRule({ pokemon: member.pokemon, cupRuleId, assignedTypeId, detailData });
+    }
+    return false;
+  });
+}
+
+export function alignmentFor(member) {
+  return ALIGNMENTS.find(a => a.id === member?.alignment) || ALIGNMENTS[0];
+}
+
+export function calculatedStat(base, sp, key, alignment) {
+  if (base == null) return "—";
+  const raw = key === "hp" ? base + Number(sp || 0) + 75 : base + Number(sp || 0) + 20;
+  if (key === "hp") return raw;
+  const nature = alignment || ALIGNMENTS[0];
+  const modifier = nature.plus === key ? 1.1 : nature.minus === key ? 0.9 : 1;
+  return Math.floor(raw * modifier);
+}
+
+export function natureName(alignment) {
+  return KO.natures?.[toID(alignment?.name)] || alignment?.name || "";
+}
+
+export function abilityName(english) {
+  return KO.abilities?.[toID(english)] || english || "";
+}
+
+export function bilingualName(korean, english) {
+  if (!english) return korean || "";
+  if (!korean || korean === english) return english;
+  return `${korean} (${english})`;
+}
+
+export function alignmentDisplay(alignment) {
+  const effect = alignment?.plus ? `, ${STAT_LABELS[alignment.plus]}↑ ${STAT_LABELS[alignment.minus]}↓` : ", 보정 없음";
+  return `${bilingualName(natureName(alignment), alignment?.name)}${effect}`;
+}
+
+// Official Korean form names (PokeAPI pokemon_form_names, pokemonkorea.co.kr dex).
+const FORM_NAMES_KO = {
+  "Paldean Form (Combat Breed)": "팔데아의 모습, 컴뱃종",
+  "Paldean Form (Blaze Breed)": "팔데아의 모습, 블레이즈종",
+  "Paldean Form (Aqua Breed)": "팔데아의 모습, 워터종",
+  "Female": "암컷",
+  "Midnight Form": "한밤중의 모습",
+  "Dusk Form": "황혼의 모습",
+  "Family of Four": "4마리 가족",
+  "Low Key Form": "로우한 모습",
+  "Blue Plumage": "블루 페더",
+  "Yellow Plumage": "옐로 페더",
+  "White Plumage": "화이트 페더",
+  "High Plains Pattern": "황야의 모양",
+  "Yellow Flower": "노란 꽃",
+  "Orange Flower": "오렌지색 꽃",
+  "Blue Flower": "파란 꽃",
+  "White Flower": "하얀 꽃",
+  "Matron Trim": "마담컷",
+  "Dandy Trim": "젠틀컷",
+  "Small Variety": "작은 사이즈",
+  "Large Variety": "큰 사이즈",
+  "Jumbo Variety": "특대 사이즈",
+  "Antique Form": "진작폼",
+  "Ruby Cream": "밀키루비",
+  "Matcha Cream": "밀키말차",
+  "Mint Cream": "밀키민트",
+  "Lemon Cream": "밀키레몬",
+  "Salted Cream": "밀키솔트",
+  "Ruby Swirl": "루비믹스",
+  "Caramel Swirl": "캐러멜믹스",
+  "Rainbow Swirl": "트리플믹스",
+  "Masterpiece Form": "걸작의 모습",
+};
+
+// PokeAPI spells Farfetch’d/Sirfetch’d with U+2019; Showdown names use ASCII.
+const speciesNameKey = name => String(name || "").toLowerCase().replace(/’/g, "'");
+
+export function localizedPokemonName(pokemon, koreanNames) {
+  if (!pokemon) return "";
+  const base = canonicalBaseName(pokemon.name);
+  const ko = koreanNames?.get?.(speciesNameKey(base));
+  if (!ko) return pokemon.name;
+  const mega = pokemon.name.match(/-Mega(?:-([A-Z]))?$/i);
+  // Official Korean mega naming, matching legacy record snapshots (메가리자몽X).
+  if (mega) return `메가${ko}${mega[1]?.toUpperCase() || ""}`;
+  if (pokemon.name.endsWith("[Alolan Form]")) return `알로라 ${ko}`;
+  if (pokemon.name.endsWith("[Hisuian Form]")) return `히스이 ${ko}`;
+  if (pokemon.name.endsWith("[Galarian Form]")) return `가라르 ${ko}`;
+  if (pokemon.name === "Heat Rotom") return `히트${ko}`;
+  if (pokemon.name === "Wash Rotom") return `워시${ko}`;
+  if (pokemon.name === "Frost Rotom") return `프로스트${ko}`;
+  if (pokemon.name === "Fan Rotom") return `스핀${ko}`;
+  if (pokemon.name === "Mow Rotom") return `커트${ko}`;
+  const form = FORM_NAMES_KO[pokemon.name.match(/\[(.+)\]$/)?.[1]];
+  return form ? `${ko} (${form})` : ko;
+}
+
+export function matchesLocalizedSearch(korean, english, query) {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return true;
+  const compact = toID(q);
+  return String(korean || "").toLowerCase().includes(q)
+    || String(english || "").toLowerCase().includes(q)
+    || (compact && (toID(korean).includes(compact) || toID(english).includes(compact)));
+}
+
+export function pokemonSearchAliases(pokemon, localizedName = "") {
+  const match = String(pokemon?.name || "").match(/^(.+?)-Mega(?:-([A-Z]))?$/i);
+  if (!match) return [];
+  const variant = match[2]?.toUpperCase() || "";
+  const localizedBase = String(localizedName || "").match(new RegExp(`^메가(.+)${variant}$`))?.[1] || "";
+  return [
+    `Mega ${match[1]}${variant ? ` ${variant}` : ""}`,
+    `${match[1]} Mega${variant ? ` ${variant}` : ""}`,
+    localizedBase ? `메가 ${localizedBase}${variant ? ` ${variant}` : ""}` : "",
+    localizedBase ? `${localizedBase} 메가${variant ? ` ${variant}` : ""}` : "",
+  ].filter(Boolean);
+}
+
+export function matchesPokemonSearch(pokemon, localizedName, query) {
+  return [localizedName, pokemon?.name, ...pokemonSearchAliases(pokemon, localizedName)]
+    .some(value => matchesLocalizedSearch(value, value, query));
+}
+
+// Showdown-style builder search: comma-separated terms, all must hold. A term
+// that exactly names a type, ability, or move filters by it; anything else is
+// a Pokémon name search.
+export function parseBuilderSearch(detailData, query) {
+  const compactKo = value => String(value || "").replace(/\s+/g, "").toLowerCase();
+  const findKo = (table, term) => Object.keys(table || {}).find(id => compactKo(table[id]) === compactKo(term));
+  return String(query || "").split(",").map(term => term.trim()).filter(Boolean).map(term => {
+    const id = toID(term);
+    if (detailData) {
+      const type = TYPE_OPTIONS.find(option => (id && option.id === id) || compactKo(option.korean) === compactKo(term));
+      if (type) return { kind: "type", id: type.id, label: type.korean };
+      const abilityId = (id && KO.abilities?.[id] ? id : "") || findKo(KO.abilities, term);
+      if (abilityId) return { kind: "ability", id: abilityId, label: KO.abilities[abilityId] };
+      const moveId = (id && detailData.moves?.[id] ? id : "") || findKo(KO.moves, term);
+      if (moveId) return { kind: "move", id: moveId, label: moveName(detailData, moveId) };
+    }
+    return { kind: "name", term };
+  });
+}
+
+export function matchesBuilderSearch(detailData, pokemon, localizedName, filters) {
+  return filters.every(filter => {
+    if (filter.kind === "name") return matchesPokemonSearch(pokemon, localizedName, filter.term);
+    const record = dexRecord(detailData, pokemon);
+    if (filter.kind === "type") return Boolean(record?.types?.some(type => toID(type) === filter.id));
+    if (filter.kind === "ability") return Boolean(record?.abilities?.some(ability => toID(ability) === filter.id));
+    return learnsetFor(detailData, pokemon).includes(filter.id);
+  });
+}
+
+// Everything the pool can be filtered by, in Showdown's group order.
+export function builderSearchVocabulary(detailData, pool) {
+  if (!detailData) return [];
+  const abilities = new Map();
+  const moves = new Set();
+  for (const pokemon of pool || []) {
+    for (const ability of dexRecord(detailData, pokemon)?.abilities || []) abilities.set(toID(ability), ability);
+    for (const move of learnsetFor(detailData, pokemon)) moves.add(move);
+  }
+  return [
+    ...TYPE_OPTIONS.map(type => ({ kind: "type", id: type.id, label: type.korean, english: type.english })),
+    ...[...moves].map(id => ({ kind: "move", id, label: moveName(detailData, id), english: moveEnglishName(detailData, id) })),
+    ...[...abilities].map(([id, english]) => ({ kind: "ability", id, label: abilityName(english), english })),
+  ];
+}
+
+// Start-of-name matches first, then mid-name matches, a few per group.
+export function builderSearchSuggestions(vocabulary, query, activeFilters = [], perKind = 4) {
+  const compactKo = value => String(value || "").replace(/\s+/g, "").toLowerCase();
+  const q = compactKo(query);
+  const qid = toID(query);
+  if (!q) return [];
+  const active = new Set(activeFilters.map(filter => `${filter.kind}:${filter.id}`));
+  const rank = entry => {
+    if (compactKo(entry.label).startsWith(q) || (qid && toID(entry.english).startsWith(qid))) return 0;
+    if (compactKo(entry.label).includes(q) || (qid && toID(entry.english).includes(qid))) return 1;
+    return -1;
+  };
+  const out = [];
+  for (const kind of ["type", "move", "ability"]) {
+    out.push(...vocabulary
+      .filter(entry => entry.kind === kind && !active.has(`${kind}:${entry.id}`))
+      .map(entry => ({ entry, score: rank(entry) }))
+      .filter(({ score }) => score >= 0)
+      .sort((a, b) => a.score - b.score || a.entry.label.localeCompare(b.entry.label, "ko"))
+      .slice(0, perKind)
+      .map(({ entry }) => entry));
+  }
+  return out;
+}
+
+export const BUILDER_SORTS = [
+  { id: "name", label: "이름순" },
+  { id: "hp", label: "HP" },
+  { id: "atk", label: "공격" },
+  { id: "def", label: "방어" },
+  { id: "spa", label: "특수공격" },
+  { id: "spd", label: "특수방어" },
+  { id: "spe", label: "스피드" },
+  { id: "bst", label: "종족값 합계" },
+];
+
+// Showdown sorts stats highest first; null means the Pokémon has no stat data.
+export function builderSortValue(detailData, pokemon, sortId) {
+  const stats = dexRecord(detailData, pokemon)?.baseStats;
+  if (!stats || sortId === "name") return null;
+  return sortId === "bst" ? Object.values(stats).reduce((sum, value) => sum + value, 0) : stats[sortId] ?? null;
+}
+
+export function itemEnglishName(detailData, id) {
+  return detailData?.items?.[id]?.name || id || "";
+}
+
+export function moveEnglishName(detailData, id) {
+  return detailData?.moves?.[id]?.name || prettifyID(id);
+}
+
+export function itemName(detailData, id) {
+  const english = itemEnglishName(detailData, id);
+  return KO.items?.[toID(english)] || KO.items?.[toID(id)] || english;
+}
+
+export function moveName(detailData, id) {
+  const english = moveEnglishName(detailData, id);
+  return KO.moves?.[toID(english)] || KO.moves?.[toID(id)] || english;
+}
+
+export function itemDisplay(detailData, id) {
+  return bilingualName(itemName(detailData, id), itemEnglishName(detailData, id));
+}
+
+export function learnsetFor(detailData, pokemon) {
+  if (!detailData || !pokemon) return [];
+  return detailData.learnsets?.[dataId(pokemon)] || detailData.learnsets?.[speciesFallbackKey(pokemon)] || [];
+}
+
+// Champions caps base PP at 20 and always grants full PP Ups (data/mods/champions/scripts.ts).
+// ponytail: ignores noPPBoosts moves, none of which are learnable in Champions today.
+export function championsPP(pp) {
+  return pp == null ? null : (Math.min(20, pp) / 5 + 1) * 4;
+}
+
+export function moveMetadata(detailData, id) {
+  const move = detailData?.moves?.[id];
+  if (!move) return moveName(detailData, id);
+  const power = move.category === "Status" ? "—" : move.basePower || "—";
+  const accuracy = move.accuracy === true ? "—" : move.accuracy ?? "—";
+  return `${TYPE_KO[move.type] || move.type || "—"}, ${CATEGORY_KO[move.category] || move.category || "—"}, 위력 ${power}, 명중 ${accuracy}, PP ${championsPP(move.pp) ?? "—"}`;
+}
+
+export function pokemonMatchesCupRule({ pokemon, cupRuleId, assignedTypeId, detailData }) {
+  const rule = CUP_RULES[cupRuleId] || CUP_RULES.none;
+  if (rule.kind === "none") return true;
+  if (rule.kind === "monotype") {
+    if (!assignedTypeId || !detailData) return false;
+    const selectedDetails = dexRecord(detailData, pokemon);
+    const details = isMegaRecord(selectedDetails)
+      ? detailData?.pokedex?.[toID(selectedDetails.baseSpecies)] || selectedDetails
+      : selectedDetails;
+    return Boolean(details?.types?.some(type => toID(type) === assignedTypeId));
+  }
+  return true;
+}
+
+export function resolveEventRuleSelection(eventContext) {
+  if (!eventContext) return null;
+
+  const regulationId = String(eventContext.regulation_id || "");
+  const cupRuleId = String(eventContext.cup_rule_id || "none");
+  if (!REGULATIONS[regulationId]) {
+    return { error: "대회의 레귤레이션을 현재 팀 빌더에서 확인할 수 없습니다." };
+  }
+  if (!CUP_RULES[cupRuleId]) {
+    return { error: "대회의 추가 룰을 현재 팀 빌더에서 확인할 수 없습니다." };
+  }
+
+  return { regulationId, cupRuleId };
+}
+
+export function formatSavedDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+export function validateTeam({ team, regulation, regulationId, cupRuleId, assignedTypeId, detailData, detailStatus, legalItems, displayPokemon }) {
+  const errors = [];
+  const incomplete = [];
+  const warnings = [];
+  const cupRule = CUP_RULES[cupRuleId] || CUP_RULES.none;
+  const assignedType = TYPE_OPTIONS.find(type => type.id === assignedTypeId) || null;
+  const display = pokemon => displayPokemon?.(pokemon) || pokemon?.name || "";
+
+  if (cupRule.kind === "monotype" && !assignedType) {
+    incomplete.push("모노타입 챌린지의 타입을 선택해 주세요.");
+  }
+
+  if (cupRule.kind === "monotype" && assignedType && detailData) {
+    for (const member of team) {
+      if (!pokemonMatchesCupRule({ pokemon: member.pokemon, cupRuleId, assignedTypeId, detailData })) {
+        errors.push(`모노타입 룰 위반: ${display(member.pokemon)}은(는) ${assignedType.korean} 타입을 포함하지 않습니다.`);
+      }
+    }
+  }
+
+  for (const member of team) {
+    if (!pokemonAllowedInRegulation({ pokemon: member.pokemon, regulation, detailData, legalItems })) {
+      errors.push(`${display(member.pokemon)}은(는) ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
+    }
+    const requiredItem = requiredItemForPokemon(detailData, member.pokemon);
+    if (requiredItem && member.item !== requiredItem) {
+      errors.push(`${display(member.pokemon)}은(는) ${itemName(detailData, requiredItem)}을(를) 반드시 지녀야 합니다.`);
+    }
+  }
+
+  const identities = new Map();
+  for (const member of team) {
+    const identity = speciesIdentity(detailData, member.pokemon);
+    if (identities.has(identity)) {
+      const other = identities.get(identity);
+      const dex = dexRecord(detailData, member.pokemon)?.num;
+      errors.push(`같은 포켓몬 중복 금지 위반: ${display(other.pokemon)} / ${display(member.pokemon)}${dex ? ` (#${String(dex).padStart(4, "0")})` : ""}`);
+    } else {
+      identities.set(identity, member);
+    }
+  }
+
+  const legalItemIds = detailData ? new Set((legalItems || []).map(item => item.id)) : null;
+  const itemOwners = new Map();
+  for (const member of team) {
+    if (!member.item) continue;
+    if (legalItemIds && !legalItemIds.has(member.item)) {
+      errors.push(`${display(member.pokemon)}의 ${itemName(detailData, member.item)}은(는) ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
+    }
+    if (itemOwners.has(member.item)) {
+      errors.push(`같은 도구 중복 금지 위반: ${itemName(detailData, member.item)}을(를) 두 마리가 사용하고 있습니다.`);
+    } else {
+      itemOwners.set(member.item, member.uid);
+    }
+  }
+
+  for (const member of team) {
+    const total = STAT_KEYS.reduce((sum, key) => sum + Number(member.statPoints?.[key] || 0), 0);
+    if (total > 66 || STAT_KEYS.some(key => Number(member.statPoints?.[key] || 0) > 32)) {
+      errors.push(`${display(member.pokemon)}의 능력 포인트 배분이 한도를 초과했습니다.`);
+    }
+
+    const selectedMoves = (member.moves || []).filter(Boolean);
+    if (new Set(selectedMoves).size !== selectedMoves.length) {
+      errors.push(`${display(member.pokemon)}에게 같은 기술을 중복 배치할 수 없습니다.`);
+    }
+
+    if (detailData) {
+      const details = dexRecord(detailData, member.pokemon);
+      if (details?.abilities?.length && member.ability && !details.abilities.includes(member.ability)) {
+        errors.push(`${display(member.pokemon)}이(가) 사용할 수 없는 특성입니다.`);
+      }
+      const learnset = new Set(learnsetFor(detailData, member.pokemon));
+      for (const move of selectedMoves) {
+        if (learnset.size && !learnset.has(move)) {
+          errors.push(`${display(member.pokemon)}은(는) ${moveName(detailData, move)}을(를) 배울 수 없습니다.`);
+        }
+      }
+    }
+
+    // 검증 통과는 '규정 위반 없음'이 아니라 제출 가능한 세팅까지 완료된 상태에만 사용한다.
+    if (selectedMoves.length < 4) {
+      incomplete.push(`${display(member.pokemon)}의 기술이 ${selectedMoves.length}/4개 설정되었습니다.`);
+    }
+  }
+
+  if (team.length < (regulation?.maxTeamSize || 6)) {
+    incomplete.unshift(`포켓몬이 ${team.length}/${regulation?.maxTeamSize || 6}마리 선택되었습니다.`);
+  }
+
+  // 상세 데이터가 준비되지 않으면 기술/도구 legality를 끝까지 검증할 수 없으므로 Valid 판정을 내리지 않는다.
+  if (detailStatus === "loading") {
+    incomplete.push("배틀 상세 데이터를 불러오는 중이라 최종 검증이 아직 완료되지 않았습니다.");
+  }
+  if (detailStatus === "error") {
+    incomplete.push("상세 배틀 데이터 연결에 실패해 기술과 도구의 사용 가능 여부를 최종 검증할 수 없습니다.");
+  }
+
+  const complete = team.length === (regulation?.maxTeamSize || 6) && incomplete.length === 0;
+  const valid = errors.length === 0 && complete;
+  const status = errors.length ? "invalid" : complete ? "valid" : "incomplete";
+  return { valid, complete, status, errors, incomplete, warnings };
+}
+
+/**
+ * Official submission eligibility is intentionally separate from validateTeam().valid.
+ * A party may be incomplete (fewer than six Pokémon or fewer than four moves) and
+ * still be submitted; only an empty party or an actual legality/identity failure
+ * makes it ineligible.
+ */
+export function validateSubmissionEligibility({
+  team = [],
+  regulation,
+  regulationId,
+  cupRuleId,
+  assignedTypeId,
+  detailData,
+  detailStatus,
+  legalItems,
+  displayPokemon,
+} = {}) {
+  const members = Array.isArray(team) ? team : [];
+  const errors = [];
+  const warnings = [];
+  const maxTeamSize = Number(regulation?.maxTeamSize || 6);
+  const dataReady = Boolean(detailData)
+    && (!detailStatus || detailStatus === "ready");
+
+  if (!members.length) errors.push("포켓몬을 1마리 이상 선택해 주세요.");
+  if (members.length > maxTeamSize) errors.push(`포켓몬은 최대 ${maxTeamSize}마리까지 제출할 수 있습니다.`);
+
+  if (!dataReady) {
+    errors.push("파티 적합성을 확인할 수 없습니다. 데이터를 다시 불러온 후 시도해 주세요.");
+  }
+  if (dataReady && !Array.isArray(legalItems)) {
+    errors.push("파티 적합성을 확인할 수 없습니다. 사용 가능 도구 데이터를 다시 불러온 후 시도해 주세요.");
+  }
+
+  for (const member of members) {
+    const name = displayPokemon?.(member?.pokemon) || member?.pokemon?.name || "알 수 없는 포켓몬";
+    if (!member?.pokemon?.name || member.resolutionState === "unresolved") {
+      errors.push(`${name}의 포켓몬 정보를 확인할 수 없습니다.`);
+      continue;
+    }
+    if (dataReady && !resolveCanonicalPokemonIdentity(member, { detailData }).resolved) {
+      errors.push(`${name}의 포켓몬 정보를 확인할 수 없습니다.`);
+    }
+  }
+
+  if (dataReady && Array.isArray(legalItems) && members.every(member => member?.pokemon?.name)) {
+    const validation = validateTeam({
+      team: members,
+      regulation,
+      regulationId,
+      cupRuleId,
+      assignedTypeId,
+      detailData,
+      detailStatus: "ready",
+      legalItems,
+      displayPokemon,
+    });
+    errors.push(...validation.errors);
+  }
+
+  const cupRule = CUP_RULES[cupRuleId] || CUP_RULES.none;
+  if (cupRule.kind === "monotype" && !assignedTypeId) {
+    errors.push("모노타입 챌린지의 타입을 선택해 주세요.");
+  }
+
+  if (members.length > 0 && members.length < maxTeamSize) {
+    warnings.push(`포켓몬이 ${members.length}/${maxTeamSize}마리 설정되었습니다. 미완성 상태로 제출할 수 있습니다.`);
+  }
+  for (const member of members) {
+    const moveCount = Array.isArray(member?.moves) ? member.moves.filter(Boolean).length : 0;
+    if (moveCount < 4) warnings.push(`${displayPokemon?.(member?.pokemon) || member?.pokemon?.name || "포켓몬"}의 기술이 ${moveCount}/4개 설정되었습니다.`);
+  }
+
+  return {
+    eligible: errors.length === 0,
+    errors: [...new Set(errors)],
+    warnings: [...new Set(warnings)],
+  };
+}
+
+export function buildSubmissionStatusRows(registrations = [], submissions = []) {
+  const latestByRegistration = new Map();
+  for (const submission of Array.isArray(submissions) ? submissions : []) {
+    const registrationId = submission?.registration_id || submission?.registrationId;
+    if (!registrationId) continue;
+    const revision = Number(submission?.revision || 0);
+    const previous = latestByRegistration.get(registrationId);
+    if (!previous || revision > previous.revision) {
+      latestByRegistration.set(registrationId, {
+        revision,
+        submittedAt: submission?.submitted_at || submission?.submittedAt || null,
+      });
+    }
+  }
+  return (Array.isArray(registrations) ? registrations : []).map(registration => {
+    const latest = latestByRegistration.get(registration?.id);
+    return {
+      registrationId: registration?.id || null,
+      registrationName: registration?.registration_name || registration?.registrationName || "",
+      hasSubmission: Boolean(latest),
+      latestRevision: latest?.revision || null,
+      latestSubmittedAt: latest?.submittedAt || null,
+    };
+  });
+}
+
+export function buildBracketSubmissionStatusModel(bracket = {}, statuses = []) {
+  const statusByRegistrationId = new Map(
+    (Array.isArray(statuses) ? statuses : [])
+      .filter(status => status?.registrationId)
+      .map(status => [status.registrationId, status])
+  );
+  const statusFor = (registrationId, name, participantId = null, entryParticipantId = null) => {
+    const status = statusByRegistrationId.get(registrationId);
+    return {
+      participantId,
+      entryParticipantId,
+      registrationId,
+      name: name || status?.registrationName || "이름 없음",
+      hasSubmission: Boolean(status?.hasSubmission),
+      latestSubmittedAt: status?.latestSubmittedAt || null,
+    };
+  };
+
+  if (bracket?.mode === "team") {
+    const teams = (Array.isArray(bracket?.participants) ? bracket.participants : [])
+      .filter(team => team?.entryId && Array.isArray(team?.memberIdentities))
+      .map(team => {
+        const members = team.memberIdentities
+          .slice()
+          .sort((a, b) => Number(a?.memberOrder || 0) - Number(b?.memberOrder || 0))
+          .filter(member => member?.entryParticipantId && member?.registrationId)
+          .map(member => statusFor(member.registrationId, member.name, null, member.entryParticipantId));
+        return {
+          teamId: team.id || null,
+          entryId: team.entryId,
+          teamName: team.name || "이름 없는 팀",
+          submitted: members.filter(member => member.hasSubmission).length,
+          total: members.length,
+          members,
+        };
+      })
+      .filter(team => team.total > 0);
+    return {
+      mode: "team",
+      submitted: teams.reduce((sum, team) => sum + team.submitted, 0),
+      total: teams.reduce((sum, team) => sum + team.total, 0),
+      teams,
+    };
+  }
+
+  const participants = (Array.isArray(bracket?.participants) ? bracket.participants : [])
+    .filter(participant => participant?.registrationId || participant?.registration_id)
+    .map(participant => statusFor(
+      participant.registrationId || participant.registration_id,
+      participant.name,
+      participant.id || null,
+      participant.entryParticipantId || participant.entry_participant_id || null
+    ));
+  return {
+    mode: "individual",
+    submitted: participants.filter(participant => participant.hasSubmission).length,
+    total: participants.length,
+    participants,
+  };
+}
+
+export function selectSubmissionRegistration(registrations = [], registrationName = "") {
+  const name = String(registrationName || "").trim();
+  if (!name) return null;
+  const matches = (Array.isArray(registrations) ? registrations : []).filter(registration =>
+    ["application", "advancement", "manual"].includes(registration?.registration_source || registration?.registrationSource)
+    && String(registration?.registration_name || registration?.registrationName || "") === name
+  );
+  if (matches.length > 1) {
+    const ambiguous = new Error("동일한 이름의 신청자가 있어 자동으로 확인할 수 없습니다. 운영진에게 문의해 주세요.");
+    ambiguous.code = "YPL_AMBIGUOUS_REGISTRATION";
+    throw ambiguous;
+  }
+  return matches[0] || null;
+}
+
+export function prettifyID(id) {
+  return String(id || "").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
+}
+
+/* 한 장으로 보는 팀 시트: 이미지 저장과 게시판 소개글이 같은 모델을 읽는다. 빠지는 정보가 없도록
+   빌더 편집기에 있는 값(종, 타입, 특성, 도구, 성격, 능력 포인트와 최종 능력치, 기술)을 모두 담는다. */
+export function buildTeamSheet(members = [], { detailData = null, displayPokemon = pokemon => pokemon?.name || "" } = {}) {
+  return (members || []).filter(member => member?.pokemon?.name).map(member => {
+    const dex = dexRecord(detailData, member.pokemon);
+    const nature = alignmentFor(member);
+    const stats = STAT_KEYS.map(key => {
+      const base = dex?.baseStats?.[key] ?? null;
+      const sp = Number(member.statPoints?.[key] || 0);
+      return { key, label: STAT_LABELS[key], base, sp, final: calculatedStat(base, sp, key, nature), mark: nature.plus === key ? "+" : nature.minus === key ? "-" : "" };
+    });
+    const item = requiredItemForPokemon(detailData, member.pokemon) || member.item || "";
+    return {
+      name: displayPokemon(member.pokemon) || member.pokemon.name,
+      english: member.pokemon.name,
+      sprite: spriteUrl(member.pokemon.name),
+      num: dex?.num ?? null,
+      types: (dex?.types || []).map(type => ({ id: toID(type), label: TYPE_KO[type] || type })),
+      ability: member.ability ? abilityName(member.ability) : "",
+      item: item ? itemName(detailData, item) : "",
+      nature: natureName(nature),
+      natureEffect: nature.plus ? `${STAT_LABELS[nature.plus]}↑ ${STAT_LABELS[nature.minus]}↓` : "보정 없음",
+      stats,
+      spTotal: stats.reduce((sum, stat) => sum + stat.sp, 0),
+      moves: (member.moves || []).filter(Boolean).map(id => {
+        const move = detailData?.moves?.[id];
+        return { name: moveName(detailData, id), type: move ? { id: toID(move.type), label: TYPE_KO[move.type] || move.type } : null, category: CATEGORY_KO[move?.category] || "" };
+      }),
+      unresolved: member.resolutionState === "unresolved",
+    };
+  });
+}
+
+// 게시판의 "팀 빌더에서 열기"가 빌더로 넘기는 팀(한 번 읽고 지운다)
+export const INCOMING_TEAM_KEY = "ypl-team-builder:incoming:v1";
+
+/* 저장된 팀(직렬화된 멤버)을 지금 데이터로 되살려 팀 시트로 만든다. 게시판 소개글과 이미지가 쓴다. */
+export function savedTeamSheet(team, { detailData = null, koreanNames = null, legalItems = [] } = {}) {
+  const regulation = REGULATIONS[team?.regulationId] || REGULATIONS[DEFAULT_REGULATION_ID];
+  const members = (team?.members || []).map(member => memberFromSaved(member, regulation, { detailData, legalItems }));
+  return buildTeamSheet(members, { detailData, displayPokemon: pokemon => localizedPokemonName(pokemon, koreanNames) || pokemon?.name });
+}

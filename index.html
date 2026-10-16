@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 탭 아이콘: 2026-10-12 Wing Y 마크. 브라우저가 아이콘을 오래 캐시하므로 그림을 바꾸면 파일 이름도 바꾼다. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon-ypl.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- 모바일 브라우저의 주소창 색까지 테마를 따라갑니다 -->
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="description" content="포켓몬 센터 연세점에서 열리는 배틀 리그 YPL의 대진표와 기록." />
+    <meta property="og:title" content="YPL | Yonsei Pokémon League" />
+    <meta property="og:description" content="포켓몬 센터 연세점 공식 배틀 리그, 역대 성적과 칭호, 명예의 전당" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="YPL" />
+    <meta property="og:url" content="https://iambin2.github.io/ypl-site/" />
+    <!-- 링크 미리보기 썸네일: 흑연색 바탕에 흰 마크와 그린 워드마크, 1200x630.
+         메신저가 캐시하므로 그림을 바꾸면 파일 이름도 바꾼다(원본 HTML은 docs/brand/og-ypl.html). -->
+    <meta property="og:image" content="https://iambin2.github.io/ypl-site/og-ypl-2026-10-12.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="검은 바탕 위 흰 Wing Y 로고와 YPL 워드마크, Yonsei Pokémon League" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- 서체 하나(E1, E2): SUIT Variable. 첫 화면의 글자가 바로 바뀌도록 미리 받는다(Q4).
+         사이트에 쓰인 글자를 모은 첫 조각만 받는다. 나머지 조각은 그 글자가 화면에 나올 때 받는다(scripts/build-suit-slices.py). -->
+    <link rel="preload" href="/fonts/suit/suit-0.b2f4a32a.woff2" as="font" type="font/woff2" crossorigin />
+    <title>YPL | Yonsei Pokémon League</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

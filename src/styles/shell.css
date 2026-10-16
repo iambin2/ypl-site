@@ -1,0 +1,135 @@
+/* =============================================================================
+   YPL Glass — shell: floating bars, tab bar, page frame, footer, admin dock, theme layer
+   Bars share the content width, so their edges line up with the gutter (G3, G5).
+   ========================================================================== */
+
+.ypl { position: relative; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; isolation: isolate; }
+.wrap { flex: 1 0 auto; width: 100%; }
+
+.skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 500; clip-path: inset(50%); opacity: 0;
+  display: inline-flex; align-items: center; height: 44px; padding: 0 var(--s5); border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-size: .9375rem; font-weight: 700;
+}
+.skip-link:focus { clip-path: none; opacity: 1; }
+
+/* ---------- top bar (G3, G4, J3) ---------- */
+.topbar {
+  position: fixed; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + var(--s3)); left: 0; right: 0; margin-inline: auto;
+  width: min(100% - var(--gutter) * 2, 1200px); height: 56px; padding: 0 6px; border-radius: 999px;
+  display: flex; align-items: center; gap: var(--s2);
+  box-shadow: var(--edge), var(--lift); transition: translate 460ms var(--spring-snappy), box-shadow var(--dur-base) var(--ease-out);
+}
+.topbar.scrolled { box-shadow: var(--edge), var(--shadow-near), var(--shadow-far); }
+.topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)); transition: translate 240ms var(--ease-in), box-shadow var(--dur-base) var(--ease-out); }
+.brand { position: relative; display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s3) 0 var(--s2); border-radius: 999px; flex: none; }
+/* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
+.brand-logo { display: flex; }
+.brand .logo { display: block; width: 47px; height: 28px; translate: 0 1px; }
+.wordmark { display: block; height: 14px; width: auto; fill: currentColor; }
+.navlinks { display: none; }
+.iconbtn { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; margin-left: auto; flex: none; }
+.theme-ic { display: grid; }
+.theme-ic > * { grid-area: 1 / 1; }
+.theme-ic .i-sun { opacity: var(--sun-o); }
+.theme-ic .i-moon { opacity: calc(1 - var(--sun-o)); }
+
+/* ---------- tab bar (G1, G2, K3) ---------- */
+.tabbar {
+  position: fixed; z-index: 20; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto;
+  width: min(100% - var(--gutter) * 2, 440px); height: 64px; padding: var(--s1); border-radius: 999px;
+  display: grid; grid-template-columns: repeat(5, 1fr); transition: translate 460ms var(--spring-snappy);
+}
+.tabbar.hide { translate: 0 calc(100% + var(--s6) + env(safe-area-inset-bottom, 0px)); transition: translate 240ms var(--ease-in); }
+.tab { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); border-radius: 999px; color: var(--fg-2); font-size: .75rem; line-height: 1; font-weight: 700; }
+.tab .ics { display: grid; }
+.tab .ics > * { grid-area: 1 / 1; transition: opacity var(--dur-fast) var(--ease-out); }
+.tab .ic-on { opacity: 0; }
+.tab:is([aria-current="page"], [data-current]) { color: var(--ind-fg); }
+.tab:is([aria-current="page"], [data-current]) .ic-on { opacity: 1; }
+.tab:is([aria-current="page"], [data-current]) .ic-off { opacity: 0; }
+.tab:is([aria-current="page"], [data-current]) .ics { animation: tab-pop 520ms var(--spring-snappy); }
+@keyframes tab-pop { from { transform: scale(.86); } }
+/* K3: the selection lens. Two round caps and a body, opaque inside one faded group, moved by transforms only (placePill). */
+.pill-ind { position: absolute; z-index: 1; top: var(--s1); bottom: var(--s1); left: 0; width: 0; pointer-events: none; opacity: var(--ind-a); filter: var(--ind-filter); transition: opacity var(--dur-fast) var(--ease-out); }
+.pill-ind[data-off] { opacity: 0; }
+.pill-ind > i { position: absolute; top: 0; left: 0; height: 100%; background: var(--ind-body); }
+.pill-ind > i:not(:nth-child(2)) { aspect-ratio: 1; border-radius: 50%; }
+.pill-ind > i:nth-child(2) { width: 100px; transform-origin: 0 50%; }
+
+@media (min-width: 860px) {
+  .tabbar { display: none; }
+  .topbar { top: var(--s4); }
+  .navlinks { position: relative; display: flex; margin-inline: auto; padding: var(--s1); border-radius: 999px; }
+  .navlink { position: relative; z-index: 3; display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 var(--s5); border-radius: 999px; font-size: .9375rem; line-height: 1; font-weight: 700; color: var(--fg-2); transition: color var(--dur-fast) var(--ease-out), scale 400ms var(--spring-snappy); }
+  .navlink:is([aria-current="page"], [data-current]) { color: var(--ind-fg); }
+  .navlink[aria-expanded="true"] { color: var(--fg); }
+  @media (hover: hover) { .navlink:not([aria-current="page"]):hover { color: var(--fg); } }
+  .iconbtn { margin-left: 0; }
+}
+@media (min-width: 1100px) { .navlink { padding: 0 var(--s4); } }
+
+/* ---------- page frame ---------- */
+.page {
+  width: min(100% - var(--gutter) * 2, 1200px); margin-inline: auto; outline: none;
+  padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px);
+}
+@media (min-width: 860px) { .page { padding-block: 112px 96px; } }
+.sec { display: flex; flex-direction: column; gap: var(--section); }
+/* L1 the one loader: the Wing Y sits dim where the screen will be, and a band of light crosses it.
+   It waits a beat before it shows, so a quick load never flashes. */
+.y-loader { display: grid; place-items: center; min-height: min(56vh, 480px); animation: y-fade var(--dur-base) var(--ease-out) 240ms backwards; }
+.y-loader.sm { min-height: 120px; }
+.y-loader-mark { display: grid; color: var(--fg); }
+.y-loader-mark > * { grid-area: 1 / 1; }
+.y-loader-mark > :first-child { opacity: .14; }
+/* the mark is a still mask and only the band inside it moves, by transform, so the sweep stays on the compositor
+   while the main thread is busy with the load it stands for */
+.y-loader-light { position: relative; overflow: hidden; -webkit-mask: url("/brand/ypl-wing-y.svg") center / contain no-repeat; mask: url("/brand/ypl-wing-y.svg") center / contain no-repeat; }
+.y-loader-light::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 300%; background: linear-gradient(100deg, transparent 35%, currentColor 50%, transparent 65%); will-change: transform; animation: y-loader-sweep 1.6s var(--ease-in-out) infinite; }
+@keyframes y-loader-sweep { from { transform: translateX(-66.667%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .y-loader-light { animation: y-pulse 2s var(--ease-in-out) infinite; } .y-loader-light::before { width: 100%; background: currentColor; animation: none; } }
+.ypl-error { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s4); }
+
+/* page transitions (I1, I2): the old page leaves as a live copy, a shared element flies on top */
+#ypl-ghosts { position: relative; z-index: 6; }
+.ghost { position: fixed; z-index: 5; pointer-events: none; margin: 0 !important; padding-inline: 0; }
+.fly { position: fixed; z-index: 6; margin: 0 !important; pointer-events: none; transform-origin: 0 0; }
+.fly-skin { background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.fly-skin::before, .fly-skin::after { display: none; }
+
+
+
+/* ---------- celebration (L5) ---------- */
+.burst { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+.burst i, .burst b { position: absolute; left: var(--x); top: var(--y); border-radius: 50%; opacity: 0; }
+.burst i { width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; background: radial-gradient(closest-side, var(--burst), transparent 72%); }
+.burst b { width: 90vmax; height: 90vmax; margin: -45vmax 0 0 -45vmax; border: 1.5px solid var(--ring); }
+
+/* ---------- logo (F1): the top bar is a fixed landmark, so the mark never moves ---------- */
+.logo { color: var(--fg); overflow: visible; }
+
+/* ---------- admin dock (O2): floating glass, above the tab bar on a phone ---------- */
+.admin-dock {
+  position: fixed; z-index: 19; left: 0; right: 0; margin-inline: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+  width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 48px; padding: 0 6px 0 var(--s5); border-radius: 999px;
+  display: flex; align-items: center; gap: var(--s2); font-size: .8125rem; line-height: 1; white-space: nowrap;
+  transition: translate 460ms var(--spring-snappy);
+}
+.admin-dock.hide { translate: 0 calc(100% + 88px + env(safe-area-inset-bottom, 0px)); transition: translate 240ms var(--ease-in); }
+.admin-dock b { font-weight: 700; }
+.admin-dock-note { color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; }
+.admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 36px; margin-left: var(--s2); padding: 0 var(--s3); border-radius: 999px; background: var(--tint); font-weight: 700; }
+@media (max-width: 639px) { .admin-dock-note { display: none; } }
+@media (min-width: 860px) { .admin-dock { bottom: var(--s6); } .admin-dock.hide { translate: none; } }
+
+/* ---------- footer: one quiet block, separated by space rather than a rule ---------- */
+.site-foot { flex: none; margin-top: auto; color: var(--fg-3); font-size: .8125rem; }
+.site-foot-in { width: min(100% - var(--gutter) * 2, 1200px); margin: 0 auto; padding: var(--s14) 0 calc(env(safe-area-inset-bottom, 0px) + 112px); display: grid; gap: var(--s6); }
+@media (min-width: 860px) { .site-foot-in { padding: var(--chapter) 0 var(--s10); } .is-admin .site-foot-in { padding-bottom: 104px; } }
+.site-foot-mark { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s4); }
+.site-foot-mark .brand { margin-left: calc(var(--s2) * -1); color: var(--fg); }
+.site-foot-tag { font-size: .9375rem; color: var(--fg-2); }
+.site-foot-dc { margin-left: auto; }
+.site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: .75rem; line-height: 1.6; }
+@media (max-width: 639px) { .site-foot-dc { margin-left: 0; } .site-foot-tag { flex-basis: 100%; } }

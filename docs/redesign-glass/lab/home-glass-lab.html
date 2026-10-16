@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Home Glass Lab</title>
+<style>
+@font-face { font-family: "SUIT Variable"; src: url("../../../public/fonts/SUIT-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: block; }
+@font-face { font-family: "YPL Figures"; src: url("../../../public/fonts/ypl-figures.woff2") format("woff2"); font-display: block; }
+/* 표지 하나와 세 장. 각 장은 화면에 붙은 무대(sticky)이고, 그 뒤의 캔버스가 빛과 유리를 그린다. */
+:root { --stage: #0A0A0A; --fg: #F5F5F5; --fg-2: #B0B0B0; --fg-3: #8C8C8C; --surface: #161616; --line: rgb(255 255 255 / .08); --chip: rgb(22 22 22 / .7); color-scheme: dark; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --stage: #E7E7E7; --fg: #0A0A0A; --fg-2: #525252; --fg-3: #6B6B6B; --surface: #FFFFFF; --line: rgb(0 0 0 / .08); --chip: rgb(255 255 255 / .7); color-scheme: light; } }
+:root[data-theme="light"] { --stage: #E7E7E7; --fg: #0A0A0A; --fg-2: #525252; --fg-3: #6B6B6B; --surface: #FFFFFF; --line: rgb(0 0 0 / .08); --chip: rgb(255 255 255 / .7); color-scheme: light; }
+* { box-sizing: border-box; margin: 0; }
+html, body { background: var(--stage); color: var(--fg); font-family: "SUIT Variable", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+main { position: relative; z-index: 1; }
+.act { position: relative; }
+.pin { position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 16px 6svh; max-width: 1200px; margin: 0 auto; }
+.cover { height: 220svh; }
+.cover .pin { align-items: center; justify-content: flex-end; }
+.cue { color: var(--fg-3); font-size: .875rem; }
+.ch { height: 300svh; }
+.txt { will-change: opacity, transform; }
+.ch h2 { font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.05; text-wrap: balance; }
+.ch p { margin-top: 8px; color: var(--fg-2); font-size: 1rem; }
+.card { margin-top: 20px; background: var(--surface); border-radius: 32px; padding: 8px 20px; max-width: 560px; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); font-size: .9375rem; }
+.row:first-child { border-top: 0; }
+.row span { color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.end { height: 60svh; display: grid; place-items: center; color: var(--fg-3); font-size: .875rem; position: relative; z-index: 1; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.theme { position: fixed; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; z-index: 2; height: 40px; padding: 0 16px; border-radius: 999px; border: 0; font: inherit; font-size: .875rem; color: var(--fg); background: var(--chip); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.theme:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<button class="theme" type="button" id="theme">테마 바꾸기</button>
+<main>
+  <section class="act cover">
+    <div class="pin"><div class="txt"><h1 class="sr">모든 배틀. 모든 기록. 모든 챔피언.</h1><p class="cue">아래로 내려 보세요</p></div></div>
+  </section>
+  <section class="act ch">
+    <div class="pin"><div class="txt">
+      <h2>모든 배틀.</h2><p>37회의 파이컵, 최근 대회 결과</p>
+      <div class="card"><div class="row">37회 파이컵 마스터 리그<span>우승 김포센</span></div><div class="row">36회 파이컵 마스터 리그<span>우승 이연세</span></div><div class="row">챔피언스 시리즈<span>우승 박리그</span></div></div>
+    </div></div>
+  </section>
+  <section class="act ch">
+    <div class="pin"><div class="txt">
+      <h2>모든 기록.</h2><p>214명의 트레이너, 이번 시즌 순위</p>
+      <div class="card"><div class="row">1 김포센<span>42점</span></div><div class="row">2 이연세<span>34점</span></div><div class="row">3 박리그<span>29점</span></div></div>
+    </div></div>
+  </section>
+  <section class="act ch">
+    <div class="pin"><div class="txt">
+      <h2>모든 챔피언.</h2><p>일곱 세대의 챔피언</p>
+      <div class="card"><div class="row">7세대 챔피언<span>김포센</span></div><div class="row">6세대 챔피언<span>이연세</span></div><div class="row">5세대 챔피언<span>박리그</span></div></div>
+    </div></div>
+  </section>
+</main>
+<div class="end">실험판의 숫자와 이름은 예시입니다</div>
+<script>
+/* 빛과 유리 2안.
+   배경: 유리를 지난 빛이 바닥에 만드는 물결무늬(커스틱)가 화면 전체에 흐르고, 큰 빛 웅덩이 몇 개와 손끝의 빛이 그 밝기를 정한다.
+   그림: 장마다 화면보다 큰 글자나 숫자가 빛을 받아 서 있다가 제자리 크기로 물러난다.
+   유리: 장이 끝나면 골 유리(골이 진 유리) 한 장이 가운데에서 날아와 화면을 덮는다. 뒤의 빛과 숫자가 골마다 갈라진다.
+   다음 장이 시작되면 골이 넓어지며 유리가 열리고 다음 숫자가 드러난다. 장마다 골의 방향이 다르다.
+   굴절은 셰이더가 계산하고 backdrop-filter 는 쓰지 않는다. 실험판의 숫자는 예시. */
+
+const VS = "attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }";
+const FS = `precision highp float;
+uniform vec2 uRes; uniform float uTime, uLight;
+uniform vec2 uPtr;
+uniform sampler2D uFig; uniform vec2 uFigC; uniform float uFigW, uFigS, uFigA, uFigAsp;
+uniform float uPaneA, uPaneW, uPaneTh, uPaneH;
+
+vec2 hash2(vec2 p){ p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
+/* 움직이는 세포의 경계까지의 거리. 경계가 빛의 선이 된다. */
+float cells(vec2 p, float t){
+  vec2 i = floor(p), f = fract(p); float d1 = 8., d2 = 8.;
+  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec2 g = vec2(float(x), float(y)), o = hash2(i + g);
+    o = .5 + .42 * sin(t + 6.2831 * o);
+    float d = length(g + o - f);
+    if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+  }
+  return d2 - d1;
+}
+float caustic(vec2 p, float t){
+  vec2 w = p + .16 * vec2(sin(p.y * 3.1 + t * .5), cos(p.x * 2.7 - t * .45));
+  w += .08 * vec2(sin(w.y * 7.3 - t * .7), cos(w.x * 6.1 + t * .6));
+  float a = exp(-cells(w * 2.6, t * .5) * 16.), b = exp(-cells(w * 4.4 + 7.3, t * .75) * 20.);
+  return a * .75 + b * .45 + a * b * 1.6;
+}
+float pool(vec2 p, vec2 c, float r){ vec2 d = p - c; return exp(-dot(d, d) / r); }
+
+/* 장면: 빛이 든 바닥 위에 빛을 받는 큰 글자. */
+float scene(vec2 fc){
+  float t = uTime;
+  vec2 p = fc / uRes.y, asp = vec2(uRes.x / uRes.y, 1.);
+  float pools = pool(p, asp * vec2(.22 + .14 * sin(t * .07), .80 + .08 * cos(t * .05)), .07)
+              + pool(p, asp * vec2(.80 + .12 * cos(t * .05), .30 + .12 * sin(t * .06)), .09) * .85
+              + pool(p, uPtr / uRes.y, .035) * .9;
+  float c = caustic(p, t);
+  float dark = .04 + pools * .06 + c * (.012 + pools * .34);
+  float light = .885 + pools * .07 + c * (.01 + pools * .07) - (1. - min(c, 1.)) * pools * .035;
+  float ground = mix(dark, light, uLight);
+  vec2 d = (fc - uFigC) / (uFigW * uFigS);
+  vec2 uv = vec2(d.x + .5, .5 - d.y * uFigAsp);
+  float a = (uv.x < 0. || uv.y < 0. || uv.x > 1. || uv.y > 1.) ? 0. : texture2D(uFig, uv).a * uFigA;
+  float ink = mix(.90 + c * .10 + pools * .03, .07 - c * .03, uLight);
+  return mix(ground, ink, a);
+}
+
+void main(){
+  vec2 fc = gl_FragCoord.xy, c = uRes * .5;
+  float cs = cos(uPaneTh), sn = sin(uPaneTh);
+  vec2 q = mat2(cs, -sn, sn, cs) * (fc - c);
+  /* 골 유리 한 장: 가운데에서 다가오는 둥근 사각형. uPaneH 는 화면 대비 반 크기, 1.5를 넘으면 화면을 다 덮는다. */
+  vec2 half_ = uRes * .5 * uPaneH;
+  float r = min(half_.x, half_.y) * .12;
+  vec2 b = abs(q) - half_ + r;
+  float sd = length(max(b, 0.)) + min(max(b.x, b.y), 0.) - r;
+  float inPane = (1. - smoothstep(-1.5, 1.5, sd)) * step(.001, uPaneA);
+  float x = q.x / uPaneW, f = fract(x) - .5, ribC = (floor(x) + .5) * uPaneW;
+  /* 골 하나는 원통 렌즈: 이웃의 장면을 뒤집어 좁게 담는다. */
+  vec2 q2 = vec2(mix(q.x, ribC - f * uPaneW * .6, uPaneA), q.y + f * f * uPaneW * .25 * uPaneA);
+  vec2 fs = c + mat2(cs, sn, -sn, cs) * q2;
+  float base = scene(fc);
+  float glass = inPane > 0. ? scene(fs) : base;
+  float shade = 1. - uPaneA * (.28 * f * f * 4.);
+  float crest = pow(max(0., 1. - abs(f + .16) * 5.), 3.) * uPaneA;
+  float seam = smoothstep(.43, .5, abs(f)) * uPaneA;
+  glass = glass * shade + crest * mix(.22, .18, uLight) - seam * mix(.05, .12, uLight) + uPaneA * mix(.02, .015, uLight);
+  float framed = step(uPaneH, 1.45);
+  float rim = exp(-pow(sd / 2.2, 2.)) * uPaneA * framed;
+  float col = mix(base * (1. - .25 * uPaneA * framed), glass, inPane) + rim * .55;
+  gl_FragColor = vec4(vec3(col), 1.);
+}`;
+
+const cv = document.getElementById("gl");
+const gl = cv.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
+const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = {}; const u = n => U[n] || (U[n] = gl.getUniformLocation(prog, n));
+
+/* 큰 그림 넷: 표지 문구, 그리고 장마다 숫자 하나. 세로 화면의 표지는 여섯 줄로 쪼개 더 크게. */
+const FIGS = ["", "37", "214", "7"];
+let figs = [];
+function textTexture(lines, font, lh) {
+  const c = document.createElement("canvas"), x = c.getContext("2d");
+  x.font = font;
+  const w = Math.max(...lines.map(l => x.measureText(l).width)), pad = 24;
+  const size = parseFloat(font.match(/(\d+)px/)[1]);
+  c.width = Math.ceil(w + pad * 2); c.height = Math.ceil(lines.length * size * lh + pad * 2);
+  x.font = font; x.fillStyle = "#fff"; x.textBaseline = "alphabetic";
+  lines.forEach((l, i) => x.fillText(l, pad, pad + size * (lh * i + .86)));
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return { t, asp: c.width / c.height };
+}
+const isTall = () => innerHeight > innerWidth * 1.2;
+function buildFigs() {
+  figs.forEach(f => gl.deleteTexture(f.t));
+  const tall = isTall();
+  const slogan = tall ? ["모든", "배틀.", "모든", "기록.", "모든", "챔피언."] : ["모든 배틀.", "모든 기록.", "모든 챔피언."];
+  figs = [textTexture(slogan, '800 260px "SUIT Variable"', tall ? 1.02 : 1.08), ...FIGS.slice(1).map(n => textTexture([n], '700px "YPL Figures"', 1))];
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)");
+const acts = [...document.querySelectorAll(".act")];
+const txts = acts.map(a => a.querySelector(".txt"));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const ease = t => t * t * (3 - 2 * t);
+const band = (t, a, b) => ease(clamp((t - a) / (b - a), 0, 1));
+const TH = [0, Math.PI / 2, .62, -.5];
+let quality = 1.5, slow = 0, dpr = 1, ptr = null, ptrNow = [0, 0], g = 0, lastTall = null;
+function size() { dpr = Math.min(devicePixelRatio || 1, quality); cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, cv.width, cv.height); }
+addEventListener("resize", () => { size(); if (isTall() !== lastTall && figs.length) { lastTall = isTall(); buildFigs(); } });
+addEventListener("pointermove", e => { ptr = [e.clientX * dpr, (innerHeight - e.clientY) * dpr]; }, { passive: true });
+
+/* 스크롤 위치를 하나의 수로: 정수 부분이 장, 소수 부분이 그 장 안의 진행. */
+function progress() {
+  let v = 0;
+  acts.forEach((a, k) => { const r = a.getBoundingClientRect(); if (r.top <= 0) v = k + clamp(-r.top / (r.height - innerHeight), 0, 1); });
+  return v;
+}
+const light = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "light" : matchMedia("(prefers-color-scheme: light)").matches;
+document.getElementById("theme").onclick = () => { document.documentElement.dataset.theme = light() ? "dark" : "light"; };
+
+/* 한 장의 시간표(t는 0~1):
+   표지는 처음 열 때 한 번 골 유리가 열리며 문구가 드러난다.
+   0~.3  덮고 있던 골 유리가 골이 넓어지며 열린다. 숫자는 화면보다 크게 서 있다가 제자리로 물러난다.
+   .3~.62 쉼. 글과 카드를 읽는 구간.
+   .62~1 다음 유리가 가운데에서 다가와 화면을 덮는다. 숫자는 뒤로 물러나며 사라진다. 마지막 장은 덮이지 않는다. */
+const W_FULL = 56;
+function plan(k, t, intro) {
+  const last = k === acts.length - 1;
+  const s = { pane: { a: 0, w: W_FULL, th: TH[k], h: 9 }, fig: { s: 1, a: 1 }, txt: band(t, .14, .3) * (last ? 1 : 1 - band(t, .58, .68)) };
+  if (t < .3) {
+    const e = band(t, 0, .3);
+    if (k === 0) {
+      s.pane.a = 1 - intro; s.pane.w = W_FULL * (1 + intro * 7);
+      s.fig.s = 1 + e * .08;
+    } else {
+      s.pane.a = 1 - e; s.pane.w = W_FULL * (1 + e * 7);
+      s.fig.s = 2.6 - 1.6 * band(t, 0, .34); s.fig.a = band(t, 0, .12);
+    }
+  } else if (t < .62 || last) {
+    s.fig.s = k === 0 ? 1.08 : 1 - .04 * band(t, .3, .62);
+  } else {
+    const e = band(t, .62, 1), z = .12 * Math.pow(13, e);
+    s.pane = { a: band(t, .62, .66), w: W_FULL * z / 1.56, th: TH[k + 1], h: z };
+    s.fig.s = (k === 0 ? 1.08 : .96) - .18 * e; s.fig.a = 1 - band(t, .8, .97);
+  }
+  return s;
+}
+
+/* 느린 기기: 프레임이 연달아 22ms를 넘으면 그리는 해상도를 한 단계 낮춘다(1.5 → 1 → .75). */
+let prev = 0;
+function pace(now) {
+  const dt = now - prev; prev = now;
+  slow = dt > 22 && dt < 200 ? slow + 1 : Math.max(0, slow - 1);
+  if (slow > 40 && quality > .75) { quality = quality > 1 ? 1 : .75; slow = 0; size(); }
+}
+const t0 = performance.now(); let intro0 = null;
+function frame(now) {
+  pace(now);
+  const time = still.matches ? 0 : (now - t0) / 1000;
+  if (intro0 === null) { intro0 = now; g = progress(); }
+  const intro = still.matches ? 1 : ease(clamp((now - intro0 - 250) / 2200, 0, 1));
+  g += (progress() - g) * (still.matches ? 1 : .14);
+  const k = Math.min(Math.floor(g), acts.length - 1), t = clamp(g - k, 0, 1);
+  const s = plan(k, t, intro);
+  txts.forEach((el, i) => {
+    const v = i !== k ? 0 : i === 0 ? intro * (1 - band(t, 0, .1)) : s.txt;
+    el.style.opacity = v; el.style.transform = `translateY(${(1 - v) * 16}px)`;
+  });
+
+  const W = cv.width, H = cv.height, f = figs[k], tall = H > W * 1.2;
+  const fw = k === 0 ? Math.min(W * .9, H * (tall ? .74 : .66) * f.asp) : Math.min(W * .86, H * .42 * f.asp);
+  const fc = k === 0 ? [W / 2, H * .55] : [W / 2, H * (tall ? .69 : .64)];
+  const drift = [W * (.5 + .3 * Math.cos(time * .2)), H * (.5 + .25 * Math.sin(time * .17))];
+  ptrNow = ptrNow.map((v, i) => v + ((ptr || drift)[i] - v) * .06);
+
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, f.t); gl.uniform1i(u("uFig"), 0);
+  gl.uniform2f(u("uRes"), W, H); gl.uniform1f(u("uTime"), time); gl.uniform1f(u("uLight"), light() ? 1 : 0);
+  gl.uniform2f(u("uPtr"), ptrNow[0], ptrNow[1]);
+  gl.uniform2f(u("uFigC"), fc[0], fc[1]); gl.uniform1f(u("uFigW"), fw); gl.uniform1f(u("uFigS"), s.fig.s);
+  gl.uniform1f(u("uFigA"), s.fig.a); gl.uniform1f(u("uFigAsp"), f.asp);
+  const breathe = still.matches ? 1 : 1 + .04 * Math.sin(time * .8);
+  gl.uniform1f(u("uPaneA"), s.pane.a); gl.uniform1f(u("uPaneW"), s.pane.w * dpr * breathe); gl.uniform1f(u("uPaneTh"), s.pane.th); gl.uniform1f(u("uPaneH"), s.pane.h);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  requestAnimationFrame(frame);
+}
+
+size();
+Promise.all([document.fonts.load('800 100px "SUIT Variable"', "모든배틀기록챔피언."), document.fonts.load('100px "YPL Figures"', "0123456789")])
+  .catch(() => null).then(() => { lastTall = isTall(); buildFigs(); requestAnimationFrame(frame); });
+</script>
+</body>
+</html>

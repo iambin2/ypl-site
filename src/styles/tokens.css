@@ -1,0 +1,428 @@
+/* =============================================================================
+   YPL Glass — foundation
+   Source of truth: docs/redesign-glass/DECISIONS.md and the lab
+   (docs/redesign-glass/lab/glass-lab.html). Decision codes (C7, K3 ...) refer to DECISIONS.md.
+
+   Achromatic only (B2-B4): a graphite stage, opaque reading surfaces, frosted glass for
+   whatever floats. Dark first, light equal: :root holds dark, <html data-theme="light"> swaps.
+
+   Spacing law (4px grid, one scale --s1..--s14, nearer = smaller):
+     --s1  4   a pair: label and value, a title and its meta line
+     --s2  8   inside one element, side-by-side controls, a hint under its field
+     --s3  12  items of one set (--grid-gap: 12, 16 desktop), a "show all" under its list
+     --s4  16  blocks inside a card, section title to content, a control to the content it drives
+     --s5  20  card padding at every width (hero --s6 24; list surfaces 8 so rows keep radius 24), a form's fields
+     --s6  24  page title to content, a sheet's title to its body
+     --section 40 (56 desktop) between sections / --chapter 80 (120) between home chapters
+   Radius law: inner = outer - padding. Hero 36, card 32, tile 12, controls pill.
+   ========================================================================== */
+
+/* SUIT Variable in unicode-range slices: a visit downloads only the glyphs it shows. Generated, do not edit by hand. */
+/* suit-slices:start (scripts/build-suit-slices.py) */
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-1.ee5617f1.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+AC00-B098;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-2.4d6c9530.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+B099-B5AF;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-3.90cba366.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+B5B0-BBC7;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-4.64ba4d7d.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+BBC8-C173;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-5.43fb3320.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+C174-C65B;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-6.96ec5b91.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+C65C-CAF3;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-7.c5821495.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+CAF4-D1A6;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-8.dd1c9adb.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+D1A7-D7A3;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-0.b2f4a32a.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+20-AC04, U+AC08, U+AC10-AC16, U+AC19-AC1A, U+AC1C-AC1D, U+AC24, U+AC2F, U+AC31-AC38, U+AC70, U+AC74, U+AC78, U+AC80-AC83, U+AC8C-AC94, U+AC9F-ACA0, U+ACA8-ACA9, U+ACAC, U+ACB0, U+ACB9, U+ACBC-ACBD, U+ACC4, U+ACE0-ACE8, U+ACF0-ACF5, U+ACFC-AD00, U+AD11, U+AD34, U+AD50, U+AD6C-AD75, U+AD7D-AD82, U+AD8C, U+ADC0, U+ADDC-ADE4, U+ADF8, U+ADFC, U+AE00, U+AE08-AE0B, U+AE30, U+AE34, U+AE38, U+AE40-AE43, U+AE45, U+AE4C-AE50, U+AE5C-AE5D, U+AE65-AE68, U+AE78, U+AEBC-AEBE, U+AECD-AECF, U+AED1, U+AED8, U+AEF4, U+AF2C-AF30, U+AF34, U+AF41, U+AF43, U+AFB8, U+AFBC-AFC0, U+AFC8, U+AFCD, U+AFD4, U+AFF0, U+B00C-B014, U+B044, U+B048-B04C, U+B054, U+B05D, U+B07C, U+B098, U+B09A-B09C, U+B0A0-B0A1, U+B0A8, U+B0AC, U+B0AE, U+B0B3-B0B8, U+B0C4, U+B0C9-B0D0, U+B0E5, U+B108-B109, U+B10C, U+B110, U+B113-B118, U+B123-B124, U+B137, U+B140, U+B144, U+B150, U+B178-B180, U+B188, U+B18D, U+B192-B193, U+B1CC, U+B1E8, U+B1FD-B208, U+B20C, U+B214, U+B220, U+B258, U+B274, U+B290-B294, U+B298, U+B2A5-B2A6, U+B2AA, U+B2C8-B2CC, U+B2D0, U+B2D8-B2D9, U+B2DD, U+B2E4-B2E5, U+B2E8-B2EC, U+B2F4-B2F7, U+B2F9, U+B2FF-B300, U+B304, U+B311-B313, U+B315, U+B354-B355, U+B358, U+B35C, U+B364, U+B367-B370, U+B374-B378, U+B3C4-B3C8, U+B3CC, U+B3D4, U+B3D9, U+B410, U+B418-B429, U+B450-B454, U+B458, U+B460, U+B463-B465, U+B4A4, U+B4C0, U+B4C8, U+B4DC-B4E0, U+B4E4-B4E6, U+B4ED-B4F1, U+B514, U+B518, U+B51C, U+B525-B527, U+B529, U+B530-B531, U+B538, U+B543, U+B545, U+B54C, U+B5A0, U+B5A4-B5A8, U+B5BC, U+B5C0, U+B610, U+B62C, U+B69C-B69D, U+B6A4, U+B6AB, U+B6F0-B6F4, U+B728-B729, U+B73B, U+B744, U+B760, U+B77C-B780, U+B784-B78C, U+B78F-B791, U+B798-B79C, U+B7A8-B7AB, U+B7AD, U+B7EC-B7F0, U+B7FC-B7FF, U+B801, U+B808-B80C, U+B81B, U+B824-B825, U+B82C, U+B838-B840, U+B85C-B860, U+B864, U+B86D-B871, U+B8B0, U+B8CC, U+B8E1-B8E8, U+B8EC-B8FB, U+B958-B960, U+B974-B987, U+B98E-B9CE, U+B9D0, U+B9D8, U+B9DB, U+B9DD-B9DE, U+B9E4-B9E8, U+B9F5, U+B9F9, U+BA38-BA40, U+BA48, U+BA4B-BA4D, U+BA54, U+BA58-BA64, U+BA67, U+BA70, U+BA74-BA78, U+BA85-BA87, U+BAA8-BAB0, U+BAB8, U+BABB-BABD, U+BB18, U+BB34-BB3C, U+BB44, U+BB47-BB49, U+BBA4, U+BBC0, U+BBF8-BBFC, U+BC00, U+BC0B, U+BC0D-BC16, U+BC18-BC1D, U+BC1F-BC25, U+BC29, U+BC30-BC34, U+BC40, U+BC43, U+BC45-BC49, U+BC84-BC88, U+BC8C, U+BC94-BC97, U+BCA0, U+BCA4, U+BCA8, U+BCB0, U+BCBC-BCC4, U+BCCD, U+BCD1, U+BCF4-BCF5, U+BCF8, U+BCFC, U+BD04, U+BD09-BD10, U+BD80-BD84, U+BD88-BD89, U+BD90, U+BD93-BD99, U+BDF0, U+BE0C, U+BE10-BE14, U+BE44-BE48, U+BE4C, U+BE54, U+BE57-BE59, U+BE5B-BE61, U+BE68, U+BE75, U+BE7C, U+BE80, U+BE90, U+BEA8, U+BED0, U+BF08, U+BF40, U+BF50-BF51, U+BFCC, U+BFD0-BFD4, U+BFDC, U+BFE1, U+C058-C05C, U+C090, U+C0AC-C0AD, U+C0B0, U+C0B4, U+C0B6-C0BC, U+C0C1, U+C0C8-C0C9, U+C0D8, U+C0DD-C0E4, U+C0F7-C0F9, U+C100, U+C11C-C11E, U+C120, U+C124, U+C12C, U+C12F, U+C131, U+C138-C13C, U+C140, U+C149-C14B, U+C154, U+C158-C15C, U+C170, U+C178, U+C18C-C18D, U+C190, U+C194, U+C19C, U+C1A1, U+C1C4, U+C1E0, U+C1FC, U+C218-C228, U+C22B-C22D, U+C232, U+C250, U+C258, U+C26C, U+C27C, U+C288, U+C290, U+C29B-C29D, U+C2A4, U+C2A8-C2AC, U+C2B4-C2B5, U+C2B9-C2E0, U+C2E4, U+C2EB-C2EC, U+C2EF-C2F1, U+C2F8, U+C30D-C314, U+C329, U+C368, U+C36C-C370, U+C378-C379, U+C3D8, U+C410, U+C465, U+C4F0-C4F8, U+C501, U+C528-C529, U+C53D, U+C544-C54A, U+C54C, U+C554-C559, U+C55E-C568, U+C571, U+C575, U+C57C-C580, U+C58C, U+C591, U+C5B4-C5BC, U+C5C4-C5C9, U+C5CE-C5E0, U+C5E3, U+C5EC-C5ED, U+C5F0-C5F4, U+C5FC-C5FD, U+C601-C606, U+C608, U+C610, U+C61B, U+C624-C625, U+C628, U+C62C, U+C62E, U+C635-C639, U+C640-C648, U+C651, U+C655, U+C678, U+C67C, U+C694-C695, U+C6A9-C6B4, U+C6B8, U+C6C0, U+C6C3-C6C5, U+C6CC, U+C6D0-C6DC, U+C6E0, U+C6E8, U+C704, U+C708, U+C719-C728, U+C73C-C73D, U+C740, U+C744, U+C74C, U+C751, U+C758, U+C774, U+C778, U+C77C-C77D, U+C784-C78A, U+C78E-C794, U+C798, U+C7A0-C7A1, U+C7A5-C7AC, U+C7B0, U+C7BC, U+C7C1-C7C8, U+C7DD, U+C800-C804, U+C808, U+C810-C81C, U+C820-C82C, U+C838, U+C84C, U+C870-C874, U+C885, U+C88B-C88C, U+C8C4, U+C8E4, U+C8FC-C904, U+C90D, U+C911-C918, U+C950, U+C96C, U+C988-C990, U+C998, U+C99D, U+C9C0-C9C4, U+C9C8, U+C9D0-C9D6, U+C9DC-C9DD, U+C9E7, U+C9F1, U+C9F8, U+CA4D, U+CABC-CAC0, U+CAD3, U+CB48, U+CBE4, U+CC0C-CC0D, U+CC1D, U+CC28-CC2C, U+CC30-CC38, U+CC3C-CC45, U+CC4C-CC54, U+CC59-CC60, U+CC98-CCAB, U+CCAD-CCB4, U+CCBC, U+CCD0, U+CCE4, U+CD08-CD09, U+CD10, U+CD19, U+CD1D, U+CD5C, U+CD78, U+CD94-CDA4, U+CDA9-CDB0, U+CDE8, U+CE04, U+CE20-CE21, U+CE35-CE5C, U+CE60, U+CE68-CE69, U+CE6D, U+CE74, U+CE78, U+CE7C-CE84, U+CE90, U+CE94, U+CEA0-CEA1, U+CEA5, U+CEE4, U+CEE8, U+CEEC-CEF7, U+CEF9-CF00, U+CF04-CF08, U+CF13, U+CF1C-CF20, U+CF54-CF58, U+CF5C-CF64, U+CF69, U+CF78, U+CF8C, U+CFE0, U+CFE4-CFE8, U+CFFC, U+D034-D038, U+D050, U+D06C, U+D070, U+D074-D07C, U+D0A4-D0AC, U+D0B9-D0C4, U+D0C8, U+D0D0-D0D1, U+D0D5-D0DD, U+D0EC-D0ED, U+D0F1, U+D130-D138, U+D140, U+D145-D15D, U+D1A0-D1A4, U+D1B0-D1B1, U+D1B5, U+D1F4, U+D22C, U+D230-D234, U+D241, U+D280, U+D29C, U+D2B8-D2BC, U+D2C0, U+D2C8, U+D2F0-D2F1, U+D2F8-D300, U+D305-D30C, U+D310, U+D314, U+D31C-D31D, U+D321, U+D328-D32C, U+D330, U+D33D, U+D37C-D38C, U+D391-D3A0, U+D3AB, U+D3B4, U+D3B8-D3BC, U+D3C9, U+D3EC-D3FC, U+D3FF-D401, U+D45C, U+D478, U+D47C, U+D480, U+D488, U+D48B-D48D, U+D4E8, U+D504, U+D50C-D514, U+D53C-D544, U+D551-D56D, U+D574, U+D578, U+D57C-D584, U+D587-D589, U+D5A5-D5C8, U+D5CC, U+D5D8, U+D5E4, U+D5E8-D5EC, U+D600-D608, U+D611, U+D615-D61C, U+D638-D640, U+D648, U+D64D, U+D654-D65C, U+D669, U+D68C-D68D, U+D6A8, U+D6C4, U+D6C8, U+D6D4, U+D718, U+D720, U+D729, U+D749-D754, U+D759, U+D761, U+D765, U+D76C-D770, U+D788, U+D78C-D798, U+FFE6;
+}
+/* suit-slices:end */
+/* YPL Figures: digits, hyphen and D drawn in the wordmark's construction (scripts/build-figures.py). Big figures only. */
+@font-face {
+  font-family: "YPL Figures";
+  src: url("/fonts/ypl-figures.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+002D, U+0044, U+2212;
+}
+@property --la { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --fade-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --lb { syntax: "<color>"; inherits: true; initial-value: transparent; }
+/* B6: the theme's colors are typed so the page fades between themes in place; nothing is copied and nothing moves.
+   Shadows and the other composite tokens switch at once. */
+@property --stage { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --stage-sunk { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --surface { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --surface-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --surface-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --fg { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --fg-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --fg-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --line { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --accent { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --on-accent { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --accent-hl { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rank-1 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rank-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rank-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rank-n { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --pod { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --pod-ink { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --pod-label { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tint { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tint-strong { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tint-soft { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glass { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glass-l3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glass-lite { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glass-solid { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --spec { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --sheen { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --caustic { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rim-top { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rim-mid { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rim-bottom { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rimc-top { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --rimc-bottom { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --well { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --ind-fg { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --hl { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --scrim { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --sel-bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --focus { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --la-open { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --lb-open { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --la-live { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --lb-live { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --la-done { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --lb-done { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --burst { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --ring { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --spot { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --spot-floor { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --contact { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --bar { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --sun-o { syntax: "<number>"; inherits: true; initial-value: 1; }
+
+:root {
+  color-scheme: dark;
+  --font: "SUIT Variable", "SUIT", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --font-fig: "YPL Figures", var(--font);
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s14: 56px;
+  --section: var(--s10); --chapter: 80px; --gutter: 16px;
+  /* the title size (40-64px) and the home's two steps above it, one golden ratio apart: the league's name on the cover, then the big figures */
+  --display: clamp(2.5rem, 2rem + 2.4vw, 4rem); --display-l: calc(var(--display) * 1.618); --display-xl: calc(var(--display) * 2.618);
+  --r-hero: 36px; --r-card: 32px; --r-tile: 12px;
+
+  --stage: #0A0A0A; --stage-sunk: #050505;
+  --surface: #161616; --surface-2: #1F1F1F; --surface-3: #2B2B2B;
+  --fg: #F5F5F5; --fg-2: #B0B0B0; --fg-3: #8C8C8C;
+  --line: rgb(255 255 255 / .1);
+  --accent: #F5F5F5; --on-accent: #0A0A0A; --accent-hl: rgb(0 0 0 / .1);
+  --accent-shadow: 0 1px 1px rgb(0 0 0 / .4), 0 12px 28px -14px rgb(255 255 255 / .3);
+  --rank-1: #FFFFFF; --rank-2: #CFCFCF; --rank-3: #A6A6A6; --rank-n: #8C8C8C;
+  /* party display case: dark in dark, on the light surface in light (the shown sprites are transparent PNGs) */
+  --pod: #141414; --pod-rim: inset 0 1px 0 rgb(255 255 255 / .06); --pod-blend: lighten; --pod-ink: #B0B0B0; --pod-label: #F5F5F5;
+  --tint: rgb(255 255 255 / .09); --tint-strong: rgb(255 255 255 / .18); --tint-soft: rgb(255 255 255 / .05);
+  --glass: rgb(26 26 26 / .44); --glass-l3: rgb(22 22 22 / .84); --glass-lite: rgb(255 255 255 / .065); --glass-solid: #202020; --glass-bright: 1.12;
+  /* glass is lit from directly above (C3): a specular pool at the top centre, a sheen falling from it,
+     light gathering again at the bottom where it leaves the glass, and a rim that is brightest at the top middle
+     and fades toward the ends, so the surface reads as curved and thick rather than outlined */
+  --spec: rgb(255 255 255 / .17); --sheen: rgb(255 255 255 / .06); --caustic: rgb(255 255 255 / .09);
+  --edge: inset 0 1px 1px -.5px rgb(255 255 255 / .24), inset 0 -1px 1px -.5px rgb(255 255 255 / .1), inset 0 0 8px rgb(255 255 255 / .045), inset 0 14px 22px -18px rgb(255 255 255 / .16), inset 0 -16px 24px -20px rgb(0 0 0 / .5);
+  --rim-top: rgb(255 255 255 / .4); --rim-mid: rgb(255 255 255 / .05); --rim-bottom: rgb(255 255 255 / .16);
+  --rimc-top: rgb(255 255 255 / .08); --rimc-bottom: rgb(255 255 255 / .02);
+  --lift: 0 1px 1px rgb(0 0 0 / .35), 0 3px 8px -3px rgb(0 0 0 / .4);
+  --shadow-near: 0 1px 1px rgb(0 0 0 / .45), 0 6px 14px -6px rgb(0 0 0 / .45); --shadow-far: 0 24px 52px -18px rgb(0 0 0 / .75);
+  --l3-shadow: 0 1px 1px rgb(0 0 0 / .45), 0 10px 24px -10px rgb(0 0 0 / .5), 0 34px 80px -26px rgb(0 0 0 / .85);
+  /* a groove pressed into the surface: segmented tracks, the bar's link track, fields */
+  --well: rgb(0 0 0 / .24); --well-edge: inset 0 1px 2px rgb(0 0 0 / .45), inset 0 3px 8px -4px rgb(0 0 0 / .45), inset 0 -1px 0 rgb(255 255 255 / .07);
+  --card-shadow: 0 1px 1px rgb(0 0 0 / .35), 0 24px 48px -28px rgb(0 0 0 / .85);
+  --card-rim: inset 0 1px 0 rgb(255 255 255 / .06), inset 0 0 0 1px rgb(255 255 255 / .025);
+  --ind-fg: #FFFFFF; --ind-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 1px 2px rgb(0 0 0 / .3);
+  /* the selection lens is drawn opaque and faded as one group (placePill) */
+  --ind-a: .22; --ind-body: linear-gradient(180deg, #FFFFFF, #C8C8C8 78%); --ind-filter: none;
+  --hl: rgb(255 255 255 / .09);
+  --scrim: rgb(0 0 0 / .5);
+  --sel-bg: rgb(255 255 255 / .26);
+  --focus: rgb(255 255 255 / .85);
+  --la-open: rgb(255 255 255 / .15); --lb-open: rgb(255 255 255 / .06);
+  --la-live: rgb(255 255 255 / .23); --lb-live: rgb(255 255 255 / .1);
+  --la-done: rgb(255 255 255 / .08); --lb-done: rgb(255 255 255 / .03);
+  --burst: rgb(255 255 255 / .26); --ring: rgb(255 255 255 / .6);
+  --sun-o: 1;
+  /* the cover scene (home): ceiling light, the lit floor, contact shadows, how much further things darken */
+  --spot: rgb(255 255 255 / .09); --spot-floor: rgb(255 255 255 / .15); --contact: rgb(0 0 0 / .72); --recede: .07; --bar: rgb(255 255 255 / .065);
+  --grain: linear-gradient(transparent, transparent);
+
+  --dur-instant: 100ms; --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 420ms; --dur-stage: 700ms;
+  --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-in: cubic-bezier(.5, 0, .75, 0); --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  /* H1/H2 springs, 3.1% and 1.1% overshoot, natural length 400ms and 670ms */
+  --spring-snappy: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
+  --spring-soft: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
+  --rise: translateY(16px); --reveal-blur: blur(8px);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --stage: #E7E7E7; --stage-sunk: #DCDCDC;
+  --surface: #FFFFFF; --surface-2: #F3F3F3; --surface-3: #E6E6E6;
+  --fg: #0A0A0A; --fg-2: #525252; --fg-3: #6B6B6B;
+  --line: rgb(0 0 0 / .08);
+  --accent: #0A0A0A; --on-accent: #FFFFFF; --accent-hl: rgb(255 255 255 / .16);
+  --accent-shadow: 0 1px 1px rgb(0 0 0 / .2), 0 12px 28px -14px rgb(0 0 0 / .5);
+  --rank-1: #000000; --rank-2: #3D3D3D; --rank-3: #5E5E5E; --rank-n: #6B6B6B;
+  --pod: var(--surface-2); --pod-rim: none; --pod-blend: normal; --pod-ink: var(--fg-2); --pod-label: var(--fg);
+  --tint: rgb(0 0 0 / .05); --tint-strong: rgb(0 0 0 / .09); --tint-soft: rgb(0 0 0 / .035);
+  --glass: rgb(255 255 255 / .5); --glass-l3: rgb(252 252 252 / .88); --glass-lite: rgb(0 0 0 / .035); --glass-solid: #F6F6F6; --glass-bright: 1.05;
+  --spec: rgb(255 255 255 / .85); --sheen: rgb(255 255 255 / .4); --caustic: rgb(255 255 255 / .5);
+  --edge: inset 0 1px 1px -.5px rgb(255 255 255 / .95), inset 0 -1px 1px -.5px rgb(255 255 255 / .6), inset 0 14px 22px -18px rgb(255 255 255 / .8), inset 0 -16px 24px -20px rgb(0 0 0 / .09), inset 0 0 0 .5px rgb(0 0 0 / .085);
+  --rim-top: rgb(255 255 255 / 1); --rim-mid: rgb(255 255 255 / .2); --rim-bottom: rgb(255 255 255 / .75);
+  --rimc-top: rgb(255 255 255 / 1); --rimc-bottom: rgb(0 0 0 / .06);
+  --lift: 0 1px 1px rgb(0 0 0 / .06), 0 3px 8px -3px rgb(0 0 0 / .12);
+  --shadow-near: 0 1px 1px rgb(0 0 0 / .05), 0 6px 14px -6px rgb(0 0 0 / .1); --shadow-far: 0 24px 52px -18px rgb(0 0 0 / .22);
+  --l3-shadow: 0 1px 1px rgb(0 0 0 / .05), 0 10px 24px -10px rgb(0 0 0 / .1), 0 34px 80px -26px rgb(0 0 0 / .28);
+  --well: rgb(0 0 0 / .05); --well-edge: inset 0 1px 2px rgb(0 0 0 / .1), inset 0 3px 8px -4px rgb(0 0 0 / .08), inset 0 -1px 0 rgb(255 255 255 / .9);
+  --card-shadow: 0 1px 1px rgb(0 0 0 / .04), 0 24px 48px -30px rgb(0 0 0 / .28);
+  --card-rim: inset 0 0 0 1px rgb(0 0 0 / .035);
+  --ind-fg: #0A0A0A; --ind-shadow: 0 1px 1px rgb(0 0 0 / .06), 0 2px 8px -2px rgb(0 0 0 / .16);
+  --ind-a: 1; --ind-body: linear-gradient(180deg, #FFFFFF, #F7F7F7); --ind-filter: drop-shadow(0 1px 1px rgb(0 0 0 / .08)) drop-shadow(0 2px 5px rgb(0 0 0 / .1));
+  --hl: rgb(0 0 0 / .04);
+  --scrim: rgb(0 0 0 / .2);
+  --sel-bg: rgb(0 0 0 / .14);
+  --focus: rgb(0 0 0 / .7);
+  --la-open: rgb(255 255 255 / .85); --lb-open: rgb(255 255 255 / .5);
+  --la-live: rgb(255 255 255 / 1); --lb-live: rgb(255 255 255 / .75);
+  --la-done: rgb(255 255 255 / .45); --lb-done: rgb(255 255 255 / .25);
+  --burst: rgb(255 255 255 / .9); --ring: rgb(0 0 0 / .28);
+  --sun-o: 0;
+  --spot: rgb(255 255 255 / .6); --spot-floor: rgb(255 255 255 / .95); --contact: rgb(0 0 0 / .2); --recede: .025; --bar: rgb(0 0 0 / .06);
+}
+@media (min-width: 860px) { :root { --section: var(--s14); --chapter: 120px; --gutter: 32px; } }
+@media (prefers-reduced-motion: reduce) { :root { --rise: none; --reveal-blur: none; } }
+
+/* ---------- names the page styles were written against, now pointing at the glass system ---------- */
+:root {
+  --font-sans: var(--font); --font-latin: var(--font);
+  --bg: var(--stage); --bg-sunk: var(--stage-sunk);
+  --ink: var(--fg); --text-2: var(--fg-2); --text-3: var(--fg-3);
+  --fill: var(--tint); --fill-2: var(--tint-soft);
+  --glass-hover: var(--tint-strong); --glass-lit: var(--surface-2);
+  --primary: var(--accent); --on-primary: var(--on-accent);
+  --shadow-glass: var(--card-rim), var(--card-shadow);
+  --shadow-primary: var(--accent-shadow); --shadow-thumb: var(--ind-shadow);
+  --shadow-pop: var(--l3-shadow); --shadow-float: var(--l3-shadow);
+  --silver: var(--fg);
+  /* B4: no status hue; state reads through weight, brightness and inversion */
+  --live: var(--fg); --ok: var(--fg); --warn: var(--fg-2); --danger: var(--fg);
+  --pod-face: var(--surface-2); --pod-floor: var(--tint);
+
+  --radius-sm: 12px; --radius-md: 16px; --radius-lg: 24px; --radius-xl: 32px; --radius-2xl: 36px; --radius-pill: 999px;
+  --rc-xs: 999px; --rc-sm: 999px; --rc-md: 999px; --rc-lg: 999px; --rc-track: 999px;
+  --corner: round;
+
+  --container: 1200px; --margin: var(--gutter); --grid-gap: 12px; --gutter-desktop: 16px;
+  --nav-height: 80px; --target: 44px; --row-min: 56px; --match-card: 98px;
+  --hair: 1px; --stroke-hairline: 1px; --stroke-connector: 1.5px; --stroke-icon: 2px; --stroke-focus: 2px;
+  --opacity-disabled: .4; --opacity-dim: .45; --opacity-watermark: .3;
+  --z-content: 0; --z-sticky: 10; --z-popover: 45; --z-modal: 50; --z-toast: 30;
+  --section-gap: var(--section);
+
+  --duration-press: 90ms; --duration-fade: var(--dur-fast); --duration-snappy: 400ms; --duration-smooth: 670ms;
+  --duration-gentle: 700ms; --duration-exit: 240ms; --duration-exit-gentle: 320ms; --duration-pulse: 1800ms;
+  --ease-spring: var(--spring-soft); --ease-snappy: var(--spring-snappy); --ease-fade: var(--ease-out);
+  --stagger-row: 40ms; --stagger-tile: 60ms;
+}
+@media (min-width: 860px) { :root { --nav-height: 88px; --grid-gap: 16px; } }
+@media (min-resolution: 2dppx) { :root { --hair: .5px; } }
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html {
+  background: var(--stage);
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  scrollbar-color: var(--fg-3) transparent;
+  scroll-padding-top: var(--nav-height);
+}
+body {
+  margin: 0; background: var(--stage); color: var(--fg);
+  font: 400 1rem/1.6 var(--font);
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  word-break: keep-all; overflow-wrap: break-word; overflow-x: clip;
+}
+::selection { background: var(--sel-bg); }
+h1, h2, h3, h4, h5, p { margin: 0; }
+h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; text-wrap: balance; }
+p { text-wrap: pretty; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; letter-spacing: inherit; background: none; border: 0; padding: 0; margin: 0; text-align: center; -webkit-tap-highlight-color: transparent; }
+button:not(:disabled) { cursor: pointer; }
+input, textarea, select { font: inherit; letter-spacing: inherit; color: inherit; }
+table { border-collapse: collapse; }
+b, strong { font-weight: 700; }
+small { font-size: inherit; }
+i, em { font-style: normal; }
+iframe { border: 0; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+input:focus-visible, textarea:focus-visible { outline: none; }
+::placeholder { color: var(--fg-3); opacity: 1; }
+input[type="range"] { accent-color: var(--fg); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--fg); width: 18px; height: 18px; margin: 0; flex: none; }
+input[type="date"], input[type="datetime-local"] { min-height: 48px; }
+::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+[data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(1); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--tint-strong); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+
+.tnum, .num { font-variant-numeric: tabular-nums; }
+.ic { flex: none; display: block; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sq { border-radius: var(--r, var(--radius-lg)); }
+.silver, .silver-live { color: inherit; }
+
+/* ---------- type: one scale, three weights ----------
+   Sizes 12 / 13 / 15 / 16 / 17 / 20 / 24 / 28, then title 28-36 and display 40-64. Weights 400 text, 700 labels and rows,
+   800 titles and names. Big figures (24px and up) are set in YPL Figures, the wordmark's own digits; small numbers stay SUIT. */
+.display { font-size: var(--display); line-height: 1.06; font-weight: 800; letter-spacing: -.04em; text-wrap: balance; }
+.title { font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem); line-height: 1.15; font-weight: 800; letter-spacing: -.03em; text-wrap: balance; }
+.headline { font-size: 1.25rem; line-height: 1.35; font-weight: 700; letter-spacing: -.015em; }
+.callout { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
+.caption, .meta { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
+.fig { font-size: 1.25rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+:is(.fig, .hx-dday, .hx-fig, .rc-poster-num, .rc-rankcard-n, .ab-flow-n) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
+.unit { font-size: .75rem; font-weight: 700; line-height: 1.2; color: var(--fg-3); margin-left: var(--s1); }
+
+/* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ---------- */
+.stage { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--stage); --la: var(--la-open); --lb: var(--lb-open); transition: --la 1.4s var(--ease-in-out), --lb 1.4s var(--ease-in-out); }
+.stage[data-state="live"] { --la: var(--la-live); --lb: var(--lb-live); }
+.stage[data-state="done"] { --la: var(--la-done); --lb: var(--lb-done); }
+.light { position: absolute; border-radius: 50%; pointer-events: none; will-change: transform; }
+.light-a { width: 140vw; height: 100vh; left: -20vw; top: -50vh; background: radial-gradient(closest-side, var(--la), transparent); translate: var(--lx, 0px) var(--ly, 0px); transition: translate 1.8s var(--ease-out); animation: drift-a 52s var(--ease-in-out) infinite alternate; }
+.light-b { width: 110vw; height: 70vh; left: -45vw; bottom: -35vh; background: radial-gradient(closest-side, var(--lb), transparent); translate: calc(var(--lx, 0px) * -.6) 0; transition: translate 1.8s var(--ease-out); animation: drift-b 68s var(--ease-in-out) infinite alternate; }
+@keyframes drift-a { from { transform: translate3d(-4vw, 0, 0); } to { transform: translate3d(4vw, 3vh, 0); } }
+@keyframes drift-b { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(30vw, -6vh, 0); } }
+.stage::after { content: ""; position: absolute; inset: 0; background: var(--grain) 0 0 / 128px 128px; }
+
+/* ---------- glass: L2 bars and floating controls, L3 sheets and popovers, lite = the same look on a flat surface (C7) ----------
+   A clear body that brightens what is behind it, a sheen falling from the light above, and edges that catch
+   light at the top and, through the glass, again at the bottom. No grain on glass. */
+.glass, .glass-l3, .glass-lite, .groove, .card { position: relative; }
+.glass {
+  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
+    radial-gradient(90% 70% at 50% 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
+  -webkit-backdrop-filter: blur(24px) saturate(170%) brightness(var(--glass-bright)); backdrop-filter: blur(24px) saturate(170%) brightness(var(--glass-bright));
+  box-shadow: var(--edge), var(--shadow-near), var(--shadow-far);
+}
+.glass-l3 {
+  background: radial-gradient(150% 60% at 50% -10%, var(--spec), transparent 60%), linear-gradient(180deg, var(--sheen), transparent 40%), linear-gradient(var(--glass-l3), var(--glass-l3));
+  -webkit-backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright)); backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright));
+  box-shadow: var(--edge), var(--l3-shadow);
+}
+.glass-lite { background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%), linear-gradient(var(--glass-lite), var(--glass-lite)); box-shadow: var(--edge), var(--lift); }
+.groove { background: var(--well); box-shadow: var(--well-edge); }
+.glass::before, .glass-l3::before, .glass-lite::before, .card::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.card::before { background: linear-gradient(180deg, var(--rimc-top), var(--rimc-bottom)); }
+.card { background: var(--surface); box-shadow: var(--card-shadow); border-radius: var(--r-card); }
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) { .glass, .glass-l3 { background: var(--glass-solid); } }
+@media (prefers-reduced-transparency: reduce) { .glass, .glass-l3 { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } .glass-lite { background: var(--surface-2); } }
+
+/* ---------- K1 press, K2 pointer highlight ---------- */
+.press { transition: scale 400ms var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
+.press:active:not(:disabled) { scale: .97; transition: scale 90ms var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .press:active:not(:disabled) { scale: 1; opacity: .75; } }
+@media (hover: hover) and (pointer: fine) {
+  .hl::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), var(--hl), transparent 70%); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); pointer-events: none; }
+  .hl:hover::after { opacity: 1; }
+}
+
+/* ---------- J1 reveal: once, a blur lifting as it rises (Reveal.jsx sets .pre only below the fold) ---------- */
+.reveal { transition: opacity 700ms var(--ease-out), transform 900ms var(--ease-out), filter 700ms var(--ease-out); }
+.reveal.pre { opacity: 0; transform: var(--rise); filter: var(--reveal-blur); }
+
+/* ---------- K4 rolling numbers ---------- */
+.roll { display: inline-flex; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.rd { display: inline-block; height: 1.15em; overflow: hidden; }
+.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.15em)); transition: transform 760ms var(--spring-soft); }
+.rs > i { font-style: normal; height: 1.15em; line-height: 1.15em; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .rs { transition: none; } }
+
+/* ---------- live dot: always beside words, pings while something is in progress ---------- */
+.live-dot, .ypl-ping { position: relative; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--fg); }
+.live-dot::after, .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ping 1.8s var(--ease-out) infinite; }
+@keyframes ping { from { transform: scale(1); opacity: .7; } to { transform: scale(3.2); opacity: 0; } }
+
+/* ---------- sideways runs (bracket, segmented): the edge that hides more content fades.
+   Driven by the run's own scroll, so a run that does not scroll shows no fade. ---------- */
+@supports (animation-timeline: scroll()) {
+  :is(.bk-scroll, .seg-track) {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+    animation: edge-fade linear both; animation-timeline: scroll(self inline);
+  }
+}
+@keyframes edge-fade { 0% { --fade-l: 0px; --fade-r: 32px; } 8%, 92% { --fade-l: 32px; --fade-r: 32px; } 100% { --fade-l: 32px; --fade-r: 0px; } }
+
+/* ---------- shared keyframes ---------- */
+@keyframes y-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes y-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.swap { animation: y-swap 420ms var(--ease-out) 60ms backwards; }
+@keyframes y-swap { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- motion law: appearing content decelerates (ease-out), floating layers and things that move spring ----------
+   reduced motion (H4): no travel or growth, opacity only; reactions that only grow are dropped.
+   :root lifts these over the page files, which load after this one. */
+@media (prefers-reduced-motion: reduce) {
+  :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .ff-ok, .dd-menu, .bk-submission-detail, .records-round-detail) { animation-name: y-fade; }
+  :root :is(.tab:is([aria-current="page"], [data-current]) .ics, .bk-slot.dset.pop) { animation: none; }
+  .light-a, .light-b { animation: none; }
+}
+/* B6 theme change: the tokens fade on <html>; every element follows them, so for the length of the fade the elements' own
+   transitions give way to one for the shadows, the composite tokens that switch at once */
+:root.theme-fade { transition-property: --stage, --stage-sunk, --surface, --surface-2, --surface-3, --fg, --fg-2, --fg-3, --line, --accent, --on-accent, --accent-hl, --rank-1, --rank-2, --rank-3, --rank-n, --pod, --pod-ink, --pod-label, --tint, --tint-strong, --tint-soft, --glass, --glass-l3, --glass-lite, --glass-solid, --spec, --sheen, --caustic, --rim-top, --rim-mid, --rim-bottom, --rimc-top, --rimc-bottom, --well, --ind-fg, --hl, --scrim, --sel-bg, --focus, --la-open, --lb-open, --la-live, --lb-live, --la-done, --lb-done, --burst, --ring, --spot, --spot-floor, --contact, --bar, --sun-o; transition-duration: var(--dur-slow); transition-timing-function: var(--ease-in-out); }
+:root.theme-fade *, :root.theme-fade *::before, :root.theme-fade *::after { transition: box-shadow var(--dur-slow) var(--ease-in-out) !important; }

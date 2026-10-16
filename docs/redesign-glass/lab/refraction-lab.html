@@ -1,0 +1,347 @@
+<title>YPL 굴절 유리</title>
+<style>
+/* Layout: the records page as the stage behind; the top bar, the phone tab bar and one draggable lens float over it.
+   Each floating piece is the shipped glass (C2) plus, in 굴절 mode, a displacement map drawn for its exact shape. */
+@font-face{font-family:"SUIT Variable";src:url("{{SUIT}}") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+:root{
+  color-scheme:dark;
+  --font:"SUIT Variable","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --stage:#0A0A0A;--surface:#161616;--surface-2:#1F1F1F;--fg:#F5F5F5;--fg-2:#B0B0B0;--fg-3:#8C8C8C;--line:rgb(255 255 255/.1);
+  --accent:#F5F5F5;--on-accent:#0A0A0A;
+  --glass:rgb(26 26 26/.44);--glass-bright:1.12;
+  --spec:rgb(255 255 255/.17);--sheen:rgb(255 255 255/.06);--caustic:rgb(255 255 255/.09);
+  --edge:inset 0 1px 1px -.5px rgb(255 255 255/.24),inset 0 -1px 1px -.5px rgb(255 255 255/.1),inset 0 0 8px rgb(255 255 255/.045),inset 0 14px 22px -18px rgb(255 255 255/.16),inset 0 -16px 24px -20px rgb(0 0 0/.5);
+  --rim-top:rgb(255 255 255/.4);--rim-mid:rgb(255 255 255/.05);--rim-bottom:rgb(255 255 255/.16);
+  --shadow:0 1px 1px rgb(0 0 0/.45),0 6px 14px -6px rgb(0 0 0/.45),0 24px 52px -18px rgb(0 0 0/.75);
+  --well:rgb(0 0 0/.24);--well-edge:inset 0 1px 2px rgb(0 0 0/.45),inset 0 3px 8px -4px rgb(0 0 0/.45),inset 0 -1px 0 rgb(255 255 255/.07);
+  --ind-a:.22;--ind-body:linear-gradient(180deg,#FFFFFF,#C8C8C8 78%);
+  --la:rgb(255 255 255/.15);--panel:#161616;--panel-line:rgb(255 255 255/.08);
+  --spring:linear(0,.0213,.0765,.1538,.244,.34,.4363,.5288,.6149,.6928,.7617,.8212,.8716,.9132,.9469,.9734,.9937,1.0087,1.0191,1.0259,1.0298,1.0314,1.0313,1.0299,1.0278,1.025,1.0221,1.019,1.016,1.0132,1.0107,1.0084,1.0064,1.0047,1.0032,1.0021,1);
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --stage:#E7E7E7;--surface:#FFFFFF;--surface-2:#F3F3F3;--fg:#0A0A0A;--fg-2:#525252;--fg-3:#6B6B6B;--line:rgb(0 0 0/.08);
+  --accent:#0A0A0A;--on-accent:#FFFFFF;
+  --glass:rgb(255 255 255/.5);--glass-bright:1.05;
+  --spec:rgb(255 255 255/.85);--sheen:rgb(255 255 255/.4);--caustic:rgb(255 255 255/.5);
+  --edge:inset 0 1px 1px -.5px rgb(255 255 255/.95),inset 0 -1px 1px -.5px rgb(255 255 255/.6),inset 0 14px 22px -18px rgb(255 255 255/.8),inset 0 -16px 24px -20px rgb(0 0 0/.09),inset 0 0 0 .5px rgb(0 0 0/.085);
+  --rim-top:#FFFFFF;--rim-mid:rgb(255 255 255/.2);--rim-bottom:rgb(255 255 255/.75);
+  --shadow:0 1px 1px rgb(0 0 0/.05),0 6px 14px -6px rgb(0 0 0/.1),0 24px 52px -18px rgb(0 0 0/.22);
+  --well:rgb(0 0 0/.05);--well-edge:inset 0 1px 2px rgb(0 0 0/.1),inset 0 3px 8px -4px rgb(0 0 0/.08),inset 0 -1px 0 rgb(255 255 255/.9);
+  --ind-a:1;--ind-body:linear-gradient(180deg,#FFFFFF,#F7F7F7);
+  --la:rgb(255 255 255/.85);--panel:#FFFFFF;--panel-line:rgb(0 0 0/.08);
+}}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --stage:#E7E7E7;--surface:#FFFFFF;--surface-2:#F3F3F3;--fg:#0A0A0A;--fg-2:#525252;--fg-3:#6B6B6B;--line:rgb(0 0 0/.08);
+  --accent:#0A0A0A;--on-accent:#FFFFFF;
+  --glass:rgb(255 255 255/.5);--glass-bright:1.05;
+  --spec:rgb(255 255 255/.85);--sheen:rgb(255 255 255/.4);--caustic:rgb(255 255 255/.5);
+  --edge:inset 0 1px 1px -.5px rgb(255 255 255/.95),inset 0 -1px 1px -.5px rgb(255 255 255/.6),inset 0 14px 22px -18px rgb(255 255 255/.8),inset 0 -16px 24px -20px rgb(0 0 0/.09),inset 0 0 0 .5px rgb(0 0 0/.085);
+  --rim-top:#FFFFFF;--rim-mid:rgb(255 255 255/.2);--rim-bottom:rgb(255 255 255/.75);
+  --shadow:0 1px 1px rgb(0 0 0/.05),0 6px 14px -6px rgb(0 0 0/.1),0 24px 52px -18px rgb(0 0 0/.22);
+  --well:rgb(0 0 0/.05);--well-edge:inset 0 1px 2px rgb(0 0 0/.1),inset 0 3px 8px -4px rgb(0 0 0/.08),inset 0 -1px 0 rgb(255 255 255/.9);
+  --ind-a:1;--ind-body:linear-gradient(180deg,#FFFFFF,#F7F7F7);
+  --la:rgb(255 255 255/.85);--panel:#FFFFFF;--panel-line:rgb(0 0 0/.08);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--stage)}
+body{margin:0;background:var(--stage);color:var(--fg);font:400 16px/1.6 var(--font);-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-x:clip}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.ic{width:22px;height:22px;fill:currentColor;display:block}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- the stage and the page behind the glass ---------- */
+.stage{position:fixed;inset:0;z-index:-1;background:radial-gradient(70vw 50vh at 50% -10vh,var(--la),transparent 70%),var(--stage)}
+.page{width:min(100% - 32px,1200px);margin-inline:auto;padding-block:112px 160px;display:flex;flex-direction:column;gap:24px}
+.display{margin:0;font-size:clamp(40px,32px + 2.4vw,64px);line-height:1.06;font-weight:780;letter-spacing:-.04em}
+.lede{margin:0;font-size:15px;color:var(--fg-2)}
+.card{position:relative;background:var(--surface);border-radius:32px;padding:20px;box-shadow:0 1px 1px rgb(0 0 0/.3),0 24px 48px -28px rgb(0 0 0/.85)}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:16px;padding:24px;border-radius:36px}
+.hero b{display:block;font-size:clamp(36px,6vw,56px);font-weight:780;letter-spacing:-.03em;line-height:1.1}
+.hero .big{font-size:clamp(96px,16vw,180px);font-weight:800;line-height:.8;letter-spacing:-.05em;color:var(--fg)}
+.round{display:grid;grid-template-columns:112px minmax(0,1fr);gap:20px;padding:16px;border-radius:24px}
+.round + .round{box-shadow:inset 0 1px 0 var(--line)}
+.r-date{font-size:13px;font-weight:650;color:var(--fg-3)}
+.r-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:12px}
+.r-head b{font-size:16px;font-weight:740}
+.r-head span{font-size:13px;color:var(--fg-3)}
+.r-line{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;align-items:center;margin-top:8px}
+.r-rk{font-size:13px;font-weight:650;color:var(--fg-3)}
+.r-rk.win{color:var(--fg);font-weight:760}
+.names{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:650;line-height:1;white-space:nowrap;background:var(--surface-2)}
+.chip.win{background:var(--accent);color:var(--on-accent)}
+.mem{font-size:13px;color:var(--fg-2)}
+.list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px;padding:8px}
+.row{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:24px}
+.row b{font-size:17px;font-weight:720}
+.row span{font-size:13px;color:var(--fg-3)}
+.stripes{height:240px;border-radius:32px;background:repeating-linear-gradient(90deg,var(--fg) 0 2px,transparent 2px 22px),repeating-linear-gradient(0deg,var(--fg) 0 2px,transparent 2px 22px);opacity:.5}
+
+/* ---------- glass: the shipped recipe ---------- */
+.glass{position:fixed;z-index:20;border-radius:999px;color:var(--fg);
+  background:radial-gradient(150% 120% at 50% -20%,var(--spec),transparent 58%),linear-gradient(180deg,var(--sheen),transparent 55%),radial-gradient(90% 70% at 50% 125%,var(--caustic),transparent 70%),linear-gradient(var(--glass),var(--glass));
+  -webkit-backdrop-filter:blur(var(--frost,24px)) saturate(170%) brightness(var(--glass-bright));backdrop-filter:blur(var(--frost,24px)) saturate(170%) brightness(var(--glass-bright));
+  box-shadow:var(--edge),var(--shadow)}
+.glass::before{content:"";position:absolute;inset:0;z-index:2;border-radius:inherit;padding:1px;pointer-events:none;
+  background:radial-gradient(150% 170% at 50% 0%,var(--rim-top),transparent 58%),radial-gradient(110% 150% at 50% 100%,var(--rim-bottom),transparent 52%),linear-gradient(var(--rim-mid),var(--rim-mid));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.topbar{top:16px;left:0;right:0;margin-inline:auto;width:min(100% - 32px,1200px);height:56px;padding:0 6px;display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px 0 8px}
+.brand .logo{width:36px;height:28px;fill:currentColor;translate:0 1px}
+.brand .wm{height:14px;width:auto;fill:currentColor}
+.nav{position:relative;display:flex;margin-inline:auto;padding:4px;border-radius:999px;background:var(--well);box-shadow:var(--well-edge)}
+.nav a{position:relative;z-index:3;display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;font-size:15px;line-height:1;font-weight:650;color:var(--fg-2);text-decoration:none;white-space:nowrap}
+.nav a[aria-current]{color:var(--fg)}
+.lens-ind{position:absolute;z-index:1;top:4px;bottom:4px;border-radius:999px;opacity:var(--ind-a);background:var(--ind-body)}
+.iconbtn{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;flex:none}
+.tabbar{left:0;right:0;bottom:12px;margin-inline:auto;width:min(100% - 32px,440px);height:64px;padding:4px;display:none;grid-template-columns:repeat(5,1fr)}
+.tab{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;line-height:1;font-weight:650;color:var(--fg-2)}
+.tab.on{color:var(--fg)}
+.tabbar .lens-ind{left:calc(4px + (100% - 8px) / 5 * 3);width:calc((100% - 8px) / 5)}
+.puck{width:220px;height:76px;left:0;top:0;display:grid;place-items:center;cursor:grab;touch-action:none;user-select:none;font-size:13px;font-weight:700;color:var(--fg-2)}
+.puck:active{cursor:grabbing}
+@media (max-width:859px){.nav{display:none}.iconbtn{margin-left:auto}.tabbar{display:grid}}
+
+/* ---------- the control panel: opaque, so it never takes part in the comparison ---------- */
+.panel{position:fixed;z-index:30;right:max(16px,calc((100vw - 1200px)/2));top:88px;width:300px;display:flex;flex-direction:column;gap:16px;padding:20px;border-radius:24px;background:var(--panel);box-shadow:0 0 0 1px var(--panel-line),0 24px 48px -24px rgb(0 0 0/.6)}
+.panel h2{margin:0;font-size:17px;font-weight:740;letter-spacing:-.01em}
+.panel p{margin:0;font-size:13px;line-height:1.55;color:var(--fg-2)}
+.seg{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:999px;background:var(--well);box-shadow:var(--well-edge)}
+.seg button{height:36px;border-radius:999px;font-size:14px;font-weight:650;color:var(--fg-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.field{display:grid;gap:6px}
+.field label{display:flex;justify-content:space-between;font-size:13px;font-weight:650;color:var(--fg-2)}
+.field output{font-variant-numeric:tabular-nums;color:var(--fg)}
+input[type="range"]{width:100%;accent-color:var(--fg);margin:0}
+.field[aria-disabled="true"]{opacity:.4}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+.toggles button{height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:650;background:var(--surface-2);color:var(--fg)}
+.toggles button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.meter{display:flex;justify-content:space-between;font-size:13px;color:var(--fg-3)}
+.meter b{color:var(--fg);font-variant-numeric:tabular-nums}
+.note{padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:13px;line-height:1.5;color:var(--fg)}
+@media (max-width:859px){.panel{position:static;width:auto;margin-bottom:8px}}
+@media (max-width:639px){.round{grid-template-columns:1fr;gap:8px}.list{grid-template-columns:1fr}.hero{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.puck{transition:none}}
+</style>
+
+<div class="stage" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="fx"></defs></svg>
+
+<header class="glass topbar" data-refract>
+  <span class="brand">
+    <svg class="logo" viewBox="410 134 716 546" aria-hidden="true"><path fill-rule="evenodd" d="M410 134 L650 238 C687 255 723 338 768 411 C813 338 849 255 886 238 L1126 134 C1111 200 1056 241 989 280 L1079 259 C1049 342 974 367 894 405 C854 425 826 455 808 496 L856 598 Q835 610 809 617 L798 589 L804 619 Q768 629 732 619 L738 589 L727 617 Q701 610 680 598 L728 496 C710 455 682 425 642 405 C562 367 487 342 457 259 L547 280 C480 241 425 200 410 134 Z M674 608 Q696 620 724 627 L715 663 L660 636 Z M735 630 Q768 639 801 630 L809 675 Q768 685 727 675 Z M812 627 Q840 620 862 608 L876 636 L821 663 Z"/></svg>
+    <svg class="wm" viewBox="0 0 310 100" fill-rule="evenodd" aria-label="YPL"><path transform="skewX(-12) translate(21 0)" d="M0 0 H34.7 L55 27.7 L75.3 0 H110 L69 56 H41 Z M41 64 H69 V100 H41 Z M118 0 H188 A18 18 0 0 1 206 18 V46 A18 18 0 0 1 202.9666 56 H118 Z M146 24 H178 V42 H146 Z M118 64 H146 V100 H118 Z M214 0 H242 V56 H214 Z M214 64 H242 V76 H286 V100 H214 Z"/></svg>
+  </span>
+  <nav class="nav" aria-label="예시 메뉴" id="nav">
+    <span class="lens-ind" id="navlens" aria-hidden="true"></span>
+    <a>홈</a><a>공지</a><a>대진표</a><a aria-current="page">기록</a><a>칭호</a><a>명예의 전당</a><a>팀 빌더</a><a>게시판</a><a>소개</a><a>더보기</a>
+  </nav>
+  <button type="button" class="iconbtn" id="theme" aria-label="테마 바꾸기"></button>
+</header>
+
+<nav class="glass tabbar" data-refract aria-label="예시 탭 바" id="tabbar">
+  <span class="lens-ind" aria-hidden="true"></span>
+  <span class="tab" data-ic="house">홈</span><span class="tab" data-ic="megaphone">공지</span><span class="tab" data-ic="tree-structure">대진표</span><span class="tab on" data-ic="ranking-fill">기록</span><span class="tab" data-ic="dots-three-outline">더보기</span>
+</nav>
+
+<div class="glass puck" data-refract id="puck" role="img" aria-label="끌어서 움직이는 유리 렌즈">끌어서 보기</div>
+
+<main class="page" id="page">
+  <aside class="panel" aria-label="굴절 설정">
+    <h2>굴절 유리 시험</h2>
+    <p id="support">유리 렌즈를 글자 위로 끌어 보세요. 가장자리에서 뒤의 글자가 휘어 보이면 굴절입니다. 굴절 세기가 100%를 넘으면 가장자리에 뒤집힌 상이 얇게 생기고, 더 올리면 글자가 거꾸로 보입니다.</p>
+    <div class="seg" role="group" aria-label="유리 종류">
+      <button type="button" id="m-frost" aria-pressed="false">지금 유리</button>
+      <button type="button" id="m-refract" aria-pressed="true">굴절 유리</button>
+    </div>
+    <div class="field" id="f-scale"><label for="scale">굴절 세기 <output id="o-scale"></output></label><input type="range" id="scale" min="0" max="200" step="5" value="110"></div>
+    <div class="field" id="f-bezel"><label for="bezel">가장자리 폭 <output id="o-bezel"></output></label><input type="range" id="bezel" min="4" max="40" step="1" value="24"></div>
+    <div class="field"><label for="frost">서리 정도 <output id="o-frost"></output></label><input type="range" id="frost" min="0" max="24" step="1" value="3"></div>
+    <div class="toggles">
+      <button type="button" id="auto" aria-pressed="false">자동 스크롤</button>
+      <button type="button" id="reset">처음 값으로</button>
+    </div>
+    <div class="meter"><span>화면 갱신</span><b id="fps">측정 중</b></div>
+  </aside>
+
+  <header>
+    <h1 class="display">리그 기록</h1>
+    <p class="lede">트레이너, 대회, 포켓몬, 랭킹 기록을 한곳에 모았습니다.</p>
+  </header>
+
+  <section class="card hero" aria-label="현재 챔피언">
+    <div><b>정두호</b><span class="lede">YPL 시즌 1 우승, 5대 챔피언</span></div>
+    <span class="big tnum" aria-hidden="true">5</span>
+  </section>
+
+  <section class="card" aria-label="대회 기록 예시" style="padding:8px">
+    <div class="round"><span class="r-date tnum">2026.10.04</span><div>
+      <div class="r-head"><b>마스터 리그 37회</b><span>YPL 시즌 3</span><span>팀전</span></div>
+      <div class="r-line"><span class="r-rk win">우승</span><span class="names"><span class="chip win">성도 울브즈</span><span class="mem">이상준</span><span class="mem">양승규</span><span class="mem">이준혁</span></span></div>
+      <div class="r-line"><span class="r-rk">준우승</span><span class="names"><span class="chip">칼로스 제니스</span><span class="mem">이종우</span><span class="mem">이진우</span></span></div>
+      <div class="r-line"><span class="r-rk">4강</span><span class="names"><span class="chip">알로라 가디언즈</span><span class="mem">허진욱</span><span class="mem">김한성</span><span class="mem">손우진</span></span></div>
+      <div class="r-line"><span class="r-rk"></span><span class="names"><span class="chip">신오 레전즈</span><span class="mem">김성빈</span><span class="mem">임시현</span><span class="mem">윤상원</span></span></div>
+    </div></div>
+    <div class="round"><span class="r-date tnum">2026.09.13</span><div>
+      <div class="r-head"><b>파이컵 라이트 7회</b><span>YPL 시즌 3</span><span>모노타입 챌린지</span></div>
+      <div class="r-line"><span class="r-rk win">우승</span><span class="names"><span class="chip win">김현민</span></span></div>
+      <div class="r-line"><span class="r-rk">준우승</span><span class="names"><span class="chip">강진영</span></span></div>
+      <div class="r-line"><span class="r-rk">4강</span><span class="names"><span class="chip">윤상원</span><span class="chip">김원의</span></span></div>
+    </div></div>
+  </section>
+
+  <section class="card list" aria-label="트레이너 예시" id="trainers"></section>
+  <div class="stripes" aria-hidden="true"></div>
+  <section class="card list" aria-label="트레이너 예시 계속" id="trainers2"></section>
+</main>
+
+<script>
+const ICONS = /*{{ICONS}}*/{};
+const $ = s => document.querySelector(s);
+const ic = n => `<svg class="ic" viewBox="0 0 256 256" aria-hidden="true"><path d="${ICONS[n] || ""}"/></svg>`;
+document.querySelectorAll(".tab").forEach(t => t.insertAdjacentHTML("afterbegin", ic(t.dataset.ic)));
+
+// example trainers, the same names and counts the records page shows
+const T = [["정두호",8,6,8],["이종우",5,2,7],["김현민",4,3,2],["이병재",3,1,5],["허진욱",3,0,5],["이준영",2,3,7],["김원의",2,2,5],["이제빈",2,1,9],["임준하",2,3,1],["김다온",2,0,0],["송수아",2,0,0],["김장현",2,0,2]];
+const rows = list => list.map(([n, w, r, s]) => `<div class="row"><b>${n}</b><span class="tnum">우승 ${w} 준우승 ${r} 4강 ${s}</span></div>`).join("");
+$("#trainers").innerHTML = rows(T); $("#trainers2").innerHTML = rows([...T].reverse());
+
+/* ---------- theme ---------- */
+const root = document.documentElement;
+const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
+const paintTheme = () => { $("#theme").innerHTML = ic(isDark() ? "sun" : "moon"); };
+$("#theme").addEventListener("click", () => { root.dataset.theme = isDark() ? "light" : "dark"; paintTheme(); });
+paintTheme();
+
+/* ---------- the selection lens in the bar sits on 기록 ---------- */
+function placeNavLens() {
+  const on = $("#nav [aria-current]"), lens = $("#navlens");
+  if (!on || !lens) return;
+  lens.style.left = on.offsetLeft + "px"; lens.style.width = on.offsetWidth + "px";
+}
+
+/* ---------- refraction ----------
+   Chromium can run an SVG filter on what is behind an element (backdrop-filter: url()). For each floating piece a
+   displacement map is drawn for its exact rounded shape: inside a band along the edge, every pixel points inward,
+   strongest at the rim and fading to nothing at the inner edge of the band. feDisplacementMap then samples the
+   backdrop from further inside, so what is behind bends and squeezes toward the rim like a thick convex lens.
+   The middle of the glass is left alone. Safari and Firefox keep the frosted glass. */
+const chromium = /Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent) && !/iPhone|iPad|iPod/.test(navigator.userAgent);
+// scale is the bend as a share of the rim band: up to 100% the image only squeezes toward the rim; past it a thin
+// mirrored edge appears, which reads as thickness. The rim band never takes more than 40% of a piece's height.
+const state = { mode: chromium ? "refract" : "frost", scale: 110, bezel: 24, frost: 3 };
+const DEFAULTS = { ...state };
+
+function drawMap(w, h, r, bezel, dpr) {
+  const W = Math.max(1, Math.round(w * dpr)), H = Math.max(1, Math.round(h * dpr));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"), img = g.createImageData(W, H), d = img.data;
+  const hw = w / 2, hh = h / 2, rr = Math.min(r, hw, hh);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const px = (i + 0.5) / dpr - hw, py = (j + 0.5) / dpr - hh;
+    const qx = Math.abs(px) - (hw - rr), qy = Math.abs(py) - (hh - rr);
+    const depth = -(Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - rr);
+    let dx = 0, dy = 0;
+    if (depth > 0 && depth < bezel) {
+      let nx, ny;
+      if (qx > 0 && qy > 0) { const l = Math.hypot(qx, qy) || 1; nx = qx / l; ny = qy / l; }
+      else if (qx > qy) { nx = 1; ny = 0; } else { nx = 0; ny = 1; }
+      nx *= Math.sign(px) || 1; ny *= Math.sign(py) || 1;
+      const t = 1 - depth / bezel, m = t * t;      // convex profile: steepest at the rim
+      dx = -nx * m; dy = -ny * m;                  // sample from further inside
+    }
+    const k = (j * W + i) * 4;
+    d[k] = 128 + dx * 127; d[k + 1] = 128 + dy * 127; d[k + 2] = 128; d[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c.toDataURL();
+}
+
+const NS = "http://www.w3.org/2000/svg";
+function applyGlass(el, i) {
+  el.style.setProperty("--frost", state.frost + "px");
+  if (state.mode !== "refract" || !chromium) { el.style.backdropFilter = ""; el.style.webkitBackdropFilter = ""; return; }
+  const w = el.offsetWidth, h = el.offsetHeight, r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || h / 2;
+  const bezel = Math.min(state.bezel, Math.min(w, h) * 0.4), scale = (bezel * state.scale) / 100;
+  const id = "rf" + i, key = [w, h, r, bezel, scale].join(":");
+  let f = document.getElementById(id);
+  if (!f) {
+    f = document.createElementNS(NS, "filter"); f.id = id;
+    f.setAttribute("filterUnits", "userSpaceOnUse"); f.setAttribute("primitiveUnits", "userSpaceOnUse"); f.setAttribute("color-interpolation-filters", "sRGB");
+    f.innerHTML = `<feImage result="map" preserveAspectRatio="none"/><feDisplacementMap in="SourceGraphic" in2="map" xChannelSelector="R" yChannelSelector="G"/>`;
+    $("#fx").append(f);
+  }
+  if (f.dataset.key !== key) {
+    f.dataset.key = key;
+    for (const [a, v] of [["x", 0], ["y", 0], ["width", w], ["height", h]]) f.setAttribute(a, v);
+    const im = f.querySelector("feImage");
+    for (const [a, v] of [["x", 0], ["y", 0], ["width", w], ["height", h]]) im.setAttribute(a, v);
+    im.setAttribute("href", drawMap(w, h, Math.min(r, h / 2, w / 2), bezel, Math.min(2, devicePixelRatio || 1)));
+    f.querySelector("feDisplacementMap").setAttribute("scale", scale); // rim offset = bezel x share / 2, its slope equals the share
+  }
+  const bf = `blur(${state.frost}px) url(#${id}) saturate(170%) brightness(var(--glass-bright))`;
+  el.style.backdropFilter = bf;
+}
+const glassEls = () => [...document.querySelectorAll("[data-refract]")];
+const applyAll = () => glassEls().forEach(applyGlass);
+
+/* ---------- controls ---------- */
+const fields = ["scale", "bezel", "frost"], units = { scale: "%", bezel: "px", frost: "px" };
+function syncControls() {
+  for (const k of fields) { $("#" + k).value = state[k]; $("#o-" + k).textContent = state[k] + units[k]; }
+  $("#m-frost").setAttribute("aria-pressed", state.mode === "frost");
+  $("#m-refract").setAttribute("aria-pressed", state.mode === "refract");
+  for (const k of ["f-scale", "f-bezel"]) $("#" + k).setAttribute("aria-disabled", state.mode !== "refract");
+}
+fields.forEach(k => $("#" + k).addEventListener("input", e => { state[k] = +e.target.value; syncControls(); applyAll(); }));
+$("#m-frost").addEventListener("click", () => { state.mode = "frost"; if (state.frost < 12) state.frost = 24; syncControls(); applyAll(); });
+$("#m-refract").addEventListener("click", () => { state.mode = "refract"; state.frost = DEFAULTS.frost; syncControls(); applyAll(); });
+$("#reset").addEventListener("click", () => { Object.assign(state, DEFAULTS); syncControls(); applyAll(); });
+if (!chromium) {
+  $("#support").textContent = "이 브라우저는 유리 뒤에 SVG 필터를 걸 수 없어 지금 유리로만 보입니다. 굴절은 데스크톱 Chrome이나 Edge에서 열어 보세요.";
+  $("#m-refract").disabled = true;
+  state.frost = 24;
+}
+
+/* ---------- the draggable lens ---------- */
+const puck = $("#puck");
+let px = 0, py = 0;
+const putPuck = () => { puck.style.transform = `translate(${px}px, ${py}px)`; };
+function homePuck() {
+  const t = document.querySelector(".display").getBoundingClientRect();
+  px = Math.max(16, t.left + 40); py = Math.max(80, t.top - 6); putPuck();
+}
+puck.addEventListener("pointerdown", e => {
+  puck.setPointerCapture(e.pointerId);
+  const ox = e.clientX - px, oy = e.clientY - py;
+  const move = ev => { px = Math.min(innerWidth - puck.offsetWidth, Math.max(0, ev.clientX - ox)); py = Math.min(innerHeight - puck.offsetHeight, Math.max(0, ev.clientY - oy)); putPuck(); };
+  const up = () => { puck.removeEventListener("pointermove", move); puck.removeEventListener("pointerup", up); puck.removeEventListener("pointercancel", up); };
+  puck.addEventListener("pointermove", move); puck.addEventListener("pointerup", up); puck.addEventListener("pointercancel", up);
+});
+
+/* ---------- auto scroll and a frame meter ---------- */
+let auto = false, dir = 1, last = 0, frames = 0, t0 = performance.now();
+$("#auto").addEventListener("click", () => { auto = !auto; $("#auto").setAttribute("aria-pressed", auto); });
+function tick(t) {
+  if (auto && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    if (scrollY >= max - 1) dir = -1; else if (scrollY <= 0) dir = 1;
+    scrollBy(0, dir * Math.min(3, (t - last) / 6 || 2));
+  }
+  last = t; frames++;
+  if (t - t0 >= 1000) { $("#fps").textContent = Math.round(frames * 1000 / (t - t0)) + "fps"; frames = 0; t0 = t; }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+let rt = 0;
+addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { placeNavLens(); applyAll(); }, 120); });
+const start = () => { placeNavLens(); syncControls(); homePuck(); applyAll(); };
+document.fonts?.ready ? document.fonts.ready.then(start) : start();
+start();
+</script>

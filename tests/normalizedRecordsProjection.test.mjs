@@ -1,0 +1,1006 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  buildNormalizedRecordsProjection,
+  isOfficialNormalizedRecordsEvent,
+} from "../src/services/normalizedRecordsProjection.js";
+import { buildPokemonStats, buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../src/services/recordsAnalytics.js";
+import { buildRecordsPokemonDirectory, resolveRecordsPokemonName, resolveRecordsSpriteName } from "../src/services/recordsPokemon.js";
+import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows } from "../src/services/recordsPresentation.js";
+import { spriteUrl } from "../src/services/teamBuilderCore.js";
+
+const EVENT_ID = "event-official";
+const SEASON_ID = "season-3";
+const TEAM_EVENT_ID = "event-team-official";
+
+function legacyData() {
+  return {
+    rankings: [{ key: "era2", label: "YPL", rows: [{ name: "Alpha", win: 1, ru: 0, top4: 0, points: 130 }] }],
+    seasons: [{ name: "YPL 시즌 3", rows: [{ name: "Alpha", win: 1, ru: 0, top4: 0, points: 30 }] }],
+    tournaments: [
+      {
+        key: "pylite",
+        label: "파이컵 라이트",
+        color: "#abc",
+        rounds: [
+          {
+            id: "linked-round",
+            date: "2026.09",
+            round: "7",
+            season: "YPL 시즌 3",
+            win: "Alpha",
+            ru: "Beta",
+            sf: [],
+            recordMeta: { eventId: EVENT_ID },
+          },
+          {
+            id: "legacy-round",
+            date: "2025.01",
+            round: "2",
+            season: "YPL 시즌 1",
+            win: "Legacy Winner",
+            sf: [],
+          },
+        ],
+      },
+    ],
+    brackets: [
+      {
+        id: "linked-bracket",
+        eventId: EVENT_ID,
+        name: "linked",
+        mode: "single",
+        format: "elim",
+        participants: [
+          { id: "pa", name: "Alpha", party: "피카츄, 라이츄" },
+          { id: "pb", name: "Beta" },
+        ],
+        graph: null,
+        applied: { tournamentKey: "pylite", date: "2026.09", season: "YPL 시즌 3", roundId: "linked-round" },
+      },
+    ],
+    champions: [],
+    titleGroups: [],
+  };
+}
+
+function rawData() {
+  return {
+    schema: "ypl_schema_validation",
+    seasons: [{ id: SEASON_ID, code: "ypl-3", name: "YPL 시즌 3", series: "ypl", sort_order: 3 }],
+    events: [
+      {
+        id: EVENT_ID,
+        season_id: SEASON_ID,
+        name: "제7회 파이컵라이트",
+        event_type: "light",
+        competition_format: "double_elimination",
+        is_team_event: false,
+        held_on: "2026-09-05",
+        date_precision: "exact",
+        status: "completed",
+        record_applied_at: "2026-09-05T00:00:00Z",
+      },
+      {
+        id: "event-running",
+        season_id: SEASON_ID,
+        name: "되돌린 대회",
+        event_type: "light",
+        is_team_event: false,
+        status: "running",
+        record_applied_at: null,
+      },
+    ],
+    players: [
+      { id: "player-a", display_name: "Alpha" },
+      { id: "player-b", display_name: "Beta" },
+      { id: "player-running", display_name: "Running" },
+    ],
+    entries: [
+      { id: "entry-a", event_id: EVENT_ID, entry_type: "individual", status: "active" },
+      { id: "entry-b", event_id: EVENT_ID, entry_type: "individual", status: "active" },
+      { id: "entry-running", event_id: "event-running", entry_type: "individual", status: "active" },
+    ],
+    entryParticipants: [
+      { id: "ep-a", event_id: EVENT_ID, entry_id: "entry-a", registration_id: "reg-a", player_id: "player-a" },
+      { id: "ep-b", event_id: EVENT_ID, entry_id: "entry-b", registration_id: "reg-b", player_id: "player-b" },
+      { id: "ep-running", event_id: "event-running", entry_id: "entry-running", registration_id: "reg-running", player_id: "player-running" },
+    ],
+    results: [
+      { id: "result-a", event_id: EVENT_ID, entry_id: "entry-a", placement_code: "champion", placement_label: "우승", rank_min: 1 },
+      { id: "result-b", event_id: EVENT_ID, entry_id: "entry-b", placement_code: "runner_up", placement_label: "준우승", rank_min: 2 },
+      { id: "result-running", event_id: "event-running", entry_id: "entry-running", placement_code: "champion", placement_label: "우승", rank_min: 1 },
+    ],
+    matches: [
+      { id: "match-a", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: "entry-b", winner_entry_id: "entry-a", resolution: "played", source: "normalized_bracket_runtime", source_node_key: "gf" },
+      { id: "match-bye", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: null, winner_entry_id: "entry-a", resolution: "played", source: "normalized_bracket_runtime", source_node_key: "bye" },
+      { id: "match-unknown", event_id: EVENT_ID, match_kind: "bracket", entry_a_id: "entry-a", entry_b_id: "entry-b", winner_entry_id: null, resolution: "unknown", source: "normalized_bracket_runtime", source_node_key: "future" },
+    ],
+    rankingBaselines: [
+      { id: "base-series", player_id: "player-a", scope: "series", series: "ypl", points: 100, wins: 0, runner_ups: 0, top4s: 0 },
+      { id: "base-season", player_id: "player-a", scope: "season", season_id: SEASON_ID, points: 0, wins: 0, runner_ups: 0, top4s: 0 },
+    ],
+    rankingAwards: [
+      { id: "award-placement", event_id: EVENT_ID, player_id: "player-a", result_id: "result-a", award_kind: "placement", points_delta: 30, win_delta: 1, runner_up_delta: 0, top4_delta: 0, counts_series: true, counts_season: true },
+      { id: "award-placement-duplicate", event_id: EVENT_ID, player_id: "player-a", result_id: "result-a", award_kind: "placement", points_delta: 30, win_delta: 1, runner_up_delta: 0, top4_delta: 0, counts_series: true, counts_season: true },
+      { id: "award-adjustment", event_id: EVENT_ID, player_id: "player-a", result_id: null, award_kind: "adjustment", points_delta: -5, win_delta: 0, runner_up_delta: 0, top4_delta: 0, counts_series: true, counts_season: false },
+      { id: "award-reversal", event_id: EVENT_ID, player_id: "player-a", result_id: null, award_kind: "reversal", points_delta: -10, win_delta: -1, runner_up_delta: 0, top4_delta: 0, counts_series: true, counts_season: true },
+      { id: "award-running", event_id: "event-running", player_id: "player-running", result_id: "result-running", award_kind: "placement", points_delta: 30, win_delta: 1, runner_up_delta: 0, top4_delta: 0, counts_series: true, counts_season: true },
+    ],
+    eventRegistrations: [
+      { id: "reg-a", event_id: EVENT_ID, player_id: "player-a", final_submission_id: null },
+      { id: "reg-b", event_id: EVENT_ID, player_id: "player-b", final_submission_id: null },
+    ],
+    registrationSubmissions: [],
+    teamSnapshots: [],
+    teamSnapshotMembers: [],
+  };
+}
+
+function teamRawData() {
+  const raw = rawData();
+  raw.events.push({
+    id: TEAM_EVENT_ID,
+    season_id: SEASON_ID,
+    name: "YPL 팀전",
+    event_type: "pokecup",
+    division: "master",
+    regulation_id: "m-b",
+    cup_rule_id: "none",
+    competition_format: "double_elimination",
+    is_team_event: true,
+    held_on: "2026-09-06",
+    date_precision: "exact",
+    status: "completed",
+    record_applied_at: "2026-09-06T00:00:00Z",
+  });
+
+  const teams = [
+    ["a", "Team Alpha", "champion"],
+    ["b", "Team Beta", "runner_up"],
+    ["c", "Team Gamma", "semifinalist"],
+    ["d", "Team Delta", "semifinalist"],
+  ];
+  for (const [teamId, teamName] of teams) {
+    const entryId = `team-entry-${teamId}`;
+    raw.entries.push({ id: entryId, event_id: TEAM_EVENT_ID, entry_type: "team", display_name: teamName, status: "active" });
+    for (const [memberOrder, suffix] of ["1", "2"].entries()) {
+      const playerId = `player-team-${teamId}-${suffix}`;
+      raw.players.push({ id: playerId, display_name: `${teamId.toUpperCase()}${suffix}` });
+      raw.eventRegistrations.push({
+        id: `registration-team-${teamId}-${suffix}`,
+        event_id: TEAM_EVENT_ID,
+        player_id: playerId,
+        final_submission_id: null,
+      });
+      raw.entryParticipants.push({
+        id: `entry-participant-team-${teamId}-${suffix}`,
+        event_id: TEAM_EVENT_ID,
+        entry_id: entryId,
+        registration_id: `registration-team-${teamId}-${suffix}`,
+        player_id: playerId,
+        member_order: memberOrder + 1,
+        role: memberOrder === 0 ? "captain" : "member",
+      });
+    }
+    const resultId = `result-team-${teamId}`;
+    raw.results.push({
+      id: resultId,
+      event_id: TEAM_EVENT_ID,
+      entry_id: entryId,
+      placement_code: teams.find(([id]) => id === teamId)[2],
+      placement_label: teams.find(([id]) => id === teamId)[2] === "champion" ? "우승" : teams.find(([id]) => id === teamId)[2] === "runner_up" ? "준우승" : "4강",
+      rank_min: teamId === "a" ? 1 : teamId === "b" ? 2 : 3,
+    });
+
+    if (teamId === "a" || teamId === "b") {
+      const points = teamId === "a" ? 30 : 20;
+      for (const suffix of ["1", "2"]) {
+        raw.rankingAwards.push({
+          id: `award-team-${teamId}-${suffix}`,
+          event_id: TEAM_EVENT_ID,
+          player_id: `player-team-${teamId}-${suffix}`,
+          result_id: resultId,
+          award_kind: "placement",
+          points_delta: points,
+          win_delta: 0,
+          runner_up_delta: 0,
+          top4_delta: 0,
+          counts_series: true,
+          counts_season: true,
+        });
+      }
+    }
+  }
+
+  raw.matches.push(
+    {
+      id: "team-parent-match",
+      event_id: TEAM_EVENT_ID,
+      match_kind: "bracket",
+      entry_a_id: "team-entry-a",
+      entry_b_id: "team-entry-b",
+      winner_entry_id: "team-entry-a",
+      resolution: "played",
+      source: "normalized_bracket_runtime",
+      source_node_key: "gf",
+    },
+    {
+      id: "team-bout-match",
+      event_id: TEAM_EVENT_ID,
+      match_kind: "team_bout",
+      parent_match_id: "team-parent-match",
+      entry_a_id: "team-entry-a",
+      entry_b_id: "team-entry-b",
+      winner_entry_id: "team-entry-a",
+      resolution: "played",
+      source: "normalized_bracket_runtime",
+      source_node_key: "gf:bout:1",
+    },
+    {
+      id: "team-ace-match",
+      event_id: TEAM_EVENT_ID,
+      match_kind: "ace",
+      parent_match_id: "team-parent-match",
+      entry_a_id: "team-entry-a",
+      entry_b_id: "team-entry-b",
+      winner_entry_id: "team-entry-a",
+      resolution: "played",
+      source: "normalized_bracket_runtime",
+      source_node_key: "gf:ace",
+    }
+  );
+
+  return raw;
+}
+
+function teamLegacyData() {
+  const legacy = legacyData();
+  legacy.tournaments[0].rounds.push({
+    id: "linked-team-round",
+    date: "2026.09.06",
+    round: "team-1",
+    season: "YPL 시즌 3",
+    win: "Team Alpha",
+    winMembers: ["A1", "A2"],
+    ru: "Team Beta",
+    ruMembers: ["B1", "B2"],
+    sf: ["Team Gamma", "Team Delta"],
+    sfMembers: [["C1", "C2"], ["D1", "D2"]],
+    team: true,
+    recordMeta: { eventId: TEAM_EVENT_ID },
+  });
+  legacy.brackets.push({
+    id: "linked-team-bracket",
+    eventId: TEAM_EVENT_ID,
+    name: "linked team",
+    mode: "team",
+    format: "elim",
+    participants: [
+      { id: "legacy-team-a", name: "Team Alpha", members: ["A1", "A2"], memberParties: { A1: "피카츄", A2: "라이츄" } },
+      { id: "legacy-team-b", name: "Team Beta", members: ["B1", "B2"], memberParties: { B1: "꼬부기", B2: "어니부기" } },
+    ],
+    graph: {
+      rounds: [[{
+        id: "legacy-team-final",
+        a: { pid: "legacy-team-a" },
+        b: { pid: "legacy-team-b" },
+        winner: "a",
+        series: { lineupA: ["A1"], lineupB: ["B1"], games: ["a"], ace: { a: "A1", b: "B1", winner: "a" } },
+      }]],
+    },
+    applied: { tournamentKey: "pylite", date: "2026.09.06", season: "YPL 시즌 3", roundId: "linked-team-round" },
+  });
+  return legacy;
+}
+
+test("official Records require completed + record_applied_at and map placements by Player ID", () => {
+  assert.equal(isOfficialNormalizedRecordsEvent(rawData().events[0]), true);
+  assert.equal(isOfficialNormalizedRecordsEvent(rawData().events[1]), false);
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), rawData());
+  assert.deepEqual(snapshot.normalized.eventIds, [EVENT_ID]);
+  assert.equal(snapshot.profiles["player:player-a"].placements.filter((row) => row.eventId === EVENT_ID).length, 1);
+  assert.equal(snapshot.profiles["player:player-a"].placements.at(-1).placement, "win");
+  assert.equal(snapshot.profiles["player:player-b"].placements.at(-1).placement, "ru");
+  assert.equal(snapshot.profiles["player:player-running"], undefined);
+  assert.equal(snapshot.matches.filter((row) => row.eventId === EVENT_ID).length, 1);
+});
+
+test("linked legacy round and bracket are suppressed instead of double-counted", () => {
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), rawData());
+  assert.equal(snapshot.archives.filter((row) => row.eventId === EVENT_ID || row.id === "linked-round").length, 1);
+  assert.equal(snapshot.profiles["player:player-a"].placements.filter((row) => row.eventId === EVENT_ID).length, 1);
+  assert.ok(snapshot.archives.some((row) => row.id === "legacy-round"));
+});
+
+test("RankingBaseline plus every ledger kind is summed with count flags and duplicate placement protection", () => {
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), rawData());
+  const series = snapshot.ranking.series.find((item) => item.key === "era2");
+  const season = snapshot.ranking.seasons.find((item) => item.id === SEASON_ID);
+  const seriesAlpha = series.rows.find((row) => row.playerId === "player-a");
+  const seasonAlpha = season.rows.find((row) => row.playerId === "player-a");
+
+  assert.deepEqual(
+    { points: seriesAlpha.points, win: seriesAlpha.win },
+    { points: 115, win: 0 }
+  );
+  assert.deepEqual(
+    { points: seasonAlpha.points, win: seasonAlpha.win },
+    { points: 20, win: 0 }
+  );
+  assert.equal(snapshot.ranking.awardRows.length, 3);
+  assert.equal(series.rows.some((row) => row.playerId === "player-running"), false);
+});
+
+test("same display_name Players remain separate profiles and legacy name history stays unresolved", () => {
+  const raw = rawData();
+  raw.players[1].display_name = "Alpha";
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+
+  assert.ok(snapshot.profiles["player:player-a"]);
+  assert.ok(snapshot.profiles["player:player-b"]);
+  assert.ok(snapshot.profiles["legacy:Alpha"]);
+  assert.equal(snapshot.profiles["player:player-a"].playerId, "player-a");
+  assert.equal(snapshot.profiles["player:player-b"].playerId, "player-b");
+  assert.equal(snapshot.profiles["legacy:Alpha"].playerId, null);
+});
+
+test("historical Event keeps legacy fallback until the P2-6 final party system is revealed", () => {
+  const withoutSnapshot = buildNormalizedRecordsProjection(legacyData(), rawData());
+  assert.ok(withoutSnapshot.rosters.some((row) => row.bracketId === "linked-bracket" && row.pokemon.includes("피카츄")));
+
+  const raw = rawData();
+  raw.events[0].team_revealed_at = "2026-09-05T01:00:00Z";
+  raw.eventRegistrations[0].final_submission_id = "submission-a";
+  raw.registrationSubmissions = [{ id: "submission-a", registration_id: "reg-a", snapshot_id: "snapshot-a" }];
+  raw.teamSnapshots = [{ id: "snapshot-a", schema_version: 1 }];
+  raw.teamSnapshotMembers = [{ id: "member-a", snapshot_id: "snapshot-a", slot: 1, pokemon_id: "eevee", pokemon_name_snapshot: "이브이" }];
+  const withSnapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+
+  assert.equal(withSnapshot.rosters.some((row) => row.bracketId === "linked-bracket"), false);
+  assert.ok(withSnapshot.rosters.some((row) => row.snapshotId === "snapshot-a" && row.pokemon.includes("이브이")));
+  assert.deepEqual(withSnapshot.rosters.find((row) => row.snapshotId === "snapshot-a").pokemonIds, ["eevee"]);
+});
+
+test("revealed P2-6 Event excludes partial legacy parties and uses only the frozen revision", () => {
+  const raw = rawData();
+  raw.events[0].team_revealed_at = "2026-09-05T01:00:00Z";
+  raw.eventRegistrations[0].final_submission_id = "submission-a-2";
+  raw.registrationSubmissions = [
+    { id: "submission-a-1", registration_id: "reg-a", snapshot_id: "snapshot-a-1", revision: 1 },
+    { id: "submission-a-2", registration_id: "reg-a", snapshot_id: "snapshot-a-2", revision: 2 },
+  ];
+  raw.teamSnapshots = [
+    { id: "snapshot-a-1", schema_version: 1 },
+    { id: "snapshot-a-2", schema_version: 1 },
+  ];
+  raw.teamSnapshotMembers = [
+    { id: "member-a-1", snapshot_id: "snapshot-a-1", slot: 1, pokemon_id: "pikachu", pokemon_name_snapshot: "피카츄" },
+    { id: "member-a-2", snapshot_id: "snapshot-a-2", slot: 1, pokemon_id: "charizard", pokemon_name_snapshot: "리자몽" },
+  ];
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  assert.equal(snapshot.rosters.some((row) => row.bracketId === "linked-bracket"), false);
+  assert.equal(snapshot.rosters.length, 1);
+  assert.deepEqual(snapshot.rosters[0].pokemon, ["리자몽"]);
+  assert.deepEqual(snapshot.rosters[0].pokemonIds, ["charizard"]);
+  assert.equal(snapshot.pokemon.some((row) => row.name === "피카츄"), false);
+  assert.equal(snapshot.pokemon.find((row) => row.name === "리자몽").entries, 1);
+
+  const archive = snapshot.archives.find((row) => row.id === EVENT_ID);
+  assert.equal(archive.rosters.length, 1);
+  assert.equal(archive.partyPreviews.win[0].snapshotId, "snapshot-a-2");
+  assert.equal(archive.partyPreviews.ru[0], null);
+});
+
+test("normalized rosters keep canonical, display, and snapshot sprite identities separate", () => {
+  const raw = rawData();
+  raw.events[0].team_revealed_at = "2026-09-13T01:00:00Z";
+  raw.eventRegistrations[0].final_submission_id = "submission-forms";
+  raw.registrationSubmissions = [{ id: "submission-forms", registration_id: "reg-a", snapshot_id: "snapshot-forms" }];
+  raw.teamSnapshots = [{ id: "snapshot-forms", schema_version: 1 }];
+  raw.teamSnapshotMembers = [
+    ["rotomheat", "Heat Rotom"],
+    ["rotomwash", "Wash Rotom"],
+    ["samurotthisui", "Samurott [Hisuian Form]"],
+    ["goodrahisui", "Goodra [Hisuian Form]"],
+    ["charizardmegax", "Charizard-Mega-X"],
+    ["charizardmegay", "Charizard-Mega-Y"],
+  ].map(([pokemon_id, pokemon_name_snapshot], index) => ({
+    id: `member-form-${index + 1}`,
+    snapshot_id: "snapshot-forms",
+    slot: index + 1,
+    pokemon_id,
+    pokemon_name_snapshot,
+  }));
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const roster = snapshot.rosters.find((row) => row.snapshotId === "snapshot-forms");
+  assert.equal(roster.pokemon.length, 6);
+  assert.deepEqual(roster.pokemonIds, raw.teamSnapshotMembers.map((member) => member.pokemon_id));
+  assert.deepEqual(roster.spriteNames, raw.teamSnapshotMembers.map((member) => member.pokemon_name_snapshot));
+  assert.equal(spriteUrl(roster.spriteNames[0]).endsWith("/rotom-heat.webp"), true);
+  assert.equal(spriteUrl(roster.spriteNames[4]).endsWith("/charizard-megax.webp"), true);
+  assert.equal(spriteUrl(roster.spriteNames[5]).endsWith("/charizard-megay.webp"), true);
+  assert.notEqual(spriteUrl(roster.spriteNames[5]), spriteUrl("Charizard"));
+
+  const archive = snapshot.archives.find((row) => row.id === EVENT_ID);
+  const partyRows = buildIndividualPartyPreviewRows(archive);
+  assert.equal(partyRows.find((row) => row.entryId === "entry-a").roster.pokemon.length, 6);
+  assert.equal(partyRows.find((row) => row.entryId === "entry-b").roster, null);
+});
+
+test("ordinary individual record apply reveals only actual participants' frozen rosters for Light, Master, and Rookie", () => {
+  for (const [eventType, division] of [
+    ["light", "light"],
+    ["pokecup", "master"],
+    ["rookie", "rookie"],
+  ]) {
+    const raw = rawData();
+    raw.events[0] = {
+      ...raw.events[0],
+      event_type: eventType,
+      division,
+      team_reveal_mode: "on_record_apply",
+      team_revealed_at: "2026-09-08T00:00:00Z",
+    };
+    raw.eventRegistrations = [
+      { id: "reg-a", event_id: EVENT_ID, player_id: "player-a", final_submission_id: "submission-a" },
+      { id: "reg-b", event_id: EVENT_ID, player_id: "player-b", final_submission_id: null },
+      { id: "reg-no-show", event_id: EVENT_ID, player_id: "player-no-show", final_submission_id: "submission-no-show" },
+    ];
+    raw.players.push({ id: "player-no-show", display_name: "No Show" });
+    raw.registrationSubmissions = [
+      { id: "submission-a", registration_id: "reg-a", snapshot_id: "snapshot-a", revision: 1 },
+      { id: "submission-no-show", registration_id: "reg-no-show", snapshot_id: "snapshot-no-show", revision: 1 },
+    ];
+    raw.teamSnapshots = [{ id: "snapshot-a" }, { id: "snapshot-no-show" }];
+    raw.teamSnapshotMembers = [
+      "pikachu", "raichu", "eevee", "vaporeon", "jolteon", "flareon",
+    ].map((pokemon_id, index) => ({
+      id: `member-a-${pokemon_id}`,
+      snapshot_id: "snapshot-a",
+      slot: index + 1,
+      pokemon_id,
+      pokemon_name_snapshot: pokemon_id,
+    })).concat([{
+      id: "member-no-show",
+      snapshot_id: "snapshot-no-show",
+      slot: 1,
+      pokemon_id: "mew",
+      pokemon_name_snapshot: "Mew",
+    }]);
+
+    const applied = buildNormalizedRecordsProjection(legacyData(), raw);
+    assert.equal(applied.rosters.length, 1, `${eventType}: submitted no-show and unsubmitted participant are excluded`);
+    assert.equal(applied.rosters[0].snapshotId, "snapshot-a");
+    assert.equal(applied.rosters[0].pokemon.length, 6);
+    assert.equal(applied.pokemon.length, 6);
+    assert.equal(applied.pokemon.some((row) => row.name === "Mew"), false);
+
+    const reverted = structuredClone(raw);
+    reverted.events[0].status = "running";
+    reverted.events[0].record_applied_at = null;
+    reverted.events[0].team_revealed_at = null;
+    reverted.eventRegistrations[0].final_submission_id = null;
+    assert.equal(
+      buildNormalizedRecordsProjection(legacyData(), reverted).rosters.filter((row) => row.snapshotId === "snapshot-a").length,
+      0,
+      `${eventType}: revert hides the normalized official roster`
+    );
+    assert.equal(reverted.registrationSubmissions.length, 2, `${eventType}: revert preserves immutable submission history`);
+  }
+});
+
+test("individual archive accordion includes every actual participant and labels missing final parties", () => {
+  const raw = rawData();
+  raw.events[0].team_revealed_at = "2026-09-05T01:00:00Z";
+  raw.eventRegistrations[0].final_submission_id = "submission-a-2";
+  raw.eventRegistrations[1].final_submission_id = "submission-b";
+  raw.eventRegistrations.push(
+    { id: "reg-c", event_id: EVENT_ID, player_id: "player-c", final_submission_id: "submission-c" },
+    { id: "reg-d", event_id: EVENT_ID, player_id: "player-d", final_submission_id: "submission-d" },
+    { id: "reg-e", event_id: EVENT_ID, player_id: "player-e", final_submission_id: null },
+    { id: "reg-f", event_id: EVENT_ID, player_id: "player-f", final_submission_id: null },
+    { id: "reg-application-only", event_id: EVENT_ID, player_id: "player-application-only", final_submission_id: "submission-ignored" },
+  );
+  raw.players.push(
+    { id: "player-c", display_name: "Gamma" },
+    { id: "player-d", display_name: "Delta" },
+    { id: "player-e", display_name: "Epsilon" },
+    { id: "player-f", display_name: "Zeta" },
+    { id: "player-application-only", display_name: "Application Only" },
+  );
+  for (const [entryId, registrationId, playerId] of [
+    ["entry-c", "reg-c", "player-c"],
+    ["entry-d", "reg-d", "player-d"],
+    ["entry-e", "reg-e", "player-e"],
+    ["entry-f", "reg-f", "player-f"],
+  ]) {
+    raw.entries.push({ id: entryId, event_id: EVENT_ID, entry_type: "individual", status: "active" });
+    raw.entryParticipants.push({ id: `ep-${entryId}`, event_id: EVENT_ID, entry_id: entryId, registration_id: registrationId, player_id: playerId });
+  }
+  raw.results.push(
+    { id: "result-c", event_id: EVENT_ID, entry_id: "entry-c", placement_code: "semifinalist", placement_label: "4강", rank_min: 3 },
+    { id: "result-d", event_id: EVENT_ID, entry_id: "entry-d", placement_code: "semifinalist", placement_label: "4강", rank_min: 3 },
+  );
+  raw.registrationSubmissions = [
+    { id: "submission-a-1", registration_id: "reg-a", snapshot_id: "snapshot-a-1", revision: 1 },
+    { id: "submission-a-2", registration_id: "reg-a", snapshot_id: "snapshot-a-2", revision: 2 },
+    { id: "submission-b", registration_id: "reg-b", snapshot_id: "snapshot-b", revision: 1 },
+    { id: "submission-c", registration_id: "reg-c", snapshot_id: "snapshot-c", revision: 1 },
+    { id: "submission-d", registration_id: "reg-d", snapshot_id: "snapshot-d", revision: 1 },
+  ];
+  raw.teamSnapshots = [
+    { id: "snapshot-a-1", schema_version: 1 },
+    { id: "snapshot-a-2", schema_version: 1 },
+    { id: "snapshot-b", schema_version: 1 },
+    { id: "snapshot-c", schema_version: 1 },
+    { id: "snapshot-d", schema_version: 1 },
+  ];
+  raw.teamSnapshotMembers = [
+    { id: "member-a-1", snapshot_id: "snapshot-a-1", slot: 1, pokemon_id: "pikachu", pokemon_name_snapshot: "Pikachu" },
+    { id: "member-a-2", snapshot_id: "snapshot-a-2", slot: 1, pokemon_id: "charizard", pokemon_name_snapshot: "Charizard" },
+    { id: "member-b", snapshot_id: "snapshot-b", slot: 1, pokemon_id: "eevee", pokemon_name_snapshot: "Eevee" },
+    { id: "member-c", snapshot_id: "snapshot-c", slot: 1, pokemon_id: "gengar", pokemon_name_snapshot: "Gengar" },
+    { id: "member-d", snapshot_id: "snapshot-d", slot: 1, pokemon_id: "dragonite", pokemon_name_snapshot: "Dragonite" },
+  ];
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const archive = snapshot.archives.find((row) => row.id === EVENT_ID);
+  const rows = buildIndividualPartyPreviewRows(archive);
+
+  assert.deepEqual(
+    rows.map((row) => [row.label, row.name, row.roster?.snapshotId || null]),
+    [
+      ["우승", "Alpha", "snapshot-a-2"],
+      ["준우승", "Beta", "snapshot-b"],
+      ["4강", "Gamma", "snapshot-c"],
+      ["4강", "Delta", "snapshot-d"],
+      ["참가", "Epsilon", null],
+      ["참가", "Zeta", null],
+    ]
+  );
+  assert.equal(rows.some((row) => row.name === "Application Only"), false);
+  assert.equal(snapshot.rosters.length, 4);
+  assert.equal(snapshot.rosters.some((row) => row.snapshotId === "snapshot-a-1"), false);
+  assert.equal(snapshot.rosters.some((row) => row.bracketId === "linked-bracket"), false);
+});
+
+test("final Snapshot Pokémon display resolves Korean names by pokemon_id and aggregates by identity", () => {
+  const raw = rawData();
+  raw.events[0].team_revealed_at = "2026-09-05T01:00:00Z";
+  raw.eventRegistrations[0].final_submission_id = "submission-a";
+  raw.eventRegistrations.push({ id: "reg-c", event_id: EVENT_ID, player_id: "player-c", final_submission_id: "submission-c" });
+  raw.players.push({ id: "player-c", display_name: "Gamma" });
+  raw.entries.push({ id: "entry-c", event_id: EVENT_ID, entry_type: "individual", status: "active" });
+  raw.entryParticipants.push({ id: "ep-c", event_id: EVENT_ID, entry_id: "entry-c", registration_id: "reg-c", player_id: "player-c" });
+  raw.results.push({ id: "result-c", event_id: EVENT_ID, entry_id: "entry-c", placement_code: "semifinalist", placement_label: "4강", rank_min: 3 });
+  raw.registrationSubmissions = [
+    { id: "submission-a", registration_id: "reg-a", snapshot_id: "snapshot-a", revision: 1 },
+    { id: "submission-c", registration_id: "reg-c", snapshot_id: "snapshot-c", revision: 1 },
+  ];
+  raw.teamSnapshots = [
+    { id: "snapshot-a", schema_version: 1 },
+    { id: "snapshot-c", schema_version: 1 },
+  ];
+  raw.teamSnapshotMembers = [
+    { id: "member-a", snapshot_id: "snapshot-a", slot: 1, pokemon_id: "pikachu", pokemon_name_snapshot: "Pikachu" },
+    { id: "member-c", snapshot_id: "snapshot-c", slot: 1, pokemon_id: "pikachu", pokemon_name_snapshot: "피카츄" },
+  ];
+
+  const directory = new Map([
+    ["pikachu", { canonicalName: "Pikachu", displayName: "피카츄" }],
+  ]);
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw, directory);
+
+  assert.equal(snapshot.rosters.length, 2);
+  assert.deepEqual(snapshot.rosters.map((row) => row.pokemon), [["피카츄"], ["피카츄"]]);
+  assert.deepEqual(snapshot.rosters.map((row) => row.pokemonIds), [["pikachu"], ["pikachu"]]);
+  assert.equal(snapshot.pokemon.length, 1);
+  assert.equal(snapshot.pokemon[0].name, "피카츄");
+  assert.equal(snapshot.pokemon[0].entries, 2);
+});
+
+test("Records Pokémon canonical resolve failure falls back to snapshot name", () => {
+  const directory = new Map([
+    ["pikachu", { canonicalName: "Pikachu", displayName: "피카츄" }],
+  ]);
+  assert.equal(resolveRecordsPokemonName("missing-id", "Snapshot English", directory), "Snapshot English");
+  assert.equal(resolveRecordsPokemonName("pikachu", "Snapshot English", directory), "피카츄");
+});
+
+test("Records sprite resolution prefers form-aware snapshots and uses canonical metadata only for localized snapshots", () => {
+  const directory = new Map([
+    ["rotomheat", { canonicalName: "Rotom-Heat", displayName: "히트로토무" }],
+    ["samurotthisui", { canonicalName: "Samurott-Hisui", displayName: "히스이 대검귀" }],
+    ["charizardmegay", { canonicalName: "Charizard-Mega-Y", displayName: "리자몽" }],
+  ]);
+
+  assert.equal(resolveRecordsSpriteName("rotomheat", "Heat Rotom", directory), "Heat Rotom");
+  assert.equal(resolveRecordsSpriteName("charizardmegay", "Charizard-Mega-Y", directory), "Charizard-Mega-Y");
+  assert.equal(resolveRecordsSpriteName("rotomheat", "히트로토무", directory), "Rotom-Heat");
+  assert.equal(resolveRecordsSpriteName("samurotthisui", "히스이 대검귀", directory), "Samurott-Hisui");
+  assert.equal(spriteUrl(resolveRecordsSpriteName("rotomheat", "히트로토무", directory)).endsWith("/rotom-heat.webp"), true);
+  assert.equal(spriteUrl(resolveRecordsSpriteName("samurotthisui", "히스이 대검귀", directory)).endsWith("/samurott-hisui.webp"), true);
+  assert.equal(spriteUrl(resolveRecordsSpriteName("charizardmegay", "리자몽", directory)).endsWith("/charizard-megay.webp"), true);
+});
+
+test("Records Pokémon directory names mega and Rotom forms distinctly", () => {
+  const directory = buildRecordsPokemonDirectory({
+    pokedex: {
+      charizard: { name: "Charizard", num: 6 },
+      charizardmegax: { name: "Charizard-Mega-X", num: 6, forme: "Mega-X" },
+      metagrossmega: { name: "Metagross-Mega", num: 376, forme: "Mega" },
+      rotom: { name: "Rotom", num: 479 },
+      rotomheat: { name: "Rotom-Heat", num: 479, forme: "Heat" },
+    },
+  }, { koreanById: new Map([["6", "리자몽"], ["376", "메타그로스"], ["479", "로토무"]]) });
+  assert.deepEqual(
+    ["charizard", "charizardmegax", "metagrossmega", "rotom", "rotomheat"].map((id) => directory.get(id).displayName),
+    ["리자몽", "메가리자몽X", "메가메타그로스", "로토무", "히트로토무"]
+  );
+});
+
+test("Records Pokémon directory names forms exactly as the team builder does", () => {
+  const directory = buildRecordsPokemonDirectory({
+    pokedex: {
+      lycanroc: { id: "lycanroc", name: "Lycanroc", baseSpecies: "Lycanroc", num: 745 },
+      lycanrocmidnight: { id: "lycanrocmidnight", name: "Lycanroc-Midnight", baseSpecies: "Lycanroc", forme: "Midnight", num: 745 },
+      florges: { id: "florges", name: "Florges", baseSpecies: "Florges", num: 671, cosmeticFormes: ["Florges-Yellow", "Florges-Orange", "Florges-Blue", "Florges-White"] },
+    },
+  }, {
+    koreanById: new Map([["745", "루가루암"], ["671", "플라제스"]]),
+    koreanByEnglish: new Map([["lycanroc", "루가루암"], ["florges", "플라제스"]]),
+  });
+  assert.equal(directory.get("lycanroc").displayName, "루가루암");
+  assert.equal(directory.get("lycanrocmidnight").displayName, "루가루암 (한밤중의 모습)");
+  // Cosmetic forms share the base record, which keeps the base name.
+  assert.equal(directory.get("florges").displayName, "플라제스");
+});
+
+test("Records Pokémon stats merge legacy name-only and id-backed rosters of the same Pokémon", () => {
+  const stats = buildPokemonStats([
+    { owner: "A", pokemon: ["아머까오", "따라큐"], placement: "win" },
+    { owner: "B", pokemon: ["아머까오", "따라큐"], pokemonIds: ["corviknight", "mimikyu"], placement: "ru" },
+  ], []);
+  assert.deepEqual(stats.map((row) => [row.name, row.entries]), [["따라큐", 2], ["아머까오", 2]]);
+  assert.deepEqual(stats[1].partners, [{ name: "따라큐", entries: 2 }]);
+});
+
+test("individual tournament party preview rows map final previews by placement and exclude team rows", () => {
+  const round = {
+    team: false,
+    win: "Test6",
+    ru: ["Test1"],
+    sf: ["Test3", "Test4"],
+    partyPreviews: {
+      win: [{ snapshotId: "snapshot-6", pokemon: ["피카츄"] }],
+      ru: [{ snapshotId: "snapshot-1", pokemon: ["리자몽"] }],
+      sf: [{ snapshotId: "snapshot-3", pokemon: ["팬텀"] }, { snapshotId: "snapshot-4", pokemon: ["망나뇽"] }],
+    },
+  };
+  assert.deepEqual(
+    buildIndividualPartyPreviewRows(round).map((row) => [row.label, row.name, row.roster?.snapshotId]),
+    [["우승", "Test6", "snapshot-6"], ["준우승", "Test1", "snapshot-1"], ["4강", "Test3", "snapshot-3"], ["4강", "Test4", "snapshot-4"]]
+  );
+  assert.deepEqual(buildIndividualPartyPreviewRows({ ...round, team: true }), []);
+});
+
+test("normalized team Results expand to member history and team archive without individual counts", () => {
+  const snapshot = buildNormalizedRecordsProjection(teamLegacyData(), teamRawData());
+  assert.deepEqual(snapshot.normalized.eventIds, [EVENT_ID, TEAM_EVENT_ID]);
+
+  const champion = snapshot.profiles["player:player-team-a-1"];
+  const runnerUp = snapshot.profiles["player:player-team-b-1"];
+  const semifinalist = snapshot.profiles["player:player-team-c-1"];
+  assert.equal(champion.placements.filter((row) => row.eventId === TEAM_EVENT_ID).length, 1);
+  assert.deepEqual(
+    champion.placements.find((row) => row.eventId === TEAM_EVENT_ID),
+    {
+      id: `${TEAM_EVENT_ID}:entry-participant-team-a-1`,
+      eventId: TEAM_EVENT_ID,
+      tournamentKey: "master",
+      tournamentName: "마스터 리그",
+      eventName: "YPL 팀전",
+      date: "2026.09.06",
+      recordAppliedAt: "2026-09-06T00:00:00Z",
+      round: "",
+      season: "YPL 시즌 3",
+      seasonId: SEASON_ID,
+      series: "ypl",
+      rule: "",
+      championSeries: false,
+      championshipPhase: "",
+      championshipFinalEventId: null,
+      team: true,
+      mode: "team",
+      format: "double_elimination",
+      source: "normalized",
+      entryId: "team-entry-a",
+      playerId: "player-team-a-1",
+      name: "A1",
+      teamName: "Team Alpha",
+      placement: "win",
+      resultLabel: "팀 우승",
+      resultRank: 1,
+    }
+  );
+  assert.equal(runnerUp.placements.find((row) => row.eventId === TEAM_EVENT_ID).resultLabel, "팀 준우승");
+  assert.equal(semifinalist.placements.find((row) => row.eventId === TEAM_EVENT_ID).resultLabel, "팀 4강");
+  assert.equal(displayRecordMeta(champion.placements.find((row) => row.eventId === TEAM_EVENT_ID).rule), "");
+  for (const teamId of ["a", "b", "c", "d"]) {
+    for (const suffix of ["1", "2"]) {
+      const profile = snapshot.profiles[`player:player-team-${teamId}-${suffix}`];
+      assert.equal(profile.history.filter((row) => row.eventId === TEAM_EVENT_ID).length, 1);
+    }
+  }
+  assert.equal(champion.history.filter((row) => row.team && row.placement === "win").length, 1);
+  assert.equal(champion.history.filter((row) => row.bracketId === "linked-team-bracket").length, 0);
+  assert.equal(snapshot.participations.filter((row) => row.bracketId === "linked-team-bracket").length, 0);
+
+  const championTrainer = snapshot.trainers.find((row) => row.playerId === "player-team-a-1");
+  assert.deepEqual(
+    { wins: championTrainer.wins, runnerUps: championTrainer.runnerUps, top4: championTrainer.top4 },
+    { wins: 0, runnerUps: 0, top4: 0 }
+  );
+  const individualTrainer = snapshot.trainers.find((row) => row.playerId === "player-a");
+  assert.equal(individualTrainer.wins, 1);
+
+  const archive = snapshot.archives.find((row) => row.id === TEAM_EVENT_ID);
+  assert.equal(archive.team, true);
+  assert.equal(archive.win, "Team Alpha");
+  assert.deepEqual(archive.winMembers, ["A1", "A2"]);
+  assert.deepEqual(archive.ru, ["Team Beta"]);
+  assert.deepEqual(archive.ruMembers, ["B1", "B2"]);
+  assert.deepEqual(archive.sf, ["Team Gamma", "Team Delta"]);
+  assert.deepEqual(archive.sfMembers, [["C1", "C2"], ["D1", "D2"]]);
+  assert.equal(archive.source, "normalized");
+  assert.equal(displayRecordMeta(archive.rule), "");
+  assert.equal(snapshot.archives.some((row) => row.id === "linked-team-round"), false);
+  assert.ok(snapshot.rosters.some((row) => row.bracketId === "linked-team-bracket" && row.owner === "A1"));
+  assert.ok(snapshot.pokemon.find((row) => row.name === "피카츄").trainers.some((row) => row.name === "A1"));
+  assert.ok(snapshot.matches.some((row) => row.bracketId === "linked-team-bracket" && row.teamMatch === true));
+  assert.equal(snapshot.matches.some((row) => row.eventId === TEAM_EVENT_ID), false);
+});
+
+test("revealed team rosters belong to each member and feed archives, profiles and Pokemon usage", () => {
+  const raw = teamRawData();
+  const event = raw.events.find((row) => row.id === TEAM_EVENT_ID);
+  event.team_revealed_at = "2026-10-04T10:09:21Z";
+  const members = [
+    ["a-1", "pikachu", "피카츄"],
+    ["a-2", "raichu", "라이츄"],
+    ["b-1", "pikachu", "피카츄"],
+  ];
+  for (const [key, pokemonId, name] of members) {
+    const registration = raw.eventRegistrations.find((row) => row.id === `registration-team-${key}`);
+    registration.final_submission_id = `submission-${key}`;
+    raw.registrationSubmissions.push({ id: registration.final_submission_id, registration_id: registration.id, snapshot_id: `snapshot-${key}`, revision: 2 });
+    raw.teamSnapshots.push({ id: `snapshot-${key}` });
+    raw.teamSnapshotMembers.push({ id: `member-${key}`, snapshot_id: `snapshot-${key}`, slot: 1, pokemon_id: pokemonId, pokemon_name_snapshot: name });
+  }
+  // An older revision and a submission without an actual participant must not enter Records.
+  raw.registrationSubmissions.push({ id: "old-submission", registration_id: "registration-team-a-1", snapshot_id: "old-snapshot", revision: 1 });
+  raw.teamSnapshots.push({ id: "old-snapshot" }, { id: "no-show-snapshot" });
+  raw.teamSnapshotMembers.push(
+    { id: "old-member", snapshot_id: "old-snapshot", slot: 1, pokemon_id: "eevee", pokemon_name_snapshot: "이브이" },
+    { id: "no-show-member", snapshot_id: "no-show-snapshot", slot: 1, pokemon_id: "eevee", pokemon_name_snapshot: "이브이" },
+  );
+  raw.eventRegistrations.push({ id: "no-show-registration", event_id: TEAM_EVENT_ID, final_submission_id: "no-show-submission" });
+  raw.registrationSubmissions.push({ id: "no-show-submission", registration_id: "no-show-registration", snapshot_id: "no-show-snapshot" });
+
+  const snapshot = buildNormalizedRecordsProjection(teamLegacyData(), raw);
+  const rosters = snapshot.rosters.filter((row) => row.eventId === TEAM_EVENT_ID);
+  assert.equal(rosters.length, 3);
+  assert.equal(new Set(rosters.map((row) => row.id)).size, 3);
+  assert.ok(rosters.every((row) => row.team));
+  assert.equal(rosters.some((row) => row.bracketId === "linked-team-bracket"), false);
+  assert.deepEqual(snapshot.profiles["player:player-team-a-1"].rosters.map((row) => row.pokemonIds), [["pikachu"]]);
+  assert.deepEqual(snapshot.profiles["player:player-team-a-2"].rosters.map((row) => row.pokemonIds), [["raichu"]]);
+  assert.equal(snapshot.trainers.find((row) => row.playerId === "player-team-a-1").wins, 0);
+  // Both revealed team rosters count, merged with Alpha's unrelated legacy roster into one row.
+  const pikachuRows = snapshot.pokemon.filter((row) => row.name === "피카츄");
+  assert.equal(pikachuRows.length, 1);
+  assert.deepEqual(pikachuRows[0].trainers.map((row) => row.name).sort(), ["A1", "Alpha", "B1"]);
+  const archive = snapshot.archives.find((row) => row.eventId === TEAM_EVENT_ID);
+  assert.equal(archive.rosters.length, 3);
+  const previews = buildTeamPartyPreviewRows(archive);
+  assert.equal(previews.length, 8);
+  assert.equal(previews.filter((row) => !row.roster).length, 5);
+  assert.equal(previews.find((row) => row.name === "A1").roster.snapshotId, "snapshot-a-1");
+  assert.equal(previews.find((row) => row.name === "A2").roster.snapshotId, "snapshot-a-2");
+  assert.equal(previews.find((row) => row.name === "A2").teamName, "Team Alpha");
+  assert.equal(previews.find((row) => row.name === "A2").label, "팀 우승");
+
+  raw.registrationSubmissions.find((row) => row.id === "submission-a-1").registration_id = "registration-team-a-2";
+  const malformed = buildNormalizedRecordsProjection(teamLegacyData(), raw);
+  assert.equal(malformed.rosters.filter((row) => row.eventId === TEAM_EVENT_ID).length, 2);
+  event.team_revealed_at = null;
+  const hidden = buildNormalizedRecordsProjection({}, raw);
+  assert.equal(hidden.rosters.filter((row) => row.eventId === TEAM_EVENT_ID).length, 0);
+});
+
+test("team RankingAwards use ledger points and never add placement counts", () => {
+  const snapshot = buildNormalizedRecordsProjection(teamLegacyData(), teamRawData());
+  const series = snapshot.ranking.series.find((item) => item.key === "era2");
+  const season = snapshot.ranking.seasons.find((item) => item.id === SEASON_ID);
+  const seriesChampion = series.rows.find((row) => row.playerId === "player-team-a-1");
+  const seriesRunnerUp = series.rows.find((row) => row.playerId === "player-team-b-1");
+  const seasonChampion = season.rows.find((row) => row.playerId === "player-team-a-1");
+  assert.deepEqual(
+    { points: seriesChampion.points, win: seriesChampion.win, ru: seriesChampion.ru, top4: seriesChampion.top4 },
+    { points: 30, win: 0, ru: 0, top4: 0 }
+  );
+  assert.equal(seriesRunnerUp.points, 20);
+  assert.equal(seasonChampion.points, 30);
+  assert.equal(series.rows.some((row) => row.playerId === "player-team-c-1"), false);
+});
+
+test("team Light RankingAwards keep fixed points per member", () => {
+  const raw = teamRawData();
+  raw.events.find((event) => event.id === TEAM_EVENT_ID).division = "light";
+  for (const award of raw.rankingAwards.filter((row) => row.event_id === TEAM_EVENT_ID)) {
+    award.points_delta = award.player_id.includes("-a-") ? 15 : 10;
+  }
+  const snapshot = buildNormalizedRecordsProjection(teamLegacyData(), raw);
+  const series = snapshot.ranking.series.find((item) => item.key === "era2");
+  assert.equal(series.rows.find((row) => row.playerId === "player-team-a-1").points, 15);
+  assert.equal(series.rows.find((row) => row.playerId === "player-team-b-1").points, 10);
+});
+
+test("legacy team placement remains in history but is excluded from trainer counts", () => {
+  const legacy = legacyData();
+  legacy.tournaments[0].rounds.push({
+    id: "legacy-only-team-round",
+    date: "2024.01",
+    round: "1",
+    season: "YPL 시즌 1",
+    win: "Legacy Team",
+    winMembers: ["Legacy Team Member"],
+    ru: "",
+    ruMembers: [],
+    sf: [],
+    sfMembers: [],
+    team: true,
+  });
+  legacy.brackets.push({
+    id: "legacy-only-team-bracket",
+    eventId: "legacy-only-team-event",
+    name: "legacy-only team",
+    mode: "team",
+    format: "elim",
+    participants: [
+      { id: "legacy-only-team-a", name: "Legacy Only Team", members: ["Legacy Bracket Member"] },
+      { id: "legacy-only-team-b", name: "Legacy Other Team", members: ["Legacy Other Member"] },
+    ],
+    graph: {
+      rounds: [[{ id: "legacy-only-team-final", a: { pid: "legacy-only-team-a" }, b: { pid: "legacy-only-team-b" }, winner: "a" }]],
+    },
+    applied: { tournamentKey: "pylite", date: "2024.02", season: "YPL 시즌 1" },
+  });
+  const snapshot = buildRecordsSnapshot(legacy);
+  const profile = snapshot.profiles["Legacy Team Member"];
+  const trainer = snapshot.trainers.find((row) => row.name === "Legacy Team Member");
+  const legacyBracketProfile = snapshot.profiles["Legacy Bracket Member"];
+  assert.equal(profile.placements[0].team, true);
+  assert.equal(profile.history[0].resultLabel, "팀 우승");
+  assert.ok(snapshot.archives.some((row) => row.id === "legacy-only-team-round"));
+  assert.equal(legacyBracketProfile.history.filter((row) => row.team && row.placement === "win").length, 1);
+  assert.deepEqual(
+    { wins: trainer.wins, runnerUps: trainer.runnerUps, top4: trainer.top4 },
+    { wins: 0, runnerUps: 0, top4: 0 }
+  );
+});
+
+test("Partner titles list the trainer by item name, never the Pokémon holders as trainers", () => {
+  const snapshot = buildRecordsSnapshot({
+    titleGroups: [{ key: "partner", name: "파트너", items: [{ id: "p1", name: "이병재", holders: ["찌르호크"] }] }],
+  });
+  assert.deepEqual(snapshot.trainers.map((row) => row.name), ["이병재"]);
+  assert.deepEqual(snapshot.profiles["이병재"].titles.map((row) => row.name), ["파트너 찌르호크"]);
+});
+
+test("Records display helpers hide raw metadata and format numeric team names", () => {
+  assert.equal(displayTeamName("1"), "1팀");
+  assert.equal(displayTeamName("1팀"), "1팀");
+  assert.equal(displayTeamName("Alpha"), "Alpha");
+  assert.equal(displayTeamName("none"), "");
+  assert.equal(displayTeamName(null), "");
+  assert.equal(displayRecordMeta("m-a"), "");
+  assert.equal(displayRecordMeta("m-b · none"), "");
+  assert.equal(displayRecordMeta("bo3 · m-b · none"), "bo3");
+  assert.equal(displayRecordMeta("single elimination"), "single elimination");
+  assert.equal(displayRecordMeta(undefined), "");
+});
+
+test("Champions Trainer history keeps one Final-preferred row and retains qualifier-only participation", () => {
+  const raw = rawData();
+  const qualifierId = "champions-qualifier";
+  const finalId = "champions-final";
+  raw.events.push(
+    {
+      id: qualifierId,
+      season_id: SEASON_ID,
+      name: "챔피언스 선발전",
+      event_type: "champions",
+      championship_phase: "qualifier",
+      championship_final_event_id: finalId,
+      competition_format: "double_elimination",
+      is_team_event: false,
+      held_on: "2026-09-01",
+      status: "completed",
+    },
+    {
+      id: finalId,
+      season_id: SEASON_ID,
+      name: "챔피언스 본선",
+      event_type: "champions",
+      championship_phase: "final",
+      competition_format: "single_elimination",
+      is_team_event: false,
+      held_on: "2026-09-02",
+      status: "completed",
+      record_applied_at: "2026-09-03T00:00:00Z",
+    }
+  );
+  raw.players.push({ id: "player-qualifier-only", display_name: "Qualifier Only" });
+  raw.entries.push(
+    { id: "qualifier-entry-a", event_id: qualifierId, entry_type: "individual", status: "active" },
+    { id: "qualifier-entry-only", event_id: qualifierId, entry_type: "individual", status: "active" },
+    { id: "final-entry-a", event_id: finalId, entry_type: "individual", status: "active" },
+    { id: "final-entry-b", event_id: finalId, entry_type: "individual", status: "active" }
+  );
+  raw.entryParticipants.push(
+    { id: "qualifier-participant-a", event_id: qualifierId, entry_id: "qualifier-entry-a", registration_id: "qualifier-reg-a", player_id: "player-a" },
+    { id: "qualifier-participant-only", event_id: qualifierId, entry_id: "qualifier-entry-only", registration_id: "qualifier-reg-only", player_id: "player-qualifier-only" },
+    { id: "final-participant-a", event_id: finalId, entry_id: "final-entry-a", registration_id: "final-reg-a", player_id: "player-a" },
+    { id: "final-participant-b", event_id: finalId, entry_id: "final-entry-b", registration_id: "final-reg-b", player_id: "player-b" }
+  );
+  raw.results.push({ id: "final-result-a", event_id: finalId, entry_id: "final-entry-a", placement_code: "champion", placement_label: "우승", rank_min: 1 });
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const alpha = snapshot.profiles["player:player-a"].history.filter(row => row.championSeries);
+  const beta = snapshot.profiles["player:player-b"].history.filter(row => row.championSeries);
+  const qualifierOnly = snapshot.profiles["player:player-qualifier-only"].history.filter(row => row.championSeries);
+
+  assert.deepEqual(alpha.map(row => [row.eventId, row.placement]), [[finalId, "win"]]);
+  assert.deepEqual(beta.map(row => [row.eventId, row.placement]), [[finalId, "participant"]]);
+  assert.deepEqual(qualifierOnly.map(row => [row.eventId, row.placement]), [[qualifierId, "participant"]]);
+  assert.deepEqual(snapshot.archives.filter(row => row.championSeries).map(row => row.eventId), [finalId]);
+});
+
+test("official normalized Events retain separate same-day ordinary archive rounds by Event ID", () => {
+  const raw = rawData();
+  raw.events[0] = {
+    ...raw.events[0],
+    name: "마스터 37회",
+    event_type: "pokecup",
+    division: "master",
+    held_on: "2026-09-12",
+    round_number: 37,
+  };
+  raw.events.push({
+    id: "event-master-38",
+    season_id: SEASON_ID,
+    name: "QA 38회 마스터리그",
+    event_type: "pokecup",
+    division: "master",
+    competition_format: "single_elimination",
+    is_team_event: false,
+    held_on: "2026-09-12",
+    date_precision: "exact",
+    status: "completed",
+    record_applied_at: "2026-09-13T00:00:00Z",
+    round_number: 38,
+  });
+
+  const snapshot = buildNormalizedRecordsProjection(legacyData(), raw);
+  const masterRounds = snapshot.archives
+    .filter(row => row.tournamentKey === "master")
+    .map(row => [row.eventId, row.round]);
+
+  assert.deepEqual(masterRounds, [["event-master-38", 38], [EVENT_ID, 37]]);
+});
