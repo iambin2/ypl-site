@@ -192,6 +192,10 @@ function FreeBoard({ data, admin, save, flash, tabs }){
    자세한 시트는 읽을 때 지금의 배틀 데이터로 다시 만든다(글 하나 약 2 KB, 시트까지 담으면 그 네 배). */
 const BOARD_TABS=[["free","자유"],["sample","샘플"],["party","파티"]];
 const KIND_LABEL={sample:"샘플",party:"파티"};
+// 배틀 형식. 형식을 고르기 전에 올라온 글(format 없음)은 모두 싱글이다.
+const FORMAT_TABS=[["single","싱글"],["double","더블"]];
+const FORMAT_LABEL=Object.fromEntries(FORMAT_TABS);
+const formatOf=post=>post?.format==="double"?"double":"single";
 
 let teamDisplay=null;
 function loadTeamDisplay(){
@@ -283,10 +287,11 @@ function TeamPicker({ kind, onPick, onClose, go }){
 }
 
 /* 소개글 작성. 팀 빌더와 게시판이 함께 쓴다. team 은 직렬화된 팀(빌더의 저장 팀과 같은 모양). */
-export function ShowcaseCompose({ team, kind:initialKind="party", initialIndex=0, onClose, onPosted }){
+export function ShowcaseCompose({ team, kind:initialKind="party", format:initialFormat="single", initialIndex=0, onClose, onPosted }){
   const display=useTeamDisplay();
   const members=team?.members||[];
   const [kind,setKind]=useState(members.length===1?"sample":initialKind);
+  const [format,setFormat]=useState(initialFormat);
   const [index,setIndex]=useState(Math.min(initialIndex,Math.max(0,members.length-1)));
   const [nick,setNick]=useState(()=>{ try{return localStorage.getItem("ypl-board-nick")||"";}catch{return "";} });
   const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [busy,setBusy]=useState(false);
@@ -302,7 +307,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", initialIndex=0
       const id=newCommunityId();
       const picked=kind==="sample"?[members[index]]:members;
       const names=(kind==="sample"?[sheet[index]]:sheet).map(r=>r?.name).filter(Boolean);
-      const post={ id, kind, nick:nick.trim().slice(0,20), title:(title.trim()||autoTitle).slice(0,60), body:body.trim().slice(0,4000),
+      const post={ id, kind, format, nick:nick.trim().slice(0,20), title:(title.trim()||autoTitle).slice(0,60), body:body.trim().slice(0,4000),
         pinHash:pin?await hashPin(id,pin):"", createdAt:new Date().toISOString(), names,
         team:{ name:team?.working?"":String(team?.name||"").slice(0,40), regulationId:team?.regulationId, cupRuleId:team?.cupRuleId||"none", cupRuleSettings:team?.cupRuleSettings||{assignedType:""}, members:picked },
         comments:[] };
@@ -314,6 +319,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", initialIndex=0
   };
   return (<Modal title={`${KIND_LABEL[kind]} 소개글 쓰기`} hint={ruleSummary(team)} onClose={onClose}>
     <div className="swap" key="compose">
+      <div className="field"><label>배틀 형식</label><Segmented value={format} onChange={setFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/></div>
       {members.length>1&&<div className="field"><label>올릴 내용</label><Segmented value={kind} onChange={setKind} ariaLabel="소개글 종류" options={[["party",`파티 전체 ${members.length}마리`],["sample","한 마리 샘플"]]}/></div>}
       {kind==="sample"&&members.length>1&&<div className="field"><label>샘플로 올릴 포켓몬</label>
         <div className="sc-choose" role="radiogroup" aria-label="샘플로 올릴 포켓몬">{members.map((m,i)=>(
@@ -340,7 +346,7 @@ function openInBuilder(post,go){
   go("builder");
 }
 
-function ShowcaseBoard({ kind, admin, flash, go, tabs }){
+function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const label=KIND_LABEL[kind];
   const [posts,setPosts]=useState(()=>peekRead(SHOWCASE_KEY)||null);
   const [loadError,setLoadError]=useState("");
@@ -352,7 +358,7 @@ function ShowcaseBoard({ kind, admin, flash, go, tabs }){
   const [picking,setPicking]=useState(false); const [composeTeam,setComposeTeam]=useState(null);
   const [article,setArticle]=useState(()=>new URLSearchParams(window.location.search).get("post"));
   const listScroll=useRef(0);
-  const all=(posts||[]).filter(p=>p.kind===kind).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
+  const all=(posts||[]).filter(p=>p.kind===kind&&formatOf(p)===format).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
   const kw=q.trim().toLowerCase();
   const list=kw?all.filter(p=>[p.title,p.body,p.nick,...(p.names||[]),...(p.team?.members||[]).map(m=>m.pokemonName)].some(t=>String(t||"").toLowerCase().includes(kw))):all;
   const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE)); const cur=Math.min(page,pages);
@@ -382,9 +388,9 @@ function ShowcaseBoard({ kind, admin, flash, go, tabs }){
   const saveEdit=async v=>{ const at=new Date().toISOString(); if(await mutate(list=>editing.apply(list,v,at),"수정했습니다.")) setEditing(null); };
   const [imageBusy,setImageBusy]=useState(false);
   const saveImage=async(post,sheet)=>{ if(imageBusy)return; setImageBusy(true);
-    try{ const r=await saveTeamSheetImage(sheet,{title:post.title,meta:[ruleSummary(post.team),`${sheet.length}마리`].join(", "),author:post.nick,date:new Date(post.createdAt)}); if(r==="downloaded")flash("이미지를 저장했습니다."); }
+    try{ const r=await saveTeamSheetImage(sheet,{title:post.title,meta:[FORMAT_LABEL[formatOf(post)],ruleSummary(post.team),`${sheet.length}마리`].join(", "),author:post.nick,date:new Date(post.createdAt)}); if(r==="downloaded")flash("이미지를 저장했습니다."); }
     catch(error){ siteAlert("이미지를 만들지 못했습니다.",error?.message||""); } finally{ setImageBusy(false); } };
-  const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
+  const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
     <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>{label}</span></button>
@@ -395,7 +401,7 @@ function ShowcaseBoard({ kind, admin, flash, go, tabs }){
       <article className="nb-article">
         <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>{label}</span></button>
         <header className="nb-a-head">
-          <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{ruleSummary(p.team)}</span></p>
+          <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
           <h1 className="title nb-a-title" data-vt={"s-"+p.id}>{p.title}</h1>
         </header>
         <div className="sc-actions">
@@ -434,8 +440,8 @@ function ShowcaseBoard({ kind, admin, flash, go, tabs }){
     {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
     {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
       {list.length===0&&(kw
-        ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${label} 글을 찾지 못했습니다.`}/>
-        : <Empty icon="list" title={`아직 ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${label} 글이 됩니다.`}/>)}
+        ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
+        : <Empty icon="list" title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
         return kind==="party"
           ? <button type="button" className="sc-tile card press" key={post.id} onClick={()=>openPost(post.id)}>
@@ -455,13 +461,17 @@ function ShowcaseBoard({ kind, admin, flash, go, tabs }){
     </div>}
     <Pager page={cur} pages={pages} onGo={setPage}/>
     {picking&&<TeamPicker kind={kind} go={go} onClose={()=>setPicking(false)} onPick={t=>{setPicking(false);setComposeTeam(t);}}/>}
-    {composeTeam&&<ShowcaseCompose team={composeTeam} kind={kind} onClose={()=>setComposeTeam(null)} onPosted={post=>{ setComposeTeam(null); flash("글을 올렸습니다."); void reload(); if(post.kind!==kind) go?.("board",{tab:post.kind}); }}/>}
+    {composeTeam&&<ShowcaseCompose team={composeTeam} kind={kind} format={format} onClose={()=>setComposeTeam(null)} onPosted={post=>{ setComposeTeam(null); flash("글을 올렸습니다."); void reload(); if(post.format!==format) setFormat(post.format); if(post.kind!==kind) go?.("board",{tab:post.kind,format:post.format}); }}/>}
   </section>);
 }
 
 export default function BoardPage(props){
   const [tab,setTab]=useState(()=>{ const t=new URLSearchParams(window.location.search).get("tab"); return BOARD_TABS.some(([k])=>k===t)?t:"free"; });
-  const changeTab=t=>{ setTab(t); const url=new URL(window.location.href); if(t==="free")url.searchParams.delete("tab"); else url.searchParams.set("tab",t); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); };
-  const tabs=<div className="bd-tabs"><Segmented value={tab} onChange={changeTab} ariaLabel="게시판 종류" options={BOARD_TABS}/></div>;
-  return tab==="free"?<FreeBoard {...props} tabs={tabs}/>:<ShowcaseBoard key={tab} kind={tab} {...props} tabs={tabs}/>;
+  const [format,setFormat]=useState(()=>formatOf({format:new URLSearchParams(window.location.search).get("format")}));
+  const replaceUrl=(key,value)=>{ const url=new URL(window.location.href); if(value)url.searchParams.set(key,value); else url.searchParams.delete(key); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); };
+  const changeTab=t=>{ setTab(t); replaceUrl("tab",t==="free"?"":t); };
+  const changeFormat=f=>{ setFormat(f); replaceUrl("format",f==="double"?f:""); };
+  const tabs=<div className="bd-tabs"><Segmented value={tab} onChange={changeTab} ariaLabel="게시판 종류" options={BOARD_TABS}/>
+    {tab!=="free"&&<Segmented value={format} onChange={changeFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/>}</div>;
+  return tab==="free"?<FreeBoard {...props} tabs={tabs}/>:<ShowcaseBoard key={tab} kind={tab} format={format} setFormat={changeFormat} {...props} tabs={tabs}/>;
 }

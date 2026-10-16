@@ -364,7 +364,7 @@ html.hx-snap:has(.home.staged) .site-foot { scroll-snap-align: end; }
 /* =========================== BOARD: SAMPLES AND PARTIES ===========================
    The board's three tabs share one head. A party is a tile whose sprites stand on the pod; a sample is the board row with
    its Pokémon in front. A post opens like any post, with the team sheet as opaque cards (every field of the builder). */
-.bd-tabs { margin-bottom: calc(var(--s4) - var(--section)); }
+.bd-tabs { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: calc(var(--s4) - var(--section)); }
 .sc-sprites { display: flex; gap: var(--s1); min-width: 0; }
 .sc-sprites img { width: 40px; height: 40px; flex: none; object-fit: contain; }
 .sc-sprites.big { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }

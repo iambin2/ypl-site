@@ -184,12 +184,13 @@ export default function App() {
       const url=new URL(window.location.href);
       url.searchParams.delete("eventId");
       // 한 화면 안의 항목을 바로 여는 링크: 공지(?notice=), 트레이너 기록(?trainer=), 랭킹 탭(?tab=rank).
-      ["notice","trainer","tab","post","pb"].forEach(key=>url.searchParams.delete(key));
+      ["notice","trainer","tab","format","post","pb"].forEach(key=>url.searchParams.delete(key));
       if(v==="news"&&options.notice) url.searchParams.set("notice",options.notice);
       if(v==="records"&&options.trainer) url.searchParams.set("trainer",options.trainer);
       if((v==="records"||v==="board"||v==="bracket")&&options.tab) url.searchParams.set("tab",options.tab);
       // 게시판의 샘플과 파티 소개글(?post=), 사설 대진표(?pb=)를 바로 여는 링크
       if(v==="board"&&options.post) url.searchParams.set("post",options.post);
+      if(v==="board"&&options.format==="double") url.searchParams.set("format","double");
       // 팀 빌더의 룰 설정(reg, cup, type)은 빌더 주소에만 남긴다.
       if(v!=="builder") ["reg","cup","type"].forEach(key=>url.searchParams.delete(key));
       if(v==="home") url.searchParams.delete("view"); else url.searchParams.set("view",v);

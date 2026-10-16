@@ -1482,7 +1482,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         selected={selectedMember.moves[picker] || ""} onPick={id => setMoveAt(picker, id)} onClose={() => setPicker(null)}
         emptyText={learnset.length ? "조건에 맞는 기술이 없습니다. 위의 타입과 분류 필터를 확인해 주세요." : "현재 포켓몬의 기술 목록을 불러오지 못했습니다."} />}
       {shareTeam && <ShowcaseCompose team={shareTeam} initialIndex={Math.max(0, team.findIndex(member => member.uid === selectedUid))} onClose={() => setShareTeam(null)}
-        onPosted={post => { setShareTeam(null); flash?.("게시판에 올렸습니다."); go?.("board", { tab: post.kind, post: post.id }); }} />}
+        onPosted={post => { setShareTeam(null); flash?.("게시판에 올렸습니다."); go?.("board", { tab: post.kind, format: post.format, post: post.id }); }} />}
       {pendingRuleChange && <Modal title="규칙 변경 확인" onClose={() => setPendingRuleChange(null)}>
         <p className="tb-rule-confirm-copy">규칙을 변경하면 현재 팀에서 사용할 수 없는 다음 포켓몬이 제거됩니다.</p>
         <ul className="tb-rule-confirm-list">
