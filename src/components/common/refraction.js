@@ -10,6 +10,7 @@ const BAND = 24;      // rim band in px, at most 40% of the short side
 const SHARE = 1.1;    // bend as a share of the band: past 1 a thin mirrored edge appears, which reads as thickness
 const FROST = { glass: 4, l3: 16 }; // blur under the bend: bars stay clear, sheets and menus keep enough frost to read over
 const MAP_PX = 120000; // map resolution budget, so a tall sheet costs no more than the top bar
+const SMOOTH = 0.6;    // blur after the bend in px: removes the streaks of nearest-pixel sampling without frosting the glass
 
 /* The inward offset at a point, as a vector in [-1, 1]. (px, py) is measured from the centre of a w x h box whose
    corners are rounded by radii [top-left, top-right, bottom-right, bottom-left]. */
@@ -57,7 +58,8 @@ function filterFor(p) {
     const f = document.createElementNS(NS, "filter");
     f.id = p.id;
     for (const [a, v] of [["filterUnits", "userSpaceOnUse"], ["primitiveUnits", "userSpaceOnUse"], ["color-interpolation-filters", "sRGB"], ["x", 0], ["y", 0]]) f.setAttribute(a, v);
-    f.innerHTML = `<feImage result="map" preserveAspectRatio="none" x="0" y="0"/><feDisplacementMap in="SourceGraphic" in2="map" xChannelSelector="R" yChannelSelector="G"/>`;
+    // the displacement samples the nearest pixel, so the steep rim streaks; a half-pixel blur after it smooths the bend
+    f.innerHTML = `<feImage result="map" preserveAspectRatio="none" x="0" y="0"/><feDisplacementMap in="SourceGraphic" in2="map" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation="${SMOOTH}" edgeMode="duplicate"/>`;
     defs.append(f);
     p.filter = f;
   }

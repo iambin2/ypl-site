@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="ko" data-theme="dark" data-title="name">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YPL 표지 시안 셋</title>
+<!-- 홈 표지 시안 셋(2026-10-19): 처음 연 사람이 감탄하는 한 화면. 개발 서버에서
+     /ypl-site/docs/redesign-glass/lab/home-drafts-lab.html (#a 대치, #b 유리, #c 볼)
+     사이트의 CSS(토큰, 유리, 버튼, 명예의 전당 바닥)와 그린 이름(brandTitle.js)을 그대로 쓴다. 색은 포켓몬 그림뿐이다. -->
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/components.css">
+<link rel="stylesheet" href="../../../src/styles/shell.css">
+<link rel="stylesheet" href="../../../src/styles/pages.css">
+<style>
+[hidden] { display: none !important; }
+html, body { overflow: hidden; height: 100%; }
+.cv { position: fixed; inset: 0; overflow: hidden; isolation: isolate; user-select: none; -webkit-user-select: none; }
+.cv img { -webkit-user-drag: none; }
+.name { display: block; fill: var(--fg); overflow: visible; }
+.head { position: absolute; z-index: 10; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: var(--s5); padding-inline: var(--gutter); text-align: center; pointer-events: none; }
+.head > * { pointer-events: auto; }
+.sub { font-size: 1rem; line-height: 1.5; color: var(--fg-2); }
+.sub b { color: var(--fg); font-weight: 700; }
+.sub .fig { font-size: 1rem; margin-left: var(--s1); }
+.acts { display: flex; gap: var(--s2); justify-content: center; flex-wrap: wrap; }
+.mon { position: relative; display: block; }
+.mon img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+.mon .hx-contact { z-index: 0; }
+
+/* 표지의 이름 세 가지(실험판에서 바꿔 본다): 지금의 그린 이름, YPL 워드마크, 한국어 문장 */
+:root:not([data-title="name"]) .t-name, :root:not([data-title="mark"]) :is(.t-mark, .t-mark-only), :root:not([data-title="ko"]) .t-ko { display: none !important; }
+.t-mark { display: block; color: var(--fg); }
+.t-mark svg { display: block; height: calc(var(--display-l) * 1.15); width: auto; margin-inline: auto; }
+.t-ko { display: block; font-size: var(--display-l); font-weight: 800; line-height: 1.08; letter-spacing: -.05em; text-wrap: balance; color: var(--fg); }
+#c .t-mark svg { height: calc(var(--display) * 1.1); }
+#c .t-ko { font-size: var(--display); }
+/* YPL 아래의 작은 이름: 같은 글자로 그린 한 줄 */
+.t-full { display: block; height: clamp(11px, .9rem, 15px); width: auto; margin: var(--s4) auto 0; fill: var(--fg-2); }
+#c .t-full { height: 11px; margin-top: var(--s3); }
+/* B: YPL이 한 덩어리 유리. 글자 안으로 뒤의 벽이 제 색으로 비치고, 가장자리에서 휜다. */
+#b .t-mark { --W: min(100vw - 48px, 900px); width: var(--W); height: calc(var(--W) / 3.1); margin-inline: auto; }
+:root[data-title="mark"] #b .sub { display: none; }
+:root:not([data-title="mark"]) :is(.b-wall.win, .b-gm, .b-rim, .b-edge, .b-drop) { display: none; }
+
+/* =================== A 대치: 두 파티가 마주 선 배틀 필드, 가운데에 빛의 선 =================== */
+#a { --m: clamp(52px, 13.5vw, 150px); }
+#a .head { top: calc(env(safe-area-inset-top, 0px) + 104px); }
+#a .name { height: calc(min(var(--display-l) * .722, 7.2vh) * 3.48); width: auto; }
+.a-beam { position: absolute; z-index: 0; top: -8vh; width: 62vw; height: 100vh; opacity: 0; pointer-events: none;
+  background: conic-gradient(from 180deg at 50% 0%, transparent 164deg, var(--spot) 180deg, transparent 196deg);
+  -webkit-mask-image: linear-gradient(#000 10%, transparent 92%); mask-image: linear-gradient(#000 10%, transparent 92%); }
+.a-beam.l { left: -6vw; rotate: -14deg; transform-origin: 50% 0; }
+.a-beam.r { right: -6vw; rotate: 14deg; transform-origin: 50% 0; }
+.a-pool { position: absolute; z-index: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); width: 60vw; height: calc(var(--m) * 1.6); border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
+.a-pool.l { left: -6vw; } .a-pool.r { right: -6vw; }
+.a-seam { position: absolute; z-index: 1; left: 50%; width: 2px; margin-left: -1px; top: 46%; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); transform-origin: 50% 0; scale: 1 0;
+  background: linear-gradient(transparent, var(--fg) 70%, var(--fg)); opacity: .55; }
+.a-seam::after { content: ""; position: absolute; left: 50%; bottom: -10px; width: 180px; height: 24px; translate: -50% 0; border-radius: 50%; background: radial-gradient(closest-side, var(--spot), transparent); }
+.a-flash { position: absolute; z-index: 1; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); width: 320px; height: 48px; margin-left: -160px; border-radius: 50%; box-shadow: 0 0 0 2px var(--ring); opacity: 0; }
+.a-side { position: absolute; z-index: 3; bottom: calc(env(safe-area-inset-bottom, 0px) + 104px); display: grid; grid-template-columns: repeat(3, var(--m)); grid-template-rows: auto auto; }
+.a-side.l { right: calc(50% + var(--m) * .32); }
+.a-side.r { left: calc(50% + var(--m) * .32); }
+.a-side .mon { width: var(--m); height: var(--m); grid-row: 2; }
+.a-side .mon.back { grid-row: 1; margin-bottom: calc(var(--m) * -.66); scale: .72; transform-origin: 50% 100%; translate: calc(var(--m) * .5 * var(--out)) 0; }
+.a-side.l { --out: -1; } .a-side.r { --out: 1; }
+/* 폰: 두 파티를 키워 화면 가장자리까지 채우고, 버튼 쪽으로 끌어올린다 */
+@media (max-width: 640px) {
+  #a { --m: 16.5vw; }
+  .a-side { bottom: calc(env(safe-area-inset-bottom, 0px) + 18vh); }
+  .a-side.l { right: calc(50% + var(--m) * .1); } .a-side.r { left: calc(50% + var(--m) * .1); }
+  .a-seam { bottom: calc(env(safe-area-inset-bottom, 0px) + 17vh); }
+  .a-pool, .a-flash { bottom: calc(env(safe-area-inset-bottom, 0px) + 16vh); }
+}
+.a-side .mon.back img { filter: brightness(calc(1 - var(--recede) * 2.5)); }
+.a-side.l img { transform: scaleX(-1); }
+.a-side .bob { display: block; width: 100%; height: 100%; animation: a-bob var(--p, 2.6s) ease-in-out infinite alternate; }
+@keyframes a-bob { to { translate: 0 -3px; } }
+
+/* =================== B 유리: 모든 포켓몬의 벽 위에 유리로 된 YPL 하나 =================== */
+#b { --cell: clamp(64px, 9vw, 104px); }
+.b-wall { position: absolute; inset: -4vh 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--cell) * .14); }
+.b-row { display: flex; width: max-content; animation: b-drift var(--dur) linear infinite; }
+.b-row:nth-child(even) { animation-direction: reverse; margin-left: calc(var(--cell) * -.5); }
+.b-row img { width: var(--cell); height: var(--cell); flex: none; object-fit: contain; margin-right: calc(var(--cell) * .18); }
+@keyframes b-drift { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .b-row { animation: none; } }
+.b-wall.base { filter: grayscale(1) contrast(1.1); opacity: .3; }
+:root[data-theme="light"] .b-wall.base { opacity: .24; }
+.b-veil { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 46% at 50% 48%, var(--stage) 0%, transparent 100%); opacity: .7; pointer-events: none; }
+/* 글자 모양으로만 보이는 같은 벽(제 색). 줄과 속도가 배경과 같아 함께 흐른다. */
+.b-wall.win { z-index: 9; scale: var(--zs); transform-origin: var(--ox) var(--oy); -webkit-mask: var(--mk) no-repeat; mask: var(--mk) no-repeat; -webkit-mask-size: var(--mw) var(--mh); mask-size: var(--mw) var(--mh); -webkit-mask-position: var(--mx) var(--my); mask-position: var(--mx) var(--my); }
+/* 유리 덩어리: 상단 바의 .glass와 같은 처방을 글자 모양에 그대로 옮긴다.
+   몸체(--glass 위에 --spec, --sheen, --caustic), 뒤를 4px 흐리고 테두리 띠에서 휘게(굴절), 1px 테두리(::before와 같은 빛),
+   안쪽 그림자(--edge), 바깥 그림자(--shadow-near, --shadow-far). 그림자는 상자 그림자를 글자 모양으로 계산해 그린 한 장이다. */
+.b-gm, .b-rim, .b-edge, .b-drop { position: absolute; pointer-events: none; }
+.b-gm { z-index: 10; -webkit-mask: var(--mk) 0 0 / 100% 100% no-repeat; mask: var(--mk) 0 0 / 100% 100% no-repeat;
+  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
+    radial-gradient(90% 70% at 50% 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
+  -webkit-backdrop-filter: var(--gf, blur(24px) saturate(170%) brightness(var(--glass-bright))); backdrop-filter: var(--gf, blur(24px) saturate(170%) brightness(var(--glass-bright))); }
+.b-edge { z-index: 11; background: var(--ed-img) 0 0 / 100% 100% no-repeat; }
+.b-rim { z-index: 12; -webkit-mask: var(--ring-mask) 0 0 / 100% 100% no-repeat; mask: var(--ring-mask) 0 0 / 100% 100% no-repeat;
+  background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid)); }
+.b-drop { z-index: 8; background: var(--sh-img) 0 0 / 100% 100% no-repeat; }
+.b-probe { position: absolute; width: 0; height: 0; visibility: hidden; }
+#b .head { top: 50%; translate: 0 -50%; gap: var(--s6); }
+#b .name { height: calc(var(--display-l) * .722 * 3.48); max-width: 88vw; width: auto; }
+:root[data-theme="dark"] #b .name { filter: drop-shadow(0 6px 24px rgb(0 0 0 / .6)); }
+
+/* =================== C 볼: 바닥에 떨어지는 유리 볼, 누르면 챔피언의 파티가 나온다 =================== */
+#c { --B: min(62vw, 46vh, 400px); }
+#c .head.top { top: calc(env(safe-area-inset-top, 0px) + 100px); }
+#c .name { height: calc(min(var(--display) * .6, 4.4vh) * 3.48); width: auto; }
+#c .head.foot { bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); }
+.c-place { position: absolute; z-index: 4; left: 50%; top: 56%; width: var(--B); height: var(--B); margin: calc(var(--B) / -2) 0 0 calc(var(--B) / -2); }
+.c-pool { position: absolute; z-index: 0; left: 50%; top: 56%; width: calc(var(--B) * 2.6); height: calc(var(--B) * .9); translate: -50% calc(var(--B) * .32); border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
+.c-shadow { position: absolute; left: 12%; right: 12%; bottom: -6%; height: 12%; border-radius: 50%; background: radial-gradient(closest-side, var(--contact), transparent); }
+.c-ring { position: absolute; left: -10%; right: -10%; bottom: -10%; height: 20%; border-radius: 50%; box-shadow: 0 0 0 2px var(--ring); opacity: 0; }
+.c-ball { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; cursor: pointer; transform: rotate(var(--tilt, 0deg));
+  background: radial-gradient(closest-side, transparent 70%, var(--sheen) 100%), radial-gradient(90% 70% at 50% 100%, var(--sheen), transparent 60%);
+  box-shadow: var(--edge), var(--shadow-near), var(--shadow-far); }
+.c-ball:focus-visible { outline: 2px solid var(--focus); outline-offset: 6px; }
+.c-cap { position: absolute; inset: 0 0 50% 0; background: linear-gradient(180deg, var(--sheen), transparent); }
+.c-orbit { position: absolute; inset: 0; }
+.c-orbit .mon { position: absolute; left: 50%; top: 50%; width: calc(var(--B) * .36); height: calc(var(--B) * .36); margin: calc(var(--B) * -.08) 0 0 calc(var(--B) * -.18); }
+.c-band { position: absolute; left: 0; right: 0; top: 50%; height: 7%; translate: 0 -50%; background: var(--stage); opacity: .82; box-shadow: inset 0 2px 3px rgb(0 0 0 / .35), inset 0 -1px 0 var(--rim-bottom); }
+.c-btn { position: absolute; left: 50%; top: 50%; width: 26%; height: 26%; translate: -50% -50%; border-radius: 50%; background: var(--stage); box-shadow: inset 0 2px 3px rgb(0 0 0 / .3); }
+.c-btn::after { content: ""; position: absolute; inset: 22%; border-radius: 50%; background: radial-gradient(120% 90% at 50% 0%, var(--spec), transparent 60%), var(--surface-2); box-shadow: var(--edge), 0 2px 6px rgb(0 0 0 / .35); }
+.c-spec { position: absolute; width: 46%; height: 30%; left: calc(27% + var(--sx, 0%)); top: calc(5% + var(--sy, 0%)); border-radius: 50%; background: radial-gradient(closest-side, var(--spec), transparent); pointer-events: none; }
+.c-burst { position: absolute; z-index: 6; left: 50%; top: 56%; width: var(--B); height: var(--B); margin: calc(var(--B) / -2) 0 0 calc(var(--B) / -2); border-radius: 50%; background: radial-gradient(closest-side, var(--burst), transparent); opacity: 0; pointer-events: none; }
+.c-party { position: absolute; z-index: 5; left: 0; right: 0; top: 56%; translate: 0 -40%; margin: 0; padding-inline: var(--gutter); }
+.c-party .hx-floor { cursor: pointer; }
+.c-hint { font-size: .8125rem; color: var(--fg-3); }
+
+/* =================== 실험판 조작 =================== */
+.lab-bar { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto; width: max-content; max-width: calc(100% - var(--gutter) * 2); display: flex; gap: var(--s1); padding: var(--s1); border-radius: 999px; }
+.lab-bar button { height: 44px; padding: 0 var(--s4); border-radius: 999px; font-size: .9375rem; font-weight: 700; color: var(--fg-2); white-space: nowrap; }
+.lab-bar button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+@media (max-width: 420px) { .lab-bar button { padding: 0 var(--s3); font-size: .8125rem; } }
+</style>
+</head>
+<body>
+<div class="ypl">
+  <div class="stage" id="ypl-stage" data-state="open" aria-hidden="true"><div class="light light-a"></div><div class="light light-b"></div></div>
+  <header class="topbar glass">
+    <a class="brand press" href="#" aria-label="YPL 홈"><span class="brand-logo" id="logo"></span><span id="wordmark"></span></a>
+    <nav class="navlinks groove" aria-label="주요 메뉴">
+      <span class="navlink" style="background:var(--ind-body);color:var(--ind-fg)">홈</span><span class="navlink">공지</span><span class="navlink">대진표</span><span class="navlink">기록</span><span class="navlink">더보기</span>
+    </nav>
+    <span class="iconbtn" aria-hidden="true"></span>
+  </header>
+
+  <!-- A 대치 -->
+  <section class="cv" id="a" hidden>
+    <i class="a-beam l"></i><i class="a-beam r"></i>
+    <i class="a-pool l"></i><i class="a-pool r"></i>
+    <i class="a-seam"></i><i class="a-flash"></i>
+    <div class="a-side l" data-mons="incineroar,garchomp,fluttermane,amoonguss,tornadus,kingambit"></div>
+    <div class="a-side r" data-mons="rillaboom,urshifu-rapidstrike,gholdengo,ragingbolt,whimsicott,dragonite"></div>
+    <div class="head">
+      <h1 data-name data-ko="마주 서면,<br>기록이 된다"></h1>
+      <p class="sub">38회 파이컵 마스터 리그까지<span class="fig">D-6</span></p>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+    </div>
+  </section>
+
+  <!-- B 유리 -->
+  <section class="cv" id="b" hidden>
+    <div class="b-wall base" aria-hidden="true"></div>
+    <i class="b-veil"></i>
+    <i class="b-drop" aria-hidden="true"></i>
+    <div class="b-wall win" aria-hidden="true"></div>
+    <i class="b-gm" aria-hidden="true"></i>
+    <i class="b-edge" aria-hidden="true"></i>
+    <i class="b-rim" aria-hidden="true"></i>
+    <i class="b-probe" style="box-shadow:var(--edge)"></i><i class="b-probe" style="box-shadow:var(--shadow-near), var(--shadow-far)"></i>
+    <div class="head">
+      <h1 data-name data-ko="모든 포켓몬,<br>모든 배틀"></h1>
+      <p class="sub">모든 포켓몬, 모든 배틀이 기록되는 곳</p>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+    </div>
+  </section>
+
+  <!-- C 볼 -->
+  <section class="cv" id="c" hidden>
+    <i class="c-pool"></i>
+    <div class="head top"><h1 data-name data-ko="챔피언은 단 한 명"></h1></div>
+    <div class="c-place">
+      <i class="c-shadow"></i><i class="c-ring"></i>
+      <div class="c-ball" role="button" tabindex="0" aria-label="챔피언의 파티 열기">
+        <div class="c-cap"></div><div class="c-orbit"></div><div class="c-band"></div><div class="c-btn"></div><i class="c-spec"></i>
+      </div>
+    </div>
+    <i class="c-burst"></i>
+    <figure class="hx-party c-party" hidden><ol class="hx-floor"></ol><figcaption class="c-hint">6대 챔피언 정두호의 파티</figcaption></figure>
+    <div class="head foot">
+      <p class="sub c-sub">볼을 눌러 챔피언의 파티를 꺼내 보세요</p>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+    </div>
+  </section>
+
+  <nav class="lab-bar glass" aria-label="시안">
+    <button data-go="a" class="press">A 대치</button>
+    <button data-go="b" class="press">B 유리</button>
+    <button data-go="c" class="press">C 볼</button>
+    <button id="title" class="press">이름</button>
+    <button id="replay" class="press">다시</button>
+    <button id="theme" class="press" aria-label="테마 바꾸기">◐</button>
+  </nav>
+</div>
+
+<script type="module">
+import { titleBlock, GLYPHS, SLANT } from "../../../src/components/home/brandTitle.js";
+import { startRefraction } from "../../../src/components/common/refraction.js";
+startRefraction();
+const BASE = "/ypl-site/";
+const spr = n => `${BASE}sprites/pokemon/${n}.webp`;
+const CHAMP = [0, 1, 2, 3, 4, 5].map(i => `${BASE}champions/g9usuez-${i}.png`);
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.22,1,.36,1)";
+const SPRING = "linear(0, .25 6%, .6 14%, .87 24%, 1.02 36%, 1.03 44%, 1.005 60%, 1)";
+
+/* 상단 바의 로고와 워드마크: 사이트의 그림 그대로 */
+for (const [id, f, h] of [["logo", "ypl-wing-y", 28], ["wordmark", "ypl-wordmark", 14]]) {
+  fetch(`${BASE}brand/${f}.svg`).then(r => r.text()).then(t => {
+    const el = document.getElementById(id); el.innerHTML = t;
+    const s = el.querySelector("svg"); s.setAttribute("height", h); s.removeAttribute("width"); s.style.cssText = "display:block;width:auto;fill:currentColor";
+  });
+}
+/* 그린 이름: 지금 홈과 같은 글자(brandTitle.js) */
+const b = titleBlock();
+/* YONSEI POKEMON LEAGUE 한 줄: 워드마크의 글자 그대로, 낱말 사이는 글자 사이의 네 배 */
+const FULL = (() => {
+  let x = 0; const gs = [];
+  for (const w of ["YONSEI", "POKEMON", "LEAGUE"]) { for (const ch of w) { gs.push(`<path transform="translate(${x} 0)" d="${GLYPHS[ch][1]}"/>`); x += GLYPHS[ch][0] + 8; } x += 32; }
+  const w = x - 40, l = -SLANT * 100;
+  return `<svg class="t-full t-mark-only" viewBox="${l} 0 ${w - l} 100" aria-hidden="true"><g transform="skewX(-12)" fill-rule="evenodd">${gs.join("")}</g></svg>`;
+})();
+const MARK = fetch(`${BASE}brand/ypl-wordmark.svg`).then(r => r.text());
+for (const h of $$("[data-name]")) h.innerHTML = `<span class="sr-only">Yonsei Pokémon League</span><span class="t-mark" aria-hidden="true"></span>${FULL}<span class="t-ko" aria-hidden="true">${h.dataset.ko}</span><svg class="name t-name" viewBox="${b.left} 0 ${b.right - b.left} ${b.h}" aria-hidden="true"><g transform="skewX(-12)">${b.glyphs.map(g => `<path transform="translate(${g.x} ${g.y})" d="${g.d}" fill-rule="evenodd"/>`).join("")}</g></svg>`;
+
+/* YPL 워드마크: A와 C는 글자색으로, B는 글자 안이 색이 도는 포켓몬 벽(창) */
+MARK.then(t => { for (const m of $$(".t-mark")) if (!m.closest("#b")) m.innerHTML = t; });
+
+/* 흐림이 풀리며 올라오는 등장(사이트의 arrive와 같은 문법) */
+const rise = (els, delay = 0, step = 70, dist = 20) => els.forEach((el, i) => el.animate(
+  still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: `translateY(${dist}px)`, filter: "blur(8px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
+  { duration: still ? 400 : 820, delay: delay + i * step, easing: EASE, fill: "backwards" }));
+/* 누르면 제자리에서 한 번 뛴다(PartyStage의 hop) */
+function hop(mon) {
+  const body = mon.firstElementChild;
+  if (!body || still || body.getAnimations().some(a => a.id === "hop")) return;
+  body.animate([{ transform: "none", easing: "cubic-bezier(.2,.75,.35,1)" }, { transform: "translateY(-18px)", offset: .4, easing: "cubic-bezier(.55,0,.85,.4)" }, { transform: "translateY(0) scale(1.05,.94)", offset: .74, easing: EASE }, { transform: "none" }], { duration: 620, id: "hop" });
+}
+const pointer = { x: innerWidth / 2, y: innerHeight / 2, nx: 0, ny: 0, at: 0 };
+addEventListener("pointermove", e => { Object.assign(pointer, { x: e.clientX, y: e.clientY, nx: e.clientX / innerWidth * 2 - 1, ny: e.clientY / innerHeight * 2 - 1, at: performance.now() }); }, { passive: true });
+addEventListener("pointerdown", e => { Object.assign(pointer, { x: e.clientX, y: e.clientY, at: performance.now() }); }, { passive: true });
+
+/* ---------------- A 대치 ---------------- */
+const A = (() => {
+  const el = $("#a");
+  for (const s of $$(".a-side", el)) {
+    const left = s.classList.contains("l");
+    /* 앞줄 셋은 가운데 쪽이 에이스, 뒷줄 셋은 그 뒤에 */
+    s.innerHTML = s.dataset.mons.split(",").map((n, i) => {
+      const col = left ? 3 - (i % 3) : 1 + (i % 3);
+      return `<span class="mon${i >= 3 ? " back" : ""}" data-col="${col}" style="grid-column:${col}"><span class="bob" style="--p:${2.2 + ((i * 7) % 5) * .3}s;animation-delay:-${i * .4}s"><img src="${spr(n)}" alt=""></span><i class="hx-contact"></i></span>`;
+    }).join("");
+  }
+  $$(".mon", el).forEach(m => m.addEventListener("pointerdown", () => hop(m.firstElementChild)));
+  let raf = 0;
+  const loop = () => {
+    const x = pointer.nx * 10;
+    $(".a-side.l", el).style.translate = `${-x}px 0`;
+    $(".a-side.r", el).style.translate = `${-x * .6}px 0`;
+    $(".head", el).style.translate = `${-x * .3}px 0`;
+    raf = requestAnimationFrame(loop);
+  };
+  function start() {
+    const beams = $$(".a-beam", el), pools = $$(".a-pool", el);
+    /* 어둠 속에서 두 조명이 차례로 켜진다(왼쪽, 오른쪽). 켜질 때 한 번 깜박인다. */
+    [0, 1].forEach(i => {
+      const kf = [{ opacity: 0 }, { opacity: .9, offset: .25 }, { opacity: .3, offset: .4 }, { opacity: 1 }];
+      beams[i].animate(kf, { duration: 520, delay: 240 + i * 420, fill: "both" });
+      pools[i].animate(kf, { duration: 520, delay: 240 + i * 420, fill: "both" });
+    });
+    /* 파티는 조명이 켜진 쪽부터, 가운데(에이스)에서 바깥으로 */
+    const order = s => $$(".mon", s).sort((p, q) => (p.dataset.col - q.dataset.col) * (s.classList.contains("l") ? -1 : 1));
+    rise(order($(".a-side.l", el)), 420, 70, 28);
+    rise(order($(".a-side.r", el)), 840, 70, 28);
+    /* 가운데 빛의 선이 위에서 바닥으로 그어지고, 닿는 순간 바닥에 고리 하나 */
+    $(".a-seam", el).animate([{ scale: "1 0" }, { scale: "1 1" }], { duration: still ? 1 : 620, delay: 1400, easing: "cubic-bezier(.5,0,.75,0)", fill: "both" });
+    $(".a-flash", el).animate([{ opacity: 1, transform: "scale(.2)" }, { opacity: 0, transform: "scale(1.8)" }], { duration: 900, delay: 2020, easing: EASE, fill: "both" });
+    rise([...$(".head", el).children], 2050, 110);
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  }
+  return { start, stop: () => cancelAnimationFrame(raf) };
+})();
+
+/* ---------------- B 유리 ---------------- */
+const B = (() => {
+  const el = $("#b");
+  const ROSTER = "pikachu charizard blastoise venusaur gengar dragonite tyranitar metagross salamence garchomp lucario greninja incineroar rillaboom cinderace primarina decidueye mimikyu dragapult corviknight toxapex ferrothorn landorus-therian tornadus thundurus kingambit gholdengo fluttermane ironhands amoonguss urshifu urshifu-rapidstrike rotom-wash rotom-heat whimsicott grimmsnarl indeedee-f hatterene torkoal pelipper archaludon sneasler basculegion farigiraf ursaluna chienpao chiyu tinglu wochien gardevoir sylveon umbreon espeon milotic gyarados kingdra scizor aegislash hydreigon volcarona talonflame zacian zamazenta calyrex-shadow calyrex-ice koraidon miraidon ogerpon ragingbolt ironvaliant maushold palafin dondozo tatsugiri annihilape ceruledge armarouge baxcalibur glimmora sinistcha arcanine snorlax lapras mew mewtwo rayquaza lugia".split(" ");
+  let rows = 0;
+  function build() {
+    const cell = parseFloat(getComputedStyle(el).getPropertyValue("--cell")) || 80;
+    const n = Math.ceil(innerHeight * 1.1 / (cell * 1.14)) + 1;
+    if (n === rows) return; rows = n;
+    const per = Math.ceil(innerWidth / (cell * 1.18)) + 2;
+    const html = Array.from({ length: n }, (_, r) => {
+      const imgs = Array.from({ length: per }, (_, i) => `<img src="${spr(ROSTER[(r * 11 + i * 3) % ROSTER.length])}" alt="" decoding="async">`).join("");
+      return `<div class="b-row" style="--dur:${70 + (r % 3) * 18}s">${imgs}${imgs}</div>`;
+    }).join("");
+    for (const w of $$(".b-wall", el)) w.innerHTML = html;
+  }
+  const win = $(".b-wall.win", el), gm = $(".b-gm", el), rim = $(".b-rim", el), edge = $(".b-edge", el), drop = $(".b-drop", el);
+  let markImg = null;
+  const ready = MARK.then(t => {
+    const url = `url("data:image/svg+xml,${encodeURIComponent(t)}")`;
+    for (const x of [win, gm, drop]) x.style.setProperty("--mk", url);
+    markImg = new Image(); markImg.src = "data:image/svg+xml," + encodeURIComponent(t);
+    return markImg.decode();
+  });
+  /* 상단 바의 유리를 글자 모양에 옮긴다(한 번, 크기나 테마가 바뀔 때만).
+     글자의 부호 거리(안쪽 +, 바깥 -)를 정확히 구하고(Felzenszwalb 거리 변환), 그것으로
+     굴절 지도(사이트 refraction.js의 lensOffset과 같은 곡선: 띠 24px, 테두리에서 가장 세게, 휨은 띠의 1.1배),
+     1px 테두리, 상자 그림자(--edge 안쪽, --shadow-near/far 바깥)를 상자 대신 글자 모양으로 그린다. 그림자 값은 토큰에서 읽는다. */
+  function edt1(f, n, d, v, z) {
+    let k = 0; v[0] = 0; z[0] = -1e30; z[1] = 1e30;
+    for (let q = 1; q < n; q++) {
+      let t;
+      for (;;) { t = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); if (t <= z[k] && k > 0) { k--; continue; } break; }
+      k++; v[k] = q; z[k] = t; z[k + 1] = 1e30;
+    }
+    k = 0;
+    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) ** 2 + f[v[k]]; }
+  }
+  function edt(on, W, H) {
+    const out = new Float64Array(W * H), N = Math.max(W, H), f = new Float64Array(N), d = new Float64Array(N), v = new Int32Array(N), z = new Float64Array(N + 1);
+    for (let x = 0; x < W; x++) { for (let y = 0; y < H; y++) f[y] = on[y * W + x] ? 0 : 1e12; edt1(f, H, d, v, z); for (let y = 0; y < H; y++) out[y * W + x] = d[y]; }
+    for (let y = 0; y < H; y++) { for (let x = 0; x < W; x++) f[x] = out[y * W + x]; edt1(f, W, d, v, z); for (let x = 0; x < W; x++) out[y * W + x] = Math.sqrt(d[x]); }
+    return out;
+  }
+  const shadows = probe => getComputedStyle(probe).boxShadow.split(/,(?![^(]*\))/).filter(x => x.trim() && x.trim() !== "none").map(x => {
+    const color = x.match(/rgba?\([^)]*\)/)[0], c = color.match(/[\d.]+/g).map(Number);
+    const [ox, oy, b = 0, sp = 0] = x.replace(color, "").replace("inset", "").trim().split(/\s+/).map(parseFloat);
+    return { inset: /inset/.test(x), ox: Math.round(ox), oy: Math.round(oy), b, sp, color: `rgb(${c[0]} ${c[1]} ${c[2]} / ${c[3] ?? 1})` };
+  });
+  const cv = (W, H) => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+  const PAD = 80;
+  function buildGlass(cw, ch) {
+    /* 화면 배율(레티나, 브라우저 확대)만큼 촘촘히 그린다. 모든 길이는 기기 픽셀(k배). */
+    const k = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+    const w = Math.round(cw * k), h = Math.round(ch * k), P = PAD * k;
+    const W = w + P * 2, H = h + P * 2, n = W * H;
+    /* 모양: 워드마크 그대로(모서리는 1px 남짓만 다듬는다) */
+    const sc = cv(W, H), sg = sc.getContext("2d", { willReadFrequently: true });
+    const soft = Math.max(.6 * k, h * .006);
+    sg.filter = `blur(${soft}px)`; sg.drawImage(markImg, P, P, w, h); sg.filter = "none";
+    const a = sg.getImageData(0, 0, W, H).data, inside = new Uint8Array(n), outside = new Uint8Array(n);
+    for (let i = 0; i < n; i++) { const v = a[i * 4 + 3] >= 128; inside[i] = v; outside[i] = !v; }
+    const dIn = edt(outside, W, H), dOut = edt(inside, W, H), SD = new Float32Array(n);
+    let maxSd = 0;
+    /* 가장자리 두어 픽셀은 정수 거리 대신 그린 글자의 부드러운 알파로 잰다(계단이 생기지 않게).
+       흐림 s의 경계에서 알파의 기울기는 1/(√(2π)s)이므로 거리 ≈ (알파 - .5) × 2.5s. */
+    for (let i = 0; i < n; i++) {
+      let v = inside[i] ? dIn[i] - .5 : -(dOut[i] - .5);
+      if (v > -2 && v < 2) v = Math.max(-2, Math.min(2, (a[i * 4 + 3] / 255 - .5) * 2.5 * soft));
+      SD[i] = v; if (v > maxSd) maxSd = v;
+    }
+    const sd = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? -1e3 : SD[y * W + x]);
+    const clamp = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+    /* 모양 한 장(덮임 비율을 알파로) */
+    const cov = sg.createImageData(W, H);
+    for (let i = 0; i < n; i++) { cov.data[i * 4 + 3] = clamp(SD[i] + .5) * 255; }
+    sg.clearRect(0, 0, W, H); sg.putImageData(cov, 0, 0);
+    /* 상자 그림자 하나를 글자 모양으로: 안쪽은 (어긋나고 줄어든 모양) 바깥, 바깥 그림자는 어긋나고 커진 모양. 흐림은 CSS처럼 반지름의 절반. */
+    function layer(sh) {
+      const t1 = cv(W, H), g1 = t1.getContext("2d"), img = g1.createImageData(W, H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const v = sd(x - Math.round(sh.ox * k), y - Math.round(sh.oy * k));
+        img.data[(y * W + x) * 4 + 3] = (sh.inset ? 1 - clamp(v - sh.sp * k + .5) : clamp(v + sh.sp * k + .5)) * 255;
+      }
+      g1.putImageData(img, 0, 0);
+      const t2 = cv(W, H), g2 = t2.getContext("2d");
+      g2.fillStyle = sh.color; g2.fillRect(0, 0, W, H);
+      g2.globalCompositeOperation = "destination-in";
+      if (sh.b > 0) g2.filter = `blur(${sh.b * k / 2}px)`;
+      g2.drawImage(t1, 0, 0); g2.filter = "none";
+      g2.globalCompositeOperation = sh.inset ? "destination-in" : "destination-out";
+      g2.drawImage(sc, 0, 0);
+      return t2;
+    }
+    const [pe, ps] = $$(".b-probe", el);
+    const paint = list => { const o = cv(W, H), g = o.getContext("2d"); for (const sh of list.slice().reverse()) g.drawImage(layer(sh), 0, 0); return o; };
+    const crop = c => { const o = cv(w, h); o.getContext("2d").drawImage(c, -P, -P); return `url("${o.toDataURL()}")`; };
+    /* 1px 테두리: 모양 안쪽 가장자리 한 줄(.glass::before의 1px 띠와 같은 자리) */
+    const ring = cv(W, H), rg = ring.getContext("2d"), ri = rg.createImageData(W, H);
+    for (let i = 0; i < n; i++) ri.data[i * 4 + 3] = (clamp(SD[i] + .5) - clamp(SD[i] - k + .5)) * 255;
+    rg.putImageData(ri, 0, 0);
+    const shapeURL = crop(sc);
+    for (const x of [win, gm]) x.style.setProperty("--mk", shapeURL);
+    rim.style.setProperty("--ring-mask", crop(ring));
+    edge.style.setProperty("--ed-img", crop(paint(shadows(pe))));
+    drop.style.setProperty("--sh-img", `url("${paint(shadows(ps).filter(x => !x.inset)).toDataURL()}")`);
+    if (!CHROME) return;
+    /* 굴절: lensOffset과 같은 곡선. 띠는 24px, 단 글자 굵기의 40%를 넘지 않는다(사이트: 짧은 변의 40%). */
+    const band = Math.min(24 * k, maxSd * 2 * .4), dm = cv(w, h), dg = dm.getContext("2d"), di = dg.createImageData(w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const X = x + P, Y = y + P, v = sd(X, Y), k = (y * w + x) * 4;
+      let dx = 0, dy = 0;
+      if (v > 0 && v < band) {
+        const gx = sd(X + 1, Y) - sd(X - 1, Y), gy = sd(X, Y + 1) - sd(X, Y - 1), l = Math.hypot(gx, gy) || 1, t = 1 - v / band, m = t * t;
+        dx = gx / l * m; dy = gy / l * m;
+      }
+      di.data[k] = 128 + dx * 127; di.data[k + 1] = 128 + dy * 127; di.data[k + 2] = 128; di.data[k + 3] = 255;
+    }
+    dg.putImageData(di, 0, 0);
+    if (!$("#gmf")) document.body.insertAdjacentHTML("beforeend", `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="gmf" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB" x="0" y="0"><feImage result="map" preserveAspectRatio="none" x="0" y="0"/><feDisplacementMap in="SourceGraphic" in2="map" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation=".6" edgeMode="duplicate"/></filter></svg>`);
+    const f = $("#gmf"), im = f.querySelector("feImage");
+    for (const node of [f, im]) { node.setAttribute("width", cw); node.setAttribute("height", ch); }
+    f.querySelector("feDisplacementMap").setAttribute("scale", band / k * 1.1);
+    im.setAttribute("href", dm.toDataURL());
+    /* 상단 바와 같은 줄: 4px 흐림, 굴절, 채도 170%, 밝기 --glass-bright */
+    gm.style.setProperty("--gf", "blur(4px) url(#gmf) saturate(170%) brightness(var(--glass-bright))");
+  }
+  /* 테마가 바뀌면 그림자 색(토큰)이 바뀌므로 다시 그린다 */
+  new MutationObserver(() => { placedKey = ""; if (!el.hidden) place(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  const CHROME = /Chrome\//.test(navigator.userAgent) && !matchMedia("(prefers-reduced-transparency: reduce)").matches;
+  let placedKey = "";
+  function place() {
+    /* 창 층은 등장 중에 움직이므로 변형 없는 자리(offset)로 잰다 */
+    const r = $(".t-mark", el).getBoundingClientRect();
+    if (!r.width) return;
+    /* 창은 유리 몸체와 같은 자리, 같은 크기(상단 바처럼 확대 없음) */
+    win.style.setProperty("--zs", 1); win.style.setProperty("--ox", "0px"); win.style.setProperty("--oy", "0px");
+    win.style.setProperty("--mx", r.left - win.offsetLeft + "px"); win.style.setProperty("--my", r.top - win.offsetTop + "px");
+    win.style.setProperty("--mw", r.width + "px"); win.style.setProperty("--mh", r.height + "px");
+    for (const x of [gm, rim, edge]) Object.assign(x.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+    Object.assign(drop.style, { left: r.left - PAD + "px", top: r.top - PAD + "px", width: r.width + PAD * 2 + "px", height: r.height + PAD * 2 + "px" });
+    const key = Math.round(r.width) + "x" + Math.round(r.height) + "@" + (window.devicePixelRatio || 1);
+    if (markImg && key !== placedKey) { placedKey = key; buildGlass(Math.round(r.width), Math.round(r.height)); }
+  }
+  function start() {
+    build();
+    /* 벽은 가운데 줄부터 바깥으로 켜진다 */
+    const base = $$(".b-wall.base .b-row", el), mid = (base.length - 1) / 2;
+    base.forEach((r, i) => r.animate([{ opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0)" }], { duration: 900, delay: 100 + Math.abs(i - mid) * 110, easing: EASE, fill: "backwards" }));
+    /* 유리 YPL이 흐림을 벗으며 내려앉고, 그 안으로 색이 든다 */
+    ready.then(() => requestAnimationFrame(place));
+    const glassIn = still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(-14px) scale(1.04)", filter: "blur(12px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }];
+    for (const x of [win, gm, rim, edge, drop]) x.animate(glassIn, { duration: 1100, delay: 700, easing: EASE, fill: "backwards" });
+    const head = $(".head", el);
+    rise([...head.children].filter(c => c.tagName !== "H1"), 1500, 110);
+    rise([...head.querySelectorAll(".t-name, .t-ko, .t-full")], 1300);
+  }
+  addEventListener("resize", () => { if (!el.hidden) { rows = 0; build(); place(); } });
+  return { start, stop() {} };
+})();
+
+/* ---------------- C 볼 ---------------- */
+const C = (() => {
+  const el = $("#c"), place = $(".c-place", el), ball = $(".c-ball", el), orbit = $(".c-orbit", el), party = $(".c-party", el);
+  orbit.innerHTML = CHAMP.map(u => `<span class="mon"><img src="${u}" alt=""></span>`).join("");
+  $(".hx-floor", party).innerHTML = CHAMP.map((u, i) => `<li class="hx-mon${i >= 3 ? " back" : ""}" data-i="${i}" style="--d:${Math.abs(i - 2.5)}"><span class="hx-mon-body"><img src="${u}" alt=""></span><i class="hx-contact"></i></li>`).join("");
+  $$(".hx-mon", party).forEach(m => m.addEventListener("click", e => { e.stopPropagation(); hop(m); }));
+  const mons = $$(".mon", orbit);
+  let raf = 0, open = false, t0 = 0;
+  function loop(now) {
+    const t = (now - t0) / 1000, B = place.offsetWidth;
+    /* 볼 안에서 여섯이 천천히 돈다. 앞에 올수록 크고 밝다. */
+    mons.forEach((m, i) => {
+      const a = t * .5 + i * Math.PI / 3, z = Math.cos(a), k = (z + 1) / 2;
+      m.style.transform = `translate(${Math.sin(a) * B * .27}px, ${z * B * .06}px) scale(${.5 + k * .5})`;
+      m.style.zIndex = Math.round(k * 10);
+      m.style.filter = `brightness(${.35 + k * .65})`;
+    });
+    /* 빛은 손 쪽으로 미끄러지고 볼은 아주 조금 기운다 */
+    ball.style.setProperty("--sx", pointer.nx * 10 + "%"); ball.style.setProperty("--sy", pointer.ny * 6 + "%");
+    ball.style.setProperty("--tilt", pointer.nx * 4 + "deg");
+    raf = requestAnimationFrame(loop);
+  }
+  function setOpen(v) {
+    open = v;
+    if (v) {
+      $(".c-burst", el).animate([{ opacity: .95, transform: "scale(.3)" }, { opacity: 0, transform: "scale(2.6)" }], { duration: 700, easing: EASE });
+      place.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.2)" }], { duration: 260, easing: "cubic-bezier(.5,0,.75,0)", fill: "forwards" });
+      party.hidden = false;
+      $$(".hx-mon", party).sort((p, q) => Math.abs(p.dataset.i - 2.5) - Math.abs(q.dataset.i - 2.5)).forEach((m, i) => m.animate(
+        still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(-40px) scale(.3)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
+        { duration: 760, delay: 120 + i * 60, easing: SPRING, fill: "backwards" }));
+      $("figcaption", party).animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 600, fill: "backwards" });
+      $(".c-sub", el).textContent = "바닥을 누르면 볼로 돌아갑니다";
+    } else {
+      party.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.6)" }], { duration: 240, easing: "cubic-bezier(.5,0,.75,0)" }).onfinish = () => { party.hidden = true; };
+      place.animate([{ opacity: 0, transform: "scale(.2)" }, { opacity: 1, transform: "none" }], { duration: 640, delay: 120, easing: SPRING, fill: "forwards" });
+      $(".c-sub", el).textContent = "볼을 눌러 챔피언의 파티를 꺼내 보세요";
+    }
+  }
+  ball.addEventListener("click", () => setOpen(true));
+  ball.addEventListener("keydown", e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setOpen(true)));
+  party.addEventListener("click", () => setOpen(false));
+  function start() {
+    open = false; party.hidden = true; $(".c-sub", el).textContent = "볼을 눌러 챔피언의 파티를 꺼내 보세요";
+    place.getAnimations().forEach(a => a.cancel());
+    /* 볼이 위에서 떨어져 바닥에서 한 번 눌렸다 튀고 선다. 닿는 순간 바닥에 고리. */
+    const drop = still ? [{ opacity: 0 }, { opacity: 1 }] : [
+      { transform: "translateY(-110vh)", easing: "cubic-bezier(.55,0,.9,.45)" },
+      { transform: "translateY(0) scale(1.07,.9)", offset: .5, easing: "cubic-bezier(.2,.7,.35,1)" },
+      { transform: "translateY(-12%) scale(.98,1.02)", offset: .7, easing: "cubic-bezier(.55,0,.85,.4)" },
+      { transform: "translateY(0) scale(1.025,.975)", offset: .86, easing: EASE },
+      { transform: "none" }];
+    ball.animate(drop, { duration: 1400, delay: 200, fill: "backwards" });
+    $(".c-shadow", el).animate([{ opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "none", offset: .5 }, { opacity: .7, transform: "scale(.85)", offset: .7 }, { opacity: 1, transform: "none" }], { duration: 1400, delay: 200, fill: "backwards" });
+    $(".c-ring", el).animate([{ opacity: 1, transform: "scale(.5)" }, { opacity: 0, transform: "scale(1.9)" }], { duration: 1000, delay: 900, easing: EASE, fill: "both" });
+    $(".c-pool", el).animate([{ opacity: 0 }, { opacity: 1 }], { duration: 900, delay: 850, fill: "backwards" });
+    rise([...$(".head.top", el).children], 1250);
+    rise([...$(".head.foot", el).children], 1500, 110);
+    t0 = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  }
+  return { start, stop: () => cancelAnimationFrame(raf) };
+})();
+
+/* 시안 고르기(#a #b #c), 다시 보기, 테마 */
+const DRAFTS = { a: A, b: B, c: C };
+let cur = null;
+const show = id => {
+  if (!DRAFTS[id]) id = "a";
+  for (const k in DRAFTS) { $("#" + k).hidden = k !== id; if (k !== id) DRAFTS[k].stop(); }
+  for (const bt of $$("[data-go]")) bt.setAttribute("aria-pressed", bt.dataset.go === id);
+  cur = id; history.replaceState(null, "", "#" + id);
+  DRAFTS[id].start();
+};
+for (const bt of $$("[data-go]")) bt.onclick = () => show(bt.dataset.go);
+$("#replay").onclick = () => show(cur);
+const TITLES = [["name", "이름"], ["mark", "YPL"], ["ko", "문장"]];
+const setTitle = k => { document.documentElement.dataset.title = k; $("#title").textContent = TITLES.find(t => t[0] === k)[1]; try { localStorage.setItem("lab-title2", k); } catch {} };
+$("#title").onclick = () => { const i = TITLES.findIndex(t => t[0] === document.documentElement.dataset.title); setTitle(TITLES[(i + 1) % 3][0]); show(cur); };
+try { setTitle(localStorage.getItem("lab-title2") || "mark"); } catch { setTitle("mark"); }
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+$("#theme").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; };
+show(location.hash.slice(1));
+</script>
+</body>
+</html>
