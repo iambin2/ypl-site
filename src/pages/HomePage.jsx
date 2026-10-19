@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "../components/index.js";
 import { lineBlock } from "../components/home/brandTitle.js";
 import { startGlassCover } from "../components/home/glassCover.js";
@@ -104,6 +104,27 @@ export default function HomePage({ data, go }) {
     setStaged(true);
     return () => { clearTimeout(fallback); glass.stop(); if (txt) txt.style.opacity = ""; };
   }, [enter]);
+
+  /* 홈의 휠 스크롤은 목표 위치로 미끄러져 간다. 터치는 기기의 관성 그대로, 시트 안이나 확대(ctrl) 휠은 건드리지 않는다. */
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let cur = scrollY, target = scrollY, raf = 0;
+    const step = () => {
+      cur += (target - cur) * 0.14;
+      if (Math.abs(target - cur) < 0.5) { cur = target; raf = 0; } else raf = requestAnimationFrame(step);
+      scrollTo(0, cur);
+    };
+    const onWheel = e => {
+      if (e.ctrlKey || e.target.closest?.(".overlay")) return;
+      e.preventDefault();
+      if (!raf) cur = target = scrollY;
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
+      target = Math.max(0, Math.min(document.documentElement.scrollHeight - innerHeight, target + dy));
+      if (!raf) raf = requestAnimationFrame(step);
+    };
+    addEventListener("wheel", onWheel, { passive: false });
+    return () => { removeEventListener("wheel", onWheel); cancelAnimationFrame(raf); };
+  }, []);
 
   return (<div className={"home" + (staged ? " staged" : "")}>
     <section className="hx-act hx-cover" aria-labelledby="hx-title">
