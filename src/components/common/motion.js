@@ -71,16 +71,6 @@ function ghostLayer() {
   if (!g) { g = document.createElement("div"); g.id = "ypl-ghosts"; g.setAttribute("aria-hidden", "true"); (document.querySelector(".ypl") || document.body).append(g); }
   return g;
 }
-/* 화면에 붙은(fixed) 무대는 transform 이 걸린 복제본 안에서 화면이 아니라 복제본에 붙는다.
-   복제본 안에서 같은 자리에 오도록 복제본 기준의 절대 위치로 옮긴다. */
-function keepPins(el, c) {
-  const cp = c.querySelectorAll("[data-pin]"), base = el.getBoundingClientRect();
-  el.querySelectorAll("[data-pin]").forEach((p, i) => {
-    if (!cp[i] || getComputedStyle(p).position !== "fixed") return;
-    const r = p.getBoundingClientRect();
-    Object.assign(cp[i].style, { position: "absolute", left: r.left - base.left + "px", top: r.top - base.top + "px", width: r.width + "px", height: r.height + "px", right: "auto" });
-  });
-}
 /* 복제본은 원래 부모 밖(#ypl-ghosts)에 놓인다. 부모에게서 물려받던 글자 모양(목록 제목의 굵기 등)을 그대로 들고 간다. */
 const INHERITED = ["font-family", "font-size", "font-weight", "font-style", "font-stretch", "font-variation-settings", "font-feature-settings", "font-variant-numeric",
   "line-height", "letter-spacing", "word-spacing", "color", "text-align", "text-transform", "white-space", "word-break", "overflow-wrap", "text-wrap-mode", "text-wrap-style", "-webkit-font-smoothing"];
@@ -94,7 +84,6 @@ function shownWidth(el, rect) {
 }
 function clone(el, rect, cls, host) {
   const c = el.cloneNode(true), cs = getComputedStyle(el);
-  keepPins(el, c);
   c.removeAttribute("id"); c.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
   c.querySelectorAll("iframe, video").forEach(e => { const p = document.createElement("div"); p.style.cssText = e.style.cssText; p.className = e.className; e.replaceWith(p); });
   c.classList.add(...cls.split(" "));
@@ -166,20 +155,10 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
 
 /* ---------- theme change (B6): the page fades to the next theme where it stands. The colour tokens are typed
    (@property) and fade on <html> (.theme-fade), so every element, gradient and glass follows them in place;
-   nothing is copied, so nothing can move. The home stage canvas paints its own colours, so a still copy of it
-   in the old theme fades out over it. ---------- */
+   nothing is copied, so nothing can move. ---------- */
 let fadeEnd = 0;
 export function themeFade(commit) {
-  const root = document.documentElement, stage = document.querySelector("canvas.hx-stage");
-  if (stage?.width && typeof stage.animate === "function") {
-    const still = document.createElement("canvas");
-    still.width = stage.width; still.height = stage.height; still.className = "hx-stage"; still.setAttribute("aria-hidden", "true");
-    still.getContext("2d").drawImage(stage, 0, 0);
-    stage.after(still);
-    const gone = () => still.remove();
-    still.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: EASE_IN_OUT, fill: "forwards" }).finished.then(gone, gone);
-    setTimeout(gone, 600); // a hidden tab never finishes the animation
-  }
+  const root = document.documentElement;
   root.classList.add("theme-fade");
   commit();
   clearTimeout(fadeEnd);

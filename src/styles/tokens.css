@@ -331,7 +331,7 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .callout { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .caption, .meta { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
 .fig { font-size: 1.25rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-:is(.fig, .hx-dday, .hx-fig, .rc-poster-num, .rc-rankcard-n, .ab-flow-n) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
+:is(.fig, .hx-dday, .rc-poster-num, .rc-rankcard-n, .ab-flow-n) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
 .unit { font-size: .75rem; font-weight: 700; line-height: 1.2; color: var(--fg-3); margin-left: var(--s1); }
 
 /* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ---------- */

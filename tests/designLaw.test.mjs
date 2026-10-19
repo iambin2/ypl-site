@@ -116,21 +116,20 @@ const EXCEPT = {
     "an article body reads at 18px on desktop (Pages)": [`${P} | .prose p | font-size: 1.125rem`],
   },
   "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": {
-    "a name cut to one line with an ellipsis; it never wraps": [`${P} | .hx-result-win b | max-width: 12em`],
   },
   "align: left by default, centre only for the four cases (Alignment)": {
     "(a) a label inside its control": [`${T} | button | text-align: center`, `${T} | .rs > i | text-align: center`, `${A} | .ed-grid input | text-align: center`,
       `${B} | .bk-count input | text-align: center`, `${B} | .bk-pt input | text-align: center`, `${B} | .bk-alloc-row input | text-align: center`,
       `${K} | .calc-stepper output | text-align: center`, `${TB} | .tb-stat-number | text-align: center`],
     "(b) a short mark in a narrow fixed cell, and the head of such a column": [`${B} | .bk-seed | text-align: center`, `${B} | .bk-series-no | text-align: center`,
-      `${B} | .bk-series-vs | text-align: center`, `${P} | .hx-rank | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
+      `${B} | .bk-series-vs | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
       `${R} | .records-party-sprite-fallback | text-align: center`, `${A} | .ed-head | text-align: center`],
     "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`],
     "(d) a symmetric stage": [`${P} | .hx-cover .hx-pin | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
   },
   "align: right only for trailing values and number columns (Alignment)": {
     "a trailing value or a number column": [`${K} | .calc-hp b | text-align: right`, `${K} | .calc-base-row b | text-align: right`, `${K} | .calc-base-row small | text-align: right`,
-      `${K} | .calc-table .num | text-align: right`, `${C} | .ypl-table .r | text-align: right`, `${P} | .hx-result-win | text-align: right`, `${R} | .rc-facts.rows dd | text-align: right`,
+      `${K} | .calc-table .num | text-align: right`, `${C} | .ypl-table .r | text-align: right`, `${R} | .rc-facts.rows dd | text-align: right`,
       `${P} | .sc-stat strong | text-align: right`, `${P} | .sc-stat-h > span:last-child | text-align: right`, `${P} | .sc-sp em | text-align: right`],
   },
   "radius: hero 36, card 32, row 24, textarea 20, tile 12, pill (Space and radius)": {
