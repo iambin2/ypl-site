@@ -3,29 +3,19 @@
    ========================================================================== */
 
 /* =========================== HOME ===========================
-   The bracket (DECISIONS 9th round): one cover and three chapters. With the stage on, each chapter is an empty
-   one-screen slot the document snaps to, so one scroll is one chapter (scroll-snap-stop keeps a fling from
-   skipping). Every chapter's text sits fixed on the screen in the same place and never slides with the scroll;
-   the transparent canvas behind (bracketStage.js) draws a sixteen-seat bracket over the stage light and the
-   chapter's figure (a number on each chapter; the cover has its own stage, the glass YPL on a wall of Pokémon, and no bracket), resolves one round per chapter in one timed transition (light runs up the
-   winners' lines, the losers' lines dim, the final flares on the last chapter) and shows only the current
-   chapter's text once the round is over. Without it (no canvas, or a screen under 520px tall) the same parts
-   stack as a plain page and the figure stands as type. */
+   One screen, the cover (DECISIONS 11th and 12th rounds): a wall of every Pokémon and one YPL of glass on it, the league's
+   name drawn small under it; the days left, the actions and the latest notice under that. The bracket stage and its three
+   chapters (9th round) were removed in the 12th round. On a screen under 520px tall the same parts stack as a plain page
+   with the wordmark drawn solid. */
 .home { display: flex; flex-direction: column; gap: var(--chapter); }
-/* the largest viewport height, so the phone's address bar never resizes the canvas */
-.hx-stage { position: fixed; left: 0; top: 0; z-index: -1; width: 100%; height: 100lvh; display: block; pointer-events: none; }
-/* chapters are whole screens under the floating bar, so they snap to the very top (the site-wide scroll-padding would stop them 80px short).
-   Snapping waits for the staged chapters: with only the footer as a snap point, a fresh load was pulled down to the footer. */
-html.hx-snap:has(.home.staged) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
-html.hx-snap:has(.home.staged) .site-foot { scroll-snap-align: end; }
 .home.staged { gap: 0; margin-top: calc((env(safe-area-inset-top, 0px) + 92px) * -1); }
-.home.staged .hx-act { height: 100svh; scroll-snap-align: start; scroll-snap-stop: always; }
-/* the bottom: tab bar (76) + 20 to the bracket's seats + 24 to the text, mirroring the seats 20px under the top bar */
+.home.staged .hx-act { position: relative; height: 100svh; }
+/* the bottom: tab bar (76) + 44 to the text */
 .home.staged .hx-pin {
-  position: fixed; left: 0; right: 0; top: 0; height: 100svh; display: flex; flex-direction: column; justify-content: flex-end;
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
   padding: 0 var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 120px); pointer-events: none;
 }
-.home.staged .hx-txt { opacity: 0; pointer-events: auto; will-change: opacity, transform; }
+.home.staged .hx-txt { pointer-events: auto; }
 @media (min-width: 860px) { .home.staged { margin-top: -112px; } .home.staged .hx-pin { padding-bottom: 56px; } }
 .hx-txt { width: 100%; max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: var(--s6); }
 
@@ -75,49 +65,8 @@ html.hx-snap:has(.home.staged) .site-foot { scroll-snap-align: end; }
 .hx-notice .ic { flex: none; color: var(--fg-3); transition: translate 400ms var(--spring-snappy); }
 @media (hover: hover) { .hx-notice:hover { color: var(--fg); } .hx-notice:hover .ic { translate: 2px 0; } }
 
-/* the figure as type, only when there is no canvas to draw it */
-.hx-fig { font-size: var(--display-xl); line-height: .92; margin: 0 0 var(--s4); color: var(--fg); }
 /* the days left sit under the name one golden step smaller than it: the title size */
 .hx-dday { font-size: var(--display); line-height: 1; }
-
-/* ---------- chapters: the display line, its subject, a quiet link; content 24px below ---------- */
-.hx-ch { min-width: 0; }
-.hx-ch-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); }
-.hx-ch-title { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
-
-/* battles: the last three results as rows, the winner on the right */
-.hx-result-main, .hx-result-win { display: flex; flex-direction: column; min-width: 0; }
-.hx-result-win { align-items: flex-end; text-align: right; }
-.hx-result-win b { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; max-width: 12em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* records: this season's top five; each row carries its points as a trail of light that brightens toward the value
-   and draws in once, when its stage first shows */
-.hx-standing { position: relative; isolation: isolate; grid-template-columns: 40px minmax(0, 1fr) auto; min-height: 60px; }
-.hx-bar {
-  position: absolute; z-index: -1; left: 0; top: 0; bottom: 0; width: calc(var(--w) * 100%); border-radius: inherit; background: linear-gradient(90deg, transparent 30%, var(--bar));
-  clip-path: inset(0 0 0 0 round 24px); transition: clip-path 1100ms var(--ease-out) calc(200ms + var(--i) * 40ms);
-}
-.home.staged .hx-txt:not(.shown) .hx-bar { clip-path: inset(0 100% 0 0 round 24px); transition: none; }
-@media (prefers-reduced-motion: reduce) { .hx-bar, .home.staged .hx-txt:not(.shown) .hx-bar { clip-path: inset(0 0 0 0 round 24px); transition: none; } }
-.hx-rank { color: var(--rank-n); text-align: center; }
-.hx-rank.r1 { color: var(--rank-1); } .hx-rank.r2 { color: var(--rank-2); } .hx-rank.r3 { color: var(--rank-3); }
-.hx-pts { display: flex; align-items: baseline; white-space: nowrap; }
-.hx-pts b { font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; }
-
-/* champions: the last six champions in order, the reigning one brightest */
-.hx-lineage { list-style: none; margin: 0; padding: var(--s2); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s1); }
-.hx-lineage > li { display: flex; }
-.hx-gen { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); padding: var(--s4); border-radius: 24px; text-align: left; transition: background-color var(--dur-fast) var(--ease-out), scale 400ms var(--spring-snappy); }
-@media (hover: hover) { .hx-gen:hover { background-color: var(--surface-2); } }
-.hx-gen-n { display: flex; align-items: baseline; margin-bottom: var(--s2); font-size: 1.75rem; font-weight: 800; line-height: 1.1; letter-spacing: -.04em; color: var(--fg-3); }
-.hx-gen-n .fig { font-size: inherit; }
-.now .hx-gen-n { color: var(--fg); }
-.hx-gen b { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
-
-/* a short screen keeps each stage to one screen: three rows, the latest three champions */
-@media (max-height: 740px) {
-  .home.staged .hx-standings > li:nth-child(n+4), .home.staged .hx-lineage > li:nth-last-child(n+4) { display: none; }
-}
 
 /* the reigning champion's party on the floor (the hall of fame stage): two rows on a phone (the back row smaller
    and further), one row on wider screens with the middle nearest. Each stands on its own contact shadow. */
