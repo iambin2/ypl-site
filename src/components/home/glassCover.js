@@ -60,6 +60,8 @@ export function startGlassCover(layer, slot, { enter = false, follow = null, onS
   const q = s => layer.querySelector(s);
   const base = q(".hx-wall"), win = q(".hx-wall.win"), body = q(".glass-mark"), edge = q(".hx-gedge"), rim = q(".hx-grim"), drop = q(".hx-gdrop");
   const [probeIn, probeOut] = layer.querySelectorAll(".hx-probe");
+  const warm = layer.appendChild(document.createElement("i"));
+  warm.style.cssText = "position:absolute;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none";
   for (const x of [win, body]) x.style.setProperty("--mk", `url("${MARK_URL}")`);
 
   /* 벽: 화면을 채우는 줄 수. 줄마다 두 벌을 이어 붙여 반 바퀴 흐르면 제자리(끊김 없음). 두 벽은 같은 줄, 같은 속도라 함께 흐른다.
@@ -126,36 +128,48 @@ export function startGlassCover(layer, slot, { enter = false, follow = null, onS
     const [shape, rim, edge, drop, disp] = out;
     return { cw, ch, k, band: r.band, shape, ring: rim, edge, drop, disp };
   }
-  function apply(d) {
+  /* 새 그림으로 바꿔 끼운다. 보이는 유리를 바꿀 때는 먼저 안 보이는 점 하나(warm)에 같은 그림과 새 필터를 걸어 받아 두고,
+     그다음 한 번에 바꾼다. 굴절 필터는 그림마다 새로 만들고 옛 것은 바꾼 뒤에 치운다(같은 필터의 지도를 갈아 끼우면 지도가
+     받아지는 동안 글자 안이 한 프레임 비틀려 보인다). 그 사이 크기가 또 바뀌었으면 false. */
+  let fn = 0;
+  async function apply(d, next, hidden) {
+    const id = `${fid}-${++fn}`;
+    /* 굴절 지도를 거는 필터. 뒤에 0.6px 흐림(refraction.js와 같음). */
+    if (d.disp) document.body.insertAdjacentHTML("beforeend", `<svg width="0" height="0" style="position:absolute" aria-hidden="true" data-glass-cover="${fid}"><filter id="${id}" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB" x="0" y="0" width="${d.cw}" height="${d.ch}"><feImage result="map" preserveAspectRatio="none" x="0" y="0" width="${d.cw}" height="${d.ch}" href="${d.disp}"/><feDisplacementMap in="SourceGraphic" in2="map" scale="${d.band / d.k * 1.1}" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation=".6" edgeMode="duplicate"/></filter></svg>`);
+    if (!hidden) {
+      warm.style.backgroundImage = [d.shape, d.ring, d.edge, d.drop].map(u => `url("${u}")`).join(",");
+      warm.style.filter = d.disp ? `url(#${id})` : "";
+      await new Promise(r => setTimeout(r, 100));
+      if (!alive || key !== next) { document.getElementById(id)?.closest("svg")?.remove(); return false; }
+    }
     for (const x of [win, body]) x.style.setProperty("--mk", `url("${d.shape}")`);
     rim.style.setProperty("--ring-mask", `url("${d.ring}")`);
     edge.style.setProperty("--edge-img", `url("${d.edge}")`);
     drop.style.setProperty("--drop-img", `url("${d.drop}")`);
-    if (!d.disp) return;
-    /* 굴절 지도를 거는 필터. 뒤에 0.6px 흐림(refraction.js와 같음). */
-    let f = document.getElementById(fid);
-    if (!f) {
-      document.body.insertAdjacentHTML("beforeend", `<svg width="0" height="0" style="position:absolute" aria-hidden="true" data-glass-cover><filter id="${fid}" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB" x="0" y="0"><feImage result="map" preserveAspectRatio="none" x="0" y="0"/><feDisplacementMap in="SourceGraphic" in2="map" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation=".6" edgeMode="duplicate"/></filter></svg>`);
-      f = document.getElementById(fid);
-    }
-    const im = f.querySelector("feImage");
-    for (const node of [f, im]) { node.setAttribute("width", d.cw); node.setAttribute("height", d.ch); }
-    f.querySelector("feDisplacementMap").setAttribute("scale", d.band / d.k * 1.1);
-    im.setAttribute("href", d.disp);
-    body.style.setProperty("--glass-filter", `blur(4px) url(#${fid}) saturate(170%) brightness(var(--glass-bright))`);
+    if (d.disp) body.style.setProperty("--glass-filter", `blur(4px) url(#${id}) saturate(170%) brightness(var(--glass-bright))`);
+    warm.style.filter = "";
+    document.querySelectorAll(`[data-glass-cover="${fid}"]`).forEach(s => { if (!d.disp || !s.querySelector(`#${id}`)) s.remove(); });
+    return true;
   }
 
-  /* 자리 잡기: 창, 몸체, 테두리는 slot 과 같은 자리, 그림자는 그보다 PAD 만큼 넓게. 층은 표지(화면에 붙은 무대)를 덮는다. */
+  /* 자리 잡기: 창, 몸체, 테두리는 slot 과 같은 자리, 그림자는 그보다 PAD 만큼 넓게. 층은 표지(화면에 붙은 무대)를 덮는다.
+     크기가 바뀌면 자리는 그 프레임에 바로 옮긴다(다시 그리기만 기다린다). 기다렸다 옮기면 확대할 때마다 유리가 옛 크기로
+     남아 있다가 툭 바뀌어 깜빡이는 것처럼 보인다. 그동안은 옛 그림이 새 크기로 늘어나 선다. */
   let shown = false;
-  function place() {
-    if (!alive) return;
+  function position() {
     const r = slot.getBoundingClientRect(), L = layer.getBoundingClientRect();
-    if (!r.width || !r.height) return;
+    if (!r.width || !r.height) return null;
     const x = r.left - L.left, y = r.top - L.top;
     win.style.setProperty("--mx", x - win.offsetLeft + "px"); win.style.setProperty("--my", y - win.offsetTop + "px");
     win.style.setProperty("--mw", r.width + "px"); win.style.setProperty("--mh", r.height + "px");
     for (const el of [body, rim, edge]) Object.assign(el.style, { left: x + "px", top: y + "px", width: r.width + "px", height: r.height + "px" });
     Object.assign(drop.style, { left: x - PAD + "px", top: y - PAD + "px", width: r.width + PAD * 2 + "px", height: r.height + PAD * 2 + "px" });
+    return r;
+  }
+  function place() {
+    if (!alive) return;
+    const r = position();
+    if (!r) return;
     const next = [Math.round(r.width), Math.round(r.height), window.devicePixelRatio || 1, document.documentElement.dataset.theme].join("|");
     if (next === key || !mark.complete) return;
     key = next;
@@ -163,9 +177,7 @@ export function startGlassCover(layer, slot, { enter = false, follow = null, onS
     (ready ? Promise.resolve(ready) : draw(Math.round(r.width), Math.round(r.height))).then(async d => {
       keep(next, d);
       await decoded(d);
-      if (!alive || key !== next) return;
-      apply(d);
-      if (shown) return;
+      if (!alive || key !== next || !(await apply(d, next, !shown)) || shown) return;
       shown = true;
       /* 처음 그려지는 순간: 유리 YPL이 흐림을 벗으며 내려앉고 그 안으로 색이 들고, 아래 이름이 따라 서고, 글이 이어서 나온다.
          첫 방문의 차례는 정해진 시각이 아니라 유리가 실제로 준비된 때부터 센다(느린 폰에서도 이름만 먼저 뜨거나 글이 앞서지 않게). */
@@ -176,7 +188,7 @@ export function startGlassCover(layer, slot, { enter = false, follow = null, onS
       onShown(wait + (big ? 800 : 0));
     }, e => { console.warn("표지 유리를 그리지 못했습니다.", e); if (follow) follow.style.opacity = ""; onShown(0); });
   }
-  const later = () => { clearTimeout(timer); timer = setTimeout(() => { build(); place(); }, 120); };
+  const later = () => { if (alive) position(); clearTimeout(timer); timer = setTimeout(() => { build(); place(); }, 120); };
   const t0 = performance.now();
 
   build();
@@ -199,7 +211,7 @@ export function startGlassCover(layer, slot, { enter = false, follow = null, onS
       removeEventListener("resize", later);
       mo.disconnect();
       if (follow) follow.style.opacity = "";
-      document.getElementById(fid)?.closest("svg")?.remove();
+      document.querySelectorAll(`[data-glass-cover="${fid}"]`).forEach(s => s.remove());
     },
   };
 }
