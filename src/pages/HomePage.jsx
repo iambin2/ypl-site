@@ -87,12 +87,22 @@ export default function HomePage({ data, go }) {
   useLayoutEffect(() => {
     coverPending = false;
     if (innerHeight < 520) return undefined;
-    const glass = startGlassCover(glassRef.current, slotRef.current, { enter });
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    txtRef.current?.animate(still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
-      { duration: still ? 1 : 480, delay: enter ? 1500 : 520, easing: EASE, fill: "backwards" });
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches, txt = txtRef.current;
+    /* 첫 방문의 글은 유리가 나오기 시작한 때에 맞춘다(onShown). 다시 오면 페이지 전환이 끝난 뒤. 알림이 오지 않으면 4초에 선다. */
+    let txtShown = false;
+    const showTxt = delay => {
+      if (txtShown || !txt) return;
+      txtShown = true; txt.style.opacity = "";
+      txt.animate(still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
+        { duration: still ? 1 : 480, delay, easing: EASE, fill: "backwards" });
+    };
+    if (enter) { if (txt) txt.style.opacity = "0"; } else showTxt(520);
+    const fallback = setTimeout(() => showTxt(0), 4000);
+    const glass = startGlassCover(glassRef.current, slotRef.current, {
+      enter, follow: slotRef.current.nextElementSibling, onShown: delay => enter && showTxt(delay),
+    });
     setStaged(true);
-    return () => glass.stop();
+    return () => { clearTimeout(fallback); glass.stop(); if (txt) txt.style.opacity = ""; };
   }, [enter]);
 
   return (<div className={"home" + (staged ? " staged" : "")}>

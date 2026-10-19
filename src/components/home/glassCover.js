@@ -4,8 +4,10 @@
      몸체(--glass 위의 --spec, --sheen, --caustic)와 흐림 4px, 테두리 띠의 굴절(refraction.js의 lensOffset과 같은 곡선),
      1px 테두리(.glass::before와 같은 빛), 안쪽 그림자(--edge)와 바깥 그림자(--shadow-near, --shadow-far).
      상자 그림자와 굴절 지도는 상자 대신 글자 모양으로 계산한다(정확한 부호 거리, 화면 배율만큼 촘촘히, glassCover.worker.js에서). 값은 토큰에서 읽는다.
-   startGlassCover(layer, slot): layer 는 표지에 붙은 빈 층(.hx-glass), slot 은 유리 YPL이 설 자리(그 크기와 위치를 읽는다).
-   크기, 화면 배율, 테마가 바뀌면 다시 그린다. 돌려주는 stop()이 모든 것을 치운다. */
+   startGlassCover(layer, slot, { enter, follow, onShown }): layer 는 표지에 붙은 빈 층(.hx-glass), slot 은 유리 YPL이 설 자리(그 크기와 위치를 읽는다).
+   follow 는 유리를 따라 나오는 것(아래의 한 줄 이름), onShown(시각)은 유리가 나오기 시작할 때 글이 나올 시각을 알린다.
+   크기, 화면 배율, 테마가 바뀌면 다시 그린다. 새 그림은 다 풀린 뒤에 한 번에 바꿔 끼운다(풀리기 전에 끼우면 마스크가 한 프레임 비어
+   확대할 때마다 글자가 깜빡인다). 돌려주는 stop()이 모든 것을 치운다. */
 import { WORDMARK_PATH } from "../layout/SiteHeader.jsx";
 import GlassWorker from "./glassCover.worker.js?worker&inline";
 
@@ -43,9 +45,11 @@ const work = (msg, transfer) => new Promise((res, rej) => {
   wk.onerror = e => { wk.terminate(); rej(e); };
   wk.postMessage(msg, transfer);
 });
+/* 그림 주소들을 미리 풀어 둔다(바꿔 끼우는 프레임에 바로 그려지게) */
+const decoded = d => Promise.all([d.shape, d.ring, d.edge, d.drop, d.disp].filter(Boolean).map(u => { const i = new Image(); i.src = u; return i.decode().catch(() => {}); }));
 let seq = 0;
 
-export function startGlassCover(layer, slot, { enter = false } = {}) {
+export function startGlassCover(layer, slot, { enter = false, follow = null, onShown = () => {} } = {}) {
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const chromium = /Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent) && !/iPhone|iPad|iPod/.test(navigator.userAgent)
     && !matchMedia("(prefers-reduced-transparency: reduce)").matches;
@@ -58,16 +62,16 @@ export function startGlassCover(layer, slot, { enter = false } = {}) {
   const [probeIn, probeOut] = layer.querySelectorAll(".hx-probe");
   for (const x of [win, body]) x.style.setProperty("--mk", `url("${MARK_URL}")`);
 
-  /* 벽: 화면을 채우는 줄 수. 줄마다 두 벌을 이어 붙여 반 바퀴 흐르면 제자리(끊김 없음). 두 벽은 같은 줄, 같은 속도라 함께 흐른다. */
-  let rows = 0, gen = 0;
+  /* 벽: 화면을 채우는 줄 수. 줄마다 두 벌을 이어 붙여 반 바퀴 흐르면 제자리(끊김 없음). 두 벽은 같은 줄, 같은 속도라 함께 흐른다.
+     벽은 늘어야 할 때만 다시 쌓는다(화면이 줄면 남는 그림은 밖에서 잘린다). 다시 쌓으면 그림이 새로 풀리며 벽과 글자 안이 깜빡인다. */
+  let rows = 0, cols = 0, gen = 0;
   function build() {
     const cell = parseFloat(getComputedStyle(layer).getPropertyValue("--cell")) || 80;
-    const n = Math.ceil(innerHeight * 1.1 / (cell * 1.14)) + 1;
-    if (n === rows) return;
-    rows = n;
-    const per = Math.ceil(innerWidth / (cell * 1.18)) + 2;
-    const html = Array.from({ length: n }, (_, r) => {
-      const imgs = Array.from({ length: per }, (_, i) => `<img data-src="${sprite(ROSTER[(r * 11 + i * 3) % ROSTER.length])}" alt="" decoding="async">`).join("");
+    const n = Math.ceil(innerHeight * 1.1 / (cell * 1.14)) + 1, per = Math.ceil(innerWidth / (cell * 1.18)) + 2;
+    if (n <= rows && per <= cols) return;
+    rows = Math.max(n, rows); cols = Math.max(per, cols);
+    const html = Array.from({ length: rows }, (_, r) => {
+      const imgs = Array.from({ length: cols }, (_, i) => `<img data-src="${sprite(ROSTER[(r * 11 + i * 3) % ROSTER.length])}" alt="" decoding="async">`).join("");
       return `<div class="hx-row" style="--dur:${70 + (r % 3) * 18}s">${imgs}${imgs}</div>`;
     }).join("");
     base.innerHTML = win.innerHTML = html;
@@ -156,18 +160,24 @@ export function startGlassCover(layer, slot, { enter = false } = {}) {
     if (next === key || !mark.complete) return;
     key = next;
     const ready = drawn.get(next);
-    (ready ? Promise.resolve(ready) : draw(Math.round(r.width), Math.round(r.height))).then(d => {
+    (ready ? Promise.resolve(ready) : draw(Math.round(r.width), Math.round(r.height))).then(async d => {
       keep(next, d);
+      await decoded(d);
       if (!alive || key !== next) return;
       apply(d);
       if (shown) return;
       shown = true;
-      // 처음 그려지는 순간: 유리 YPL이 흐림을 벗으며 내려앉고, 그 안으로 색이 든다
-      const kf = still || !enter ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(-14px) scale(1.04)", filter: "blur(12px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }];
-      for (const el of [win, body, rim, edge, drop]) { el.style.opacity = ""; el.animate(kf, { duration: enter && !still ? 1100 : 420, delay: enter ? 500 : 0, easing: EASE, fill: "backwards" }); }
-    }, e => console.warn("표지 유리를 그리지 못했습니다.", e));
+      /* 처음 그려지는 순간: 유리 YPL이 흐림을 벗으며 내려앉고 그 안으로 색이 들고, 아래 이름이 따라 서고, 글이 이어서 나온다.
+         첫 방문의 차례는 정해진 시각이 아니라 유리가 실제로 준비된 때부터 센다(느린 폰에서도 이름만 먼저 뜨거나 글이 앞서지 않게). */
+      const big = enter && !still, wait = enter ? Math.max(0, 500 - (performance.now() - t0)) : 0;
+      const kf = big ? [{ opacity: 0, transform: "translateY(-14px) scale(1.04)", filter: "blur(12px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }] : [{ opacity: 0 }, { opacity: 1 }];
+      for (const el of [win, body, rim, edge, drop]) { el.style.opacity = ""; el.animate(kf, { duration: big ? 1100 : 420, delay: wait, easing: EASE, fill: "backwards" }); }
+      if (follow) { follow.style.opacity = ""; follow.animate(big ? [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }] : [{ opacity: 0 }, { opacity: 1 }], { duration: big ? 700 : 420, delay: wait + (big ? 450 : 0), easing: EASE, fill: "backwards" }); }
+      onShown(wait + (big ? 800 : 0));
+    }, e => { console.warn("표지 유리를 그리지 못했습니다.", e); if (follow) follow.style.opacity = ""; onShown(0); });
   }
-  const later = () => { clearTimeout(timer); timer = setTimeout(() => { rows = 0; build(); place(); }, 120); };
+  const later = () => { clearTimeout(timer); timer = setTimeout(() => { build(); place(); }, 120); };
+  const t0 = performance.now();
 
   build();
   if (enter && !still) {
@@ -175,7 +185,7 @@ export function startGlassCover(layer, slot, { enter = false } = {}) {
     const rs = [...base.children], mid = (rs.length - 1) / 2;
     rs.forEach((r, i) => r.animate([{ opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0)" }], { duration: 900, delay: 100 + Math.abs(i - mid) * 110, easing: EASE, fill: "backwards" }));
   }
-  for (const el of [win, body, rim, edge, drop]) el.style.opacity = "0";
+  for (const el of follow ? [win, body, rim, edge, drop, follow] : [win, body, rim, edge, drop]) el.style.opacity = "0";
   mark.decode().catch(() => {}).then(() => requestAnimationFrame(place));
   addEventListener("resize", later);
   // 테마가 바뀌면 그림자 색(토큰)이 바뀌므로 다시 그린다(색이 다 바뀐 뒤)
@@ -188,6 +198,7 @@ export function startGlassCover(layer, slot, { enter = false } = {}) {
       clearTimeout(timer);
       removeEventListener("resize", later);
       mo.disconnect();
+      if (follow) follow.style.opacity = "";
       document.getElementById(fid)?.closest("svg")?.remove();
     },
   };

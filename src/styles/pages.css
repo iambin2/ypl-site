@@ -27,9 +27,15 @@
 .hx-ypl { display: block; color: var(--fg); }
 .hx-ypl svg { display: block; width: min(100%, 360px); height: auto; margin-inline: auto; fill: currentColor; }
 .hx-fullname { display: block; height: clamp(11px, .9rem, 15px); width: auto; margin: var(--s4) auto 0; fill: var(--fg-2); }
-/* with the stage on, the YPL is an empty slot the glass stands in, centred in the space over the text */
-.home.staged .hx-cover .hx-title { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; padding-top: calc(env(safe-area-inset-top, 0px) + 92px); }
-.home.staged .hx-ypl { --W: max(200px, min(100vw - 48px, 860px, (100svh - 460px) * 3.1)); width: var(--W); height: calc(var(--W) / 3.1); }
+/* with the stage on, the YPL is an empty slot the glass stands in. The name under it is set as one lockup with it: on the same
+   axis at .6 of its width, a gap in proportion (the glass's own shadow falls into it). The lockup and the text under it stand as
+   one group in the middle of the screen between the top bar and the bottom, so the actions read as part of the cover, not as a footer.
+   --W fits the whole group: the YPL (W / 3.1), the name (W / 30), the gap, and ~400px of bars, actions and notice. */
+.home.staged .hx-cover .hx-pin { justify-content: center; padding-top: calc(env(safe-area-inset-top, 0px) + 92px); }
+.home.staged .hx-cover .hx-title { --W: max(200px, min(100vw - 48px, 860px, (100svh - 400px) * 2.36)); position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; margin: 0 0 var(--s10); }
+@media (min-width: 860px) { .home.staged .hx-cover .hx-title { margin-bottom: var(--s14); } }
+.home.staged .hx-ypl { width: var(--W); height: calc(var(--W) / 3.1); }
+.home.staged .hx-fullname { width: max(220px, var(--W) * .6); height: auto; margin-top: calc(var(--W) * .05); }
 .home.staged .hx-cover .hx-txt { position: relative; z-index: 1; }
 /* the wall: rows of sprites drifting slowly, each the other way, grey and faint; the glass shows the same rows in colour */
 .hx-glass { display: none; }
