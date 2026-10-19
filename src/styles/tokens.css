@@ -360,6 +360,12 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
   -webkit-backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright)); backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright));
   box-shadow: var(--edge), var(--l3-shadow);
 }
+/* glass in the shape of a mark (the home cover's YPL, glassCover.js): the .glass recipe cut to the shape in --mk.
+   --glass-filter carries the bend drawn for that shape (Chromium); without it the frost of .glass stands alone. */
+.glass-mark { -webkit-mask: var(--mk) 0 0 / 100% 100% no-repeat; mask: var(--mk) 0 0 / 100% 100% no-repeat;
+  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
+    radial-gradient(90% 70% at 50% 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
+  -webkit-backdrop-filter: var(--glass-filter, blur(24px) saturate(170%) brightness(var(--glass-bright))); backdrop-filter: var(--glass-filter, blur(24px) saturate(170%) brightness(var(--glass-bright))); }
 .glass-lite { background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%), linear-gradient(var(--glass-lite), var(--glass-lite)); box-shadow: var(--edge), var(--lift); }
 .groove { background: var(--well); box-shadow: var(--well-edge); }
 .glass::before, .glass-l3::before, .glass-lite::before, .card::before {
@@ -370,7 +376,7 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .card::before { background: linear-gradient(180deg, var(--rimc-top), var(--rimc-bottom)); }
 .card { background: var(--surface); box-shadow: var(--card-shadow); border-radius: var(--r-card); }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) { .glass, .glass-l3 { background: var(--glass-solid); } }
-@media (prefers-reduced-transparency: reduce) { .glass, .glass-l3 { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } .glass-lite { background: var(--surface-2); } }
+@media (prefers-reduced-transparency: reduce) { .glass, .glass-l3, .glass-mark { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } .glass-lite { background: var(--surface-2); } }
 
 /* ---------- K1 press, K2 pointer highlight ---------- */
 .press { transition: scale 400ms var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }

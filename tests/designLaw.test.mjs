@@ -99,6 +99,7 @@ const EXCEPT = {
       `${T} | .glass::before, .glass-l3::before, .glass-lite::before, .card::before | padding: 1px`, `${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
       `${P} | .home.staged | margin-top: calc((env(safe-area-inset-top, 0px) + 92px) * -1)`, `${P} | .home.staged | margin-top: -112px`,
+      `${P} | .home.staged .hx-cover .hx-title | padding-top: calc(env(safe-area-inset-top, 0px) + 92px)`,
       `${S} | .page | padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px)`, `${S} | .page | padding-block: 112px 96px`,
       `${S} | .site-foot-in | padding: var(--s14) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
       `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-left: 48px`, `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-right: 48px`,

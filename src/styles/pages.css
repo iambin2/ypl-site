@@ -7,7 +7,7 @@
    one-screen slot the document snaps to, so one scroll is one chapter (scroll-snap-stop keeps a fling from
    skipping). Every chapter's text sits fixed on the screen in the same place and never slides with the scroll;
    the transparent canvas behind (bracketStage.js) draws a sixteen-seat bracket over the stage light and the
-   chapter's figure (the league's name on the cover, a number on each chapter), resolves one round per chapter in one timed transition (light runs up the
+   chapter's figure (a number on each chapter; the cover has its own stage, the glass YPL on a wall of Pokémon, and no bracket), resolves one round per chapter in one timed transition (light runs up the
    winners' lines, the losers' lines dim, the final flares on the last chapter) and shows only the current
    chapter's text once the round is over. Without it (no canvas, or a screen under 520px tall) the same parts
    stack as a plain page and the figure stands as type. */
@@ -29,12 +29,40 @@ html.hx-snap:has(.home.staged) .site-foot { scroll-snap-align: end; }
 @media (min-width: 860px) { .home.staged { margin-top: -112px; } .home.staged .hx-pin { padding-bottom: 56px; } }
 .hx-txt { width: 100%; max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: var(--s6); }
 
-/* ---------- cover: the days left (when an event is coming), the actions and the latest notice under the name ---------- */
+/* ---------- cover (11th round): a wall of every Pokémon and one YPL of glass on it, the league's name drawn small under it;
+   the days left (when an event is coming), the actions and the latest notice under that ---------- */
 .hx-cover .hx-pin { align-items: center; text-align: center; }
 .hx-cover .hx-txt { align-items: center; gap: 0; }
 .hx-title { margin-bottom: var(--s6); }
-/* the drawn name without a canvas: the same letters, its cap height .722 of --display-l like the canvas */
-.hx-mark { display: block; width: min(100%, calc(var(--display-l) * .722 * var(--w))); height: auto; margin-inline: auto; fill: currentColor; overflow: visible; }
+.hx-ypl { display: block; color: var(--fg); }
+.hx-ypl svg { display: block; width: min(100%, 360px); height: auto; margin-inline: auto; fill: currentColor; }
+.hx-fullname { display: block; height: clamp(11px, .9rem, 15px); width: auto; margin: var(--s4) auto 0; fill: var(--fg-2); }
+/* with the stage on, the YPL is an empty slot the glass stands in, centred in the space over the text */
+.home.staged .hx-cover .hx-title { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; padding-top: calc(env(safe-area-inset-top, 0px) + 92px); }
+.home.staged .hx-ypl { --W: max(200px, min(100vw - 48px, 860px, (100svh - 460px) * 3.1)); width: var(--W); height: calc(var(--W) / 3.1); }
+.home.staged .hx-cover .hx-txt { position: relative; z-index: 1; }
+/* the wall: rows of sprites drifting slowly, each the other way, grey and faint; the glass shows the same rows in colour */
+.hx-glass { display: none; }
+.home.staged .hx-glass { --cell: clamp(64px, 9vw, 104px); display: block; position: absolute; inset: 0; z-index: 0; overflow: hidden; isolation: isolate; pointer-events: none; }
+.hx-wall { position: absolute; inset: -4vh 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--cell) * .14); }
+.hx-row { display: flex; width: max-content; animation: hx-drift var(--dur) linear infinite; }
+.hx-row:nth-child(even) { animation-direction: reverse; margin-left: calc(var(--cell) * -.5); }
+.hx-row img { width: var(--cell); height: var(--cell); flex: none; object-fit: contain; margin-right: calc(var(--cell) * .18); -webkit-user-drag: none; user-select: none; }
+@keyframes hx-drift { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .hx-row { animation: none; } }
+.hx-wall:not(.win) { filter: grayscale(1) contrast(1.1); opacity: .3; }
+:root[data-theme="light"] .hx-wall:not(.win) { opacity: .24; }
+/* the stage's colour pools under the name and under the text, so both read over the wall */
+.hx-veil { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 46% at 50% 44%, var(--stage), transparent), linear-gradient(180deg, transparent 55%, var(--stage)); opacity: .7; }
+.hx-wall.win { z-index: 2; -webkit-mask: var(--mk) no-repeat; mask: var(--mk) no-repeat; -webkit-mask-size: var(--mw) var(--mh); mask-size: var(--mw) var(--mh); -webkit-mask-position: var(--mx) var(--my); mask-position: var(--mx) var(--my); }
+/* the glass YPL in layers: its shadow, the body (.glass-mark, tokens.css), the inner edge (--edge) and the 1px rim (.glass::before) */
+.hx-glass .glass-mark, .hx-gedge, .hx-grim, .hx-gdrop { position: absolute; pointer-events: none; }
+.hx-gdrop { z-index: 1; background: var(--drop-img) 0 0 / 100% 100% no-repeat; }
+.hx-glass .glass-mark { z-index: 3; }
+.hx-gedge { z-index: 4; background: var(--edge-img) 0 0 / 100% 100% no-repeat; }
+.hx-grim { z-index: 5; -webkit-mask: var(--ring-mask) 0 0 / 100% 100% no-repeat; mask: var(--ring-mask) 0 0 / 100% 100% no-repeat;
+  background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid)); }
+.hx-probe { position: absolute; width: 0; height: 0; visibility: hidden; }
 .hx-moment { display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
 .hx-moment-name { font-size: 1.25rem; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; text-wrap: balance; }
 @media (min-width: 860px) { .hx-moment-name { font-size: 1.75rem; } }

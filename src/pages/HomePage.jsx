@@ -1,7 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Roll, Icon, rankRows } from "../components/index.js";
 import { startStage } from "../components/home/bracketStage.js";
-import { TITLE, titleBlock } from "../components/home/brandTitle.js";
+import { lineBlock } from "../components/home/brandTitle.js";
+import { startGlassCover } from "../components/home/glassCover.js";
+import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { displaySeasonLabel, generationNumberFromLegacyLabel } from "../services/seasonLabel.js";
 import { formatDate } from "../services/dateFormat.js";
 import { leagueTitle } from "../services/eventName.js";
@@ -118,16 +120,15 @@ function useHomeRecords(data) {
 let coverPending = true;
 const firstCover = () => coverPending;
 
-/* 표지의 이름: 워드마크의 글자로 그린 YONSEI POKEMON LEAGUE, 제목 크기의 한 단계 위(--display-l) */
-const NAME = { kind: "mark", step: "l", lines: TITLE };
 const fig = n => (n ? { kind: "fig", lines: [String(n)] } : null);
 
-/* 캔버스가 없을 때의 이름: 무대가 그리는 것과 같은 글자와 기울기 */
-function NameMark() {
-  const b = titleBlock();
+/* 표지의 이름(11차): 유리로 된 YPL 워드마크 하나와 그 아래 같은 글자로 그린 한 줄 YONSEI POKEMON LEAGUE.
+   무대가 켜지면 YPL 자리는 비워 두고 유리(glassCover.js)가 그 자리에 선다. 무대가 없으면 워드마크를 그대로 그린다. */
+function FullName() {
+  const b = lineBlock();
   return (
-    <svg className="hx-mark" viewBox={`${b.left} 0 ${b.right - b.left} ${b.h}`} style={{ "--w": (b.right - b.left) / 100 }} aria-hidden="true">
-      <g transform="skewX(-12)">{b.glyphs.map((g, i) => <path key={i} transform={`translate(${g.x} ${g.y})`} d={g.d} fillRule="evenodd" />)}</g>
+    <svg className="hx-fullname" viewBox={`${b.left} 0 ${b.right - b.left} ${b.h}`} aria-hidden="true">
+      <g transform="skewX(-12)" fillRule="evenodd">{b.glyphs.map((g, i) => <path key={i} transform={`translate(${g.x} 0)`} d={g.d} />)}</g>
     </svg>
   );
 }
@@ -154,6 +155,7 @@ function Act({ id, title, sub, more, figure, staged, children }) {
 }
 
 /* ============================== HOME ==============================
+   표지(DECISIONS 11차): 포켓몬 벽 위의 유리 YPL(glassCover.js). 표지에는 대진표가 없고, 첫 장으로 넘어가면 표지가 물러나며 대진표가 들어온다.
    대진(DECISIONS 9차): 표지 하나와 세 장. 화면 전체에 16강 대진표가 새겨져 있고, 장이 바뀔 때마다 한 라운드가 끝나
    빛이 이긴 쪽으로만 올라간다. 그 위에 표지는 리그의 이름, 세 장은 큰 숫자가 선다(src/components/home/bracketStage.js).
    이름은 늘 표지에 있고 다가오는 대회의 남은 날은 그 아래 글에 선다. 세 장의 숫자는 최신 회차, 이번 시즌 트레이너 수, 챔피언 세대 수.
@@ -162,6 +164,7 @@ export default function HomePage({ data, go }) {
   const [enter] = useState(firstCover);
   const rootRef = useRef(null);
   const stage = useRef(null);
+  const glassRef = useRef(null), slotRef = useRef(null), nameRef = useRef(null);
   const [staged, setStaged] = useState(false);
 
   const champs = useMemo(() => [...(data.champions || [])].sort((a, b) => (a.season || 0) - (b.season || 0)), [data.champions]);
@@ -189,7 +192,7 @@ export default function HomePage({ data, go }) {
   const dday = now ? (now.today ? "오늘" : `D-${now.dday}`) : null;
 
   const figures = useMemo(() => [
-    NAME, fig(round), fig(ranked.length), fig(champs.length),
+    null, fig(round), fig(ranked.length), fig(champs.length),
   ], [round, ranked.length, champs.length]);
 
   /* 무대는 한 번, 그리기 전에 켠다(평면 배치가 한 프레임 비치지 않게). 낮은 화면(가로로 든 폰)과 캔버스를 못 쓰는 기기는 평면 배치로 남는다. */
@@ -198,11 +201,13 @@ export default function HomePage({ data, go }) {
   useLayoutEffect(() => {
     coverPending = false;
     if (innerHeight < 520) return undefined;
-    const g = startStage(rootRef.current, figuresRef.current, { intro: enter });
+    const cover = [glassRef.current, nameRef.current];
+    const g = startStage(rootRef.current, figuresRef.current, { cover, hold: enter ? 1500 : 520 });
     if (!g) return undefined;
+    const glass = startGlassCover(glassRef.current, slotRef.current, { enter });
     stage.current = { g, figures: figuresRef.current };
     setStaged(true);
-    return () => { g.stop(); stage.current = null; };
+    return () => { g.stop(); glass.stop(); stage.current = null; };
   }, [enter]);
   useEffect(() => {
     const s = stage.current;
@@ -212,7 +217,14 @@ export default function HomePage({ data, go }) {
   return (<div className={"home" + (staged ? " staged" : "")} ref={rootRef}>
     <section className="hx-act hx-cover" aria-labelledby="hx-title">
       <div className="hx-pin" data-pin>
-        <h1 className={"hx-title" + (staged ? " sr-only" : "")} id="hx-title"><span className="sr-only">Yonsei Pokémon League</span>{!staged && <NameMark />}</h1>
+        <div className="hx-glass" ref={glassRef} aria-hidden="true" />
+        <h1 className="hx-title" id="hx-title" ref={nameRef}>
+          <span className="sr-only">Yonsei Pokémon League</span>
+          <span className="hx-ypl" ref={slotRef} aria-hidden="true">
+            {!staged && <svg viewBox="0 0 310 100"><path transform="skewX(-12) translate(21 0)" fillRule="evenodd" d={WORDMARK_PATH} /></svg>}
+          </span>
+          <FullName />
+        </h1>
         <div className="hx-txt">
           {now && <div className="hx-moment">
             <span className="hx-dday tnum">{dday}</span>

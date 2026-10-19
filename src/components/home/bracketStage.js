@@ -111,8 +111,10 @@ function fit(g, f, b, cap) {
 }
 
 /* root 안의 .hx-act(표지와 세 장, 스크롤이 붙는 한 화면짜리 자리)와 그 안의 .hx-pin(화면에 붙은 무대), .hx-txt(글과 카드)를 읽는다.
-   figures: 장마다 { kind, lines, step }(kind "mark" 그린 이름, "fig" 숫자. step "l" 이름, 없으면 "xl" 큰 숫자). intro: 첫 방문이면 대진표가 그려지며 표지가 드러난다. 캔버스를 못 쓰면 null(홈은 평면 배치로). */
-export function startStage(root, figures, { intro = false } = {}) {
+   figures: 장마다 { kind, lines, step }(kind "mark" 그린 이름, "fig" 숫자. step "l" 이름, 없으면 "xl" 큰 숫자). intro: 첫 방문이면 대진표가 그려지며 표지가 드러난다. 캔버스를 못 쓰면 null(홈은 평면 배치로).
+   cover: 표지에 따로 선 무대(유리 YPL과 포켓몬 벽, glassCover.js). 주면 표지에는 대진표가 없고, 첫 장으로 넘어갈 때 표지가 물러나며 대진표가 들어온다.
+   hold: 글이 나오기까지 기다릴 시간(표지의 첫 등장이 끝난 뒤에 글이 나오게). */
+export function startStage(root, figures, { intro = false, cover = [], hold = 520 } = {}) {
   const canvas = document.createElement("canvas");
   canvas.className = "hx-stage"; canvas.setAttribute("aria-hidden", "true");
   const ctx = canvas.getContext("2d");
@@ -122,7 +124,9 @@ export function startStage(root, figures, { intro = false } = {}) {
   document.querySelectorAll(".hx-stage").forEach(old => old !== canvas && old.remove());
   const stageEl = document.getElementById("ypl-stage");
   if (stageEl) stageEl.after(canvas); else (document.querySelector(".ypl") || document.body).prepend(canvas);
-  canvas.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 480, easing: "cubic-bezier(.22,1,.36,1)" });
+  // 표지 무대가 따로 있으면 캔버스의 투명도는 표지가 정한다(이 등장이 덮어쓰면 표지 위에 대진표가 비친다)
+  if (!cover.length) canvas.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 480, easing: "cubic-bezier(.22,1,.36,1)" });
+  else canvas.style.opacity = "0";
 
   // 주소창과 무관한 높이: 가장 큰 화면(lvh, 캔버스)과 가장 작은 화면(svh, 글의 무대)
   const probe = h => { const d = document.createElement("div"); d.setAttribute("aria-hidden", "true"); d.style.cssText = `position:fixed;left:0;top:0;width:0;height:${h};visibility:hidden;pointer-events:none`; document.body.append(d); return d; };
@@ -292,7 +296,16 @@ export function startStage(root, figures, { intro = false } = {}) {
   }
 
   let lift = 0, lastY = scrollY, movedAt = 0;
-  const t0 = performance.now(), readyAt = t0 + (intro && !still.matches ? INTRO - 260 : 520); // 페이지 전환(480ms)이 끝난 뒤 글이 나온다
+  const t0 = performance.now(), readyAt = t0 + (intro && !still.matches ? INTRO - 260 : hold); // 페이지 전환(480ms)이 끝난 뒤 글이 나온다
+  /* 표지 무대가 따로 있으면: 표지에서는 그것만, 장으로 넘어가면 그것이 먼저 물러나고(260ms) 대진표가 라운드와 함께 들어온다.
+     표지로 돌아올 때는 대진표의 빛이 거둬지는 동안 표지가 다시 선다. */
+  function coverShown(now) {
+    if (!tr) return cur === 0 ? 1 : 0;
+    const e = now - tr.t0;
+    if (tr.from === 0) return 1 - clamp(e / 260);
+    if (tr.to === 0) return eOut(clamp((e - tr.total * .35) / 420));
+    return 0;
+  }
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = prev ? clamp(now - prev, 0, 50) : 16; prev = now;
@@ -320,6 +333,11 @@ export function startStage(root, figures, { intro = false } = {}) {
       if (v > .6 && !shown.has(i)) { shown.add(i); t.classList.add("shown"); }
     });
     const light = document.documentElement.dataset.theme === "light", lean = leavingNow ? 0 : smooth(0, .5, drift);
+    if (cover.length) {
+      const c = still.matches ? (cur === 0 ? 1 : 0) : coverShown(now), v = c < .002 ? "0" : c > .998 ? "" : c.toFixed(3);
+      for (const el of cover) { el.style.opacity = v; el.style.visibility = c < .002 ? "hidden" : ""; }
+      canvas.style.opacity = (1 - c).toFixed(3);
+    }
     draw(now, light, lift, lean);
   }
 
@@ -338,6 +356,7 @@ export function startStage(root, figures, { intro = false } = {}) {
       root.removeEventListener("focusin", onFocus);
       [pLvh, pSvh, pSafe, pL, pXL].forEach(d => d.remove());
       txts.forEach(t => { if (t) { t.style.opacity = ""; t.style.transform = ""; t.style.pointerEvents = ""; } });
+      cover.forEach(el => { el.style.opacity = ""; el.style.visibility = ""; });
       let done = false;
       const gone = () => { if (done) return; done = true; canvas.remove(); };
       setTimeout(gone, 320); // 탭이 숨어 애니메이션이 멈춰 있어도 치운다

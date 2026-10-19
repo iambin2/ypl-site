@@ -22,6 +22,15 @@ export const TITLE = ["YONSEI", "POKEMON", "LEAGUE"];
 export const SLANT = Math.tan(12 * Math.PI / 180);
 const GAP = 8, LEAD = 24;   // letters as in the wordmark; lines one outer bar apart (100 / φ³ ≈ 24)
 
+/* The name on one line (under the glass YPL on the home cover): words four letter gaps apart, slanted as one.
+   Returns each letter's x and the slanted ink bounds (left, right) in cap units, the line 100 tall. */
+export function lineBlock(words = TITLE) {
+  const glyphs = [];
+  let x = 0;
+  for (const word of words) { for (const ch of word) { glyphs.push({ x, y: 0, d: GLYPHS[ch][1] }); x += GLYPHS[ch][0] + GAP; } x += GAP * 4; }
+  return { glyphs, left: -SLANT * 100, right: x - GAP * 5, h: 100 };
+}
+
 /* The lines stacked upright and left aligned; the one shared slant then lines their left edges up on the 12-degree axis.
    Returns each letter's place and the slanted ink bounds (left, right) and height, in cap units. */
 export function titleBlock(lines = TITLE) {
