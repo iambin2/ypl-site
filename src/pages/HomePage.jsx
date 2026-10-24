@@ -106,25 +106,63 @@ export default function HomePage({ data, go }) {
     return () => { clearTimeout(fallback); glass.stop(); if (txt) txt.style.opacity = ""; };
   }, [enter]);
 
-  /* 홈의 휠 스크롤은 목표 위치로 미끄러져 간다. 터치는 기기의 관성 그대로, 시트 안이나 확대(ctrl) 휠은 건드리지 않는다. */
+  /* 홈의 화면 내리기는 목표 위치로 미끄러져 간다. 휠은 한 칸씩 목표를 옮기고, 터치(2026-10-24, 사용자 요청)는 끄는 동안 손가락을 바짝 따르다가
+     놓으면 그 빠르기로 더 미끄러져 서서히 선다. 시트 안, 확대(ctrl) 휠, 두 손가락(핀치)은 건드리지 않는다.
+     따라가는 정도는 프레임 길이로 맞춘다(120Hz 폰에서도 같은 빠르기). */
   useEffect(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-    let cur = scrollY, target = scrollY, raf = 0;
-    const step = () => {
-      cur += (target - cur) * 0.14;
-      if (Math.abs(target - cur) < 0.5) { cur = target; raf = 0; } else raf = requestAnimationFrame(step);
+    let cur = scrollY, target = scrollY, raf = 0, last = 0, ease = .14;
+    const max = () => document.documentElement.scrollHeight - innerHeight;
+    const step = now => {
+      const k = 1 - (1 - ease) ** (Math.min(64, now - (last || now - 16.7)) / 16.7);
+      last = now;
+      cur += (target - cur) * k;
+      if (Math.abs(target - cur) < 0.5) { cur = target; raf = 0; last = 0; } else raf = requestAnimationFrame(step);
       scrollTo(0, cur);
+    };
+    const push = (dy, e) => {
+      if (!raf) cur = target = scrollY;
+      ease = e;
+      target = Math.max(0, Math.min(max(), target + dy));
+      if (!raf) raf = requestAnimationFrame(step);
     };
     const onWheel = e => {
       if (e.ctrlKey || e.target.closest?.(".overlay")) return;
       e.preventDefault();
-      if (!raf) cur = target = scrollY;
-      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
-      target = Math.max(0, Math.min(document.documentElement.scrollHeight - innerHeight, target + dy));
-      if (!raf) raf = requestAnimationFrame(step);
+      push(e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1), .14);
+    };
+    let drag = false, y0 = 0, t0 = 0, vel = 0;
+    const onStart = e => {
+      drag = e.touches.length === 1 && !e.target.closest?.(".overlay");
+      if (!drag) return;
+      y0 = e.touches[0].clientY; t0 = e.timeStamp; vel = 0;
+      cancelAnimationFrame(raf); raf = 0; last = 0;
+    };
+    const onMove = e => {
+      if (!drag) return;
+      if (e.touches.length !== 1) { drag = false; return; }
+      e.preventDefault();
+      const y = e.touches[0].clientY, dy = y0 - y, dt = Math.max(1, e.timeStamp - t0);
+      y0 = y; t0 = e.timeStamp;
+      vel = vel * .2 + (dy / dt) * .8;
+      push(dy, .5);
+    };
+    const onEnd = e => {
+      if (!drag) return;
+      drag = false;
+      // 멈췄다 놓으면 미끄러지지 않는다
+      if (e.timeStamp - t0 > 80) vel = 0;
+      push(vel * 320, .075);
     };
     addEventListener("wheel", onWheel, { passive: false });
-    return () => { removeEventListener("wheel", onWheel); cancelAnimationFrame(raf); };
+    addEventListener("touchstart", onStart, { passive: true });
+    addEventListener("touchmove", onMove, { passive: false });
+    addEventListener("touchend", onEnd);
+    addEventListener("touchcancel", onEnd);
+    return () => {
+      removeEventListener("wheel", onWheel); removeEventListener("touchstart", onStart); removeEventListener("touchmove", onMove);
+      removeEventListener("touchend", onEnd); removeEventListener("touchcancel", onEnd); cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (<div className={"home" + (staged ? " staged" : "")}>
