@@ -59,6 +59,8 @@
 .hx-grim { z-index: 5; -webkit-mask: var(--ring-mask) 0 0 / 100% 100% no-repeat; mask: var(--ring-mask) 0 0 / 100% 100% no-repeat;
   background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid)); }
 .hx-probe { position: absolute; width: 0; height: 0; visibility: hidden; }
+/* 13th round: the stage is one WebGL canvas (glassStage.js) filling the cover; the DOM wall above stays for browsers without WebGL2 */
+.hx-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .hx-moment { display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
 .hx-moment-name { font-size: 1.25rem; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; text-wrap: balance; }
 @media (min-width: 860px) { .hx-moment-name { font-size: 1.75rem; } }

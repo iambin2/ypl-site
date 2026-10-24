@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YPL 홈 다음 시안</title>
+<!-- 홈 다시 만들기 시안 셋(2026-10-24). 개발 서버에서 /ypl-site/docs/redesign-glass/lab/home-next-lab.html (#a 리그 판, #b 포스터, #c 시즌 레일)
+     지금 홈에서 이어받는 것: 포켓몬 벽 위의 유리 YPL(실제 glassCover.js를 그대로 부른다), 그 아래 그린 한 줄 이름, 첫 등장의 차례,
+     남은 날, 주 행동, 최신 공지. 사이트 CSS(토큰, 유리, 버튼, 목록 행)를 그대로 쓴다. 숫자와 이름은 시안용 견본이다. -->
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/components.css">
+<link rel="stylesheet" href="../../../src/styles/shell.css">
+<link rel="stylesheet" href="../../../src/styles/pages.css">
+<style>
+[hidden] { display: none !important; }
+.lab.home.staged { margin-top: 0; display: block; }
+.cv { position: relative; isolation: isolate; overflow: hidden; }
+.cv > .hx-glass { z-index: 0; }
+.slot { display: block; }
+.over { position: relative; z-index: 1; }
+.sec-h { font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: var(--s4); }
+.dday { font-family: var(--font-fig); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.meta { font-size: .9375rem; color: var(--fg-2); display: inline-flex; align-items: center; gap: var(--s2); }
+.acts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.ypl-row__end b { color: var(--fg); font-weight: 700; }
+
+/* =================== A 표지와 리그 판: 표지는 그대로 두고, 내리면 리그의 지금이 카드로 선다 =================== */
+#a .cv { height: 88svh; min-height: 560px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 92px) var(--gutter) var(--s14); text-align: center; }
+#a h1 { --W: max(200px, min(100vw - 48px, 820px, (88svh - 360px) * 2.36)); display: flex; flex-direction: column; align-items: center; }
+#a .slot { width: var(--W); height: calc(var(--W) / 3.1); }
+#a .hx-fullname { width: max(220px, var(--W) * .6); height: auto; margin-top: calc(var(--W) * .05); }
+#a .lede { margin-top: var(--s10); font-size: 1rem; color: var(--fg-2); }
+#a .cv .acts { margin-top: var(--s6); justify-content: center; }
+#a .hx-veil { background: radial-gradient(ellipse 60% 46% at 50% 44%, var(--stage), transparent), linear-gradient(180deg, transparent 50%, var(--stage) 96%); }
+.board { position: relative; z-index: 1; max-width: 1200px; margin: calc(var(--s14) * -1) auto 0; padding: 0 var(--gutter) 160px; display: grid; gap: var(--section); }
+.a-next { padding: var(--s6); border-radius: var(--r-hero); display: grid; gap: var(--s4); }
+.a-next .dday { font-size: var(--display-l); }
+.a-next-name { font-size: 1.5rem; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; }
+.a-next .acts { margin-top: var(--s2); }
+.rank { width: 28px; text-align: center; font-family: var(--font-fig); font-weight: 800; font-size: 1.5rem; }
+.rank-row { grid-template-columns: 28px minmax(0, 1fr) auto; }
+.rank-row:nth-child(1) .rank { color: var(--rank-1); } .rank-row:nth-child(2) .rank { color: var(--rank-2); } .rank-row:nth-child(3) .rank { color: var(--rank-3); }
+@media (min-width: 860px) {
+  .board { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--s4); row-gap: var(--section); align-items: start; }
+  .a-next { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; column-gap: var(--s10); }
+  .a-next .acts { margin-top: 0; }
+}
+
+/* =================== B 포스터: 한 화면, 왼쪽 한 줄에 선 큰 유리 YPL과 다음 대회 =================== */
+#b .cv { min-height: 100svh; }
+#b .hx-veil { background: linear-gradient(180deg, transparent 30%, var(--stage) 92%), linear-gradient(90deg, var(--stage), transparent 70%); opacity: .8; }
+.b-in { position: relative; z-index: 1; min-height: 100svh; max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 112px) var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 96px); }
+#b h1 { --W: min(100vw - var(--gutter) * 2, 760px, (100svh - 520px) * 3.1); }
+#b .slot { width: var(--W); height: calc(var(--W) / 3.1); }
+#b .hx-fullname { width: calc(var(--W) * .6); height: auto; margin: calc(var(--W) * .05) 0 0; }
+.b-foot { display: grid; gap: var(--s10); align-items: end; }
+.b-event { display: grid; gap: var(--s2); }
+.b-event .dday { font-size: var(--display-xl); margin-bottom: var(--s2); }
+.b-event-name { font-size: 1.75rem; font-weight: 800; line-height: 1.2; letter-spacing: -.03em; }
+.b-event .acts { margin-top: var(--s4); }
+.b-news { max-width: 420px; width: 100%; }
+@media (min-width: 860px) { .b-foot { grid-template-columns: 1fr auto; } .b-event-name { font-size: 2.25rem; } }
+@media (max-width: 859px) { .b-news li:nth-child(n+2) { display: none; } }
+
+/* =================== C 시즌 레일: 표지 아래 대회들이 한 줄로 흐른다. 지나간 대회는 우승자, 다음 대회는 반전 =================== */
+#c .cv { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 92px) 0 calc(env(safe-area-inset-bottom, 0px) + 96px); }
+#c h1 { --W: max(200px, min(100vw - 48px, 620px, (100svh - 520px) * 2.36)); display: flex; flex-direction: column; align-items: center; padding-inline: var(--gutter); }
+#c .slot { width: var(--W); height: calc(var(--W) / 3.1); }
+#c .hx-fullname { width: max(200px, var(--W) * .6); height: auto; margin-top: calc(var(--W) * .05); }
+.rail { position: relative; z-index: 1; width: 100%; margin-top: var(--s14); display: flex; gap: var(--s3); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding: var(--s4) calc(50% - 124px) var(--s6); -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.rail::-webkit-scrollbar { display: none; }
+@media (max-width: 859px) { .rail { -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); } }
+.ev { flex: none; width: 248px; min-height: 172px; scroll-snap-align: center; padding: var(--s5); border-radius: var(--r-card); display: flex; flex-direction: column; text-align: left; }
+.ev-name { font-size: 1rem; font-weight: 700; line-height: 1.4; }
+.ev-date { margin-top: var(--s1); font-size: .8125rem; color: var(--fg-3); }
+.ev-end { margin-top: auto; padding-top: var(--s4); display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); font-size: .8125rem; color: var(--fg-3); }
+.ev-end b { font-size: 1.0625rem; font-weight: 800; color: var(--fg); }
+.ev.next { background: var(--accent); color: var(--on-accent); box-shadow: var(--accent-shadow); }
+.ev.next :is(.ev-date, .ev-end) { color: inherit; opacity: .7; }
+.ev.next .dday { font-size: 2.5rem; color: var(--on-accent); }
+.ev.next .ev-end { opacity: 1; align-items: end; }
+.ev.next .ev-end span { opacity: .7; }
+.ev.later { opacity: .6; }
+#c .hx-notice { position: relative; z-index: 1; margin-top: var(--s2); }
+
+.lab-bar { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto; width: max-content; max-width: calc(100% - var(--gutter) * 2); display: flex; gap: var(--s1); padding: var(--s1); border-radius: 999px; }
+.lab-bar button { height: 44px; padding: 0 var(--s4); border-radius: 999px; font-size: .9375rem; font-weight: 700; color: var(--fg-2); white-space: nowrap; }
+.lab-bar button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+@media (max-width: 420px) { .lab-bar button { padding: 0 var(--s3); font-size: .8125rem; } }
+</style>
+</head>
+<body>
+<div class="ypl">
+  <div class="stage" id="ypl-stage" data-state="open" aria-hidden="true"><div class="light light-a"></div><div class="light light-b"></div></div>
+  <header class="topbar glass">
+    <a class="brand press" href="#" aria-label="YPL 홈"><span class="brand-logo" id="logo"></span><span id="wordmark"></span></a>
+    <nav class="navlinks groove" aria-label="주요 메뉴">
+      <span class="navlink" style="background:var(--ind-body);color:var(--ind-fg)">홈</span><span class="navlink">공지</span><span class="navlink">대진표</span><span class="navlink">기록</span><span class="navlink">더보기</span>
+    </nav>
+    <span class="iconbtn" aria-hidden="true"></span>
+  </header>
+
+  <!-- A 표지와 리그 판 -->
+  <main class="lab home staged" id="a" hidden>
+    <section class="cv">
+      <div class="hx-glass" aria-hidden="true"></div>
+      <h1 class="over"><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+      <p class="lede over" data-rise>포켓몬 센터 연세점의 공식 리그</p>
+      <div class="acts over" data-rise><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+    </section>
+    <div class="board">
+      <article class="card a-next reveal">
+        <span class="dday" data-dday></span>
+        <div><div class="a-next-name" data-ev-name></div><div class="meta" style="margin-top:var(--s1)" data-ev-meta></div></div>
+        <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">신청하기</button><button class="ypl-btn ypl-btn--glass press hl">대회 공지</button></div>
+      </article>
+      <section class="reveal"><h2 class="sec-h">공지</h2><ul class="ypl-group" data-news="3"></ul></section>
+      <section class="reveal"><h2 class="sec-h">시즌 3 랭킹</h2><ul class="ypl-group" data-rank></ul></section>
+      <section class="reveal"><h2 class="sec-h">현 챔피언</h2><ul class="ypl-group"><li><button class="ypl-row press"><span><span class="ypl-row__title">한결</span><span class="ypl-row__meta">시즌 2 챔피언스 파이널 우승</span></span><span class="ypl-row__end">6대</span></button></li></ul></section>
+    </div>
+  </main>
+
+  <!-- B 포스터 -->
+  <main class="lab home staged" id="b" hidden>
+    <section class="cv">
+      <div class="hx-glass" aria-hidden="true"></div>
+      <div class="b-in">
+        <h1><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+        <div class="b-foot">
+          <div class="b-event" data-rise>
+            <span class="dday" data-dday></span>
+            <div class="b-event-name" data-ev-name></div>
+            <div class="meta" data-ev-meta></div>
+            <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+          </div>
+          <ul class="ypl-group b-news" data-rise data-news="2"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- C 시즌 레일 -->
+  <main class="lab home staged" id="c" hidden>
+    <section class="cv">
+      <div class="hx-glass" aria-hidden="true"></div>
+      <h1 class="over"><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+      <div class="rail" data-rise aria-label="시즌 3 대회"></div>
+      <button class="hx-notice press" data-rise><b>공지</b><span class="hx-notice-t" data-notice></span><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M181.66 133.66l-80 80a8 8 0 0 1-11.32-11.32L164.69 128 90.34 53.66a8 8 0 0 1 11.32-11.32l80 80a8 8 0 0 1 0 11.32z"/></svg></button>
+    </section>
+  </main>
+
+  <nav class="lab-bar glass" aria-label="시안">
+    <button data-go="a" class="press">A 리그 판</button>
+    <button data-go="b" class="press">B 포스터</button>
+    <button data-go="c" class="press">C 레일</button>
+    <button id="replay" class="press">다시</button>
+    <button id="theme" class="press" aria-label="테마 바꾸기">◐</button>
+  </nav>
+</div>
+
+<script type="module">
+import { lineBlock } from "../../../src/components/home/brandTitle.js";
+import { startGlassCover } from "../../../src/components/home/glassCover.js";
+import { startRefraction } from "../../../src/components/common/refraction.js";
+startRefraction();
+const BASE = "/ypl-site/";
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.22,1,.36,1)";
+
+/* 시안용 견본(실제 홈에서는 이미 불러온 공지와 기록에서 읽는다) */
+const NEXT = { dday: 6, name: "38회 파이컵 마스터 리그", meta: "10월 30일 (금) 오후 6:00, 참가 신청 중" };
+const NEWS = [["38회 파이컵 마스터 리그 참가 신청", "10월 20일 (화)"], ["시즌 3 랭킹 포인트 반영 안내", "10월 14일 (수)"], ["팀 빌더 규정 업데이트", "10월 9일 (금)"]];
+const RANK = [["한결", "우승 2회", "86점"], ["도윤", "준우승 2회", "64점"], ["서진", "우승 1회", "52점"]];
+const RAIL = [
+  ["35회 파이컵 마스터 리그", "9월 5일 (토)", "한결"], ["35회 파이컵 루키 리그", "9월 6일 (일)", "하람"],
+  ["36회 파이컵 마스터 리그", "9월 26일 (토)", "도윤"], ["파이컵 라이트", "10월 3일 (토)", "서진"],
+  ["37회 파이컵 마스터 리그", "10월 17일 (토)", "한결"], ["next"],
+  ["38회 파이컵 루키 리그", "10월 31일 (토)"], ["시즌 3 챔피언스 예선", "12월 5일 (토)"],
+];
+
+/* 상단 바의 로고와 워드마크, 그린 한 줄 이름: 사이트의 그림 그대로 */
+for (const [id, f, h] of [["logo", "ypl-wing-y", 28], ["wordmark", "ypl-wordmark", 14]]) {
+  fetch(`${BASE}brand/${f}.svg`).then(r => r.text()).then(t => {
+    const el = document.getElementById(id); el.innerHTML = t;
+    const s = el.querySelector("svg"); s.setAttribute("height", h); s.removeAttribute("width"); s.style.cssText = "display:block;width:auto;fill:currentColor";
+  });
+}
+const lb = lineBlock();
+for (const s of $$("[data-name]")) {
+  s.setAttribute("viewBox", `${lb.left} 0 ${lb.right - lb.left} ${lb.h}`);
+  s.innerHTML = `<g transform="skewX(-12)" fill-rule="evenodd">${lb.glyphs.map(g => `<path transform="translate(${g.x} 0)" d="${g.d}"/>`).join("")}</g>`;
+}
+for (const s of $$("[data-dday]")) s.textContent = `D-${NEXT.dday}`;
+for (const s of $$("[data-ev-name]")) s.textContent = NEXT.name;
+for (const s of $$("[data-ev-meta]")) s.innerHTML = NEXT.meta;
+for (const s of $$("[data-notice]")) s.textContent = NEWS[0][0];
+const row = (t, m, e) => `<li><button class="ypl-row press"><span><span class="ypl-row__title">${t}</span><span class="ypl-row__meta">${m}</span></span>${e ? `<span class="ypl-row__end">${e}</span>` : ""}</button></li>`;
+for (const s of $$("[data-news]")) s.innerHTML = NEWS.slice(0, +s.dataset.news).map(([t, d]) => row(t, d)).join("");
+$("[data-rank]").innerHTML = RANK.map(([n, m, p], i) => `<li><button class="ypl-row rank-row press"><span class="rank">${i + 1}</span><span><span class="ypl-row__title">${n}</span><span class="ypl-row__meta">${m}</span></span><span class="ypl-row__end"><b>${p}</b></span></button></li>`).join("");
+$(".rail").innerHTML = RAIL.map(([n, d, w]) => n === "next"
+  ? `<button class="ev next press"><span class="ev-name">${NEXT.name}</span><span class="ev-date">10월 30일 (금)</span><span class="ev-end"><span class="dday">D-${NEXT.dday}</span><span>신청 중</span></span></button>`
+  : `<button class="ev card press${w ? "" : " later"}"><span class="ev-name">${n}</span><span class="ev-date">${d}</span>${w ? `<span class="ev-end">우승<b>${w}</b></span>` : ""}</button>`).join("");
+
+/* 흐림이 풀리며 올라오는 등장(사이트의 Reveal과 같은 문법) */
+const rise = (els, delay = 0, step = 110) => els.forEach((el, i) => { el.style.opacity = ""; el.animate(
+  still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(12px)", filter: "blur(6px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
+  { duration: still ? 1 : 560, delay: delay + i * step, easing: EASE, fill: "backwards" }); });
+
+/* A: 표지 아래 카드는 처음 화면에 들 때 한 번 올라온다 */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); rise([e.target], 0); } }), { threshold: .15 });
+
+let glass = null, cur = null, fallback = 0;
+function show(id) {
+  if (!["a", "b", "c"].includes(id)) id = "a";
+  glass?.stop(); clearTimeout(fallback);
+  for (const k of ["a", "b", "c"]) { $("#" + k).hidden = k !== id; if (k !== id) $(".hx-glass", $("#" + k)).innerHTML = ""; }
+  for (const bt of $$("[data-go]")) bt.setAttribute("aria-pressed", bt.dataset.go === id);
+  cur = id; history.replaceState(null, "", "#" + id); scrollTo(0, 0);
+  const el = $("#" + id), txt = $$("[data-rise]", el);
+  for (const t of txt) t.style.opacity = "0";
+  if (id === "a") for (const r of $$(".reveal", el)) { r.style.opacity = "0"; io.observe(r); }
+  if (id === "c") { const rail = $(".rail", el), n = $(".ev.next", rail); requestAnimationFrame(() => { rail.scrollLeft = n.offsetLeft - (rail.clientWidth - n.offsetWidth) / 2; }); }
+  let done = false;
+  const go = d => { if (done) return; done = true; rise(txt, d); };
+  fallback = setTimeout(() => go(0), 4000);
+  /* 지금 홈과 같은 유리 YPL과 같은 첫 등장: 벽이 가운데 줄부터 켜지고, 유리가 내려앉고, 이름, 글 차례 */
+  glass = startGlassCover($(".hx-glass", el), $(".slot", el), { enter: true, follow: $(".hx-fullname", el), onShown: go });
+}
+for (const bt of $$("[data-go]")) bt.onclick = () => show(bt.dataset.go);
+$("#replay").onclick = () => show(cur);
+$("#theme").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; };
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1));
+</script>
+</body>
+</html>

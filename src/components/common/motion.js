@@ -86,6 +86,9 @@ function clone(el, rect, cls, host) {
   const c = el.cloneNode(true), cs = getComputedStyle(el);
   c.removeAttribute("id"); c.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
   c.querySelectorAll("iframe, video").forEach(e => { const p = document.createElement("div"); p.style.cssText = e.style.cssText; p.className = e.className; e.replaceWith(p); });
+  // 캔버스(홈 표지의 무대)는 복제하면 비어 있다. 마지막 그림을 옮겨 그린다.
+  const cvs = el.querySelectorAll("canvas");
+  c.querySelectorAll("canvas").forEach((d, i) => { const s = cvs[i]; if (!s?.width) return; d.width = s.width; d.height = s.height; try { d.getContext("2d").drawImage(s, 0, 0); } catch { /* 읽을 수 없는 캔버스는 비워 둔다 */ } });
   c.classList.add(...cls.split(" "));
   c.inert = true;
   INHERITED.forEach(p => { const v = cs.getPropertyValue(p); if (v) c.style.setProperty(p, v); });

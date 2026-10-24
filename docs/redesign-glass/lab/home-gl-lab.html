@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YPL 홈 GL 시안</title>
+<!-- 홈 다시 만들기, WebGL 무대 시안 셋(2026-10-24). 개발 서버에서 /ypl-site/docs/redesign-glass/lab/home-gl-lab.html (#g 지금 표지, #h 토너먼트, #i 입장)
+     무대는 glassGL.js 한 장: 포켓몬 그림은 텍스처 한 장, 유리는 셰이더. DOM 그림, 마스크, backdrop-filter가 없다(끊김의 구조적 해결).
+     글과 버튼은 사이트 CSS 그대로. 숫자와 이름은 견본. 화면을 누르면 기술이 맞은 듯 무대에 충격파가 지나간다. -->
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/components.css">
+<link rel="stylesheet" href="../../../src/styles/shell.css">
+<link rel="stylesheet" href="../../../src/styles/pages.css">
+<style>
+[hidden] { display: none !important; }
+html, body { overflow: hidden; height: 100%; }
+.gl { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; touch-action: manipulation; }
+.cv { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 92px) var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 96px); pointer-events: none; }
+.cv :is(button, a) { pointer-events: auto; }
+.slot { display: block; }
+h1 { --W: max(220px, min(100vw - 48px, 860px, (100svh - 420px) * 2.36)); display: flex; flex-direction: column; align-items: center; }
+h1 .slot { width: var(--W); height: calc(var(--W) / 3.1); }
+.hx-fullname { width: max(220px, var(--W) * .6); height: auto; margin-top: calc(var(--W) * .05); }
+.txt { display: flex; flex-direction: column; align-items: center; margin-top: var(--s10); }
+.dday { font-family: var(--font-fig); font-weight: 800; line-height: 1; font-size: var(--display); }
+.ev-name { margin-top: var(--s2); font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; }
+.meta { margin-top: var(--s2); font-size: .9375rem; color: var(--fg-2); }
+.acts { margin-top: var(--s6); display: flex; gap: var(--s2); justify-content: center; flex-wrap: wrap; }
+.hx-notice { margin-top: var(--s3); }
+.cap { margin-top: var(--s3); font-size: .8125rem; color: var(--fg-3); min-height: 1.2em; }
+@media (min-width: 860px) { .ev-name { font-size: 1.75rem; } }
+/* H: 겨루는 동안 위는 비워 둔다(유리는 우승이 정해진 뒤에 선다) */
+#h h1 { --W: max(220px, min(100vw - 48px, 760px, (100svh - 440px) * 2.36)); }
+
+.lab-bar { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto; width: max-content; max-width: calc(100% - var(--gutter) * 2); display: flex; align-items: center; gap: var(--s1); padding: var(--s1); border-radius: 999px; }
+.lab-bar button { height: 44px; padding: 0 var(--s4); border-radius: 999px; font-size: .9375rem; font-weight: 700; color: var(--fg-2); white-space: nowrap; }
+.lab-bar button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.knobs { position: fixed; z-index: 30; right: var(--gutter); top: calc(env(safe-area-inset-top, 0px) + 84px); display: grid; gap: var(--s2); padding: var(--s3) var(--s4); border-radius: 20px; font-size: .8125rem; color: var(--fg-2); }
+.knobs label { display: grid; grid-template-columns: 32px 120px 44px; align-items: center; gap: var(--s2); }
+.knobs output { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .knobs { display: none; } }
+.fps { min-width: 56px; padding: 0 var(--s2); font-size: .8125rem; color: var(--fg-3); font-variant-numeric: tabular-nums; text-align: center; }
+@media (max-width: 420px) { .lab-bar button { padding: 0 var(--s3); font-size: .8125rem; } .knobs { position: fixed; z-index: 30; right: var(--gutter); top: calc(env(safe-area-inset-top, 0px) + 84px); display: grid; gap: var(--s2); padding: var(--s3) var(--s4); border-radius: 20px; font-size: .8125rem; color: var(--fg-2); }
+.knobs label { display: grid; grid-template-columns: 32px 120px 44px; align-items: center; gap: var(--s2); }
+.knobs output { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .knobs { display: none; } }
+.fps { min-width: 44px; } }
+</style>
+</head>
+<body>
+<div class="ypl">
+  <div class="stage" id="ypl-stage" data-state="open" aria-hidden="true"><div class="light light-a"></div><div class="light light-b"></div></div>
+  <canvas class="gl" aria-hidden="true"></canvas>
+  <header class="topbar glass" style="z-index:20">
+    <a class="brand press" href="#" aria-label="YPL 홈"><span class="brand-logo" id="logo"></span><span id="wordmark"></span></a>
+    <nav class="navlinks groove" aria-label="주요 메뉴">
+      <span class="navlink" style="background:var(--ind-body);color:var(--ind-fg)">홈</span><span class="navlink">공지</span><span class="navlink">대진표</span><span class="navlink">기록</span><span class="navlink">더보기</span>
+    </nav>
+    <span class="iconbtn" aria-hidden="true"></span>
+  </header>
+
+  <section class="cv" id="g" hidden>
+    <h1><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+    <div class="txt" data-rise>
+      <span class="dday">D-6</span><span class="ev-name">38회 파이컵 마스터 리그</span><span class="meta">10월 30일 (금) 오후 6:00, 참가 신청 중</span>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+      <button class="hx-notice press"><b>공지</b><span class="hx-notice-t">시즌 3 랭킹 포인트 반영 안내</span></button>
+    </div>
+  </section>
+
+  <section class="cv" id="h" hidden>
+    <h1><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+    <div class="txt" data-rise>
+      <span class="dday">D-6</span><span class="ev-name">38회 파이컵 마스터 리그</span><span class="meta">10월 30일 (금) 오후 6:00, 참가 신청 중</span>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+      <p class="cap" id="h-cap"></p>
+    </div>
+  </section>
+
+  <section class="cv" id="i" hidden>
+    <h1><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+    <div class="txt" data-rise>
+      <span class="dday">D-6</span><span class="ev-name">38회 파이컵 마스터 리그</span><span class="meta">10월 30일 (금) 오후 6:00, 참가 신청 중</span>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+    </div>
+  </section>
+
+  <nav class="lab-bar glass" aria-label="시안">
+    <button data-go="g" class="press">G 표지</button>
+    <button data-go="h" class="press">H 토너먼트</button>
+    <button data-go="i" class="press">I 입장</button>
+    <button id="replay" class="press">다시</button>
+    <button id="theme" class="press" aria-label="테마 바꾸기">◐</button>
+    <span class="fps" id="fps" aria-live="off"></span>
+  </nav>
+  <div class="knobs glass" autocomplete="off" aria-label="유리 조절(실험판)">
+    <label>서리 <input type="range" autocomplete="off" id="k-frost" min="0" max="12" step=".5" value="2"><output>2px</output></label>
+    <label>굴절 <input type="range" autocomplete="off" id="k-bend" min="0" max="3" step=".1" value="1.4"><output>1.4배</output></label>
+    <label>두께 <input type="range" autocomplete="off" id="k-bevel" min="0" max="3" step=".1" value=".6"><output>0.6배</output></label>
+  </div>
+</div>
+
+<script type="module">
+import { lineBlock } from "../../../src/components/home/brandTitle.js";
+import { WORDMARK_PATH } from "../../../src/components/layout/SiteHeader.jsx";
+import { startRefraction } from "../../../src/components/common/refraction.js";
+import { glassStage } from "./glassGL.js";
+startRefraction();
+const BASE = "/ypl-site/";
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.22,1,.36,1)";
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const out = x => 1 - (1 - x) ** 3, inn = x => x * x * x, lerp = (a, b, t) => a + (b - a) * t;
+/* 스프링(사이트 --spring-snappy와 비슷하게 3% 남짓 넘친다) */
+const spring = x => (x >= 1 ? 1 : 1 - Math.exp(-6.5 * x) * Math.cos(7.2 * x));
+
+for (const [id, f, h] of [["logo", "ypl-wing-y", 28], ["wordmark", "ypl-wordmark", 14]]) {
+  fetch(`${BASE}brand/${f}.svg`).then(r => r.text()).then(t => {
+    const el = document.getElementById(id); el.innerHTML = t;
+    const s = el.querySelector("svg"); s.setAttribute("height", h); s.removeAttribute("width"); s.style.cssText = "display:block;width:auto;fill:currentColor";
+  });
+}
+const lb = lineBlock();
+for (const s of $$("[data-name]")) {
+  s.setAttribute("viewBox", `${lb.left} 0 ${lb.right - lb.left} ${lb.h}`);
+  s.innerHTML = `<g transform="skewX(-12)" fill-rule="evenodd">${lb.glyphs.map(g => `<path transform="translate(${g.x} 0)" d="${g.d}"/>`).join("")}</g>`;
+  s.style.fill = "var(--fg-2)";
+}
+const MARK = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 100" width="1240" height="400"><path transform="skewX(-12) translate(21 0)" fill-rule="evenodd" d="${WORDMARK_PATH}"/></svg>`);
+const ROSTER = ("pikachu charizard blastoise venusaur gengar dragonite tyranitar metagross salamence garchomp lucario greninja incineroar rillaboom "
+  + "cinderace primarina decidueye mimikyu dragapult corviknight toxapex ferrothorn landorus-therian tornadus thundurus kingambit gholdengo fluttermane "
+  + "ironhands amoonguss urshifu urshifu-rapidstrike rotom-wash rotom-heat whimsicott grimmsnarl indeedee-f hatterene torkoal pelipper archaludon "
+  + "sneasler basculegion farigiraf ursaluna chienpao chiyu tinglu wochien gardevoir sylveon umbreon espeon milotic gyarados kingdra scizor aegislash "
+  + "hydreigon volcarona talonflame zacian zamazenta calyrex-shadow calyrex-ice koraidon miraidon ogerpon ragingbolt ironvaliant maushold palafin "
+  + "dondozo tatsugiri annihilape ceruledge armarouge baxcalibur glimmora sinistcha arcanine snorlax lapras mew mewtwo rayquaza lugia").split(" ");
+const KO = { garchomp: "한카리아스", incineroar: "어흥염", fluttermane: "날개치는머리", kingambit: "대도각참", rillaboom: "고릴타", dragonite: "망나뇽", gholdengo: "타부자고",
+  "urshifu-rapidstrike": "우라오스", amoonguss: "뽀록나", tornadus: "토네로스", ragingbolt: "굽이치는우레", ironhands: "무쇠손", chienpao: "파오젠", whimsicott: "엘풍", ogerpon: "오거폰", sneasler: "포푸니크" };
+const rise = (els, delay = 0, step = 110) => els.forEach((el, i) => { el.style.opacity = ""; el.animate(
+  still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(12px)", filter: "blur(6px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
+  { duration: still ? 1 : 560, delay: delay + i * step, easing: EASE, fill: "backwards" }); });
+
+/* ---------------- G 지금 표지, 새 무대: 같은 벽 같은 유리, 한 장의 GL ---------------- */
+function draftG() {
+  return {
+    sprites: ROSTER.map(n => `${BASE}sprites/cover/${n}.webp`), cell: 256,
+    frame(t, P, v) {
+      const cell = clamp(v.W * .09, 64, 104), gapY = cell * 1.14, step = cell * 1.18;
+      const n = Math.ceil(v.H * 1.1 / gapY) + 1, per = Math.ceil(v.W / step) + 2, rowW = per * step, mid = (n - 1) / 2, y0 = v.H / 2 - mid * gapY;
+      const r0 = v.ready;
+      for (let r = 0; r < n; r++) {
+        const e = r0 < 0 ? 0 : still ? 1 : out(clamp((r0 - .1 - Math.abs(r - mid) * .11) / .9));
+        if (!e) continue;
+        const dur = 70 + (r % 3) * 18, off = still ? 0 : (t * rowW / dur) % rowW;
+        const x0 = (r % 2 ? -rowW + off - cell * .5 : -off);
+        for (let i = 0; i < per * 2; i++) P.base(x0 + i * step + cell / 2, y0 + r * gapY, cell, (r * 11 + (i % per) * 3) % ROSTER.length, e);
+      }
+      return r0 < 0 ? 0 : still ? 1 : out(clamp((r0 - .6) / 1.1));
+    },
+    shownAt: 1.5,
+  };
+}
+
+/* ---------------- H 토너먼트: 열 때마다 16마리가 실제로 겨루고, 우승한 한 마리가 유리 YPL 뒤에 선다 ---------------- */
+function draftH() {
+  const names = Object.keys(KO);
+  let order, rounds, start;
+  const seed = () => {
+    order = names.map((n, i) => [Math.random(), i]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+    rounds = [order];
+    while (rounds.at(-1).length > 1) { const p = rounds.at(-1); rounds.push(p.filter((_, j) => j % 2 === 0).map((_, j) => p[2 * j + (Math.random() < .5 ? 0 : 1)])); }
+    start = null; $("#h-cap").textContent = "";
+  };
+  seed();
+  const RT = .95;
+  const layout = (n, v) => {
+    const [cols, rows] = { 16: [4, 4], 8: [4, 2], 4: [2, 2], 2: [2, 1], 1: [1, 1] }[n];
+    const rw = Math.min(v.W * .9, 640), rh = Math.min(v.H * .5, 480), s = Math.min(rw / cols, rh / rows) * .86, cy = v.H * .4;
+    return { s, at: j => [v.W / 2 + ((j % cols) - (cols - 1) / 2) * (rw / cols), cy + (Math.floor(j / cols) - (rows - 1) / 2) * (rh / rows)] };
+  };
+  let captioned = false;
+  return {
+    sprites: names.map(n => `${BASE}sprites/pokemon/${n}.webp`), cell: 256, seed,
+    frame(t, P, v) {
+      if (v.ready < 0) return 0;
+      if (start === null) start = t + .3;
+      const T = t - start, g = { v: 0 };
+      const champ = rounds.at(-1)[0], end = (rounds.length - 1) * RT;
+      // 우승 뒤: 우승자가 화면보다 크게 자라 유리 뒤에 선다(바깥은 흑백, 글자 안은 제 색)
+      if (T > end) {
+        const u = clamp((T - end) / 1.3), e = out(u), L = layout(1, v), [x0, y0] = L.at(0);
+        const cx = v.slot[0] + v.slot[2] / 2, cy = v.slot[1] + v.slot[3] / 2, big = Math.min(v.H * 1.25, v.W * 1.6);
+        const drift = still ? 0 : Math.sin(T * .25) * v.W * .015;
+        const x = lerp(x0, cx + drift, e), y = lerp(y0, cy, e), s = lerp(L.s, big, e);
+        P.base(x, y, s, champ, e);
+        P.top(x, y, s, champ, 1 - clamp(u * 1.6));
+        if (!captioned && u > .3) { captioned = true; $("#h-cap").textContent = `이번 판의 우승 ${KO[names[champ]]}, 누르면 다시 겨룹니다`; }
+        return still ? 1 : out(clamp((T - end - .4) / 1.1));
+      }
+      captioned = false;
+      if (T < 0) {
+        const L = layout(16, v);
+        order.forEach((f, j) => { const [x, y] = L.at(j); P.top(x, y, L.s, f, out(clamp((T + .3 + .3 - j * .02) / .4))); });
+        return 0;
+      }
+      const k = Math.min(rounds.length - 2, Math.floor(T / RT)), u = (T - k * RT) / RT;
+      const cur = rounds[k], next = rounds[k + 1], L = layout(cur.length, v), N = layout(next.length, v);
+      cur.forEach((f, j) => {
+        const [hx, hy] = L.at(j), [px, py] = L.at(j ^ 1), mx = (hx + px) / 2, my = (hy + py) / 2;
+        const hitX = lerp(hx, mx, .38), hitY = lerp(hy, my, .38);
+        const win = next[j >> 1] === f;
+        let x, y, s = L.s, a = 1;
+        if (u < .3) { const q = inn(u / .3); x = lerp(hx, hitX, q); y = lerp(hy, hitY, q); }
+        else if (win) { const q = spring((u - .3) / .7), [nx, ny] = N.at(j >> 1); x = lerp(hitX, nx, q); y = lerp(hitY, ny, q); s = lerp(L.s, N.s, q); }
+        else { const q = out(clamp((u - .3) / .45)); x = lerp(hitX, hx + (hx - mx) * .3, q); y = hitY + q * 28; s = L.s * (1 - .2 * q); a = 1 - q; }
+        P.top(x, y, s, f, a);
+        // 맞는 순간: 둘 사이에 고리와 빛
+        if (win && u >= .3 && u < .85) { const q = (u - .3) / .55; P.top(mx, my, L.s * (.6 + 1.1 * out(q)), 0, (1 - q) * .9, 1); P.top(mx, my, L.s * .9, 0, (1 - q) ** 2 * .7, 2); }
+      });
+      return 0;
+    },
+    tap() { if (captioned) seed(); },
+    shownAt: 4.6,
+  };
+}
+
+/* ---------------- I 입장: 선수 입장 통로. 양쪽 벽의 포켓몬 사이로 걸어 들어가고, 끝의 빛 앞에 유리 YPL ---------------- */
+function draftI() {
+  const names = ROSTER.slice(0, 60);
+  const L = 18, SP = .6, COLS = Math.round(L / SP), YS = [-.46, -.16, .14, .44];
+  const items = [];
+  for (let c = 0; c < COLS; c++) for (const side of [-1, 1]) YS.forEach((Y, r) => items.push({ z: c * SP + (side > 0 ? SP / 2 : 0), X: side * (.62 + (r % 2) * .04), Y, cell: (c * 7 + r * 13 + (side > 0 ? 29 : 0)) % names.length }));
+  const tmp = [];
+  return {
+    sprites: names.map(n => `${BASE}sprites/pokemon/${n}.webp`), cell: 256,
+    frame(t, P, v) {
+      if (v.ready < 0) return 0;
+      const tr = v.ready, f = Math.min(v.W * .62, v.H * .7), cx = v.W / 2, cy = v.slot[1] + v.slot[3] / 2;
+      const d = still ? 2 : 13 * (1 - Math.exp(-tr * 1.5)) + tr * .45, e = still ? 1 : out(clamp(tr / .8));
+      // 끝의 빛(위에서 내려오는 무대의 빛과 같은 결)
+      P.base(cx, cy, Math.min(v.W, v.H) * 1.3, 0, .32 * e, 2);
+      tmp.length = 0;
+      for (const it of items) {
+        const z = ((it.z - d) % L + L) % L + .3;
+        const a = clamp((L - z) / (L * .45)) ** 1.5 * clamp((z - .3) / .5) * e;
+        if (a > .01) tmp.push([z, cx + it.X / z * f, cy + it.Y / z * f, .3 / z * f, it.cell, a]);
+      }
+      tmp.sort((p, q) => q[0] - p[0]);
+      for (const [, x, y, s, c, a] of tmp) P.base(x, y, s, c, a);
+      return still ? 1 : out(clamp((tr - 1.1) / 1.1));
+    },
+    shownAt: 2,
+  };
+}
+
+const DRAFTS = { g: draftG, h: draftH, i: draftI };
+let stage = null, cur = null, draft = null, fallback = 0, token = 0;
+async function show(id) {
+  if (!DRAFTS[id]) id = "g";
+  const my = ++token;
+  stage?.stop(); stage = null; clearTimeout(fallback);
+  const old = $(".gl"), cv = old.cloneNode(); old.replaceWith(cv);
+  for (const k in DRAFTS) $("#" + k).hidden = k !== id;
+  for (const bt of $$("[data-go]")) bt.setAttribute("aria-pressed", bt.dataset.go === id);
+  cur = id; history.replaceState(null, "", "#" + id);
+  const el = $("#" + id), txt = $$("[data-rise]", el), name = $(".hx-fullname", el);
+  for (const x of [...txt, name]) x.style.opacity = "0";
+  draft = DRAFTS[id]();
+  try {
+    stage = await glassStage(cv, { sprites: draft.sprites, cell: draft.cell, shape: MARK, slot: $(".slot", el), draft });
+  } catch (e) { console.warn(e); for (const x of [...txt, name]) x.style.opacity = ""; return; }
+  if (my !== token) return stage.stop();
+  for (const [id, k, u] of [["k-frost", "frost", "px"], ["k-bend", "bend", "배"], ["k-bevel", "bevel", "배"]]) { const inp = $("#" + id); stage.knobs[k] = +inp.value; inp.oninput = () => { stage.knobs[k] = +inp.value; inp.nextElementSibling.textContent = (k !== "frost" ? (+inp.value).toFixed(1) : inp.value) + u; }; }
+  /* 글은 유리가 서는 때에 맞춘다: 그 시각을 무대의 준비 시각에서 센다 */
+  const t0 = performance.now();
+  const poll = () => {
+    if (my !== token) return;
+    const shown = draft.shownAt;
+    if (stageReadyAt && (performance.now() - stageReadyAt) / 1000 >= shown - .4) { rise([name], 0); rise(txt, 250); return; }
+    if (performance.now() - t0 > 6000) { rise([name, ...txt], 0); return; }
+    requestAnimationFrame(poll);
+  };
+  stageReadyAt = 0;
+  readyWatch(my);
+  poll();
+}
+/* 무대의 그림이 다 올라온 때: 첫 프레임에서 view.ready가 0 이상이 되는 순간을 draft를 감싸 잡는다 */
+let stageReadyAt = 0;
+function readyWatch(my) {
+  const f = draft.frame.bind(draft);
+  draft.frame = (t, P, v) => { if (!stageReadyAt && v.ready >= 0 && my === token) stageReadyAt = performance.now() - v.ready * 1000; return f(t, P, v); };
+}
+
+/* 누르면 그 자리에서 충격파(H는 우승 뒤에 다시 겨룬다) */
+addEventListener("pointerdown", e => {
+  if (e.target.closest("button, a, .lab-bar, .topbar, .knobs")) return;
+  stage?.ripple(e.clientX, e.clientY);
+  draft?.tap?.();
+});
+for (const bt of $$("[data-go]")) bt.onclick = () => show(bt.dataset.go);
+$("#replay").onclick = () => show(cur);
+$("#theme").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; };
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+addEventListener("resize", () => stage?.measure());
+
+/* 초당 프레임(실험판 확인용): 최근 1초 */
+const fr = [];
+(function tick(now) { fr.push(now); while (fr[0] < now - 1000) fr.shift(); $("#fps").textContent = `${fr.length}fps`; requestAnimationFrame(tick); })(performance.now());
+show(location.hash.slice(1));
+</script>
+</body>
+</html>

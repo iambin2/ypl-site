@@ -14,7 +14,7 @@ import GlassWorker from "./glassCover.worker.js?worker&inline";
 const MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 100"><path transform="skewX(-12) translate(21 0)" fill-rule="evenodd" d="${WORDMARK_PATH}"/></svg>`;
 const MARK_URL = "data:image/svg+xml," + encodeURIComponent(MARK_SVG);
 /* 벽에 서는 포켓몬: 대전에서 자주 보는 얼굴들(public/sprites/pokemon) */
-const ROSTER = ("pikachu charizard blastoise venusaur gengar dragonite tyranitar metagross salamence garchomp lucario greninja incineroar rillaboom "
+export const ROSTER = ("pikachu charizard blastoise venusaur gengar dragonite tyranitar metagross salamence garchomp lucario greninja incineroar rillaboom "
   + "cinderace primarina decidueye mimikyu dragapult corviknight toxapex ferrothorn landorus-therian tornadus thundurus kingambit gholdengo fluttermane "
   + "ironhands amoonguss urshifu urshifu-rapidstrike rotom-wash rotom-heat whimsicott grimmsnarl indeedee-f hatterene torkoal pelipper archaludon "
   + "sneasler basculegion farigiraf ursaluna chienpao chiyu tinglu wochien gardevoir sylveon umbreon espeon milotic gyarados kingdra scizor aegislash "

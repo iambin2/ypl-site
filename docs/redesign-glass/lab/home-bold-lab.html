@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YPL 홈 대담한 시안</title>
+<!-- 홈 다시 만들기, 대담한 시안 셋(2026-10-24). 개발 서버에서 /ypl-site/docs/redesign-glass/lab/home-bold-lab.html (#d 표본, #e 유리 속으로, #f 비문)
+     유리는 지금 홈의 처방 그대로(glassShape.js는 glassCover.js에 아무 모양을 받게 한 실험판 복사본). 색은 포켓몬 그림뿐이다. 이름과 숫자는 견본. -->
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/components.css">
+<link rel="stylesheet" href="../../../src/styles/shell.css">
+<link rel="stylesheet" href="../../../src/styles/pages.css">
+<style>
+[hidden] { display: none !important; }
+.lab.home.staged { margin-top: 0; display: block; }
+.cv { position: relative; isolation: isolate; overflow: hidden; height: 100svh; }
+.cv > .hx-glass { z-index: 0; }
+.slot { display: block; }
+.over { position: relative; z-index: 1; }
+.dday { font-family: var(--font-fig); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.meta { font-size: .9375rem; color: var(--fg-2); }
+.acts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* =================== D 표본: 포켓몬 한 마리가 화면보다 크게 유리 YPL 뒤를 지나간다. 글자 안에서만 제 색 =================== */
+#d .hx-veil { background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent, var(--stage)); opacity: .9; }
+.sp { position: absolute; inset: 0; }
+.sp img { position: absolute; left: 50%; top: 46%; width: min(128vh, 150vw); aspect-ratio: 1; translate: -50% -50%; object-fit: contain; opacity: 0; }
+#d .hx-wall:not(.win) { opacity: .22; }
+#d .cv { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+#d h1 { --W: min(100vw - 32px, 1040px, (100svh - 300px) * 3.1); margin-top: -4svh; }
+#d .slot { width: var(--W); height: calc(var(--W) / 3.1); }
+.d-foot { position: absolute; z-index: 1; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); max-width: 1200px; margin-inline: auto; padding-inline: var(--gutter);
+  display: flex; justify-content: space-between; align-items: end; gap: var(--s6); flex-wrap: wrap; }
+.d-label { display: grid; gap: var(--s1); }
+.d-no { font-family: var(--font-fig); font-weight: 800; font-size: 1.5rem; color: var(--fg-3); }
+.d-name { font-size: 1.75rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; }
+.d-line { font-size: .9375rem; color: var(--fg-2); }
+.d-event { display: grid; gap: var(--s2); justify-items: end; text-align: right; }
+.d-event .dday { font-size: var(--display); }
+.d-event b { font-size: 1rem; font-weight: 700; }
+@media (max-width: 859px) { .sp img { top: 30%; width: min(118vh, 190vw); } #d .cv { justify-content: flex-start; padding-top: calc(env(safe-area-inset-top, 0px) + 22svh); } .d-event { justify-items: start; text-align: left; } .d-foot { flex-direction: column-reverse; align-items: start; gap: var(--s10); } }
+
+/* =================== E 유리 속으로: 내리면 YPL의 P 구멍 속으로 들어가고, 그 너머에 유리로 된 남은 날이 선다 =================== */
+.e-track { height: 320svh; }
+.e-stick { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+.e-stick > .cv { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 92px var(--gutter) 96px; }
+.e1 { z-index: 2; will-change: transform, opacity; }
+.e1 h1 { --W: max(220px, min(100vw - 48px, 860px, (100svh - 300px) * 2.36)); display: flex; flex-direction: column; align-items: center; }
+.e1 .slot { width: var(--W); height: calc(var(--W) / 3.1); }
+.e1 .hx-fullname { width: max(220px, var(--W) * .6); height: auto; margin-top: calc(var(--W) * .05); }
+.e-cue { margin-top: var(--s14); font-size: .9375rem; color: var(--fg-3); }
+.e2 { z-index: 1; opacity: 0; }
+.e2 .slot { margin-inline: auto; }
+.e2 .over { display: grid; gap: var(--s2); justify-items: center; margin-top: var(--s10); }
+.e2-name { font-size: 1.75rem; font-weight: 800; letter-spacing: -.03em; }
+.e2 .acts { margin-top: var(--s4); justify-content: center; }
+
+/* =================== F 비문: 리그의 이름이 화면보다 긴 유리 한 줄로 천천히 지나간다. 기념비의 띠처럼 =================== */
+#f .hx-veil { background: linear-gradient(180deg, var(--stage), transparent 28%, transparent 66%, var(--stage)); opacity: .85; }
+#f .slot { position: absolute; z-index: 1; left: 0; top: 50%; will-change: transform; }
+.f-top, .f-foot { position: absolute; z-index: 1; left: 0; right: 0; max-width: 1200px; margin-inline: auto; padding-inline: var(--gutter); }
+.f-top { top: calc(env(safe-area-inset-top, 0px) + 112px); font-size: 1rem; color: var(--fg-2); }
+.f-foot { bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); display: flex; align-items: end; justify-content: space-between; gap: var(--s6); flex-wrap: wrap; }
+.f-ev { display: flex; align-items: end; gap: var(--s5); }
+.f-ev .dday { font-size: var(--display); }
+.f-ev b { display: block; font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; }
+
+.lab-bar { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto; width: max-content; max-width: calc(100% - var(--gutter) * 2); display: flex; gap: var(--s1); padding: var(--s1); border-radius: 999px; }
+.lab-bar button { height: 44px; padding: 0 var(--s4); border-radius: 999px; font-size: .9375rem; font-weight: 700; color: var(--fg-2); white-space: nowrap; }
+.lab-bar button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+@media (max-width: 420px) { .lab-bar button { padding: 0 var(--s3); font-size: .8125rem; } }
+</style>
+</head>
+<body>
+<div class="ypl">
+  <div class="stage" id="ypl-stage" data-state="open" aria-hidden="true"><div class="light light-a"></div><div class="light light-b"></div></div>
+  <header class="topbar glass">
+    <a class="brand press" href="#" aria-label="YPL 홈"><span class="brand-logo" id="logo"></span><span id="wordmark"></span></a>
+    <nav class="navlinks groove" aria-label="주요 메뉴">
+      <span class="navlink" style="background:var(--ind-body);color:var(--ind-fg)">홈</span><span class="navlink">공지</span><span class="navlink">대진표</span><span class="navlink">기록</span><span class="navlink">더보기</span>
+    </nav>
+    <span class="iconbtn" aria-hidden="true"></span>
+  </header>
+
+  <!-- D 표본 -->
+  <main class="lab home staged" id="d" hidden>
+    <section class="cv">
+      <div class="hx-glass" aria-hidden="true"></div>
+      <h1 class="over"><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span></h1>
+      <div class="d-foot">
+        <div class="d-label" data-rise aria-live="polite"><span class="d-no"></span><span class="d-name"></span><span class="d-line"></span></div>
+        <div class="d-event" data-rise><span class="dday">D-6</span><b>38회 파이컵 마스터 리그</b><span class="meta">10월 30일 (금) 오후 6:00</span>
+          <div class="acts" style="margin-top:var(--s2)"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- E 유리 속으로 -->
+  <main class="lab home staged" id="e" hidden>
+    <div class="e-track"><div class="e-stick">
+      <section class="cv e2">
+        <div class="hx-glass" aria-hidden="true"></div>
+        <span class="slot over" aria-hidden="true"></span>
+        <div class="over">
+          <span class="e2-name">38회 파이컵 마스터 리그</span>
+          <span class="meta">10월 30일 (금) 오후 6:00, 참가 신청 중</span>
+          <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">대회 공지</button></div>
+        </div>
+      </section>
+      <section class="cv e1">
+        <div class="hx-glass" aria-hidden="true"></div>
+        <h1 class="over"><span class="sr-only">Yonsei Pokémon League</span><span class="slot" aria-hidden="true"></span><svg class="hx-fullname" data-name aria-hidden="true"></svg></h1>
+        <p class="e-cue over" data-rise>내려서 다음 대회로</p>
+      </section>
+    </div></div>
+  </main>
+
+  <!-- F 비문 -->
+  <main class="lab home staged" id="f" hidden>
+    <section class="cv">
+      <div class="hx-glass" aria-hidden="true"></div>
+      <span class="slot" aria-hidden="true"></span>
+      <h1 class="sr-only">Yonsei Pokémon League</h1>
+      <p class="f-top" data-rise>포켓몬 센터 연세점의 공식 리그</p>
+      <div class="f-foot" data-rise>
+        <div class="f-ev"><span class="dday">D-6</span><span><b>38회 파이컵 마스터 리그</b><span class="meta">10월 30일 (금) 오후 6:00</span></span></div>
+        <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="lab-bar glass" aria-label="시안">
+    <button data-go="d" class="press">D 표본</button>
+    <button data-go="e" class="press">E 유리 속으로</button>
+    <button data-go="f" class="press">F 비문</button>
+    <button id="replay" class="press">다시</button>
+    <button id="theme" class="press" aria-label="테마 바꾸기">◐</button>
+  </nav>
+</div>
+
+<script type="module">
+import { lineBlock } from "../../../src/components/home/brandTitle.js";
+import { startGlassCover } from "./glassShape.js";
+import { startRefraction } from "../../../src/components/common/refraction.js";
+startRefraction();
+const BASE = "/ypl-site/";
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.22,1,.36,1)";
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const svgUrl = s => "data:image/svg+xml," + encodeURIComponent(s);
+
+for (const [id, f, h] of [["logo", "ypl-wing-y", 28], ["wordmark", "ypl-wordmark", 14]]) {
+  fetch(`${BASE}brand/${f}.svg`).then(r => r.text()).then(t => {
+    const el = document.getElementById(id); el.innerHTML = t;
+    const s = el.querySelector("svg"); s.setAttribute("height", h); s.removeAttribute("width"); s.style.cssText = "display:block;width:auto;fill:currentColor";
+  });
+}
+const lb = lineBlock();
+for (const s of $$("[data-name]")) {
+  s.setAttribute("viewBox", `${lb.left} 0 ${lb.right - lb.left} ${lb.h}`);
+  s.innerHTML = `<g transform="skewX(-12)" fill-rule="evenodd">${lb.glyphs.map(g => `<path transform="translate(${g.x} 0)" d="${g.d}"/>`).join("")}</g>`;
+}
+
+/* 모양 둘: 두 번 이어 쓴 리그 이름(비문이 끊김 없이 돈다), YPL 숫자체로 쓴 남은 날 */
+const FRIEZE = (() => {
+  const words = ["YONSEI", "POKEMON", "LEAGUE"], b = lineBlock([...words, ...words]);
+  const period = b.glyphs[words.join("").length].x - b.glyphs[0].x;
+  const w = b.right - b.left;
+  return { url: svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${b.left} 0 ${w} 100"><g transform="skewX(-12)" fill-rule="evenodd">${b.glyphs.map(g => `<path transform="translate(${g.x} 0)" d="${g.d}"/>`).join("")}</g></svg>`), aspect: w / 100, period: period / w };
+})();
+async function figureShape(text) {
+  await document.fonts.load('800 400px "YPL Figures"');
+  const c = document.createElement("canvas"), g = c.getContext("2d");
+  g.font = '800 400px "YPL Figures"';
+  const m = g.measureText(text), pad = 8;
+  const w = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight) + pad * 2, h = Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) + pad * 2;
+  c.width = w; c.height = h;
+  g.font = '800 400px "YPL Figures"'; g.fillStyle = "#000";
+  g.fillText(text, m.actualBoundingBoxLeft + pad, m.actualBoundingBoxAscent + pad);
+  return { url: c.toDataURL(), aspect: w / h };
+}
+
+const rise = (els, delay = 0, step = 110) => els.forEach((el, i) => { el.style.opacity = ""; el.animate(
+  still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(12px)", filter: "blur(6px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
+  { duration: still ? 1 : 560, delay: delay + i * step, easing: EASE, fill: "backwards" }); });
+
+/* ---------------- D 표본 ---------------- */
+const SPECIMENS = [
+  ["garchomp", "445", "한카리아스", "이번 시즌 가장 많이 쓰인 포켓몬"],
+  ["incineroar", "727", "어흥염", "37회 파이컵 우승 파티의 선봉"],
+  ["fluttermane", "987", "날개치는머리", "시즌 2 챔피언스 파이널 결승에 두 번 섰다"],
+  ["kingambit", "983", "대도각참", "이번 시즌 승률 1위"],
+  ["rillaboom", "812", "고릴타", "루키 리그에서 가장 많이 쓰인 포켓몬"],
+  ["gholdengo", "1000", "타부자고", "36회 파이컵 준우승 파티의 에이스"],
+];
+const D = (() => {
+  let timer = 0, i = 0, walls = [];
+  const spr = n => `${BASE}sprites/pokemon/${n}.webp`;
+  function label(k, first) {
+    const [, no, name, line] = SPECIMENS[k], el = $(".d-label");
+    const put = () => { $(".d-no", el).textContent = no; $(".d-name", el).textContent = name; $(".d-line", el).textContent = line; };
+    if (first) return put();
+    el.animate([{ opacity: 1 }, { opacity: 0, filter: "blur(4px)" }], { duration: 320, easing: "cubic-bezier(.5,0,.75,0)" }).onfinish = () => { put(); rise([el], 0); };
+  }
+  /* 두 벽(흑백 바깥, 제 색 안쪽)에 같은 그림을 같은 순간 같은 움직임으로. 한 마리는 9초 동안 천천히 가로지르며 물러선다. */
+  async function swap(first) {
+    const k = i++ % SPECIMENS.length, src = spr(SPECIMENS[k][0]);
+    const imgs = walls.map(w => w.querySelectorAll("img")[k % 2]);
+    for (const im of imgs) im.src = src;
+    await Promise.all(imgs.map(im => im.decode().catch(() => {})));
+    const dir = k % 2 ? -1 : 1;
+    for (const w of walls) {
+      const [now, old] = [w.querySelectorAll("img")[k % 2], w.querySelectorAll("img")[(k + 1) % 2]];
+      now.getAnimations().forEach(a => a.cancel());
+      now.animate([{ opacity: 0 }, { opacity: 1 }], { duration: first ? 1400 : 1600, easing: EASE, fill: "forwards" });
+      if (!still) now.animate([{ transform: `translateX(${dir * 6}%) scale(1.08)` }, { transform: `translateX(${dir * -6}%) scale(1)` }], { duration: 9800, easing: "linear", fill: "forwards", composite: "add" });
+      old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1600, easing: EASE, fill: "forwards" });
+    }
+    label(k, first);
+  }
+  return {
+    wall: (base, win) => { walls = [base, win]; for (const w of walls) w.innerHTML = `<div class="sp"><img alt="" decoding="async"><img alt="" decoding="async"></div>`; i = 0; swap(true); timer = setInterval(() => swap(false), 8000); },
+    stop: () => clearInterval(timer),
+    opts: () => ({}),
+  };
+})();
+
+/* ---------------- E 유리 속으로 ---------------- */
+let eGlass2 = null;
+const E = (() => {
+  let raf = 0, origin = null;
+  const e1 = () => $(".e1"), e2 = () => $(".e2");
+  /* P의 구멍 가운데: 워드마크 viewBox(310x100)에서 기울기를 지난 자리 (176, 33) */
+  function measure() {
+    const s = $(".e1 .slot"), L = e1().getBoundingClientRect(), r = s.getBoundingClientRect();
+    origin = [r.left - L.left + r.width * 176 / 310, r.top - L.top + r.height * .33];
+    e1().style.transformOrigin = `${origin[0]}px ${origin[1]}px`;
+  }
+  function frame() {
+    const t = $(".e-track"), p = clamp(scrollY / (t.offsetHeight - innerHeight));
+    const z = clamp(p / .62);
+    e1().style.transform = `scale(${Math.pow(70, z * z)})`;
+    e1().style.opacity = 1 - clamp((p - .4) / .2);
+    e1().style.visibility = p > .62 ? "hidden" : "";
+    const q = clamp((p - .42) / .3);
+    /* 너머의 장면은 크기를 바꾸지 않는다(유리는 변형 없는 자리로 잰다). 글만 조금 늦게 올라온다. */
+    e2().style.opacity = q;
+    $(".e2 .over").style.transform = `translateY(${(1 - clamp((p - .55) / .3)) * 24}px)`;
+    $(".e2 .over").style.opacity = clamp((p - .55) / .3);
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    async start() {
+      const fig = await figureShape("D-6");
+      const s2 = $(".e2 .slot"), H = Math.min(innerHeight * .34, innerWidth / fig.aspect * .82);
+      Object.assign(s2.style, { width: H * fig.aspect + "px", height: H + "px" });
+      eGlass2 = startGlassCover($(".e2 .hx-glass"), s2, { shape: fig.url });
+      requestAnimationFrame(() => { measure(); frame(); });
+      addEventListener("resize", measure);
+    },
+    stop() { cancelAnimationFrame(raf); removeEventListener("resize", measure); eGlass2?.stop(); eGlass2 = null; e1().style.cssText = ""; e2().style.cssText = ""; },
+  };
+})();
+
+/* ---------------- F 비문 ---------------- */
+const F = (() => {
+  let raf = 0, t0 = 0, glass = null;
+  function size() {
+    const s = $("#f .slot"), H = Math.max(140, Math.min(innerHeight * .4, 420));
+    Object.assign(s.style, { width: H * FRIEZE.aspect + "px", height: H + "px", marginTop: -H / 2 - innerHeight * .02 + "px" });
+  }
+  function frame(now) {
+    const s = $("#f .slot"), w = s.offsetWidth, period = w * FRIEZE.period;
+    /* 초당 화면 폭의 2.6%, 한 바퀴 돌면 처음 자리로(두 번 이어 쓴 이름이라 이음매가 없다) */
+    const x = still ? -period * .02 : -(((now - t0) / 1000 * innerWidth * .026) % period) - period * .02;
+    s.style.transform = `translateX(${x}px)`;
+    glass?.position();
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    shape: FRIEZE.url, size,
+    bind(g) { glass = g; t0 = performance.now(); raf = requestAnimationFrame(frame); addEventListener("resize", size); },
+    stop() { cancelAnimationFrame(raf); removeEventListener("resize", size); glass = null; },
+  };
+})();
+
+let glass = null, cur = null, fallback = 0;
+function show(id) {
+  if (!["d", "e", "f"].includes(id)) id = "d";
+  glass?.stop(); D.stop(); E.stop(); F.stop(); clearTimeout(fallback);
+  for (const k of ["d", "e", "f"]) { $("#" + k).hidden = k !== id; if (k !== id) $$(".hx-glass", $("#" + k)).forEach(l => (l.innerHTML = "")); }
+  for (const bt of $$("[data-go]")) bt.setAttribute("aria-pressed", bt.dataset.go === id);
+  cur = id; history.replaceState(null, "", "#" + id); scrollTo(0, 0);
+  const el = $("#" + id), txt = $$("[data-rise]", el);
+  for (const t of txt) t.style.opacity = "0";
+  let done = false;
+  const go = d => { if (done) return; done = true; rise(txt, d); };
+  fallback = setTimeout(() => go(0), 4000);
+  const layer = id === "e" ? $(".e1 .hx-glass") : $(".hx-glass", el), slot = id === "e" ? $(".e1 .slot") : $(".slot", el);
+  const opts = { enter: true, onShown: go };
+  if (id === "d") opts.wall = D.wall;
+  if (id === "e") { opts.follow = $(".e1 .hx-fullname"); E.start(); }
+  if (id === "f") { opts.shape = F.shape; F.size(); }
+  glass = startGlassCover(layer, slot, opts);
+  if (id === "f") F.bind(glass);
+}
+for (const bt of $$("[data-go]")) bt.onclick = () => show(bt.dataset.go);
+$("#replay").onclick = () => show(cur);
+$("#theme").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; };
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1));
+</script>
+</body>
+</html>

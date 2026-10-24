@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "re
 import { Icon } from "../components/index.js";
 import { lineBlock } from "../components/home/brandTitle.js";
 import { startGlassCover } from "../components/home/glassCover.js";
+import { startGlassStage } from "../components/home/glassStage.js";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { formatDate } from "../services/dateFormat.js";
 
@@ -98,9 +99,9 @@ export default function HomePage({ data, go }) {
     };
     if (enter) { if (txt) txt.style.opacity = "0"; } else showTxt(520);
     const fallback = setTimeout(() => showTxt(0), 4000);
-    const glass = startGlassCover(glassRef.current, slotRef.current, {
-      enter, follow: slotRef.current.nextElementSibling, onShown: delay => enter && showTxt(delay),
-    });
+    /* 무대는 WebGL 한 장(glassStage.js, 13차). WebGL2가 없으면 예전의 DOM 표지(glassCover.js). */
+    const opts = { enter, follow: slotRef.current.nextElementSibling, onShown: delay => enter && showTxt(delay) };
+    const glass = startGlassStage(glassRef.current, slotRef.current, opts) || startGlassCover(glassRef.current, slotRef.current, opts);
     setStaged(true);
     return () => { clearTimeout(fallback); glass.stop(); if (txt) txt.style.opacity = ""; };
   }, [enter]);
