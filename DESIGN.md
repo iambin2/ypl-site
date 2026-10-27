@@ -90,7 +90,7 @@ SUIT for every word, hierarchy by size and weight (sizes 12, 13, 15, 16, 17, 20,
 
 ## Logo (F1–F3)
 
-Wing Y (`public/brand/ypl-wing-y.svg`, the 2026-10-12 mark refined on 2026-10-27, candidate F): two raised wings, each a long top feather over one shorter feather, meeting in a Y; a straight band across the neck and a three-feather fan tail, all straight edges, exactly symmetric, 1.36 wide to 1 tall. It keeps the 2026-10-12 drawing's rules (feather strata parallel to the top edge, every feather tip on one diagonal, the fan tail) with the slits opened so they still show at 24px; 24px tall (33 wide) beside the wordmark on the top bar. Solid, white on dark and black on light. It never animates: the top bar is a fixed landmark (the entrance rise and the loading band were removed on 2026-10-12).
+Wing Y (`public/brand/ypl-wing-y.svg`, the 2026-10-12 mark refined on 2026-10-27, candidate H): two raised wings, each a broad top feather over one shorter feather, meeting in a Y on a thick stem; a straight band across the neck and a wide three-feather fan tail, all straight edges, exactly symmetric, 1.51 wide to 1 tall. It keeps the 2026-10-12 drawing's rules (feather strata parallel to the top edge, every feather tip on one diagonal, the fan tail) with heavier strokes and slits just wide enough to show at 24px; the outlines touch but never overlap, so it fills the same under nonzero and evenodd. 24px tall (36 wide) beside the wordmark on the top bar. Solid, white on dark and black on light. It never animates: the top bar is a fixed landmark (the entrance rise and the loading band were removed on 2026-10-12).
 
 ## Space and radius
 

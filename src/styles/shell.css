@@ -25,7 +25,7 @@
 .brand { position: relative; display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s3) 0 var(--s2); border-radius: var(--r-pill); flex: none; }
 /* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
 .brand-logo { display: flex; }
-.brand .logo { display: block; width: 33px; height: 24px; translate: 0 1px; }
+.brand .logo { display: block; width: 36px; height: 24px; translate: 0 1px; }
 .wordmark { display: block; height: 14px; width: auto; fill: currentColor; }
 .navlinks { display: none; }
 .iconbtn { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; margin-left: auto; flex: none; }
