@@ -4,15 +4,16 @@ import { TABS, WIDE_TABS, current, tabOf, usePill, useWideNav } from "./Navigati
 
 export const DISCORD_URL = "https://discord.gg/T7UZHhGvUh";
 
-/* YPL Wing Y (2026-10-12 교체) — 형태는 그대로(public/brand/ypl-wing-y.svg), 단색(F1): 다크에서 흰색, 라이트에서 검정.
-   날개 둘, 가운데 Y, 띠 아래 세 갈래 꼬리. 모든 면이 직선이고 좌우가 정확히 대칭이다.
+/* YPL Wing Y (2026-10-27 다듬음, F) — public/brand/ypl-wing-y.svg 와 같은 도형, 단색(F1): 다크에서 흰색, 라이트에서 검정.
+   2026-10-12 로고를 그린 규칙(윗변과 나란한 깃털 층, 한 사선 위의 깃털 끝, 세 갈래 꼬리)으로 다시 세우고
+   깃털을 날개 아래 하나로 줄이고 틈을 넓히고 폭을 0.84배로 모았다. 모든 면이 직선이고 좌우가 정확히 대칭이다.
    상단 바는 고정된 길잡이라서 로고는 움직이지 않는다(2026-10-12, 등장과 로딩 빛 띠를 뺐다). */
-const MARK_PATH = "M0 0 L455 118 L699.5 402.5 L944 118 L1399 0 L1322 103 L1007.5 190 L768.5 495.5 L768.5 536.5 L630.5 536.5 L630.5 495.5 L391.5 190 L77 103 Z M99 136.5 L158 218 L424 284 L372.5 212 Z M1026.5 212 L975 284 L1241 218 L1300 136.5 Z M196.5 254 L258 338 L511.5 403 L446.5 316.5 Z M952.5 316.5 L887.5 403 L1141 338 L1202.5 254 Z M630.5 559.5 L768.5 559.5 L768.5 591.5 L882 710 L801.5 785.5 L736.5 621 L728 621 L769.5 785.5 L699.5 841.5 L629.5 785.5 L671 621 L662.5 621 L597.5 785.5 L517 710 L630.5 591.5 Z";
-const MARK_RATIO = 1399 / 841.5;
-export function BrandMark({ size = 28, className = "" }) {
+const MARK_PATH = "M0 0 L382.2 118 L587.6 402.5 L793 118 L1175.2 0 L1110.5 103 L850.8 183.2 L645.5 495.5 L645.5 536.5 L529.6 536.5 L529.6 495.5 L324.4 183.2 L64.7 103 Z M161.3 256.8 L109.8 174.8 L441.7 277.3 L496.2 360.2 Z M679 360.2 L733.5 277.3 L1065.4 174.8 L1013.9 256.8 Z M529.6 580.5 L645.5 580.5 L645.5 612.5 L740.9 731 L680 806.5 L625.4 642 L603.1 642 L638 806.5 L587.6 862.5 L537.2 806.5 L572 642 L549.8 642 L495.2 806.5 L434.3 731 L529.6 612.5 Z";
+const MARK_RATIO = 1175.2 / 862.5;
+export function BrandMark({ size = 24, className = "" }) {
   return (
     <svg className={"logo" + (className ? " " + className : "")} width={Math.round(size * MARK_RATIO)} height={size}
-      viewBox="0 0 1399 841.5" aria-hidden="true" focusable="false">
+      viewBox="0 0 1175.2 862.5" aria-hidden="true" focusable="false">
       <path d={MARK_PATH} fill="currentColor" fillRule="evenodd" />
     </svg>
   );
