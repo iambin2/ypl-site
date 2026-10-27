@@ -3,56 +3,55 @@
    ========================================================================== */
 
 /* =========================== HOME ===========================
-   One screen, the hall (DECISIONS 14th round, 2026-10-27): a giant YPL lit from above and sinking into the dark, the reigning
-   champion's six standing in front of it in a V (the middle two nearest), reflected in the black floor; the champion's plaque,
-   then the next event and the actions. Things stand still and only light moves: the pointer carries a light over the YPL, and
-   hovering (tapping) one Pokémon brightens its own beam while the rest step back. The cover's wall and glass (11th to 13th
-   rounds) were removed. */
-.hh { min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.hh-hall { position: relative; width: calc(100% + var(--gutter) * 2); margin-inline: calc(var(--gutter) * -1); overflow-x: clip; }
-.hh-giant { display: block; width: min(100%, 72vh * 3.1, 980px); height: auto; margin-inline: auto; overflow: visible; }
-/* the six in a V: --s is a Pokémon's size (1, .84, .7 outward), the smaller ones stand further back and higher */
-.hh-row { --w: calc(min(100vw, 1200px) / 3.95); position: relative; display: flex; justify-content: center; align-items: flex-end; margin-top: calc(var(--w) * -.46); }
-.hh-mon { --s: 1; position: relative; flex: none; width: calc(var(--w) * var(--s)); aspect-ratio: 1; margin: 0 calc(var(--w) * var(--s) * -.12);
-  translate: 0 calc((1 - var(--s)) * var(--w) * -.55); z-index: calc(var(--s) * 10); -webkit-tap-highlight-color: transparent; }
-.hh-fig { position: absolute; inset: 0; }
-.hh-fig > * { position: absolute; inset: 0; width: 100%; height: 100%; }
-.hh-fig img { object-fit: contain; object-position: 50% 100%; opacity: 0; -webkit-user-drag: none; user-select: none; }
-/* before its light comes on a Pokémon is a white silhouette of itself (black in light) */
-.hh-sil { background: var(--fg); -webkit-mask: var(--src) 50% 100% / contain no-repeat; mask: var(--src) 50% 100% / contain no-repeat; }
-.hh-mon.lit .hh-sil { opacity: 0; }
-.hh-mon.lit img { opacity: 1; transition: filter 900ms var(--ease-out); }
-.hh-fig.hh-refl { top: 100%; bottom: auto; height: 100%; scale: 1 -1; opacity: .22; -webkit-mask: linear-gradient(to top, var(--fg), transparent 42%); mask: linear-gradient(to top, var(--fg), transparent 42%); }
-.hh-mon::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: -3%; height: 10%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, var(--contact), transparent); }
-/* each Pokémon's own light from above: off until it is revealed, brighter on the one in focus, the rest step back */
-.hh-beam { position: absolute; left: 50%; bottom: 18%; width: 150%; height: 440%; translate: -50% 0; z-index: -2; pointer-events: none; opacity: 0;
-  background: linear-gradient(to top, var(--hh-beam), transparent 88%); clip-path: polygon(45% 0, 55% 0, 96% 100%, 4% 100%); filter: blur(12px); }
-.hh-mon.lit .hh-beam { opacity: .55; transition: opacity 900ms var(--ease-out); }
-.hh-mon.lit.focus .hh-beam { opacity: 1; }
-.hh-mon.lit.dim .hh-beam { opacity: .18; }
-.hh-mon.lit.dim img { filter: brightness(.55); }
-/* the floor the feet touch: a glow, and one edge line bright in the middle and gone at the ends */
-.hh-floor { position: absolute; left: 0; right: 0; bottom: calc(var(--w) * -.5); height: calc(var(--w) * .9); z-index: -3; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
-.hh-edge { position: absolute; left: 4%; right: 4%; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--hh-edge), transparent); }
-.hh-name { min-height: 20px; margin-top: calc(var(--w) * .16); font-size: .8125rem; color: var(--fg-2); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); }
-.hh-name.on { opacity: 1; }
-/* the plaque: the champion's name and one line under it; then the next event and the actions */
-.hh-plaque { margin-top: var(--s4); display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
-.hh-plaque b { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; }
-.hh-plaque span { font-size: .8125rem; color: var(--fg-2); }
-.hh-info { margin-top: var(--section); display: flex; flex-direction: column; align-items: center; gap: var(--s5); }
-.hh-ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
-.hh-ev-row { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; column-gap: var(--s3); }
-.hh-dday { line-height: 1; }
-.hh-ev-name { font-size: 1.0625rem; font-weight: 800; }
-.hh-ev-meta { display: inline-flex; align-items: center; gap: var(--s2); font-size: .8125rem; color: var(--fg-2); }
-.hh-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); }
-@media (min-width: 860px) { .hh-row { --w: min(17vw, 25vh, 210px); } }
+   One screen, the arena (DECISIONS 18th round, 2026-10-27): a battle field lying in perspective, its centre line, circle and
+   button drawn as one Poké Ball; the YPL stands on the ball and is reflected in the floor; under it the next event and the
+   actions. Things stand still and only light moves (the 14th round's rule): the pointer carries one light over the field, where
+   only the lines it touches brighten, and one over the YPL's letters; a tap sends one wave of light across the floor. The stage
+   fills the screen behind the bars; the text stands in the page. The hall (14th round) was replaced: it repeated the hall of fame. */
+.ha { position: relative; min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; justify-content: flex-end; text-align: center; }
+.ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent); --glow: color-mix(in srgb, var(--fg) 24%, transparent);
+  --lx: 50%; --ly: var(--floor); position: absolute; left: 50%; top: calc((env(safe-area-inset-top, 0px) + 92px) * -1); width: 100vw; height: 100svh; translate: -50% 0; overflow: hidden; pointer-events: none; }
+.ha-beam { position: absolute; left: 50%; top: 0; width: min(170vw, 1500px); height: var(--floor); translate: -50% 0;
+  background: linear-gradient(to bottom, transparent, var(--home-beam) 70%, transparent); clip-path: polygon(46% 0, 54% 0, 72% 100%, 28% 100%); filter: blur(14px); }
+/* the field: one plane laid back in perspective, faded toward its far and near ends */
+.ha-persp { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 30%; }
+.ha-persp.lit { -webkit-mask: radial-gradient(circle at var(--lx) var(--ly), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at var(--lx) var(--ly), #000, transparent min(40vw, 360px)); }
+.ha-plane { position: absolute; left: 50%; top: var(--floor); width: min(150vw, 1500px); aspect-ratio: .64; transform: translate(-50%, -50%) rotateX(68deg);
+  -webkit-mask: radial-gradient(closest-side, #000 40%, transparent); mask: radial-gradient(closest-side, #000 40%, transparent); }
+.ha-plane > i { position: absolute; display: block; }
+.ha-pool { inset: 10% -10%; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent 75%); }
+.ha-rect { inset: 8% 6%; border: 3px solid var(--ln); border-radius: var(--r-hero); }
+.ha-line { left: 6%; right: 6%; top: 50%; height: 3px; translate: 0 -50%; background: var(--ln); }
+.ha-ring { left: 50%; top: 50%; width: 46%; aspect-ratio: 1; translate: -50% -50%; border: 3px solid var(--ln); border-radius: 50%; }
+.ha-knob { left: 50%; top: 50%; width: 9%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 3px solid var(--ln); background: radial-gradient(closest-side, var(--ln) 40%, transparent 46%); }
+.ha-box { left: 30%; right: 30%; height: 12%; border: 3px solid var(--ln); }
+.ha-box.t { top: 8%; border-top: 0; border-radius: 0 0 var(--r-card) var(--r-card); }
+.ha-box.b { bottom: 8%; border-bottom: 0; border-radius: var(--r-card) var(--r-card) 0 0; }
+/* the lit copy: the same lines bright and glowing, seen only where the light falls */
+.ha-persp.lit .ha-plane > i { border-color: var(--lit); box-shadow: 0 0 24px var(--glow), inset 0 0 24px var(--glow); }
+.ha-persp.lit .ha-line { background: var(--lit); box-shadow: 0 0 24px var(--glow); }
+.ha-persp.lit .ha-knob { background: radial-gradient(closest-side, var(--fg) 40%, transparent 46%); box-shadow: 0 0 40px var(--glow); }
+.ha-wave { left: 50%; top: 50%; width: 9%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 3px solid var(--fg); opacity: 0; }
+/* the YPL stands on the ball and is reflected in the floor under it */
+.ha-mark { --h: clamp(88px, 15vw, 216px); position: absolute; left: 50%; top: var(--floor); }
+.ha-mark svg { position: absolute; left: 50%; height: var(--h); width: auto; translate: -50% 0; overflow: visible; }
+.ha-mark svg:not(.ha-refl) { bottom: calc(var(--h) * .08); filter: drop-shadow(0 0 30px var(--glow)); }
+.ha-refl { top: calc(var(--h) * -.08); scale: 1 -1; opacity: .3; -webkit-mask: linear-gradient(to top, #000, transparent 60%); mask: linear-gradient(to top, #000, transparent 60%); }
+.ha-info { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s5); }
+.ha-ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.ha-ev-row { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; column-gap: var(--s3); }
+.ha-ev-name { font-size: 1.0625rem; font-weight: 800; }
+.ha-ev-meta { display: inline-flex; align-items: center; gap: var(--s2); font-size: .8125rem; color: var(--fg-2); }
+.ha-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); }
+@media (min-width: 860px) {
+  .ha { min-height: calc(100svh - 208px); }
+  .ha-stage { --floor: 56%; top: -112px; }
+}
 
-/* the reigning champion's party on the floor (the hall of fame stage), standing as the home hall stands it.
+/* the reigning champion's party on the floor (the hall of fame stage), in a V (the shape the 14th round's home hall gave it).
    Each stands on its own contact shadow. */
 .hx-party { container-type: inline-size; margin: var(--s10) 0 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--s5); }
-/* the same V as the home hall (--s 1, .84, .7 outward; the smaller ones further back and higher), at every width */
+/* the V (--s 1, .84, .7 outward; the smaller ones further back and higher), at every width */
 .hx-floor { --mon: min(25cqi, 184px); position: relative; list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-end; }
 .hx-floor::before {
   content: ""; position: absolute; left: 50%; bottom: calc(var(--mon) * -.2); width: min(var(--mon) * 4.4, 100cqi + var(--gutter) * 2); height: calc(var(--mon) * 1.1); translate: -50% 0;
@@ -63,7 +62,7 @@
 .hx-mon-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 100%; }
 .hx-mon img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; -webkit-user-drag: none; user-select: none;
   filter: brightness(calc(1 - (1 - var(--s)) * var(--recede) * 3)); transition: filter var(--dur-base) var(--ease-out); }
-/* only light moves (home hall): the one under the pointer keeps its light, the rest step back */
+/* only light moves (14th round): the one under the pointer keeps its light, the rest step back */
 @media (hover: hover) { .hx-floor:has(.hx-mon:hover) .hx-mon:not(:hover) img { filter: brightness(.55); } }
 .hx-mon-name { padding-bottom: var(--s4); font-size: .8125rem; font-weight: 600; color: var(--fg-2); }
 .hx-contact { position: absolute; left: 16%; right: 16%; bottom: -5%; height: 14%; border-radius: 50%; background: radial-gradient(closest-side, var(--contact), transparent); pointer-events: none; }

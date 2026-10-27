@@ -139,7 +139,7 @@ const EXCEPT = {
       `${B} | .bk-series-vs | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
       `${R} | .records-party-sprite-fallback | text-align: center`, `${A} | .ed-head | text-align: center`],
     "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`],
-    "(d) a symmetric stage": [`${P} | .hh | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
+    "(d) a symmetric stage": [`${P} | .ha | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
   },
   "align: right only for trailing values and number columns (Alignment)": {
     "a trailing value or a number column": [`${K} | .calc-hp b | text-align: right`, `${K} | .calc-base-row b | text-align: right`, `${K} | .calc-base-row small | text-align: right`,
