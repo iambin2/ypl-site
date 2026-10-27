@@ -186,10 +186,9 @@
 .ff-q { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s5); }
 .ff-q-label { font-size: .8125rem; font-weight: 600; line-height: 1.25; color: var(--fg-2); }
 .ff-choices { display: flex; flex-direction: column; gap: var(--s2); }
-/* a chosen answer is selected like a segment: the lens of the same glass */
+/* a chosen answer is selected like a segment: lite glass (components.css), inverted when chosen */
 .ff-choice {
   position: relative; display: flex; align-items: center; gap: var(--s3); min-height: 48px; padding: 0 var(--s5); border-radius: var(--r-pill); cursor: pointer; font-size: 1rem;
-  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%), linear-gradient(var(--glass-lite), var(--glass-lite)); box-shadow: var(--edge), var(--lift);
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .ff-choice input { position: absolute; opacity: 0; pointer-events: none; }

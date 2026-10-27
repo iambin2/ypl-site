@@ -110,7 +110,7 @@ const EXCEPT = {
   "space: margin, padding and gap sit on the 4px scale (Space and radius)": {
     "a hairline: the rim mask and the screen-reader clip": [
       `${C} | :is(.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ann-link, .ann-submit)::before | padding: 1px`,
-      `${T} | .glass::before, .glass-l3::before, .glass-lite::before, .card::before | padding: 1px`, `${T} | .sr-only | margin: -1px`],
+      `${T} | .glass::before, .glass-l3::before, .card::before | padding: 1px`, `${T} | .glint > b | padding: 1px`, `${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
       `${S} | .page | padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px)`, `${S} | .page | padding-block: 112px 96px`,
       `${S} | .site-foot-in | padding: var(--s14) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,

@@ -17,8 +17,10 @@ export default function Stage({ view, state = "open" }) {
       document.documentElement.style.setProperty("--grain", `url(${c.toDataURL()})`);
     } catch { /* canvas unavailable: the stage stays plain */ }
   }, []);
+  // 빛의 자리는 <html>에 둔다: 무대뿐 아니라 떠 있는 유리도 같은 천장 빛을 받아 반사광이 따라 옮겨 간다
+  useEffect(() => { document.documentElement.style.setProperty("--lx", LIGHT_X[view] || "0vw"); }, [view]);
   return (
-    <div className="stage" id="ypl-stage" data-state={state} style={{ "--lx": LIGHT_X[view] || "0vw" }} aria-hidden="true">
+    <div className="stage" id="ypl-stage" data-state={state} aria-hidden="true">
       <div className="light light-a" /><div className="light light-b" />
     </div>
   );

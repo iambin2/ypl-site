@@ -183,6 +183,8 @@
   /* the selection lens is drawn opaque and faded as one group (placePill) */
   --ind-a: .22; --ind-body: linear-gradient(180deg, #FFFFFF, #C8C8C8 78%); --ind-filter: none;
   --hl: rgb(255 255 255 / .09);
+  /* the light a touch raises inside glass and on its rim (glint.js) */
+  --glint: rgb(255 255 255 / .3); --glint-rim: rgb(255 255 255 / .95);
   --scrim: rgb(0 0 0 / .5);
   --sel-bg: rgb(255 255 255 / .26);
   --focus: rgb(255 255 255 / .85);
@@ -216,13 +218,15 @@
   --rank-1: #000000; --rank-2: #3D3D3D; --rank-3: #5E5E5E; --rank-n: #6B6B6B;
   --pod: var(--surface-2); --pod-rim: none; --pod-blend: normal; --pod-ink: var(--fg-2); --pod-label: var(--fg);
   --tint: rgb(0 0 0 / .05); --tint-strong: rgb(0 0 0 / .09); --tint-soft: rgb(0 0 0 / .035);
-  --glass: rgb(255 255 255 / .5); --glass-l3: rgb(252 252 252 / .88); --glass-lite: rgb(0 0 0 / .035); --glass-solid: #F6F6F6; --glass-bright: 1.05;
-  --spec: rgb(255 255 255 / .85); --sheen: rgb(255 255 255 / .4); --caustic: rgb(255 255 255 / .5);
-  --edge: inset 0 1px 1px -.5px rgb(255 255 255 / .95), inset 0 -1px 1px -.5px rgb(255 255 255 / .6), inset 0 14px 22px -18px rgb(255 255 255 / .8), inset 0 -16px 24px -20px rgb(0 0 0 / .09), inset 0 0 0 .5px rgb(0 0 0 / .085);
-  --rim-top: rgb(255 255 255 / 1); --rim-mid: rgb(255 255 255 / .2); --rim-bottom: rgb(255 255 255 / .75);
+  /* light glass is clear and a little grey, not white: the white pool and rim of the ceiling light only read against
+     a body darker than themselves, and a faint dark contour at the ends keeps the piece standing on a white card */
+  --glass: rgb(240 240 240 / .46); --glass-l3: rgb(252 252 252 / .88); --glass-lite: rgb(0 0 0 / .035); --glass-solid: #F6F6F6; --glass-bright: 1.02;
+  --spec: rgb(255 255 255 / .95); --sheen: rgb(255 255 255 / .28); --caustic: rgb(255 255 255 / .75);
+  --edge: inset 0 1px 1px -.5px rgb(255 255 255 / .95), inset 0 -1px 1px -.5px rgb(255 255 255 / .6), inset 0 14px 22px -18px rgb(255 255 255 / .8), inset 0 -16px 24px -20px rgb(0 0 0 / .12), inset 0 0 0 .5px rgb(0 0 0 / .1);
+  --rim-top: rgb(255 255 255 / 1); --rim-mid: rgb(0 0 0 / .07); --rim-bottom: rgb(255 255 255 / .8);
   --rimc-top: rgb(255 255 255 / 1); --rimc-bottom: rgb(0 0 0 / .06);
-  --lift: 0 1px 1px rgb(0 0 0 / .06), 0 3px 8px -3px rgb(0 0 0 / .12);
-  --shadow-near: 0 1px 1px rgb(0 0 0 / .05), 0 6px 14px -6px rgb(0 0 0 / .1); --shadow-far: 0 24px 52px -18px rgb(0 0 0 / .22);
+  --lift: 0 1px 1px rgb(0 0 0 / .07), 0 3px 8px -3px rgb(0 0 0 / .16);
+  --shadow-near: 0 1px 1px rgb(0 0 0 / .06), 0 6px 14px -6px rgb(0 0 0 / .14); --shadow-far: 0 24px 52px -18px rgb(0 0 0 / .24);
   --l3-shadow: 0 1px 1px rgb(0 0 0 / .05), 0 10px 24px -10px rgb(0 0 0 / .1), 0 34px 80px -26px rgb(0 0 0 / .28);
   --well: rgb(0 0 0 / .05); --well-edge: inset 0 1px 2px rgb(0 0 0 / .1), inset 0 3px 8px -4px rgb(0 0 0 / .08), inset 0 -1px 0 rgb(255 255 255 / .9);
   --card-shadow: 0 1px 1px rgb(0 0 0 / .04), 0 24px 48px -30px rgb(0 0 0 / .28);
@@ -230,6 +234,7 @@
   --ind-fg: #0A0A0A; --ind-shadow: 0 1px 1px rgb(0 0 0 / .06), 0 2px 8px -2px rgb(0 0 0 / .16);
   --ind-a: 1; --ind-body: linear-gradient(180deg, #FFFFFF, #F7F7F7); --ind-filter: drop-shadow(0 1px 1px rgb(0 0 0 / .08)) drop-shadow(0 2px 5px rgb(0 0 0 / .1));
   --hl: rgb(0 0 0 / .04);
+  --glint: rgb(255 255 255 / .95); --glint-rim: rgb(255 255 255 / 1);
   --scrim: rgb(0 0 0 / .2);
   --sel-bg: rgb(0 0 0 / .14);
   --focus: rgb(0 0 0 / .7);
@@ -330,35 +335,46 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 /* ---------- glass: L2 bars and floating controls, L3 sheets and popovers, lite = the same look on a flat surface (C7) ----------
    A clear body that brightens what is behind it, a sheen falling from the light above, and edges that catch
    light at the top and, through the glass, again at the bottom. No grain on glass. */
-.glass, .glass-l3, .glass-lite, .groove, .card { position: relative; }
+.glass, .glass-l3, .groove, .card { position: relative; }
+/* One ceiling light lights the stage and every floating piece (C3): --gx is where it stands across the screen
+   (the stage's --lx, set per page on <html>). The pool on top, the light gathering under it and the brightest
+   stretch of the rim all stand under it, so when the page changes and the stage light moves, the light on the bars
+   glides with it. The bars sit centred on the screen, so 50% + --gx is the light's own place. */
+@property --gx { syntax: "<length>"; inherits: true; initial-value: 0px; }
+.glass, .glass-l3 { --gx: var(--lx, 0px); }
+/* a menu stands at its trigger, not on the screen's axis: its light stays at its own centre */
+:is(.popover, .dd-menu) { --gx: 0px; }
 .glass {
-  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
-    radial-gradient(90% 70% at 50% 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
+  background: radial-gradient(150% 120% at calc(50% + var(--gx)) -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
+    radial-gradient(90% 70% at calc(50% + var(--gx)) 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
   -webkit-backdrop-filter: blur(24px) saturate(170%) brightness(var(--glass-bright)); backdrop-filter: blur(24px) saturate(170%) brightness(var(--glass-bright));
   box-shadow: var(--edge), var(--shadow-near), var(--shadow-far);
 }
 .glass-l3 {
-  background: radial-gradient(150% 60% at 50% -10%, var(--spec), transparent 60%), linear-gradient(180deg, var(--sheen), transparent 40%), linear-gradient(var(--glass-l3), var(--glass-l3));
+  background: radial-gradient(150% 60% at calc(50% + var(--gx)) -10%, var(--spec), transparent 60%), linear-gradient(180deg, var(--sheen), transparent 40%), linear-gradient(var(--glass-l3), var(--glass-l3));
   -webkit-backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright)); backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright));
   box-shadow: var(--edge), var(--l3-shadow);
 }
-/* glass in the shape of a mark (the home cover's YPL, glassCover.js): the .glass recipe cut to the shape in --mk.
-   --glass-filter carries the bend drawn for that shape (Chromium); without it the frost of .glass stands alone. */
-.glass-mark { -webkit-mask: var(--mk) 0 0 / 100% 100% no-repeat; mask: var(--mk) 0 0 / 100% 100% no-repeat;
-  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
-    radial-gradient(90% 70% at 50% 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
-  -webkit-backdrop-filter: var(--glass-filter, blur(24px) saturate(170%) brightness(var(--glass-bright))); backdrop-filter: var(--glass-filter, blur(24px) saturate(170%) brightness(var(--glass-bright))); }
-.glass-lite { background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%), linear-gradient(var(--glass-lite), var(--glass-lite)); box-shadow: var(--edge), var(--lift); }
 .groove { background: var(--well); box-shadow: var(--well-edge); }
-.glass::before, .glass-l3::before, .glass-lite::before, .card::before {
+.glass::before, .glass-l3::before, .card::before {
   content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid));
+  background: radial-gradient(150% 170% at calc(50% + var(--gx, 0px)) 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at calc(50% + var(--gx, 0px)) 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
 }
 .card::before { background: linear-gradient(180deg, var(--rimc-top), var(--rimc-bottom)); }
 .card { background: var(--surface); box-shadow: var(--card-shadow); border-radius: var(--r-card); }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) { .glass, .glass-l3 { background: var(--glass-solid); } }
-@media (prefers-reduced-transparency: reduce) { .glass, .glass-l3, .glass-mark { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } .glass-lite { background: var(--surface-2); } }
+@media (prefers-reduced-transparency: reduce) { .glass, .glass-l3 { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* ---------- glint: glass lights up where it is touched (glint.js) ----------
+   A soft bloom of light rises inside the glass under the finger and the rim catches it nearest the finger, then both
+   go out. It sits under the words and the lens (z-index -1 inside the piece's own stacking context) and over the
+   body, and is moved by transform and opacity only. */
+.glint { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0; }
+.glint > i { position: absolute; left: var(--gx0); top: var(--gy0); width: var(--gd); height: var(--gd); margin: calc(var(--gd) / -2) 0 0 calc(var(--gd) / -2); border-radius: 50%; background: radial-gradient(closest-side, var(--glint), transparent); will-change: transform; }
+.glint > b { position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+  background: radial-gradient(var(--gr) circle at var(--gx0) var(--gy0), var(--glint-rim), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 
 /* ---------- K1 press, K2 pointer highlight ---------- */
 .press { transition: scale 400ms var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }

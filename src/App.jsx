@@ -11,6 +11,7 @@ import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { themeFade, transition } from "./components/common/motion.js";
 import { startRefraction } from "./components/common/refraction.js";
+import { startGlint } from "./components/common/glint.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { signOutAdmin } from "./storage.js";
@@ -158,7 +159,7 @@ export default function App() {
   },[view]);
   useScrollChrome();
   // C2: 떠 있는 유리는 가장자리에서 뒤를 휘게 한다(Chromium). 다른 브라우저는 CSS의 서리 유리 그대로.
-  useEffect(()=>{ startRefraction(); },[]);
+  useEffect(()=>{ startRefraction(); startGlint(); },[]);
   useEffect(()=>{
     initHistory();
     const onPopState=()=>{
