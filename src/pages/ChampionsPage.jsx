@@ -60,12 +60,11 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
     </PageHead>
 
     {!reigning && <Empty title="등록된 챔피언이 없습니다." desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
-    {/* 현 챔피언: 홈 표지와 같은 무대. 동판의 글처럼 세대, 이름, 시즌을 새기고, 우승 파티가 받침 없이 천장 빛 아래 바닥에 선다. */}
+    {/* 현 챔피언: 홈 표지와 같은 무대. 홈의 명판처럼 이름을 새기고 그 아래 한 줄에 세대와 시즌을 둔 뒤, 우승 파티가 받침 없이 천장 빛 아래 바닥에 선다. */}
     {reigning && <section className="hof-stage" aria-labelledby="hof-reigning">
       <div className="hof-stage-who">
-        <span className="hof-eyebrow">{genLabel(reigning)}</span>
         <h2 className="hofs-name" id="hof-reigning">{reigning.name}</h2>
-        <span className="callout">{seasonLabel(reigning)} 우승</span>
+        <span className="callout">{genLabel(reigning)}, {seasonLabel(reigning)} 우승</span>
       </div>
       <PartyStage label="우승 엔트리" members={reigningTeam}>{plate(reigningTeam)}</PartyStage>
       <button className="ypl-btn ypl-btn--primary press hl" onClick={e => setPop({ c: reigning, from: e.currentTarget.closest(".hof-stage").querySelector(".hofs-name") })}>
@@ -101,7 +100,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       {admin && <div className="hof-admin">
         {past.filter(c => c.kind !== "normalized").map(c => (
           <button key={"e" + c.id} className="ypl-btn ypl-btn--tonal ypl-btn--sm press" onClick={() => setModal({ type: "champion", item: c })}>
-            <Icon n="edit" size={16} />{c.name} 수정
+            {c.name} 수정
           </button>
         ))}
       </div>}
@@ -110,9 +109,8 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
     {/* 엔트리 시트: 같은 동판과 같은 무대. 파티는 가운데부터 차례로 선다. */}
     {pop && (() => { const c = pop.c, team = partyOf(c); return <Modal label={`${c.name} 우승 엔트리`} className="hof-modal" onClose={() => setPop(null)} fly={{ from: pop.from, selector: ".hofm-nm" }}>
       <div className="hofm-top">
-        <span className="hof-eyebrow">{genLabel(c)}</span>
         <div className="hofm-nm">{c.name}</div>
-        <div className="hofm-gen">{seasonLabel(c)} 우승 엔트리</div>
+        <div className="hofm-gen">{genLabel(c)}, {seasonLabel(c)} 우승</div>
       </div>
       {team.length > 0 && <PartyStage label="우승 엔트리" members={team} enter>{plate(team)}</PartyStage>}
       <div className="modal-actions"><button className="ypl-btn ypl-btn--glass press" onClick={() => setPop(null)}>닫기</button>{go && <button className="ypl-btn ypl-btn--primary press" onClick={() => { setPop(null); go("records", { trainer: c.name }); }}>{c.name} 기록 보기</button>}</div>

@@ -11,20 +11,10 @@ export function arrive(els, start, step) {
   ));
 }
 
-/* 포켓몬을 누르면(데스크톱은 올리면) 제자리에서 한 번 뛴다. 그림자는 떠 있는 동안 작고 옅어진다. */
-function hop(e) {
-  const mon = e.currentTarget, body = mon.firstElementChild, shadow = mon.querySelector(".hx-contact");
-  if (!body || reduced() || body.getAnimations().length) return;
-  body.animate([
-    { transform: "none", easing: "cubic-bezier(.2,.75,.35,1)" },
-    { transform: "translateY(-18px)", offset: .4, easing: "cubic-bezier(.55,0,.85,.4)" },
-    { transform: "translateY(0) scale(1.05, .94)", offset: .74, easing: EASE_OUT },
-    { transform: "none" },
-  ], { duration: 620 });
-  shadow?.animate([{ transform: "none" }, { transform: "scale(.66)", opacity: .45, offset: .4 }, { transform: "none", offset: .74 }, { transform: "none" }], { duration: 620 });
-}
+/* 홈 전당과 같은 V: 가운데 둘이 가장 크고(1) 바깥으로 .84, .7, 작은 쪽이 더 뒤에 더 높이 선다 (HomePage sizeAt). */
+const sizeAt = (i, n) => { const d = Math.abs(i - (n - 1) / 2); return d < 1 ? 1 : d < 2 ? .84 : .7; };
 
-/* 무대 위의 우승 파티: 상자 없이, 천장 빛이 떨어지는 바닥에 서 있다. 폰은 앞뒤 두 줄, 넓은 화면은 가운데가 가까운 한 줄.
+/* 무대 위의 우승 파티: 상자 없이, 천장 빛이 떨어지는 바닥에 홈과 같은 V로 서 있다. 움직이는 것은 빛뿐이라, 올린 포켓몬 말고는 한 걸음 어두워진다.
    members 는 [{ name, img, fallback? }], children 은 사진 설명 자리. enter 면 처음 그려질 때 가운데부터 차례로 선다. */
 export default function PartyStage({ members, label, enter = false, children }) {
   const list = members.slice(0, 6);
@@ -37,12 +27,11 @@ export default function PartyStage({ members, label, enter = false, children }) 
     const mid = (mons.length - 1) / 2;
     arrive(mons.slice().sort((a, b) => Math.abs(+a.dataset.i - mid) - Math.abs(+b.dataset.i - mid)), 420, 60);
   }, [enter, list.length]);
-  const mid = (list.length - 1) / 2;
   return (
     <figure className="hx-party" ref={ref}>
       <ol className="hx-floor" aria-label={label}>
         {list.map((m, i) => (
-          <li key={i} className={"hx-mon" + (i >= 3 ? " back" : "")} data-i={i} style={{ "--d": Math.abs(i - mid) }} onPointerEnter={e => e.pointerType === "mouse" && hop(e)} onPointerDown={hop}>
+          <li key={i} className="hx-mon" data-i={i} style={{ "--s": sizeAt(i, list.length) }}>
             <span className="hx-mon-body">
               {m.img ? <img src={m.img} alt={m.name} decoding="async" fetchpriority={i < 3 ? "high" : undefined} onError={onSpriteError(m.fallback)} />
                 : <span className="hx-mon-name">{m.name}</span>}

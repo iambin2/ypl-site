@@ -110,7 +110,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         </header>
         {a.body&&<Reveal className="nb-body card"><Prose text={a.body}/></Reveal>}
         {(a.link||a.link2||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
-          {hasForm&&<button className="ann-apply ypl-btn ypl-btn--primary press hl" onClick={()=>setFill(a.id)}><Icon n="form" size={18}/>{a.form.buttonLabel||"참가 신청하기"}</button>}
+          {hasForm&&<button className="ann-apply ypl-btn ypl-btn--primary press hl" onClick={()=>setFill(a.id)}>{a.form.buttonLabel||"참가 신청하기"}</button>}
           {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</button>}
           {championshipSubmission?.isChampionship&&<>
             <button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</button>

@@ -27,10 +27,13 @@ colors:
     rank: ["#000000", "#3D3D3D", "#5E5E5E", "#6B6B6B"]
 typography:
   family: "SUIT Variable (source public/fonts/SUIT-Variable.woff2, served as unicode-range slices in public/fonts/suit/ by scripts/build-suit-slices.py) for all text; YPL Figures (public/fonts/ypl-figures.woff2) for big figures"
-  scale: { display: "40-64px / 800 (--display), home steps one golden ratio apart: the drawn name at display x1.618, figures display x2.618", title: "28-36px / 800", sizes: "12 13 15 16 17 20 24 28", weights: "400 text, 700 labels and rows, 800 titles and names" }
+  scale: { display: "40-64px / 800 (--display), home steps one golden ratio apart: the drawn name at display x1.618, figures display x2.618", title: "28-36px / 800", sizes: "12 13 15 16 17 20 24 28", weights: "400 text, 600 rows labels buttons chips, 700 headlines 20px and up, 800 titles names and figures" }
+  tracking: "0 up to 18px, -.015em at 20, -.02em at 24-28, -.03em title, -.04em display, 0 for YPL Figures"
+  leading: [1, 1.06, 1.15, 1.25, 1.35, 1.45, 1.55, 1.8]
+  figures: "YPL Figures on three steps: --fig-s 28, --fig-m 48, --fig-l 72"
   numbers: "tabular-nums everywhere a number can change"
 spacing: [4, 8, 12, 16, 20, 24, 40, 56, 80, 120]
-radius: { hero: 36, card: 32, tile: 12, controls: pill }
+radius: { hero: 36, card: 32, row: 24, field: 20, tile: 12, controls: pill }
 motion:
   spring-snappy: "3.1% overshoot, 400ms natural length"
   spring-soft: "1.1% overshoot, 670ms natural length"
@@ -53,9 +56,9 @@ Fluid, light, playful in the hand, serious on the page (seven parts serious to t
 Every screen is checked against these five and nothing else; the sections below are their detail.
 
 1. Space shrinks with nearness: 4 label and value, 8 inside an element, 12 (16 desktop) one set of cards, 16 a control to the content it drives, 24 page title to content, 40 (56 desktop) between sections.
-2. A list row has one shape: the title first (16px, 700), one grey line under it (13px), a trailing value on the right. Nothing small sits above a title.
+2. A list row has one shape: the title first (16px, 600), one grey line under it (13px), a trailing value on the right. Nothing small sits above a title.
 3. Buttons are words. An icon only says what the words cannot: leaving the site (↗), creating (+), the next step in a flow (→).
-4. Numbers of 24px and up are YPL Figures with a small unit beside them (30점, 8팀, 6대).
+4. Scoreboard numbers (days left, ranks, points, generations, counts) are YPL Figures at 28px and up with a small unit beside them (30점, 8팀, 6대); every other number is SUIT.
 5. Bars and content keep the same distance top and bottom: 20px from a floating bar, plus the safe area.
 
 ## Color (B1–B5)
@@ -80,7 +83,7 @@ Every screen is checked against these five and nothing else; the sections below 
 
 ## Type (E1–E6)
 
-SUIT for every word, hierarchy by size and weight (sizes 12, 13, 15, 16, 17, 20, 24, 28, then title and display; weights 400, 700, 800). Big figures, 24px and up (days left, round numbers, lead scores, ranks), are set in YPL Figures: digits drawn in the wordmark's construction (stems 28, bars 24, radius 18, slanted 12 degrees, cut by the band at 56-64), a real 720-byte web font built by `scripts/build-figures.py`; the 1 has a base so it never reads as a 7. Small numbers in tables and dates stay SUIT. Titles are large, space is the hero. English appears only in the brand. No small uppercase label sits above a title. The YPL wordmark is drawn (wordmark B "띠"), never typeset; on the top bar it is 14px tall beside a 28px Wing Y, 8px apart. The league's full name can be drawn the same way (`src/components/home/brandTitle.js`, no longer on the home): the wordmark's own Y, P and L and ten more letters in its construction, the diagonals of K and M taking the Y's arms; letters 8 apart, lines one outer bar (24) apart. Korean copy uses plain prose, no middle dots. Copy wraps only at its container's edge (2026-10-16): no `ch` or `em` measure caps a line that fits, so a short caption never breaks early in a wide card; only a one-line name cut with an ellipsis may cap its width. Page titles are the plain name (공지, 기록, 대진표) with a description only when it adds something.
+SUIT for every word, hierarchy by size and weight (sizes 12, 13, 15, 16, 17, 20, 24, 28, then title and display). Four weights, each with one job (15th round): 400 text; 600 row titles, labels, buttons, chips and table values; 700 only for headlines of 20px and up; 800 titles, names and figures. Tracking follows size on one curve: none up to 18px (small Korean is cleanest at 0), -.015em at 20, -.02em at 24-28, -.03em the title step, -.04em display; headings inherit no tracking. Line heights come from one set: 1, 1.06, 1.15, 1.25, 1.35, 1.45, 1.55, 1.8 (the article body). Scoreboard figures (days left, ranks, points, generations, counts) are set in YPL Figures on three steps, `--fig-s` 28, `--fig-m` 48, `--fig-l` 72; a list's step numbers are not figures and stand in the title's own type: digits drawn in the wordmark's construction (stems 28, bars 24, radius 18, slanted 12 degrees, cut by the band at 56-64), a real 720-byte web font built by `scripts/build-figures.py`; the 1 has a base so it never reads as a 7. Small numbers in tables and dates stay SUIT. Titles are large, space is the hero. English appears only in the brand. No small uppercase label sits above a title. The YPL wordmark is drawn (wordmark B "띠"), never typeset; on the top bar it is 14px tall beside a 28px Wing Y, 8px apart. The league's full name can be drawn the same way (`src/components/home/brandTitle.js`, no longer on the home): the wordmark's own Y, P and L and ten more letters in its construction, the diagonals of K and M taking the Y's arms; letters 8 apart, lines one outer bar (24) apart. Korean copy uses plain prose, no middle dots. Copy wraps only at its container's edge (2026-10-16): no `ch` or `em` measure caps a line that fits, so a short caption never breaks early in a wide card; only a one-line name cut with an ellipsis may cap its width. Page titles are the plain name (공지, 기록, 대진표) with a description only when it adds something.
 
 ## Logo (F1–F3)
 
@@ -88,7 +91,7 @@ Wing Y (`public/brand/ypl-wing-y.svg`, replaced 2026-10-12): two wings meeting i
 
 ## Space and radius
 
-4px grid on one scale (`--s1` to `--s14`), nearer means smaller: 4 label and value and a title and its meta line, 8 inside an element, between side-by-side controls and a hint under its field, 12 items of one set (`--grid-gap`, 16 desktop) and a "show all" under its list, 16 blocks inside a card, section title to content and a control (tabs, a segmented switch) to the content it drives, 20 card padding at every width (hero 24; list surfaces 8 so their rows keep radius 24) and between a form's fields, 24 page title to first content and a sheet's title to its body, 40 between sections (56 desktop), 80 between chapters (120 desktop). Gutters 16 phone, 32 desktop; bars share the content width. Inner radius equals outer radius minus padding: hero 36, card 32 (padding 20) holding 12px tiles; controls are pills. Every label sits at the exact centre of its control.
+4px grid on one scale (`--s1` to `--s14`), nearer means smaller: 4 label and value and a title and its meta line, 8 inside an element, between side-by-side controls and a hint under its field, 12 items of one set (`--grid-gap`, 16 desktop) and a "show all" under its list, 16 blocks inside a card, section title to content and a control (tabs, a segmented switch) to the content it drives, 20 card padding at every width (hero 24; list surfaces 8 so their rows keep radius 24) and between a form's fields, 24 page title to first content and a sheet's title to its body, 40 between sections (56 desktop), 80 between chapters (120 desktop). Gutters 16 phone, 32 desktop; bars share the content width. Inner radius equals outer radius minus padding: hero 36, card 32 (padding 20) holding 12px tiles; controls are pills. Every corner is named (`--r-hero` 36, `--r-card` 32, `--r-row` 24, `--r-field` 20, `--r-tile` 12, `--r-pill`): a row in a list takes the row radius, a tile in a card the tile radius, nothing in between. Every label sits at the exact centre of its control.
 
 ## Alignment (2026-10-16)
 
@@ -125,7 +128,7 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 ## Components
 
 - Buttons (M11): primary inverse fill, secondary lite glass, tertiary text; 48px (40px small). Words only; an icon only for leaving the site, creating, or the next step in a flow (rule 3).
-- Chips (M10): 28px lite glass pills; the dot appears only while something is live.
+- Chips (M10): one 28px lite glass pill (13px, 600) for every label, tag and status; inverted only for a decided winner and an applied search filter; the dot appears only while something is live. A count is a 24px flat pill (`.fold-badge`, `.tb-count-badge`), never glass inside glass.
 - Segmented (K3): groove track, raised lens; scrolls sideways without a bar when the labels do not fit, the groove stays put.
 - Fields (M7): groove pills; textareas round at 20px. Focus is a 2px achromatic ring, keyboard only (K7).
 - Dropdowns and menus (M6): desktop popover that grows from its trigger; phone sheet.
@@ -143,7 +146,7 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 - Notices and board: list card with the same row (rule 2): the title first, a pinned or admin-only label in front of it, then one line of date and excerpt (notices) or name and time (posts); a notice or post opens on its own screen at the full content width, its body in one opaque reading card (17px phone, 18px desktop). A run of three or more short lists in the body (team sheets) lays out as tiles side by side. A post's comments sit in a second card below.
 - Records: trainers and Pokémon are lists that open a sheet (trainer results stand in three equal columns); rankings open on the current season with one control (season, cumulative, past records), then a hero card, two rank cards and the table.
 - Brackets: opaque match cards on the stage, lines lit as winners are decided and drawn once, the champion's road brightest, the champion cell inverted.
-- Hall of fame: an inscription (generation, name, season) over the party standing on the lit floor (`PartyStage`), with the party's names in one quiet line under it like a museum label. Earlier champions hang as plaques on a wall (one, two or three columns), each with its party on a small floor of contact shadows; a plaque opens a sheet with the same inscription and the same stage. The stage's ceiling light is an ellipse that touches its box on every side, so it never shows an edge.
+- Hall of fame: the home plaque's inscription (the name, then one line of generation and season, never a label above the name) over the party standing on the lit floor (`PartyStage`) in the home hall's V at every width, still, with only the light answering the pointer, and the party's names in one quiet line under it like a museum label. Earlier champions hang as plaques on a wall (one, two or three columns), each with its party on a small floor of contact shadows; a plaque opens a sheet with the same inscription and the same stage. The stage's ceiling light is an ellipse that touches its box on every side, so it never shows an edge.
 - Team builder: three steps on a phone (규정, 포켓몬 선택, 팀 구성), one screen on desktop; same state either way. The team saves as one PNG sheet in the current theme (every field of the editor) and posts straight to the board.
 - Board tabs 자유, 샘플, 파티: a party is a tile with its sprites on the pod; a post shows the team sheet as opaque cards and opens in the builder. Brackets tabs 공식, 사설: a private bracket uses the official board with an inverted "사설" chip and a sentence that it never reaches records; its images say so too.
 - About: an ordinary document whose sections rise once.

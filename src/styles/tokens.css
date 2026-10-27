@@ -149,7 +149,10 @@
   --section: var(--s10); --chapter: 80px; --gutter: 16px;
   /* the title size (40-64px) and the home's two steps above it, one golden ratio apart: the league's name on the cover, then the big figures */
   --display: clamp(2.5rem, 2rem + 2.4vw, 4rem); --display-l: calc(var(--display) * 1.618); --display-xl: calc(var(--display) * 2.618);
-  --r-hero: 36px; --r-card: 32px; --r-tile: 12px;
+  /* big figures, YPL Figures only: 28 beside a title, 48 a figure of its own, 72 the poster */
+  --fig-s: 1.75rem; --fig-m: 3rem; --fig-l: 4.5rem;
+  /* radius law: inner = outer - padding; a list row keeps 24 inside its 8px list surface, a textarea rounds at 20 */
+  --r-hero: 36px; --r-card: 32px; --r-row: 24px; --r-field: 20px; --r-tile: 12px; --r-pill: 999px;
 
   --stage: #0A0A0A; --stage-sunk: #050505;
   --surface: #161616; --surface-2: #1F1F1F; --surface-3: #2B2B2B;
@@ -197,6 +200,7 @@
   --dur-instant: 100ms; --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 420ms; --dur-stage: 700ms;
   --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-in: cubic-bezier(.5, 0, .75, 0); --ease-in-out: cubic-bezier(.65, 0, .35, 1);
   /* H1/H2 springs, 3.1% and 1.1% overshoot, natural length 400ms and 670ms */
+  --dur-snappy: 400ms; --dur-soft: 670ms;
   --spring-snappy: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
   --spring-soft: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
   --rise: translateY(16px); --reveal-blur: blur(8px);
@@ -240,37 +244,12 @@
 @media (min-width: 860px) { :root { --section: var(--s14); --chapter: 120px; --gutter: 32px; } }
 @media (prefers-reduced-motion: reduce) { :root { --rise: none; --reveal-blur: none; } }
 
-/* ---------- names the page styles were written against, now pointing at the glass system ---------- */
+/* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
 :root {
-  --font-sans: var(--font); --font-latin: var(--font);
-  --bg: var(--stage); --bg-sunk: var(--stage-sunk);
-  --ink: var(--fg); --text-2: var(--fg-2); --text-3: var(--fg-3);
-  --fill: var(--tint); --fill-2: var(--tint-soft);
-  --glass-hover: var(--tint-strong); --glass-lit: var(--surface-2);
-  --primary: var(--accent); --on-primary: var(--on-accent);
-  --shadow-glass: var(--card-rim), var(--card-shadow);
-  --shadow-primary: var(--accent-shadow); --shadow-thumb: var(--ind-shadow);
-  --shadow-pop: var(--l3-shadow); --shadow-float: var(--l3-shadow);
-  --silver: var(--fg);
-  /* B4: no status hue; state reads through weight, brightness and inversion */
-  --live: var(--fg); --ok: var(--fg); --warn: var(--fg-2); --danger: var(--fg);
-  --pod-face: var(--surface-2); --pod-floor: var(--tint);
-
-  --radius-sm: 12px; --radius-md: 16px; --radius-lg: 24px; --radius-xl: 32px; --radius-2xl: 36px; --radius-pill: 999px;
-  --rc-xs: 999px; --rc-sm: 999px; --rc-md: 999px; --rc-lg: 999px; --rc-track: 999px;
-  --corner: round;
-
-  --container: 1200px; --margin: var(--gutter); --grid-gap: 12px; --gutter-desktop: 16px;
-  --nav-height: 80px; --target: 44px; --row-min: 56px; --match-card: 98px;
-  --hair: 1px; --stroke-hairline: 1px; --stroke-connector: 1.5px; --stroke-icon: 2px; --stroke-focus: 2px;
-  --opacity-disabled: .4; --opacity-dim: .45; --opacity-watermark: .3;
-  --z-content: 0; --z-sticky: 10; --z-popover: 45; --z-modal: 50; --z-toast: 30;
-  --section-gap: var(--section);
-
-  --duration-press: 90ms; --duration-fade: var(--dur-fast); --duration-snappy: 400ms; --duration-smooth: 670ms;
-  --duration-gentle: 700ms; --duration-exit: 240ms; --duration-exit-gentle: 320ms; --duration-pulse: 1800ms;
-  --ease-spring: var(--spring-soft); --ease-snappy: var(--spring-snappy); --ease-fade: var(--ease-out);
-  --stagger-row: 40ms; --stagger-tile: 60ms;
+  --grid-gap: 12px; --nav-height: 80px; --target: 44px; --row-min: 56px; --match-card: 98px;
+  --hair: 1px; --stroke-connector: 1.5px;
+  --opacity-disabled: .4; --opacity-dim: .45;
+  --z-popover: 45; --z-modal: 50; --z-toast: 30;
 }
 @media (min-width: 860px) { :root { --nav-height: 88px; --grid-gap: 16px; } }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
@@ -288,13 +267,13 @@ html {
 }
 body {
   margin: 0; background: var(--stage); color: var(--fg);
-  font: 400 1rem/1.6 var(--font);
+  font: 400 1rem/1.55 var(--font);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   word-break: keep-all; overflow-wrap: break-word; overflow-x: clip;
 }
 ::selection { background: var(--sel-bg); }
 h1, h2, h3, h4, h5, p { margin: 0; }
-h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; text-wrap: balance; }
+h1, h2, h3, h4 { font-weight: 800; line-height: 1.25; text-wrap: balance; }
 p { text-wrap: pretty; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
@@ -302,7 +281,7 @@ button { font: inherit; color: inherit; letter-spacing: inherit; background: non
 button:not(:disabled) { cursor: pointer; }
 input, textarea, select { font: inherit; letter-spacing: inherit; color: inherit; }
 table { border-collapse: collapse; }
-b, strong { font-weight: 700; }
+b, strong { font-weight: 600; }
 small { font-size: inherit; }
 i, em { font-style: normal; }
 iframe { border: 0; }
@@ -317,12 +296,12 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 [data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(1); }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--tint-strong); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: var(--tint-strong); border-radius: var(--r-pill); border: 3px solid transparent; background-clip: padding-box; }
 
 .tnum, .num { font-variant-numeric: tabular-nums; }
 .ic { flex: none; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.sq { border-radius: var(--r, var(--radius-lg)); }
+.sq { border-radius: var(--r, var(--r-row)); }
 .silver, .silver-live { color: inherit; }
 
 /* ---------- type: one scale, three weights ----------
@@ -333,9 +312,9 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .headline { font-size: 1.25rem; line-height: 1.35; font-weight: 700; letter-spacing: -.015em; }
 .callout { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .caption, .meta { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
-.fig { font-size: 1.25rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-:is(.fig, .rc-poster-num, .rc-rankcard-n, .ab-flow-n) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
-.unit { font-size: .75rem; font-weight: 700; line-height: 1.2; color: var(--fg-3); margin-left: var(--s1); }
+.fig { font-size: var(--fig-s); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+:is(.fig, .rc-poster-num, .bk-draw-cnt) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
+.unit { font-size: .75rem; font-weight: 600; line-height: 1.25; color: var(--fg-3); margin-left: var(--s1); }
 
 /* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ---------- */
 .stage { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--stage); --la: var(--la-open); --lb: var(--lb-open); transition: --la 1.4s var(--ease-in-out), --lb 1.4s var(--ease-in-out); }

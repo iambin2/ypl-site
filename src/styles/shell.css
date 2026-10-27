@@ -8,21 +8,21 @@
 
 .skip-link {
   position: fixed; top: 10px; left: 10px; z-index: 500; clip-path: inset(50%); opacity: 0;
-  display: inline-flex; align-items: center; height: 44px; padding: 0 var(--s5); border-radius: 999px;
-  background: var(--accent); color: var(--on-accent); font-size: .9375rem; font-weight: 700;
+  display: inline-flex; align-items: center; height: 44px; padding: 0 var(--s5); border-radius: var(--r-pill);
+  background: var(--accent); color: var(--on-accent); font-size: .9375rem; font-weight: 600;
 }
 .skip-link:focus { clip-path: none; opacity: 1; }
 
 /* ---------- top bar (G3, G4, J3) ---------- */
 .topbar {
   position: fixed; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + var(--s3)); left: 0; right: 0; margin-inline: auto;
-  width: min(100% - var(--gutter) * 2, 1200px); height: 56px; padding: 0 6px; border-radius: 999px;
+  width: min(100% - var(--gutter) * 2, 1200px); height: 56px; padding: 0 6px; border-radius: var(--r-pill);
   display: flex; align-items: center; gap: var(--s2);
   box-shadow: var(--edge), var(--lift); transition: translate 460ms var(--spring-snappy), box-shadow var(--dur-base) var(--ease-out);
 }
 .topbar.scrolled { box-shadow: var(--edge), var(--shadow-near), var(--shadow-far); }
 .topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)); transition: translate 240ms var(--ease-in), box-shadow var(--dur-base) var(--ease-out); }
-.brand { position: relative; display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s3) 0 var(--s2); border-radius: 999px; flex: none; }
+.brand { position: relative; display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s3) 0 var(--s2); border-radius: var(--r-pill); flex: none; }
 /* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
 .brand-logo { display: flex; }
 .brand .logo { display: block; width: 47px; height: 28px; translate: 0 1px; }
@@ -37,11 +37,11 @@
 /* ---------- tab bar (G1, G2, K3) ---------- */
 .tabbar {
   position: fixed; z-index: 20; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto;
-  width: min(100% - var(--gutter) * 2, 440px); height: 64px; padding: var(--s1); border-radius: 999px;
+  width: min(100% - var(--gutter) * 2, 440px); height: 64px; padding: var(--s1); border-radius: var(--r-pill);
   display: grid; grid-template-columns: repeat(5, 1fr); transition: translate 460ms var(--spring-snappy);
 }
 .tabbar.hide { translate: 0 calc(100% + var(--s6) + env(safe-area-inset-bottom, 0px)); transition: translate 240ms var(--ease-in); }
-.tab { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); border-radius: 999px; color: var(--fg-2); font-size: .75rem; line-height: 1; font-weight: 700; }
+.tab { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); border-radius: var(--r-pill); color: var(--fg-2); font-size: .75rem; line-height: 1; font-weight: 600; }
 .tab .ics { display: grid; }
 .tab .ics > * { grid-area: 1 / 1; transition: opacity var(--dur-fast) var(--ease-out); }
 .tab .ic-on { opacity: 0; }
@@ -60,8 +60,8 @@
 @media (min-width: 860px) {
   .tabbar { display: none; }
   .topbar { top: var(--s4); }
-  .navlinks { position: relative; display: flex; margin-inline: auto; padding: var(--s1); border-radius: 999px; }
-  .navlink { position: relative; z-index: 3; display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 var(--s5); border-radius: 999px; font-size: .9375rem; line-height: 1; font-weight: 700; color: var(--fg-2); transition: color var(--dur-fast) var(--ease-out), scale 400ms var(--spring-snappy); }
+  .navlinks { position: relative; display: flex; margin-inline: auto; padding: var(--s1); border-radius: var(--r-pill); }
+  .navlink { position: relative; z-index: 3; display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 var(--s5); border-radius: var(--r-pill); font-size: .9375rem; line-height: 1; font-weight: 600; color: var(--fg-2); transition: color var(--dur-fast) var(--ease-out), scale 400ms var(--spring-snappy); }
   .navlink:is([aria-current="page"], [data-current]) { color: var(--ind-fg); }
   .navlink[aria-expanded="true"] { color: var(--fg); }
   @media (hover: hover) { .navlink:not([aria-current="page"]):hover { color: var(--fg); } }
@@ -112,14 +112,14 @@
 /* ---------- admin dock (O2): floating glass, above the tab bar on a phone ---------- */
 .admin-dock {
   position: fixed; z-index: 19; left: 0; right: 0; margin-inline: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
-  width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 48px; padding: 0 6px 0 var(--s5); border-radius: 999px;
+  width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 48px; padding: 0 6px 0 var(--s5); border-radius: var(--r-pill);
   display: flex; align-items: center; gap: var(--s2); font-size: .8125rem; line-height: 1; white-space: nowrap;
   transition: translate 460ms var(--spring-snappy);
 }
 .admin-dock.hide { translate: 0 calc(100% + 88px + env(safe-area-inset-bottom, 0px)); transition: translate 240ms var(--ease-in); }
-.admin-dock b { font-weight: 700; }
+.admin-dock b { font-weight: 600; }
 .admin-dock-note { color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; }
-.admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 36px; margin-left: var(--s2); padding: 0 var(--s3); border-radius: 999px; background: var(--tint); font-weight: 700; }
+.admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 36px; margin-left: var(--s2); padding: 0 var(--s3); border-radius: var(--r-pill); background: var(--tint); font-weight: 600; }
 @media (max-width: 639px) { .admin-dock-note { display: none; } }
 @media (min-width: 860px) { .admin-dock { bottom: var(--s6); } .admin-dock.hide { translate: none; } }
 
@@ -131,5 +131,5 @@
 .site-foot-mark .brand { margin-left: calc(var(--s2) * -1); color: var(--fg); }
 .site-foot-tag { font-size: .9375rem; color: var(--fg-2); }
 .site-foot-dc { margin-left: auto; }
-.site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: .75rem; line-height: 1.6; }
+.site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: .75rem; line-height: 1.55; }
 @media (max-width: 639px) { .site-foot-dc { margin-left: 0; } .site-foot-tag { flex-basis: 100%; } }

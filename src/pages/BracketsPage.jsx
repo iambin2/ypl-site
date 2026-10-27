@@ -518,7 +518,7 @@ function BracketWizard({ data, onClose, onCreate }){
   };
   return (<div className="bk-create">
     <div className="bk-head">
-      <button className="btn btn-ghost btn-sm" onClick={onClose}><Icon n="back" size={14}/>목록</button>
+      <button className="btn btn-ghost btn-sm" onClick={onClose}>목록</button>
       <h2>새 대진표</h2>
     </div>
     <div className="bk-stepper">
@@ -549,11 +549,11 @@ function BracketWizard({ data, onClose, onCreate }){
             {value:"__manual__",label:"연결하지 않고 새로 만들기"}
           ]}
         />
-        {eventError&&<div className="bk-hint" style={{color:"var(--danger)"}}>{eventError}</div>}
+        {eventError&&<div className="bk-hint" style={{color:"var(--fg)"}}>{eventError}</div>}
         {eventId&&!eventBusy&&
           <div className="bk-hint">
             공지에 설정된 대회 정보와 신청자 {eventRegs.length}명의 명단을 사용합니다.
-            {mode!=="team"&&submissionStatusError&&<span style={{display:"block",color:"var(--danger)",marginTop:4}}>파티 제출 상태: {submissionStatusError}</span>}
+            {mode!=="team"&&submissionStatusError&&<span style={{display:"block",color:"var(--fg)",marginTop:4}}>파티 제출 상태: {submissionStatusError}</span>}
           </div>
         }
       </div>
@@ -610,7 +610,7 @@ function BracketWizard({ data, onClose, onCreate }){
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
           <label>본선 직행자 선택</label>
           <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.</div>
-          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight:700}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
+          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
         </div>}
         <div className="field">
           <label>참가자 확정</label>
@@ -714,7 +714,7 @@ function BracketWizard({ data, onClose, onCreate }){
             <button type="button" className="btn btn-primary btn-sm" disabled={!championshipManualPlayerId||championshipManualBusy} onClick={addChampionshipManualParticipant}>추가</button>
           </div>
         </div>}
-        {linkedEvent?.championship_phase==="qualifier"&&(()=>{const capacity=Number(linkedEvent?.competition_settings?.championship?.finalCapacity)||0;const actual=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;const target=capacity-directRegistrationIds.length;const eliminated=actual-target;return <div className="bk-hint" style={{marginTop:8}}>본선 정원은 {capacity}명이고 본선 직행은 {directRegistrationIds.length}명입니다. 선발전에는 {actual}명이 참가해 {target}명이 통과하므로 {Math.max(0,eliminated)}명이 탈락해야 합니다.{actual<target&&<span style={{color:"var(--danger)"}}> 참가 인원이 부족해 본선 정원을 채울 수 없습니다.</span>}</div>;})()}
+        {linkedEvent?.championship_phase==="qualifier"&&(()=>{const capacity=Number(linkedEvent?.competition_settings?.championship?.finalCapacity)||0;const actual=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;const target=capacity-directRegistrationIds.length;const eliminated=actual-target;return <div className="bk-hint" style={{marginTop:8}}>본선 정원은 {capacity}명이고 본선 직행은 {directRegistrationIds.length}명입니다. 선발전에는 {actual}명이 참가해 {target}명이 통과하므로 {Math.max(0,eliminated)}명이 탈락해야 합니다.{actual<target&&<span style={{color:"var(--fg)"}}> 참가 인원이 부족해 본선 정원을 채울 수 없습니다.</span>}</div>;})()}
       </> : <>
         {eventId&&mode==="team"&&<div className="field">
           <label>신청자 / 팀 지망</label>
@@ -769,7 +769,7 @@ function BracketWizard({ data, onClose, onCreate }){
       </>}
 
       <div className="modal-actions">
-        <button className="btn btn-ghost" onClick={()=>setStep(1)}><Icon n="back" size={14}/>이전</button>
+        <button className="btn btn-ghost" onClick={()=>setStep(1)}>이전</button>
         <button className="btn btn-primary" onClick={go} disabled={creating}>{creating?"생성 중…":"대진표 생성"}</button>
       </div>
     </>}
@@ -1108,8 +1108,8 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       {/* 날짜와 참가 수는 바로 위 대회 머리에 있다. 여기에는 결과만 한 번. */}
       {(res.ru||(res.sf&&res.sf.length>0))&&<Facts items={[...(res.ru?[["준우승",nameOf(res.ru)]]:[]),...(res.sf&&res.sf.length?[["4강",res.sf.map(nameOf).join(", ")]]:[])]}/>}
       <div className="bk-cb-actions">
-        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}><Icon n="image" size={15}/>우승 이미지</button>
-        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}><Icon n="image" size={15}/>대진표 이미지</button>
+        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</button>
+        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</button>
         {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
         {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={undoApplied}>반영 취소</button>}</>}
       </div>
@@ -1432,7 +1432,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     {identityPreviewBusy
       ? <div className="bk-hint">선수 정보를 확인하는 중입니다.</div>
       : identityPreviewError
-        ? <div className="bk-hint" style={{color:"var(--danger)"}}>{identityPreviewError}</div>
+        ? <div className="bk-hint" style={{color:"var(--fg)"}}>{identityPreviewError}</div>
         : <div className="bk-chg">
             {identityPreview.map(row=>(
               <div className="bk-chg-row" key={row.participantId}>
@@ -1468,7 +1468,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹과 시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
       {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{recordSeason}」에도 동일한 점수와 성적이 반영됩니다.</div>}
       <div className="modal-actions">
-  <button className="btn btn-ghost" onClick={()=>setPreview(null)} disabled={applying}><Icon n="back" size={14}/>뒤로</button>
+  <button className="btn btn-ghost" onClick={()=>setPreview(null)} disabled={applying}>뒤로</button>
   <button
     className="btn btn-primary"
     onClick={commit}
@@ -1513,7 +1513,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         }
 
         {linkedContextError&&
-          <div className="bk-hint" style={{color:"var(--danger)"}}>{linkedContextError}</div>
+          <div className="bk-hint" style={{color:"var(--fg)"}}>{linkedContextError}</div>
         }
 
         {!linkedContextBusy&&!linkedContextError&&<>

@@ -23,7 +23,7 @@ export function LoginModal({ onClose, onSuccess }) {
   return (<Modal title="관리자 로그인" hint="운영진 전용입니다. 관리자 계정으로 로그인해 주세요." onClose={onClose}>
     <div className="field"><label>아이디</label><input autoComplete="username" autoCapitalize="none" value={id} onChange={e=>setId(e.target.value)}/></div>
     <div className="field"><label>비밀번호</label><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
-    {err&&<div className="bk-hint" style={{color:"var(--danger)",marginTop:-12}}>{err}</div>}
+    {err&&<div className="bk-hint" style={{color:"var(--fg)",marginTop:-12}}>{err}</div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit} disabled={busy}>{busy?"확인 중":"로그인"}</button></div>
   </Modal>);
 }
@@ -282,7 +282,7 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
     <div className="pts-note" style={{marginBottom:16}}>포인트 기준 — 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
     <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:16}}>
       <button className="btn btn-ghost btn-sm" onClick={add}>+ 회차 추가 (맨 아래)</button>
-      <button className="btn btn-ghost btn-sm" onClick={sortNow}><Icon n="sort" size={14}/>날짜순 정렬</button>
+      <button className="btn btn-ghost btn-sm" onClick={sortNow}>날짜순 정렬</button>
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
     </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>

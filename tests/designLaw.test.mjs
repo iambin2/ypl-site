@@ -16,20 +16,28 @@ const rel = f => relative(ROOT, f).replaceAll("\\", "/");
 const TOKENS = read(join(STYLES, "tokens.css"));
 const SPACE = new Set([0, 80, 120, ...[...TOKENS.matchAll(/--s\d+:\s*(\d+)px/g)].map(m => +m[1])]); // --s1..--s14, --chapter 80/120
 const SIZES = new Set([12, 13, 15, 16, 17, 20, 24, 28]);
-const WEIGHTS = new Set(["400", "700", "800"]);
+const WEIGHTS = new Set(["400", "600", "700", "800"]);
+// tracking follows size (one curve): none up to 18px, then tighter as type grows; YPL Figures stand at 0
+const TRACK = new Set(["0", "inherit", "-.015em", "-.02em", "-.03em", "-.04em"]);
+const trackFor = px => px <= 18 ? "0" : px < 24 ? "-.015em" : px <= 28 ? "-.02em" : "-.03em";
+const LEADING = new Set(["1", "1.06", "1.15", "1.25", "1.35", "1.45", "1.55", "1.8", "inherit", "1.15em"]);
 const RADII = new Set([0, 12, 20, 24, 32, 36, 999]); // tile, textarea, list row, card, hero, pill
 
 // ---------- declarations ----------
+// each CSS rule block's declarations, so a rule can read a declaration beside its font-size
+const BLOCKS = [];
+const sib = (d, prop) => d.blk === undefined ? undefined : BLOCKS[d.blk][prop];
+const sizePx = v => { const m = /^(\d*\.?\d+)(rem|px)$/.exec(v || ""); return m ? +m[1] * (m[2] === "rem" ? 16 : 1) : null; };
 function cssDecls(file) {
   const src = read(file).replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, " "));
   const out = [], stack = []; let buf = "";
   const flush = () => {
     const t = buf.trim(), i = t.indexOf(":");
-    if (i > 0 && stack.length) out.push({ file: rel(file), sel: stack.at(-1), prop: t.slice(0, i).trim(), value: t.slice(i + 1).trim() });
+    if (i > 0 && stack.length) out.push({ file: rel(file), sel: stack.at(-1).sel, blk: stack.at(-1).blk, prop: t.slice(0, i).trim(), value: t.slice(i + 1).trim() });
     buf = "";
   };
   for (const ch of src) {
-    if (ch === "{") { stack.push(buf.trim().replace(/\s+/g, " ")); buf = ""; }
+    if (ch === "{") { stack.push({ sel: buf.trim().replace(/\s+/g, " "), blk: BLOCKS.push({}) - 1 }); buf = ""; }
     else if (ch === "}") { flush(); stack.pop(); }
     else if (ch === ";") flush();
     else buf += ch;
@@ -48,7 +56,8 @@ function inlineDecls(file) {
 }
 const SRC = walk(join(ROOT, "src")).filter(f => /\.(jsx?|mjs)$/.test(f) && !rel(f).startsWith("src/data/"));
 const DECLS = [...readdirSync(STYLES).filter(f => f.endsWith(".css")).flatMap(f => cssDecls(join(STYLES, f))), ...SRC.flatMap(inlineDecls)];
-const keyOf = d => `${d.file} | ${d.sel} | ${d.prop}: ${d.value}`;
+for (const d of DECLS) if (d.blk !== undefined) BLOCKS[d.blk][d.prop] = d.value;
+const keyOf = d =>`${d.file} | ${d.sel} | ${d.prop}: ${d.value}`;
 
 // ---------- helpers ----------
 const noVars = v => v.replace(/var\([^()]*(\([^()]*\))?[^()]*\)/g, "");
@@ -67,7 +76,12 @@ const RULES = {
   "color: achromatic only (Color B1-B5)": d => chromatic(d.value),
   "space: margin, padding and gap sit on the 4px scale (Space and radius)": d => /^(margin|padding|gap|row-gap|column-gap)(-|$)/.test(d.prop) && pxs(d.value).some(n => !SPACE.has(n)),
   "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--[\w-]+\))$/.test(d.value) && !(/^-?\d*\.?\d+(rem|px)$/.test(d.value) && SIZES.has(parseFloat(d.value) * (d.value.endsWith("rem") ? 16 : 1))),
-  "type: weights 400 700 800 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
+  "type: weights 400 600 700 800 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
+  "type: 700 only for headlines of 20px and up; rows, labels and buttons are 600 (Type)": d => d.prop === "font-weight" && d.value === "700" && !((sizePx(sib(d, "font-size")) ?? 0) >= 20),
+  "type: tracking follows size, none up to 18px (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value)
+    || (sizePx(sib(d, "font-size")) !== null && !/fig/.test(d.sel) && trackFor(sizePx(sib(d, "font-size"))) !== d.value)),
+  "type: line-heights on one set (Type)": d => d.prop === "line-height" && !LEADING.has(d.value),
+  "type: YPL Figures sit on the --fig scale, 28px and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
   "type: one face, SUIT and YPL Figures (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font(-fig)?\))$/.test(d.value),
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
   "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value),
@@ -110,10 +124,12 @@ const EXCEPT = {
   "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": {
     "the title step (28-36) itself and its copies": [`${T} | .title | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`,
       `${P} | .ab-league b | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`, `${TB} | .tb-editor-title h2 | font-size: 2.25rem`],
-    "big figures in YPL Figures, sized to their poster (rule 4)": [`${K} | .calc-speed-me .fig | font-size: 3rem`, `${R} | .rc-poster-num | font-size: 3.25rem`, `${R} | .rc-poster-num | font-size: 4.5rem`],
     "an article body reads at 18px on desktop (Pages)": [`${P} | .prose p | font-size: 1.125rem`],
   },
   "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": {
+  },
+  "type: line-heights on one set (Type)": {
+    "a rank cell sits on its neighbour's 28px line box": [`${R} | .r2-line > .r2-rk | line-height: 28px`],
   },
   "align: left by default, centre only for the four cases (Alignment)": {
     "(a) a label inside its control": [`${T} | button | text-align: center`, `${T} | .rs > i | text-align: center`, `${A} | .ed-grid input | text-align: center`,

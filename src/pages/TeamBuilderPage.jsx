@@ -1342,7 +1342,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
-              <Icon n="sort" size={14} />{sortId === "name" ? (sortReversed ? "역순" : "가나다순") : (sortReversed ? "낮은 순" : "높은 순")}
+              {sortId === "name" ? (sortReversed ? "역순" : "가나다순") : (sortReversed ? "낮은 순" : "높은 순")}
             </button>
           </div>
           {cupRule.kind === "monotype" && !assignedTypeId ? (
@@ -1362,7 +1362,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               <div>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
               </div>
-              <div className="tb-team-meta"><strong className="fig">{team.length}</strong><span className="unit">/ {regulation.maxTeamSize || 6}</span></div>
+              <strong className="tb-pool-count">{team.length}<small> / {regulation.maxTeamSize || 6}</small></strong>
             </div>
             <div className="tb-team-slots">
               {Array.from({ length: regulation.maxTeamSize || 6 }, (_, index) => {
