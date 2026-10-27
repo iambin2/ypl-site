@@ -214,15 +214,14 @@
 .tb-rule-confirm-copy + .tb-rule-confirm-copy { margin-top: var(--s3); }
 .tb-rule-confirm-list { --r: var(--r-row); margin: var(--s3) 0; padding: var(--s3) var(--s4) var(--s3) var(--s10); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); font-weight: 600; }
 .tb-library-save { --r: var(--r-row); padding: var(--s4); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
-.tb-library-save-meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-top: var(--s3); font-size: .75rem; color: var(--fg-3); }
+.tb-library-save-meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-top: var(--s3); font-size: .8125rem; color: var(--fg-3); }
 .tb-library-save-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
 .tb-library-workspace-actions { display: flex; gap: var(--s2); }
 .tb-save-message { margin-top: var(--s3); font-size: .9375rem; font-weight: 600; color: var(--fg); }
-/* saved teams: one glass group, rows split by inset hairlines */
+/* saved teams: one group; rows carry no rules, the space between them does (M1) */
 .tb-saved-list { --r: var(--r-row); display: flex; flex-direction: column; margin-top: var(--s4); padding: 0 var(--s2); border-radius: var(--r); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
 .tb-saved-list:empty { display: none; }
 .tb-saved-team { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s2) var(--s2) 0; }
-.tb-saved-team + .tb-saved-team { background: linear-gradient(var(--line), var(--line)) no-repeat var(--s3) 0 / calc(100% - var(--s3) * 2) var(--hair); }
 .tb-saved-main {
   --r: var(--r-row);
   flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--s1); padding: var(--s2) var(--s3);
@@ -230,8 +229,8 @@
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) { .tb-saved-main:hover { background: var(--tint-soft); } }
-.tb-saved-main strong { display: flex; align-items: center; gap: var(--s2); font-size: .9375rem; font-weight: 600; }
-.tb-saved-main > span { font-size: .75rem; color: var(--fg-3); }
+.tb-saved-main strong { display: flex; align-items: center; gap: var(--s2); font-size: 1rem; font-weight: 600; line-height: 1.45; }
+.tb-saved-main > span { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
 .tb-saved-icons { display: flex; gap: var(--s1); margin-top: var(--s1); }
 .tb-saved-icons img { width: 32px; height: 32px; object-fit: contain; }
 .tb-saved-actions { display: flex; gap: var(--s2); flex: none; }

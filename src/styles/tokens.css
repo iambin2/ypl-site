@@ -252,7 +252,7 @@
 
 /* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
 :root {
-  --grid-gap: 12px; --nav-height: 80px; --target: 44px; --row-min: 56px; --match-card: 98px;
+  --grid-gap: 12px; --nav-height: 80px; --target: 44px; --row-min: 60px; --match-card: 98px;
   --hair: 1px; --stroke-connector: 1.5px;
   --opacity-disabled: .4; --opacity-dim: .45;
   --z-popover: 45; --z-modal: 50; --z-toast: 30;

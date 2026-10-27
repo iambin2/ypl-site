@@ -107,7 +107,7 @@
 .ypl-group { list-style: none; margin: 0; padding: var(--s2); display: flex; flex-direction: column; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
 .ypl-row {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
-  min-height: 60px; padding: var(--s3) var(--s4); border: 0; border-radius: var(--r-row); background-color: transparent; color: inherit; text-align: left;
+  min-height: var(--row-min); padding: var(--s3) var(--s4); border: 0; border-radius: var(--r-row); background-color: transparent; color: inherit; text-align: left;
   transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy);
 }
 .ypl-row__title { display: block; font-size: 1rem; font-weight: 600; line-height: 1.45; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -162,7 +162,8 @@
 .bk-grow2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--s3); margin-bottom: 0; }
 .bk-grow2 > .dd, .bk-grow2 > input { margin-bottom: var(--s3); }
 @media (max-width: 639px) { .bk-grow2 { grid-template-columns: 1fr; } }
-.bk-hint, .hint { font-size: .9375rem; line-height: 1.55; color: var(--fg-3); }
+/* an explanatory sentence (a sheet's hint, a note in a form, an empty state, a page description) reads in one grey */
+.bk-hint, .hint { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .req { margin-left: var(--s1); color: var(--fg-2); }
 .row-actions { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .row-actions > div { display: flex; gap: var(--s2); flex-wrap: wrap; }
@@ -192,20 +193,26 @@
 @keyframes dd-in { from { opacity: 0; transform: scale(.9); } }
 .dd-opt {
   width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
-  padding: var(--s2) var(--s3); border: 0; border-radius: 18px; background: transparent; text-align: left; font-size: .9375rem; line-height: 1.45;
+  padding: var(--s2) var(--s3); border: 0; border-radius: 18px; background: transparent; text-align: left; font-size: .9375rem; line-height: 1.45; font-weight: 600;
   transition: background-color var(--dur-fast) var(--ease-out);
 }
-@media (hover: hover) { .dd-opt:hover:not(:disabled) { background: var(--tint); } }
-.dd-opt:focus-visible { outline: none; background: var(--tint); }
-.dd-opt.sel { font-weight: 600; }
+@media (hover: hover) { .dd-opt:hover:not(:disabled):not(.sel) { background: var(--tint-soft); } }
+.dd-opt.sel { background: var(--tint); }
+.dd-opt:focus-visible { outline: none; background: var(--tint-strong); }
 .dd-tick { display: flex; color: var(--fg); }
-.dd-none { padding: var(--s3); font-size: .9375rem; color: var(--fg-3); }
+.dd-none { padding: var(--s3); font-size: .9375rem; color: var(--fg-2); }
+.modal > .dd-none { padding-inline: 0; }
 
-/* ---------- Menu rows (sheet and popover) ---------- */
+/* ---------- Menu rows (sheet and popover) ----------
+   Chosen rows, wherever they float, share one state ladder: rest clear, hover --tint-soft, selected --tint with a check,
+   keyboard focus --tint-strong; the label stays 600 so a selection never moves the words.
+   In a sheet the rows hang 12 into its padding: their words stand on the title's edge and the highlight 8 from the
+   sheet's edge, so its radius is the sheet's 32 less 8 (24). */
 .menu { display: flex; flex-direction: column; gap: var(--s1); }
+.modal > .menu, .pick-list, .sc-pick { margin-inline: calc(var(--s3) * -1); }
 .mi {
-  position: relative; display: flex; align-items: center; gap: var(--s3); width: 100%; height: 52px; padding: 0 var(--s4);
-  border-radius: var(--r-tile); font-size: 1rem; line-height: 1; font-weight: 600; text-align: left; color: var(--fg);
+  position: relative; display: flex; align-items: center; gap: var(--s3); width: 100%; height: 52px; padding: 0 var(--s3);
+  border-radius: var(--r-row); font-size: 1rem; line-height: 1; font-weight: 600; text-align: left; color: var(--fg);
 }
 .mi > .ic:first-child { color: var(--fg-2); }
 .mi .check, .mi .mi-end { margin-left: auto; color: var(--fg); }
@@ -213,10 +220,9 @@
 .mi.on { background: var(--tint); }
 @media (hover: hover) { .mi:hover:not(.on) { background: var(--tint-soft); } }
 .mi:focus-visible { outline: none; background: var(--tint-strong); }
-.mi-sep { height: 1px; margin: var(--s2) var(--s4); background: var(--line); }
+.mi-sep { height: 1px; margin: var(--s2) var(--s3); background: var(--line); }
 .popover { position: fixed; z-index: var(--z-popover); min-width: 240px; padding: 6px; border-radius: var(--r-row); }
 .popover .mi { height: 44px; font-size: .9375rem; border-radius: 18px; }
-.popover .mi-sep { margin: var(--s2) var(--s3); }
 
 /* ---------- Table (M1, M2): no row rules, generous rows; headers share their column's alignment ---------- */
 .ypl-table-wrap { padding: var(--s2); border-radius: var(--r-card); }
@@ -310,7 +316,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   padding: var(--s2) var(--pad) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
 }
 .modal > h3 { padding-right: 52px; font-size: 1.5rem; line-height: 1.25; font-weight: 800; letter-spacing: -.02em; }
-.modal > .hint { margin-top: var(--s2); font-size: .9375rem; color: var(--fg-2); }
+.modal > .hint { margin-top: var(--s2); }
 .modal > h3 + *:not(.hint), .modal > .hint + * { margin-top: var(--s6); }
 .modal-x {
   position: absolute; top: 0; right: var(--s4); z-index: 4; width: 40px; height: 40px; display: grid; place-items: center;
@@ -318,9 +324,11 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) { .modal-x:hover { background: var(--tint-strong); color: var(--fg); } }
-/* actions stay reachable while the body scrolls; the primary action sits on the right */
+/* actions stay reachable while the body scrolls; the primary action sits on the right.
+   They are their own group: 40 under the body (24 margin and the 16 their backing needs), 24 over the sheet's edge.
+   A sticky box stops at its scroller's padding, so its bottom offset reaches back over that padding (else it rode 24 high). */
 .modal-actions {
-  position: sticky; bottom: 0; z-index: 3;
+  position: sticky; bottom: calc((var(--s6) + env(safe-area-inset-bottom, 0px)) * -1); z-index: 3;
   display: flex; justify-content: flex-end; align-items: center; gap: var(--s2); flex-wrap: wrap;
   margin: var(--s6) calc(var(--pad) * -1) calc((var(--s6) + env(safe-area-inset-bottom, 0px)) * -1);
   padding: var(--s4) var(--pad) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
@@ -339,7 +347,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   /* the body scrolls and clips, so the close button sits inside it, centred on the title's first line */
   .modal { --pad: var(--s8); padding: var(--s2) var(--pad) var(--s8); }
   .modal-x { right: var(--s5); top: calc(var(--s2) - 5px); }
-  .modal-actions { margin-bottom: calc(var(--s8) * -1); padding-bottom: var(--s8); }
+  .modal-actions { bottom: calc(var(--s8) * -1); margin-bottom: calc(var(--s8) * -1); padding-bottom: var(--s8); }
   .modal-actions .btn, .modal-actions .ypl-btn { flex: none; }
 }
 
@@ -355,29 +363,31 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
 .fold.open .fold-chev { transform: rotate(180deg); }
 .fold-body { padding: 0 var(--s4) var(--s4); }
 
-/* Compact desktop controls keep a full touch target on phones and touch screens. */
+/* Compact desktop controls keep a full touch target on phones and touch screens.
+   The floor's height has no weight (:where), so it raises a 36px control to 44 but never lowers a 48px field or a 60px row. */
 @media (max-width: 639px), (pointer: coarse) {
-  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .ypl-btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); min-height: var(--target); }
+  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .ypl-btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); }
+  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .ypl-btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--target); }
 }
 
 /* ---------- PickerSheet: a long list in a sheet, and the pill field that opens it ---------- */
 .pick-search { margin-bottom: var(--s3); }
-.pick-list { display: flex; flex-direction: column; gap: var(--s1); margin: 0 calc(var(--s2) * -1); }
+.pick-list { display: flex; flex-direction: column; gap: var(--s1); }
 .pick-row {
-  width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--s3);
-  min-height: var(--row-min); padding: var(--s1) var(--s2); border: 0; border-radius: var(--r-row); background: transparent; color: inherit; text-align: left;
+  width: 100%; display: flex; align-items: center; gap: var(--s3);
+  min-height: var(--row-min); padding: var(--s1) var(--s3); border: 0; border-radius: var(--r-row); background: transparent; color: inherit; text-align: left;
   content-visibility: auto; contain-intrinsic-size: auto 60px;
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out);
 }
-.pick-row:not(:has(img, .pick-blank)) { grid-template-columns: minmax(0, 1fr) auto auto; padding-left: var(--s3); }
-@media (hover: hover) { .pick-row:hover:not(:disabled) { background: var(--tint-soft); } }
-.pick-row.cursor { background: var(--tint); }
-.pick-row.sel { background: var(--tint-strong); }
+@media (hover: hover) { .pick-row:hover:not(:disabled):not(.sel) { background: var(--tint-soft); } }
+.pick-row.sel { background: var(--tint); }
+.pick-row.cursor { background: var(--tint-strong); }
 .pick-row:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
-.pick-row img, .pick-blank { width: 44px; height: 44px; object-fit: contain; }
-.pick-copy { min-width: 0; display: flex; flex-direction: column; }
-.pick-copy strong { font-size: 1rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pick-copy small { font-size: .8125rem; color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-row img, .pick-blank { flex: none; width: 44px; height: 44px; object-fit: contain; }
+.pick-row > .check { flex: none; color: var(--fg); }
+.pick-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
+.pick-copy strong { font-size: 1rem; font-weight: 600; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-copy small { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pick-trail { font-style: normal; font-size: .9375rem; font-weight: 600; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 .pick-field { position: relative; min-width: 0; }
 .pick-field .dd-btn { width: 100%; }

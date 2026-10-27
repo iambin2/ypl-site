@@ -132,7 +132,7 @@
    17px on a phone and 18px on desktop (N6). A list-like body (team sheets) lays its groups side by side. */
 /* a notice row is the board's row: the title first (a pinned label in front of it), then one quiet line of date and excerpt */
 .nb-list { display: flex; flex-direction: column; padding: var(--s2); }
-.nb-item { display: flex; flex-direction: column; justify-content: center; width: 100%; min-height: 72px; padding: var(--s3) var(--s4); border-radius: var(--r-row); text-align: left; color: var(--fg); transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy); }
+.nb-item { display: flex; flex-direction: column; justify-content: center; width: 100%; min-height: var(--row-min); padding: var(--s3) var(--s4); border-radius: var(--r-row); text-align: left; color: var(--fg); transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy); }
 @media (hover: hover) { .nb-item:hover { background: var(--surface-2); } }
 .nb-meta { display: flex; gap: var(--s2); min-width: 0; margin-top: var(--s1); }
 .nb-meta .tnum { flex: none; }
@@ -181,8 +181,8 @@
 .pr-flabel { flex: none; min-width: 72px; font-size: .75rem; color: var(--fg-3); }
 .pr-vtext { min-width: 0; font-weight: 600; word-break: break-word; }
 .pr-foot { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); font-size: .75rem; color: var(--fg-3); }
-.pr-refresh { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--tint); color: var(--fg-2); transition: scale var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
-@media (hover: hover) { .pr-refresh:hover { color: var(--fg); } }
+.pr-refresh { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--tint); color: var(--fg-2); transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+@media (hover: hover) { .pr-refresh:hover { color: var(--fg); background: var(--tint-strong); } }
 .pr-empty { padding: var(--s4) 0; font-size: .9375rem; color: var(--fg-2); }
 .pr-wrap.compact { margin: 0 0 var(--s5); }
 
@@ -223,7 +223,7 @@
 .bd-list:has(> .ypl-empty) { padding: 0; background: none; box-shadow: none; }
 .bd-head {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
-  min-height: 72px; padding: var(--s3) var(--s4); border-radius: var(--r-row); text-align: left; color: inherit;
+  min-height: var(--row-min); padding: var(--s3) var(--s4); border-radius: var(--r-row); text-align: left; color: inherit;
   transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy);
 }
 @media (hover: hover) { .bd-head:hover { background: var(--surface-2); } }
@@ -400,9 +400,9 @@
 .sc-moves li b { display: flex; align-items: center; gap: var(--s2); min-width: 0; font-size: .9375rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-moves li small { font-size: .75rem; color: var(--fg-3); }
 .sc-moves li b::before { content: ""; width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--type, var(--fg-3)); }
-.sc-pick { list-style: none; display: flex; flex-direction: column; gap: var(--s2); margin: 0 0 var(--s5); padding: 0; }
-.sc-pick-row { display: flex; flex-direction: column; align-items: stretch; gap: var(--s2); width: 100%; padding: var(--s3) var(--s4); border-radius: var(--r-row); background: var(--surface-2); text-align: left; color: inherit; transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out); }
-@media (hover: hover) { .sc-pick-row:hover { background: var(--surface-3); } }
+.sc-pick { list-style: none; display: flex; flex-direction: column; gap: var(--s1); padding: 0; }
+.sc-pick-row { display: flex; flex-direction: column; align-items: stretch; gap: var(--s2); width: 100%; padding: var(--s3); border-radius: var(--r-row); background: transparent; text-align: left; color: inherit; transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out); }
+@media (hover: hover) { .sc-pick-row:hover { background: var(--tint-soft); } }
 .sc-pick-main { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
 .sc-pick-main b { font-size: 1rem; font-weight: 600; }
 .sc-pick-main small { font-size: .8125rem; color: var(--fg-3); }

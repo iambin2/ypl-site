@@ -235,6 +235,49 @@ test("the press answers first: the nav lens leaves before the next page is drawn
   assert.match(app, /leadPills\(next\);\s*afterPaint\(/, "back and forward do the same");
 });
 
+// 2026-10-28 space and text law (DESIGN.md "Space and text law"): each was broken somewhere when it was written down.
+const decl = (sel, prop) => DECLS.filter(d => d.sel === sel && d.prop === prop).map(d => d.value);
+test("the touch floor raises a control but never lowers a field or a row (law 3)", () => {
+  const floor = DECLS.filter(d => d.file === C && d.prop === "min-height" && d.value === "var(--target)" && d.sel.includes(".ypl button"));
+  assert.ok(floor.length > 0, "the touch floor is still there");
+  assert.deepEqual(floor.filter(d => !d.sel.startsWith(":where(")).map(keyOf), [], "the floor's height must carry no weight (:where)");
+});
+
+test("a list row is 60 everywhere, from one token (law 3)", () => {
+  assert.match(TOKENS, /--row-min:\s*60px/);
+  for (const sel of [".ypl-row", ".nb-item", ".bd-head", ".pick-row"]) assert.deepEqual(decl(sel, "min-height"), ["var(--row-min)"], sel);
+});
+
+test("a sheet's actions sit 40 under its body and its padding over its edge: the sticky reaches over the padding (law 2)", () => {
+  const bottoms = decl(".modal-actions", "bottom");
+  assert.equal(bottoms.length, 2, "phone and desktop");
+  for (const b of bottoms) assert.match(b, /^calc\(.*\* -1\)$/, "a sticky box stops at its scroller's padding, so bottom: 0 rides it high");
+});
+
+test("rows in a sheet hang into its padding so their words stand on the title's edge (law 1)", () => {
+  assert.deepEqual(decl(".modal > .menu, .pick-list, .sc-pick", "margin-inline"), ["calc(var(--s3) * -1)"]);
+  for (const sel of [".mi", ".pick-row"]) assert.ok(DECLS.some(d => d.sel === sel && d.prop === "padding" && /var\(--s3\)$/.test(d.value)), `${sel} pads its words 12 in`);
+});
+
+test("chosen rows share one state ladder: hover soft, selected tint, keyboard focus strong (law 5)", () => {
+  const rows = DECLS.filter(d => /^background(-color)?$/.test(d.prop) && /^(\.popover )?\.(mi|dd-opt|pick-row)[.:]/.test(d.sel));
+  const want = sel => /:hover/.test(sel) ? "var(--tint-soft)" : /focus-visible|\.cursor/.test(sel) ? "var(--tint-strong)" : /\.(on|sel)\b/.test(sel) ? "var(--tint)" : null;
+  assert.ok(rows.length >= 9);
+  assert.deepEqual(rows.filter(d => want(d.sel) && d.value !== want(d.sel)).map(keyOf), []);
+  assert.deepEqual(decl(".dd-opt.sel", "font-weight"), [], "an option keeps its weight when chosen");
+});
+
+test("an X is drawn at its circle's scale: 18, 14 or 12 (law 6)", () => {
+  const STATUS = "src/pages/TeamBuilderPage.jsx: 15"; // the validation panel's status sign beside its check and alert, not a close
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/<Icon n="x" size=\{(\d+)\}/g)].filter(m => !["12", "14", "18"].includes(m[1])).map(m => `${rel(f)}: ${m[1]}`));
+  assert.deepEqual(hits, [STATUS]);
+});
+
+test("an explanatory sentence reads in one grey (law 4)", () => {
+  for (const sel of [".bk-hint, .hint", ".callout", ".dd-none"]) assert.deepEqual(decl(sel, "color"), ["var(--fg-2)"], sel);
+  assert.deepEqual(decl(".modal > .hint", "color"), [], "a sheet's hint takes the shared grey");
+});
+
 test("no View Transitions snapshots (Don't)", () => {
   const hits = [...SRC, ...readdirSync(STYLES).map(f => join(STYLES, f))].filter(f => /startViewTransition|view-transition/.test(read(f)));
   assert.deepEqual(hits.map(rel), []);

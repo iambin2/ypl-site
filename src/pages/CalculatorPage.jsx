@@ -412,7 +412,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
         <div className="tb-search-row calc-tier-search">
           <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={18} /></span>
           <input value={query} onChange={event => setQuery(event.target.value)} placeholder="포켓몬 검색" aria-label="포켓몬 검색" autoComplete="off" />
-          {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={12} /></button>}
+          {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={14} /></button>}
         </div>
         <ol className="calc-tiers">
           {shown.map((row, index) => (
@@ -525,7 +525,7 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
           <div className="tb-search-row">
             <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={18} /></span>
             <input value={query} onChange={event => setQuery(event.target.value)} placeholder="기술 검색" aria-label="기술 검색" autoComplete="off" />
-            {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={12} /></button>}
+            {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={14} /></button>}
           </div>
           <Dropdown className="tb-dd" value={typeFilter} onChange={setTypeFilter} ariaLabel="기술 타입" options={[{ value: "", label: "모든 타입" }, ...TYPE_OPTIONS.map(type => ({ value: type.id, label: type.korean }))]} />
           <Dropdown className="tb-dd" value={categoryFilter} onChange={setCategoryFilter} ariaLabel="기술 분류" options={[{ value: "", label: "모든 분류" }, { value: "Physical", label: "물리" }, { value: "Special", label: "특수" }, { value: "Status", label: "변화" }]} />

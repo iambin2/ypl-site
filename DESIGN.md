@@ -175,6 +175,17 @@ A first-visit review found the rules above broken in many small places. Each lin
 - **Words and buttons stand clear of drawn lines.** On the home arena the line, the buttons and the empty-state sentence ("다음 대회 일정은 공지에 올라옵니다.") stand on open floor, never on a field line.
 - **Copy says one thing.** The footer is a fan site run by the club and says it has no relation to Nintendo, Creatures, GAME FREAK or The Pokémon Company; it no longer pairs "공식" with "비공식". Quotation marks are typographic (‘ ’).
 
+## Space and text law (2026-10-28)
+
+What makes the screen feel calm is that the eye never has to find a new line to read from and never meets two sizes for one job. A survey of every window, sheet, menu and control found both broken, so these six hold for all of them; `tests/designLaw.test.mjs` checks what it can see.
+
+1. **One text edge per surface.** On a page, a card, a sheet or a menu the words start on one line, the surface's padding. Whatever draws its own box (a field, a button, a tile, a chip, a grouped list) puts the box on that line and its words inside. A row with no box at rest (a menu row, an option, a picker row, a team to post) puts its words on the line and hangs its highlight 12 into the padding: on a phone sheet the highlight stands 8 from the edge, so its radius is the sheet's 32 less 8, the row radius 24. A popover and a dropdown menu (padding 6) start their words 18 in, both the same.
+2. **Nearer is tighter, and a group's actions are a group.** Rule 1's distances stand; the buttons that end a sheet stand 40 under its body (the section distance) and the sheet's own padding over its edge (24 on a phone, 32 in a desktop dialog), at every height of sheet, and stay pinned while the body scrolls under them.
+3. **Heights on one ladder.** 24 count, 28 chip, 36 a control inside a track, a field or a row (segment, clear, refresh), 40 small button and the sheet's X, 44 the touch floor and a floating menu's row, 48 button, field and dropdown, 52 a one-line choice in a sheet, 60 a list row (`--row-min`: notices, posts, trainers, pickers, tables). The touch floor only raises what is lower; it never lowers a 48 field or a 60 row.
+4. **Five text roles, one look each.** A title; a row title (16, 600); its grey line (13, `--fg-3`, 4 under, line height 1.45); an explanatory sentence (15, 1.55, `--fg-2`: a page description, a sheet's hint, a note in a form, an empty list); a field label (13, 600, `--fg-2`).
+5. **One state ladder for chosen rows.** Rest clear, hover `--tint-soft`, selected `--tint` with a check, keyboard focus `--tint-strong`. The label stays 600 in every state, so choosing never moves the words.
+6. **An X is drawn at its circle's scale.** 18 in the sheet's 40, 14 in a 36 clear button, 12 in a chip.
+
 ## Don't
 
 - Do not reintroduce View Transitions snapshots for pages or theme; they flickered on phones.

@@ -201,7 +201,7 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
             event.preventDefault(); event.stopPropagation(); onRemove();
           }
         }}
-      ><Icon n="x" size={13} /></span>
+      ><Icon n="x" size={12} /></span>
     </button>
   );
 }
@@ -1318,7 +1318,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               aria-autocomplete="list"
               autoComplete="off"
             />
-            {(query || searchChips.length > 0) && <button className="tb-clear" onClick={() => { setQuery(""); setSearchChips([]); }} aria-label="검색 조건 모두 지우기"><Icon n="x" size={12} /></button>}
+            {(query || searchChips.length > 0) && <button className="tb-clear" onClick={() => { setQuery(""); setSearchChips([]); }} aria-label="검색 조건 모두 지우기"><Icon n="x" size={14} /></button>}
             {showSuggestions && (
               <div className="dd-menu glass-l3 tb-suggest" id="tb-search-suggest" role="listbox" aria-label="검색 조건 후보">
                 {searchSuggestions.map((entry, index) => (
@@ -1338,7 +1338,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               {searchChips.map((chip, index) => (
                 <button type="button" key={`${chip.kind}:${chip.id}`} className="tb-chip" aria-label={`${SEARCH_KIND_LABEL[chip.kind]} ${chip.label} 조건 지우기`}
                   onClick={() => setSearchChips(current => current.filter((_, chipIndex) => chipIndex !== index))}>
-                  <small>{SEARCH_KIND_LABEL[chip.kind]}</small>{chip.label}<Icon n="x" size={11} />
+                  <small>{SEARCH_KIND_LABEL[chip.kind]}</small>{chip.label}<Icon n="x" size={12} />
                 </button>
               ))}
             </div>
