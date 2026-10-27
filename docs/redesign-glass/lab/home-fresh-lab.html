@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YPL 홈 전당</title>
+<!-- 홈을 처음부터 다시, 3판 전당(2026-10-27). 개발 서버에서 /ypl-site/docs/redesign-glass/lab/home-fresh-lab.html
+     거대한 YPL 앞에 V자로 선 현 챔피언의 여섯. 하얀 그림자가 머리 위 빛을 받아 한 마리씩 제 색을 찾고, 검은 바닥에 비친다.
+     움직임의 원칙(사용자 피드백): 물체는 서 있고 빛만 움직인다. 포인터는 YPL 위의 빛을 옮기고, 포켓몬 위에 올리면 그 한 마리의 조명만 밝아진다.
+     지키는 것은 사이트의 양식뿐: 토큰, 유리, 버튼, SUIT와 YPL Figures, 그린 워드마크. 색은 포켓몬 그림뿐이다. 이름과 숫자는 시안용 견본이다. -->
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/components.css">
+<link rel="stylesheet" href="../../../src/styles/shell.css">
+<link rel="stylesheet" href="../../../src/styles/pages.css">
+<style>
+:root { --top: calc(env(safe-area-inset-top, 0px) + 88px); --bot: calc(env(safe-area-inset-bottom, 0px) + 80px);
+  --beam: color-mix(in srgb, var(--fg) 12%, transparent); --shine: var(--fg); --edge-line: color-mix(in srgb, var(--fg) 34%, transparent); }
+[data-theme="light"] { --beam: rgb(255 255 255 / .75); --shine: var(--surface); }
+body { overflow-x: hidden; }
+img { -webkit-user-drag: none; user-select: none; }
+.figx { font-family: var(--font-fig); font-weight: 800; line-height: .9; font-variant-numeric: tabular-nums; }
+.meta { font-size: .8125rem; line-height: 1.4; color: var(--fg-2); }
+.acts { display: flex; gap: var(--s2); justify-content: center; flex-wrap: wrap; }
+
+.hof { position: relative; min-height: 100dvh; padding: var(--top) var(--gutter) var(--bot); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; isolation: isolate; }
+.hof::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(120% 80% at 50% 40%, transparent 40%, color-mix(in srgb, var(--stage-sunk) 90%, transparent)); }
+
+/* 거대한 YPL: 위에서 빛을 받아 아래로 어둠에 잠기는 몸. 포인터가 그 위의 빛을 옮긴다 */
+.hall { position: relative; width: calc(100% + var(--gutter) * 2); max-width: 1200px; margin-inline: calc(var(--gutter) * -1); }
+.giant { position: relative; display: block; width: min(100%, 72vh * 3.1, 980px); height: auto; margin-inline: auto; overflow: visible; }
+
+/* 여섯은 V자: 가운데 둘이 크고 앞에, 양 끝이 작고 뒤에 */
+.row { --w: calc(min(100vw, 1200px) / 3.95); position: relative; display: flex; justify-content: center; align-items: flex-end; margin-top: calc(var(--w) * -.46); }
+.mon { --s: 1; position: relative; flex: none; width: calc(var(--w) * var(--s)); aspect-ratio: 1; margin: 0 calc(var(--w) * var(--s) * -.12);
+  translate: 0 calc((1 - var(--s)) * var(--w) * -.55); z-index: calc(var(--s) * 10); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mon:nth-child(2), .mon:nth-child(7) { --s: .7; }
+.mon:nth-child(3), .mon:nth-child(6) { --s: .84; }
+.fig { position: absolute; inset: 0; }
+.fig > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fig img { object-fit: contain; object-position: 50% 100%; opacity: 0; }
+.sil { background: var(--fg); -webkit-mask: var(--src) 50% 100% / contain no-repeat; mask: var(--src) 50% 100% / contain no-repeat; }
+.refl { top: 100%; bottom: auto; height: 100%; scale: 1 -1; opacity: .22; -webkit-mask: linear-gradient(to top, #000, transparent 42%); mask: linear-gradient(to top, #000, transparent 42%); }
+.mon::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: -3%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, var(--contact), transparent); z-index: -1; }
+/* 머리 위 조명: 처음엔 꺼져 있고, 제 색을 찾을 때 켜진다. 올리면 그 한 마리만 밝고 나머지는 물러난다 */
+.beam { position: absolute; left: 50%; bottom: 18%; width: 150%; height: 440%; translate: -50% 0; z-index: -2; pointer-events: none; opacity: 0;
+  background: linear-gradient(to top, var(--beam), transparent 88%); clip-path: polygon(45% 0, 55% 0, 96% 100%, 4% 100%); filter: blur(12px); }
+.lit .beam { opacity: .55; transition: opacity 900ms var(--ease-out); }
+.lit.focus .beam { opacity: 1; }
+.lit.dim .beam { opacity: .18; }
+.lit .fig img { transition: filter 900ms var(--ease-out); }
+.lit.dim .fig img { filter: brightness(.55); }
+/* 발이 닿는 바닥: 가운데가 밝고 끝으로 사라지는 한 줄의 가장자리와 그 아래 반사하는 검은 바닥 */
+.floor { position: absolute; left: 0; right: 0; bottom: calc(var(--w) * -.5); height: calc(var(--w) * .9); z-index: -3; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
+.edge { position: absolute; left: 4%; right: 4%; bottom: 0; height: 1px; z-index: 0; background: linear-gradient(90deg, transparent, var(--edge-line), transparent); }
+.mon-name { height: 20px; margin-top: calc(var(--w) * .16); font-size: .8125rem; color: var(--fg-2); transition: opacity var(--dur-base) var(--ease-out); }
+
+/* 명판: 챔피언의 이름 한 줄과 그 아래 한 줄. 그다음 다가오는 대회와 행동 */
+.plaque { margin-top: var(--s4); display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.plaque b { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+.info { margin-top: var(--section); display: flex; flex-direction: column; align-items: center; gap: var(--s5); }
+.ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.ev-row { display: flex; align-items: baseline; gap: var(--s3); }
+.ev-row .figx { font-size: 2.25rem; }
+.ev-name { font-size: 1.0625rem; font-weight: 800; }
+@media (min-width: 860px) {
+  .row { --w: min(17vw, 25vh, 210px); }
+  .plaque b { font-size: 2rem; }
+  .ev-row .figx { font-size: 2.75rem; }
+}
+
+.lab-bar { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto; width: max-content; display: flex; gap: var(--s1); padding: var(--s1); border-radius: 999px; }
+.lab-bar button { height: 44px; padding: 0 var(--s4); border-radius: 999px; font-size: .9375rem; font-weight: 700; color: var(--fg-2); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="ypl">
+  <div class="stage" data-state="open" aria-hidden="true"><div class="light light-a"></div><div class="light light-b"></div></div>
+  <header class="topbar glass">
+    <a class="brand press" href="#" aria-label="YPL 홈"><span class="brand-logo" id="logo"></span><span id="wordmark"></span></a>
+    <nav class="navlinks groove" aria-label="주요 메뉴">
+      <span class="navlink" style="background:var(--ind-body);color:var(--ind-fg)">홈</span><span class="navlink">공지</span><span class="navlink">대진표</span><span class="navlink">기록</span><span class="navlink">더보기</span>
+    </nav>
+    <span class="iconbtn" aria-hidden="true"></span>
+  </header>
+
+  <main class="hof">
+    <section class="hall">
+      <h1><span class="sr-only">Yonsei Pokémon League</span><svg class="giant" aria-hidden="true"></svg></h1>
+      <div class="row" aria-label="현 챔피언의 파티"><i class="floor" aria-hidden="true"></i></div>
+      <p class="mon-name" aria-live="polite"></p>
+    </section>
+    <div class="plaque" data-rise><b>한결</b><span class="meta">시즌 2 챔피언스 파이널 우승</span></div>
+    <div class="info" data-rise>
+      <div class="ev"><div class="ev-row"><span class="figx">D-6</span><span class="ev-name">38회 파이컵 마스터 리그</span></div><span class="meta">10월 30일 (금) 오후 6:00, 참가 신청 중</span></div>
+      <div class="acts"><button class="ypl-btn ypl-btn--primary press hl">이번 대회 신청하기</button><button class="ypl-btn ypl-btn--glass press hl">리그 소개</button></div>
+    </div>
+  </main>
+
+  <nav class="lab-bar glass" aria-label="실험판">
+    <button id="replay" class="press">다시</button>
+    <button id="theme" class="press" aria-label="테마 바꾸기">◐</button>
+  </nav>
+</div>
+
+<script type="module">
+const BASE = "/ypl-site/";
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.22,1,.36,1)";
+const sprite = n => `${BASE}sprites/cover/${n}.webp`;
+
+/* 시안용 견본: 현 챔피언의 파티(실제로는 명예의 전당 기록에서 읽는다) */
+const PARTY = [["incineroar", "어흥염"], ["fluttermane", "날개치는머리"], ["urshifu-rapidstrike", "우라오스"], ["rillaboom", "고릴타"], ["ragingbolt", "굽이치는우레"], ["amoonguss", "뽀록나"]];
+
+/* 거대한 YPL: 몸(위에서 아래로 잠김), 한 번 지나가는 빛의 띠, 포인터를 따르는 빛 */
+const WM = "M0 0 H34.7 L55 27.7 L75.3 0 H110 L69 56 H41 Z M41 64 H69 V100 H41 Z M118 0 H188 A18 18 0 0 1 206 18 V46 A18 18 0 0 1 202.9666 56 H118 Z M146 24 H178 V42 H146 Z M118 64 H146 V100 H118 Z M214 0 H242 V56 H214 Z M214 64 H242 V76 H286 V100 H214 Z";
+const wm = a => `<path transform="skewX(-12) translate(21 0)" fill-rule="evenodd" d="${WM}" ${a}/>`;
+const giant = $(".giant");
+giant.setAttribute("viewBox", "-4 -4 318 108");
+giant.innerHTML = `<defs>
+  <linearGradient id="gbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--fg)" stop-opacity=".78"/><stop offset=".5" stop-color="var(--fg)" stop-opacity=".36"/><stop offset="1" stop-color="var(--fg)" stop-opacity=".03"/></linearGradient>
+  <linearGradient id="gband" gradientUnits="userSpaceOnUse" x1="-160" y1="0" x2="-40" y2="0"><stop offset="0" stop-color="var(--shine)" stop-opacity="0"/><stop offset=".5" stop-color="var(--shine)" stop-opacity=".9"/><stop offset="1" stop-color="var(--shine)" stop-opacity="0"/></linearGradient>
+  <radialGradient id="glamp" gradientUnits="userSpaceOnUse" cx="155" cy="-10" r="90"><stop offset="0" stop-color="var(--shine)" stop-opacity=".6"/><stop offset="1" stop-color="var(--shine)" stop-opacity="0"/></radialGradient>
+</defs>${wm('fill="url(#gbody)"')}${wm('fill="url(#glamp)" class="lamp"')}${wm('fill="url(#gband)"')}`;
+for (const [id, f, h] of [["logo", "ypl-wing-y", 28], ["wordmark", "ypl-wordmark", 14]]) {
+  fetch(`${BASE}brand/${f}.svg`).then(r => r.text()).then(t => {
+    const el = document.getElementById(id); el.innerHTML = t;
+    const s = el.querySelector("svg"); s.setAttribute("height", h); s.removeAttribute("width"); s.style.cssText = "display:block;width:auto;fill:currentColor";
+  });
+}
+const fig = n => `<i class="sil" style="--src:url(${sprite(n)})"></i><img src="${sprite(n)}" alt="">`;
+$(".row").insertAdjacentHTML("beforeend", PARTY.map(([n, ko]) => `<button class="mon" aria-label="${ko}" data-ko="${ko}"><i class="beam"></i><span class="fig">${fig(n)}</span><span class="fig refl" aria-hidden="true">${fig(n)}</span></button>`).join("")
+  + `<i class="edge" aria-hidden="true"></i>`);
+
+/* 포인터가 YPL 위의 빛을 옮긴다. 글자는 움직이지 않는다. 포인터가 없으면 빛은 위 가운데에 머문다 */
+const lamp = $("#glamp");
+let lx = 155, ly = -10, tlx = 155, tly = -10, lampRaf = 0;
+const moveLamp = () => {
+  lx += (tlx - lx) * .08; ly += (tly - ly) * .08;
+  lamp.setAttribute("cx", lx.toFixed(1)); lamp.setAttribute("cy", ly.toFixed(1));
+  lampRaf = Math.abs(tlx - lx) + Math.abs(tly - ly) > .2 ? requestAnimationFrame(moveLamp) : 0;
+};
+const aim = (x, y) => { tlx = x; tly = y; if (!lampRaf) lampRaf = requestAnimationFrame(moveLamp); };
+addEventListener("pointermove", e => {
+  if (e.pointerType !== "mouse" || still) return;
+  const r = giant.getBoundingClientRect(), vb = giant.viewBox.baseVal;
+  aim(vb.x + (e.clientX - r.left) / r.width * vb.width, Math.max(-30, vb.y + (e.clientY - r.top) / r.height * vb.height));
+});
+document.documentElement.addEventListener("pointerleave", () => aim(155, -10));
+
+/* 올린(누른) 한 마리만 조명이 밝아지고 이름이 바닥 아래에 선다. 나머지는 물러난다. 물체는 그대로 */
+const mons = $$(".mon"), nameEl = $(".mon-name");
+const focus = m => {
+  for (const x of mons) { x.classList.toggle("focus", x === m); x.classList.toggle("dim", !!m && x !== m); }
+  nameEl.style.opacity = m ? 1 : 0; if (m) nameEl.textContent = m.dataset.ko;
+};
+for (const m of mons) {
+  m.addEventListener("pointerenter", e => e.pointerType === "mouse" && m.classList.contains("lit") && focus(m));
+  m.addEventListener("pointerleave", e => e.pointerType === "mouse" && focus(null));
+  m.addEventListener("click", () => m.classList.contains("lit") && focus(m.classList.contains("focus") ? null : m));
+}
+
+/* 첫 등장: 어둠에서 YPL이 흐림을 벗고 서고, 빛의 띠가 한 번 지나가고, 바닥의 가장자리가 가운데에서 그어진다.
+   하얀 그림자 여섯이 함께 선 뒤, 가운데부터 한 마리씩 머리 위 조명이 켜지며 제 색을 찾는다. 튀는 움직임 없이 무겁고 느리게 */
+function sweep(ms) {
+  const g = $("#gband"); let t0 = 0;
+  const step = t => { t0 ||= t; const k = Math.min(1, (t - t0) / ms), e = k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2, x = -160 + e * 640;
+    g.setAttribute("x1", x); g.setAttribute("x2", x + 120); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+const timers = [];
+const later = (ms, f) => timers.push(setTimeout(f, still ? 0 : ms));
+function reveal(m) {
+  m.classList.add("lit");
+  if (still) return;
+  m.querySelector(".beam").animate([{ opacity: 0 }, { opacity: .85, offset: .4 }, { opacity: .55 }], { duration: 1800, easing: EASE });
+  for (const s of $$(".sil", m)) s.animate([{ opacity: 1, filter: "brightness(1)" }, { opacity: 1, filter: "brightness(1.5) drop-shadow(0 0 18px var(--fg))", offset: .3 }, { opacity: 0 }], { duration: 1100, easing: EASE, fill: "forwards" });
+  for (const i of $$("img", m)) i.animate([{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1 }], { duration: 1100, easing: EASE, fill: "forwards" });
+}
+function enter() {
+  timers.splice(0).forEach(clearTimeout); focus(null);
+  for (const a of document.getAnimations()) if (a.effect?.target?.closest?.(".hof")) a.cancel();
+  for (const m of mons) m.classList.remove("lit");
+  for (const s of $$(".sil")) s.style.opacity = still ? 0 : "";
+  for (const i of $$(".fig img")) i.style.opacity = still ? 1 : "";
+  if (still) { mons.forEach(reveal); return; }
+  const a = (el, kf, o) => el.animate(kf, { easing: EASE, fill: "backwards", ...o });
+  a(giant, [{ opacity: 0, transform: "scale(1.03)", filter: "blur(24px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], { duration: 2000 });
+  later(900, () => sweep(2600));
+  a($(".edge"), [{ transform: "scaleX(0)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 1600, delay: 1100 });
+  a($(".floor"), [{ opacity: 0 }, { opacity: 1 }], { duration: 1600, delay: 1100 });
+  for (const m of mons) a($(".fig", m), [{ opacity: 0 }, { opacity: 1 }], { duration: 1000, delay: 1500 }), a($(".refl", m), [{ opacity: 0 }, { opacity: .22 }], { duration: 1000, delay: 1500 });
+  [2, 3, 1, 4, 0, 5].forEach((k, i) => later(2500 + i * 260, () => reveal(mons[k])));
+  $$("[data-rise]").forEach((el, i) => a(el, [{ opacity: 0, transform: "translateY(12px)", filter: "blur(6px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], { duration: 900, delay: 2700 + i * 160 }));
+}
+$("#replay").onclick = enter;
+$("#theme").onclick = () => { const r = document.documentElement; r.classList.add("theme-fade"); r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; };
+enter();
+</script>
+</body>
+</html>

@@ -190,6 +190,8 @@
   --sun-o: 1;
   /* the cover scene (home): ceiling light, the lit floor, contact shadows, how much further things darken */
   --spot: rgb(255 255 255 / .09); --spot-floor: rgb(255 255 255 / .15); --contact: rgb(0 0 0 / .72); --recede: .07; --bar: rgb(255 255 255 / .065);
+  /* the home hall: each Pokémon's beam, the light that crosses the giant YPL, the floor's edge line */
+  --hh-beam: rgb(255 255 255 / .12); --hh-shine: #F5F5F5; --hh-edge: rgb(255 255 255 / .34);
   --grain: linear-gradient(transparent, transparent);
 
   --dur-instant: 100ms; --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 420ms; --dur-stage: 700ms;
@@ -233,6 +235,7 @@
   --burst: rgb(255 255 255 / .9); --ring: rgb(0 0 0 / .28);
   --sun-o: 0;
   --spot: rgb(255 255 255 / .6); --spot-floor: rgb(255 255 255 / .95); --contact: rgb(0 0 0 / .2); --recede: .025; --bar: rgb(0 0 0 / .06);
+  --hh-beam: rgb(255 255 255 / .75); --hh-shine: #FFFFFF; --hh-edge: rgb(0 0 0 / .26);
 }
 @media (min-width: 860px) { :root { --section: var(--s14); --chapter: 120px; --gutter: 32px; } }
 @media (prefers-reduced-motion: reduce) { :root { --rise: none; --reveal-blur: none; } }
@@ -331,7 +334,7 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .callout { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .caption, .meta { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
 .fig { font-size: 1.25rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-:is(.fig, .hx-dday, .rc-poster-num, .rc-rankcard-n, .ab-flow-n) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
+:is(.fig, .rc-poster-num, .rc-rankcard-n, .ab-flow-n) { font-family: var(--font-fig); font-weight: 800; letter-spacing: 0; }
 .unit { font-size: .75rem; font-weight: 700; line-height: 1.2; color: var(--fg-3); margin-left: var(--s1); }
 
 /* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ---------- */

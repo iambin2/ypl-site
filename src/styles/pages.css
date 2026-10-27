@@ -3,78 +3,51 @@
    ========================================================================== */
 
 /* =========================== HOME ===========================
-   One screen, the cover (DECISIONS 11th and 12th rounds): a wall of every Pokémon and one YPL of glass on it, the league's
-   name drawn small under it; the days left, the actions and the latest notice under that. The bracket stage and its three
-   chapters (9th round) were removed in the 12th round. On a screen under 520px tall the same parts stack as a plain page
-   with the wordmark drawn solid. */
-.home { display: flex; flex-direction: column; gap: var(--chapter); }
-.home.staged { gap: 0; margin-top: calc((env(safe-area-inset-top, 0px) + 92px) * -1); }
-.home.staged .hx-act { position: relative; height: 100svh; }
-/* the bottom: tab bar (76) + 44 to the text */
-.home.staged .hx-pin {
-  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 0 var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 120px); pointer-events: none;
-}
-.home.staged .hx-txt { pointer-events: auto; }
-@media (min-width: 860px) { .home.staged { margin-top: -112px; } .home.staged .hx-pin { padding-bottom: 56px; } }
-.hx-txt { width: 100%; max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: var(--s6); }
-
-/* ---------- cover (11th round): a wall of every Pokémon and one YPL of glass on it, the league's name drawn small under it;
-   the days left (when an event is coming), the actions and the latest notice under that ---------- */
-.hx-cover .hx-pin { align-items: center; text-align: center; }
-.hx-cover .hx-txt { align-items: center; gap: 0; }
-.hx-title { margin-bottom: var(--s6); }
-.hx-ypl { display: block; color: var(--fg); }
-.hx-ypl svg { display: block; width: min(100%, 360px); height: auto; margin-inline: auto; fill: currentColor; }
-.hx-fullname { display: block; height: clamp(11px, .9rem, 15px); width: auto; margin: var(--s4) auto 0; fill: var(--fg-2); }
-/* with the stage on, the YPL is an empty slot the glass stands in. The name under it is set as one lockup with it: on the same
-   axis at .6 of its width, a gap in proportion (the glass's own shadow falls into it). The lockup and the text under it stand as
-   one group in the middle of the screen between the top bar and the bottom, so the actions read as part of the cover, not as a footer.
-   --W fits the whole group: the YPL (W / 3.1), the name (W / 30), the gap, and ~400px of bars, actions and notice. */
-.home.staged .hx-cover .hx-pin { justify-content: center; padding-top: calc(env(safe-area-inset-top, 0px) + 92px); }
-.home.staged .hx-cover .hx-title { --W: max(200px, min(100vw - 48px, 860px, (100svh - 400px) * 2.36)); position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; margin: 0 0 var(--s10); }
-@media (min-width: 860px) { .home.staged .hx-cover .hx-title { margin-bottom: var(--s14); } }
-.home.staged .hx-ypl { width: var(--W); height: calc(var(--W) / 3.1); }
-.home.staged .hx-fullname { width: max(220px, var(--W) * .6); height: auto; margin-top: calc(var(--W) * .05); }
-.home.staged .hx-cover .hx-txt { position: relative; z-index: 1; }
-/* the wall: rows of sprites drifting slowly, each the other way, grey and faint; the glass shows the same rows in colour */
-.hx-glass { display: none; }
-.home.staged .hx-glass { --cell: clamp(64px, 9vw, 104px); display: block; position: absolute; inset: 0; z-index: 0; overflow: hidden; isolation: isolate; pointer-events: none; }
-.hx-wall { position: absolute; inset: -4vh 0; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--cell) * .14); }
-.hx-row { display: flex; width: max-content; animation: hx-drift var(--dur) linear infinite; }
-.hx-row:nth-child(even) { animation-direction: reverse; margin-left: calc(var(--cell) * -.5); }
-.hx-row img { width: var(--cell); height: var(--cell); flex: none; object-fit: contain; margin-right: calc(var(--cell) * .18); -webkit-user-drag: none; user-select: none; }
-@keyframes hx-drift { to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .hx-row { animation: none; } }
-.hx-wall:not(.win) { filter: grayscale(1) contrast(1.1); opacity: .3; }
-:root[data-theme="light"] .hx-wall:not(.win) { opacity: .24; }
-/* the stage's colour pools under the name and under the text, so both read over the wall */
-.hx-veil { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 46% at 50% 44%, var(--stage), transparent), linear-gradient(180deg, transparent 55%, var(--stage)); opacity: .7; }
-.hx-wall.win { z-index: 2; -webkit-mask: var(--mk) no-repeat; mask: var(--mk) no-repeat; -webkit-mask-size: var(--mw) var(--mh); mask-size: var(--mw) var(--mh); -webkit-mask-position: var(--mx) var(--my); mask-position: var(--mx) var(--my); }
-/* the glass YPL in layers: its shadow, the body (.glass-mark, tokens.css), the inner edge (--edge) and the 1px rim (.glass::before) */
-.hx-glass .glass-mark, .hx-gedge, .hx-grim, .hx-gdrop { position: absolute; pointer-events: none; }
-.hx-gdrop { z-index: 1; background: var(--drop-img) 0 0 / 100% 100% no-repeat; }
-.hx-glass .glass-mark { z-index: 3; }
-.hx-gedge { z-index: 4; background: var(--edge-img) 0 0 / 100% 100% no-repeat; }
-.hx-grim { z-index: 5; -webkit-mask: var(--ring-mask) 0 0 / 100% 100% no-repeat; mask: var(--ring-mask) 0 0 / 100% 100% no-repeat;
-  background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid)); }
-.hx-probe { position: absolute; width: 0; height: 0; visibility: hidden; }
-/* 13th round: the stage is one WebGL canvas (glassStage.js) filling the cover; the DOM wall above stays for browsers without WebGL2 */
-.hx-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.hx-moment { display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
-.hx-moment-name { font-size: 1.25rem; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; text-wrap: balance; }
-@media (min-width: 860px) { .hx-moment-name { font-size: 1.75rem; } }
-.hx-moment-meta { display: inline-flex; align-items: center; gap: var(--s2); font-size: .9375rem; color: var(--fg-2); }
-.hx-actions { margin-top: var(--s6); display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); }
-/* the latest notice, one quiet line under the actions */
-.hx-notice { margin-top: var(--s3); display: inline-flex; align-items: center; gap: var(--s2); max-width: 100%; min-height: 44px; padding: 0 var(--s3); border-radius: 999px; font-size: .9375rem; color: var(--fg-2); transition: color var(--dur-fast) var(--ease-out), scale 400ms var(--spring-snappy); }
-.hx-notice b { flex: none; font-weight: 700; color: var(--fg); }
-.hx-notice-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hx-notice .ic { flex: none; color: var(--fg-3); transition: translate 400ms var(--spring-snappy); }
-@media (hover: hover) { .hx-notice:hover { color: var(--fg); } .hx-notice:hover .ic { translate: 2px 0; } }
-
-/* the days left sit under the name one golden step smaller than it: the title size */
-.hx-dday { font-size: var(--display); line-height: 1; }
+   One screen, the hall (DECISIONS 14th round, 2026-10-27): a giant YPL lit from above and sinking into the dark, the reigning
+   champion's six standing in front of it in a V (the middle two nearest), reflected in the black floor; the champion's plaque,
+   then the next event and the actions. Things stand still and only light moves: the pointer carries a light over the YPL, and
+   hovering (tapping) one Pokémon brightens its own beam while the rest step back. The cover's wall and glass (11th to 13th
+   rounds) were removed. */
+.hh { min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.hh-hall { position: relative; width: calc(100% + var(--gutter) * 2); margin-inline: calc(var(--gutter) * -1); overflow-x: clip; }
+.hh-giant { display: block; width: min(100%, 72vh * 3.1, 980px); height: auto; margin-inline: auto; overflow: visible; }
+/* the six in a V: --s is a Pokémon's size (1, .84, .7 outward), the smaller ones stand further back and higher */
+.hh-row { --w: calc(min(100vw, 1200px) / 3.95); position: relative; display: flex; justify-content: center; align-items: flex-end; margin-top: calc(var(--w) * -.46); }
+.hh-mon { --s: 1; position: relative; flex: none; width: calc(var(--w) * var(--s)); aspect-ratio: 1; margin: 0 calc(var(--w) * var(--s) * -.12);
+  translate: 0 calc((1 - var(--s)) * var(--w) * -.55); z-index: calc(var(--s) * 10); -webkit-tap-highlight-color: transparent; }
+.hh-fig { position: absolute; inset: 0; }
+.hh-fig > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hh-fig img { object-fit: contain; object-position: 50% 100%; opacity: 0; -webkit-user-drag: none; user-select: none; }
+/* before its light comes on a Pokémon is a white silhouette of itself (black in light) */
+.hh-sil { background: var(--fg); -webkit-mask: var(--src) 50% 100% / contain no-repeat; mask: var(--src) 50% 100% / contain no-repeat; }
+.hh-mon.lit .hh-sil { opacity: 0; }
+.hh-mon.lit img { opacity: 1; transition: filter 900ms var(--ease-out); }
+.hh-fig.hh-refl { top: 100%; bottom: auto; height: 100%; scale: 1 -1; opacity: .22; -webkit-mask: linear-gradient(to top, var(--fg), transparent 42%); mask: linear-gradient(to top, var(--fg), transparent 42%); }
+.hh-mon::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: -3%; height: 10%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, var(--contact), transparent); }
+/* each Pokémon's own light from above: off until it is revealed, brighter on the one in focus, the rest step back */
+.hh-beam { position: absolute; left: 50%; bottom: 18%; width: 150%; height: 440%; translate: -50% 0; z-index: -2; pointer-events: none; opacity: 0;
+  background: linear-gradient(to top, var(--hh-beam), transparent 88%); clip-path: polygon(45% 0, 55% 0, 96% 100%, 4% 100%); filter: blur(12px); }
+.hh-mon.lit .hh-beam { opacity: .55; transition: opacity 900ms var(--ease-out); }
+.hh-mon.lit.focus .hh-beam { opacity: 1; }
+.hh-mon.lit.dim .hh-beam { opacity: .18; }
+.hh-mon.lit.dim img { filter: brightness(.55); }
+/* the floor the feet touch: a glow, and one edge line bright in the middle and gone at the ends */
+.hh-floor { position: absolute; left: 0; right: 0; bottom: calc(var(--w) * -.5); height: calc(var(--w) * .9); z-index: -3; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
+.hh-edge { position: absolute; left: 4%; right: 4%; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--hh-edge), transparent); }
+.hh-name { min-height: 20px; margin-top: calc(var(--w) * .16); font-size: .8125rem; color: var(--fg-2); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); }
+.hh-name.on { opacity: 1; }
+/* the plaque: the champion's name and one line under it; then the next event and the actions */
+.hh-plaque { margin-top: var(--s4); display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.hh-plaque b { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+.hh-plaque span { font-size: .8125rem; color: var(--fg-2); }
+.hh-info { margin-top: var(--section); display: flex; flex-direction: column; align-items: center; gap: var(--s5); }
+.hh-ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.hh-ev-row { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; column-gap: var(--s3); }
+.hh-dday { font-size: 1.75rem; line-height: 1; }
+.hh-ev-name { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.01em; }
+.hh-ev-meta { display: inline-flex; align-items: center; gap: var(--s2); font-size: .8125rem; color: var(--fg-2); }
+.hh-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); }
+@media (min-width: 860px) { .hh-row { --w: min(17vw, 25vh, 210px); } }
 
 /* the reigning champion's party on the floor (the hall of fame stage): two rows on a phone (the back row smaller
    and further), one row on wider screens with the middle nearest. Each stands on its own contact shadow. */

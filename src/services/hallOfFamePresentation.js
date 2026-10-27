@@ -32,6 +32,27 @@ export function normalizedSeasonLabel(season = {}) {
 
 export { generationNumberFromLegacyLabel };
 
+// The hall of fame in generation order, oldest first (the last is the reigning champion): normalized entries, and legacy
+// site_data entries keyed by generation, a site_data row replacing a remote legacy row of the same generation.
+export function mergeHallOfFame(legacyRows, normalizedRows) {
+  const legacyChamps = Array.isArray(legacyRows) ? legacyRows : [];
+  const remoteRows = Array.isArray(normalizedRows) ? normalizedRows : [];
+  const legacyByGeneration = new Map();
+  for (const row of remoteRows.filter(row => row.kind === "legacy")) legacyByGeneration.set(row.generationNumber, row);
+  for (const row of legacyChamps) {
+    legacyByGeneration.set(generationNumberFromLegacyLabel(row.gen), {
+      ...row,
+      kind: "legacy",
+      generationNumber: generationNumberFromLegacyLabel(row.gen),
+    });
+  }
+  return [
+    ...legacyByGeneration.values(),
+    ...remoteRows.filter(row => row.kind === "normalized"),
+  ].sort((a, b) => Number(a.generationNumber || 0) - Number(b.generationNumber || 0)
+    || String(a.format || "").localeCompare(String(b.format || "")));
+}
+
 const showdownId = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]/g, "");
 
 // Form names no directory entry spells: the official Pokédex names (pokemonkorea.co.kr)

@@ -4,8 +4,8 @@ import { Empty, Icon, Modal, PageHead, Reveal, SectionHead } from "../components
 import PartyStage from "../components/common/PartyStage.jsx";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
-  generationNumberFromLegacyLabel,
   legacyChampionLabel,
+  mergeHallOfFame,
   loadHallOfFameArtworkLookup,
   resolveHallOfFameArtwork,
 } from "../services/hallOfFamePresentation.js";
@@ -33,22 +33,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       .catch(() => { if (!cancelled) setArtworkLookup(new Map()); });
     return () => { cancelled = true; };
   }, []);
-  const legacyChamps = Array.isArray(data.champions) ? data.champions : [];
-  const remoteRows = Array.isArray(normalizedChamps) ? normalizedChamps : [];
-  const legacyByGeneration = new Map();
-  for (const row of remoteRows.filter(row => row.kind === "legacy")) legacyByGeneration.set(row.generationNumber, row);
-  for (const row of legacyChamps) {
-    legacyByGeneration.set(generationNumberFromLegacyLabel(row.gen), {
-      ...row,
-      kind: "legacy",
-      generationNumber: generationNumberFromLegacyLabel(row.gen),
-    });
-  }
-  const champs = [
-    ...legacyByGeneration.values(),
-    ...remoteRows.filter(row => row.kind === "normalized"),
-  ].sort((a, b) => Number(a.generationNumber || 0) - Number(b.generationNumber || 0)
-    || String(a.format || "").localeCompare(String(b.format || "")));
+  const champs = mergeHallOfFame(data.champions, normalizedChamps);
 
   const [pop, setPop] = useState(null);
 

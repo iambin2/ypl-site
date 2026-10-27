@@ -98,8 +98,6 @@ const EXCEPT = {
       `${C} | :is(.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ann-link, .ann-submit)::before | padding: 1px`,
       `${T} | .glass::before, .glass-l3::before, .glass-lite::before, .card::before | padding: 1px`, `${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
-      `${P} | .home.staged | margin-top: calc((env(safe-area-inset-top, 0px) + 92px) * -1)`, `${P} | .home.staged | margin-top: -112px`,
-      `${P} | .home.staged .hx-cover .hx-pin | padding-top: calc(env(safe-area-inset-top, 0px) + 92px)`,
       `${S} | .page | padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px)`, `${S} | .page | padding-block: 112px 96px`,
       `${S} | .site-foot-in | padding: var(--s14) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
       `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-left: 48px`, `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-right: 48px`,
@@ -125,7 +123,7 @@ const EXCEPT = {
       `${B} | .bk-series-vs | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
       `${R} | .records-party-sprite-fallback | text-align: center`, `${A} | .ed-head | text-align: center`],
     "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`],
-    "(d) a symmetric stage": [`${P} | .hx-cover .hx-pin | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
+    "(d) a symmetric stage": [`${P} | .hh | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
   },
   "align: right only for trailing values and number columns (Alignment)": {
     "a trailing value or a number column": [`${K} | .calc-hp b | text-align: right`, `${K} | .calc-base-row b | text-align: right`, `${K} | .calc-base-row small | text-align: right`,
