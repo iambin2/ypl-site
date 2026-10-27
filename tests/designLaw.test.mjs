@@ -81,8 +81,9 @@ const RULES = {
   "type: tracking follows size, none up to 18px (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value)
     || (sizePx(sib(d, "font-size")) !== null && !/fig/.test(d.sel) && trackFor(sizePx(sib(d, "font-size"))) !== d.value)),
   "type: line-heights on one set (Type)": d => d.prop === "line-height" && !LEADING.has(d.value),
-  "type: YPL Figures sit on the --fig scale, 28px and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
-  "type: one face, SUIT and YPL Figures (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font(-fig)?\))$/.test(d.value),
+  "type: big figures sit on the --fig scale, 28px and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
+  // YPL Figures belongs to the brand (the wordmark and its own text); a page's numbers are SUIT (2026-10-27)
+  "type: one face, SUIT; YPL Figures only with the brand (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
   "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value),
   "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",

@@ -76,7 +76,7 @@
 .rc-poster { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); }
 .rc-poster-label { font-size: .8125rem; font-weight: 600; line-height: 1.25; color: var(--fg-2); }
 .rc-poster-fig { display: inline-flex; align-items: baseline; white-space: nowrap; }
-.rc-poster-num { font-size: var(--fig-m); line-height: 1; font-variant-numeric: tabular-nums; }
+.rc-poster-num { font-size: var(--fig-m); font-weight: 800; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .rc-poster-num .roll { line-height: 1.15; }
 .rc-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: var(--s2); }
 .rc-facts.rows { grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--s1) 0; border-radius: var(--r-tile); background: var(--surface-2); }
@@ -95,7 +95,7 @@
 .rc-lead-cta { justify-self: stretch; }
 @media (min-width: 640px) { .rc-lead-head { grid-template-columns: minmax(0, 1fr) 220px; align-items: end; } .rc-lead-cta { justify-self: start; } }
 @media (min-width: 1024px) {
-  .rc-poster-num { font-size: var(--fig-l); }
+  .rc-poster-num { font-size: var(--fig-l); letter-spacing: -.04em; }
   .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s6); }
   .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
   /* a label and value row is as wide as it reads, not the width of the card */

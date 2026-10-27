@@ -14,7 +14,7 @@ export function Poster({ label, value, unit }) {
   );
 }
 
-/* 칸의 값이 "25회", "8명"처럼 정수와 단위뿐이면 점수판 숫자(YPL Figures 28)와 작은 단위로 세운다(규칙 4). */
+/* 칸의 값이 "25회", "8명"처럼 정수와 단위뿐이면 점수판 숫자(SUIT 800, 28px)와 작은 단위로 세운다(규칙 4). */
 const COUNT = /^(\d+)(회|명|팀|점|종|건|개)$/;
 const factValue = v => {
   const m = COUNT.exec(String(v ?? ""));

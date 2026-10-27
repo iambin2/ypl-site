@@ -136,7 +136,7 @@
 /* ---------- draw animation ---------- */
 .bk-drawwrap { display: flex; flex-direction: column; gap: var(--s4); }
 .bk-draw-h { display: flex; align-items: baseline; gap: var(--s3); font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-.bk-draw-cnt { font-size: var(--fig-s); font-weight: 800; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.bk-draw-cnt { font-size: var(--fig-s); font-weight: 800; letter-spacing: -.02em; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 .bk-slot.dwait { color: var(--fg-3); }
 .bk-slot.dwait i { display: block; width: 28px; height: 3px; border-radius: var(--r-pill); background: var(--tint); }
 .bk-slot.drolling { background: var(--tint); color: var(--fg); font-weight: 800; animation: y-pulse var(--dur-slow) var(--ease-out) infinite; }

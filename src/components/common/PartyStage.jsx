@@ -15,8 +15,9 @@ export function arrive(els, start, step) {
 const sizeAt = (i, n) => { const d = Math.abs(i - (n - 1) / 2); return d < 1 ? 1 : d < 2 ? .84 : .7; };
 
 /* 무대 위의 우승 파티: 상자 없이, 천장 빛이 떨어지는 바닥에 홈과 같은 V로 서 있다. 움직이는 것은 빛뿐이라, 올린 포켓몬 말고는 한 걸음 어두워진다.
-   members 는 [{ name, img, fallback? }], children 은 사진 설명 자리. enter 면 처음 그려질 때 가운데부터 차례로 선다. */
-export default function PartyStage({ members, label, enter = false, children }) {
+   members 는 [{ name, img, fallback? }], children 은 사진 설명 자리. enter 면 처음 그려질 때 가운데부터 차례로 선다.
+   dais 면 명예의 전당의 단상 위에 선다: 바닥에 그린 세 개의 원(19차). */
+export default function PartyStage({ members, label, enter = false, dais = false, children }) {
   const list = members.slice(0, 6);
   const ref = useRef(null);
   const played = useRef(false);
@@ -28,7 +29,7 @@ export default function PartyStage({ members, label, enter = false, children }) 
     arrive(mons.slice().sort((a, b) => Math.abs(+a.dataset.i - mid) - Math.abs(+b.dataset.i - mid)), 420, 60);
   }, [enter, list.length]);
   return (
-    <figure className="hx-party" ref={ref}>
+    <figure className={"hx-party" + (dais ? " dais" : "")} ref={ref}>
       <ol className="hx-floor" aria-label={label}>
         {list.map((m, i) => (
           <li key={i} className="hx-mon" data-i={i} style={{ "--s": sizeAt(i, list.length) }}>

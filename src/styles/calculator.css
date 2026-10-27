@@ -126,7 +126,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-speed-basis { display: flex; flex-direction: column; gap: var(--s4); }
 .calc-speed-basis .ypl-seg { align-self: flex-start; }
 .calc-speed-me { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
-.calc-speed-me .fig { font-size: var(--fig-m); }
+.calc-speed-me .fig { font-size: var(--fig-m); letter-spacing: -.03em; }
 .calc-speed-me p { flex: 1; min-width: 200px; font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .calc-speed-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s3); align-items: center; }
 .calc-tier-search { margin-top: var(--s4); }
