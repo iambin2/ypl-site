@@ -18,15 +18,15 @@ export default function SiteFooter({ onNavigate, tagline }) {
           </button>
           {tagline && <p className="site-foot-tag">{tagline}</p>}
           <a className="ypl-btn ypl-btn--sm ypl-btn--glass press hl site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
-            <Icon n="discord" size={16} />디스코드 참여<Icon n="ext" size={16} />
+            디스코드 참여<Icon n="ext" size={16} />
           </a>
         </div>
 
         <div className="site-foot-rule">
           <span>© {span} Yonsei Pokémon League</span>
           <span className="site-foot-fine">
-            연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점의 비공식 기록 사이트입니다.
-            Pokémon 및 포켓몬스터는 Nintendo, Creatures, GAME FREAK의 상표입니다.
+            연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점이 운영하는 팬 사이트로, Nintendo, Creatures, GAME FREAK, The Pokémon Company와 관계가 없습니다.
+            Pokémon 및 포켓몬스터는 각 회사의 상표입니다.
           </span>
         </div>
       </div>

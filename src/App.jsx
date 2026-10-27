@@ -5,7 +5,7 @@ import { loadSiteData, saveSiteData } from "./services/siteDataService.js";
 import HomePage, { stageStateOf } from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
-import TabBar, { MORE_ITEMS, useWideNav } from "./components/layout/Navigation.jsx";
+import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/Navigation.jsx";
 import Stage, { showBars, useScrollChrome } from "./components/layout/Stage.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
@@ -49,6 +49,8 @@ const TitlesPage = lazyPage(() => import("./pages/TitlesPage.jsx"));
 const AdminModalHost = lazy(() => import("./admin/AdminModalHost.jsx"));
 const PAGES = { about: AboutPage, board: BoardPage, bracket: BracketsPage, champions: ChampionsPage, news: NewsPage, records: RecordsPage, builder: TeamBuilderPage, calc: CalculatorPage, titles: TitlesPage };
 const ready = v => !PAGES[v] || PAGES[v].ready();
+/* 다음 프레임이 화면에 나간 뒤에 실행한다(rAF 다음의 작업): 그 프레임에 이미 시작한 반응(누름, 알약)이 먼저 보인다. */
+const afterPaint = run => requestAnimationFrame(() => setTimeout(run, 0));
 const whenReady = (v, run) => { if (ready(v)) run(); else PAGES[v].preload().then(run, run); };
 
 /* =========================================================================
@@ -167,7 +169,8 @@ export default function App() {
       const next=readInitialAppView(window.location.search);
       // 기록을 따르는 페이지 상태(열린 대진표)는 popHandlers 로 전환 안에서 바꾼다.
       // 지금 화면을 복사한 다음, 페이지의 바뀐 화면까지 한 번에 그려야 공유 요소가 제자리를 찾는다.
-      whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);}),{dir:to<from?"back":"forward",shared,scrollY}));
+      leadPills(next);
+      afterPaint(()=>whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);}),{dir:to<from?"back":"forward",shared,scrollY})));
       showBars();
     };
     window.addEventListener("popstate",onPopState);
@@ -198,7 +201,9 @@ export default function App() {
       if(url.href!==window.location.href) pushHistory({view:v},url);
     }
     // I1: 지금 화면은 살아 있는 복사본으로 사라지고, 새 화면은 맨 위에서 살짝 위로 올라온다.
-    whenReady(v,()=>transition(()=>flushSync(()=>{setView(v);setMore(null);}),{shared:options.shared,scrollY:0}));
+    // 누름의 반응이 먼저다: 알약을 이 프레임에 출발시키고, 복사와 새 페이지 그리기는 그 프레임이 나간 뒤에 한다.
+    leadPills(v);
+    afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
     showBars();
   },[view]);
   const flash=useCallback((m)=>setToast({id:Date.now()+Math.random(),text:m}),[]);
@@ -284,7 +289,7 @@ export default function App() {
     ...MORE_ITEMS.map(([key,label,icon])=>({key,label,icon,current:view===key,onSelect:()=>go(key)})),
     {key:"sep",sep:true},
     {key:"discord",label:"디스코드 참여",icon:"discord",href:DISCORD_URL},
-    {key:"admin",label:admin?"관리자 로그아웃":"관리자 로그인",icon:admin?"logout":"lock",onSelect:onAdmin},
+    {key:"admin",label:admin?"관리자 로그아웃":"관리자 로그인",icon:admin?"logout":"login",onSelect:onAdmin},
   ];
   return (
     <div className={"ypl"+(admin?" is-admin":"")}>

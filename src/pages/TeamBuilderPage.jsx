@@ -5,6 +5,7 @@ import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
 import { EASE_OUT, reduced } from "../components/common/motion.js";
+import { formatDate } from "../services/dateFormat.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
@@ -140,6 +141,9 @@ function BaseStatStrip({ stats, sortId }) {
   );
 }
 
+/* "2026.09.09 – 2026.12.02" → "9월 9일 (수) – 12월 2일 (수)": 날짜는 사이트의 한 표기로 */
+const periodText = period => String(period || "").replace(/\d{4}\.\d{2}\.\d{2}/g, d => formatDate(d));
+
 /* 목록은 편집과 따로 그린다. 359행(화면 요소 약 9천 개)을 능력 포인트나 기술이 바뀔 때마다 다시 그리면
    슬라이더 한 칸에 100ms가 걸렸다. 목록이 받는 값은 팀의 종 구성이 바뀔 때만 새로 만들어진다. */
 const PoolList = memo(function PoolList({ pool, detailData, displayPokemon, sortId, occupancy, selectedUid, onAdd }) {
@@ -153,7 +157,7 @@ const PoolList = memo(function PoolList({ pool, detailData, displayPokemon, sort
         return (
           <button key={pokemon.name} className="tb-pokemon-row" onClick={() => onAdd(pokemon)} disabled={already && !canReplaceSelected}>
             <img src={spriteUrl(pokemon.name)} alt="" loading="lazy" decoding="async" onError={onSpriteError()} />
-            <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{displayPokemon(pokemon) !== pokemon.name ? pokemon.name : ""}{details?.num ? `${displayPokemon(pokemon) !== pokemon.name ? " " : ""}#${String(details.num).padStart(4, "0")}` : ""}</small></span>
+            <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{details?.num ? `#${String(details.num).padStart(4, "0")}` : ""}</small></span>
             <TypeBadges types={details?.types || []} />
             <BaseStatStrip stats={details?.baseStats} sortId={sortId} />
             <span className="tb-add-mark">
@@ -1224,8 +1228,8 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     <section className="sec tb-page" data-step={step}>
       <PageHead plain="팀 빌더" desc="포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.">
         <div className="tb-hero-actions">
-          <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀 <span className="tb-count-badge">{savedTeams.length}</span></button>
-          <button className="btn tb-main-btn tb-save-btn" disabled={!storageAvailable} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
+          <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="tb-count-badge">{savedTeams.length}</span>}</button>
+          <button className="btn tb-main-btn tb-save-btn" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
         </div>
       </PageHead>
 
@@ -1253,7 +1257,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         </div>
         <div className="tb-rule-meta">
           <span className={`tb-status-chip ${regulation.status}`}>{regulation.status === "current" ? "현행" : "이전"}</span>
-          <span>{regulation.period}</span>
+          <span>{periodText(regulation.period)}</span>
           <span>{regulation.description}</span>
           {cupRule.kind !== "none" && <span>{cupRule.description}</span>}
         </div>
@@ -1342,7 +1346,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
-              {sortId === "name" ? (sortReversed ? "역순" : "가나다순") : (sortReversed ? "낮은 순" : "높은 순")}
+              {sortId === "name" ? (sortReversed ? "ㅎ부터" : "ㄱ부터") : (sortReversed ? "낮은 순" : "높은 순")}
             </button>
           </div>
           {cupRule.kind === "monotype" && !assignedTypeId ? (

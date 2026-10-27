@@ -140,8 +140,8 @@ function FreeBoard({ data, admin, save, flash, tabs }){
       <article className="nb-article">
         <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>게시판</span></button>
         <header className="nb-a-head">
-          <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={12}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
           <h1 className="title nb-a-title" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
+          <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={12}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
         </header>
         {(p.body||p.link)&&<div className="nb-body card">
           <Prose text={p.body}/>
@@ -149,7 +149,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
         </div>}
         <div className="bd-tools"><button className="bd-del press" onClick={()=>editPost(p)}>수정</button><button className="bd-del press" onClick={()=>delPost(p)}>삭제</button></div>
         <div className="bd-cmts card">
-          <h2 className="bd-cmts-h">댓글 {cc}</h2>
+          <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
           {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
             <div className="bd-cmt-main"><div className="bd-cmt-top"><b>{c.nick}</b><span className="bd-date tnum">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-del sm" onClick={()=>editComment(p,c)}>수정</button><button className="bd-del sm" onClick={()=>delComment(p,c)}>삭제</button></div><div className="bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div></div>
           </div>))}
@@ -162,12 +162,12 @@ function FreeBoard({ data, admin, save, flash, tabs }){
 
   return (<section className="sec">
     <PageHead plain="게시판" desc="로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.">
+      {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
         <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setCompose(true)}><Icon n="plus" size={16}/>글쓰기</button>
       </div>
     </PageHead>
-    {tabs}
     <div className="bd-list swap">
       {list.length===0&&(kw
         ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
@@ -178,7 +178,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
             <span className="bd-title">{p.secret&&<span className="bd-lock"><Icon n="lock" size={12}/> 관리자 전용</span>}<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span></span>
             <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
           </span>
-          <span className="bd-cc"><Icon n="msg" size={14}/>{cc}</span>
+          {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
         </button>);})}
     </div>
     <Pager page={cur} pages={pages} onGo={setPage}/>
@@ -401,8 +401,8 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
       <article className="nb-article">
         <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>{label}</span></button>
         <header className="nb-a-head">
-          <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
           <h1 className="title nb-a-title" data-vt={"s-"+p.id}>{p.title}</h1>
+          <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
         </header>
         <div className="sc-actions">
           <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={14}/></button>
@@ -417,7 +417,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         <div className="sc-post-sheet">{display==="error"?<p className="bk-error">배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</p>
           :!display?<Loader small/>:<TeamSheetView sheet={sheet}/>}</div>
         <div className="bd-cmts card">
-          <h2 className="bd-cmts-h">댓글 {cc}</h2>
+          <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
           {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
             <div className="bd-cmt-main"><div className="bd-cmt-top"><b>{c.nick}</b><span className="bd-date tnum">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-del sm" onClick={()=>editComment(p,c)}>수정</button><button className="bd-del sm" onClick={()=>delComment(p,c)}>삭제</button></div><div className="bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div></div>
           </div>))}
@@ -431,12 +431,12 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
 
   return (<section className="sec">
     <PageHead plain="게시판" desc={kind==="sample"?"포켓몬 한 마리의 세팅과 운용법을 나누는 곳입니다. 팀 빌더에서 바로 올리고 가져갈 수 있습니다.":"파티 전체를 소개하는 곳입니다. 마음에 드는 파티는 내 팀 빌더로 바로 가져갈 수 있습니다."}>
+      {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이 검색" count={list.length}/>
         <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</button>
       </div>
     </PageHead>
-    {tabs}
     {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
     {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
       {list.length===0&&(kw
@@ -449,14 +449,14 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
               <span className="sc-tile-foot">
                 <span className="bd-main"><span className="bd-title" data-vt={"s-"+post.id}>{post.title}</span>
                   <span className="bd-meta"><b className="bd-nick">{post.nick}</b><span>{REGULATIONS[post.team?.regulationId]?.shortName||""}</span><span className="bd-date tnum">{fmtDT(post.createdAt)}</span></span></span>
-                <span className="bd-cc"><Icon n="msg" size={14}/>{cc}</span>
+                {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
               </span>
             </button>
           : <button type="button" className="bd-head sc-row press" key={post.id} onClick={()=>openPost(post.id)}>
               <img className="sc-row-sprite" src={spriteUrl(post.team?.members?.[0]?.pokemonName)} alt="" loading="lazy" decoding="async" onError={onSpriteError()}/>
               <span className="bd-main"><span className="bd-title" data-vt={"s-"+post.id}>{post.title}</span>
                 <span className="bd-meta"><b className="bd-nick">{post.nick}</b><span>{post.names?.[0]||""}</span><span className="bd-date tnum">{fmtDT(post.createdAt)}</span></span></span>
-              <span className="bd-cc"><Icon n="msg" size={14}/>{cc}</span>
+              {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
             </button>; })}
     </div>}
     <Pager page={cur} pages={pages} onGo={setPage}/>

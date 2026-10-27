@@ -1,7 +1,7 @@
 import React, { useId, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "./Icon.jsx";
-import { EASE_IN, EASE_OUT, desktop, reduced, settleTitle, springTo, springs } from "./motion.js";
+import { DUR, EASE_IN, EASE_OUT, desktop, reduced, settleTitle, springTo, springs } from "./motion.js";
 
 /* 닫힘 애니메이션 — 떠 있는 층은 부모가 상태를 지우는 순간 사라진다.
    그래서 React 가 떼어 낸 노드를 그 자리에 잠깐 다시 붙여 사라지는 모습만 재생하고 지운다.
@@ -51,7 +51,7 @@ function recede(on) {
   if (on) main.style.transformOrigin = `50% ${innerHeight / 2 - main.getBoundingClientRect().top}px`;
   recedeAnim?.cancel();
   recedeAnim = main.animate([{ transform: on ? "none" : "scale(.965)" }, { transform: on ? "scale(.965)" : "none" }],
-    { duration: on ? 620 : 320, easing: on ? springs().soft : EASE_OUT, fill: "forwards" });
+    { duration: on ? DUR.soft : 320, easing: on ? springs().soft : EASE_OUT, fill: "forwards" });
   if (!on) recedeAnim.finished.then(a => a.cancel()).catch(() => {});
 }
 function holdPage(on) {
@@ -114,7 +114,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     flyRef.current = null;
     if (!reduced()) scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: EASE_OUT });
     if (desktop()) {
-      if (!reduced()) sheet.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 480, easing: springs().snappy });
+      if (!reduced()) sheet.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: DUR.snappy, easing: springs().snappy });
     } else {
       sheet.style.transform = `translateY(${sheet.offsetHeight + 20}px)`;
       slide(0);
@@ -190,10 +190,9 @@ export default function Modal({ title, hint, children, onClose, className = "", 
         tabIndex={-1} ref={sheetRef}>
         <div className="grip" aria-hidden="true" />
         <div className="modal" ref={bodyRef}>
-          {title !== undefined && <>
-            <button type="button" className="modal-x press" onClick={() => closeRef.current?.()} aria-label="닫기"><Icon n="x" size={18} /></button>
-            <h3 id={titleId}>{title}</h3>
-          </>}
+          {/* every sheet and dialog closes the same way: the X at its top right, titled or not */}
+          <button type="button" className="modal-x press" onClick={() => closeRef.current?.()} aria-label="닫기"><Icon n="x" size={18} /></button>
+          {title !== undefined && <h3 id={titleId}>{title}</h3>}
           {hint && <p className="hint">{hint}</p>}
           {children}
         </div>

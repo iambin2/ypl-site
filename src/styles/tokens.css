@@ -77,7 +77,7 @@
 /* YPL Figures: digits, hyphen and D drawn in the wordmark's construction (scripts/build-figures.py). Big figures only. */
 @font-face {
   font-family: "YPL Figures";
-  src: url("/fonts/ypl-figures.woff2") format("woff2");
+  src: url("/fonts/ypl-figures.woff2?v=20261027") format("woff2"); /* the query changes whenever the glyphs do, so no browser keeps old digits */
   font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+002D, U+0044, U+2212;
 }
 @property --la { syntax: "<color>"; inherits: true; initial-value: transparent; }
@@ -278,8 +278,8 @@ body {
 }
 ::selection { background: var(--sel-bg); }
 h1, h2, h3, h4, h5, p { margin: 0; }
+/* headlines balance their lines; body copy runs to its container's edge and never breaks early (2026-10-16) */
 h1, h2, h3, h4 { font-weight: 800; line-height: 1.25; text-wrap: balance; }
-p { text-wrap: pretty; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; letter-spacing: inherit; background: none; border: 0; padding: 0; margin: 0; text-align: center; -webkit-tap-highlight-color: transparent; }
@@ -377,7 +377,7 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 
 /* ---------- K1 press, K2 pointer highlight ---------- */
-.press { transition: scale 400ms var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
+.press { transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 .press:active:not(:disabled) { scale: .97; transition: scale 90ms var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { .press:active:not(:disabled) { scale: 1; opacity: .75; } }
 @media (hover: hover) and (pointer: fine) {
@@ -386,13 +386,13 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 }
 
 /* ---------- J1 reveal: once, a blur lifting as it rises (Reveal.jsx sets .pre only below the fold) ---------- */
-.reveal { transition: opacity 700ms var(--ease-out), transform 900ms var(--ease-out), filter 700ms var(--ease-out); }
+.reveal { transition: opacity var(--dur-stage) var(--ease-out), transform 900ms var(--ease-out), filter var(--dur-stage) var(--ease-out); }
 .reveal.pre { opacity: 0; transform: var(--rise); filter: var(--reveal-blur); }
 
 /* ---------- K4 rolling numbers ---------- */
 .roll { display: inline-flex; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: 1.15; }
 .rd { display: inline-block; height: 1.15em; overflow: hidden; }
-.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.15em)); transition: transform 760ms var(--spring-soft); }
+.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.15em)); transition: transform var(--dur-soft) var(--spring-soft); }
 .rs > i { font-style: normal; height: 1.15em; line-height: 1.15em; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .rs { transition: none; } }
 
@@ -401,10 +401,10 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .live-dot::after, .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ping 1.8s var(--ease-out) infinite; }
 @keyframes ping { from { transform: scale(1); opacity: .7; } to { transform: scale(3.2); opacity: 0; } }
 
-/* ---------- sideways runs (bracket, segmented): the edge that hides more content fades.
+/* ---------- sideways runs (bracket, segmented, filter rows): the edge that hides more content fades.
    Driven by the run's own scroll, so a run that does not scroll shows no fade. ---------- */
 @supports (animation-timeline: scroll()) {
-  :is(.bk-scroll, .seg-track) {
+  :is(.bk-scroll, .seg-track, .rc-filter[role="group"]) {
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
     mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
     animation: edge-fade linear both; animation-timeline: scroll(self inline);
@@ -417,7 +417,7 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-.swap { animation: y-swap 420ms var(--ease-out) 60ms backwards; }
+.swap { animation: y-swap var(--dur-slow) var(--ease-out) 60ms backwards; }
 @keyframes y-swap { from { opacity: 0; transform: translateY(8px); } }
 
 /* ---------- motion law: appearing content decelerates (ease-out), floating layers and things that move spring ----------

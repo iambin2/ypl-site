@@ -196,14 +196,14 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
   return (
     <div className="tb-panel calc-side" data-calc-side={index}>
       <div className="calc-side-head">
-        <button type="button" className="calc-mon press" onClick={onPickPokemon} aria-label={`${SIDE_NAMES[index]} 선택`}>
-          {pokemon ? <img src={spriteUrl(pokemon.name)} alt="" onError={onSpriteError()} /> : <span className="calc-mon-empty"><Icon n="plus" size={20} /></span>}
+        {pokemon ? <button type="button" className="calc-mon press" onClick={onPickPokemon} aria-label={`${SIDE_NAMES[index]} 바꾸기`}>
+          <img src={spriteUrl(pokemon.name)} alt="" onError={onSpriteError()} />
           <span className="calc-mon-copy">
+            <strong>{display(pokemon)}</strong>
             <small>{SIDE_NAMES[index]}</small>
-            <strong>{pokemon ? display(pokemon) : "포켓몬 선택"}</strong>
             {record && <TypeBadges types={record.types} />}
           </span>
-        </button>
+        </button> : <p className="calc-side-empty">{SIDE_NAMES[index]}을 고르면 특성, 도구, 기술을 여기서 정합니다.</p>}
         {(hasSavedTeams || pokemon) && <div className="calc-side-actions">
           {hasSavedTeams && <button type="button" className="btn btn-ghost btn-sm" onClick={onImport}>내 팀에서</button>}
           {pokemon && <button type="button" className="btn btn-ghost btn-sm" onClick={onClear}>비우기</button>}
@@ -320,7 +320,7 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
           {[0, 1].map(index => (
             <button type="button" key={index} className="calc-versus-mon press" onClick={() => openPokemonPicker(index)}>
               {pokemons[index] ? <img src={spriteUrl(pokemons[index].name)} alt="" onError={onSpriteError()} /> : <span className="calc-mon-empty"><Icon n="plus" size={20} /></span>}
-              <span><small>{SIDE_NAMES[index]}</small><strong>{pokemons[index] ? nameOf(index) : "포켓몬 선택"}</strong></span>
+              <span><strong>{pokemons[index] ? nameOf(index) : `${SIDE_NAMES[index]} 선택`}</strong>{pokemons[index] && <small>{SIDE_NAMES[index]}</small>}</span>
             </button>
           ))}
         </div>

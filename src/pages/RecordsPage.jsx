@@ -12,7 +12,8 @@ import {
   normalizedRecordsReadEnabled,
 } from "../services/normalizedRecordsService.js";
 import { syncTournamentRounds } from "../services/recordSync.js";
-import { recordRoundTitle } from "../services/eventName.js";
+import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
+import { generationText } from "../services/seasonLabel.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -177,11 +178,12 @@ function TrainerView({ snapshot, onOpen }) {
     <div className="rc-list">
       <RailSearch value={query} onChange={setQuery} placeholder="트레이너 검색" count={`${visible.length}명`} />
       {visible.length ? (
-        <ul className="ypl-group rc-pick">
-          {/* 성적 이름은 머리줄에 한 번만. 데스크톱은 두 단이라 머리줄도 둘 */}
+        <ul className="ypl-group rc-pick" style={{ "--rows": Math.ceil(rows.length / 2) + 1 }}>
+          {/* 성적 이름은 머리줄에 한 번만. 데스크톱은 두 단이고 위에서 아래로 읽으므로 둘째 단의 머리줄이 목록 한가운데에 선다 */}
           <li className="rc-pick-head" aria-hidden="true"><div className="ypl-row rc-pick-row rc-pick-row--stats"><span>트레이너</span><span className="rc-stats">{["우승", "준우승", "4강"].map((k) => <span key={k} className="rc-stat"><span>{k}</span></span>)}</span><span className="rc-pick-chev" /></div></li>
-          <li className="rc-pick-head desk" aria-hidden="true"><div className="ypl-row rc-pick-row rc-pick-row--stats"><span>트레이너</span><span className="rc-stats">{["우승", "준우승", "4강"].map((k) => <span key={k} className="rc-stat"><span>{k}</span></span>)}</span><span className="rc-pick-chev" /></div></li>
-          {rows.map((trainer) => (
+          {rows.flatMap((trainer, index) => [index === Math.ceil(rows.length / 2) && (
+            <li key="desk-head" className="rc-pick-head desk" aria-hidden="true"><div className="ypl-row rc-pick-row rc-pick-row--stats"><span>트레이너</span><span className="rc-stats">{["우승", "준우승", "4강"].map((k) => <span key={k} className="rc-stat"><span>{k}</span></span>)}</span><span className="rc-pick-chev" /></div></li>
+          ), (
             <li key={trainer.key || trainer.name}>
               <button type="button" className="ypl-row rc-pick-row rc-pick-row--stats" onClick={(e) => onOpen(trainer.key || trainer.name, e.currentTarget.querySelector(".ypl-row__title"))}>
                 <span className="ypl-row__title">{trainer.name}</span>
@@ -194,7 +196,7 @@ function TrainerView({ snapshot, onOpen }) {
                 <Icon n="chevr" size={16} className="rc-pick-chev" />
               </button>
             </li>
-          ))}
+          )])}
         </ul>
       ) : <Empty title="검색 결과가 없습니다." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
@@ -235,9 +237,9 @@ function TrainerProfile({ snapshot, profile }) {
      챔피언 칩이 이미 덮는 이름은 칭호 목록에서 뺀다.
      c.gen 이 레거시는 "초대", 정규화 행은 "6대 챔피언"으로 들어와
      그대로 붙이면 "6대 챔피언 챔피언"이 된다. 접미사를 한 번만 붙인다. */
-  const genLabel = (g) => `${String(g || "").replace(/\s*챔피언\s*$/, "")} 챔피언`;
+  const genLabel = (g) => `${generationText(g)} 챔피언`;
   const shownTitles = new Set(profile.champions.map((c) => genLabel(c.gen)));
-  const restTitles = profile.titles.filter((t) => !shownTitles.has(t.name));
+  const restTitles = profile.titles.filter((t) => !shownTitles.has(t.name) && !(/챔피언\s*$/.test(t.name) && shownTitles.has(genLabel(t.name))));
   const historyRows = history.slice().sort(compareHistoryRecency).slice((histCur - 1) * HIST_PER_PAGE, histCur * HIST_PER_PAGE);
 
   return (
@@ -267,7 +269,7 @@ function TrainerProfile({ snapshot, profile }) {
       </section>
 
       <section className="rc-sec" aria-labelledby="rc-hist-h">
-        <div className="rc-sech"><h4 id="rc-hist-h">대회 이력</h4><span>최근 순으로 {history.length}건</span></div>
+        <div className="rc-sech"><h4 id="rc-hist-h">대회 이력</h4></div>
         {history.length ? (
           <ul className="ypl-group">
             {historyRows.map((event) => {
@@ -298,7 +300,7 @@ function TrainerProfile({ snapshot, profile }) {
       </section>
 
       <section className="rc-sec" aria-labelledby="rc-fav-h">
-        <div className="rc-sech"><h4 id="rc-fav-h">엔트리 기록</h4><span>자주 쓴 포켓몬</span></div>
+        <div className="rc-sech"><h4 id="rc-fav-h">자주 쓴 포켓몬</h4></div>
         {favorites.length ? (
           <CountList items={favorites.slice(0, 6)} />
         ) : (
@@ -319,6 +321,18 @@ function RailSearch({ value, onChange, placeholder, count }) {
         <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder} />
       </div>
       <span className="tnum">{count}</span>
+    </div>
+  );
+}
+
+/* 페이지 탭 아래의 거르개: 세그먼트(탭)가 아니라 버튼 한 줄이고, 적용된 것만 반전된다(B3, 칩 규칙). */
+function FilterRow({ value, onChange, options, label }) {
+  return (
+    <div className="rc-filter" role="group" aria-label={label}>
+      {options.map(([key, text]) => (
+        <button key={key} type="button" aria-pressed={key === value} onClick={() => onChange(key)}
+          className={"ypl-btn ypl-btn--sm press " + (key === value ? "ypl-btn--primary" : "ypl-btn--glass")}>{text}</button>
+      ))}
     </div>
   );
 }
@@ -437,7 +451,6 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
 
   const renderRound = (tour, r, key, showCompetition = false) => {
     const championSeries = Boolean(r.championSeries || r.champ);
-    const rl = championSeries ? "" : r.round ? (/^\d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
     const runnerUps = Array.isArray(r.ru) ? r.ru : split(r.ru);
     const rule = displayRecordMeta(r.rule);
     const partyRows = r.team ? buildTeamPartyPreviewRows(r) : buildIndividualPartyPreviewRows(r);
@@ -445,6 +458,13 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     const expanded = openRoundKey === key;
     const toggle = () => setOpenRoundKey((current) => current === key ? null : key);
     const championshipEmphasis = championSeries && r.championshipPhase !== "qualifier";
+    // 대회 이름은 다른 화면과 같은 조립 이름("37회 파이컵 팀전 리전 워즈")을 쓴다. 이름이 이미 말한 것은 회색 줄에서 뺀다.
+    // 챔피언스 시리즈는 회차를 쓰지 않는다(트레이너 이력과 같은 규칙). 예전 기록은 회차와 리그로 이름을 짓는다.
+    const rl = championSeries ? "" : r.round ? (/^d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
+    const title = championSeries ? "챔피언스 시리즈" : r.eventName || (rl ? `${rl} ${leagueTitle(tour.label)}` : leagueTitle(tour.label));
+    const meta = [formatDate(r.date), r.season, championshipEmphasis && "챔피언스 시리즈", r.team && "팀전", rule]
+      .filter((part, i, all) => part && !title.includes(part) && all.indexOf(part) === i).join(", ");
+    const head = <span className="r2-head"><span className="r2-title">{title}</span>{meta && <span className="r2-meta">{meta}</span>}</span>;
     /* 순위마다 한 줄: 이름표 열 뒤에 이름. 팀전은 팀마다 줄을 나눈다. */
     const resultLines = (lines) => (
       <div className="r2-res">
@@ -471,32 +491,17 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     ]);
     return (
       <li className={"round2" + (championshipEmphasis ? " champ" : "")} key={key}>
-        <div className="r2-date">{formatDate(r.date)}</div>
         <div className="r2-main">
           {toggleable && !r.team ? (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
               <div className="records-round-summary">
-                {(showCompetition || rl || rule || r.team || championshipEmphasis || r.season) && <span className="r2-head">
-                  {showCompetition && <span className="r2-rule">{tour.label}</span>}
-                  {rl && <span className="r2-round">{rl}</span>}
-                  {r.season && <span className="r2-season">{r.season}</span>}
-                  {championshipEmphasis && <span className="r2-champ">챔피언스 시리즈</span>}
-                  {r.team && <span className="r2-mode">팀전</span>}
-                  {rule && !(r.team && rule === "팀전") && <span className="r2-rule">{rule}</span>}
-                </span>}
+                {head}
                 {individualResults()}
               </div>
               <span className="records-round-chevron" aria-hidden="true"><svg viewBox="0 0 12 8"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
             </button>
           ) : <>
-          {(showCompetition || rl || rule || r.team || championshipEmphasis || r.season) && <div className="r2-head">
-            {showCompetition && <span className="r2-rule">{tour.label}</span>}
-            {rl && <span className="r2-round">{rl}</span>}
-            {r.season && <span className="r2-season">{r.season}</span>}
-            {championshipEmphasis && <span className="r2-champ">챔피언스 시리즈</span>}
-            {r.team && <span className="r2-mode">팀전</span>}
-            {rule && !(r.team && rule === "팀전") && <span className="r2-rule">{rule}</span>}
-          </div>}
+          {head}
           {!r.team && individualResults()}
           {r.team && teamResults()}</>}
           {toggleable && r.team && (
@@ -540,14 +545,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
   if (!otours.length) return <Empty title="대회 기록이 없습니다." />;
 
   return (<>
-    <div className="rc-filter">
-      <Segmented
-        value={selectedTour ? selectedTour.key : "all"}
-        onChange={setCategory}
-        ariaLabel="대회 종류"
-        options={[["all", "전체"], ...otours.map((tour) => [tour.key, tour.label])]}
-      />
-    </div>
+    <FilterRow value={selectedTour ? selectedTour.key : "all"} onChange={setCategory} label="대회 종류"
+      options={[["all", "전체"], ...otours.map((tour) => [tour.key, tour.label])]} />
 
     {selectedTour ? (
       <div className="swap" key={category}>
@@ -562,13 +561,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       </div>
     ) : (
       <>
-        <div className="records-toolbar">
-          <div className="records-search-field">
-            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={16}/></span>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="대회명, 시즌, 룰, 입상자 검색" aria-label="대회 기록 검색" />
-          </div>
-          <span className="tnum">전체 {allRows.length}회차</span>
-        </div>
+        <div className="rc-list-search"><RailSearch value={query} onChange={setQuery} placeholder="대회명, 시즌, 룰, 입상자 검색" count={`${allRows.length}건`} /></div>
         {allRows.length ? (
           <ul className="ypl-group sq rc-rounds swap">
             {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
@@ -602,7 +595,7 @@ function PokemonView({ snapshot }) {
           {rows.map((pokemon) => (
             <li key={pokemon.name}>
               <button type="button" className="ypl-row rc-pick-row rc-pick-row--rank" onClick={(e) => setOpen({ key: pokemon.name, from: e.currentTarget.querySelector(".ypl-row__title") })}>
-                <span className="rc-rail-n tnum">{snapshot.pokemon.indexOf(pokemon) + 1}</span>
+                <span className="rc-rail-n tnum">{snapshot.pokemon.findIndex((p) => p.entries === pokemon.entries) + 1}</span>
                 <span className="ypl-row__title">{pokemon.name}</span>
                 <span className="ypl-row__end">{pokemon.entries}회</span>
               </button>
@@ -643,12 +636,12 @@ function PokemonView({ snapshot }) {
 
             {current.champions.length > 0 && (
               <section className="rc-sec" aria-labelledby="rc-pk-ch-h">
-                <div className="rc-sech"><h4 id="rc-pk-ch-h">역대 챔피언 엔트리</h4><span>명예의 전당 기록</span></div>
+                <div className="rc-sech"><h4 id="rc-pk-ch-h">역대 챔피언 엔트리</h4></div>
                 <ul className="ypl-group">
                   {current.champions.map((item, index) => (
                     <li key={`${item.gen}:${index}`}>
                       <div className="ypl-row">
-                        <span className="ypl-row__title rc-crown"><Icon n="crown" size={16}/>{item.gen} {item.name}</span>
+                        <span className="ypl-row__title">{generationText(item.gen)} {item.name}</span>
                         <span className="ypl-row__end">{item.season}</span>
                       </div>
                     </li>
@@ -701,7 +694,7 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
     <>
       <div className="rc-filter">
         {options.length > 0 && <Segmented value={view.id} onChange={setSel} ariaLabel="랭킹 보기" options={options} />}
-        {past.length > 0 && <Dropdown value="" placeholder="지난 기록" ariaLabel="지난 기록" onChange={setSel} options={past.map((v) => ({ value: v.id, label: v.label }))} />}
+        {past.length > 0 && <Dropdown className="rc-past" value="" placeholder="지난 시즌 보기" ariaLabel="지난 기록" onChange={setSel} options={past.map((v) => ({ value: v.id, label: v.label }))} />}
         {admin && !normalizedMode && <>
           <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 시즌</button>
           <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 누적 탭</button>
@@ -791,7 +784,7 @@ function Podium({ rows, label, onName }) {
   return (<>
     <section className="rc-lead" aria-label={`${label} ${tied ? "공동 " : ""}${leader.rank}위`}>
       <div className="rc-lead-who">
-        <h3 className="rc-lead-title">{leaders.map((r) => <span className="rc-lead-name" key={r.name}>{nameOf(r)}</span>)}</h3>
+        <h3 className={"rc-lead-title" + (tied ? " tied" : "")}>{leaders.map((r, i) => <span className="rc-lead-name" key={r.name}>{i > 0 && ", "}{nameOf(r)}</span>)}</h3>
         <span className="rc-lead-sub">{label} {tied ? `공동 ${leader.rank}위, ${leaders.length}명` : `${leader.rank}위`}</span>
       </div>
       <div className="rc-lead-figs">

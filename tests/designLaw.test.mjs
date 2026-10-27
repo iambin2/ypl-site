@@ -90,6 +90,12 @@ const RULES = {
   "radius: hero 36, card 32, row 24, textarea 20, tile 12, pill (Space and radius)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
   "glass: blur only in the glass recipes (Stage and material)": d => /backdrop-filter$/.test(d.prop) && !d.value.startsWith("none") && d.file !== "src/styles/tokens.css",
   "motion: easing only through --ease-* and --spring-* (Motion)": d => /^(transition|animation)/.test(d.prop) && /cubic-bezier|\blinear\(|steps\(|\bease(-in|-out|-in-out)?\b/.test(noVars(d.value)),
+  // a spring curve stretched or squeezed feels like a different spring (2026-10-27: 400, 460, 480, 520 and 560ms snappy were all in use)
+  "motion: a spring runs at its natural length, var(--dur-snappy) or var(--dur-soft) (Motion)": d => /^(transition|animation)/.test(d.prop)
+    && [...d.value.matchAll(/(\S+)\s+var\(--spring-(snappy|soft)\)/g)].some(([, dur, kind]) => dur !== `var(--dur-${kind})`),
+  // body copy runs to its container's edge (2026-10-16); only headlines and a caption under a picture may balance their lines
+  "type: body copy never breaks early; balance only on headlines (Type)": d => d.prop === "text-wrap"
+    && (/pretty/.test(d.value) || (/balance/.test(d.value) && !/^(h1, h2, h3, h4|\.display|\.title|\.hof-plate)$/.test(d.sel))),
 };
 
 // ---------- deliberate exceptions, by rule and reason ----------
@@ -122,8 +128,7 @@ const EXCEPT = {
       `${S} | .topbar | padding: 0 6px`, `${S} | .admin-dock | padding: 0 6px 0 var(--s5)`, `${C} | .dd-menu | padding: 6px`, `${C} | .popover | padding: 6px`, `${K} | .calc-stepper button | margin: 2px`],
   },
   "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": {
-    "the title step (28-36) itself and its copies": [`${T} | .title | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`,
-      `${P} | .ab-league b | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`, `${TB} | .tb-editor-title h2 | font-size: 2.25rem`],
+    "the title step (28-36) itself and its copies": [`${T} | .title | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`, `${TB} | .tb-editor-title h2 | font-size: 2.25rem`],
     "an article body reads at 18px on desktop (Pages)": [`${P} | .prose p | font-size: 1.125rem`],
   },
   "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": {
@@ -182,6 +187,51 @@ test("a tab switch moves: the lens slides and the new view rises (Motion, K3)", 
   assert.deepEqual(pages.filter(f => !/className=[{"][^>]*\bswap\b/.test(read(f))).map(rel), [], "a page tab's view must enter with .swap");
   const handed = SRC.flatMap(f => [...read(f).matchAll(/function (\w+)\(\{[^}]*\btabs\b[^}]*\}\)\s*\{([\s\S]*?)\n\}/g)].map(([, name, body]) => ({ at: `${rel(f)} ${name}`, body })));
   assert.deepEqual(handed.filter(c => !/\bswap\b/.test(c.body)).map(c => c.at), [], "a view behind a handed-down tab bar must enter with .swap");
+});
+
+test("springs in script run at their natural length too (Motion)", () => {
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/\{[^{}]*springs\(\)\.(snappy|soft)[^{}]*\}/g)]
+    .filter(([obj, kind]) => !obj.includes(`DUR.${kind}`)).map(([obj]) => `${rel(f)}: ${obj}`));
+  assert.deepEqual(hits, [], "use { duration: DUR.snappy | DUR.soft } with springs()");
+});
+
+// 2026-10-27 consistency pass: the rules below were each broken somewhere before they were written down (DESIGN.md "Consistency").
+const src = p => read(join(ROOT, p)).replace(/\r\n/g, "\n");
+test("a title comes first: no date, chip or label above it (rule 2)", () => {
+  for (const f of ["src/pages/NewsPage.jsx", "src/pages/BoardPage.jsx"])
+    for (const [head] of src(f).matchAll(/<header className="nb-a-head">[\s\S]*?<\/header>/g))
+      assert.ok(head.indexOf("<h1") < head.indexOf("nb-a-meta"), `${f}: the article title stands above its grey line`);
+  for (const [head] of src("src/pages/BracketsPage.jsx").matchAll(/<header className="bk-t-head card">[\s\S]*?<\/header>/g))
+    assert.ok(head.indexOf("<h1") < head.indexOf("bk-t-row"), "a bracket head shows its name before any chip");
+  const lead = src("src/components/common/LeadFigures.jsx");
+  assert.ok(lead.indexOf('"rc-poster-fig"') < lead.indexOf('"rc-poster-label"'), "a big figure stands above its label");
+  assert.ok(!/className="r2-date"/.test(src("src/pages/RecordsPage.jsx")), "a round's date sits on its grey line, not above its name");
+  assert.ok(!/<time[^>]*>[^<]*<\/time>\s*<div><b>/.test(src("src/pages/AboutPage.jsx")), "a timeline entry names the event before its date");
+});
+
+test("icons only say what words cannot: no decorative icons on pages (rule 3)", () => {
+  const files = [...readdirSync(join(ROOT, "src/pages")).map(f => `src/pages/${f}`), "src/components/layout/SiteFooter.jsx"];
+  const hits = files.flatMap(f => [...src(f).matchAll(/<Icon n="(crown|medal|chart|trophy|discord|msg|list)"/g)].map(m => `${f}: ${m[1]}`));
+  assert.deepEqual(hits, []);
+});
+
+test("every sheet closes the same way: the X is not tied to a title (Components)", () => {
+  assert.doesNotMatch(src("src/components/common/Modal.jsx"), /title !== undefined && <>\s*<button type="button" className="modal-x/);
+});
+
+test("a generation is written one way: 1대, never 초대 (Consistency)", async () => {
+  const { generationText } = await import("../src/services/seasonLabel.js");
+  assert.equal(generationText("초대"), "1대");
+  assert.equal(generationText("초대 챔피언"), "1대");
+  assert.equal(generationText("6대 챔피언"), "6대");
+  for (const f of ["src/pages/TitlesPage.jsx", "src/pages/ChampionsPage.jsx", "src/pages/RecordsPage.jsx"])
+    assert.match(src(f), /generationText/, `${f} shows generations through generationText`);
+});
+
+test("the press answers first: the nav lens leaves before the next page is drawn (K1, K3)", () => {
+  const app = src("src/App.jsx");
+  assert.match(app, /leadPills\(v\);\s*afterPaint\(/, "go() starts the lens, then renders after the frame");
+  assert.match(app, /leadPills\(next\);\s*afterPaint\(/, "back and forward do the same");
 });
 
 test("no View Transitions snapshots (Don't)", () => {

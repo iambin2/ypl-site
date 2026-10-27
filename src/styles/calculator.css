@@ -91,7 +91,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 }
 @media (hover: hover) { .calc-mon:hover { background: var(--tint-soft); } }
 .calc-mon img { --r: var(--r-tile); width: 72px; height: 72px; flex: none; object-fit: contain; border-radius: var(--r); background: var(--surface-2); }
-.calc-mon .calc-mon-empty { width: 72px; height: 72px; border-radius: var(--r-tile); }
+.calc-side-empty { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .calc-mon-copy { min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
 .calc-mon-copy strong { font-size: 1.25rem; font-weight: 800; letter-spacing: -.015em; line-height: 1.25; }
 .calc-mon-copy .tb-types { margin-top: var(--s1); }

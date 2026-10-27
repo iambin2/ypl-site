@@ -11,6 +11,13 @@
 }
 .records-read-state.is-error { color: var(--fg); }
 .rc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
+.rc-filter[role="group"] { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.rc-filter[role="group"]::-webkit-scrollbar { display: none; }
+.rc-filter[role="group"] > .ypl-btn { flex: none; }
+@media (max-width: 859px) {
+  .rc-filter[role="group"] { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); }
+}
+.rc-past .dd-btn.ph > span { color: var(--fg); }
 .rc-note { margin-top: var(--s6); font-size: .8125rem; line-height: 1.55; color: var(--fg-3); }
 .rc-admin { margin: 0; }
 
@@ -39,15 +46,18 @@
 .rc-stat b { font-size: 1rem; font-weight: 800; line-height: 1.25; }
 .rc-stat span { font-size: .75rem; line-height: 1.25; color: var(--fg-3); }
 .rc-stat.zero b { color: var(--fg-3); font-weight: 600; }
-.rc-pick-chev { color: var(--fg-3); transition: transform 400ms var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
+.rc-pick-chev { color: var(--fg-3); transition: transform var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
 @media (hover: hover) { .rc-pick-row:hover .rc-pick-chev { color: var(--fg); transform: translateX(2px); } }
 .rc-rail-n { font-size: .8125rem; font-weight: 600; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 @media (min-width: 860px) {
-  .rc-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s2); }
+  .rc-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), auto); grid-auto-flow: column; column-gap: var(--s2); }
+  .rc-pick:not([style]) { grid-template-rows: none; grid-auto-flow: row; }
 }
 
 /* ---------- the profile sheet: on glass, the cards become tiles of the same glass ---------- */
 .rc-sheet { width: min(100%, 640px); }
+.rc-sheet .rc-lead-who { padding-right: var(--s10); }
+.rc-sheet .rc-lead-head { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 860px) { .rc-sheet { width: min(100% - 48px, 680px); } }
 .rc-profile { display: flex; flex-direction: column; gap: var(--s8); min-width: 0; }
 .sheet .rc-lead { padding: 0; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
@@ -59,6 +69,8 @@
 .rc-lead-who { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); }
 .rc-lead-head { display: grid; gap: var(--s4); }
 .rc-lead-name { display: block; }
+.rc-lead-title.tied { font-size: 1.75rem; line-height: 1.25; letter-spacing: -.02em; }
+.rc-lead-title.tied .rc-lead-name { display: inline; }
 .rc-lead-sub { font-size: .9375rem; color: var(--fg-2); }
 .rc-lead-figs { position: relative; display: grid; gap: var(--s4); }
 .rc-poster { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); }
@@ -72,11 +84,12 @@
 .rc-facts.rows dt { flex: none; font-size: .8125rem; }
 .rc-facts.rows dd { font-size: 1.0625rem; font-weight: 600; text-align: right; }
 .sheet .rc-facts.rows { background: var(--tint-soft); }
-.rc-facts > div { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s3) var(--s4); border-radius: var(--r-tile); background: var(--surface-2); }
+.rc-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--s1); padding: var(--s3) var(--s4); border-radius: var(--r-tile); background: var(--surface-2); }
 .sheet .rc-facts > div { background: var(--tint-soft); }
 .sheet .rc-facts.rows > div { background: none; }
 .rc-facts dt { font-size: .75rem; line-height: 1.35; color: var(--fg-3); }
 .rc-facts dd { margin: 0; font-size: 1.25rem; letter-spacing: -.015em; font-weight: 800; line-height: 1.25; }
+.rc-facts dd .unit { letter-spacing: 0; }
 .rc-lead-note { font-size: .8125rem; line-height: 1.55; color: var(--fg-2); }
 .rc-lead-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .rc-lead-cta { justify-self: stretch; }
@@ -86,7 +99,7 @@
   .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s6); }
   .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
   /* a label and value row is as wide as it reads, not the width of the card */
-  .rc-facts.rows { width: min(100%, 360px); justify-self: end; }
+  .rc-facts.rows { width: min(100%, 360px); justify-self: start; }
 }
 
 /* trainer history and counts */
@@ -95,23 +108,18 @@
 .rc-hist-end { display: grid; justify-items: end; gap: var(--s1); }
 .rc-place { font-size: .9375rem; font-weight: 600; line-height: 1.45; color: var(--fg-2); white-space: nowrap; }
 .rc-place.win { font-weight: 800; color: var(--fg); }
-.rc-crown { display: flex; align-items: center; gap: var(--s2); }
 .sheet .pager { margin-top: var(--s3); }
 .rc-sec .pager { margin-top: var(--s4); }
 
 /* ---------- tournament archive ---------- */
-.records-toolbar { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); flex-wrap: wrap; }
-.records-toolbar .records-search-field { max-width: 440px; flex: 1 1 280px; }
-.records-toolbar > span { font-size: .8125rem; color: var(--fg-3); }
+.rc-list-search { margin-bottom: var(--s4); }
 
 .round2 { display: grid; gap: var(--s2); padding: var(--s4); border-radius: var(--r-row); }
 .round2.champ { background: var(--surface-2); }
-.r2-date { font-size: .8125rem; font-weight: 600; line-height: 1.45; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 .r2-main { min-width: 0; }
-.r2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s3); margin-bottom: var(--s3); }
-.r2-round, .r2-head > .r2-rule:first-child { font-size: 1rem; font-weight: 800; color: var(--fg); }
-.r2-rule, .r2-season, .r2-mode { font-size: .8125rem; color: var(--fg-3); }
-.r2-champ { font-size: .8125rem; font-weight: 600; color: var(--fg); }
+.r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s4); }
+.r2-title { font-size: 1rem; font-weight: 600; line-height: 1.45; color: var(--fg); }
+.r2-meta, .r2-season { font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
 .r2-res { display: grid; gap: var(--s2); }
 .r2-line { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: var(--s3); }
 .r2-line > .r2-rk { line-height: 28px; }
@@ -126,11 +134,11 @@
 /* the team toggle sits under the result lines as its own block: 16px away, its label centred on the chevron */
 .r2-res + .records-round-toggle { margin-top: var(--s4); align-items: center; }
 .records-round-summary { flex: 1; min-width: 0; font-size: .9375rem; font-weight: 600; }
-.records-round-chevron { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--tint); color: var(--fg-2); transition: transform 400ms var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
+.records-round-chevron { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--tint); color: var(--fg-2); transition: transform var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
 .records-round-chevron svg { width: 12px; height: 8px; }
 .records-round-toggle[aria-expanded="true"] .records-round-chevron { transform: rotate(180deg); }
 @media (hover: hover) { .records-round-toggle:hover .records-round-chevron { color: var(--fg); } }
-.records-round-detail { margin-top: var(--s3); animation: y-swap 420ms var(--ease-out) backwards; }
+.records-round-detail { margin-top: var(--s3); animation: y-swap var(--dur-slow) var(--ease-out) backwards; }
 .records-round-party-row { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: var(--s1) var(--s3); padding: var(--s2) 0; }
 .records-round-party-row + .records-round-party-row { box-shadow: inset 0 1px 0 var(--line); }
 .records-round-party-row .r2-name { height: auto; padding: 0; background: none; font-size: .9375rem; }
@@ -141,7 +149,6 @@
 .records-party-sprite-fallback { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: var(--s1); overflow: hidden; border-radius: var(--r-tile); background: var(--tint-soft); color: var(--fg-3); font-size: .75rem; line-height: 1.15; text-align: center; }
 .records-party-missing { font-size: .8125rem; color: var(--fg-3); }
 @media (min-width: 640px) {
-  .round2 { grid-template-columns: 112px minmax(0, 1fr); align-items: baseline; gap: var(--s5); }
   .records-round-party-row { grid-template-columns: 56px minmax(72px, 160px) minmax(0, 1fr); }
   .records-party-sprites, .records-party-missing { grid-column: auto; }
 }
@@ -162,5 +169,7 @@
 }
 
 /* 이름 링크: 글자 그대로, 누를 수 있다는 것은 호버의 밑줄로만 알린다(무채색, 같은 종류는 같은 반응). */
-.rc-name-link { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+.rc-name-link { position: relative; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+/* the word keeps its own line box, so a row's title and grey line stay 4 apart; the finger gets 44px from a box laid around it */
+.rc-name-link::after { content: ""; position: absolute; inset: -12px -4px; }
 @media (hover: hover) { .rc-name-link:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; } }

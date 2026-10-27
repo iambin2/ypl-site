@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Vite dev server (http://localhost:5173)
 npm run build    # production build → dist/
 npm run preview  # serve the built dist/
-npm test         # full suite: node --test "tests/*.test.mjs"  (343 tests, including the design law)
+npm test         # full suite: node --test "tests/*.test.mjs"  (351 tests, including the design law)
 npm run data:champions  # rebuild the committed src/data/champions-data.json from Showdown + PokeAPI
                         # (refresh-champions-data.yml does this weekly and opens a PR when it changed)
 npm run font:slices     # re-cut SUIT Variable into unicode-range slices (needs pip install -r scripts/requirements-fonts.txt)

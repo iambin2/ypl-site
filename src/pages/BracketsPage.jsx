@@ -1421,7 +1421,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       <div className="bk-applybox">
         <div className="bk-ab-meta">{team?"팀전":"개인전"}{champ?" 챔피언스 시리즈":""}</div>
         <div>{curT.label} <b>{preview.roundNum}회</b>{recordSeason?`, ${recordSeason}`:""}{rule.trim()?`, ${rule.trim()}`:""}</div>
-        <div><Icon n="trophy" size={14}/> <b>{nameOf(res.champ)}</b>{res.ru?<>, 준우승 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 4강 {res.sf.map(nameOf).join(", ")}</>:null}</div>
+        <div>우승 <b>{nameOf(res.champ)}</b>{res.ru?<>, 준우승 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 4강 {res.sf.map(nameOf).join(", ")}</>:null}</div>
       </div>
       {linked&&!team&&(
         !!identityPreviewError ||
@@ -1502,9 +1502,9 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
             ? `, ${linkedContext.event.division==="master"?"마스터 리그":linkedContext.event.division==="rookie"?"루키 리그":linkedContext.event.division==="light"?"파이컵 라이트":linkedContext.event.division}`
             : ""}
         </div>
-        <div><Icon n="trophy" size={14}/> 우승 <b>{nameOf(res.champ)}</b></div>
-        {res.ru&&<div><Icon n="medal" size={14}/> 준우승 <b>{nameOf(res.ru)}</b></div>}
-        {res.sf.length>0&&<div><Icon n="medal" size={14}/> 4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
+        <div>우승 <b>{nameOf(res.champ)}</b></div>
+        {res.ru&&<div>준우승 <b>{nameOf(res.ru)}</b></div>}
+        {res.sf.length>0&&<div>4강 <b>{res.sf.map(nameOf).join(", ")}</b></div>}
       </div>
 
       {linked ? <>
@@ -1895,13 +1895,12 @@ function PrivateBrackets({ admin, flash, tabs }){
     return (<section className="sec"><div className="bk-open swap">
       <button type="button" className="nb-back press" onClick={closeBracket}><Icon n="back" size={18}/><span>사설 대진표</span></button>
       <header className="bk-t-head card">
-        <div className="bk-t-row">
-          <span className="pb-chips"><span className="ypl-chip ypl-chip--ink">사설</span><span className="ypl-chip">{live&&<i className="live-dot" aria-hidden="true"/>}{pbStatus(open)}</span></span>
-          <span className="caption tnum">{formatDate(open.createdAt)}</span>
-        </div>
         <div className="bk-t-body">
           <h1 className="title bk-open-title" data-vt={"pb-"+open.id}>{open.name}</h1>
-          <p className="callout">{open.host?`${open.host} 개설, `:""}{pbFormat(open)}, {open.participants.length}명</p>
+          <p className="callout">{open.host?`${open.host} 개설, `:""}{pbFormat(open)}, {open.participants.length}명{open.createdAt?`, ${formatDate(open.createdAt)}`:""}</p>
+        </div>
+        <div className="bk-t-row">
+          <span className="pb-chips"><span className="ypl-chip ypl-chip--ink">사설</span>{live&&<span className="ypl-chip"><i className="live-dot" aria-hidden="true"/>{pbStatus(open)}</span>}</span>
         </div>
         {open.note&&<Prose text={open.note}/>}
         <p className="bk-hint">누구나 만들 수 있는 사설 대진표입니다. 결과는 공식 기록, 랭킹, 칭호에 반영되지 않습니다.</p>
@@ -2257,11 +2256,11 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         <section className="rc-lead" aria-labelledby="bk-lead-name">
           <div className="rc-lead-who">
             <h3 className="rc-lead-title" id="bk-lead-name" data-vt={"b-"+lead.id}>{lead.name}</h3>
-            <span className="rc-lead-sub bk-lead-sub">{live&&<i className="live-dot" aria-hidden="true"/>}{live?"지금 진행 중인 대회":"가장 최근 대회, "+statusTag(lead)}</span>
+            <span className="rc-lead-sub bk-lead-sub">{live&&<i className="live-dot" aria-hidden="true"/>}{live?"지금 진행 중인 대회":admin?"가장 최근 대회, "+statusTag(lead):"가장 최근 대회"}</span>
           </div>
           <div className="rc-lead-figs">
             <Poster label="참가" value={lead.participants.length} unit={lead.mode==="team"?"팀":"명"}/>
-            <Facts items={[["방식",lead.mode==="team"?"팀전":"개인전"],["형식",bracketFormat(lead)],...(lead.createdAt?[["날짜",formatDate(lead.createdAt)]]:[])]}/>
+            <Facts items={[...(String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")?[]:[["방식",lead.mode==="team"?"팀전":"개인전"]]),["형식",bracketFormat(lead)],...(lead.createdAt?[["날짜",formatDate(lead.createdAt)]]:[])]}/>
           </div>
           <button className="ypl-btn ypl-btn--primary press hl rc-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기</button>
         </section>); })()}
@@ -2285,14 +2284,13 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     {open&&!wizard&&<div className="bk-open swap">
       <button type="button" className="nb-back press" disabled={deletingId===open.id} onClick={closeBracket}><Icon n="back" size={18}/><span>대진표</span></button>
       <header className="bk-t-head card">
-        <div className="bk-t-row">
-          <span className="ypl-chip">{statusTag(open)==="진행 중"&&<i className="live-dot" aria-hidden="true"/>}{statusTag(open)}</span>
-          {open.createdAt&&<span className="caption tnum">{formatDate(open.createdAt)}</span>}
-        </div>
         <div className="bk-t-body">
           <h1 className="title bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
-          <p className="callout">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}</p>
+          <p className="callout">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}</p>
         </div>
+        {(admin||statusTag(open)==="진행 중")&&<div className="bk-t-row">
+          <span className="ypl-chip">{statusTag(open)==="진행 중"&&<i className="live-dot" aria-hidden="true"/>}{statusTag(open)}</span>
+        </div>}
         {!open.readOnly&&admin&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press bk-del" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}><Icon n="trash" size={16}/>{deletingId===open.id?"삭제 중…":"삭제"}</button>}
       </header>
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}

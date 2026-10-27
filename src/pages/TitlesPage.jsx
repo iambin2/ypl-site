@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Icon, PageHead, Segmented } from "../components/index.js";
-import { displaySeasonLabel } from "../services/seasonLabel.js";
+import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
 
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
 function shortName(name, key) {
@@ -16,7 +16,7 @@ export default function TitlesPage({ data, admin, setModal, go }) {
   const [openKey, setOpenKey] = useState(groups.length ? groups[0].key : null);
   const g = groups.find(x => x.key === openKey) || groups[0];
 
-  const genOf = name => String(name).replace(/\s*챔피언$/, "");
+  const genOf = name => generationText(name);
   const shortSeason = displaySeasonLabel;
   const championSeason = name => {
     const c = (data.champions || []).find(x => genOf(x.gen) === genOf(name));
@@ -47,8 +47,7 @@ export default function TitlesPage({ data, admin, setModal, go }) {
       <section className="rc-lead" aria-labelledby="tt-group-name">
         {/* 숫자를 늘어놓는 장식 칸 대신 이 분류가 무엇인지와 얼마나 채워졌는지를 한 문장으로 */}
         <div className="rc-lead-who">
-          <h3 className="rc-lead-title" id="tt-group-name">{g.name}</h3>
-          {g.desc && <span className="rc-lead-sub">{g.desc}</span>}
+          <h3 className="rc-lead-title tt-cond" id="tt-group-name">{g.desc || g.name}</h3>
           <span className="caption">{rate ? `칭호 ${items.length}개 중 ${done}개에 주인이 있습니다.` : `칭호 ${items.length}개`}</span>
         </div>
         {admin && <button className="ypl-btn ypl-btn--glass ypl-btn--sm press tt-add"
@@ -69,7 +68,7 @@ export default function TitlesPage({ data, admin, setModal, go }) {
                 <Row className={"ypl-row" + (holders.length ? "" : " tt-off")} onClick={edit(it)}>
                   <span>
                     <span className="ypl-row__title">{holders[0] ? who(holders[0]) : "미달성"}</span>
-                    <span className="ypl-row__meta">{gen}{season ? `, ${season}` : ""}</span>
+                    <span className="ypl-row__meta">{gen} 챔피언{season ? `, ${season} 우승` : ""}</span>
                   </span>
                   {now && <span className="ypl-chip ypl-chip--ink">현 챔피언</span>}
                 </Row>

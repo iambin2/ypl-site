@@ -31,6 +31,16 @@ export function usePill(ref, cur) {
   }, [ref, cur]);
 }
 
+/* 누른 순간 알약이 먼저 출발한다(K1, K3). 새 페이지를 그리는 무거운 일은 그다음 프레임에 하고, 알약은 변형만 쓰므로
+   그동안에도 합성 단계에서 계속 미끄러진다. 페이지가 그려진 뒤의 usePill은 이미 가는 중인 알약을 끊지 않는다. */
+export function leadPills(view) {
+  if (typeof document === "undefined") return;
+  document.querySelectorAll(".tabbar, .navlinks").forEach(box => {
+    const target = box.querySelector(`[data-tab="${view}"]`) || (MORE_ITEMS.some(([k]) => k === view) ? box.querySelector('[data-tab="more"]') : null);
+    if (target && box.offsetParent !== null) placePill(box, true, target);
+  });
+}
+
 /* 더보기 안의 화면에 있을 때는 더보기 칸이 선택 표시를 받지만, 페이지 자체는 아니므로 aria-current 는 달지 않는다. */
 export const current = (cur, key) => cur !== key ? {} : key === "more" ? { "data-current": "" } : { "aria-current": "page" };
 
@@ -42,7 +52,7 @@ export default function TabBar({ view, moreOpen, onNavigate, onMore }) {
     <nav className="tabbar glass" aria-label="주요 메뉴" ref={ref}>
       <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
       {TABS.map(([key, label, ic]) => (
-        <button key={key} type="button" className="tab press" {...current(cur, key)}
+        <button key={key} type="button" className="tab press" data-tab={key} {...current(cur, key)}
           {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
           onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>
           <span className="ics"><Icon n={ic} size={24} className="ic-off" /><Icon n={ic + "-fill"} size={24} className="ic-on" /></span>

@@ -15,8 +15,6 @@
 .tb-field { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
 .tb-field > span { font-size: .8125rem; font-weight: 600; line-height: 1.25; }
 .tb-rule-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); margin-top: var(--s4); font-size: .8125rem; color: var(--fg-3); }
-.tb-status-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--fg-3); }
-.tb-status-chip.current::before { background: var(--fg); }
 
 /* ---------- validation + official submission ---------- */
 .tb-validation-wrap { margin-top: calc(var(--grid-gap) - var(--section)); }
@@ -138,7 +136,7 @@
 @media (hover: hover) { .tb-slot:not(.empty):not(.active):hover { background: var(--tint); } }
 .tb-slot.active { background: var(--tint-strong); box-shadow: var(--ind-shadow); }
 .tb-slot.unresolved .tb-slot-copy small { color: var(--fg-2); }
-.tb-slot.empty { grid-template-columns: 1fr; place-items: center; background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+.tb-slot.empty { grid-template-columns: 1fr; place-items: center; background: var(--tint-soft); box-shadow: none; }
 .tb-slot.empty .tb-slot-no { position: static; }
 .tb-slot.empty .tb-slot-empty { display: none; }
 .tb-slot-no {
@@ -280,7 +278,7 @@
   .tb-pokemon-row > img { grid-row: 1 / 3; }
   .tb-pokemon-row .tb-pokemon-copy { grid-column: 2; grid-row: 1; align-self: end; }
   .tb-pokemon-row .tb-types { grid-column: 2; grid-row: 2; align-self: start; }
-  .tb-pokemon-row .tb-base-strip { grid-column: 1 / -1; grid-row: 3; margin-top: var(--s1); } /* 타입 칩에서 8: 행의 4 간격 + 4 */
+  .tb-pokemon-row .tb-base-strip { grid-column: 2 / -1; grid-row: 3; margin-top: var(--s1); } /* 이름의 왼쪽 선에 선다. 타입 칩에서 8: 행의 4 간격 + 4 */
   .tb-pokemon-row > .tb-add-mark { grid-column: 3; grid-row: 1 / 3; }
 }
 

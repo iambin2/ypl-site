@@ -161,65 +161,6 @@ export default function HomePage({ data, go }) {
     return () => { removeEventListener("pointermove", onMove); document.documentElement.removeEventListener("pointerleave", onLeave); cancelAnimationFrame(raf); };
   }, []);
 
-  /* 홈의 화면 내리기는 목표 위치로 미끄러져 간다. 휠은 한 칸씩 목표를 옮기고, 터치(2026-10-24, 사용자 요청)는 끄는 동안 손가락을 바짝 따르다가
-     놓으면 그 빠르기로 더 미끄러져 서서히 선다. 시트 안, 확대(ctrl) 휠, 두 손가락(핀치)은 건드리지 않는다.
-     따라가는 정도는 프레임 길이로 맞춘다(120Hz 폰에서도 같은 빠르기). */
-  useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-    let cur = scrollY, target = scrollY, raf = 0, last = 0, ease = .14;
-    const max = () => document.documentElement.scrollHeight - innerHeight;
-    const step = now => {
-      const k = 1 - (1 - ease) ** (Math.min(64, now - (last || now - 16.7)) / 16.7);
-      last = now;
-      cur += (target - cur) * k;
-      if (Math.abs(target - cur) < 0.5) { cur = target; raf = 0; last = 0; } else raf = requestAnimationFrame(step);
-      scrollTo(0, cur);
-    };
-    const push = (dy, e) => {
-      if (!raf) cur = target = scrollY;
-      ease = e;
-      target = Math.max(0, Math.min(max(), target + dy));
-      if (!raf) raf = requestAnimationFrame(step);
-    };
-    const onWheel = e => {
-      if (e.ctrlKey || e.target.closest?.(".overlay")) return;
-      e.preventDefault();
-      push(e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1), .14);
-    };
-    let drag = false, y0 = 0, t0 = 0, vel = 0;
-    const onStart = e => {
-      drag = e.touches.length === 1 && !e.target.closest?.(".overlay");
-      if (!drag) return;
-      y0 = e.touches[0].clientY; t0 = e.timeStamp; vel = 0;
-      cancelAnimationFrame(raf); raf = 0; last = 0;
-    };
-    const onMove = e => {
-      if (!drag) return;
-      if (e.touches.length !== 1) { drag = false; return; }
-      e.preventDefault();
-      const y = e.touches[0].clientY, dy = y0 - y, dt = Math.max(1, e.timeStamp - t0);
-      y0 = y; t0 = e.timeStamp;
-      vel = vel * .2 + (dy / dt) * .8;
-      push(dy, .5);
-    };
-    const onEnd = e => {
-      if (!drag) return;
-      drag = false;
-      // 멈췄다 놓으면 미끄러지지 않는다
-      if (e.timeStamp - t0 > 80) vel = 0;
-      push(vel * 320, .075);
-    };
-    addEventListener("wheel", onWheel, { passive: false });
-    addEventListener("touchstart", onStart, { passive: true });
-    addEventListener("touchmove", onMove, { passive: false });
-    addEventListener("touchend", onEnd);
-    addEventListener("touchcancel", onEnd);
-    return () => {
-      removeEventListener("wheel", onWheel); removeEventListener("touchstart", onStart); removeEventListener("touchmove", onMove);
-      removeEventListener("touchend", onEnd); removeEventListener("touchcancel", onEnd); cancelAnimationFrame(raf);
-    };
-  }, []);
-
   const stop = (offset, opacity, color = "var(--fg)") => <stop offset={offset} style={{ stopColor: color, stopOpacity: opacity }} />;
   const shine = "var(--home-shine)";
   const letters = ["body", "lamp", "band"].map(k => <path key={k} transform="skewX(-12) translate(21 0)" fillRule="evenodd" d={WORDMARK_PATH} fill={`url(#ha-${k})`} />);
@@ -245,6 +186,8 @@ export default function HomePage({ data, go }) {
         <div className="ha-ev-row"><span className="fig">{now.today ? "오늘" : `D-${now.dday}`}</span><span className="ha-ev-name">{now.name}</span></div>
         <span className="ha-ev-meta">{now.today && <i className="live-dot" aria-hidden="true" />}{now.dueLabel}, {now.status}</span>
       </div>}
+      {/* 잡힌 대회가 없을 때도 처음 온 사람이 다음에 무엇을 볼지 한 줄로 안다 */}
+      {!now && <p className="ha-ev-meta">다음 대회 일정은 공지에 올라옵니다.</p>}
       <div className="ha-actions">
         <button type="button" className="ypl-btn ypl-btn--primary press hl" onClick={() => go(primary[1])}>{primary[0]}</button>
         <button type="button" className="ypl-btn ypl-btn--glass press hl" onClick={() => go("about")}>리그 소개</button>

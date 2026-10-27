@@ -9,9 +9,13 @@ const fmtDT=iso=>formatDate(iso,{time:true});
 const PAGE_SIZE=10;
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문의 제목 자리로 이어진다(I2).
    신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 주소는 그대로(?view=news) 두고 화면 안의 상태로만 바꾼다. */
-/* 목록의 미리보기는 본문의 첫 문장이 뜻을 가질 때만: "1조", "2" 같은 조각은 보이지 않는다. 앞의 기호와 이모지는 뗀다. */
-function excerptOf(body){
-  const line=String(body||"").split("\n").map(l=>l.replace(/^[^\p{L}\p{N}]+/u,"").trim()).find(Boolean)||"";
+/* 목록의 미리보기는 본문의 첫 문장이 뜻을 가질 때만: "1조", "2" 같은 조각은 보이지 않는다. 앞의 기호와 이모지는 뗀다.
+   제목을 되풀이하는 첫 줄("제6회 챔피언스 시리즈" 아래의 "6회 챔피언스 시리즈 공지")은 건너뛴다. */
+const bare=s=>String(s||"").replace(/공지|안내|제\s*(?=\d)|[^\p{L}\p{N}]/gu,"");
+function excerptOf(body,title=""){
+  const t=bare(title);
+  const line=String(body||"").split("\n").map(l=>l.replace(/^[^\p{L}\p{N}]+/u,"").trim())
+    .find(l=>l&&!(t&&(bare(l).includes(t)||t.includes(bare(l)))))||"";
   return line.length>=12?line:"";
 }
 
@@ -105,8 +109,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       <article className="nb-article">
         <button type="button" className="nb-back press" onClick={closeArticle}><Icon n="back" size={18}/><span>공지</span></button>
         <header className="nb-a-head">
-          <p className="caption tnum nb-a-meta">{formatDate(a.date)}{a.pinned&&<span className="pin">고정</span>}</p>
           <h1 className="title nb-a-title" data-vt={"n-"+a.id}>{a.title}</h1>
+          <p className="caption tnum nb-a-meta">{formatDate(a.date)}{a.pinned&&<span className="pin">고정</span>}</p>
         </header>
         {a.body&&<Reveal className="nb-body card"><Prose text={a.body}/></Reveal>}
         {(a.link||a.link2||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
@@ -146,7 +150,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       {shown.map(a=>{
         return (<button type="button" className="nb-item press" key={a.id} onClick={()=>openArticle(a.id)}>
           <span className="nb-title">{a.pinned&&<span className="pin">고정</span>}<span data-vt={"n-"+a.id}>{a.title}</span></span>
-          <span className="nb-meta caption"><span className="tnum">{formatDate(a.date)}</span>{excerptOf(a.body)&&<span className="nb-excerpt">{excerptOf(a.body)}</span>}</span>
+          <span className="nb-meta caption"><span className="tnum">{formatDate(a.date)}</span>{excerptOf(a.body,a.title)&&<span className="nb-excerpt">{excerptOf(a.body,a.title)}</span>}</span>
         </button>);})}
     </div>}
     <Pager page={cur} pages={pages} onGo={setPage}/>
@@ -164,7 +168,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
   const val=(r,f)=>{ const v=(r.answers||{})[f.id]; return Array.isArray(v)?v.join(", "):String(v||""); };
   return (<div className={"pr-wrap fold"+(open?" open":"")+(compact?" compact":"")}>
     <button type="button" className="fold-head pr-fold-head" onClick={e=>{e.stopPropagation();setOpen(v=>!v);}}>
-      <span className="pr-title"><Icon n="list" size={15}/> {form.publicTitle||"현재까지 신청 현황"}</span>
+      <span className="pr-title">{form.publicTitle||"현재까지 신청 현황"}</span>
       <span className="pr-n">{resp.length}명</span>
       <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
     </button>

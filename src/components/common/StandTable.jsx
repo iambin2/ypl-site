@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { EASE_OUT, reduced, springs } from "./motion.js";
+import { DUR, EASE_OUT, reduced, springs } from "./motion.js";
 
 /* 점수 순으로 정렬하고 같은 점수는 같은 순위, 다음 순위는 건너뛴다(6, 6, 8). */
 export function rankRows(rows) {
@@ -37,7 +37,7 @@ export default function StandTable({ rows, showNote, total, onName }) {
         const f = before.get(tr.dataset.k), l = next.get(tr.dataset.k);
         if (f == null) { tr.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: EASE_OUT }); continue; }
         if (Math.abs(f - l) < 0.5) continue;
-        tr.animate([{ transform: `translateY(${f - l}px)` }, { transform: "none" }], { duration: 760, easing: springs().soft });
+        tr.animate([{ transform: `translateY(${f - l}px)` }, { transform: "none" }], { duration: DUR.soft, easing: springs().soft });
         if (l < f) { tr.classList.remove("rise"); void tr.offsetWidth; tr.classList.add("rise"); }
       }
     }

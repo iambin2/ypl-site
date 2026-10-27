@@ -16,7 +16,7 @@ CAP, UPM, SCALE = 100, 1000, 7.22  # cap 100 units -> SUIT's cap height 722
 T = math.tan(math.radians(12))
 
 
-def glyphs(S, B, M, W=88, R=18, flag=24):
+def glyphs(S, B, M, W=88, R=18, flag=16):
     r = max(R - S, 0)
     il, ir, mt = S, W - S, 56 - M
     a = lambda rr, sweep, x, y: f"A{rr} {rr} 0 0 {sweep} {x} {y}" if rr else f"L{x} {y}"
@@ -28,17 +28,25 @@ def glyphs(S, B, M, W=88, R=18, flag=24):
     up_seven = f"M0 0 H{W-R} A{R} {R} 0 0 1 {W} {R} V56 H{ir} V{B+r} {a(r,0,ir-r,B)} H0 Z"
     stem_r = f"M{ir} 64 H{W} V100 H{ir} Z"
     w1 = S + flag
+    # the 8 is two rounded loops: the corners at its waist round like its outer corners, where the 0 stays square,
+    # so it reads as an 8 at 28px instead of a B or a 日 (2026-10-27). A narrowed waist read as the Korean 요.
+    k = R
+    up_eight = (f"M0 {R} A{R} {R} 0 0 1 {R} 0 H{W-R} A{R} {R} 0 0 1 {W} {R} V{56-k} A{k} {k} 0 0 1 {W-k} 56 H{k} A{k} {k} 0 0 1 0 {56-k} Z "
+                f"M{il} {B+r} V{mt} H{ir} V{B+r} {a(r,0,ir-r,B)} H{il+r} {a(r,0,il,B+r)} Z")
+    low_eight = (f"M0 {64+k} A{k} {k} 0 0 1 {k} 64 H{il} V{100-B-r} {a(r,0,il+r,100-B)} H{ir-r} {a(r,0,ir,100-B-r)} V64 H{W-k} "
+                 f"A{k} {k} 0 0 1 {W} {64+k} V{100-R} A{R} {R} 0 0 1 {W-R} 100 H{R} A{R} {R} 0 0 1 0 {100-R} Z")
     return {
         "zero": (W, up_open + " " + low_open),
-        # 1 has a base bar like the wordmark's L foot, so its flag never reads as a 7
-        "one": (w1 + 8, f"M0 0 H{w1} V56 H{w1-S} V{B} H0 Z M{w1-S} 64 H{w1} V{100-B} H{w1+8} V100 H0 V{100-B} H{w1-S} Z"),
+        # 1 is a stem with a short flag and no foot: the old full-width foot under a flag as long made it read as a J
+        # or an I at 28px (2026-10-27); its narrow width keeps it apart from the 7's full top bar
+        "one": (w1, f"M0 0 H{w1} V56 H{flag} V{B} H0 Z M{flag} 64 H{w1} V100 H{flag} Z"),
         "two": (W, f"M0 0 H{W-R} A{R} {R} 0 0 1 {W} {R} V56 H0 V{mt} H{ir} V{B+r} {a(r,0,ir-r,B)} H0 Z M0 64 H{il} V{100-B} H{W} V100 H0 Z"),
         "three": (W, f"M0 0 H{W-R} A{R} {R} 0 0 1 {W} {R} V56 H{max(il-8, 12)} V{mt} H{ir} V{B+r} {a(r,0,ir-r,B)} H0 Z " + low_hook),
         "four": (W, f"M0 0 H{il} V{mt} H{ir} V0 H{W} V56 H0 Z " + stem_r),
         "five": (W, f"M0 0 H{W} V{B} H{il} V{mt} H{W} V56 H0 Z " + low_hook),
         "six": (W, f"M0 {R} A{R} {R} 0 0 1 {R} 0 H{W} V{B} H{il+r} {a(r,0,il,B+r)} V{mt} H{W} V56 H0 Z " + low_open),
         "seven": (W, up_seven + " " + stem_r),
-        "eight": (W, up_box + " " + low_open),
+        "eight": (W, up_eight + " " + low_eight),
         "nine": (W, up_box + " " + low_hook),
         "D": (W, f"M0 0 H{W-R} A{R} {R} 0 0 1 {W} {R} V56 H{ir} V{B+r} {a(r,0,ir-r,B)} H{il} V56 H0 Z "
                  f"M0 64 H{il} V{100-B} H{ir-r} {a(r,0,ir,100-B-r)} V64 H{W} V{100-R} A{R} {R} 0 0 1 {W-R} 100 H0 Z"),
@@ -80,7 +88,7 @@ def build(name, weight, S, B, M, gap, out):
 
 
 if __name__ == "__main__":
-    out = os.path.join(os.path.dirname(__file__), "..", "public", "fonts")
+    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "public", "fonts")
     path, _ = build("Heavy", 800, 28, 24, 14, 12, out)
     final = os.path.join(out, "ypl-figures.woff2")
     os.replace(path, final)

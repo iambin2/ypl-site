@@ -50,12 +50,12 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
       <nav className="navlinks groove" aria-label="주요 메뉴" ref={nav}>
         <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
         {(wide ? WIDE_TABS : TABS).map(([key, label]) => (
-          <button key={key} type="button" className="navlink press" {...current(cur, key)}
+          <button key={key} type="button" className="navlink press" data-tab={key} {...current(cur, key)}
             {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
       </nav>
-      {onAdmin && <button type="button" className="iconbtn press" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="lock" size={22} /></button>}
+      {onAdmin && <button type="button" className="iconbtn press" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={22} /></button>}
       <button type="button" className="iconbtn press" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
         <span className="theme-ic"><Icon n="sun" size={22} className="i-sun" /><Icon n="moon" size={22} className="i-moon" /></span>
       </button>

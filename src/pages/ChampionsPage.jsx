@@ -4,12 +4,11 @@ import { Empty, Icon, Modal, PageHead, Reveal, SectionHead } from "../components
 import PartyStage from "../components/common/PartyStage.jsx";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
-  legacyChampionLabel,
   mergeHallOfFame,
   loadHallOfFameArtworkLookup,
   resolveHallOfFameArtwork,
 } from "../services/hallOfFamePresentation.js";
-import { displaySeasonLabel } from "../services/seasonLabel.js";
+import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
 import { onSpriteError } from "../services/teamBuilderCore.js";
 
 /* ============================== CHAMPIONS ==============================
@@ -37,7 +36,8 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
 
   const [pop, setPop] = useState(null);
 
-  const genLabel = c => (c.kind === "normalized" ? c.gen : legacyChampionLabel(c.gen));
+  // 세대는 어디서나 숫자로("초대"가 아니라 "1대"), 문장은 "6대 챔피언, YPL 시즌 2 우승" 한 가지로 쓴다.
+  const genLabel = c => generationText(c.gen) ? `${generationText(c.gen)} 챔피언` : "챔피언";
   const seasonLabel = c => displaySeasonLabel(c.slabel) || ("시즌 " + c.season);
 
   const reigning = champs.length ? champs[champs.length - 1] : null;

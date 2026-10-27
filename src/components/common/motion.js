@@ -9,6 +9,9 @@ const mq = q => typeof window !== "undefined" && window.matchMedia?.(q).matches;
 export const reduced = () => mq("(prefers-reduced-motion: reduce)");
 export const desktop = () => mq("(min-width: 860px)");
 
+/* a spring runs at its natural length, the same as --dur-snappy and --dur-soft in tokens.css; stretching it changes its feel */
+export const DUR = { snappy: 400, soft: 670 };
+
 let curves = null;
 /* the CSS springs as WAAPI easings; browsers without linear() get the ease-out curve */
 export function springs() {
@@ -134,7 +137,7 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
     const s = oldRect.width / nr.width, dx = oldRect.left - nr.left, dy = oldRect.top - nr.top;
     const newFly = clone(target, nr, "fly fly-skin", host);
     target.style.visibility = "hidden";
-    const t = { duration: move ? 620 : 240, easing: move ? springs().soft : "linear" };
+    const t = { duration: move ? DUR.soft : 240, easing: move ? springs().soft : "linear" };
     if (target.classList.contains("card")) {
       const skin = document.createElement("div");
       skin.className = "card fly"; skin.style.borderRadius = getComputedStyle(target).borderRadius; host.insertBefore(skin, oldFly);
@@ -174,10 +177,10 @@ export function themeFade(commit) {
    The leading edge springs toward the target first, the trailing edge follows a beat later, and the lens
    thins a little while it is stretched, then settles as one drop. A new target mid-flight starts from where it is. */
 const PILL_ON = ':scope > [aria-pressed="true"], :scope > [aria-current="page"], :scope > [aria-selected="true"], :scope > [data-current]';
-export function placePill(box, animate) {
+export function placePill(box, animate, target) {
   const ind = box?.querySelector(":scope > .pill-ind");
   if (!ind) return;
-  const on = box.querySelector(PILL_ON);
+  const on = target || box.querySelector(PILL_ON);
   if (!on) { ind.dataset.off = ""; return; }
   delete ind.dataset.off;
   const parts = [...ind.children], h = ind.offsetHeight || on.offsetHeight;
