@@ -18,6 +18,7 @@
   .rc-filter[role="group"] { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); }
 }
 .rc-past .dd-btn.ph > span { color: var(--fg); }
+@media (min-width: 860px) { .rc-filter > .rc-past { width: auto; flex: none; } }
 .rc-note { margin-top: var(--s6); font-size: .8125rem; line-height: 1.55; color: var(--fg-3); }
 .rc-admin { margin: 0; }
 

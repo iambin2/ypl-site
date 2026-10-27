@@ -238,6 +238,7 @@ td.ypl-table__rank { font-size: 1.25rem; line-height: 1; font-weight: 800; color
 .ypl-table__meta { display: block; font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
 .ypl-table__n { width: 72px; }
 td.ypl-table__n { font-weight: 600; color: var(--fg-2); }
+td.ypl-table__n.zero { font-weight: 400; color: var(--fg-3); }
 td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; white-space: nowrap; }
 .ypl-table__note { font-size: .8125rem; color: var(--fg-3); }
 .ypl-table .wide { display: none; }

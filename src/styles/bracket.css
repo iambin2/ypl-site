@@ -25,6 +25,10 @@
 .bk-board { display: flex; flex-direction: column; gap: var(--s4); }
 .bk-board > .bk-hint { padding: var(--s3) var(--s4); border-radius: var(--r-tile); background: var(--tint-soft); font-size: .9375rem; color: var(--fg-2); }
 .bk-champ-lead { margin-bottom: var(--s2); }
+.bk-places { margin: 0; display: grid; gap: var(--s2); }
+.bk-places > div { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: baseline; gap: var(--s3); }
+.bk-places dt { font-size: .8125rem; font-weight: 600; color: var(--fg-3); }
+.bk-places dd { margin: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.45; color: var(--fg); }
 .bk-cb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
 .bk-applied { display: inline-flex; align-items: center; gap: var(--s1); padding: 0 var(--s2); font-size: .8125rem; font-weight: 600; color: var(--fg-2); }
 

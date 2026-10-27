@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
-import { Dropdown, Empty, Facts, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
+import { Dropdown, Empty, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
@@ -1106,7 +1106,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
         <span className="rc-lead-sub">우승</span>
       </div>
       {/* 날짜와 참가 수는 바로 위 대회 머리에 있다. 여기에는 결과만 한 번. */}
-      {(res.ru||(res.sf&&res.sf.length>0))&&<Facts items={[...(res.ru?[["준우승",nameOf(res.ru)]]:[]),...(res.sf&&res.sf.length?[["4강",res.sf.map(nameOf).join(", ")]]:[])]}/>}
+      {(res.ru||(res.sf&&res.sf.length>0))&&<Places res={res} nameOf={nameOf}/>}
       <div className="bk-cb-actions">
         <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</button>
         <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</button>
@@ -1761,6 +1761,11 @@ const PB_UNLOCK_KEY="ypl-private-brackets:unlocked";
 const readUnlocked=()=>{ try{ return new Set(JSON.parse(sessionStorage.getItem(PB_UNLOCK_KEY)||"[]")); }catch{ return new Set(); } };
 const writeUnlocked=set=>{ try{ sessionStorage.setItem(PB_UNLOCK_KEY,JSON.stringify([...set])); }catch{ /* 이 탭에서만 기억 못 함 */ } };
 const pbFormat=b=>b.double?"더블 엘리미네이션":"싱글 엘리미네이션";
+/* 우승 카드의 나머지 입상: 라벨과 값의 상자가 아니라 기록 > 대회 카드처럼 순위 이름표 뒤에 이름이 오는 줄(Consistency) */
+function Places({ res, nameOf }){
+  const lines=[["준우승",res.ru?[nameOf(res.ru)]:[]],["4강",(res.sf||[]).map(nameOf)]].filter(([,names])=>names.length);
+  return <dl className="bk-places">{lines.map(([label,names])=><div key={label}><dt>{label}</dt><dd>{names.join(", ")}</dd></div>)}</dl>;
+}
 const pbStatus=b=>elimResult(b.graph)?.done?"종료":"진행 중";
 const pbHasPicks=b=>collectGraphMatches(b.graph).some(m=>m.winner);
 
@@ -1922,7 +1927,7 @@ function PrivateBrackets({ admin, flash, tabs }){
         : <div className="bk-board swap">
             {res?.done&&<section className="rc-lead sq bk-champ-lead" aria-labelledby="pb-champ-name">
               <div className="rc-lead-who"><h3 className="rc-lead-title" id="pb-champ-name">{nameOf(res.champ)}</h3><span className="rc-lead-sub">우승</span></div>
-              {(res.ru||(res.sf&&res.sf.length>0))&&<Facts items={[...(res.ru?[["준우승",nameOf(res.ru)]]:[]),...(res.sf&&res.sf.length?[["4강",res.sf.map(nameOf).join(", ")]]:[])]}/>}
+              {(res.ru||(res.sf&&res.sf.length>0))&&<Places res={res} nameOf={nameOf}/>}
             </section>}
             <ElimBoard g={open.graph} nameOf={nameOf} admin={canEdit&&!busy} onPick={pick} seedOf={pid=>{const i=open.participants.findIndex(x=>x.id===pid);return open.order==="input"&&i>=0?i+1:null;}}/>
           </div>}
@@ -2256,11 +2261,13 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         <section className="rc-lead" aria-labelledby="bk-lead-name">
           <div className="rc-lead-who">
             <h3 className="rc-lead-title" id="bk-lead-name" data-vt={"b-"+lead.id}>{lead.name}</h3>
-            <span className="rc-lead-sub bk-lead-sub">{live&&<i className="live-dot" aria-hidden="true"/>}{live?"지금 진행 중인 대회":admin?"가장 최근 대회, "+statusTag(lead):"가장 최근 대회"}</span>
+            <span className="rc-lead-sub bk-lead-sub">{live&&<i className="live-dot" aria-hidden="true"/>}{/* 형식과 날짜는 대회를 설명하는 말이라 칸이 아니라 이 회색 줄에 선다(상세 머리, 목록 행과 같은 줄). 큰 숫자는 참가 수 하나 */}
+              {[live?"지금 진행 중인 대회":"가장 최근 대회", admin&&!live&&statusTag(lead),
+                !String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")&&(lead.mode==="team"?"팀전":"개인전"),
+                bracketFormat(lead), lead.createdAt&&formatDate(lead.createdAt)].filter(Boolean).join(", ")}</span>
           </div>
           <div className="rc-lead-figs">
             <Poster label="참가" value={lead.participants.length} unit={lead.mode==="team"?"팀":"명"}/>
-            <Facts items={[...(String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")?[]:[["방식",lead.mode==="team"?"팀전":"개인전"]]),["형식",bracketFormat(lead)],...(lead.createdAt?[["날짜",formatDate(lead.createdAt)]]:[])]}/>
           </div>
           <button className="ypl-btn ypl-btn--primary press hl rc-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기</button>
         </section>); })()}

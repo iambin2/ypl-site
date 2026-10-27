@@ -1229,7 +1229,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
       <PageHead plain="팀 빌더" desc="포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.">
         <div className="tb-hero-actions">
           <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="tb-count-badge">{savedTeams.length}</span>}</button>
-          <button className="btn tb-main-btn tb-save-btn" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
+          <button className={"btn tb-save-btn " + (!storageAvailable || (team.length === 0 && !currentSaved) ? "btn-ghost" : "tb-main-btn")} disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
         </div>
       </PageHead>
 

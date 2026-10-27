@@ -54,7 +54,7 @@ export default function StandTable({ rows, showNote, total, onName }) {
       <td className="ypl-table__rank c">{r.rank}</td>
       <td>{onName ? <button type="button" className="ypl-table__name rc-name-link" onClick={e => onName(r.name, e.currentTarget)}>{r.name}</button> : <span className="ypl-table__name">{r.name}</span>}
         {(r.win || r.ru || r.top4 || (showNote && r.note)) ? <span className="ypl-table__meta narrow">{[["우승", r.win], ["준우승", r.ru], ["4강", r.top4]].filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).concat(showNote && r.note ? [r.note] : []).join(" ")}</span> : null}</td>
-      <td className="ypl-table__n c wide">{r.win || 0}</td><td className="ypl-table__n c wide">{r.ru || 0}</td><td className="ypl-table__n c wide">{r.top4 || 0}</td>
+      {[r.win, r.ru, r.top4].map((n, i) => <td key={i} className={"ypl-table__n c wide" + (n ? "" : " zero")}>{n || 0}</td>)}
       {showNote && <td className="ypl-table__note wide">{r.note || ""}</td>}
       <td className="ypl-table__pts r">{(r.points || 0).toLocaleString("ko-KR")}</td>
     </tr>))}</tbody></table></div>

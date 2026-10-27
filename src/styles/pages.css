@@ -268,6 +268,7 @@
    then its titles as one list. Titles without a holder sit dimmed. */
 /* a control sits 16px above the content it drives (records tabs, titles groups, builder steps) */
 .tt-seg, .records-main-tabs { margin-bottom: calc(var(--s4) - var(--section)); }
+.tt-seg { align-self: flex-start; }
 .tt-view { display: grid; gap: var(--s4); }
 .rc-lead-title.tt-cond { font-size: 1.75rem; line-height: 1.25; letter-spacing: -.02em; }
 .tt-add { justify-self: start; }
