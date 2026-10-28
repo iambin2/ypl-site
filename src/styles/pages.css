@@ -14,33 +14,27 @@
 /* the slot holds the YPL above the floor and the near half of the ring below it */
 .ha-slot { position: relative; flex: none; height: calc(var(--h) * 1.08 + var(--field-near)); }
 .ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent); --glow: color-mix(in srgb, var(--fg) 24%, transparent);
-  position: absolute; left: 50%; top: calc(100% - var(--field-near) - 100svh * var(--fk)); width: 100vw; height: 100svh; translate: -50% 0; overflow: hidden; pointer-events: none; }
+  position: absolute; left: 50%; top: calc(100% - var(--field-near) - 100svh * var(--fk)); width: 100vw; height: 100svh; translate: -50% 0; overflow: clip; pointer-events: none; }
 /* the arena ends in the dark, not at a cut: its lower part fades into the stage, so scrolling to the footer never shows the box's edge */
 .ha-stage { -webkit-mask: linear-gradient(to bottom, #000 72%, transparent); mask: linear-gradient(to bottom, #000 72%, transparent); }
 .ha-beam { position: absolute; left: 50%; top: 0; width: min(170vw, 1500px); height: var(--floor); translate: -50% 0;
   background: linear-gradient(to bottom, transparent, var(--home-beam) 70%, transparent); clip-path: polygon(46% 0, 54% 0, 72% 100%, 28% 100%); filter: blur(14px); }
-/* the field: one plane laid back in perspective, faded toward its far and near ends */
-.ha-persp { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 30%; }
+/* the field: one plane laid back in perspective, faded toward its far and near ends. It is drawn flat (arenaField.js projects
+   it once), so it costs no 3D layer; each line is a filled outline, thicker where the field comes nearer */
+.ha-persp { position: absolute; inset: 0; }
+.ha-field { position: absolute; inset: 0; overflow: visible; }
+.ha-field path { fill: var(--ln); fill-rule: evenodd; }
+.ha-field .ha-pool path { fill: var(--spot-floor); }
+.ha-line, .ha-knob, .ha-wave { transform-box: fill-box; transform-origin: center; }
 /* the pointer's light (HomePage.jsx writes --hx, --hy on this layer only; they do not inherit, so a move restyles one element) */
 @property --hx { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
 @property --hy { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
 .ha-persp.lit { --hy: var(--floor); -webkit-mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); }
-.ha-plane { position: absolute; left: 50%; top: var(--floor); width: var(--fw); aspect-ratio: .64; transform: translate(-50%, -50%) rotateX(68deg);
-  -webkit-mask: radial-gradient(closest-side, #000 40%, transparent); mask: radial-gradient(closest-side, #000 40%, transparent); }
-.ha-plane > i { position: absolute; display: block; }
-.ha-pool { inset: 10% -10%; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent 75%); }
-.ha-rect { inset: 8% 6%; border: 3px solid var(--ln); border-radius: var(--r-hero); }
-.ha-line { left: 6%; right: 6%; top: 50%; height: 3px; translate: 0 -50%; background: var(--ln); }
-.ha-ring { left: 50%; top: 50%; width: 46%; aspect-ratio: 1; translate: -50% -50%; border: 3px solid var(--ln); border-radius: 50%; }
-.ha-knob { left: 50%; top: 50%; width: 9%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 3px solid var(--ln); background: radial-gradient(closest-side, var(--ln) 40%, transparent 46%); }
-.ha-box { left: 30%; right: 30%; height: 12%; border: 3px solid var(--ln); }
-.ha-box.t { top: 8%; border-top: 0; border-radius: 0 0 var(--r-card) var(--r-card); }
-.ha-box.b { bottom: 8%; border-bottom: 0; border-radius: var(--r-card) var(--r-card) 0 0; }
 /* the lit copy: the same lines bright and glowing, seen only where the light falls */
-.ha-persp.lit .ha-plane > i { border-color: var(--lit); box-shadow: 0 0 24px var(--glow), inset 0 0 24px var(--glow); }
-.ha-persp.lit .ha-line { background: var(--lit); box-shadow: 0 0 24px var(--glow); }
-.ha-persp.lit .ha-knob { background: radial-gradient(closest-side, var(--fg) 40%, transparent 46%); box-shadow: 0 0 40px var(--glow); }
-.ha-wave { left: 50%; top: 50%; width: 9%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 3px solid var(--fg); opacity: 0; }
+.ha-persp.lit .ha-field { filter: drop-shadow(0 0 4px var(--glow)) drop-shadow(0 0 12px var(--glow)); }
+.ha-persp.lit .ha-field path { fill: var(--lit); }
+.ha-persp.lit .ha-field :is(.ha-face, .ha-wave) { fill: var(--fg); }
+.ha-wave { opacity: 0; }
 /* the YPL stands on the ball and is reflected in the floor under it */
 .ha-mark { position: absolute; left: 50%; top: var(--floor); }
 .ha-mark svg { position: absolute; left: 50%; height: var(--h); width: auto; translate: -50% 0; overflow: visible; }

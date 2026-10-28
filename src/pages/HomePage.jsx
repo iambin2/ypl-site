@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "re
 import { reduced, EASE_OUT } from "../components/common/motion.js";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { formatDate } from "../services/dateFormat.js";
+import { arenaField } from "../components/home/arenaField.js";
 
 const DAY_MS = 86400000;
 /* "2026-10-04", "2026.10.04", "2026-10-04T15:21" → 그날 0시의 Date. 일까지 없으면 null. */
@@ -66,19 +67,31 @@ function sweep(band, ms) {
 }
 
 /* 원근으로 누운 배틀 필드: 바깥 선, 양 끝의 트레이너 박스, 가운데 선과 원과 단추(몬스터볼). 같은 필드를 두 장 겹쳐
-   아래 장은 흐린 선, 위 장은 빛을 받은 선이다. 위 장은 빛이 닿는 자리만 보인다(--hx, --hy). */
-function Field({ lit }) {
+   아래 장은 흐린 선, 위 장은 빛을 받은 선이다. 위 장은 빛이 닿는 자리만 보인다(--hx, --hy).
+   필드는 3D로 움직이지 않으므로 원근을 한 번 계산해 평면 그림(SVG)으로 그린다(arenaField.js): 3D 층이 생기지 않는다. */
+function Field({ lit, g }) {
+  if (!g) return null;
+  const k = lit ? "lit" : "dim", { rect, line, ring, knob, face, boxT, boxB, pool, fade } = g.paths;
   return (
     <div className={"ha-persp" + (lit ? " lit" : "")} aria-hidden="true">
-      <div className="ha-plane">
-        {!lit && <i className="ha-pool" />}
-        <i className="ha-rect" /><i className="ha-box t" /><i className="ha-box b" /><i className="ha-line" /><i className="ha-ring" />
-        {lit && <i className="ha-wave" />}
-        <i className="ha-knob" />
-      </div>
+      <svg className="ha-field" width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`}>
+        <defs>
+          <mask id={`ha-mask-${k}`} maskUnits="userSpaceOnUse" x="0" y="0" width={g.w} height={g.h}>
+            {fade.map((b, i) => <path key={i} d={b.d} fill="#fff" fillOpacity={b.o} fillRule="evenodd" />)}
+          </mask>
+        </defs>
+        <g mask={`url(#ha-mask-${k})`}>
+          {!lit && <g className="ha-pool">{pool.map((b, i) => <path key={i} d={b.d} fillOpacity={b.o} />)}</g>}
+          <path className="ha-rect" d={rect} /><path className="ha-box t" d={boxT} /><path className="ha-box b" d={boxB} /><path className="ha-line" d={line} /><path className="ha-ring" d={ring} />
+          {lit && <path className="ha-wave" d={knob} />}
+          <g className="ha-knob"><path d={knob} /><path className="ha-face" d={face} /></g>
+        </g>
+      </svg>
     </div>
   );
 }
+/* 무대(100vw, 100svh)의 크기와 바닥의 높이. 첫 그림은 창 크기로 짐작하고, 그려지기 전에 실제 크기로 고친다 */
+const guessField = () => { const w = innerWidth, h = innerHeight, floorY = h * (w >= 860 ? .56 : .54); return { w, h, floorY, paths: arenaField(w, h, floorY) }; };
 
 /* ============================== HOME ==============================
    홈은 아레나 한 화면(DECISIONS 18차): 원근으로 누운 배틀 필드의 몬스터볼 위에 YPL이 서고 바닥에 비친다. 그 아래 다가오는 대회와 행동.
@@ -87,6 +100,17 @@ function Field({ lit }) {
 export default function HomePage({ data, go }) {
   const [enter] = useState(firstCover);
   const stageRef = useRef(null), markRef = useRef(null), bandRef = useRef(null), lampRef = useRef(null), infoRef = useRef(null);
+  const [field, setField] = useState(guessField);
+  useLayoutEffect(() => {
+    const st = stageRef.current;
+    const measure = () => {
+      const w = st.clientWidth, h = st.clientHeight, floorY = Math.round(h * parseFloat(getComputedStyle(st).getPropertyValue("--floor")) / 100);
+      setField(f => f.w === w && f.h === h && f.floorY === floorY ? f : { w, h, floorY, paths: arenaField(w, h, floorY) });
+    };
+    measure();
+    addEventListener("resize", measure);
+    return () => removeEventListener("resize", measure);
+  }, []);
 
   /* 대회 단계: 남은 날과 주 행동이 같은 계산을 읽는다 */
   const now = useMemo(() => {
@@ -138,15 +162,13 @@ export default function HomePage({ data, go }) {
      내려오는지는 화면 크기마다 달라 계산 대신 잰다. 무대는 바닥과 함께 움직이므로 이 거리는 글의 자리와 상관없다. */
   useLayoutEffect(() => {
     const ha = stageRef.current.closest(".ha"), ring = stageRef.current.querySelector(".ha-ring");
-    let last = "";
     const fit = () => {
+      if (!ring) return;
       const near = Math.ceil(ring.getBoundingClientRect().bottom - markRef.current.getBoundingClientRect().top) + "px";
-      if (near !== last) ha.style.setProperty("--field-near", last = near);
+      if (ha.style.getPropertyValue("--field-near") !== near) ha.style.setProperty("--field-near", near);
     };
     fit();
-    addEventListener("resize", fit);
-    return () => removeEventListener("resize", fit);
-  }, []);
+  }, [field]);
 
   /* 포인터가 빛을 옮긴다: 필드 위의 빛(닿는 자리의 선만 밝아진다)과 YPL 위의 빛. 필드와 글자는 움직이지 않는다.
      포인터가 없거나 떠나면 빛은 몬스터볼과 YPL의 위 가운데로 돌아가 머문다 */
@@ -184,7 +206,7 @@ export default function HomePage({ data, go }) {
     <div className="ha-slot">
     <div className="ha-stage" ref={stageRef}>
       <i className="ha-beam" aria-hidden="true" />
-      <Field /><Field lit />
+      <Field g={field} /><Field lit g={field} />
       <h1 className="ha-mark" ref={markRef}><span className="sr-only">Yonsei Pokémon League</span>
         <svg viewBox={VB.join(" ")} aria-hidden="true">
           <defs>

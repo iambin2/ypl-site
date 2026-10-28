@@ -206,12 +206,10 @@
   --dur-snappy: 400ms; --dur-soft: 670ms;
   --spring-snappy: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
   --spring-soft: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
-  --rise: translateY(16px); --reveal-blur: blur(8px);
-  /* the bars' light following the stage light after a page change. It is a main-thread animation (a gradient's place),
-     so a phone moves it with the page change instead of over the page change's own frames. */
-  --glide: 1.8s;
+  --rise: translateY(16px); --reveal-blur: none; /* a blurred rise re-rasterised each card as it scrolled in (2026-10-28) */
+  /* the bars' light moves with the stage light, at the page change (a gliding gradient restyled the bars every frame) */
+  --glide: 0s;
 }
-@media (pointer: coarse) { :root { --glide: 0s; } }
 :root[data-theme="light"] {
   color-scheme: light;
   --stage: #E7E7E7; --stage-sunk: #DCDCDC;
@@ -253,10 +251,7 @@
 }
 @media (min-width: 860px) { :root { --section: var(--s14); --chapter: 120px; --gutter: 32px; } }
 @media (prefers-reduced-motion: reduce) { :root { --rise: none; --reveal-blur: none; } }
-/* A touch screen keeps its GPU for the scroll (2026-10-28, Android in-app browser): the stage light rests instead of drifting,
-   which let the compositor redraw the whole screen and both bars' glass on every frame forever (about 600 draws against 9 in
-   a three-second trace), and a section rises without the blur, which redrew each card blurred as it scrolled in. */
-@media (hover: none) { :root { --reveal-blur: none; } :root :is(.light-a, .light-b) { animation: none; } }
+
 
 /* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
 :root {
@@ -271,8 +266,23 @@
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ----------
+   Painted on the page itself, not on a layer (2026-10-28, structural): the light from above, the low light and the
+   dither are the root's own backgrounds and scroll with the page, the light hanging over its top. Nothing fixed or
+   composited lies behind the page, so the page is one layer and the bars are the only other two. The stage used to be
+   four full-screen layers fixed behind the page (the stage, its dither, two drifting lights with will-change), which
+   pushed the whole page into a second full-size layer; a phone overdrew five or six screens a frame and ran out of tile
+   memory while scrolling, so the screen stalled and jumped. The light brightens with the event state (data-stage). */
+@property --grain { syntax: "*"; inherits: false; }
+:root { --la: var(--la-open); --lb: var(--lb-open); }
+:root[data-stage="live"] { --la: var(--la-live); --lb: var(--lb-live); }
+:root[data-stage="done"] { --la: var(--la-done); --lb: var(--lb-done); }
 html {
-  background: var(--stage);
+  background-color: var(--stage);
+  background-image: var(--grain, none),
+    radial-gradient(70vw 50vh at 50% 0, var(--la), transparent),
+    radial-gradient(55vw 35vh at 10vw 100vh, var(--lb), transparent);
+  background-size: 128px 128px, 100% 100vh, 100% 100vh; background-repeat: repeat, no-repeat, no-repeat;
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
   scrollbar-color: var(--fg-3) transparent;
   /* 스크롤바 자리를 모든 페이지에서 비워 둔다: 짧은 페이지와 긴 페이지를 오갈 때, 시트가 스크롤을 잠글 때 화면이 옆으로 튀지 않는다 */
@@ -280,7 +290,7 @@ html {
   scroll-padding-top: var(--nav-height);
 }
 body {
-  margin: 0; background: var(--stage); color: var(--fg);
+  margin: 0; color: var(--fg);
   font: 400 1rem/1.55 var(--font);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   word-break: keep-all; overflow-wrap: break-word; overflow-x: clip;
@@ -330,48 +340,15 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .fig { font-size: var(--fig-s); font-weight: 800; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .unit { font-size: .75rem; font-weight: 600; line-height: 1.25; color: var(--fg-3); margin-left: var(--s1); }
 
-/* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ---------- */
-.stage { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--stage); --la: var(--la-open); --lb: var(--lb-open); transition: --la 1.4s var(--ease-in-out), --lb 1.4s var(--ease-in-out); }
-.stage[data-state="live"] { --la: var(--la-live); --lb: var(--lb-live); }
-.stage[data-state="done"] { --la: var(--la-done); --lb: var(--lb-done); }
-.light { position: absolute; border-radius: 50%; pointer-events: none; will-change: transform; }
-.light-a { width: 140vw; height: 100vh; left: -20vw; top: -50vh; background: radial-gradient(closest-side, var(--la), transparent); translate: var(--lx, 0px) var(--ly, 0px); transition: translate 1.8s var(--ease-out); animation: drift-a 52s var(--ease-in-out) infinite alternate; }
-.light-b { width: 110vw; height: 70vh; left: -45vw; bottom: -35vh; background: radial-gradient(closest-side, var(--lb), transparent); translate: calc(var(--lx, 0px) * -.6) 0; transition: translate 1.8s var(--ease-out); animation: drift-b 68s var(--ease-in-out) infinite alternate; }
-@keyframes drift-a { from { transform: translate3d(-4vw, 0, 0); } to { transform: translate3d(4vw, 3vh, 0); } }
-@keyframes drift-b { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(30vw, -6vh, 0); } }
-.stage::after { content: ""; position: absolute; inset: 0; background: var(--grain) 0 0 / 128px 128px; }
-/* the light follows the scroll a little (5%, at most 48px) on the compositor; without scroll timelines Stage.jsx sets --ly */
-.light-y { position: absolute; inset: 0; pointer-events: none; }
-@supports (animation-timeline: scroll()) {
-  .light-y { animation: light-follow linear both; animation-timeline: scroll(root); animation-range: 0px 960px; }
-}
-@keyframes light-follow { to { translate: 0 -48px; } }
-
 /* ---------- glass: L2 bars and floating controls, L3 sheets and popovers, lite = the same look on a flat surface (C7) ----------
    A clear body that brightens what is behind it, a sheen falling from the light above, and edges that catch
    light at the top and, through the glass, again at the bottom. No grain on glass. */
 .glass, .glass-l3, .groove, .card { position: relative; }
-/* One ceiling light lights the stage and every floating piece (C3): --gx is where it stands across the screen
-   (the stage's --lx, set per page through <html data-light>). The pool on top, the light gathering under it and the brightest
-   stretch of the rim all stand under it, so when the page changes and the stage light moves, the light on the bars
-   glides with it. The bars sit centred on the screen, so 50% + --gx is the light's own place. */
-/* --gx does not inherit: it glides for 1.8s after every page change, and an inherited one restyled everything inside the
-   bars on every frame of that glide. The rim (::before) and the cards in a sheet take it from the piece by hand. */
+/* One ceiling light lights the stage and every floating piece (C3), straight above the screen's centre on every page: the
+   pool on top, the light gathering under it and the brightest stretch of the rim stand under it (50% + --gx, --gx 0).
+   A menu at its trigger keeps its light at its own centre. --gx does not inherit. */
 @property --gx { syntax: "<length>"; inherits: false; initial-value: 0px; }
-.glass, .glass-l3 { --gx: var(--lx, 0px); }
 :is(.glass, .glass-l3)::before { --gx: inherit; }
-:is(.glass, .glass-l3) .card { --gx: var(--lx, 0px); }
-/* the light's place per page (Stage.jsx sets data-light on <html>). It is set on the pieces that use it, never on <html>
-   itself: a custom property changed on the root restyles the whole document. */
-:root[data-light] :is(.stage, .glass, .glass-l3) { --lx: 0vw; }
-:root[data-light="news"] :is(.stage, .glass, .glass-l3) { --lx: -18vw; }
-:root[data-light="bracket"] :is(.stage, .glass, .glass-l3) { --lx: 16vw; }
-:root[data-light="records"] :is(.stage, .glass, .glass-l3) { --lx: -8vw; }
-:root[data-light="titles"] :is(.stage, .glass, .glass-l3) { --lx: 10vw; }
-:root[data-light="champions"] :is(.stage, .glass, .glass-l3) { --lx: -12vw; }
-:root[data-light="builder"] :is(.stage, .glass, .glass-l3) { --lx: 6vw; }
-:root[data-light="about"] :is(.stage, .glass, .glass-l3) { --lx: -4vw; }
-:root[data-light="board"] :is(.stage, .glass, .glass-l3) { --lx: 14vw; }
 /* a menu stands at its trigger, not on the screen's axis: its light stays at its own centre */
 :is(.popover, .dd-menu) { --gx: 0px; }
 .glass {
@@ -456,7 +433,6 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 @media (prefers-reduced-motion: reduce) {
   :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .ff-ok, .dd-menu, .bk-submission-detail, .records-round-detail) { animation-name: y-fade; }
   :root :is(.tab:is([aria-current="page"], [data-current]) .ics, .bk-slot.dset.pop) { animation: none; }
-  .light-a, .light-b { animation: none; }
 }
 /* B6 theme change: the tokens fade on <html>; every element follows them, so for the length of the fade the elements' own
    transitions give way to one for the shadows, the composite tokens that switch at once */

@@ -6,11 +6,10 @@ import HomePage, { stageStateOf } from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
 import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/Navigation.jsx";
-import Stage, { showBars, useScrollChrome } from "./components/layout/Stage.jsx";
+import { showBars, useScrollChrome, useStage } from "./components/layout/Stage.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { themeFade, transition } from "./components/common/motion.js";
-import { startRefraction } from "./components/common/refraction.js";
 import { startGlint } from "./components/common/glint.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
@@ -160,8 +159,7 @@ export default function App() {
     document.title=label?`${label} | YPL`:"YPL | Yonsei Pokémon League";
   },[view]);
   useScrollChrome();
-  // C2: 떠 있는 유리는 가장자리에서 뒤를 휘게 한다(Chromium). 다른 브라우저는 CSS의 서리 유리 그대로.
-  useEffect(()=>{ startRefraction(); startGlint(); },[]);
+  useEffect(()=>{ startGlint(); },[]);
   useEffect(()=>{
     initHistory();
     const onPopState=()=>{
@@ -271,6 +269,7 @@ export default function App() {
   },[data,flash]);
   const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
   const stage=useMemo(()=>data?stageStateOf(data.announcements):"open",[data]);
+  useStage(stage);
   // 첫 화면이 그려지고 브라우저가 한가해지면 나머지 페이지 조각을 미리 받아 둔다. 첫 이동도 기다림 없이 전환된다.
   // 한 번에 하나씩, 앞 조각이 다 들어온 뒤 다음 한가한 틈에: 모두 한꺼번에 평가하면 폰에서 화면이 한동안 굳는다.
   const loaded=Boolean(data);
@@ -303,7 +302,6 @@ export default function App() {
     <div className={"ypl"+(admin?" is-admin":"")}>
       {/* 키보드로 들어온 사람은 매번 바 전체를 지나야 본문에 닿았다. */}
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
-      <Stage view={view} state={stage}/>
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
         moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null}/>
 
