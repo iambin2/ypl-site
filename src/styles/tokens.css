@@ -21,57 +21,57 @@
 /* suit-slices:start (scripts/build-suit-slices.py) */
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-1.ee5617f1.woff2") format("woff2");
+  src: url("/fonts/suit/suit-1.7b381bcc.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
   unicode-range: U+AC00-B098;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-2.4d6c9530.woff2") format("woff2");
+  src: url("/fonts/suit/suit-2.ef2ad9a1.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+B099-B5AF;
+  unicode-range: U+B099-B5B2;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-3.90cba366.woff2") format("woff2");
+  src: url("/fonts/suit/suit-3.9bb82ade.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+B5B0-BBC7;
+  unicode-range: U+B5B3-BBD4;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-4.64ba4d7d.woff2") format("woff2");
+  src: url("/fonts/suit/suit-4.2c2b2c03.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+BBC8-C173;
+  unicode-range: U+BBD5-C18D;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-5.43fb3320.woff2") format("woff2");
+  src: url("/fonts/suit/suit-5.95691217.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+C174-C65B;
+  unicode-range: U+C18E-C66C;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-6.96ec5b91.woff2") format("woff2");
+  src: url("/fonts/suit/suit-6.04625a83.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+C65C-CAF3;
+  unicode-range: U+C66D-CB2B;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-7.c5821495.woff2") format("woff2");
+  src: url("/fonts/suit/suit-7.1cf36422.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+CAF4-D1A6;
+  unicode-range: U+CB2C-D1F7;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-8.dd1c9adb.woff2") format("woff2");
+  src: url("/fonts/suit/suit-8.4e307c58.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+D1A7-D7A3;
+  unicode-range: U+D1F8-D7A3;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-0.b2f4a32a.woff2") format("woff2");
+  src: url("/fonts/suit/suit-0.817aa08c.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+20-AC04, U+AC08, U+AC10-AC16, U+AC19-AC1A, U+AC1C-AC1D, U+AC24, U+AC2F, U+AC31-AC38, U+AC70, U+AC74, U+AC78, U+AC80-AC83, U+AC8C-AC94, U+AC9F-ACA0, U+ACA8-ACA9, U+ACAC, U+ACB0, U+ACB9, U+ACBC-ACBD, U+ACC4, U+ACE0-ACE8, U+ACF0-ACF5, U+ACFC-AD00, U+AD11, U+AD34, U+AD50, U+AD6C-AD75, U+AD7D-AD82, U+AD8C, U+ADC0, U+ADDC-ADE4, U+ADF8, U+ADFC, U+AE00, U+AE08-AE0B, U+AE30, U+AE34, U+AE38, U+AE40-AE43, U+AE45, U+AE4C-AE50, U+AE5C-AE5D, U+AE65-AE68, U+AE78, U+AEBC-AEBE, U+AECD-AECF, U+AED1, U+AED8, U+AEF4, U+AF2C-AF30, U+AF34, U+AF41, U+AF43, U+AFB8, U+AFBC-AFC0, U+AFC8, U+AFCD, U+AFD4, U+AFF0, U+B00C-B014, U+B044, U+B048-B04C, U+B054, U+B05D, U+B07C, U+B098, U+B09A-B09C, U+B0A0-B0A1, U+B0A8, U+B0AC, U+B0AE, U+B0B3-B0B8, U+B0C4, U+B0C9-B0D0, U+B0E5, U+B108-B109, U+B10C, U+B110, U+B113-B118, U+B123-B124, U+B137, U+B140, U+B144, U+B150, U+B178-B180, U+B188, U+B18D, U+B192-B193, U+B1CC, U+B1E8, U+B1FD-B208, U+B20C, U+B214, U+B220, U+B258, U+B274, U+B290-B294, U+B298, U+B2A5-B2A6, U+B2AA, U+B2C8-B2CC, U+B2D0, U+B2D8-B2D9, U+B2DD, U+B2E4-B2E5, U+B2E8-B2EC, U+B2F4-B2F7, U+B2F9, U+B2FF-B300, U+B304, U+B311-B313, U+B315, U+B354-B355, U+B358, U+B35C, U+B364, U+B367-B370, U+B374-B378, U+B3C4-B3C8, U+B3CC, U+B3D4, U+B3D9, U+B410, U+B418-B429, U+B450-B454, U+B458, U+B460, U+B463-B465, U+B4A4, U+B4C0, U+B4C8, U+B4DC-B4E0, U+B4E4-B4E6, U+B4ED-B4F1, U+B514, U+B518, U+B51C, U+B525-B527, U+B529, U+B530-B531, U+B538, U+B543, U+B545, U+B54C, U+B5A0, U+B5A4-B5A8, U+B5BC, U+B5C0, U+B610, U+B62C, U+B69C-B69D, U+B6A4, U+B6AB, U+B6F0-B6F4, U+B728-B729, U+B73B, U+B744, U+B760, U+B77C-B780, U+B784-B78C, U+B78F-B791, U+B798-B79C, U+B7A8-B7AB, U+B7AD, U+B7EC-B7F0, U+B7FC-B7FF, U+B801, U+B808-B80C, U+B81B, U+B824-B825, U+B82C, U+B838-B840, U+B85C-B860, U+B864, U+B86D-B871, U+B8B0, U+B8CC, U+B8E1-B8E8, U+B8EC-B8FB, U+B958-B960, U+B974-B987, U+B98E-B9CE, U+B9D0, U+B9D8, U+B9DB, U+B9DD-B9DE, U+B9E4-B9E8, U+B9F5, U+B9F9, U+BA38-BA40, U+BA48, U+BA4B-BA4D, U+BA54, U+BA58-BA64, U+BA67, U+BA70, U+BA74-BA78, U+BA85-BA87, U+BAA8-BAB0, U+BAB8, U+BABB-BABD, U+BB18, U+BB34-BB3C, U+BB44, U+BB47-BB49, U+BBA4, U+BBC0, U+BBF8-BBFC, U+BC00, U+BC0B, U+BC0D-BC16, U+BC18-BC1D, U+BC1F-BC25, U+BC29, U+BC30-BC34, U+BC40, U+BC43, U+BC45-BC49, U+BC84-BC88, U+BC8C, U+BC94-BC97, U+BCA0, U+BCA4, U+BCA8, U+BCB0, U+BCBC-BCC4, U+BCCD, U+BCD1, U+BCF4-BCF5, U+BCF8, U+BCFC, U+BD04, U+BD09-BD10, U+BD80-BD84, U+BD88-BD89, U+BD90, U+BD93-BD99, U+BDF0, U+BE0C, U+BE10-BE14, U+BE44-BE48, U+BE4C, U+BE54, U+BE57-BE59, U+BE5B-BE61, U+BE68, U+BE75, U+BE7C, U+BE80, U+BE90, U+BEA8, U+BED0, U+BF08, U+BF40, U+BF50-BF51, U+BFCC, U+BFD0-BFD4, U+BFDC, U+BFE1, U+C058-C05C, U+C090, U+C0AC-C0AD, U+C0B0, U+C0B4, U+C0B6-C0BC, U+C0C1, U+C0C8-C0C9, U+C0D8, U+C0DD-C0E4, U+C0F7-C0F9, U+C100, U+C11C-C11E, U+C120, U+C124, U+C12C, U+C12F, U+C131, U+C138-C13C, U+C140, U+C149-C14B, U+C154, U+C158-C15C, U+C170, U+C178, U+C18C-C18D, U+C190, U+C194, U+C19C, U+C1A1, U+C1C4, U+C1E0, U+C1FC, U+C218-C228, U+C22B-C22D, U+C232, U+C250, U+C258, U+C26C, U+C27C, U+C288, U+C290, U+C29B-C29D, U+C2A4, U+C2A8-C2AC, U+C2B4-C2B5, U+C2B9-C2E0, U+C2E4, U+C2EB-C2EC, U+C2EF-C2F1, U+C2F8, U+C30D-C314, U+C329, U+C368, U+C36C-C370, U+C378-C379, U+C3D8, U+C410, U+C465, U+C4F0-C4F8, U+C501, U+C528-C529, U+C53D, U+C544-C54A, U+C54C, U+C554-C559, U+C55E-C568, U+C571, U+C575, U+C57C-C580, U+C58C, U+C591, U+C5B4-C5BC, U+C5C4-C5C9, U+C5CE-C5E0, U+C5E3, U+C5EC-C5ED, U+C5F0-C5F4, U+C5FC-C5FD, U+C601-C606, U+C608, U+C610, U+C61B, U+C624-C625, U+C628, U+C62C, U+C62E, U+C635-C639, U+C640-C648, U+C651, U+C655, U+C678, U+C67C, U+C694-C695, U+C6A9-C6B4, U+C6B8, U+C6C0, U+C6C3-C6C5, U+C6CC, U+C6D0-C6DC, U+C6E0, U+C6E8, U+C704, U+C708, U+C719-C728, U+C73C-C73D, U+C740, U+C744, U+C74C, U+C751, U+C758, U+C774, U+C778, U+C77C-C77D, U+C784-C78A, U+C78E-C794, U+C798, U+C7A0-C7A1, U+C7A5-C7AC, U+C7B0, U+C7BC, U+C7C1-C7C8, U+C7DD, U+C800-C804, U+C808, U+C810-C81C, U+C820-C82C, U+C838, U+C84C, U+C870-C874, U+C885, U+C88B-C88C, U+C8C4, U+C8E4, U+C8FC-C904, U+C90D, U+C911-C918, U+C950, U+C96C, U+C988-C990, U+C998, U+C99D, U+C9C0-C9C4, U+C9C8, U+C9D0-C9D6, U+C9DC-C9DD, U+C9E7, U+C9F1, U+C9F8, U+CA4D, U+CABC-CAC0, U+CAD3, U+CB48, U+CBE4, U+CC0C-CC0D, U+CC1D, U+CC28-CC2C, U+CC30-CC38, U+CC3C-CC45, U+CC4C-CC54, U+CC59-CC60, U+CC98-CCAB, U+CCAD-CCB4, U+CCBC, U+CCD0, U+CCE4, U+CD08-CD09, U+CD10, U+CD19, U+CD1D, U+CD5C, U+CD78, U+CD94-CDA4, U+CDA9-CDB0, U+CDE8, U+CE04, U+CE20-CE21, U+CE35-CE5C, U+CE60, U+CE68-CE69, U+CE6D, U+CE74, U+CE78, U+CE7C-CE84, U+CE90, U+CE94, U+CEA0-CEA1, U+CEA5, U+CEE4, U+CEE8, U+CEEC-CEF7, U+CEF9-CF00, U+CF04-CF08, U+CF13, U+CF1C-CF20, U+CF54-CF58, U+CF5C-CF64, U+CF69, U+CF78, U+CF8C, U+CFE0, U+CFE4-CFE8, U+CFFC, U+D034-D038, U+D050, U+D06C, U+D070, U+D074-D07C, U+D0A4-D0AC, U+D0B9-D0C4, U+D0C8, U+D0D0-D0D1, U+D0D5-D0DD, U+D0EC-D0ED, U+D0F1, U+D130-D138, U+D140, U+D145-D15D, U+D1A0-D1A4, U+D1B0-D1B1, U+D1B5, U+D1F4, U+D22C, U+D230-D234, U+D241, U+D280, U+D29C, U+D2B8-D2BC, U+D2C0, U+D2C8, U+D2F0-D2F1, U+D2F8-D300, U+D305-D30C, U+D310, U+D314, U+D31C-D31D, U+D321, U+D328-D32C, U+D330, U+D33D, U+D37C-D38C, U+D391-D3A0, U+D3AB, U+D3B4, U+D3B8-D3BC, U+D3C9, U+D3EC-D3FC, U+D3FF-D401, U+D45C, U+D478, U+D47C, U+D480, U+D488, U+D48B-D48D, U+D4E8, U+D504, U+D50C-D514, U+D53C-D544, U+D551-D56D, U+D574, U+D578, U+D57C-D584, U+D587-D589, U+D5A5-D5C8, U+D5CC, U+D5D8, U+D5E4, U+D5E8-D5EC, U+D600-D608, U+D611, U+D615-D61C, U+D638-D640, U+D648, U+D64D, U+D654-D65C, U+D669, U+D68C-D68D, U+D6A8, U+D6C4, U+D6C8, U+D6D4, U+D718, U+D720, U+D729, U+D749-D754, U+D759, U+D761, U+D765, U+D76C-D770, U+D788, U+D78C-D798, U+FFE6;
+  unicode-range: U+20-AC04, U+AC08, U+AC10-AC16, U+AC19-AC1A, U+AC1C-AC1D, U+AC24, U+AC2F, U+AC31-AC38, U+AC70, U+AC74, U+AC78, U+AC80-AC83, U+AC8C-AC94, U+AC9F-ACA0, U+ACA8-ACA9, U+ACAC, U+ACB0, U+ACB9, U+ACBC-ACBD, U+ACC4, U+ACE0-ACE8, U+ACF0-ACF5, U+ACFC-AD00, U+AD11, U+AD34, U+AD50, U+AD6C-AD75, U+AD7D-AD82, U+AD8C, U+ADC0, U+ADDC-ADE4, U+ADF8, U+ADFC, U+AE00, U+AE08-AE0B, U+AE30, U+AE34, U+AE38, U+AE40-AE43, U+AE45, U+AE4C-AE50, U+AE5C-AE5D, U+AE65-AE68, U+AE78, U+AEBC-AEBD, U+AECD-AECF, U+AED1, U+AED8, U+AEF4, U+AF2C-AF30, U+AF34, U+AF41, U+AF43, U+AFB8, U+AFBC-AFC0, U+AFC8, U+AFCD, U+AFD4, U+AFF0, U+B00C-B014, U+B044, U+B048-B04C, U+B054, U+B05D, U+B07C, U+B098, U+B09A-B09C, U+B0A0-B0A1, U+B0A8, U+B0AC, U+B0AE, U+B0B3-B0B8, U+B0C4, U+B0C9-B0D0, U+B0E5, U+B108-B109, U+B10C, U+B110, U+B113-B118, U+B123-B124, U+B137, U+B140, U+B144, U+B150, U+B178-B180, U+B188, U+B18D, U+B192-B193, U+B1CC, U+B1E8, U+B1FD-B208, U+B20C, U+B214, U+B220, U+B258, U+B274, U+B290-B294, U+B298, U+B2A5-B2A6, U+B2AA, U+B2C8-B2CC, U+B2D0, U+B2D8-B2D9, U+B2DD, U+B2E4-B2E5, U+B2E8-B2EC, U+B2F4-B2F7, U+B2F9, U+B2FF-B300, U+B304, U+B311-B313, U+B315, U+B354-B355, U+B358, U+B35C, U+B364, U+B367-B370, U+B374-B378, U+B3C4-B3C8, U+B3CC, U+B3D4, U+B3D9, U+B410, U+B418-B429, U+B450-B454, U+B458, U+B460, U+B463-B465, U+B4A4, U+B4C0, U+B4C8, U+B4DC-B4E0, U+B4E4-B4F1, U+B514, U+B518, U+B51C, U+B525-B527, U+B529, U+B530-B531, U+B538, U+B543, U+B545, U+B54C, U+B5A0, U+B5A4-B5A8, U+B5BC, U+B5C0, U+B610, U+B62C, U+B69C-B69D, U+B6A4, U+B6AB, U+B6F0-B6F4, U+B728-B729, U+B73B, U+B744, U+B760, U+B77C-B780, U+B784-B78C, U+B78F-B791, U+B798-B79C, U+B7A8-B7AB, U+B7AD, U+B7EC-B7F0, U+B7FC-B7FF, U+B801, U+B808-B80C, U+B81B, U+B824-B825, U+B82C, U+B838-B840, U+B85C-B860, U+B864, U+B86D-B871, U+B8B0, U+B8CC, U+B8E1-B8E8, U+B8EC-B8FB, U+B958-B960, U+B974-B987, U+B98E-B9CE, U+B9D0, U+B9D8, U+B9DB, U+B9DD-B9DE, U+B9E4-B9E8, U+B9F5, U+B9F9, U+BA38-BA40, U+BA48, U+BA4B-BA4D, U+BA54, U+BA58-BA64, U+BA67, U+BA70, U+BA74-BA78, U+BA85-BA87, U+BAA8-BAB0, U+BAB8, U+BABB-BABD, U+BB18, U+BB34-BB3C, U+BB44, U+BB47-BB49, U+BBA4, U+BBC0, U+BBF8-BBFC, U+BC00, U+BC0B, U+BC0D-BC16, U+BC18-BC1D, U+BC1F-BC25, U+BC29, U+BC30-BC34, U+BC40, U+BC43, U+BC45-BC49, U+BC84-BC88, U+BC8C, U+BC94-BC97, U+BCA0, U+BCA4, U+BCA8, U+BCB0, U+BCBC-BCC4, U+BCCD, U+BCD1, U+BCF4-BCF5, U+BCF8, U+BCFC, U+BD04, U+BD09-BD10, U+BD80-BD84, U+BD88-BD89, U+BD90, U+BD93-BD99, U+BDF0, U+BE0C, U+BE10-BE14, U+BE44-BE48, U+BE4C, U+BE54, U+BE57-BE59, U+BE5B-BE61, U+BE68, U+BE75, U+BE7C, U+BE80, U+BE90, U+BEA8, U+BED0, U+BF08, U+BF40, U+BF50-BF51, U+BFCC, U+BFD0-BFD4, U+BFDC, U+BFE1, U+C058-C05C, U+C090, U+C0AC-C0AD, U+C0B0, U+C0B4, U+C0B6-C0BC, U+C0C1, U+C0C8-C0C9, U+C0D8, U+C0DD-C0E4, U+C0F7-C0F9, U+C100, U+C11C-C11E, U+C120, U+C124, U+C12C, U+C12F, U+C131, U+C138-C13C, U+C140, U+C149-C14B, U+C154, U+C158-C15C, U+C170, U+C178, U+C18C-C18D, U+C190, U+C194, U+C19C, U+C1A1, U+C1C4, U+C1E0, U+C1FC, U+C218-C228, U+C22B-C22D, U+C232, U+C250, U+C258, U+C26C, U+C27C, U+C288, U+C290, U+C29B-C29D, U+C2A4, U+C2A8-C2AC, U+C2B4-C2B5, U+C2B9-C2E0, U+C2E4, U+C2EB-C2EC, U+C2EF-C2F1, U+C2F8, U+C30D-C314, U+C329, U+C368, U+C36C-C370, U+C378-C379, U+C3D8, U+C410, U+C465, U+C4F0-C4F8, U+C501, U+C528-C529, U+C53D, U+C544-C54A, U+C54C, U+C554-C559, U+C55E-C568, U+C571, U+C575, U+C57C-C580, U+C58C, U+C591, U+C5B4-C5BC, U+C5C4-C5C9, U+C5CE-C5E0, U+C5E3, U+C5EC-C5ED, U+C5F0-C5F4, U+C5FC-C5FD, U+C601-C606, U+C608, U+C610, U+C61B, U+C624-C625, U+C628, U+C62C, U+C62E, U+C635-C639, U+C640-C648, U+C651, U+C655, U+C678, U+C67C, U+C694-C695, U+C6A9-C6B4, U+C6B8, U+C6C0, U+C6C3-C6C5, U+C6CC, U+C6D0-C6DC, U+C6E0, U+C6E8, U+C704, U+C708, U+C717-C728, U+C73C-C73D, U+C740, U+C744, U+C74C, U+C751, U+C758, U+C774, U+C778, U+C77C-C77D, U+C784-C78A, U+C78E-C794, U+C798, U+C7A0-C7A1, U+C7A5-C7AC, U+C7B0, U+C7BC, U+C7C1-C7C8, U+C7DD, U+C800-C804, U+C808, U+C810-C81C, U+C820-C82C, U+C838, U+C84C, U+C870-C874, U+C881, U+C885, U+C88B-C88C, U+C8C4, U+C8E4, U+C8FC-C904, U+C90D, U+C911-C918, U+C950, U+C96C, U+C988-C990, U+C998, U+C99D, U+C9C0-C9C4, U+C9C8, U+C9D0-C9D6, U+C9DC-C9DD, U+C9E7, U+C9F1, U+C9F8, U+CA4D, U+CABC-CAC0, U+CB48, U+CBE4, U+CC0C-CC0D, U+CC1D, U+CC28-CC2C, U+CC30-CC38, U+CC3C-CC45, U+CC4C-CC54, U+CC59-CC60, U+CC98-CCAB, U+CCAD-CCB4, U+CCBC, U+CCD0, U+CCE4, U+CD08-CD09, U+CD10, U+CD19, U+CD1D, U+CD5C, U+CD78, U+CD94-CDA4, U+CDA9-CDB0, U+CDE8, U+CE04, U+CE20-CE21, U+CE35-CE5C, U+CE60, U+CE68-CE69, U+CE6D, U+CE74, U+CE78, U+CE7C-CE84, U+CE90, U+CE94, U+CEA0-CEA1, U+CEA5, U+CEE4, U+CEE8, U+CEEC-CEF7, U+CEF9-CF00, U+CF04-CF08, U+CF13, U+CF1C, U+CF54-CF58, U+CF5C-CF64, U+CF69, U+CF78, U+CF8C, U+CFE0, U+CFE4-CFE8, U+CFFC, U+D034-D038, U+D050, U+D06C, U+D070, U+D074-D07C, U+D0A4-D0AC, U+D0B9-D0C4, U+D0C8, U+D0D0-D0D1, U+D0D5-D0DD, U+D0EC-D0ED, U+D0F1, U+D130-D138, U+D140, U+D145-D15D, U+D1A0-D1A4, U+D1B0-D1B1, U+D1B5, U+D1F4, U+D22C, U+D230-D234, U+D241, U+D280, U+D29C, U+D2B8-D2BC, U+D2C0, U+D2C8, U+D2F0-D2F1, U+D2F8-D300, U+D305-D30C, U+D310, U+D314, U+D31C-D31D, U+D321, U+D328-D32C, U+D330, U+D33D, U+D37C-D38C, U+D391-D3A0, U+D3AB, U+D3B8-D3BC, U+D3C9, U+D3EC-D3FC, U+D3FF-D401, U+D45C, U+D478, U+D47C, U+D480, U+D488, U+D48B-D48D, U+D4E8, U+D504, U+D50C-D514, U+D53C-D544, U+D551-D56D, U+D574, U+D578, U+D57C-D584, U+D587-D589, U+D5A5-D5C8, U+D5CC, U+D5D8, U+D5E4, U+D5E8-D5EC, U+D600-D608, U+D611, U+D615-D61C, U+D638-D640, U+D648, U+D64D, U+D654-D65C, U+D669, U+D68C-D68D, U+D6A8, U+D6C4, U+D6C8, U+D6D4, U+D718, U+D720, U+D729, U+D749-D754, U+D759, U+D761, U+D765, U+D76C-D770, U+D788, U+D78C-D798, U+FFE6;
 }
 /* suit-slices:end */
 /* YPL Figures: digits, hyphen and D drawn in the wordmark's construction (scripts/build-figures.py). Reserved for the brand:
@@ -207,7 +207,11 @@
   --spring-snappy: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
   --spring-soft: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
   --rise: translateY(16px); --reveal-blur: blur(8px);
+  /* the bars' light following the stage light after a page change. It is a main-thread animation (a gradient's place),
+     so a phone moves it with the page change instead of over the page change's own frames. */
+  --glide: 1.8s;
 }
+@media (pointer: coarse) { :root { --glide: 0s; } }
 :root[data-theme="light"] {
   color-scheme: light;
   --stage: #E7E7E7; --stage-sunk: #DCDCDC;
@@ -332,17 +336,38 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 @keyframes drift-a { from { transform: translate3d(-4vw, 0, 0); } to { transform: translate3d(4vw, 3vh, 0); } }
 @keyframes drift-b { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(30vw, -6vh, 0); } }
 .stage::after { content: ""; position: absolute; inset: 0; background: var(--grain) 0 0 / 128px 128px; }
+/* the light follows the scroll a little (5%, at most 48px) on the compositor; without scroll timelines Stage.jsx sets --ly */
+.light-y { position: absolute; inset: 0; pointer-events: none; }
+@supports (animation-timeline: scroll()) {
+  .light-y { animation: light-follow linear both; animation-timeline: scroll(root); animation-range: 0px 960px; }
+}
+@keyframes light-follow { to { translate: 0 -48px; } }
 
 /* ---------- glass: L2 bars and floating controls, L3 sheets and popovers, lite = the same look on a flat surface (C7) ----------
    A clear body that brightens what is behind it, a sheen falling from the light above, and edges that catch
    light at the top and, through the glass, again at the bottom. No grain on glass. */
 .glass, .glass-l3, .groove, .card { position: relative; }
 /* One ceiling light lights the stage and every floating piece (C3): --gx is where it stands across the screen
-   (the stage's --lx, set per page on <html>). The pool on top, the light gathering under it and the brightest
+   (the stage's --lx, set per page through <html data-light>). The pool on top, the light gathering under it and the brightest
    stretch of the rim all stand under it, so when the page changes and the stage light moves, the light on the bars
    glides with it. The bars sit centred on the screen, so 50% + --gx is the light's own place. */
-@property --gx { syntax: "<length>"; inherits: true; initial-value: 0px; }
+/* --gx does not inherit: it glides for 1.8s after every page change, and an inherited one restyled everything inside the
+   bars on every frame of that glide. The rim (::before) and the cards in a sheet take it from the piece by hand. */
+@property --gx { syntax: "<length>"; inherits: false; initial-value: 0px; }
 .glass, .glass-l3 { --gx: var(--lx, 0px); }
+:is(.glass, .glass-l3)::before { --gx: inherit; }
+:is(.glass, .glass-l3) .card { --gx: var(--lx, 0px); }
+/* the light's place per page (Stage.jsx sets data-light on <html>). It is set on the pieces that use it, never on <html>
+   itself: a custom property changed on the root restyles the whole document. */
+:root[data-light] :is(.stage, .glass, .glass-l3) { --lx: 0vw; }
+:root[data-light="news"] :is(.stage, .glass, .glass-l3) { --lx: -18vw; }
+:root[data-light="bracket"] :is(.stage, .glass, .glass-l3) { --lx: 16vw; }
+:root[data-light="records"] :is(.stage, .glass, .glass-l3) { --lx: -8vw; }
+:root[data-light="titles"] :is(.stage, .glass, .glass-l3) { --lx: 10vw; }
+:root[data-light="champions"] :is(.stage, .glass, .glass-l3) { --lx: -12vw; }
+:root[data-light="builder"] :is(.stage, .glass, .glass-l3) { --lx: 6vw; }
+:root[data-light="about"] :is(.stage, .glass, .glass-l3) { --lx: -4vw; }
+:root[data-light="board"] :is(.stage, .glass, .glass-l3) { --lx: 14vw; }
 /* a menu stands at its trigger, not on the screen's axis: its light stays at its own centre */
 :is(.popover, .dd-menu) { --gx: 0px; }
 .glass {

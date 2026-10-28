@@ -272,18 +272,24 @@ export default function App() {
   // 첫 화면이 그려지고 브라우저가 한가해지면 나머지 페이지 조각을 미리 받아 둔다. 첫 이동도 기다림 없이 전환된다.
   // 한 번에 하나씩, 앞 조각이 다 들어온 뒤 다음 한가한 틈에: 모두 한꺼번에 평가하면 폰에서 화면이 한동안 굳는다.
   const loaded=Boolean(data);
+  // 계산기는 빼 둔다: 데미지 엔진의 평가만 폰에서 수백 ms라 한가한 틈에도 화면이 굳는다. 그 화면으로 갈 기색(더보기 열기, 탭에 손이나 포인터)이 보일 때 받는다.
   useEffect(()=>{
     if(!loaded||navigator.connection?.saveData) return undefined;
-    const queue=Object.values(PAGES);
+    const queue=Object.values(PAGES).filter(p=>p!==CalculatorPage);
     let handle=null, stopped=false;
     const later=f=>window.requestIdleCallback?window.requestIdleCallback(f,{timeout:2000}):setTimeout(f,400);
     const next=()=>{ if(stopped||!queue.length) return; handle=later(()=>{ if(!stopped) queue.shift().prefetch().then(next); }); };
     next();
     return ()=>{ stopped=true; if(window.requestIdleCallback) window.cancelIdleCallback(handle); else clearTimeout(handle); };
   },[loaded]);
+  useEffect(()=>{
+    const intent=e=>{ const v=e.target.closest?.("[data-tab]")?.dataset.tab; if(PAGES[v]) PAGES[v].prefetch(); };
+    addEventListener("pointerover",intent,{passive:true}); addEventListener("pointerdown",intent,{passive:true});
+    return ()=>{ removeEventListener("pointerover",intent); removeEventListener("pointerdown",intent); };
+  },[]);
   const logout=()=>{ signOutAdmin(); setAdmin(false); };
   const onAdmin=()=>{ setMore(null); admin?logout():setModal({type:"login"}); };
-  const toggleMore=el=>setMore(m=>m?null:el);
+  const toggleMore=el=>{ if(!more) CalculatorPage.prefetch(); setMore(m=>m?null:el); };
   const wideNav=useWideNav();
   const moreItems=[
     ...MORE_ITEMS.map(([key,label,icon])=>({key,label,icon,current:view===key,onSelect:()=>go(key)})),

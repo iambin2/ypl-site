@@ -10,14 +10,17 @@
    fills the screen behind the bars; the text stands in the page. The hall (14th round) was replaced: it repeated the hall of fame. */
 .ha { position: relative; min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; justify-content: flex-end; text-align: center; }
 .ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent); --glow: color-mix(in srgb, var(--fg) 24%, transparent);
-  --lx: 50%; --ly: var(--floor); position: absolute; left: 50%; top: calc((env(safe-area-inset-top, 0px) + 92px) * -1); width: 100vw; height: 100svh; translate: -50% 0; overflow: hidden; pointer-events: none; }
+  position: absolute; left: 50%; top: calc((env(safe-area-inset-top, 0px) + 92px) * -1); width: 100vw; height: 100svh; translate: -50% 0; overflow: hidden; pointer-events: none; }
 /* the arena ends in the dark, not at a cut: its lower part fades into the stage, so scrolling to the footer never shows the box's edge */
 .ha-stage { -webkit-mask: linear-gradient(to bottom, #000 72%, transparent); mask: linear-gradient(to bottom, #000 72%, transparent); }
 .ha-beam { position: absolute; left: 50%; top: 0; width: min(170vw, 1500px); height: var(--floor); translate: -50% 0;
   background: linear-gradient(to bottom, transparent, var(--home-beam) 70%, transparent); clip-path: polygon(46% 0, 54% 0, 72% 100%, 28% 100%); filter: blur(14px); }
 /* the field: one plane laid back in perspective, faded toward its far and near ends */
 .ha-persp { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 30%; }
-.ha-persp.lit { -webkit-mask: radial-gradient(circle at var(--lx) var(--ly), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at var(--lx) var(--ly), #000, transparent min(40vw, 360px)); }
+/* the pointer's light (HomePage.jsx writes --hx, --hy on this layer only; they do not inherit, so a move restyles one element) */
+@property --hx { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
+@property --hy { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
+.ha-persp.lit { --hy: var(--floor); -webkit-mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); }
 .ha-plane { position: absolute; left: 50%; top: var(--floor); width: min(150vw, 1500px); aspect-ratio: .64; transform: translate(-50%, -50%) rotateX(68deg);
   -webkit-mask: radial-gradient(closest-side, #000 40%, transparent); mask: radial-gradient(closest-side, #000 40%, transparent); }
 .ha-plane > i { position: absolute; display: block; }

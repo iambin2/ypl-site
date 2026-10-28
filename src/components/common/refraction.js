@@ -33,18 +33,32 @@ const NS = "http://www.w3.org/2000/svg";
 const pieces = new WeakMap();
 let defs = null, seq = 0, started = false;
 
-function drawMap(w, h, radii, band) {
+/* Maps are cached by shape: a sheet or menu that opens again at the same size costs nothing. Only the rim band is
+   computed; the middle stays neutral (128, 128), which is most of a sheet. Data URLs, so nothing has to be revoked. */
+const maps = new Map();
+function drawMap(w, h, radii, band, key) {
+  if (maps.has(key)) return maps.get(key);
   const res = Math.min(Math.min(2, window.devicePixelRatio || 1), Math.sqrt(MAP_PX / (w * h)));
   const W = Math.max(1, Math.round(w * res)), H = Math.max(1, Math.round(h * res));
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d"), img = g.createImageData(W, H), d = img.data;
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-    const [dx, dy] = lensOffset(((i + 0.5) * w) / W - w / 2, ((j + 0.5) * h) / H - h / 2, w, h, radii, band);
-    const k = (j * W + i) * 4;
-    d[k] = 128 + dx * 127; d[k + 1] = 128 + dy * 127; d[k + 2] = 128; d[k + 3] = 255;
+  for (let k = 0; k < d.length; k += 4) { d[k] = d[k + 1] = d[k + 2] = 128; d[k + 3] = 255; }
+  // a pixel further than the band plus the largest corner from every edge is never bent
+  const edge = Math.ceil((band + Math.min(Math.max(...radii), w / 2, h / 2)) * res) + 1;
+  for (let j = 0; j < H; j++) {
+    const mid = j >= edge && j < H - edge && W > 2 * edge;
+    for (let i = 0; i < W; i++) {
+      if (mid && i === edge) i = W - edge;
+      const [dx, dy] = lensOffset(((i + 0.5) * w) / W - w / 2, ((j + 0.5) * h) / H - h / 2, w, h, radii, band);
+      const k = (j * W + i) * 4;
+      d[k] = 128 + dx * 127; d[k + 1] = 128 + dy * 127;
+    }
   }
   g.putImageData(img, 0, 0);
-  return new Promise(done => c.toBlob(b => done(b ? URL.createObjectURL(b) : c.toDataURL()), "image/png"));
+  const url = c.toDataURL("image/png");
+  if (maps.size >= 32) maps.delete(maps.keys().next().value);
+  maps.set(key, url);
+  return url;
 }
 
 function filterFor(p) {
@@ -81,14 +95,11 @@ async function refract(el) {
   // the new size takes the region at once (the old map stretches for a frame), the new map follows when it is drawn
   for (const node of [f, im]) { node.setAttribute("width", w); node.setAttribute("height", h); }
   f.querySelector("feDisplacementMap").setAttribute("scale", band * SHARE);
-  const url = await drawMap(w, h, radii, band);
-  if (p.key !== key) { if (url.startsWith("blob:")) URL.revokeObjectURL(url); return; }
+  const url = drawMap(w, h, radii, band, key);
   // decode first, so the filter never runs on an empty map (which would shift the whole backdrop)
   try { const probe = new Image(); probe.src = url; await probe.decode(); } catch { /* the filter still loads it */ }
-  if (p.key !== key) { if (url.startsWith("blob:")) URL.revokeObjectURL(url); return; }
-  const old = p.url;
-  im.setAttribute("href", url); p.url = url;
-  if (old?.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(old), 1000);
+  if (p.key !== key) return;
+  im.setAttribute("href", url);
   // sheets hold text over whatever is behind; full saturation turned artwork behind them into coloured blotches
   const l3 = el.classList.contains("glass-l3");
   el.style.backdropFilter = `blur(${l3 ? FROST.l3 : FROST.glass}px) url(#${p.id}) saturate(${l3 ? 100 : 170}%) brightness(var(--glass-bright))`;
@@ -98,7 +109,6 @@ function forget(el) {
   const p = pieces.get(el);
   if (!p) return;
   p.filter?.remove();
-  if (p.url?.startsWith("blob:")) URL.revokeObjectURL(p.url);
   pieces.delete(el);
   el.style.backdropFilter = "";
 }
@@ -113,7 +123,15 @@ export function startRefraction() {
   const due = new Set();
   let frame = 0;
   const schedule = el => { due.add(el); frame ||= requestAnimationFrame(() => { frame = 0; const all = [...due]; due.clear(); all.forEach(e => { refract(e); }); }); };
-  const ro = new ResizeObserver(entries => entries.forEach(e => schedule(e.target)));
+  // a piece that is already bent waits for its size to settle (a sheet growing as it fills, a list being filtered):
+  // the old map stretches meanwhile, instead of a new map being drawn on every step
+  const settle = new WeakMap();
+  const resized = el => {
+    if (!pieces.get(el)?.key) { schedule(el); return; }
+    clearTimeout(settle.get(el));
+    settle.set(el, setTimeout(() => schedule(el), 160));
+  };
+  const ro = new ResizeObserver(entries => entries.forEach(e => resized(e.target)));
   const watched = new Set();
   const track = el => { if (el.closest(SKIP)) return; if (!watched.has(el)) { watched.add(el); ro.observe(el); } schedule(el); };
   const scan = node => { if (node.nodeType !== 1) return; if (node.matches(SEL)) track(node); node.querySelectorAll(SEL).forEach(track); };

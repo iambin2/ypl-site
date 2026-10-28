@@ -6,7 +6,7 @@ that appears anywhere in src/ or index.html: the UI copy, the legacy records and
 That covers practically every screen, so it is the one file index.html preloads.
 The other syllables go into contiguous slices across U+AC00-D7A3, fetched only when a page shows one.
 SUIT has no Hangul kerning, so splitting Hangul changes no rendering; every slice keeps the same metrics,
-the wght axis and all layout features.
+the wght axis and all layout features, and gains the HVAR table the source lacks (advances without outlines).
 
 Slice ranges overlap slice 0 on purpose. CSS Fonts 4 checks the last defined @font-face first, and slice 0
 is written last, so its syllables never fetch another slice and the rest stay short spans.
@@ -20,6 +20,7 @@ Usage: npm run font:slices  (pip install -r scripts/requirements-fonts.txt; pinn
 import glob, hashlib, io, os, re
 from fontTools.ttLib import TTFont
 from fontTools import subset
+from fontTools.varLib.hvar import add_HVAR
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCE = os.path.join(ROOT, "public/fonts/SUIT-Variable.woff2")
@@ -47,6 +48,9 @@ def build(unicodes):
     subsetter = subset.Subsetter(options)
     subsetter.populate(unicodes=unicodes)
     subsetter.subset(font)
+    # SUIT ships without HVAR, so a browser finds each glyph's advance at a weight by running the glyph's whole outline
+    # variation: the first layout of a screen with new words cost hundreds of ms on a phone. HVAR holds the advances.
+    add_HVAR(font)
     out = io.BytesIO()
     font.save(out)
     return out.getvalue()

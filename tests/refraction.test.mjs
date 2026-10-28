@@ -20,3 +20,13 @@ test("each corner uses its own radius, so a sheet with square bottom corners kee
   assert.ok(dy < -0.9, "near the bottom rim it points up, into the sheet");
   assert.deepEqual(lensOffset(-297, 199, 600, 400, [28, 28, 28, 28], 24), [0, 0], "a rounded corner leaves that point outside");
 });
+
+test("past the band plus the corner from every edge nothing bends, so the map skips the middle", () => {
+  for (const [w, h, radii, band] of [[358, 64, [32, 32, 32, 32], 24], [390, 700, [28, 28, 0, 0], 24], [240, 300, [999, 999, 999, 999], 24]]) {
+    const edge = band + Math.min(Math.max(...radii), w / 2, h / 2);
+    for (let y = -h / 2; y <= h / 2; y += 3) for (let x = -w / 2; x <= w / 2; x += 3) {
+      if (Math.min(x + w / 2, w / 2 - x, y + h / 2, h / 2 - y) <= edge) continue;
+      assert.deepEqual(lensOffset(x, y, w, h, radii, band), [0, 0], `${w}x${h} at ${x},${y}`);
+    }
+  }
+});

@@ -922,19 +922,32 @@ export function buildRecordsSnapshot(data = {}) {
   const names = collectNames(data, placements, matches, participations, rosters);
   const archives = buildArchives(data, rosters);
 
+  // grouped once, in their original order: filtering every list again for every trainer was the records page's slowest step
+  const groupBy = (list, keysOf) => {
+    const groups = new Map();
+    for (const item of list) for (const key of new Set(keysOf(item))) {
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    }
+    return groups;
+  };
+  const matchesBy = groupBy(matches, (m) => [m.winner, m.loser]);
+  const placementsBy = groupBy(placements, (p) => [p.name]);
+  const participationsBy = groupBy(participations, (p) => [p.name]);
+  const rostersBy = groupBy(rosters, (r) => [r.owner]);
+
   const profiles = {};
   for (const name of names) {
-    const playerMatches = matches
-      .filter((m) => m.winner === name || m.loser === name)
+    const playerMatches = (matchesBy.get(name) || [])
       .map((m) => ({
         ...m,
         won: m.winner === name,
         opponent: m.winner === name ? m.loser : m.winner,
       }));
 
-    const playerPlacements = placements.filter((p) => p.name === name);
-    const playerParticipations = participations.filter((p) => p.name === name);
-    const playerRosters = rosters.filter((r) => r.owner === name);
+    const playerPlacements = placementsBy.get(name) || [];
+    const playerParticipations = participationsBy.get(name) || [];
+    const playerRosters = rostersBy.get(name) || [];
 
     profiles[name] = {
       name,

@@ -66,7 +66,7 @@ function sweep(band, ms) {
 }
 
 /* 원근으로 누운 배틀 필드: 바깥 선, 양 끝의 트레이너 박스, 가운데 선과 원과 단추(몬스터볼). 같은 필드를 두 장 겹쳐
-   아래 장은 흐린 선, 위 장은 빛을 받은 선이다. 위 장은 빛이 닿는 자리만 보인다(--lx, --ly). */
+   아래 장은 흐린 선, 위 장은 빛을 받은 선이다. 위 장은 빛이 닿는 자리만 보인다(--hx, --hy). */
 function Field({ lit }) {
   return (
     <div className={"ha-persp" + (lit ? " lit" : "")} aria-hidden="true">
@@ -138,12 +138,12 @@ export default function HomePage({ data, go }) {
      포인터가 없거나 떠나면 빛은 몬스터볼과 YPL의 위 가운데로 돌아가 머문다 */
   useEffect(() => {
     if (reduced() || !matchMedia("(pointer: fine)").matches) return undefined;
-    const stage = stageRef.current, lamp = lampRef.current, mark = markRef.current.querySelector("svg");
+    const stage = stageRef.current, lit = stage.querySelector(".ha-persp.lit"), lamp = lampRef.current, mark = markRef.current.querySelector("svg");
     const rest = () => { const r = stage.getBoundingClientRect(); return [r.width / 2, r.height * parseFloat(getComputedStyle(stage).getPropertyValue("--floor")) / 100]; };
     let [fx, fy] = rest(), [tfx, tfy] = [fx, fy], [lx, ly] = LAMP_REST, [tlx, tly] = LAMP_REST, raf = 0;
     const step = () => {
       fx += (tfx - fx) * .07; fy += (tfy - fy) * .07; lx += (tlx - lx) * .08; ly += (tly - ly) * .08;
-      stage.style.setProperty("--lx", fx.toFixed(1) + "px"); stage.style.setProperty("--ly", fy.toFixed(1) + "px");
+      lit.style.setProperty("--hx", fx.toFixed(1) + "px"); lit.style.setProperty("--hy", fy.toFixed(1) + "px");
       lamp.setAttribute("cx", lx.toFixed(1)); lamp.setAttribute("cy", ly.toFixed(1));
       raf = Math.abs(tfx - fx) + Math.abs(tfy - fy) + Math.abs(tlx - lx) + Math.abs(tly - ly) > .3 ? requestAnimationFrame(step) : 0;
     };
