@@ -134,6 +134,20 @@ export default function HomePage({ data, go }) {
     return () => { timers.forEach(clearTimeout); stopSweep?.(); };
   }, [enter]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* 아래 글은 원의 가까운 끝 바로 밑에 선다(글과 단추는 그린 선 위에 서지 않는다). 원근으로 누운 원이 바닥 밑으로 얼마나
+     내려오는지는 화면 크기마다 달라 계산 대신 잰다. 무대는 바닥과 함께 움직이므로 이 거리는 글의 자리와 상관없다. */
+  useLayoutEffect(() => {
+    const ha = stageRef.current.closest(".ha"), ring = stageRef.current.querySelector(".ha-ring");
+    let last = "";
+    const fit = () => {
+      const near = Math.ceil(ring.getBoundingClientRect().bottom - markRef.current.getBoundingClientRect().top) + "px";
+      if (near !== last) ha.style.setProperty("--field-near", last = near);
+    };
+    fit();
+    addEventListener("resize", fit);
+    return () => removeEventListener("resize", fit);
+  }, []);
+
   /* 포인터가 빛을 옮긴다: 필드 위의 빛(닿는 자리의 선만 밝아진다)과 YPL 위의 빛. 필드와 글자는 움직이지 않는다.
      포인터가 없거나 떠나면 빛은 몬스터볼과 YPL의 위 가운데로 돌아가 머문다 */
   useEffect(() => {
@@ -166,6 +180,8 @@ export default function HomePage({ data, go }) {
   const letters = ["body", "lamp", "band"].map(k => <path key={k} transform="skewX(-12) translate(21 0)" fillRule="evenodd" d={WORDMARK_PATH} fill={`url(#ha-${k})`} />);
 
   return (<div className="ha" onClick={e => !e.target.closest("button, a") && wave()}>
+    {/* YPL이 서는 자리. 필드의 바닥이 이 자리의 아래 끝에 놓여, YPL과 그 아래 글이 한 무리로 화면 가운데에 선다 */}
+    <div className="ha-slot">
     <div className="ha-stage" ref={stageRef}>
       <i className="ha-beam" aria-hidden="true" />
       <Field /><Field lit />
@@ -180,6 +196,7 @@ export default function HomePage({ data, go }) {
         </svg>
         <svg className="ha-refl" viewBox={VB.join(" ")} aria-hidden="true">{letters}</svg>
       </h1>
+    </div>
     </div>
     <div className="ha-info" ref={infoRef}>
       {now && <div className="ha-ev">

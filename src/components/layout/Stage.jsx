@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { desktop } from "../common/motion.js";
 
 /* L0 무대: 흑연색 바탕 위로 바로 위에서 떨어지는 부드러운 빛 하나(C3). 40초 넘는 주기로 아주 느리게 흐르고(D1),
    페이지가 바뀌면 빛의 자리가 천천히 옮겨 가며, 대회 상태에 따라 밝기가 달라지고, 스크롤에 아주 약하게 따라온다(D2).
@@ -28,33 +29,53 @@ export default function Stage({ view, state = "open" }) {
   );
 }
 
-/* G4, J3: 스크롤을 내리면 바가 숨고 올리면 나온다. 콘텐츠가 상단 바 아래로 지나가면 바 아래에 옅은 그림자.
-   무대의 빛은 스크롤에 아주 약하게 따라온다. 리렌더 없이 클래스만 바꾼다. */
-const bars = () => [document.querySelector(".topbar"), document.querySelector(".tabbar"), document.querySelector(".admin-dock")];
-// 이동 뒤 스크롤 복원(뒤로 가기로 목록 중간에 돌아옴)은 손의 스크롤이 아니다: 그 한 번은 바를 숨기지 않는다
-let resync = false;
-export function showBars() { resync = true; bars().forEach(b => b?.classList.remove("hide")); }
+/* G4, J3: 바는 손가락을 따라 숨고 나온다. 내리는 만큼 밀려 나가고 올리는 만큼 돌아오며, 스크롤한 거리보다 더 숨지 않으니
+   맨 위에서는 늘 다 보인다. 스크롤이 멈추면 마지막 방향으로 마저 숨거나 나온다. 바꾸는 것은 translate 하나라 합성 단계에서 움직인다.
+   콘텐츠가 상단 바 아래로 지나가면 바 아래에 옅은 그림자. 무대의 빛은 스크롤에 아주 약하게 따라온다. */
+const TRAVEL = 80; // 바가 다 숨기까지 스크롤하는 거리(px)
+const bars = () => [document.querySelector(".topbar"), document.querySelector(".tabbar"), desktop() ? null : document.querySelector(".admin-dock")];
+let hidden = 0, resync = false, unglide = 0;
+function place(glide) {
+  const f = hidden / TRAVEL, pieces = bars().filter(b => b?.offsetHeight);
+  // 읽기를 먼저 모두, 쓰기는 그다음: 바마다 레이아웃을 다시 하지 않는다
+  const away = pieces.map(b => b.classList.contains("topbar") ? -(b.offsetTop + b.offsetHeight + 8) : innerHeight - b.offsetTop + 8);
+  pieces.forEach((b, i) => {
+    b.style.transition = glide ? "translate var(--dur-base) var(--ease-out)" : "none";
+    b.style.translate = f ? `0 ${(f * away[i]).toFixed(1)}px` : "";
+  });
+  clearTimeout(unglide);
+  unglide = setTimeout(() => pieces.forEach(b => { b.style.transition = ""; }), glide ? 280 : 0);
+}
+// 이동 뒤 스크롤 복원(뒤로 가기로 목록 중간에 돌아옴)은 손의 스크롤이 아니다: 바는 나와 있고 그 한 번은 세지 않는다
+export function showBars() { resync = true; if (hidden) { hidden = 0; place(true); } }
 export function useScrollChrome() {
   useEffect(() => {
     // 스크롤 연동 애니메이션이 없는 브라우저만 빛을 손으로 옮긴다
     const follow = !globalThis.CSS?.supports?.("animation-timeline: scroll()");
-    let lastY = scrollY, ticking = false;
+    let lastY = Math.max(0, scrollY), dir = 0, timer = 0;
+    const settle = () => {
+      clearTimeout(timer);
+      if (hidden <= 0 || hidden >= TRAVEL) return;
+      hidden = dir > 0 && lastY >= TRAVEL ? TRAVEL : 0;
+      place(true);
+    };
+    // 스크롤 이벤트는 프레임마다 한 번, 그리기 직전에 온다: 같은 프레임에 바를 옮긴다
     const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        ticking = false;
-        const y = scrollY;
-        if (resync) { resync = false; lastY = y; }
-        const dy = y - lastY;
-        document.querySelector(".topbar")?.classList.toggle("scrolled", y > 8);
-        if (y < 64) { showBars(); lastY = y; }
-        else if (Math.abs(dy) > 10) { bars().forEach(b => b?.classList.toggle("hide", dy > 0)); lastY = y; }
-        // 빛 하나에만 쓴다: 무대에 쓰면 상속을 따라 무대 전체가 매 스크롤 프레임 다시 계산된다
-        if (follow) document.querySelector("#ypl-stage .light-a")?.style.setProperty("--ly", -Math.min(y * 0.05, 48) + "px");
-      });
+      const y = Math.max(0, scrollY);
+      if (resync) { resync = false; lastY = y; }
+      const dy = y - lastY;
+      lastY = y;
+      if (dy) dir = Math.sign(dy);
+      document.querySelector(".topbar")?.classList.toggle("scrolled", y > 8);
+      const next = Math.min(Math.max(hidden + dy, 0), TRAVEL, y);
+      if (next !== hidden) { hidden = next; place(false); }
+      clearTimeout(timer);
+      timer = setTimeout(settle, 160);
+      // 빛 하나에만 쓴다: 무대에 쓰면 상속을 따라 무대 전체가 매 스크롤 프레임 다시 계산된다
+      if (follow) document.querySelector("#ypl-stage .light-a")?.style.setProperty("--ly", -Math.min(y * 0.05, 48) + "px");
     };
     addEventListener("scroll", onScroll, { passive: true });
-    return () => removeEventListener("scroll", onScroll);
+    addEventListener("scrollend", settle);
+    return () => { removeEventListener("scroll", onScroll); removeEventListener("scrollend", settle); clearTimeout(timer); };
   }, []);
 }

@@ -8,9 +8,13 @@
    actions. Things stand still and only light moves (the 14th round's rule): the pointer carries one light over the field, where
    only the lines it touches brighten, and one over the YPL's letters; a tap sends one wave of light across the floor. The stage
    fills the screen behind the bars; the text stands in the page. The hall (14th round) was replaced: it repeated the hall of fame. */
-.ha { position: relative; min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; justify-content: flex-end; text-align: center; }
+/* On a phone (2026-10-28) the YPL on the ball, the event and the buttons are one group, centred between the bars. The field's floor (--fk of the
+   screen's height) lies in the YPL's slot, so the field follows the group; the info keeps clear of the ring. */
+.ha { --h: clamp(88px, 15vw, 216px); --fk: .54; --fw: clamp(730px, 190vw, 1500px); --field-near: calc(var(--fw) * .15); /* HomePage.jsx measures the ring and replaces it */ position: relative; min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; justify-content: center; text-align: center; }
+/* the slot holds the YPL above the floor and the near half of the ring below it */
+.ha-slot { position: relative; flex: none; height: calc(var(--h) * 1.08 + var(--field-near)); }
 .ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent); --glow: color-mix(in srgb, var(--fg) 24%, transparent);
-  position: absolute; left: 50%; top: calc((env(safe-area-inset-top, 0px) + 92px) * -1); width: 100vw; height: 100svh; translate: -50% 0; overflow: hidden; pointer-events: none; }
+  position: absolute; left: 50%; top: calc(100% - var(--field-near) - 100svh * var(--fk)); width: 100vw; height: 100svh; translate: -50% 0; overflow: hidden; pointer-events: none; }
 /* the arena ends in the dark, not at a cut: its lower part fades into the stage, so scrolling to the footer never shows the box's edge */
 .ha-stage { -webkit-mask: linear-gradient(to bottom, #000 72%, transparent); mask: linear-gradient(to bottom, #000 72%, transparent); }
 .ha-beam { position: absolute; left: 50%; top: 0; width: min(170vw, 1500px); height: var(--floor); translate: -50% 0;
@@ -21,7 +25,7 @@
 @property --hx { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
 @property --hy { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
 .ha-persp.lit { --hy: var(--floor); -webkit-mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); }
-.ha-plane { position: absolute; left: 50%; top: var(--floor); width: min(150vw, 1500px); aspect-ratio: .64; transform: translate(-50%, -50%) rotateX(68deg);
+.ha-plane { position: absolute; left: 50%; top: var(--floor); width: var(--fw); aspect-ratio: .64; transform: translate(-50%, -50%) rotateX(68deg);
   -webkit-mask: radial-gradient(closest-side, #000 40%, transparent); mask: radial-gradient(closest-side, #000 40%, transparent); }
 .ha-plane > i { position: absolute; display: block; }
 .ha-pool { inset: 10% -10%; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent 75%); }
@@ -38,11 +42,11 @@
 .ha-persp.lit .ha-knob { background: radial-gradient(closest-side, var(--fg) 40%, transparent 46%); box-shadow: 0 0 40px var(--glow); }
 .ha-wave { left: 50%; top: 50%; width: 9%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 3px solid var(--fg); opacity: 0; }
 /* the YPL stands on the ball and is reflected in the floor under it */
-.ha-mark { --h: clamp(88px, 15vw, 216px); position: absolute; left: 50%; top: var(--floor); }
+.ha-mark { position: absolute; left: 50%; top: var(--floor); }
 .ha-mark svg { position: absolute; left: 50%; height: var(--h); width: auto; translate: -50% 0; overflow: visible; }
 .ha-mark svg:not(.ha-refl) { bottom: calc(var(--h) * .08); filter: drop-shadow(0 0 30px var(--glow)); }
 .ha-refl { top: calc(var(--h) * -.08); scale: 1 -1; opacity: .3; -webkit-mask: linear-gradient(to top, #000, transparent 60%); mask: linear-gradient(to top, #000, transparent 60%); }
-.ha-info { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s5); padding-bottom: var(--s14); }
+.ha-info { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s5); margin-top: var(--s4); }
 .ha-ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
 .ha-ev-row { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; column-gap: var(--s3); }
 .ha-ev-name { font-size: 1.0625rem; font-weight: 800; }
@@ -50,8 +54,11 @@
 .ha-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); }
 @media (min-width: 860px) {
   .ha { min-height: calc(100svh - 208px); }
-  .ha-info { padding-bottom: var(--s10); }
+  /* the desktop keeps the arena of the 18th round: the field fills the screen and the words stand at its foot */
+  .ha { --fk: .56; justify-content: flex-end; }
+  .ha-slot { position: static; height: auto; }
   .ha-stage { --floor: 56%; top: -112px; }
+  .ha-info { margin-top: 0; padding-bottom: var(--s10); }
 }
 
 /* the reigning champion's party on the floor (the hall of fame stage), in a V (the shape the 14th round's home hall gave it).
@@ -152,8 +159,12 @@
 .nb-a-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); }
 .nb-a-title { width: fit-content; max-width: 100%; }
 .nb-body { padding: var(--s5); }
-.prose { display: grid; gap: var(--s6); }
-.prose p { white-space: pre-wrap; font-size: 1.0625rem; line-height: 1.8; color: var(--fg); }
+/* 한 칸은 본문 너비를 넘지 않는다: 띄어 쓸 곳 없는 긴 주소가 칸을 넓혀 모든 문단이 카드 밖으로 잘리던 것 */
+.prose { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s6); }
+.prose p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.0625rem; line-height: 1.8; color: var(--fg); }
+.prose h3 + p { margin-top: calc(var(--s4) - var(--s6)); }
+.prose a { color: var(--fg); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--fg-3); }
+.prose strong { font-weight: 600; }
 .prose-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr)); gap: var(--s3); }
 .prose-grid p { padding: var(--s3) var(--s4); border-radius: var(--r-tile); background: var(--surface-2); line-height: 1.55; }
 .prose-grid p::first-line { font-weight: 600; }

@@ -3,7 +3,7 @@
    (.glass bars and dock, .glass-l3 sheets, menus and toasts) a displacement map is drawn for its exact rounded shape:
    inside a band along the edge every pixel points inward, strongest at the rim and fading to nothing at the band's
    inner edge, so the backdrop is sampled from further in and squeezes toward the rim. The middle is left alone.
-   Other browsers, and anyone who asked for reduced transparency, keep the frosted glass from the CSS.
+   Other browsers, touch screens, and anyone who asked for reduced transparency, keep the frosted glass from the CSS.
    Reference build: docs/redesign-glass/lab/refraction-lab.html. Nothing here touches the DOM at import time. */
 
 const BAND = 24;      // rim band in px, at most 40% of the short side
@@ -118,7 +118,9 @@ export function startRefraction() {
   started = true;
   const ua = navigator.userAgent;
   const chromium = /Chrome\/|Chromium\/|Edg\//.test(ua) && !/iPhone|iPad|iPod/.test(ua);
-  if (!chromium || typeof ResizeObserver !== "function" || window.matchMedia?.("(prefers-reduced-transparency: reduce)").matches) return;
+  // a touch screen keeps the frosted glass: the bend is an SVG filter run under each bar on every scroll frame, and on a phone
+  // GPU (Android in-app browsers) it cost the scroll its frames
+  if (!chromium || typeof ResizeObserver !== "function" || window.matchMedia?.("(prefers-reduced-transparency: reduce), (hover: none)").matches) return;
 
   const due = new Set();
   let frame = 0;

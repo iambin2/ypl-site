@@ -21,7 +21,8 @@
   box-shadow: var(--edge), var(--lift); transition: translate var(--dur-snappy) var(--spring-snappy), box-shadow var(--dur-base) var(--ease-out), --gx var(--glide) var(--ease-out);
 }
 .topbar.scrolled { box-shadow: var(--edge), var(--shadow-near), var(--shadow-far); }
-.topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)); transition: translate 240ms var(--ease-in), box-shadow var(--dur-base) var(--ease-out), --gx var(--glide) var(--ease-out); }
+/* a sheet on a phone puts the top bar away (Modal.jsx); it wins over the scroll's inline translate */
+.topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)) !important; transition: translate 240ms var(--ease-in), box-shadow var(--dur-base) var(--ease-out), --gx var(--glide) var(--ease-out); }
 .brand { position: relative; display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s3) 0 var(--s2); border-radius: var(--r-pill); flex: none; }
 /* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
 .brand-logo { display: flex; }
@@ -40,7 +41,6 @@
   width: min(100% - var(--gutter) * 2, 440px); height: 64px; padding: var(--s1); border-radius: var(--r-pill);
   display: grid; grid-template-columns: repeat(5, 1fr); transition: translate var(--dur-snappy) var(--spring-snappy), --gx var(--glide) var(--ease-out);
 }
-.tabbar.hide { translate: 0 calc(100% + var(--s6) + env(safe-area-inset-bottom, 0px)); transition: translate 240ms var(--ease-in), --gx var(--glide) var(--ease-out); }
 .tab { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); border-radius: var(--r-pill); color: var(--fg-2); font-size: .75rem; line-height: 1; font-weight: 600; }
 .tab .ics { display: grid; }
 .tab .ics > * { grid-area: 1 / 1; transition: opacity var(--dur-fast) var(--ease-out); }
@@ -116,12 +116,11 @@
   display: flex; align-items: center; gap: var(--s2); font-size: .8125rem; line-height: 1; white-space: nowrap;
   transition: translate var(--dur-snappy) var(--spring-snappy), --gx var(--glide) var(--ease-out);
 }
-.admin-dock.hide { translate: 0 calc(100% + 88px + env(safe-area-inset-bottom, 0px)); transition: translate 240ms var(--ease-in), --gx var(--glide) var(--ease-out); }
 .admin-dock b { font-weight: 600; }
 .admin-dock-note { color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; }
 .admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 36px; margin-left: var(--s2); padding: 0 var(--s3); border-radius: var(--r-pill); background: var(--tint); font-weight: 600; }
 @media (max-width: 639px) { .admin-dock-note { display: none; } }
-@media (min-width: 860px) { .admin-dock { bottom: var(--s6); } .admin-dock.hide { translate: none; } }
+@media (min-width: 860px) { .admin-dock { bottom: var(--s6); } }
 
 /* ---------- footer: one quiet block, separated by space rather than a rule ---------- */
 .site-foot { flex: none; margin-top: auto; color: var(--fg-3); font-size: .8125rem; }
