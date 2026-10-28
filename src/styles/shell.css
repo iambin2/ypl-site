@@ -3,7 +3,7 @@
    Bars share the content width, so their edges line up with the gutter (G3, G5).
    ========================================================================== */
 
-.ypl { position: relative; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; isolation: isolate; }
+.ypl { position: relative; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; isolation: isolate; overflow-x: clip; }
 .wrap { flex: 1 0 auto; width: 100%; }
 
 .skip-link {

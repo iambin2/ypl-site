@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, Reveal, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
+import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
@@ -8,7 +9,7 @@ const fmtDT=iso=>formatDate(iso,{time:true});
 
 const PAGE_SIZE=10;
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문의 제목 자리로 이어진다(I2).
-   신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 주소는 그대로(?view=news) 두고 화면 안의 상태로만 바꾼다. */
+   신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
 /* 목록의 미리보기는 본문의 첫 문장이 뜻을 가질 때만: "1조", "2" 같은 조각은 보이지 않는다. 앞의 기호와 이모지는 뗀다.
    제목을 되풀이하는 첫 줄("제6회 챔피언스 시리즈" 아래의 "6회 챔피언스 시리즈 공지")은 건너뛴다. */
 const bare=s=>String(s||"").replace(/공지|안내|제\s*(?=\d)|[^\p{L}\p{N}]/gu,"");
@@ -25,7 +26,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const [eventResponses,setEventResponses]=useState({});
   const [championshipSubmissionEvents,setChampionshipSubmissionEvents]=useState({});
   const [seen,setSeen]=useState({});
-  // ?notice=<id>로 들어오면(홈의 최신 공지) 그 공지를 바로 연다. 닫으면 주소에서도 지운다.
+  // ?notice=<id>로 들어오면(공유한 링크) 그 공지를 바로 연다. 닫으면 주소에서도 지운다.
   const [article,setArticle]=useState(()=>new URLSearchParams(window.location.search).get("notice"));
   const listScroll=useRef(0);
   const refreshEventApplications=useCallback(async announcement=>{
@@ -74,8 +75,12 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     })).then(rows=>{if(!cancelled)setChampionshipSubmissionEvents(Object.fromEntries(rows));});
     return ()=>{cancelled=true;};
   },[data.announcements]);
-  const openArticle=id=>{ listScroll.current=window.scrollY; transition(()=>flushSync(()=>setArticle(id)),{shared:"n-"+id}); };
-  const closeArticle=()=>{ const id=article; const url=new URL(window.location.href); if(url.searchParams.has("notice")){ url.searchParams.delete("notice"); window.history.replaceState(window.history.state,"",url); } transition(()=>flushSync(()=>setArticle(null)),{shared:"n-"+id,dir:"back",scrollY:listScroll.current}); };
+  // 공지를 여는 것은 기록 한 칸: 폰의 뒤로 가기가 목록으로 돌아오고, 공지 탭을 다시 누르면 목록이 된다
+  useEffect(()=>{ const onPop=()=>setArticle(new URLSearchParams(window.location.search).get("notice")||null); popHandlers.add(onPop); return ()=>{ popHandlers.delete(onPop); }; },[]);
+  const openArticle=id=>{ listScroll.current=window.scrollY; const url=new URL(window.location.href); url.searchParams.set("notice",id);
+    pushHistory({...window.history.state,notice:id},url); transition(()=>flushSync(()=>setArticle(id)),{shared:"n-"+id}); };
+  const closeArticle=()=>{ const id=article; if(window.history.state?.notice) return backWith("n-"+id);
+    const url=new URL(window.location.href); if(url.searchParams.has("notice")){ url.searchParams.delete("notice"); window.history.replaceState(window.history.state,"",url); } transition(()=>flushSync(()=>setArticle(null)),{shared:"n-"+id,dir:"back",scrollY:listScroll.current}); };
   const href=(u)=>/^https?:\/\//.test(u)?u:"https://"+u;
   const all=[...data.announcements].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(a.date<b.date?1:-1));
   const kw=q.trim().toLowerCase();

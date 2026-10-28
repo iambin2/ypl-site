@@ -106,7 +106,7 @@ function CommentForm({ onSubmit }){
 }
 
 /* 게시판: 공지와 같은 문법. 목록에서 글을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문 제목 자리로 이어진다(I2).
-   주소는 그대로(?view=board) 두고 화면 안의 상태로만 바꾼다. 댓글과 삭제는 본문 화면에 모은다. */
+   연 글은 주소(?post=)와 기록 한 칸에 남는다. 댓글과 삭제는 본문 화면에 모은다. */
 function FreeBoard({ data, admin, save, flash, tabs }){
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   const all=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
@@ -116,11 +116,15 @@ function FreeBoard({ data, admin, save, flash, tabs }){
   const cur=Math.min(page,pages);
   const shown=list.slice((cur-1)*PAGE_SIZE,cur*PAGE_SIZE);
   useEffect(()=>{setPage(1);},[q]);
-  const [article,setArticle]=useState(null);
+  const [article,setArticle]=useState(()=>new URLSearchParams(window.location.search).get("post"));
   const listScroll=useRef(0);
   const [compose,setCompose]=useState(false);
-  const openPost=id=>{ listScroll.current=window.scrollY; transition(()=>flushSync(()=>setArticle(id)),{shared:"b-"+id}); };
-  const closePost=()=>{ const id=article; transition(()=>flushSync(()=>setArticle(null)),{shared:"b-"+id,dir:"back",scrollY:listScroll.current}); };
+  // 글을 여는 것은 기록 한 칸: 폰의 뒤로 가기가 목록으로 돌아온다
+  useEffect(()=>{ const onPop=()=>setArticle(new URLSearchParams(window.location.search).get("post")||null); popHandlers.add(onPop); return ()=>{ popHandlers.delete(onPop); }; },[]);
+  const openPost=id=>{ listScroll.current=window.scrollY; const url=new URL(window.location.href); url.searchParams.set("post",id);
+    pushHistory({...window.history.state,post:id},url); transition(()=>flushSync(()=>setArticle(id)),{shared:"b-"+id}); };
+  const closePost=()=>{ const id=article; if(window.history.state?.post) return backWith("b-"+id);
+    const url=new URL(window.location.href); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setArticle(null)),{shared:"b-"+id,dir:"back",scrollY:listScroll.current}); };
   const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글을 등록했습니다."); };
   const [editing,setEditing]=useState(null);
   const delPost=async(p)=>{ if(!(await authorize(p,"글","삭제",admin)))return; closePost(); save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };

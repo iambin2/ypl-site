@@ -31,7 +31,9 @@ export default function Stage({ view, state = "open" }) {
 /* G4, J3: 스크롤을 내리면 바가 숨고 올리면 나온다. 콘텐츠가 상단 바 아래로 지나가면 바 아래에 옅은 그림자.
    무대의 빛은 스크롤에 아주 약하게 따라온다. 리렌더 없이 클래스만 바꾼다. */
 const bars = () => [document.querySelector(".topbar"), document.querySelector(".tabbar"), document.querySelector(".admin-dock")];
-export function showBars() { bars().forEach(b => b?.classList.remove("hide")); }
+// 이동 뒤 스크롤 복원(뒤로 가기로 목록 중간에 돌아옴)은 손의 스크롤이 아니다: 그 한 번은 바를 숨기지 않는다
+let resync = false;
+export function showBars() { resync = true; bars().forEach(b => b?.classList.remove("hide")); }
 export function useScrollChrome() {
   useEffect(() => {
     // 스크롤 연동 애니메이션이 없는 브라우저만 빛을 손으로 옮긴다
@@ -42,7 +44,9 @@ export function useScrollChrome() {
       ticking = true;
       requestAnimationFrame(() => {
         ticking = false;
-        const y = scrollY, dy = y - lastY;
+        const y = scrollY;
+        if (resync) { resync = false; lastY = y; }
+        const dy = y - lastY;
         document.querySelector(".topbar")?.classList.toggle("scrolled", y > 8);
         if (y < 64) { showBars(); lastY = y; }
         else if (Math.abs(dy) > 10) { bars().forEach(b => b?.classList.toggle("hide", dy > 0)); lastY = y; }

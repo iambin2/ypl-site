@@ -177,8 +177,10 @@ export default function App() {
     return ()=>window.removeEventListener("popstate",onPopState);
   },[]);
   const go=useCallback((v, options={})=>{
-    // 지금 탭을 다시 누르면 맨 위로 부드럽게 올라간다.
-    if(v===view&&!options.eventId&&!options.notice&&!options.trainer&&!options.tab){ setMore(null); window.scrollTo({top:0,behavior:"smooth"}); return; }
+    // 지금 탭을 다시 누르면 맨 위로 부드럽게 올라간다. 그 탭 안에서 공지, 글, 대진표를 열어 두었으면 목록으로 돌아간다.
+    const here=new URLSearchParams(window.location.search);
+    const inside=["notice","post","pb"].some(key=>here.has(key))||(view==="bracket"&&here.has("eventId"))||Boolean(window.history.state?.bracketId);
+    if(v===view&&!inside&&!options.eventId&&!options.notice&&!options.trainer&&!options.tab){ setMore(null); window.scrollTo({top:0,behavior:"smooth"}); return; }
     if((v==="builder"||v==="bracket")&&options.eventId){
       const url=new URL(window.location.href);
       url.search= v==="builder" ? `view=builder&eventId=${encodeURIComponent(options.eventId)}` : bracketRouteSearch(options.eventId, window.location.search).slice(1);
@@ -198,12 +200,12 @@ export default function App() {
       // 팀 빌더의 룰 설정(reg, cup, type)은 빌더 주소에만 남긴다.
       if(v!=="builder") ["reg","cup","type"].forEach(key=>url.searchParams.delete(key));
       if(v==="home") url.searchParams.delete("view"); else url.searchParams.set("view",v);
-      if(url.href!==window.location.href) pushHistory({view:v},url);
+      if(inside||url.href!==window.location.href) pushHistory({view:v},url);
     }
     // I1: 지금 화면은 살아 있는 복사본으로 사라지고, 새 화면은 맨 위에서 살짝 위로 올라온다.
     // 누름의 반응이 먼저다: 알약을 이 프레임에 출발시키고, 복사와 새 페이지 그리기는 그 프레임이 나간 뒤에 한다.
     leadPills(v);
-    afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
+    afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
     showBars();
   },[view]);
   const flash=useCallback((m)=>setToast({id:Date.now()+Math.random(),text:m}),[]);
