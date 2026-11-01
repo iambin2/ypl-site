@@ -39,11 +39,11 @@ export default function PickerSheet({ title, placeholder, items, selected, onPic
   return (
     <Modal title={title} onClose={onClose}>
       <div className="tb-search-row pick-search">
-        <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={18} /></span>
+        <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={20} /></span>
         <input value={query} onChange={event => { setQuery(event.target.value); setCursor(event.target.value ? 0 : -1); }} onKeyDown={onKeyDown}
           placeholder={placeholder} aria-label={placeholder} autoComplete="off" autoFocus={fine}
           role="combobox" aria-expanded="true" aria-controls="pick-list" aria-activedescendant={cursor >= 0 ? `pick-opt-${cursor}` : undefined} />
-        {query && <button type="button" className="tb-clear" onClick={() => { setQuery(""); setCursor(-1); }} aria-label="검색어 지우기"><Icon n="x" size={14} /></button>}
+        {query && <button type="button" className="tb-clear" onClick={() => { setQuery(""); setCursor(-1); }} aria-label="검색어 지우기"><Icon n="x" size={16} /></button>}
       </div>
       <div className="pick-list" id="pick-list" role="listbox" aria-label={title} ref={listRef}>
         {shown.map((item, index) => (
@@ -53,7 +53,7 @@ export default function PickerSheet({ title, placeholder, items, selected, onPic
             <span className="pick-copy"><strong>{item.label}</strong>{item.sub && <small>{item.sub}</small>}</span>
             {item.badges}
             {item.trailing != null && <em className="pick-trail">{item.trailing}</em>}
-            {item.value === selected && <Icon n="check" size={18} className="check" />}
+            {item.value === selected && <Icon n="check" size={20} className="check" />}
           </button>
         ))}
         {!shown.length && <p className="tb-pool-empty">{emptyText}</p>}
@@ -70,7 +70,7 @@ export function PickField({ label, value, placeholder, typeId, typeLabel, onOpen
         <span>{value || placeholder}</span>
         {typeLabel ? <span className={`pick-type type-${typeId}`}>{typeLabel}</span> : !onClear || !value ? <Icon n="chev" size={16} className="dd-chev" /> : null}
       </button>
-      {value && onClear && !disabled && <button type="button" className="tb-clear pick-clear" aria-label={`${label} 지우기`} onClick={onClear}><Icon n="x" size={14} /></button>}
+      {value && onClear && !disabled && <button type="button" className="tb-clear pick-clear" aria-label={`${label} 지우기`} onClick={onClear}><Icon n="x" size={16} /></button>}
     </div>
   );
 }

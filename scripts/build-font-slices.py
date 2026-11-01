@@ -19,12 +19,12 @@ from fontTools.ttLib import TTFont
 from fontTools import subset
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCES = {400: "4Regular", 500: "5Medium", 600: "6SemiBold", 700: "7Bold"}
+SOURCES = {400: "4Regular", 600: "6SemiBold", 700: "7Bold"}
 SOURCE_DIR = os.path.join(ROOT, "public/fonts/freesentation")
 OUT_DIR = os.path.join(SOURCE_DIR, "slices")
 TOKENS = os.path.join(ROOT, "src/styles/tokens.css")
 INDEX = os.path.join(ROOT, "index.html")
-PRELOAD = (400, 500, 700)  # body, the menu and headlines: the first screen shows all three
+PRELOAD = (400, 600, 700)  # body, labels and headlines: the first screen shows all three
 HANGUL = range(0xAC00, 0xD7A4)
 PUNCTUATION = (range(0x3000, 0x3100), range(0xFF00, 0xFFF0))
 

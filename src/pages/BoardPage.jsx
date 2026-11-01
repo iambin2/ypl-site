@@ -28,7 +28,7 @@ function MediaEmbed({ url }){
   const m=parseMedia(url); if(!m) return null;
   if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="유튜브 영상" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
   if(m.type==="image") return <a className="bd-img" href={m.url} target="_blank" rel="noopener noreferrer"><img src={m.url} alt="첨부 이미지" loading="lazy" decoding="async"/></a>;
-  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url}<Icon n="ext" size={13}/></a>;
+  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url}<Icon n="ext" size={16}/></a>;
 }
 
 function BoardCompose({ onClose, onSubmit }){
@@ -46,7 +46,7 @@ function BoardCompose({ onClose, onSubmit }){
       <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
-      <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={14}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
+      <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
       {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다. 다른 방문자에게는 목록에도 표시되지 않습니다.</div>}
       <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>등록</button></div>
     </div>
@@ -81,7 +81,7 @@ function EditSheet({ heading, initial, onClose, onSave }){
       {has("body")&&<div className="field"><label>내용</label><textarea value={v.body} onChange={set("body")} rows={has("title")?6:3}/></div>}
       {has("link")&&<div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
         {v.link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={v.link}/></div>}</div>}
-      {has("secret")&&<label className="bk-check"><input type="checkbox" checked={v.secret} onChange={set("secret")}/><span><Icon n="lock" size={14}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>}
+      {has("secret")&&<label className="bk-check"><input type="checkbox" checked={v.secret} onChange={set("secret")}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>}
       <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" disabled={busy} onClick={submit}>{busy?"저장 중…":"저장"}</button></div>
     </div>
   </Modal>);
@@ -142,10 +142,10 @@ function FreeBoard({ data, admin, save, flash, tabs }){
   if(p){ const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>게시판</span></button>
+        <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
         <header className="nb-a-head">
           <h1 className="title nb-a-title" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
-          <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={12}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
+          <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
         </header>
         {(p.body||p.link)&&<div className="nb-body card">
           <Prose text={p.body}/>
@@ -179,7 +179,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
       {shown.map(p=>{ const cc=(p.comments||[]).length;
         return (<button type="button" className={"bd-head press"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
           <span className="bd-main">
-            <span className="bd-title">{p.secret&&<span className="bd-lock"><Icon n="lock" size={12}/> 관리자 전용</span>}<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span></span>
+            <span className="bd-title">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span></span>
             <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
           </span>
           {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
@@ -285,7 +285,7 @@ function TeamPicker({ kind, onPick, onClose, go }){
             <span className="sc-pick-main"><b>{t.name}</b><small>{ruleSummary(t)}, {t.members.length}마리</small></span>
             <PartySprites members={t.members}/>
           </button></li>))}</ul>}
-      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button><button className="btn btn-primary" onClick={()=>{onClose();go?.("builder");}}>팀 빌더 열기<Icon n="arrow" size={14}/></button></div>
+      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button><button className="btn btn-primary" onClick={()=>{onClose();go?.("builder");}}>팀 빌더 열기<Icon n="arrow" size={16}/></button></div>
     </div>
   </Modal>);
 }
@@ -397,19 +397,19 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
-    <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>{label}</span></button>
+    <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
     {fresh?<Empty icon="search" title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={18}/><span>{label}</span></button>
+        <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
         <header className="nb-a-head">
           <h1 className="title nb-a-title" data-vt={"s-"+p.id}>{p.title}</h1>
           <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
         </header>
         <div className="sc-actions">
-          <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={14}/></button>
+          <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={16}/></button>
           <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)}>{imageBusy?"만드는 중…":"이미지 저장"}</button>
           <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>share(p)}>링크 공유</button>
           <button className="bd-del press" onClick={()=>editPost(p)}>수정</button>

@@ -11,7 +11,9 @@ export const reduced = () => mq("(prefers-reduced-motion: reduce)");
 export const desktop = () => mq("(min-width: 860px)");
 
 /* a spring runs at its natural length, the same as --dur-snappy and --dur-soft in tokens.css; stretching it changes its feel */
-export const DUR = { snappy: 400, soft: 670 };
+export const DUR = { instant: 90, fast: 180, base: 260, slow: 480, sweep: 900, snappy: 400, soft: 670 };
+/* a draw ceremony lands its rows one by one */
+export const STAGGER = { row: 40, tile: 60 };
 
 let curves = null;
 /* the CSS springs as WAAPI easings; browsers without linear() get the ease-out curve */
@@ -163,10 +165,10 @@ export function themeFade(commit) {
   if (reduced()) { commit(); return; }
   const veil = document.createElement("div");
   veil.className = "veil";
-  veil.style.background = getComputedStyle(document.documentElement).getPropertyValue("--stage");
+  veil.style.background = getComputedStyle(document.documentElement).getPropertyValue("--bg");
   document.body.append(veil);
   commit();
-  veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: EASE_OUT }).finished.finally(() => veil.remove());
+  veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.base, easing: EASE_OUT }).finished.finally(() => veil.remove());
 }
 
 /* ---------- K3 liquid selection lens ----------
@@ -217,5 +219,5 @@ export function placePill(box, animate, target) {
 export function settleTitle(target) {
   if (!target || reduced() || typeof target.animate !== "function") return;
   target.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }],
-    { duration: 460, delay: 90, easing: EASE_OUT, fill: "backwards" });
+    { duration: DUR.slow, delay: 90, easing: EASE_OUT, fill: "backwards" });
 }

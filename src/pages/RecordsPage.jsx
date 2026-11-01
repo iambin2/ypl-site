@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Empty, Facts, Icon, Loader, Modal, PageHead, Pager, Poster, Reveal, Roll, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
+import { Dropdown, Empty, Facts, Icon, Loader, Modal, PageHead, Pager, Poster, Roll, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { formatDate } from "../services/dateFormat.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
@@ -128,14 +128,14 @@ export default function RecordsPage({ data, admin, setModal, save }) {
         </div>
       )}
 
-      <Reveal className="records-main-tabs">
+      <div className="records-main-tabs">
         <Segmented
           value={tab}
           onChange={setTab}
           ariaLabel="기록 보기"
           options={[["trainer", "트레이너"], ["tour", "대회"], ["pokemon", "포켓몬"], ["rank", "랭킹"]]}
         />
-      </Reveal>
+      </div>
 
       <div className="swap" key={tab}>
         {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} />}

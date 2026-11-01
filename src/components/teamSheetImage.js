@@ -8,7 +8,7 @@ const FONT = '"Albert Sans", "Freesentation", "Apple SD Gothic Neo", "Malgun Got
 /* 색은 값을 따로 들고 있지 않고 지금 테마의 토큰을 읽는다: 이미지가 사이트와 어긋날 수 없다 */
 const palette = () => {
   const css = getComputedStyle(document.documentElement), v = name => css.getPropertyValue(name).trim();
-  return { bg: v("--stage"), card: v("--surface"), well: v("--well"), fg: v("--fg"), fg2: v("--fg-2"), fg3: v("--fg-3"), bar: v("--well"), barOn: v("--fg"), line: v("--surface-2") };
+  return { bg: v("--bg"), card: v("--surface"), well: v("--surface-sunken"), fg: v("--text-primary"), fg2: v("--text-secondary"), fg3: v("--text-tertiary"), bar: v("--surface-sunken"), barOn: v("--text-primary"), line: v("--surface-raised") };
 };
 // team-builder.css 의 타입 점 색과 같은 값
 const TYPE_DOT = { normal: "#9FA19F", fire: "#E62829", water: "#2980EF", electric: "#FAC000", grass: "#3FA129", ice: "#3FD8FF", fighting: "#FF8000", poison: "#9141CB", ground: "#915121", flying: "#81B9EF", psychic: "#EF4179", bug: "#91A119", rock: "#AFA981", ghost: "#704170", dragon: "#5060E1", dark: "#624D4E", steel: "#60A1B8", fairy: "#EF70EF" };

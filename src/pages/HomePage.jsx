@@ -1,8 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Modal from "../components/common/Modal.jsx";
-import Reveal, { STAGGER } from "../components/common/Reveal.jsx";
 import Roll from "../components/common/Roll.jsx";
-import { DUR, EASE_IN_OUT, EASE_OUT, reduced, springs } from "../components/common/motion.js";
+import { DUR, EASE_IN_OUT, EASE_OUT, STAGGER, reduced, springs } from "../components/common/motion.js";
 import { WORDMARK_PATH, Wordmark } from "../components/layout/SiteHeader.jsx";
 import { arenaField } from "../components/home/arenaField.js";
 import { loadChampions, loadCounts } from "../components/home/homeFacts.js";
@@ -48,9 +47,9 @@ export function eventAction(announcements) {
 let heroPending = true, arenaPending = true;
 const firstHero = () => heroPending;
 
-const rise = (el, delay = 0, y = 16) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: 480, delay, easing: EASE_OUT, fill: "backwards" });
+const rise = (el, delay = 0, y = 16) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay, easing: EASE_OUT, fill: "backwards" });
 /* 빛의 띠: 경계가 또렷한 사선 면 하나가 포켓몬 뒤를 지나간다 */
-const sweep = slab => slab?.querySelector(".hm-sweep")?.animate([{ transform: "translateX(-140%) skewX(-14deg)" }, { transform: "translateX(340%) skewX(-14deg)" }], { duration: 900, easing: EASE_IN_OUT });
+const sweep = slab => slab?.querySelector(".hm-sweep")?.animate([{ transform: "translateX(-140%) skewX(-12deg)" }, { transform: "translateX(340%) skewX(-12deg)" }], { duration: DUR.sweep, easing: EASE_IN_OUT });
 
 const MARK_MASK = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 100'><path transform='skewX(-12) translate(21 0)' fill-rule='evenodd' d='${WORDMARK_PATH}'/></svg>`)}") center / 100% 100% no-repeat`;
 
@@ -150,13 +149,13 @@ function Arena({ primary, go }) {
       st.classList.remove("pre");
       const play = (s, kf, o) => st.querySelectorAll(s).forEach(el => el.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
       const fade = [{ opacity: 0 }, { opacity: 1 }];
-      play(".hm-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: 420, delay: 120 });
-      play(".hm-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: 480, delay: 150 });
-      play(".hm-ring", fade, { duration: 360, delay: 240 });
-      play(".hm-ball", fade, { duration: 270, delay: 360 });
-      play(".hm-lit", fade, { duration: 420, delay: 420 });
-      play(".hm-mark > .wordmark", fade, { duration: 600, delay: 300 });
-      band.current.animate([{ transform: "translateX(-160%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], { duration: 900, delay: 600, easing: EASE_IN_OUT });
+      play(".hm-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: DUR.slow, delay: 120 });
+      play(".hm-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: 150 });
+      play(".hm-ring", fade, { duration: DUR.slow, delay: 240 });
+      play(".hm-ball", fade, { duration: DUR.base, delay: 360 });
+      play(".hm-lit", fade, { duration: DUR.slow, delay: 420 });
+      play(".hm-mark > .wordmark", fade, { duration: DUR.slow, delay: 300 });
+      band.current.animate([{ transform: "translateX(-160%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], { duration: DUR.sweep, delay: 600, easing: EASE_IN_OUT });
       timer = setTimeout(fireWave, 360);
     }, { threshold: .3 });
     once.observe(st);
@@ -199,10 +198,10 @@ function Arena({ primary, go }) {
         <i className="hm-wave" ref={wave} aria-hidden="true" />
         <div className="hm-mark" ref={mark}><Wordmark /><span className="hm-shine" style={{ WebkitMask: MARK_MASK, mask: MARK_MASK }} aria-hidden="true"><i className="hm-band" ref={band} /></span></div>
       </div>
-      <Reveal className="hm-end">
+      <div className="hm-end">
         <h2>다음 기록은 당신의 차례입니다</h2>
         <button type="button" className="ypl-btn hm-btn hm-btn--end press" onClick={() => go(primary[1])}>{primary[0]}</button>
-      </Reveal>
+      </div>
     </section>
   );
 }
@@ -258,20 +257,20 @@ export default function HomePage({ data, go }) {
     {champions?.length ? <SlabBelt champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <div className="hm-belt-hold" aria-hidden="true" />}
 
     <section className="hm-wrap hm-count">
-      {showCounts && <Reveal tag="h2" aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
+      {showCounts && <h2 aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
         <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언.</span>
-      </Reveal>}
+      </h2>}
       <div className="hm-routes">
-        {routes.map(([view, title, line], i) => <Reveal tag="button" type="button" className="hm-route press" delay={i * STAGGER.tile} key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></Reveal>)}
+        {routes.map(([view, title, line], i) => <button type="button" className="hm-route press" key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></button>)}
       </div>
     </section>
 
     {notices.length > 0 && <section className="hm-wrap hm-notices">
-      <Reveal tag="h2">공지</Reveal>
+      <h2>공지</h2>
       <div className="hm-list">
         {notices.map((a, i) => {
           const excerpt = excerptOf(a.body, a.title);
-          return <Reveal tag="button" type="button" className="hm-row press" delay={i * STAGGER.row} key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></Reveal>;
+          return <button type="button" className="hm-row press" key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></button>;
         })}
         <button type="button" className="hm-all press" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
       </div>

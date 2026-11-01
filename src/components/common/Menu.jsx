@@ -28,9 +28,9 @@ export function MenuItems({ items, onPick, role = "menu" }) {
     <div className="menu" role={role} ref={ref}>
       {items.map(it => {
         if (it.sep) return <div key={it.key} className="mi-sep" role="separator" />;
-        const inner = <>{it.icon && <Icon n={it.icon} size={22} />}<span>{it.label}</span>
+        const inner = <>{it.icon && <Icon n={it.icon} size={20} />}<span>{it.label}</span>
           {it.href && <Icon n="ext" size={16} className="mi-end" />}
-          {it.current && <Icon n="check" size={18} className="check" />}</>;
+          {it.current && <Icon n="check" size={20} className="check" />}</>;
         return it.href
           ? <a key={it.key} className="mi press" role={itemRole} href={it.href} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.(it)}>{inner}</a>
           : <button key={it.key} type="button" className={"mi press" + (it.current ? " on" : "")} role={itemRole}
@@ -52,7 +52,7 @@ export function Popover({ anchor, onClose, children }) {
   const ref = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
-  useExitAnimation(ref, { exit: node => [node.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.96)" }], { duration: 150, easing: EASE_IN, fill: "forwards" })] });
+  useExitAnimation(ref, { exit: node => [node.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.96)" }], { duration: DUR.fast, easing: EASE_IN, fill: "forwards" })] });
   useLayoutEffect(() => {
     const pop = ref.current, trigger = anchor?.current || anchor;
     if (!pop || !trigger) return undefined;

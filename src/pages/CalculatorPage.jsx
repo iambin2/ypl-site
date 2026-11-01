@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Icon, Loader, PageHead, Reveal, STAGGER, Segmented } from "../components/index.js";
+import { Dropdown, Icon, Loader, PageHead, Segmented } from "../components/index.js";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { DEFAULT_REGULATION_ID, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData } from "../services/index.js";
@@ -105,9 +105,9 @@ function Toggle({ on, onChange, children }) {
 function Stepper({ value, min, max, onChange, label }) {
   return (
     <div className="calc-stepper" role="group" aria-label={label}>
-      <button type="button" className="press" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={`${label} 내리기`}><Icon n="minus" size={14} /></button>
+      <button type="button" className="press" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={`${label} 내리기`}><Icon n="minus" size={16} /></button>
       <output className={value ? "on" : ""}>{signed(value)}</output>
-      <button type="button" className="press" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={`${label} 올리기`}><Icon n="plus" size={14} /></button>
+      <button type="button" className="press" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={`${label} 올리기`}><Icon n="plus" size={16} /></button>
     </div>
   );
 }
@@ -222,7 +222,7 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
           </label>
           <div className="tb-field"><span>도구</span>
             {lockedItem
-              ? <div className="tb-locked-item"><span>{itemName(detailData, lockedItem)}</span><Icon n="lock" size={15} /></div>
+              ? <div className="tb-locked-item"><span>{itemName(detailData, lockedItem)}</span><Icon n="lock" size={16} /></div>
               : <PickField label="도구" value={side.item ? itemName(detailData, side.item) : ""} placeholder="도구 없음" onOpen={() => setPicker("item")} />}
           </div>
           <label className="tb-field"><span>상태이상</span>
@@ -315,7 +315,7 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
   const directionEmpty = from => !pokemons[from] ? `${SIDE_NAMES[from]}을 선택하세요.` : !pokemons[1 - from] ? `${SIDE_NAMES[1 - from]}을 선택하세요.` : "기술을 선택하면 대미지가 여기에 나옵니다.";
   return (
     <>
-      <Reveal className="tb-panel" delay={STAGGER.row}>
+      <div className="tb-panel">
         <div className="calc-versus">
           {[0, 1].map(index => (
             <button type="button" key={index} className="calc-versus-mon press" onClick={() => openPokemonPicker(index)}>
@@ -334,20 +334,20 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
           <DirectionResults title={`${nameOf(0)}의 공격`} results={ready ? results[0] : []} detailData={detailData} emptyText={directionEmpty(0)} />
           <DirectionResults title={`${nameOf(1)}의 공격`} results={ready ? results[1] : []} detailData={detailData} emptyText={directionEmpty(1)} />
         </div>
-      </Reveal>
+      </div>
 
-      <Reveal delay={STAGGER.row * 2}><FieldCard field={field} onChange={setField} /></Reveal>
+      <div><FieldCard field={field} onChange={setField} /></div>
 
       <div className="calc-side-switch">
         <Segmented value={String(editing)} onChange={value => setEditing(Number(value))} ariaLabel="편집할 포켓몬" options={[["0", SIDE_NAMES[0]], ["1", SIDE_NAMES[1]]]} />
       </div>
-      <Reveal className="calc-sides" delay={STAGGER.row * 3} data-editing={editing}>
+      <div className="calc-sides" data-editing={editing}>
         {[0, 1].map(index => (
           <SideCard key={index} index={index} side={sides[index]} record={records[index]} pokemon={pokemons[index]} detailData={detailData} legalItems={legalItems} display={display}
             onChange={next => setSide(index, next)} onPickPokemon={() => openPokemonPicker(index)} onImport={() => openImport(index)} hasSavedTeams={hasSavedTeams}
             onClear={() => setSide(index, { ...emptySide(), conds: sides[index].conds })} />
         ))}
-      </Reveal>
+      </div>
     </>
   );
 }
@@ -384,7 +384,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
   );
   return (
     <>
-      <Reveal className="tb-panel" delay={STAGGER.row}>
+      <div className="tb-panel">
         <div className="calc-speed-basis">
           <Segmented value={String(basis)} onChange={value => setBasis(Number(value))} ariaLabel="기준 포켓몬" options={[["0", SIDE_NAMES[0]], ["1", SIDE_NAMES[1]]]} />
           {pokemons[basis] && me != null ? (
@@ -401,18 +401,18 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
           )}
         </div>
         <p className="calc-note">기준 포켓몬의 능력 포인트, 성격, 도구, 랭크, 순풍과 날씨는 대미지 탭의 설정을 그대로 씁니다.</p>
-      </Reveal>
+      </div>
 
-      <Reveal className="tb-panel" delay={STAGGER.row * 2}>
+      <div className="tb-panel">
         <div className="calc-speed-controls">
           <Segmented value={spread} onChange={setSpread} ariaLabel="상대 스피드 기준" options={Object.entries(SPEED_SPREAD_LABELS)} />
           <Dropdown className="tb-dd" value={modifier} onChange={setModifier} ariaLabel="상대 스피드 보정" options={SPEED_MODIFIERS} />
         </div>
         <p className="calc-note">최속은 32포인트에 스피드 상승 성격, 준속은 32포인트에 무보정 성격, 무보정은 0포인트, 최저는 0포인트에 스피드 하락 성격입니다.</p>
         <div className="tb-search-row calc-tier-search">
-          <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={18} /></span>
+          <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={20} /></span>
           <input value={query} onChange={event => setQuery(event.target.value)} placeholder="포켓몬 검색" aria-label="포켓몬 검색" autoComplete="off" />
-          {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={14} /></button>}
+          {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={16} /></button>}
         </div>
         <ol className="calc-tiers">
           {shown.map((row, index) => (
@@ -428,7 +428,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
           {meIndex === -1 && !q && meRow}
           {!shown.length && <p className="tb-pool-empty">검색 결과가 없습니다.</p>}
         </ol>
-      </Reveal>
+      </div>
     </>
   );
 }
@@ -452,11 +452,11 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
 
   if (!pokemon || !record) {
     return (
-      <Reveal className="tb-panel calc-dex-empty" delay={STAGGER.row}>
+      <div className="tb-panel calc-dex-empty">
         <strong>도감에서 볼 포켓몬을 고르세요.</strong>
         <span>종족값, 레벨 50 실수치 범위, 타입 상성, 챔피언스에서 배우는 기술을 한 화면에 보여 줍니다.</span>
         <button type="button" className="btn tb-main-btn" onClick={openPicker}>포켓몬 선택</button>
-      </Reveal>
+      </div>
     );
   }
   const weight = weightOf(record);
@@ -464,7 +464,7 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
   const total = STAT_KEYS.reduce((sum, key) => sum + (record.baseStats?.[key] || 0), 0);
   return (
     <>
-      <Reveal className="tb-panel" delay={STAGGER.row}>
+      <div className="tb-panel">
         <div className="tb-editor-head">
           <img src={spriteUrl(pokemon.name)} alt="" onError={onSpriteError()} />
           <div className="tb-editor-title">
@@ -479,10 +479,10 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
           <button type="button" className="btn btn-sm" onClick={() => onUse(0)}>내 포켓몬으로 계산</button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUse(1)}>상대로 계산</button>
         </div>
-      </Reveal>
+      </div>
 
       <div className="calc-dex-grid">
-        <Reveal className="tb-panel" delay={STAGGER.row * 2}>
+        <div className="tb-panel">
           <div className="tb-subhead"><div><strong>종족값</strong><span>오른쪽은 레벨 50 실수치 범위</span></div><b>합계 {total}</b></div>
           <div className="tb-stats">
             {STAT_KEYS.map(key => {
@@ -504,9 +504,9 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
               {record.abilities.map(ability => <li key={ability}><strong>{abilityName(ability)}</strong>{ability !== abilityName(ability) && <small>{ability}</small>}</li>)}
             </ul>
           </div>
-        </Reveal>
+        </div>
 
-        <Reveal className="tb-panel" delay={STAGGER.row * 3}>
+        <div className="tb-panel">
           <div className="tb-subhead"><div><strong>방어 상성</strong><span>특성은 반영하지 않은 타입 상성</span></div></div>
           <div className="calc-matchups">
             {MULTIPLIER_LABELS.filter(([key]) => chart[key]?.length).map(([key, label]) => (
@@ -516,16 +516,16 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
               </div>
             ))}
           </div>
-        </Reveal>
+        </div>
       </div>
 
-      <Reveal className="tb-panel" delay={STAGGER.row * 4}>
+      <div className="tb-panel">
         <div className="tb-subhead"><div><strong>배우는 기술</strong><span>포켓몬 챔피언스 기준</span></div><b>{moves.length} / {learnset.length}</b></div>
         <div className="calc-move-tools">
           <div className="tb-search-row">
-            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={18} /></span>
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={20} /></span>
             <input value={query} onChange={event => setQuery(event.target.value)} placeholder="기술 검색" aria-label="기술 검색" autoComplete="off" />
-            {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={14} /></button>}
+            {query && <button type="button" className="tb-clear" onClick={() => setQuery("")} aria-label="검색어 지우기"><Icon n="x" size={16} /></button>}
           </div>
           <Dropdown className="tb-dd" value={typeFilter} onChange={setTypeFilter} ariaLabel="기술 타입" options={[{ value: "", label: "모든 타입" }, ...TYPE_OPTIONS.map(type => ({ value: type.id, label: type.korean }))]} />
           <Dropdown className="tb-dd" value={categoryFilter} onChange={setCategoryFilter} ariaLabel="기술 분류" options={[{ value: "", label: "모든 분류" }, { value: "Physical", label: "물리" }, { value: "Special", label: "특수" }, { value: "Status", label: "변화" }]} />
@@ -549,7 +549,7 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
           </table>
           {!moves.length && <p className="tb-pool-empty">조건에 맞는 기술이 없습니다.</p>}
         </div>
-      </Reveal>
+      </div>
     </>
   );
 }

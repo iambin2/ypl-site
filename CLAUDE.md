@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Vite dev server (http://localhost:5173)
 npm run build    # production build → dist/
 npm run preview  # serve the built dist/
-npm test         # full suite: node --test "tests/*.test.mjs"  (364 tests, including the design law)
+npm test         # full suite: node --test "tests/*.test.mjs"  (370 tests, including the design law)
 npm run data:champions  # rebuild the committed src/data/champions-data.json from Showdown + PokeAPI
                         # (refresh-champions-data.yml does this weekly and opens a PR when it changed)
 npm run font:slices     # re-cut Freesentation into unicode-range slices (needs pip install -r scripts/requirements-fonts.txt)
@@ -64,6 +64,8 @@ Invariants that are easy to violate and expensive to fix — `docs/ARCHITECTURE.
 Client-side checks are UX guards only. The RPC/DB layer is the integrity boundary.
 
 ## Product and design constraints
+
+When changing or adding UI, read `DESIGN.md` first and use only its tokens and the existing components. If a new value or pattern seems needed, propose updating `DESIGN.md` first; never invent one in place.
 
 `PRODUCT.md` and `DESIGN.md` are binding, not background reading, and a frontend change must not alter data behavior.
 

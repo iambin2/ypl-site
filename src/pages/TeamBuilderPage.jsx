@@ -1,10 +1,10 @@
 import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Dropdown, Icon, Loader, Modal, PageHead, Reveal, STAGGER, Segmented, celebrate, centerOf, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Icon, Loader, Modal, PageHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm } from "../components/index.js";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
-import { EASE_OUT, reduced } from "../components/common/motion.js";
+import { DUR, EASE_OUT, reduced } from "../components/common/motion.js";
 import { formatDate } from "../services/dateFormat.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
@@ -201,7 +201,7 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
             event.preventDefault(); event.stopPropagation(); onRemove();
           }
         }}
-      ><Icon n="x" size={12} /></span>
+      ><Icon n="x" size={16} /></span>
     </button>
   );
 }
@@ -213,17 +213,17 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   if (result.status === "invalid") {
     title = "규정 위반";
     message = `${result.errors.length}개의 규정 위반을 확인했습니다.`;
-    icon = <Icon n="x" size={15} />;
+    icon = <Icon n="x" size={16} />;
   } else if (result.status === "valid") {
     title = "검증 통과";
     message = `${regulationName}, ${cupRuleSummary} 기준으로 포켓몬 구성과 세팅이 최종 검증을 통과했습니다.`;
-    icon = <Icon n="check" size={15} />;
+    icon = <Icon n="check" size={16} />;
   } else {
     title = teamLength || configuredSpecialRule ? "미완성" : "팀을 구성해 주세요.";
     message = teamLength || configuredSpecialRule
       ? "규정 위반은 확인되지 않았지만 최종 검증에 필요한 룰 설정 또는 팀 세팅이 아직 완료되지 않았습니다."
       : "포켓몬을 선택하고 각 포켓몬의 세팅을 완료해 주세요.";
-    icon = <Icon n="alert" size={15} />;
+    icon = <Icon n="alert" size={16} />;
   }
 
   const messages = [
@@ -278,7 +278,7 @@ function OfficialSubmissionPanel({
     : state === "invalid"
       ? "제출 불가"
       : !registration ? "신청자 확인 필요" : "대회 확인 필요";
-  const icon = <Icon n={state === "valid" ? "check" : state === "invalid" ? "x" : "alert"} size={15} />;
+  const icon = <Icon n={state === "valid" ? "check" : state === "invalid" ? "x" : "alert"} size={16} />;
   const messages = [
     ...(eventContextError ? [eventContextError] : []),
     ...(eventGate && !eventGate.allowed && !eligibility?.errors?.includes(eventGate.error) ? [eventGate.error] : []),
@@ -380,7 +380,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     const bar = stepsRef.current;
     if (bar && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
     if (!reduced()) document.querySelectorAll(`.tb-page [data-tb-step="${next}"]`).forEach((el, i) =>
-      el.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: i * 40, easing: EASE_OUT, fill: "backwards" }));
+      el.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: i * 40, easing: EASE_OUT, fill: "backwards" }));
   }, []);
   const draftTimerRef = useRef(null);
   const restoringDraftRef = useRef(false);
@@ -1237,7 +1237,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         <Segmented value={step} onChange={changeStep} ariaLabel="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
       </div>
 
-      <Reveal className="tb-rule-card" delay={STAGGER.row * 1} data-tb-step="rules">
+      <div className="tb-rule-card" data-tb-step="rules">
         <div className="tb-rule-grid">
           <label className="tb-field">
             <span>레귤레이션{eventId ? " (대회 기준)" : ""}</span>
@@ -1261,9 +1261,9 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           <span>{regulation.description}</span>
           {cupRule.kind !== "none" && <span>{cupRule.description}</span>}
         </div>
-      </Reveal>
+      </div>
 
-      <Reveal className="tb-validation-wrap" delay={STAGGER.row * 2} data-tb-step="team">
+      <div className="tb-validation-wrap" data-tb-step="team">
         <OfficialSubmissionPanel
           eventId={eventId}
           eventContext={eventContext}
@@ -1282,9 +1282,9 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           submissionError={submissionError}
           onSubmit={submitCurrentTeam}
         />
-      </Reveal>
+      </div>
 
-      {(team.length > 0 || cupRule.kind !== "none") && <Reveal className="tb-validation-wrap" delay={STAGGER.row * 2} data-tb-step="team">
+      {(team.length > 0 || cupRule.kind !== "none") && <div className="tb-validation-wrap" data-tb-step="team">
         <ValidationPanel
           result={validation}
           regulationName={regulation.name}
@@ -1292,17 +1292,17 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           teamLength={team.length}
           configuredSpecialRule={cupRule.kind !== "none"}
         />
-      </Reveal>}
+      </div>}
 
       <div className="tb-layout">
-        <Reveal className="tb-panel tb-pool-panel" delay={STAGGER.row * 3} data-tb-step="pool">
+        <div className="tb-panel tb-pool-panel" data-tb-step="pool">
           <div className="tb-panel-head">
             <div><h2>포켓몬 선택</h2></div>
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
           </div>
           {(detailStatus!=="ready"||localizationStatus!=="ready")&&<div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{[detailStatus!=="ready"&&dataStatusText,localizationStatus!=="ready"&&localizationText].filter(Boolean).join(", ")}</div>}
           <div className="tb-search-row">
-            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={18}/></span>
+            <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={20}/></span>
             <input
               className="tb-input"
               value={query}
@@ -1318,7 +1318,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               aria-autocomplete="list"
               autoComplete="off"
             />
-            {(query || searchChips.length > 0) && <button className="tb-clear" onClick={() => { setQuery(""); setSearchChips([]); }} aria-label="검색 조건 모두 지우기"><Icon n="x" size={14} /></button>}
+            {(query || searchChips.length > 0) && <button className="tb-clear" onClick={() => { setQuery(""); setSearchChips([]); }} aria-label="검색 조건 모두 지우기"><Icon n="x" size={16} /></button>}
             {showSuggestions && (
               <div className="dd-menu plate-l3 tb-suggest" id="tb-search-suggest" role="listbox" aria-label="검색 조건 후보">
                 {searchSuggestions.map((entry, index) => (
@@ -1338,7 +1338,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               {searchChips.map((chip, index) => (
                 <button type="button" key={`${chip.kind}:${chip.id}`} className="tb-chip" aria-label={`${SEARCH_KIND_LABEL[chip.kind]} ${chip.label} 조건 지우기`}
                   onClick={() => setSearchChips(current => current.filter((_, chipIndex) => chipIndex !== index))}>
-                  <small>{SEARCH_KIND_LABEL[chip.kind]}</small>{chip.label}<Icon n="x" size={12} />
+                  <small>{SEARCH_KIND_LABEL[chip.kind]}</small>{chip.label}<Icon n="x" size={16} />
                 </button>
               ))}
             </div>
@@ -1358,10 +1358,10 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           ) : (
             <PoolList pool={filteredPool} detailData={detailData} displayPokemon={displayPokemon} sortId={sortId} occupancy={occupancy} selectedUid={selectedUid} onAdd={onAddPokemon} />
           )}
-        </Reveal>
+        </div>
 
         <div className="tb-main-column" data-tb-step="team">
-          <Reveal className="tb-panel" delay={STAGGER.row * 4}>
+          <div className="tb-panel">
             <div className="tb-panel-head tb-team-head">
               <div>
                 <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
@@ -1382,9 +1382,9 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               <button className="btn btn-ghost btn-sm" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage}>{imageBusy ? "이미지 만드는 중…" : "이미지로 저장"}</button>
               <button className="btn btn-ghost btn-sm" disabled={detailStatus === "loading"} onClick={openShare}>게시판에 올리기</button>
             </div>}
-          </Reveal>
+          </div>
 
-          <Reveal className="tb-panel tb-editor" delay={STAGGER.row * 5}>
+          <div className="tb-panel tb-editor">
             {!selectedMember ? (
               <div className="tb-editor-empty"><strong>세팅할 포켓몬을 선택하세요.</strong><span>왼쪽 목록에서 추가하거나 위 팀 슬롯을 선택하면 상세 설정을 편집할 수 있습니다.</span></div>
             ) : (
@@ -1437,7 +1437,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                   {selectedRequiredItem ? (
                     <>
                       <div className="tb-locked-item" role="textbox" aria-readonly="true" aria-label="메가폼 전용 도구">
-                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><Icon n="lock" size={15} />
+                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><Icon n="lock" size={16} />
                       </div>
                       <div className="tb-field-meta">선택한 메가폼에 필요한 도구로 자동 지정되며 변경할 수 없습니다.</div>
                     </>
@@ -1475,7 +1475,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                 </div>
               </>
             )}
-          </Reveal>
+          </div>
 
         </div>
       </div>

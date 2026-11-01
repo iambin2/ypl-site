@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { excerptOf } from "../services/noticeExcerpt.js";
 import { flushSync } from "react-dom";
-import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, Reveal, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
+import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
@@ -103,21 +103,21 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back press" onClick={closeArticle}><Icon n="back" size={18}/><span>공지</span></button>
+        <button type="button" className="nb-back press" onClick={closeArticle}><Icon n="back" size={20}/><span>공지</span></button>
         <header className="nb-a-head">
           <h1 className="title nb-a-title" data-vt={"n-"+a.id}>{a.title}</h1>
           <p className="caption tnum nb-a-meta">{formatDate(a.date)}{a.pinned&&<span className="pin">고정</span>}</p>
         </header>
-        {a.body&&<Reveal className="nb-body card"><Prose text={a.body}/></Reveal>}
+        {a.body&&<div className="nb-body card"><Prose text={a.body}/></div>}
         {(a.link||a.link2||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
-          {hasForm&&<button className="ann-apply ypl-btn ypl-btn--primary press hl" onClick={()=>setFill(a.id)}>{a.form.buttonLabel||"참가 신청하기"}</button>}
-          {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit ypl-btn ypl-btn--soft press hl" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</button>}
+          {hasForm&&<button className="ann-apply ypl-btn ypl-btn--primary press" onClick={()=>setFill(a.id)}>{a.form.buttonLabel||"참가 신청하기"}</button>}
+          {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit ypl-btn ypl-btn--soft press" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</button>}
           {championshipSubmission?.isChampionship&&<>
-            <button className="ann-apply ann-submit ypl-btn ypl-btn--soft press hl" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</button>
-            <button className="ann-apply ann-submit ypl-btn ypl-btn--soft press hl" onClick={()=>openBuilder(championshipSubmission.finalEvent.id)}>본선 파티 제출</button>
+            <button className="ann-apply ann-submit ypl-btn ypl-btn--soft press" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</button>
+            <button className="ann-apply ann-submit ypl-btn ypl-btn--soft press" onClick={()=>openBuilder(championshipSubmission.finalEvent.id)}>본선 파티 제출</button>
           </>}
-          {a.link&&<a className="ann-link ypl-btn ypl-btn--soft press hl" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
-          {a.link2&&<a className="ann-link alt ypl-btn ypl-btn--soft press hl" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
+          {a.link&&<a className="ann-link ypl-btn ypl-btn--soft press" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
+          {a.link2&&<a className="ann-link alt ypl-btn ypl-btn--soft press" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
           {admin&&(hasForm||a.form?.eventId)&&<button className="ann-resp ypl-btn ypl-btn--quiet press" onClick={()=>setRespId(a.id)}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
         </div>}
         {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
@@ -207,7 +207,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
             </div>))}
           </div>}
       <div className="pr-foot">
-        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} aria-label="공개 응답 새로고침" title="새로고침"><Icon n="refresh" size={15}/></button>}
+        {onRefresh&&<button className="pr-refresh" onClick={e=>{e.stopPropagation();onRefresh();}} aria-label="공개 응답 새로고침" title="새로고침"><Icon n="refresh" size={16}/></button>}
         {updatedAt&&<span>마지막 확인 {updatedAt}</span>}
       </div>
     </div>}
@@ -230,7 +230,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     // L5: 신청이 접수된 순간 흰 빛이 한 번 퍼진다
     requestAnimationFrame(()=>celebrate?.(...centerOf(document.querySelector(".ff-ok"))));
   };
-  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={30}/></div><h4>신청이 접수되었습니다.</h4><p>신청해 주셔서 감사합니다.<br/>결과와 안내는 공지로 알려 드립니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
+  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={24}/></div><h4>신청이 접수되었습니다.</h4><p>신청해 주셔서 감사합니다.<br/>결과와 안내는 공지로 알려 드립니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><button className="btn btn-primary" onClick={onClose}>닫기</button></div></div></Modal>);
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해 주세요." onClose={onClose}>
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
@@ -260,14 +260,14 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride }){
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
   return (<Modal title="신청 응답" hint={ann.title} onClose={onClose}>
-    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<button className="btn btn-ghost btn-sm" onClick={csv}><Icon n="download" size={15}/>CSV(엑셀) 내려받기</button>}</div>
+    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<button className="btn btn-ghost btn-sm" onClick={csv}><Icon n="download" size={16}/>CSV(엑셀) 내려받기</button>}</div>
     {resp.length===0?<div className="fr-empty">아직 접수된 신청이 없습니다.</div>:
       <div className="fr-scroll"><table className="fr-tbl">
         <thead><tr><th>#</th><th>제출 시각</th>{normalized&&<th>참가자 이름</th>}{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
         <tbody>{resp.map((r,i)=>(<tr key={r.id}>
           <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
           {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
-          <td>{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={14}/></button>}</td>
+          <td>{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={16}/></button>}</td>
         </tr>))}</tbody>
       </table></div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button></div>

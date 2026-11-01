@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { EASE_IN_OUT, EASE_OUT, reduced } from "../components/common/motion.js";
+import { DUR, EASE_IN_OUT, EASE_OUT, reduced } from "../components/common/motion.js";
 import { normTeam as normalizeLegacyParty } from "../services/legacyPartyImages.js";
-import { Empty, Icon, Modal, PageHead, Reveal, SectionHead } from "../components/index.js";
+import { Empty, Icon, Modal, PageHead, SectionHead } from "../components/index.js";
 import PartyStage, { arrive } from "../components/common/PartyStage.jsx";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
 import {
@@ -21,20 +21,20 @@ function openHall(st) {
   const q = s => [...st.querySelectorAll(s)];
   const play = (els, kf, o) => els.forEach(el => el?.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
   const fade = [{ opacity: 0 }, { opacity: 1 }];
-  play([st], fade, { duration: 480, pseudoElement: "::before" });
-  play([st], fade, { duration: 480, delay: 60, pseudoElement: "::after" });
+  play([st], fade, { duration: DUR.slow, pseudoElement: "::before" });
+  play([st], fade, { duration: DUR.slow, delay: 60, pseudoElement: "::after" });
   const floor = st.querySelector(".hx-floor");
-  play([floor], fade, { duration: 420, delay: 120, pseudoElement: "::before" });
-  play([floor], [{ opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "none" }], { duration: 540, delay: 150, pseudoElement: "::after" });
+  play([floor], fade, { duration: DUR.slow, delay: 120, pseudoElement: "::before" });
+  play([floor], [{ opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: 150, pseudoElement: "::after" });
   const mons = q(".hx-mon"), mid = (mons.length - 1) / 2;
   arrive(mons.sort((a, b) => Math.abs(+a.dataset.i - mid) - Math.abs(+b.dataset.i - mid)), 180, 30);
-  play(q(".hofs-name"), fade, { duration: 600, delay: 300 });
+  play(q(".hofs-name"), fade, { duration: DUR.slow, delay: 300 });
   q(".hofs-band").forEach(band => {
-    const w = band.parentElement.offsetWidth, from = -w / 2, to = w, t = { duration: 900, delay: 600, easing: EASE_IN_OUT };
+    const w = band.parentElement.offsetWidth, from = -w / 2, to = w, t = { duration: DUR.sweep, delay: 600, easing: EASE_IN_OUT };
     band.animate([{ opacity: 1, transform: `translateX(${from}px)` }, { opacity: 1, transform: `translateX(${to}px)` }], t);
     band.firstElementChild.animate([{ transform: `translateX(${-from}px)` }, { transform: `translateX(${-to}px)` }], t);
   });
-  play(q(".hof-stage-who .callout, .hof-plate, .hof-stage > .ypl-btn"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: 480, delay: 420 });
+  play(q(".hof-stage-who .callout, .hof-plate, .hof-stage > .ypl-btn"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: 420 });
 }
 
 /* ============================== CHAMPIONS ==============================
@@ -101,7 +101,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
         <span className="callout">{genLabel(reigning)}, {seasonLabel(reigning)} 우승</span>
       </div>
       <PartyStage label="우승 엔트리" members={reigningTeam} dais>{plate(reigningTeam)}</PartyStage>
-      <button className="ypl-btn ypl-btn--primary press hl" onClick={e => setPop({ c: reigning, from: e.currentTarget.closest(".hof-stage").querySelector(".hofs-name") })}>
+      <button className="ypl-btn ypl-btn--primary press" onClick={e => setPop({ c: reigning, from: e.currentTarget.closest(".hof-stage").querySelector(".hofs-name") })}>
         우승 엔트리 크게 보기
       </button>
     </section>}
@@ -109,7 +109,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
     {/* 역대 챔피언: 벽에 나란히 걸린 동판. 판마다 세대, 이름, 시즌, 그리고 작은 바닥에 선 우승 파티. */}
     {past.length > 0 && <section className="hof-past">
       <SectionHead plain="역대" silver="챔피언" />
-      <Reveal tag="ol" className="hof-wall">
+      <ol className="hof-wall">
         {past.map((c, i) => (
           <li key={c.id || i}>
             <button className="card hof-plaque press" onClick={e => setPop({ c, from: e.currentTarget.querySelector(".hof-plaque-name") })} aria-label={c.name + " 우승 엔트리 보기"}>
@@ -129,7 +129,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
             </button>
           </li>
         ))}
-      </Reveal>
+      </ol>
       {admin && <div className="hof-admin">
         {past.filter(c => c.kind !== "normalized").map(c => (
           <button key={"e" + c.id} className="ypl-btn ypl-btn--tonal ypl-btn--sm press" onClick={() => setModal({ type: "champion", item: c })}>

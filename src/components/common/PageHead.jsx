@@ -24,7 +24,7 @@ export function SectionHead({ id, plain, silver, more }) {
       <div>
         <h2 className="headline" id={id}>{[plain, silver].filter(Boolean).join(" ")}</h2>
       </div>
-      {more && <button type="button" className="ypl-more press" onClick={more[1]}>{more[0]}<Icon n="chevr" size={14} /></button>}
+      {more && <button type="button" className="ypl-more press" onClick={more[1]}>{more[0]}<Icon n="chevr" size={16} /></button>}
     </div>
   );
 }

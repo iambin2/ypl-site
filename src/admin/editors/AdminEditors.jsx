@@ -23,7 +23,7 @@ export function LoginModal({ onClose, onSuccess }) {
   return (<Modal title="관리자 로그인" hint="운영진 전용입니다. 관리자 계정으로 로그인해 주세요." onClose={onClose}>
     <div className="field"><label>아이디</label><input autoComplete="username" autoCapitalize="none" value={id} onChange={e=>setId(e.target.value)}/></div>
     <div className="field"><label>비밀번호</label><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
-    {err&&<div className="bk-hint" style={{color:"var(--fg)",marginTop:-12}}>{err}</div>}
+    {err&&<div className="bk-hint" style={{color:"var(--text-primary)",marginTop:-12}}>{err}</div>}
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit} disabled={busy}>{busy?"확인 중":"로그인"}</button></div>
   </Modal>);
 }
@@ -126,7 +126,7 @@ function FormBuilder({ form, setForm }){
   return (<div className="fb-wrap">
     <label className="bk-check" style={{marginBottom:enabled?16:0}}>
       <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
-      <span><Icon n="form" size={14}/> 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
+      <span><Icon n="form" size={16}/> 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
     </label>
     {enabled&&<>
       <div className="field"><label>신청 버튼 문구</label><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></div>
@@ -170,9 +170,9 @@ function FormBuilder({ form, setForm }){
           <span className="fb-qn">{i+1}</span>
           <Dropdown value={f.type} onChange={v=>changeType(f,v)} options={Q_TYPES}/>
           <div className="fb-q-move">
-            <button type="button" className="fb-ic" onClick={()=>move(i,-1)} disabled={i===0} title="위로"><Icon n="up" size={13}/></button>
-            <button type="button" className="fb-ic" onClick={()=>move(i,1)} disabled={i===fields.length-1} title="아래로"><Icon n="down" size={13}/></button>
-            <button type="button" className="fb-ic del" onClick={()=>del(f.id)} title="질문 삭제"><Icon n="x" size={12}/></button>
+            <button type="button" className="fb-ic" onClick={()=>move(i,-1)} disabled={i===0} title="위로"><Icon n="up" size={16}/></button>
+            <button type="button" className="fb-ic" onClick={()=>move(i,1)} disabled={i===fields.length-1} title="아래로"><Icon n="down" size={16}/></button>
+            <button type="button" className="fb-ic del" onClick={()=>del(f.id)} title="질문 삭제"><Icon n="x" size={16}/></button>
           </div>
         </div>
         <input className="fb-label" value={f.label} onChange={e=>patch(f.id,{label:e.target.value})} placeholder={`질문 ${i+1} (예: 참가자 이름)`}/>
@@ -180,7 +180,7 @@ function FormBuilder({ form, setForm }){
           {(f.options||[]).map((op,oi)=>(<div className="fb-opt" key={oi}>
             <span className={"fb-dot "+f.type} aria-hidden="true">{f.type==="dropdown"?oi+1:null}</span>
             <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`선택지 ${oi+1}`}/>
-            <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="선택지 삭제"><Icon n="x" size={12}/></button>
+            <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="선택지 삭제"><Icon n="x" size={16}/></button>
           </div>))}
           <button type="button" className="fb-addopt" onClick={()=>patch(f.id,{options:[...(f.options||[]),""]})}>+ 선택지 추가</button>
         </div>}
@@ -206,7 +206,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
     <FormBuilder form={form} setForm={setForm}/>
     <div className={"fold"+(linkOpen?" open":"")}>
       <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>
-        <span className="fold-title"><Icon n="link" size={14}/> 링크 첨부 <span className="fold-note">(구글폼 등 외부 링크, 선택)</span></span>
+        <span className="fold-title"><Icon n="link" size={16}/> 링크 첨부 <span className="fold-note">(구글폼 등 외부 링크, 선택)</span></span>
         {(link||link2)&&!linkOpen&&<span className="fold-badge">{[link,link2].filter(Boolean).length}</span>}
         <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
       </button>
@@ -235,7 +235,7 @@ export function StandingsEditor({ title, rows, onClose, onSave }) {
       <input type="number" value={r.ru} onChange={e=>upd(i,"ru",e.target.value)}/>
       <input type="number" value={r.top4} onChange={e=>upd(i,"top4",e.target.value)}/>
       <input type="number" value={r.points} onChange={e=>upd(i,"points",e.target.value)}/>
-      <button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={12}/></button>
+      <button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button>
     </div>))}</div>
     <button className="btn btn-ghost btn-sm" style={{marginTop:12}} onClick={add}>+ 트레이너 추가</button>
     <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
@@ -286,7 +286,7 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
     </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
-      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={13}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={13}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={12}/></button></div>
+      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={16}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={16}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button></div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <Segmented value={!!r.team} onChange={v=>upd(i,"team",v)} ariaLabel="경기 방식" options={[[false,"개인전"],[true,"팀전"]]}/>
         <Segmented value={!!r.champ} onChange={v=>upd(i,"champ",v)} ariaLabel="형식" options={[[false,"일반"],[true,"챔피언스 시리즈"]]}/>
@@ -295,13 +295,13 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
         <div className="ed-r2"><input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="우승"/><input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="준우승"/></div>
         <input value={r.sfText} onChange={e=>upd(i,"sfText",e.target.value)} placeholder="4강 (쉼표 구분)"/>
       </>:<>
-        <div className="ed-team"><span className="ed-rk gold"><Icon n="trophy" size={13}/> 우승 팀</span>
+        <div className="ed-team"><span className="ed-rk gold"><Icon n="trophy" size={16}/> 우승 팀</span>
           <input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={r.winM} onChange={e=>upd(i,"winM",e.target.value)} placeholder="팀원 (쉼표 구분, 인원 제한 없음)"/></div>
         <div className="ed-team"><span className="ed-rk">준우승 팀</span>
           <input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={r.ruM} onChange={e=>upd(i,"ruM",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>
-        {r.sfTeams.map((t,k)=>(<div className="ed-team" key={k}><span className="ed-rk">4강 팀 {k+1} <button className="ed-x" onClick={()=>sfDel(i,k)}><Icon n="x" size={12}/></button></span>
+        {r.sfTeams.map((t,k)=>(<div className="ed-team" key={k}><span className="ed-rk">4강 팀 {k+1} <button className="ed-x" onClick={()=>sfDel(i,k)}><Icon n="x" size={16}/></button></span>
           <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>))}
         <button className="btn btn-ghost btn-sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>+ 4강 팀 추가</button>

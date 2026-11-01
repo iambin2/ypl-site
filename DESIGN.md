@@ -1,55 +1,36 @@
 ---
 name: YPL — Yonsei Pokémon League (Navy)
-description: "The league site of record for Pokémon Center Yonsei, as simple as psacard.com: a white page and one navy in solid fills; what matters stands bold; everything that moves moves on the compositor; iOS springs; light first, dark equal."
-source: "docs/redesign-glass/DECISIONS.md (authority, 24th round for the material) and docs/redesign-navy/prototype.html (reference build); recorded from the shipped src/"
-colors:
-  always:
-    navy: "#081C3D"
-    bar: "#081C3D"
-    on-bar: "#FFFFFF"
-    on-bar-2: "#B3BED1"
-    bar-up: "#1D3156"
-    band: "#9FB0CC"
-    window: "#081C3D"
-  light:
-    stage: "#FFFFFF"
-    surface: "#F3F5F8"
-    surface-2: "#E6E9EE"
-    fg: "#081C3D"
-    fg-2: "#4A5264"
-    fg-3: "#5B6375"
-    soft: "#ECEEF2"
-    accent: "#081C3D"
-    on-accent: "#FFFFFF"
-    rank: ["#081C3D", "#2F3F5C", "#4A5264", "#5B6375"]
-  dark:
-    stage: "#081C3D"
-    surface: "#12284C"
-    surface-2: "#1D3156"
-    fg: "#FFFFFF"
-    fg-2: "#B3BED1"
-    fg-3: "#A2ABBC"
-    soft: "#1D3156"
-    accent: "#FFFFFF"
-    on-accent: "#081C3D"
-    rank: ["#FFFFFF", "#D5DCE8", "#B3BED1", "#A2ABBC"]
-typography:
-  family: "Freesentation for Korean (static weights 400 500 600 700, cut into core and rest slices by scripts/build-font-slices.py), Albert Sans for Latin and digits (one variable file). Both OFL. YPL Figures (public/fonts/ypl-figures.woff2) belongs to the brand only"
-  scale: { hero: "48-96px / 700 (--hero), the home's opening sentence; --hero-2 36-72 its numbers; --hero-3 32-56 its close; --hero-4 32 a section name", display: "40-64px / 700 (--display)", title: "28-36px / 700", sizes: "12 13 15 16 17 20 24 28", weights: "400 text, 500 quiet labels and the menu, 600 rows labels and buttons, 700 titles, names and figures" }
-  tracking: ".01em the body, 0 up to 18px where set, -.015em at 20, -.02em from 24, -.025em display"
-  leading: [1, 1.06, 1.15, 1.25, 1.35, 1.45, 1.55, 1.8]
-  figures: "700 with tabular digits on three steps: --fig-s 28, --fig-m 48, --fig-l 72"
-  numbers: "tabular-nums everywhere a number can change, except a number inside a sentence"
-spacing: [4, 8, 12, 16, 20, 24, 32, 40, 56, 80, 120]
-radius: { hero: 36, card: 32, row: 24, field: 20, tile: 12, controls: pill }
-motion:
-  spring-snappy: "3.1% overshoot, 400ms natural length"
-  spring-soft: "1.1% overshoot, 670ms natural length"
-  ease-out: "cubic-bezier(.22,1,.36,1)"
-  ease-in: "cubic-bezier(.5,0,.75,0)"
+description: "A sealed official record book: white paper, one navy ink, facts set large and bold, champions alone held in a case. One signature, a 12 degree slant. Everything that moves moves on the compositor; light first, dark equal."
+source: "tokens live in src/styles/tokens.css; tests/designLaw.test.mjs enforces this file; decisions in docs/redesign-glass/DECISIONS.md (24th round on)"
+scale:
+  base: 4
+  space: [4, 8, 12, 16, 24, 32, 40, 56, 80, 120]
+  type: [13, 16, 20, 24, 32, 48, 72, 96]
+  weights: [400, 600, 700]
+  radius: { sm: 12, lg: 24, pill: full }
+  breakpoints: [640, 860, 1100]
+  content: { full: 1200, read: 720, sheet: 560 }
+  z: { base: 0, raised: 1, sticky: 10, header: 20, overlay: 30, modal: 40, popover: 50, toast: 60, tooltip: 70, skip: 80, veil: 90 }
+  motion: { step: 60, instant: 90, fast: 180, base: 260, slow: 480, snappy: 400, soft: 670, sweep: 900, loop: 1600 }
 ---
 
 # YPL Navy
+
+**봉인된 공식 기록부: 흰 종이에 네이비 잉크 한 색으로 사실을 굵게 적고, 챔피언만 케이스에 담아 세운다.**
+
+The signature is one thing, the 12 degree slant of the wordmark: the band across a slab, the loader and the letters all lean the same way. Nothing else decorates.
+
+## Principles
+
+| Principle | Why | So we do not |
+|---|---|---|
+| Facts replace decoration | Records are why the site exists | Add illustrations, empty badges or typed numbers; every figure is read from data |
+| Hierarchy is size and weight | There is one colour | Colour text to stress it |
+| One solid tone divides surfaces | The user chose PSA-style solid colour | Stack border, shadow and tone; use gradients |
+| Motion is a response or an event | Springs are the identity, habit is what reads as AI | Rise every section on scroll or lift every card on hover |
+| The venue phone is the measure | It is the main scene | Hide function behind hover, or go under 44px to touch |
+
+Motion allowed: the press, the selection lens, sheets, page changes, the home entrance, the slab belt, rolling numbers, the arena. Nothing else moves.
 
 Tokens and recipes live in `src/styles/tokens.css`; motion helpers in `src/components/common/motion.js`.
 `tests/designLaw.test.mjs` enforces the measurable part of this file (color literals and hue, the space, type and radius scales, alignment, blur, easing, middle dots, View Transitions) and the material law (no blur, no shadow in a transition, keyframes move transform and opacity only) on every CSS declaration, inline style and script animation. A deliberate exception is listed there under its reason.
@@ -64,19 +45,39 @@ Fluid, light, playful in the hand, serious on the page (seven parts serious to t
 Every screen is checked against these five and nothing else; the sections below are their detail.
 
 1. Space shrinks with nearness: 4 label and value, 8 inside an element, 12 (16 desktop) one set of cards, 16 a control to the content it drives, 24 page title to content, 40 (56 desktop) between sections.
-2. A list row has one shape: the title first (16px, 600), one grey line under it (13px), a trailing value on the right. Nothing small sits above a title.
+2. A list row has one shape: the title first (label), one grey line under it (caption), a trailing value on the right. Nothing small sits above a title.
 3. Buttons are words. An icon only says what the words cannot: leaving the site (↗), creating (+), the next step in a flow (→).
-4. Scoreboard numbers (days left, ranks, points, generations, counts) stand large, 700 at 28px and up with tabular digits and a small unit beside them (30점, 8팀, 6대); the wordmark's digits (YPL Figures) belong to the brand.
-5. Bars and content keep the same distance top and bottom: 20px from a floating bar, plus the safe area.
+4. Scoreboard numbers (days left, ranks, points, generations, counts) stand large, 700 at 32px and up with tabular digits and a small unit beside them (30점, 8팀, 6대); the wordmark's digits (YPL Figures) belong to the brand.
+5. Bars and content keep the same distance top and bottom, plus the safe area.
 
-## Color (24th round, replaces B1–B5)
+## Color
 
-- One colour: navy `#081C3D`, a darkened Yonsei blue, on white. Text is navy too, not black: black beside the navy bar and buttons read as two darks that nearly match.
-- Solid fills only (user, 2026-11-01): no gradient, no sheen, no soft light, no metallic effect, no status hue. State reads through weight, tone and inversion.
-- The primary button is the theme's inverse fill (navy on light, white on dark). Selection is a small lens one solid tone from what it stands on (`--lens`).
-- First, second and third place differ by tone (`--rank-1..3`).
-- Pokémon type colours stay: they are content, not chrome.
-- Light is the default; a stored choice lives in `ypl-theme-2` (the old key held dark for everyone). Dark is equal: every token is redefined for it. The address bar is navy in both.
+Two layers in `tokens.css`: primitives (`--navy-*`, `--gray-*`, `--white`) and semantic tokens. Components read semantic tokens only; `designLaw` fails a component that reads a primitive.
+
+- One colour: navy `#081C3D`, a darkened Yonsei blue. It is a brand surface, not an accent: the bar, the footer, the arena and the slab windows are large navy fields on purpose. Text is navy too, not black: black beside the navy bar read as two darks that nearly match.
+- The greys carry the navy's hue (oklch 260) at chroma .004 to .02, so nothing is a framework grey.
+- The page is pure white. It is what gives the PSA impression; pure black is never used.
+- Solid fills only (user, 2026-11-01): no gradient, sheen, soft light or metallic effect. Colour never comes from opacity. Two exceptions: the overlay behind a sheet, and disabled. `--opacity-muted` and `--opacity-ghost` serve text on inverted fills and drawn pictures.
+- Status has no hue. `--success-*`, `--warning-*`, `--danger-*`, `--info-*` exist so a status has one name, and resolve to the same tones; it reads through words, icons and weight, never colour alone.
+- First, second and third place differ by tone (`--rank-1..3`). Pokémon type colours stay: they are content, not chrome.
+- Light is the default; a stored choice lives in `ypl-theme-2`. Dark is equal, redefined token by token. The address bar is navy in both.
+
+Contrast, computed from the tokens (AA is 4.5):
+
+| Text | On | Light | Dark |
+|---|---|---|---|
+| text-primary | bg | 16.9 | 16.9 |
+| text-primary | surface | 15.7 | 14.6 |
+| text-primary | surface-raised | 13.4 | 12.9 |
+| text-secondary | bg | 8.5 | 11.0 |
+| text-secondary | surface | 7.9 | 9.5 |
+| text-tertiary | bg | 6.0 | 7.3 |
+| text-tertiary | surface | 5.6 | 6.3 |
+| text-tertiary | surface-raised | 4.7 | 5.6 |
+| text-tertiary | surface-sunken | 5.2 | 6.9 |
+| text-on-accent | accent | 16.9 | 16.9 |
+| on-bar-2 | bar | 9.0 | 9.0 |
+| on-bar-2 | tabs | 9.0 | 6.9 |
 
 ## Stage and surfaces (24th round, replaces D1–D4)
 
@@ -91,9 +92,23 @@ Every screen is checked against these five and nothing else; the sections below 
 - **Groove (`.groove`):** a track in one solid tone: segmented tracks, fields. The selection lens sits in it.
 - The party sits in a display case (`--pod`). Sprites are transparent PNGs.
 
-## Type (E1–E6)
+## Type
 
-Freesentation for Korean and Albert Sans for Latin and digits, the closest open pair to PSA's Area Normal; hierarchy by size and weight (sizes 12, 13, 15, 16, 17, 20, 24, 28, then title, display and the home's hero steps). Four weights, each with one job: 400 text; 500 quiet labels and the menu; 600 row titles, labels, buttons, chips and table values; 700 titles, names and figures. What matters stands bold, as on PSA (user, 2026-11-01). Tracking: .01em on the body, none where set up to 18px, -.015em at 20, -.02em from 24, -.025em display; headings inherit no tracking. Line heights come from one set: 1, 1.06, 1.15, 1.25, 1.35, 1.45, 1.55, 1.8 (the article body). Scoreboard figures (days left, ranks, points, generations, counts) are 700 with tabular digits on three steps, `--fig-s` 28, `--fig-m` 48, `--fig-l` 72; a number inside a sentence keeps its natural width (`Roll natural`). YPL Figures is reserved for the brand, never a page's numbers. Titles are large, space is the hero. English appears only in the brand. No small uppercase label sits above a title. The YPL wordmark is drawn, never typeset; on the top bar it is 18px tall beside a 28px Wing Y, 12px apart. Korean copy uses plain prose, no middle dots. Copy wraps only at its container's edge: no `ch` or `em` measure caps a line that fits. Page titles are the plain name (공지, 기록, 대진표) with a description only when it adds something. A notice or post body reads the few pieces of Markdown admins paste: a block opening with `#` is a headline over its text, `**bold**` is 600, `[text](url)` and bare addresses are underlined links; nothing else is parsed. Hangul outside Freesentation's 2,780 syllables falls back to the system face.
+Freesentation for Korean (static, cut into core and rest slices), Albert Sans for Latin and digits, the closest open pair to PSA's Area Normal. The body scale is 16 by 1.2 on the 4px grid, taking every second step above 24, because a table-heavy phone cannot afford wider steps.
+
+| Style | Size | Leading | Tracking | Weight | For |
+|---|---|---|---|---|---|
+| caption | 13 | 1.5 | .01em | 400, 600 | dates, grey lines, tab labels, units |
+| body | 16 | 1.65 | .01em | 400 | reading, explanations |
+| label | 16 | 1.35 | .01em | 600 | row titles, buttons, the menu, fields |
+| lead | 20 | 1.45 | -.01em | 600 | small headings |
+| h3 | 24 | 1.35 | -.015em | 700 | card and sheet titles |
+| h2 | 32 | 1.25 | -.02em | 700 | section titles, small figures |
+| h1 | 48 | 1.25 | -.02em | 700 | page titles, figures |
+| display | 72 | 1.25 | -.025em | 700 | large figures, the home's numbers |
+| hero | 96 | 1.25 | -.025em | 700 | the home's first line, a champion's name |
+
+Sizes are tokens, never numbers. A fluid size is a `clamp()` whose ends are steps of this scale (`--title`, `--display`, `--hero`). What matters stands bold: 700 for titles, names and figures. Scoreboard figures use tabular digits on `--fig-s`, `--fig-m`, `--fig-l`; a number inside a sentence keeps its natural width (`Roll natural`). Reading text is capped at 40em, about 40 Hangul, and paragraphs use `text-wrap: pretty`; headlines balance. YPL Figures belongs to the brand. No small uppercase label sits above a title. The wordmark is drawn, never typeset; on the top bar it is 18px tall beside a 28px Wing Y, 12px apart. Korean copy uses plain prose, no middle dots. Page titles are the plain name. A notice or post body reads the few pieces of Markdown admins paste: a block opening with `#` is a headline over its text, `**bold**` is 600, `[text](url)` and bare addresses are underlined links. Hangul outside Freesentation's 2,780 syllables falls back to the system face.
 
 ## Logo (F1–F3)
 
@@ -101,7 +116,11 @@ Wing Y (`public/brand/ypl-wing-y.svg`, the 2026-10-12 mark refined on 2026-10-27
 
 ## Space and radius
 
-4px grid on one scale (`--s1` to `--s14`), nearer means smaller: 4 label and value and a title and its meta line, 8 inside an element, between side-by-side controls and a hint under its field, 12 items of one set (`--grid-gap`, 16 desktop) and a "show all" under its list, 16 blocks inside a card, section title to content and a control (tabs, a segmented switch) to the content it drives, 20 card padding at every width (hero 24; list surfaces 8 so their rows keep radius 24) and between a form's fields, 24 page title to first content and a sheet's title to its body, 40 between sections (56 desktop), 80 between chapters (120 desktop). Gutters 16 phone, 32 desktop; bars share the content width. Inner radius equals outer radius minus padding: hero 36, card 32 (padding 20) holding 12px tiles; controls are pills. Every corner is named (`--r-hero` 36, `--r-card` 32, `--r-row` 24, `--r-field` 20, `--r-tile` 12, `--r-pill`): a row in a list takes the row radius, a tile in a card the tile radius, nothing in between. Every label sits at the exact centre of its control.
+Base unit 4px. Nearer means smaller: 4 a label and its value, 8 inside an element, 12 items of one set, 16 a control to the content it drives, 24 card padding and a page title to its content, 40 (56 desktop) between sections, 80 (120 desktop) between chapters. Gutters 16 phone, 32 desktop. The grid is 4 columns with a gap of 24 on desktop, 2 with a gap of 16 on a phone. Content is 1200 wide, reading 720, a sheet 560.
+
+Radius comes from the slab: **outer 24 = inner 12 + padding 12**. 24 for cards, slabs, sheets and popovers; 12 for inner surfaces, tiles, textareas and rows; pill for buttons, one-line fields, chips and tabs; 0 for what runs the full width. A list surface is 24 with padding 12 over rows of 12. The one exception is a bracket's match card, 16 around slots of 12.
+
+Depth: 0 for everything on the page, separated by tone; 1 for popovers and plates; 2 for sheets. One light from above, in a navy shadow.
 
 ## Alignment (2026-10-16)
 
@@ -125,7 +144,7 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 - **Page transitions (23rd round):** no snapshots and no copy of the old page: copying it doubled the document in the one frame that already had to draw the next page. The old page goes at once and the new page rises 16px on the snappy spring. Back goes the other way and returns to the scroll position it left. A shared element's landing spot is measured before the page starts rising, so it lands once.
 - **Shared elements (I2):** notice and board post title to article title; bracket card title to the board head; the tab pill never breaks between pages. Trainer, Pokémon and champion sheets do not fly the row: the row stays put and the sheet title settles 6px as it fades in (460ms, 90ms after the sheet starts).
 - **Theme change (B6, 23rd round):** nothing moves. The page turns at once under one still sheet of the old stage's colour (`.veil`) and the sheet fades over 280ms, one opacity on the compositor. Fading the colour tokens themselves restyled the whole document every frame. The home's pointer sheet redraws in the new colour.
-- **Press (K1):** scale .97 in 90ms, back on the snappy spring. Desktop hover: a soft light comes up inside the element (`.hl`).
+- **Press (K1):** scale .97 in 90ms, back on the snappy spring. Hover moves a control one tone (`--control-hover`, `--state-hover`). Only the slab lifts.
 - **Selection (K3):** a liquid lens. The leading edge springs toward the target first, the trailing edge follows a beat later, the lens thins up to 10% while stretched and settles with under 5% overshoot. It is two round caps and a body in one solid tone, moved by transforms only, so it keeps its frames while the next page renders.
 - **Tab switch (K3, 2026-10-16):** every page tab (a Segmented on the page's `tab` or `step`) slides its lens and the new view rises with `.swap`, including tabs that render a whole separate view and remount the bar (board 샘플/파티, 사설 대진표): the bar hands its lens position across the remount. `tests/designLaw.test.mjs` enforces it.
 - **Numbers (K4)** roll digit by digit. **Ranking rows (K5)** slide to their new place (FLIP) and rows that rose glow briefly.
@@ -135,7 +154,7 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 - **Home entrance (24th round):** each time the site is opened on the home, about a second: the sentence rises line by line, the event and buttons follow, the slabs stand from the middle out on the soft spring, and one solid slanted band crosses the current champion's window behind the Pokémon. On a return everything stands.
 - **The belt:** tied to the scroll, never automatic; the slab that passes the centre gets the band.
 - **Arena (24th round):** the first time it scrolls in, the lines are drawn from the middle, the ball lights, one sharp ring leaves it across the floor and a solid band crosses the YPL. Tapping an empty spot sends the ring again.
-- **Reveal (J1):** a section rises once the first time it scrolls in; anything already on screen stays still.
+- **No scroll reveals (24th round):** sections stand where they are; nothing rises as it scrolls in. The home keeps its entrance, its numbers and its arena because each is an event.
 - **Celebration (L5):** one flat disc and a ring spread from the moment (application accepted, team submitted, final decided); Android gets a short buzz (P2).
 - **Loading (L1, 2026-10-12):** one shared loader (`Loader.jsx`), no words: the Wing Y sits dim (14%) where the screen will be and one solid band crosses it every 1.6s. It appears after 240ms so a quick load never flashes; `small` for spots inside a card or list. Reduced motion pulses instead of sweeping.
 
@@ -179,7 +198,7 @@ A first-visit review found the rules above broken in many small places. Each lin
 - **Icons only for leaving, creating, the next step** (rule 3), and navigation. No decorative icon in a heading, a chip, a list title or a result line; the Discord button is the words and ↗.
 - **Inverted means decided or applied.** A winner, the current champion, an applied filter. A category label ("학기 최강전") is a plain chip; the dot means live and nothing else.
 - **Same content, same shape.** Kinds of competition and kinds of league share one card of rows (name, chip, line). Empty slots are recessed tiles, never outlined boxes. Picking a Pokémon has one control per screen.
-- **Body copy runs to its container's edge.** No `text-wrap: pretty` and no measure caps; only headlines and the caption under a picture balance their lines.
+- **Reading text is capped at 40em** and paragraphs are pretty; only headlines and the caption under a picture balance their lines.
 - **Words and buttons stand clear of drawn lines.** On the home arena the line, the buttons and the empty-state sentence ("다음 대회 일정은 공지에 올라옵니다.") stand on open floor, never on a field line.
 - **Copy says one thing.** The footer is a fan site run by the club and says it has no relation to Nintendo, Creatures, GAME FREAK or The Pokémon Company; it no longer pairs "공식" with "비공식". Quotation marks are typographic (‘ ’).
 
@@ -187,12 +206,12 @@ A first-visit review found the rules above broken in many small places. Each lin
 
 What makes the screen feel calm is that the eye never has to find a new line to read from and never meets two sizes for one job. A survey of every window, sheet, menu and control found both broken, so these six hold for all of them; `tests/designLaw.test.mjs` checks what it can see.
 
-1. **One text edge per surface.** On a page, a card, a sheet or a menu the words start on one line, the surface's padding. Whatever draws its own box (a field, a button, a tile, a chip, a grouped list) puts the box on that line and its words inside. A row with no box at rest (a menu row, an option, a picker row, a team to post) puts its words on the line and hangs its highlight 12 into the padding: on a phone sheet the highlight stands 8 from the edge, so its radius is the sheet's 32 less 8, the row radius 24. A popover and a dropdown menu (padding 6) start their words 18 in, both the same.
+1. **One text edge per surface.** On a page, a card, a sheet or a menu the words start on one line, the surface's padding. Whatever draws its own box (a field, a button, a tile, a chip, a grouped list) puts the box on that line and its words inside. A row with no box at rest puts its words on the line and hangs its highlight 12 into the padding.
 2. **Nearer is tighter, and a group's actions are a group.** Rule 1's distances stand; the buttons that end a sheet stand 40 under its body (the section distance) and the sheet's own padding over its edge (24 on a phone, 32 in a desktop dialog), at every height of sheet, and stay pinned while the body scrolls under them.
 3. **Heights on one ladder.** 24 count, 28 chip, 36 a control inside a track, a field or a row (segment, clear, refresh), 40 small button and the sheet's X, 44 the touch floor and a floating menu's row, 48 button, field and dropdown, 52 a one-line choice in a sheet, 60 a list row (`--row-min`: notices, posts, trainers, pickers, tables). The touch floor only raises what is lower; it never lowers a 48 field or a 60 row.
-4. **Five text roles, one look each.** A title; a row title (16, 600); its grey line (13, `--fg-3`, 4 under, line height 1.45); an explanatory sentence (15, 1.55, `--fg-2`: a page description, a sheet's hint, a note in a form, an empty list); a field label (13, 600, `--fg-2`).
-5. **One state ladder for chosen rows.** Rest clear, hover `--tint-soft`, selected `--tint` with a check, keyboard focus `--tint-strong`. The label stays 600 in every state, so choosing never moves the words.
-6. **An X is drawn at its circle's scale.** 18 in the sheet's 40, 14 in a 36 clear button, 12 in a chip.
+4. **Five text roles, one look each.** A title; a row title (16, 600); its grey line (caption, `--text-tertiary`, 4 under, line height 1.45); an explanatory sentence (body, `--text-secondary`: a page description, a sheet's hint, a note in a form, an empty list); a field label (caption, 600, `--text-secondary`).
+5. **One state ladder for chosen rows.** Rest clear, hover `--state-hover`, selected `--state-selected` with a check, keyboard focus `--state-pressed`. The label stays 600 in every state, so choosing never moves the words.
+6. **Icons stand on three sizes.** 16, 20 and 24, from Phosphor, in `currentColor`. An X is 20 in a sheet's 40, 16 in a chip or a field.
 
 ## Don't
 

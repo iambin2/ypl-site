@@ -55,9 +55,9 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
       </nav>
-      {onAdmin && <button type="button" className="iconbtn press" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={22} /></button>}
+      {onAdmin && <button type="button" className="iconbtn press" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={20} /></button>}
       <button type="button" className="iconbtn press" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
-        <span className="theme-ic"><Icon n="sun" size={22} className="i-sun" /><Icon n="moon" size={22} className="i-moon" /></span>
+        <span className="theme-ic"><Icon n="sun" size={20} className="i-sun" /><Icon n="moon" size={20} className="i-moon" /></span>
       </button>
       {cta && <button type="button" className="bar-cta press" onClick={() => onNavigate(cta[1])}>{cta[0]}</button>}
     </header>

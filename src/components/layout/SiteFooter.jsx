@@ -17,7 +17,7 @@ export default function SiteFooter({ onNavigate, tagline }) {
             <span className="brand-logo"><BrandMark /></span><Wordmark />
           </button>
           {tagline && <p className="site-foot-tag">{tagline}</p>}
-          <a className="ypl-btn ypl-btn--sm ypl-btn--soft press hl site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+          <a className="ypl-btn ypl-btn--sm ypl-btn--soft press site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
             디스코드 참여<Icon n="ext" size={16} />
           </a>
         </div>

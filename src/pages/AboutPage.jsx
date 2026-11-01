@@ -1,5 +1,5 @@
 import React from "react";
-import { Reveal, Icon, PageHead, STAGGER, SectionHead } from "../components/index.js";
+import { Icon, PageHead, SectionHead } from "../components/index.js";
 import { formatDate } from "../services/dateFormat.js";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
 
@@ -42,10 +42,10 @@ function Comps({ items }) {
   return (
     <div className="ab-comps">
       {items.map((c, i) => (
-        <Reveal key={c.name} delay={i * STAGGER.tile} className="ab-comp">
+        <div key={c.name} className="ab-comp">
           <div className="ab-comp-h"><b>{c.name}</b><span className="y-chip">{c.tag}</span></div>
           <p>{c.desc}</p>
-        </Reveal>
+        </div>
       ))}
     </div>
   );
@@ -61,13 +61,13 @@ export default function AboutPage({ go }) {
       <SectionHead plain="참가하는" silver="법" />
       <ol className="ab-flow ab-join">
         {JOIN.map((s, i) => (
-          <Reveal tag="li" key={s.t} delay={i * STAGGER.tile}>
+          <li key={s.t}>
             <span className="ab-flow-n">{i + 1}</span>
             <b>{s.t}</b>
             <span>{s.d}</span>
-            {s.href ? <a className="ypl-btn ypl-btn--soft ypl-btn--sm press hl" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
-              : <button type="button" className="ypl-btn ypl-btn--soft ypl-btn--sm press hl" onClick={() => go?.(s.to)}>{s.cta}</button>}
-          </Reveal>
+            {s.href ? <a className="ypl-btn ypl-btn--soft ypl-btn--sm press" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
+              : <button type="button" className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={() => go?.(s.to)}>{s.cta}</button>}
+          </li>
         ))}
       </ol>
     </section>
@@ -76,11 +76,11 @@ export default function AboutPage({ go }) {
       <SectionHead plain="시즌의" silver="흐름" />
       <ol className="ab-flow">
         {FLOW.map((s, i) => (
-          <Reveal tag="li" key={s.t} delay={i * STAGGER.tile} className={i === FLOW.length - 1 ? "last" : ""}>
+          <li key={s.t} className={i === FLOW.length - 1 ? "last" : ""}>
             <span className="ab-flow-n">{i + 1}</span>
             <b>{s.t}</b>
             <span>{s.d}</span>
-          </Reveal>
+          </li>
         ))}
       </ol>
     </section>
@@ -89,10 +89,10 @@ export default function AboutPage({ go }) {
       <SectionHead plain="YPL의" silver="기록" />
       <div className="ab-records">
         {RECORDS.map((r, i) => (
-          <Reveal key={r.t} delay={i * STAGGER.tile} className="ab-rec">
+          <div key={r.t} className="ab-rec">
             <b>{r.t}</b>
             <p>{r.d}</p>
-          </Reveal>
+          </div>
         ))}
       </div>
     </section>
@@ -101,11 +101,11 @@ export default function AboutPage({ go }) {
       <SectionHead plain="리그" silver="연혁" />
       <ol className="ab-timeline">
         {TIMELINE.map((t, i) => (
-          <Reveal tag="li" key={t.date} delay={i * STAGGER.tile}>
+          <li key={t.date}>
             <b>{t.title}</b>
             <time className="tnum">{dateText(t)}</time>
             <p>{t.body}</p>
-          </Reveal>
+          </li>
         ))}
       </ol>
     </section>
@@ -117,7 +117,7 @@ export default function AboutPage({ go }) {
 
     <section className="ab-block">
       <SectionHead plain="정규" silver="리그" />
-      <Reveal tag="p" className="ab-lead">2025년 6월부터 YPL은 두 개의 정규 리그로 운영됩니다.</Reveal>
+      <p className="ab-lead">2025년 6월부터 YPL은 두 개의 정규 리그로 운영됩니다.</p>
       <Comps items={LEAGUES} />
     </section>
   </section>);

@@ -15,13 +15,12 @@ const rel = f => relative(ROOT, f).replaceAll("\\", "/");
 // ---------- the scales (DESIGN.md "Space and radius", "Type") ----------
 const TOKENS = read(join(STYLES, "tokens.css"));
 const SPACE = new Set([0, 80, 120, ...[...TOKENS.matchAll(/--s\d+:\s*(\d+)px/g)].map(m => +m[1])]); // --s1..--s14, --chapter 80/120
-const SIZES = new Set([12, 13, 15, 16, 17, 20, 24, 28]);
-const WEIGHTS = new Set(["400", "500", "600", "700"]);
-// tracking follows size (one curve): none up to 18px, then tighter as type grows, -.025em for display type only; the body's own .01em opens small Korean
-const TRACK = new Set(["0", ".01em", "inherit", "-.015em", "-.02em", "-.025em"]);
-const trackFor = px => px <= 18 ? "0" : px < 24 ? "-.015em" : "-.02em";
-const LEADING = new Set(["1", "1.06", "1.15", "1.25", "1.35", "1.45", "1.55", "1.8", "inherit", "1.15em", "1.25em"]);
-const RADII = new Set([0, 12, 20, 24, 32, 36, 999]); // tile, textarea, list row, card, hero, pill
+const WEIGHTS = new Set(["400", "600", "700"]);
+// a size comes with its tracking: the scale pairs them in tokens.css
+const TRACK = new Set(["0", "inherit", "var(--ls-body)", "var(--ls-lead)", "var(--ls-h3)", "var(--ls-title)", "var(--ls-display)"]);
+const trackFor = { "var(--fs-lead)": "var(--ls-lead)", "var(--fs-h3)": "var(--ls-h3)", "var(--fs-h2)": "var(--ls-title)", "var(--fs-h1)": "var(--ls-title)", "var(--fs-display)": "var(--ls-display)", "var(--fs-hero)": "var(--ls-display)" };
+const LEADING = new Set(["1", "inherit", "1.25em", "var(--lh-caption)", "var(--lh-body)", "var(--lh-label)", "var(--lh-lead)", "var(--lh-title)"]);
+const RADII = new Set([0, 12, 24, 999]); // the slab's rule: outer 24 = inner 12 + padding 12
 
 // ---------- declarations ----------
 // each CSS rule block's declarations, so a rule can read a declaration beside its font-size
@@ -69,19 +68,18 @@ const COLOR = /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|\b(whi
 const RULES = {
   "color: literals live only in tokens.css (Color)": d => d.file !== "src/styles/tokens.css" && !/mask/.test(d.prop) && COLOR.test(d.value),
   "space: margin, padding and gap sit on the 4px scale (Space and radius)": d => /^(margin|padding|gap|row-gap|column-gap)(-|$)/.test(d.prop) && pxs(d.value).some(n => !SPACE.has(n)),
-  "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--[\w-]+\))$/.test(d.value) && !(/^-?\d*\.?\d+(rem|px)$/.test(d.value) && SIZES.has(parseFloat(d.value) * (d.value.endsWith("rem") ? 16 : 1))),
-  "type: weights 400 500 600 700 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
-  "type: tracking follows size, none up to 18px (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value)
-    || (sizePx(sib(d, "font-size")) !== null && !/fig/.test(d.sel) && trackFor(sizePx(sib(d, "font-size"))) !== d.value)),
+  "type: a size is a token, never a number (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--(fs-[\w]+|hero(-\d)?|display(-l)?|title|fig-[sml])\))$/.test(d.value),
+  "type: weights 400 600 700 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
+  "type: tracking is a token and follows its size (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value) || (trackFor[sib(d, "font-size")] && trackFor[sib(d, "font-size")] !== d.value)),
   "type: line-heights on one set (Type)": d => d.prop === "line-height" && !LEADING.has(d.value),
   "type: big figures sit on the --fig scale, 28px and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
   // one stack everywhere: Freesentation for Korean, Albert Sans for Latin and digits
   "type: one font stack; YPL Figures only with the brand (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
-  "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value),
+  "type: only reading text carries a measure, 40em (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value) && !(d.sel === ".prose" && d.value === "40em"),
   "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
   "align: right only for trailing values and number columns (Alignment)": d => d.prop === "text-align" && /right|end/.test(d.value),
-  "radius: hero 36, card 32, row 24, textarea 20, tile 12, pill (Space and radius)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
+  "radius: 12, 24, pill (Space and radius)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
   "matte: nothing blurs what is behind it (Material)": d => /backdrop-filter$/.test(d.prop),
   "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Material)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
   "matte: shadows are still, a shadow in a transition repaints its element every frame (Motion)": d => /^transition(-property)?$/.test(d.prop) && /box-shadow/.test(d.value),
@@ -89,9 +87,11 @@ const RULES = {
   // a spring curve stretched or squeezed feels like a different spring (2026-10-27: 400, 460, 480, 520 and 560ms snappy were all in use)
   "motion: a spring runs at its natural length, var(--dur-snappy) or var(--dur-soft) (Motion)": d => /^(transition|animation)/.test(d.prop)
     && [...d.value.matchAll(/(\S+)\s+var\(--spring-(snappy|soft)\)/g)].some(([, dur, kind]) => dur !== `var(--dur-${kind})`),
-  // body copy runs to its container's edge (2026-10-16); only headlines and a caption under a picture may balance their lines
-  "type: body copy never breaks early; balance only on headlines (Type)": d => d.prop === "text-wrap"
-    && (/pretty/.test(d.value) || (/balance/.test(d.value) && !/^(h1, h2, h3, h4|\.display|\.title|\.hof-plate)$/.test(d.sel))),
+  "type: paragraphs are pretty, only headlines balance (Type)": d => d.prop === "text-wrap" && !((/pretty/.test(d.value) && d.sel === "p") || (/balance/.test(d.value) && /^(h1, h2, h3, h4|\.display|\.title|\.hof-plate)$/.test(d.sel))),
+  "color: components read semantic tokens, never primitives (Color)": d => d.file !== "src/styles/tokens.css" && /var\(--(navy|gray)-\d+|var\(--white\)/.test(d.value),
+  "depth: a z-index is a named step (Depth)": d => d.prop === "z-index" && !/^(auto|calc\(var\(--z-sticky\) \+ 1\)|var\(--z-[a-z]+\))$/.test(d.value),
+  "opacity: 0, 1 or a token (Color)": d => d.prop === "opacity" && !/^(0|1|var\(--opacity-[a-z]+\))$/.test(d.value),
+  "motion: a duration is a token (Motion)": d => /^(transition|animation)/.test(d.prop) && /(?<![\w.-])\d*\.?\d+m?s\b/.test(noVars(d.value)),
 };
 
 // ---------- deliberate exceptions, by rule and reason ----------
@@ -101,6 +101,12 @@ const TYPES = ["normal: #9FA19F", "fire: #E62829", "water: #2980EF", "electric: 
   "flying: #81B9EF", "psychic: #EF4179", "bug: #91A119", "rock: #AFA981", "ghost: #704170", "dragon: #5060E1", "dark: #624D4E", "steel: #60A1B8", "fairy: #EF70EF"]
   .map(t => `${TB} | .type-${t.split(":")[0]} | --type:${t.split(":")[1]}`);
 const EXCEPT = {
+  "depth: a z-index is a named step (Depth)": {
+    "a stack orders itself: toasts by their place, the V of the party by its depth": ["src/components/common/Toaster.jsx | style | z-index: 10 - index", "src/styles/pages.css | .hx-mon | z-index: calc(var(--s) * 10)"],
+  },
+  "opacity: 0, 1 or a token (Color)": {
+    "the fourth toast in a stack leaves": ["src/components/common/Toaster.jsx | style | opacity: index > 2 && !item.out ? 0 : undefined"],
+  },
   "color: literals live only in tokens.css (Color)": {
     "Pokémon type colours are content, not chrome": TYPES,
     "a video letterbox is black in both themes": [`${P} | .bd-yt | background: #000`],
@@ -115,13 +121,7 @@ const EXCEPT = {
       `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s4) 0 0 44px`,
       `${TB} | .tb-official-lookup | margin: var(--s4) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s4) 0 0 44px`],
     "concentric inset: inner radius = outer radius - padding": [
-      `${S} | .admin-dock | padding: 0 6px 0 var(--s5)`, `${C} | .dd-menu | padding: 6px`, `${C} | .popover | padding: 6px`, `${K} | .calc-stepper button | margin: 2px`],
-  },
-  "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": {
-    "the title step (28-36) itself and its copies": [`${T} | .title | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`, `${TB} | .tb-editor-title h2 | font-size: 2.25rem`],
-    "an article body reads at 18px on desktop (Pages)": [`${P} | .prose p | font-size: 1.125rem`],
-  },
-  "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": {
+      `${K} | .calc-stepper button | margin: 2px`],
   },
   "type: line-heights on one set (Type)": {
     "a rank cell sits on its neighbour's 28px line box": [`${R} | .r2-line > .r2-rk | line-height: 28px`],
@@ -141,10 +141,7 @@ const EXCEPT = {
       `${K} | .calc-table .num | text-align: right`, `${C} | .ypl-table .r | text-align: right`, `${R} | .rc-facts.rows dd | text-align: right`,
       `${P} | .sc-stat strong | text-align: right`, `${P} | .sc-stat-h > span:last-child | text-align: right`, `${P} | .sc-sp em | text-align: right`],
   },
-  "radius: hero 36, card 32, row 24, textarea 20, tile 12, pill (Space and radius)": {
-    "concentric: a menu row inside a 24px menu with 6px padding": [`${C} | .dd-opt | border-radius: 18px`, `${C} | .popover .mi | border-radius: 18px`],
-    "a bracket connector's bend, a line rather than a surface": [`${B} | .bk-col2:not(:last-child) .bk-mpos:nth-child(odd)::after | border-top-right-radius: 8px`,
-      `${B} | .bk-col2:not(:last-child) .bk-mpos:nth-child(even)::after | border-bottom-right-radius: 8px`],
+  "radius: 12, 24, pill (Space and radius)": {
     "concentric: a match card holds 12px slots with 4px padding; the champion cell takes the card's shape": [`${B} | .bk-match | border-radius: 16px`, `${B} | .bk-champ-node | border-radius: 16px`],
   },
 };
@@ -250,20 +247,30 @@ test("rows in a sheet hang into its padding so their words stand on the title's 
 
 test("chosen rows share one state ladder: hover soft, selected tint, keyboard focus strong (law 5)", () => {
   const rows = DECLS.filter(d => /^background(-color)?$/.test(d.prop) && /^(\.popover )?\.(mi|dd-opt|pick-row)[.:]/.test(d.sel));
-  const want = sel => /:hover/.test(sel) ? "var(--tint-soft)" : /focus-visible|\.cursor/.test(sel) ? "var(--tint-strong)" : /\.(on|sel)\b/.test(sel) ? "var(--tint)" : null;
+  const want = sel => /:hover/.test(sel) ? "var(--state-hover)" : /focus-visible|\.cursor/.test(sel) ? "var(--state-pressed)" : /\.(on|sel)\b/.test(sel) ? "var(--state-selected)" : null;
   assert.ok(rows.length >= 9);
   assert.deepEqual(rows.filter(d => want(d.sel) && d.value !== want(d.sel)).map(keyOf), []);
   assert.deepEqual(decl(".dd-opt.sel", "font-weight"), [], "an option keeps its weight when chosen");
 });
 
-test("an X is drawn at its circle's scale: 18, 14 or 12 (law 6)", () => {
-  const STATUS = "src/pages/TeamBuilderPage.jsx: 15"; // the validation panel's status sign beside its check and alert, not a close
-  const hits = SRC.flatMap(f => [...read(f).matchAll(/<Icon n="x" size=\{(\d+)\}/g)].filter(m => !["12", "14", "18"].includes(m[1])).map(m => `${rel(f)}: ${m[1]}`));
-  assert.deepEqual(hits, [STATUS]);
+test("icons stand on three sizes: 16, 20, 24 (Icons)", () => {
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/<Icon [^>]*?size=\{(\d+)\}/g)].filter(m => !["16", "20", "24"].includes(m[1])).map(m => `${rel(f)}: ${m[1]}`));
+  assert.deepEqual(hits, []);
+});
+
+test("three breakpoints: 640, 860, 1100 (Layout)", () => {
+  const css = readdirSync(STYLES).filter(f => f.endsWith(".css")).map(f => read(join(STYLES, f))).join("\n");
+  const widths = [...new Set([...css.matchAll(/\((?:min|max)-width:\s*(\d+)px\)/g)].map(m => +m[1]))].sort((a, b) => a - b);
+  assert.deepEqual(widths.filter(w => ![639, 640, 859, 860, 1099, 1100].includes(w)), []);
+});
+
+test("script animations take their durations from DUR (Motion)", () => {
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\([^;]*?duration:\s*(\d+)/g)].filter(m => +m[1] > 0).map(m => `${rel(f)}: ${m[1]}`));
+  assert.deepEqual(hits.filter(h => !/motion\.js: (1600|1150|1200)|HomePage\.jsx: 1500/.test(h)), []);
 });
 
 test("an explanatory sentence reads in one grey (law 4)", () => {
-  for (const sel of [".bk-hint, .hint", ".callout", ".dd-none"]) assert.deepEqual(decl(sel, "color"), ["var(--fg-2)"], sel);
+  for (const sel of [".bk-hint, .hint", ".callout", ".dd-none"]) assert.deepEqual(decl(sel, "color"), ["var(--text-secondary)"], sel);
   assert.deepEqual(decl(".modal > .hint", "color"), [], "a sheet's hint takes the shared grey");
 });
 
@@ -290,7 +297,7 @@ test("a sheet fills the width under 860 and clips its corners (Sheets)", () => {
   const base = css.match(/^\.sheet \{([^}]*)\}/m)[1];
   assert.match(base, /width: 100%/, "a narrower sheet floats round on top and square below");
   assert.match(base, /overflow: hidden/, "the pinned actions paint square over unclipped corners");
-  assert.match(css, /@media \(min-width: 860px\) \{\s*\.sheet \{[^}]*border-radius: var\(--r-card\);/, "a dialog is round on all four corners");
+  assert.match(css, /@media \(min-width: 860px\) \{\s*\.sheet \{[^}]*border-radius: var\(--r-lg\);/, "a dialog is round on all four corners");
 });
 
 test("no View Transitions snapshots (Don't)", () => {
