@@ -181,6 +181,64 @@ What the browser draws is designed too, once, in `tokens.css`.
 - **Empty:** `Empty`, sentences only: what is empty, then what to do.
 - **Errors, three sizes, one voice:** `FormError` for one field or one form, `ErrorNote` for a section or a whole page (what went wrong, one way to try again), a toast for something that passed. Colour never carries it alone.
 
+## Voice and tone
+
+Words are under the law too. Korean, plain and factual: what happens, then what to do. These rules cover the words the site itself writes, never what people write in it.
+
+**Register.** Polite formal 합니다체, one voice everywhere.
+
+| Where | Form | Example |
+|---|---|---|
+| Explanation, guidance | ~합니다 | 대진표에서 확정된 결과가 기록에 반영됩니다. |
+| Asking someone to act | ~해 주세요 | 제목을 입력해 주세요. |
+| Confirming an action | ~할까요? | 이 공지를 삭제할까요? |
+| Something finished | ~했습니다 | 저장했습니다. |
+| Errors | ~하지 못했습니다, then a request | 글을 올리지 못했습니다. 잠시 뒤 다시 시도해 주세요. |
+| Buttons, links, tabs | Noun form | 저장, 대진표 보기 |
+| Status labels | Short noun phrase | 임시저장됨, 데이터 연결 안 됨 |
+| Field hints | 예: and a real value | 예: 37회 파이컵 |
+| Legal notice | ~합니다, nothing shortened | The footer sentence |
+
+**Labels.** One form: a noun. Sino-Korean verbs lose 하기 (저장, 신청, 등록, 수정); native verbs keep 기 (보기, 만들기, 올리기, 내려받기). Where there is an object, object first (대진표 만들기). One action has one name on every screen. Single actions are fixed words: 취소, 저장, 삭제, 닫기, 등록, 수정. No `+` before a label, no 하세요 on a button.
+
+**Punctuation.**
+
+- Exclamation marks: none.
+- A complete sentence ends with a period. A heading, a sheet title, an empty state's title, a label and a button do not, even when they read as a sentence.
+- Ellipsis is the one character `…`, never `...`, and only on visible progress text (저장 중…) and a field prompt. A screen reader's label has none.
+- Quotes are curly. `‘ ’` for a name on the screen or a term, `“ ”` for quoted speech. Straight quotes are never shown.
+- No middle dot. A list takes commas.
+- No em dash in a sentence. Split the sentence or use brackets. A lone `—` is allowed as the mark for an empty value.
+- No tilde. A range takes an en dash, spaced between words (2023년 – 2025년), tight between bare digits (2024–2026).
+- Arrows are not punctuation. ↑ ↓ are allowed only beside a stat, for a nature's effect.
+- A Latin word sits in Korean like any word: normal spacing, particle attached (YPL의).
+
+**Numbers, dates, time.**
+
+| What | Rule | Example |
+|---|---|---|
+| Date, reading | `formatDate`, always | 11월 1일 (일); another year 2025년 11월 1일 (토) |
+| Date, tight table | Digits and dots | 2026. 11. 1. |
+| Date, machine | ISO, for files and `datetime` | 2026-11-01 |
+| Time | 12-hour with 오전/오후, no leading zero | 오후 3:05 |
+| Thousands | Comma | 1,240 |
+| Large numbers | Full digits. The league's numbers are small; 만 and 억 are not used | 12,500 |
+| Money | Digits then 원, no ₩ | 1,000원 |
+| Number and unit | No space | 32명, 37회, 6세대, 48% |
+
+**English.** Headings are Korean; English appears for names. Sentence case when it does. Fixed spellings: YPL, Yonsei Pokémon League, Pokémon with its accent, 파이컵 Lite. Discord is written 디스코드 in running Korean. No all-caps labels.
+
+**Emoji.** None in the interface, in any position.
+
+**Errors.** Two parts: what did not happen, then what to do. Say what the site could not do, so nothing sounds like the person's fault: 입력해 주세요, not 비어 있습니다. When a retry button stands beside it, the button is the second part. Never a bare noun such as 저장 실패, and 알 수 없는 오류 is not an answer.
+
+- A visitor never sees an error code, a stack, or words such as ID, RPC, 스키마, 로컬 저장소.
+- An operator may see the cause after the sentence. Integrity errors that name IDs and identity data stay as they are: they appear only when data is broken, and the exact term is the operator's lead.
+
+**Page titles.** `페이지명 | YPL`, one separator. The home is `YPL | Yonsei Pokémon League`.
+
+**Don't.** Claims with no fact behind them (새로운 기준, 혁신적인, 완벽한), pushing (지금 바로), invitations to a feeling (경험해 보세요), sentences about a mood rather than what happens, and 당신.
+
 ## Components
 
 - Buttons: one component, `Button.jsx`. `variant` is primary (one per area), secondary, tertiary, destructive or inverse (on navy); `size` is sm 40, md 48, lg 56. Labels are words; an icon only for leaving the site, creating or the next step. `loading` keeps the width: the words clear under one spinner. `className` only places the button.
