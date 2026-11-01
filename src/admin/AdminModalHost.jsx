@@ -1,6 +1,6 @@
 import React from "react";
 import { siteConfirm } from "../components/index.js";
-import { announcementDeletionBlockedMessage, isEventLinked, cancelApplicationEvent, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
+import { announcementDeletionBlockedMessage, isEventLinked, cancelApplicationEvent, notifyAnnouncement, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
 import {
   AnnEditor,
   ChampionEditor,
@@ -149,6 +149,8 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
           }
 
           close();
+          // 새 공지만 알린다. 알림이 실패해도 공지는 이미 저장됐다.
+          if (!modal.item) notifyAnnouncement(nextAnnouncement.id).catch(() => flash?.("공지는 올렸지만 알림을 보내지 못했습니다."));
         }}
         onDelete={modal.item ? async () => {
           const eventId = modal.item.form?.eventId || null;

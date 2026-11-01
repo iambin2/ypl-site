@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, Reveal, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
-import { builderRouteSearch, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
@@ -145,6 +145,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     <PageHead plain="공지">
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
+        <PushToggle/>
         {admin&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setModal({type:"ann"})}><Icon n="plus" size={16}/>공지 작성</button>}
       </div>
     </PageHead>
@@ -161,6 +162,27 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     <Pager page={cur} pages={pages} onGo={setPage}/>
     {modals}
   </section>);
+}
+
+/* ===== 새 공지 알림 받기 ===== */
+function PushToggle(){
+  const [mode]=useState(currentPushMode);
+  const [on,setOn]=useState(false); const [busy,setBusy]=useState(mode==="ready");
+  useEffect(()=>{
+    if(mode!=="ready") return;
+    let cancelled=false;
+    isPushOn().then(value=>{if(!cancelled)setOn(value);}).catch(console.error).finally(()=>{if(!cancelled)setBusy(false);});
+    return ()=>{cancelled=true;};
+  },[mode]);
+  if(mode==="none") return null;
+  const toggle=async()=>{
+    if(mode==="install") return siteAlert("홈 화면에 추가해 주세요.","아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.");
+    setBusy(true);
+    try{ if(on) await disablePush(); else await enablePush(); setOn(!on); }
+    catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||""); }
+    finally{ setBusy(false); }
+  };
+  return <button type="button" className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={busy} onClick={toggle}>{on?"알림 끄기":"알림 받기"}</button>;
 }
 
 /* ===== 공개 응답 목록 (예: 실시간 밴 리스트) ===== */

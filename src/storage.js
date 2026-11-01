@@ -65,6 +65,18 @@ export function signOutAdmin() {
   clearTimeout(refreshTimer);
 }
 
+// 로그인한 세션으로 Edge Function을 부른다. Supabase가 없는 환경에서는 할 일이 없다.
+export async function invokeFunction(name, body) {
+  if (!supa) return;
+  const response = await authFetch(new URL(`functions/v1/${name}`, SUPA_URL.replace(/\/?$/, "/")), {
+    method: "POST",
+    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    keepalive: true,
+  });
+  if (!response.ok) throw new Error(`${name}: ${response.status}`);
+}
+
 export const STORAGE_MODE = (typeof window !== "undefined" && window.storage)
   ? "artifact"
   : (supa ? "supabase" : "local");

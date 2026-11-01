@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Vite dev server (http://localhost:5173)
 npm run build    # production build → dist/
 npm run preview  # serve the built dist/
-npm test         # full suite: node --test "tests/*.test.mjs"  (363 tests, including the design law)
+npm test         # full suite: node --test "tests/*.test.mjs"  (366 tests, including the design law)
 npm run data:champions  # rebuild the committed src/data/champions-data.json from Showdown + PokeAPI
                         # (refresh-champions-data.yml does this weekly and opens a PR when it changed)
 npm run font:slices     # re-cut SUIT Variable into unicode-range slices (needs pip install -r scripts/requirements-fonts.txt)
@@ -29,6 +29,7 @@ GitHub Pages via `.github/workflows/deploy.yml` on every push to `main`.
 
 - `vite.config.js` hardcodes `base: "/ypl-site/"` — it must match the repository name. Renaming the repo means changing this.
 - A build-only Vite plugin (`productionVersionPlugin`) emits `version.json` and injects a head script that polls it and force-reloads the page when the deployed build id changes. Anything touching `index.html` head order or `base` interacts with this.
+- The `notify-announcement` Edge Function does not deploy with the site; deploy it separately (`npx supabase functions deploy notify-announcement --use-api --project-ref rqffrogcverfjqzjasax`) with the `VAPID_KEYS` secret set in Supabase. Its public half is `VAPID_PUBLIC_KEY` in `src/services/announcementPush.js`; replacing the pair orphans every subscription.
 - Env vars (`.env` locally, repo secrets in CI): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_YPL_DATA_SCHEMA` (production uses `ypl_schema_validation`).
 
 ## Architecture
@@ -39,6 +40,7 @@ React 18 + Vite SPA, no router library and no state library.
 - **`src/services/`** holds all domain logic as pure ES modules — bracket lifecycle, projections, records, champions, team builder, submission. This is where the real complexity lives and what the test suite covers. Components consume it through the `src/services/index.js` barrel.
 - **`src/pages/`** are view components, **`src/components/`** shared UI, **`src/admin/`** the client-side admin mode (editors, modal host, mode bar).
 - **Visitor space** (board 샘플/파티 tabs, 사설 대진표 tab) lives in separate `site_data` keys through `src/services/communityStore.js`; it never touches official data or records. Team sheets (`buildTeamSheet`) feed both the board and the PNG export (`src/components/teamSheetImage.js`).
+- **Notice alerts** are Web Push: `public/sw.js` only shows notifications (no fetch handler, no cache), `src/services/announcementPush.js` subscribes through the RPCs in `docs/db/announcement_push.sql`, and saving a new notice calls the `notify-announcement` Edge Function (`supabase/functions/`), which holds `VAPID_KEYS`. iOS only offers push inside the home-screen app, hence `public/manifest.webmanifest`.
 - **`src/storage.js`** is a three-tier data adapter — `window.storage` (Claude artifact) → Supabase → `localStorage` — exposed as `STORAGE_MODE`. It serves the key/value `site_data` table only, not the normalized schema.
 - **`src/styles/`** is plain CSS, loaded as 8 files with `tokens.css` as the foundation (matte tokens and recipes, both themes via `<html data-theme>`, base elements, motion). Older page styles reach the glass values through alias names (`--ink`, `--fill`, `--primary` ...) defined there. Theme is a required product feature; never hardcode a color that exists as a token.
 - **Shell** (`src/components/layout/`): floating top bar, phone tab bar, stage, `history.js` (history index for back direction and scroll restore). `src/components/common/Modal.jsx` is the one sheet/dialog; pages portal into `.ypl`.

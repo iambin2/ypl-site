@@ -334,9 +334,9 @@ Client/UI는 UX guard일 뿐 canonical integrity boundary가 아니다. RPC/serv
 2026-10-16부터 Production DB가 쓰기 권한의 관문이다 (`docs/db/access_lockdown.sql`, 근거와 검증과 되돌리기는 `docs/db-access-lockdown.md`).
 
 - `ypl_schema_validation` 22개 table과 `public.site_data` 모두 RLS가 켜져 있다. anon은 전부 읽을 수 있다.
-- anon이 쓰는 것은 세 가지뿐이다. 커뮤니티 `site_data` key 두 개(`ypl_showcase_v1`, `ypl_private_brackets_v1`) INSERT/UPDATE, 열린 Event의 신청서 `event_registrations` INSERT (열 단위 grant와 `visitor_apply` 정책), 공식 파티 제출 RPC `submit_registration_team_snapshot` (SECURITY DEFINER, 본문 검사가 관문).
+- anon이 쓰는 것은 네 가지뿐이다. 커뮤니티 `site_data` key 두 개(`ypl_showcase_v1`, `ypl_private_brackets_v1`) INSERT/UPDATE, 열린 Event의 신청서 `event_registrations` INSERT (열 단위 grant와 `visitor_apply` 정책), 공식 파티 제출 RPC `submit_registration_team_snapshot` (SECURITY DEFINER, 본문 검사가 관문), 공지 알림 구독 RPC `save_push_subscription`과 `delete_push_subscription` (SECURITY DEFINER, `docs/db/announcement_push.sql`). `push_subscriptions` table은 anon에게 닫혀 있고 endpoint는 알려진 푸시 서비스만 받는다.
 - 그 밖의 모든 쓰기와 관리자 RPC 실행은 `authenticated` 역할만 가능하고, RLS `admin_write` 정책이 JWT `app_metadata.ypl_admin = true` 를 요구한다. 관리자는 Supabase Auth로 로그인한다 (`src/storage.js` 의 `signInAdmin`).
-- 챔피언스 RPC는 SECURITY INVOKER라 같은 RLS를 거친다. DEFINER로 남은 것은 파티 제출, `ensure_current_ypl_season` 계열, Qualifier direct selection 정리 trigger뿐이다.
+- 챔피언스 RPC는 SECURITY INVOKER라 같은 RLS를 거친다. DEFINER로 남은 것은 파티 제출, 공지 알림 구독, `ensure_current_ypl_season` 계열, Qualifier direct selection 정리 trigger뿐이다.
 - TRUNCATE는 anon과 authenticated 모두에게 없다.
 
 `docs/db/*.sql` 원본의 ACL 줄은 이 상태와 같게 유지한다. 새 함수나 table을 추가하면 anon에게 쓰기나 관리자 RPC 실행을 주지 않는다 (`tests/championsApplicationEventPairRpc.test.mjs` 가 검사한다). broad table write grant, broad anon mutation, ambiguous cascade cleanup을 도입하지 않는다.
