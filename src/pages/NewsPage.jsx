@@ -120,13 +120,13 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         {a.body&&<Reveal className="nb-body card"><Prose text={a.body}/></Reveal>}
         {(a.link||a.link2||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
           {hasForm&&<button className="ann-apply ypl-btn ypl-btn--primary press hl" onClick={()=>setFill(a.id)}>{a.form.buttonLabel||"참가 신청하기"}</button>}
-          {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</button>}
+          {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<button className="ann-apply ann-submit ypl-btn ypl-btn--soft press hl" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</button>}
           {championshipSubmission?.isChampionship&&<>
-            <button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</button>
-            <button className="ann-apply ann-submit ypl-btn ypl-btn--glass press hl" onClick={()=>openBuilder(championshipSubmission.finalEvent.id)}>본선 파티 제출</button>
+            <button className="ann-apply ann-submit ypl-btn ypl-btn--soft press hl" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</button>
+            <button className="ann-apply ann-submit ypl-btn ypl-btn--soft press hl" onClick={()=>openBuilder(championshipSubmission.finalEvent.id)}>본선 파티 제출</button>
           </>}
-          {a.link&&<a className="ann-link ypl-btn ypl-btn--glass press hl" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
-          {a.link2&&<a className="ann-link alt ypl-btn ypl-btn--glass press hl" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
+          {a.link&&<a className="ann-link ypl-btn ypl-btn--soft press hl" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
+          {a.link2&&<a className="ann-link alt ypl-btn ypl-btn--soft press hl" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></a>}
           {admin&&(hasForm||a.form?.eventId)&&<button className="ann-resp ypl-btn ypl-btn--quiet press" onClick={()=>setRespId(a.id)}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></button>}
         </div>}
         {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses

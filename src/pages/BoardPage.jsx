@@ -410,8 +410,8 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         </header>
         <div className="sc-actions">
           <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={14}/></button>
-          <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)}>{imageBusy?"만드는 중…":"이미지 저장"}</button>
-          <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>share(p)}>링크 공유</button>
+          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)}>{imageBusy?"만드는 중…":"이미지 저장"}</button>
+          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>share(p)}>링크 공유</button>
           <button className="bd-del press" onClick={()=>editPost(p)}>수정</button>
           <button className="bd-del press" onClick={()=>delPost(p)}>삭제</button>
         </div>
@@ -441,7 +441,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</button>
       </div>
     </PageHead>
-    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
+    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
     {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
       {list.length===0&&(kw
         ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>

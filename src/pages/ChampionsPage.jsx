@@ -15,22 +15,26 @@ import { onSpriteError } from "../services/teamBuilderCore.js";
 /* 전당의 첫 등장은 사이트에 들어올 때마다 한 번(홈의 아레나와 같은 규칙). 다시 오면 다 켜진 전당이 화면 전환으로 선다. */
 let hallPending = true;
 
-/* 첫 등장, 무겁고 느리게: 천장의 빛줄기가 켜지고, 단상의 원이 가운데에서 바닥에 퍼지고, 파티가 가운데부터 서고,
-   이름이 어둠과 흐림을 벗은 뒤 빛의 띠 하나가 글자를 지나간다. 마지막에 설명과 버튼. 움직임 줄이기에서는 다 켜진 채로 선다. */
+/* 첫 등장은 1초 안에: 천장의 빛줄기가 켜지고, 단상의 원이 가운데에서 바닥에 퍼지고, 파티가 가운데부터 서고,
+   이름이 어둠을 벗은 뒤 빛의 띠 하나가 글자를 지나간다. 마지막에 설명과 버튼. 움직임 줄이기에서는 다 켜진 채로 선다. */
 function openHall(st) {
   const q = s => [...st.querySelectorAll(s)];
   const play = (els, kf, o) => els.forEach(el => el?.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
   const fade = [{ opacity: 0 }, { opacity: 1 }];
-  play([st], fade, { duration: 1600, pseudoElement: "::before" });
-  play([st], fade, { duration: 1600, delay: 200, pseudoElement: "::after" });
+  play([st], fade, { duration: 480, pseudoElement: "::before" });
+  play([st], fade, { duration: 480, delay: 60, pseudoElement: "::after" });
   const floor = st.querySelector(".hx-floor");
-  play([floor], fade, { duration: 1400, delay: 400, pseudoElement: "::before" });
-  play([floor], [{ opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "none" }], { duration: 1800, delay: 500, pseudoElement: "::after" });
+  play([floor], fade, { duration: 420, delay: 120, pseudoElement: "::before" });
+  play([floor], [{ opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "none" }], { duration: 540, delay: 150, pseudoElement: "::after" });
   const mons = q(".hx-mon"), mid = (mons.length - 1) / 2;
-  arrive(mons.sort((a, b) => Math.abs(+a.dataset.i - mid) - Math.abs(+b.dataset.i - mid)), 900, 90);
-  play(q(".hofs-name"), [{ opacity: 0, filter: "blur(24px)" }, { opacity: 1, filter: "blur(0)" }], { duration: 2000, delay: 1300 });
-  q(".hofs-name > span").forEach(el => el.animate([{ backgroundPosition: "100% 0, 0 0" }, { backgroundPosition: "0% 0, 0 0" }], { duration: 2400, delay: 2400, easing: EASE_IN_OUT }));
-  play(q(".hof-stage-who .callout, .hof-plate, .hof-stage > .ypl-btn"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: 900, delay: 2800 });
+  arrive(mons.sort((a, b) => Math.abs(+a.dataset.i - mid) - Math.abs(+b.dataset.i - mid)), 180, 30);
+  play(q(".hofs-name"), fade, { duration: 600, delay: 300 });
+  q(".hofs-band").forEach(band => {
+    const w = band.parentElement.offsetWidth, from = -w / 2, to = w, t = { duration: 900, delay: 600, easing: EASE_IN_OUT };
+    band.animate([{ opacity: 1, transform: `translateX(${from}px)` }, { opacity: 1, transform: `translateX(${to}px)` }], t);
+    band.firstElementChild.animate([{ transform: `translateX(${-from}px)` }, { transform: `translateX(${-to}px)` }], t);
+  });
+  play(q(".hof-stage-who .callout, .hof-plate, .hof-stage > .ypl-btn"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: 480, delay: 420 });
 }
 
 /* ============================== CHAMPIONS ==============================
@@ -93,7 +97,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
     {/* 현 챔피언: 홈 표지와 같은 무대. 홈의 명판처럼 이름을 새기고 그 아래 한 줄에 세대와 시즌을 둔 뒤, 우승 파티가 받침 없이 천장 빛 아래 바닥에 선다. */}
     {reigning && <section className="hof-stage" aria-labelledby="hof-reigning" ref={hallRef}>
       <div className="hof-stage-who">
-        <h2 className="hofs-name" id="hof-reigning"><span>{reigning.name}</span></h2>
+        <h2 className="hofs-name" id="hof-reigning"><span>{reigning.name}<span className="hofs-band" aria-hidden="true"><i>{reigning.name}</i></span></span></h2>
         <span className="callout">{genLabel(reigning)}, {seasonLabel(reigning)} 우승</span>
       </div>
       <PartyStage label="우승 엔트리" members={reigningTeam} dais>{plate(reigningTeam)}</PartyStage>
@@ -143,7 +147,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
         <div className="hofm-gen">{genLabel(c)}, {seasonLabel(c)} 우승</div>
       </div>
       {team.length > 0 && <PartyStage label="우승 엔트리" members={team} enter dais>{plate(team)}</PartyStage>}
-      <div className="modal-actions"><button className="ypl-btn ypl-btn--glass press" onClick={() => setPop(null)}>닫기</button>{go && <button className="ypl-btn ypl-btn--primary press" onClick={() => { setPop(null); go("records", { trainer: c.name }); }}>{c.name} 기록 보기</button>}</div>
+      <div className="modal-actions"><button className="ypl-btn ypl-btn--soft press" onClick={() => setPop(null)}>닫기</button>{go && <button className="ypl-btn ypl-btn--primary press" onClick={() => { setPop(null); go("records", { trainer: c.name }); }}>{c.name} 기록 보기</button>}</div>
     </Modal>; })()}
   </section>);
 }

@@ -1,4 +1,4 @@
-// The YPL Glass design law (DESIGN.md) as a test. Every CSS declaration in src/styles and every inline style={{}} in src
+// The YPL Matte design law (DESIGN.md) as a test. Every CSS declaration in src/styles and every inline style={{}} in src
 // is checked against the scales and rules below. A deliberate exception is listed in EXCEPT under its reason; an exception
 // that no longer occurs fails too, so the list only shrinks. New UI that passes this test needs no separate consistency check.
 import test from "node:test";
@@ -89,7 +89,9 @@ const RULES = {
   "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
   "align: right only for trailing values and number columns (Alignment)": d => d.prop === "text-align" && /right|end/.test(d.value),
   "radius: hero 36, card 32, row 24, textarea 20, tile 12, pill (Space and radius)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
-  "glass: blur only in the glass recipes (Stage and material)": d => /backdrop-filter$/.test(d.prop) && !d.value.startsWith("none") && d.file !== "src/styles/tokens.css",
+  "matte: nothing blurs what is behind it (Material)": d => /backdrop-filter$/.test(d.prop),
+  "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Material)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
+  "matte: shadows are still, a shadow in a transition repaints its element every frame (Motion)": d => /^transition(-property)?$/.test(d.prop) && /box-shadow/.test(d.value),
   "motion: easing only through --ease-* and --spring-* (Motion)": d => /^(transition|animation)/.test(d.prop) && /cubic-bezier|\blinear\(|steps\(|\bease(-in|-out|-in-out)?\b/.test(noVars(d.value)),
   // a spring curve stretched or squeezed feels like a different spring (2026-10-27: 400, 460, 480, 520 and 560ms snappy were all in use)
   "motion: a spring runs at its natural length, var(--dur-snappy) or var(--dur-soft) (Motion)": d => /^(transition|animation)/.test(d.prop)
@@ -108,16 +110,13 @@ const TYPES = ["normal: #9FA19F", "fire: #E62829", "water: #2980EF", "electric: 
 const EXCEPT = {
   "color: literals live only in tokens.css (Color)": {
     "Pokémon type colours are content, not chrome": TYPES,
-    "the sheet's opaque fallback is set beside the sheet": [`${C} | .sheet | --sheet-solid: #181818`, `${C} | :root[data-theme="light"] .sheet | --sheet-solid: #F7F7F7`],
     "a video letterbox is black in both themes": [`${P} | .bd-yt | background: #000`],
   },
   "color: achromatic only (Color B1-B5)": {
     "Pokémon type colours are content, not chrome": TYPES,
   },
   "space: margin, padding and gap sit on the 4px scale (Space and radius)": {
-    "a hairline: the rim mask and the screen-reader clip": [
-      `${C} | :is(.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ann-link, .ann-submit)::before | padding: 1px`,
-      `${T} | .glass::before, .glass-l3::before, .card::before | padding: 1px`, `${T} | .glint > b | padding: 1px`, `${T} | .sr-only | margin: -1px`],
+    "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
       `${S} | .page | padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px)`, `${S} | .page | padding-block: 112px 96px`,
       `${S} | .site-foot-in | padding: var(--s14) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
@@ -276,6 +275,24 @@ test("an X is drawn at its circle's scale: 18, 14 or 12 (law 6)", () => {
 test("an explanatory sentence reads in one grey (law 4)", () => {
   for (const sel of [".bk-hint, .hint", ".callout", ".dd-none"]) assert.deepEqual(decl(sel, "color"), ["var(--fg-2)"], sel);
   assert.deepEqual(decl(".modal > .hint", "color"), [], "a sheet's hint takes the shared grey");
+});
+
+// 2026-11-01 (23rd round): what moves runs on the compositor. A filter, clip or background in a script animation repaints every frame;
+// the home's pointer light held a desktop at 12 frames a second that way.
+test("scripted animations move transform and opacity only (Motion)", () => {
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\(\s*\[[^\]]*\]/g)].filter(([m]) => /\b(filter|clipPath|backgroundPosition|boxShadow|width|height)\s*:/.test(m)).map(([m]) => `${rel(f)}: ${m.slice(0, 80)}`));
+  assert.deepEqual(hits, [], "move it by transform and opacity, or give it a still picture to move");
+});
+test("css keyframes move transform and opacity only (Motion)", () => {
+  const css = readdirSync(STYLES).filter(f => f.endsWith(".css")).map(f => read(join(STYLES, f))).join("\n");
+  const blocks = [...css.matchAll(/@keyframes ([\w-]+) \{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/g)].map(([, name, body]) => ({ name, props: [...body.matchAll(/([\w-]+)\s*:/g)].map(m => m[1]) }));
+  const LOCAL = { "edge-fade-l": "a sideways run's fade, only over its first 32px", "edge-fade-r": "and its last 32px", "row-rise": "one row, once, when a ranking changes", "bk-land": "one bracket slot in the draw ceremony" };
+  assert.ok(blocks.length > 8);
+  assert.deepEqual(blocks.filter(b => !LOCAL[b.name] && b.props.some(p => !["transform", "opacity"].includes(p))).map(b => `${b.name}: ${b.props}`), []);
+});
+test("the bars and the page never hold a backdrop or a page copy (Material, Motion)", () => {
+  assert.doesNotMatch(src("src/components/common/motion.js"), /"ghost"/, "a page change copies nothing");
+  assert.doesNotMatch(TOKENS, /@property --(stage|surface|fg)\b/, "theme change restyles once, under the veil");
 });
 
 test("no View Transitions snapshots (Don't)", () => {

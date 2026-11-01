@@ -1108,10 +1108,10 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       {/* 날짜와 참가 수는 바로 위 대회 머리에 있다. 여기에는 결과만 한 번. */}
       {(res.ru||(res.sf&&res.sf.length>0))&&<Places res={res} nameOf={nameOf}/>}
       <div className="bk-cb-actions">
-        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</button>
-        <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</button>
+        <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</button>
+        <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</button>
         {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>onApply(b,res)}>기록에 반영<Icon n="arrow" size={14}/></button>}
-        {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={undoApplied}>반영 취소</button>}</>}
+        {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={14}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당 등록 실패: ${error?.message||"알 수 없는 오류"}`);}finally{setHallOfFameBusy(false);}}}>{hallOfFameBusy?"명예의 전당 등록 중…":"명예의 전당 재시도"}</button>}{!readOnly&&admin&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={undoApplied}>반영 취소</button>}</>}
       </div>
     </section>}
     {b.eventId&&(admin||!(res&&res.done))&&<SubmissionStatusPanel
@@ -1911,14 +1911,14 @@ function PrivateBrackets({ admin, flash, tabs }){
         <p className="bk-hint">누구나 만들 수 있는 사설 대진표입니다. 결과는 공식 기록, 랭킹, 칭호에 반영되지 않습니다.</p>
         <div className="pb-actions">
           {canEdit
-            ? <>{!admin&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>lock(open.id)}>입력 마치기</button>}
-                {!pbHasPicks(open)&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={busy} onClick={redraw}>다시 추첨</button>}</>
+            ? <>{!admin&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>lock(open.id)}>입력 마치기</button>}
+                {!pbHasPicks(open)&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={busy} onClick={redraw}>다시 추첨</button>}</>
             : <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={askUnlock}>결과 입력</button>}
-          <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={share}>링크 공유</button>
-          <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadBracketPng(pngBracket,nameOf)}>대진표 이미지</button>
-          {res?.done&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={()=>downloadChampionPng(pngBracket,res,nameOf)}>우승 이미지</button>}
-          <button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={busy} onClick={startEdit}>수정</button>
-          {(canEdit||admin)&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press" disabled={busy} onClick={del}>삭제</button>}
+          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={share}>링크 공유</button>
+          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>downloadBracketPng(pngBracket,nameOf)}>대진표 이미지</button>
+          {res?.done&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>downloadChampionPng(pngBracket,res,nameOf)}>우승 이미지</button>}
+          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={busy} onClick={startEdit}>수정</button>
+          {(canEdit||admin)&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={busy} onClick={del}>삭제</button>}
         </div>
         {canEdit&&<p className="bk-hint">이긴 쪽 이름을 누르면 다음 경기로 올라갑니다. 같은 쪽을 다시 누르면 취소됩니다.</p>}
       </header>
@@ -1943,7 +1943,7 @@ function PrivateBrackets({ admin, flash, tabs }){
       </div>
     </PageHead>
     {tabs}
-    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--glass ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
+    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
     {!list&&!loadError?<Loader/>:shown.length===0
       ? (kw?<Empty className="swap" icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
            :<Empty className="swap" title="아직 사설 대진표가 없습니다." desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다.">
@@ -2298,7 +2298,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         {(admin||statusTag(open)==="진행 중")&&<div className="bk-t-row">
           <span className="ypl-chip">{statusTag(open)==="진행 중"&&<i className="live-dot" aria-hidden="true"/>}{statusTag(open)}</span>
         </div>}
-        {!open.readOnly&&admin&&<button className="ypl-btn ypl-btn--glass ypl-btn--sm press bk-del" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}><Icon n="trash" size={16}/>{deletingId===open.id?"삭제 중…":"삭제"}</button>}
+        {!open.readOnly&&admin&&<button className="ypl-btn ypl-btn--soft ypl-btn--sm press bk-del" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}><Icon n="trash" size={16}/>{deletingId===open.id?"삭제 중…":"삭제"}</button>}
       </header>
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
     </div>}

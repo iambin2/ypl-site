@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Vite dev server (http://localhost:5173)
 npm run build    # production build → dist/
 npm run preview  # serve the built dist/
-npm test         # full suite: node --test "tests/*.test.mjs"  (351 tests, including the design law)
+npm test         # full suite: node --test "tests/*.test.mjs"  (363 tests, including the design law)
 npm run data:champions  # rebuild the committed src/data/champions-data.json from Showdown + PokeAPI
                         # (refresh-champions-data.yml does this weekly and opens a PR when it changed)
 npm run font:slices     # re-cut SUIT Variable into unicode-range slices (needs pip install -r scripts/requirements-fonts.txt)
@@ -40,7 +40,7 @@ React 18 + Vite SPA, no router library and no state library.
 - **`src/pages/`** are view components, **`src/components/`** shared UI, **`src/admin/`** the client-side admin mode (editors, modal host, mode bar).
 - **Visitor space** (board 샘플/파티 tabs, 사설 대진표 tab) lives in separate `site_data` keys through `src/services/communityStore.js`; it never touches official data or records. Team sheets (`buildTeamSheet`) feed both the board and the PNG export (`src/components/teamSheetImage.js`).
 - **`src/storage.js`** is a three-tier data adapter — `window.storage` (Claude artifact) → Supabase → `localStorage` — exposed as `STORAGE_MODE`. It serves the key/value `site_data` table only, not the normalized schema.
-- **`src/styles/`** is plain CSS, loaded as 8 files with `tokens.css` as the foundation (glass tokens and recipes, both themes via `<html data-theme>`, base elements, motion). Older page styles reach the glass values through alias names (`--ink`, `--fill`, `--primary` ...) defined there. Theme is a required product feature; never hardcode a color that exists as a token.
+- **`src/styles/`** is plain CSS, loaded as 8 files with `tokens.css` as the foundation (matte tokens and recipes, both themes via `<html data-theme>`, base elements, motion). Older page styles reach the glass values through alias names (`--ink`, `--fill`, `--primary` ...) defined there. Theme is a required product feature; never hardcode a color that exists as a token.
 - **Shell** (`src/components/layout/`): floating top bar, phone tab bar, stage, `history.js` (history index for back direction and scroll restore). `src/components/common/Modal.jsx` is the one sheet/dialog; pages portal into `.ypl`.
 
 ### Data source boundary (read `docs/ARCHITECTURE.md` before touching data code)
@@ -65,12 +65,13 @@ Client-side checks are UX guards only. The RPC/DB layer is the integrity boundar
 
 `PRODUCT.md` and `DESIGN.md` are binding, not background reading, and a frontend change must not alter data behavior.
 
-The visual system is **YPL Glass** (rebuilt 2026-10-07 to 2026-10-11). Its authority is `docs/redesign-glass/DECISIONS.md`; the reference build is `docs/redesign-glass/lab/glass-lab.html`; `DESIGN.md` is the portable summary recorded from the shipped site and must be kept in step. Earlier design systems (silver, WDL, the `docs/design-system/` rulebook) were removed and live only in git history.
+The visual system is **YPL Matte** (rebuilt 2026-11-01 from YPL Glass, which it replaced because everything that moved was being repainted). Its authority is `docs/redesign-glass/DECISIONS.md` (23rd round for the material); the reference build is `docs/redesign-solid/lab/skin-lab.src.html`, skin C; `DESIGN.md` is the portable summary recorded from the shipped site and must be kept in step. The space, type, radius and row laws carried over unchanged from YPL Glass. Earlier design systems (silver, WDL, the `docs/design-system/` rulebook) were removed and live only in git history.
 
 - Achromatic only (graphite, white, grey). No brand hue, no metallic gradient, no status hue; state reads through weight, brightness and inversion.
-- Glass is for whatever floats (bars, sheets, menus, toasts); reading surfaces are opaque. At most four real blurs on one screen.
+- Opaque matte plates for whatever floats, cards for reading; depth comes from tone and one baked sheen. Nothing blurs anything: no `backdrop-filter`, no `filter: blur`.
+- Whatever moves moves by transform and opacity on a picture already drawn; never animate a shadow, filter, clip, mask or background, and never copy the page for a transition. This is what keeps the motion on the compositor; measure with a Tracing paint count before and after.
 - One text face, SUIT Variable, served as unicode-range slices (`scripts/build-suit-slices.py` writes `public/fonts/suit/`, the tokens.css block and the index.html preload; the deploy reruns it, so production always has new copy in slice 0, and committing a local rerun only keeps dev in step); big figures use YPL Figures (`public/fonts/ypl-figures.woff2`, built by `scripts/build-figures.py`). The Wing Y logo (`public/brand/ypl-wing-y.svg`) and the drawn wordmark (`public/brand/ypl-wordmark.svg`) are used as they are, never redrawn.
-- Motion is CSS plus Web Animations, zero dependencies (`src/components/common/motion.js`). Page and theme transitions animate live copies; never View Transitions snapshots.
+- Motion is CSS plus Web Animations, zero dependencies (`src/components/common/motion.js`). Pages and themes change in place (the new page rises, a theme turns under a fading veil); never View Transitions snapshots.
 - Korean copy uses plain prose with **no middle-dot (·) separators**.
 - `tests/designLaw.test.mjs` enforces the measurable rules on all CSS and inline styles. When it fails, fix the value; add to its `EXCEPT` only with a real reason from DESIGN.md, never to silence it.
 - Phone-first: the venue phone is the primary screen; dark first, light equal.

@@ -1320,7 +1320,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
             />
             {(query || searchChips.length > 0) && <button className="tb-clear" onClick={() => { setQuery(""); setSearchChips([]); }} aria-label="검색 조건 모두 지우기"><Icon n="x" size={14} /></button>}
             {showSuggestions && (
-              <div className="dd-menu glass-l3 tb-suggest" id="tb-search-suggest" role="listbox" aria-label="검색 조건 후보">
+              <div className="dd-menu plate-l3 tb-suggest" id="tb-search-suggest" role="listbox" aria-label="검색 조건 후보">
                 {searchSuggestions.map((entry, index) => (
                   <React.Fragment key={`${entry.kind}:${entry.id}`}>
                     {(index === 0 || searchSuggestions[index - 1].kind !== entry.kind) && <div className="tb-suggest-head">{SEARCH_KIND_LABEL[entry.kind]}</div>}

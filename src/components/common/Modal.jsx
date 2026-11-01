@@ -63,7 +63,7 @@ function holdPage(on) {
   recede(on);
 }
 
-/* 대화상자 — 폰은 아래에서 올라오는 글래스 시트(끌어내려 닫기, 손을 뗀 속도를 이어받는 스프링),
+/* 대화상자 — 폰은 아래에서 올라오는 매트 시트(끌어내려 닫기, 손을 뗀 속도를 이어받는 스프링),
    데스크톱은 가운데 창(M5). Esc 와 바깥 누름으로 닫히고, 열려 있는 동안 뒤 페이지는 스크롤되지 않는다.
    title 이 없으면 머리 없이 children 만 그린다(label 이 이름이 된다).
    fly: { from: 누른 요소, selector: 시트 안의 제목 } 이면 시트 제목이 제자리로 살짝 내려앉는다(I2). */
@@ -185,7 +185,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
   const node = (
     <div className="overlay" ref={overlayRef}>
       <div className="scrim" onClick={() => closeRef.current?.()} />
-      <section className={"sheet glass-l3" + (className ? " " + className : "")} role="dialog" aria-modal="true"
+      <section className={"sheet plate-l3" + (className ? " " + className : "")} role="dialog" aria-modal="true"
         aria-labelledby={title !== undefined ? titleId : undefined} aria-label={title !== undefined ? undefined : label}
         tabIndex={-1} ref={sheetRef}>
         <div className="grip" aria-hidden="true" />

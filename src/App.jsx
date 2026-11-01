@@ -10,7 +10,6 @@ import { showBars, useScrollChrome, useStage } from "./components/layout/Stage.j
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { themeFade, transition } from "./components/common/motion.js";
-import { startGlint } from "./components/common/glint.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { signOutAdmin } from "./storage.js";
@@ -53,69 +52,10 @@ const afterPaint = run => requestAnimationFrame(() => setTimeout(run, 0));
 const whenReady = (v, run) => { if (ready(v)) run(); else PAGES[v].preload().then(run, run); };
 
 /* =========================================================================
-   YPL — Yonsei Pokemon League  (Glass, docs/redesign-glass)
+   YPL — Yonsei Pokemon League  (Matte, docs/redesign-glass/DECISIONS.md 23차)
    방문자 조회, 관리자 편집, window.storage(shared) 영구저장
    ========================================================================= */
 const uid = () => Math.random().toString(36).slice(2, 9);
-
-/* (로고 이미지 제거됨) */
-/* (로고 이미지 제거됨) */
-/* (로고 이미지 제거됨) */
-const IMPORTED = {"rankings": [{"key": "era2", "label": "YPL", "rows": [{"name": "정두호", "win": 3, "ru": 5, "top4": 0, "points": 370}, {"name": "이종우", "win": 2, "ru": 2, "top4": 3, "points": 190}, {"name": "김현민", "win": 2, "ru": 3, "top4": 0, "points": 170}, {"name": "이준영", "win": 1, "ru": 0, "top4": 3, "points": 120}, {"name": "김원의", "win": 2, "ru": 0, "top4": 1, "points": 95}, {"name": "이제빈", "win": 1, "ru": 0, "top4": 6, "points": 90}, {"name": "허진욱", "win": 0, "ru": 0, "top4": 4, "points": 50}, {"name": "임소동", "win": 2, "ru": 0, "top4": 0, "points": 45}, {"name": "천승은", "win": 0, "ru": 1, "top4": 0, "points": 40}, {"name": "송하준", "win": 1, "ru": 0, "top4": 1, "points": 40}, {"name": "이병재", "win": 0, "ru": 1, "top4": 0, "points": 40}, {"name": "정재현", "win": 1, "ru": 0, "top4": 0, "points": 30}, {"name": "선동연", "win": 1, "ru": 0, "top4": 0, "points": 25}, {"name": "이종찬", "win": 1, "ru": 0, "top4": 0, "points": 25}, {"name": "이상준", "win": 0, "ru": 0, "top4": 1, "points": 20}, {"name": "김채운", "win": 1, "ru": 0, "top4": 0, "points": 20}, {"name": "성기성", "win": 1, "ru": 0, "top4": 0, "points": 20}, {"name": "신동헌", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "조윤호", "win": 0, "ru": 0, "top4": 1, "points": 20}, {"name": "김장현", "win": 0, "ru": 0, "top4": 1, "points": 20}, {"name": "구태욱", "win": 0, "ru": 0, "top4": 1, "points": 20}, {"name": "이재원", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "김무현", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "김태건", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "김인구", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "손우진", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "김유진", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "강고균", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "이진우", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "이원준", "win": 0, "ru": 0, "top4": 0, "points": 0}, {"name": "김호연", "win": 0, "ru": 0, "top4": 0, "points": 0}]}, {"key": "era1", "label": "클래식", "rows": [{"name": "정두호", "win": 4, "ru": 2, "top4": 6, "points": 290}, {"name": "허진욱", "win": 4, "ru": 0, "top4": 4, "points": 205}, {"name": "이종우", "win": 3, "ru": 2, "top4": 5, "points": 200}, {"name": "이제빈", "win": 2, "ru": 2, "top4": 5, "points": 190}, {"name": "임준하", "win": 2, "ru": 3, "top4": 1, "points": 155}, {"name": "이준영", "win": 1, "ru": 5, "top4": 2, "points": 150}, {"name": "이병재", "win": 2, "ru": 1, "top4": 4, "points": 140}, {"name": "김철수", "win": 1, "ru": 1, "top4": 4, "points": 105}, {"name": "김다온", "win": 2, "ru": 0, "top4": 0, "points": 100}, {"name": "원석호", "win": 1, "ru": 1, "top4": 2, "points": 90}, {"name": "김현민", "win": 1, "ru": 1, "top4": 2, "points": 90}, {"name": "김진헌", "win": 2, "ru": 0, "top4": 4, "points": 90}, {"name": "김지승", "win": 1, "ru": 1, "top4": 1, "points": 80}, {"name": "김원의", "win": 0, "ru": 2, "top4": 4, "points": 80}, {"name": "송수아", "win": 2, "ru": 0, "top4": 0, "points": 70}, {"name": "김장현", "win": 2, "ru": 0, "top4": 1, "points": 70}, {"name": "조윤호", "win": 1, "ru": 0, "top4": 1, "points": 60}, {"name": "경재우", "win": 1, "ru": 0, "top4": 1, "points": 50}, {"name": "김한빈", "win": 0, "ru": 2, "top4": 0, "points": 40}, {"name": "신동헌", "win": 0, "ru": 1, "top4": 1, "points": 30}, {"name": "이상우", "win": 0, "ru": 2, "top4": 0, "points": 30}, {"name": "최재혁", "win": 0, "ru": 1, "top4": 4, "points": 30}, {"name": "이동하", "win": 0, "ru": 1, "top4": 1, "points": 25}, {"name": "박상준", "win": 1, "ru": 0, "top4": 0, "points": 20}, {"name": "한수호", "win": 0, "ru": 0, "top4": 2, "points": 20}, {"name": "이시우", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "이원준", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "정재현", "win": 0, "ru": 0, "top4": 2, "points": 20}, {"name": "이동하", "win": 0, "ru": 1, "top4": 1, "points": 20}, {"name": "서경표", "win": 1, "ru": 0, "top4": 0, "points": 15}, {"name": "남현모", "win": 0, "ru": 1, "top4": 1, "points": 15}, {"name": "송원준", "win": 1, "ru": 0, "top4": 0, "points": 10}, {"name": "이재원", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "류지오", "win": 0, "ru": 0, "top4": 0, "points": 0}, {"name": "김다연", "win": 0, "ru": 1, "top4": 0, "points": 0}, {"name": "조형준", "win": 0, "ru": 1, "top4": 0, "points": 0}, {"name": "김주윤", "win": 0, "ru": 1, "top4": 0, "points": 0}, {"name": "천승은", "win": 0, "ru": 0, "top4": 1, "points": 0}, {"name": "윤태희", "win": 0, "ru": 0, "top4": 1, "points": 0}, {"name": "송하준", "win": 0, "ru": 0, "top4": 0, "points": 0}]}], "seasons": [{"name": "클래식 시즌 1", "rows": [{"name": "이제빈", "win": 1, "ru": 1, "top4": 2, "points": 90}, {"name": "정두호", "win": 1, "ru": 1, "top4": 0, "points": 70}, {"name": "허진욱", "win": 1, "ru": 0, "top4": 2, "points": 70}, {"name": "이종우", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "이병재", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "김다온", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "김한빈", "win": 0, "ru": 2, "top4": 0, "points": 40}, {"name": "신동헌", "win": 0, "ru": 1, "top4": 1, "points": 30}, {"name": "김원의", "win": 0, "ru": 0, "top4": 3, "points": 30}, {"name": "김철수", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "한수호", "win": 0, "ru": 0, "top4": 2, "points": 20}, {"name": "원석호", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "김현민", "win": 0, "ru": 0, "top4": 1, "points": 10}]}, {"name": "클래식 시즌 2", "rows": [{"name": "임준하", "win": 1, "ru": 2, "top4": 1, "points": 100}, {"name": "원석호", "win": 1, "ru": 1, "top4": 1, "points": 80}, {"name": "이병재", "win": 1, "ru": 0, "top4": 2, "points": 70}, {"name": "김철수", "win": 1, "ru": 0, "top4": 1, "points": 60}, {"name": "김다온", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "김지승", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "이종우", "win": 0, "ru": 1, "top4": 2, "points": 40}, {"name": "이제빈", "win": 0, "ru": 1, "top4": 1, "points": 30}, {"name": "김원의", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "정두호", "win": 0, "ru": 0, "top4": 2, "points": 20}, {"name": "허진욱", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "이준영", "win": 0, "ru": 0, "top4": 1, "points": 10}]}, {"name": "클래식 시즌 3", "rows": [{"name": "이준영", "win": 1, "ru": 3, "top4": 0, "points": 100}, {"name": "정두호", "win": 1, "ru": 0, "top4": 2, "points": 70}, {"name": "임준하", "win": 1, "ru": 1, "top4": 0, "points": 55}, {"name": "허진욱", "win": 1, "ru": 0, "top4": 1, "points": 55}, {"name": "김현민", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "송수아", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "김진헌", "win": 1, "ru": 0, "top4": 2, "points": 30}, {"name": "이상우", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "이종우", "win": 1, "ru": 0, "top4": 1, "points": 20}, {"name": "서경표", "win": 1, "ru": 0, "top4": 0, "points": 15}, {"name": "김철수", "win": 0, "ru": 0, "top4": 2, "points": 15}, {"name": "이병재", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "정재현", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "이재원", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "김장현", "win": 1, "ru": 0, "top4": 0, "points": 10}, {"name": "송원준", "win": 1, "ru": 0, "top4": 0, "points": 10}, {"name": "이동하", "win": 0, "ru": 0, "top4": 1, "points": 5}, {"name": "남현모", "win": 0, "ru": 0, "top4": 1, "points": 5}]}, {"name": "클래식 시즌 4", "rows": [{"name": "김장현", "win": 1, "ru": 0, "top4": 1, "points": 60}, {"name": "김진헌", "win": 1, "ru": 0, "top4": 1, "points": 60}, {"name": "정두호", "win": 1, "ru": 0, "top4": 1, "points": 50}, {"name": "경재우", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "조윤호", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "최재혁", "win": 0, "ru": 0, "top4": 4, "points": 30}, {"name": "허진욱", "win": 1, "ru": 0, "top4": 0, "points": 20}, {"name": "이준영", "win": 0, "ru": 1, "top4": 1, "points": 20}, {"name": "이시우", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "송수아", "win": 1, "ru": 0, "top4": 0, "points": 20}, {"name": "박상준", "win": 1, "ru": 0, "top4": 0, "points": 20}, {"name": "김현민", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "김지승", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "이원준", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "이동하", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "이종우", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "이상우", "win": 0, "ru": 1, "top4": 0, "points": 10}, {"name": "남현모", "win": 0, "ru": 1, "top4": 0, "points": 10}]}, {"name": "YPL 시즌 1", "rows": [{"name": "김현민", "win": 1, "ru": 0, "top4": 0, "points": 30}, {"name": "정재현", "win": 1, "ru": 0, "top4": 0, "points": 30}, {"name": "이종우", "win": 1, "ru": 1, "top4": 0, "points": 20}, {"name": "신동헌", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "이제빈", "win": 2, "ru": 0, "top4": 1, "points": 10}, {"name": "이재원", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "허진욱", "win": 2, "ru": 0, "top4": 1, "points": 10}, {"name": "김원의", "win": 1, "ru": 0, "top4": 1, "points": 10}]}, {"name": "YPL 시즌 2", "rows": [{"name": "정두호", "win": 1, "ru": 0, "top4": 0, "points": 60}, {"name": "김현민", "win": 0, "ru": 1, "top4": 0, "points": 40}, {"name": "이상준", "win": 0, "ru": 0, "top4": 1, "points": 20}, {"name": "이제빈", "win": 0, "ru": 0, "top4": 1, "points": 20}, {"name": "김원의", "win": 0, "ru": 0, "top4": 0, "points": 25}, {"name": "선동연", "win": 0, "ru": 0, "top4": 0, "points": 25}, {"name": "임소동", "win": 0, "ru": 0, "top4": 0, "points": 25}, {"name": "이종찬", "win": 0, "ru": 0, "top4": 0, "points": 25}, {"name": "이종우", "win": 0, "ru": 0, "top4": 0, "points": 10}, {"name": "김유진", "win": 0, "ru": 0, "top4": 0, "points": 10}, {"name": "강고균", "win": 0, "ru": 0, "top4": 0, "points": 10}, {"name": "이진우", "win": 0, "ru": 0, "top4": 0, "points": 10}]}], "tournaments": [{"key": "pycup", "label": "클래식 파이컵", "color": "#9FB3C8", "rounds": [{"date": "2023.05", "round": "1", "win": "김다온", "ru": "김한빈", "sf": ["이제빈", "허진욱"], "rule": "랜덤 배틀"}, {"date": "2023.06", "round": "2", "win": "정두호", "ru": "이제빈", "sf": ["김원의", "허진욱"], "rule": "NPC 배틀 1"}, {"date": "2023.07", "round": "3", "win": "이제빈", "ru": "김한빈", "sf": ["한수호", "김원의"], "rule": "4세대 NPC컵"}, {"date": "2023.08", "round": "4", "win": "허진욱", "ru": "정두호", "sf": ["김현민", "원석호"], "rule": "로또 배틀"}, {"date": "2023.09", "round": "5", "win": "이병재", "ru": "김철수", "sf": ["신동헌", "한수호"], "rule": "NPC 배틀 2"}, {"date": "2023.10", "round": "6", "win": "이종우", "ru": "신동헌", "sf": ["이제빈", "김원의"], "rule": "드래프트"}, {"date": "2023.11", "round": "1시즌 챔피언스 시리즈", "win": "정두호", "ru": "이종우", "sf": ["이병재", "이제빈"], "rule": ""}, {"date": "2023.11", "round": "7", "win": "김다온", "ru": "임준하", "sf": ["정두호", "이병재"], "rule": "NPC 배틀 3"}, {"date": "2023.12", "round": "8", "win": "이병재", "ru": "이제빈", "sf": ["이종우", "원석호"], "rule": "스위치 63배틀"}, {"date": "2024.01", "round": "9", "win": "임준하", "ru": "원석호", "sf": ["김철수", "이제빈"], "rule": "미션 배틀"}, {"date": "2024.02", "round": "10", "win": "김철수", "ru": "김원의", "sf": ["이병재", "정두호"], "rule": "VGC 2023"}, {"date": "2024.03", "round": "11", "win": "원석호", "ru": "임준하", "sf": ["허진욱", "이종우"], "rule": "NPC 배틀 4"}, {"date": "2024.04", "round": "12", "win": "김지승", "ru": "이종우", "sf": ["이준영", "임준하"], "rule": "6세대 배틀"}, {"date": "2024.04", "round": "2시즌 챔피언스 시리즈", "win": "이종우", "ru": "김원의", "sf": ["김지승", "김철수"], "rule": ""}, {"date": "2024.05", "round": "13", "win": "김현민", "ru": "이준영", "sf": ["정두호", "이병재"], "rule": "LC컵"}, {"date": "2024.06", "round": "14", "win": "정두호", "ru": "이준영", "sf": ["정재현", "김진헌"], "rule": "최애, 빌리겠습니다."}, {"date": "2024.07", "round": "15", "win": "임준하", "ru": "이준영", "sf": ["허진욱", "김철수"], "rule": "멀티 배틀"}, {"date": "2024.07", "round": "", "win": "서경표", "ru": "이재원", "sf": ["이동하", "남현모"], "rule": "멀티 배틀"}, {"date": "2024.08", "round": "16", "win": "허진욱", "ru": "임준하", "sf": ["정두호", "이종우"], "rule": "초전설전"}, {"date": "2024.09", "round": "17", "win": "이준영", "ru": "이상우", "sf": ["김철수", "김진헌"], "rule": "5세대 NPC컵"}, {"date": "2024.10", "round": "18", "win": "송수아", "ru": "이병재", "sf": [], "rule": "리그전"}, {"date": "2024.10", "round": "", "win": "이종우", "ru": "김다연", "sf": [], "rule": ""}, {"date": "2024.10", "round": "", "win": "김진헌", "ru": "조형준", "sf": [], "rule": ""}, {"date": "2024.10", "round": "", "win": "김장현", "ru": "김주윤", "sf": [], "rule": ""}, {"date": "2024.10", "round": "", "win": "송원준", "ru": "최재혁", "sf": [], "rule": ""}, {"date": "2024.11", "round": "3시즌 챔피언스 시리즈", "win": "허진욱", "ru": "이준영", "sf": ["정두호", "김현민"], "rule": ""}, {"date": "2024.11", "round": "19", "win": "김진헌", "ru": "김지승", "sf": ["김장현", "김원의"], "rule": "최애몬, 빌리겠습니다."}, {"date": "2024.12", "round": "20", "win": "김장현", "ru": "이시우", "sf": ["최재혁", "이준영"], "rule": "VGC 2024 Reg H"}, {"date": "2025.01", "round": "21", "win": "정두호", "ru": "김현민", "sf": ["최재혁", "이종우"], "rule": "15달러 챌린지"}, {"date": "2025.02", "round": "22", "win": "허진욱", "ru": "이준영", "sf": ["정두호", "김진헌"], "rule": "NPC 랜덤뽑기 팀전"}, {"date": "2025.02", "round": "", "win": "박상준", "ru": "남현모", "sf": ["경재우", "최재혁"], "rule": ""}, {"date": "2025.02", "round": "", "win": "송수아", "ru": "이상우", "sf": ["천승은", "윤태희"], "rule": ""}, {"date": "2025.03", "round": "23", "win": "경재우", "ru": "이원준", "sf": ["최재혁", "이제빈"], "rule": "BW2 스토리"}, {"date": "2025.04", "round": "24", "win": "조윤호", "ru": "이동하", "sf": ["정재현", "김진헌"], "rule": "NPC 배틀 5"}, {"date": "2025.05", "round": "4시즌 챔피언스 시리즈", "win": "이제빈", "ru": "정두호", "sf": ["조윤호", "이종우"], "rule": ""}]}, {"key": "pylite", "label": "파이컵 라이트", "color": "#BFD2E2", "rounds": [{"date": "2024.10", "round": "1", "win": "김지승"}, {"date": "2025.01", "round": "2", "win": "정두호"}, {"date": "2025.02", "round": "3", "win": "정두호"}, {"date": "2025.02", "round": "", "win": "이제빈"}, {"date": "2025.02", "round": "", "win": "류지오"}, {"date": "2025.03", "round": "4", "win": "송하준"}]}, {"key": "master", "label": "마스터 리그", "color": "#2FA2D8", "rounds": [{"date": "2025.06", "round": "1", "win": "김현민", "ru": "이종우", "sf": ["이제빈", "허진욱"], "rule": "VGC Reg I 팀전"}, {"date": "2025.06", "round": "", "win": "정재현", "ru": "신동헌", "sf": ["이재원", "김원의"], "rule": ""}, {"date": "2025.07", "round": "2", "win": "이준영", "ru": "정두호", "sf": ["이제빈", "조윤호"], "rule": "모노타입"}, {"date": "2025.08.02", "round": "3", "win": "김현민", "ru": "정두호", "sf": ["이준영", "이종우"], "rule": "갓챠!"}, {"date": "2025.09", "round": "4", "win": "관동 레즈", "ru": "알로라 가디언즈", "sf": [], "rule": "6세대 63 팀전", "winMembers": ["이제빈", "송하준", "김채운", "성기성", "임소동"], "ruMembers": ["정두호", "김무현", "김태건", "김인구", "손우진"], "team": true}, {"date": "2025.10", "round": "5", "win": "이종우", "ru": "정두호", "sf": ["송하준", "이준영"], "rule": "NPC 대회"}, {"date": "2025.11.26", "round": "6", "win": "이종우", "ru": "천승은", "sf": ["김장현", "이제빈"], "rule": "모험! 미르시티!"}, {"date": "2026.01.27", "round": "7", "win": "정두호", "ru": "이병재", "sf": ["이준영", "허진욱"], "rule": "배틀! 언더독 라이징!"}, {"date": "2026.02.21", "round": "1", "win": "정두호", "ru": "김현민", "sf": ["이종우", "이제빈"], "rule": "챔피언스리그"}, {"date": "2026.03.21", "round": "8", "win": "정두호", "ru": "김현민", "sf": ["이상준", "이제빈"], "rule": "데스티니 컵"}, {"date": "2026.04.12", "round": "9", "win": "성도 울브즈", "ru": "칼로스 제니스", "sf": [], "rule": "7세대 63 팀전", "winMembers": ["김원의", "선동연", "임소동", "이종찬"], "ruMembers": ["이종우", "김유진", "강고균", "이진우"], "team": true}, {"date": "2026.05.02", "round": "10", "win": "김원의", "ru": "정두호", "sf": ["구태욱", "허진욱"], "rule": "VGC M-A Champions"}]}, {"key": "rookie", "label": "루키 리그", "color": "#5BC8B0", "rounds": [{"date": "2025.07", "round": "2", "win": "천승은"}, {"date": "2025.08.02", "round": "3", "win": "김원의"}, {"date": "2025.10.25", "round": "4", "win": "이원준"}, {"date": "2025.11.26", "round": "6", "win": "이상우"}, {"date": "2026.01.27", "round": "7", "win": "이상준"}, {"date": "2026.03.15", "round": "8", "win": "김호연"}, {"date": "2026.05.02", "round": "10", "win": "손우진"}]}], "pokecup": {"rows": [{"name": "이시우", "win": 1, "ru": 1, "top4": 0, "points": 70}, {"name": "박상준", "win": 1, "ru": 0, "top4": 1, "points": 60}, {"name": "이병재", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "정재현", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "남현모", "win": 0, "ru": 1, "top4": 0, "points": 20}, {"name": "정두호", "win": 0, "ru": 1, "top4": 2, "points": 40}, {"name": "허진욱", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "곽준우", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "이재원", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "곽준우", "win": 1, "ru": 0, "top4": 0, "points": 50}, {"name": "김진헌", "win": 0, "ru": 0, "top4": 1, "points": 10}, {"name": "김민재", "win": 0, "ru": 0, "top4": 1, "points": 10}], "rounds": [{"date": "2024년 11월", "round": "1"}, {"date": "2024년 12월", "round": "2"}, {"date": "2025.01", "round": "3"}, {"date": "2025.02", "round": "4"}]}};
-/* 포켓몬 이미지: 팀전 엔트리에서만 쓰이므로 최초 사용 시점까지 평가를 미룹니다(초기 로딩 최적화) */
-/* ============================== 시드 ============================== */
-const SEED = {
-  meta: {
-    fullName: "Yonsei Pokémon League",
-    tagline: "포켓몬 센터 연세점 공식 배틀 리그",
-    intro: "포센연이 운영하는 자체 배틀 리그입니다. 모든 트레이너의 성적과 칭호, 명예의 전당을 한곳에 기록합니다.",
-    currentChampion: "정두호", currentChampionGen: "5대",
-  },
-  champions: [
-    { id:uid(), gen:"초대", season:1, slabel:"CLASSIC SEASON 1", name:"정두호", team:["이어롭","픽시","해피너스","다투곰(블러드문)","무장조","더시마사리"] },
-    { id:uid(), gen:"2대", season:2, slabel:"CLASSIC SEASON 2", name:"이종우", team:["번치코","어래곤","타부자고","껍질몬","모토마","클레피"] },
-    { id:uid(), gen:"3대", season:3, slabel:"CLASSIC SEASON 3", name:"허진욱", team:["코터스","꿰뚫는화염","날뛰는우레","굽이치는물결","드레디어(히스이)","쉐이미(스카이폼)"] },
-    { id:uid(), gen:"4대", season:4, slabel:"CLASSIC SEASON 4", name:"이제빈", team:["오거폰(물)","아머까오","드닐레이브","루카리오","윈디","눈설왕"] },
-    { id:uid(), gen:"5대", season:5, slabel:"YPL SEASON 1", name:"정두호", team:["맘복치","오롱털","다투곰","그우린차","썬더볼트","파밀리쥐"] },
-  ],
-  titleGroups: [
-    { id:uid(), key:"champion", name:"역대 챔피언", icon:"👑", desc:"챔피언스 시리즈 우승", items:[
-      {id:uid(),name:"초대 챔피언",holders:["정두호"]},{id:uid(),name:"2대 챔피언",holders:["이종우"]},
-      {id:uid(),name:"3대 챔피언",holders:["허진욱"]},{id:uid(),name:"4대 챔피언",holders:["이제빈"]},
-      {id:uid(),name:"5대 챔피언",holders:["정두호"]} ]},
-    { id:uid(), key:"type", name:"타입 엑스퍼트", icon:"⚡", desc:"같은 타입만 사용해서 개인전 4강 이상 진출", items:[
-      {id:uid(),name:"노말 엑스퍼트",holders:["정두호","김진헌"]},{id:uid(),name:"격투 엑스퍼트",holders:[]},
-      {id:uid(),name:"비행 엑스퍼트",holders:["조윤호"]},{id:uid(),name:"독 엑스퍼트",holders:["이원준"]},
-      {id:uid(),name:"땅 엑스퍼트",holders:["김철수","정두호"]},{id:uid(),name:"바위 엑스퍼트",holders:["이제빈"]},
-      {id:uid(),name:"벌레 엑스퍼트",holders:["이제빈"]},{id:uid(),name:"고스트 엑스퍼트",holders:["이준영"]},
-      {id:uid(),name:"강철 엑스퍼트",holders:[]},{id:uid(),name:"불꽃 엑스퍼트",holders:[]},
-      {id:uid(),name:"물 엑스퍼트",holders:["이준영"]},{id:uid(),name:"풀 엑스퍼트",holders:["장서영"]},
-      {id:uid(),name:"전기 엑스퍼트",holders:[]},{id:uid(),name:"에스퍼 엑스퍼트",holders:["이제빈","천승은"]},
-      {id:uid(),name:"얼음 엑스퍼트",holders:[]},{id:uid(),name:"드래곤 엑스퍼트",holders:[]},
-      {id:uid(),name:"악 엑스퍼트",holders:[]},{id:uid(),name:"페어리 엑스퍼트",holders:["김다온","김원의"]} ]},
-    { id:uid(), key:"region", name:"지방 엘리트", icon:"🗺️", desc:"같은 세대의 포켓몬만 사용해서 개인전 4강 이상 진출 (리전폼은 해당 지역 세대 기준)", items:[
-      {id:uid(),name:"관동 엘리트",holders:[]},{id:uid(),name:"성도 엘리트",holders:["이제빈"]},
-      {id:uid(),name:"호연 엘리트",holders:[]},{id:uid(),name:"신오 엘리트",holders:[]},
-      {id:uid(),name:"히스이 엘리트",holders:["김장현"]},{id:uid(),name:"하나 엘리트",holders:["임준하","정두호"]},
-      {id:uid(),name:"칼로스 엘리트",holders:[]},{id:uid(),name:"알로라 엘리트",holders:["임준하"]},
-      {id:uid(),name:"가라르 엘리트",holders:[]},{id:uid(),name:"팔데아 엘리트",holders:[]} ]},
-    { id:uid(), key:"partner", name:"파트너", icon:"🤝", desc:"같은 포켓몬으로 2회 이상 우승", items:[
-      {id:uid(),name:"이병재",holders:["찌르호크"]},
-      {id:uid(),name:"정두호",holders:["이어롭","픽시","해피너스","다투곰"]},
-      {id:uid(),name:"이종우",holders:["마릴리","이어롭","텅비드"]} ]},
-    { id:uid(), key:"etc", name:"기타 칭호", icon:"🎖️", desc:"특수 조건을 달성한 트레이너에게 주어지는 칭호", items:[
-      {id:uid(),name:"슈퍼루키",desc:"루키 리그 우승",holders:["천승은","김원의","이원준","이상준","김호연","손우진"]},
-      {id:uid(),name:"버스드라이버",desc:"전승으로 팀전 우승",holders:["송수아"]} ]},
-    { id:uid(), key:"event", name:"이벤트 칭호", icon:"🎉", desc:"파이컵 라이트 등 이벤트 대회 우승", items:[
-      {id:uid(),name:"끝말잇기",holders:["김지승"]},{id:uid(),name:"몽키매직",holders:["정두호"]},
-      {id:uid(),name:"전화기",holders:["정두호","이제빈","류지오"]},{id:uid(),name:"초신성",holders:["송하준"]},
-      {id:uid(),name:"메가진화의 계승자",holders:["이종우"]},{id:uid(),name:"RED",holders:["구태욱"]} ]},
-  ],
-  announcements: [],
-  brackets: [],
-  board: [],
-  ...IMPORTED,
-};
 
 /* 저장된(Supabase) 데이터의 일부 텍스트를 최신 표기로 교정 — 로드 시 메모리에서 적용 */
 function normalizeData(d){
@@ -136,7 +76,8 @@ export default function App() {
   const [data,setData]=useState(null); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
   const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(null); const [modal,setModal]=useState(null);
   const [more,setMore]=useState(null);
-  useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||SEED)))();},[]);
+  // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
+  useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
   // 다크가 기본이다(B1). 라이트를 고른 기록이 있을 때만 라이트로 연다.
   const [dark,setDark]=useState(()=>{
     try{ return localStorage.getItem("ypl-theme")!=="light"; }catch(e){ return true; }
@@ -150,7 +91,7 @@ export default function App() {
     const root=document.documentElement;
     root.dataset.theme=dark?"dark":"light";
     root.style.colorScheme=dark?"dark":"light";
-    document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#0a0a0a":"#e7e7e7"));
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#0b0b0b":"#e4e4e4"));
   },[dark]);
   useEffect(()=>{ try{ localStorage.setItem("ypl-theme", dark?"dark":"light"); }catch(e){} },[dark]);
   /* 탭 제목 — 뒤로 가기 목록과 브라우저 탭에서 어디에 있었는지 구분되게 화면 이름을 붙인다. */
@@ -159,14 +100,13 @@ export default function App() {
     document.title=label?`${label} | YPL`:"YPL | Yonsei Pokémon League";
   },[view]);
   useScrollChrome();
-  useEffect(()=>{ startGlint(); },[]);
   useEffect(()=>{
     initHistory();
     const onPopState=()=>{
       const {from,to,shared,scrollY}=popped();
       const next=readInitialAppView(window.location.search);
       // 기록을 따르는 페이지 상태(열린 대진표)는 popHandlers 로 전환 안에서 바꾼다.
-      // 지금 화면을 복사한 다음, 페이지의 바뀐 화면까지 한 번에 그려야 공유 요소가 제자리를 찾는다.
+      // 공유 요소의 자리를 잰 다음, 페이지의 바뀐 화면까지 한 번에 그려야 그 요소가 제자리를 찾는다.
       leadPills(next);
       afterPaint(()=>whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);}),{dir:to<from?"back":"forward",shared,scrollY})));
       showBars();
@@ -200,8 +140,8 @@ export default function App() {
       if(v==="home") url.searchParams.delete("view"); else url.searchParams.set("view",v);
       if(inside||url.href!==window.location.href) pushHistory({view:v},url);
     }
-    // I1: 지금 화면은 살아 있는 복사본으로 사라지고, 새 화면은 맨 위에서 살짝 위로 올라온다.
-    // 누름의 반응이 먼저다: 알약을 이 프레임에 출발시키고, 복사와 새 페이지 그리기는 그 프레임이 나간 뒤에 한다.
+    // I1: 지금 화면은 바로 비키고, 새 화면이 맨 위에서 살짝 위로 올라온다.
+    // 누름의 반응이 먼저다: 알약을 이 프레임에 출발시키고, 새 페이지 그리기는 그 프레임이 나간 뒤에 한다.
     leadPills(v);
     afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
     showBars();
@@ -274,9 +214,10 @@ export default function App() {
   // 한 번에 하나씩, 앞 조각이 다 들어온 뒤 다음 한가한 틈에: 모두 한꺼번에 평가하면 폰에서 화면이 한동안 굳는다.
   const loaded=Boolean(data);
   // 계산기는 빼 둔다: 데미지 엔진의 평가만 폰에서 수백 ms라 한가한 틈에도 화면이 굳는다. 그 화면으로 갈 기색(더보기 열기, 탭에 손이나 포인터)이 보일 때 받는다.
+  // 명예의 전당도 뺀다: 옛 파티 이미지 표(legacyPartyImages, 압축해도 248KB)를 달고 와 첫 방문 전송량의 30%를 차지했다.
   useEffect(()=>{
     if(!loaded||navigator.connection?.saveData) return undefined;
-    const queue=Object.values(PAGES).filter(p=>p!==CalculatorPage);
+    const queue=Object.values(PAGES).filter(p=>p!==CalculatorPage&&p!==ChampionsPage);
     let handle=null, stopped=false;
     const later=f=>window.requestIdleCallback?window.requestIdleCallback(f,{timeout:2000}):setTimeout(f,400);
     const next=()=>{ if(stopped||!queue.length) return; handle=later(()=>{ if(!stopped) queue.shift().prefetch().then(next); }); };
@@ -290,7 +231,7 @@ export default function App() {
   },[]);
   const logout=()=>{ signOutAdmin(); setAdmin(false); };
   const onAdmin=()=>{ setMore(null); admin?logout():setModal({type:"login"}); };
-  const toggleMore=el=>{ if(!more) CalculatorPage.prefetch(); setMore(m=>m?null:el); };
+  const toggleMore=el=>{ if(!more){ CalculatorPage.prefetch(); ChampionsPage.prefetch(); } setMore(m=>m?null:el); };
   const wideNav=useWideNav();
   const moreItems=[
     ...MORE_ITEMS.map(([key,label,icon])=>({key,label,icon,current:view===key,onSelect:()=>go(key)})),
@@ -304,6 +245,7 @@ export default function App() {
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
         moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null}/>
+      <div className="edge-t" aria-hidden="true"/><div className="edge-b" aria-hidden="true"/>
 
       <div className="wrap"><main className="page" id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>

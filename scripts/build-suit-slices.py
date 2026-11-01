@@ -1,9 +1,11 @@
 """SUIT Variable, cut into unicode-range slices so a visit downloads only the glyphs it shows.
 
 The source stays public/fonts/SUIT-Variable.woff2 (v2.0.5, OFL; the labs and the OG card still read it).
-Slice 0 holds every non-Hangul glyph (all Latin kerning stays inside one file) plus each Hangul syllable
-that appears anywhere in src/ or index.html: the UI copy, the legacy records and the Pokemon names.
-That covers practically every screen, so it is the one file index.html preloads.
+Slice 0 holds every non-Hangul glyph (all Latin kerning stays inside one file) plus each Hangul syllable of the
+UI copy in src/ and index.html, so it is the one file index.html preloads.
+Slice g holds the syllables only the game data has (Pokemon, moves, items in src/data). They were half of slice 0
+and no first screen shows them, so this file comes only when a page shows one. Do not prefetch it: a link
+prefetch starts during the load and the font request then downloads it a second time.
 The other syllables go into contiguous slices across U+AC00-D7A3, fetched only when a page shows one.
 SUIT has no Hangul kerning, so splitting Hangul changes no rendering; every slice keeps the same metrics,
 the wght axis and all layout features, and gains the HVAR table the source lacks (advances without outlines).
@@ -32,9 +34,12 @@ HANGUL = range(0xAC00, 0xD7A4)
 
 
 def corpus():
+    """Characters of the UI copy, and of the game data."""
     paths = [p for p in glob.glob(os.path.join(ROOT, "src/**/*.*"), recursive=True)
              if p.endswith((".js", ".jsx", ".mjs", ".json", ".css"))] + [INDEX]
-    return {ord(c) for p in paths for c in open(p, encoding="utf-8", errors="ignore").read()}
+    data = os.path.join(ROOT, "src", "data") + os.sep
+    read = lambda ps: {ord(c) for p in ps for c in open(p, encoding="utf-8", errors="ignore").read()}
+    return read(p for p in paths if not p.startswith(data)), read(p for p in paths if p.startswith(data))
 
 
 def build(unicodes):
@@ -75,9 +80,10 @@ def fmt(ranges):
 def main():
     cmap = TTFont(SOURCE).getBestCmap()
     hangul = sorted(c for c in cmap if c in HANGUL)
-    used = corpus()
-    core = sorted(c for c in cmap if c not in HANGUL or c in used)
-    rest = [c for c in hangul if c not in used]
+    ui, data = corpus()
+    core = sorted(c for c in cmap if c not in HANGUL or c in ui)
+    game = [c for c in hangul if c in data and c not in ui]
+    rest = [c for c in hangul if c not in ui and c not in data]
 
     size = -(-len(rest) // REST_SLICES)
     groups = [rest[i:i + size] for i in range(0, len(rest), size)]
@@ -86,13 +92,15 @@ def main():
         lo = HANGUL.start if i == 0 else group[0]
         hi = groups[i + 1][0] - 1 if i + 1 < len(groups) else HANGUL.stop - 1
         slices.append((group, fmt([(lo, hi)])))
+    slices.append((game, fmt(runs(game, hangul))))
     slices.append((core, fmt(runs(core, cmap))))
 
     os.makedirs(OUT_DIR, exist_ok=True)
     for old in glob.glob(os.path.join(OUT_DIR, "suit-*.woff2")):
         os.remove(old)
     rules, names = [], []
-    for n, (cps, urange) in enumerate([slices[-1]] + slices[:-1]):
+    tags = [0, *range(1, len(groups) + 1), "g"]  # slice 0 first, the rest, then the game data
+    for n, (cps, urange) in zip(tags, [slices[-1]] + slices[:-1]):
         data = build(cps)
         name = f"suit-{n}.{hashlib.sha256(data).hexdigest()[:8]}.woff2"
         with open(os.path.join(OUT_DIR, name), "wb") as f:

@@ -200,7 +200,7 @@ function TrainerView({ snapshot, onOpen }) {
         </ul>
       ) : <Empty title="검색 결과가 없습니다." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
-        <button type="button" className="ypl-btn ypl-btn--glass press ypl-table-more" onClick={() => setAll(true)}>{visible.length}명 전체 보기</button>
+        <button type="button" className="ypl-btn ypl-btn--soft press ypl-table-more" onClick={() => setAll(true)}>{visible.length}명 전체 보기</button>
       )}
     </div>
   );
@@ -331,7 +331,7 @@ function FilterRow({ value, onChange, options, label }) {
     <div className="rc-filter" role="group" aria-label={label}>
       {options.map(([key, text]) => (
         <button key={key} type="button" aria-pressed={key === value} onClick={() => onChange(key)}
-          className={"ypl-btn ypl-btn--sm press " + (key === value ? "ypl-btn--primary" : "ypl-btn--glass")}>{text}</button>
+          className={"ypl-btn ypl-btn--sm press " + (key === value ? "ypl-btn--primary" : "ypl-btn--soft")}>{text}</button>
       ))}
     </div>
   );
@@ -604,7 +604,7 @@ function PokemonView({ snapshot }) {
         </ul>
       ) : <Empty title="검색 결과가 없습니다." />}
       {!all && !normalized && visible.length > LIST_SHOWN && (
-        <button type="button" className="ypl-btn ypl-btn--glass press ypl-table-more" onClick={() => setAll(true)}>{visible.length}종 전체 보기</button>
+        <button type="button" className="ypl-btn ypl-btn--soft press ypl-table-more" onClick={() => setAll(true)}>{visible.length}종 전체 보기</button>
       )}
       {current && (
         <Modal label={`${current.name} 기록`} className="rc-sheet" onClose={() => setOpen(null)} fly={{ from: open.from, selector: ".rc-lead-title" }}>

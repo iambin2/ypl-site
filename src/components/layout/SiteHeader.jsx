@@ -34,7 +34,7 @@ export function Wordmark() {
   );
 }
 
-/* G3: 데스크톱은 화면 가장자리에서 떨어진 알약형 글래스 바, 폰은 같은 바에 로고와 테마 버튼만.
+/* G3: 데스크톱은 화면 가장자리에서 떨어진 알약형 매트 바, 폰은 같은 바에 로고와 테마 버튼만.
    바의 폭은 본문과 같아 가장자리가 본문과 한 줄에 맞는다. 넓은 데스크톱은 더보기가 없어 관리자 로그인이 테마 버튼 옆에 선다(onAdmin). */
 export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, moreOpen, onMore, onAdmin }) {
   const nav = useRef(null);
@@ -43,7 +43,7 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
   usePill(nav, cur + (wide ? ":wide" : ""));
   const themeLabel = dark ? "라이트 테마로 바꾸기" : "다크 테마로 바꾸기";
   return (
-    <header className="topbar glass">
+    <header className="topbar plate">
       <button type="button" className="brand press" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
         <span className="brand-logo"><BrandMark /></span><Wordmark />
       </button>

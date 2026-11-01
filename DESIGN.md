@@ -1,30 +1,34 @@
 ---
-name: YPL — Yonsei Pokémon League (Glass)
-description: "The league site of record for Pokémon Center Yonsei: achromatic glass floating over a graphite stage lit from directly above; opaque reading surfaces; iOS springs; dark first, light equal."
-source: "docs/redesign-glass/DECISIONS.md (authority) and docs/redesign-glass/lab/glass-lab.html (reference build); recorded from the shipped src/ on 2026-10-11"
+name: YPL — Yonsei Pokémon League (Matte)
+description: "The league site of record for Pokémon Center Yonsei: achromatic matte plates over a graphite stage lit from directly above; nothing blurs, everything that moves moves on the compositor; iOS springs; dark first, light equal."
+source: "docs/redesign-glass/DECISIONS.md (authority, 23rd round for the material) and docs/redesign-solid/lab/skin-lab.src.html (skin C, reference build); recorded from the shipped src/"
 colors:
   dark:
-    stage: "#0A0A0A"
-    surface: "#161616"
-    surface-2: "#1F1F1F"
-    surface-3: "#2B2B2B"
+    stage: "#0B0B0B"
+    surface: "#171717"
+    surface-2: "#222222"
     fg: "#F5F5F5"
     fg-2: "#B0B0B0"
-    fg-3: "#8C8C8C"
+    fg-3: "#9A9A9A"
+    plate: "#222222"
+    plate-l3: "#1B1B1B"
+    lens: "#3C3C3C"
     accent: "#F5F5F5"
     on-accent: "#0A0A0A"
-    rank: ["#FFFFFF", "#CFCFCF", "#A6A6A6", "#8C8C8C"]
+    rank: ["#FFFFFF", "#CFCFCF", "#A6A6A6", "#9A9A9A"]
   light:
-    stage: "#E7E7E7"
+    stage: "#E4E4E4"
     surface: "#FFFFFF"
-    surface-2: "#F3F3F3"
-    surface-3: "#E6E6E6"
+    surface-2: "#F4F4F4"
     fg: "#0A0A0A"
     fg-2: "#525252"
-    fg-3: "#6B6B6B"
+    fg-3: "#5F5F5F"
+    plate: "#F7F7F7"
+    plate-l3: "#FAFAFA"
+    lens: "#FFFFFF"
     accent: "#0A0A0A"
     on-accent: "#FFFFFF"
-    rank: ["#000000", "#3D3D3D", "#5E5E5E", "#6B6B6B"]
+    rank: ["#000000", "#3D3D3D", "#5E5E5E", "#5F5F5F"]
 typography:
   family: "SUIT Variable (source public/fonts/SUIT-Variable.woff2, served as unicode-range slices in public/fonts/suit/ by scripts/build-suit-slices.py) for all text and every number; YPL Figures (public/fonts/ypl-figures.woff2) belongs to the brand only"
   scale: { display: "40-64px / 800 (--display), home steps one golden ratio apart: the drawn name at display x1.618, figures display x2.618", title: "28-36px / 800", sizes: "12 13 15 16 17 20 24 28", weights: "400 text, 600 rows labels buttons chips, 700 headlines 20px and up, 800 titles names and figures" }
@@ -41,10 +45,10 @@ motion:
   ease-in: "cubic-bezier(.5,0,.75,0)"
 ---
 
-# YPL Glass
+# YPL Matte
 
 Tokens and recipes live in `src/styles/tokens.css`; motion helpers in `src/components/common/motion.js`.
-`tests/designLaw.test.mjs` enforces the measurable part of this file (color literals and hue, the space, type and radius scales, alignment, blur, easing, middle dots, View Transitions) on every CSS declaration and inline style. A deliberate exception is listed there under its reason.
+`tests/designLaw.test.mjs` enforces the measurable part of this file (color literals and hue, the space, type and radius scales, alignment, blur, easing, middle dots, View Transitions) and the material law (no blur, no shadow in a transition, keyframes move transform and opacity only) on every CSS declaration, inline style and script animation. A deliberate exception is listed there under its reason.
 Decision codes in brackets (C7, K3 ...) point to `docs/redesign-glass/DECISIONS.md`, which wins any disagreement with this file.
 
 ## Identity
@@ -64,24 +68,22 @@ Every screen is checked against these five and nothing else; the sections below 
 ## Color (B1–B5)
 
 - Achromatic only. No accent hue, no metallic gradient, no status hue. State reads through weight, brightness and inversion.
-- The primary button is the theme's inverse fill (white on dark, black on light). Selection is a small lens of the same glass (`--ind-fill`).
+- The primary button is the theme's inverse fill (white on dark, black on light). Selection is a small lens one solid tone above what it stands on (`--lens`).
 - First, second and third place differ by brightness (`--rank-1..3`).
 - Pokémon type colours stay: they are content, not chrome.
 - Light is not an afterthought: every token is redefined under `[data-theme="light"]`, and the color tokens are registered with `@property` so a theme change can fade them.
 
-## Stage and material (C1–C7, D1–D4)
+## Stage and material (D1–D4, 23rd round)
 
-- **Stage (L0):** graphite with one soft light from directly above and a low one at the lower left, painted on the page itself (the root's own backgrounds, with a 1/255 dither that stops banding; no visible grain). It scrolls with the page, the light hanging over its top, and brightens with the event state (open, live, done). It does not drift, follow the scroll or move between pages. **Structure (2026-10-28):** nothing fixed or composited lies behind the page, so a screen is one page layer plus the two bars; the old stage was four full-screen layers fixed behind the page (two drifting lights with will-change, the dither, the stage), which also pushed the whole page into a second full-size layer, and phones stalled and jumped while scrolling. Keep it that way: no fixed full-screen element, no will-change on large elements, no 3D transforms on drawings that never move.
-- **Refraction (C2), removed 2026-10-28:** the rim bend was an SVG filter (`backdrop-filter: url()`) recomputed under every floating piece on every scroll frame. The glass is frosted everywhere, one way on every device.
-- **Glass (L2, `.glass`):** frosted, lit from directly above so it reads as a thick curved object. A body that brightens what is behind it (`brightness`), a specular pool at the top with a sheen falling from it, light gathering again at the bottom, soft inner edges (no hard 1px outline), and a rim brightest at the top that fades toward the ends and returns faintly at the bottom. Layered shadow straight down.
-- **One ceiling light (16th round):** the stage light and the glass are lit by the same light, straight above the screen's centre on every page: the pool on the bars and sheets, the light gathering under it and the brightest stretch of the rim stand under it (`--gx` 0). Menus at their trigger keep their light at their own centre.
-- **Glint (16th round, `glint.js`):** glass lights up where it is touched. On the bars and secondary buttons a bloom of light rises inside the glass under the finger and the rim catches it nearest the finger, held while the finger stays and let go after it lifts (200ms in, 560ms out). It sits over the body and under the words and the lens. Reduced motion keeps the press without it. In light the bloom is quiet by nature (white on clear white glass); the rim carries it.
-- **Light glass:** clear and a little grey, not white, so the white pool and rim read against it, with a faint dark contour at the ends that keeps a bar standing on a white card.
-- **Sheet glass (L3, `.glass-l3`):** sheets, dialogs, popovers, toasts. Stronger blur and body.
-- **Lite glass:** the same raised look without blur for controls on flat surfaces: secondary buttons, chips, form choices (one selector list at the top of `components.css`).
+The material was rebuilt on 2026-11-01. The glass was measured as about 15% of the GPU time of a scroll, and everything else that made the site feel heavy came from what moved being repainted; the rule below is what fixes that. **Whatever moves moves by transform and opacity, on a picture that is already drawn. Nothing blurs anything, and no shadow, filter, clip or mask changes while something moves.**
+
+- **Stage (L0):** graphite with one soft light from directly above, painted on the page itself (the root's own backgrounds, with a still 1/255 dither image that stops banding; no visible grain). It scrolls with the page, the light hanging over its top, and brightens with the event state (open, live, done). Nothing fixed or composited lies behind the page, so a screen is one page layer, the bars and the two edges. Keep it that way: no fixed full-screen element, no will-change on large elements, no 3D transforms on drawings that never move.
+- **Plate (L2, `.plate`):** what floats is an opaque plate one tone lighter than the page (`--plate`), lit once from above by a sheen baked into the top 64px (`--sheen`), with one still shadow. It shows nothing of what is behind it, so nothing has to be computed under it.
+- **Edges (23rd round):** the bars never blur what passes under them. The page dissolves into the stage on two still gradients at the screen's edges (`.edge-t`, `.edge-b`); the top one comes up only once content passes under it, so it never covers the ceiling light at the top of a page.
+- **Sheet plate (L3, `.plate-l3`):** sheets, dialogs, popovers, toasts: `--plate-l3` with the same sheen and one deep still shadow.
+- **Soft:** the same raised look on a flat surface, in the surface's own tone: secondary buttons (`.ypl-btn--soft`), chips, form choices (one selector list at the top of `components.css`).
 - **Groove (`.groove`):** a track pressed into the surface, shaded from the top edge: segmented tracks, the top bar's link track, fields. The selection lens sits raised in it.
-- **Reading surfaces are opaque (`.card`, `--surface`):** lists, tables, match cards, hero cards. Glass is for whatever floats.
-- Budget: at most four real blurs on screen at once. Segmented controls therefore use lite glass.
+- **Cards (`.card`, `--surface`):** lists, tables, match cards, hero cards; the same sheen and one soft still shadow, no outline and no rim.
 - The party sits in a display case that follows the theme (`--pod` tokens): dark in dark, the light surface in light. The shown sprites are transparent PNGs; `lighten` in dark still melts the black ground of the old embedded fallback sprites.
 
 ## Type (E1–E6)
@@ -107,33 +109,33 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 
 ## Layout and navigation (G1–G7)
 
-- Phone: floating glass top bar (logo, theme) and a bottom glass tab bar of five: 홈, 공지, 대진표, 기록, 더보기. 더보기 holds 칭호, 명예의 전당, 게시판, 팀 빌더, 계산기, 소개, Discord and admin login.
-- Desktop (860px+): one floating pill bar with the same five in the middle; 더보기 opens a glass popover. Wide desktop (1100px+): every page has its own link (홈, 공지, 대진표, 기록, 칭호, 명예의 전당, 게시판, 팀 빌더, 계산기, 소개, in the same order as 더보기) and there is no 더보기; Discord stays in the footer, and admin login is a sign-in icon button (an arrow into a door; a padlock read as a shopping bag at 22px) left of the theme button (hidden in admin mode, where the bottom admin bar logs out).
-- Bars follow the finger: they slide away as far as the page is scrolled down (80px of scroll puts them fully away, never more than the distance from the top) and come back as far as it is scrolled up; when the scroll stops they finish the move in its last direction with a spring that takes over the scroll's speed (response 0.4s, damping 0.68: about 5% past and back), run as Web Animations on the compositor and picked up where it stands if the page is scrolled again. While following they change `transform` only, with no CSS transition; the top bar floats with a small shadow and gains its full shadow once content passes under it.
-- Content maximum width 1200px. Admin mode shows as a floating glass dock at the bottom (O2).
+- Phone: floating plate top bar (logo, theme) and a bottom plate tab bar of five: 홈, 공지, 대진표, 기록, 더보기. 더보기 holds 칭호, 명예의 전당, 게시판, 팀 빌더, 계산기, 소개, Discord and admin login.
+- Desktop (860px+): one floating pill bar with the same five in the middle; 더보기 opens a plate popover. Wide desktop (1100px+): every page has its own link (홈, 공지, 대진표, 기록, 칭호, 명예의 전당, 게시판, 팀 빌더, 계산기, 소개, in the same order as 더보기) and there is no 더보기; Discord stays in the footer, and admin login is a sign-in icon button (an arrow into a door; a padlock read as a shopping bag at 22px) left of the theme button (hidden in admin mode, where the bottom admin bar logs out).
+- Bars follow the finger: they slide away as far as the page is scrolled down (80px of scroll puts them fully away, never more than the distance from the top) and come back as far as it is scrolled up; when the scroll stops they finish the move in its last direction with a spring that takes over the scroll's speed (response 0.4s, damping 0.68: about 5% past and back), run as Web Animations on the compositor and picked up where it stands if the page is scrolled again. While following they change `transform` only, with no CSS transition.
+- Content maximum width 1200px. Admin mode shows as a floating plate dock at the bottom (O2).
 
 ## Motion (H1–H5, I1–I4, J1–J4, K1–K10)
 
 - **One curve law (10th round):** content that appears decelerates on the page rise's ease-out (sections, swaps, sheet tiles, the champion cell, the success check); floating layers that present (sheets, menus, dropdowns, toasts) and things already on screen that move or react (press, the lens, shared flights, reordering rows, rolling digits, the selected tab icon) use the springs. User-caused reactions mostly under 200ms, big changes longer. Reduced motion keeps opacity and drops travel and growth, in one rule at the end of `tokens.css`.
-- **Page transitions:** no snapshots. The old page leaves as a live copy (200ms, ease-in, a quarter of the travel upward), the new page rises 16px in (480ms ease-out, 60ms later). Back goes the other way and returns to the scroll position it left. A shared element's landing spot is measured before the page starts rising, so it lands once.
-- **Shared elements (I2):** notice and board post title to article title; bracket card title to the board head; the tab pill never breaks between pages. Trainer, Pokémon and champion sheets do not fly the row: the row stays put and the sheet title settles 6px with a lifting blur (460ms, 90ms after the sheet starts).
-- **Theme change (B6, 2026-10-12):** nothing moves, only the colors change. The typed color tokens fade on `<html>` over `--dur-slow` (`.theme-fade`), so every element, gradient and glass follows them in place; shadows switch at once and ease on the element. Nothing is copied. The home stage canvas fades from a still copy of itself in the old theme. The theme icon crossfades without turning.
-- **Press (K1):** scale .97 in 90ms, back on the snappy spring. Desktop hover: a soft light follows the pointer inside the element (`.hl`).
-- **Selection (K3):** a liquid lens. The leading edge springs toward the target first, the trailing edge follows a beat later, the lens thins up to 10% while stretched and settles with under 5% overshoot. It is two round caps and a body, opaque inside one faded group, moved by transforms only, so it keeps its frames while the next page renders.
+- **Page transitions (23rd round):** no snapshots and no copy of the old page: copying it doubled the document in the one frame that already had to draw the next page. The old page goes at once and the new page rises 16px on the snappy spring. Back goes the other way and returns to the scroll position it left. A shared element's landing spot is measured before the page starts rising, so it lands once.
+- **Shared elements (I2):** notice and board post title to article title; bracket card title to the board head; the tab pill never breaks between pages. Trainer, Pokémon and champion sheets do not fly the row: the row stays put and the sheet title settles 6px as it fades in (460ms, 90ms after the sheet starts).
+- **Theme change (B6, 23rd round):** nothing moves. The page turns at once under one still sheet of the old stage's colour (`.veil`) and the sheet fades over 280ms, one opacity on the compositor. Fading the colour tokens themselves restyled the whole document every frame. The home's pointer sheet redraws in the new colour.
+- **Press (K1):** scale .97 in 90ms, back on the snappy spring. Desktop hover: a soft light comes up inside the element (`.hl`).
+- **Selection (K3):** a liquid lens. The leading edge springs toward the target first, the trailing edge follows a beat later, the lens thins up to 10% while stretched and settles with under 5% overshoot. It is two round caps and a body in one solid tone, moved by transforms only, so it keeps its frames while the next page renders.
 - **Tab switch (K3, 2026-10-16):** every page tab (a Segmented on the page's `tab` or `step`) slides its lens and the new view rises with `.swap`, including tabs that render a whole separate view and remount the bar (board 샘플/파티, 사설 대진표): the bar hands its lens position across the remount. `tests/designLaw.test.mjs` enforces it.
 - **Numbers (K4)** roll digit by digit. **Ranking rows (K5)** slide to their new place (FLIP) and rows that rose glow briefly.
 - **Sheets (K10, M5):** phone sheets rise from the bottom, drag down to close, and leave at the finger's speed; the page behind recedes to .965. Desktop shows the same content as a centred dialog. Every sheet and dialog has the X at its top right, titled or not.
 - **Springs keep their natural length (2026-10-27):** snappy runs 400ms (`var(--dur-snappy)`, `DUR.snappy`), soft 670ms (`var(--dur-soft)`, `DUR.soft`). A spring curve stretched to another length is another spring.
 - **The press answers first (2026-10-27):** a tap on the bars starts the selection lens in that frame (`leadPills`); copying the old page and drawing the new one wait until that frame is out (`afterPaint`). On a mid-range phone the new page took 300-600ms to draw and nothing moved meanwhile.
-- **Arena entrance (18th round, 2026-10-27):** each time the site is opened on the home: the beam from above comes on (1.6s), the floor's pool follows, the centre line and the field's edge are drawn from the middle, the circle and the button fade in and one wave of light crosses the floor from the button, then the YPL comes out of the dark and a blur (2s) and one band of light crosses its letters; the event text comes last (3.2s). Nothing bounces, pops or slides; the arena is heavy and slow. On a return everything stands lit and the text follows the page transition.
-- **Reveal (J1):** a section rises once with a lifting blur the first time it scrolls in (on a touch screen it rises without the blur); anything already on screen stays still.
+- **Arena entrance (18th round, 23rd round):** each time the site is opened on the home: about a second: the beam from above comes on, the floor's pool follows, the centre line is drawn from the middle and the field's edge opens from the floor line, the YPL comes out of the dark as one wave of light leaves the button (0.3s), the event text rises (0.4s), the circle and the button fade in, and one band of light crosses the letters (0.6s to 1.5s). Nothing bounces, pops or slides. Every step is a transform or an opacity on a picture drawn once. On a return everything stands lit.
+- **Reveal (J1):** a section rises once the first time it scrolls in; anything already on screen stays still.
 - **Celebration (L5):** one white light and a ring spread from the moment (application accepted, team submitted, final decided); Android gets a short buzz (P2).
 - **Loading (L1, 2026-10-12):** one shared loader (`Loader.jsx`), no words: the Wing Y sits dim (14%) where the screen will be and a band of light crosses it every 1.6s. It appears after 240ms so a quick load never flashes; `small` for spots inside a card or list. Reduced motion pulses instead of sweeping.
 
 ## Components
 
-- Buttons (M11): primary inverse fill, secondary lite glass, tertiary text; 48px (40px small). Words only; an icon only for leaving the site, creating, or the next step in a flow (rule 3).
-- Chips (M10): one 28px lite glass pill (13px, 600) for every label, tag and status; inverted only for a decided winner and an applied search filter; the dot appears only while something is live. A count is a 24px flat pill (`.fold-badge`, `.tb-count-badge`), never glass inside glass.
+- Buttons (M11): primary inverse fill, secondary soft, tertiary text; 48px (40px small). Words only; an icon only for leaving the site, creating, or the next step in a flow (rule 3).
+- Chips (M10): one 28px soft pill (13px, 600) for every label, tag and status; inverted only for a decided winner and an applied search filter; the dot appears only while something is live. A count is a 24px flat pill (`.fold-badge`, `.tb-count-badge`), never a pill inside a pill.
 - Segmented (K3): groove track, raised lens; scrolls sideways without a bar when the labels do not fit, the groove stays put.
 - Fields (M7): groove pills; textareas round at 20px. Focus is a 2px achromatic ring, keyboard only (K7).
 - Dropdowns and menus (M6): desktop popover that grows from its trigger; phone sheet.
@@ -147,11 +149,11 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 
 ## Pages (N1–N7)
 
-- Home: one screen, the arena (DECISIONS 18th round, 2026-10-27; the 14th round's hall was replaced because it repeated the hall of fame). A battle field lies in perspective across the whole screen behind the bars (projected once into a flat SVG by `src/components/home/arenaField.js`, perspective 900px from 50% 30%, tilted 68 degrees; never CSS 3D, which cost a phone two huge layers): the edge, a trainer box at each end, and the centre line, circle and button drawn together as one Poké Ball, faded toward the far and near ends, under a beam from directly above. The YPL wordmark stands on the ball, lit from above, and is reflected in the floor. Under it, in the page: the days left and the next event, then two buttons. On a phone the YPL on the ball and the words under it are one group centred between the bars, the words standing just clear of the circle's near edge (measured, since the field lies in perspective); the desktop keeps the words at the foot of the arena. Movement rule (user, 14th round): things stand still and only light moves. The field is drawn twice, dim lines and lit glowing lines, and the lit copy shows only inside one soft circle of light; the pointer carries that light over the field and a second light over the YPL's letters, and both return to rest on the ball and the top of the letters when the pointer leaves (on a phone they stay at rest). Tapping an empty spot sends one wave of light across the floor from the button. No parallax, no particles, no auto-repeating motion. Below the arena is the footer. The Wing Y logo is never used on the home. Reduced motion shows the lit arena at once and keeps the lights still.
+- Home: one screen, the arena (DECISIONS 18th round, 2026-10-27; the 14th round's hall was replaced because it repeated the hall of fame). A battle field lies in perspective across the whole screen behind the bars (projected once into a flat SVG by `src/components/home/arenaField.js`, perspective 900px from 50% 30%, tilted 68 degrees; never CSS 3D, which cost a phone two huge layers): the edge, a trainer box at each end, and the centre line, circle and button drawn together as one Poké Ball, faded toward the far and near ends by plain gradients, under a beam from directly above. The YPL wordmark stands on the ball, lit from above, and is reflected in the floor. Under it, in the page: the days left and the next event, then two buttons. On a phone the YPL on the ball and the words under it are one group centred between the bars, the words standing just clear of the circle's near edge (measured, since the field lies in perspective); the desktop keeps the words at the foot of the arena. Movement rule (user, 14th round): things stand still and only light moves. The field is drawn twice, dim lines over lit lines, and between them lies one dark sheet with a soft hole: a 256px canvas in the stage's colour stretched over the screen. The pointer slides that sheet by transform over the lit lines and carries a second light over the YPL's letters inside a still mask of the letters, so moving the light repaints nothing (23rd round; moving a mask over the old SVG field held a desktop at 12 frames a second). Both return to rest on the ball and the top of the letters when the pointer leaves; on a phone the light stands at rest in a still mask. Tapping an empty spot sends one wave of light across the floor from the button. No parallax, no particles, no auto-repeating motion. Below the arena is the footer. The Wing Y logo is never used on the home. Reduced motion shows the lit arena at once and keeps the lights still.
 - Notices and board: list card with the same row (rule 2): the title first, a pinned or admin-only label in front of it, then one line of date and excerpt (notices) or name and time (posts); a notice or post opens on its own screen at the full content width, its body in one opaque reading card (17px phone, 18px desktop). A run of three or more short lists in the body (team sheets) lays out as tiles side by side. A post's comments sit in a second card below.
 - Records: trainers and Pokémon are lists that open a sheet (trainer results stand in three equal columns; on desktop the two columns read down, then across); the tournament archive is filtered by a row of small buttons (the applied one inverted, never a second tab bar) and each round reads like a row: its assembled event name, then one grey line of date, season, mode and rule; rankings open on the current season with one control (season, cumulative, past records), then a hero card, two rank cards and the table.
 - Brackets: opaque match cards on the stage, lines lit as winners are decided and drawn once, the champion's road brightest, the champion cell inverted.
-- Hall of fame (19th round, 2026-10-27): the champion's hall, built from the home arena's vocabulary. One shaft of light falls from above the page head (which stays above it) onto a dais drawn on the floor as three rings, thinner on the short axis like a floor seen at an angle (`PartyStage dais`). The party stands on it in a V at every width; the name is the hall's one inscription at the home's next step (`--display-l`), lit from above like the YPL with a soft glow, then one line of generation and season, then the party's names in one quiet line below the outer ring, like a museum label. The first visit to the hall in each visit to the site plays an entrance once (like the arena): the shaft comes on, the rings spread from the centre, the party stands from the middle out, the name comes out of the dark and a blur and one band of light crosses it, then the line and the button. On a return it stands lit; reduced motion stands lit at once. Still otherwise: only the light answers the pointer. Earlier champions hang as plaques on a wall (one, two or three columns), each lit faintly from above at its top edge with its party on a small floor of contact shadows; a plaque opens a sheet with the same inscription and the same dais. The hall's air is an ellipse that touches its box on every side, so it never shows an edge. The floor does not mirror the party: a reflection stood away from the feet and read as ghosts.
+- Hall of fame (19th round, 2026-10-27): the champion's hall, built from the home arena's vocabulary. One shaft of light falls from above the page head (which stays above it) onto a dais drawn on the floor as three rings, thinner on the short axis like a floor seen at an angle (`PartyStage dais`). The party stands on it in a V at every width; the name is the hall's one inscription at the home's next step (`--display-l`), lit from above like the YPL with a soft glow, then one line of generation and season, then the party's names in one quiet line below the outer ring, like a museum label. The first visit to the hall in each visit to the site plays an entrance once (like the arena): the shaft comes on, the rings spread from the centre, the party stands from the middle out, the name comes out of the dark and one band of light crosses it (a soft window of the name sliding one way while the words inside it slide the other, so only the light moves), then the line and the button. On a return it stands lit; reduced motion stands lit at once. Still otherwise: only the light answers the pointer. Earlier champions hang as plaques on a wall (one, two or three columns), each lit faintly from above at its top edge with its party on a small floor of contact shadows; a plaque opens a sheet with the same inscription and the same dais. The hall's air is an ellipse that touches its box on every side, so it never shows an edge. The floor does not mirror the party: a reflection stood away from the feet and read as ghosts.
 - Team builder: three steps on a phone (규정, 포켓몬 선택, 팀 구성), one screen on desktop; same state either way. The team saves as one PNG sheet in the current theme (every field of the editor) and posts straight to the board.
 - Board tabs 자유, 샘플, 파티: a party is a tile with its sprites on the pod; a post shows the team sheet as opaque cards and opens in the builder. Brackets tabs 공식, 사설: a private bracket uses the official board with an inverted "사설" chip and a sentence that it never reaches records; its images say so too.
 - About: an ordinary document whose sections rise once.
@@ -189,7 +191,9 @@ What makes the screen feel calm is that the eye never has to find a new line to 
 ## Don't
 
 - Do not reintroduce View Transitions snapshots for pages or theme; they flickered on phones.
-- Do not put blur on reading surfaces or exceed four blurs on one screen.
+- Do not blur anything, behind or in front: no `backdrop-filter`, no `filter: blur`, no blurred entrance.
+- Do not animate a shadow, a filter, a clip, a mask or a background. Give the moving thing a still picture and move that.
+- Do not copy the page for a transition.
 - Do not add hue for status, a metallic gradient or visible grain. The only second face is YPL Figures, and it belongs to the brand: never set a page's numbers in it.
 - Do not repeat what the screen already says: one fact once, no all-zero tiles, no default status ("종료") on every row, no decorative numerals.
 - Do not put an eyebrow or kicker label above a title.

@@ -41,7 +41,7 @@ export function MenuItems({ items, onPick, role = "menu" }) {
   );
 }
 
-/* M6: on a desktop a glass popover grows out of its trigger; on a phone the same rows rise as a sheet. */
+/* M6: on a desktop a plate popover grows out of its trigger; on a phone the same rows rise as a sheet. */
 export default function Menu({ anchor, title, items, onClose, role }) {
   const [sheet] = useState(() => !desktop());
   if (sheet) return <Modal title={title} onClose={onClose}><MenuItems items={items} role={role} onPick={onClose} /></Modal>;
@@ -69,7 +69,7 @@ export function Popover({ anchor, onClose, children }) {
     window.addEventListener("resize", resize);
     return () => { document.removeEventListener("pointerdown", outside); window.removeEventListener("keydown", key); window.removeEventListener("resize", resize); };
   }, [anchor]);
-  const node = <div className="popover glass-l3" ref={ref}>{children}</div>;
+  const node = <div className="popover plate-l3" ref={ref}>{children}</div>;
   const host = typeof document !== "undefined" ? (document.querySelector(".ypl") || document.body) : null;
   return host ? createPortal(node, host) : node;
 }

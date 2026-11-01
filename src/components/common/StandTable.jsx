@@ -59,7 +59,7 @@ export default function StandTable({ rows, showNote, total, onName }) {
       <td className="ypl-table__pts r">{(r.points || 0).toLocaleString("ko-KR")}</td>
     </tr>))}</tbody></table></div>
     {!open && rows.length > SHOWN && (
-      <button type="button" className="ypl-btn ypl-btn--glass press ypl-table-more" onClick={() => setOpen(true)}>{total}명 전체 보기</button>
+      <button type="button" className="ypl-btn ypl-btn--soft press ypl-table-more" onClick={() => setOpen(true)}>{total}명 전체 보기</button>
     )}
   </>);
 }

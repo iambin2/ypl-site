@@ -1,5 +1,5 @@
 /* =============================================================================
-   YPL Glass — records: trainers, tournament archive, Pokémon usage, rankings
+   YPL Matte — records: trainers, tournament archive, Pokémon usage, rankings
    A trainer or a Pokémon opens as a sheet (N3). Rankings lead with one hero card,
    the next two side by side, then the table (M1, M2).
    ========================================================================== */
@@ -55,7 +55,7 @@
   .rc-pick:not([style]) { grid-template-rows: none; grid-auto-flow: row; }
 }
 
-/* ---------- the profile sheet: on glass, the cards become tiles of the same glass ---------- */
+/* ---------- the profile sheet: on a sheet, the cards become tiles of the same tone ---------- */
 .rc-sheet { width: min(100%, 640px); }
 .rc-sheet .rc-lead-who { padding-right: var(--s10); }
 .rc-sheet .rc-lead-head { grid-template-columns: minmax(0, 1fr); }
@@ -63,6 +63,8 @@
 .rc-profile { display: flex; flex-direction: column; gap: var(--s8); min-width: 0; }
 .sheet .rc-lead { padding: 0; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
 .sheet .ypl-group { background: var(--tint-soft); box-shadow: none; border-radius: var(--r-row); padding: var(--s1); }
+/* a long history below the sheet's fold costs nothing while the sheet opens */
+.sheet .ypl-group > li { content-visibility: auto; contain-intrinsic-size: auto 60px; }
 .sheet .ypl-row { border-radius: var(--r-field); }
 .sheet .ypl-empty { padding-block: var(--s6); }
 

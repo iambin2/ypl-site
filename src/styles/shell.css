@@ -1,5 +1,5 @@
 /* =============================================================================
-   YPL Glass — shell: floating bars, tab bar, page frame, footer, admin dock, theme layer
+   YPL Matte — shell: floating bars, tab bar, page frame, footer, admin dock, theme layer
    Bars share the content width, so their edges line up with the gutter (G3, G5).
    ========================================================================== */
 
@@ -18,11 +18,16 @@
   position: fixed; z-index: 20; top: calc(env(safe-area-inset-top, 0px) + var(--s3)); left: 0; right: 0; margin-inline: auto;
   width: min(100% - var(--gutter) * 2, 1200px); height: 56px; padding: 0 6px; border-radius: var(--r-pill);
   display: flex; align-items: center; gap: var(--s2);
-  box-shadow: var(--edge), var(--lift); transition: translate var(--dur-snappy) var(--spring-snappy), box-shadow var(--dur-base) var(--ease-out), --gx var(--glide) var(--ease-out);
+  transition: translate var(--dur-snappy) var(--spring-snappy); will-change: transform;
 }
-.topbar.scrolled { box-shadow: var(--edge), var(--shadow-near), var(--shadow-far); }
+/* the bars never blur what passes under them: the page dissolves into the stage on two still gradients at the screen's edges.
+   The top one comes up only once content passes under it, so it never covers the ceiling light at the top of a page. */
+.edge-t, .edge-b { position: fixed; z-index: 15; left: 0; right: 0; pointer-events: none; }
+.edge-t { top: 0; height: calc(env(safe-area-inset-top, 0px) + 88px); background: linear-gradient(var(--stage) 44%, transparent); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); }
+.topbar.scrolled + .edge-t { opacity: 1; }
+.edge-b { bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 120px); background: linear-gradient(transparent, var(--stage) 62%); }
 /* a sheet on a phone puts the top bar away (Modal.jsx); it wins over the scroll's inline translate */
-.topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)) !important; transition: translate 240ms var(--ease-in), box-shadow var(--dur-base) var(--ease-out), --gx var(--glide) var(--ease-out); }
+.topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)) !important; transition: translate 240ms var(--ease-in); }
 .brand { position: relative; display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s3) 0 var(--s2); border-radius: var(--r-pill); flex: none; }
 /* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
 .brand-logo { display: flex; }
@@ -32,14 +37,15 @@
 .iconbtn { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; margin-left: auto; flex: none; }
 .theme-ic { display: grid; }
 .theme-ic > * { grid-area: 1 / 1; }
-.theme-ic .i-sun { opacity: var(--sun-o); }
-.theme-ic .i-moon { opacity: calc(1 - var(--sun-o)); }
+.theme-ic .i-moon { opacity: 0; }
+:root[data-theme="light"] .theme-ic .i-sun { opacity: 0; }
+:root[data-theme="light"] .theme-ic .i-moon { opacity: 1; }
 
 /* ---------- tab bar (G1, G2, K3) ---------- */
 .tabbar {
   position: fixed; z-index: 20; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--s3)); margin-inline: auto;
   width: min(100% - var(--gutter) * 2, 440px); height: 64px; padding: var(--s1); border-radius: var(--r-pill);
-  display: grid; grid-template-columns: repeat(5, 1fr); transition: translate var(--dur-snappy) var(--spring-snappy), --gx var(--glide) var(--ease-out);
+  display: grid; grid-template-columns: repeat(5, 1fr); transition: translate var(--dur-snappy) var(--spring-snappy); will-change: transform; --lens: var(--lens-bar);
 }
 .tab { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); border-radius: var(--r-pill); color: var(--fg-2); font-size: .75rem; line-height: 1; font-weight: 600; }
 .tab .ics { display: grid; }
@@ -50,15 +56,15 @@
 .tab:is([aria-current="page"], [data-current]) .ic-off { opacity: 0; }
 .tab:is([aria-current="page"], [data-current]) .ics { animation: tab-pop var(--dur-snappy) var(--spring-snappy); }
 @keyframes tab-pop { from { transform: scale(.86); } }
-/* K3: the selection lens. Two round caps and a body, opaque inside one faded group, moved by transforms only (placePill). */
-.pill-ind { position: absolute; z-index: 1; top: var(--s1); bottom: var(--s1); left: 0; width: 0; pointer-events: none; opacity: var(--ind-a); filter: var(--ind-filter); transition: opacity var(--dur-fast) var(--ease-out); }
+/* K3: the selection lens. Two round caps and a body, one solid tone, moved by transforms only (placePill). */
+.pill-ind { position: absolute; z-index: 1; top: var(--s1); bottom: var(--s1); left: 0; width: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
 .pill-ind[data-off] { opacity: 0; }
-.pill-ind > i { position: absolute; top: 0; left: 0; height: 100%; background: var(--ind-body); }
+.pill-ind > i { position: absolute; top: 0; left: 0; height: 100%; background: var(--lens); will-change: transform; }
 .pill-ind > i:not(:nth-child(2)) { aspect-ratio: 1; border-radius: 50%; }
 .pill-ind > i:nth-child(2) { width: 100px; transform-origin: 0 50%; }
 
 @media (min-width: 860px) {
-  .tabbar { display: none; }
+  .tabbar, .edge-b { display: none; }
   .topbar { top: var(--s4); }
   .navlinks { position: relative; display: flex; margin-inline: auto; padding: var(--s1); border-radius: var(--r-pill); }
   .navlink { position: relative; z-index: 3; display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 var(--s5); border-radius: var(--r-pill); font-size: .9375rem; line-height: 1; font-weight: 600; color: var(--fg-2); transition: color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy); }
@@ -91,12 +97,11 @@
 @media (prefers-reduced-motion: reduce) { .y-loader-light { animation: y-pulse 2s var(--ease-in-out) infinite; } .y-loader-light::before { width: 100%; background: currentColor; animation: none; } }
 .ypl-error { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s4); }
 
-/* page transitions (I1, I2): the old page leaves as a live copy, a shared element flies on top */
+/* page transitions (I1, I2): the new page rises at once; a shared element flies on top */
 #ypl-ghosts { position: relative; z-index: 6; }
-.ghost { position: fixed; z-index: 5; pointer-events: none; margin: 0 !important; padding-inline: 0; }
 .fly { position: fixed; z-index: 6; margin: 0 !important; pointer-events: none; transform-origin: 0 0; }
-.fly-skin { background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-.fly-skin::before, .fly-skin::after { display: none; }
+.fly-skin { background: none !important; box-shadow: none !important; }
+.fly-skin::after { display: none; }
 
 
 
@@ -109,12 +114,12 @@
 /* ---------- logo (F1): the top bar is a fixed landmark, so the mark never moves ---------- */
 .logo { color: var(--fg); overflow: visible; }
 
-/* ---------- admin dock (O2): floating glass, above the tab bar on a phone ---------- */
+/* ---------- admin dock (O2): floating plate, above the tab bar on a phone ---------- */
 .admin-dock {
   position: fixed; z-index: 19; left: 0; right: 0; margin-inline: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
   width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 48px; padding: 0 6px 0 var(--s5); border-radius: var(--r-pill);
   display: flex; align-items: center; gap: var(--s2); font-size: .8125rem; line-height: 1; white-space: nowrap;
-  transition: translate var(--dur-snappy) var(--spring-snappy), --gx var(--glide) var(--ease-out);
+  transition: translate var(--dur-snappy) var(--spring-snappy); will-change: transform;
 }
 .admin-dock b { font-weight: 600; }
 .admin-dock-note { color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; }

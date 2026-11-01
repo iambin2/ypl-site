@@ -1,4 +1,5 @@
-/* Motion helpers ported from the lab (docs/redesign-glass/lab/glass-lab.html). Pure CSS + Web Animations, no dependency (H5).
+/* Motion helpers. Pure CSS + Web Animations, no dependency (H5). Everything here moves by transform and opacity only, so it runs on the
+   compositor and keeps its frames while the main thread draws the next page.
    Nothing here touches the DOM at import time: tests load components that import this file under Node. */
 
 export const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
@@ -61,8 +62,9 @@ export function celebrate(x = innerWidth / 2, y = innerHeight * 0.38) {
 }
 
 /* ---------- page transitions on the live page (I1, I2, I3) ----------
-   No snapshots (H5): the old page is a live copy that fades out, the new page rises in, and a shared element
-   flies between its two places. Glass keeps its real blur the whole time, so nothing pops when it ends. */
+   No snapshots (H5) and no copy of the old page (2026-11-01): copying it doubled the document for the one frame that already had to
+   draw the next page, which froze a phone for 130-330ms. The old page goes at once and the new one rises on the spring; a shared
+   element flies between its two places. */
 let flight = null;
 /* true while a back transition renders the page it returns to: what was already seen there (Roll) does not play again */
 let backing = false;
@@ -111,9 +113,6 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   if (!m0 || typeof m0.animate !== "function") { mutate(); window.scrollTo(0, nextY); return; }
   const move = !reduced(), anims = [], host = ghostLayer();
   const oldEl = shared && m0.querySelector(`[data-vt="${shared}"]`), oldRect = oldEl?.getBoundingClientRect();
-  const ghost = clone(m0, m0.getBoundingClientRect(), "ghost", host);
-  ghost.style.height = "auto";
-  if (shared) ghost.querySelector(`[data-vt="${shared}"]`)?.style.setProperty("visibility", "hidden");
   const oldFly = oldEl && clone(oldEl, oldRect, "fly fly-skin", host);
 
   backing = dir === "back";
@@ -130,8 +129,7 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   const nr = target?.getBoundingClientRect();
 
   const y = move ? (dir === "back" ? -16 : 16) : 0;
-  anims.push(ghost.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateY(${-y / 4}px)` }], { duration: 200, easing: EASE_IN, fill: "forwards" }));
-  anims.push(m1.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: 480, easing: EASE_OUT, delay: 60, fill: "backwards" }));
+  anims.push(m1.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.snappy, easing: move ? springs().snappy : "linear" }));
 
   if (target && oldEl && nr.width > 0) {
     const s = oldRect.width / nr.width, dx = oldRect.left - nr.left, dy = oldRect.top - nr.top;
@@ -159,21 +157,20 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   });
 }
 
-/* ---------- theme change (B6): the page fades to the next theme where it stands. The colour tokens are typed
-   (@property) and fade on <html> (.theme-fade), so every element, gradient and glass follows them in place;
-   nothing is copied, so nothing can move. ---------- */
-let fadeEnd = 0;
+/* ---------- theme change (B6): nothing moves. The page turns at once under one still sheet of the old stage and the sheet fades,
+   a single opacity on the compositor (.veil). ---------- */
 export function themeFade(commit) {
-  const root = document.documentElement;
-  root.classList.add("theme-fade");
+  if (reduced()) { commit(); return; }
+  const veil = document.createElement("div");
+  veil.className = "veil";
+  veil.style.background = getComputedStyle(document.documentElement).getPropertyValue("--stage");
+  document.body.append(veil);
   commit();
-  clearTimeout(fadeEnd);
-  fadeEnd = setTimeout(() => root.classList.remove("theme-fade"), 480);
+  veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: EASE_OUT }).finished.finally(() => veil.remove());
 }
 
 /* ---------- K3 liquid selection lens ----------
-   The lens is two round caps and a body between them, drawn opaque inside one faded group so the pieces never
-   show a seam. Only transforms move, so it keeps running on the compositor while the next page renders.
+   The lens is two round caps and a body in one solid tone. Only transforms move, so it keeps running on the compositor while the next page renders.
    The leading edge springs toward the target first, the trailing edge follows a beat later, and the lens
    thins a little while it is stretched, then settles as one drop. A new target mid-flight starts from where it is. */
 const PILL_ON = ':scope > [aria-pressed="true"], :scope > [aria-current="page"], :scope > [aria-selected="true"], :scope > [data-current]';
@@ -216,9 +213,9 @@ export function placePill(box, animate, target) {
 }
 
 /* I2 into a sheet, kept small: the pressed row stays where it is, and the sheet's title settles into place a short
-   way with the lifting blur of a section reveal (J1), a beat after the sheet starts to rise. */
+   way, a beat after the sheet starts to rise. */
 export function settleTitle(target) {
   if (!target || reduced() || typeof target.animate !== "function") return;
-  target.animate([{ opacity: 0, transform: "translateY(6px)", filter: "blur(6px)" }, { opacity: 1, transform: "none", filter: "blur(0px)" }],
+  target.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }],
     { duration: 460, delay: 90, easing: EASE_OUT, fill: "backwards" });
 }

@@ -7,39 +7,42 @@
    button drawn as one Poké Ball; the YPL stands on the ball and is reflected in the floor; under it the next event and the
    actions. Things stand still and only light moves (the 14th round's rule): the pointer carries one light over the field, where
    only the lines it touches brighten, and one over the YPL's letters; a tap sends one wave of light across the floor. The stage
-   fills the screen behind the bars; the text stands in the page. The hall (14th round) was replaced: it repeated the hall of fame. */
+   fills the screen behind the bars; the text stands in the page. Nothing here repaints once drawn (23rd round): every move is a transform
+   or an opacity on a picture that is already there. */
 /* On a phone (2026-10-28) the YPL on the ball, the event and the buttons are one group, centred between the bars. The field's floor (--fk of the
    screen's height) lies in the YPL's slot, so the field follows the group; the info keeps clear of the ring. */
 .ha { --h: clamp(88px, 15vw, 216px); --fk: .54; --fw: clamp(730px, 190vw, 1500px); --field-near: calc(var(--fw) * .15); /* HomePage.jsx measures the ring and replaces it */ position: relative; min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; justify-content: center; text-align: center; }
 /* the slot holds the YPL above the floor and the near half of the ring below it */
 .ha-slot { position: relative; flex: none; height: calc(var(--h) * 1.08 + var(--field-near)); }
-.ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent); --glow: color-mix(in srgb, var(--fg) 24%, transparent);
+.ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent);
   position: absolute; left: 50%; top: calc(100% - var(--field-near) - 100svh * var(--fk)); width: 100vw; height: 100svh; translate: -50% 0; overflow: clip; pointer-events: none; }
-/* the arena ends in the dark, not at a cut: its lower part fades into the stage, so scrolling to the footer never shows the box's edge */
-.ha-stage { -webkit-mask: linear-gradient(to bottom, #000 72%, transparent); mask: linear-gradient(to bottom, #000 72%, transparent); }
-.ha-beam { position: absolute; left: 50%; top: 0; width: min(170vw, 1500px); height: var(--floor); translate: -50% 0;
-  background: linear-gradient(to bottom, transparent, var(--home-beam) 70%, transparent); clip-path: polygon(46% 0, 54% 0, 72% 100%, 28% 100%); filter: blur(14px); }
-/* the field: one plane laid back in perspective, faded toward its far and near ends. It is drawn flat (arenaField.js projects
-   it once), so it costs no 3D layer; each line is a filled outline, thicker where the field comes nearer */
-.ha-persp { position: absolute; inset: 0; }
-.ha-field { position: absolute; inset: 0; overflow: visible; }
-.ha-field path { fill: var(--ln); fill-rule: evenodd; }
-.ha-field .ha-pool path { fill: var(--spot-floor); }
-.ha-line, .ha-knob, .ha-wave { transform-box: fill-box; transform-origin: center; }
-/* the pointer's light (HomePage.jsx writes --hx, --hy on this layer only; they do not inherit, so a move restyles one element) */
-@property --hx { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
-@property --hy { syntax: "<length-percentage>"; inherits: false; initial-value: 50%; }
-.ha-persp.lit { --hy: var(--floor); -webkit-mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at var(--hx) var(--hy), #000, transparent min(40vw, 360px)); }
-/* the lit copy: the same lines bright and glowing, seen only where the light falls */
-.ha-persp.lit .ha-field { filter: drop-shadow(0 0 4px var(--glow)) drop-shadow(0 0 12px var(--glow)); }
-.ha-persp.lit .ha-field path { fill: var(--lit); }
-.ha-persp.lit .ha-field :is(.ha-face, .ha-wave) { fill: var(--fg); }
-.ha-wave { opacity: 0; }
+.ha-stage > i { position: absolute; }
+/* still pictures, drawn once. From the bottom: the floor's pool, the lit lines, the pointer's dark sheet, the dim lines, the fades that lay the
+   field back into the dark at both ends and let it end in the stage, and the room's own light. The stage's lower edge is the stage's colour, so
+   scrolling to the footer never shows its box. */
+.ha-floor { left: 50%; top: var(--floor); width: min(190vw, 1500px); height: min(84vw, 660px); translate: -50% -50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
+.ha-fade { inset: 0; background: linear-gradient(var(--stage) 12%, transparent 34%, transparent 66%, var(--stage) 96%); }
+.ha-sky { inset: 0; background: radial-gradient(70vw 50vh at 50% 0, var(--la), transparent); }
+.ha-beam { inset: 0 0 auto; height: var(--floor); background: radial-gradient(52% 100% at 50% 0, var(--home-beam), transparent); }
+.ha-f { position: absolute; inset: 0; transform-origin: 50% var(--floor); }
+.ha-f path { fill: var(--ln); fill-rule: evenodd; }
+.ha-lit path { fill: var(--lit); }
+/* the light at rest on the ball where no pointer can carry it */
+@media not all and (pointer: fine) { .ha-lit { -webkit-mask: radial-gradient(circle at 50% var(--floor), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at 50% var(--floor), #000, transparent min(40vw, 360px)); } }
+/* a 256px texture stretched over the screen: moving it costs one transform and no paint (HomePage.jsx) */
+.ha-cover { position: absolute; left: 0; top: 0; will-change: transform; }
+/* a tap's wave: one soft ring laid on the floor */
+.ha-wave { left: 50%; top: var(--floor); width: calc(var(--fw) * .09); aspect-ratio: 8 / 3; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, transparent 84%, var(--lit) 94%, transparent); opacity: 0; }
 /* the YPL stands on the ball and is reflected in the floor under it */
 .ha-mark { position: absolute; left: 50%; top: var(--floor); }
 .ha-mark svg { position: absolute; left: 50%; height: var(--h); width: auto; translate: -50% 0; overflow: visible; }
-.ha-mark svg:not(.ha-refl) { bottom: calc(var(--h) * .08); filter: drop-shadow(0 0 30px var(--glow)); }
+.ha-mark svg:not(.ha-refl) { bottom: calc(var(--h) * .08); }
 .ha-refl { top: calc(var(--h) * -.08); scale: 1 -1; opacity: .3; -webkit-mask: linear-gradient(to top, #000, transparent 60%); mask: linear-gradient(to top, #000, transparent 60%); }
+/* the light on the letters: the mark is a still mask and only the light inside it moves */
+.ha-shine { position: absolute; left: 50%; bottom: calc(var(--h) * .08); height: var(--h); aspect-ratio: 318 / 108; translate: -50% 0; overflow: hidden; }
+.ha-shine > i { position: absolute; }
+.ha-band { inset: 0 -60%; background: linear-gradient(100deg, transparent 40%, var(--home-shine) 50%, transparent 60%); transform: translateX(-100%); }
+.ha-lamp { left: -28%; top: -82%; width: 56%; aspect-ratio: 1; background: radial-gradient(closest-side, color-mix(in srgb, var(--home-shine) 55%, transparent), transparent); }
 .ha-info { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s5); margin-top: var(--s4); }
 .ha-ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
 .ha-ev-row { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; column-gap: var(--s3); }
@@ -53,6 +56,15 @@
   .ha-slot { position: static; height: auto; }
   .ha-stage { --floor: 56%; top: -112px; }
   .ha-info { margin-top: 0; padding-bottom: var(--s10); }
+}
+
+/* a phone on its side has no room for the ring's near half: the YPL, the event and the buttons stand in two rows between the bars */
+@media (max-height: 520px) and (orientation: landscape) {
+  .ha { --h: 64px; min-height: 0; justify-content: flex-start; }
+  .ha-slot { position: relative; height: calc(var(--h) * 1.08 + var(--s4)); }
+  .ha-stage { --floor: 54%; top: calc(100% - var(--s4) - 100svh * var(--fk)); }
+  .ha-info { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: var(--s2) var(--s6); margin-top: 0; padding-bottom: 0; }
+  .ha-ev { align-items: flex-start; text-align: left; }
 }
 
 /* the reigning champion's party on the floor (the hall of fame stage), in a V (the shape the 14th round's home hall gave it).
@@ -87,10 +99,10 @@
    An ordinary document whose sections rise once as they first appear (N7, J1). */
 .ab-block { min-width: 0; }
 .ab-lead { margin: 0 0 var(--s4); color: var(--fg-2); }
-.ab-records, .ab-timeline, .ab-comps { list-style: none; margin: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
+.ab-records, .ab-timeline, .ab-comps { list-style: none; margin: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
 
 .ab-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
-.ab-flow li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; column-gap: var(--s3); row-gap: var(--s1); padding: var(--s5); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
+.ab-flow li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; column-gap: var(--s3); row-gap: var(--s1); padding: var(--s5); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
 .ab-flow-n, .ab-flow b { font-size: 1.25rem; font-weight: 800; line-height: 1.35; letter-spacing: -.015em; }
 .ab-flow-n { grid-row: span 3; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 .ab-flow li > :not(.ab-flow-n) { grid-column: 2; }
@@ -124,7 +136,7 @@
 }
 /* 폰: 한 문장짜리 단계가 카드 한 장씩 화면을 차지하지 않게, 단계들을 카드 하나 안의 번호 목록으로 묶는다. */
 @media (max-width: 639px) {
-  .ab-block .ab-flow { grid-template-columns: 1fr; gap: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
+  .ab-block .ab-flow { grid-template-columns: 1fr; gap: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
   .ab-flow li { padding: var(--s4); border-radius: var(--r-row); background: none; box-shadow: none; }
   .ab-flow-n, .ab-flow b { font-size: 1.0625rem; letter-spacing: 0; }
   .ab-flow .ypl-btn { margin-top: var(--s2); }
@@ -198,7 +210,7 @@
 .ff-q { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s5); }
 .ff-q-label { font-size: .8125rem; font-weight: 600; line-height: 1.25; color: var(--fg-2); }
 .ff-choices { display: flex; flex-direction: column; gap: var(--s2); }
-/* a chosen answer is selected like a segment: lite glass (components.css), inverted when chosen */
+/* a chosen answer is selected like a segment: soft (components.css), inverted when chosen */
 .ff-choice {
   position: relative; display: flex; align-items: center; gap: var(--s3); min-height: 48px; padding: 0 var(--s5); border-radius: var(--r-pill); cursor: pointer; font-size: 1rem;
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
@@ -216,7 +228,7 @@
 .fr-tot { font-size: .9375rem; font-weight: 600; }
 .fr-scroll { overflow: auto; max-height: 50vh; border-radius: var(--r-field); background: var(--tint-soft); }
 .fr-tbl { width: 100%; font-size: .8125rem; }
-.fr-tbl th { position: sticky; top: 0; z-index: 1; padding: var(--s3); background: var(--sheet-solid, var(--surface)); text-align: left; font-size: .75rem; font-weight: 600; color: var(--fg-3); white-space: nowrap; }
+.fr-tbl th { position: sticky; top: 0; z-index: 1; padding: var(--s3); background: var(--plate-l3); text-align: left; font-size: .75rem; font-weight: 600; color: var(--fg-3); white-space: nowrap; }
 .fr-tbl td { padding: var(--s3); vertical-align: top; }
 .fr-tbl tbody tr + tr td { box-shadow: inset 0 1px 0 var(--line); }
 .fr-idx { color: var(--fg-3); font-variant-numeric: tabular-nums; }
@@ -227,7 +239,7 @@
 
 /* =========================== BOARD ===========================
    One list surface; a post opens on its own screen like a notice (I2), with the same body card and its comments below. */
-.bd-list { display: flex; flex-direction: column; padding: var(--s2); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
+.bd-list { display: flex; flex-direction: column; padding: var(--s2); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
 .bd-list:has(> .ypl-empty) { padding: 0; background: none; box-shadow: none; }
 .bd-head {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
@@ -289,25 +301,26 @@
    vocabulary; the party stands on it; the name stands above in the home's lit letters, crossed once by a
    band of light when the hall opens. Earlier champions hang on the wall as plaques, each with its party standing on a small floor.
    A plaque opens the entry as a sheet with the same inscription and the same dais (I2: the title settles). */
-.hof-stage, .hx-party.dais { --ln: color-mix(in srgb, var(--fg) 30%, transparent); --glow: color-mix(in srgb, var(--fg) 22%, transparent); }
+.hof-stage, .hx-party.dais { --ln: color-mix(in srgb, var(--fg) 30%, transparent); }
 .hof-stage {
   position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: var(--s6); padding-top: var(--s4); text-align: center; }
 /* the page head stays above the shaft, so the light never washes its words (light theme) */
 .sec:has(> .hof-stage) > .ypl-head { position: relative; z-index: 1; }
 /* the shaft: the home arena's beam, from above the page head down onto the dais */
 .hof-stage::before { content: ""; position: absolute; z-index: -1; left: 50%; top: -240px; bottom: 104px; width: min(150vw, 1200px); translate: -50% 0;
-  background: linear-gradient(to bottom, transparent, var(--home-beam) 74%, transparent); clip-path: polygon(44% 0, 56% 0, 77% 100%, 23% 100%); filter: blur(16px); pointer-events: none; }
+  background: radial-gradient(44% 100% at 50% 0, var(--home-beam), transparent); pointer-events: none; }
 /* the hall's air around the champion: an ellipse that touches the box on every side, so it fades out before any edge (no seam) */
 .hof-stage::after { content: ""; position: absolute; z-index: -2; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); top: -120px; bottom: 0; background: radial-gradient(closest-side at 50% 42%, var(--spot), transparent); pointer-events: none; }
 .hof-stage-who, .hofm-top { display: flex; flex-direction: column; align-items: center; gap: var(--s2); text-align: center; }
-/* the name is the hall's one inscription: the home's next step up, lit from above like the YPL, a band of light at rest past its right edge */
+/* the name is the hall's one inscription: the home's next step up, a band of light at rest past its right edge */
 .hofs-name { max-width: 100%; font-size: var(--display-l); font-weight: 800; line-height: 1.06; letter-spacing: -.04em; overflow-wrap: anywhere; }
 .hofs-name > span {
-  display: inline-block; padding-inline: .06em; color: transparent;
-  background: linear-gradient(100deg, transparent 42%, var(--home-shine) 50%, transparent 58%) 0% 0 / 250% 100% no-repeat,
-    linear-gradient(to bottom, var(--fg) 30%, color-mix(in srgb, var(--fg) 58%, transparent));
-  -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 32px var(--glow));
+  position: relative; display: inline-block; padding-inline: .06em;
 }
+/* the band of light: a soft window holding the same name in the shine's colour. The window slides one way and the words inside it the
+   other way by the same distance, so the words stand still and only the light crosses them, on the compositor. */
+.hofs-band { position: absolute; inset: 0 auto 0 0; width: 50%; overflow: hidden; pointer-events: none; opacity: 0; -webkit-mask: linear-gradient(90deg, transparent, #000, transparent); mask: linear-gradient(90deg, transparent, #000, transparent); }
+.hofs-band > i { display: block; width: 200%; padding-inline: .06em; color: var(--home-shine); white-space: nowrap; }
 .hof-stage .hx-party { margin: var(--s2) 0 var(--s4); }
 /* the label under the exhibit: the party's names in one quiet line */
 .hof-plate { display: block; padding-top: var(--s2); font-size: .8125rem; line-height: 1.55; color: var(--fg-3); text-align: center; text-wrap: balance; }

@@ -10,7 +10,7 @@ function shortName(name, key) {
 }
 
 /* ============================== TITLES ==============================
-   분류는 세그먼트, 고른 분류는 리드 카드(달성 수가 실버 점수) 아래 유리 목록. */
+   분류는 세그먼트, 고른 분류는 리드 카드(달성 수가 실버 점수) 아래 매트 목록. */
 export default function TitlesPage({ data, admin, setModal, go }) {
   const groups = data.titleGroups || [];
   const [openKey, setOpenKey] = useState(groups.length ? groups[0].key : null);
@@ -50,7 +50,7 @@ export default function TitlesPage({ data, admin, setModal, go }) {
           <h3 className="rc-lead-title tt-cond" id="tt-group-name">{g.desc || g.name}</h3>
           <span className="caption">{rate ? `칭호 ${items.length}개 중 ${done}개에 주인이 있습니다.` : `칭호 ${items.length}개`}</span>
         </div>
-        {admin && <button className="ypl-btn ypl-btn--glass ypl-btn--sm press tt-add"
+        {admin && <button className="ypl-btn ypl-btn--soft ypl-btn--sm press tt-add"
           onClick={() => setModal({ type: "title", groupKey: g.key })}>
           <Icon n="plus" size={16} />칭호 추가
         </button>}

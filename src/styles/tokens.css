@@ -1,10 +1,11 @@
 /* =============================================================================
-   YPL Glass — foundation
-   Source of truth: docs/redesign-glass/DECISIONS.md and the lab
-   (docs/redesign-glass/lab/glass-lab.html). Decision codes (C7, K3 ...) refer to DECISIONS.md.
+   YPL Matte — foundation
+   Source of truth: docs/redesign-glass/DECISIONS.md (23rd round on) and the lab
+   (docs/redesign-solid/lab/skin-lab.src.html, skin C). Decision codes (C7, K3 ...) refer to DECISIONS.md.
 
-   Achromatic only (B2-B4): a graphite stage, opaque reading surfaces, frosted glass for
-   whatever floats. Dark first, light equal: :root holds dark, <html data-theme="light"> swaps.
+   Achromatic only (B2-B4): a graphite stage and opaque matte plates with one soft sheen baked in from the light above.
+   Nothing blurs what is behind it, and nothing that moves carries a filter, a moving mask or a live shadow: whatever moves
+   moves by transform and opacity. Dark first, light equal: :root holds dark, <html data-theme="light"> swaps.
 
    Spacing law (4px grid, one scale --s1..--s14, nearer = smaller):
      --s1  4   a pair: label and value, a title and its meta line
@@ -21,57 +22,63 @@
 /* suit-slices:start (scripts/build-suit-slices.py) */
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-1.7b381bcc.woff2") format("woff2");
+  src: url("/fonts/suit/suit-1.e3c5c3f6.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+AC00-B098;
+  unicode-range: U+AC00-B090;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-2.ef2ad9a1.woff2") format("woff2");
+  src: url("/fonts/suit/suit-2.a350627a.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+B099-B5B2;
+  unicode-range: U+B091-B5AF;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-3.9bb82ade.woff2") format("woff2");
+  src: url("/fonts/suit/suit-3.ff814ce9.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+B5B3-BBD4;
+  unicode-range: U+B5B0-BBCF;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-4.2c2b2c03.woff2") format("woff2");
+  src: url("/fonts/suit/suit-4.1ce63ab5.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+BBD5-C18D;
+  unicode-range: U+BBD0-C17F;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-5.95691217.woff2") format("woff2");
+  src: url("/fonts/suit/suit-5.590be0b8.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+C18E-C66C;
+  unicode-range: U+C180-C65F;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-6.04625a83.woff2") format("woff2");
+  src: url("/fonts/suit/suit-6.edb88db3.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+C66D-CB2B;
+  unicode-range: U+C660-CB17;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-7.1cf36422.woff2") format("woff2");
+  src: url("/fonts/suit/suit-7.be2d6eb6.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+CB2C-D1F7;
+  unicode-range: U+CB18-D1B9;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-8.4e307c58.woff2") format("woff2");
+  src: url("/fonts/suit/suit-8.e0de8569.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+D1F8-D7A3;
+  unicode-range: U+D1BA-D7A3;
 }
 @font-face {
   font-family: "SUIT Variable";
-  src: url("/fonts/suit/suit-0.817aa08c.woff2") format("woff2");
+  src: url("/fonts/suit/suit-g.2915cccb.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
-  unicode-range: U+20-AC04, U+AC08, U+AC10-AC16, U+AC19-AC1A, U+AC1C-AC1D, U+AC24, U+AC2F, U+AC31-AC38, U+AC70, U+AC74, U+AC78, U+AC80-AC83, U+AC8C-AC94, U+AC9F-ACA0, U+ACA8-ACA9, U+ACAC, U+ACB0, U+ACB9, U+ACBC-ACBD, U+ACC4, U+ACE0-ACE8, U+ACF0-ACF5, U+ACFC-AD00, U+AD11, U+AD34, U+AD50, U+AD6C-AD75, U+AD7D-AD82, U+AD8C, U+ADC0, U+ADDC-ADE4, U+ADF8, U+ADFC, U+AE00, U+AE08-AE0B, U+AE30, U+AE34, U+AE38, U+AE40-AE43, U+AE45, U+AE4C-AE50, U+AE5C-AE5D, U+AE65-AE68, U+AE78, U+AEBC-AEBD, U+AECD-AECF, U+AED1, U+AED8, U+AEF4, U+AF2C-AF30, U+AF34, U+AF41, U+AF43, U+AFB8, U+AFBC-AFC0, U+AFC8, U+AFCD, U+AFD4, U+AFF0, U+B00C-B014, U+B044, U+B048-B04C, U+B054, U+B05D, U+B07C, U+B098, U+B09A-B09C, U+B0A0-B0A1, U+B0A8, U+B0AC, U+B0AE, U+B0B3-B0B8, U+B0C4, U+B0C9-B0D0, U+B0E5, U+B108-B109, U+B10C, U+B110, U+B113-B118, U+B123-B124, U+B137, U+B140, U+B144, U+B150, U+B178-B180, U+B188, U+B18D, U+B192-B193, U+B1CC, U+B1E8, U+B1FD-B208, U+B20C, U+B214, U+B220, U+B258, U+B274, U+B290-B294, U+B298, U+B2A5-B2A6, U+B2AA, U+B2C8-B2CC, U+B2D0, U+B2D8-B2D9, U+B2DD, U+B2E4-B2E5, U+B2E8-B2EC, U+B2F4-B2F7, U+B2F9, U+B2FF-B300, U+B304, U+B311-B313, U+B315, U+B354-B355, U+B358, U+B35C, U+B364, U+B367-B370, U+B374-B378, U+B3C4-B3C8, U+B3CC, U+B3D4, U+B3D9, U+B410, U+B418-B429, U+B450-B454, U+B458, U+B460, U+B463-B465, U+B4A4, U+B4C0, U+B4C8, U+B4DC-B4E0, U+B4E4-B4F1, U+B514, U+B518, U+B51C, U+B525-B527, U+B529, U+B530-B531, U+B538, U+B543, U+B545, U+B54C, U+B5A0, U+B5A4-B5A8, U+B5BC, U+B5C0, U+B610, U+B62C, U+B69C-B69D, U+B6A4, U+B6AB, U+B6F0-B6F4, U+B728-B729, U+B73B, U+B744, U+B760, U+B77C-B780, U+B784-B78C, U+B78F-B791, U+B798-B79C, U+B7A8-B7AB, U+B7AD, U+B7EC-B7F0, U+B7FC-B7FF, U+B801, U+B808-B80C, U+B81B, U+B824-B825, U+B82C, U+B838-B840, U+B85C-B860, U+B864, U+B86D-B871, U+B8B0, U+B8CC, U+B8E1-B8E8, U+B8EC-B8FB, U+B958-B960, U+B974-B987, U+B98E-B9CE, U+B9D0, U+B9D8, U+B9DB, U+B9DD-B9DE, U+B9E4-B9E8, U+B9F5, U+B9F9, U+BA38-BA40, U+BA48, U+BA4B-BA4D, U+BA54, U+BA58-BA64, U+BA67, U+BA70, U+BA74-BA78, U+BA85-BA87, U+BAA8-BAB0, U+BAB8, U+BABB-BABD, U+BB18, U+BB34-BB3C, U+BB44, U+BB47-BB49, U+BBA4, U+BBC0, U+BBF8-BBFC, U+BC00, U+BC0B, U+BC0D-BC16, U+BC18-BC1D, U+BC1F-BC25, U+BC29, U+BC30-BC34, U+BC40, U+BC43, U+BC45-BC49, U+BC84-BC88, U+BC8C, U+BC94-BC97, U+BCA0, U+BCA4, U+BCA8, U+BCB0, U+BCBC-BCC4, U+BCCD, U+BCD1, U+BCF4-BCF5, U+BCF8, U+BCFC, U+BD04, U+BD09-BD10, U+BD80-BD84, U+BD88-BD89, U+BD90, U+BD93-BD99, U+BDF0, U+BE0C, U+BE10-BE14, U+BE44-BE48, U+BE4C, U+BE54, U+BE57-BE59, U+BE5B-BE61, U+BE68, U+BE75, U+BE7C, U+BE80, U+BE90, U+BEA8, U+BED0, U+BF08, U+BF40, U+BF50-BF51, U+BFCC, U+BFD0-BFD4, U+BFDC, U+BFE1, U+C058-C05C, U+C090, U+C0AC-C0AD, U+C0B0, U+C0B4, U+C0B6-C0BC, U+C0C1, U+C0C8-C0C9, U+C0D8, U+C0DD-C0E4, U+C0F7-C0F9, U+C100, U+C11C-C11E, U+C120, U+C124, U+C12C, U+C12F, U+C131, U+C138-C13C, U+C140, U+C149-C14B, U+C154, U+C158-C15C, U+C170, U+C178, U+C18C-C18D, U+C190, U+C194, U+C19C, U+C1A1, U+C1C4, U+C1E0, U+C1FC, U+C218-C228, U+C22B-C22D, U+C232, U+C250, U+C258, U+C26C, U+C27C, U+C288, U+C290, U+C29B-C29D, U+C2A4, U+C2A8-C2AC, U+C2B4-C2B5, U+C2B9-C2E0, U+C2E4, U+C2EB-C2EC, U+C2EF-C2F1, U+C2F8, U+C30D-C314, U+C329, U+C368, U+C36C-C370, U+C378-C379, U+C3D8, U+C410, U+C465, U+C4F0-C4F8, U+C501, U+C528-C529, U+C53D, U+C544-C54A, U+C54C, U+C554-C559, U+C55E-C568, U+C571, U+C575, U+C57C-C580, U+C58C, U+C591, U+C5B4-C5BC, U+C5C4-C5C9, U+C5CE-C5E0, U+C5E3, U+C5EC-C5ED, U+C5F0-C5F4, U+C5FC-C5FD, U+C601-C606, U+C608, U+C610, U+C61B, U+C624-C625, U+C628, U+C62C, U+C62E, U+C635-C639, U+C640-C648, U+C651, U+C655, U+C678, U+C67C, U+C694-C695, U+C6A9-C6B4, U+C6B8, U+C6C0, U+C6C3-C6C5, U+C6CC, U+C6D0-C6DC, U+C6E0, U+C6E8, U+C704, U+C708, U+C717-C728, U+C73C-C73D, U+C740, U+C744, U+C74C, U+C751, U+C758, U+C774, U+C778, U+C77C-C77D, U+C784-C78A, U+C78E-C794, U+C798, U+C7A0-C7A1, U+C7A5-C7AC, U+C7B0, U+C7BC, U+C7C1-C7C8, U+C7DD, U+C800-C804, U+C808, U+C810-C81C, U+C820-C82C, U+C838, U+C84C, U+C870-C874, U+C881, U+C885, U+C88B-C88C, U+C8C4, U+C8E4, U+C8FC-C904, U+C90D, U+C911-C918, U+C950, U+C96C, U+C988-C990, U+C998, U+C99D, U+C9C0-C9C4, U+C9C8, U+C9D0-C9D6, U+C9DC-C9DD, U+C9E7, U+C9F1, U+C9F8, U+CA4D, U+CABC-CAC0, U+CB48, U+CBE4, U+CC0C-CC0D, U+CC1D, U+CC28-CC2C, U+CC30-CC38, U+CC3C-CC45, U+CC4C-CC54, U+CC59-CC60, U+CC98-CCAB, U+CCAD-CCB4, U+CCBC, U+CCD0, U+CCE4, U+CD08-CD09, U+CD10, U+CD19, U+CD1D, U+CD5C, U+CD78, U+CD94-CDA4, U+CDA9-CDB0, U+CDE8, U+CE04, U+CE20-CE21, U+CE35-CE5C, U+CE60, U+CE68-CE69, U+CE6D, U+CE74, U+CE78, U+CE7C-CE84, U+CE90, U+CE94, U+CEA0-CEA1, U+CEA5, U+CEE4, U+CEE8, U+CEEC-CEF7, U+CEF9-CF00, U+CF04-CF08, U+CF13, U+CF1C, U+CF54-CF58, U+CF5C-CF64, U+CF69, U+CF78, U+CF8C, U+CFE0, U+CFE4-CFE8, U+CFFC, U+D034-D038, U+D050, U+D06C, U+D070, U+D074-D07C, U+D0A4-D0AC, U+D0B9-D0C4, U+D0C8, U+D0D0-D0D1, U+D0D5-D0DD, U+D0EC-D0ED, U+D0F1, U+D130-D138, U+D140, U+D145-D15D, U+D1A0-D1A4, U+D1B0-D1B1, U+D1B5, U+D1F4, U+D22C, U+D230-D234, U+D241, U+D280, U+D29C, U+D2B8-D2BC, U+D2C0, U+D2C8, U+D2F0-D2F1, U+D2F8-D300, U+D305-D30C, U+D310, U+D314, U+D31C-D31D, U+D321, U+D328-D32C, U+D330, U+D33D, U+D37C-D38C, U+D391-D3A0, U+D3AB, U+D3B8-D3BC, U+D3C9, U+D3EC-D3FC, U+D3FF-D401, U+D45C, U+D478, U+D47C, U+D480, U+D488, U+D48B-D48D, U+D4E8, U+D504, U+D50C-D514, U+D53C-D544, U+D551-D56D, U+D574, U+D578, U+D57C-D584, U+D587-D589, U+D5A5-D5C8, U+D5CC, U+D5D8, U+D5E4, U+D5E8-D5EC, U+D600-D608, U+D611, U+D615-D61C, U+D638-D640, U+D648, U+D64D, U+D654-D65C, U+D669, U+D68C-D68D, U+D6A8, U+D6C4, U+D6C8, U+D6D4, U+D718, U+D720, U+D729, U+D749-D754, U+D759, U+D761, U+D765, U+D76C-D770, U+D788, U+D78C-D798, U+FFE6;
+  unicode-range: U+AC13, U+AC1A, U+AC24, U+AC2F, U+AC38, U+AC81, U+AC90-AC94, U+AC9F, U+ACAC, U+ACE1, U+ACE8, U+ACFD, U+AD34, U+AD70, U+AD7F, U+AD82, U+ADC0, U+ADE0, U+AE40, U+AE45, U+AE4D-AE4E, U+AE5D, U+AE68, U+AE78, U+AEBD, U+AECF, U+AED1, U+AEF4, U+AF2D-AF30, U+AF41, U+AFC8, U+AFCD, U+AFD4, U+B048, U+B054, U+B09A, U+B0A1, U+B0B3, U+B0B5, U+B0C4, U+B0C9-B0D0, U+B0E5, U+B137, U+B150, U+B179-B180, U+B188, U+B18D, U+B1CC, U+B1E8, U+B1FD, U+B205, U+B291, U+B2AA, U+B2DD, U+B2F7, U+B304, U+B315, U+B355, U+B369-B36B, U+B374, U+B3C8, U+B3D4, U+B451, U+B463-B465, U+B4C0, U+B4EF, U+B518, U+B51C, U+B525-B527, U+B531, U+B538, U+B543, U+B545, U+B62C, U+B69C-B69D, U+B6A4, U+B728-B729, U+B784, U+B78F, U+B791, U+B7A8-B7AB, U+B7ED-B7F0, U+B801, U+B81B, U+B839, U+B860, U+B8B0, U+B8E1, U+B8FB, U+B959-B95C, U+B975, U+B98E, U+B9DB, U+B9E5, U+B9F5, U+BA40, U+BA4B, U+BA58, U+BA67, U+BA78, U+BAB0, U+BB18, U+BB35, U+BB44, U+BB47-BB49, U+BC0D, U+BC1F, U+BC25, U+BC40, U+BC45-BC49, U+BC85, U+BC8C, U+BCB0, U+BCD1, U+BD04, U+BD09-BD10, U+BD90, U+BD93-BD95, U+BDF0, U+BE10, U+BE45, U+BE54, U+BE57-BE59, U+BE75, U+BEA8, U+BED0, U+BF08, U+BF40, U+BF50-BF51, U+BFCC, U+BFD4, U+BFDC, U+BFE1, U+C058-C05C, U+C090, U+C0B6, U+C0E4, U+C0F7-C0F9, U+C100, U+C11D, U+C12C, U+C15C, U+C170, U+C178, U+C19C, U+C219, U+C21F, U+C22D, U+C232, U+C258, U+C26C, U+C290, U+C29B-C29D, U+C2A8, U+C2B4, U+C2EB, U+C2EF, U+C2F8, U+C30D, U+C314, U+C329, U+C368, U+C370, U+C3D8, U+C410, U+C465, U+C4F1, U+C53D, U+C545, U+C557, U+C561-C568, U+C575, U+C58C, U+C5B9, U+C5C4, U+C5C9, U+C5CE, U+C5E0, U+C5E3, U+C5FD, U+C625, U+C637-C639, U+C641, U+C648, U+C651, U+C695, U+C6B1, U+C6DC, U+C6E8, U+C719, U+C721-C728, U+C73D, U+C789-C78A, U+C78E, U+C794, U+C7BC, U+C7C1-C7C8, U+C7DD, U+C813, U+C816, U+C824-C82C, U+C88B, U+C8C4, U+C8E4, U+C8FD, U+C96C, U+C998, U+C9D5-C9D6, U+C9F1, U+CABC, U+CAC0, U+CB48, U+CC0C-CC0D, U+CC1D, U+CC29-CC2C, U+CC45, U+CC59-CC60, U+CC99, U+CCA9, U+CCBC, U+CD09, U+CD10, U+CD19, U+CD78, U+CDA4, U+CE84, U+CEA0-CEA1, U+CEA5, U+CEF9-CF00, U+CF04-CF08, U+CF55, U+CF5C-CF64, U+CF69, U+CF78, U+CFE0, U+CFE4-CFE8, U+CFFC, U+D034-D038, U+D050, U+D0A5-D0A8, U+D0C1, U+D0D0-D0D1, U+D0EC, U+D0F1, U+D131-D134, U+D145, U+D15C-D15D, U+D1A1-D1A4, U+D1B0, U+D1F4, U+D230-D234, U+D241, U+D2F1, U+D2F8, U+D31C, U+D321, U+D330, U+D33D, U+D37D-D38C, U+D391, U+D399-D3A0, U+D3AB, U+D401, U+D478, U+D47C, U+D48B, U+D4E8, U+D514, U+D551, U+D565, U+D56B, U+D578, U+D57C-D584, U+D587, U+D5C8, U+D5CC, U+D5D8, U+D5E8-D5EC, U+D608, U+D611, U+D61C, U+D639, U+D640, U+D64D, U+D6C8, U+D6D4, U+D718, U+D720, U+D729, U+D749, U+D754, U+D759, U+D761, U+D765, U+D76C;
+}
+@font-face {
+  font-family: "SUIT Variable";
+  src: url("/fonts/suit/suit-0.bcf7da13.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+20-AC04, U+AC08, U+AC10-AC12, U+AC14-AC16, U+AC19, U+AC1C-AC1D, U+AC31, U+AC70, U+AC74, U+AC78, U+AC80, U+AC83, U+AC8C, U+ACA0, U+ACA8-ACA9, U+ACB0, U+ACB9, U+ACBC-ACBD, U+ACC4, U+ACE0, U+ACE4-ACE7, U+ACF0-ACF5, U+ACFC, U+AD00, U+AD11, U+AD50, U+AD6C-AD6D, U+AD73-AD75, U+AD7D, U+AD81, U+AD8C, U+ADDC, U+ADE4, U+ADF8, U+ADFC, U+AE00, U+AE08-AE0B, U+AE30, U+AE34, U+AE38, U+AE41-AE43, U+AE4C, U+AE50, U+AE5C, U+AE65, U+AEBC, U+AECD, U+AED8, U+AF2C, U+AF34, U+AF43, U+AFB8, U+AFBC-AFC0, U+AFF0, U+B00C-B014, U+B044, U+B04A-B04C, U+B05D, U+B07C, U+B098, U+B09C, U+B0A0, U+B0A8, U+B0AC, U+B0AE, U+B0B4, U+B0B8, U+B108-B109, U+B10C, U+B110, U+B113-B118, U+B123-B124, U+B140, U+B144, U+B178, U+B192-B193, U+B204, U+B208, U+B20C, U+B214, U+B220, U+B258, U+B274, U+B290, U+B294, U+B298, U+B2A5-B2A6, U+B2C8-B2CC, U+B2D0, U+B2D8-B2D9, U+B2E4-B2E5, U+B2E8-B2EC, U+B2F4-B2F5, U+B2F9, U+B2FF-B300, U+B311-B313, U+B354, U+B358, U+B35C, U+B364, U+B367, U+B36E-B370, U+B378, U+B3C4-B3C5, U+B3CC, U+B3D9, U+B410, U+B418-B429, U+B450, U+B454, U+B458, U+B460, U+B4A4, U+B4C8, U+B4DC-B4E0, U+B4E4-B4ED, U+B4F1, U+B514, U+B529, U+B530, U+B54C, U+B5A0, U+B5A4-B5A8, U+B5BC, U+B5C0, U+B610, U+B6AB, U+B6F0-B6F4, U+B73B, U+B744, U+B760, U+B77C-B780, U+B78C, U+B790, U+B798-B79C, U+B7AD, U+B7C9, U+B7EC, U+B7FC-B7FF, U+B808-B80C, U+B824-B825, U+B82C, U+B838, U+B840, U+B85C-B85D, U+B864, U+B86D-B871, U+B8CC, U+B8E8, U+B8EC-B8F9, U+B958, U+B960, U+B974, U+B978-B987, U+B9AC-B9CE, U+B9D0, U+B9D8, U+B9DD-B9DE, U+B9E4, U+B9E8, U+B9F9, U+BA38-BA3C, U+BA48, U+BA4D, U+BA54, U+BA5C-BA64, U+BA70, U+BA74, U+BA85-BA87, U+BAA8-BAAC, U+BAB8, U+BABB-BABD, U+BB34, U+BB36-BB3C, U+BBA4, U+BBC0, U+BBF8-BBFC, U+BC00, U+BC0B, U+BC0F-BC16, U+BC18-BC1D, U+BC24, U+BC29, U+BC30-BC34, U+BC43, U+BC84, U+BC88, U+BC94-BC97, U+BCA0, U+BCA4, U+BCA8, U+BCBC-BCC4, U+BCCD, U+BCF4-BCF5, U+BCF8, U+BCFC, U+BD80-BD84, U+BD88-BD89, U+BD99, U+BE0C, U+BE14, U+BE44, U+BE48, U+BE4C, U+BE5B-BE61, U+BE68, U+BE7C, U+BE80, U+BE90, U+BFD0, U+C0AC-C0AD, U+C0B0, U+C0B4, U+C0BC, U+C0C1, U+C0C8-C0C9, U+C0D8, U+C0DD, U+C11C, U+C11E, U+C120, U+C124, U+C12F, U+C131, U+C138-C13C, U+C140, U+C149-C14B, U+C154, U+C158, U+C18C-C18D, U+C190, U+C194, U+C1A1, U+C1C4, U+C1E0, U+C1FC, U+C218, U+C21C, U+C220-C228, U+C22B, U+C250, U+C27C, U+C288, U+C2A4, U+C2AC, U+C2B5, U+C2B9-C2E0, U+C2E4, U+C2EC, U+C2F1, U+C313, U+C36C, U+C378-C379, U+C4F0, U+C4F4-C4F8, U+C501, U+C528-C529, U+C544, U+C548-C54A, U+C54C, U+C554-C555, U+C558-C559, U+C55E-C560, U+C571, U+C57C-C580, U+C591, U+C5B4-C5B8, U+C5BB-C5BC, U+C5C5-C5C8, U+C5D0-C5D8, U+C5EC-C5ED, U+C5F0-C5F4, U+C5FC, U+C601-C606, U+C608, U+C610, U+C61B, U+C624, U+C628, U+C62C, U+C62E, U+C634-C635, U+C640, U+C644, U+C655, U+C678, U+C67C, U+C694, U+C6A9-C6B0, U+C6B4, U+C6B8, U+C6C0, U+C6C3-C6C5, U+C6CC, U+C6D0-C6D4, U+C6E0, U+C704, U+C708, U+C717, U+C720, U+C73C, U+C740, U+C744, U+C74C, U+C751, U+C758, U+C774, U+C778, U+C77C-C77D, U+C784-C788, U+C790-C791, U+C798, U+C7A0-C7A1, U+C7A5-C7AC, U+C7B0, U+C800-C804, U+C808, U+C810-C811, U+C815, U+C81C, U+C820, U+C838, U+C84C, U+C870-C874, U+C881, U+C885, U+C88C, U+C8FC, U+C900-C904, U+C90D, U+C911-C918, U+C950, U+C988-C990, U+C99D, U+C9C0-C9C4, U+C9C8, U+C9D0-C9D3, U+C9DC-C9DD, U+C9E7, U+C9F8, U+CA4D, U+CABD, U+CAD3, U+CBE4, U+CC28, U+CC30-CC38, U+CC3C-CC44, U+CC4C-CC54, U+CC98, U+CC9C-CCA8, U+CCAB, U+CCAD-CCB4, U+CCD0, U+CCE4, U+CD08, U+CD1D, U+CD5C, U+CD94-CD9C, U+CDA9-CDB0, U+CDE8, U+CE04, U+CE20-CE21, U+CE35-CE5C, U+CE60, U+CE68-CE69, U+CE6D, U+CE74, U+CE78, U+CE7C, U+CE90, U+CE94, U+CEE4, U+CEE8, U+CEEC-CEF7, U+CF13, U+CF1C, U+CF54, U+CF58, U+CF8C, U+D06C, U+D070, U+D074-D07C, U+D0A4, U+D0AC, U+D0B9-D0C0, U+D0C4, U+D0C8, U+D0D5-D0DD, U+D0ED, U+D130, U+D138, U+D140, U+D14C-D154, U+D1A0, U+D1B1, U+D1B5, U+D22C, U+D280, U+D29C, U+D2B8-D2BC, U+D2C0, U+D2C8, U+D2F0, U+D300, U+D305-D30C, U+D310, U+D314, U+D31D, U+D328-D32C, U+D37C, U+D398, U+D3B8-D3BC, U+D3C9, U+D3EC-D3FC, U+D3FF, U+D45C, U+D480, U+D488, U+D48D, U+D504, U+D50C, U+D53C-D544, U+D558-D560, U+D568-D569, U+D56D, U+D574, U+D588-D589, U+D5A5, U+D5E4, U+D600-D604, U+D615, U+D638, U+D63C, U+D648, U+D654-D65C, U+D669, U+D68C-D68D, U+D6A8, U+D6C4, U+D750-D751, U+D770, U+D788, U+D78C-D798, U+FFE6;
 }
 /* suit-slices:end */
 /* YPL Figures: digits, hyphen and D drawn in the wordmark's construction (scripts/build-figures.py). Reserved for the brand:
@@ -81,176 +88,91 @@
   src: url("/fonts/ypl-figures.woff2?v=20261027") format("woff2"); /* the query changes whenever the glyphs do, so no browser keeps old digits */
   font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+002D, U+0044, U+2212;
 }
-@property --la { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @property --fade-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
-@property --lb { syntax: "<color>"; inherits: true; initial-value: transparent; }
-/* B6: the theme's colors are typed so the page fades between themes in place; nothing is copied and nothing moves.
-   Shadows and the other composite tokens switch at once. */
-@property --stage { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --stage-sunk { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --surface { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --surface-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --surface-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --fg { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --fg-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --fg-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --line { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --accent { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --on-accent { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --accent-hl { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rank-1 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rank-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rank-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rank-n { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --pod { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --pod-ink { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --pod-label { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --tint { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --tint-strong { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --tint-soft { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --glass { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --glass-l3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --glass-lite { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --glass-solid { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --spec { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --sheen { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --caustic { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rim-top { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rim-mid { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rim-bottom { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rimc-top { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --rimc-bottom { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --well { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --ind-fg { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --hl { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --scrim { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --sel-bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --focus { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --la-open { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --lb-open { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --la-live { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --lb-live { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --la-done { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --lb-done { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --burst { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --ring { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --spot { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --spot-floor { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --contact { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --bar { syntax: "<color>"; inherits: true; initial-value: transparent; }
-@property --sun-o { syntax: "<number>"; inherits: true; initial-value: 1; }
 
 :root {
   color-scheme: dark;
   --font: "SUIT Variable", "SUIT", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  --font-fig: "YPL Figures", var(--font);
 
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s14: 56px;
   --section: var(--s10); --chapter: 80px; --gutter: 16px;
   /* the title size (40-64px) and the home's two steps above it, one golden ratio apart: the league's name on the cover, then the big figures */
-  --display: clamp(2.5rem, 2rem + 2.4vw, 4rem); --display-l: calc(var(--display) * 1.618); --display-xl: calc(var(--display) * 2.618);
+  --display: clamp(2.5rem, 2rem + 2.4vw, 4rem); --display-l: calc(var(--display) * 1.618);
   /* big figures, set in SUIT 800 with tabular digits: 28 beside a title, 48 a figure of its own, 72 the poster */
   --fig-s: 1.75rem; --fig-m: 3rem; --fig-l: 4.5rem;
   /* radius law: inner = outer - padding; a list row keeps 24 inside its 8px list surface, a textarea rounds at 20 */
   --r-hero: 36px; --r-card: 32px; --r-row: 24px; --r-field: 20px; --r-tile: 12px; --r-pill: 999px;
 
-  --stage: #0A0A0A; --stage-sunk: #050505;
-  --surface: #161616; --surface-2: #1F1F1F; --surface-3: #2B2B2B;
-  --fg: #F5F5F5; --fg-2: #B0B0B0; --fg-3: #8C8C8C;
+  --stage: #0B0B0B;
+  --surface: #171717; --surface-2: #222222;
+  --fg: #F5F5F5; --fg-2: #B0B0B0; --fg-3: #9A9A9A;
   --line: rgb(255 255 255 / .1);
   --accent: #F5F5F5; --on-accent: #0A0A0A; --accent-hl: rgb(0 0 0 / .1);
-  --accent-shadow: 0 1px 1px rgb(0 0 0 / .4), 0 12px 28px -14px rgb(255 255 255 / .3);
-  --rank-1: #FFFFFF; --rank-2: #CFCFCF; --rank-3: #A6A6A6; --rank-n: #8C8C8C;
+  --accent-shadow: 0 1px 1px rgb(0 0 0 / .4);
+  --rank-1: #FFFFFF; --rank-2: #CFCFCF; --rank-3: #A6A6A6; --rank-n: #9A9A9A;
   /* party display case: dark in dark, on the light surface in light (the shown sprites are transparent PNGs) */
-  --pod: #141414; --pod-rim: inset 0 1px 0 rgb(255 255 255 / .06); --pod-blend: lighten; --pod-ink: #B0B0B0; --pod-label: #F5F5F5;
+  --pod: #141414; --pod-rim: inset 0 1px 0 rgb(255 255 255 / .06);
   --tint: rgb(255 255 255 / .09); --tint-strong: rgb(255 255 255 / .18); --tint-soft: rgb(255 255 255 / .05);
-  --glass: rgb(26 26 26 / .44); --glass-l3: rgb(22 22 22 / .84); --glass-lite: rgb(255 255 255 / .065); --glass-solid: #202020; --glass-bright: 1.12;
-  /* glass is lit from directly above (C3): a specular pool at the top centre, a sheen falling from it,
-     light gathering again at the bottom where it leaves the glass, and a rim that is brightest at the top middle
-     and fades toward the ends, so the surface reads as curved and thick rather than outlined */
-  --spec: rgb(255 255 255 / .17); --sheen: rgb(255 255 255 / .06); --caustic: rgb(255 255 255 / .09);
-  --edge: inset 0 1px 1px -.5px rgb(255 255 255 / .24), inset 0 -1px 1px -.5px rgb(255 255 255 / .1), inset 0 0 8px rgb(255 255 255 / .045), inset 0 14px 22px -18px rgb(255 255 255 / .16), inset 0 -16px 24px -20px rgb(0 0 0 / .5);
-  --rim-top: rgb(255 255 255 / .4); --rim-mid: rgb(255 255 255 / .05); --rim-bottom: rgb(255 255 255 / .16);
-  --rimc-top: rgb(255 255 255 / .08); --rimc-bottom: rgb(255 255 255 / .02);
-  --lift: 0 1px 1px rgb(0 0 0 / .35), 0 3px 8px -3px rgb(0 0 0 / .4);
-  --shadow-near: 0 1px 1px rgb(0 0 0 / .45), 0 6px 14px -6px rgb(0 0 0 / .45); --shadow-far: 0 24px 52px -18px rgb(0 0 0 / .75);
-  --l3-shadow: 0 1px 1px rgb(0 0 0 / .45), 0 10px 24px -10px rgb(0 0 0 / .5), 0 34px 80px -26px rgb(0 0 0 / .85);
+  /* matte: what floats is an opaque plate, one step lighter than the page. The light from above is baked in once as a sheen
+     falling from the top edge, so a plate reads as lit without anything being computed under it. */
+  --plate: #222222; --plate-l3: #1B1B1B; --soft: rgb(255 255 255 / .075);
+  --sheen: linear-gradient(180deg, rgb(255 255 255 / .07), transparent 64px);
+  --lift: 0 1px 1px rgb(0 0 0 / .35);
+  --plate-shadow: 0 10px 24px -12px rgb(0 0 0 / .7); --l3-shadow: 0 24px 64px -24px rgb(0 0 0 / .85);
+  --card-shadow: 0 18px 32px -22px #000;
   /* a groove pressed into the surface: segmented tracks, the bar's link track, fields */
-  --well: rgb(0 0 0 / .24); --well-edge: inset 0 1px 2px rgb(0 0 0 / .45), inset 0 3px 8px -4px rgb(0 0 0 / .45), inset 0 -1px 0 rgb(255 255 255 / .07);
-  --card-shadow: 0 1px 1px rgb(0 0 0 / .35), 0 24px 48px -28px rgb(0 0 0 / .85);
-  --card-rim: inset 0 1px 0 rgb(255 255 255 / .06), inset 0 0 0 1px rgb(255 255 255 / .025);
-  --ind-fg: #FFFFFF; --ind-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 1px 2px rgb(0 0 0 / .3);
-  /* the selection lens is drawn opaque and faded as one group (placePill) */
-  --ind-a: .22; --ind-body: linear-gradient(180deg, #FFFFFF, #C8C8C8 78%); --ind-filter: none;
+  --well: rgb(0 0 0 / .24); --well-edge: inset 0 1px 2px rgb(0 0 0 / .45), inset 0 -1px 0 rgb(255 255 255 / .07);
+  /* the selection lens: one solid step above what it stands on */
+  --lens: #3C3C3C; --lens-bar: #3C3C3C; --ind-fg: #FFFFFF; --ind-shadow: 0 1px 2px rgb(0 0 0 / .3);
   --hl: rgb(255 255 255 / .09);
-  /* the light a touch raises inside glass and on its rim (glint.js) */
-  --glint: rgb(255 255 255 / .3); --glint-rim: rgb(255 255 255 / .95);
   --scrim: rgb(0 0 0 / .5);
   --sel-bg: rgb(255 255 255 / .26);
   --focus: rgb(255 255 255 / .85);
-  --la-open: rgb(255 255 255 / .15); --lb-open: rgb(255 255 255 / .06);
-  --la-live: rgb(255 255 255 / .23); --lb-live: rgb(255 255 255 / .1);
-  --la-done: rgb(255 255 255 / .08); --lb-done: rgb(255 255 255 / .03);
+  --la-open: rgb(255 255 255 / .15); --la-live: rgb(255 255 255 / .23); --la-done: rgb(255 255 255 / .08);
   --burst: rgb(255 255 255 / .26); --ring: rgb(255 255 255 / .6);
-  --sun-o: 1;
   /* the cover scene (home): ceiling light, the lit floor, contact shadows, how much further things darken */
-  --spot: rgb(255 255 255 / .09); --spot-floor: rgb(255 255 255 / .15); --contact: rgb(0 0 0 / .72); --recede: .07; --bar: rgb(255 255 255 / .065);
+  --spot: rgb(255 255 255 / .09); --spot-floor: rgb(255 255 255 / .15); --contact: rgb(0 0 0 / .72); --recede: .07;
   /* the home arena: the beam from above onto the field, the light that crosses and follows over the YPL */
-  --home-beam: rgb(255 255 255 / .12); --home-shine: #F5F5F5;
-  --grain: linear-gradient(transparent, transparent);
+  --home-beam: rgb(255 255 255 / .13); --home-shine: #F5F5F5;
 
-  --dur-instant: 100ms; --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 420ms; --dur-stage: 700ms;
+  --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 420ms; --dur-stage: 700ms;
   --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-in: cubic-bezier(.5, 0, .75, 0); --ease-in-out: cubic-bezier(.65, 0, .35, 1);
   /* H1/H2 springs, 3.1% and 1.1% overshoot, natural length 400ms and 670ms */
   --dur-snappy: 400ms; --dur-soft: 670ms;
   --spring-snappy: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
   --spring-soft: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
-  --rise: translateY(16px); --reveal-blur: none; /* a blurred rise re-rasterised each card as it scrolled in (2026-10-28) */
-  /* the bars' light moves with the stage light, at the page change (a gliding gradient restyled the bars every frame) */
-  --glide: 0s;
+  --rise: translateY(16px);
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --stage: #E7E7E7; --stage-sunk: #DCDCDC;
-  --surface: #FFFFFF; --surface-2: #F3F3F3; --surface-3: #E6E6E6;
-  --fg: #0A0A0A; --fg-2: #525252; --fg-3: #6B6B6B;
+  --stage: #E4E4E4;
+  --surface: #FFFFFF; --surface-2: #F4F4F4;
+  --fg: #0A0A0A; --fg-2: #525252; --fg-3: #5F5F5F;
   --line: rgb(0 0 0 / .08);
   --accent: #0A0A0A; --on-accent: #FFFFFF; --accent-hl: rgb(255 255 255 / .16);
-  --accent-shadow: 0 1px 1px rgb(0 0 0 / .2), 0 12px 28px -14px rgb(0 0 0 / .5);
-  --rank-1: #000000; --rank-2: #3D3D3D; --rank-3: #5E5E5E; --rank-n: #6B6B6B;
-  --pod: var(--surface-2); --pod-rim: none; --pod-blend: normal; --pod-ink: var(--fg-2); --pod-label: var(--fg);
+  --accent-shadow: 0 1px 1px rgb(0 0 0 / .2);
+  --rank-1: #000000; --rank-2: #3D3D3D; --rank-3: #5E5E5E; --rank-n: #5F5F5F;
+  --pod: var(--surface-2); --pod-rim: none;
   --tint: rgb(0 0 0 / .05); --tint-strong: rgb(0 0 0 / .09); --tint-soft: rgb(0 0 0 / .035);
-  /* light glass is clear and a little grey, not white: the white pool and rim of the ceiling light only read against
-     a body darker than themselves, and a faint dark contour at the ends keeps the piece standing on a white card */
-  --glass: rgb(240 240 240 / .46); --glass-l3: rgb(252 252 252 / .88); --glass-lite: rgb(0 0 0 / .035); --glass-solid: #F6F6F6; --glass-bright: 1.02;
-  --spec: rgb(255 255 255 / .95); --sheen: rgb(255 255 255 / .28); --caustic: rgb(255 255 255 / .75);
-  --edge: inset 0 1px 1px -.5px rgb(255 255 255 / .95), inset 0 -1px 1px -.5px rgb(255 255 255 / .6), inset 0 14px 22px -18px rgb(255 255 255 / .8), inset 0 -16px 24px -20px rgb(0 0 0 / .12), inset 0 0 0 .5px rgb(0 0 0 / .1);
-  --rim-top: rgb(255 255 255 / 1); --rim-mid: rgb(0 0 0 / .07); --rim-bottom: rgb(255 255 255 / .8);
-  --rimc-top: rgb(255 255 255 / 1); --rimc-bottom: rgb(0 0 0 / .06);
-  --lift: 0 1px 1px rgb(0 0 0 / .07), 0 3px 8px -3px rgb(0 0 0 / .16);
-  --shadow-near: 0 1px 1px rgb(0 0 0 / .06), 0 6px 14px -6px rgb(0 0 0 / .14); --shadow-far: 0 24px 52px -18px rgb(0 0 0 / .24);
-  --l3-shadow: 0 1px 1px rgb(0 0 0 / .05), 0 10px 24px -10px rgb(0 0 0 / .1), 0 34px 80px -26px rgb(0 0 0 / .28);
-  --well: rgb(0 0 0 / .05); --well-edge: inset 0 1px 2px rgb(0 0 0 / .1), inset 0 3px 8px -4px rgb(0 0 0 / .08), inset 0 -1px 0 rgb(255 255 255 / .9);
-  --card-shadow: 0 1px 1px rgb(0 0 0 / .04), 0 24px 48px -30px rgb(0 0 0 / .28);
-  --card-rim: inset 0 0 0 1px rgb(0 0 0 / .035);
-  --ind-fg: #0A0A0A; --ind-shadow: 0 1px 1px rgb(0 0 0 / .06), 0 2px 8px -2px rgb(0 0 0 / .16);
-  --ind-a: 1; --ind-body: linear-gradient(180deg, #FFFFFF, #F7F7F7); --ind-filter: drop-shadow(0 1px 1px rgb(0 0 0 / .08)) drop-shadow(0 2px 5px rgb(0 0 0 / .1));
+  --plate: #F7F7F7; --plate-l3: #FAFAFA; --soft: rgb(0 0 0 / .045);
+  --sheen: linear-gradient(180deg, #FFFFFF, transparent 64px);
+  --lift: 0 1px 1px rgb(0 0 0 / .07);
+  --plate-shadow: 0 10px 24px -14px rgb(0 0 0 / .22); --l3-shadow: 0 24px 64px -24px rgb(0 0 0 / .28);
+  --card-shadow: 0 18px 32px -24px rgb(0 0 0 / .32);
+  --well: rgb(0 0 0 / .05); --well-edge: inset 0 1px 2px rgb(0 0 0 / .1), inset 0 -1px 0 rgb(255 255 255 / .9);
+  --lens: #FFFFFF; --lens-bar: #E2E2E2; --ind-fg: #0A0A0A; --ind-shadow: 0 1px 1px rgb(0 0 0 / .06);
   --hl: rgb(0 0 0 / .04);
-  --glint: rgb(255 255 255 / .95); --glint-rim: rgb(255 255 255 / 1);
   --scrim: rgb(0 0 0 / .2);
   --sel-bg: rgb(0 0 0 / .14);
   --focus: rgb(0 0 0 / .7);
-  --la-open: rgb(255 255 255 / .85); --lb-open: rgb(255 255 255 / .5);
-  --la-live: rgb(255 255 255 / 1); --lb-live: rgb(255 255 255 / .75);
-  --la-done: rgb(255 255 255 / .45); --lb-done: rgb(255 255 255 / .25);
+  --la-open: rgb(255 255 255 / .85); --la-live: rgb(255 255 255 / 1); --la-done: rgb(255 255 255 / .45);
   --burst: rgb(255 255 255 / .9); --ring: rgb(0 0 0 / .28);
-  --sun-o: 0;
-  --spot: rgb(255 255 255 / .6); --spot-floor: rgb(255 255 255 / .95); --contact: rgb(0 0 0 / .2); --recede: .025; --bar: rgb(0 0 0 / .06);
-  --home-beam: rgb(255 255 255 / .75); --home-shine: #FFFFFF;
+  --spot: rgb(255 255 255 / .6); --spot-floor: rgb(255 255 255 / .95); --contact: rgb(0 0 0 / .2); --recede: .025;
+  --home-beam: rgb(255 255 255 / .8); --home-shine: #FFFFFF;
 }
 @media (min-width: 860px) { :root { --section: var(--s14); --chapter: 120px; --gutter: 32px; } }
-@media (prefers-reduced-motion: reduce) { :root { --rise: none; --reveal-blur: none; } }
+@media (prefers-reduced-motion: reduce) { :root { --rise: none; } }
 
 
 /* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
@@ -267,28 +189,26 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 /* ---------- L0 stage: graphite with one soft light from directly above (C3, D1, D2) ----------
-   Painted on the page itself, not on a layer (2026-10-28, structural): the light from above, the low light and the
-   dither are the root's own backgrounds and scroll with the page, the light hanging over its top. Nothing fixed or
-   composited lies behind the page, so the page is one layer and the bars are the only other two. The stage used to be
-   four full-screen layers fixed behind the page (the stage, its dither, two drifting lights with will-change), which
-   pushed the whole page into a second full-size layer; a phone overdrew five or six screens a frame and ran out of tile
-   memory while scrolling, so the screen stalled and jumped. The light brightens with the event state (data-stage). */
-@property --grain { syntax: "*"; inherits: false; }
-:root { --la: var(--la-open); --lb: var(--lb-open); }
-:root[data-stage="live"] { --la: var(--la-live); --lb: var(--lb-live); }
-:root[data-stage="done"] { --la: var(--la-done); --lb: var(--lb-done); }
+   Painted on the page itself, not on a layer (2026-10-28, structural): the light and the dither are the root's own
+   backgrounds and scroll with the page, the light hanging over its top. Nothing fixed or composited lies behind the page, so
+   a screen is one page layer plus the bars and two still edges. The light brightens with the event state (data-stage).
+   The dither is one small still image (2026-11-01): it used to be drawn in a canvas on load and written on <html>, which
+   restyled the whole document once right after the first paint. */
+:root { --la: var(--la-open); }
+:root[data-stage="live"] { --la: var(--la-live); }
+:root[data-stage="done"] { --la: var(--la-done); }
 html {
   background-color: var(--stage);
-  background-image: var(--grain, none),
-    radial-gradient(70vw 50vh at 50% 0, var(--la), transparent),
-    radial-gradient(55vw 35vh at 10vw 100vh, var(--lb), transparent);
-  background-size: 128px 128px, 100% 100vh, 100% 100vh; background-repeat: repeat, no-repeat, no-repeat;
+  background-image: url("/brand/dither.png"), radial-gradient(70vw 50vh at 50% 0, var(--la), transparent);
+  background-size: 128px 128px, 100% 100vh; background-repeat: repeat, no-repeat;
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
   scrollbar-color: var(--fg-3) transparent;
   /* 스크롤바 자리를 모든 페이지에서 비워 둔다: 짧은 페이지와 긴 페이지를 오갈 때, 시트가 스크롤을 잠글 때 화면이 옆으로 튀지 않는다 */
   scrollbar-gutter: stable;
   scroll-padding-top: var(--nav-height);
 }
+/* the home draws this same light inside its own stage, over the field (the pointer's dark sheet would otherwise hide it) */
+html:has(.ha) { background-image: url("/brand/dither.png"); background-size: 128px 128px; background-repeat: repeat; }
 body {
   margin: 0; color: var(--fg);
   font: 400 1rem/1.55 var(--font);
@@ -326,7 +246,6 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .ic { flex: none; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sq { border-radius: var(--r, var(--r-row)); }
-.silver, .silver-live { color: inherit; }
 
 /* ---------- type: one scale, three weights ----------
    Sizes 12 / 13 / 15 / 16 / 17 / 20 / 24 / 28, then title 28-36 and display 40-64. Weights 400 text, 700 labels and rows,
@@ -340,61 +259,27 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .fig { font-size: var(--fig-s); font-weight: 800; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .unit { font-size: .75rem; font-weight: 600; line-height: 1.25; color: var(--fg-3); margin-left: var(--s1); }
 
-/* ---------- glass: L2 bars and floating controls, L3 sheets and popovers, lite = the same look on a flat surface (C7) ----------
-   A clear body that brightens what is behind it, a sheen falling from the light above, and edges that catch
-   light at the top and, through the glass, again at the bottom. No grain on glass. */
-.glass, .glass-l3, .groove, .card { position: relative; }
-/* One ceiling light lights the stage and every floating piece (C3), straight above the screen's centre on every page: the
-   pool on top, the light gathering under it and the brightest stretch of the rim stand under it (50% + --gx, --gx 0).
-   A menu at its trigger keeps its light at its own centre. --gx does not inherit. */
-@property --gx { syntax: "<length>"; inherits: false; initial-value: 0px; }
-:is(.glass, .glass-l3)::before { --gx: inherit; }
-/* a menu stands at its trigger, not on the screen's axis: its light stays at its own centre */
-:is(.popover, .dd-menu) { --gx: 0px; }
-.glass {
-  background: radial-gradient(150% 120% at calc(50% + var(--gx)) -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%),
-    radial-gradient(90% 70% at calc(50% + var(--gx)) 125%, var(--caustic), transparent 70%), linear-gradient(var(--glass), var(--glass));
-  -webkit-backdrop-filter: blur(24px) saturate(170%) brightness(var(--glass-bright)); backdrop-filter: blur(24px) saturate(170%) brightness(var(--glass-bright));
-  box-shadow: var(--edge), var(--shadow-near), var(--shadow-far);
-}
-.glass-l3 {
-  background: radial-gradient(150% 60% at calc(50% + var(--gx)) -10%, var(--spec), transparent 60%), linear-gradient(180deg, var(--sheen), transparent 40%), linear-gradient(var(--glass-l3), var(--glass-l3));
-  -webkit-backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright)); backdrop-filter: blur(32px) saturate(100%) brightness(var(--glass-bright));
-  box-shadow: var(--edge), var(--l3-shadow);
-}
+/* ---------- matte: L2 bars and floating controls, L3 sheets and popovers (23rd round) ----------
+   An opaque plate lit once from above by a baked sheen. It shows nothing of what is behind it, so nothing has to be
+   computed under it; a surface reads as raised by its tone. The shadows are still: never transition one. */
+.plate, .plate-l3, .groove, .card { position: relative; }
+.plate { background: var(--sheen), var(--plate); box-shadow: var(--plate-shadow); }
+.plate-l3 { background: var(--sheen), var(--plate-l3); box-shadow: var(--l3-shadow); }
 .groove { background: var(--well); box-shadow: var(--well-edge); }
-.glass::before, .glass-l3::before, .card::before {
-  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: radial-gradient(150% 170% at calc(50% + var(--gx, 0px)) 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at calc(50% + var(--gx, 0px)) 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-}
-.card::before { background: linear-gradient(180deg, var(--rimc-top), var(--rimc-bottom)); }
-.card { background: var(--surface); box-shadow: var(--card-shadow); border-radius: var(--r-card); }
-@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) { .glass, .glass-l3 { background: var(--glass-solid); } }
-@media (prefers-reduced-transparency: reduce) { .glass, .glass-l3 { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+.card { background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); border-radius: var(--r-card); }
 
-/* ---------- glint: glass lights up where it is touched (glint.js) ----------
-   A soft bloom of light rises inside the glass under the finger and the rim catches it nearest the finger, then both
-   go out. It sits under the words and the lens (z-index -1 inside the piece's own stacking context) and over the
-   body, and is moved by transform and opacity only. */
-.glint { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0; }
-.glint > i { position: absolute; left: var(--gx0); top: var(--gy0); width: var(--gd); height: var(--gd); margin: calc(var(--gd) / -2) 0 0 calc(var(--gd) / -2); border-radius: 50%; background: radial-gradient(closest-side, var(--glint), transparent); will-change: transform; }
-.glint > b { position: absolute; inset: 0; border-radius: inherit; padding: 1px;
-  background: radial-gradient(var(--gr) circle at var(--gx0) var(--gy0), var(--glint-rim), transparent 70%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-
-/* ---------- K1 press, K2 pointer highlight ---------- */
+/* ---------- K1 press, K2 hover highlight ---------- */
 .press { transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 .press:active:not(:disabled) { scale: .97; transition: scale 90ms var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { .press:active:not(:disabled) { scale: 1; opacity: .75; } }
 @media (hover: hover) and (pointer: fine) {
-  .hl::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), var(--hl), transparent 70%); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); pointer-events: none; }
+  .hl::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: radial-gradient(240px circle at 50% 50%, var(--hl), transparent 70%); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); pointer-events: none; }
   .hl:hover::after { opacity: 1; }
 }
 
-/* ---------- J1 reveal: once, a blur lifting as it rises (Reveal.jsx sets .pre only below the fold) ---------- */
-.reveal { transition: opacity var(--dur-stage) var(--ease-out), transform 900ms var(--ease-out), filter var(--dur-stage) var(--ease-out); }
-.reveal.pre { opacity: 0; transform: var(--rise); filter: var(--reveal-blur); }
+/* ---------- J1 reveal: once, as it rises (Reveal.jsx sets .pre only below the fold) ---------- */
+.reveal { transition: opacity var(--dur-stage) var(--ease-out), transform 900ms var(--ease-out); }
+.reveal.pre { opacity: 0; transform: var(--rise); }
 
 /* ---------- K4 rolling numbers ---------- */
 .roll { display: inline-flex; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: 1.15; }
@@ -414,10 +299,14 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
   :is(.bk-scroll, .seg-track, .rc-filter[role="group"]) {
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
     mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
-    animation: edge-fade linear both; animation-timeline: scroll(self inline);
+    /* two ranges at the two ends: between them no animation is active, so a long run scrolls with no style or mask work at all */
+    --fade-r: 32px;
+    animation: edge-fade-l linear both, edge-fade-r linear both; animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range: 0px 32px, calc(100% - 32px) 100%;
   }
 }
-@keyframes edge-fade { 0% { --fade-l: 0px; --fade-r: 32px; } 8%, 92% { --fade-l: 32px; --fade-r: 32px; } 100% { --fade-l: 32px; --fade-r: 0px; } }
+@keyframes edge-fade-l { from { --fade-l: 0px; } to { --fade-l: 32px; } }
+@keyframes edge-fade-r { from { --fade-r: 32px; } to { --fade-r: 0px; } }
 
 /* ---------- shared keyframes ---------- */
 @keyframes y-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
@@ -434,7 +323,6 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
   :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .ff-ok, .dd-menu, .bk-submission-detail, .records-round-detail) { animation-name: y-fade; }
   :root :is(.tab:is([aria-current="page"], [data-current]) .ics, .bk-slot.dset.pop) { animation: none; }
 }
-/* B6 theme change: the tokens fade on <html>; every element follows them, so for the length of the fade the elements' own
-   transitions give way to one for the shadows, the composite tokens that switch at once */
-:root.theme-fade { transition-property: --stage, --stage-sunk, --surface, --surface-2, --surface-3, --fg, --fg-2, --fg-3, --line, --accent, --on-accent, --accent-hl, --rank-1, --rank-2, --rank-3, --rank-n, --pod, --pod-ink, --pod-label, --tint, --tint-strong, --tint-soft, --glass, --glass-l3, --glass-lite, --glass-solid, --spec, --sheen, --caustic, --rim-top, --rim-mid, --rim-bottom, --rimc-top, --rimc-bottom, --well, --ind-fg, --hl, --scrim, --sel-bg, --focus, --la-open, --lb-open, --la-live, --lb-live, --la-done, --lb-done, --burst, --ring, --spot, --spot-floor, --contact, --bar, --sun-o; transition-duration: var(--dur-slow); transition-timing-function: var(--ease-in-out); }
-:root.theme-fade *, :root.theme-fade *::before, :root.theme-fade *::after { transition: box-shadow var(--dur-slow) var(--ease-in-out) !important; }
+/* B6 theme change (2026-11-01): the page turns at once under one still sheet of the old stage, and that sheet fades. One opacity on the
+   compositor; the typed colour tokens that used to fade restyled the whole document every frame (15ms a frame on a mid-range phone). */
+.veil { position: fixed; inset: 0; z-index: 90; pointer-events: none; }

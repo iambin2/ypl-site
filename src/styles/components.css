@@ -1,26 +1,17 @@
 /* =============================================================================
-   YPL Glass — components
+   YPL Matte — components
    Every control draws from here: buttons, chips, segmented, fields, menus, lists, tables,
    sheets, toasts, empty and loading states. Every label sits at the exact centre of its control.
    ========================================================================== */
 
-/* ---------- "lite" glass: the floating look on a flat surface, without blur (C7) ---------- */
-.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
+/* ---------- soft: the raised look of a plate on a flat surface, in the surface's own tone ---------- */
+.ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
 .pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-type, .tb-status-chip, .tb-official-meta span, .rc-chip,
 .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .ff-choice {
-  position: relative;
-  background: radial-gradient(150% 120% at 50% -20%, var(--spec), transparent 58%), linear-gradient(180deg, var(--sheen), transparent 55%), linear-gradient(var(--glass-lite), var(--glass-lite));
-  box-shadow: var(--edge), var(--lift);
-}
-/* its own stacking context, so the glint of a touch (glint.js) rises over the body and under the words */
-:is(.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn)) { isolation: isolate; }
-:is(.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ann-link, .ann-submit)::before {
-  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: radial-gradient(150% 170% at 50% 0%, var(--rim-top), transparent 58%), radial-gradient(110% 150% at 50% 100%, var(--rim-bottom), transparent 52%), linear-gradient(var(--rim-mid), var(--rim-mid));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  position: relative; background: var(--sheen), linear-gradient(var(--soft), var(--soft)); box-shadow: var(--lift);
 }
 
-/* ---------- Button (M11): primary is the theme's inverse fill, secondary is glass, tertiary is text ---------- */
+/* ---------- Button (M11): primary is the theme's inverse fill, secondary is soft, tertiary is text ---------- */
 .ypl-btn, .btn, .btn-ghost {
   position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
   height: 48px; padding: 0 var(--s5); border: 0; border-radius: var(--r-pill);
@@ -35,8 +26,8 @@
 .ypl-btn--sm .ic, .btn.btn-sm .ic { width: 16px; height: 16px; }
 :is(.ypl-btn, .btn, .pg-btn, .dd-btn, .dd-opt, .fb-ic, .ed-mv, .ed-del, .tb-pokemon-row):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 @media (hover: hover) {
-  :is(.ypl-btn--primary, .btn-primary, .btn-danger, .tb-main-btn):hover:not(:disabled) { filter: brightness(1.08); }
-  :is(.ypl-btn--glass, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn)):hover:not(:disabled) { background-color: var(--tint); }
+  :is(.ypl-btn--primary, .btn-primary, .btn-danger, .tb-main-btn):hover:not(:disabled) { opacity: .88; }
+  :is(.ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn)):hover:not(:disabled) { background-color: var(--tint); }
   .ypl-btn--quiet:hover:not(:disabled) { color: var(--fg); }
 }
 /* K1 on every control and tile, whether or not it carries .press */
@@ -47,7 +38,7 @@
 :is(.hm-result, .bk-card, .tb-slot:not(.empty), .fb-addq, .tb-pokemon-row, .tb-saved-main, .ypl-row:is(button, a)):active:not(:disabled) { scale: .985; transition: scale 90ms var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { :is(.ypl-btn, .btn, .ypl-row):active:not(:disabled) { scale: 1; opacity: .75; } }
 
-/* ---------- Chip and badge (M10): one 28px lite glass pill for every label, tag and status; the dot rides in front only while live ---------- */
+/* ---------- Chip and badge (M10): one 28px soft pill for every label, tag and status; the dot rides in front only while live ---------- */
 .ypl-chip, .y-chip, .pin, .rc-chip, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-status-chip, .tb-type, .tb-official-meta span,
 .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .tb-chip {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: 28px; padding: 0 var(--s3);
@@ -56,10 +47,10 @@
 .ypl-chip--ink { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 .y-chip { color: var(--fg-2); }
 .y-chip .ic, .ypl-chip .ic { width: 14px; height: 14px; }
-/* a count: a small flat pill, never glass inside glass */
+/* a count: a small flat pill, never a pill inside a pill */
 .fold-badge, .tb-count-badge { min-width: 24px; height: 24px; padding: 0 var(--s2); display: inline-grid; place-items: center; border-radius: var(--r-pill); background: var(--tint); color: var(--fg); font-size: .75rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 
-/* ---------- Segmented (K3): a glass track, the chosen cell is a small lens of the same glass ---------- */
+/* ---------- Segmented (K3): a groove track, the chosen cell is a small lens one tone up ---------- */
 .ypl-seg { position: relative; display: inline-flex; max-width: 100%; border-radius: var(--r-pill); vertical-align: top; }
 .seg-track {
   position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); padding: var(--s1);
@@ -104,7 +95,7 @@
 @media (hover: hover) { .ypl-more:hover { color: var(--fg); } .ypl-more:hover .ic { transform: translateX(2px); } }
 
 /* ---------- List: one reading surface, rows with no rules and generous height (M1) ---------- */
-.ypl-group { list-style: none; margin: 0; padding: var(--s2); display: flex; flex-direction: column; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow); }
+.ypl-group { list-style: none; margin: 0; padding: var(--s2); display: flex; flex-direction: column; border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
 .ypl-row {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
   min-height: var(--row-min); padding: var(--s3) var(--s4); border: 0; border-radius: var(--r-row); background-color: transparent; color: inherit; text-align: left;
@@ -124,7 +115,7 @@
 /* ---------- Lead card: the one hero card on a records screen (radius 36, padding 24; tiles 12) ---------- */
 .rc-lead {
   position: relative; overflow: hidden; display: grid; gap: var(--s4); padding: var(--s6);
-  border-radius: var(--r-hero); background: var(--surface); box-shadow: var(--card-rim), var(--card-shadow);
+  border-radius: var(--r-hero); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow);
 }
 .rc-lead-title { font-size: var(--display); font-weight: 800; line-height: 1.06; letter-spacing: -.04em; }
 
@@ -137,7 +128,7 @@
 /* ---------- generic card for forms and panels ---------- */
 .card.form-card { padding: var(--s5); }
 
-/* ---------- Field (M7): label, a filled glass pill, hint ---------- */
+/* ---------- Field (M7): label, a filled groove pill, hint ---------- */
 .field { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s5); min-width: 0; }
 .field > label { font-size: .8125rem; font-weight: 600; line-height: 1.25; color: var(--fg-2); }
 .field:has(> input[type="checkbox"]) { flex-direction: row; align-items: center; gap: var(--s3); min-height: var(--target); }
@@ -146,7 +137,7 @@
 :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea) {
   width: 100%; min-height: 48px; padding: var(--s3) var(--s5); border: 0; border-radius: var(--r-pill);
   background: var(--well); box-shadow: var(--well-edge); color: var(--fg); font-size: 1rem; line-height: 1.45;
-  transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out);
   -webkit-appearance: none; appearance: none;
 }
 :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -171,7 +162,7 @@
 .pts-note { padding: var(--s4) var(--s5); border-radius: var(--r-tile); background: var(--tint-soft); font-size: .8125rem; line-height: 1.55; color: var(--fg-3); }
 .pts-note b { color: var(--fg); font-weight: 600; }
 
-/* ---------- Dropdown (M6): a pill field; desktop opens a glass menu that grows from it, a phone a sheet ---------- */
+/* ---------- Dropdown (M6): a pill field; desktop opens a plate menu that grows from it, a phone a sheet ---------- */
 .dd { position: relative; width: 100%; min-width: 0; }
 .dd-btn {
   position: relative; width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
@@ -269,7 +260,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
 .pg-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--accent-shadow); }
 .pg-dots { padding: 0 var(--s1); color: var(--fg-3); }
 
-/* ---------- search field: a 48px glass pill with the glass on the left ---------- */
+/* ---------- search field: a 48px groove pill with the lens on the left ---------- */
 .lsearch, .records-search-field, .tb-search-row { position: relative; width: 100%; }
 .lsearch { width: min(360px, 100%); }
 .lsearch input, .records-search-field input, .tb-search-row input { padding-left: 48px; padding-right: 48px; }
@@ -294,7 +285,6 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   transform: translateY(calc(var(--i, 0) * -12px)) scale(calc(1 - var(--i, 0) * .05));
   transition: transform var(--dur-snappy) var(--spring-snappy), opacity var(--dur-base) var(--ease-out), translate 200ms var(--ease-in);
 }
-.toast:not(:first-child) { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--glass-solid); }
 .toast > span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .toast.out { opacity: 0; translate: 0 14px; }
 
@@ -302,12 +292,10 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
 .overlay { position: fixed; inset: 0; z-index: var(--z-modal); }
 .scrim { position: absolute; inset: 0; background: var(--scrim); touch-action: none; }
 .sheet {
-  --sheet-solid: #181818;
   position: absolute; left: 0; right: 0; bottom: 0; margin-inline: auto; width: min(100%, 560px);
   max-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column;
   border-radius: var(--r-card) var(--r-card) 0 0; outline: none;
 }
-:root[data-theme="light"] .sheet { --sheet-solid: #F7F7F7; }
 .grip { flex: none; height: 24px; display: grid; place-items: center; touch-action: none; cursor: grab; }
 .grip::after { content: ""; width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--fg-3); opacity: .5; }
 .modal {
@@ -332,12 +320,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   display: flex; justify-content: flex-end; align-items: center; gap: var(--s2); flex-wrap: wrap;
   margin: var(--s6) calc(var(--pad) * -1) calc((var(--s6) + env(safe-area-inset-bottom, 0px)) * -1);
   padding: var(--s4) var(--pad) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(to bottom, transparent, var(--sheet-solid) var(--s4));
-}
-/* the backing only exists while the body scrolls under it; on a glass sheet that does not scroll it would read as a band of a different grey */
-@supports (animation-timeline: scroll()) {
-  .modal-actions { background: none; animation: modal-actions-back linear both; animation-timeline: scroll(nearest); }
-  @keyframes modal-actions-back { from, to { background: linear-gradient(to bottom, transparent, var(--sheet-solid) var(--s4)); } }
+  background: linear-gradient(to bottom, transparent, var(--plate-l3) var(--s4));
 }
 .modal-actions .btn, .modal-actions .ypl-btn { flex: 1 1 0; }
 @media (min-width: 860px) {

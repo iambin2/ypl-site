@@ -44,7 +44,7 @@ export default function Segmented({ value, onChange, options, ariaLabel, classNa
 
   // 홈의 그림자는 바깥 상자에, 가로로 넘기는 칸과 렌즈는 안쪽 상자에 둔다. 넘겨도 홈의 가장자리는 제자리에 있다.
   return (
-    // 트랙은 표면에 눌러 판 홈(groove), 선택 렌즈는 그 위에 떠 있다. 블러가 없어 세그먼트가 여러 개여도 한 화면 블러 예산 4개를 넘지 않는다(C7)
+    // 트랙은 표면에 눌러 판 홈(groove), 선택 렌즈는 그 위에 떠 있다.
     <div className={"ypl-seg groove" + (className ? " " + className : "")}>
       <div className="seg-track" role="tablist" aria-label={ariaLabel} ref={ref}>
         <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>

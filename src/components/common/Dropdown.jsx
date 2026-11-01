@@ -9,10 +9,10 @@ import { EASE_IN, desktop } from "./motion.js";
 function DropdownMenu({ children, ariaLabel }){
   const ref=useRef(null);
   useExitAnimation(ref,{ inPlace:true, exit:node=>[node.animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.96)"}],{duration:150,easing:EASE_IN,fill:"forwards"})] });
-  return <div className="dd-menu glass-l3" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
+  return <div className="dd-menu plate-l3" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
 }
 
-/* M6: 데스크톱은 칸 아래로 커지며 열리는 글래스 메뉴, 폰은 같은 항목이 바텀시트로 올라온다. */
+/* M6: 데스크톱은 칸 아래로 커지며 열리는 매트 메뉴, 폰은 같은 항목이 바텀시트로 올라온다. */
 export default function Dropdown({ value, onChange, options = [], placeholder, className, disabled = false, ariaLabel, width }){
   const [open,setOpen]=useState(false); const [sheet,setSheet]=useState(false); const ref=useRef(null); const btnRef=useRef(null);
   useEffect(()=>{ if(!open||sheet)return; const h=(e)=>{ if(ref.current&&!ref.current.contains(e.target))setOpen(false); }; const k=(e)=>{ if(e.key==="Escape"){setOpen(false);btnRef.current?.focus();} };

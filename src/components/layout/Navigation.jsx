@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import Icon from "../common/Icon.jsx";
 import { placePill } from "../common/motion.js";
 
-/* G1, G2: 폰은 하단 글래스 탭 바 5칸, 데스크톱은 상단 바 가운데에 같은 다섯. 더보기에는 나머지 다섯 화면. */
+/* G1, G2: 폰은 하단 매트 탭 바 5칸, 데스크톱은 상단 바 가운데에 같은 다섯. 더보기에는 나머지 다섯 화면. */
 export const TABS = [["home","홈","home"],["news","공지","news"],["bracket","대진표","bracket"],["records","기록","records"],["more","더보기","more"]];
 export const MORE_ITEMS = [["titles","칭호","medal"],["champions","명예의 전당","trophy"],["board","게시판","chats"],["builder","팀 빌더","users"],["calc","계산기","calc"],["about","소개","info"]];
 /* 탭 제목에 쓰는 화면 이름. 홈은 빠져서 기본 제목을 쓴다. */
@@ -49,7 +49,7 @@ export default function TabBar({ view, moreOpen, onNavigate, onMore }) {
   const cur = tabOf(view);
   usePill(ref, cur);
   return (
-    <nav className="tabbar glass" aria-label="주요 메뉴" ref={ref}>
+    <nav className="tabbar plate" aria-label="주요 메뉴" ref={ref}>
       <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
       {TABS.map(([key, label, ic]) => (
         <button key={key} type="button" className="tab press" data-tab={key} {...current(cur, key)}

@@ -65,8 +65,8 @@ export default function AboutPage({ go }) {
             <span className="ab-flow-n">{i + 1}</span>
             <b>{s.t}</b>
             <span>{s.d}</span>
-            {s.href ? <a className="ypl-btn ypl-btn--glass ypl-btn--sm press hl" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
-              : <button type="button" className="ypl-btn ypl-btn--glass ypl-btn--sm press hl" onClick={() => go?.(s.to)}>{s.cta}</button>}
+            {s.href ? <a className="ypl-btn ypl-btn--soft ypl-btn--sm press hl" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
+              : <button type="button" className="ypl-btn ypl-btn--soft ypl-btn--sm press hl" onClick={() => go?.(s.to)}>{s.cta}</button>}
           </Reveal>
         ))}
       </ol>

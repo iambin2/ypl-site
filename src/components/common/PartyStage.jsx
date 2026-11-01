@@ -2,12 +2,12 @@ import React, { useLayoutEffect, useRef } from "react";
 import { reduced, EASE_OUT } from "./motion.js";
 import { onSpriteError } from "../../services/teamBuilderCore.js";
 
-/* 흐림이 풀리며 올라오는 등장(J1과 같은 문법). 움직임 줄이기에서는 투명도만. */
+/* 올라오는 등장(J1과 같은 문법). 변형과 투명도만 쓴다. 움직임 줄이기에서는 투명도만. */
 export function arrive(els, start, step) {
   const still = reduced();
   els.forEach((el, i) => el?.animate(
-    still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(20px)", filter: "blur(8px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
-    { duration: still ? 400 : 820, delay: start + i * step, easing: EASE_OUT, fill: "backwards" },
+    still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: "translateY(20px)" }, { opacity: 1, transform: "none" }],
+    { duration: still ? 240 : 480, delay: start + i * step, easing: EASE_OUT, fill: "backwards" },
   ));
 }
 
