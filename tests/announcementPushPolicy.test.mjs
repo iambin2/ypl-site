@@ -13,8 +13,11 @@ test("iOS Safari without push is told to add the site to the home screen", () =>
   assert.equal(pushMode({ ...phone, ios: true }), "install");
 });
 
-test("nothing shows when push cannot work", () => {
+test("a browser without push still shows the button and explains why", () => {
+  assert.equal(pushMode(phone), "unsupported");
+  assert.equal(pushMode({ ...phone, ios: true, standalone: true }), "unsupported");
+});
+
+test("nothing shows without Supabase", () => {
   assert.equal(pushMode({ ...phone, hasPush: true, connected: false }), "none");
-  assert.equal(pushMode(phone), "none");
-  assert.equal(pushMode({ ...phone, ios: true, standalone: true }), "none");
 });

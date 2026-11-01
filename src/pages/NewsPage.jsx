@@ -177,6 +177,7 @@ function PushToggle(){
   if(mode==="none") return null;
   const toggle=async()=>{
     if(mode==="install") return siteAlert("홈 화면에 추가해 주세요.","아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.");
+    if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다.","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
     setBusy(true);
     try{ if(on) await disablePush(); else await enablePush(); setOn(!on); }
     catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||""); }
