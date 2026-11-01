@@ -1,6 +1,6 @@
 ---
 name: YPL — Yonsei Pokémon League (Navy)
-description: "A sealed official record book: white paper, one navy ink, facts set large and bold, champions alone held in a case. One signature, a 12 degree slant. Everything that moves moves on the compositor; light first, dark equal."
+description: "A sealed official record book: white paper, black type set large and bold, navy for the surfaces, champions alone held in a case. One signature, a 12 degree slant. Everything that moves moves on the compositor; light first, dark equal."
 source: "tokens live in src/styles/tokens.css; tests/designLaw.test.mjs enforces this file; decisions in docs/redesign-glass/DECISIONS.md (24th round on)"
 scale:
   base: 4
@@ -16,7 +16,7 @@ scale:
 
 # YPL Navy
 
-**봉인된 공식 기록부: 흰 종이에 네이비 잉크 한 색으로 사실을 굵게 적고, 챔피언만 케이스에 담아 세운다.**
+**봉인된 공식 기록부: 흰 종이에 검은 글자로 사실을 굵게 적고, 네이비 면과 케이스로 챔피언을 세운다.**
 
 The signature is one thing, the 12 degree slant of the wordmark: the band across a slab, the loader and the letters all lean the same way. Nothing else decorates.
 
@@ -52,11 +52,11 @@ Every screen is checked against these five and nothing else; the sections below 
 
 ## Color
 
-Two layers in `tokens.css`: primitives (`--navy-*`, `--gray-*`, `--white`) and semantic tokens. Components read semantic tokens only; `designLaw` fails a component that reads a primitive.
+Two layers in `tokens.css`: primitives (`--navy-*`, `--gray-*`, `--white`, `--black`) and semantic tokens. Components read semantic tokens only; `designLaw` fails a component that reads a primitive.
 
-- One colour: navy `#081C3D`, a darkened Yonsei blue. It is a brand surface, not an accent: the bar, the footer, the arena and the slab windows are large navy fields on purpose. Text is navy too, not black: black beside the navy bar read as two darks that nearly match.
+- One colour: navy `#081C3D`, a darkened Yonsei blue. It is for surfaces, not text: the bar, the footer, the arena, the slab windows and the primary button are large navy fields on purpose. Text is black `#111111` (user, 2026-11-02): it reads cleaner, and a soft black is kinder than `#000` on a white page.
 - The greys carry the navy's hue (oklch 260) at chroma .004 to .02, so nothing is a framework grey.
-- The page is pure white. It is what gives the PSA impression; pure black is never used.
+- The page is pure white. It is what gives the PSA impression; pure `#000` is never used.
 - Solid fills only (user, 2026-11-01): no gradient, sheen, soft light or metallic effect. Colour never comes from opacity. Two exceptions: the overlay behind a sheet, and disabled. `--opacity-muted` and `--opacity-ghost` serve text on inverted fills and drawn pictures.
 - Status has no hue. `--success-*`, `--warning-*`, `--danger-*`, `--info-*` exist so a status has one name, and resolve to the same tones; it reads through words, icons and weight, never colour alone.
 - First, second and third place differ by tone (`--rank-1..3`). Pokémon type colours stay: they are content, not chrome.
@@ -66,16 +66,16 @@ Contrast, computed from the tokens (AA is 4.5):
 
 | Text | On | Light | Dark |
 |---|---|---|---|
-| text-primary | bg | 16.9 | 16.9 |
-| text-primary | surface | 15.7 | 14.6 |
-| text-primary | surface-raised | 13.4 | 12.9 |
+| text-primary | bg | 18.9 | 16.9 |
+| text-primary | surface | 17.6 | 14.6 |
+| text-primary | surface-raised | 14.9 | 12.9 |
 | text-secondary | bg | 8.5 | 11.0 |
 | text-secondary | surface | 7.9 | 9.5 |
 | text-tertiary | bg | 6.0 | 7.3 |
 | text-tertiary | surface | 5.6 | 6.3 |
 | text-tertiary | surface-raised | 4.7 | 5.6 |
 | text-tertiary | surface-sunken | 5.2 | 6.9 |
-| text-on-accent | accent | 16.9 | 16.9 |
+| text-on-accent | accent | 16.9 | 18.9 |
 | on-bar-2 | bar | 9.0 | 9.0 |
 | on-bar-2 | tabs | 9.0 | 6.9 |
 
@@ -166,7 +166,7 @@ Every control follows one rule, set once in `tokens.css`: hover moves it one ton
 
 What the browser draws is designed too, once, in `tokens.css`.
 
-- Selection, caret and accent read the brand: `--selection-bg`, `caret-color` and `accent-color` follow `--accent`, so checkboxes, ranges and the text cursor need no rule of their own.
+- Selection and accent read the brand: `--selection-bg` and `accent-color` follow `--accent`, so checkboxes and ranges need no rule of their own. The text cursor is the text colour.
 - Scrollbars are thin in `--scrollbar`, the same on the page and in inner scrollers. `scrollbar-gutter: stable` holds their place, so a sheet that locks the page moves nothing. `scroll-padding-top` clears the bar. Sideways overscroll is off; pull to refresh stays, because a venue phone uses it.
 - Number fields lose the browser's spin arrows and fields lose its autofill yellow; `color-scheme` sets the rest.
 - Controls are not selectable text. `pointer` means clickable, `not-allowed` means disabled. Tap highlight is off because every control answers with its own press.

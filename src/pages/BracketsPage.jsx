@@ -104,7 +104,7 @@ const BKM=BKF;
 /* 이미지는 테마와 상관없이 네이비 판이다. 색은 토큰에서 읽어 사이트와 어긋나지 않는다. */
 let BKC=null;
 function bkInks(){ const css=getComputedStyle(document.documentElement), v=n=>css.getPropertyValue(n).trim();
-  BKC={ bg:v("--bar"), card:v("--bar-up"), ink:v("--on-bar"), t2:v("--on-bar-2"), t5:v("--on-bar-2"), line2:v("--bar-up"), primary:v("--on-bar"), onPrimary:v("--bar") }; }
+  BKC={ bg:v("--bar"), card:v("--bar-up"), ink:v("--on-bar"), t2:v("--on-bar-2"), t5:v("--on-bar-2"), line2:v("--bar-up"), primary:v("--on-bar"), onPrimary:v("--on-label") }; }
 async function bkFonts(){ bkInks(); try{ if(document.fonts&&document.fonts.load){ await Promise.all(["700","600","400"].flatMap(w=>[document.fonts.load(w+' 40px "Freesentation"',"가"),document.fonts.load(w+' 40px "Albert Sans"',"A")])); await document.fonts.ready; } }catch(e){} }
 function bkPage(ctx,W,H){ ctx.fillStyle=BKC.bg; ctx.fillRect(0,0,W,H); }
 /* YPL 워드마크: 사이트 상단 바와 같은 그린 글자. x는 align 기준점, y는 글자 아래끝, h는 글자 높이. */
