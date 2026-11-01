@@ -101,14 +101,13 @@ function bkClip(ctx,t,max){ if(ctx.measureText(t).width<=max)return t; let s=t; 
 /* 이미지 저장도 사이트와 같은 서체와 네이비 다크 토큰을 쓴다. */
 const BKF='"Albert Sans", "Freesentation", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 const BKM=BKF;
-async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await Promise.all(['800 40px "SUIT Variable"','700 40px "SUIT Variable"','400 40px "SUIT Variable"'].map(f=>document.fonts.load(f))); await document.fonts.ready; } }catch(e){} }
-const BKC={ bg:"#081c3d", card:"#12284c", ink:"#ffffff", t2:"#b3bed1", t5:"#a2abbc",
-            line2:"rgba(255,255,255,.16)", primary:"#ffffff", onPrimary:"#081c3d" };
-/* 금속 광택은 없다(B3). 예전 호출부를 그대로 두기 위해 이름만 남기고 단색을 돌려준다. */
-function bkSilver(){ return BKC.ink; }
-/* 바탕: 흑연색 위에 바로 위에서 떨어지는 빛 하나(C3) */
-function bkPage(ctx,W,H){ ctx.fillStyle=BKC.bg; ctx.fillRect(0,0,W,H); const g=ctx.createRadialGradient(W/2,-H*.2,0,W/2,-H*.2,Math.max(W,H)*.75); g.addColorStop(0,"rgba(255,255,255,.12)"); g.addColorStop(1,"rgba(255,255,255,0)"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
-/* YPL 워드마크 B(E6): 사이트 상단 바와 같은 그린 글자. x는 align 기준점, y는 글자 아래끝, h는 글자 높이. */
+/* 이미지는 테마와 상관없이 네이비 판이다. 색은 토큰에서 읽어 사이트와 어긋나지 않는다. */
+let BKC=null;
+function bkInks(){ const css=getComputedStyle(document.documentElement), v=n=>css.getPropertyValue(n).trim();
+  BKC={ bg:v("--bar"), card:v("--bar-up"), ink:v("--on-bar"), t2:v("--on-bar-2"), t5:v("--on-bar-2"), line2:v("--bar-up"), primary:v("--on-bar"), onPrimary:v("--bar") }; }
+async function bkFonts(){ bkInks(); try{ if(document.fonts&&document.fonts.load){ await Promise.all(["700","600","400"].flatMap(w=>[document.fonts.load(w+' 40px "Freesentation"',"가"),document.fonts.load(w+' 40px "Albert Sans"',"A")])); await document.fonts.ready; } }catch(e){} }
+function bkPage(ctx,W,H){ ctx.fillStyle=BKC.bg; ctx.fillRect(0,0,W,H); }
+/* YPL 워드마크: 사이트 상단 바와 같은 그린 글자. x는 align 기준점, y는 글자 아래끝, h는 글자 높이. */
 function bkWordmark(ctx,x,y,h,align="left"){
   const k=h/100, w=310*k, left=align==="center"?x-w/2:x;
   ctx.save(); ctx.translate(left,y-h); ctx.scale(k,k);
@@ -122,7 +121,7 @@ async function downloadChampionPng(b,res,nameOf){
   const S=2,W=1200,H=820; const cv=document.createElement("canvas"); cv.width=W*S; cv.height=H*S;
   const ctx=cv.getContext("2d"); ctx.scale(S,S);
 
-  // 배경: 사이트와 같은 bg와 광원 하나. 테두리 없음
+  // 배경: 네이비 단색, 테두리 없음
   bkPage(ctx,W,H);
 
   ctx.textAlign="center";
@@ -138,7 +137,7 @@ async function downloadChampionPng(b,res,nameOf){
   let party=""; if(b.mode==="team"){ party=(part?.members||[]).join(", "); }
   else if(part?.party){ party=part.party.split(/[,\n]/).map(x=>x.trim()).filter(Boolean).join(", "); }
   ctx.font=`800 120px ${BKF}`; const champTxt=bkClip(ctx,champ,W-180); const cw=ctx.measureText(champTxt).width;
-  ctx.fillStyle=bkSilver(ctx,W/2-cw/2,W/2+cw/2); ctx.fillText(champTxt,W/2,420);
+  ctx.fillStyle=BKC.ink; ctx.fillText(champTxt,W/2,420);
 
   let ty=572;
   if(party){ ctx.fillStyle=BKC.t2; ctx.font=`400 23px ${BKF}`;

@@ -1,13 +1,14 @@
 import { WORDMARK_PATH } from "./layout/SiteHeader.jsx";
 import { formatDate } from "../services/dateFormat.js";
 
-/* 팀 시트 한 장을 PNG로 그린다(쇼다운 팀 이미지와 같은 쓰임). 사이트와 같은 무채색 재료, 같은 글꼴과 워드마크,
+/* 팀 시트 한 장을 PNG로 그린다(쇼다운 팀 이미지와 같은 쓰임). 사이트와 같은 토큰, 같은 글꼴과 워드마크,
    지금 보고 있는 테마 그대로. 타입 색은 사이트처럼 점 하나로만 쓴다(B1, 타입 색은 내용). 스프라이트는 같은 출처라
    캔버스가 오염되지 않는다. */
 const FONT = '"Albert Sans", "Freesentation", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
-const PALETTE = {
-  dark: { bg: "#0A0A0A", glow: "rgba(255,255,255,.12)", card: "#161616", well: "#1F1F1F", fg: "#F5F5F5", fg2: "#B0B0B0", fg3: "#8C8C8C", bar: "rgba(255,255,255,.1)", barOn: "#F5F5F5", line: "rgba(255,255,255,.1)" },
-  light: { bg: "#E7E7E7", glow: "rgba(255,255,255,.7)", card: "#FFFFFF", well: "#F3F3F3", fg: "#0A0A0A", fg2: "#525252", fg3: "#6B6B6B", bar: "rgba(0,0,0,.08)", barOn: "#0A0A0A", line: "rgba(0,0,0,.08)" },
+/* 색은 값을 따로 들고 있지 않고 지금 테마의 토큰을 읽는다: 이미지가 사이트와 어긋날 수 없다 */
+const palette = () => {
+  const css = getComputedStyle(document.documentElement), v = name => css.getPropertyValue(name).trim();
+  return { bg: v("--stage"), card: v("--surface"), well: v("--well"), fg: v("--fg"), fg2: v("--fg-2"), fg3: v("--fg-3"), bar: v("--well"), barOn: v("--fg"), line: v("--surface-2") };
 };
 // team-builder.css 의 타입 점 색과 같은 값
 const TYPE_DOT = { normal: "#9FA19F", fire: "#E62829", water: "#2980EF", electric: "#FAC000", grass: "#3FA129", ice: "#3FD8FF", fighting: "#FF8000", poison: "#9141CB", ground: "#915121", flying: "#81B9EF", psychic: "#EF4179", bug: "#91A119", rock: "#AFA981", ghost: "#704170", dragon: "#5060E1", dark: "#624D4E", steel: "#60A1B8", fairy: "#EF70EF" };
@@ -112,19 +113,14 @@ function drawCard(ctx, c, x, y, row, sprite) {
 
 export async function renderTeamSheetCanvas(sheet, { title = "", meta = "", author = "", date = new Date() } = {}) {
   await fontsReady();
-  const theme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  const c = PALETTE[theme];
+  const c = palette();
   const cols = sheet.length > 1 ? 2 : 1, rows = Math.max(1, Math.ceil(sheet.length / cols));
   const W = PAD * 2 + cols * CARD_W + (cols - 1) * GAP;
   const H = HEAD_H + rows * CARD_H + (rows - 1) * GAP + FOOT_H + PAD;
   const S = 2, cv = document.createElement("canvas");
   cv.width = W * S; cv.height = H * S;
   const ctx = cv.getContext("2d"); ctx.scale(S, S);
-  // 무대: 흑연색(밝은 테마는 회색) 위에 바로 위에서 떨어지는 빛 하나
   ctx.fillStyle = c.bg; ctx.fillRect(0, 0, W, H);
-  const g = ctx.createRadialGradient(W / 2, -H * 0.2, 0, W / 2, -H * 0.2, Math.max(W, H) * 0.75);
-  g.addColorStop(0, c.glow); g.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
   ctx.textAlign = "left"; ctx.fillStyle = c.fg; ctx.font = `700 32px ${FONT}`;
   ctx.fillText(clip(ctx, title || "이름 없는 팀", W - PAD * 2), PAD, PAD + 32);
