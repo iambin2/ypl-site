@@ -56,7 +56,6 @@
 }
 
 /* ---------- the profile sheet: on a sheet, the cards become tiles of the same tone ---------- */
-.rc-sheet { width: min(100%, 640px); }
 .rc-sheet .rc-lead-who { padding-right: var(--s10); }
 .rc-sheet .rc-lead-head { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 860px) { .rc-sheet { width: min(100% - 48px, 680px); } }

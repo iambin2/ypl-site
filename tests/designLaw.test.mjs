@@ -295,6 +295,14 @@ test("the bars and the page never hold a backdrop or a page copy (Material, Moti
   assert.doesNotMatch(TOKENS, /@property --(stage|surface|fg)\b/, "theme change restyles once, under the veil");
 });
 
+test("a sheet fills the width under 860 and clips its corners (Sheets)", () => {
+  const css = read(join(STYLES, "components.css"));
+  const base = css.match(/^\.sheet \{([^}]*)\}/m)[1];
+  assert.match(base, /width: 100%/, "a narrower sheet floats round on top and square below");
+  assert.match(base, /overflow: hidden/, "the pinned actions paint square over unclipped corners");
+  assert.match(css, /@media \(min-width: 860px\) \{\s*\.sheet \{[^}]*border-radius: var\(--r-card\);/, "a dialog is round on all four corners");
+});
+
 test("no View Transitions snapshots (Don't)", () => {
   const hits = [...SRC, ...readdirSync(STYLES).map(f => join(STYLES, f))].filter(f => /startViewTransition|view-transition/.test(read(f)));
   assert.deepEqual(hits.map(rel), []);

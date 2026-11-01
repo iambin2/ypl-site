@@ -350,7 +350,6 @@
 .hof-admin { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
 
 /* the entry sheet: the same inscription over the same stage */
-.sheet.hof-modal { width: min(100%, 640px); }
 @media (min-width: 860px) { .sheet.hof-modal { width: min(100% - 48px, 760px); } }
 .hofm-top { padding-inline: var(--s14); }
 .hofm-nm { width: fit-content; max-width: 100%; font-size: var(--display); font-weight: 800; letter-spacing: -.04em; line-height: 1.06; }
