@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Empty, Icon, ListSearch, Loader, Modal, PageHead, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
+import { Empty, Icon, ListSearch, Loader, Modal, PageHead, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition, ErrorNote } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { CUP_RULES, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
@@ -176,8 +176,8 @@ function FreeBoard({ data, admin, save, flash, tabs }){
     </PageHead>
     <div className="bd-list swap">
       {list.length===0&&(kw
-        ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
-        : <Empty icon="list" title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
+        ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
+        : <Empty title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const cc=(p.comments||[]).length;
         return (<button type="button" className={"ypl-row bd-head"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
           <span className="bd-main">
@@ -400,7 +400,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
     <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
-    {fresh?<Empty icon="search" title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+    {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
     return (<section className="sec">
@@ -420,7 +420,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         {/* 샘플은 카드 한 장이라, 넓은 화면에서는 카드를 왼쪽에 두고 소개와 댓글을 오른쪽 칸에 세운다(위 모서리를 카드와 맞춘다) */}
         <div className={"sc-post"+(p.kind==="sample"?" split":"")}>
         {p.body&&<div className="nb-body card sc-body"><Prose text={p.body}/></div>}
-        <div className="sc-post-sheet">{display==="error"?<p className="bk-error">배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</p>
+        <div className="sc-post-sheet">{display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
           :!display?<Loader small/>:<TeamSheetView sheet={sheet}/>}</div>
         <div className="bd-cmts card">
           <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
@@ -443,11 +443,11 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         <Button variant="primary" size="sm" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</Button>
       </div>
     </PageHead>
-    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><Button size="sm" onClick={reload}>다시 시도</Button></div>}
+    {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
       {list.length===0&&(kw
-        ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
-        : <Empty icon="list" title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
+        ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
+        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
         return kind==="party"
           ? <button type="button" className="sc-tile card" key={post.id} onClick={()=>openPost(post.id)}>

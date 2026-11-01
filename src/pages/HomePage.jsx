@@ -105,6 +105,13 @@ function SlabBelt({ champions, enter, onOpen }) {
   );
 }
 
+/* 슬랩이 오기 전에 같은 크기의 빈 케이스가 자리를 지킨다: 아래가 밀려 내려가지 않는다 */
+const SlabGhosts = () => (
+  <div className="hm-belt" aria-hidden="true"><div className="hm-track is-ghost">
+    {[0, 1, 2, 3, 4].map(i => <div className="hm-slab is-ghost" key={i}><span className="hm-label" /><span className="hm-win" /></div>)}
+  </div></div>
+);
+
 /* 아레나: 원근으로 누운 배틀 필드(arenaField). 밝은 선 위를 네이비 장이 덮고, 장의 또렷한 구멍을 변형으로만 옮긴다.
    위에 어두운 선을 겹쳐 그리면 구멍 안의 선만 밝게 보인다. 무엇도 다시 그리지 않는다. */
 const Lines = ({ g, d, className }) => <svg className={"hm-f " + className} width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true"><path d={d} /></svg>;
@@ -254,13 +261,12 @@ export default function HomePage({ data, go }) {
       </div>
     </section>
 
-    {/* 슬랩이 들어오기 전에도 자리를 잡아 둔다: 아래가 밀려 내려가지 않게 */}
-    {champions?.length ? <SlabBelt champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <div className="hm-belt-hold" aria-hidden="true" />}
+        {champions?.length ? <SlabBelt champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <SlabGhosts />}
 
     <section className="hm-wrap hm-count">
-      {showCounts && <h2 aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
+      <div className="hm-count-hold">{showCounts && <h2 aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
         <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언.</span>
-      </h2>}
+      </h2>}</div>
       <div className="hm-routes">
         {routes.map(([view, title, line], i) => <button type="button" className="hm-route" key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></button>)}
       </div>

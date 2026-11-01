@@ -142,8 +142,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       </div>
     </PageHead>
     {list.length===0?(kw
-      ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
-      : <Empty icon="msg" title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
+      ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
+      : <Empty title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
     : <div className="nb-list card">
       {shown.map(a=>{
         return (<button type="button" className="ypl-row nb-item" key={a.id} onClick={()=>openArticle(a.id)}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Empty, Facts, Icon, Loader, Modal, PageHead, Pager, Poster, Roll, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
+import { Dropdown, Empty, ErrorNote, Facts, Icon, Loader, Modal, PageHead, Pager, Poster, Roll, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { formatDate } from "../services/dateFormat.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
@@ -123,10 +123,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
         <Loader small />
       )}
       {normalizedRead.error && (
-        <div className="records-read-state is-error" role="alert">
-          <span>공식 기록을 읽지 못해 아래에는 기존 기록만 표시됩니다. 다시 시도해 주세요.</span>
-          <Button type="button" size="sm" onClick={() => setReloadKey((value) => value + 1)}>다시 시도</Button>
-        </div>
+        <ErrorNote onRetry={() => setReloadKey((value) => value + 1)}>공식 기록을 읽지 못해 아래에는 기존 기록만 표시됩니다. 다시 시도해 주세요.</ErrorNote>
       )}
 
       <div className="records-main-tabs">

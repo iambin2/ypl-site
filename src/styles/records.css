@@ -9,7 +9,6 @@
   padding: var(--s3) var(--s4); border-radius: var(--r-sm); background: var(--state-hover);
   font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary);
 }
-.records-read-state.is-error { color: var(--text-primary); }
 .rc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
 .rc-filter[role="group"] { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .rc-filter[role="group"]::-webkit-scrollbar { display: none; }

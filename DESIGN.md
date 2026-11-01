@@ -162,6 +162,25 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 
 Every control follows one rule, set once in `tokens.css`: hover moves it one tone and only under `@media (hover: hover)`; active is scale .97 on every `<button>` and `.press`; `:focus-visible` is one ring (`--focus-width`, `--focus-offset`, `--focus-ring`) for controls and fields alike; disabled is `--opacity-disabled` with a not-allowed cursor; selected is inversion or the lens; loading is the button's spinner.
 
+## Browser surfaces
+
+What the browser draws is designed too, once, in `tokens.css`.
+
+- Selection, caret and accent read the brand: `--selection-bg`, `caret-color` and `accent-color` follow `--accent`, so checkboxes, ranges and the text cursor need no rule of their own.
+- Scrollbars are thin in `--scrollbar`, the same on the page and in inner scrollers. `scrollbar-gutter: stable` holds their place, so a sheet that locks the page moves nothing. `scroll-padding-top` clears the bar. Sideways overscroll is off; pull to refresh stays, because a venue phone uses it.
+- Number fields lose the browser's spin arrows and fields lose its autofill yellow; `color-scheme` sets the rest.
+- Controls are not selectable text. `pointer` means clickable, `not-allowed` means disabled. Tap highlight is off because every control answers with its own press.
+- Images drag as the browser's default, except sprites, which are set to stay put.
+- Smooth scrolling stops under reduced motion.
+- Print is the record in ink: no bars, footer, buttons or home stage, always light, links print their address.
+
+## Loading, empty, error
+
+- **Nothing moves when it arrives.** Each page holds the footer below the fold until its content lands; the home holds the slabs with empty cases of the same size and the numbers with their lines. Keep cumulative layout shift under .02.
+- **Loading:** the one `Loader`, after 240ms so a quick load never flashes. No shimmer: the site has one solid colour and nothing to sweep. The button's own spinner covers an action.
+- **Empty:** `Empty`, sentences only: what is empty, then what to do.
+- **Errors, three sizes, one voice:** `FormError` for one field or one form, `ErrorNote` for a section or a whole page (what went wrong, one way to try again), a toast for something that passed. Colour never carries it alone.
+
 ## Components
 
 - Buttons: one component, `Button.jsx`. `variant` is primary (one per area), secondary, tertiary, destructive or inverse (on navy); `size` is sm 40, md 48, lg 56. Labels are words; an icon only for leaving the site, creating or the next step. `loading` keeps the width: the words clear under one spinner. `className` only places the button.

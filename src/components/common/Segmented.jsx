@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef } from "react";
-import { placePill } from "./motion.js";
+import { placePill, reduced } from "./motion.js";
 
 /* 같은 화면 안의 보기 전환(K3). 선택 알약은 목적지 쪽으로 먼저 늘어났다가 뒤따라 줄어든다.
    칸 폭이 서로 달라도 따라가도록 선택된 버튼을 직접 잰다. 넘치면 스크롤 막대 없이 가로로 넘기고,
@@ -34,7 +34,7 @@ export default function Segmented({ value, onChange, options, ariaLabel, classNa
     placePill(track, placed.current);
     placed.current = true;
     const on = track.querySelector('[aria-selected="true"]');
-    if (on && track.scrollWidth > track.clientWidth) track.scrollTo({ left: on.offsetLeft - track.clientWidth / 2 + on.offsetWidth / 2, behavior: "smooth" });
+    if (on && track.scrollWidth > track.clientWidth) track.scrollTo({ left: on.offsetLeft - track.clientWidth / 2 + on.offsetWidth / 2, behavior: reduced() ? "auto" : "smooth" });
     const again = () => placePill(track, false);
     const ro = typeof ResizeObserver === "function" ? new ResizeObserver(again) : null;
     ro?.observe(track);

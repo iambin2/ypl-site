@@ -8,7 +8,6 @@
 /* ---------- list: the newest bracket leads, the rest in one list ---------- */
 .bk-list { display: grid; gap: var(--section); }
 .bk-lead-sub { display: flex; align-items: center; gap: var(--s2); }
-.bk-error { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-primary); }
 .bk-row-main { min-width: 0; display: grid; gap: var(--s1); }
 .bk-row-end { display: grid; justify-items: end; gap: var(--s1); }
 .bk-row-status { font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption); color: var(--text-tertiary); white-space: nowrap; }
@@ -48,7 +47,6 @@
 .bk-submission-summary { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .bk-submission-chevron { display: flex; color: var(--text-tertiary); transition: transform var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
 .bk-submission-chevron.open { transform: rotate(180deg); }
-.bk-submission-error { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding-bottom: var(--s4); font-size: var(--fs-body); }
 .bk-submission-detail { padding-bottom: var(--s6); animation: y-swap var(--dur-slow) var(--ease-out) backwards; }
 .bk-submission-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--s2); }
 .bk-submission-group { padding: var(--s2) var(--s4); border-radius: var(--r-sm); background: var(--surface-raised); }

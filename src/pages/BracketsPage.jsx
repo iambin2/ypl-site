@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
-import { Button, Dropdown, Empty, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
+import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
@@ -925,10 +925,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
           <Icon n="refresh" size={16}/>
         </button>
       </div>
-      {error && <div className="bk-submission-error">
-        <span>{error}</span>
-        <Button type="button" size="sm" onClick={onRefresh}>다시 불러오기</Button>
-      </div>}
+      {error && <ErrorNote action="다시 불러오기" onRetry={onRefresh}>{error}</ErrorNote>}
       {expanded && !busy && !error && model.total > 0 && (
         <div className="bk-submission-detail">
           {model.mode === "team" ? (
@@ -1866,7 +1863,7 @@ function PrivateBrackets({ admin, flash, tabs }){
 
   if(openId&&!open) return (<section className="sec"><div className="bk-open swap">
     <button type="button" className="nb-back" onClick={closeBracket}><Icon n="back" size={20}/><span>사설 대진표</span></button>
-    {fresh?<Empty icon="search" title="대진표를 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+    {fresh?<Empty title="대진표를 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </div></section>);
 
   if(open){ const res=elimResult(open.graph); const live=!res?.done; const pngBracket={...open,private:true};
@@ -1916,9 +1913,9 @@ function PrivateBrackets({ admin, flash, tabs }){
       </div>
     </PageHead>
     {tabs}
-    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><Button size="sm" onClick={reload}>다시 시도</Button></div>}
+    {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!list&&!loadError?<Loader/>:shown.length===0
-      ? (kw?<Empty className="swap" icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
+      ? (kw?<Empty className="swap" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
            :<Empty className="swap" title="아직 사설 대진표가 없습니다." desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다.">
               <Button variant="primary" size="sm" onClick={()=>setCreating(true)}><Icon n="plus" size={16}/>첫 사설 대진표 만들기</Button>
             </Empty>)
@@ -2220,7 +2217,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   const statusTag=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); if(b.applied||(r&&r.done))return admin?(b.applied?"기록 반영됨":"기록 반영 전"):"종료"; return"진행 중"; };
   return (<section className="sec">
     {!open&&<PageHead plain="대진표">
-      {normalizedLoadError&&<p className="bk-error">대진표 오류: {normalizedLoadError}</p>}
+      {normalizedLoadError&&<ErrorNote>대진표 오류: {normalizedLoadError}</ErrorNote>}
       {admin&&<Button variant="primary" size="sm" disabled={!!deletingId} onClick={()=>setWizard(true)}><Icon n="plus" size={16}/>새 대진표</Button>}
     </PageHead>}
     {!open&&!wizard&&tabsEl()}

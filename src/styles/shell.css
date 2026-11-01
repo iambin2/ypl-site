@@ -77,8 +77,9 @@
 @media (min-width: 1100px) { .navlink { padding: 0 var(--s2); } }
 
 /* ---------- page frame ---------- */
+/* a page holds the footer below the fold until its content arrives, so the footer never jumps */
 .page {
-  width: min(100% - var(--gutter) * 2, var(--content)); margin-inline: auto; outline: none;
+  width: min(100% - var(--gutter) * 2, var(--content)); min-height: 100svh; margin-inline: auto; outline: none;
   padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px);
 }
 @media (min-width: 860px) { .page { padding-block: 112px 96px; } }
@@ -98,7 +99,6 @@
 .y-loader-light::before { content: ""; position: absolute; top: 0; bottom: 0; left: 33%; width: 34%; background: currentColor; will-change: transform; animation: y-loader-sweep var(--dur-loop) var(--ease-in-out) infinite; }
 @keyframes y-loader-sweep { from { transform: translateX(-34%) skewX(-12deg); } to { transform: translateX(34%) skewX(-12deg); } }
 @media (prefers-reduced-motion: reduce) { .y-loader-light { animation: y-pulse var(--dur-loop) var(--ease-in-out) infinite; } .y-loader-light::before { width: 100%; background: currentColor; animation: none; } }
-.ypl-error { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s4); }
 
 /* page transitions (I1, I2): the new page rises at once; a shared element flies on top */
 #ypl-ghosts { position: relative; z-index: var(--z-sticky); }

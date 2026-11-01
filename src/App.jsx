@@ -9,7 +9,7 @@ import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/N
 import { showBars, useScrollChrome } from "./components/layout/Stage.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
-import { themeFade, transition } from "./components/common/motion.js";
+import { reduced, themeFade, transition } from "./components/common/motion.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { signOutAdmin } from "./storage.js";
@@ -117,7 +117,7 @@ export default function App() {
     // 지금 탭을 다시 누르면 맨 위로 부드럽게 올라간다. 그 탭 안에서 공지, 글, 대진표를 열어 두었으면 목록으로 돌아간다.
     const here=new URLSearchParams(window.location.search);
     const inside=["notice","post","pb"].some(key=>here.has(key))||(view==="bracket"&&here.has("eventId"))||Boolean(window.history.state?.bracketId);
-    if(v===view&&!inside&&!options.eventId&&!options.notice&&!options.trainer&&!options.tab){ setMore(null); window.scrollTo({top:0,behavior:"smooth"}); return; }
+    if(v===view&&!inside&&!options.eventId&&!options.notice&&!options.trainer&&!options.tab){ setMore(null); window.scrollTo({top:0,behavior:reduced()?"auto":"smooth"}); return; }
     if((v==="builder"||v==="bracket")&&options.eventId){
       const url=new URL(window.location.href);
       url.search= v==="builder" ? `view=builder&eventId=${encodeURIComponent(options.eventId)}` : bracketRouteSearch(options.eventId, window.location.search).slice(1);

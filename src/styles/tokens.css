@@ -113,7 +113,7 @@
   --border-subtle: var(--navy-800); --border-default: var(--navy-700); --border-strong: var(--gray-500); --divider: var(--navy-800);
   --accent: var(--white); --accent-hover: var(--gray-200); --accent-active: var(--gray-300); --accent-subtle: var(--navy-800);
   --focus-ring: var(--white); --selection-bg: var(--white); --selection-text: var(--navy-950);
-  --control: var(--navy-800); --control-hover: var(--navy-700);
+  --control: var(--navy-800); --control-hover: var(--navy-700); --scrollbar: var(--navy-600);
   --state-hover: var(--navy-800); --state-selected: var(--navy-700); --state-pressed: var(--navy-600);
   --lens: var(--navy-700); --ind-fg: var(--white); --tabs: var(--navy-800); --pod: var(--navy-925);
   --rank-1: var(--white); --rank-2: var(--gray-300); --rank-3: var(--gray-400); --rank-n: var(--gray-400);
@@ -129,7 +129,7 @@
   --border-subtle: var(--gray-200); --border-default: var(--gray-300); --border-strong: var(--gray-500); --divider: var(--gray-200);
   --accent: var(--navy-950); --accent-hover: var(--navy-800); --accent-active: var(--navy-700); --accent-subtle: var(--gray-100);
   --focus-ring: var(--navy-950); --selection-bg: var(--navy-950); --selection-text: var(--white);
-  --control: var(--gray-100); --control-hover: var(--gray-200);
+  --control: var(--gray-100); --control-hover: var(--gray-200); --scrollbar: var(--gray-400);
   --state-hover: var(--gray-100); --state-selected: var(--gray-200); --state-pressed: var(--gray-300);
   --lens: var(--white); --ind-fg: var(--navy-950); --tabs: var(--navy-950); --pod: var(--gray-200);
   --rank-1: var(--navy-950); --rank-2: var(--gray-700); --rank-3: var(--gray-600); --rank-n: var(--gray-600);
@@ -170,7 +170,9 @@
 html {
   background-color: var(--bg);
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
-  scrollbar-color: var(--text-tertiary) transparent;
+  scrollbar-color: var(--scrollbar) transparent; scrollbar-width: thin;
+  overscroll-behavior-x: none;
+  accent-color: var(--accent); caret-color: var(--accent);
   /* 스크롤바 자리를 모든 페이지에서 비워 둔다: 짧은 페이지와 긴 페이지를 오갈 때, 시트가 스크롤을 잠글 때 화면이 옆으로 튀지 않는다 */
   scrollbar-gutter: stable;
   scroll-padding-top: var(--nav-height);
@@ -199,14 +201,19 @@ iframe { border: 0; }
 :focus { outline: none; }
 :focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
 ::placeholder { color: var(--text-tertiary); opacity: 1; }
-input[type="range"] { accent-color: var(--text-primary); }
-input[type="checkbox"], input[type="radio"] { accent-color: var(--text-primary); width: 20px; height: 20px; margin: 0; flex: none; }
+input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; margin: 0; flex: none; }
 input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 ::-webkit-calendar-picker-indicator { opacity: var(--opacity-disabled); cursor: pointer; }
-[data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(1); }
+/* number fields type; a browser's own spin arrows and yellow autofill belong to no design */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input:-webkit-autofill { -webkit-text-fill-color: var(--text-primary); box-shadow: inset 0 0 0 100px var(--surface-sunken); }
+/* controls are not text to select; a label that holds a control is itself the control */
+:where(button, .tab, .navlink, .bar-cta) { user-select: none; }
+label:has(input) { cursor: pointer; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--state-pressed); border-radius: var(--r-pill); border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: var(--r-pill); border: 3px solid transparent; background-clip: padding-box; }
 
 .tnum, .num { font-variant-numeric: tabular-nums; }
 .ic { flex: none; display: block; }
@@ -288,3 +295,13 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 /* B6 theme change (2026-11-01): the page turns at once under one still sheet of the old stage, and that sheet fades. One opacity on the
    compositor; the typed colour tokens that used to fade restyled the whole document every frame (15ms a frame on a mid-range phone). */
 .veil { position: fixed; inset: 0; z-index: var(--z-veil); pointer-events: none; }
+
+/* ---------- print: the record, in ink, without the site around it ---------- */
+@media print {
+  :root, :root[data-theme] { --bg: var(--white); --surface: var(--white); --surface-raised: var(--white); --text-primary: var(--navy-950); --text-secondary: var(--gray-700); --text-tertiary: var(--gray-600); }
+  .topbar, .tabbar, .edge-b, .admin-dock, .site-foot, .hm-belt, .hm-close, .btn, .veil, .skip-link { display: none !important; }
+  .page { width: 100%; min-height: 0; padding: 0; }
+  .card, .ypl-group { break-inside: avoid; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: var(--fs-caption); }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

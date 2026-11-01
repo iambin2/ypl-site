@@ -1,6 +1,7 @@
 export { default as Button } from "./common/Button.jsx";
 export { default as Field, FormError } from "./common/Field.jsx";
 export { default as Empty } from "./common/Empty.jsx";
+export { default as ErrorNote } from "./common/ErrorNote.jsx";
 export { default as Loader } from "./common/Loader.jsx";
 export { default as Dropdown } from "./common/Dropdown.jsx";
 export { default as ListSearch } from "./common/ListSearch.jsx";

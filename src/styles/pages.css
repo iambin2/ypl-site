@@ -17,7 +17,8 @@
 
 /* the slabs: three solid faces, no shadow; the current champion's case is inverted */
 .hm-belt { overflow: hidden; }
-.hm-belt-hold { height: 292px; }
+.hm-slab.is-ghost { flex: 0 0 var(--w); cursor: default; }
+.hm-track.is-ghost { width: 100%; justify-content: center; overflow: hidden; }
 .hm-track { --w: 224px; --win: 192px; position: relative; display: flex; gap: var(--s3); width: max-content; padding-block: var(--s3); }
 .hm-slab { flex: 0 0 var(--w); display: block; padding: var(--s3); border-radius: var(--r-lg); background: var(--case); text-align: left; transition: translate var(--dur-snappy) var(--spring-snappy), scale var(--dur-snappy) var(--spring-snappy); }
 .hm-slab.cur { background: var(--case-cur); }
@@ -33,6 +34,8 @@
 @media (hover: hover) { .hm-slab:hover { translate: 0 -8px; } }
 
 .hm-count { padding-block: var(--s14); }
+/* the numbers arrive after the page does: their lines are held so nothing moves */
+.hm-count-hold { min-height: calc(var(--hero-2) * var(--lh-title) * 3); }
 .hm-count h2 { font-size: var(--hero-2); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
 .hm-count h2 > span { display: block; }
 .hm-count h2 br { display: none; }
@@ -77,7 +80,6 @@
   .hm-hero { padding: 120px var(--gutter) var(--chapter); }
   .hm-next { flex-direction: row; justify-content: center; gap: var(--s2); margin-top: var(--s6); font-size: var(--fs-lead); letter-spacing: var(--ls-lead); }
   .hm-actions { margin-top: var(--s10); }
-  .hm-belt-hold { height: 396px; }
   .hm-track { --w: 280px; --win: 280px; gap: var(--s6); }
   .hm-label { min-height: 76px; padding: var(--s3) var(--s4); }
   .hm-who b { font-size: var(--fs-body); }
@@ -85,6 +87,7 @@
   .hm-gen { font-size: var(--hero-4); }
   .hm-win { padding: var(--s4); }
   .hm-count { padding-block: 120px; }
+  .hm-count-hold { min-height: calc(var(--hero-2) * var(--lh-title) * 2); }
   .hm-count h2 > span { display: inline; }
   .hm-count h2 br { display: inline; }
   .hm-routes { grid-template-columns: repeat(4, 1fr); gap: var(--s6); margin-top: var(--chapter); }
@@ -386,7 +389,6 @@
 .sc-tile-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3); }
 .sc-row { grid-template-columns: auto minmax(0, 1fr) auto; }
 .sc-row-sprite { width: 48px; height: 48px; object-fit: contain; border-radius: var(--r-sm); background: var(--pod); }
-.sc-error { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s3); }
 .sc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s4); }
 .sc-actions .bd-del { margin-left: auto; }
 .sc-actions .bd-del + .bd-del { margin-left: 0; }
