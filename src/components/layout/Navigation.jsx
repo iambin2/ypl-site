@@ -26,8 +26,10 @@ export function usePill(ref, cur) {
     placed.current = true;
     const again = () => placePill(box, false);
     addEventListener("resize", again);
+    // 메뉴의 글자 조각은 화면을 그린 뒤에 온다: 그때 칸의 폭이 바뀌므로 다시 맞춘다
     document.fonts?.ready.then(again);
-    return () => removeEventListener("resize", again);
+    document.fonts?.addEventListener("loadingdone", again);
+    return () => { removeEventListener("resize", again); document.fonts?.removeEventListener("loadingdone", again); };
   }, [ref, cur]);
 }
 
@@ -49,7 +51,7 @@ export default function TabBar({ view, moreOpen, onNavigate, onMore }) {
   const cur = tabOf(view);
   usePill(ref, cur);
   return (
-    <nav className="tabbar plate" aria-label="주요 메뉴" ref={ref}>
+    <nav className="tabbar" aria-label="주요 메뉴" ref={ref}>
       <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
       {TABS.map(([key, label, ic]) => (
         <button key={key} type="button" className="tab press" data-tab={key} {...current(cur, key)}

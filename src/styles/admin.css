@@ -24,7 +24,7 @@
 .ch-img {
   --r: var(--r-row);
   aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; cursor: pointer;
-  background: radial-gradient(ellipse 70% 22% at 50% 82%, var(--tint), transparent 72%), var(--surface-2);
+  background: var(--surface-2);
   transition: background-color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) { .ch-img:hover { background-color: var(--tint); } }
@@ -34,7 +34,7 @@
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */
-.fb-wrap { --r: var(--r-card); margin: var(--s5) 0; padding: var(--s5); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.fb-wrap { --r: var(--r-card); margin: var(--s5) 0; padding: var(--s5); background: var(--surface); }
 .fb-wrap > .bk-check { font-weight: 600; }
 /* a question is a fill-2 cell inside the plate; concentric 32 - 16 = 16 */
 .fb-q { --r: calc(var(--r-card) - var(--s4)); margin-bottom: var(--s3); padding: var(--s4); background: var(--tint-soft); }
@@ -90,7 +90,7 @@
 .ed-x { width: 24px; height: 24px; margin-left: var(--s2); }
 
 /* ---------- rounds editor ---------- */
-.ed-round { --r: var(--r-row); display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s3); padding: var(--s4); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.ed-round { --r: var(--r-row); display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s3); padding: var(--s4); background: var(--surface); }
 .ed-round input { min-height: var(--target); padding: var(--s2) var(--s3); }
 .ed-rtop { display: flex; align-items: center; gap: var(--s2); }
 .ed-w { flex: 1 1 130px; min-width: 0; }

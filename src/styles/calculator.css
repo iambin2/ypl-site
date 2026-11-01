@@ -21,7 +21,7 @@
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) { .calc-toggle:not(.on):hover { background: var(--tint-strong); color: var(--fg); } }
-.calc-toggle.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--ind-shadow); }
+.calc-toggle.on { background: var(--accent); color: var(--on-accent); }
 
 /* ---------- summary: who faces whom, who moves first, both directions ---------- */
 .calc-versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
@@ -42,7 +42,7 @@
 .calc-speed-line p { font-size: .9375rem; line-height: 1.45; color: var(--fg-2); }
 .fig-pair { flex: none; display: inline-flex; align-items: baseline; gap: var(--s2); }
 .fig-pair b { font-size: 1.25rem; font-weight: 700; color: var(--fg-3); font-variant-numeric: tabular-nums; }
-.fig-pair b.on { color: var(--fg); font-weight: 800; }
+.fig-pair b.on { color: var(--fg); font-weight: 700; }
 .fig-pair i { font-style: normal; font-size: .75rem; color: var(--fg-3); }
 
 .calc-directions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s6); margin-top: var(--s4); }
@@ -62,7 +62,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-result-move { grid-area: move; min-width: 0; display: flex; flex-direction: column; }
 .calc-result-move strong { font-size: 1rem; font-weight: 600; }
 .calc-result-move small { font-size: .8125rem; color: var(--fg-3); }
-.calc-result-pct { grid-area: pct; justify-self: end; font-size: 1.0625rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.calc-result-pct { grid-area: pct; justify-self: end; font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .calc-result-ko { grid-area: ko; justify-self: end; font-size: .8125rem; font-weight: 600; color: var(--fg-2); white-space: nowrap; }
 .calc-result.quiet .calc-result-ko { grid-row: 1 / 3; color: var(--fg-3); font-weight: 400; }
 .calc-result-detail { margin-top: var(--s2); padding: var(--s3) var(--s4); border-radius: var(--r-tile); background: var(--surface-2); font-size: .8125rem; line-height: 1.55; color: var(--fg-2); }
@@ -93,7 +93,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-mon img { --r: var(--r-tile); width: 72px; height: 72px; flex: none; object-fit: contain; border-radius: var(--r); background: var(--surface-2); }
 .calc-side-empty { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .calc-mon-copy { min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
-.calc-mon-copy strong { font-size: 1.25rem; font-weight: 800; letter-spacing: -.015em; line-height: 1.25; }
+.calc-mon-copy strong { font-size: 1.25rem; font-weight: 700; letter-spacing: -.015em; line-height: 1.25; }
 .calc-mon-copy .tb-types { margin-top: var(--s1); }
 
 .calc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s4); }
@@ -107,7 +107,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-stat-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 56px 104px 44px; align-items: center; gap: var(--s2); min-height: var(--row-min); }
 .calc-stat-row + .calc-stat-row { box-shadow: inset 0 1px 0 var(--line); }
 .calc-stat-row input[type="range"] { width: 100%; height: 24px; }
-.calc-final { justify-self: end; font-size: 1.0625rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.calc-final { justify-self: end; font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .calc-stepper { display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; height: 36px; border-radius: var(--r-pill); background: var(--tint-soft); }
 .calc-stepper button {
@@ -118,7 +118,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 @media (hover: hover) { .calc-stepper button:hover:not(:disabled) { background: var(--tint); color: var(--fg); } }
 .calc-stepper button:disabled { opacity: .3; }
 .calc-stepper output { text-align: center; font-size: .9375rem; font-weight: 600; color: var(--fg-3); font-variant-numeric: tabular-nums; }
-.calc-stepper output.on { color: var(--fg); font-weight: 800; }
+.calc-stepper output.on { color: var(--fg); font-weight: 700; }
 
 .calc-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
 
@@ -126,7 +126,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-speed-basis { display: flex; flex-direction: column; gap: var(--s4); }
 .calc-speed-basis .ypl-seg { align-self: flex-start; }
 .calc-speed-me { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
-.calc-speed-me .fig { font-size: var(--fig-m); letter-spacing: -.03em; }
+.calc-speed-me .fig { font-size: var(--fig-m); letter-spacing: -.02em; }
 .calc-speed-me p { flex: 1; min-width: 200px; font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .calc-speed-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s3); align-items: center; }
 .calc-tier-search { margin-top: var(--s4); }
@@ -141,11 +141,11 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-tier-copy { min-width: 0; display: flex; flex-direction: column; }
 .calc-tier-copy strong { font-size: 1rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calc-tier-copy small { font-size: .8125rem; color: var(--fg-3); }
-.calc-tier > b { font-size: 1.0625rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.calc-tier > b { font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .calc-tier.slower { opacity: .55; }
 .calc-tier.tie > b { padding: 0 var(--s3); border-radius: var(--r-pill); background: var(--tint); }
 /* the basis row is the one inverted row, like the champion cell */
-.calc-tier.me { background: var(--accent); color: var(--on-accent); box-shadow: var(--ind-shadow); content-visibility: visible; }
+.calc-tier.me { background: var(--accent); color: var(--on-accent); content-visibility: visible; }
 .calc-tier.me .calc-tier-copy small { color: inherit; opacity: .7; }
 
 /* ---------- dex ---------- */
@@ -158,7 +158,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-base-row { display: grid; grid-template-columns: 56px 36px minmax(0, 1fr) 76px; align-items: center; gap: var(--s3); min-height: 48px; }
 .calc-base-row + .calc-base-row { box-shadow: inset 0 1px 0 var(--line); }
 .calc-base-row strong { font-size: .9375rem; font-weight: 600; }
-.calc-base-row b { font-size: 1rem; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.calc-base-row b { font-size: 1rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 .calc-base-row small { font-size: .8125rem; color: var(--fg-3); text-align: right; font-variant-numeric: tabular-nums; }
 .calc-base-bar { height: 8px; border-radius: var(--r-pill); background: var(--tint); overflow: hidden; }
 .calc-base-bar i { display: block; height: 100%; border-radius: inherit; background: var(--fg); }
@@ -169,7 +169,7 @@ button.calc-result-head { transition: scale var(--dur-snappy) var(--spring-snapp
 .calc-matchups { display: flex; flex-direction: column; }
 .calc-matchup { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: var(--s3); min-height: 48px; padding: var(--s2) 0; }
 .calc-matchup + .calc-matchup { box-shadow: inset 0 1px 0 var(--line); }
-.calc-matchup > strong { font-size: .9375rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.calc-matchup > strong { font-size: .9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .calc-move-tools { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: var(--s3); margin-bottom: var(--s3); }
 .calc-table-wrap { overflow-x: auto; margin: 0 calc(var(--s2) * -1); }

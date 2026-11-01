@@ -3,7 +3,7 @@
 Grid (y down, cap 100, same as public/brand/ypl-wordmark.svg): stems S, outer bars B, middle bar M ending at 56,
 the band cut 56-64, outer bowl corners R=18 with concentric inner corners (r = R - S), counters W - 2S wide,
 slanted 12deg, at the wordmark's own weights (S28 B24 M14). The site uses it for big figures only
-(tokens.css --font-fig); everything else stays SUIT. Output: public/fonts/ypl-figures.woff2.
+(tokens.css --font-fig); everything else stays the site font. Output: public/fonts/ypl-figures.woff2.
 Usage: python scripts/build-figures.py
 """
 import math, sys, os

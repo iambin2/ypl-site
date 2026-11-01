@@ -1,8 +1,13 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { reduced, EASE_IN_OUT, EASE_OUT } from "../components/common/motion.js";
-import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
-import { formatDate } from "../services/dateFormat.js";
+import Modal from "../components/common/Modal.jsx";
+import Reveal, { STAGGER } from "../components/common/Reveal.jsx";
+import Roll from "../components/common/Roll.jsx";
+import { DUR, EASE_IN_OUT, EASE_OUT, reduced, springs } from "../components/common/motion.js";
+import { WORDMARK_PATH, Wordmark } from "../components/layout/SiteHeader.jsx";
 import { arenaField } from "../components/home/arenaField.js";
+import { loadChampions, loadCounts } from "../components/home/homeFacts.js";
+import { formatDate } from "../services/dateFormat.js";
+import { excerptOf } from "../services/noticeExcerpt.js";
 
 const DAY_MS = 86400000;
 /* "2026-10-04", "2026.10.04", "2026-10-04T15:21" → 그날 0시의 Date. 일까지 없으면 null. */
@@ -32,195 +37,253 @@ function nextEvent(announcements, now = new Date()) {
   return best;
 }
 
-/* D2: 무대의 밝기는 대회 상태를 따른다. 오늘 열리면 진행 중, 다가오면 접수 중, 없으면 종료. */
-export function stageStateOf(announcements) {
+/* 상단 바의 대회 행동: 다음 대회가 있을 때만 [글자, 화면]. 오늘 열리면 대진표로 간다. */
+export function eventAction(announcements) {
   const upcoming = nextEvent(announcements);
-  return !upcoming ? "done" : upcoming.dday === 0 ? "live" : "open";
+  return !upcoming ? null : upcoming.dday === 0 ? ["대진표", "bracket"] : ["대회 신청", "news"];
 }
 
-/* 아레나의 첫 등장은 사이트에 들어올 때마다 한 번이다. 판정은 처음 그릴 때 받아 두고 그려진 뒤에 지운다
-   (개발 모드의 두 번 호출도 같은 답을 받는다). 홈에 다시 오면 다 켜진 아레나가 보통의 화면 전환으로 선다. */
-let coverPending = true;
-const firstCover = () => coverPending;
+/* 첫 등장은 사이트에 들어올 때마다 한 번이다. 판정은 처음 그릴 때 받아 두고 그려진 뒤에 지운다
+   (개발 모드의 두 번 호출도 같은 답을 받는다). 홈에 다시 오면 보통의 화면 전환으로 선다. */
+let heroPending = true, arenaPending = true;
+const firstHero = () => heroPending;
 
-/* YPL의 좌표(viewBox). 글자 모양의 마스크 하나 안에서 빛만 움직인다 */
-const VB = [-4, -4, 318, 108];
-const MARK_MASK = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='${VB.join(" ")}'><path transform='skewX(-12) translate(21 0)' fill-rule='evenodd' d='${WORDMARK_PATH}'/></svg>`)}") center / contain no-repeat`;
+const rise = (el, delay = 0, y = 16) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: 480, delay, easing: EASE_OUT, fill: "backwards" });
+/* 빛의 띠: 경계가 또렷한 사선 면 하나가 포켓몬 뒤를 지나간다 */
+const sweep = slab => slab?.querySelector(".hm-sweep")?.animate([{ transform: "translateX(-140%) skewX(-14deg)" }, { transform: "translateX(340%) skewX(-14deg)" }], { duration: 900, easing: EASE_IN_OUT });
 
-function rise(el, delay) {
-  if (!el) return;
-  el.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: 480, delay, easing: EASE_OUT, fill: "backwards" });
-}
+const MARK_MASK = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 100'><path transform='skewX(-12) translate(21 0)' fill-rule='evenodd' d='${WORDMARK_PATH}'/></svg>`)}") center / 100% 100% no-repeat`;
 
-/* 원근으로 누운 배틀 필드: 바깥 선, 양 끝의 트레이너 박스, 가운데 선과 원과 단추(몬스터볼). 필드는 움직이지 않으므로 한 번 계산해
-   평면 그림(SVG)으로 그린다(arenaField.js). 등장에서 따로 움직이는 부분마다 한 장씩이고, 그린 뒤로는 다시 그리지 않는다. */
-const Lines = ({ g, d, className }) => <svg className={"ha-f " + className} width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true"><path d={d} /></svg>;
-/* 무대(100vw, 100svh)의 크기와 바닥의 높이. 첫 그림은 창 크기로 짐작하고, 그려지기 전에 실제 크기로 고친다 */
-const guessField = () => { const w = innerWidth, h = innerHeight, floorY = h * (w >= 860 ? .56 : .54); return { w, h, floorY, paths: arenaField(w, h, floorY) }; };
-
-/* ============================== HOME ==============================
-   홈은 아레나 한 화면(DECISIONS 18차): 원근으로 누운 배틀 필드의 몬스터볼 위에 YPL이 서고 바닥에 비친다. 그 아래 다가오는 대회와 행동.
-   움직임의 원칙(14차의 피드백): 물체는 서 있고 빛만 움직인다. 포인터는 필드 위의 빛과 YPL 위의 빛을 옮기고, 빈 곳을 누르면 빛의 파동이 바닥을 지나간다.
-   첫 등장은 1초 안에: 위의 빛이 켜지고, 선이 가운데에서 그어지고, 몬스터볼에 불이 들어오며 파동이 지나간 뒤, YPL이 어둠을 벗는다.
-   무엇도 다시 그리지 않는다(23차): 필드의 밝은 선은 아래에 그려 두고, 그 위를 덮은 어두운 장의 구멍을 변형으로만 옮긴다. 등장도 변형과 투명도뿐이다. */
-export default function HomePage({ data, go }) {
-  const [enter] = useState(firstCover);
-  const stageRef = useRef(null), markRef = useRef(null), bandRef = useRef(null), lampRef = useRef(null), coverRef = useRef(null), infoRef = useRef(null);
-  const [field, setField] = useState(guessField);
-  const [fine] = useState(() => matchMedia("(pointer: fine)").matches);
+/* 슬랩 띠: 최신 챔피언이 가운데 서고, 앞에 옛 챔피언 셋이 돌아 들어온다. 자동으로 돌지 않고 스크롤에 붙어 옆으로 흐른다. */
+const FLOW = .5;
+function SlabBelt({ champions, enter, onOpen }) {
+  const track = useRef(null);
+  const head = champions.slice(-Math.min(3, champions.length - 1));
+  const belt = [...head, ...champions], center = head.length;
   useLayoutEffect(() => {
-    const st = stageRef.current;
+    const el = track.current, move = !reduced(), slabs = [...el.children];
+    let step = 0, base = 0, active = center;
     const measure = () => {
-      const w = st.clientWidth, h = st.clientHeight, floorY = Math.round(h * parseFloat(getComputedStyle(st).getPropertyValue("--floor")) / 100);
-      setField(f => f.w === w && f.h === h && f.floorY === floorY ? f : { w, h, floorY, paths: arenaField(w, h, floorY) });
+      step = slabs.length > 1 ? slabs[1].offsetLeft - slabs[0].offsetLeft : 0;
+      base = el.parentElement.clientWidth / 2 - (slabs[center].offsetLeft + slabs[center].offsetWidth / 2);
     };
+    const place = () => {
+      const run = move ? Math.max(0, scrollY) * FLOW : 0;
+      el.style.transform = `translate3d(${(base - run).toFixed(1)}px,0,0)`;
+      const now = step ? center + Math.round(run / step) : center;
+      if (now !== active) { active = now; sweep(slabs[now]); }
+    };
+    const resize = () => { measure(); place(); };
+    resize();
+    document.fonts?.ready.then(resize);
+    let timer = 0;
+    if (move && enter) {
+      slabs.forEach((s, i) => s.animate(
+        [{ opacity: 0, transform: "translateY(64px) scale(.96)" }, { opacity: 1, offset: .35 }, { opacity: 1, transform: "none" }],
+        { duration: DUR.soft, delay: 60 + Math.abs(i - center) * 70, easing: springs().soft, fill: "backwards" }));
+      timer = setTimeout(() => sweep(slabs[center]), 540);
+    }
+    addEventListener("scroll", place, { passive: true });
+    addEventListener("resize", resize);
+    return () => { clearTimeout(timer); removeEventListener("scroll", place); removeEventListener("resize", resize); };
+  }, [center, enter]);
+  return (
+    <section className="hm-belt" aria-label="역대 챔피언">
+      <div className="hm-track" ref={track}>
+        {belt.map((c, i) => (
+          <button type="button" className={"hm-slab press" + (c === champions[0] ? " cur" : "")} key={i} onClick={() => onOpen(c)}
+            aria-label={`${c.label} 챔피언 ${c.name}, ${c.line}`} tabIndex={i < center ? -1 : 0}>
+            <span className="hm-label">
+              <span className="hm-who"><b>{c.name}</b><span>{c.line}</span></span>
+              {c.generation > 0 && <strong className="hm-gen">{c.generation}<small>대</small></strong>}
+            </span>
+            <span className="hm-win"><i className="hm-sweep" aria-hidden="true" />{c.party[0]?.img && <img src={c.party[0].img} alt="" loading={Math.abs(i - center) < 3 ? "eager" : "lazy"} decoding="async" />}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* 아레나: 원근으로 누운 배틀 필드(arenaField). 밝은 선 위를 네이비 장이 덮고, 장의 또렷한 구멍을 변형으로만 옮긴다.
+   위에 어두운 선을 겹쳐 그리면 구멍 안의 선만 밝게 보인다. 무엇도 다시 그리지 않는다. */
+const Lines = ({ g, d, className }) => <svg className={"hm-f " + className} width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true"><path d={d} /></svg>;
+const shape = el => { const phone = el.clientWidth < 860, h = phone ? 620 : 840, floorY = Math.round(h * (phone ? .42 : .4)); return { w: el.clientWidth, h, floorY }; };
+function Arena({ primary, go }) {
+  const close = useRef(null), stage = useRef(null), hole = useRef(null), wave = useRef(null), mark = useRef(null), band = useRef(null), ringRef = useRef(null), knobRef = useRef(null);
+  const [field, setField] = useState(null);
+  const rest = useRef([0, 0]), waveAt = useRef("none");
+  useLayoutEffect(() => {
+    const measure = () => { const g = shape(close.current); setField(f => f && f.w === g.w && f.h === g.h ? f : { ...g, paths: arenaField(g.w, g.h, g.floorY) }); };
     measure();
     addEventListener("resize", measure);
     return () => removeEventListener("resize", measure);
   }, []);
+  const placeHole = (x, y) => { hole.current.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`; };
+  useLayoutEffect(() => {
+    if (!field) return;
+    const ring = ringRef.current.getBBox(), knob = knobRef.current.getBBox();
+    /* YPL은 단추의 먼 끝에 선다. 글과 단추는 원의 가까운 끝 아래에 선다 */
+    mark.current.style.top = Math.round(knob.y) - 8 + "px";
+    close.current.style.paddingTop = Math.ceil(ring.y + ring.height + 56) + "px";
+    rest.current = [field.w / 2, knob.y + knob.height / 2];
+    placeHole(...rest.current);
+    const ww = ring.width * 3.2, wh = ring.height * 3.2;
+    Object.assign(wave.current.style, { width: ww + "px", height: wh + "px" });
+    waveAt.current = `translate(${rest.current[0] - ww / 2}px,${rest.current[1] - wh / 2}px)`;
+  }, [field]);
+  /* 파동은 몬스터볼에서 나가는 또렷한 원 하나다 */
+  const fireWave = () => {
+    if (reduced()) return;
+    wave.current.animate([{ transform: `${waveAt.current} scale(.05)`, opacity: .9 }, { transform: `${waveAt.current} scale(1)`, opacity: 0 }], { duration: 1500, easing: EASE_OUT });
+  };
+  /* 처음 화면에 들어올 때 한 번: 선이 가운데에서 그어지고, 몬스터볼이 켜지고, 파동이 지나고, 띠 하나가 YPL을 지나간다 */
+  useEffect(() => {
+    if (!field || !arenaPending || reduced() || typeof IntersectionObserver !== "function") return undefined;
+    const st = stage.current;
+    let timer = 0;
+    st.classList.add("pre");
+    const once = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      once.disconnect();
+      arenaPending = false;
+      st.classList.remove("pre");
+      const play = (s, kf, o) => st.querySelectorAll(s).forEach(el => el.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
+      const fade = [{ opacity: 0 }, { opacity: 1 }];
+      play(".hm-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: 420, delay: 120 });
+      play(".hm-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: 480, delay: 150 });
+      play(".hm-ring", fade, { duration: 360, delay: 240 });
+      play(".hm-ball", fade, { duration: 270, delay: 360 });
+      play(".hm-lit", fade, { duration: 420, delay: 420 });
+      play(".hm-mark > .wordmark", fade, { duration: 600, delay: 300 });
+      band.current.animate([{ transform: "translateX(-160%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], { duration: 900, delay: 600, easing: EASE_IN_OUT });
+      timer = setTimeout(fireWave, 360);
+    }, { threshold: .3 });
+    once.observe(st);
+    return () => { once.disconnect(); clearTimeout(timer); st.classList.remove("pre"); };
+  }, [Boolean(field)]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* 포인터의 빛: 구멍 하나를 옮긴다. 떠나면 몬스터볼로 돌아가 머문다 */
+  useEffect(() => {
+    if (!field || reduced() || !matchMedia("(pointer: fine)").matches) return undefined;
+    const box = close.current;
+    let [x, y] = rest.current, [tx, ty] = rest.current, raf = 0;
+    const step = () => {
+      x += (tx - x) * .12; y += (ty - y) * .12;
+      placeHole(x, y);
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > .3 ? requestAnimationFrame(step) : 0;
+    };
+    const glide = () => { if (!raf) raf = requestAnimationFrame(step); };
+    const onMove = e => {
+      if (e.pointerType !== "mouse") return;
+      const r = stage.current.getBoundingClientRect();
+      tx = e.clientX - r.left; ty = e.clientY - r.top;
+      glide();
+    };
+    const onLeave = () => { [tx, ty] = rest.current; glide(); };
+    box.addEventListener("pointermove", onMove, { passive: true });
+    box.addEventListener("pointerleave", onLeave);
+    return () => { box.removeEventListener("pointermove", onMove); box.removeEventListener("pointerleave", onLeave); cancelAnimationFrame(raf); };
+  }, [field]); // eslint-disable-line react-hooks/exhaustive-deps
+  const p = field?.paths;
+  return (
+    <section className="hm-close" ref={close} onClick={e => !e.target.closest("button, a") && fireWave()}>
+      <div className="hm-arena" ref={stage} style={field ? { height: field.h, "--floor": field.floorY + "px" } : undefined}>
+        {field && <Lines g={field} className="hm-lit" d={p.rect + p.line + p.ring + p.knob + p.face} />}
+        <i className="hm-hole" ref={hole} aria-hidden="true" style={field ? { "--hole": Math.min(field.w * .36, 320) + "px" } : undefined} />
+        {field && <div className="hm-dim">
+          <Lines g={field} className="hm-rect" d={p.rect} />
+          <Lines g={field} className="hm-line" d={p.line} />
+          <svg className="hm-f hm-ring" width={field.w} height={field.h} viewBox={`0 0 ${field.w} ${field.h}`} aria-hidden="true"><path d={p.ring} ref={ringRef} /></svg>
+          <svg className="hm-f hm-ball" width={field.w} height={field.h} viewBox={`0 0 ${field.w} ${field.h}`} aria-hidden="true"><path d={p.knob + p.face} ref={knobRef} /></svg>
+        </div>}
+        <i className="hm-wave" ref={wave} aria-hidden="true" />
+        <div className="hm-mark" ref={mark}><Wordmark /><span className="hm-shine" style={{ WebkitMask: MARK_MASK, mask: MARK_MASK }} aria-hidden="true"><i className="hm-band" ref={band} /></span></div>
+      </div>
+      <Reveal className="hm-end">
+        <h2>다음 기록은 당신의 차례입니다</h2>
+        <button type="button" className="ypl-btn hm-btn hm-btn--end press" onClick={() => go(primary[1])}>{primary[0]}</button>
+      </Reveal>
+    </section>
+  );
+}
+
+/* ============================== HOME ==============================
+   24차: 하얀 페이지와 네이비 한 색. 이름 없이 문장으로 시작해 슬랩에 봉인된 챔피언, 리그의 숫자, 갈 곳, 공지를 지나 아레나로 닫는다.
+   첫 등장은 1초 안에: 제목이 솟고, 슬랩이 가운데부터 스프링으로 서고, 사선 면 하나가 가운데 슬랩을 지나간다. */
+export default function HomePage({ data, go }) {
+  const [enter] = useState(firstHero);
+  const hero = useRef(null);
+  const [champions, setChampions] = useState(null), [counts, setCounts] = useState(null), [pop, setPop] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    loadChampions(data).then(rows => { if (live) setChampions(rows); }).catch(error => { console.warn("home champions read failed", error); if (live) setChampions([]); });
+    loadCounts(data).then(next => { if (live) setCounts(next); }).catch(error => console.warn("home counts read failed", error));
+    return () => { live = false; };
+  }, [data]);
+
+  useLayoutEffect(() => {
+    heroPending = false;
+    if (!enter || reduced()) return;
+    const q = s => [...hero.current.querySelectorAll(s)];
+    q(".hm-ln").forEach((el, i) => rise(el, 60 + i * 90));
+    q(".hm-next, .hm-actions").forEach((el, i) => rise(el, 240 + i * 80));
+  }, [enter]);
 
   /* 대회 단계: 남은 날과 주 행동이 같은 계산을 읽는다 */
   const now = useMemo(() => {
     const upcoming = nextEvent(data.announcements);
     if (!upcoming) return null;
-    const { a, draft, raw, dday } = upcoming;
-    const today = dday === 0;
-    return {
-      today, dday,
-      name: draft.name || a.title,
-      status: today ? "오늘 열립니다" : "참가 신청 중",
-      dueLabel: today ? `오늘 ${formatDate(raw, { time: true })}` : formatDate(raw, { time: true }),
-    };
+    const { a, draft, raw, dday } = upcoming, today = dday === 0;
+    return { today, dday, name: draft.name || a.title, when: formatDate(raw, { time: true }) };
   }, [data.announcements]);
   const primary = !now ? ["기록 보기", "records"] : now.today ? ["대진표 보기", "bracket"] : ["이번 대회 신청하기", "news"];
+  const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
+  const routes = [["bracket", "대진표", "지금 열린 대회의 대진과 결과"], ["records", "기록", "트레이너, 대회, 포켓몬, 랭킹"], ["champions", "명예의 전당", "역대 챔피언과 우승 엔트리"], ["builder", "팀 빌더", "현재 규정으로 팀을 짜고 저장"]];
+  const showCounts = counts && counts.tournaments > 0 && counts.trainers > 0 && champions;
 
-  /* 빛의 파동 하나가 몬스터볼에서 바닥을 지나간다 */
-  const wave = () => {
-    if (!stageRef.current || reduced()) return;
-    stageRef.current.querySelector(".ha-wave").animate([{ transform: "scale(1)", opacity: .9 }, { transform: "scale(11)", opacity: 0 }], { duration: 2400, easing: EASE_OUT });
-  };
-
-  /* 첫 등장. 다시 오면 글이 화면 전환을 따라 선다 */
-  useLayoutEffect(() => {
-    coverPending = false;
-    if (!enter || reduced()) return undefined;
-    const st = stageRef.current;
-    const play = (s, kf, o) => st.querySelectorAll(s).forEach(el => el.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
-    const fade = [{ opacity: 0 }, { opacity: 1 }];
-    play(".ha-beam, .ha-sky", fade, { duration: 480 });
-    play(".ha-floor", fade, { duration: 480, delay: 60 });
-    play(".ha-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: 420, delay: 120 });
-    play(".ha-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: 480, delay: 150 });
-    play(".ha-ring", fade, { duration: 360, delay: 240 });
-    play(".ha-ball", fade, { duration: 270, delay: 360 });
-    play(".ha-lit", fade, { duration: 420, delay: 420 });
-    play(".ha-mark > svg:not(.ha-refl), .ha-shine", fade, { duration: 600, delay: 300 });
-    play(".ha-refl", [{ opacity: 0 }, { opacity: .3 }], { duration: 600, delay: 300 });
-    bandRef.current.animate([{ transform: "translateX(-100%)" }, { transform: "translateX(100%)" }], { duration: 900, delay: 600, easing: EASE_IN_OUT });
-    const timer = setTimeout(wave, 300);
-    rise(infoRef.current, 420);
-    return () => clearTimeout(timer);
-  }, [enter]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* 아래 글은 원의 가까운 끝 바로 밑에 선다(글과 단추는 그린 선 위에 서지 않는다). 원근으로 누운 원이 바닥 밑으로 얼마나
-     내려오는지는 화면 크기마다 달라 계산 대신 잰다. 무대는 바닥과 함께 움직이므로 이 거리는 글의 자리와 상관없다. */
-  useLayoutEffect(() => {
-    const ha = stageRef.current.closest(".ha"), ring = stageRef.current.querySelector(".ha-ring path");
-    const fit = () => {
-      if (!ring) return;
-      const near = Math.ceil(ring.getBoundingClientRect().bottom - markRef.current.getBoundingClientRect().top) + "px";
-      if (ha.style.getPropertyValue("--field-near") !== near) ha.style.setProperty("--field-near", near);
-    };
-    fit();
-  }, [field]);
-
-  /* 포인터의 빛: 작은 캔버스에 무대 색의 장과 부드러운 구멍을 그려 화면보다 크게 늘린다. 필드의 밝은 선은 그 아래에 있고,
-     구멍을 옮기는 일은 변형 하나뿐이라 아무것도 다시 그리지 않는다. 그림은 크기와 테마가 바뀔 때만 다시 그린다. */
-  const floorAt = () => { const st = stageRef.current; return [st.clientWidth / 2, st.clientHeight * parseFloat(getComputedStyle(st).getPropertyValue("--floor")) / 100]; };
-  const placeCover = (x, y) => { const c = coverRef.current, half = c.offsetWidth / 2; c.style.transform = `translate3d(${(x - half).toFixed(1)}px,${(y - half).toFixed(1)}px,0)`; };
-  useLayoutEffect(() => {
-    const c = coverRef.current;
-    if (!c) return undefined;
-    const size = Math.max(field.w, field.h) * 2.6, hole = Math.min(field.w * .4, 360) / size * c.width, mid = c.width / 2;
-    c.style.width = c.style.height = size + "px";
-    const paint = () => {
-      const x = c.getContext("2d");
-      x.globalCompositeOperation = "source-over"; x.fillStyle = getComputedStyle(stageRef.current).getPropertyValue("--stage"); x.fillRect(0, 0, c.width, c.height);
-      const light = x.createRadialGradient(mid, mid, 0, mid, mid, hole);
-      light.addColorStop(0, "#000"); light.addColorStop(1, "transparent");
-      x.globalCompositeOperation = "destination-out"; x.fillStyle = light; x.fillRect(0, 0, c.width, c.height);
-    };
-    paint();
-    placeCover(...floorAt());
-    const theme = new MutationObserver(paint);
-    theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => theme.disconnect();
-  }, [field]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* 포인터가 필드 위의 빛과 YPL 위의 빛을 옮긴다. 포인터가 없거나 떠나면 빛은 몬스터볼과 YPL의 위 가운데로 돌아가 머문다 */
-  useEffect(() => {
-    if (reduced() || !fine) return undefined;
-    const stage = stageRef.current, lamp = lampRef.current, shine = lamp.parentElement;
-    const lampRest = () => [shine.clientWidth / 2, -shine.clientHeight * .1];
-    let [fx, fy] = floorAt(), [tfx, tfy] = [fx, fy], [lx, ly] = lampRest(), [tlx, tly] = [lx, ly], raf = 0;
-    const step = () => {
-      fx += (tfx - fx) * .12; fy += (tfy - fy) * .12; lx += (tlx - lx) * .12; ly += (tly - ly) * .12;
-      placeCover(fx, fy);
-      lamp.style.transform = `translate3d(${lx.toFixed(1)}px,${ly.toFixed(1)}px,0)`;
-      raf = Math.abs(tfx - fx) + Math.abs(tfy - fy) + Math.abs(tlx - lx) + Math.abs(tly - ly) > .3 ? requestAnimationFrame(step) : 0;
-    };
-    const glide = () => { if (!raf) raf = requestAnimationFrame(step); };
-    const onMove = e => {
-      if (e.pointerType !== "mouse") return;
-      const s = stage.getBoundingClientRect(), m = shine.getBoundingClientRect();
-      tfx = e.clientX - s.left; tfy = e.clientY - s.top;
-      tlx = e.clientX - m.left; tly = Math.max(-m.height * .3, e.clientY - m.top);
-      glide();
-    };
-    const onLeave = () => { [tfx, tfy] = floorAt(); [tlx, tly] = lampRest(); glide(); };
-    step();
-    addEventListener("pointermove", onMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onLeave);
-    return () => { removeEventListener("pointermove", onMove); document.documentElement.removeEventListener("pointerleave", onLeave); cancelAnimationFrame(raf); };
-  }, [fine]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const stop = (offset, opacity) => <stop offset={offset} style={{ stopColor: "var(--fg)", stopOpacity: opacity }} />;
-  const letters = <path transform="skewX(-12) translate(21 0)" fillRule="evenodd" d={WORDMARK_PATH} fill="url(#ha-body)" />;
-  const { rect, line, ring, knob, face, boxT, boxB } = field.paths;
-
-  return (<div className="ha" onClick={e => !e.target.closest("button, a") && wave()}>
-    {/* YPL이 서는 자리. 필드의 바닥이 이 자리의 아래 끝에 놓여, YPL과 그 아래 글이 한 무리로 화면 가운데에 선다 */}
-    <div className="ha-slot">
-    <div className="ha-stage" ref={stageRef}>
-      <i className="ha-floor" aria-hidden="true" />
-      <Lines g={field} className="ha-lit" d={rect + line + ring + knob + face + boxT + boxB} />
-      {fine && <canvas className="ha-cover" ref={coverRef} width="256" height="256" aria-hidden="true" />}
-      <Lines g={field} className="ha-rect" d={rect} />
-      <Lines g={field} className="ha-line" d={line} />
-      <Lines g={field} className="ha-ring" d={ring} />
-      <Lines g={field} className="ha-ball" d={knob + face + boxT + boxB} />
-      <i className="ha-fade" aria-hidden="true" /><i className="ha-sky" aria-hidden="true" /><i className="ha-beam" aria-hidden="true" /><i className="ha-wave" aria-hidden="true" />
-      <h1 className="ha-mark" ref={markRef}><span className="sr-only">Yonsei Pokémon League</span>
-        <svg viewBox={VB.join(" ")} aria-hidden="true">
-          <defs><linearGradient id="ha-body" x1="0" y1="0" x2="0" y2="1">{stop(0, .95)}{stop(1, .6)}</linearGradient></defs>
-          {letters}
-        </svg>
-        <span className="ha-shine" style={{ WebkitMask: MARK_MASK, mask: MARK_MASK }} aria-hidden="true"><i className="ha-band" ref={bandRef} /><i className="ha-lamp" ref={lampRef} /></span>
-        <svg className="ha-refl" viewBox={VB.join(" ")} aria-hidden="true">{letters}</svg>
-      </h1>
-    </div>
-    </div>
-    <div className="ha-info" ref={infoRef}>
-      {now && <div className="ha-ev">
-        <div className="ha-ev-row"><span className="fig">{now.today ? "오늘" : `D-${now.dday}`}</span><span className="ha-ev-name">{now.name}</span></div>
-        <span className="ha-ev-meta">{now.today && <i className="live-dot" aria-hidden="true" />}{now.dueLabel}, {now.status}</span>
-      </div>}
-      {/* 잡힌 대회가 없을 때도 처음 온 사람이 다음에 무엇을 볼지 한 줄로 안다 */}
-      {!now && <p className="ha-ev-meta">다음 대회 일정은 공지에 올라옵니다.</p>}
-      <div className="ha-actions">
-        <button type="button" className="ypl-btn ypl-btn--primary press hl" onClick={() => go(primary[1])}>{primary[0]}</button>
-        <button type="button" className="ypl-btn ypl-btn--soft press hl" onClick={() => go("about")}>리그 소개</button>
+  return (<div className="hm">
+    <section className="hm-hero" ref={hero}>
+      <h1><span className="hm-ln">모든 승부가</span><br /><span className="hm-ln">기록이 됩니다</span></h1>
+      {now
+        ? <p className="hm-next">{now.today && <i className="live-dot" aria-hidden="true" />}<b className="tnum">{now.today ? "오늘" : `D-${now.dday}`}</b> <span>{now.name}</span> <span className="hm-when">{now.when}</span></p>
+        : <p className="hm-next">다음 대회 일정은 공지에 올라옵니다.</p>}
+      <div className="hm-actions">
+        <button type="button" className="ypl-btn ypl-btn--primary hm-btn press" onClick={() => go(primary[1])}>{primary[0]}</button>
+        <button type="button" className="ypl-btn ypl-btn--soft hm-btn press" onClick={() => go("about")}>리그 소개</button>
       </div>
-    </div>
+    </section>
+
+    {/* 슬랩이 들어오기 전에도 자리를 잡아 둔다: 아래가 밀려 내려가지 않게 */}
+    {champions?.length ? <SlabBelt champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <div className="hm-belt-hold" aria-hidden="true" />}
+
+    <section className="hm-wrap hm-count">
+      {showCounts && <Reveal tag="h2" aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
+        <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언.</span>
+      </Reveal>}
+      <div className="hm-routes">
+        {routes.map(([view, title, line], i) => <Reveal tag="button" type="button" className="hm-route press" delay={i * STAGGER.tile} key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></Reveal>)}
+      </div>
+    </section>
+
+    {notices.length > 0 && <section className="hm-wrap hm-notices">
+      <Reveal tag="h2">공지</Reveal>
+      <div className="hm-list">
+        {notices.map((a, i) => {
+          const excerpt = excerptOf(a.body, a.title);
+          return <Reveal tag="button" type="button" className="hm-row press" delay={i * STAGGER.row} key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></Reveal>;
+        })}
+        <button type="button" className="hm-all press" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
+      </div>
+    </section>}
+
+    <Arena primary={primary} go={go} />
+
+    {pop && <Modal title={pop.name} hint={`${pop.label} 챔피언, ${pop.line}`} className="hm-sheet" onClose={() => setPop(null)}>
+      <ul className="hm-party">
+        {pop.party.map((m, i) => <li key={i}><span className="hm-tile">{m.img && <img src={m.img} alt="" />}</span>{m.name}</li>)}
+      </ul>
+      <div className="modal-actions"><button type="button" className="ypl-btn ypl-btn--soft press" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</button></div>
+    </Modal>}
   </div>);
 }

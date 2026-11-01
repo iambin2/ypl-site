@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>YPL 로고 초안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&display=block">
+<style>
+@font-face { font-family: Freesentation; src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2404@1.0/Freesentation-4Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: Freesentation; src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2404@1.0/Freesentation-5Medium.woff2") format("woff2"); font-weight: 500; }
+* { box-sizing: border-box; margin: 0; }
+:root { --navy: #081C3D; --up: #1D3156; --grey: #4A5264; }
+body { width: 2000px; padding: 80px; background: #ECEEF2; color: var(--navy); font-family: "Albert Sans", Freesentation, sans-serif; -webkit-font-smoothing: antialiased; word-break: keep-all; }
+header { display: flex; align-items: baseline; gap: 24px; margin-bottom: 56px; }
+h1 { font-size: 48px; font-weight: 500; letter-spacing: -.02em; line-height: 1.25; }
+header p { font-size: 22px; color: var(--grey); }
+h2 { font-size: 28px; font-weight: 500; letter-spacing: -.015em; margin: 72px 0 8px; }
+.note { font-size: 19px; color: var(--grey); margin-bottom: 24px; }
+.four { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.tile { border-radius: 24px; overflow: hidden; background: #FFF; }
+.big { background: var(--navy); color: #FFF; height: 260px; display: grid; place-items: center; }
+.big svg { height: 88px; display: block; }
+.sizes { padding: 24px; display: flex; align-items: flex-end; gap: 24px; height: 104px; color: var(--navy); }
+.cap { padding: 0 24px 24px; }
+.cap b { display: block; font-size: 20px; font-weight: 500; }
+.cap span { display: block; margin-top: 4px; font-size: 16px; line-height: 1.5; color: var(--grey); }
+.bar { height: 72px; background: var(--navy); color: #FFF; border-radius: 16px; display: flex; align-items: center; padding: 0 32px; gap: 24px; font-size: 16px; font-weight: 500; }
+.bar + .bar { margin-top: 12px; }
+.bar em { font-style: normal; color: #B3BED1; }
+.bar small { font-size: 15px; color: #B3BED1; margin-left: auto; font-weight: 400; }
+.lock { display: flex; align-items: center; }
+.lock .w, .w { display: block; }
+.panel { border-radius: 24px; padding: 40px; min-height: 220px; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+.panel.n { background: var(--navy); color: #FFF; }
+.panel.p { background: #FFF; }
+.full { display: flex; align-items: center; gap: 20px; }
+.full div { font-size: 22px; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; }
+.icons { display: flex; align-items: flex-end; gap: 16px; }
+.badge { background: var(--navy); color: #FFF; display: grid; place-items: center; }
+.badge svg { width: 68%; }
+.badge.white { background: #FFF; color: var(--navy); }
+.row { display: flex; align-items: flex-end; gap: 32px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="wing" viewBox="0 0 1315.1 870.6"><path fill="currentColor" d="M0 0 L427.7 118 L657.5 430 L887.4 118 L1315.1 0 L1199.8 164 L947.9 233.5 L755.3 495.5 L755.3 536.5 L559.8 536.5 L559.8 495.5 L367.1 233.5 L115.3 164 Z M246.8 351.1 L149.5 212.7 L403.3 282.8 L506.3 422.7 Z M808.8 422.7 L911.7 282.8 L1165.6 212.7 L1068.3 351.1 Z M559.8 574.5 L755.3 574.5 L755.3 608.1 L916.1 732.5 L805.8 811.8 L713.7 639.1 L692.3 639.1 L751.1 811.8 L657.5 870.6 L564 811.8 L622.8 639.1 L601.3 639.1 L509.3 811.8 L399 732.5 L559.8 608.1 Z"/></symbol>
+</defs></svg>
+<header><h1>YPL 로고 초안</h1><p>날개는 그대로, 글자 로고만 다시 그립니다</p></header>
+
+<h2>글자 로고</h2>
+<p class="note">같은 뼈대로 그린 후보입니다. 아래 줄은 32px, 18px, 14px 높이입니다.</p>
+<div class="four" id="words"></div>
+
+<h2>상단 바에서</h2>
+<p class="note">실제 72px 바에 넣은 모습입니다. 날개 28px, 글자 18px로 비율도 함께 고쳤습니다.</p>
+<div id="bars"></div>
+
+<h2>날개와 묶음</h2>
+<p class="note">Wing Y의 깃털과 꼬리는 건드리지 않았습니다. 추천안 기준의 쓰임새입니다.</p>
+<div class="three">
+  <div class="panel n"><div class="lock" id="lockN"></div></div>
+  <div class="panel p"><div class="full" id="fullP"></div></div>
+  <div class="panel p"><div class="icons" id="icons"></div></div>
+</div>
+
+<script>
+const wordmarks = {
+  current: { vb: "0 0 310 100", skew: true, d: "M0 0 H34.7 L55 27.7 L75.3 0 H110 L69 56 H41 Z M41 64 H69 V100 H41 Z M118 0 H188 A18 18 0 0 1 206 18 V46 A18 18 0 0 1 202.9666 56 H118 Z M146 24 H178 V42 H146 Z M118 64 H146 V100 H118 Z M214 0 H242 V56 H214 Z M214 64 H242 V76 H286 V100 H214 Z" },
+  wide: { vb: "0 0 310 100", skew: true, d: "M0 0 H34.7 L55 27.7 L75.3 0 H110 L72 52 H38 Z M41 68 H69 V100 H41 Z M118 0 H188 A18 18 0 0 1 206 18 V34 A18 18 0 0 1 188 52 H118 Z M146 22 H178 V32 H146 Z M118 68 H146 V100 H118 Z M214 0 H242 V52 H214 Z M214 68 H242 V76 H286 V100 H214 Z" },
+  solid: { vb: "0 0 310 100", skew: true, d: "M0 0 H34.7 L55 27.7 L75.3 0 H110 L69 56 V100 H41 V56 Z M118 0 H188 A18 18 0 0 1 206 18 V46 A18 18 0 0 1 188 64 H146 V100 H118 Z M146 24 H178 V40 H146 Z M214 0 H242 V76 H286 V100 H214 Z" },
+  upright: { vb: "0 0 276 100", skew: false, d: "M0 0 H26 L50 34 L74 0 H100 L61 54 V100 H39 V54 Z M114 0 H166 A31 31 0 0 1 166 62 H136 V100 H114 Z M136 20 H164 A11 11 0 0 1 164 42 H136 Z M209 0 H231 V80 H276 V100 H209 Z" },
+};
+const svg = (k, h) => { const m = wordmarks[k], [, , vw, vh] = m.vb.split(" ").map(Number); return `<svg height="${h}" width="${h * vw / vh}" viewBox="${m.vb}" fill="currentColor"><path fill-rule="evenodd" ${m.skew ? 'transform="skewX(-12) translate(21 0)"' : ""} d="${m.d}"/></svg>`; };
+const wing = h => `<svg class="w" height="${h}" width="${h * 1315.1 / 870.6}"><use href="#wing"/></svg>`;
+const info = [
+  ["current", "현행", "띠가 14px에서 1px로 줄어 뭉칩니다."],
+  ["wide", "A. 띠 넓힘", "띠는 살지만 P의 구멍이 좁아져 글자가 무너집니다."],
+  ["solid", "B. 솔리드 기울임, 추천", "띠를 없앤 한 덩어리입니다. 속도감을 지키면서 14px에서도 또렷합니다."],
+  ["upright", "C. 직립 기하", "단정하지만 평범해져 YPL만의 인상이 약해집니다."],
+];
+document.getElementById("words").innerHTML = info.map(([k, t, s]) => `<div class="tile"><div class="big">${svg(k, 88)}</div><div class="sizes">${svg(k, 32)}${svg(k, 18)}${svg(k, 14)}</div><div class="cap"><b>${t}</b><span>${s}</span></div></div>`).join("");
+const nav = "<em>공지</em><em>대진표</em><em>기록</em><em>명예의 전당</em><em>게시판</em>";
+document.getElementById("bars").innerHTML = info.map(([k, t]) => `<div class="bar"><span class="lock" style="gap:${k === "current" ? 8 : 12}px">${wing(k === "current" ? 24 : 28)}${svg(k, k === "current" ? 14 : 18)}</span>${nav}<small>${t}</small></div>`).join("");
+const pick = "solid";
+document.getElementById("lockN").innerHTML = wing(64) + `<span style="width:24px"></span>` + svg(pick, 42);
+document.getElementById("fullP").innerHTML = wing(64) + `<div>Yonsei<br>Pokémon League</div>`;
+document.getElementById("icons").innerHTML = [[96, 22], [64, 15], [32, 7], [16, 3]].map(([s, r]) => `<span class="badge" style="width:${s}px;height:${s}px;border-radius:${r}px"><svg viewBox="0 0 1315.1 870.6"><use href="#wing"/></svg></span>`).join("");
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { excerptOf } from "../services/noticeExcerpt.js";
 import { flushSync } from "react-dom";
 import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, Reveal, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
@@ -10,16 +11,6 @@ const fmtDT=iso=>formatDate(iso,{time:true});
 const PAGE_SIZE=10;
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문의 제목 자리로 이어진다(I2).
    신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
-/* 목록의 미리보기는 본문의 첫 문장이 뜻을 가질 때만: "1조", "2" 같은 조각은 보이지 않는다. 앞의 기호와 이모지는 뗀다.
-   제목을 되풀이하는 첫 줄("제6회 챔피언스 시리즈" 아래의 "6회 챔피언스 시리즈 공지")은 건너뛴다. */
-const bare=s=>String(s||"").replace(/공지|안내|제\s*(?=\d)|[^\p{L}\p{N}]/gu,"");
-function excerptOf(body,title=""){
-  const t=bare(title);
-  const line=String(body||"").split("\n").map(l=>l.replace(/^[^\p{L}\p{N}]+/u,"").trim())
-    .find(l=>l&&!(t&&(bare(l).includes(t)||t.includes(bare(l)))))||"";
-  return line.length>=12?line:"";
-}
-
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);

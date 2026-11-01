@@ -4,7 +4,7 @@ import { formatDate } from "../services/dateFormat.js";
 /* 팀 시트 한 장을 PNG로 그린다(쇼다운 팀 이미지와 같은 쓰임). 사이트와 같은 무채색 재료, 같은 글꼴과 워드마크,
    지금 보고 있는 테마 그대로. 타입 색은 사이트처럼 점 하나로만 쓴다(B1, 타입 색은 내용). 스프라이트는 같은 출처라
    캔버스가 오염되지 않는다. */
-const FONT = '"SUIT Variable", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+const FONT = '"Albert Sans", "Freesentation", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 const PALETTE = {
   dark: { bg: "#0A0A0A", glow: "rgba(255,255,255,.12)", card: "#161616", well: "#1F1F1F", fg: "#F5F5F5", fg2: "#B0B0B0", fg3: "#8C8C8C", bar: "rgba(255,255,255,.1)", barOn: "#F5F5F5", line: "rgba(255,255,255,.1)" },
   light: { bg: "#E7E7E7", glow: "rgba(255,255,255,.7)", card: "#FFFFFF", well: "#F3F3F3", fg: "#0A0A0A", fg2: "#525252", fg3: "#6B6B6B", bar: "rgba(0,0,0,.08)", barOn: "#0A0A0A", line: "rgba(0,0,0,.08)" },
@@ -41,7 +41,7 @@ function loadImage(src) {
   });
 }
 async function fontsReady() {
-  try { await Promise.all(["800 32px", "700 16px", "400 16px"].map(f => document.fonts.load(`${f} "SUIT Variable"`))); await document.fonts.ready; } catch { /* system font */ }
+  try { await Promise.all(["700 32px", "600 16px", "400 16px"].map(f => document.fonts.load(`${f} "Freesentation"`, "가").then(() => document.fonts.load(`${f} "Albert Sans"`)))); await document.fonts.ready; } catch { /* system font */ }
 }
 function typePill(ctx, c, x, y, type) {
   ctx.font = `700 12px ${FONT}`;
@@ -59,7 +59,7 @@ function drawCard(ctx, c, x, y, row, sprite) {
   roundRect(ctx, ix, y + CARD_PAD, 104, 104, 12); ctx.fillStyle = c.well; ctx.fill();
   if (sprite) { const s = Math.min(96 / sprite.width, 96 / sprite.height); const w = sprite.width * s, h = sprite.height * s; ctx.drawImage(sprite, ix + 52 - w / 2, y + CARD_PAD + 52 - h / 2, w, h); }
   const tx = ix + 104 + 16, tw = iw - 120;
-  ctx.textAlign = "left"; ctx.fillStyle = c.fg; ctx.font = `800 24px ${FONT}`;
+  ctx.textAlign = "left"; ctx.fillStyle = c.fg; ctx.font = `700 24px ${FONT}`;
   ctx.fillText(clip(ctx, row.name, tw), tx, y + CARD_PAD + 30);
   ctx.fillStyle = c.fg3; ctx.font = `400 13px ${FONT}`;
   const sub = [row.english !== row.name ? row.english : "", row.num != null ? `No. ${String(row.num).padStart(4, "0")}` : ""].filter(Boolean).join("   ");
@@ -90,7 +90,7 @@ function drawCard(ctx, c, x, y, row, sprite) {
     roundRect(ctx, barX, cy - 9, barW, 6, 3); ctx.fillStyle = c.bar; ctx.fill();
     if (stat.sp) { roundRect(ctx, barX, cy - 9, Math.max(6, barW * stat.sp / 32), 6, 3); ctx.fillStyle = c.barOn; ctx.fill(); }
     ctx.fillStyle = stat.sp ? c.fg : c.fg3; ctx.font = `${stat.sp ? 700 : 400} 13px ${FONT}`; ctx.fillText(String(stat.sp), barX + barW + 12, cy);
-    ctx.textAlign = "right"; ctx.fillStyle = c.fg; ctx.font = `800 16px ${FONT}`; ctx.fillText(String(stat.final), ix + iw, cy); ctx.textAlign = "left";
+    ctx.textAlign = "right"; ctx.fillStyle = c.fg; ctx.font = `700 16px ${FONT}`; ctx.fillText(String(stat.final), ix + iw, cy); ctx.textAlign = "left";
   }
 
   // 기술 네 칸
@@ -126,7 +126,7 @@ export async function renderTeamSheetCanvas(sheet, { title = "", meta = "", auth
   g.addColorStop(0, c.glow); g.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-  ctx.textAlign = "left"; ctx.fillStyle = c.fg; ctx.font = `800 32px ${FONT}`;
+  ctx.textAlign = "left"; ctx.fillStyle = c.fg; ctx.font = `700 32px ${FONT}`;
   ctx.fillText(clip(ctx, title || "이름 없는 팀", W - PAD * 2), PAD, PAD + 32);
   ctx.fillStyle = c.fg3; ctx.font = `400 15px ${FONT}`;
   ctx.fillText(clip(ctx, meta, W - PAD * 2), PAD, PAD + 62);

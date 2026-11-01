@@ -1,14 +1,14 @@
 /* =============================================================================
-   YPL Matte — components
+   YPL Navy — components
    Every control draws from here: buttons, chips, segmented, fields, menus, lists, tables,
    sheets, toasts, empty and loading states. Every label sits at the exact centre of its control.
    ========================================================================== */
 
-/* ---------- soft: the raised look of a plate on a flat surface, in the surface's own tone ---------- */
+/* ---------- soft: one solid tone for every secondary control ---------- */
 .ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
 .pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-type, .tb-status-chip, .tb-official-meta span, .rc-chip,
 .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .ff-choice {
-  position: relative; background: var(--sheen), linear-gradient(var(--soft), var(--soft)); box-shadow: var(--lift);
+  position: relative; background: var(--soft);
 }
 
 /* ---------- Button (M11): primary is the theme's inverse fill, secondary is soft, tertiary is text ---------- */
@@ -20,14 +20,14 @@
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 .ypl-btn .ic, .btn .ic { width: 18px; height: 18px; }
-.ypl-btn--primary, .btn-primary, .btn-danger, .ypl-btn--danger, .tb-main-btn { background: var(--accent); color: var(--on-accent); box-shadow: var(--accent-shadow); --hl: var(--accent-hl); }
+.ypl-btn--primary, .btn-primary, .btn-danger, .ypl-btn--danger, .tb-main-btn { background: var(--accent); color: var(--on-accent); --hl: var(--accent-hl); }
 .ypl-btn--quiet { height: var(--target); padding: 0 var(--s3); background: none; color: var(--fg-2); }
 .ypl-btn--sm, .btn.btn-sm { height: 40px; padding: 0 var(--s4); font-size: .9375rem; }
 .ypl-btn--sm .ic, .btn.btn-sm .ic { width: 16px; height: 16px; }
 :is(.ypl-btn, .btn, .pg-btn, .dd-btn, .dd-opt, .fb-ic, .ed-mv, .ed-del, .tb-pokemon-row):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 @media (hover: hover) {
-  :is(.ypl-btn--primary, .btn-primary, .btn-danger, .tb-main-btn):hover:not(:disabled) { opacity: .88; }
-  :is(.ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn)):hover:not(:disabled) { background-color: var(--tint); }
+  :is(.ypl-btn--primary, .btn-primary, .btn-danger, .tb-main-btn):hover:not(:disabled) { background: var(--accent-hover); }
+  :is(.ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn)):hover:not(:disabled) { background: var(--soft-hover); }
   .ypl-btn--quiet:hover:not(:disabled) { color: var(--fg); }
 }
 /* K1 on every control and tile, whether or not it carries .press */
@@ -95,7 +95,7 @@
 @media (hover: hover) { .ypl-more:hover { color: var(--fg); } .ypl-more:hover .ic { transform: translateX(2px); } }
 
 /* ---------- List: one reading surface, rows with no rules and generous height (M1) ---------- */
-.ypl-group { list-style: none; margin: 0; padding: var(--s2); display: flex; flex-direction: column; border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.ypl-group { list-style: none; margin: 0; padding: var(--s2); display: flex; flex-direction: column; border-radius: var(--r-card); background: var(--surface); }
 .ypl-row {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
   min-height: var(--row-min); padding: var(--s3) var(--s4); border: 0; border-radius: var(--r-row); background-color: transparent; color: inherit; text-align: left;
@@ -115,9 +115,9 @@
 /* ---------- Lead card: the one hero card on a records screen (radius 36, padding 24; tiles 12) ---------- */
 .rc-lead {
   position: relative; overflow: hidden; display: grid; gap: var(--s4); padding: var(--s6);
-  border-radius: var(--r-hero); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow);
+  border-radius: var(--r-hero); background: var(--surface);
 }
-.rc-lead-title { font-size: var(--display); font-weight: 800; line-height: 1.06; letter-spacing: -.04em; }
+.rc-lead-title { font-size: var(--display); font-weight: 700; line-height: 1.06; letter-spacing: -.025em; }
 
 
 /* ---------- surfaces that name their corner in --r (editors, builder, apply) ---------- */
@@ -136,7 +136,7 @@
 
 :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea) {
   width: 100%; min-height: 48px; padding: var(--s3) var(--s5); border: 0; border-radius: var(--r-pill);
-  background: var(--well); box-shadow: var(--well-edge); color: var(--fg); font-size: 1rem; line-height: 1.45;
+  background: var(--well); color: var(--fg); font-size: 1rem; line-height: 1.45;
   transition: background-color var(--dur-fast) var(--ease-out);
   -webkit-appearance: none; appearance: none;
 }
@@ -167,7 +167,7 @@
 .dd-btn {
   position: relative; width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding: 0 var(--s4) 0 var(--s5); border: 0; border-radius: var(--r-pill);
-  background: var(--well); box-shadow: var(--well-edge);
+  background: var(--well);
   color: var(--fg); text-align: left; font-size: 1rem; font-weight: 600;
   transition: scale var(--dur-snappy) var(--spring-snappy);
 }
@@ -230,13 +230,13 @@
 .ypl-table .r { text-align: right; }
 .ypl-table .c { text-align: center; }
 .ypl-table__rank { width: 52px; }
-td.ypl-table__rank { font-size: 1.25rem; line-height: 1; font-weight: 800; color: var(--rank-n); }
+td.ypl-table__rank { font-size: 1.25rem; line-height: 1; font-weight: 700; color: var(--rank-n); }
 .ypl-table__name { display: block; font-size: 1rem; font-weight: 600; line-height: 1.35; }
 .ypl-table__meta { display: block; font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
 .ypl-table__n { width: 72px; }
 td.ypl-table__n { font-weight: 600; color: var(--fg-2); }
 td.ypl-table__n.zero { font-weight: 400; color: var(--fg-3); }
-td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; white-space: nowrap; }
+td.ypl-table__pts { font-size: 1.0625rem; font-weight: 700; line-height: 1; white-space: nowrap; }
 .ypl-table__note { font-size: .8125rem; color: var(--fg-3); }
 .ypl-table .wide { display: none; }
 .ypl-table-more { width: 100%; margin-top: var(--s3); }
@@ -257,7 +257,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .pg-btn:first-child:not(.on), .pg-btn:last-child:not(.on) { color: var(--fg); }
-.pg-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--accent-shadow); }
+.pg-btn.on { background: var(--accent); color: var(--on-accent); }
 .pg-dots { padding: 0 var(--s1); color: var(--fg-3); }
 
 /* ---------- search field: a 48px groove pill with the lens on the left ---------- */
@@ -305,7 +305,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   padding: var(--s2) var(--pad) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
 }
-.modal > h3 { padding-right: 52px; font-size: 1.5rem; line-height: 1.25; font-weight: 800; letter-spacing: -.02em; }
+.modal > h3 { padding-right: 52px; font-size: 1.5rem; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; }
 .modal > .hint { margin-top: var(--s2); }
 .modal > h3 + *:not(.hint), .modal > .hint + * { margin-top: var(--s6); }
 .modal-x {
@@ -322,7 +322,7 @@ td.ypl-table__pts { font-size: 1.0625rem; font-weight: 800; line-height: 1; whit
   display: flex; justify-content: flex-end; align-items: center; gap: var(--s2); flex-wrap: wrap;
   margin: var(--s6) calc(var(--pad) * -1) calc((var(--s6) + env(safe-area-inset-bottom, 0px)) * -1);
   padding: var(--s4) var(--pad) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(to bottom, transparent, var(--plate-l3) var(--s4));
+  background: var(--plate-l3);
 }
 .modal-actions .btn, .modal-actions .ypl-btn { flex: 1 1 0; }
 @media (min-width: 860px) {

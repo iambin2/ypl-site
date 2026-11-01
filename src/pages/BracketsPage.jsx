@@ -98,12 +98,12 @@ function bkRR(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,
 function bkSpaced(ctx,text,cx,y,sp){ ctx.save(); ctx.textAlign="left"; const ws=[...text].map(ch=>ctx.measureText(ch).width+sp); const tot=ws.reduce((a,c)=>a+c,0)-sp; let x=cx-tot/2; for(let i=0;i<text.length;i++){ ctx.fillText(text[i],x,y); x+=ws[i]; } ctx.restore(); }
 
 function bkClip(ctx,t,max){ if(ctx.measureText(t).width<=max)return t; let s=t; while(s.length>1&&ctx.measureText(s+"…").width>max)s=s.slice(0,-1); return s+"…"; }
-/* 이미지 저장도 사이트와 같은 서체 하나(SUIT, E1)와 무채색 다크 토큰(B2)을 쓴다. */
-const BKF='"SUIT Variable", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+/* 이미지 저장도 사이트와 같은 서체와 네이비 다크 토큰을 쓴다. */
+const BKF='"Albert Sans", "Freesentation", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
 const BKM=BKF;
 async function bkFonts(){ try{ if(document.fonts&&document.fonts.load){ await Promise.all(['800 40px "SUIT Variable"','700 40px "SUIT Variable"','400 40px "SUIT Variable"'].map(f=>document.fonts.load(f))); await document.fonts.ready; } }catch(e){} }
-const BKC={ bg:"#0a0a0a", card:"#161616", ink:"#f5f5f5", t2:"#b0b0b0", t5:"#8c8c8c",
-            line2:"rgba(255,255,255,.16)", primary:"#f5f5f5", onPrimary:"#0a0a0a" };
+const BKC={ bg:"#081c3d", card:"#12284c", ink:"#ffffff", t2:"#b3bed1", t5:"#a2abbc",
+            line2:"rgba(255,255,255,.16)", primary:"#ffffff", onPrimary:"#081c3d" };
 /* 금속 광택은 없다(B3). 예전 호출부를 그대로 두기 위해 이름만 남기고 단색을 돌려준다. */
 function bkSilver(){ return BKC.ink; }
 /* 바탕: 흑연색 위에 바로 위에서 떨어지는 빛 하나(C3) */

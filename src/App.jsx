@@ -2,11 +2,11 @@ import React, { lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
 import { loadSiteData, saveSiteData } from "./services/siteDataService.js";
-import HomePage, { stageStateOf } from "./pages/HomePage.jsx";
+import HomePage, { eventAction } from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
 import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/Navigation.jsx";
-import { showBars, useScrollChrome, useStage } from "./components/layout/Stage.jsx";
+import { showBars, useScrollChrome } from "./components/layout/Stage.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { themeFade, transition } from "./components/common/motion.js";
@@ -78,9 +78,9 @@ export default function App() {
   const [more,setMore]=useState(null);
   // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
-  // 다크가 기본이다(B1). 라이트를 고른 기록이 있을 때만 라이트로 연다.
+  // 라이트가 기본이다(24차). 다크를 고른 기록이 있을 때만 다크로 연다. 예전 키는 고르지 않아도 다크가 저장돼 있어서 쓰지 않는다.
   const [dark,setDark]=useState(()=>{
-    try{ return localStorage.getItem("ypl-theme")!=="light"; }catch(e){ return true; }
+    try{ return localStorage.getItem("ypl-theme-2")==="dark"; }catch(e){ return false; }
   });
   /* B6: 화면은 그 자리에 있고 색만 다음 테마로 번진다. 아무것도 움직이지 않는다. */
   const switchTheme=useCallback(()=>{
@@ -91,9 +91,8 @@ export default function App() {
     const root=document.documentElement;
     root.dataset.theme=dark?"dark":"light";
     root.style.colorScheme=dark?"dark":"light";
-    document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute("content",dark?"#0b0b0b":"#e4e4e4"));
   },[dark]);
-  useEffect(()=>{ try{ localStorage.setItem("ypl-theme", dark?"dark":"light"); }catch(e){} },[dark]);
+  useEffect(()=>{ try{ localStorage.setItem("ypl-theme-2", dark?"dark":"light"); }catch(e){} },[dark]);
   /* 탭 제목 — 뒤로 가기 목록과 브라우저 탭에서 어디에 있었는지 구분되게 화면 이름을 붙인다. */
   useEffect(()=>{
     const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
@@ -208,8 +207,7 @@ export default function App() {
     return false;
   },[data,flash]);
   const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
-  const stage=useMemo(()=>data?stageStateOf(data.announcements):"open",[data]);
-  useStage(stage);
+  const cta=useMemo(()=>data?eventAction(data.announcements):null,[data]);
   // 첫 화면이 그려지고 브라우저가 한가해지면 나머지 페이지 조각을 미리 받아 둔다. 첫 이동도 기다림 없이 전환된다.
   // 한 번에 하나씩, 앞 조각이 다 들어온 뒤 다음 한가한 틈에: 모두 한꺼번에 평가하면 폰에서 화면이 한동안 굳는다.
   const loaded=Boolean(data);
@@ -244,10 +242,10 @@ export default function App() {
       {/* 키보드로 들어온 사람은 매번 바 전체를 지나야 본문에 닿았다. */}
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
-        moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null}/>
-      <div className="edge-t" aria-hidden="true"/><div className="edge-b" aria-hidden="true"/>
+        moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null} cta={cta}/>
+      <div className="edge-b" aria-hidden="true"/>
 
-      <div className="wrap"><main className="page" id="ypl-main" tabIndex={-1} key={view}>
+      <div className="wrap"><main className={"page"+(view==="home"?" page--home":"")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}

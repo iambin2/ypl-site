@@ -1,4 +1,4 @@
-// The YPL Matte design law (DESIGN.md) as a test. Every CSS declaration in src/styles and every inline style={{}} in src
+// The YPL Navy design law (DESIGN.md) as a test. Every CSS declaration in src/styles and every inline style={{}} in src
 // is checked against the scales and rules below. A deliberate exception is listed in EXCEPT under its reason; an exception
 // that no longer occurs fails too, so the list only shrinks. New UI that passes this test needs no separate consistency check.
 import test from "node:test";
@@ -16,11 +16,11 @@ const rel = f => relative(ROOT, f).replaceAll("\\", "/");
 const TOKENS = read(join(STYLES, "tokens.css"));
 const SPACE = new Set([0, 80, 120, ...[...TOKENS.matchAll(/--s\d+:\s*(\d+)px/g)].map(m => +m[1])]); // --s1..--s14, --chapter 80/120
 const SIZES = new Set([12, 13, 15, 16, 17, 20, 24, 28]);
-const WEIGHTS = new Set(["400", "600", "700", "800"]);
-// tracking follows size (one curve): none up to 18px, then tighter as type grows; YPL Figures stand at 0
-const TRACK = new Set(["0", "inherit", "-.015em", "-.02em", "-.03em", "-.04em"]);
-const trackFor = px => px <= 18 ? "0" : px < 24 ? "-.015em" : px <= 28 ? "-.02em" : "-.03em";
-const LEADING = new Set(["1", "1.06", "1.15", "1.25", "1.35", "1.45", "1.55", "1.8", "inherit", "1.15em"]);
+const WEIGHTS = new Set(["400", "500", "600", "700"]);
+// tracking follows size (one curve): none up to 18px, then tighter as type grows, -.025em for display type only; the body's own .01em opens small Korean
+const TRACK = new Set(["0", ".01em", "inherit", "-.015em", "-.02em", "-.025em"]);
+const trackFor = px => px <= 18 ? "0" : px < 24 ? "-.015em" : "-.02em";
+const LEADING = new Set(["1", "1.06", "1.15", "1.25", "1.35", "1.45", "1.55", "1.8", "inherit", "1.15em", "1.25em"]);
 const RADII = new Set([0, 12, 20, 24, 32, 36, 999]); // tile, textarea, list row, card, hero, pill
 
 // ---------- declarations ----------
@@ -64,26 +64,19 @@ const noVars = v => v.replace(/var\([^()]*(\([^()]*\))?[^()]*\)/g, "");
 const pxs = v => [...noVars(v).matchAll(/(-?\d*\.?\d+)px/g)].map(m => Math.abs(+m[1]));
 const fontFace = d => d.sel.startsWith("@font-face");
 const COLOR = /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|\b(white|black|red|green|blue|gray|grey)\b/i;
-function chromatic(v) {
-  const hex = [...v.matchAll(/#([0-9a-f]{3,8})\b/gi)].map(([, h]) => h.length < 6 ? [...h.slice(0, 3)].map(c => parseInt(c + c, 16)) : [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)));
-  const rgb = [...v.matchAll(/rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/g)].map(m => m.slice(1).map(Number));
-  return /\b(hsla?|hwb|lab|lch|oklab|oklch)\(|\b(red|green|blue)\b/i.test(v) || [...hex, ...rgb].some(([r, g, b]) => r !== g || g !== b);
-}
 
 // ---------- the law: each rule names its DESIGN.md section ----------
 const RULES = {
   "color: literals live only in tokens.css (Color)": d => d.file !== "src/styles/tokens.css" && !/mask/.test(d.prop) && COLOR.test(d.value),
-  "color: achromatic only (Color B1-B5)": d => chromatic(d.value),
   "space: margin, padding and gap sit on the 4px scale (Space and radius)": d => /^(margin|padding|gap|row-gap|column-gap)(-|$)/.test(d.prop) && pxs(d.value).some(n => !SPACE.has(n)),
   "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--[\w-]+\))$/.test(d.value) && !(/^-?\d*\.?\d+(rem|px)$/.test(d.value) && SIZES.has(parseFloat(d.value) * (d.value.endsWith("rem") ? 16 : 1))),
-  "type: weights 400 600 700 800 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
-  "type: 700 only for headlines of 20px and up; rows, labels and buttons are 600 (Type)": d => d.prop === "font-weight" && d.value === "700" && !((sizePx(sib(d, "font-size")) ?? 0) >= 20),
+  "type: weights 400 500 600 700 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
   "type: tracking follows size, none up to 18px (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value)
     || (sizePx(sib(d, "font-size")) !== null && !/fig/.test(d.sel) && trackFor(sizePx(sib(d, "font-size"))) !== d.value)),
   "type: line-heights on one set (Type)": d => d.prop === "line-height" && !LEADING.has(d.value),
   "type: big figures sit on the --fig scale, 28px and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
-  // YPL Figures belongs to the brand (the wordmark and its own text); a page's numbers are SUIT (2026-10-27)
-  "type: one face, SUIT; YPL Figures only with the brand (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
+  // one stack everywhere: Freesentation for Korean, Albert Sans for Latin and digits
+  "type: one font stack; YPL Figures only with the brand (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
   "type: copy wraps only at its container's edge, never at a ch or em measure (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value),
   "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
@@ -112,20 +105,17 @@ const EXCEPT = {
     "Pokémon type colours are content, not chrome": TYPES,
     "a video letterbox is black in both themes": [`${P} | .bd-yt | background: #000`],
   },
-  "color: achromatic only (Color B1-B5)": {
-    "Pokémon type colours are content, not chrome": TYPES,
-  },
   "space: margin, padding and gap sit on the 4px scale (Space and radius)": {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
       `${S} | .page | padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px)`, `${S} | .page | padding-block: 112px 96px`,
-      `${S} | .site-foot-in | padding: var(--s14) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
+      `${S} | .site-foot-in | padding: var(--s10) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
       `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-left: 48px`, `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-right: 48px`,
       `${C} | .modal > h3 | padding-right: 52px`, `${TB} | .tb-slot:not(.empty) | padding-top: 48px`, `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
       `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s4) 0 0 44px`,
       `${TB} | .tb-official-lookup | margin: var(--s4) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s4) 0 0 44px`],
     "concentric inset: inner radius = outer radius - padding": [
-      `${S} | .topbar | padding: 0 6px`, `${S} | .admin-dock | padding: 0 6px 0 var(--s5)`, `${C} | .dd-menu | padding: 6px`, `${C} | .popover | padding: 6px`, `${K} | .calc-stepper button | margin: 2px`],
+      `${S} | .admin-dock | padding: 0 6px 0 var(--s5)`, `${C} | .dd-menu | padding: 6px`, `${C} | .popover | padding: 6px`, `${K} | .calc-stepper button | margin: 2px`],
   },
   "type: sizes 12 13 15 16 17 20 24 28, title and display (Type)": {
     "the title step (28-36) itself and its copies": [`${T} | .title | font-size: clamp(1.75rem, 1.5rem + 1vw, 2.25rem)`, `${TB} | .tb-editor-title h2 | font-size: 2.25rem`],
@@ -143,8 +133,8 @@ const EXCEPT = {
     "(b) a short mark in a narrow fixed cell, and the head of such a column": [`${B} | .bk-seed | text-align: center`, `${B} | .bk-series-no | text-align: center`,
       `${B} | .bk-series-vs | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
       `${R} | .records-party-sprite-fallback | text-align: center`, `${A} | .ed-head | text-align: center`],
-    "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`],
-    "(d) a symmetric stage": [`${P} | .ha | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
+    "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`, `${P} | .hm-party li | text-align: center`],
+    "(d) a symmetric stage": [`${P} | .hm-hero | text-align: center`, `${P} | .hm-close | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
   },
   "align: right only for trailing values and number columns (Alignment)": {
     "a trailing value or a number column": [`${K} | .calc-hp b | text-align: right`, `${K} | .calc-base-row b | text-align: right`, `${K} | .calc-base-row small | text-align: right`,

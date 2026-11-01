@@ -3,79 +3,118 @@
    ========================================================================== */
 
 /* =========================== HOME ===========================
-   One screen, the arena (DECISIONS 18th round, 2026-10-27): a battle field lying in perspective, its centre line, circle and
-   button drawn as one Poké Ball; the YPL stands on the ball and is reflected in the floor; under it the next event and the
-   actions. Things stand still and only light moves (the 14th round's rule): the pointer carries one light over the field, where
-   only the lines it touches brighten, and one over the YPL's letters; a tap sends one wave of light across the floor. The stage
-   fills the screen behind the bars; the text stands in the page. Nothing here repaints once drawn (23rd round): every move is a transform
-   or an opacity on a picture that is already there. */
-/* On a phone (2026-10-28) the YPL on the ball, the event and the buttons are one group, centred between the bars. The field's floor (--fk of the
-   screen's height) lies in the YPL's slot, so the field follows the group; the info keeps clear of the ring. */
-.ha { --h: clamp(88px, 15vw, 216px); --fk: .54; --fw: clamp(730px, 190vw, 1500px); --field-near: calc(var(--fw) * .15); /* HomePage.jsx measures the ring and replaces it */ position: relative; min-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 208px); display: flex; flex-direction: column; justify-content: center; text-align: center; }
-/* the slot holds the YPL above the floor and the near half of the ring below it */
-.ha-slot { position: relative; flex: none; height: calc(var(--h) * 1.08 + var(--field-near)); }
-.ha-stage { --floor: 54%; --ln: color-mix(in srgb, var(--fg) 26%, transparent); --lit: color-mix(in srgb, var(--fg) 88%, transparent);
-  position: absolute; left: 50%; top: calc(100% - var(--field-near) - 100svh * var(--fk)); width: 100vw; height: 100svh; translate: -50% 0; overflow: clip; pointer-events: none; }
-.ha-stage > i { position: absolute; }
-/* still pictures, drawn once. From the bottom: the floor's pool, the lit lines, the pointer's dark sheet, the dim lines, the fades that lay the
-   field back into the dark at both ends and let it end in the stage, and the room's own light. The stage's lower edge is the stage's colour, so
-   scrolling to the footer never shows its box. */
-.ha-floor { left: 50%; top: var(--floor); width: min(190vw, 1500px); height: min(84vw, 660px); translate: -50% -50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); }
-.ha-fade { inset: 0; background: linear-gradient(var(--stage) 12%, transparent 34%, transparent 66%, var(--stage) 96%); }
-.ha-sky { inset: 0; background: radial-gradient(70vw 50vh at 50% 0, var(--la), transparent); }
-.ha-beam { inset: 0 0 auto; height: var(--floor); background: radial-gradient(52% 100% at 50% 0, var(--home-beam), transparent); }
-.ha-f { position: absolute; inset: 0; transform-origin: 50% var(--floor); }
-.ha-f path { fill: var(--ln); fill-rule: evenodd; }
-.ha-lit path { fill: var(--lit); }
-/* the light at rest on the ball where no pointer can carry it */
-@media not all and (pointer: fine) { .ha-lit { -webkit-mask: radial-gradient(circle at 50% var(--floor), #000, transparent min(40vw, 360px)); mask: radial-gradient(circle at 50% var(--floor), #000, transparent min(40vw, 360px)); } }
-/* a 256px texture stretched over the screen: moving it costs one transform and no paint (HomePage.jsx) */
-.ha-cover { position: absolute; left: 0; top: 0; will-change: transform; }
-/* a tap's wave: one soft ring laid on the floor */
-.ha-wave { left: 50%; top: var(--floor); width: calc(var(--fw) * .09); aspect-ratio: 8 / 3; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, transparent 84%, var(--lit) 94%, transparent); opacity: 0; }
-/* the YPL stands on the ball and is reflected in the floor under it */
-.ha-mark { position: absolute; left: 50%; top: var(--floor); }
-.ha-mark svg { position: absolute; left: 50%; height: var(--h); width: auto; translate: -50% 0; overflow: visible; }
-.ha-mark svg:not(.ha-refl) { bottom: calc(var(--h) * .08); }
-.ha-refl { top: calc(var(--h) * -.08); scale: 1 -1; opacity: .3; -webkit-mask: linear-gradient(to top, #000, transparent 60%); mask: linear-gradient(to top, #000, transparent 60%); }
-/* the light on the letters: the mark is a still mask and only the light inside it moves */
-.ha-shine { position: absolute; left: 50%; bottom: calc(var(--h) * .08); height: var(--h); aspect-ratio: 318 / 108; translate: -50% 0; overflow: hidden; }
-.ha-shine > i { position: absolute; }
-.ha-band { inset: 0 -60%; background: linear-gradient(100deg, transparent 40%, var(--home-shine) 50%, transparent 60%); transform: translateX(-100%); }
-.ha-lamp { left: -28%; top: -82%; width: 56%; aspect-ratio: 1; background: radial-gradient(closest-side, color-mix(in srgb, var(--home-shine) 55%, transparent), transparent); }
-.ha-info { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s5); margin-top: var(--s4); }
-.ha-ev { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
-.ha-ev-row { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; column-gap: var(--s3); }
-.ha-ev-name { font-size: 1.0625rem; font-weight: 800; }
-.ha-ev-meta { display: inline-flex; align-items: center; gap: var(--s2); font-size: .8125rem; color: var(--fg-2); }
-.ha-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); }
-@media (min-width: 860px) {
-  .ha { min-height: calc(100svh - 208px); }
-  /* the desktop keeps the arena of the 18th round: the field fills the screen and the words stand at its foot */
-  .ha { --fk: .56; justify-content: flex-end; }
-  .ha-slot { position: static; height: auto; }
-  .ha-stage { --floor: 56%; top: -112px; }
-  .ha-info { margin-top: 0; padding-bottom: var(--s10); }
-}
+   24th round (2026-11-01): a white page and one navy. A sentence opens it, the champions stand sealed in slabs on a belt tied to the scroll,
+   then the league's numbers, where to go, the notices, and the arena closes the page in navy, meeting the footer.
+   Every surface is a solid tone. Nothing here repaints once drawn: every move is a transform or an opacity on a picture that is already there. */
+.hm-wrap { width: min(100% - var(--gutter) * 2, var(--content)); margin-inline: auto; }
+.hm-hero { padding: var(--s14) var(--gutter) var(--s10); text-align: center; }
+.hm-hero h1 { font-size: var(--hero); font-weight: 700; line-height: 1.25; letter-spacing: -.025em; }
+.hm-ln { display: inline-block; }
+.hm-next { display: flex; flex-direction: column; align-items: center; margin-top: var(--s4); font-size: 1rem; line-height: 1.45; color: var(--fg-2); }
+.hm-next b { color: var(--fg); font-weight: 700; }
+.hm-next .live-dot { margin-bottom: var(--s1); }
+.hm-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s6); }
+.ypl-btn.hm-btn { height: 56px; padding: 0 var(--s6); font-size: 1rem; }
+.ypl-btn.hm-btn--end { background: var(--on-bar); color: var(--bar); }
+@media (hover: hover) { .ypl-btn.hm-btn--end:hover:not(:disabled) { background: var(--soft-hover); } }
 
-/* a phone on its side has no room for the ring's near half: the YPL, the event and the buttons stand in two rows between the bars */
-@media (max-height: 520px) and (orientation: landscape) {
-  .ha { --h: 64px; min-height: 0; justify-content: flex-start; }
-  .ha-slot { position: relative; height: calc(var(--h) * 1.08 + var(--s4)); }
-  .ha-stage { --floor: 54%; top: calc(100% - var(--s4) - 100svh * var(--fk)); }
-  .ha-info { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: var(--s2) var(--s6); margin-top: 0; padding-bottom: 0; }
-  .ha-ev { align-items: flex-start; text-align: left; }
+/* the slabs: three solid faces, no shadow; the current champion's case is inverted */
+.hm-belt { overflow: hidden; }
+.hm-belt-hold { height: 292px; }
+.hm-track { --w: 216px; --win: 192px; position: relative; display: flex; gap: var(--s3); width: max-content; padding-block: var(--s3); }
+.hm-slab { flex: 0 0 var(--w); display: block; padding: var(--s2); border-radius: var(--r-field); background: var(--case); text-align: left; transition: translate var(--dur-snappy) var(--spring-snappy), scale var(--dur-snappy) var(--spring-snappy); }
+.hm-slab.cur { background: var(--case-cur); }
+.hm-label { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-height: 60px; padding: var(--s2) var(--s3); border-radius: var(--r-tile); background: var(--label); color: var(--on-label); }
+.hm-who { min-width: 0; }
+.hm-who b { display: block; font-size: 1rem; font-weight: 700; line-height: 1.25; }
+.hm-who span { display: block; font-size: .75rem; line-height: 1.35; font-weight: 500; color: var(--on-label-2); }
+.hm-gen { flex: none; font-size: var(--fig-s); font-weight: 700; line-height: 1; }
+.hm-gen small { margin-left: var(--s1); font-size: .8125rem; font-weight: 500; }
+.hm-win { position: relative; display: block; overflow: hidden; height: var(--win); margin-top: var(--s2); padding: var(--s3); border-radius: var(--r-tile); background: var(--window); }
+.hm-win img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; }
+.hm-sweep { position: absolute; top: -10%; bottom: -10%; left: 0; width: 48%; background: var(--bar-up); transform: translateX(-140%) skewX(-14deg); }
+@media (hover: hover) { .hm-slab:hover { translate: 0 -8px; } }
+
+.hm-count { padding-block: var(--s14); }
+.hm-count h2 { font-size: var(--hero-2); font-weight: 700; line-height: 1.25; letter-spacing: -.02em; }
+.hm-count h2 > span { display: block; }
+.hm-count h2 br { display: none; }
+.hm-count .roll { line-height: 1.25; align-items: flex-start; vertical-align: top; }
+.hm-count .rd, .hm-count .rs > i { height: 1.25em; line-height: 1.25em; }
+.hm-count .rs { transform: translateY(calc(var(--d) * -1.25em)); }
+.hm-routes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s6) var(--s4); margin-top: var(--s10); }
+.hm-route { display: block; text-align: left; }
+.hm-route b { display: block; font-size: 1.25rem; font-weight: 600; line-height: 1.25; letter-spacing: -.015em; }
+.hm-route span { display: block; margin-top: var(--s1); font-size: .9375rem; line-height: 1.45; color: var(--fg-2); }
+
+.hm-notices { display: grid; gap: var(--s4); padding-bottom: var(--s14); }
+.hm-notices h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.25; letter-spacing: -.015em; }
+.hm-row { display: block; width: 100%; min-height: var(--row-min); padding-bottom: var(--s4); text-align: left; }
+.hm-row b { display: block; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; }
+.hm-row span { display: block; margin-top: var(--s1); font-size: .8125rem; line-height: 1.45; color: var(--fg-3); }
+.hm-all { font-size: .9375rem; font-weight: 600; }
+
+/* the arena: the lit lines lie under one navy sheet with a sharp hole in it, the dim lines over both */
+.hm-close { position: relative; z-index: 16; overflow: hidden; background: var(--bar); color: var(--on-bar); text-align: center; }
+.hm-arena { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; }
+.hm-arena.pre > * { opacity: 0; }
+.hm-f { position: absolute; left: 0; top: 0; }
+.hm-f path { fill: currentColor; fill-rule: evenodd; }
+.hm-dim { position: absolute; inset: 0; opacity: .26; }
+.hm-dim .hm-f { transform-origin: 50% var(--floor); }
+.hm-hole { position: absolute; left: 0; top: 0; width: var(--hole); height: var(--hole); margin: calc(var(--hole) / -2) 0 0 calc(var(--hole) / -2); border-radius: 50%; box-shadow: 0 0 0 130vmax var(--bar); }
+.hm-wave { position: absolute; left: 0; top: 0; border: 3px solid var(--on-bar); border-radius: 50%; opacity: 0; pointer-events: none; }
+.hm-mark { position: absolute; left: 50%; width: clamp(220px, 25vw, 360px); transform: translate(-50%, -100%); }
+.hm-mark .wordmark { width: 100%; height: auto; }
+.hm-shine { position: absolute; inset: 0; overflow: hidden; }
+.hm-band { position: absolute; top: -20%; bottom: -20%; left: 0; width: 26%; background: var(--band); transform: translateX(-160%) skewX(-12deg); }
+.hm-end { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s6); padding: 0 var(--gutter); }
+.hm-end h2 { font-size: var(--hero-3); font-weight: 700; line-height: 1.25; letter-spacing: -.02em; }
+
+.hm-party { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4) var(--s2); }
+.hm-party li { display: flex; flex-direction: column; gap: var(--s2); font-size: .8125rem; line-height: 1.35; font-weight: 600; text-align: center; }
+.hm-tile { display: block; aspect-ratio: 1; padding: var(--s2); border-radius: var(--r-tile); background: var(--window); }
+.hm-tile img { width: 100%; height: 100%; object-fit: contain; }
+
+@media (min-width: 860px) {
+  .hm-hero { padding: 120px var(--gutter) var(--chapter); }
+  .hm-next { flex-direction: row; justify-content: center; gap: var(--s2); margin-top: var(--s6); font-size: 1.25rem; letter-spacing: -.015em; }
+  .hm-actions { margin-top: var(--s10); }
+  .ypl-btn.hm-btn { padding: 0 var(--s8); font-size: 1.0625rem; }
+  .hm-belt-hold { height: 396px; }
+  .hm-track { --w: 280px; --win: 280px; gap: var(--s6); }
+  .hm-slab { padding: var(--s3); border-radius: var(--r-row); }
+  .hm-label { min-height: 76px; padding: var(--s3) var(--s4); }
+  .hm-who b { font-size: 1.0625rem; }
+  .hm-who span { font-size: .8125rem; }
+  .hm-gen { font-size: var(--hero-4); }
+  .hm-win { padding: var(--s4); }
+  .hm-count { padding-block: 120px; }
+  .hm-count h2 > span { display: inline; }
+  .hm-count h2 br { display: inline; }
+  .hm-routes { grid-template-columns: repeat(4, 1fr); gap: var(--s6); margin-top: var(--chapter); }
+  .hm-route b { font-size: var(--hero-4); letter-spacing: -.02em; }
+  .hm-route span { margin-top: var(--s2); font-size: 1.0625rem; }
+  .hm-notices { grid-template-columns: repeat(4, 1fr); gap: var(--s6); padding-bottom: 120px; }
+  .hm-notices h2 { font-size: var(--hero-4); letter-spacing: -.02em; }
+  .hm-list { grid-column: 2 / -1; }
+  .hm-row { padding-bottom: var(--s6); }
+  .hm-row b { font-size: 1.25rem; letter-spacing: -.015em; }
+  .hm-row span { font-size: .9375rem; }
+  .hm-all { font-size: 1.0625rem; }
+  .hm-end { gap: var(--s8); padding-bottom: var(--s14); }
 }
+@media (hover: hover) {
+  .hm-route b, .hm-row b { transition: translate var(--dur-snappy) var(--spring-snappy); }
+  .hm-route:hover b, .hm-row:hover b { translate: var(--s1) 0; }
+}
+@media (prefers-reduced-motion: reduce) { .hm-slab, .hm-route b, .hm-row b { transition: none; } }
 
 /* the reigning champion's party on the floor (the hall of fame stage), in a V (the shape the 14th round's home hall gave it).
    Each stands on its own contact shadow. */
 .hx-party { container-type: inline-size; margin: var(--s10) 0 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--s5); }
 /* the V (--s 1, .84, .7 outward; the smaller ones further back and higher), at every width */
 .hx-floor { --mon: min(22cqi, 184px); position: relative; list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-end; }
-.hx-floor::before {
-  content: ""; position: absolute; left: 50%; bottom: calc(var(--mon) * -.2); width: min(var(--mon) * 4.4, 100cqi + var(--gutter) * 2); height: calc(var(--mon) * 1.1); translate: -50% 0;
-  border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); pointer-events: none;
-}
 .hx-mon { --s: 1; position: relative; flex: none; width: calc(var(--mon) * var(--s)); aspect-ratio: 1; margin: 0 calc(var(--mon) * var(--s) * -.06);
   translate: 0 calc((1 - var(--s)) * var(--mon) * -.55); z-index: calc(var(--s) * 10); cursor: default; -webkit-tap-highlight-color: transparent; }
 .hx-mon-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 100%; }
@@ -88,22 +127,20 @@
 .hx-party.dais .hx-floor::after {
   content: ""; position: absolute; z-index: 0; left: 50%; bottom: calc(var(--mon) * -.5); width: min(var(--mon) * 5.4, 100cqi + var(--gutter) * 2); aspect-ratio: 4.4;
   translate: -50% 0; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(closest-side, transparent 30%, var(--ln) 31.2%, transparent 32.6%, transparent 63.6%, var(--ln) 64.8%, transparent 66%,
-    transparent 96.4%, var(--ln) 97.8%, transparent);
+  background: radial-gradient(closest-side, transparent 31%, var(--ln) 31%, var(--ln) 31.6%, transparent 31.6%, transparent 64%, var(--ln) 64%, var(--ln) 64.6%, transparent 64.6%, transparent 97.4%, var(--ln) 97.4%, var(--ln) 98%, transparent 98%);
 }
 /* the party's names stand below the outer ring, clear of the drawn lines (Consistency) */
 .hx-party.dais > figcaption { --mon: min(22cqi, 184px); margin-top: calc(var(--mon) * .32); }
-.hx-contact { position: absolute; left: 16%; right: 16%; bottom: -5%; height: 14%; border-radius: 50%; background: radial-gradient(closest-side, var(--contact), transparent); pointer-events: none; }
 
 /* =========================== ABOUT ===========================
    An ordinary document whose sections rise once as they first appear (N7, J1). */
 .ab-block { min-width: 0; }
 .ab-lead { margin: 0 0 var(--s4); color: var(--fg-2); }
-.ab-records, .ab-timeline, .ab-comps { list-style: none; margin: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.ab-records, .ab-timeline, .ab-comps { list-style: none; margin: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--surface); }
 
 .ab-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
-.ab-flow li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; column-gap: var(--s3); row-gap: var(--s1); padding: var(--s5); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
-.ab-flow-n, .ab-flow b { font-size: 1.25rem; font-weight: 800; line-height: 1.35; letter-spacing: -.015em; }
+.ab-flow li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; column-gap: var(--s3); row-gap: var(--s1); padding: var(--s5); border-radius: var(--r-card); background: var(--surface); }
+.ab-flow-n, .ab-flow b { font-size: 1.25rem; font-weight: 700; line-height: 1.35; letter-spacing: -.015em; }
 .ab-flow-n { grid-row: span 3; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 .ab-flow li > :not(.ab-flow-n) { grid-column: 2; }
 /* the last step, the season champion, is marked by brightness alone (B4): a large inverse tile under the clear tab bar would hide its labels */
@@ -125,7 +162,7 @@
 
 .ab-comp { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: var(--s3) var(--s8); align-items: baseline; padding: var(--s4); }
 .ab-comp-h { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
-.ab-comp-h b { font-size: 1.25rem; font-weight: 800; line-height: 1.35; letter-spacing: -.015em; }
+.ab-comp-h b { font-size: 1.25rem; font-weight: 700; line-height: 1.35; letter-spacing: -.015em; }
 .ab-comp p { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 @media (min-width: 1024px) { .ab-comp-h b { font-size: 1.5rem; letter-spacing: -.02em; } .ab-comp p { font-size: .9375rem; } }
 
@@ -136,7 +173,7 @@
 }
 /* 폰: 한 문장짜리 단계가 카드 한 장씩 화면을 차지하지 않게, 단계들을 카드 하나 안의 번호 목록으로 묶는다. */
 @media (max-width: 639px) {
-  .ab-block .ab-flow { grid-template-columns: 1fr; gap: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+  .ab-block .ab-flow { grid-template-columns: 1fr; gap: 0; padding: var(--s2); border-radius: var(--r-card); background: var(--surface); }
   .ab-flow li { padding: var(--s4); border-radius: var(--r-row); background: none; box-shadow: none; }
   .ab-flow-n, .ab-flow b { font-size: 1.0625rem; letter-spacing: 0; }
   .ab-flow .ypl-btn { margin-top: var(--s2); }
@@ -216,10 +253,10 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .ff-choice input { position: absolute; opacity: 0; pointer-events: none; }
-.ff-choice.sel { background: var(--accent); color: var(--on-accent); box-shadow: var(--accent-shadow); font-weight: 600; }
+.ff-choice.sel { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .ff-done { display: flex; flex-direction: column; align-items: flex-start; padding: var(--s2) 0 0; }
 .ff-ok { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--on-accent); animation: y-pop var(--dur-stage) var(--ease-out) backwards; }
-.ff-done h4 { margin-top: var(--s5); font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
+.ff-done h4 { margin-top: var(--s5); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
 .ff-done p { margin-top: var(--s2); font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .ff-done .modal-actions { align-self: stretch; }
 
@@ -239,7 +276,7 @@
 
 /* =========================== BOARD ===========================
    One list surface; a post opens on its own screen like a notice (I2), with the same body card and its comments below. */
-.bd-list { display: flex; flex-direction: column; padding: var(--s2); border-radius: var(--r-card); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.bd-list { display: flex; flex-direction: column; padding: var(--s2); border-radius: var(--r-card); background: var(--surface); }
 .bd-list:has(> .ypl-empty) { padding: 0; background: none; box-shadow: none; }
 .bd-head {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
@@ -306,21 +343,16 @@
   position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: var(--s6); padding-top: var(--s4); text-align: center; }
 /* the page head stays above the shaft, so the light never washes its words (light theme) */
 .sec:has(> .hof-stage) > .ypl-head { position: relative; z-index: 1; }
-/* the shaft: the home arena's beam, from above the page head down onto the dais */
-.hof-stage::before { content: ""; position: absolute; z-index: -1; left: 50%; top: -240px; bottom: 104px; width: min(150vw, 1200px); translate: -50% 0;
-  background: radial-gradient(44% 100% at 50% 0, var(--home-beam), transparent); pointer-events: none; }
-/* the hall's air around the champion: an ellipse that touches the box on every side, so it fades out before any edge (no seam) */
-.hof-stage::after { content: ""; position: absolute; z-index: -2; left: calc(var(--gutter) * -1); right: calc(var(--gutter) * -1); top: -120px; bottom: 0; background: radial-gradient(closest-side at 50% 42%, var(--spot), transparent); pointer-events: none; }
 .hof-stage-who, .hofm-top { display: flex; flex-direction: column; align-items: center; gap: var(--s2); text-align: center; }
 /* the name is the hall's one inscription: the home's next step up, a band of light at rest past its right edge */
-.hofs-name { max-width: 100%; font-size: var(--display-l); font-weight: 800; line-height: 1.06; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.hofs-name { max-width: 100%; font-size: var(--display-l); font-weight: 700; line-height: 1.06; letter-spacing: -.025em; overflow-wrap: anywhere; }
 .hofs-name > span {
   position: relative; display: inline-block; padding-inline: .06em;
 }
 /* the band of light: a soft window holding the same name in the shine's colour. The window slides one way and the words inside it the
    other way by the same distance, so the words stand still and only the light crosses them, on the compositor. */
-.hofs-band { position: absolute; inset: 0 auto 0 0; width: 50%; overflow: hidden; pointer-events: none; opacity: 0; -webkit-mask: linear-gradient(90deg, transparent, #000, transparent); mask: linear-gradient(90deg, transparent, #000, transparent); }
-.hofs-band > i { display: block; width: 200%; padding-inline: .06em; color: var(--home-shine); white-space: nowrap; }
+.hofs-band { position: absolute; inset: 0 auto 0 0; width: 50%; overflow: hidden; pointer-events: none; opacity: 0;  }
+.hofs-band > i { display: block; width: 200%; padding-inline: .06em; color: var(--band); white-space: nowrap; }
 .hof-stage .hx-party { margin: var(--s2) 0 var(--s4); }
 /* the label under the exhibit: the party's names in one quiet line */
 .hof-plate { display: block; padding-top: var(--s2); font-size: .8125rem; line-height: 1.55; color: var(--fg-3); text-align: center; text-wrap: balance; }
@@ -331,19 +363,16 @@
 @media (min-width: 640px) { .hof-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .hof-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .hof-wall > li { display: flex; min-width: 0; }
-/* a plaque is lit from above like the hall: a faint pool of the ceiling light on its top edge */
-.hof-plaque { background-image: radial-gradient(120% 64% at 50% 0%, var(--spot), transparent 70%); }
 .hof-plaque { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: var(--s1); padding: var(--s5) var(--s5) var(--s4); text-align: left; transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy); }
 @media (hover: hover) { .hof-plaque:hover { background-color: var(--surface-2); } }
 .hof-plaque-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s3); }
 .hof-gen { display: flex; align-items: baseline; white-space: nowrap; }
-.hof-plaque-name { font-size: 1.25rem; font-weight: 800; line-height: 1.25; letter-spacing: -.015em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hof-plaque-name { font-size: 1.25rem; font-weight: 700; line-height: 1.25; letter-spacing: -.015em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hof-plaque-meta { font-size: .8125rem; color: var(--fg-2); }
 .hof-chev { color: var(--fg-3); transition: transform var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
 @media (hover: hover) { .hof-plaque:hover .hof-chev { color: var(--fg); transform: translateX(2px); } }
-/* the small floor: six standing side by side on one soft pool of light, each on its own contact shadow */
+/* six standing side by side */
 .hof-mini { container-type: inline-size; position: relative; display: flex; justify-content: center; margin-top: var(--s5); }
-.hof-mini::before { content: ""; position: absolute; left: 4%; right: 4%; bottom: -14%; height: 46%; border-radius: 50%; background: radial-gradient(closest-side, var(--spot-floor), transparent); pointer-events: none; }
 .hof-mini-mon { --m: min(16cqi, 72px); position: relative; width: var(--m); height: var(--m); display: flex; align-items: flex-end; justify-content: center; }
 .hof-mini-mon img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; -webkit-user-drag: none; user-select: none; }
 .hof-mini-ph { position: relative; z-index: 1; padding-bottom: var(--s3); font-size: .75rem; font-weight: 600; color: var(--fg-3); }
@@ -352,7 +381,7 @@
 /* the entry sheet: the same inscription over the same stage */
 @media (min-width: 860px) { .sheet.hof-modal { width: min(100% - 48px, 760px); } }
 .hofm-top { padding-inline: var(--s14); }
-.hofm-nm { width: fit-content; max-width: 100%; font-size: var(--display); font-weight: 800; letter-spacing: -.04em; line-height: 1.06; }
+.hofm-nm { width: fit-content; max-width: 100%; font-size: var(--display); font-weight: 700; letter-spacing: -.025em; line-height: 1.06; }
 .hofm-gen { font-size: .9375rem; color: var(--fg-2); }
 .hof-modal .hx-party { margin: var(--s8) 0 var(--s2); }
 
@@ -395,7 +424,7 @@
 .sc-mon-head { display: flex; align-items: center; gap: var(--s4); }
 .sc-mon-sprite { width: 88px; height: 88px; flex: none; object-fit: contain; border-radius: var(--r-tile); background: var(--pod); box-shadow: var(--pod-rim); }
 .sc-mon-who { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
-.sc-mon-name { font-size: 1.25rem; font-weight: 800; line-height: 1.25; letter-spacing: -.015em; }
+.sc-mon-name { font-size: 1.25rem; font-weight: 700; line-height: 1.25; letter-spacing: -.015em; }
 .sc-mon-sub { font-size: .75rem; color: var(--fg-3); }
 .sc-mon-who .tb-types { margin-top: var(--s1); }
 .sc-facts { display: flex; flex-direction: column; gap: var(--s2); margin: 0; }
@@ -407,7 +436,7 @@
 .sc-stat { display: grid; grid-template-columns: 64px 36px minmax(0, 1fr) 40px; align-items: center; gap: var(--s2); min-height: 32px; font-size: .9375rem; }
 .sc-stat b { font-weight: 600; white-space: nowrap; }
 .sc-stat > span.tnum { color: var(--fg-2); }
-.sc-stat strong { font-weight: 800; text-align: right; }
+.sc-stat strong { font-weight: 700; text-align: right; }
 .sc-stat-h { min-height: 28px; font-size: .75rem; color: var(--fg-3); }
 .sc-stat-h > span:last-child { text-align: right; }
 .sc-sp { display: flex; align-items: center; gap: var(--s2); min-width: 0; }

@@ -1,17 +1,10 @@
 import { useEffect } from "react";
 import { desktop, reduced, springTo } from "../common/motion.js";
 
-/* L0 무대: 흑연색 바탕 위로 바로 위에서 떨어지는 부드러운 빛 하나(C3). 페이지 자체(<html>)의 바탕으로 그린다(tokens.css):
-   따로 떠 있는 층이 없어 페이지가 한 장으로 스크롤된다. 빛은 대회 상태에 따라 밝기만 달라진다(data-stage). */
-export function useStage(state = "open") {
-  useEffect(() => { document.documentElement.dataset.stage = state; }, [state]);
-}
-
 /* G4, J3: 바는 손가락에 붙어 있다. 내리는 만큼 밀려 나가고 올리는 만큼 돌아오며(1:1, 늦음 없이), 스크롤한 거리보다 더 숨지
    않으니 맨 위에서는 늘 다 보인다. 스크롤이 멈추면 그때의 속도를 이어받은 스프링으로 마지막 방향까지 마저 가고, 살짝 넘었다
    돌아와 선다. 스크롤을 따라가는 동안은 transform 만 바꾸고 CSS 전환은 걸지 않는다(전환이 끼면 바가 손가락을 뒤쫓았다).
-   스프링은 Web Animations 로 합성 단계에서 돌고, 도중에 다시 스크롤하면 보이는 그 자리에서 이어받는다.
-   콘텐츠가 상단 바 아래로 지나가면 바 아래에 옅은 그림자. */
+   스프링은 Web Animations 로 합성 단계에서 돌고, 도중에 다시 스크롤하면 보이는 그 자리에서 이어받는다. */
 const TRAVEL = 80;               // 바가 다 숨기까지 스크롤하는 거리(px)
 const SPRING = [0.4, 0.68];      // 반응 시간(s)과 감쇠: 5% 남짓 넘었다 돌아온다
 const bars = () => [document.querySelector(".topbar"), document.querySelector(".tabbar"), desktop() ? null : document.querySelector(".admin-dock")];
@@ -61,7 +54,6 @@ export function useScrollChrome() {
       const dy = y - lastY;
       if (dy) { dir = Math.sign(dy); v = v * .4 + dy / Math.max(8, now - lastT) * 1000 * .6; }
       lastY = y; lastT = now;
-      document.querySelector(".topbar")?.classList.toggle("scrolled", y > 8);
       if (!dy) return;
       stop();
       const next = Math.min(Math.max(hidden + dy, 0), TRAVEL, y);

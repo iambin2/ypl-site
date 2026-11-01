@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>YPL 홈 초안 보드</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&display=block">
+<style>
+@font-face { font-family: Freesentation; src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2404@1.0/Freesentation-4Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: Freesentation; src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2404@1.0/Freesentation-6SemiBold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: Freesentation; src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/2404@1.0/Freesentation-7Bold.woff2") format("woff2"); font-weight: 700; }
+* { box-sizing: border-box; margin: 0; }
+body { width: 2520px; padding: 80px; background: #ECEEF2; color: #081C3D; font-family: "Albert Sans", Freesentation, sans-serif; -webkit-font-smoothing: antialiased; word-break: keep-all; }
+header { display: flex; align-items: baseline; gap: 24px; margin-bottom: 56px; }
+header h1 { font-size: 48px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+header p { font-size: 22px; color: #4A5264; }
+.grid { display: grid; grid-template-columns: 1440px 390px 390px; gap: 56px; align-items: start; }
+h2 { font-size: 22px; font-weight: 600; margin-bottom: 16px; }
+iframe { display: block; border: 0; background: #FFF; width: 100%; }
+.desktop { border-radius: 20px; overflow: hidden; }
+.phone { border-radius: 36px; overflow: hidden; }
+.motion { margin-top: 56px; }
+.film { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.frame { position: relative; overflow: hidden; border-radius: 12px; background: #081C3D; aspect-ratio: .78; }
+.frame i { position: absolute; top: -10%; bottom: -10%; width: 44%; left: var(--x); background: #1D3156; transform: skewX(-14deg); }
+.frame img { position: absolute; left: 6%; top: 14%; width: 88%; }
+.time { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; font-size: 15px; text-align: center; color: #4A5264; font-variant-numeric: tabular-nums; }
+.step { margin-top: 24px; }
+.step b { display: block; font-size: 19px; font-weight: 600; line-height: 1.35; }
+.step span { display: block; margin-top: 4px; font-size: 16px; line-height: 1.5; color: #4A5264; }
+</style>
+</head>
+<body>
+<header><h1>YPL 홈 초안 4</h1><p>네이비 한 색, 흰 면, 포켓몬 한 마리</p></header>
+<div class="grid">
+  <section><h2>데스크톱 1440, 라이트</h2><div class="desktop"><iframe id="d" src="home-draft.html" width="1440"></iframe></div></section>
+  <section><h2>폰 390, 라이트</h2><div class="phone"><iframe id="p" src="home-draft.html" width="390"></iframe></div></section>
+  <section>
+    <h2>폰 390, 다크 첫 화면</h2>
+    <div class="phone"><iframe id="n" src="home-draft.html?theme=dark" width="390" height="844"></iframe></div>
+    <div class="motion">
+      <h2>움직임</h2>
+      <div class="film">
+        <div class="frame"><i style="--x:-60%"></i><img src="/sprites/pokemon/garchomp.webp" alt=""></div>
+        <div class="frame"><i style="--x:-4%"></i><img src="/sprites/pokemon/garchomp.webp" alt=""></div>
+        <div class="frame"><i style="--x:40%"></i><img src="/sprites/pokemon/garchomp.webp" alt=""></div>
+        <div class="frame"><i style="--x:120%"></i><img src="/sprites/pokemon/garchomp.webp" alt=""></div>
+      </div>
+      <div class="time"><span>0ms</span><span>300ms</span><span>600ms</span><span>900ms</span></div>
+      <div class="step"><b>단색 빛의 띠</b><span>경계가 또렷한 사선 면이 포켓몬 뒤를 지나갑니다. 번지는 빛은 없습니다.</span></div>
+      <div class="step"><b>첫 등장, 1초</b><span>제목이 솟고, 슬랩이 가운데부터 바깥으로 스프링을 타고 섭니다.</span></div>
+      <div class="step"><b>슬랩 띠</b><span>자동으로 돌지 않고 스크롤에 붙어 옆으로 흐릅니다.</span></div>
+      <div class="step"><b>숫자</b><span>59, 71, 6이 화면에 들어오는 순간 자리별로 구릅니다.</span></div>
+      <div class="step"><b>메뉴 렌즈</b><span>리퀴드 렌즈와 눌림 응답을 그대로 가져옵니다.</span></div>
+      <div class="step"><b>아레나</b><span>선이 가운데서 그어지고, 파동은 또렷한 원 하나로 번져 갑니다.</span></div>
+    </div>
+  </section>
+</div>
+<script>
+addEventListener("load", () => {
+  for (const id of ["d", "p"]) { const f = document.getElementById(id); f.style.height = f.contentDocument.documentElement.scrollHeight + "px"; }
+});
+</script>
+</body>
+</html>

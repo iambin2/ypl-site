@@ -8,7 +8,7 @@
 .tb-hero-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
 
 /* ---------- plate panels ---------- */
-.tb-rule-card, .tb-panel, .tb-validation { --r: var(--r-card); padding: var(--s5); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); min-width: 0; }
+.tb-rule-card, .tb-panel, .tb-validation { --r: var(--r-card); padding: var(--s5); background: var(--surface); min-width: 0; }
 
 /* ---------- rules ---------- */
 .tb-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3); }
@@ -49,7 +49,7 @@
 .tb-main-column { display: flex; flex-direction: column; gap: var(--grid-gap); min-width: 0; }
 .tb-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 /* card-title */
-.tb-panel-head h2 { font-size: 1.25rem; font-weight: 800; line-height: 1.35; letter-spacing: -.015em; }
+.tb-panel-head h2 { font-size: 1.25rem; font-weight: 700; line-height: 1.35; letter-spacing: -.015em; }
 @media (min-width: 1024px) { .tb-panel-head h2 { font-size: 1.5rem; letter-spacing: -.02em; } }
 .tb-pool-count { font-size: 1.25rem; letter-spacing: -.015em; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .tb-pool-count small { margin-left: var(--s1); font-size: .75rem; font-weight: 600; color: var(--fg-3); }
@@ -90,7 +90,7 @@
 }
 .tb-base-strip > span { display: grid; justify-items: center; gap: var(--s1); white-space: nowrap; }
 .tb-base-strip i { font-style: normal; font-size: .75rem; font-weight: 600; color: var(--fg-3); }
-.tb-base-strip .on { color: var(--fg); font-weight: 800; }
+.tb-base-strip .on { color: var(--fg); font-weight: 700; }
 .tb-base-strip .on i { color: var(--fg-2); }
 .tb-pokemon-copy { min-width: 0; display: flex; flex-direction: column; }
 .tb-pokemon-copy strong { font-size: .9375rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -100,7 +100,7 @@
   background: var(--tint); color: var(--fg-2);
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { background: var(--accent); color: var(--on-accent); box-shadow: var(--ind-shadow); } }
+@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { background: var(--accent); color: var(--on-accent); } }
 .tb-pool-empty { padding: var(--s10) var(--s3); font-size: .9375rem; color: var(--fg-2); }
 
 /* ---------- TypeBadge: a fill chip; the type's own colour is the dot ---------- */
@@ -134,7 +134,7 @@
   transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) { .tb-slot:not(.empty):not(.active):hover { background: var(--tint); } }
-.tb-slot.active { background: var(--tint-strong); box-shadow: var(--ind-shadow); }
+.tb-slot.active { background: var(--tint-strong); }
 .tb-slot.unresolved .tb-slot-copy small { color: var(--fg-2); }
 .tb-slot.empty { grid-template-columns: 1fr; place-items: center; background: var(--tint-soft); box-shadow: none; }
 .tb-slot.empty .tb-slot-no { position: static; }
@@ -174,8 +174,8 @@
 }
 .tb-editor-title { min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
 /* section-title */
-.tb-editor-title h2 { font-size: 1.75rem; font-weight: 800; line-height: 1.15; letter-spacing: -.02em; }
-@media (min-width: 1024px) { .tb-editor-title h2 { font-size: 2.25rem; letter-spacing: -.03em; } }
+.tb-editor-title h2 { font-size: 1.75rem; font-weight: 700; line-height: 1.15; letter-spacing: -.02em; }
+@media (min-width: 1024px) { .tb-editor-title h2 { font-size: 2.25rem; letter-spacing: -.02em; } }
 .tb-editor-title > span { font-size: .9375rem; color: var(--fg-2); }
 .tb-editor-title small { font-size: .75rem; color: var(--fg-3); }
 .tb-editor-title .tb-types { margin-top: var(--s1); }
@@ -212,14 +212,14 @@
 /* ---------- dialogs: rule change, library (plate groups on the dialog's surface) ---------- */
 .tb-rule-confirm-copy { font-size: .9375rem; line-height: 1.55; color: var(--fg-2); }
 .tb-rule-confirm-copy + .tb-rule-confirm-copy { margin-top: var(--s3); }
-.tb-rule-confirm-list { --r: var(--r-row); margin: var(--s3) 0; padding: var(--s3) var(--s4) var(--s3) var(--s10); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); font-weight: 600; }
-.tb-library-save { --r: var(--r-row); padding: var(--s4); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.tb-rule-confirm-list { --r: var(--r-row); margin: var(--s3) 0; padding: var(--s3) var(--s4) var(--s3) var(--s10); background: var(--surface); font-weight: 600; }
+.tb-library-save { --r: var(--r-row); padding: var(--s4); background: var(--surface); }
 .tb-library-save-meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-top: var(--s3); font-size: .8125rem; color: var(--fg-3); }
 .tb-library-save-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
 .tb-library-workspace-actions { display: flex; gap: var(--s2); }
 .tb-save-message { margin-top: var(--s3); font-size: .9375rem; font-weight: 600; color: var(--fg); }
 /* saved teams: one group; rows carry no rules, the space between them does (M1) */
-.tb-saved-list { --r: var(--r-row); display: flex; flex-direction: column; margin-top: var(--s4); padding: 0 var(--s2); border-radius: var(--r); background: var(--sheen), var(--surface); box-shadow: var(--card-shadow); }
+.tb-saved-list { --r: var(--r-row); display: flex; flex-direction: column; margin-top: var(--s4); padding: 0 var(--s2); border-radius: var(--r); background: var(--surface); }
 .tb-saved-list:empty { display: none; }
 .tb-saved-team { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s2) var(--s2) 0; }
 .tb-saved-main {

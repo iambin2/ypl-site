@@ -123,7 +123,6 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
                 {partyOf(c).map((m, j) => (
                   <span className="hof-mini-mon" key={j}>
                     {m.img ? <img src={m.img} alt="" loading="lazy" decoding="async" onError={onSpriteError()} /> : <span className="hof-mini-ph">{m.name.slice(0, 1)}</span>}
-                    <i className="hx-contact" aria-hidden="true" />
                   </span>
                 ))}
               </span>}

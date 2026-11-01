@@ -37,7 +37,6 @@ export default function PartyStage({ members, label, enter = false, dais = false
               {m.img ? <img src={m.img} alt={m.name} decoding="async" fetchpriority={i < 3 ? "high" : undefined} onError={onSpriteError(m.fallback)} />
                 : <span className="hx-mon-name">{m.name}</span>}
             </span>
-            <i className="hx-contact" aria-hidden="true" />
           </li>
         ))}
       </ol>

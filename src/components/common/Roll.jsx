@@ -4,7 +4,8 @@ import { reduced, returning } from "./motion.js";
 /* K4: 숫자는 자릿수마다 굴러가며 바뀐다. 처음 화면에 들어올 때도 0에서 제 값까지 한 번 굴러온다.
    뒤로 돌아온 화면은 이미 본 값이라 굴리지 않는다.
    자릿수가 같으면 같은 칸이 남아 굴러가고, 자릿수가 바뀌면 새로 그린다. 읽는 값은 aria-label 하나. */
-export default function Roll({ value, format = n => n.toLocaleString("ko-KR") }) {
+/* natural: 자릿수 칸이 제 숫자의 폭을 따른다. 점수판이 아닌 문장 속 숫자에서 1 옆이 벌어지지 않는다. */
+export default function Roll({ value, format = n => n.toLocaleString("ko-KR"), natural = false }) {
   const n = Number(value) || 0;
   const s = format(n);
   const ref = useRef(null);
@@ -17,9 +18,9 @@ export default function Roll({ value, format = n => n.toLocaleString("ko-KR") })
     return () => { cancelAnimationFrame(raf); io.disconnect(); };
   }, [seen]);
   return (
-    <span className="roll" role="img" aria-label={s} key={s.length} ref={ref}>
+    <span className={"roll" + (natural ? " roll--natural" : "")} role="img" aria-label={s} key={s.length} ref={ref}>
       {[...s].map((ch, i) => /\d/.test(ch)
-        ? <span className="rd" aria-hidden="true" key={i}><span className="rs" style={{ "--d": seen ? ch : 0 }}>{"0123456789".split("").map(d => <i key={d}>{d}</i>)}</span></span>
+        ? <span className="rd" aria-hidden="true" key={i}>{natural && <span className="rd-w">{ch}</span>}<span className="rs" style={{ "--d": seen ? ch : 0 }}>{"0123456789".split("").map(d => <i key={d}>{d}</i>)}</span></span>
         : <span aria-hidden="true" key={i}>{ch}</span>)}
     </span>
   );
