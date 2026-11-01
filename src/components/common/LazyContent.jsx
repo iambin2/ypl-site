@@ -1,6 +1,7 @@
 import React, { Component, Suspense } from "react";
 import Modal from "./Modal.jsx";
 import Loader from "./Loader.jsx";
+import Button from "./Button.jsx";
 
 // A failed deployment chunk can recover through a document reload, which also
 // runs the existing version check. Keep the shell and modal close action usable.
@@ -16,7 +17,7 @@ export default class LazyContent extends Component {
     const content = failed ? (
       <div className="ypl-error" role="alert">
         <p className="callout">화면을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p>
-        <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>새로고침</button>
+        <Button type="button" variant="primary" onClick={() => window.location.reload()}>새로고침</Button>
       </div>
     ) : (
       <Loader small={!!this.props.onClose} />

@@ -7,6 +7,7 @@ import { arenaField } from "../components/home/arenaField.js";
 import { loadChampions, loadCounts } from "../components/home/homeFacts.js";
 import { formatDate } from "../services/dateFormat.js";
 import { excerptOf } from "../services/noticeExcerpt.js";
+import Button from "../components/common/Button.jsx";
 
 const DAY_MS = 86400000;
 /* "2026-10-04", "2026.10.04", "2026-10-04T15:21" → 그날 0시의 Date. 일까지 없으면 null. */
@@ -90,7 +91,7 @@ function SlabBelt({ champions, enter, onOpen }) {
     <section className="hm-belt" aria-label="역대 챔피언">
       <div className="hm-track" ref={track}>
         {belt.map((c, i) => (
-          <button type="button" className={"hm-slab press" + (c === champions[0] ? " cur" : "")} key={i} onClick={() => onOpen(c)}
+          <button type="button" className={"hm-slab" + (c === champions[0] ? " cur" : "")} key={i} onClick={() => onOpen(c)}
             aria-label={`${c.label} 챔피언 ${c.name}, ${c.line}`} tabIndex={i < center ? -1 : 0}>
             <span className="hm-label">
               <span className="hm-who"><b>{c.name}</b><span>{c.line}</span></span>
@@ -200,7 +201,7 @@ function Arena({ primary, go }) {
       </div>
       <div className="hm-end">
         <h2>다음 기록은 당신의 차례입니다</h2>
-        <button type="button" className="ypl-btn hm-btn hm-btn--end press" onClick={() => go(primary[1])}>{primary[0]}</button>
+        <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
       </div>
     </section>
   );
@@ -248,8 +249,8 @@ export default function HomePage({ data, go }) {
         ? <p className="hm-next">{now.today && <i className="live-dot" aria-hidden="true" />}<b className="tnum">{now.today ? "오늘" : `D-${now.dday}`}</b> <span>{now.name}</span> <span className="hm-when">{now.when}</span></p>
         : <p className="hm-next">다음 대회 일정은 공지에 올라옵니다.</p>}
       <div className="hm-actions">
-        <button type="button" className="ypl-btn ypl-btn--primary hm-btn press" onClick={() => go(primary[1])}>{primary[0]}</button>
-        <button type="button" className="ypl-btn ypl-btn--soft hm-btn press" onClick={() => go("about")}>리그 소개</button>
+        <Button type="button" variant="primary" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
+        <Button type="button" size="lg" onClick={() => go("about")}>리그 소개</Button>
       </div>
     </section>
 
@@ -261,7 +262,7 @@ export default function HomePage({ data, go }) {
         <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언.</span>
       </h2>}
       <div className="hm-routes">
-        {routes.map(([view, title, line], i) => <button type="button" className="hm-route press" key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></button>)}
+        {routes.map(([view, title, line], i) => <button type="button" className="hm-route" key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></button>)}
       </div>
     </section>
 
@@ -270,9 +271,9 @@ export default function HomePage({ data, go }) {
       <div className="hm-list">
         {notices.map((a, i) => {
           const excerpt = excerptOf(a.body, a.title);
-          return <button type="button" className="hm-row press" key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></button>;
+          return <button type="button" className="hm-row" key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></button>;
         })}
-        <button type="button" className="hm-all press" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
+        <button type="button" className="hm-all" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
       </div>
     </section>}
 
@@ -282,7 +283,7 @@ export default function HomePage({ data, go }) {
       <ul className="hm-party">
         {pop.party.map((m, i) => <li key={i}><span className="hm-tile">{m.img && <img src={m.img} alt="" />}</span>{m.name}</li>)}
       </ul>
-      <div className="modal-actions"><button type="button" className="ypl-btn ypl-btn--soft press" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</button></div>
+      <div className="modal-actions"><Button type="button" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button></div>
     </Modal>}
   </div>);
 }

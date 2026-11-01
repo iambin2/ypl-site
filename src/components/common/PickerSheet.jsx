@@ -48,7 +48,7 @@ export default function PickerSheet({ title, placeholder, items, selected, onPic
       <div className="pick-list" id="pick-list" role="listbox" aria-label={title} ref={listRef}>
         {shown.map((item, index) => (
           <button type="button" key={item.value || "none"} id={`pick-opt-${index}`} role="option" aria-selected={item.value === selected} disabled={item.disabled}
-            className={"pick-row press" + (item.value === selected ? " sel" : "") + (index === cursor ? " cursor" : "")} onClick={() => pick(item)}>
+            className={"pick-row" + (item.value === selected ? " sel" : "") + (index === cursor ? " cursor" : "")} onClick={() => pick(item)}>
             {item.img !== undefined && (item.img ? <img src={item.img} alt="" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="pick-blank" />)}
             <span className="pick-copy"><strong>{item.label}</strong>{item.sub && <small>{item.sub}</small>}</span>
             {item.badges}

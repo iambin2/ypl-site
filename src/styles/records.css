@@ -13,7 +13,7 @@
 .rc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
 .rc-filter[role="group"] { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .rc-filter[role="group"]::-webkit-scrollbar { display: none; }
-.rc-filter[role="group"] > .ypl-btn { flex: none; }
+.rc-filter[role="group"] > .btn { flex: none; }
 @media (max-width: 859px) {
   .rc-filter[role="group"] { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); }
 }

@@ -38,7 +38,7 @@ test("completed bracket opens record application with the supplied save callback
     window: { location: { search: "" } },
     require: name => name === "react" ? react
       : name.endsWith("historicalBracketReadModel.js") ? { buildBracketPageList: rows => rows }
-      : name.endsWith("components/index.js") ? { Reveal: "div", Icon: "span", Loader: "div" }
+      : name.endsWith("components/index.js") ? { Button: "button", Field: "div", FormError: "p", Icon: "span", Loader: "div" }
       : {},
   });
   function findElement(node, name) {
@@ -90,7 +90,7 @@ for (const mode of ["single", "team"]) {
           getIndividualPlacementPointPolicy, getTeamPlacementPointPolicy,
         }
         : name.endsWith("components/index.js") ? {
-          Modal: ({ children }) => React.createElement("section", null, children), Icon: "span", Loader: ({ label = "불러오는 중" }) => React.createElement("div", { role: "status", "aria-label": label }),
+          Button: "button", Field: "div", FormError: "p", Modal: ({ children }) => React.createElement("section", null, children), Icon: "span", Loader: ({ label = "불러오는 중" }) => React.createElement("div", { role: "status", "aria-label": label }),
         } : {},
     });
     const b = { eventId: "event-1", mode, projection: { source: "normalized" }, participants: [

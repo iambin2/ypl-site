@@ -55,6 +55,7 @@ import {
   weightMovePower,
   weightOf,
 } from "../services/calculatorCore.js";
+import Button from "../components/common/Button.jsx";
 
 const REGULATION = REGULATIONS[DEFAULT_REGULATION_ID];
 const SIDE_NAMES = ["내 포켓몬", "상대 포켓몬"];
@@ -99,7 +100,7 @@ function TypeBadges({ types = [] }) {
 }
 
 function Toggle({ on, onChange, children }) {
-  return <button type="button" className={"calc-toggle press" + (on ? " on" : "")} aria-pressed={on} onClick={() => onChange(!on)}>{children}</button>;
+  return <button type="button" className={"calc-toggle" + (on ? " on" : "")} aria-pressed={on} onClick={() => onChange(!on)}>{children}</button>;
 }
 
 function Stepper({ value, min, max, onChange, label }) {
@@ -135,7 +136,7 @@ function ResultRow({ result, detailData, open, onToggle }) {
   }
   return (
     <li className={"calc-result" + (open ? " open" : "")}>
-      <button type="button" className="calc-result-head press" aria-expanded={open} onClick={onToggle}>
+      <button type="button" className="calc-result-head" aria-expanded={open} onClick={onToggle}>
         <span className="calc-result-move"><strong>{name}</strong><small>{meta}</small></span>
         <span className="calc-result-pct">{result.max ? `${result.minPct} – ${result.maxPct}%` : "0%"}</span>
         <span className="calc-result-ko">{result.koText}</span>
@@ -196,7 +197,7 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
   return (
     <div className="tb-panel calc-side" data-calc-side={index}>
       <div className="calc-side-head">
-        {pokemon ? <button type="button" className="calc-mon press" onClick={onPickPokemon} aria-label={`${SIDE_NAMES[index]} 바꾸기`}>
+        {pokemon ? <button type="button" className="calc-mon" onClick={onPickPokemon} aria-label={`${SIDE_NAMES[index]} 바꾸기`}>
           <img src={spriteUrl(pokemon.name)} alt="" onError={onSpriteError()} />
           <span className="calc-mon-copy">
             <strong>{display(pokemon)}</strong>
@@ -205,8 +206,8 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
           </span>
         </button> : <p className="calc-side-empty">{SIDE_NAMES[index]}을 고르면 특성, 도구, 기술을 여기서 정합니다.</p>}
         {(hasSavedTeams || pokemon) && <div className="calc-side-actions">
-          {hasSavedTeams && <button type="button" className="btn btn-ghost btn-sm" onClick={onImport}>내 팀에서</button>}
-          {pokemon && <button type="button" className="btn btn-ghost btn-sm" onClick={onClear}>비우기</button>}
+          {hasSavedTeams && <Button type="button" size="sm" onClick={onImport}>내 팀에서</Button>}
+          {pokemon && <Button type="button" size="sm" onClick={onClear}>비우기</Button>}
         </div>}
       </div>
 
@@ -318,7 +319,7 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
       <div className="tb-panel">
         <div className="calc-versus">
           {[0, 1].map(index => (
-            <button type="button" key={index} className="calc-versus-mon press" onClick={() => openPokemonPicker(index)}>
+            <button type="button" key={index} className="calc-versus-mon" onClick={() => openPokemonPicker(index)}>
               {pokemons[index] ? <img src={spriteUrl(pokemons[index].name)} alt="" onError={onSpriteError()} /> : <span className="calc-mon-empty"><Icon n="plus" size={20} /></span>}
               <span><strong>{pokemons[index] ? nameOf(index) : `${SIDE_NAMES[index]} 선택`}</strong>{pokemons[index] && <small>{SIDE_NAMES[index]}</small>}</span>
             </button>
@@ -391,12 +392,12 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
             <div className="calc-speed-me">
               <span className="fig">{me}</span>
               <p>{display(pokemons[basis])}의 스피드입니다. 비교한 {rows.length}마리 중 {faster}마리가 더 빠르고{ties ? `, ${ties}마리가 같습니다` : ""}.</p>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setQuery(""); requestAnimationFrame(() => meRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })); }}>내 위치 보기</button>
+              <Button type="button" size="sm" onClick={() => { setQuery(""); requestAnimationFrame(() => meRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })); }}>내 위치 보기</Button>
             </div>
           ) : (
             <div className="calc-speed-me">
               <p>기준이 될 포켓몬을 고르면 스피드 라인 안의 위치를 보여 줍니다.</p>
-              <button type="button" className="btn btn-sm" onClick={() => openPokemonPicker(basis)}>포켓몬 선택</button>
+              <Button type="button" size="sm" onClick={() => openPokemonPicker(basis)}>포켓몬 선택</Button>
             </div>
           )}
         </div>
@@ -455,7 +456,7 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
       <div className="tb-panel calc-dex-empty">
         <strong>도감에서 볼 포켓몬을 고르세요.</strong>
         <span>종족값, 레벨 50 실수치 범위, 타입 상성, 챔피언스에서 배우는 기술을 한 화면에 보여 줍니다.</span>
-        <button type="button" className="btn tb-main-btn" onClick={openPicker}>포켓몬 선택</button>
+        <Button type="button" variant="primary" onClick={openPicker}>포켓몬 선택</Button>
       </div>
     );
   }
@@ -475,9 +476,9 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
           </div>
         </div>
         <div className="calc-dex-actions">
-          <button type="button" className="btn btn-ghost btn-sm" onClick={openPicker}>다른 포켓몬</button>
-          <button type="button" className="btn btn-sm" onClick={() => onUse(0)}>내 포켓몬으로 계산</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUse(1)}>상대로 계산</button>
+          <Button type="button" size="sm" onClick={openPicker}>다른 포켓몬</Button>
+          <Button type="button" size="sm" onClick={() => onUse(0)}>내 포켓몬으로 계산</Button>
+          <Button type="button" size="sm" onClick={() => onUse(1)}>상대로 계산</Button>
         </div>
       </div>
 
@@ -650,7 +651,7 @@ export default function CalculatorPage() {
         <div className="tb-panel calc-dex-empty">
           <strong>포켓몬 데이터를 불러오지 못했습니다.</strong>
           <span>연결 상태를 확인한 뒤 다시 시도해 주세요.</span>
-          <button type="button" className="btn tb-main-btn" onClick={() => window.location.reload()}>다시 시도</button>
+          <Button type="button" variant="primary" onClick={() => window.location.reload()}>다시 시도</Button>
         </div>
       ) : loading ? <Loader /> : (
         <div className="calc-swap swap" key={tab}>

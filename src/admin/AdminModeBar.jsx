@@ -6,7 +6,7 @@ export default function AdminModeBar({ onLogout }) {
     <div className="admin-dock plate" role="status">
       <i className="live-dot" aria-hidden="true" /><b>관리자 모드</b>
       <span className="admin-dock-note">각 섹션에서 추가, 수정, 삭제할 수 있습니다.</span>
-      {onLogout && <button type="button" className="admin-dock-out press" onClick={onLogout}>로그아웃</button>}
+      {onLogout && <button type="button" className="admin-dock-out" onClick={onLogout}>로그아웃</button>}
     </div>
   );
 }

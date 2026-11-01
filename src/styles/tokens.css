@@ -96,11 +96,11 @@
   /* the slab's rule: outer 24 = inner 12 + padding 12 */
   --r-sm: 12px; --r-lg: 24px; --r-pill: 999px;
   --shadow-1: 0 12px 32px -16px rgb(8 28 61 / .28); --shadow-2: 0 24px 64px -24px rgb(8 28 61 / .4);
-  --opacity-disabled: .4; --opacity-muted: .7; --opacity-ghost: .24;
+  --focus-width: 2px; --focus-offset: 2px; --opacity-disabled: .4; --opacity-muted: .7; --opacity-ghost: .24;
   --z-base: 0; --z-raised: 1; --z-sticky: 10; --z-header: 20; --z-overlay: 30; --z-modal: 40; --z-popover: 50; --z-toast: 60; --z-tooltip: 70; --z-skip: 80; --z-veil: 90;
 
   /* the bars, the footer and the closing arena are navy in both themes */
-  --bar: var(--navy-950); --on-bar: var(--white); --on-bar-2: var(--navy-200); --bar-up: var(--navy-800); --band: var(--navy-300);
+  --bar: var(--navy-950); --on-bar: var(--white); --on-bar-2: var(--navy-200); --bar-up: var(--navy-800); --navy-up-hover: var(--gray-300); --bar-up-hover: var(--navy-700); --band: var(--navy-300);
   --window: var(--navy-950); --label: var(--white); --on-label: var(--navy-950); --on-label-2: var(--gray-600);
 }
 /* ---------- semantic: what components read. Dark here, light below. ---------- */
@@ -179,7 +179,7 @@ body {
   margin: 0; color: var(--text-primary);
   font: 400 var(--fs-body)/var(--lh-body) var(--font); letter-spacing: var(--ls-body);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-  word-break: keep-all; overflow-wrap: break-word; overflow-x: clip;
+  word-break: keep-all; overflow-wrap: break-word; overflow-x: clip; -webkit-tap-highlight-color: transparent;
 }
 ::selection { background: var(--sel-bg); color: var(--sel-fg); }
 h1, h2, h3, h4, h5, p { margin: 0; }
@@ -197,8 +197,7 @@ small { font-size: inherit; }
 i, em { font-style: normal; }
 iframe { border: 0; }
 :focus { outline: none; }
-:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-input:focus-visible, textarea:focus-visible { outline: none; }
+:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
 ::placeholder { color: var(--text-tertiary); opacity: 1; }
 input[type="range"] { accent-color: var(--text-primary); }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--text-primary); width: 20px; height: 20px; margin: 0; flex: none; }
@@ -234,9 +233,11 @@ input[type="date"], input[type="datetime-local"] { min-height: 48px; }
 .card { background: var(--surface); border-radius: var(--r-lg); }
 
 /* ---------- K1 press, K2 hover highlight ---------- */
-.press { transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
-.press:active:not(:disabled) { scale: .97; transition: scale var(--dur-instant) var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
-@media (prefers-reduced-motion: reduce) { .press:active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); } }
+:where(button, .press) { transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+:where(button, .press):active:not(:disabled) { scale: .97; transition: scale var(--dur-instant) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { :where(button, .press):active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); } }
+/* every disabled control looks the same and says so by its cursor */
+:where(button, input, select, textarea):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 
 /* ---------- K4 rolling numbers ---------- */
 .roll { display: inline-flex; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: var(--lh-title); }

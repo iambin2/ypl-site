@@ -54,7 +54,7 @@ export default function TabBar({ view, moreOpen, onNavigate, onMore }) {
     <nav className="tabbar" aria-label="주요 메뉴" ref={ref}>
       <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
       {TABS.map(([key, label, ic]) => (
-        <button key={key} type="button" className="tab press" data-tab={key} {...current(cur, key)}
+        <button key={key} type="button" className="tab" data-tab={key} {...current(cur, key)}
           {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
           onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>
           <span className="ics"><Icon n={ic} size={24} className="ic-off" /><Icon n={ic + "-fill"} size={24} className="ic-on" /></span>

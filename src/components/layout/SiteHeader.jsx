@@ -44,22 +44,22 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
   const themeLabel = dark ? "라이트 테마로 바꾸기" : "다크 테마로 바꾸기";
   return (
     <header className="topbar">
-      <button type="button" className="brand press" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
+      <button type="button" className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
         <span className="brand-logo"><BrandMark /></span><Wordmark />
       </button>
       <nav className="navlinks" aria-label="주요 메뉴" ref={nav}>
         <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
         {(wide ? WIDE_TABS : TABS).map(([key, label]) => (
-          <button key={key} type="button" className="navlink press" data-tab={key} {...current(cur, key)}
+          <button key={key} type="button" className="navlink" data-tab={key} {...current(cur, key)}
             {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
       </nav>
-      {onAdmin && <button type="button" className="iconbtn press" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={20} /></button>}
-      <button type="button" className="iconbtn press" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
+      {onAdmin && <button type="button" className="iconbtn" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={20} /></button>}
+      <button type="button" className="iconbtn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
         <span className="theme-ic"><Icon n="sun" size={20} className="i-sun" /><Icon n="moon" size={20} className="i-moon" /></span>
       </button>
-      {cta && <button type="button" className="bar-cta press" onClick={() => onNavigate(cta[1])}>{cta[0]}</button>}
+      {cta && <button type="button" className="bar-cta" onClick={() => onNavigate(cta[1])}>{cta[0]}</button>}
     </header>
   );
 }

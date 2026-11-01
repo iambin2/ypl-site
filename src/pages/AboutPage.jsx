@@ -2,6 +2,7 @@ import React from "react";
 import { Icon, PageHead, SectionHead } from "../components/index.js";
 import { formatDate } from "../services/dateFormat.js";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
+import Button from "../components/common/Button.jsx";
 
 const FLOW = [
   { t: "매월 파이컵", d: "정규 대회에 출전합니다." },
@@ -65,8 +66,8 @@ export default function AboutPage({ go }) {
             <span className="ab-flow-n">{i + 1}</span>
             <b>{s.t}</b>
             <span>{s.d}</span>
-            {s.href ? <a className="ypl-btn ypl-btn--soft ypl-btn--sm press" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
-              : <button type="button" className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={() => go?.(s.to)}>{s.cta}</button>}
+            {s.href ? <Button size="sm" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></Button>
+              : <Button type="button" size="sm" onClick={() => go?.(s.to)}>{s.cta}</Button>}
           </li>
         ))}
       </ol>

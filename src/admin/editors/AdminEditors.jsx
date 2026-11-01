@@ -9,6 +9,8 @@ import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
 import { eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
 import { signInAdmin } from "../../storage.js";
+import Button from "../../components/common/Button.jsx";
+import Field, { FormError } from "../../components/common/Field.jsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -21,21 +23,21 @@ export function LoginModal({ onClose, onSuccess }) {
     catch(error){ setErr(error?.message||"로그인하지 못했습니다."); setBusy(false); }
   };
   return (<Modal title="관리자 로그인" hint="운영진 전용입니다. 관리자 계정으로 로그인해 주세요." onClose={onClose}>
-    <div className="field"><label>아이디</label><input autoComplete="username" autoCapitalize="none" value={id} onChange={e=>setId(e.target.value)}/></div>
-    <div className="field"><label>비밀번호</label><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
-    {err&&<div className="bk-hint" style={{color:"var(--text-primary)",marginTop:-12}}>{err}</div>}
-    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit} disabled={busy}>{busy?"확인 중":"로그인"}</button></div>
+    <Field label="아이디"><input autoComplete="username" autoCapitalize="none" value={id} onChange={e=>setId(e.target.value)}/></Field>
+    <Field label="비밀번호"><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></Field>
+    {err&&<FormError>{err}</FormError>}
+    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"확인 중":"로그인"}</Button></div>
   </Modal>);
 }
 export function MetaEditor({ meta, onClose, onSave }) {
   const [m,setM]=useState({...meta}); const f=k=>e=>setM({...m,[k]:e.target.value});
   return (<Modal title="메인 정보 수정" onClose={onClose}>
-    <div className="field"><label>리그 정식 이름</label><input value={m.fullName} onChange={f("fullName")}/></div>
-    <div className="field"><label>한 줄 소개</label><input value={m.tagline} onChange={f("tagline")}/></div>
-    <div className="field"><label>현 챔피언 대수</label><input value={m.currentChampionGen} onChange={f("currentChampionGen")} placeholder="5대"/></div>
-    <div className="field"><label>현 챔피언</label><input value={m.currentChampion} onChange={f("currentChampion")}/></div>
-    <div className="field"><label>홈 소개글</label><textarea value={m.intro} onChange={f("intro")}/></div>
-    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave(m)}>저장</button></div>
+    <Field label="리그 정식 이름"><input value={m.fullName} onChange={f("fullName")}/></Field>
+    <Field label="한 줄 소개"><input value={m.tagline} onChange={f("tagline")}/></Field>
+    <Field label="현 챔피언 대수"><input value={m.currentChampionGen} onChange={f("currentChampionGen")} placeholder="5대"/></Field>
+    <Field label="현 챔피언"><input value={m.currentChampion} onChange={f("currentChampion")}/></Field>
+    <Field label="홈 소개글"><textarea value={m.intro} onChange={f("intro")}/></Field>
+    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={()=>onSave(m)}>저장</Button></div>
   </Modal>);
 }
 export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = normalizeLegacyParty }) {
@@ -50,11 +52,11 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
     onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,slabel:slabel.trim()||undefined,name:name.trim(),team}); };
   return (<Modal title={item?"챔피언 수정":"챔피언 추가"} onClose={onClose}>
     <div className="bk-grow2">
-      <div className="field"><label>대수</label><input value={gen} onChange={e=>setGen(e.target.value)} placeholder="예: 6대"/></div>
-      <div className="field"><label>시즌 번호</label><input value={season} onChange={e=>setSeason(e.target.value)} placeholder="예: 6"/></div>
+      <Field label="대수"><input value={gen} onChange={e=>setGen(e.target.value)} placeholder="예: 6대"/></Field>
+      <Field label="시즌 번호"><input value={season} onChange={e=>setSeason(e.target.value)} placeholder="예: 6"/></Field>
     </div>
-    <div className="field"><label>챔피언 이름</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
-    <div className="field"><label>시즌 라벨 (선택)</label><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL 시즌 2"/></div>
+    <Field label="챔피언 이름"><input value={name} onChange={e=>setName(e.target.value)}/></Field>
+    <Field label="시즌 라벨 (선택)"><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL 시즌 2"/></Field>
     <div className="field"><label>우승 엔트리</label>
       <div className="ch-grid">{mons.map((m,i)=>{ const img=resolveHallOfFameArtwork(m,artwork)||m.img; return (<div className="ch-slot" key={i}>
         <div className="ch-imgwrap">
@@ -64,7 +66,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
       </div>); })}</div>
       <div className="bk-hint">포켓몬 이름을 입력하면 이미지가 자동으로 표시됩니다. 폼이 있는 포켓몬은 팀 빌더에 나오는 이름 그대로 입력해 주세요.</div>
     </div>
-    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
+    <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 
@@ -74,10 +76,10 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
   const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders:raw.split(/[,\n]/).map(s=>s.trim()).filter(Boolean)});
   return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름에는 트레이너를, 아래에는 파트너 포켓몬을 쉼표(,)로 구분해 입력하세요.":"해당자를 쉼표(,)로 구분해 입력하세요. 예: 정두호, 이제빈"} onClose={onClose}>
     <div className="field"><label>{partner?"트레이너":"칭호 이름"}</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
-    {!partner&&<div className="field"><label>설명 (선택)</label><input value={desc} onChange={e=>setDesc(e.target.value)}/></div>}
+    {!partner&&<Field label="설명 (선택)"><input value={desc} onChange={e=>setDesc(e.target.value)}/></Field>}
     <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></div>
     {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
-    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
+    <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 const Q_TYPES=[
@@ -124,16 +126,16 @@ function FormBuilder({ form, setForm }){
   const nameBase=eventNameBase(nameFields);
   const namePreview=(nameBase&&!roundKnown?"N회 ":"")+formatEventName({...nameFields,round:roundKnown?draftRound:null,subtitle:subtitleValue});
   return (<div className="fb-wrap">
-    <label className="bk-check" style={{marginBottom:enabled?16:0}}>
+    <label className="bk-check" style={{marginBottom:enabled?"var(--s4)":0}}>
       <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
       <span><Icon n="form" size={16}/> 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
     </label>
     {enabled&&<>
-      <div className="field"><label>신청 버튼 문구</label><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></div>
+      <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></Field>
       <div className="fb-q">
         <div className="fb-q-top"><strong>대회 연결 설정</strong></div>
-        <div className="fb-note" style={{marginBottom:12}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
-        <label className="bk-check" style={{marginBottom:12}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
+        <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
+        <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
         <div className="field"><label>{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</label><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다":""}.</div></div>
         <div className="field"><label>대회 종류</label><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></div>
@@ -151,15 +153,15 @@ function FormBuilder({ form, setForm }){
         </div>}
         {isChampions? <>
           <div className="bk-grow2">
-            <div className="field"><label>선발전 날짜</label><input type="date" value={eventDraft.qualifierHeldOn??eventDraft.heldOn??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierHeldOn:e.target.value}})}/></div>
-            <div className="field"><label>본선 날짜</label><input type="date" value={eventDraft.finalHeldOn||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalHeldOn:e.target.value}})}/></div>
+            <Field label="선발전 날짜"><input type="date" value={eventDraft.qualifierHeldOn??eventDraft.heldOn??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierHeldOn:e.target.value}})}/></Field>
+            <Field label="본선 날짜"><input type="date" value={eventDraft.finalHeldOn||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalHeldOn:e.target.value}})}/></Field>
           </div>
           <div className="bk-grow2" style={{marginBottom:0}}>
             <div className="field"><label>선발전 파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={eventDraft.qualifierSubmissionTargetAt??eventDraft.submissionTargetAt??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierSubmissionTargetAt:e.target.value}})}/></div>
             <div className="field"><label>본선 파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={eventDraft.finalSubmissionTargetAt||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalSubmissionTargetAt:e.target.value}})}/></div>
           </div>
         </> : <>
-          <div className="field"><label>대회일</label><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></div>
+          <Field label="대회일"><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></Field>
           <div className="field" style={{marginBottom:0}}><label>파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={(form?.eventDraft?.submissionTargetAt)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),submissionTargetAt:e.target.value}})}/></div>
         </>}
         </>}
@@ -200,9 +202,9 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
   const championsDraft=form?.eventDraft?.eventType==="champions";
   const normalizedEventDraft=form?.enabled?{...(form.eventDraft||{}),eventType:form?.eventDraft?.eventType||"pokecup",division:championsDraft?null:normalizeApplicationEventDivision(form?.eventDraft?.division,Boolean(form?.eventDraft?.isTeamEvent),{preserveLegacy:Boolean(form?.eventId)}),isTeamEvent:championsDraft?false:Boolean(form?.eventDraft?.isTeamEvent),battleFormat:form?.eventDraft?.battleFormat||null,competitionFormat:championsDraft?null:(form?.eventDraft?.competitionFormat||null),regulationId:form?.eventDraft?.regulationId||Object.keys(REGULATIONS)[0]||null,cupRuleId:form?.eventDraft?.cupRuleId||"none"}:form?.eventDraft;
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
-    <div className="field"><label>날짜</label><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></div>
-    <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)}/></div>
-    <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:120}}/></div>
+    <Field label="날짜"><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></Field>
+    <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)}/></Field>
+    <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:120}}/></Field>
     <FormBuilder form={form} setForm={setForm}/>
     <div className={"fold"+(linkOpen?" open":"")}>
       <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>
@@ -211,14 +213,14 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
         <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
       </button>
       {linkOpen&&<div className="fold-body swap">
-        <div className="field"><label>링크 1 (선택) — 누르면 새 탭으로 이동</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></div>
-        <div className="field"><label>링크 1 버튼 문구 (선택)</label><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></div>
-        <div className="field"><label>링크 2 (선택) — 추가 링크</label><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></div>
-        <div className="field" style={{marginBottom:0}}><label>링크 2 버튼 문구 (선택)</label><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></div>
+        <Field label="링크 1 (선택) — 누르면 새 탭으로 이동"><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></Field>
+        <Field label="링크 1 버튼 문구 (선택)"><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></Field>
+        <Field label="링크 2 (선택) — 추가 링크"><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></Field>
+        <Field label="링크 2 버튼 문구 (선택)" flush><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></Field>
       </div>}
     </div>
     <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="modal-actions">{onDelete&&<button className="btn btn-danger" onClick={onDelete} style={{marginRight:"auto"}}>삭제</button>}<button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</button></div>
+    <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
   </Modal>);
 }
 export function StandingsEditor({ title, rows, onClose, onSave }) {
@@ -237,8 +239,8 @@ export function StandingsEditor({ title, rows, onClose, onSave }) {
       <input type="number" value={r.points} onChange={e=>upd(i,"points",e.target.value)}/>
       <button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button>
     </div>))}</div>
-    <button className="btn btn-ghost btn-sm" style={{marginTop:12}} onClick={add}>+ 트레이너 추가</button>
-    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
+    <Button size="sm" style={{marginTop:"var(--s3)"}} onClick={add}>+ 트레이너 추가</Button>
+    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
@@ -279,15 +281,15 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
     onSave(out);
   };
   return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력하세요. 저장하면 날짜순으로 자동 정렬되며, 화살표 버튼으로 순서를 직접 바꿀 수도 있습니다." onClose={onClose}>
-    <div className="pts-note" style={{marginBottom:16}}>포인트 기준 — 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
-    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:16}}>
-      <button className="btn btn-ghost btn-sm" onClick={add}>+ 회차 추가 (맨 아래)</button>
-      <button className="btn btn-ghost btn-sm" onClick={sortNow}>날짜순 정렬</button>
+    <div className="pts-note" style={{marginBottom:"var(--s4)"}}>포인트 기준 — 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
+    <div style={{display:"flex",alignItems:"center",gap:"var(--s3)",flexWrap:"wrap",marginBottom:"var(--s4)"}}>
+      <Button size="sm" onClick={add}>+ 회차 추가 (맨 아래)</Button>
+      <Button size="sm" onClick={sortNow}>날짜순 정렬</Button>
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
     </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
       <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={16}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={16}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button></div>
-      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:"var(--s2)",flexWrap:"wrap"}}>
         <Segmented value={!!r.team} onChange={v=>upd(i,"team",v)} ariaLabel="경기 방식" options={[[false,"개인전"],[true,"팀전"]]}/>
         <Segmented value={!!r.champ} onChange={v=>upd(i,"champ",v)} ariaLabel="형식" options={[[false,"일반"],[true,"챔피언스 시리즈"]]}/>
       </div>
@@ -304,10 +306,10 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
         {r.sfTeams.map((t,k)=>(<div className="ed-team" key={k}><span className="ed-rk">4강 팀 {k+1} <button className="ed-x" onClick={()=>sfDel(i,k)}><Icon n="x" size={16}/></button></span>
           <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름 (선택)"/>
           <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>))}
-        <button className="btn btn-ghost btn-sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>+ 4강 팀 추가</button>
+        <Button size="sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>+ 4강 팀 추가</Button>
       </>}
       <div className="ed-r2"><Dropdown value={r.season||""} onChange={v=>upd(i,"season",v)} options={[{value:"",label:"(시즌 미지정)"},...((seasons||[]).map(n=>({value:n,label:n}))),...((r.season&&!(seasons||[]).includes(r.season))?[{value:r.season,label:r.season+" (기존)"}]:[])]}/><input value={r.rule} onChange={e=>upd(i,"rule",e.target.value)} placeholder="룰 (예: 모노타입 / 6세대 63 팀전)"/></div>
     </div>))}</div>
-    <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>저장</button></div>
+    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
 }

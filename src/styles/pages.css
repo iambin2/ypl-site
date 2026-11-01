@@ -14,9 +14,6 @@
 .hm-next b { color: var(--text-primary); font-weight: 700; }
 .hm-next .live-dot { margin-bottom: var(--s1); }
 .hm-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s6); }
-.ypl-btn.hm-btn { height: 56px; padding: 0 var(--s6); font-size: var(--fs-body); }
-.ypl-btn.hm-btn--end { background: var(--on-bar); color: var(--bar); }
-@media (hover: hover) { .ypl-btn.hm-btn--end:hover:not(:disabled) { background: var(--control-hover); } }
 
 /* the slabs: three solid faces, no shadow; the current champion's case is inverted */
 .hm-belt { overflow: hidden; }
@@ -80,7 +77,6 @@
   .hm-hero { padding: 120px var(--gutter) var(--chapter); }
   .hm-next { flex-direction: row; justify-content: center; gap: var(--s2); margin-top: var(--s6); font-size: var(--fs-lead); letter-spacing: var(--ls-lead); }
   .hm-actions { margin-top: var(--s10); }
-  .ypl-btn.hm-btn { padding: 0 var(--s8); font-size: var(--fs-body); }
   .hm-belt-hold { height: 396px; }
   .hm-track { --w: 280px; --win: 280px; gap: var(--s6); }
   .hm-label { min-height: 76px; padding: var(--s3) var(--s4); }
@@ -141,7 +137,7 @@
 /* the last step, the season champion, is marked by brightness alone (B4): a large inverse tile under the clear tab bar would hide its labels */
 .ab-flow li.last .ab-flow-n { color: var(--text-primary); }
 .ab-flow li > span:not(.ab-flow-n) { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-.ab-flow .ypl-btn { justify-self: start; margin-top: var(--s4); }
+.ab-flow .btn { justify-self: start; margin-top: var(--s4); }
 .ab-join { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (min-width: 1100px) { .ab-flow { gap: var(--s4); } .ab-flow li > span:not(.ab-flow-n) { font-size: var(--fs-body); } }
 
@@ -171,7 +167,7 @@
   .ab-block .ab-flow { grid-template-columns: 1fr; gap: 0; padding: var(--s3); border-radius: var(--r-lg); background: var(--surface); }
   .ab-flow li { padding: var(--s4); border-radius: var(--r-sm); background: none; box-shadow: none; }
   .ab-flow-n, .ab-flow b { font-size: var(--fs-body); letter-spacing: 0; }
-  .ab-flow .ypl-btn { margin-top: var(--s2); }
+  .ab-flow .btn { margin-top: var(--s2); }
 }
 
 /* =========================== NEWS ===========================
@@ -180,8 +176,7 @@
    17px on a phone and 18px on desktop (N6). A list-like body (team sheets) lays its groups side by side. */
 /* a notice row is the board's row: the title first (a pinned label in front of it), then one quiet line of date and excerpt */
 .nb-list { display: flex; flex-direction: column; padding: var(--s2); }
-.nb-item { display: flex; flex-direction: column; justify-content: center; width: 100%; min-height: var(--row-min); padding: var(--s3) var(--s4); border-radius: var(--r-sm); text-align: left; color: var(--text-primary); transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy); }
-@media (hover: hover) { .nb-item:hover { background: var(--surface-raised); } }
+.nb-item { display: flex; flex-direction: column; justify-content: center; }
 .nb-meta { display: flex; gap: var(--s2); min-width: 0; margin-top: var(--s1); }
 .nb-meta .tnum { flex: none; }
 .nb-title .pin { height: 24px; margin-right: var(--s2); padding: 0 var(--s2); font-size: var(--fs-caption); vertical-align: 2px; }
@@ -273,14 +268,7 @@
    One list surface; a post opens on its own screen like a notice (I2), with the same body card and its comments below. */
 .bd-list { display: flex; flex-direction: column; padding: var(--s3); border-radius: var(--r-lg); background: var(--surface); }
 .bd-list:has(> .ypl-empty) { padding: 0; background: none; box-shadow: none; }
-.bd-head {
-  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
-  min-height: var(--row-min); padding: var(--s3) var(--s4); border-radius: var(--r-sm); text-align: left; color: inherit;
-  transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy);
-}
-@media (hover: hover) { .bd-head:hover { background: var(--surface-raised); } }
 .bd-main, .bd-cmt-main { min-width: 0; }
-.nb-title, .bd-title { display: block; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bd-lock { display: inline-flex; align-items: center; gap: var(--s1); height: 24px; margin-right: var(--s2); padding: 0 var(--s2); border-radius: var(--r-pill); background: var(--accent); color: var(--text-on-accent); font-size: var(--fs-caption); font-weight: 600; vertical-align: 2px; line-height: 1; }
 .nb-a-meta .bd-lock { margin-right: 0; }
 .bd-lock .ic { width: 16px; height: 16px; }

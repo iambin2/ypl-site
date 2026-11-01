@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Icon, PageHead, Segmented } from "../components/index.js";
 import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
+import Button from "../components/common/Button.jsx";
 
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
 function shortName(name, key) {
@@ -50,10 +51,10 @@ export default function TitlesPage({ data, admin, setModal, go }) {
           <h3 className="rc-lead-title tt-cond" id="tt-group-name">{g.desc || g.name}</h3>
           <span className="caption">{rate ? `칭호 ${items.length}개 중 ${done}개에 주인이 있습니다.` : `칭호 ${items.length}개`}</span>
         </div>
-        {admin && <button className="ypl-btn ypl-btn--soft ypl-btn--sm press tt-add"
+        {admin && <Button size="sm" className="tt-add"
           onClick={() => setModal({ type: "title", groupKey: g.key })}>
           <Icon n="plus" size={16} />칭호 추가
-        </button>}
+        </Button>}
       </section>
 
       <ul className="ypl-group swap" key={g.key}>

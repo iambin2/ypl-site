@@ -55,7 +55,7 @@
   width: 20px; height: 20px; flex: none; display: grid; place-items: center;
   border-radius: 50%; background: var(--state-selected); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary);
 }
-.fb-dot.multi { border-radius: 30%; }
+.fb-dot.multi { border-radius: 0; }
 .fb-dot.dropdown { background: none; width: 20px; }
 .fb-addopt {
   align-self: flex-start; height: 36px; padding: 0 var(--s3); border: 0; border-radius: var(--r-pill); background: transparent;

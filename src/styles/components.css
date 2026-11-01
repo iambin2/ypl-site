@@ -5,38 +5,39 @@
    ========================================================================== */
 
 /* ---------- soft: one solid tone for every secondary control ---------- */
-.ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn), .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
+.ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
 .pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-type, .tb-status-chip, .tb-official-meta span, .rc-chip,
 .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .ff-choice {
   position: relative; background: var(--control);
 }
 
-/* ---------- Button (M11): primary is the theme's inverse fill, secondary is soft, tertiary is text ---------- */
-.ypl-btn, .btn, .btn-ghost {
+/* ---------- Button: one component (Button.jsx). Hierarchy is the variant, height the size. ---------- */
+.btn {
+  --btn-bg: var(--control); --btn-bg-hover: var(--control-hover); --btn-fg: var(--text-primary);
   position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
-  height: 48px; padding: 0 var(--s6); border: 0; border-radius: var(--r-pill);
-  font-size: var(--fs-body); line-height: 1; font-weight: 600; white-space: nowrap; color: var(--text-primary);
-  user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  border: 0; border-radius: var(--r-pill); background: var(--btn-bg); color: var(--btn-fg);
+  font-size: var(--fs-body); line-height: 1; font-weight: 600; white-space: nowrap; user-select: none;
+  transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.ypl-btn .ic, .btn .ic { width: 20px; height: 20px; }
-.ypl-btn--primary, .btn-primary, .btn-danger, .ypl-btn--danger, .tb-main-btn { background: var(--accent); color: var(--text-on-accent); }
-.ypl-btn--quiet { height: var(--target); padding: 0 var(--s3); background: none; color: var(--text-secondary); }
-.ypl-btn--sm, .btn.btn-sm { height: 40px; padding: 0 var(--s4); font-size: var(--fs-body); }
-.ypl-btn--sm .ic, .btn.btn-sm .ic { width: 16px; height: 16px; }
-:is(.ypl-btn, .btn, .pg-btn, .dd-btn, .dd-opt, .fb-ic, .ed-mv, .ed-del, .tb-pokemon-row):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
-@media (hover: hover) {
-  :is(.ypl-btn--primary, .btn-primary, .btn-danger, .tb-main-btn):hover:not(:disabled) { background: var(--accent-hover); }
-  :is(.ypl-btn--soft, .ypl-btn--tonal, .btn:not(.btn-primary):not(.btn-danger):not(.tb-main-btn)):hover:not(:disabled) { background: var(--control-hover); }
-  .ypl-btn--quiet:hover:not(:disabled) { color: var(--text-primary); }
-}
-/* K1 on every control and tile, whether or not it carries .press */
-:is(.ypl-btn, .btn, .modal-x, .hofm-x, .fb-ic, .fb-addopt, .ed-del, .ed-mv, .ed-x, .bk-count button,
-  .ls-clear, .tb-clear, .bk-bout-win, .pr-refresh, .fr-del, .bd-del, .tb-slot-remove, .ann-link, .ann-apply, .ann-resp, .pg-btn, .ypl-more):active:not(:disabled) {
-  scale: .97; transition: scale var(--dur-instant) var(--ease-out);
-}
-:is(.hm-result, .bk-card, .tb-slot:not(.empty), .fb-addq, .tb-pokemon-row, .tb-saved-main, .ypl-row:is(button, a)):active:not(:disabled) { scale: .985; transition: scale var(--dur-instant) var(--ease-out); }
-@media (prefers-reduced-motion: reduce) { :is(.ypl-btn, .btn, .ypl-row):active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); } }
+.btn--sm { height: 40px; padding: 0 var(--s4); }
+.btn--md { height: 48px; padding: 0 var(--s6); }
+.btn--lg { height: 56px; padding: 0 var(--s8); }
+.btn .ic { width: 20px; height: 20px; }
+.btn--sm .ic { width: 16px; height: 16px; }
+.btn--primary { --btn-bg: var(--accent); --btn-bg-hover: var(--accent-hover); --btn-fg: var(--text-on-accent); }
+.btn--destructive { --btn-bg: var(--danger-bg); --btn-bg-hover: var(--accent-hover); --btn-fg: var(--danger-text); }
+.btn--inverse { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--bar); }
+.btn--tertiary { --btn-bg: transparent; --btn-bg-hover: var(--state-hover); --btn-fg: var(--text-secondary); }
+@media (hover: hover) { .btn:hover:not(:disabled) { background: var(--btn-bg-hover); } }
+/* loading keeps the width: the words stay and turn clear under one spinner */
+.btn[aria-busy="true"] { color: transparent; }
+.btn[aria-busy="true"]:disabled { opacity: 1; }
+.btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; border: 2px solid var(--btn-fg); border-right-color: transparent; border-radius: 50%; animation: y-spin var(--dur-loop) linear infinite; }
+@keyframes y-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn[aria-busy="true"]::after { animation: none; } }
+.form-error { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; color: var(--text-primary); }
+.form-error .ic { flex: none; }
+.field--flush { margin-bottom: 0; }
 
 /* ---------- Chip and badge (M10): one 28px soft pill for every label, tag and status; the dot rides in front only while live ---------- */
 .ypl-chip, .y-chip, .pin, .rc-chip, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-status-chip, .tb-type, .tb-official-meta span,
@@ -96,16 +97,18 @@
 
 /* ---------- List: one reading surface, rows with no rules and generous height (M1) ---------- */
 .ypl-group { list-style: none; margin: 0; padding: var(--s3); display: flex; flex-direction: column; border-radius: var(--r-lg); background: var(--surface); }
+.ypl-row, .pick-row {
+  transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy);
+}
 .ypl-row {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
   min-height: var(--row-min); padding: var(--s3) var(--s4); border: 0; border-radius: var(--r-sm); background-color: transparent; color: inherit; text-align: left;
-  transition: background-color var(--dur-fast) var(--ease-out), scale var(--dur-snappy) var(--spring-snappy);
 }
-.ypl-row__title { display: block; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ypl-row__title, .nb-title, .bd-title { display: block; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ypl-row__meta { display: block; font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .ypl-row__title + .ypl-row__meta { margin-top: var(--s1); }
 .ypl-row__end { font-size: var(--fs-caption); color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (hover: hover) { :is(button, a).ypl-row:hover { background-color: var(--surface-raised); } }
+@media (hover: hover) { :is(button, a).ypl-row:hover { background-color: var(--state-hover); } }
 
 /* ---------- Empty (L3): sentences only, on the content's left edge like the content it stands in for (alignment law) ---------- */
 .ypl-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s10) 0; }
@@ -140,8 +143,7 @@
   transition: background-color var(--dur-fast) var(--ease-out);
   -webkit-appearance: none; appearance: none;
 }
-:where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-:where(.ypl) :where(input, textarea):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+:where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 :where(.ypl) textarea { min-height: 128px; border-radius: var(--r-sm); resize: vertical; line-height: var(--lh-body); padding: var(--s4) var(--s6); }
 :where(.ypl) :where(input[type="number"]) { font-variant-numeric: tabular-nums; }
 :where(.ypl) :is(input, textarea)[aria-invalid="true"] { outline: 2px solid var(--text-primary); outline-offset: 2px; }
@@ -324,7 +326,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   padding: var(--s4) var(--pad) calc(var(--s6) + env(safe-area-inset-bottom, 0px));
   background: var(--surface-float);
 }
-.modal-actions .btn, .modal-actions .ypl-btn { flex: 1 1 0; }
+.modal-actions .btn { flex: 1 1 0; }
 @media (min-width: 860px) {
   .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 48px, 560px); max-height: calc(100dvh - 64px); border-radius: var(--r-lg); }
   .grip { height: var(--s4); }
@@ -333,7 +335,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   .modal { --pad: var(--s8); padding: var(--s2) var(--pad) var(--s8); }
   .modal-x { right: var(--s4); top: calc(var(--s2) - 5px); }
   .modal-actions { bottom: calc(var(--s8) * -1); margin-bottom: calc(var(--s8) * -1); padding-bottom: var(--s8); }
-  .modal-actions .btn, .modal-actions .ypl-btn { flex: none; }
+  .modal-actions .btn { flex: none; }
 }
 
 /* ---------- fold (collapsible) ---------- */
@@ -351,8 +353,8 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 /* Compact desktop controls keep a full touch target on phones and touch screens.
    The floor's height has no weight (:where), so it raises a 36px control to 44 but never lowers a 48px field or a 60px row. */
 @media (max-width: 639px), (pointer: coarse) {
-  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .ypl-btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); }
-  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .ypl-btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--target); }
+  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); }
+  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--target); }
 }
 
 /* ---------- PickerSheet: a long list in a sheet, and the pill field that opens it ---------- */
@@ -362,12 +364,10 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   width: 100%; display: flex; align-items: center; gap: var(--s3);
   min-height: var(--row-min); padding: var(--s1) var(--s3); border: 0; border-radius: var(--r-sm); background: transparent; color: inherit; text-align: left;
   content-visibility: auto; contain-intrinsic-size: auto 60px;
-  transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) { .pick-row:hover:not(:disabled):not(.sel) { background: var(--state-hover); } }
 .pick-row.sel { background: var(--state-selected); }
 .pick-row.cursor { background: var(--state-pressed); }
-.pick-row:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 .pick-row img, .pick-blank { flex: none; width: 44px; height: 44px; object-fit: contain; }
 .pick-row > .check { flex: none; color: var(--text-primary); }
 .pick-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }

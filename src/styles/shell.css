@@ -137,7 +137,7 @@
 .site-foot-mark { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s4); }
 .site-foot-mark .brand { color: var(--on-bar); }
 .site-foot-tag { font-size: var(--fs-body); color: var(--on-bar-2); }
-.site-foot .ypl-btn--soft { background: var(--bar-up); color: var(--on-bar); }
+.site-foot .btn { --btn-bg: var(--bar-up); --btn-bg-hover: var(--bar-up-hover); --btn-fg: var(--on-bar); }
 .site-foot-dc { margin-left: auto; }
 .site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: var(--fs-caption); line-height: var(--lh-caption); }
 @media (max-width: 639px) { .site-foot-dc { margin-left: 0; } .site-foot-tag { flex-basis: 100%; } }

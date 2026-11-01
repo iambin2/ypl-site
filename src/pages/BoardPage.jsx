@@ -9,6 +9,8 @@ import { formatDate } from "../services/dateFormat.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { SHOWCASE_KEY, hashPin, newCommunityId, pinMatches, readCommunity, shareLink, updateCommunity } from "../services/communityStore.js";
 import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, savedTeamSheet, spriteUrl } from "../services/teamBuilderCore.js";
+import Button from "../components/common/Button.jsx";
+import Field from "../components/common/Field.jsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
@@ -28,7 +30,7 @@ function MediaEmbed({ url }){
   const m=parseMedia(url); if(!m) return null;
   if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="유튜브 영상" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
   if(m.type==="image") return <a className="bd-img" href={m.url} target="_blank" rel="noopener noreferrer"><img src={m.url} alt="첨부 이미지" loading="lazy" decoding="async"/></a>;
-  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:8}}>{m.url}<Icon n="ext" size={16}/></a>;
+  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:"var(--s2)"}}>{m.url}<Icon n="ext" size={16}/></a>;
 }
 
 function BoardCompose({ onClose, onSubmit }){
@@ -38,17 +40,17 @@ function BoardCompose({ onClose, onSubmit }){
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
       <div className="bk-grow2">
-        <div className="field"><label>닉네임</label><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></div>
-        <div className="field"><label>수정, 삭제 비밀번호 (선택, 숫자 4자리)</label><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></div>
+        <Field label="닉네임"><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
+        <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
       </div>
-      <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요." maxLength={60}/></div>
-      <div className="field"><label>내용</label><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></div>
+      <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요." maxLength={60}/></Field>
+      <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></Field>
       <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
       <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
       {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다. 다른 방문자에게는 목록에도 표시되지 않습니다.</div>}
-      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" onClick={submit}>등록</button></div>
+      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>등록</Button></div>
     </div>
   </Modal>);
 }
@@ -77,12 +79,12 @@ function EditSheet({ heading, initial, onClose, onSave }){
   };
   return (<Modal title={heading} onClose={onClose}>
     <div className="swap" key="edit">
-      {has("title")&&<div className="field"><label>제목</label><input value={v.title} onChange={set("title")} maxLength={60}/></div>}
-      {has("body")&&<div className="field"><label>내용</label><textarea value={v.body} onChange={set("body")} rows={has("title")?6:3}/></div>}
+      {has("title")&&<Field label="제목"><input value={v.title} onChange={set("title")} maxLength={60}/></Field>}
+      {has("body")&&<Field label="내용"><textarea value={v.body} onChange={set("body")} rows={has("title")?6:3}/></Field>}
       {has("link")&&<div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
         {v.link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={v.link}/></div>}</div>}
       {has("secret")&&<label className="bk-check"><input type="checkbox" checked={v.secret} onChange={set("secret")}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>}
-      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" disabled={busy} onClick={submit}>{busy?"저장 중…":"저장"}</button></div>
+      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
     </div>
   </Modal>);
 }
@@ -99,7 +101,7 @@ function CommentForm({ onSubmit }){
     </div>
     <div className="bd-cform-row">
       <input className="bd-cform-body" value={body} onChange={e=>setBody(e.target.value)} placeholder="댓글 달기…" onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
-      <button className="btn btn-primary btn-sm" onClick={submit}>등록</button>
+      <Button variant="primary" size="sm" onClick={submit}>등록</Button>
     </div>
     <input className="bd-cform-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 또는 유튜브 링크 (선택)"/>
   </div>);
@@ -142,7 +144,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
   if(p){ const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
+        <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
         <header className="nb-a-head">
           <h1 className="title nb-a-title" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
           <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
@@ -151,7 +153,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
           <Prose text={p.body}/>
           {p.link&&<MediaEmbed url={p.link}/>}
         </div>}
-        <div className="bd-tools"><button className="bd-del press" onClick={()=>editPost(p)}>수정</button><button className="bd-del press" onClick={()=>delPost(p)}>삭제</button></div>
+        <div className="bd-tools"><button className="bd-del" onClick={()=>editPost(p)}>수정</button><button className="bd-del" onClick={()=>delPost(p)}>삭제</button></div>
         <div className="bd-cmts card">
           <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
           {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
@@ -169,7 +171,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
       {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
-        <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setCompose(true)}><Icon n="plus" size={16}/>글쓰기</button>
+        <Button variant="primary" size="sm" onClick={()=>setCompose(true)}><Icon n="plus" size={16}/>글쓰기</Button>
       </div>
     </PageHead>
     <div className="bd-list swap">
@@ -177,7 +179,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
         ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
         : <Empty icon="list" title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const cc=(p.comments||[]).length;
-        return (<button type="button" className={"bd-head press"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
+        return (<button type="button" className={"ypl-row bd-head"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
           <span className="bd-main">
             <span className="bd-title">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span></span>
             <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
@@ -281,11 +283,11 @@ function TeamPicker({ kind, onPick, onClose, go }){
     <div className="swap" key="pick">
       {teams.length===0
         ? <p className="bk-hint">이 브라우저의 팀 빌더에 저장된 팀이 없습니다. 팀 빌더에서 팀을 만든 뒤 그곳에서 바로 올릴 수 있습니다.</p>
-        : <ul className="sc-pick">{teams.map(t=>(<li key={t.id}><button type="button" className="sc-pick-row press" onClick={()=>onPick(t)}>
+        : <ul className="sc-pick">{teams.map(t=>(<li key={t.id}><button type="button" className="sc-pick-row" onClick={()=>onPick(t)}>
             <span className="sc-pick-main"><b>{t.name}</b><small>{ruleSummary(t)}, {t.members.length}마리</small></span>
             <PartySprites members={t.members}/>
           </button></li>))}</ul>}
-      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>닫기</button><button className="btn btn-primary" onClick={()=>{onClose();go?.("builder");}}>팀 빌더 열기<Icon n="arrow" size={16}/></button></div>
+      <div className="modal-actions"><Button onClick={onClose}>닫기</Button><Button variant="primary" onClick={()=>{onClose();go?.("builder");}}>팀 빌더 열기<Icon n="arrow" size={16}/></Button></div>
     </div>
   </Modal>);
 }
@@ -327,18 +329,18 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       {members.length>1&&<div className="field"><label>올릴 내용</label><Segmented value={kind} onChange={setKind} ariaLabel="소개글 종류" options={[["party",`파티 전체 ${members.length}마리`],["sample","한 마리 샘플"]]}/></div>}
       {kind==="sample"&&members.length>1&&<div className="field"><label>샘플로 올릴 포켓몬</label>
         <div className="sc-choose" role="radiogroup" aria-label="샘플로 올릴 포켓몬">{members.map((m,i)=>(
-          <button type="button" key={i} role="radio" aria-checked={i===index} className={"sc-choose-mon press"+(i===index?" on":"")} onClick={()=>setIndex(i)}>
+          <button type="button" key={i} role="radio" aria-checked={i===index} className={"sc-choose-mon"+(i===index?" on":"")} onClick={()=>setIndex(i)}>
             <img src={spriteUrl(m.pokemonName)} alt="" onError={onSpriteError()}/><span>{nameAt(i)}</span>
           </button>))}</div></div>}
       {kind==="party"&&<div className="field"><PartySprites members={members} big/></div>}
       <div className="bk-grow2">
-        <div className="field"><label>닉네임</label><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></div>
-        <div className="field"><label>수정, 삭제 비밀번호 (선택, 숫자 4자리)</label><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></div>
+        <Field label="닉네임"><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
+        <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
       </div>
-      <div className="field"><label>제목</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder={autoTitle} maxLength={60}/></div>
-      <div className="field"><label>소개</label><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder={kind==="sample"?"채용 이유, 노리는 상대, 운용법을 적어 주세요.":"컨셉, 선출 방법, 주의할 상대를 적어 주세요."}/></div>
+      <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder={autoTitle} maxLength={60}/></Field>
+      <Field label="소개"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder={kind==="sample"?"채용 이유, 노리는 상대, 운용법을 적어 주세요.":"컨셉, 선출 방법, 주의할 상대를 적어 주세요."}/></Field>
       <p className="bk-hint">특성, 도구, 성격, 능력 포인트, 기술이 모두 함께 올라가고, 읽는 사람이 자기 팀 빌더로 가져갈 수 있습니다.</p>
-      <div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>취소</button><button className="btn btn-primary" disabled={busy||!display} onClick={submit}>{busy?"올리는 중…":"올리기"}</button></div>
+      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy||!display} onClick={submit} loading={busy}>올리기</Button></div>
     </div>
   </Modal>);
 }
@@ -397,23 +399,23 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
-    <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
+    <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
     {fresh?<Empty icon="search" title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back press" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
+        <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
         <header className="nb-a-head">
           <h1 className="title nb-a-title" data-vt={"s-"+p.id}>{p.title}</h1>
           <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
         </header>
         <div className="sc-actions">
-          <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={16}/></button>
-          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)}>{imageBusy?"만드는 중…":"이미지 저장"}</button>
-          <button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={()=>share(p)}>링크 공유</button>
-          <button className="bd-del press" onClick={()=>editPost(p)}>수정</button>
-          <button className="bd-del press" onClick={()=>delPost(p)}>삭제</button>
+          <Button variant="primary" size="sm" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={16}/></Button>
+          <Button size="sm" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
+          <Button size="sm" onClick={()=>share(p)}>링크 공유</Button>
+          <button className="bd-del" onClick={()=>editPost(p)}>수정</button>
+          <button className="bd-del" onClick={()=>delPost(p)}>삭제</button>
         </div>
         {/* 샘플은 카드 한 장이라, 넓은 화면에서는 카드를 왼쪽에 두고 소개와 댓글을 오른쪽 칸에 세운다(위 모서리를 카드와 맞춘다) */}
         <div className={"sc-post"+(p.kind==="sample"?" split":"")}>
@@ -438,17 +440,17 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
       {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이 검색" count={list.length}/>
-        <button className="ypl-btn ypl-btn--primary ypl-btn--sm press" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</button>
+        <Button variant="primary" size="sm" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</Button>
       </div>
     </PageHead>
-    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><button className="ypl-btn ypl-btn--soft ypl-btn--sm press" onClick={reload}>다시 시도</button></div>}
+    {loadError&&<div className="sc-error"><p className="bk-error">{loadError}</p><Button size="sm" onClick={reload}>다시 시도</Button></div>}
     {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
       {list.length===0&&(kw
         ? <Empty icon="search" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
         : <Empty icon="list" title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
         return kind==="party"
-          ? <button type="button" className="sc-tile card press" key={post.id} onClick={()=>openPost(post.id)}>
+          ? <button type="button" className="sc-tile card" key={post.id} onClick={()=>openPost(post.id)}>
               <PartySprites members={post.team?.members}/>
               <span className="sc-tile-foot">
                 <span className="bd-main"><span className="bd-title" data-vt={"s-"+post.id}>{post.title}</span>
@@ -456,7 +458,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
                 {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
               </span>
             </button>
-          : <button type="button" className="bd-head sc-row press" key={post.id} onClick={()=>openPost(post.id)}>
+          : <button type="button" className="ypl-row bd-head sc-row" key={post.id} onClick={()=>openPost(post.id)}>
               <img className="sc-row-sprite" src={spriteUrl(post.team?.members?.[0]?.pokemonName)} alt="" loading="lazy" decoding="async" onError={onSpriteError()}/>
               <span className="bd-main"><span className="bd-title" data-vt={"s-"+post.id}>{post.title}</span>
                 <span className="bd-meta"><b className="bd-nick">{post.nick}</b><span>{post.names?.[0]||""}</span><span className="bd-date tnum">{fmtDT(post.createdAt)}</span></span></span>

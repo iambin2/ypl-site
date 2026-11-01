@@ -1,6 +1,7 @@
 import React from "react";
 import Icon from "../common/Icon.jsx";
 import { BrandMark, DISCORD_URL, Wordmark } from "./SiteHeader.jsx";
+import Button from "../common/Button.jsx";
 
 const YEAR_FOUNDED = 2023;
 
@@ -13,13 +14,13 @@ export default function SiteFooter({ onNavigate, tagline }) {
     <footer className="site-foot">
       <div className="site-foot-in">
         <div className="site-foot-mark">
-          <button type="button" className="brand press" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
+          <button type="button" className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
             <span className="brand-logo"><BrandMark /></span><Wordmark />
           </button>
           {tagline && <p className="site-foot-tag">{tagline}</p>}
-          <a className="ypl-btn ypl-btn--sm ypl-btn--soft press site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+          <Button size="sm" className="site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
             디스코드 참여<Icon n="ext" size={16} />
-          </a>
+          </Button>
         </div>
 
         <div className="site-foot-rule">

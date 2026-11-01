@@ -158,12 +158,16 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 - **Celebration (L5):** one flat disc and a ring spread from the moment (application accepted, team submitted, final decided); Android gets a short buzz (P2).
 - **Loading (L1, 2026-10-12):** one shared loader (`Loader.jsx`), no words: the Wing Y sits dim (14%) where the screen will be and one solid band crosses it every 1.6s. It appears after 240ms so a quick load never flashes; `small` for spots inside a card or list. Reduced motion pulses instead of sweeping.
 
+## States
+
+Every control follows one rule, set once in `tokens.css`: hover moves it one tone and only under `@media (hover: hover)`; active is scale .97 on every `<button>` and `.press`; `:focus-visible` is one ring (`--focus-width`, `--focus-offset`, `--focus-ring`) for controls and fields alike; disabled is `--opacity-disabled` with a not-allowed cursor; selected is inversion or the lens; loading is the button's spinner.
+
 ## Components
 
-- Buttons (M11): primary inverse fill, secondary soft, tertiary text; 48px (40px small). Words only; an icon only for leaving the site, creating, or the next step in a flow (rule 3).
+- Buttons: one component, `Button.jsx`. `variant` is primary (one per area), secondary, tertiary, destructive or inverse (on navy); `size` is sm 40, md 48, lg 56. Labels are words; an icon only for leaving the site, creating or the next step. `loading` keeps the width: the words clear under one spinner. `className` only places the button.
 - Chips (M10): one 28px soft pill (13px, 600) for every label, tag and status; inverted only for a decided winner and an applied search filter; the dot appears only while something is live. A count is a 24px flat pill (`.fold-badge`, `.tb-count-badge`), never a pill inside a pill.
 - Segmented (K3): groove track, raised lens; scrolls sideways without a bar when the labels do not fit, the groove stays put.
-- Fields (M7): groove pills; textareas round at 20px. Focus is a 2px solid ring, keyboard only (K7).
+- Fields: `Field.jsx` keeps the label visible and linked, and sets the hint or error under the control with `aria-describedby`. One-line fields are pills, textareas round at 12, and the placeholder never replaces a label. A form-level error is `FormError`: an icon and weight, never colour alone, shown on submit.
 - Dropdowns and menus (M6): desktop popover that grows from its trigger; phone sheet.
 - Tables (M1, M2): no row rules, 60px rows, header labels share their column's alignment (see Alignment).
 - Toasts (K6): from below (phone: just above the tab bar), stacked like Sonner, 3.8s.

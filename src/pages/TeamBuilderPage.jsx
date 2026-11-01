@@ -59,6 +59,7 @@ import {
   validateTeam,
   resolveEventRuleSelection,
 } from "../services/teamBuilderCore.js";
+import Button from "../components/common/Button.jsx";
 
 
 function readInitialRuleState() {
@@ -314,13 +315,13 @@ function OfficialSubmissionPanel({
           autoComplete="name"
           disabled={lookupBusy}
         />
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()}>{lookupBusy ? "확인 중…" : "신청자 확인"}</button>
+        <Button type="button" size="sm" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()} loading={lookupBusy}>신청자 확인</Button>
       </div>
       {messages.length > 0 && <ul>{messages.slice(0, 8).map((message, index) => <li className={eligibility?.errors?.includes(message) || lookupError === message || eventContextError === message || submissionError === message ? "error" : "incomplete"} key={`${message}-${index}`}>{message}</li>)}</ul>}
       {state === "valid" && <div className="tb-official-submit">
-        <button type="button" className="btn tb-main-btn" onClick={onSubmit} disabled={submissionBusy}>
+        <Button type="button" variant="primary" onClick={onSubmit} disabled={submissionBusy}>
           {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출하기" : "파티 제출하기"}
-        </button>
+        </Button>
         {submittedAt && <span className="tb-field-meta">제출 완료 시각 {formatSubmissionTime(submittedAt)}</span>}
       </div>}
     </div>
@@ -1228,8 +1229,8 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     <section className="sec tb-page" data-step={step}>
       <PageHead plain="팀 빌더" desc="포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.">
         <div className="tb-hero-actions">
-          <button className="btn btn-ghost" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="tb-count-badge">{savedTeams.length}</span>}</button>
-          <button className={"btn tb-save-btn " + (!storageAvailable || (team.length === 0 && !currentSaved) ? "btn-ghost" : "tb-main-btn")} disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</button>
+          <Button disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="tb-count-badge">{savedTeams.length}</span>}</Button>
+          <Button variant={!storageAvailable || (team.length === 0 && !currentSaved) ? "secondary" : "primary"} disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</Button>
         </div>
       </PageHead>
 
@@ -1345,9 +1346,9 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           )}
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
+            <Button type="button" size="sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
               {sortId === "name" ? (sortReversed ? "ㅎ부터" : "ㄱ부터") : (sortReversed ? "낮은 순" : "높은 순")}
-            </button>
+            </Button>
           </div>
           {cupRule.kind === "monotype" && !assignedTypeId ? (
             <div className="tb-pool-empty">모노타입 챌린지의 타입을 선택해 주세요.</div>
@@ -1376,11 +1377,11 @@ export default function TeamBuilderPage({ go, flash } = {}) {
             </div>
             <div className="tb-team-actions">
               <span>{draftSavedAt && draftStatus === "saved" ? `마지막 임시저장 ${new Date(draftSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}` : "변경사항은 이 브라우저에 자동 임시저장됩니다."}</span>
-              <button className="btn btn-ghost btn-sm" onClick={resetTeam}>초기화</button>
+              <Button size="sm" onClick={resetTeam}>초기화</Button>
             </div>
             {team.length > 0 && <div className="tb-share-actions">
-              <button className="btn btn-ghost btn-sm" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage}>{imageBusy ? "이미지 만드는 중…" : "이미지로 저장"}</button>
-              <button className="btn btn-ghost btn-sm" disabled={detailStatus === "loading"} onClick={openShare}>게시판에 올리기</button>
+              <Button size="sm" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지로 저장</Button>
+              <Button size="sm" disabled={detailStatus === "loading"} onClick={openShare}>게시판에 올리기</Button>
             </div>}
           </div>
 
@@ -1494,8 +1495,8 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         </ul>
         <p className="tb-rule-confirm-copy">계속 변경하시겠습니까?</p>
         <div className="modal-actions">
-          <button type="button" className="btn btn-ghost" onClick={() => setPendingRuleChange(null)}>취소</button>
-          <button type="button" className="btn tb-main-btn" onClick={() => applyRuleChange(pendingRuleChange)}>규칙 변경</button>
+          <Button type="button" onClick={() => setPendingRuleChange(null)}>취소</Button>
+          <Button type="button" variant="primary" onClick={() => applyRuleChange(pendingRuleChange)}>규칙 변경</Button>
         </div>
       </Modal>}
 
@@ -1503,8 +1504,8 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         <p className="tb-rule-confirm-copy">저장되지 않은 변경사항이 있습니다. 현재 변경을 저장한 뒤 계속하면 팀 전환 중에도 변경사항이 유지됩니다.</p>
         <p className="tb-rule-confirm-copy">{currentSaved ? `“${currentSaved.name}” 팀에 현재 변경사항을 저장합니다.` : `현재 팀을 “${defaultTeamName()}” 이름의 새 저장 팀으로 보관합니다.`}</p>
         <div className="modal-actions">
-          <button type="button" className="btn btn-ghost" onClick={() => setPendingTeamChange(null)}>취소</button>
-          <button type="button" className="btn tb-main-btn" onClick={continuePendingTeamChange}>저장 후 계속</button>
+          <Button type="button" onClick={() => setPendingTeamChange(null)}>취소</Button>
+          <Button type="button" variant="primary" onClick={continuePendingTeamChange}>저장 후 계속</Button>
         </div>
       </Modal>}
 
@@ -1514,10 +1515,10 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           <div className="tb-library-save-meta"><span>{regulation.name}, {currentCupRuleSummary}, {team.length}/6마리</span><span>이 브라우저에 저장됩니다.</span><span>미완성이거나 규정을 위반한 팀도 임시로 저장할 수 있습니다.</span></div>
           <div className="tb-library-save-row">
             <div className="tb-library-workspace-actions">
-              <button className="btn btn-ghost btn-sm" disabled={!storageAvailable} onClick={startNewTeam}>새 팀</button>
-              <button className="btn btn-ghost btn-sm" disabled={!storageAvailable || team.length === 0} onClick={duplicateCurrentTeam}>현재 팀 복제</button>
+              <Button size="sm" disabled={!storageAvailable} onClick={startNewTeam}>새 팀</Button>
+              <Button size="sm" disabled={!storageAvailable || team.length === 0} onClick={duplicateCurrentTeam}>현재 팀 복제</Button>
             </div>
-            <button className="btn tb-main-btn btn-sm" disabled={!storageAvailable || team.length === 0} onClick={saveCurrentTeam}>{currentSaved ? "변경사항 저장" : "새 팀 저장"}</button>
+            <Button variant="primary" size="sm" disabled={!storageAvailable || team.length === 0} onClick={saveCurrentTeam}>{currentSaved ? "변경사항 저장" : "새 팀 저장"}</Button>
           </div>
           {saveMessage && <div className="tb-save-message">{saveMessage}</div>}
         </div>
@@ -1533,8 +1534,8 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                   <div className="tb-saved-icons">{saved.members.map((member, index) => <img key={`${member.pokemonName}-${index}`} src={spriteUrl(member.pokemonName)} alt="" title={member.pokemonName} onError={onSpriteError()} />)}</div>
                 </button>
                 <div className="tb-saved-actions">
-                  <button className="btn btn-ghost btn-sm" onClick={() => duplicateSavedTeam(saved)}>복제</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => deleteSavedTeam(saved)}>삭제</button>
+                  <Button size="sm" onClick={() => duplicateSavedTeam(saved)}>복제</Button>
+                  <Button variant="destructive" size="sm" onClick={() => deleteSavedTeam(saved)}>삭제</Button>
                 </div>
               </div>
             );

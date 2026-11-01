@@ -33,7 +33,7 @@ export function MenuItems({ items, onPick, role = "menu" }) {
           {it.current && <Icon n="check" size={20} className="check" />}</>;
         return it.href
           ? <a key={it.key} className="mi press" role={itemRole} href={it.href} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.(it)}>{inner}</a>
-          : <button key={it.key} type="button" className={"mi press" + (it.current ? " on" : "")} role={itemRole}
+          : <button key={it.key} type="button" className={"mi" + (it.current ? " on" : "")} role={itemRole}
             aria-selected={role === "listbox" ? Boolean(it.current) : undefined} aria-current={role === "menu" && it.current ? "true" : undefined}
             disabled={it.disabled} onClick={() => { onPick?.(it); it.onSelect?.(); }}>{inner}</button>;
       })}

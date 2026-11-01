@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { DUR, EASE_OUT, reduced, springs } from "./motion.js";
+import Button from "./Button.jsx";
 
 /* 점수 순으로 정렬하고 같은 점수는 같은 순위, 다음 순위는 건너뛴다(6, 6, 8). */
 export function rankRows(rows) {
@@ -59,7 +60,7 @@ export default function StandTable({ rows, showNote, total, onName }) {
       <td className="ypl-table__pts r">{(r.points || 0).toLocaleString("ko-KR")}</td>
     </tr>))}</tbody></table></div>
     {!open && rows.length > SHOWN && (
-      <button type="button" className="ypl-btn ypl-btn--soft press ypl-table-more" onClick={() => setOpen(true)}>{total}명 전체 보기</button>
+      <Button type="button" className="ypl-table-more" onClick={() => setOpen(true)}>{total}명 전체 보기</Button>
     )}
   </>);
 }

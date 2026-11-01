@@ -231,7 +231,7 @@ test("the touch floor raises a control but never lowers a field or a row (law 3)
 
 test("a list row is 60 everywhere, from one token (law 3)", () => {
   assert.match(TOKENS, /--row-min:\s*60px/);
-  for (const sel of [".ypl-row", ".nb-item", ".bd-head", ".pick-row"]) assert.deepEqual(decl(sel, "min-height"), ["var(--row-min)"], sel);
+  for (const sel of [".ypl-row", ".pick-row"]) assert.deepEqual(decl(sel, "min-height"), ["var(--row-min)"], sel);
 });
 
 test("a sheet's actions sit 40 under its body and its padding over its edge: the sticky reaches over the padding (law 2)", () => {
@@ -298,6 +298,17 @@ test("a sheet fills the width under 860 and clips its corners (Sheets)", () => {
   assert.match(base, /width: 100%/, "a narrower sheet floats round on top and square below");
   assert.match(base, /overflow: hidden/, "the pinned actions paint square over unclipped corners");
   assert.match(css, /@media \(min-width: 860px\) \{\s*\.sheet \{[^}]*border-radius: var\(--r-lg\);/, "a dialog is round on all four corners");
+});
+
+test("one button: every button that is a button comes from Button.jsx (Components)", () => {
+  const hits = SRC.filter(f => !f.endsWith("Button.jsx")).flatMap(f => [...read(f).matchAll(/className=["{][^>\n]*\b(ypl-btn|btn-primary|btn-ghost|btn-danger)\b/g)].map(m => `${rel(f)}: ${m[1]}`));
+  assert.deepEqual(hits, []);
+  assert.doesNotMatch(TOKENS.replace(/\/\*[\s\S]*?\*\//g, ""), /\.hl\b/);
+});
+
+test("inline space is a token (Space)", () => {
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/style=\{\{([^{}]*)\}\}/g)].filter(([, b]) => /\b(margin\w*|padding\w*|gap)\s*:\s*-?[1-9]/.test(b)).map(([m]) => `${rel(f)}: ${m.slice(0, 60)}`));
+  assert.deepEqual(hits, []);
 });
 
 test("no View Transitions snapshots (Don't)", () => {

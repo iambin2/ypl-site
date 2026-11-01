@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Modal from "./Modal.jsx";
+import Button from "./Button.jsx";
 
 /* 사이트 대화상자 — 브라우저 기본 alert / confirm / prompt 를 대신한다.
    기본 팝업은 운영체제 모양이라 사이트의 대화상자, 시트, 모션과 어긋난다.
@@ -60,15 +61,15 @@ export function SiteDialogHost() {
         />
       </div>}
       <div className="modal-actions">
-        {current.kind !== "alert" && <button type="button" className="btn btn-ghost" onClick={cancel}>취소</button>}
-        <button
+        {current.kind !== "alert" && <Button type="button" onClick={cancel}>취소</Button>}
+        <Button
           type="button"
-          className={current.danger ? "btn btn-danger" : "btn btn-primary"}
+          variant={current.danger ? "destructive" : "primary"}
           onClick={accept}
           autoFocus={current.kind !== "prompt"}
         >
           {current.kind === "alert" ? "닫기" : current.confirmLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

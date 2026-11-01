@@ -191,7 +191,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
         <div className="grip" aria-hidden="true" />
         <div className="modal" ref={bodyRef}>
           {/* every sheet and dialog closes the same way: the X at its top right, titled or not */}
-          <button type="button" className="modal-x press" onClick={() => closeRef.current?.()} aria-label="닫기"><Icon n="x" size={20} /></button>
+          <button type="button" className="modal-x" onClick={() => closeRef.current?.()} aria-label="닫기"><Icon n="x" size={20} /></button>
           {title !== undefined && <h3 id={titleId}>{title}</h3>}
           {hint && <p className="hint">{hint}</p>}
           {children}

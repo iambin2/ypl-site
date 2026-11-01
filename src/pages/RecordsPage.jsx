@@ -14,6 +14,7 @@ import {
 import { syncTournamentRounds } from "../services/recordSync.js";
 import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
 import { generationText } from "../services/seasonLabel.js";
+import Button from "../components/common/Button.jsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -124,7 +125,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       {normalizedRead.error && (
         <div className="records-read-state is-error" role="alert">
           <span>공식 기록을 읽지 못해 아래에는 기존 기록만 표시됩니다. 다시 시도해 주세요.</span>
-          <button type="button" className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={() => setReloadKey((value) => value + 1)}>다시 시도</button>
+          <Button type="button" size="sm" onClick={() => setReloadKey((value) => value + 1)}>다시 시도</Button>
         </div>
       )}
 
@@ -200,7 +201,7 @@ function TrainerView({ snapshot, onOpen }) {
         </ul>
       ) : <Empty title="검색 결과가 없습니다." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
-        <button type="button" className="ypl-btn ypl-btn--soft press ypl-table-more" onClick={() => setAll(true)}>{visible.length}명 전체 보기</button>
+        <Button type="button" className="ypl-table-more" onClick={() => setAll(true)}>{visible.length}명 전체 보기</Button>
       )}
     </div>
   );
@@ -330,8 +331,8 @@ function FilterRow({ value, onChange, options, label }) {
   return (
     <div className="rc-filter" role="group" aria-label={label}>
       {options.map(([key, text]) => (
-        <button key={key} type="button" aria-pressed={key === value} onClick={() => onChange(key)}
-          className={"ypl-btn ypl-btn--sm press " + (key === value ? "ypl-btn--primary" : "ypl-btn--soft")}>{text}</button>
+        <Button key={key} type="button" aria-pressed={key === value} onClick={() => onChange(key)}
+          size="sm" variant={key === value ? "primary" : "secondary"}>{text}</Button>
       ))}
     </div>
   );
@@ -553,7 +554,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
         <div className="rc-sech">
           <h4>{selectedTour.label}</h4>
           <span className="tnum">{(selectedTour.rounds || []).length}회</span>
-          {admin && selectedTour.legacy && <button className="btn btn-primary btn-sm ed-pencil" onClick={openRoundEditor}>회차 편집</button>}
+          {admin && selectedTour.legacy && <Button variant="primary" size="sm" className="ed-pencil" onClick={openRoundEditor}>회차 편집</Button>}
         </div>
         <ul className="ypl-group rc-rounds">
           {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}
@@ -604,7 +605,7 @@ function PokemonView({ snapshot }) {
         </ul>
       ) : <Empty title="검색 결과가 없습니다." />}
       {!all && !normalized && visible.length > LIST_SHOWN && (
-        <button type="button" className="ypl-btn ypl-btn--soft press ypl-table-more" onClick={() => setAll(true)}>{visible.length}종 전체 보기</button>
+        <Button type="button" className="ypl-table-more" onClick={() => setAll(true)}>{visible.length}종 전체 보기</Button>
       )}
       {current && (
         <Modal label={`${current.name} 기록`} className="rc-sheet" onClose={() => setOpen(null)} fly={{ from: open.from, selector: ".rc-lead-title" }}>
@@ -696,8 +697,8 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
         {options.length > 0 && <Segmented value={view.id} onChange={setSel} ariaLabel="랭킹 보기" options={options} />}
         {past.length > 0 && <Dropdown className="rc-past" value="" placeholder="지난 시즌 보기" ariaLabel="지난 기록" onChange={setSel} options={past.map((v) => ({ value: v.id, label: v.label }))} />}
         {admin && !normalizedMode && <>
-          <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addSeason}>+ 시즌</button>
-          <button className="ypl-btn ypl-btn--sm ypl-btn--tonal press" onClick={addEra}>+ 누적 탭</button>
+          <Button size="sm" onClick={addSeason}>+ 시즌</Button>
+          <Button size="sm" onClick={addEra}>+ 누적 탭</Button>
         </>}
       </div>
       {!view ? <Empty title="랭킹 기록이 없습니다." />
@@ -718,8 +719,8 @@ function RankView({ era, data, admin, setModal, onName }) {
       <Podium rows={era.rows} label={`${era.label} 누적 랭킹`} onName={onName} />
       {admin && era.source !== "normalized" && (
         <div className="rc-admin">
-          <button
-            className="btn btn-primary btn-sm"
+          <Button
+            variant="primary" size="sm"
             onClick={() => setModal({
               type: "standings",
               title: era.label + " 랭킹",
@@ -728,7 +729,7 @@ function RankView({ era, data, admin, setModal, onName }) {
             })}
           >
             이 시기 랭킹 수정
-          </button>
+          </Button>
         </div>
       )}
       <StandTable rows={podiumSplit(era.rows).rest} total={era.rows.length} onName={onName} />
@@ -744,8 +745,8 @@ function SeasonView({ s, data, admin, setModal, onName }) {
       {s.rows.length ? <Podium rows={s.rows} label={`${s.name} 성적`} onName={onName} /> : <Empty title={`${s.name} 성적은 아직 없습니다.`} />}
       {admin && s.source !== "normalized" && (
         <div className="rc-admin">
-          <button
-            className="btn btn-primary btn-sm"
+          <Button
+            variant="primary" size="sm"
             onClick={() => setModal({
               type: "standings",
               title: s.name,
@@ -754,7 +755,7 @@ function SeasonView({ s, data, admin, setModal, onName }) {
             })}
           >
             {s.name} 성적 수정
-          </button>
+          </Button>
         </div>
       )}
       {podiumSplit(s.rows).rest.length > 0 && <StandTable rows={podiumSplit(s.rows).rest} showNote={hasNote} total={s.rows.length} onName={onName} />}

@@ -154,7 +154,8 @@
   transition: scale var(--dur-snappy) var(--spring-snappy), opacity var(--dur-fast) var(--ease-out),
     background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.tb-slot:hover .tb-slot-remove, .tb-slot.active .tb-slot-remove, .tb-slot-remove:focus-visible { opacity: 1; }
+@media (hover: hover) { .tb-slot:hover .tb-slot-remove { opacity: 1; } }
+.tb-slot.active .tb-slot-remove, .tb-slot-remove:focus-visible { opacity: 1; }
 @media (hover: hover) { .tb-slot-remove:hover { background: var(--state-selected); color: var(--text-primary); } }
 @media (hover: none) { .tb-slot-remove { opacity: 1; } }
 @media (max-width: 639px), (pointer: coarse) {

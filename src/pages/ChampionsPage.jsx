@@ -11,6 +11,7 @@ import {
 } from "../services/hallOfFamePresentation.js";
 import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
 import { onSpriteError } from "../services/teamBuilderCore.js";
+import Button from "../components/common/Button.jsx";
 
 /* 전당의 첫 등장은 사이트에 들어올 때마다 한 번(홈의 아레나와 같은 규칙). 다시 오면 다 켜진 전당이 화면 전환으로 선다. */
 let hallPending = true;
@@ -34,7 +35,7 @@ function openHall(st) {
     band.animate([{ opacity: 1, transform: `translateX(${from}px)` }, { opacity: 1, transform: `translateX(${to}px)` }], t);
     band.firstElementChild.animate([{ transform: `translateX(${-from}px)` }, { transform: `translateX(${-to}px)` }], t);
   });
-  play(q(".hof-stage-who .callout, .hof-plate, .hof-stage > .ypl-btn"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: 420 });
+  play(q(".hof-stage-who .callout, .hof-plate, .hof-stage > .btn"), [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: 420 });
 }
 
 /* ============================== CHAMPIONS ==============================
@@ -88,9 +89,9 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
 
   return (<section className="sec">
     <PageHead plain="명예의" silver="전당" desc="챔피언스 시리즈를 제패한 역대 챔피언과 그날의 우승 엔트리를 보관합니다.">
-      {admin && <button className="ypl-btn ypl-btn--tonal ypl-btn--sm press" onClick={() => setModal({ type: "champion" })}>
+      {admin && <Button size="sm" onClick={() => setModal({ type: "champion" })}>
         <Icon n="plus" size={16} />이전 챔피언 추가
-      </button>}
+      </Button>}
     </PageHead>
 
     {!reigning && <Empty title="등록된 챔피언이 없습니다." desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
@@ -101,9 +102,9 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
         <span className="callout">{genLabel(reigning)}, {seasonLabel(reigning)} 우승</span>
       </div>
       <PartyStage label="우승 엔트리" members={reigningTeam} dais>{plate(reigningTeam)}</PartyStage>
-      <button className="ypl-btn ypl-btn--primary press" onClick={e => setPop({ c: reigning, from: e.currentTarget.closest(".hof-stage").querySelector(".hofs-name") })}>
+      <Button variant="primary" onClick={e => setPop({ c: reigning, from: e.currentTarget.closest(".hof-stage").querySelector(".hofs-name") })}>
         우승 엔트리 크게 보기
-      </button>
+      </Button>
     </section>}
 
     {/* 역대 챔피언: 벽에 나란히 걸린 동판. 판마다 세대, 이름, 시즌, 그리고 작은 바닥에 선 우승 파티. */}
@@ -112,7 +113,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       <ol className="hof-wall">
         {past.map((c, i) => (
           <li key={c.id || i}>
-            <button className="card hof-plaque press" onClick={e => setPop({ c, from: e.currentTarget.querySelector(".hof-plaque-name") })} aria-label={c.name + " 우승 엔트리 보기"}>
+            <button className="card hof-plaque" onClick={e => setPop({ c, from: e.currentTarget.querySelector(".hof-plaque-name") })} aria-label={c.name + " 우승 엔트리 보기"}>
               <span className="hof-plaque-top">
                 <span className="hof-gen">{genMark(c)}</span>
                 <Icon n="chevr" size={16} className="hof-chev" />
@@ -132,9 +133,9 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       </ol>
       {admin && <div className="hof-admin">
         {past.filter(c => c.kind !== "normalized").map(c => (
-          <button key={"e" + c.id} className="ypl-btn ypl-btn--tonal ypl-btn--sm press" onClick={() => setModal({ type: "champion", item: c })}>
+          <Button key={"e" + c.id} size="sm" onClick={() => setModal({ type: "champion", item: c })}>
             {c.name} 수정
-          </button>
+          </Button>
         ))}
       </div>}
     </section>}
@@ -146,7 +147,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
         <div className="hofm-gen">{genLabel(c)}, {seasonLabel(c)} 우승</div>
       </div>
       {team.length > 0 && <PartyStage label="우승 엔트리" members={team} enter dais>{plate(team)}</PartyStage>}
-      <div className="modal-actions"><button className="ypl-btn ypl-btn--soft press" onClick={() => setPop(null)}>닫기</button>{go && <button className="ypl-btn ypl-btn--primary press" onClick={() => { setPop(null); go("records", { trainer: c.name }); }}>{c.name} 기록 보기</button>}</div>
+      <div className="modal-actions"><Button onClick={() => setPop(null)}>닫기</Button>{go && <Button variant="primary" onClick={() => { setPop(null); go("records", { trainer: c.name }); }}>{c.name} 기록 보기</Button>}</div>
     </Modal>; })()}
   </section>);
 }

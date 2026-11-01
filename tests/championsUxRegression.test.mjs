@@ -22,7 +22,7 @@ test("Champions participant additions use phase-specific durable paths", () => {
   assert.match(brackets, /listChampionshipManualParticipantCandidates/);
   assert.match(brackets, /advancementType:"manual"/);
   assert.match(brackets, /linkedEvent\?\.championship_phase \? \[\] : addedParticipants/);
-  assert.match(brackets, /linkedEvent\?\.championship_phase \? <button/);
+  assert.match(brackets, /linkedEvent\?\.championship_phase \? <Button/);
   assert.match(championsService, /add_championship_qualifier_manual_registration/);
   assert.match(championsService, /championshipFinalCreatePreflight/);
   assert.match(championsService, /advancementType !== "manual"/);
