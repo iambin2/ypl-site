@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Empty, Icon, ListSearch, Loader, Modal, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition, ErrorNote } from "../components/index.js";
+import { reduced } from "../components/common/motion.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { CUP_RULES, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
@@ -358,38 +359,39 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   if(article&&!p) return (<section className="bd"><BackLink to={label} onClick={closePost}/>
     {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </section>);
-  if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
-    // 공지와 같은 두 단(데스크톱): 왼쪽 709는 날짜, 제목, 소개, 세팅 카드, 댓글. 오른쪽 439는 같은 첫 줄에서 그림과 행동, 스크롤해도 남는다.
-    // 폰은 한 단으로 그림과 행동이 제목 바로 아래에 선다.
+  if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length; const one=p.kind==="sample";
+    const toCase=i=>document.getElementById(`bd-case-${p.id}-${i}`)?.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});
+    // 쇼케이스 글은 팀을 보여 주고 가져가게 하는 글이다. 파티: 여섯이 맨 앞에 크게(누르면 그 세팅으로), 바로 아래 가져가는 행동, 글쓴이의 말,
+    // 포켓몬별 세팅(한 줄에 셋), 댓글. 샘플: 한 마리의 세팅이 왼쪽에 서 있고, 오른쪽에 행동, 말, 댓글이 흐른다.
     return (<section className="bd">
-      <article className={"bd-art"+(p.kind==="sample"?" one":"")}>
+      <article className={"bd-art "+(one?"one":"many")}>
         <header className="bd-art-head">
           <BackLink to={label} onClick={closePost}/>
           <p className="t12 dim reg bd-date-line">{[label,FORMAT_LABEL[formatOf(p)],ruleSummary(p.team),p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
           <h1 className="t32 bd-title-h" data-vt={"s-"+p.id}>{p.title}</h1>
         </header>
-        <aside className="bd-aside">
-          <div className="bd-six">{(p.team?.members||[]).map((m,i)=><span className="pn stand bd-cell" key={i}><Mon src={spriteUrl(m.pokemonName)}/><span className="floor bd-band"><b className="t12">{(sheet[i]?.name)||m.pokemonName}</b></span></span>)}</div>
+        {!one&&<div className="bd-six">{(p.team?.members||[]).map((m,i)=>{ const name=(sheet[i]?.name)||m.pokemonName;
+          return <button type="button" className="pn stand bd-cell" key={i} onClick={()=>toCase(i)} aria-label={`${name} 세팅 보기`}><Mon src={spriteUrl(m.pokemonName)}/><span className="floor bd-band"><b className="t15">{name}</b></span></button>; })}</div>}
+        <div className="stack bd-bar">
           <Dock><Button variant="main" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기</Button></Dock>
-          <div className="stack bd-actions">
-            <Button variant="second" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
-            <Button variant="second" onClick={()=>share(p)}>링크 공유</Button>
-            <Button variant="second" onClick={()=>editPost(p)}>수정</Button>
-            <Button variant="second" onClick={()=>delPost(p)}>삭제</Button>
-          </div>
-        </aside>
-        <div className="bd-main">
-          {p.body&&<div className="bd-body"><Prose text={p.body}/></div>}
-          <div className="sc-post-sheet">{display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
-            :!display?<Loader small/>:<TeamSheet sheet={sheet}/>}</div>
-          <section className="bd-cmts" aria-labelledby={"bd-cmts-"+p.id}>
-            <SectionHead id={"bd-cmts-"+p.id} title={cc>0?`댓글 ${cc}`:"댓글"}/>
-            {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
-              <div className="bd-cmt-top"><b className="t12">{c.nick}</b><span className="t12 dim num">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-act t12" onClick={()=>editComment(p,c)}>수정</button><button className="bd-act t12" onClick={()=>delComment(p,c)}>삭제</button></div><div className="read bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div>
-            </div>))}
-            <CommentForm onSubmit={(c)=>addComment(p,c)}/>
-          </section>
+          <Button variant="second" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
+          <Button variant="second" onClick={()=>share(p)}>링크 공유</Button>
+          <Button variant="second" onClick={()=>editPost(p)}>수정</Button>
+          <Button variant="second" onClick={()=>delPost(p)}>삭제</Button>
         </div>
+        {p.body&&<div className="bd-body"><Prose text={p.body}/></div>}
+        <section className="sc-post-sheet" aria-label="포켓몬별 세팅">
+          {!one&&<SectionHead id={"bd-sets-"+p.id} title="포켓몬별 세팅"/>}
+          {display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
+            :!display?<Loader small/>:<TeamSheet sheet={sheet} idPrefix={`bd-case-${p.id}-`}/>}
+        </section>
+        <section className="bd-cmts" aria-labelledby={"bd-cmts-"+p.id}>
+          <SectionHead id={"bd-cmts-"+p.id} title={cc>0?`댓글 ${cc}`:"댓글"}/>
+          {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
+            <div className="bd-cmt-top"><b className="t12">{c.nick}</b><span className="t12 dim num">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-act t12" onClick={()=>editComment(p,c)}>수정</button><button className="bd-act t12" onClick={()=>delComment(p,c)}>삭제</button></div><div className="read bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div>
+          </div>))}
+          <CommentForm onSubmit={(c)=>addComment(p,c)}/>
+        </section>
       </article>
       {editing&&<EditSheet {...editing} onClose={()=>setEditing(null)} onSave={saveEdit}/>}
     </section>);

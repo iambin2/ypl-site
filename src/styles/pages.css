@@ -90,7 +90,10 @@
   .sc-post.split > .sc-post-sheet { grid-area: sheet; }
   .sc-post.split > .bd-cmts { grid-area: cmts; margin-top: 0; }
 }
-.sc-sheet { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
+/* cases stand from their top edge: a row never stretches a shorter case, so every picture window is the same height */
+.sc-sheet { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); align-items: start; }
+.sc-mon { height: auto; scroll-margin-top: calc(var(--nav-height) + var(--s5)); }
+.sc-mon > .sc-win { flex: none; }
 /* the cases count their column's width, not the screen's: two in a 709 column, three in 1200, one on a phone */
 .sc-sheet.multi { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .sc-sheet:not(.multi) { max-width: var(--sheet-w); }
@@ -118,7 +121,8 @@
 .sc-sp em { width: 20px; font-style: normal; font-size: var(--t12); color: var(--mute); text-align: right; }
 .sc-sp em.on { font-weight: 600; color: var(--lit); }
 .sc-moves { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); margin: 0; padding: 0; }
-.sc-moves li { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; padding: var(--s2) var(--s3); background: var(--panel-2); }
+/* a move slot holds its name over its type line; an empty slot keeps the same height, so cases stay the same length */
+.sc-moves li { display: flex; flex-direction: column; justify-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--s3); background: var(--panel-2); }
 .sc-moves li b { display: block; min-width: 0; font-size: var(--t15); line-height: var(--l15); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-move-line { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
 .sc-moves li small { font-size: var(--t12); line-height: var(--l12); color: var(--mute); }

@@ -29,29 +29,36 @@
   .bd-post:not(.one) .bd-mini { height: var(--h-row2); }
 }
 
-/* a post: the notices' two columns. Left 709, the date line, the title at 32, the words, the cases, the comments; right 439 from the
-   same first line and held in view, the pictures with their names, the main action and the rest */
+/* a showcase post shows a team and lets people take it.
+   A party: the six large across the page (each opens its settings below), the actions joined under them by the seam, the author's
+   words, the settings three across, the comments in a 709 column. A sample: its one case stands at the left (439) held in view, the
+   actions, the words and the comments run at the right (709). A phone reads it all in one column in that order. */
 .bd > .back:first-child, .bd-art-head > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
 .bd-date-line { margin-top: var(--s3); }
 .bd-title-h { margin-top: var(--s2); }
-.bd-aside { display: grid; gap: var(--s5); margin-top: var(--s5); }
-.bd-body { margin-top: var(--s8); }
-.bd-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
-.bd-cell { --floor: var(--h-control); aspect-ratio: 1; }
+.bd-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s8); }
+.bd-cell { --floor: var(--h-control); display: block; width: 100%; aspect-ratio: 1; }
 .bd-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
 .bd-band { display: grid; place-items: center; padding: 0 var(--s3); }
 .bd-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* a sample is one Pokémon: its case below already shows it large, so the side column holds only the actions (one fact once) */
-.bd-art.one .bd-six { display: none; }
-.bd-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.bd-aside .dock { margin-top: 0; }
-.sc-post-sheet { margin-top: var(--s8); }
+.bd-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--seam); }
+.bd-art.one .bd-bar { margin-top: var(--s8); }
+.bd-bar .dock { margin-top: 0; }
+.bd-body { margin-top: var(--s8); }
+.sc-post-sheet { margin-top: var(--s13); }
+.bd-art.one .sc-post-sheet { margin-top: var(--s8); }
 @media (min-width: 860px) {
-  .bd-art { display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); grid-template-areas: "head aside" "main aside"; grid-template-rows: auto 1fr; column-gap: var(--s13); align-items: start; }
-  .bd-art-head { grid-area: head; }
-  .bd-aside { grid-area: aside; position: sticky; top: calc(var(--nav-height) + var(--s8)); margin-top: 0; }
-  .bd-main { grid-area: main; }
-  .bd-main > :first-child { margin-top: var(--s8); }
+  .bd-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bd-bar { grid-template-columns: minmax(0, 1.618fr) repeat(4, minmax(0, 1fr)); }
+  .bd-art.many .bd-cmts { max-width: 709px; }
+  .bd-art.one { display: grid; grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); column-gap: var(--s13); align-items: start;
+    grid-template-areas: "head head" "sheet bar" "sheet body" "sheet cmts"; grid-template-rows: auto auto auto 1fr; }
+  .bd-art.one > .bd-art-head { grid-area: head; }
+  .bd-art.one > .sc-post-sheet { grid-area: sheet; position: sticky; top: calc(var(--nav-height) + var(--s5)); }
+  .bd-art.one > .bd-bar { grid-area: bar; }
+  .bd-art.one > .bd-body { grid-area: body; }
+  .bd-art.one > .bd-cmts { grid-area: cmts; }
+  .bd-art.one .sc-sheet:not(.multi) { max-width: none; }
 }
 
 /* comments: panels, the name 12 bold with its time dim, the words read at 15 */

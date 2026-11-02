@@ -34,9 +34,9 @@ export function rosterSheet(roster, display, only = null) {
 }
 
 /* 팀 시트: 빌더 편집기에 있는 모든 값을 포켓몬마다 한 장의 케이스에. 이미지 저장도 같은 모델을 그린다. */
-export default function TeamSheet({ sheet }) {
+export default function TeamSheet({ sheet, idPrefix = "" }) {
   return <div className={"sc-sheet" + (sheet.length > 1 ? " multi" : "")}>{sheet.map((row, i) => (
-    <article className="case sc-mon" key={i}>
+    <article className="case sc-mon" key={i} id={idPrefix ? idPrefix + i : undefined}>
       <header className="case-label">
         <span className="case-who"><b>{row.name}</b><span>{[row.english !== row.name ? row.english : "", row.num != null ? `No. ${String(row.num).padStart(4, "0")}` : ""].filter(Boolean).join("  ")}</span></span>
       </header>
