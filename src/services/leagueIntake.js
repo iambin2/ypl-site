@@ -5,6 +5,7 @@ export function announcementEventType(draft = {}) {
 }
 
 export function changeAnnouncementEventType(draft = {}, type) {
+  if(announcementEventType(draft)===type)return draft;
   const {officialEvent,rankingEnabled,...settings}=draft.competitionSettings||{};
   return {...draft,eventType:type==="general"?"pokecup":type,
     division:type==="general"?"other":type==="champions"?null:"both",isTeamEvent:false,

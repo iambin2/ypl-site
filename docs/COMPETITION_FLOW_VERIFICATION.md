@@ -1,6 +1,6 @@
 # 대회 흐름 검증
 
-2026-11-02 운영 DB와 현재 프런트엔드를 기준으로 확인했다. `npm test` 445개와 격리 PostgreSQL 통합 검증 20개가 통과했고 production build도 통과했다.
+2026-11-02 운영 DB와 현재 프런트엔드를 기준으로 확인했다. `npm test` 446개와 격리 PostgreSQL 통합 검증 20개가 통과했고 production build도 통과했다.
 
 ## 유형별 결과
 

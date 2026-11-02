@@ -35,6 +35,11 @@ test("an explicit other Event never inherits Master points even with stale or mi
   for(const settings of [{},{rankingEnabled:true},{rankingEnabled:false}])
     assert.equal(getIndividualPlacementPointPolicy({event_type:"pokecup",division:"other",is_team_event:false,competition_settings:settings}).enabled,false);
 });
+
+test("reselecting a competition's current type preserves its team, league and selected edition",()=>{
+  for(const draft of [{eventType:"pokecup",division:"master",isTeamEvent:true},{eventType:"champions",competitionEditionId:"seventh"},{eventType:"pokecup",division:"other"}])
+    assert.equal(changeAnnouncementEventType(draft,announcementEventType(draft)),draft);
+});
 const rookie = { ...master, id: "rookie", division: "rookie", status: "open", record_applied_at: null };
 test("the bracket picker groups ordinary leagues and preserves independent Champions phases", () => {
   const options = leagueIntakeOptions([rookie, master, { id: "qualifier" }, { id: "final" }]);
