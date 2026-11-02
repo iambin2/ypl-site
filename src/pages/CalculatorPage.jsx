@@ -148,7 +148,7 @@ function ResultBoard({ result, detailData }) {
         <b className="t15">{result.koText}</b>
         <Button variant="link" aria-expanded={rolls} onClick={() => setRolls(!rolls)}>{rolls ? "난수 닫기" : "난수 보기"}</Button>
       </div>
-      {rolls && <p className="t12 reg dim calc-rolls">{result.rolls.join(", ")}</p>}
+      {rolls && <p className="t12 reg dim calc-rolls swap">{result.rolls.join(", ")}</p>}
     </div>
   );
 }

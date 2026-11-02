@@ -245,7 +245,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
         {(link||link2)&&!linkOpen&&<span className="fold-badge">{[link,link2].filter(Boolean).length}</span>}
         <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
       </button>
-      {linkOpen&&<div className="fold-body swap">
+      {linkOpen&&<div className="fold-body">
         <Field label="링크 1 (선택)" hint="누르면 새 탭으로 이동합니다."><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></Field>
         <Field label="링크 1 버튼 문구 (선택)"><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청"/></Field>
         <Field label="링크 2 (선택)"><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></Field>

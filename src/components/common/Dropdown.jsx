@@ -5,10 +5,10 @@ import Modal from "./Modal.jsx";
 import { MenuItems } from "./Menu.jsx";
 import { DUR, EASE_IN, desktop } from "./motion.js";
 
-/* 메뉴는 열릴 때처럼 닫힐 때도 움직인다(떠 있는 층의 공통 규칙). */
+/* 메뉴는 열릴 때처럼 닫힐 때도 움직인다(떠 있는 층의 공통 규칙): 켜진 자리에서 꺼질 뿐 줄어들지 않는다(Menu의 Popover와 같다). */
 function DropdownMenu({ children, ariaLabel }){
   const ref=useRef(null);
-  useExitAnimation(ref,{ inPlace:true, exit:node=>[node.animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.976)"}],{duration: DUR.tone,easing:EASE_IN,fill:"forwards"})] });
+  useExitAnimation(ref,{ inPlace:true, exit:node=>[node.animate([{opacity:1},{opacity:0}],{duration: DUR.tone,easing:EASE_IN,fill:"forwards"})] });
   return <div className="dd-menu plate-l3" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
 }
 

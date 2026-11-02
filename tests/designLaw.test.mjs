@@ -258,7 +258,7 @@ test("pages move through the verbs of motion.js, never their own .animate() (Mot
 });
 test("keyframes are a closed list: a new one needs a new verb in DESIGN.md (Motion)", () => {
   const names = CSS.flatMap(f => [...read(join(STYLES, f)).matchAll(/@keyframes\s+([\w-]+)/g)].map(m => m[1])).sort();
-  assert.deepEqual(names, ["bk-land", "dd-in", "row-rise", "y-busy", "y-fade", "y-pop", "y-pulse", "y-rise", "y-swap", "y-turn"]);
+  assert.deepEqual(names, ["y-busy", "y-fade", "y-pulse", "y-rise", "y-turn"]);
 });
 test("script animations take their durations from DUR (Motion)", () => {
   const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\([^;]*?duration:\s*(\d+)/g)].filter(m => +m[1] > 0).map(m => `${rel(f)}: ${m[1]}`));
@@ -271,7 +271,7 @@ test("scripted animations move transform and opacity only (Motion)", () => {
 test("css keyframes move transform and opacity only (Motion)", () => {
   const css = CSS.map(f => read(join(STYLES, f))).join("\n");
   const blocks = [...css.matchAll(/@keyframes ([\w-]+) \{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/g)].map(([, name, body]) => ({ name, props: [...body.matchAll(/([\w-]+)\s*:/g)].map(m => m[1]) }));
-  assert.ok(blocks.length > 6);
+  assert.ok(blocks.length >= 5);
   assert.deepEqual(blocks.filter(b => b.props.some(p => !["transform", "opacity"].includes(p))).map(b => `${b.name}: ${b.props}`), []);
 });
 test("a page change copies nothing and flies nothing; there is no burst (Motion)", () => {

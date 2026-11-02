@@ -195,7 +195,8 @@ label:has(input) { cursor: pointer; }
 .inv .seg { color: var(--ground); }
 
 /* ---------- press and hover: a finger comes down, scale .976; desktop hover lifts a panel one tone. Nothing grows. ---------- */
-:where(button, .press) { transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
+/* a panel that changes state (lit, dim, inverted) changes in one tone, whether or not a finger pressed it */
+:where(button, .press, .pn, .inv, .seg) { transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
 :where(button, .press):active:not(:disabled) { scale: .976; }
 @media (prefers-reduced-motion: reduce) { :where(button, .press):active:not(:disabled) { scale: 1; } }
 :where(button, input, select, textarea):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
@@ -203,11 +204,22 @@ label:has(input) { cursor: pointer; }
 /* ---------- shared keyframes: things arrive by lighting ---------- */
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes y-pop { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
-.swap { animation: y-swap var(--move-leave) backwards; }
-@keyframes y-swap { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .dd-menu, .bk-submission-detail, .records-round-detail) { animation: none; } }
+/* content a control swaps in lights as a page does: an arrival, so the light verb and its ease-out */
+.swap { animation: y-fade var(--move-light) backwards; }
+/* a fold opens: its chevron turns and its rows rise in one after another, 38 apart */
+:is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > * { animation: y-rise var(--move-light) backwards; }
+:is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > :nth-child(2) { animation-delay: calc(var(--t-press) * .38); }
+:is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > :nth-child(3) { animation-delay: calc(var(--t-press) * .76); }
+:is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > :nth-child(n + 4) { animation-delay: calc(var(--t-press) * 1.14); }
+/* what arrives on its own, after the page stands, rises into place too: a toast, an error, a check's mark */
+:is(.toast-panel, .q-error, .error-note) { animation: y-rise var(--move-light) backwards; }
+.box .ic, input[type="checkbox"]:checked::after { animation: y-fade var(--move-tone) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  :root input[type="checkbox"]:checked::after,
+  :root :is(.swap, .fb-reveal, .dd-menu, .toast-panel, .q-error, .error-note, .box .ic),
+  :root :is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > * { animation: none; }
+}
 /* theme change: the page turns in one frame under a clearing wash of the old ground (motion.js themeTurn) */
 .theme-turn * { transition: none !important; }
 .theme-fade * { transition: none !important; }

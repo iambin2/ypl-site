@@ -49,8 +49,8 @@
 .pr-flabel { flex: none; min-width: 84px; font-size: var(--t12); color: var(--mute); }
 .pr-vtext { min-width: 0; font-weight: 600; word-break: break-word; }
 .pr-foot { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); font-size: var(--t12); color: var(--mute); }
-.pr-refresh { width: 44px; height: 44px; display: grid; place-items: center; color: var(--dim); transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
-@media (hover: hover) { .pr-refresh:hover { color: var(--lit); }
+.pr-refresh { width: 44px; height: 44px; display: grid; place-items: center; color: var(--dim); transition: scale var(--move-press), transform var(--move-tone), color var(--move-tone); }
+@media (hover: hover) { .pr-refresh:hover { color: var(--lit); transform: rotate(90deg); }
 }
 .pr-empty { padding: var(--s5) 0; font-size: var(--t15); color: var(--dim); }
 .pr-wrap.compact { margin: 0 0 var(--s5); }

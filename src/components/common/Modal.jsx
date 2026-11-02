@@ -70,7 +70,8 @@ export default function Modal({ title, hint, children, onClose, className = "", 
       const sheet = node.querySelector(".sheet"), scrim = node.querySelector(".scrim");
       if (reduced()) return [node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, fill: "forwards" })];
       const out = [scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" })];
-      if (desktop()) out.push(sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
+      // a dialog closes the way it opened, faster: it sinks the same 12 as it goes dark
+      if (desktop()) out.push(sheet.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(12px)" }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
       else {
         const from = new DOMMatrix(getComputedStyle(sheet).transform).m42;
         out.push(sheet.animate([{ transform: `translateY(${from}px)` }, { transform: `translateY(${sheet.offsetHeight + 20}px)` }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));

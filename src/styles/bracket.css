@@ -11,14 +11,14 @@
 .bk-panel-head span { font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
 .bk-submission-head { display: flex; align-items: center; gap: var(--s3); }
 .bk-submission-toggle { flex: 1; min-width: 0; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3); text-align: left; }
-.bk-submission-refresh { width: 44px; height: 44px; flex: none; display: grid; place-items: center; color: var(--dim); transition: transform var(--move-light), color var(--move-tone), scale var(--move-press); }
+.bk-submission-refresh { width: 44px; height: 44px; flex: none; display: grid; place-items: center; color: var(--dim); transition: transform var(--move-tone), color var(--move-tone), scale var(--move-press); }
 @media (hover: hover) { .bk-submission-refresh:hover:not(:disabled) { transform: rotate(90deg); color: var(--lit); } }
-.bk-submission-refresh:active:not(:disabled) { scale: .976; transition: transform var(--move-light), color var(--move-tone), scale var(--move-press); }
+.bk-submission-refresh:active:not(:disabled) { scale: .976; }
 .bk-submission-title { font-size: var(--t15); font-weight: 700; }
 .bk-submission-summary { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--t12); color: var(--mute); font-variant-numeric: tabular-nums; }
 .bk-submission-chevron { display: flex; color: var(--mute); transition: transform var(--move-light), color var(--move-tone); }
 .bk-submission-chevron.open { transform: rotate(180deg); }
-.bk-submission-detail { padding-bottom: var(--s8); animation: y-swap var(--move-light) backwards; }
+.bk-submission-detail { padding-bottom: var(--s8); }
 .bk-submission-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s2); }
 .bk-submission-group { padding: var(--s2) var(--s5); background: var(--panel-2); }
 .bk-submission-group-head { display: flex; justify-content: space-between; padding: var(--s2) 0; font-size: var(--t15); font-weight: 600; }
@@ -41,8 +41,7 @@
 .bk-slot.drolling { background: var(--panel-2); color: var(--lit); font-weight: 700; animation: y-pulse var(--move-light) infinite; }
 .bk-slot.dset { color: var(--lit); font-weight: 600; }
 /* a drawn name switches on in its slot */
-.bk-slot.dset.pop { animation: bk-land var(--move-tone); }
-@keyframes bk-land { from { opacity: 0; } }
+.bk-slot.dset.pop { animation: y-fade var(--move-tone); }
 .bk-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s5); }
 .bk-group { padding: var(--s5); background: var(--panel); }
 .bk-group-h { margin-bottom: var(--s3); font-size: var(--t15); font-weight: 600; }

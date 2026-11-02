@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Bang } from "./Board.jsx";
 import { DUR, EASE_OUT, reduced } from "./motion.js";
 
-/* A toast is an inverted 52 panel above the tab bar (DESIGN.md "Sheets, dialogs, toasts"). It switches on where it stands; a newer one
-   covers the one before. push 로 받은 문장을 4.66초 보여 준다. 실패를 알리는 문장은 ! 칸으로 시작한다.
+/* A toast is an inverted 52 panel above the tab bar (DESIGN.md "Sheets, dialogs, toasts"). It arrives as everything does, rising the
+   last 12 into its place as it lights; a newer one covers the one before. push 로 받은 문장을 4.66초 보여 준다. 실패를 알리는 문장은 ! 칸으로 시작한다.
    action({ label, run })이 있으면 밑줄 단어 하나를 달고, 누르면 그 일을 하고 사라진다(c8 되돌리기). */
 const LIFE = 4660;
 const failed = text => /못했|못해|실패|없습니다|확인하지/.test(text);
@@ -11,7 +11,7 @@ const failed = text => /못했|못해|실패|없습니다|확인하지/.test(tex
 function Toast({ item, index, onGone, onAct }) {
   const ref = useRef(null);
   useEffect(() => {
-    if (!reduced()) ref.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
+    if (!reduced()) ref.current?.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: DUR.light, easing: EASE_OUT });
   }, []);
   useEffect(() => {
     if (!item.out) return undefined;

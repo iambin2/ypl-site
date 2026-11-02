@@ -11,5 +11,5 @@
 /* the word keeps its own line box, so a row's title and grey line stay 4 apart; the finger gets 44px from a box laid around it */
 .rc-name-link::after { content: ""; position: absolute; inset: -12px -4px; }
 @media (hover: hover) {
-  .rc-name-link:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;}
+  .rc-name-link:hover { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; }
 }

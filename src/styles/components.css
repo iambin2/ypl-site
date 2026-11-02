@@ -33,11 +33,10 @@
 .btn--inverse { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
 .btn--tertiary { --btn-fg: var(--dim); }
 @media (hover: hover) { .btn:hover:not(:disabled) { background: var(--btn-bg-hover); } }
-/* loading keeps the width: the words stay and turn clear under one spinner */
+/* loading keeps the width: the words stay and turn clear under the busy cell (DESIGN.md "Busy": a sending main action shows it in place of its word) */
 .btn[aria-busy="true"] { color: transparent; }
 .btn[aria-busy="true"]:disabled { opacity: 1; }
-.btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; box-shadow: inset 0 0 0 var(--line) var(--btn-fg); animation: y-pulse var(--move-light) infinite; }
-@media (prefers-reduced-motion: reduce) { .btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; box-shadow: inset 0 0 0 var(--line) var(--btn-fg); animation: y-pulse var(--move-light) infinite; } }
+.btn > .y-busy { position: absolute; inset: 0; width: fit-content; height: fit-content; margin: auto; color: var(--btn-fg); }
 .form-error { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 /* section and whole-page errors: what went wrong, and one way to try again */
 .field--flush { margin-bottom: 0; }
@@ -107,7 +106,7 @@
   margin-right: calc(var(--s2) * -1); font-size: var(--t12); line-height: 1; font-weight: 600; color: var(--dim);
   transition: color var(--move-tone), scale var(--move-press);
 }
-.ypl-more .ic { width: 16px; height: 16px; transition: transform var(--move-light); }
+.ypl-more .ic { width: 16px; height: 16px; transition: transform var(--move-tone); }
 @media (hover: hover) { .ypl-more:hover { color: var(--lit); } .ypl-more:hover .ic { transform: translateX(var(--s1)); } }
 
 /* ---------- List: rows on hairlines; the lines stop on the same edges as the words, and a hovered row underlines its title (M1) ---------- */
@@ -193,9 +192,8 @@
 .dd-menu {
   position: absolute; z-index: var(--z-popover); top: calc(100% + var(--s2)); left: 0; right: 0; min-width: calc(var(--s21) * 2 + var(--s13));
   max-height: min(calc(var(--s21) * 4 + var(--s5)), 61.8vh); overflow-y: auto; overscroll-behavior: contain; padding: 0; transform-origin: top center;
-  animation: dd-in var(--move-tone);
+  animation: y-fade var(--move-tone);
 }
-@keyframes dd-in { from { opacity: 0; } }
 .dd-opt {
   width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding: var(--s2) var(--s3); border: 0; background: transparent; text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 600;
@@ -238,8 +236,6 @@
 .ypl-table :is(th, td):last-child { padding-right: 0; }
 @media (hover: hover) { .ypl-table tbody tr:hover td { background: var(--panel-2); } }
 /* a new row switches on once; a background is never animated */
-.ypl-table tr.rise td { animation: row-rise var(--move-tone) 1; }
-@keyframes row-rise { from { opacity: 0; } }
 .ypl-table .r { text-align: right; }
 .ypl-table .c { text-align: center; }
 .ypl-table .ypl-table__rank { text-align: left; }
