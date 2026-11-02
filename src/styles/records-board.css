@@ -1,0 +1,94 @@
+/* =============================================================================
+   YPL Scoreboard: records (RecordsPage.jsx, StandTable.jsx). Drafts: docs/redesign-next c3-records-light (the first frame),
+   c13-more-records (events, ranking, a trainer). Counters on top; page tabs; tables of 44 rows under a 32 head strip with the
+   record holder inverted at 52; filters as chips; Pokémon on their floors. records.css still holds what the titles page borrows.
+   ========================================================================== */
+
+.rc-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
+.rc-counts { margin-top: var(--s5); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rc-tabs { margin-top: var(--s8); }
+.rc-body { margin-top: var(--s3); }
+.rc-list { display: grid; min-width: 0; }
+.rc-more, .rc-pager { margin-top: var(--s5); }
+.rc-admin { margin-bottom: var(--s5); }
+.rc-note { margin-top: var(--s8); max-width: var(--read); }
+
+/* the trainers' table: # 40, the name, three figures of 52; the head strip is 32 */
+.rc-th { display: grid; grid-template-columns: 40px minmax(0, 1fr) 52px 52px 52px; align-items: center; height: var(--h-strip); margin-top: var(--s3); padding-right: var(--pad); }
+.rc-th > span:first-child { padding-left: var(--pad); }
+.rc-th > span:nth-child(n + 3), .rc-three > span { text-align: right; }
+.rc-tr.row { height: var(--h-control); }
+.rc-tr.row.inv { height: var(--h-row); }
+.rc-tr .row-lead { width: 40px; padding-left: var(--pad); }
+.rc-tr .row-lead > span { color: var(--mute); }
+.rc-tr.inv .row-lead > span { color: var(--ground); }
+.rc-three { display: grid; grid-template-columns: repeat(3, 52px); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.rc-tr.inv .rc-three { font-size: var(--t20); line-height: var(--l20); }
+
+/* the ranking: one season choice, a head strip, rows of 52 (64 with the record line) */
+.rc-season { display: grid; gap: var(--s3); }
+.rc-season .dd-btn { height: var(--h-row); padding: 0 var(--pad); background: var(--panel); box-shadow: none; font-weight: 600; }
+.rc-admin-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rank-th { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr) auto; align-items: center; height: var(--h-strip); margin-top: var(--s5); padding-right: var(--pad); }
+.rank-th > span:first-child { text-align: center; }
+.rank-rows .row-lead { width: var(--s13); text-align: center; }
+.rank-rows .row-value { display: flex; align-items: baseline; gap: var(--s1); }
+.rank-rows .row--2 { height: var(--h-row2); }
+.rank-tie { margin-top: var(--s2); }
+.rank-more { margin-top: var(--s5); }
+
+/* events: a panel each, its name and grey line, the placings as lines, the winner bold */
+.rc-list-search { margin-top: var(--s5); }
+.rc-rounds { margin: var(--s5) 0 0; padding: 0; list-style: none; }
+.round2 { display: grid; padding: var(--pad); }
+.r2-main { min-width: 0; }
+.r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s3); }
+.r2-title { font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.r2-meta { font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
+.r2-res { display: grid; gap: var(--s1); }
+.r2-line { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr); align-items: start; gap: var(--s2); }
+.r2-rk { font-size: var(--t12); line-height: var(--l15); font-weight: 600; color: var(--dim); white-space: nowrap; }
+.r2-names { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
+.r2-name.win { font-weight: 700; }
+.r2-name.mem { font-size: var(--t12); font-weight: 400; color: var(--dim); }
+.records-round-toggle { width: 100%; display: flex; align-items: flex-start; gap: var(--s3); text-align: left; }
+.records-round-summary { flex: 1; min-width: 0; }
+.r2-res + .records-round-toggle { margin-top: var(--s3); align-items: center; font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
+.records-round-chevron { flex: none; display: grid; place-items: center; width: var(--s5); height: var(--s5); color: var(--dim); }
+.records-round-toggle[aria-expanded="true"] .records-round-chevron { rotate: 180deg; }
+.records-round-detail { margin: var(--s3) 0 0; padding: 0; list-style: none; }
+.records-round-detail .row { background: var(--panel-2); }
+
+/* Pokémon: panels of three across, each standing on its name band */
+.rc-mons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s5); }
+.rc-mon { --floor: var(--h-row); display: block; height: calc(var(--s21) + var(--s13) * 2); text-align: left; }
+.rc-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s5)); margin-inline: auto; }
+.rc-mon-rank { position: absolute; top: var(--s2); left: var(--s3); z-index: var(--z-raised); }
+.rc-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--s3); }
+.rc-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* a trainer or a Pokémon in its sheet */
+.rc-profile { display: grid; min-width: 0; }
+.rc-who { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s5); }
+.rc-who .dd { flex: none; }
+.rc-joined { margin-top: var(--s2); }
+.rc-chips-label { margin-top: var(--s5); }
+.rc-titles { margin-top: var(--s2); }
+.rc-titles > * { cursor: default; }
+.rc-sec { margin-top: var(--s13); min-width: 0; }
+.rc-place { display: inline-flex; align-items: center; height: var(--s5); padding: 0 var(--s2); font-weight: 700; }
+.rc-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.rc-cell { --floor: var(--s13); height: calc(var(--s21) + var(--s13)); }
+.rc-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
+.rc-mon-lead { --floor: 24%; height: 216px; }
+.rc-mon-who { position: absolute; top: var(--pad); left: var(--pad); z-index: var(--z-raised); display: grid; gap: var(--s1); }
+.rc-mon-lead .mon { right: var(--pad); height: calc(100% - var(--floor)); }
+.rc-lead-note { margin-top: var(--s5); }
+.rc-usage { margin: 0; display: grid; gap: var(--seam); }
+.rc-usage > div { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr); gap: var(--s3); padding: var(--s3) var(--pad); background: var(--panel); }
+.rc-usage dt { font-size: var(--t12); line-height: var(--l15); font-weight: 600; color: var(--dim); }
+.rc-usage dd { margin: 0; font-size: var(--t15); line-height: var(--l-read); }
+@media (min-width: 860px) {
+  .rc { max-width: 709px; }
+  .rc-mons, .rc-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}

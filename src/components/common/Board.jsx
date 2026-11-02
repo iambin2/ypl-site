@@ -145,3 +145,12 @@ export function TabsLine({ value, onChange, options, label }) {
 export function Status({ live, children }) {
   return <span className={"status t12" + (live ? "" : " dim")}>{live && <i className="lamp sig" aria-hidden="true" />}{children}</span>;
 }
+
+/* Chips: filters and counts as 32 panels in a row, 12px, the applied one inverted, the count in its word (전체 59). */
+export function Chips({ value, onChange, options, label }) {
+  return (
+    <div className="chips" role="group" aria-label={label}>
+      {options.map(([key, text]) => <button type="button" key={key} aria-pressed={value === key} className={value === key ? "inv" : "pn"} onClick={() => onChange(key)}>{text}</button>)}
+    </div>
+  );
+}

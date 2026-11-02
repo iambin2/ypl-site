@@ -31,7 +31,7 @@ const LENGTHS = new Set([...SPACE, 1, 2, 3, 16, 20, 24, 32, 36, 40, 44, 52, 56, 
 const REBUILT = new Set([
   "src/styles/shell.css", "src/styles/board.css", "src/styles/home.css",
   "src/pages/HomePage.jsx", "src/components/common/Board.jsx", "src/components/common/Button.jsx",
-  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/styles/brackets.css", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
+  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/styles/brackets.css", "src/styles/records-board.css", "src/pages/RecordsPage.jsx", "src/components/common/StandTable.jsx", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
   "src/components/common/Seg.jsx", "src/components/common/seg.js", "src/components/common/Icon.jsx", "src/components/common/Loader.jsx", "src/components/common/Segmented.jsx",
   "src/components/layout/Navigation.jsx", "src/components/layout/SiteHeader.jsx", "src/components/layout/SiteFooter.jsx", "src/admin/AdminModeBar.jsx",
 ]);
@@ -139,9 +139,6 @@ const EXCEPT = {
       `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
       `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s5) 0 0 44px`,
       `${TB} | .tb-official-lookup | margin: var(--s5) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s5) 0 0 44px`],
-  },
-  "type: a line is on the 4 grid, from its token (Type)": {
-    "a rank cell sits on its neighbour's 32 line box": [`${R} | .r2-line > .r2-rk | line-height: 32px`],
   },
 };
 
