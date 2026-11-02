@@ -169,3 +169,21 @@
 @media (hover: hover) { button.bk-place-name:not(.inv):hover { background: var(--panel-2); } }
 .bk-pts-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .bk-pts-note { margin: 0 0 var(--s2); }
+
+/* ---------- 결과 입력 (c8): match chips, the match's head, its two players as rows; the winner inverted ---------- */
+.bk-entry { display: grid; gap: var(--s3); margin-bottom: var(--s8); }
+.bk-entry > h2 { margin: 0; }
+.bk-entry-chips { display: flex; flex-wrap: wrap; gap: var(--seam); }
+.bk-entry-chip { display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); min-width: var(--s13); min-height: var(--h-control); padding: 0 var(--s3); color: var(--dim); transition: background-color var(--move-tone); }
+.bk-entry-chip.inv { color: var(--ground); font-weight: 700; }
+.bk-entry-chip.done:not(.inv) { color: var(--lit); }
+@media (hover: hover) { .bk-entry-chip.pn:hover { background: var(--panel-2); } }
+.bk-entry-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); margin: 0; }
+.bk-entry-live { display: inline-flex; align-items: center; gap: var(--s2); }
+.bk-entry-row { display: grid; grid-template-columns: var(--s5) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: calc(var(--h-row2) + var(--s5)); padding: 0 var(--pad); text-align: left; color: inherit; transition: background-color var(--move-tone); }
+.bk-entry-row.inv { color: var(--ground); }
+.bk-entry-row.inv .dim { color: var(--ground); }
+.bk-entry-name { display: grid; gap: var(--s1); min-width: 0; }
+.bk-entry-name > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-entry-row.pn .bk-entry-name > span { color: var(--dim); }
+@media (hover: hover) { .bk-entry-row.pn:not(:disabled):hover { background: var(--panel-2); } }

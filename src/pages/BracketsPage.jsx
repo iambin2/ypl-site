@@ -891,6 +891,45 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
   return <div className={"mb"+(compact?" cmp":"")+(canPick?" can-pick":"")}>{line("a",pa,"button",pickProps("a"))}{line("b",pb,"button",pickProps("b"))}</div>;
 }
 
+/* ===== 결과 입력 (docs/redesign-next c8) =====
+   경기 칩으로 경기를 고르고 이긴 줄을 눌러 승자를 정한다. 대진표의 줄을 누르는 것과 같은 일이며(같은 줄을 다시 누르면 취소),
+   저장은 누를 때마다 된다. 개인전의 게임 점수와 불참은 경기 데이터에 칸이 없어 다루지 않는다. */
+const stageOf=(g,m)=>{
+  const ri=g.rounds.findIndex(r=>r.includes(m));
+  if(ri>=0){ if(g.kind==="double") return `승자조 ${ri+1}라운드`; const len=g.rounds[ri].length; return len===1?"결승":`${len*2}강`; }
+  const li=(g.lb||[]).findIndex(r=>r.includes(m));
+  if(li>=0) return `패자조 ${li+1}라운드`;
+  return m===g.reset?"리셋 결승":"결승";
+};
+function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy }){
+  const ev=evalGraph(g);
+  const rows=collectGraphMatches(g).map(m=>({m,a:ev.sp(m.a),b:ev.sp(m.b)})).filter(x=>x.a&&x.b&&x.a!==BYE&&x.b!==BYE);
+  const [chosen,setChosen]=useState(null);
+  const cur=rows.find(x=>x.m.id===chosen)||rows.find(x=>!x.m.winner)||rows[rows.length-1];
+  if(!cur) return null;
+  const at=rows.indexOf(cur);
+  const next=rows.slice(at+1).find(x=>!x.m.winner)||rows.find(x=>!x.m.winner&&x!==cur);
+  const side=(s,pid)=>{
+    const win=cur.m.winner===s, decided=Boolean(cur.m.winner);
+    return <button type="button" className={"bk-entry-row "+(win?"inv":"pn")} disabled={busy} aria-pressed={win}
+      onClick={()=>teamMode?onOpenTeam(cur.m,cur.a,cur.b):onPick(cur.m.id,s)}>
+      <span className="t12 dim num">{seedOf(pid)||""}</span>
+      <span className="bk-entry-name"><b className="t20">{nameOf(pid)}</b><span className="t12 reg">{teamMode?"눌러서 팀 대결 입력":win?"승자, 다시 누르면 취소":decided?"눌러서 승자로 바꾸기":"눌러서 승자로"}</span></span>
+      {win&&<Icon n="check" size={20}/>}
+    </button>;
+  };
+  return (<section className="bk-entry" aria-label="결과 입력">
+    <h2 className="t20">결과 입력</h2>
+    <div className="bk-entry-chips" role="tablist" aria-label="경기">{rows.map((x,i)=><button type="button" role="tab" aria-selected={x===cur} key={x.m.id}
+      className={"bk-entry-chip t12 "+(x===cur?"inv":"pn")+(x.m.winner?" done":"")} onClick={()=>setChosen(x.m.id)}>{x.m.winner&&<Icon n="check" size={16}/>}M{i+1}</button>)}</div>
+    <div className="stack">
+      <p className="pn bk-entry-head t12"><span className="dim">M{at+1}, {stageOf(g,cur.m)}</span>{cur.m.winner?<span>결과 확정</span>:<span className="bk-entry-live"><i className="lamp sig" aria-hidden="true"/>진행 중</span>}</p>
+      {side("a",cur.a)}{side("b",cur.b)}
+    </div>
+    {next&&<Button variant="second" onClick={()=>setChosen(next.m.id)}>다음 경기 M{rows.indexOf(next)+1}</Button>}
+  </section>);
+}
+
 /* ===== 대진표 보드 =====
    경기 상자는 74(36, 이음매 2, 36). 첫 열의 상자는 94 간격(상자와 20)으로 서고, 다음 열은 앞의 두 상자 사이에 선다.
    끝난 경기의 승자 길은 2px의 켜진 선, 아직인 길은 1px 선이다. */
@@ -1153,6 +1192,8 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       onResetPin={admin?resetPin:null}
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
+    {admin&&!locked&&b.format==="elim"&&b.graph&&!(res&&res.done)&&<ResultEntry g={b.graph} nameOf={nameOf} busy={matchMutationBusy} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam}
+      seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
     {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"} seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
     {series&&<TeamMatchModal teamA={series.A} teamB={series.B} init={series.m.series} onClose={()=>setSeries(null)} onSave={saveSeries}/>}
   </div>);
