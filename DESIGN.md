@@ -264,6 +264,16 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 
 **Don't.** Claims with no fact behind them (새로운 기준, 혁신적인, 완벽한), pushing (지금 바로), invitations to a feeling (경험해 보세요), sentences about a mood rather than what happens, and 당신.
 
+## Accessibility
+
+- **AA at least,** in both themes; the contrast table above is computed from the tokens.
+- **Keyboard:** everything works by key, in reading order, and every stop shows the one ring. Inside a menu the ring sits inset, because the list clips. A key that lands in a bar put away by scrolling brings it back. Sheets lock what is behind them with `inert`. The first stop is 본문으로 건너뛰기.
+- **Semantics:** one `h1` a page and no skipped level; a sheet's title starts its own outline. Buttons are `button`, links are `a`. Two clicks on non-controls are deliberate and have another way: the scrim (Esc, the close button) and the arena's wave (decoration).
+- **Fields:** a control gets a visible `Field` label. Where a row of inputs shares its heading, each input carries `aria-label`. A caption over a group is `.field-label`, not `<label>`; `tests/labelLaw.test.mjs` keeps `<label>` tied to a control. An error on one field goes through `Field`, which sets `aria-describedby` and `aria-invalid`.
+- **Never colour alone:** a winner reads by weight and tone, an error by its icon and words, a type chip by its name.
+- **Touch:** 44 by 44 on a phone or any coarse pointer. Under a fine pointer a 40 control is fine. A 36 segment and a 40 bar link keep their size and reach 44 with an invisible `::after`.
+- **Reduced motion:** nothing travels; see Motion.
+
 ## Components
 
 - Buttons: one component, `Button.jsx`. `variant` is primary (one per area), secondary, tertiary, destructive or inverse (on navy); `size` is sm 40, md 48, lg 56. Labels are words; an icon only for leaving the site, creating or the next step. `loading` keeps the width: the words clear under one spinner. `className` only places the button.

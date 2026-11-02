@@ -92,7 +92,7 @@
 .bk-match .bk-slot.win { background: var(--state-selected); font-weight: 700; }
 .bk-match:has(.bk-slot.win) .bk-slot:not(.win) { color: var(--text-tertiary); }
 .bk-slot.bye { color: var(--text-tertiary); font-weight: 600; }
-.bk-match.team-click { cursor: pointer; transition: scale var(--dur-snappy) var(--spring-snappy); }
+.bk-match.team-click { width: 100%; text-align: left; cursor: pointer; transition: scale var(--dur-snappy) var(--spring-snappy); }
 @media (hover: hover) { .bk-match.team-click:hover .bk-slot:not(.win) { background-color: var(--state-hover); } }
 .bk-match.team-click:active { scale: .985; transition: scale var(--dur-instant) var(--ease-out); }
 .bk-match.tbd { opacity: var(--opacity-disabled); }

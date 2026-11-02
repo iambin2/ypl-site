@@ -527,8 +527,9 @@ function BracketWizard({ data, onClose, onCreate }){
     <div className="card form-card swap" key={step}>
     {step===1&&<>
       <div className="field">
-        <label>신청 대회 선택</label>
+        <label htmlFor="bk-reg-event">신청 대회 선택</label>
         <Dropdown
+          id="bk-reg-event"
           value={manualMode?"__manual__":eventId}
           onChange={v=>{
             if(v==="__manual__"){
@@ -561,12 +562,12 @@ function BracketWizard({ data, onClose, onCreate }){
         <Field label="대회명"><input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 37회 파이컵"/></Field>
 
         <div className="field">
-          <label>경기 방식</label>
+          <span className="field-label">경기 방식</span>
           <Segmented value={mode} onChange={setMode} ariaLabel="경기 방식" options={[["single","개인전"],["team","팀전"]]}/>
         </div>
 
         <div className="field">
-          <label>대진 형식</label>
+          <span className="field-label">대진 형식</span>
           <Segmented value={format} onChange={setFormat} ariaLabel="대진 형식" options={[["elim","토너먼트"],["group","조별예선 + 본선"]]}/>
         </div>
 
@@ -598,12 +599,12 @@ function BracketWizard({ data, onClose, onCreate }){
     </>}    {step===2&&<>
       {eventId&&mode!=="team" ? <>
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
-          <label>본선 직행자 선택</label>
+          <span className="field-label">본선 직행자 선택</span>
           <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.</div>
           <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
         </div>}
         <div className="field">
-          <label>참가자 확정</label>
+          <span className="field-label">참가자 확정</span>
           <div className="bk-hint">
             {linkedEvent?.championship_phase==="qualifier"?`직행자 ${directRegistrationIds.length}명은 제외하고 선발전 실제 참가자를 확정합니다. `:"신청자 중 실제 참가자를 선택합니다. "}참가 확정 {selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length}명 / 신청 {eventRegs.length}명
           </div>
@@ -637,6 +638,7 @@ function BracketWizard({ data, onClose, onCreate }){
             <div className="bk-pin bk-participant-confirm-row bk-participant-added" key={`added-${i}`}>
               <span className="bk-pin-no gold">+</span>
               <input
+                aria-label="추가 참가자 이름"
                 value={name}
                 onChange={e=>setAddedParticipants(prev=>prev.map((x,j)=>j===i?e.target.value:x))}
                 placeholder="추가 참가자 이름"
@@ -685,7 +687,7 @@ function BracketWizard({ data, onClose, onCreate }){
           </Button>}
         </div>
         {championshipManualOpen&&linkedEvent?.championship_phase&&<div className="field" style={{marginTop:"var(--s3)"}}>
-          <label>참가자 추가</label>
+          <span className="field-label">참가자 추가</span>
           <div className="bk-grow2">
             <Dropdown
               value={championshipManualPlayerId}
@@ -694,6 +696,7 @@ function BracketWizard({ data, onClose, onCreate }){
               options={championshipManualCandidates.map(player=>({value:player.id,label:player.display_name}))}
             />
             {linkedEvent.championship_phase==="final"&&<input
+              aria-label="운영 사유 (선택)"
               value={championshipManualReason}
               onChange={event=>setChampionshipManualReason(event.target.value)}
               placeholder="운영 사유 (선택)"
@@ -707,7 +710,7 @@ function BracketWizard({ data, onClose, onCreate }){
         {linkedEvent?.championship_phase==="qualifier"&&(()=>{const capacity=Number(linkedEvent?.competition_settings?.championship?.finalCapacity)||0;const actual=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;const target=capacity-directRegistrationIds.length;const eliminated=actual-target;return <div className="bk-hint" style={{marginTop:"var(--s2)"}}>본선 정원은 {capacity}명이고 본선 직행은 {directRegistrationIds.length}명입니다. 선발전에는 {actual}명이 참가해 {target}명이 통과하므로 {Math.max(0,eliminated)}명이 탈락해야 합니다.{actual<target&&<span style={{color:"var(--text-primary)"}}> 참가 인원이 부족해 본선 정원을 채울 수 없습니다.</span>}</div>;})()}
       </> : <>
         {eventId&&mode==="team"&&<div className="field">
-          <label>신청자 / 팀 지망</label>
+          <span className="field-label">신청자 / 팀 지망</span>
           <div className="bk-hint">신청서에 저장된 팀 지망을 참고해 아래 기존 팀 편성 입력에서 최종 배정합니다.</div>
           <div className="bk-fill">
             {eventRegs.map((reg,i)=>{
@@ -731,10 +734,10 @@ function BracketWizard({ data, onClose, onCreate }){
           </div>
         </div>}
 
-        <div className="field"><label>{mode==="team"?"팀 수":"참가자 수"}</label>
+        <div className="field"><span className="field-label">{mode==="team"?"팀 수":"참가자 수"}</span>
           <div className="bk-count">
             <button type="button" onClick={()=>setCnt(Math.max(2,count-1))} aria-label="하나 줄이기"><Icon n="minus" size={16}/></button>
-            <input type="text" inputMode="numeric" value={countStr} onChange={e=>setCnt(e.target.value)}/>
+            <input type="text" inputMode="numeric" aria-label={mode==="team"?"팀 수":"참가자 수"} value={countStr} onChange={e=>setCnt(e.target.value)}/>
             <button type="button" onClick={()=>setCnt(Math.min(64,count+1))} aria-label="하나 늘리기"><Icon n="plus" size={16}/></button>
           </div>
           <div className="bk-hint">{(()=>{
@@ -748,12 +751,12 @@ function BracketWizard({ data, onClose, onCreate }){
           {mode==="team"
             ? teams.map((t,i)=>(<div className="bk-team-card" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
                 <span className="bk-pin-no gold">{i+1}</span>
-                <input className="bk-tc-name" value={t.name} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder={`팀 ${i+1} 이름`}/>
-                <input className="bk-tc-mem" value={t.members} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,members:e.target.value}:x))} placeholder="팀원 (쉼표로 구분)"/>
+                <input className="bk-tc-name" value={t.name} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder={`팀 ${i+1} 이름`} aria-label={`팀 ${i+1} 이름`}/>
+                <input className="bk-tc-mem" value={t.members} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,members:e.target.value}:x))} placeholder="팀원 (쉼표로 구분)" aria-label="팀원 (쉼표로 구분)"/>
               </div>))
             : names.map((n,i)=>(<div className="bk-pin" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
                 <span className="bk-pin-no">{i+1}</span>
-                <input value={n} onChange={e=>setNames(names.map((x,j)=>j===i?e.target.value:x))} placeholder={`참가자 ${i+1}`}/>
+                <input value={n} onChange={e=>setNames(names.map((x,j)=>j===i?e.target.value:x))} placeholder={`참가자 ${i+1}`} aria-label={`참가자 ${i+1}`}/>
               </div>))}
         </div>
       </>}
@@ -817,8 +820,9 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
   if(teamMode){
     const clickable=admin&&(bothReal||decided);
     const rowT=(side,pid)=>{ const isWin=decided&&m.winner===side; const isBye=pid===BYE;
-      return <div className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")}>{seed(pid)}<span className="bk-tn">{pid===BYE?"부전승":(pid?nameOf(pid):"…")}</span></div>; };
-    return <div className={"bk-match sq"+(compact?" cmp":"")+(clickable?" team-click":"")} onClick={()=>clickable&&onOpenTeam(m,pa,pb)} title={clickable?"눌러서 팀 대결 진행 또는 수정":""}>{rowT("a",pa)}{rowT("b",pb)}</div>;
+      return <span className={"bk-slot"+(isWin?" win":"")+(isBye?" bye":"")}>{seed(pid)}<span className="bk-tn">{pid===BYE?"부전승":(pid?nameOf(pid):"…")}</span></span>; };
+    const Box=clickable?"button":"div";
+    return <Box {...(clickable?{type:"button"}:{})} className={"bk-match sq"+(compact?" cmp":"")+(clickable?" team-click":"")} onClick={()=>clickable&&onOpenTeam(m,pa,pb)} title={clickable?"눌러서 팀 대결 진행 또는 수정":""}>{rowT("a",pa)}{rowT("b",pb)}</Box>;
   }
   const canPick=admin&&bothReal;
   const row=(side,pid)=>{
@@ -844,7 +848,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
   const pathOf=(m)=>{ const w=ev.win[m.id]; if(!w||w===BYE)return ""; return finalRes&&finalRes.champ&&w===finalRes.champ?" won champ":" won"; };
   const rlabel=(len)=>{ const names={1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"}; return names[len]||`${len*2}강`; };
   const { centers, totalH }=treeCenters(g.rounds);
-  return (<div className="bk-scroll sq"><div className="bk-tree">
+  return (<div className="bk-scroll sq" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree">
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
       <div className="bk-col-h">{g.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
       <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
@@ -1084,7 +1088,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     {readOnly&&admin&&<p className="bk-hint">이미 끝난 과거 대진표입니다. 볼 수만 있고 수정, 삭제, 기록 반영은 할 수 없습니다.</p>}
     {res&&res.done&&championshipEvent?.championship_phase!=="qualifier"&&<section className="rc-lead sq bk-champ-lead" aria-labelledby="bk-champ-name">
       <div className="rc-lead-who">
-        <h3 className="rc-lead-title" id="bk-champ-name">{nameOf(res.champ)}</h3>
+        <h2 className="rc-lead-title" id="bk-champ-name">{nameOf(res.champ)}</h2>
         <span className="rc-lead-sub">우승</span>
       </div>
       {/* 날짜와 참가 수는 바로 위 대회 머리에 있다. 여기에는 결과만 한 번. */}
@@ -1410,7 +1414,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         identityPreview.some(row=>row.status!=="existing")
       )&&
   <div className="field">
-    <label>참가자 선수 정보 확인</label>
+    <span className="field-label">참가자 선수 정보 확인</span>
     {identityPreviewBusy
       ? <div className="bk-hint">선수 정보를 확인하는 중입니다.</div>
       : identityPreviewError
@@ -1440,7 +1444,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     }
   </div>
 }
-      {preview.willRank ? <div className="field"><label>누적 랭킹 「{rankEra?.label}」 포인트 변동</label>
+      {preview.willRank ? <div className="field"><span className="field-label">누적 랭킹 「{rankEra?.label}」 포인트 변동</span>
         <div className="bk-chg">{changes.map(c=><div className="bk-chg-row" key={c.name}>
           <span className={"bk-exist "+(c.isNew?"new":"old")}>{c.isNew?"랭킹 신규":"랭킹 기존"}</span><b>{c.name}</b>
           <span className="bk-chg-pts">{c.curPts}<Icon n="arrow" size={16}/>{r1(c.curPts+c.d.points)}</span>
@@ -1499,14 +1503,14 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         {!linkedContextBusy&&!linkedContextError&&<>
           <div className="bk-grow2">
             <div className="field">
-              <label>기록 분류</label>
+              <span className="field-label">기록 분류</span>
               <div className="bk-hint">
                 {curT?.label||"분류 확인 필요"} (연결된 대회 기준)
               </div>
             </div>
 
             <div className="field">
-              <label>시즌</label>
+              <span className="field-label">시즌</span>
               <div className="bk-hint">
                 {recordSeason||"시즌 정보 없음"} (연결된 대회 기준)
               </div>
@@ -1528,7 +1532,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           </div>
 
           <div className="field">
-            <label>반영 내용</label>
+            <span className="field-label">반영 내용</span>
             <div className="bk-applybox">
               <div><Icon n="check" size={16}/> {curT?.label||"회차"} 기록</div>
               <div>
@@ -1546,7 +1550,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
 
           {!excluded&&
             <div className="field">
-              <label>등수별 점수</label>
+              <span className="field-label">등수별 점수</span>
               <div className="bk-hint">
                 {team
                   ? `우승 ${ptWinN}점, 준우승 ${ptRuN}점`
@@ -1557,14 +1561,15 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         </>}
       </> : <>
         <div className="field">
-          <label>형식</label>
+          <span className="field-label">형식</span>
           <Segmented value={champ} onChange={setChamp} ariaLabel="형식" options={[[false,"일반 (파이컵)"],[true,"챔피언스 시리즈"]]}/>
         </div>
 
         <div className="bk-grow2">
           <div className="field">
-            <label>추가할 대회(회차 묶음)</label>
+            <label htmlFor="bk-add-round">추가할 대회(회차 묶음)</label>
             <Dropdown
+              id="bk-add-round"
               value={tkey}
               onChange={setTkey}
               placeholder="대회 선택"
@@ -1573,8 +1578,9 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           </div>
 
           <div className="field">
-            <label>시즌</label>
+            <label htmlFor="bk-add-season">시즌</label>
             <Dropdown
+              id="bk-add-season"
               value={season}
               onChange={setSeason}
               options={seasons.map(s=>({value:s.name,label:s.name}))}
@@ -1591,17 +1597,17 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         <Field label="대회 룰 (선택)"><input value={rule} onChange={e=>setRule(e.target.value)} placeholder="예: 모노타입 / 랜덤 배틀 / 6세대 63"/></Field>
 
         <div className="field">
-          <label>등수별 점수{team?" (팀원별 고정 점수)":""}</label>
+          <span className="field-label">등수별 점수{team?" (팀원별 고정 점수)":""}</span>
           <div className="bk-pts">
-            <div className="bk-pt"><span>우승</span><input value={ptWin} onChange={setPt(setPtWin)}/></div>
-            <div className="bk-pt"><span>준우승</span><input value={ptRu} onChange={setPt(setPtRu)}/></div>
-            {!team&&<div className="bk-pt"><span>4강</span><input value={ptSf} onChange={setPt(setPtSf)}/></div>}
+            <div className="bk-pt"><span>우승</span><input aria-label="우승 점수" value={ptWin} onChange={setPt(setPtWin)}/></div>
+            <div className="bk-pt"><span>준우승</span><input aria-label="준우승 점수" value={ptRu} onChange={setPt(setPtRu)}/></div>
+            {!team&&<div className="bk-pt"><span>4강</span><input aria-label="4강 점수" value={ptSf} onChange={setPt(setPtSf)}/></div>}
           </div>
         </div>
 
         {team&&alloc.length>0&&
           <div className="field">
-            <label>팀원별 점수 배분 (개별 수정 가능)</label>
+            <span className="field-label">팀원별 점수 배분 (개별 수정 가능)</span>
             <div className="bk-alloc">
               {alloc.map(a=>
                 <div className="bk-alloc-row" key={a.key}>
@@ -1610,6 +1616,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
                   {badgeFor(a.member)}
                   <span className="bk-alloc-team">{a.team}</span>
                   <input
+                    aria-label={`${a.label} 점수`}
                     value={override[a.key]??""}
                     placeholder={String(a.base)}
                     onChange={e=>setOverride({...override,[a.key]:e.target.value.replace(/[^0-9.]/g,"")})}
@@ -1634,8 +1641,9 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
 
         {bumpRank&&!excluded&&
           <div className="field">
-            <label>반영할 누적 랭킹</label>
+            <label htmlFor="bk-rank-era">반영할 누적 랭킹</label>
             <Dropdown
+              id="bk-rank-era"
               value={rankKey}
               onChange={setRankKey}
               placeholder="랭킹 선택"
@@ -1700,7 +1708,7 @@ function BracketDraw({ b, onDone }){
           <div className="bk-draw-mem">{g.members.map((mem,mi)=>slotFor("g"+gi+"_"+mi,mem,false))}</div>
         </div>))}</div>
     ) : (()=>{ const {centers,totalH}=treeCenters(b.graph.rounds);
-      return (<div className="bk-scroll sq"><div className="bk-tree">
+      return (<div className="bk-scroll sq" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree">
         {b.graph.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
           <div className="bk-col-h">{b.graph.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
           <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
@@ -1757,10 +1765,10 @@ function PrivateBracketCreate({ onClose, onCreate }){
         <Field label="개설자 닉네임"><input value={host} onChange={e=>setHost(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
         <Field label="관리 비밀번호 (숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="결과 입력에 필요" inputMode="numeric"/></Field>
       </div>
-      <div className="field"><label>참가자 {names.length>0&&<span className="tnum">{names.length}명</span>}</label>
-        <textarea value={namesText} onChange={e=>setNamesText(e.target.value)} rows={6} placeholder={"한 줄에 한 명씩 적거나 쉼표로 나눠 붙여넣어 주세요.\n지우\n이슬\n웅"}/></div>
-      <div className="field"><label>방식</label><Segmented value={double} onChange={setDouble} ariaLabel="대진 방식" options={[["single","싱글 엘리미네이션"],["double","더블 엘리미네이션"]]}/></div>
-      <div className="field"><label>대진 배치</label><Segmented value={order} onChange={setOrder} ariaLabel="대진 배치" options={[["random","무작위 추첨"],["input","적은 순서대로"]]}/></div>
+      <div className="field"><label htmlFor="pb-names">참가자 {names.length>0&&<span className="tnum">{names.length}명</span>}</label>
+        <textarea id="pb-names" value={namesText} onChange={e=>setNamesText(e.target.value)} rows={6} placeholder={"한 줄에 한 명씩 적거나 쉼표로 나눠 붙여넣어 주세요.\n지우\n이슬\n웅"}/></div>
+      <div className="field"><span className="field-label">방식</span><Segmented value={double} onChange={setDouble} ariaLabel="대진 방식" options={[["single","싱글 엘리미네이션"],["double","더블 엘리미네이션"]]}/></div>
+      <div className="field"><span className="field-label">대진 배치</span><Segmented value={order} onChange={setOrder} ariaLabel="대진 배치" options={[["random","무작위 추첨"],["input","적은 순서대로"]]}/></div>
       {order==="input"&&<p className="bk-hint">1번과 2번, 3번과 4번이 차례로 만나고, 부전승은 뒤쪽 경기에 들어갑니다.</p>}
       <Field label="안내 (선택)"><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="규칙, 일정, 장소 등을 적어 주세요."/></Field>
       <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>대진표 만들기</Button></div>
@@ -1787,7 +1795,7 @@ function PrivateBracketEdit({ b, onClose, onSave }){
     <div className="swap" key="pb-edit">
       <Field label="대진표 이름"><input value={name} onChange={e=>setName(e.target.value)} maxLength={40}/></Field>
       <Field label="개설자 닉네임"><input value={host} onChange={e=>setHost(e.target.value)} maxLength={20}/></Field>
-      <div className="field"><label>참가자 이름</label>
+      <div className="field"><span className="field-label">참가자 이름</span>
         {names.map((n,i)=><input key={b.participants[i].id} value={n} aria-label={`참가자 ${i+1}`} maxLength={20} style={{marginTop:i?8:0}} onChange={e=>{const v=e.target.value; setNames(cur=>cur.map((x,k)=>k===i?v:x));}}/>)}</div>
       <Field label="안내 (선택)"><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}/></Field>
       <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
@@ -1891,7 +1899,7 @@ function PrivateBrackets({ admin, flash, tabs }){
         ? <BracketDraw b={open} onDone={()=>setDrawId(null)}/>
         : <div className="bk-board swap">
             {res?.done&&<section className="rc-lead sq bk-champ-lead" aria-labelledby="pb-champ-name">
-              <div className="rc-lead-who"><h3 className="rc-lead-title" id="pb-champ-name">{nameOf(res.champ)}</h3><span className="rc-lead-sub">우승</span></div>
+              <div className="rc-lead-who"><h2 className="rc-lead-title" id="pb-champ-name">{nameOf(res.champ)}</h2><span className="rc-lead-sub">우승</span></div>
               {(res.ru||(res.sf&&res.sf.length>0))&&<Places res={res} nameOf={nameOf}/>}
             </section>}
             <ElimBoard g={open.graph} nameOf={nameOf} admin={canEdit&&!busy} onPick={pick} seedOf={pid=>{const i=open.participants.findIndex(x=>x.id===pid);return open.order==="input"&&i>=0?i+1:null;}}/>
@@ -2225,7 +2233,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       {list.length>0&&(()=>{ const lead=list[0]; const live=statusTag(lead)==="진행 중"; return (
         <section className="rc-lead" aria-labelledby="bk-lead-name">
           <div className="rc-lead-who">
-            <h3 className="rc-lead-title" id="bk-lead-name" data-vt={"b-"+lead.id}>{lead.name}</h3>
+            <h2 className="rc-lead-title" id="bk-lead-name" data-vt={"b-"+lead.id}>{lead.name}</h2>
             <span className="rc-lead-sub bk-lead-sub">{live&&<i className="live-dot" aria-hidden="true"/>}{/* 형식과 날짜는 대회를 설명하는 말이라 칸이 아니라 이 회색 줄에 선다(상세 머리, 목록 행과 같은 줄). 큰 숫자는 참가 수 하나 */}
               {[live?"지금 진행 중인 대회":"가장 최근 대회", admin&&!live&&statusTag(lead),
                 !String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")&&(lead.mode==="team"?"팀전":"개인전"),

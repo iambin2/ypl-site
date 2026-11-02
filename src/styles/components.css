@@ -137,7 +137,7 @@
 
 /* ---------- Field (M7): label, a filled groove pill, hint ---------- */
 .field { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s4); min-width: 0; }
-.field > label { font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption); color: var(--text-secondary); }
+.field > label, .field-label { font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption); color: var(--text-secondary); }
 .field:has(> input[type="checkbox"]) { flex-direction: row; align-items: center; gap: var(--s3); min-height: var(--target); }
 .field:has(> input[type="checkbox"]) > label { font-size: var(--fs-body); font-weight: 400; color: var(--text-primary); cursor: pointer; }
 
@@ -195,7 +195,7 @@
 }
 @media (hover: hover) { .dd-opt:hover:not(:disabled):not(.sel) { background: var(--state-hover); } }
 .dd-opt.sel { background: var(--state-selected); }
-.dd-opt:focus-visible { outline: none; background: var(--state-pressed); }
+.dd-opt:focus-visible { outline-offset: calc(var(--focus-width) * -1); background: var(--state-pressed); }
 .dd-tick { display: flex; color: var(--text-primary); }
 .dd-none { padding: var(--s3); font-size: var(--fs-body); color: var(--text-secondary); }
 .modal > .dd-none { padding-inline: 0; }
@@ -216,7 +216,7 @@
 .mi .mi-end { color: var(--text-tertiary); }
 .mi.on { background: var(--state-selected); }
 @media (hover: hover) { .mi:hover:not(.on) { background: var(--state-hover); } }
-.mi:focus-visible { outline: none; background: var(--state-pressed); }
+.mi:focus-visible { outline-offset: calc(var(--focus-width) * -1); background: var(--state-pressed); }
 .mi-sep { height: 1px; margin: var(--s2) var(--s3); background: var(--divider); }
 .popover { position: fixed; z-index: var(--z-popover); min-width: 240px; padding: var(--s3); border-radius: var(--r-sm); }
 .popover .mi { height: 44px; font-size: var(--fs-body); border-radius: var(--r-sm); }
@@ -359,6 +359,8 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 @media (max-width: 639px), (pointer: coarse) {
   .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); }
   :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--target); }
+  /* a 36px segment and a 40px bar link keep their look; a finger gets 44 */
+  :is(.navlink, .seg-track > button)::after { content: ""; position: absolute; inset: calc(var(--s1) * -1) 0; }
 }
 
 /* ---------- PickerSheet: a long list in a sheet, and the pill field that opens it ---------- */

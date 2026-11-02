@@ -41,7 +41,7 @@ test("Qualifier controls derive survivors and never expose manual survivor selec
 });
 
 test("Final wizard reuses ordinary participant confirmation without Champions management controls", () => {
-  assert.match(brackets, /<label>참가자 확정<\/label>/);
+  assert.match(brackets, />참가자 확정</);
   assert.match(brackets, /eventRegs\.map\(\(reg,i\)=>\{/);
   assert.match(brackets, /setSelectedRegistrationIds/);
   assert.match(brackets, /preflightChampionshipFinalBracket\(linkedEvent\.id\)/);

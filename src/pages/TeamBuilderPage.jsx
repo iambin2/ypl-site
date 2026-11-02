@@ -1424,7 +1424,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                       return (
                         <div className="tb-stat-row" key={key}>
                           <div className="tb-stat-label"><strong>{STAT_LABELS[key]}{nature.plus === key ? " ↑" : nature.minus === key ? " ↓" : ""}</strong><span>Base {base ?? "—"}</span></div>
-                          <input type="range" min="0" max="32" step="1" value={point} onChange={event => updateStat(selectedMember, key, event.target.value)} />
+                          <input type="range" min="0" max="32" step="1" value={point} aria-label={`${STAT_LABELS[key]} 포인트`} onChange={event => updateStat(selectedMember, key, event.target.value)} />
                           <input className="tb-stat-number" type="number" min="0" max="32" step="1" value={point} onChange={event => updateStat(selectedMember, key, event.target.value)} aria-label={`${STAT_LABELS[key]} Stat Point`} />
                           <div className="tb-final-stat"><span>최종</span><strong>{final}</strong></div>
                         </div>

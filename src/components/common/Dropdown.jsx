@@ -13,7 +13,7 @@ function DropdownMenu({ children, ariaLabel }){
 }
 
 /* M6: 데스크톱은 칸 아래로 커지며 열리는 매트 메뉴, 폰은 같은 항목이 바텀시트로 올라온다. */
-export default function Dropdown({ value, onChange, options = [], placeholder, className, disabled = false, ariaLabel, width }){
+export default function Dropdown({ id, value, onChange, options = [], placeholder, className, disabled = false, ariaLabel, width }){
   const [open,setOpen]=useState(false); const [sheet,setSheet]=useState(false); const ref=useRef(null); const btnRef=useRef(null);
   useEffect(()=>{ if(!open||sheet)return; const h=(e)=>{ if(ref.current&&!ref.current.contains(e.target))setOpen(false); }; const k=(e)=>{ if(e.key==="Escape"){setOpen(false);btnRef.current?.focus();} };
     document.addEventListener("mousedown",h); document.addEventListener("keydown",k); return ()=>{document.removeEventListener("mousedown",h);document.removeEventListener("keydown",k);}; },[open,sheet]);
@@ -33,7 +33,7 @@ export default function Dropdown({ value, onChange, options = [], placeholder, c
   const toggle=()=>{ if(!open) setSheet(!desktop()); setOpen(o=>!o); };
   const pick=(v)=>{ onChange(v); setOpen(false); btnRef.current?.focus(); };
   return (<div className={"dd"+(open?" open":"")+(className?" "+className:"")} ref={ref} style={width ? { width } : undefined} onKeyDown={onKeyDown}>
-    <button type="button" ref={btnRef} className={"dd-btn"+(sel?"":" ph")} onClick={toggle} disabled={disabled} aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open}>
+    <button type="button" id={id} ref={btnRef} className={"dd-btn"+(sel?"":" ph")} onClick={toggle} disabled={disabled} aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open}>
       <span>{sel?sel.label:(placeholder||"선택")}</span>
       <Icon n="chev" size={16} className="dd-chev" />
     </button>

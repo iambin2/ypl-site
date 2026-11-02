@@ -45,7 +45,7 @@ function BoardCompose({ onClose, onSubmit }){
       </div>
       <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력해 주세요." maxLength={60}/></Field>
       <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></Field>
-      <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
+      <div className="field"><label htmlFor="bd-link">이미지 또는 유튜브 링크 (선택)</label><input id="bd-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요." aria-label="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
       <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
@@ -81,7 +81,7 @@ function EditSheet({ heading, initial, onClose, onSave }){
     <div className="swap" key="edit">
       {has("title")&&<Field label="제목"><input value={v.title} onChange={set("title")} maxLength={60}/></Field>}
       {has("body")&&<Field label="내용"><textarea value={v.body} onChange={set("body")} rows={has("title")?6:3}/></Field>}
-      {has("link")&&<div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
+      {has("link")&&<div className="field"><label htmlFor="bd-edit-link">이미지 또는 유튜브 링크 (선택)</label><input id="bd-edit-link" value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요." aria-label="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
         {v.link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={v.link}/></div>}</div>}
       {has("secret")&&<label className="bk-check"><input type="checkbox" checked={v.secret} onChange={set("secret")}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>}
       <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
@@ -96,14 +96,14 @@ function CommentForm({ onSubmit }){
     onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
   return (<div className="bd-cform">
     <div className="bd-cform-row">
-      <input className="bd-cform-nick" value={nick} onChange={e=>setNick(e.target.value)} placeholder="닉네임" maxLength={20}/>
-      <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="비밀번호(선택)" inputMode="numeric"/>
+      <input className="bd-cform-nick" value={nick} onChange={e=>setNick(e.target.value)} placeholder="닉네임" aria-label="닉네임" maxLength={20}/>
+      <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="비밀번호(선택)" aria-label="비밀번호(선택)" inputMode="numeric"/>
     </div>
     <div className="bd-cform-row">
-      <input className="bd-cform-body" value={body} onChange={e=>setBody(e.target.value)} placeholder="댓글 달기…" onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
+      <input className="bd-cform-body" value={body} onChange={e=>setBody(e.target.value)} placeholder="댓글 달기…" aria-label="댓글 달기…" onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
       <Button variant="primary" size="sm" onClick={submit}>등록</Button>
     </div>
-    <input className="bd-cform-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 또는 유튜브 링크 (선택)"/>
+    <input className="bd-cform-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 또는 유튜브 링크 (선택)" aria-label="이미지 또는 유튜브 링크 (선택)"/>
   </div>);
 }
 
@@ -325,9 +325,9 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
   };
   return (<Modal title={`${KIND_LABEL[kind]} 소개글 쓰기`} hint={ruleSummary(team)} onClose={onClose}>
     <div className="swap" key="compose">
-      <div className="field"><label>배틀 형식</label><Segmented value={format} onChange={setFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/></div>
-      {members.length>1&&<div className="field"><label>올릴 내용</label><Segmented value={kind} onChange={setKind} ariaLabel="소개글 종류" options={[["party",`파티 전체 ${members.length}마리`],["sample","한 마리 샘플"]]}/></div>}
-      {kind==="sample"&&members.length>1&&<div className="field"><label>샘플로 올릴 포켓몬</label>
+      <div className="field"><span className="field-label">배틀 형식</span><Segmented value={format} onChange={setFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/></div>
+      {members.length>1&&<div className="field"><span className="field-label">올릴 내용</span><Segmented value={kind} onChange={setKind} ariaLabel="소개글 종류" options={[["party",`파티 전체 ${members.length}마리`],["sample","한 마리 샘플"]]}/></div>}
+      {kind==="sample"&&members.length>1&&<div className="field"><span className="field-label">샘플로 올릴 포켓몬</span>
         <div className="sc-choose" role="radiogroup" aria-label="샘플로 올릴 포켓몬">{members.map((m,i)=>(
           <button type="button" key={i} role="radio" aria-checked={i===index} className={"sc-choose-mon"+(i===index?" on":"")} onClick={()=>setIndex(i)}>
             <img src={spriteUrl(m.pokemonName)} alt="" onError={onSpriteError()}/><span>{nameAt(i)}</span>

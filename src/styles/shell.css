@@ -25,6 +25,8 @@
 .edge-b { position: fixed; z-index: var(--z-sticky); left: 0; right: 0; bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 88px); background: var(--bg); pointer-events: none; }
 /* a sheet on a phone puts the top bar away (Modal.jsx); it wins over the scroll's inline translate */
 .topbar.hide { translate: 0 calc(-100% - var(--s6) - env(safe-area-inset-top, 0px)) !important; transition: translate var(--dur-fast) var(--ease-in); }
+/* a key that lands in a bar brings it back, whichever way it was put away */
+:is(.topbar, .tabbar):has(:focus-visible) { translate: none !important; transform: none !important; }
 .brand { position: relative; display: flex; align-items: center; gap: var(--s3); height: 44px; border-radius: var(--r-pill); flex: none; }
 /* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
 .brand-logo { display: flex; }

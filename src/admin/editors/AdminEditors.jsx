@@ -24,8 +24,7 @@ export function LoginModal({ onClose, onSuccess }) {
   };
   return (<Modal title="관리자 로그인" hint="운영진 전용입니다. 관리자 계정으로 로그인해 주세요." onClose={onClose}>
     <Field label="아이디"><input autoComplete="username" autoCapitalize="none" value={id} onChange={e=>setId(e.target.value)}/></Field>
-    <Field label="비밀번호"><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></Field>
-    {err&&<FormError>{err}</FormError>}
+    <Field label="비밀번호" error={err}><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></Field>
     <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"확인 중…":"로그인"}</Button></div>
   </Modal>);
 }
@@ -57,12 +56,12 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
     </div>
     <Field label="챔피언 이름"><input value={name} onChange={e=>setName(e.target.value)}/></Field>
     <Field label="시즌 라벨 (선택)"><input value={slabel} onChange={e=>setSlabel(e.target.value)} placeholder="예: YPL 시즌 2"/></Field>
-    <div className="field"><label>우승 엔트리</label>
+    <div className="field"><span className="field-label">우승 엔트리</span>
       <div className="ch-grid">{mons.map((m,i)=>{ const img=resolveHallOfFameArtwork(m,artwork)||m.img; return (<div className="ch-slot" key={i}>
         <div className="ch-imgwrap">
           <div className="ch-img">{img?<img src={img} alt="" loading="lazy" decoding="async"/>:<span className="ch-plus">{m.name.trim()?"이미지 없음":""}</span>}</div>
         </div>
-        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value,img:""})} placeholder={`이름 ${i+1}`}/>
+        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value,img:""})} placeholder={`이름 ${i+1}`} aria-label={`이름 ${i+1}`}/>
       </div>); })}</div>
       <div className="bk-hint">포켓몬 이름을 입력하면 이미지가 자동으로 표시됩니다. 폼이 있는 포켓몬은 팀 빌더에 나오는 이름 그대로 입력해 주세요.</div>
     </div>
@@ -75,9 +74,9 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
   const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[raw,setRaw]=useState((item?.holders||[]).join(", "));
   const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders:raw.split(/[,\n]/).map(s=>s.trim()).filter(Boolean)});
   return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름에는 트레이너를, 아래에는 파트너 포켓몬을 쉼표(,)로 구분해 입력해 주세요.":"해당자를 쉼표(,)로 구분해 입력해 주세요. 예: 정두호, 이제빈"} onClose={onClose}>
-    <div className="field"><label>{partner?"트레이너":"칭호 이름"}</label><input value={name} onChange={e=>setName(e.target.value)}/></div>
+    <Field label={partner?"트레이너":"칭호 이름"}><input value={name} onChange={e=>setName(e.target.value)}/></Field>
     {!partner&&<Field label="설명 (선택)"><input value={desc} onChange={e=>setDesc(e.target.value)}/></Field>}
-    <div className="field"><label>{partner?"파트너 포켓몬":"해당자"}</label><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></div>
+    <Field label={partner?"파트너 포켓몬":"해당자"}><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></Field>
     {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
     <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
@@ -137,19 +136,19 @@ function FormBuilder({ form, setForm }){
         <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
         <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
-        <div className="field"><label>{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</label><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다":""}.</div></div>
-        <div className="field"><label>대회 종류</label><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></div>
-        <div className="field"><label>구분</label>{isChampions?<div className="bk-hint">해당 없음. 챔피언스는 구분 없이 진행합니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
-        <div className="field"><label>참가 단위</label><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></div>
-        <div className="field"><label>배틀 형식</label><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></div>
-        <div className="field"><label>대진 방식</label>{isChampions?<div className="bk-applybox"><div><b>선발전</b> {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} (고정)</div><div><b>본선</b> {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</div></div>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</div>
-        {isChampions&&<div className="field"><label>본선 정원</label><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8"/><div className="fb-note">회차는 이전 챔피언스 회차에 이어 자동으로 매겨집니다.</div></div>}
-        <div className="field"><label>레귤레이션</label><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></div>
-        <div className="field"><label>파이컵 추가 룰</label><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></div>
-        <div className="field"><label>기록 표시 룰 <span className="fb-note">(선택, 자유 입력)</span></label><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></div>
+        <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다":""}.</div></div>
+        <Field label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Field>
+        <div className="field"><span className="field-label">구분</span>{isChampions?<div className="bk-hint">해당 없음. 챔피언스는 구분 없이 진행합니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
+        <Field label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Field>
+        <Field label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Field>
+        <div className="field"><span className="field-label">대진 방식</span>{isChampions?<div className="bk-applybox"><div><b>선발전</b> {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} (고정)</div><div><b>본선</b> {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</div></div>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</div>
+        {isChampions&&<div className="field"><span className="field-label">본선 정원</span><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8" aria-label="8"/><div className="fb-note">회차는 이전 챔피언스 회차에 이어 자동으로 매겨집니다.</div></div>}
+        <Field label="레귤레이션"><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></Field>
+        <Field label="파이컵 추가 룰"><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></Field>
+        <Field label={<>기록 표시 룰 <span className="fb-note">(선택, 자유 입력)</span></>}><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></Field>
         {!isChampions&&<div className="bk-grow2">
-          <div className="field"><label>칭호 보상 <span className="fb-note">(선택)</span></label><input value={eventDraft.titleAward?.name||""} onChange={e=>patchForm({eventDraft:{...eventDraft,titleAward:{scope:"champion",...(eventDraft.titleAward||{}),name:e.target.value}}})} placeholder="예: 초신성"/></div>
-          <div className="field"><label>칭호 부여 대상</label><Dropdown value={eventDraft.titleAward?.scope||"champion"} disabled={!eventDraft.titleAward?.name?.trim()} ariaLabel="칭호 부여 대상" onChange={scope=>patchForm({eventDraft:{...eventDraft,titleAward:{...(eventDraft.titleAward||{}),scope}}})} options={[{value:"champion",label:"우승자"},{value:"top4",label:"4강 이상"}]}/></div>
+          <Field label={<>칭호 보상 <span className="fb-note">(선택)</span></>}><input value={eventDraft.titleAward?.name||""} onChange={e=>patchForm({eventDraft:{...eventDraft,titleAward:{scope:"champion",...(eventDraft.titleAward||{}),name:e.target.value}}})} placeholder="예: 초신성"/></Field>
+          <Field label="칭호 부여 대상"><Dropdown value={eventDraft.titleAward?.scope||"champion"} disabled={!eventDraft.titleAward?.name?.trim()} ariaLabel="칭호 부여 대상" onChange={scope=>patchForm({eventDraft:{...eventDraft,titleAward:{...(eventDraft.titleAward||{}),scope}}})} options={[{value:"champion",label:"우승자"},{value:"top4",label:"4강 이상"}]}/></Field>
         </div>}
         {isChampions? <>
           <div className="bk-grow2">
@@ -157,16 +156,16 @@ function FormBuilder({ form, setForm }){
             <Field label="본선 날짜"><input type="date" value={eventDraft.finalHeldOn||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalHeldOn:e.target.value}})}/></Field>
           </div>
           <div className="bk-grow2" style={{marginBottom:0}}>
-            <div className="field"><label>선발전 파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={eventDraft.qualifierSubmissionTargetAt??eventDraft.submissionTargetAt??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierSubmissionTargetAt:e.target.value}})}/></div>
-            <div className="field"><label>본선 파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={eventDraft.finalSubmissionTargetAt||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalSubmissionTargetAt:e.target.value}})}/></div>
+            <Field label={<>선발전 파티 제출 권장 시각 <span className="fb-note">(선택)</span></>}><input type="datetime-local" value={eventDraft.qualifierSubmissionTargetAt??eventDraft.submissionTargetAt??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierSubmissionTargetAt:e.target.value}})}/></Field>
+            <Field label={<>본선 파티 제출 권장 시각 <span className="fb-note">(선택)</span></>}><input type="datetime-local" value={eventDraft.finalSubmissionTargetAt||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalSubmissionTargetAt:e.target.value}})}/></Field>
           </div>
         </> : <>
           <Field label="대회일"><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></Field>
-          <div className="field" style={{marginBottom:0}}><label>파티 제출 권장 시각 <span className="fb-note">(선택)</span></label><input type="datetime-local" value={(form?.eventDraft?.submissionTargetAt)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),submissionTargetAt:e.target.value}})}/></div>
+          <Field label={<>파티 제출 권장 시각 <span className="fb-note">(선택)</span></>} flush><input type="datetime-local" value={(form?.eventDraft?.submissionTargetAt)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),submissionTargetAt:e.target.value}})}/></Field>
         </>}
         </>}
       </div>
-      {fields.some(f=>f.public)&&<div className="field fb-reveal"><label>공개 목록 제목</label><input value={(form&&form.publicTitle)||""} onChange={e=>patchForm({publicTitle:e.target.value})} placeholder="예: 현재까지 밴 리스트"/></div>}
+      {fields.some(f=>f.public)&&<div className="field fb-reveal"><label htmlFor="fb-public-title">공개 목록 제목</label><input id="fb-public-title" value={(form&&form.publicTitle)||""} onChange={e=>patchForm({publicTitle:e.target.value})} placeholder="예: 현재까지 밴 리스트" aria-label="예: 현재까지 밴 리스트"/></div>}
       {fields.map((f,i)=>(<div className="fb-q" key={f.id}>
         <div className="fb-q-top">
           <span className="fb-qn">{i+1}</span>
@@ -177,11 +176,11 @@ function FormBuilder({ form, setForm }){
             <button type="button" className="fb-ic del" onClick={()=>del(f.id)} title="질문 삭제"><Icon n="x" size={16}/></button>
           </div>
         </div>
-        <input className="fb-label" value={f.label} onChange={e=>patch(f.id,{label:e.target.value})} placeholder={`질문 ${i+1} (예: 참가자 이름)`}/>
+        <input className="fb-label" value={f.label} onChange={e=>patch(f.id,{label:e.target.value})} placeholder={`질문 ${i+1} (예: 참가자 이름)`} aria-label={`질문 ${i+1} (예: 참가자 이름)`}/>
         {isChoice(f.type)&&<div className="fb-opts">
           {(f.options||[]).map((op,oi)=>(<div className="fb-opt" key={oi}>
             <span className={"fb-dot "+f.type} aria-hidden="true">{f.type==="dropdown"?oi+1:null}</span>
-            <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`선택지 ${oi+1}`}/>
+            <input value={op} onChange={e=>patch(f.id,{options:f.options.map((x,k)=>k===oi?e.target.value:x)})} placeholder={`선택지 ${oi+1}`} aria-label={`선택지 ${oi+1}`}/>
             <button type="button" className="fb-ic del" onClick={()=>patch(f.id,{options:f.options.filter((_,k)=>k!==oi)})} disabled={(f.options||[]).length<=1} title="선택지 삭제"><Icon n="x" size={16}/></button>
           </div>))}
           <button type="button" className="fb-addopt" onClick={()=>patch(f.id,{options:[...(f.options||[]),""]})}>선택지 추가</button>
@@ -232,11 +231,11 @@ export function StandingsEditor({ title, rows, onClose, onSave }) {
   return (<Modal title={`${title} 수정`} hint="이름과 성적을 입력해 주세요. 표시는 포인트 순으로 자동 정렬됩니다." onClose={onClose}>
     <div className="ed-grid ed-head"><span>트레이너</span><span>우승</span><span>준우승</span><span>4강</span><span>포인트</span><span/></div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-grid" key={i}>
-      <input value={r.name} onChange={e=>upd(i,"name",e.target.value)} placeholder="이름"/>
-      <input type="number" value={r.win} onChange={e=>upd(i,"win",e.target.value)}/>
-      <input type="number" value={r.ru} onChange={e=>upd(i,"ru",e.target.value)}/>
-      <input type="number" value={r.top4} onChange={e=>upd(i,"top4",e.target.value)}/>
-      <input type="number" value={r.points} onChange={e=>upd(i,"points",e.target.value)}/>
+      <input value={r.name} onChange={e=>upd(i,"name",e.target.value)} placeholder="이름" aria-label="이름"/>
+      <input type="number" aria-label="우승" value={r.win} onChange={e=>upd(i,"win",e.target.value)}/>
+      <input type="number" aria-label="준우승" value={r.ru} onChange={e=>upd(i,"ru",e.target.value)}/>
+      <input type="number" aria-label="4강" value={r.top4} onChange={e=>upd(i,"top4",e.target.value)}/>
+      <input type="number" aria-label="포인트" value={r.points} onChange={e=>upd(i,"points",e.target.value)}/>
       <button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button>
     </div>))}</div>
     <Button size="sm" style={{marginTop:"var(--s3)"}} onClick={add}>트레이너 추가</Button>
@@ -288,27 +287,27 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
     </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
-      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={16}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={16}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button></div>
+      <div className="ed-rtop"><input className="ed-w" value={r.date} onChange={e=>upd(i,"date",e.target.value)} placeholder="날짜 (2025.06)" aria-label="날짜 (2025.06)"/><input className="ed-w" value={r.round} onChange={e=>upd(i,"round",e.target.value)} placeholder="회차" aria-label="회차"/><button className="ed-mv" onClick={()=>moveUp(i)} disabled={i===0} title="위로" aria-label="위로"><Icon n="up" size={16}/></button><button className="ed-mv" onClick={()=>moveDown(i)} disabled={i===list.length-1} title="아래로" aria-label="아래로"><Icon n="down" size={16}/></button><button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button></div>
       <div style={{display:"flex",gap:"var(--s2)",flexWrap:"wrap"}}>
         <Segmented value={!!r.team} onChange={v=>upd(i,"team",v)} ariaLabel="경기 방식" options={[[false,"개인전"],[true,"팀전"]]}/>
         <Segmented value={!!r.champ} onChange={v=>upd(i,"champ",v)} ariaLabel="형식" options={[[false,"일반"],[true,"챔피언스 시리즈"]]}/>
       </div>
       {!r.team?<>
-        <div className="ed-r2"><input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="우승"/><input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="준우승"/></div>
-        <input value={r.sfText} onChange={e=>upd(i,"sfText",e.target.value)} placeholder="4강 (쉼표 구분)"/>
+        <div className="ed-r2"><input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="우승" aria-label="우승"/><input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="준우승" aria-label="준우승"/></div>
+        <input value={r.sfText} onChange={e=>upd(i,"sfText",e.target.value)} placeholder="4강 (쉼표 구분)" aria-label="4강 (쉼표 구분)"/>
       </>:<>
         <div className="ed-team"><span className="ed-rk gold"><Icon n="trophy" size={16}/> 우승 팀</span>
-          <input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="팀 이름 (선택)"/>
-          <input value={r.winM} onChange={e=>upd(i,"winM",e.target.value)} placeholder="팀원 (쉼표 구분, 인원 제한 없음)"/></div>
+          <input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="팀 이름 (선택)" aria-label="팀 이름 (선택)"/>
+          <input value={r.winM} onChange={e=>upd(i,"winM",e.target.value)} placeholder="팀원 (쉼표 구분, 인원 제한 없음)" aria-label="팀원 (쉼표 구분, 인원 제한 없음)"/></div>
         <div className="ed-team"><span className="ed-rk">준우승 팀</span>
-          <input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="팀 이름 (선택)"/>
-          <input value={r.ruM} onChange={e=>upd(i,"ruM",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>
+          <input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="팀 이름 (선택)" aria-label="팀 이름 (선택)"/>
+          <input value={r.ruM} onChange={e=>upd(i,"ruM",e.target.value)} placeholder="팀원 (쉼표 구분)" aria-label="팀원 (쉼표 구분)"/></div>
         {r.sfTeams.map((t,k)=>(<div className="ed-team" key={k}><span className="ed-rk">4강 팀 {k+1} <button className="ed-x" onClick={()=>sfDel(i,k)}><Icon n="x" size={16}/></button></span>
-          <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름 (선택)"/>
-          <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)"/></div>))}
+          <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름 (선택)" aria-label="팀 이름 (선택)"/>
+          <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)" aria-label="팀원 (쉼표 구분)"/></div>))}
         <Button size="sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>4강 팀 추가</Button>
       </>}
-      <div className="ed-r2"><Dropdown value={r.season||""} onChange={v=>upd(i,"season",v)} options={[{value:"",label:"(시즌 미지정)"},...((seasons||[]).map(n=>({value:n,label:n}))),...((r.season&&!(seasons||[]).includes(r.season))?[{value:r.season,label:r.season+" (기존)"}]:[])]}/><input value={r.rule} onChange={e=>upd(i,"rule",e.target.value)} placeholder="룰 (예: 모노타입 / 6세대 63 팀전)"/></div>
+      <div className="ed-r2"><Dropdown value={r.season||""} onChange={v=>upd(i,"season",v)} options={[{value:"",label:"(시즌 미지정)"},...((seasons||[]).map(n=>({value:n,label:n}))),...((r.season&&!(seasons||[]).includes(r.season))?[{value:r.season,label:r.season+" (기존)"}]:[])]}/><input value={r.rule} onChange={e=>upd(i,"rule",e.target.value)} placeholder="룰 (예: 모노타입 / 6세대 63 팀전)" aria-label="룰 (예: 모노타입 / 6세대 63 팀전)"/></div>
     </div>))}</div>
     <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);

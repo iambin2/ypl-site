@@ -47,7 +47,7 @@
 
 .calc-directions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s6); margin-top: var(--s4); }
 .calc-direction { min-width: 0; }
-.calc-direction h3 { margin-bottom: var(--s2); font-size: var(--fs-body); font-weight: 600; }
+.calc-direction h2 { margin-bottom: var(--s2); font-size: var(--fs-body); font-weight: 600; }
 .calc-results { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
 .calc-result + .calc-result { box-shadow: inset 0 1px 0 var(--divider); }
 .calc-result { padding-bottom: var(--s3); }

@@ -156,7 +156,7 @@ function DirectionResults({ title, results, detailData, emptyText }) {
   const [open, setOpen] = useState(null);
   return (
     <div className="calc-direction">
-      <h3>{title}</h3>
+      <h2>{title}</h2>
       {results.length ? (
         <ul className="calc-results">
           {results.map((result, index) => <ResultRow key={`${result.moveId}-${index}`} result={result} detailData={detailData} open={open === index} onToggle={() => setOpen(open === index ? null : index)} />)}

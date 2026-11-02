@@ -235,15 +235,15 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해 주세요." onClose={onClose}>
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
-      {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/></div>}
+      {form.eventId&&<div className="ff-q"><label className="ff-q-label" htmlFor="ff-name">참가자 이름<span className="req">*</span></label><input id="ff-name" aria-required="true" type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/></div>}
       {fields.length===0&&!form.eventId&&<p className="bk-hint">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
-        <label className="ff-q-label">{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
-        {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
-        {f.type==="long"&&<textarea value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
-        {f.type==="single"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+(ans[f.id]===op?" sel":"")} key={oi}><input type="radio" name={f.id} checked={ans[f.id]===op} onChange={()=>set(f.id,op)}/><span>{op}</span></label>))}</div>}
-        {f.type==="multi"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+((Array.isArray(ans[f.id])&&ans[f.id].includes(op))?" sel":"")} key={oi}><input type="checkbox" checked={Array.isArray(ans[f.id])&&ans[f.id].includes(op)} onChange={()=>toggleMulti(f.id,op)}/><span>{op}</span></label>))}</div>}
-        {f.type==="dropdown"&&<Dropdown value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택해 주세요."/>}
+        <label className="ff-q-label" htmlFor={`ff-${f.id}`}>{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
+        {f.type==="short"&&<input id={`ff-${f.id}`} aria-required={f.required||undefined} type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
+        {f.type==="long"&&<textarea id={`ff-${f.id}`} aria-required={f.required||undefined} value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
+        {f.type==="single"&&<div className="ff-choices" role="radiogroup" aria-label={f.label||`질문 ${i+1}`}>{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+(ans[f.id]===op?" sel":"")} key={oi}><input type="radio" name={f.id} checked={ans[f.id]===op} onChange={()=>set(f.id,op)}/><span>{op}</span></label>))}</div>}
+        {f.type==="multi"&&<div className="ff-choices" role="group" aria-label={f.label||`질문 ${i+1}`}>{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+((Array.isArray(ans[f.id])&&ans[f.id].includes(op))?" sel":"")} key={oi}><input type="checkbox" checked={Array.isArray(ans[f.id])&&ans[f.id].includes(op)} onChange={()=>toggleMulti(f.id,op)}/><span>{op}</span></label>))}</div>}
+        {f.type==="dropdown"&&<Dropdown id={`ff-${f.id}`} value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택해 주세요."/>}
       </div>))}
       <div className="modal-actions"><Button onClick={onClose} disabled={busy}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"제출 중…":"제출"}</Button></div>
     </div>
