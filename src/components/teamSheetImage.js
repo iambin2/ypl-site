@@ -8,12 +8,12 @@ const FONT = '"Albert Sans", "Freesentation", "Apple SD Gothic Neo", "Malgun Got
 /* 색은 값을 따로 들고 있지 않고 지금 테마의 토큰을 읽는다: 이미지가 사이트와 어긋날 수 없다 */
 const palette = () => {
   const css = getComputedStyle(document.documentElement), v = name => css.getPropertyValue(name).trim();
-  return { bg: v("--bg"), card: v("--surface"), well: v("--surface-sunken"), fg: v("--text-primary"), fg2: v("--text-secondary"), fg3: v("--text-tertiary"), bar: v("--surface-sunken"), barOn: v("--text-primary"), line: v("--surface-raised") };
+  return { bg: v("--ground"), card: v("--panel"), well: v("--panel-2"), fg: v("--lit"), fg2: v("--dim"), fg3: v("--mute"), bar: v("--panel-2"), barOn: v("--lit"), line: v("--rule") };
 };
 // team-builder.css 의 타입 점 색과 같은 값
 const TYPE_DOT = { normal: "#9FA19F", fire: "#E62829", water: "#2980EF", electric: "#FAC000", grass: "#3FA129", ice: "#3FD8FF", fighting: "#FF8000", poison: "#9141CB", ground: "#915121", flying: "#81B9EF", psychic: "#EF4179", bug: "#91A119", rock: "#AFA981", ghost: "#704170", dragon: "#5060E1", dark: "#624D4E", steel: "#60A1B8", fairy: "#EF70EF" };
 
-const PAD = 52, GAP = 4, CARD_W = 576, CARD_H = 576, CARD_PAD = 32, HEAD_H = 136, FOOT_H = 84;
+const PAD = 52, GAP = 2, CARD_W = 576, CARD_H = 576, CARD_PAD = 32, HEAD_H = 136, FOOT_H = 84;
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath(); ctx.moveTo(x + r, y);
