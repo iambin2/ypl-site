@@ -19,12 +19,12 @@ export default function Segmented({ value, onChange, options, ariaLabel, classNa
     const on = ref.current?.querySelector('[aria-selected="true"]');
     // 이미 목적지에 있던 알약이면 넘겨받지 않는다(넘겨받으면 placePill이 제자리로 보고 새 막대에 알약을 놓지 않는다).
     const there = on && prev && Math.abs(on.offsetLeft - prev.L) < 0.5 && Math.abs(on.offsetLeft + on.offsetWidth - prev.R) < 0.5;
-    if (ind && prev && !there && performance.now() - prev.at < HANDOFF_MS) { ind._lens = { L: prev.L, R: prev.R, h: prev.h }; placed.current = true; }
+    if (ind && prev && !there && performance.now() - prev.at < HANDOFF_MS) { ind._lens = { L: prev.L, R: prev.R }; placed.current = true; }
     return () => {
       const lens = ind?._lens;
       if (!lens) return;
       const [L, R] = lens.now?.() || [lens.L, lens.R];
-      handoff.set(ariaLabel, { L, R, h: lens.h, at: performance.now() });
+      handoff.set(ariaLabel, { L, R, at: performance.now() });
     };
   }, []);
 
@@ -47,7 +47,7 @@ export default function Segmented({ value, onChange, options, ariaLabel, classNa
     // 트랙은 표면에 눌러 판 홈(groove), 선택 렌즈는 그 위에 떠 있다.
     <div className={"ypl-seg groove" + (className ? " " + className : "")}>
       <div className="seg-track" role="tablist" aria-label={ariaLabel} ref={ref}>
-        <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
+        <span className="pill-ind" aria-hidden="true"><i /></span>
         {options.map(([key, label]) => (
           <button key={key} type="button" role="tab" className="press" aria-selected={key === value} onClick={() => onChange(key)}>{label}</button>
         ))}

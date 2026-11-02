@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { place, seal, stand } from "../components/common/motion.js";
+import { DUR, STAGGER, place, seal, stand } from "../components/common/motion.js";
 import { normTeam as normalizeLegacyParty } from "../services/legacyPartyImages.js";
 import { Empty, Icon, SectionHead } from "../components/index.js";
 import Case from "../components/common/Case.jsx";
@@ -18,9 +18,9 @@ let hallPending = true;
 
 /* 첫 등장은 1초 안에: 제목과 설명이 솟고, 케이스가 서고, 사선 면 하나가 창을 지나간다. */
 function openHall(cover) {
-  place([...cover.querySelectorAll(".hof-lead > *")], { delay: 60, step: 100 });
+  place([...cover.querySelectorAll(".hof-lead > *")], { delay: STAGGER.tile, step: DUR.press });
   const box = cover.querySelector(".case");
-  stand(box, { delay: 120 });
+  stand(box, { delay: STAGGER.tile * 2 });
   seal(box, 540);
 }
 

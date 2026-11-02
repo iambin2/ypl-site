@@ -12,7 +12,7 @@ export function rankRows(rows) {
   });
 }
 
-const SHOWN = 7; // 4위부터 10위까지, 나머지는 "전체 보기"로 펼친다
+const SHOWN = 8; // 4위부터 11위까지, 나머지는 "전체 보기"로 펼친다
 
 /* 같은 이름이 두 번 나오는 기록도 있어, 몇 번째 이름인지까지 붙여 행을 구분한다. */
 function keyed(rows) {

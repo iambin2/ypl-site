@@ -7,7 +7,7 @@
 
 /* one round tool button for every editor */
 .fb-ic, .ed-del, .ed-mv, .ed-x {
-  width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%;
+  width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 0;
   background: var(--state-hover); color: var(--text-secondary);
   transition: scale var(--move-press), background-color var(--move-tone),
     color var(--move-tone), opacity var(--move-tone);
@@ -22,7 +22,6 @@
 .ch-slot { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
 .ch-imgwrap { position: relative; }
 .ch-img {
-  --r: var(--r-sm);
   aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; cursor: pointer;
   background: var(--surface-raised);
   transition: background-color var(--move-tone);
@@ -34,16 +33,15 @@
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */
-.fb-wrap { --r: var(--r-lg); margin: var(--s5) 0; padding: var(--s8); background: var(--surface); }
+.fb-wrap { margin: var(--s5) 0; padding: var(--s8); background: var(--surface); }
 .fb-wrap > .bk-check { font-weight: 600; }
 /* a question is a fill-2 cell inside the plate; concentric 32 - 16 = 16 */
-.fb-q { --r: calc(var(--r-lg) - var(--s5)); margin-bottom: var(--s3); padding: var(--s5); background: var(--state-hover); }
+.fb-q { margin-bottom: var(--s3); padding: var(--s5); background: var(--state-hover); }
 .fb-q-top { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); }
 .fb-q-top strong { font-size: var(--fs-body); font-weight: 600; }
 .fb-q-top .dd { width: 220px; }
 .fb-qn {
-  width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%;
-  background: var(--state-selected); color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; line-height: 1;
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center; color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; line-height: 1;
 }
 .fb-q-move { display: flex; gap: var(--s1); margin-left: auto; }
 .fb-label { font-weight: 600; }
@@ -52,18 +50,16 @@
 .fb-opt input { min-height: var(--target); padding: var(--s2) var(--s3); }
 /* option glyph: the shape of the answer (circle, square, list), drawn in fill */
 .fb-dot {
-  width: 20px; height: 20px; flex: none; display: grid; place-items: center;
-  border-radius: 50%; background: var(--state-selected); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary);
+  width: 20px; height: 20px; flex: none; display: grid; place-items: center; background: var(--state-selected); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary);
 }
 .fb-dot.multi { border-radius: 0; }
 .fb-dot.dropdown { background: none; width: 20px; }
 .fb-addopt {
-  align-self: flex-start; height: 36px; padding: 0 var(--s3); border: 0; border-radius: var(--r-pill); background: transparent;
+  align-self: flex-start; height: 36px; padding: 0 var(--s3); border: 0; background: transparent;
   font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
 .fb-addq {
-  --r: var(--r-sm);
   width: 100%; min-height: var(--row-min); margin-top: var(--s1); border: 0; background: var(--state-hover);
   font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
@@ -79,7 +75,7 @@
 
 /* ---------- standings editor ---------- */
 .ed-grid {
-  display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, .8fr)) 32px; gap: var(--s2); align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1.618fr) repeat(4, minmax(0, 1fr)) 32px; gap: var(--s2); align-items: center;
   margin-bottom: var(--s2);
 }
 .ed-grid input { min-height: var(--target); padding: var(--s2) var(--s3); text-align: center; }
@@ -90,23 +86,23 @@
 .ed-x { width: 24px; height: 24px; margin-left: var(--s2); }
 
 /* ---------- rounds editor ---------- */
-.ed-round { --r: var(--r-sm); display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s3); padding: var(--s5); background: var(--surface); }
+.ed-round { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s3); padding: var(--s5); background: var(--surface); }
 .ed-round input { min-height: var(--target); padding: var(--s2) var(--s3); }
 .ed-rtop { display: flex; align-items: center; gap: var(--s2); }
-.ed-w { flex: 1 1 130px; min-width: 0; }
+.ed-w { flex: 1 1 136px; min-width: 0; }
 .ed-r2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
-.ed-team { --r: var(--r-sm); display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3); background: var(--state-hover); }
+.ed-team { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3); background: var(--state-hover); }
 .ed-rk { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-caption); font-weight: 600; color: var(--text-secondary); }
 .ed-rk.gold { color: var(--text-primary); }
 .ed-auto { min-height: 36px; }
 @media (max-width: 639px) {
   .ch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ed-grid { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, .7fr)) var(--target); gap: var(--s1); }
+  .ed-grid { grid-template-columns: minmax(0, 1.618fr) repeat(4, minmax(0, 1fr)) var(--target); gap: var(--s1); }
   .ed-r2 { grid-template-columns: 1fr; }
   .fb-q-top .dd { width: auto; flex: 1; }
 }
 @media (pointer: coarse) {
-  .ed-grid { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, .7fr)) var(--target); }
+  .ed-grid { grid-template-columns: minmax(0, 1.618fr) repeat(4, minmax(0, 1fr)) var(--target); }
 }
 
 /* editors open on plate sheets: their groups become tiles of the same tone instead of opaque cards */

@@ -6,10 +6,10 @@
 
 .records-read-state {
   display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap;
-  padding: var(--s3) var(--s5); border-radius: var(--r-sm); background: var(--state-hover);
+  padding: var(--s3) var(--s5); background: var(--state-hover);
   font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary);
 }
-.rc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s5); }
+.rc-filter { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--s3) var(--s8); margin-bottom: var(--s5); }
 .rc-filter[role="group"] { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .rc-filter[role="group"]::-webkit-scrollbar { display: none; }
 .rc-filter[role="group"] > .btn { flex: none; }
@@ -50,7 +50,7 @@
 @media (hover: hover) { .rc-pick-row:hover .rc-pick-chev { color: var(--text-primary); transform: translateX(2px); } }
 .rc-rail-n { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 @media (min-width: 860px) {
-  .rc-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), auto); grid-auto-flow: column; column-gap: var(--s2); }
+  .rc-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), auto); grid-auto-flow: column; column-gap: var(--s13); }
   .rc-pick:not([style]) { grid-template-rows: none; grid-auto-flow: row; }
 }
 
@@ -60,10 +60,10 @@
 @media (min-width: 860px) { .rc-sheet { width: min(100% - 48px, 680px); } }
 .rc-profile { display: flex; flex-direction: column; gap: var(--s8); min-width: 0; }
 .sheet .rc-lead { padding: 0; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
-.sheet .ypl-group { background: var(--state-hover); box-shadow: none; border-radius: var(--r-sm); padding: var(--s1); }
+.sheet .ypl-group { background: var(--state-hover); box-shadow: none; padding: var(--s1); }
 /* a long history below the sheet's fold costs nothing while the sheet opens */
 .sheet .ypl-group > li { content-visibility: auto; contain-intrinsic-size: auto 60px; }
-.sheet .ypl-row { border-radius: var(--r-sm); }
+.sheet .ypl-row { }
 .sheet .ypl-empty { padding-block: var(--s8); }
 
 /* ---------- lead: the hero card with a score and tiles ---------- */
@@ -79,13 +79,13 @@
 .rc-poster-fig { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .rc-poster-num { font-size: var(--fig-m); font-weight: 700; line-height: 1; letter-spacing: var(--ls-title); font-variant-numeric: tabular-nums; }
 .rc-poster-num .roll { line-height: var(--lh-title); }
-.rc-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: var(--s2); }
-.rc-facts.rows { grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--s1) 0; border-radius: var(--r-sm); background: var(--surface-raised); }
+.rc-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: var(--s2); }
+.rc-facts.rows { grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--s1) 0; background: var(--surface-raised); }
 .rc-facts.rows > div { flex-direction: row; align-items: baseline; justify-content: space-between; gap: var(--s5); padding: var(--s3) var(--s5); background: none; }
 .rc-facts.rows dt { flex: none; font-size: var(--fs-caption); }
 .rc-facts.rows dd { font-size: var(--fs-body); font-weight: 600; text-align: right; }
 .sheet .rc-facts.rows { background: var(--state-hover); }
-.rc-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--s1); padding: var(--s3) var(--s5); border-radius: var(--r-sm); background: var(--surface-raised); }
+.rc-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--s1); padding: var(--s3) var(--s5); background: var(--surface-raised); }
 .sheet .rc-facts > div { background: var(--state-hover); }
 .sheet .rc-facts.rows > div { background: none; }
 .rc-facts dt { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
@@ -100,7 +100,7 @@
   .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s8); }
   .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
   /* a label and value row is as wide as it reads, not the width of the card */
-  .rc-facts.rows { width: min(100%, 360px); justify-self: start; }
+  .rc-facts.rows { width: min(100%, 356px); justify-self: start; }
 }
 
 /* trainer history and counts */
@@ -115,7 +115,7 @@
 /* ---------- tournament archive ---------- */
 .rc-list-search { margin-bottom: var(--s5); }
 
-.round2 { display: grid; gap: var(--s2); padding: var(--s5); border-radius: var(--r-sm); }
+.round2 { display: grid; gap: var(--s2); padding: var(--s5); }
 .round2.champ { background: var(--surface-raised); }
 .r2-main { min-width: 0; }
 .r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s5); }
@@ -127,7 +127,7 @@
 .r2-names { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s2); }
 .r2-rk { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
 .r2-rk.gold { color: var(--text-primary); font-weight: 700; }
-.r2-name { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 var(--s3); border-radius: var(--r-pill); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; line-height: 1; }
+.r2-name { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 var(--s3); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; line-height: 1; }
 .r2-name.win { background: var(--accent); color: var(--text-on-accent); }
 .r2-name.mem { padding: 0 var(--s1); background: none; font-weight: 400; color: var(--text-secondary); }
 
@@ -135,24 +135,24 @@
 /* the team toggle sits under the result lines as its own block: 16px away, its label centred on the chevron */
 .r2-res + .records-round-toggle { margin-top: var(--s5); align-items: center; }
 .records-round-summary { flex: 1; min-width: 0; font-size: var(--fs-body); font-weight: 600; }
-.records-round-chevron { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--state-selected); color: var(--text-secondary); transition: transform var(--move-slide), color var(--move-tone); }
+.records-round-chevron { flex: none; width: 32px; height: 32px; display: grid; place-items: center; color: var(--text-secondary); transition: transform var(--move-slide), color var(--move-tone); }
 .records-round-chevron svg { width: 12px; height: 8px; }
 .records-round-toggle[aria-expanded="true"] .records-round-chevron { transform: rotate(180deg); }
 @media (hover: hover) { .records-round-toggle:hover .records-round-chevron { color: var(--text-primary); } }
 .records-round-detail { margin-top: var(--s5); animation: y-swap var(--move-place) backwards; }
 /* parties are cases, one or two across in a sheet and up to three on a page */
-.rc-parties { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
+.rc-parties { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s1); }
 @media (min-width: 640px) { .rc-parties { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .r2-main .rc-parties { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .rc-sec > .ypl-table-more { margin-top: var(--s3); }
 /* a Pokémon's name in a list stands beside its picture */
 .ypl-row.rc-count { grid-template-columns: 44px minmax(0, 1fr) auto; }
-.rc-count-pic { display: block; width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--window); }
+.rc-count-pic { display: block; width: 44px; height: 44px; background: var(--window); }
 .rc-count-pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
 /* a Pokémon's sheet opens on its card */
 .rc-mon-lead { display: grid; gap: var(--s5); }
-.rc-mon-lead > .case { width: min(100%, 200px); padding-right: var(--s3); }
-@media (min-width: 640px) { .rc-mon-lead { grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: var(--s8); } .rc-mon-lead .rc-lead-figs { grid-template-columns: minmax(0, 1fr); } }
+.rc-mon-lead > .case { width: min(100%, 220px); }
+@media (min-width: 640px) { .rc-mon-lead { grid-template-columns: 220px minmax(0, 1fr); align-items: center; gap: var(--s8); } .rc-mon-lead .rc-lead-figs { grid-template-columns: minmax(0, 1fr); } }
 .rc-usage > div { grid-template-columns: 48px minmax(0, 1fr); }
 .rc-parties .case-who b { white-space: normal; }
 .rc-usage dd { font-weight: 400; color: var(--text-secondary); }
@@ -160,12 +160,12 @@
 /* ---------- rankings: the podium is cases, the first standing across the two after it, then the table ---------- */
 .rc-rank { display: grid; gap: var(--grid-gap); }
 .rc-rank .ypl-table-wrap { margin-top: calc(var(--s5) - var(--grid-gap)); }
-.rc-podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.rc-podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s1); }
 .rc-podium > li:first-child { grid-column: 1 / -1; }
 .rc-podium-pts { font-size: var(--fig-m); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
 .rc-podium-pts small { margin-left: var(--s1); font-size: var(--fs-body); font-weight: 600; letter-spacing: var(--ls-body); }
 @media (min-width: 860px) {
-  .rc-podium { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s8); }
+  .rc-podium { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .rc-podium > li:first-child { grid-column: auto; }
   .rc-podium-pts { font-size: var(--fig-l); }
 }

@@ -52,7 +52,7 @@ export default function TabBar({ view, moreOpen, onNavigate, onMore }) {
   usePill(ref, cur);
   return (
     <nav className="tabbar" aria-label="주요 메뉴" ref={ref}>
-      <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
+      <span className="pill-ind" aria-hidden="true"><i /></span>
       {TABS.map(([key, label, ic]) => (
         <button key={key} type="button" className="tab" data-tab={key} {...current(cur, key)}
           {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}

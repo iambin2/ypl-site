@@ -1,3 +1,4 @@
+import { centreInk } from "./components/common/inkCentre.js";
 import React, { Component } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
@@ -36,6 +37,9 @@ class AppBoundary extends Component {
     return <StatusPage title="화면을 표시하지 못했습니다." desc="새로고침해 주세요. 계속되면 운영진에게 알려 주세요." onRetry={() => window.location.reload()} />;
   }
 }
+
+// 스프라이트는 어디에 놓이든 잉크의 중앙으로 선다. load 는 올라오지 않아 잡는 단계에서 듣는다. 홈의 B면은 모서리에 서는 그림이다.
+document.addEventListener("load", e => { if (e.target.matches?.('img[src*="/sprites/pokemon/"]:not(.hm-b img)')) centreInk(e.target); }, true);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

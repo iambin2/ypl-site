@@ -48,7 +48,7 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
         <span className="brand-logo"><BrandMark /></span><Wordmark />
       </button>
       <nav className="navlinks" aria-label="주요 메뉴" ref={nav}>
-        <span className="pill-ind" aria-hidden="true"><i /><i /><i /></span>
+        <span className="pill-ind" aria-hidden="true"><i /></span>
         {(wide ? WIDE_TABS : TABS).map(([key, label]) => (
           <button key={key} type="button" className="navlink" data-tab={key} {...current(cur, key)}
             {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
@@ -59,7 +59,7 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
       <button type="button" className="iconbtn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
         <span className="theme-ic"><Icon n="sun" size={20} className="i-sun" /><Icon n="moon" size={20} className="i-moon" /></span>
       </button>
-      {cta && <button type="button" className="bar-cta" onClick={() => onNavigate(cta[1])}>{cta[0]}</button>}
+      {cta && <button type="button" className="bar-cta" onClick={() => onNavigate(cta[1])}>{cta[0]}<Icon n="arrow" size={16} /></button>}
     </header>
   );
 }

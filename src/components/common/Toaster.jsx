@@ -3,14 +3,14 @@ import Icon from "./Icon.jsx";
 import { DUR, reduced, springs } from "./motion.js";
 
 /* K6: 토스트는 아래(폰은 탭 바 바로 위)에서 스프링으로 올라오고, 여러 개면 뒤로 겹쳐 쌓인다(Sonner 방식).
-   push 로 받은 문장을 3.8초 보여 준다. 실패를 알리는 문장에는 확인 표시 대신 안내 표시를 단다. */
-const LIFE = 3800;
+   push 로 받은 문장을 4.66초 보여 준다. 실패를 알리는 문장에는 확인 표시 대신 안내 표시를 단다. */
+const LIFE = 4660;
 const failed = text => /못했|못해|실패|없습니다|확인하지/.test(text);
 
 function Toast({ item, index, onGone }) {
   const ref = useRef(null);
   useEffect(() => {
-    if (!reduced()) ref.current?.animate([{ transform: "translateY(120%) scale(.94)", opacity: 0 }, { transform: "translateY(0) scale(1)", opacity: 1 }], { duration: DUR.place, easing: springs().spring });
+    if (!reduced()) ref.current?.animate([{ transform: "translateY(100%) scale(.944)", opacity: 0 }, { transform: "translateY(0) scale(1)", opacity: 1 }], { duration: DUR.place, easing: springs().spring });
   }, []);
   useEffect(() => {
     if (!item.out) return undefined;

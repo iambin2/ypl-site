@@ -19,28 +19,44 @@ export async function loadChampions(data) {
   }));
 }
 
+/* 랭킹 화면과 같은 고르기: 정규화 기록은 최신 시즌이 맨 앞, 예전 기록은 맨 뒤에 있다. */
+function currentSeason(snapshot, data, rankRows) {
+  const seasons = snapshot.ranking?.seasons || data.seasons || [];
+  const normalized = seasons.some(s => s.source === "normalized") || (snapshot.ranking?.series || []).some(s => s.source === "normalized");
+  const season = normalized ? seasons[0] : seasons[seasons.length - 1];
+  if (!season?.rows?.length) return null;
+  return { name: season.name, rows: rankRows(season.rows).slice(0, 3).map(({ rank, name, points }) => ({ rank, name, points: points || 0 })) };
+}
+
 /* 기록 화면의 스냅숏을 같은 캐시로 읽는다. 공식 기록을 못 읽으면 기록 화면처럼 기존 기록으로 센다.
-   숫자 둘을 위해 요청 11개가 나가므로, 다시 찾은 방문자는 6시간 안의 값을 쓴다. 대회가 끝나야 바뀌는 숫자다. */
-const COUNTS_KEY = "ypl-home-counts";
-const COUNTS_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+   사실 몇 개를 위해 요청 11개가 나가므로, 다시 찾은 방문자는 6시간 안의 값을 쓴다. 대회가 끝나야 바뀌는 사실이다. */
+const FACTS_KEY = "ypl-home-facts";
+const FACTS_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const RECORDS_MAX_AGE_MS = 60 * 1000;
 
-export async function loadCounts(data, admin = false) {
+export async function loadFacts(data, admin = false) {
   if (!admin) {
     try {
-      const saved = JSON.parse(localStorage.getItem(COUNTS_KEY));
-      if (saved && Date.now() - saved.at < COUNTS_MAX_AGE_MS) return saved.counts;
+      const saved = JSON.parse(localStorage.getItem(FACTS_KEY));
+      if (saved && Date.now() - saved.at < FACTS_MAX_AGE_MS) return saved.facts;
     } catch { /* 저장소를 못 읽으면 새로 센다 */ }
   }
-  const [{ freshRead }, normalized, projection, analytics] = await Promise.all([
+  const [{ freshRead }, normalized, projection, analytics, { recordRoundTitle }, { rankRows }] = await Promise.all([
     import("../../services/readCache.js"), import("../../services/normalizedRecordsService.js"),
-    import("../../services/normalizedRecordsProjection.js"), import("../../services/recordsAnalytics.js"),
+    import("../../services/normalizedRecordsProjection.js"), import("../../services/recordsAnalytics.js"), import("../../services/eventName.js"), import("../common/StandTable.jsx"),
   ]);
   let raw = null;
   if (normalized.normalizedRecordsReadEnabled()) raw = await freshRead("records", normalized.fetchNormalizedRecordsSnapshot, admin ? 0 : RECORDS_MAX_AGE_MS).catch(() => null);
   const snapshot = raw ? projection.buildNormalizedRecordsProjection(data, raw, null) : analytics.buildRecordsSnapshot(data);
-  const counts = { tournaments: (snapshot.archives || []).length, trainers: (snapshot.trainers || []).length };
+  const archives = snapshot.archives || [], dated = archives.filter(a => /\d{4}/.test(a.date || ""));
+  const latest = archives.find(a => a.win);
+  const facts = {
+    tournaments: archives.length, trainers: (snapshot.trainers || []).length,
+    latest: latest ? { winner: latest.win, name: latest.eventName || recordRoundTitle(latest.tournamentName, latest.round) } : null,
+    first: dated[dated.length - 1]?.date || "",
+    season: currentSeason(snapshot, data, rankRows),
+  };
   // 공식 기록을 읽었을 때만 기억한다. 대체 집계가 6시간 남아 있으면 안 된다.
-  if (raw) try { localStorage.setItem(COUNTS_KEY, JSON.stringify({ at: Date.now(), counts })); } catch { /* 다음에 다시 센다 */ }
-  return counts;
+  if (raw) try { localStorage.setItem(FACTS_KEY, JSON.stringify({ at: Date.now(), facts })); } catch { /* 다음에 다시 센다 */ }
+  return facts;
 }

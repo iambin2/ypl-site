@@ -59,7 +59,7 @@ export function Popover({ anchor, onClose, children }) {
     const r = trigger.getBoundingClientRect(), w = pop.offsetWidth;
     const left = Math.max(16, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 16));
     Object.assign(pop.style, { left: left + "px", top: r.bottom + 8 + "px", transformOrigin: `${r.left + r.width / 2 - left}px -8px` });
-    if (!reduced()) pop.animate([{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: springs().spring });
+    if (!reduced()) pop.animate([{ opacity: 0, transform: "scale(.91)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: springs().spring });
     pop.querySelector(".mi")?.focus({ preventScroll: true });
     const outside = e => { if (!pop.contains(e.target) && !trigger.contains(e.target)) closeRef.current?.(); };
     const key = e => { if (e.key === "Escape") { closeRef.current?.(); trigger.focus?.({ preventScroll: true }); } };

@@ -19,8 +19,8 @@ const WEIGHTS = new Set(["400", "600", "700"]);
 // a size comes with its tracking: the scale pairs them in tokens.css
 const TRACK = new Set(["0", "inherit", "var(--ls-body)", "var(--ls-lead)", "var(--ls-h3)", "var(--ls-title)", "var(--ls-display)"]);
 const trackFor = { "var(--fs-lead)": "var(--ls-lead)", "var(--fs-h3)": "var(--ls-h3)", "var(--fs-h2)": "var(--ls-title)", "var(--fs-h1)": "var(--ls-title)", "var(--fs-display)": "var(--ls-display)", "var(--fs-hero)": "var(--ls-display)" };
-const LEADING = new Set(["1", "inherit", "1.25em", "var(--lh-caption)", "var(--lh-body)", "var(--lh-label)", "var(--lh-lead)", "var(--lh-title)"]);
-const RADII = new Set([0, 12, 24, 999]); // the slab's rule: outer 24 = inner 12 + padding 12
+const LEADING = new Set(["1", "inherit", "1.236em", "var(--lh-caption)", "var(--lh-body)", "var(--lh-label)", "var(--lh-lead)", "var(--lh-title)", "var(--lh-display)"]);
+const RADII = new Set([0]); // nothing is round: a control is a plane too
 
 // ---------- declarations ----------
 // each CSS rule block's declarations, so a rule can read a declaration beside its font-size
@@ -76,10 +76,13 @@ const RULES = {
   // one stack everywhere: Freesentation for Korean, Albert Sans for Latin and digits
   "type: one font stack; YPL Figures only with the brand (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
-  "type: only reading text carries a measure, 40em (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value) && !(d.sel === ".prose" && d.value === "40em"),
+  "type: only reading text carries a measure, 36em (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value) && !(d.sel === ".prose" && d.value === "36em"),
+  "golden: a split is equal or 1.618 to 1 (The golden law)": d => /^grid-template(-columns|-rows)?$/.test(d.prop) && [...d.value.matchAll(/(\d*\.?\d+)fr/g)].some(m => !["1", "1.618", "4.236"].includes(m[1])),
+  "golden: a transition's scale comes from phi (The golden law)": d => (d.prop === "scale" || d.prop === "transform") && [...d.value.matchAll(/scale[XY]?\((\d*\.\d+)\)/g), ...(d.prop === "scale" ? [[0, d.value]] : [])].some(m => /^\d*\.\d+$/.test(m[1]) && ![".976", ".966", ".944", ".91", ".854", "1.034", "3.236"].includes(m[1])),
+  "golden: a shadow stands on the steps of space (The golden law)": d => d.prop === "box-shadow" && /px/.test(noVars(d.value)) && !/^inset 0 (0 0 )?1px|^(inset )?0 0 0 /.test(d.value) && pxs(d.value).some(n => !SPACE.has(n)),
   "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
   "align: right only for trailing values and number columns (Alignment)": d => d.prop === "text-align" && /right|end/.test(d.value),
-  "radius: 12, 24, pill (Space and radius)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
+  "radius: nothing is round (The plane)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
   "matte: nothing blurs what is behind it (Material)": d => /backdrop-filter$/.test(d.prop),
   "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Material)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
   "matte: shadows are still, a shadow in a transition repaints its element every frame (Motion)": d => /^transition(-property)?$/.test(d.prop) && /box-shadow/.test(d.value),
@@ -115,7 +118,6 @@ const EXCEPT = {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
       `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
-      `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-left: 48px`, `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-right: 48px`,
       `${TB} | .tb-slot:not(.empty) | padding-top: 48px`, `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
       `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s5) 0 0 44px`,
       `${TB} | .tb-official-lookup | margin: var(--s5) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s5) 0 0 44px`],
@@ -133,15 +135,11 @@ const EXCEPT = {
       `${B} | .bk-series-vs | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
       `${A} | .ed-head | text-align: center`],
     "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`, `${P} | .hm-party li | text-align: center`, `${C} | .case-name | text-align: center`],
-    "(d) a symmetric stage": [`${P} | .hm-close | text-align: center`],
   },
   "align: right only for trailing values and number columns (Alignment)": {
     "a trailing value or a number column": [`${K} | .calc-hp b | text-align: right`, `${K} | .calc-base-row b | text-align: right`, `${K} | .calc-base-row small | text-align: right`,
       `${K} | .calc-table .num | text-align: right`, `${C} | .ypl-table .r | text-align: right`, `${R} | .rc-facts.rows dd | text-align: right`,
       `${P} | .sc-stat strong | text-align: right`, `${P} | .sc-stat-h > span:last-child | text-align: right`, `${P} | .sc-sp em | text-align: right`],
-  },
-  "radius: 12, 24, pill (Space and radius)": {
-    "concentric: a match card holds 12px slots with 4px padding; the champion cell takes the card's shape": [`${B} | .bk-match | border-radius: 16px`, `${B} | .bk-champ-node | border-radius: 16px`],
   },
 };
 
@@ -198,15 +196,70 @@ test("space and time step by the golden ratio (Space and radius, Motion)", () =>
   }
 });
 
-// A new thing that moves is one of the verbs. These files are where the verbs that need the finger or a measurement live; the arena is one event of its own.
+// One ratio sets the rest too: type stands on the steps of space, leading and tracking are powers of 1/phi, and a curve is the Fibonacci sum of what it holds.
+const PHI = (1 + Math.sqrt(5)) / 2;
+test("type stands on the steps of space (Type)", () => {
+  const rem = name => +new RegExp(`--fs-${name}:\\s*([\\d.]+)rem`).exec(TOKENS)[1] * 16;
+  for (const name of ["lead", "h3", "h2", "h1", "display", "hero"]) assert.ok(SPACE.has(rem(name)), `--fs-${name} is ${rem(name)}px`);
+});
+test("leading is 1 + a power of 1/phi, tracking a power of 1/phi over ten (Type)", () => {
+  const near = (v, set) => set.some(p => Math.abs(v - p) < .001);
+  const powers = [1, 2, 3, 4, 5, 6].map(n => PHI ** -n);
+  for (const [, v] of TOKENS.matchAll(/--lh-[a-z]+:\s*([\d.]+)/g)) assert.ok(near(+v - 1, powers), `leading ${v}`);
+  for (const [, v] of TOKENS.matchAll(/--ls-[a-z0-9]+:\s*-?([\d.]+)em/g)) assert.ok(near(+v, powers.map(p => p / 10)), `tracking ${v}`);
+});
+test("planes hold, lines operate: the main action is the one plane, the rest is a line under a word (Plane and line)", () => {
+  assert.doesNotMatch(TOKENS, /--r-[a-z]+:/, "there is no radius token");
+  const alive = /live-dot|ypl-ping|aria-busy/;
+  assert.deepEqual(DECLS.filter(d => /radius/.test(d.prop) && !/^0$/.test(d.value) && !alive.test(d.sel)).map(keyOf), [], "only what is alive is round");
+  assert.deepEqual(decl(".btn--lg", "height"), ["52px"]);
+  assert.deepEqual(decl(".btn--lg", "min-width"), ["136px"], "the main action is 1 to phi squared");
+  assert.deepEqual(decl(".btn--secondary", "text-decoration"), ["underline"]);
+  assert.ok(decl(".pill-ind", "height").includes("var(--rule)"), "the selection is a line");
+  assert.deepEqual(decl(".ypl-group", "background"), [], "a list is rows on hairlines, not a grey box");
+  assert.deepEqual(decl(".case", "padding"), [], "a case is two planes, not a frame");
+});
+test("a case with one picture is the golden rectangle cut once: a square window and the label that is left (The plane)", () => {
+  assert.deepEqual(decl(".case.one", "aspect-ratio"), ["1 / var(--golden)"]);
+  assert.deepEqual(decl(".case.one .case-win", "aspect-ratio"), ["1"]);
+});
+test("planes of one tone part by a seam of 4 (The plane)", () => {
+  assert.ok(decl(".case-grid", "gap").includes("var(--s1)"));
+  assert.ok(decl(".hm-rail", "gap").includes("var(--s1)"));
+});
+test("the middle is measured by ink: text from the font's baseline, a sprite from its own pixels (The centre)", () => {
+  assert.match(TOKENS, /ascent-override: 97%; descent-override: 25%;/, "without it 16px text rides .8 above the middle of its box");
+  assert.match(src("src/main.jsx"), /centreInk\(e\.target\)/, "every sprite stands on its ink");
+  assert.deepEqual(decl(".ypl-table .ypl-table__rank", "text-align"), ["left"], "a rank stands on the same edge as the hairline over it");
+});
+test("the selection is one element (Plane and line)", () => {
+  assert.doesNotMatch(src("src/components/common/Segmented.jsx"), /<i \/><i \/>/);
+});
+
+test("saved images stand on the same law (The golden law)", () => {
+  const sizes = new Set(["13", "16", "20", "32", "52", "84", "136"]);
+  for (const f of ["src/pages/BracketsPage.jsx", "src/components/teamSheetImage.js"]) {
+    const fonts = [...src(f).matchAll(/ctx\.font\s*=\s*`([^`]*)`/g)].map(m => m[1]);
+    assert.ok(fonts.length > 8, f);
+    assert.deepEqual(fonts.filter(x => /\b800\b/.test(x)), [], "weights 400 600 700");
+    assert.deepEqual(fonts.filter(x => !sizes.has((/ (\d+(?:\.\d+)?)px/.exec(x) || [])[1])).filter(x => / \d/.test(x)), [], "a size on the scale");
+  }
+});
+test("the first screen of the home is four planes, each a golden section of the last, and nothing on it moves but what arrives (Pages)", () => {
+  assert.deepEqual(decl(".hm-plate", "grid-template").map(v => v.replaceAll(/\s+/g, " ")).sort(), ["1.618fr 1fr / 4.236fr 1.618fr 1fr", "4.236fr 1.618fr 1fr / 1.618fr 1fr"]);
+  const home = src("src/pages/HomePage.jsx");
+  assert.doesNotMatch(home, /<Roll|\.animate\(|requestAnimationFrame/, "no digit rolls, no pointer tracking and no stage of its own on the home");
+});
+
+// A new thing that moves is one of the verbs. These files are where the verbs that need the finger or a measurement live.
 const ANIMATES = new Set(["src/components/common/motion.js", "src/components/common/Modal.jsx", "src/components/common/Menu.jsx", "src/components/common/Dropdown.jsx",
-  "src/components/common/Toaster.jsx", "src/components/common/StandTable.jsx", "src/pages/HomePage.jsx"]);
+  "src/components/common/Toaster.jsx", "src/components/common/StandTable.jsx"]);
 test("pages move through the verbs of motion.js, never their own .animate() (Motion)", () => {
   assert.deepEqual(SRC.filter(f => /\.animate\(/.test(read(f)) && !ANIMATES.has(rel(f))).map(rel), [], "use place, stand or seal from motion.js");
 });
 test("keyframes are a closed list: a new one needs a new verb in DESIGN.md (Motion)", () => {
   const names = readdirSync(STYLES).flatMap(f => [...read(join(STYLES, f)).matchAll(/@keyframes\s+([\w-]+)/g)].map(m => m[1])).sort();
-  assert.deepEqual(names, ["bk-draw", "bk-land", "dd-in", "edge-fade-l", "edge-fade-r", "ping", "row-rise", "tab-pop", "y-fade", "y-loader-sweep", "y-pop", "y-pulse", "y-rise", "y-spin", "y-swap"]);
+  assert.deepEqual(names, ["bk-draw", "bk-land", "dd-in", "ping", "row-rise", "tab-pop", "y-fade", "y-loader-sweep", "y-pop", "y-pulse", "y-rise", "y-spin", "y-swap"]);
 });
 
 // 2026-10-27 consistency pass: the rules below were each broken somewhere before they were written down (DESIGN.md "Consistency").
@@ -256,8 +309,8 @@ test("the touch floor raises a control but never lowers a field or a row (law 3)
   assert.deepEqual(floor.filter(d => !d.sel.startsWith(":where(")).map(keyOf), [], "the floor's height must carry no weight (:where)");
 });
 
-test("a list row is 60 everywhere, from one token (law 3)", () => {
-  assert.match(TOKENS, /--row-min:\s*60px/);
+test("a list row is 52 everywhere, from one token (law 3)", () => {
+  assert.match(TOKENS, /--row-min:\s*52px/);
   for (const sel of [".ypl-row", ".pick-row"]) assert.deepEqual(decl(sel, "min-height"), ["var(--row-min)"], sel);
 });
 
@@ -310,7 +363,7 @@ test("scripted animations move transform and opacity only (Motion)", () => {
 test("css keyframes move transform and opacity only (Motion)", () => {
   const css = readdirSync(STYLES).filter(f => f.endsWith(".css")).map(f => read(join(STYLES, f))).join("\n");
   const blocks = [...css.matchAll(/@keyframes ([\w-]+) \{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/g)].map(([, name, body]) => ({ name, props: [...body.matchAll(/([\w-]+)\s*:/g)].map(m => m[1]) }));
-  const LOCAL = { "edge-fade-l": "a sideways run's fade, only over its first 32px", "edge-fade-r": "and its last 32px", "row-rise": "one row, once, when a ranking changes", "bk-land": "one bracket slot in the draw ceremony" };
+  const LOCAL = { "row-rise": "one row, once, when a ranking changes", "bk-land": "one bracket slot in the draw ceremony" };
   assert.ok(blocks.length > 8);
   assert.deepEqual(blocks.filter(b => !LOCAL[b.name] && b.props.some(p => !["transform", "opacity"].includes(p))).map(b => `${b.name}: ${b.props}`), []);
 });
@@ -324,7 +377,6 @@ test("a sheet fills the width under 860 and clips its corners (Sheets)", () => {
   const base = css.match(/^\.sheet \{([^}]*)\}/m)[1];
   assert.match(base, /width: 100%/, "a narrower sheet floats round on top and square below");
   assert.match(base, /overflow: hidden/, "the pinned actions paint square over unclipped corners");
-  assert.match(css, /@media \(min-width: 860px\) \{\s*\.sheet \{[^}]*border-radius: var\(--r-lg\);/, "a dialog is round on all four corners");
 });
 
 test("one button: every button that is a button comes from Button.jsx (Components)", () => {

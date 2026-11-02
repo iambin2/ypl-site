@@ -13,25 +13,25 @@ export const desktop = () => mq("(min-width: 860px)");
 /* one length for each verb of the motion law, the --t-* of tokens.css; a spring runs at its own, stretching it changes its feel */
 export const DUR = { press: 100, tone: 160, leave: 260, place: 420, lift: 680, seal: 1100, wait: 1780 };
 /* things that arrive together arrive one step apart */
-export const STAGGER = { row: 40, tile: 60 };
+export const STAGGER = { row: 38, tile: 62 };
 
 /* ---------- the verbs of the motion law (DESIGN.md): pages and components move through these, never through their own .animate() ---------- */
 /* place: what arrives rises the shortest way into its place. step spaces out what arrives together. */
-export function place(els, { delay = 0, step = 0, y = 16 } = {}) {
+export function place(els, { delay = 0, step = 0, y = 12 } = {}) {
   if (reduced()) return;
   [].concat(els).forEach((el, i) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }],
     { duration: DUR.place, delay: delay + i * step, easing: EASE_OUT, fill: "backwards" }));
 }
 /* stand: a case is heavier than a word: it comes up further on the larger spring and lands */
-export function stand(els, { delay = 60, step = STAGGER.tile } = {}) {
+export function stand(els, { delay = STAGGER.tile, step = STAGGER.tile } = {}) {
   if (reduced()) return;
-  [].concat(els).forEach((el, i) => el?.animate([{ opacity: 0, transform: "translateY(64px) scale(.96)" }, { opacity: 1, offset: .35 }, { opacity: 1, transform: "none" }],
+  [].concat(els).forEach((el, i) => el?.animate([{ opacity: 0, transform: "translateY(32px) scale(.976)" }, { opacity: 1, offset: .382 }, { opacity: 1, transform: "none" }],
     { duration: DUR.lift, delay: delay + i * step, easing: springs().lift, fill: "backwards" }));
 }
 /* seal: one solid slanted band crosses a case's window behind what it holds. Once, for an event, never for a habit. */
 export function seal(caseEl, delay = 0) {
   if (reduced()) return;
-  caseEl?.querySelector(".case-band")?.animate([{ transform: "translateX(-140%) skewX(-12deg)" }, { transform: "translateX(340%) skewX(-12deg)" }], { duration: DUR.seal, delay, easing: EASE_IN_OUT });
+  caseEl?.querySelector(".case-band")?.animate([{ transform: "translateX(-162%) skewX(-12deg)" }, { transform: "translateX(340%) skewX(-12deg)" }], { duration: DUR.seal, delay, easing: EASE_IN_OUT });
 }
 
 let curves = null;
@@ -74,10 +74,10 @@ export function celebrate(x = innerWidth / 2, y = innerHeight * 0.38) {
   if (!layer) { layer = document.createElement("div"); layer.id = "ypl-burst"; layer.className = "burst"; layer.setAttribute("aria-hidden", "true"); document.body.append(layer); }
   const glow = document.createElement("i"), ring = document.createElement("b");
   for (const e of [glow, ring]) { e.style.setProperty("--x", x + "px"); e.style.setProperty("--y", y + "px"); layer.append(e); }
-  if (reduced()) { ring.remove(); glow.animate([{ opacity: 0 }, { opacity: 0.8 }, { opacity: 0 }], { duration: DUR.seal }).finished.then(() => glow.remove()); }
+  if (reduced()) { ring.remove(); glow.animate([{ opacity: 0 }, { opacity: 0.854 }, { opacity: 0 }], { duration: DUR.seal }).finished.then(() => glow.remove()); }
   else {
-    glow.animate([{ opacity: 0, transform: "scale(.12)" }, { opacity: 1, offset: 0.22 }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.wait, easing: EASE_OUT }).finished.then(() => glow.remove());
-    ring.animate([{ opacity: 0.9, transform: "scale(.03)" }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.seal, easing: EASE_OUT }).finished.then(() => ring.remove());
+    glow.animate([{ opacity: 0, transform: "scale(.146)" }, { opacity: 1, offset: 0.236 }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.wait, easing: EASE_OUT }).finished.then(() => glow.remove());
+    ring.animate([{ opacity: 0.854, transform: "scale(.034)" }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.seal, easing: EASE_OUT }).finished.then(() => ring.remove());
   }
   try { navigator.vibrate?.([14, 50, 22]); } catch { /* not supported */ }
 }
@@ -149,7 +149,7 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   m1.getAnimations({ subtree: true }).forEach(a => { if ((a.animationName === "y-swap" || (target && a.animationName && a.effect?.target?.contains?.(target))) && a.effect.getComputedTiming().endTime !== Infinity) a.finish(); });
   const nr = target?.getBoundingClientRect();
 
-  const y = move ? (dir === "back" ? -16 : 16) : 0;
+  const y = move ? (dir === "back" ? -12 : 12) : 0;
   anims.push(m1.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: move ? springs().spring : "linear" }));
 
   if (target && oldEl && nr.width > 0) {
@@ -190,10 +190,9 @@ export function themeFade(commit) {
   veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT }).finished.finally(() => veil.remove());
 }
 
-/* ---------- K3 liquid selection lens ----------
-   The lens is two round caps and a body in one solid tone. Only transforms move, so it keeps running on the compositor while the next page renders.
-   The leading edge springs toward the target first, the trailing edge follows a beat later, and the lens
-   thins a little while it is stretched, then settles as one drop. A new target mid-flight starts from where it is. */
+/* ---------- K3 selection lens ----------
+   The lens is one plane in one solid tone. Only transforms move, so it keeps running on the compositor while the next page renders.
+   The leading edge springs toward the target first and the trailing edge follows a beat later. A new target mid-flight starts from where it is. */
 const PILL_ON = ':scope > [aria-pressed="true"], :scope > [aria-current="page"], :scope > [aria-selected="true"], :scope > [data-current]';
 export function placePill(box, animate, target) {
   const ind = box?.querySelector(":scope > .pill-ind");
@@ -201,42 +200,33 @@ export function placePill(box, animate, target) {
   const on = target || box.querySelector(PILL_ON);
   if (!on) { ind.dataset.off = ""; return; }
   delete ind.dataset.off;
-  const parts = [...ind.children], h = ind.offsetHeight || on.offsetHeight;
+  const part = ind.children[0];
   const L = on.offsetLeft, R = L + on.offsetWidth, last = ind._lens;
   // Already there, or on its way there: a re-placement from a font load or a resize observer must not cut the move short.
-  if (last && Math.abs(last.L - L) < 0.5 && Math.abs(last.R - R) < 0.5 && last.h === h) return;
+  if (last && Math.abs(last.L - L) < 0.5 && Math.abs(last.R - R) < 0.5) return;
   const from = last ? last.now?.() || [last.L, last.R] : null;
   last?.anims?.forEach(a => a.cancel());
-  ind._lens = { L, R, h };
-  const pose = (l, r, sy = 1) => [
-    `translateX(${l}px) scaleY(${sy})`,
-    `translateX(${l + h / 2}px) scale(${Math.max(0, r - l - h) / 100}, ${sy})`,
-    `translateX(${r - h}px) scaleY(${sy})`,
-  ];
-  pose(L, R).forEach((t, k) => { if (parts[k]) parts[k].style.transform = t; });
-  if (!animate || !from || !h || parts.length < 3 || reduced() || typeof ind.animate !== "function") return;
+  ind._lens = { L, R };
+  const pose = (l, r) => `translateX(${l}px) scaleX(${Math.max(0, r - l) / 100})`;
+  if (part) part.style.transform = pose(L, R);
+  if (!animate || !from || !part || reduced() || typeof ind.animate !== "function") return;
   const [l0, r0] = from;
   if (Math.abs(l0 - L) < 0.5 && Math.abs(r0 - R) < 0.5) return;
   const right = L + R > l0 + r0;
   const lead = springTo(right ? r0 : l0, right ? R : L, 0, 0.34, 0.72).values;
   const trail = [...Array(Math.round(FPS / 15)).fill(right ? l0 : r0), ...springTo(right ? l0 : r0, right ? L : R, 0, 0.46, 0.9).values];
   const n = Math.max(lead.length, trail.length), at = (v, i) => v[Math.min(i, v.length - 1)];
-  const frames = [[], [], []], track = [], wide = Math.max(r0 - l0, R - L);
-  for (let i = 0; i < n; i++) {
-    const [l, r] = right ? [at(trail, i), at(lead, i)] : [at(lead, i), at(trail, i)];
-    const sy = 1 - Math.min(0.1, Math.max(0, r - l - wide) / (h * 6));
-    pose(l, r, sy).forEach((t, k) => frames[k].push({ transform: t }));
-    track.push([l, r]);
-  }
-  const anims = parts.slice(0, 3).map((part, k) => part.animate(frames[k], { duration: ((n - 1) * 1000) / FPS, easing: "linear" }));
-  ind._lens.anims = anims;
-  ind._lens.now = () => anims[0].playState === "running" ? track[Math.min(n - 1, Math.round(((anims[0].currentTime || 0) * FPS) / 1000))] : null;
+  const track = [];
+  for (let i = 0; i < n; i++) track.push(right ? [at(trail, i), at(lead, i)] : [at(lead, i), at(trail, i)]);
+  const anim = part.animate(track.map(([l, r]) => ({ transform: pose(l, r) })), { duration: ((n - 1) * 1000) / FPS, easing: "linear" });
+  ind._lens.anims = [anim];
+  ind._lens.now = () => anim.playState === "running" ? track[Math.min(n - 1, Math.round(((anim.currentTime || 0) * FPS) / 1000))] : null;
 }
 
 /* I2 into a sheet, kept small: the pressed row stays where it is, and the sheet's title settles into place a short
    way, a beat after the sheet starts to rise. */
 export function settleTitle(target) {
   if (!target || reduced() || typeof target.animate !== "function") return;
-  target.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }],
-    { duration: DUR.place, delay: 90, easing: EASE_OUT, fill: "backwards" });
+  target.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }],
+    { duration: DUR.place, delay: DUR.press, easing: EASE_OUT, fill: "backwards" });
 }

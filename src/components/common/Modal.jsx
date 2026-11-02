@@ -34,7 +34,7 @@ export function useExitAnimation(ref, { replacedBy = null, inPlace = false, exit
         const done = () => node.remove();
         const anims = exitRef.current?.(node) || node.getAnimations({ subtree: true });
         Promise.all(anims.map(animation => animation.finished)).then(done, done);
-        setTimeout(done, 700);
+        setTimeout(done, 680);
       });
     };
   }, [ref, replacedBy, inPlace]);
@@ -50,7 +50,7 @@ function recede(on) {
   if (!main || reduced() || desktop()) return;
   if (on) main.style.transformOrigin = `50% ${innerHeight / 2 - main.getBoundingClientRect().top}px`;
   recedeAnim?.cancel();
-  recedeAnim = main.animate([{ transform: on ? "none" : "scale(.965)" }, { transform: on ? "scale(.965)" : "none" }],
+  recedeAnim = main.animate([{ transform: on ? "none" : "scale(.966)" }, { transform: on ? "scale(.966)" : "none" }],
     { duration: on ? DUR.lift : DUR.leave, easing: on ? springs().lift : EASE_OUT, fill: "forwards" });
   if (!on) recedeAnim.finished.then(a => a.cancel()).catch(() => {});
 }
@@ -82,7 +82,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
       const sheet = node.querySelector(".sheet"), scrim = node.querySelector(".scrim");
       if (reduced()) return [node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, fill: "forwards" })];
       const out = [scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" })];
-      if (desktop()) out.push(sheet.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.97)" }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
+      if (desktop()) out.push(sheet.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.976)" }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
       else {
         const from = new DOMMatrix(getComputedStyle(sheet).transform).m42;
         out.push(sheet.animate([{ transform: `translateY(${from}px)` }, { transform: `translateY(${sheet.offsetHeight + 20}px)` }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
@@ -114,7 +114,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     flyRef.current = null;
     if (!reduced()) scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.leave, easing: EASE_OUT });
     if (desktop()) {
-      if (!reduced()) sheet.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: springs().spring });
+      if (!reduced()) sheet.animate([{ opacity: 0, transform: "scale(.944)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: springs().spring });
     } else {
       sheet.style.transform = `translateY(${sheet.offsetHeight + 20}px)`;
       slide(0);

@@ -8,7 +8,7 @@ import { DUR, EASE_IN, desktop } from "./motion.js";
 /* 메뉴는 열릴 때처럼 닫힐 때도 움직인다(떠 있는 층의 공통 규칙). */
 function DropdownMenu({ children, ariaLabel }){
   const ref=useRef(null);
-  useExitAnimation(ref,{ inPlace:true, exit:node=>[node.animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.96)"}],{duration: DUR.tone,easing:EASE_IN,fill:"forwards"})] });
+  useExitAnimation(ref,{ inPlace:true, exit:node=>[node.animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.976)"}],{duration: DUR.tone,easing:EASE_IN,fill:"forwards"})] });
   return <div className="dd-menu plate-l3" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
 }
 

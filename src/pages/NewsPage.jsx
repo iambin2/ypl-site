@@ -9,7 +9,7 @@ import Button from "../components/common/Button.jsx";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
-const PAGE_SIZE=10;
+const PAGE_SIZE=8;
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문의 제목 자리로 이어진다(I2).
    신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {

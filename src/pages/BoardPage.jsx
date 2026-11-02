@@ -14,7 +14,7 @@ import Case from "../components/common/Case.jsx";
 import TeamSheet, { sheetOf, useTeamDisplay } from "../components/common/TeamSheet.jsx";
 import Field from "../components/common/Field.jsx";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 8;
 
 /* ============================== BOARD (자유게시판) ============================== */
 const fmtDT=iso=>formatDate(iso,{time:true});

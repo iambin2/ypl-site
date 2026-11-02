@@ -1,12 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Case from "../components/common/Case.jsx";
 import ChampionSheet from "../components/common/ChampionSheet.jsx";
-import Roll from "../components/common/Roll.jsx";
-import { DUR, EASE_IN_OUT, EASE_OUT, place, reduced, seal, stand } from "../components/common/motion.js";
-import { WORDMARK_PATH, Wordmark } from "../components/layout/SiteHeader.jsx";
+import { STAGGER, place, reduced, seal } from "../components/common/motion.js";
 import Icon from "../components/common/Icon.jsx";
-import { arenaField } from "../components/home/arenaField.js";
-import { loadChampions, loadCounts } from "../components/home/homeFacts.js";
+import { loadChampions, loadFacts } from "../components/home/homeFacts.js";
 import { formatDate } from "../services/dateFormat.js";
 import { excerptOf } from "../services/noticeExcerpt.js";
 import Button from "../components/common/Button.jsx";
@@ -47,31 +44,27 @@ export function eventAction(announcements) {
 
 /* 첫 등장은 사이트에 들어올 때마다 한 번이다. 판정은 처음 그릴 때 받아 두고 그려진 뒤에 지운다
    (개발 모드의 두 번 호출도 같은 답을 받는다). 홈에 다시 오면 보통의 화면 전환으로 선다. */
-let heroPending = true, arenaPending = true;
-const firstHero = () => heroPending;
+let firstOpen = true;
+const opening = () => firstOpen;
 
-const MARK_MASK = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 100'><path transform='skewX(-12) translate(21 0)' fill-rule='evenodd' d='${WORDMARK_PATH}'/></svg>`)}") center / 100% 100% no-repeat`;
+/* 첫 기록의 달: "2023-05-20", "2023.05" → "2023년 5월" */
+const monthOf = s => { const n = String(s || "").match(/\d+/g); return n?.length >= 2 ? `${n[0]}년 ${+n[1]}월` : ""; };
 
-/* 슬랩 레일: 최신 챔피언이 맨 앞에 서고 옆으로 밀면 옛 챔피언이 이어진다. 브라우저의 가로 스크롤이라 손가락과 어긋날 일이 없다.
-   마우스로는 옆으로 밀 수 없어 포인터가 있는 넓은 화면에만 화살표를 둔다. */
-function SlabRail({ champions, enter, onOpen }) {
+/* 역대 챔피언 레일: 브라우저의 가로 스크롤이라 손가락과 어긋날 일이 없다. 마우스로는 옆으로 밀 수 없어 화살표를 둔다. */
+function HallRail({ champions, onOpen }) {
   const rail = useRef(null);
-  useLayoutEffect(() => {
-    if (!enter) return undefined;
-    const slabs = [...rail.current.children];
-    stand(slabs);
-    seal(slabs[0], 540);
-    return undefined;
-  }, [enter]);
   const push = dir => {
     const el = rail.current, [first, second] = el.children;
     el.scrollBy({ left: dir * (second ? second.offsetLeft - first.offsetLeft : 0), behavior: reduced() ? "auto" : "smooth" });
   };
   return (
-    <section className="hm-belt" aria-label="역대 챔피언">
-      <div className="hm-arrows">
-        <button type="button" className="hm-arrow is-back" onClick={() => push(-1)} aria-label="이전 챔피언"><Icon n="arrow" size={20} /></button>
-        <button type="button" className="hm-arrow" onClick={() => push(1)} aria-label="다음 챔피언"><Icon n="arrow" size={20} /></button>
+    <section className="hm-sec" aria-labelledby="hm-hall">
+      <div className="hm-head">
+        <h2 id="hm-hall">역대 챔피언</h2>
+        <div className="hm-arrows">
+          <button type="button" className="hm-arrow is-back" onClick={() => push(-1)} aria-label="이전 챔피언"><Icon n="arrow" size={20} /></button>
+          <button type="button" className="hm-arrow" onClick={() => push(1)} aria-label="다음 챔피언"><Icon n="arrow" size={20} /></button>
+        </div>
       </div>
       <div className="hm-rail" ref={rail}>
         {champions.map(c => <Case key={c.key} title={c.name} line={c.line} fig={c.generation || null} unit="대" sprite={c.party[0]?.img || ""} onClick={() => onOpen(c)} label={`${c.label} 챔피언 ${c.name}, ${c.line}`} />)}
@@ -80,137 +73,34 @@ function SlabRail({ champions, enter, onOpen }) {
   );
 }
 
-/* 슬랩이 오기 전에 같은 크기의 빈 케이스가 자리를 지킨다: 아래가 밀려 내려가지 않는다 */
-const SlabGhosts = () => (
-  <div className="hm-belt" aria-hidden="true"><div className="hm-rail is-ghost">
-    {[0, 1, 2, 3, 4, 5].map(i => <Case key={i} title="" sprite="" />)}
-  </div></div>
-);
-
-/* 아레나: 원근으로 누운 배틀 필드(arenaField). 밝은 선 위를 네이비 장이 덮고, 장의 또렷한 구멍을 변형으로만 옮긴다.
-   위에 어두운 선을 겹쳐 그리면 구멍 안의 선만 밝게 보인다. 무엇도 다시 그리지 않는다. */
-const Lines = ({ g, d, className }) => <svg className={"hm-f " + className} width={g.w} height={g.h} viewBox={`0 0 ${g.w} ${g.h}`} aria-hidden="true"><path d={d} /></svg>;
-const shape = el => { const phone = el.clientWidth < 860, h = phone ? 620 : 840, floorY = Math.round(h * (phone ? .42 : .4)); return { w: el.clientWidth, h, floorY }; };
-function Arena({ primary, go }) {
-  const close = useRef(null), stage = useRef(null), hole = useRef(null), wave = useRef(null), mark = useRef(null), band = useRef(null), ringRef = useRef(null), knobRef = useRef(null);
-  const [field, setField] = useState(null);
-  const rest = useRef([0, 0]), waveAt = useRef("none");
-  useLayoutEffect(() => {
-    const measure = () => { const g = shape(close.current); setField(f => f && f.w === g.w && f.h === g.h ? f : { ...g, paths: arenaField(g.w, g.h, g.floorY) }); };
-    measure();
-    addEventListener("resize", measure);
-    return () => removeEventListener("resize", measure);
-  }, []);
-  const placeHole = (x, y) => { hole.current.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`; };
-  useLayoutEffect(() => {
-    if (!field) return;
-    const ring = ringRef.current.getBBox(), knob = knobRef.current.getBBox();
-    /* YPL은 단추의 먼 끝에 선다. 글과 단추는 원의 가까운 끝 아래에 선다 */
-    mark.current.style.top = Math.round(knob.y) - 8 + "px";
-    close.current.style.paddingTop = Math.ceil(ring.y + ring.height + 56) + "px";
-    rest.current = [field.w / 2, knob.y + knob.height / 2];
-    placeHole(...rest.current);
-    const ww = ring.width * 3.2, wh = ring.height * 3.2;
-    Object.assign(wave.current.style, { width: ww + "px", height: wh + "px" });
-    waveAt.current = `translate(${rest.current[0] - ww / 2}px,${rest.current[1] - wh / 2}px)`;
-  }, [field]);
-  /* 파동은 몬스터볼에서 나가는 또렷한 원 하나다 */
-  const fireWave = () => {
-    if (reduced()) return;
-    wave.current.animate([{ transform: `${waveAt.current} scale(.05)`, opacity: .9 }, { transform: `${waveAt.current} scale(1)`, opacity: 0 }], { duration: DUR.wait, easing: EASE_OUT });
-  };
-  /* 처음 화면에 들어올 때 한 번: 선이 가운데에서 그어지고, 몬스터볼이 켜지고, 파동이 지나고, 띠 하나가 YPL을 지나간다 */
-  useEffect(() => {
-    if (!field || !arenaPending || reduced() || typeof IntersectionObserver !== "function") return undefined;
-    const st = stage.current;
-    let timer = 0;
-    st.classList.add("pre");
-    const once = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      once.disconnect();
-      arenaPending = false;
-      st.classList.remove("pre");
-      const play = (s, kf, o) => st.querySelectorAll(s).forEach(el => el.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
-      const fade = [{ opacity: 0 }, { opacity: 1 }];
-      play(".hm-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: DUR.place, delay: 120 });
-      play(".hm-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, delay: 150 });
-      play(".hm-ring", fade, { duration: DUR.place, delay: 240 });
-      play(".hm-ball", fade, { duration: DUR.leave, delay: 360 });
-      play(".hm-lit", fade, { duration: DUR.place, delay: 420 });
-      play(".hm-mark > .wordmark", fade, { duration: DUR.place, delay: 300 });
-      band.current.animate([{ transform: "translateX(-160%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], { duration: DUR.seal, delay: 600, easing: EASE_IN_OUT });
-      timer = setTimeout(fireWave, 360);
-    }, { threshold: .3 });
-    once.observe(st);
-    return () => { once.disconnect(); clearTimeout(timer); st.classList.remove("pre"); };
-  }, [Boolean(field)]); // eslint-disable-line react-hooks/exhaustive-deps
-  /* 포인터의 빛: 구멍 하나를 옮긴다. 떠나면 몬스터볼로 돌아가 머문다 */
-  useEffect(() => {
-    if (!field || reduced() || !matchMedia("(pointer: fine)").matches) return undefined;
-    const box = close.current;
-    let [x, y] = rest.current, [tx, ty] = rest.current, raf = 0;
-    const step = () => {
-      x += (tx - x) * .12; y += (ty - y) * .12;
-      placeHole(x, y);
-      raf = Math.abs(tx - x) + Math.abs(ty - y) > .3 ? requestAnimationFrame(step) : 0;
-    };
-    const glide = () => { if (!raf) raf = requestAnimationFrame(step); };
-    const onMove = e => {
-      if (e.pointerType !== "mouse") return;
-      const r = stage.current.getBoundingClientRect();
-      tx = e.clientX - r.left; ty = e.clientY - r.top;
-      glide();
-    };
-    const onLeave = () => { [tx, ty] = rest.current; glide(); };
-    box.addEventListener("pointermove", onMove, { passive: true });
-    box.addEventListener("pointerleave", onLeave);
-    return () => { box.removeEventListener("pointermove", onMove); box.removeEventListener("pointerleave", onLeave); cancelAnimationFrame(raf); };
-  }, [field]); // eslint-disable-line react-hooks/exhaustive-deps
-  const p = field?.paths;
-  return (
-    <section className="hm-close" ref={close} onClick={e => !e.target.closest("button, a") && fireWave()}>
-      <div className="hm-arena" ref={stage} style={field ? { height: field.h, "--floor": field.floorY + "px" } : undefined}>
-        {field && <Lines g={field} className="hm-lit" d={p.rect + p.line + p.ring + p.knob + p.face} />}
-        <i className="hm-hole" ref={hole} aria-hidden="true" style={field ? { "--hole": Math.min(field.w * .36, 320) + "px" } : undefined} />
-        {field && <div className="hm-dim">
-          <Lines g={field} className="hm-rect" d={p.rect} />
-          <Lines g={field} className="hm-line" d={p.line} />
-          <svg className="hm-f hm-ring" width={field.w} height={field.h} viewBox={`0 0 ${field.w} ${field.h}`} aria-hidden="true"><path d={p.ring} ref={ringRef} /></svg>
-          <svg className="hm-f hm-ball" width={field.w} height={field.h} viewBox={`0 0 ${field.w} ${field.h}`} aria-hidden="true"><path d={p.knob + p.face} ref={knobRef} /></svg>
-        </div>}
-        <i className="hm-wave" ref={wave} aria-hidden="true" />
-        <div className="hm-mark" ref={mark}><Wordmark /><span className="hm-shine" style={{ WebkitMask: MARK_MASK, mask: MARK_MASK }} aria-hidden="true"><i className="hm-band" ref={band} /></span></div>
-      </div>
-      <div className="hm-end">
-        <h2>다음 기록을 남길 차례입니다.</h2>
-        <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
-      </div>
-    </section>
-  );
-}
-
 /* ============================== HOME ==============================
-   기록부 한 권: 네이비 앞표지(문장, 다음 대회, 봉인된 챔피언), 흰 속지(리그의 숫자, 공지, 갈 곳), 네이비 뒤표지(아레나).
-   첫 등장은 1초 안에: 문장이 솟고, 슬랩이 앞에서부터 스프링으로 서고, 사선 면 하나가 현재 챔피언을 지나간다. */
+   φ로 거듭 나눈 한 장. 첫 화면은 틈 없이 맞닿은 네 면이고, 면 하나에 사실 하나다: 다음 대회, 챔피언, 지난 우승, 대회 수.
+   눈은 큰 면에서 작은 면으로 돌고, 면을 누르면 그 사실이 사는 화면으로 간다.
+   아래로 갈수록 시간을 거슬러 간다: 지금(공지, 시즌) → 역대 챔피언 → 첫 기록. 글자는 움직이지 않고, 첫 등장은 제자리에 놓인다. */
 export default function HomePage({ data, go, admin }) {
-  const [enter] = useState(firstHero);
-  const hero = useRef(null);
-  const [champions, setChampions] = useState(null), [counts, setCounts] = useState(null), [pop, setPop] = useState(null);
+  const [enter] = useState(opening);
+  const lead = useRef(null), crown = useRef(null);
+  const [champions, setChampions] = useState(null), [facts, setFacts] = useState(null), [pop, setPop] = useState(null);
 
   useEffect(() => {
     let live = true;
     loadChampions(data).then(rows => { if (live) setChampions(rows); }).catch(error => { console.warn("home champions read failed", error); if (live) setChampions([]); });
-    loadCounts(data, admin).then(next => { if (live) setCounts(next); }).catch(error => console.warn("home counts read failed", error));
+    loadFacts(data, admin).then(next => { if (live) setFacts(next); }).catch(error => console.warn("home facts read failed", error));
     return () => { live = false; };
   }, [data]);
 
   useLayoutEffect(() => {
-    heroPending = false;
-    if (!enter) return;
-    const q = s => [...hero.current.querySelectorAll(s)];
-    place(q(".hm-ln"), { delay: 60, step: 100 });
-    place(q(".hm-next, .hm-actions"), { delay: 260, step: 100 });
+    firstOpen = false;
+    if (enter) place([...lead.current.children], { step: STAGGER.tile });
   }, [enter]);
+
+  const reigning = champions?.[0];
+  const landed = Boolean(reigning);
+  useLayoutEffect(() => {
+    if (!enter || !landed) return;
+    place(crown.current.querySelector("img"), { delay: STAGGER.tile });
+    seal(crown.current, STAGGER.tile * 2);
+  }, [enter, landed]);
 
   /* 대회 단계: 남은 날과 주 행동이 같은 계산을 읽는다 */
   const now = useMemo(() => {
@@ -221,51 +111,81 @@ export default function HomePage({ data, go, admin }) {
   }, [data.announcements]);
   const primary = !now ? ["기록 보기", "records"] : now.today ? ["대진표 보기", "bracket"] : ["이번 대회 신청", "news"];
   const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
-  const routes = [["bracket", "대진표", "지금 열린 대회의 대진과 결과"], ["records", "기록", "트레이너, 대회, 포켓몬, 랭킹"], ["champions", "명예의 전당", "역대 챔피언과 우승 엔트리"], ["builder", "팀 빌더", "현재 규정으로 팀을 짜고 저장"]];
-  const showCounts = counts && counts.tournaments > 0 && counts.trainers > 0 && champions;
+  const first = monthOf(facts?.first);
 
   return (<div className="hm">
-    <div className="hm-cover">
-      <section className="hm-lead" ref={hero}>
-        <h1><span className="hm-ln">모든 승부가</span> <span className="hm-ln">기록이 됩니다.</span></h1>
-        <div className="hm-now">
+    <section className="hm-plate" aria-label="지금의 YPL">
+      <div className="hm-a" ref={lead}>
+        <div className="hm-say">
+          <h1><span>모든 승부가</span> <span>기록이 됩니다.</span></h1>
+          <p>포켓몬 센터 연세점의 공식 배틀 리그입니다.</p>
+        </div>
+        <div className="hm-next">
           {now
-            ? <p className="hm-next">{now.today && <i className="live-dot" aria-hidden="true" />}<b className="tnum">{now.today ? "오늘" : `D-${now.dday}`}</b><span><strong>{now.name}</strong>{now.when}</span></p>
-            : <p className="hm-next">다음 대회 일정은 공지에 올라옵니다.</p>}
+            ? <p className="hm-when">{now.today && <i className="live-dot" aria-hidden="true" />}<b className="tnum">{now.today ? "오늘" : `D-${now.dday}`}</b><span><strong>{now.name}</strong>{now.when}</span></p>
+            : <p className="hm-when">다음 대회 일정은 공지에 올라옵니다.</p>}
           <div className="hm-actions">
-            <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
+            <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}<Icon n="arrow" size={20} /></Button>
             <Button type="button" size="lg" onClick={() => go("about")}>리그 소개</Button>
           </div>
         </div>
-      </section>
-      {champions?.length ? <SlabRail champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <SlabGhosts />}
+      </div>
+
+      <button type="button" className="hm-plane hm-b" ref={crown} onClick={() => reigning ? setPop(reigning) : go("champions")} aria-label={reigning ? `${reigning.label} 챔피언 ${reigning.name}, ${reigning.line}` : "명예의 전당"}>
+        <i className="hm-slant" aria-hidden="true" />
+        <i className="case-band" aria-hidden="true" />
+        <Icon n="arrow" size={20} />
+        {reigning && <><b>{reigning.name}</b><small>{reigning.label} 챔피언, {reigning.line}</small></>}
+        {reigning?.party[0]?.img && <img src={reigning.party[0].img} alt="" decoding="async" />}
+      </button>
+
+      <button type="button" className="hm-plane hm-c" onClick={() => go("records", { tab: "tour" })} aria-label={facts?.latest ? `지난 대회 우승 ${facts.latest.winner}, ${facts.latest.name}` : "대회 기록"}>
+        <Icon n="arrow" size={20} />
+        {facts?.latest && <><b>{facts.latest.winner}</b><small>{facts.latest.name} 우승</small></>}
+      </button>
+
+      <button type="button" className="hm-plane hm-d" onClick={() => go("records", { tab: "tour" })} aria-label={facts?.tournaments ? `지금까지 대회 ${facts.tournaments}회` : "대회 기록"}>
+        <Icon n="arrow" size={20} />
+        {facts?.tournaments > 0 && <><b className="tnum">{facts.tournaments}</b><em>회</em><small>지금까지의 대회</small></>}
+      </button>
+    </section>
+
+    <div className="hm-now">
+        {notices.length > 0 && <section className="hm-sec" aria-labelledby="hm-notices">
+          <div className="hm-head">
+            <h2 id="hm-notices">공지</h2>
+            <button type="button" className="hm-all" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
+          </div>
+          <div className="hm-list">
+            {notices.map(a => {
+              const excerpt = excerptOf(a.body, a.title);
+              return <button type="button" className="hm-row" key={a.id} onClick={() => go("news", { notice: a.id })}><span><b>{a.title}</b><small>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</small></span></button>;
+            })}
+          </div>
+        </section>}
+        {facts?.season && <section className="hm-sec" aria-labelledby="hm-season">
+          <div className="hm-head">
+            <h2 id="hm-season">{facts.season.name}</h2>
+            <button type="button" className="hm-all" onClick={() => go("records", { tab: "rank" })}>랭킹 전체 보기</button>
+          </div>
+          <ol className="hm-list">
+            {facts.season.rows.map(r => <li key={r.name}><button type="button" className="hm-row" onClick={() => go("records", { trainer: r.name })}><i>{r.rank}</i><span><b>{r.name}</b></span><strong>{r.points}<small>점</small></strong></button></li>)}
+          </ol>
+        </section>}
     </div>
 
-    <div className="hm-wrap hm-figs" role="group" aria-label="리그의 숫자">
-      {showCounts && [[counts.tournaments, "회", "대회"], [counts.trainers, "명", "트레이너"], [champions.length, "명", "챔피언"]].map(([n, unit, label]) => (
-        <Case key={label} title={label}><span className="hm-fig"><Roll value={n} /><small>{unit}</small></span></Case>
-      ))}
-    </div>
+    {champions?.length > 1 && <div className="hm-wrap hm-ledger"><HallRail champions={champions.slice(1)} onOpen={setPop} /></div>}
 
-    <div className="hm-wrap hm-board">
-      {notices.length > 0 && <section className="hm-notices">
-        <div className="hm-head">
-          <h2>공지</h2>
-          <button type="button" className="hm-all" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
-        </div>
-        <div className="hm-list">
-          {notices.map(a => {
-            const excerpt = excerptOf(a.body, a.title);
-            return <button type="button" className="hm-row" key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></button>;
-          })}
-        </div>
-      </section>}
-      <nav className="hm-routes" aria-label="바로 가기">
-        {routes.map(([view, title, line]) => <Case key={view} title={title} line={line} data-tab={view} onClick={() => go(view)} />)}
-      </nav>
-    </div>
-
-    <Arena primary={primary} go={go} />
+    <section className="hm-close" aria-label="YPL의 시작">
+      <div className="hm-first">
+        <h2>{first ? `첫 기록은 ${first}입니다.` : "다음 기록을 남길 차례입니다."}</h2>
+        <div className="hm-actions"><Button type="button" variant="inverse" size="lg" onClick={() => go("records")}>기록 보기</Button></div>
+      </div>
+      {facts?.trainers > 0 && champions && <dl>
+        <div><dt>트레이너</dt><dd>{facts.trainers}<small>명</small></dd></div>
+        <div><dt>챔피언</dt><dd>{champions.length}<small>명</small></dd></div>
+      </dl>}
+    </section>
 
     {pop && <ChampionSheet name={pop.name} hint={`${pop.label} 챔피언, ${pop.line}`} party={pop.party} onClose={() => setPop(null)}>
       <Button type="button" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button>

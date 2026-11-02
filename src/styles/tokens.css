@@ -6,15 +6,7 @@
    nothing that moves carries a filter, a moving mask or a live shadow: whatever moves moves by transform and opacity.
    Light first, dark equal: :root holds dark, <html data-theme="light"> swaps, and a first visit opens light.
 
-   Spacing law (4px grid, one scale --s1..--s14, nearer = smaller):
-     --s1  4   a pair: label and value, a title and its meta line
-     --s2  8   inside one element, side-by-side controls, a hint under its field
-     --s3  12  items of one set (--grid-gap: 12, 16 desktop), a "show all" under its list
-     --s4  16  blocks inside a card, section title to content, a control to the content it drives
-     --s5  20  card padding at every width (hero --s6 24; list surfaces 8 so rows keep radius 24), a form's fields
-     --s6  24  page title to content, a sheet's title to its body
-     --section 40 (56 desktop) between sections / --chapter 80 (120) between home chapters
-   Radius law: inner = outer - padding. Hero 36, card 32, tile 12, controls pill.
+   One ratio, phi, sets everything: space, type, leading, tracking, curvature, time, splits and proportions. See DESIGN.md "The golden law".
    ========================================================================== */
 
 /* Albert Sans for Latin and digits, one variable file. */
@@ -22,6 +14,8 @@
   font-family: "Albert Sans";
   src: url("/fonts/albert-sans-latin-wght.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
+  /* the browser rounds a font's ascent to a whole pixel, which left 16px text .8 above the middle of its box. Every line takes its baseline from this font. */
+  ascent-override: 97%; descent-override: 25%;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* Freesentation for Korean, in unicode-range slices: a visit downloads only the glyphs it shows. Generated, do not edit by hand. */
@@ -70,8 +64,6 @@
   src: url("/fonts/ypl-figures.woff2?v=20261027") format("woff2"); /* the query changes whenever the glyphs do, so no browser keeps old digits */
   font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+002D, U+0044, U+2212;
 }
-@property --fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }
-@property --fade-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
 
 /* ---------- primitives: raw values. Only the semantic layer below reads these; components never do. ---------- */
 :root {
@@ -81,35 +73,34 @@
   --gray-50: #F5F7F9; --gray-100: #EEF0F4; --gray-200: #E1E5EB; --gray-300: #CCD1D9; --gray-400: #A5ABB5; --gray-500: #79818D; --gray-600: #5D646F; --gray-700: #474D58;
 
   --font: "Albert Sans", "Freesentation", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  /* one scale: 16 by 1.2 on the 4px grid, every second step above 24 */
-  --fs-caption: .8125rem; --fs-body: 1rem; --fs-lead: 1.25rem; --fs-h3: 1.5rem; --fs-h2: 2rem; --fs-h1: 3rem; --fs-display: 4.5rem; --fs-hero: 6rem;
-  --lh-caption: 1.5; --lh-body: 1.65; --lh-label: 1.35; --lh-lead: 1.45; --lh-title: 1.25;
-  --ls-body: .01em; --ls-lead: -.01em; --ls-h3: -.015em; --ls-title: -.02em; --ls-display: -.025em;
+  /* type stands on the steps of space: 20, 32, 52, 84, 136. 13 and 16 are the reading sizes under them. */
+  --fs-caption: .8125rem; --fs-body: 1rem; --fs-lead: 1.25rem; --fs-h3: 1.25rem; --fs-h2: 2rem; --fs-h1: 3.25rem; --fs-display: 5.25rem; --fs-hero: 8.5rem;
+  /* leading is 1 + a power of 1/phi: the bigger the type, the closer its lines. Tracking is a power of 1/phi over ten. */
+  --lh-caption: 1.382; --lh-body: 1.618; --lh-label: 1.382; --lh-lead: 1.382; --lh-title: 1.236; --lh-display: 1.146;
+  --ls-body: .009em; --ls-lead: -.009em; --ls-h3: -.009em; --ls-title: -.0146em; --ls-display: -.0236em;
   /* fluid steps end on the scale */
   --title: clamp(var(--fs-h3), 1.25rem + 1vw, var(--fs-h2));
   --display: clamp(var(--fs-h2), 1.5rem + 2.4vw, var(--fs-h1)); --display-l: clamp(var(--fs-h1), 8vw, var(--fs-hero));
-  --hero: clamp(var(--fs-h1), 6.67vw, var(--fs-hero)); --hero-2: clamp(var(--fs-h2), 5vw, var(--fs-display)); --hero-3: clamp(var(--fs-h2), 4vw, var(--fs-h1)); --hero-4: var(--fs-h2);
+  --hero: clamp(var(--fs-h2), 13.8vw, var(--fs-h1)); --hero-2: clamp(var(--fs-h2), 5vw, var(--fs-display)); --hero-3: clamp(var(--fs-h2), 4vw, var(--fs-h1)); --hero-4: var(--fs-h2);
   --fig-s: var(--fs-h2); --fig-m: var(--fs-h1); --fig-l: var(--fs-display);
 
   /* the golden law: space is 4px times a Fibonacci number, so every step is about 1.618 times the one before. A token is named for its number. */
   --s1: 4px; --s2: 8px; --s3: 12px; --s5: 20px; --s8: 32px; --s13: 52px; --s21: 84px; --s34: 136px;
   --section: var(--s13); --chapter: var(--s21); --gutter: var(--s5);
   --golden: 1.618; /* the larger part of a split, and the height of a card to its width */
-  /* the slab's rule: outer 24 = inner 12 + padding 12 */
-  --r-sm: 12px; --r-lg: 24px; --r-pill: 999px;
-  --shadow-1: 0 12px 32px -16px rgb(8 28 61 / .28); --shadow-2: 0 24px 64px -24px rgb(8 28 61 / .4);
-  --focus-width: 2px; --focus-offset: 2px; --opacity-disabled: .4; --opacity-muted: .7; --opacity-ghost: .24;
+  --shadow-1: 0 12px 32px -20px rgb(8 28 61 / .236); --shadow-2: 0 20px 52px -20px rgb(8 28 61 / .382);
+  --focus-width: 2px; --focus-offset: 2px; --opacity-disabled: .382; --opacity-muted: .618; --opacity-ghost: .236;
   --z-base: 0; --z-raised: 1; --z-sticky: 10; --z-header: 20; --z-modal: 40; --z-popover: 50; --z-toast: 60; --z-skip: 80; --z-veil: 90;
 
-  /* the bars, the footer and the closing arena are navy in both themes */
+  /* the bars, the footer and the home's first and last planes are navy in both themes */
   --bar: var(--navy-950); --on-bar: var(--white); --on-bar-2: var(--navy-200); --bar-up: var(--navy-800); --navy-up-hover: var(--gray-300); --bar-up-hover: var(--navy-700); --band: var(--navy-300);
-  --window: var(--navy-950); --label: var(--white); --on-label: var(--black); --on-label-2: var(--gray-600);
+  --label: var(--gray-200); --label-hover: var(--gray-300); --on-label: var(--black); --on-label-2: var(--gray-700);
 }
 /* ---------- semantic: what components read. Dark here, light below. ---------- */
 :root {
   color-scheme: dark;
   --bg: var(--navy-950); --surface: var(--navy-900); --surface-raised: var(--navy-800); --surface-sunken: var(--navy-925); --surface-float: var(--navy-900); --surface-pop: var(--navy-800); --pop-hover: var(--navy-700); --pop-selected: var(--navy-600);
-  --overlay: rgb(4 14 31 / .6);
+  --overlay: rgb(4 14 31 / .618);
   --text-primary: var(--white); --text-secondary: var(--gray-300); --text-tertiary: var(--gray-400); --text-disabled: var(--gray-500); --text-on-accent: var(--black);
   --text-link: var(--white); --text-link-hover: var(--gray-300);
   --border-subtle: var(--navy-800); --border-default: var(--navy-700); --border-strong: var(--gray-500); --divider: var(--navy-800);
@@ -119,13 +110,13 @@
   --state-hover: var(--navy-800); --state-selected: var(--navy-700); --state-pressed: var(--navy-600);
   --lens: var(--navy-700); --ind-fg: var(--white); --tabs: var(--navy-800); --pod: var(--navy-925);
   --rank-1: var(--white); --rank-2: var(--gray-300); --rank-3: var(--gray-400); --rank-n: var(--gray-400);
-  --case: var(--navy-800);
+  --window: var(--navy-800); --plane-b: var(--navy-900); --plane-c: var(--navy-800); --plane-d: var(--navy-700); --slant: var(--navy-800);
   --burst: var(--navy-800); --ring: var(--gray-300);
 }
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: var(--white); --surface: var(--gray-50); --surface-raised: var(--gray-200); --surface-sunken: var(--gray-100); --surface-float: var(--white); --surface-pop: var(--white); --pop-hover: var(--state-hover); --pop-selected: var(--state-selected);
-  --overlay: rgb(8 28 61 / .45);
+  --overlay: rgb(8 28 61 / .382);
   --text-primary: var(--black); --text-secondary: var(--gray-700); --text-tertiary: var(--gray-600); --text-disabled: var(--gray-500); --text-on-accent: var(--white);
   --text-link: var(--black); --text-link-hover: var(--gray-700);
   --border-subtle: var(--gray-200); --border-default: var(--gray-300); --border-strong: var(--gray-500); --divider: var(--gray-200);
@@ -135,7 +126,7 @@
   --state-hover: var(--gray-100); --state-selected: var(--gray-200); --state-pressed: var(--gray-300);
   --lens: var(--white); --ind-fg: var(--black); --tabs: var(--navy-950); --pod: var(--gray-200);
   --rank-1: var(--black); --rank-2: var(--gray-700); --rank-3: var(--gray-600); --rank-n: var(--gray-600);
-  --case: var(--gray-200);
+  --window: var(--navy-950); --plane-b: var(--gray-200); --plane-c: var(--gray-100); --plane-d: var(--navy-800); --slant: var(--gray-100);
   --burst: var(--gray-200); --ring: var(--gray-600);
 }
 /* status never takes a hue (24th round): it reads through words, icons and weight, so the four kinds resolve to the same tones */
@@ -155,15 +146,15 @@
   --move-place: var(--t-place) var(--ease-place); --move-slide: var(--t-place) var(--spring); --move-lift: var(--t-lift) var(--spring-lift);
   --move-leave: var(--t-leave) var(--ease-leave); --move-seal: var(--t-seal) var(--ease-seal); --move-wait: var(--t-wait) var(--ease-seal);
 }
-@media (min-width: 860px) { :root { --section: var(--s21); --chapter: var(--s34); --gutter: var(--s13); } }
+@media (min-width: 860px) { :root { --section: var(--s21); --chapter: var(--s34); --gutter: var(--s13); --hero: clamp(var(--fs-h1), 7vw, var(--fs-hero)); } }
 
 
 /* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
 :root {
-  --grid-gap: var(--s5); --content: 1200px; --sheet-w: 560px; --nav-height: 60px; --tab-height: 64px; --target: 44px; --row-min: 60px; --match-card: 98px;
-  --hair: 1px; --stroke-connector: 1.5px;
+  --grid-gap: var(--s5); --content: 1200px; --sheet-w: 576px; --nav-height: 52px; --tab-height: 52px; --target: 44px; --row-min: 52px; --match-card: 98px;
+  --hair: 1px; --rule: 2px; --stroke-connector: 1.5px;
 }
-@media (min-width: 860px) { :root { --nav-height: 72px; --grid-gap: var(--s8); } }
+@media (min-width: 860px) { :root { --nav-height: 84px; --grid-gap: var(--s8); } }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
 
 /* ---------- base ---------- */
@@ -216,12 +207,11 @@ input:-webkit-autofill { -webkit-text-fill-color: var(--text-primary); box-shado
 label:has(input) { cursor: pointer; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: var(--r-pill); border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border: 3px solid transparent; background-clip: padding-box; }
 
 .tnum, .num { font-variant-numeric: tabular-nums; }
 .ic { flex: none; display: block; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.sq { border-radius: var(--r, var(--r-sm)); }
 
 /* ---------- type: one scale, four weights ----------
    Sizes 12 / 13 / 15 / 16 / 17 / 20 / 24 / 28, then title 28-36 and display 40-64. Weights 400 text, 500 quiet labels, 600 rows,
@@ -242,20 +232,22 @@ label:has(input) { cursor: pointer; }
 /* what opens over a card has no dimmed page to lift it, so in the dark it stands one tone up */
 .dd-menu, .popover, .toast { background: var(--surface-pop); --state-hover: var(--pop-hover); --state-selected: var(--pop-selected); }
 .groove { background: var(--surface-sunken); }
-.card { background: var(--surface); border-radius: var(--r-lg); }
+.card { background: var(--surface); }
 
 /* ---------- K1 press, K2 hover highlight ---------- */
 :where(button, .press) { transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
-:where(button, .press):active:not(:disabled) { scale: .97; transition: scale var(--move-down); }
+:where(button, .press):active:not(:disabled) { scale: .976; transition: scale var(--move-down); }
+/* what meets its neighbours keeps its size and answers in tone */
+:is(.navlink, .tab, .bar-cta, .iconbtn, .seg-track button, .hm-arrow, .btn--secondary, .btn--tertiary):active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); }
 @media (prefers-reduced-motion: reduce) { :where(button, .press):active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); } }
 /* every disabled control looks the same and says so by its cursor */
 :where(button, input, select, textarea):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 
 /* ---------- K4 rolling numbers ---------- */
 .roll { display: inline-flex; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: var(--lh-title); }
-.rd { display: inline-block; height: 1.25em; overflow: hidden; }
-.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.25em)); transition: transform var(--move-lift); }
-.rs > i { font-style: normal; height: 1.25em; line-height: 1.25em; text-align: center; }
+.rd { display: inline-block; height: 1.236em; overflow: hidden; }
+.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.236em)); transition: transform var(--move-lift); }
+.rs > i { font-style: normal; height: 1.236em; line-height: 1.236em; text-align: center; }
 .roll--natural { font-variant-numeric: normal; }
 .roll--natural .rd { position: relative; }
 .roll--natural .rd-w { visibility: hidden; }
@@ -263,29 +255,15 @@ label:has(input) { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .rs { transition: none; } }
 
 /* ---------- live dot: always beside words, pings while something is in progress ---------- */
+/* the one curve on the site: what is alive is round */
 .live-dot, .ypl-ping { position: relative; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--text-primary); }
 .live-dot::after, .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ping var(--move-wait) infinite; }
-@keyframes ping { from { transform: scale(1); opacity: var(--opacity-muted); } to { transform: scale(3.2); opacity: 0; } }
-
-/* ---------- sideways runs (bracket, segmented, filter rows): the edge that hides more content fades.
-   Driven by the run's own scroll, so a run that does not scroll shows no fade. ---------- */
-@supports (animation-timeline: scroll()) {
-  :is(.bk-scroll, .seg-track, .rc-filter[role="group"]) {
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
-    /* two ranges at the two ends: between them no animation is active, so a long run scrolls with no style or mask work at all */
-    --fade-r: 32px;
-    animation: edge-fade-l linear both, edge-fade-r linear both; animation-timeline: scroll(self inline), scroll(self inline);
-    animation-range: 0px 32px, calc(100% - 32px) 100%;
-  }
-}
-@keyframes edge-fade-l { from { --fade-l: 0px; } to { --fade-l: 32px; } }
-@keyframes edge-fade-r { from { --fade-r: 32px; } to { --fade-r: 0px; } }
+@keyframes ping { from { transform: scale(1); opacity: var(--opacity-muted); } to { transform: scale(3.236); opacity: 0; } }
 
 /* ---------- shared keyframes ---------- */
-@keyframes y-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes y-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes y-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes y-pop { from { opacity: 0; transform: scale(.944); } to { opacity: 1; transform: none; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
 .swap { animation: y-swap var(--move-place) backwards; }
 @keyframes y-swap { from { opacity: 0; transform: translateY(8px); } }
@@ -304,7 +282,7 @@ label:has(input) { cursor: pointer; }
 /* ---------- print: the record, in ink, without the site around it ---------- */
 @media print {
   :root, :root[data-theme] { --bg: var(--white); --surface: var(--white); --surface-raised: var(--white); --text-primary: var(--black); --text-secondary: var(--gray-700); --text-tertiary: var(--gray-600); }
-  .topbar, .tabbar, .admin-dock, .site-foot, .hm-cover, .hm-close, .btn, .veil, .skip-link { display: none !important; }
+  .topbar, .tabbar, .admin-dock, .site-foot, .hm-cover, .hm-plate, .hm-close, .btn, .veil, .skip-link { display: none !important; }
   .page { width: 100%; min-height: 0; padding: 0; }
   .card, .ypl-group { break-inside: avoid; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: var(--fs-caption); }
