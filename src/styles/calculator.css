@@ -16,7 +16,7 @@
 /* ---------- toggles: lite pills, an active one is inverted like a chosen chip ---------- */
 .calc-toggles { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); }
 .calc-toggle {
-  height: 36px; padding: 0; border: 0;
+  height: 44px; padding: 0; border: 0;
   background: none; color: var(--text-secondary); font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
@@ -67,7 +67,7 @@ button.calc-result-head { transition: scale var(--move-press), background-color 
 .calc-rolls { margin-top: var(--s1); color: var(--text-tertiary); font-variant-numeric: tabular-nums; word-break: keep-all; }
 
 /* HP bar: bright = HP left even after the highest roll, dim = the roll window, track = what is lost for sure */
-.calc-hpbar { position: relative; height: 6px; margin: 0 var(--s1); background: var(--state-selected); overflow: hidden; }
+.calc-hpbar { position: relative; height: 8px; margin: 0 var(--s1); background: var(--state-selected); overflow: hidden; }
 .calc-hpbar span { position: absolute; inset: 0; transform-origin: left center; transition: transform var(--move-tone); }
 .calc-hp-range { background: var(--text-tertiary); }
 .calc-hp-left { background: var(--text-primary); }
@@ -106,9 +106,9 @@ button.calc-result-head { transition: scale var(--move-press), background-color 
 .calc-stat-row input[type="range"] { width: 100%; height: 24px; }
 .calc-final { justify-self: end; font-size: var(--fs-body); font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.calc-stepper { display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; height: 36px; background: var(--state-hover); }
+.calc-stepper { display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; height: 44px; background: var(--state-hover); }
 .calc-stepper button {
-  width: 32px; height: 32px; min-width: 0; min-height: 0; display: grid; place-items: center; margin: 2px; border: 0;
+  width: 32px; height: 32px; min-width: 0; min-height: 0; display: grid; place-items: center; border: 0;
   background: transparent; color: var(--text-secondary);
   transition: scale var(--move-press), background-color var(--move-tone);
 }
@@ -151,7 +151,7 @@ button.calc-result-head { transition: scale var(--move-press), background-color 
 .calc-dex-empty .btn { margin-top: var(--s3); }
 .calc-dex-actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s5); }
 .calc-dex-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--grid-gap); align-items: start; }
-.calc-base-row { display: grid; grid-template-columns: 52px 32px minmax(0, 1fr) 84px; align-items: center; gap: var(--s3); min-height: 48px; }
+.calc-base-row { display: grid; grid-template-columns: 52px 32px minmax(0, 1fr) 84px; align-items: center; gap: var(--s3); min-height: 52px; }
 .calc-base-row + .calc-base-row { box-shadow: inset 0 1px 0 var(--divider); }
 .calc-base-row strong { font-size: var(--fs-body); font-weight: 600; }
 .calc-base-row b { font-size: var(--fs-body); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
@@ -163,7 +163,7 @@ button.calc-result-head { transition: scale var(--move-press), background-color 
 .calc-abilities strong { font-weight: 600; }
 .calc-abilities small { font-size: var(--fs-caption); color: var(--text-tertiary); }
 .calc-matchups { display: flex; flex-direction: column; }
-.calc-matchup { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: var(--s3); min-height: 48px; padding: var(--s2) 0; }
+.calc-matchup { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: var(--s3); min-height: 52px; padding: var(--s2) 0; }
 .calc-matchup + .calc-matchup { box-shadow: inset 0 1px 0 var(--divider); }
 .calc-matchup > strong { font-size: var(--fs-body); font-weight: 700; font-variant-numeric: tabular-nums; }
 
@@ -171,7 +171,7 @@ button.calc-result-head { transition: scale var(--move-press), background-color 
 .calc-table-wrap { overflow-x: auto; margin: 0 calc(var(--s2) * -1); }
 .calc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
 .calc-table th { padding: var(--s2); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); text-align: left; white-space: nowrap; }
-.calc-table td { padding: var(--s2); height: 60px; vertical-align: middle; white-space: nowrap; content-visibility: auto; }
+.calc-table td { padding: var(--s2); height: 52px; vertical-align: middle; white-space: nowrap; content-visibility: auto; }
 .calc-table tbody tr + tr td { box-shadow: inset 0 1px 0 var(--divider); }
 .calc-table td strong { display: block; font-weight: 600; }
 .calc-table td small { display: block; font-size: var(--fs-caption); color: var(--text-tertiary); }
@@ -203,10 +203,8 @@ button.calc-result-head { transition: scale var(--move-press), background-color 
   .calc-versus-mon strong { white-space: normal; overflow-wrap: anywhere; line-height: var(--lh-label); }
   .calc-grid, .calc-moves { grid-template-columns: 1fr; }
   .calc-stat-row input[type="range"] { display: none; }
-  .calc-stat-row { grid-template-columns: minmax(0, 1fr) 52px 84px 40px; gap: var(--s2); }
+  .calc-stat-row { grid-template-columns: minmax(0, 1fr) 52px 84px 44px; gap: var(--s2); }
   .calc-stat-row .tb-stat-label strong, .calc-stat-row .tb-stat-label span { white-space: nowrap; }
-  .calc-stepper { grid-template-columns: 28px minmax(0, 1fr) 28px; }
-  .calc-stepper button { width: 28px; height: 28px; }
   .calc-move-tools { grid-template-columns: 1fr 1fr; }
   .calc-move-tools .tb-dd:last-child { grid-column: 1 / -1; }
   .calc-table th:nth-child(3), .calc-table td:nth-child(3) { display: none; }

@@ -1,7 +1,7 @@
 /* =============================================================================
    YPL Navy — components
    Every control draws from here: buttons, chips, segmented, fields, menus, lists, tables,
-   sheets, toasts, empty and loading states. Every label sits at the exact centre of its control.
+   sheets, toasts, empty and loading states. Every label sits on the ink centre of its control.
    ========================================================================== */
 
 .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
@@ -18,9 +18,9 @@
   font-size: var(--fs-body); line-height: 1; font-weight: 600; white-space: nowrap; user-select: none;
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
-/* the main action is the one plane in its area: 1 high to phi squared wide, 52 by 136 */
-.btn--sm { height: 40px; min-width: 84px; padding: 0 var(--s5); }
-.btn--md { height: 48px; min-width: 136px; padding: 0 var(--s5); }
+/* the main action is the one plane in its area: 1 high to phi squared wide, 52 by 136, and the 32 from its side to the word is phi times the 20 from its top to the ink */
+.btn--sm { height: 44px; min-width: 84px; padding: 0 var(--s5); }
+.btn--md { height: 52px; min-width: 136px; padding: 0 var(--s8); }
 .btn--lg { height: 52px; min-width: 136px; padding: 0 var(--s8); }
 /* what is not the main action is a line under its word, and two of them stand a step apart */
 .btn--secondary + .btn, .btn--tertiary + .btn { margin-left: var(--s5); }
@@ -49,16 +49,16 @@
 .error-note .ic { flex: none; }
 .field--flush { margin-bottom: 0; }
 
-/* ---------- Chip and badge (M10): one 28px soft pill for every label, tag and status; the dot rides in front only while live ---------- */
+/* ---------- Chip and badge (M10): one 32px word for every label, tag and status; the dot rides in front only while live ---------- */
 .ypl-chip, .y-chip, .pin, .rc-chip, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-status-chip, .tb-type, .tb-official-meta span,
 .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .tb-chip {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: 28px; padding: 0; color: var(--text-primary); font-size: var(--fs-caption); line-height: 1; font-weight: 600; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: 32px; padding: 0; color: var(--text-primary); font-size: var(--fs-caption); line-height: 1; font-weight: 600; white-space: nowrap;
 }
 .ypl-chip--ink { padding: 0 var(--s2); background: var(--accent); color: var(--text-on-accent); box-shadow: none; }
 .y-chip { color: var(--text-secondary); }
 .y-chip .ic, .ypl-chip .ic { width: 16px; height: 16px; }
 /* a count is a number */
-.fold-badge, .tb-count-badge { min-width: 24px; height: 24px; padding: 0 var(--s2); display: inline-grid; place-items: center; color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.fold-badge, .tb-count-badge { min-width: 20px; height: 20px; padding: 0 var(--s2); display: inline-grid; place-items: center; color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 
 /* ---------- Segmented (K3): words on a hairline, one line under the chosen word ---------- */
 .ypl-seg { --lens: var(--accent); --ind-fg: var(--text-primary); --seg-line: var(--divider); position: relative; display: inline-flex; max-width: 100%; vertical-align: top; background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--seg-line); }
@@ -83,7 +83,7 @@
 .seg-track > button[aria-selected="true"] { color: var(--ind-fg); }
 @media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--text-primary); } }
 
-/* ---------- PageHead (E3): the title is large, the space is the hero; 24px to the first content ---------- */
+/* ---------- PageHead (E3): the page opens on a navy plane; every distance in it is measured to the ink ---------- */
 .ypl-head { display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--page-top) * -1) calc(50% - 50vw) calc(var(--s8) - var(--section)); padding: var(--s8) calc(50vw - 50%); background: var(--bar); color: var(--on-bar); }
 .ypl-head .callout { color: var(--on-bar-2); }
 .ypl-head .btn--primary { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--on-label); }
@@ -92,23 +92,23 @@
 .ypl-head input::placeholder, .ypl-head .ls-ico, .ypl-head .search-input-icon { color: var(--on-bar-2); }
 @media (min-width: 860px) { .ypl-head { padding-block: var(--s13); } }
 .ypl-head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s5); flex-wrap: wrap; }
-.ypl-head-h { min-width: 0; }
-.ypl-head-desc { margin-top: calc(var(--s2) - var(--s5)); }
-/* whatever the head carries under its title (search, tabs, actions) starts 24 under the title or its line; controls after it keep 16 */
+.ypl-head-h { min-width: 0; margin-block: var(--trim); }
+.ypl-head-desc { margin-block: var(--trim); }
+/* whatever the head carries under its title (search, tabs, actions) starts 32 under the title or its line; controls after it keep 20 */
 .ypl-head > :is(.ypl-head-row, .ypl-head-desc) + :not(.ypl-head-desc) { margin-top: calc(var(--s8) - var(--s5)); }
 .ypl-head .bd-tabs { margin-bottom: 0; }
 .y-page-aside { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 
-/* ---------- Section head: a headline, a quiet link on the right; 16px to the content ---------- */
+/* ---------- Section head: a headline, a quiet link on the right; 20 to the content ---------- */
 .ypl-sech { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s5); flex-wrap: wrap; }
 .ypl-sech > div { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
 .ypl-more {
-  flex: none; display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); height: 36px; padding: 0 var(--s2) 0 var(--s3);
+  flex: none; display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); height: 44px; padding: 0 var(--s2) 0 var(--s3);
   margin-right: calc(var(--s2) * -1); font-size: var(--fs-caption); line-height: 1; font-weight: 600; color: var(--text-secondary);
   transition: color var(--move-tone), scale var(--move-press);
 }
 .ypl-more .ic { width: 16px; height: 16px; transition: transform var(--move-slide); }
-@media (hover: hover) { .ypl-more:hover { color: var(--text-primary); } .ypl-more:hover .ic { transform: translateX(2px); } }
+@media (hover: hover) { .ypl-more:hover { color: var(--text-primary); } .ypl-more:hover .ic { transform: translateX(var(--s1)); } }
 
 /* ---------- List: rows on hairlines; the lines stop on the same edges as the words, and a hovered row underlines its title (M1) ---------- */
 .ypl-group { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -118,7 +118,7 @@
 }
 .ypl-row {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
-  min-height: var(--row-min); padding: var(--s3) 0; border: 0; background-color: transparent; color: inherit; text-align: left;
+  min-height: var(--row-min); padding: var(--row-pad) 0; border: 0; background-color: transparent; color: inherit; text-align: left;
 }
 .ypl-row__title, .nb-title, .bd-title { display: block; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ypl-row__meta { display: block; font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
@@ -131,11 +131,11 @@
 .ypl-empty b { font-size: var(--fs-body); font-weight: 600; }
 .ypl-empty p { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
 
-/* ---------- Lead card: the one hero card on a records screen (radius 36, padding 24; tiles 12) ---------- */
+/* ---------- Lead card: the one hero card on a records screen ---------- */
 .rc-lead {
   position: relative; overflow: hidden; display: grid; gap: var(--s5); padding: var(--s8); background: var(--surface);
 }
-.rc-lead-title { font-size: var(--display); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-display); }
+.rc-lead-title { margin-block: var(--trim); font-size: var(--display); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-display); }
 
 
 
@@ -149,7 +149,7 @@
 .field:has(> input[type="checkbox"]) > label { font-size: var(--fs-body); font-weight: 400; color: var(--text-primary); cursor: pointer; }
 
 :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea) {
-  width: 100%; min-height: 48px; padding: var(--s3) 0; border: 0;
+  width: 100%; min-height: 52px; padding: var(--s3) 0; border: 0;
   background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--field-line, var(--border-strong)); color: var(--text-primary); font-size: var(--fs-body); line-height: var(--lh-body);
   -webkit-appearance: none; appearance: none;
 }
@@ -177,7 +177,7 @@
 /* ---------- Dropdown (M6): a word on a line; desktop opens a plate menu that grows from it, a phone a sheet ---------- */
 .dd { position: relative; width: 100%; min-width: 0; }
 .dd-btn {
-  position: relative; width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  position: relative; width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding: 0; border: 0;
   background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--field-line, var(--border-strong));
   color: var(--text-primary); text-align: left; font-size: var(--fs-body); font-weight: 600;
@@ -209,8 +209,7 @@
 /* ---------- Menu rows (sheet and popover) ----------
    Chosen rows, wherever they float, share one state ladder: rest clear, hover --state-hover, selected --state-selected with a check,
    keyboard focus --state-pressed; the label stays 600 so a selection never moves the words.
-   In a sheet the rows hang 12 into its padding: their words stand on the title's edge and the highlight 8 from the
-   sheet's edge, so its radius is the sheet's 32 less 8 (24). */
+   In a sheet the rows hang 12 into its padding: their words stand on the title's edge. */
 .menu { display: flex; flex-direction: column; gap: var(--s1); }
 .modal > .menu, .pick-list, .sc-pick { margin-inline: calc(var(--s3) * -1); }
 .mi {
@@ -231,7 +230,7 @@
 .ypl-table-wrap.card { background: none; }
 .ypl-table tbody tr + tr td { box-shadow: inset 0 var(--hair) 0 var(--divider); }
 .ypl-table { width: 100%; font-variant-numeric: tabular-nums; border-collapse: separate; border-spacing: 0; }
-.ypl-table th { height: 40px; padding: 0 var(--s2); text-align: left; vertical-align: middle; font-size: var(--fs-caption); line-height: 1; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
+.ypl-table th { height: 44px; padding: 0 var(--s2); text-align: left; vertical-align: middle; font-size: var(--fs-caption); line-height: 1; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
 .ypl-table td { height: var(--row-min); padding: var(--s2); vertical-align: middle; transition: background-color var(--move-tone); }
 .ypl-table :is(th, td):first-child { padding-left: 0; }
 .ypl-table :is(th, td):last-child { padding-right: 0; }
@@ -261,7 +260,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   .ypl-table__n { width: 84px; }
 }
 
-/* ---------- Pager: 44px circles, the current page inverse ---------- */
+/* ---------- Pager: words; the current page gains a 2px line ---------- */
 .pager { display: flex; justify-content: center; align-items: center; gap: var(--s2); }
 .pg-btn {
   min-width: var(--target); height: var(--target); padding: 0 var(--s2); display: inline-grid; place-items: center;
@@ -279,7 +278,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 .ls-ico, .search-input-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: flex; color: var(--text-tertiary); pointer-events: none; z-index: var(--z-raised); }
 .ls-ico .ic, .search-input-icon .ic { width: 20px; height: 20px; }
 .ls-clear, .tb-clear {
-  position: absolute; right: 0; top: 50%; translate: 0 -50%; width: 36px; height: 36px; display: grid; place-items: center;
+  position: absolute; right: 0; top: 50%; translate: 0 -50%; width: 44px; height: 44px; display: grid; place-items: center;
   border: 0; color: var(--text-secondary);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
@@ -292,31 +291,30 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 .is-admin .toaster { bottom: calc(env(safe-area-inset-bottom, 0px) + 136px); }
 @media (min-width: 860px) { .toaster { bottom: var(--s8); } .is-admin .toaster { bottom: 84px; } }
 .toast {
-  position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--s2); min-height: 56px; padding: var(--s3) var(--s8); font-size: var(--fs-body); line-height: var(--lh-label); font-weight: 600; transform-origin: 50% 100%;
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--s2); min-height: 52px; padding: var(--s3) var(--s8); font-size: var(--fs-body); line-height: var(--lh-label); font-weight: 600; transform-origin: 50% 100%;
   transform: translateY(calc(var(--i, 0) * -12px)) scale(calc(1 - var(--i, 0) * .056));
   transition: transform var(--move-slide), opacity var(--move-tone), translate var(--move-leave);
 }
 .toast > span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .toast.out { opacity: 0; translate: 0 12px; }
 
-/* ---------- Sheet and dialog (M5, K10): one rule at 860px. Under it a sheet rises from the bottom and fills the width,
-   so its square lower edge is the screen's own; from it a dialog sits in the middle, round on all four corners.
-   The sheet clips, or the pinned actions' backing paints square over its round corners. ---------- */
+/* ---------- Sheet and dialog (M5, K10): one rule at 860px. Under it a sheet rises from the bottom and fills the width;
+   from it a dialog sits in the middle. ---------- */
 .overlay { position: fixed; inset: 0; z-index: var(--z-modal); }
 .scrim { position: absolute; inset: 0; background: var(--overlay); touch-action: none; }
 .sheet {
   position: absolute; left: 0; right: 0; bottom: 0; width: 100%; overflow: hidden;
-  max-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; outline: none;
+  max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; outline: none;
 }
-.grip { flex: none; height: 24px; display: grid; place-items: center; touch-action: none; cursor: grab; }
-.grip::after { content: ""; width: 40px; height: 5px; background: var(--text-tertiary); opacity: var(--opacity-disabled); }
+.grip { flex: none; height: 20px; display: grid; place-items: center; touch-action: none; cursor: grab; }
+.grip::after { content: ""; width: 52px; height: 4px; background: var(--text-tertiary); opacity: var(--opacity-disabled); }
 .modal {
   --pad: var(--s5);
   position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   padding: var(--s2) var(--pad) calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
-.modal > h3 { padding-right: 52px; font-size: var(--fs-h3); line-height: var(--lh-label); font-weight: 700; letter-spacing: var(--ls-h3); }
-.modal > .hint { margin-top: var(--s2); }
+.modal > h3 { padding-right: 52px; margin-bottom: var(--trim); font-size: var(--fs-h3); line-height: var(--lh-label); font-weight: 700; letter-spacing: var(--ls-h3); }
+.modal > .hint { margin-block: calc(var(--s3) + var(--trim)) var(--trim); }
 .modal > h3 + *:not(.hint), .modal > .hint + * { margin-top: var(--s8); }
 .modal-x {
   position: absolute; top: 0; right: 0; z-index: var(--z-raised); width: 52px; height: 52px; display: grid; place-items: center; color: var(--text-secondary);
@@ -334,8 +332,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 }
 .modal-actions .btn { flex: 1 1 0; }
 @media (min-width: 860px) {
-  .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 48px, var(--sheet-w)); max-height: calc(100dvh - 64px); }
-  .grip { height: var(--s5); }
+  .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 52px, var(--sheet-w)); max-height: calc(100dvh - 52px); }
   .grip::after { display: none; }
   /* the body scrolls and clips, so the close button sits inside it, centred on the title's first line */
   .modal { --pad: var(--s8); padding: var(--s2) var(--pad) var(--s8); }
@@ -346,7 +343,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 /* ---------- fold (collapsible) ---------- */
 .fold { margin: var(--s5) 0; background: var(--state-hover); }
 .fold-head {
-  width: 100%; min-height: 56px; display: flex; align-items: center; gap: var(--s3); padding: 0 var(--s5);
+  width: 100%; min-height: 52px; display: flex; align-items: center; gap: var(--s3); padding: 0 var(--s5);
   border: 0; background: transparent; text-align: left; font-size: var(--fs-body); font-weight: 600;
 }
 .fold-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
@@ -364,13 +361,13 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   :is(.navlink, .seg-track > button)::after { content: ""; position: absolute; inset: calc(var(--s1) * -1) 0; }
 }
 
-/* ---------- PickerSheet: a long list in a sheet, and the pill field that opens it ---------- */
+/* ---------- PickerSheet: a long list in a sheet, and the field that opens it ---------- */
 .pick-search { margin-bottom: var(--s3); }
 .pick-list { display: flex; flex-direction: column; gap: var(--s1); }
 .pick-row {
   width: 100%; display: flex; align-items: center; gap: var(--s3);
   min-height: var(--row-min); padding: var(--s1) var(--s3); border: 0; background: transparent; color: inherit; text-align: left;
-  content-visibility: auto; contain-intrinsic-size: auto 60px;
+  content-visibility: auto; contain-intrinsic-size: auto 52px;
 }
 @media (hover: hover) { .pick-row:hover:not(:disabled):not(.sel) { background: var(--state-hover); } }
 .pick-row.sel { background: var(--state-selected); }
@@ -386,13 +383,12 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 .pick-field:has(.pick-clear) .dd-btn { padding-right: var(--s13); }
 .pick-type { --type: var(--text-tertiary); flex: none; display: inline-flex; align-items: center; gap: var(--s2); margin-left: auto; font-size: var(--fs-caption); font-weight: 600; color: var(--text-secondary); }
 .pick-type::before { content: ""; width: 4px; height: 12px; transform: skewX(-12deg); background: var(--type); }
-.pick-clear { right: 8px; }
+.pick-clear { right: var(--s2); }
 
-/* ---------- the case: the site's card, three solid faces and no line or shadow. A grey frame holds a white label and one navy window.
-   Outer 24 = inner 12 + padding 12. The label stays white in both themes; the frame takes its tone from the page. ---------- */
+/* ---------- the case: a record on the plane, two flush planes with no frame: a light label over one navy window ---------- */
 .case { display: flex; flex-direction: column; width: 100%; height: 100%; color: var(--text-primary); text-align: left; }
 button.case:active:not(:disabled) { scale: 1; }
-.case-label { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); min-height: var(--row-min); padding: var(--s3) var(--s5); background: var(--label); color: var(--on-label); transition: background-color var(--move-tone); }
+.case-label { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); min-height: var(--row-min); padding: var(--row-pad) var(--s5); background: var(--label); color: var(--on-label); transition: background-color var(--move-tone); }
 @media (hover: hover) { button.case:hover .case-label { background: var(--label-hover); } }
 .case-who { flex: 1; min-width: 0; }
 .case-who b { display: block; overflow: hidden; font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-label); text-overflow: ellipsis; white-space: nowrap; }

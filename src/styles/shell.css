@@ -24,7 +24,6 @@
 /* a sheet on a phone puts the top bar away (Modal.jsx) */
 .topbar.hide { translate: 0 calc(-100% - env(safe-area-inset-top, 0px)); transition: translate var(--move-leave); }
 .brand { position: relative; display: flex; align-items: center; gap: var(--s3); height: var(--target); flex: none; }
-/* the logo box sits outside the text line, then 1px down for the wing-heavy shape (centre of mass at 42% height) */
 .brand-logo { display: flex; }
 .brand .logo { display: block; width: 48px; height: 32px; translate: 0 1px; }
 .wordmark { display: block; height: 20px; width: auto; fill: currentColor; }
@@ -84,7 +83,7 @@
 }
 @media (min-width: 860px) { .page { --page-top: var(--s13); padding-block: calc(var(--nav-height) + var(--page-top)) var(--s21); } }
 /* the home and the hall run the full width: their navy cover meets the bar */
-.page.page--full { width: 100%; padding-block: var(--nav-height) 0; }
+.page.page--full { width: 100%; padding-block: var(--nav-height) 0; container-type: inline-size; } /* 100vw counts the scrollbar's reserved gutter, 100cqw does not, so the left edge stays the content's */
 .sec { display: flex; flex-direction: column; gap: var(--section); }
 /* L1 the one loader: the Wing Y sits dim where the screen will be, and one solid band crosses it.
    It waits a beat before it shows, so a quick load never flashes. */
@@ -122,19 +121,19 @@
 /* ---------- admin dock (O2): floating plate, above the tab bar on a phone ---------- */
 .admin-dock {
   position: fixed; z-index: var(--z-header); left: 0; right: 0; margin-inline: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s3));
-  width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 48px; padding: 0 var(--s2) 0 var(--s8);
+  width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 52px; padding: 0 var(--s2) 0 var(--s8);
   display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); line-height: 1; white-space: nowrap;
 }
 .admin-dock b { font-weight: 600; }
 .admin-dock-note { color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; }
-.admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 36px; margin-left: var(--s2); padding: 0 var(--s3); background: var(--state-selected); font-weight: 600; }
+.admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 44px; margin-left: var(--s2); padding: 0 var(--s3); background: var(--state-selected); font-weight: 600; }
 @media (max-width: 639px) { .admin-dock-note { display: none; } }
 @media (min-width: 860px) { .admin-dock { bottom: var(--s8); } }
 
 /* ---------- footer: one navy block, the page's close ---------- */
 .site-foot { position: relative; flex: none; margin-top: auto; background: var(--bar); color: var(--on-bar-2); font-size: var(--fs-caption); }
 .site-foot-in { width: min(100% - var(--gutter) * 2, 1200px); margin: 0 auto; padding: var(--s13) 0 calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s8)); display: grid; gap: var(--s8); }
-@media (min-width: 860px) { .site-foot-in { padding: var(--s13) 0 var(--s13); } .is-admin .site-foot-in { padding-bottom: 104px; } }
+@media (min-width: 860px) { .site-foot-in { padding: var(--s13) 0 var(--s13); } .is-admin .site-foot-in { padding-bottom: var(--s34); } }
 .site-foot-mark { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s5); }
 .site-foot-mark .brand { color: var(--on-bar); }
 .site-foot-tag { font-size: var(--fs-body); color: var(--on-bar-2); }

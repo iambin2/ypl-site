@@ -41,7 +41,7 @@
 .fb-q-top strong { font-size: var(--fs-body); font-weight: 600; }
 .fb-q-top .dd { width: 220px; }
 .fb-qn {
-  width: 28px; height: 28px; flex: none; display: grid; place-items: center; color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; line-height: 1;
+  width: 32px; height: 32px; flex: none; display: grid; place-items: center; color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; line-height: 1;
 }
 .fb-q-move { display: flex; gap: var(--s1); margin-left: auto; }
 .fb-label { font-weight: 600; }
@@ -55,7 +55,7 @@
 .fb-dot.multi { border-radius: 0; }
 .fb-dot.dropdown { background: none; width: 20px; }
 .fb-addopt {
-  align-self: flex-start; height: 36px; padding: 0 var(--s3); border: 0; background: transparent;
+  align-self: flex-start; height: 44px; padding: 0 var(--s3); border: 0; background: transparent;
   font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
@@ -69,7 +69,7 @@
   .fb-addq:hover { background: var(--state-selected); color: var(--text-primary); }
 }
 .fb-q-foot { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); margin-top: var(--s2); }
-.fb-req { min-height: 36px; }
+.fb-req { min-height: 44px; }
 .fb-note { font-size: var(--fs-caption); font-weight: 400; color: var(--text-tertiary); }
 .fb-reveal { animation: y-rise var(--move-lift) backwards; }
 
@@ -94,7 +94,7 @@
 .ed-team { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3); background: var(--state-hover); }
 .ed-rk { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--fs-caption); font-weight: 600; color: var(--text-secondary); }
 .ed-rk.gold { color: var(--text-primary); }
-.ed-auto { min-height: 36px; }
+.ed-auto { min-height: 44px; }
 @media (max-width: 639px) {
   .ch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ed-grid { grid-template-columns: minmax(0, 1.618fr) repeat(4, minmax(0, 1fr)) var(--target); gap: var(--s1); }

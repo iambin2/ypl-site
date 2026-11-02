@@ -32,7 +32,7 @@
 .rc-list { display: flex; flex-direction: column; gap: var(--s5); min-width: 0; }
 .rc-list > .ypl-table-more { margin-top: calc(var(--s3) - var(--s5)); }
 .rc-search { display: flex; align-items: center; gap: var(--s3); }
-.rc-search .records-search-field { flex: 1; max-width: 440px; }
+.rc-search .records-search-field { flex: 1; max-width: 356px; }
 .rc-search > span { flex: none; font-size: var(--fs-caption); color: var(--text-tertiary); }
 .rc-pick-row { grid-template-columns: minmax(0, 1fr) auto; }
 .rc-pick-row--rank { grid-template-columns: 32px minmax(0, 1fr) auto; }
@@ -57,7 +57,6 @@
 /* ---------- the profile sheet: on a sheet, the cards become tiles of the same tone ---------- */
 .rc-sheet .rc-lead-who { padding-right: var(--s13); }
 .rc-sheet .rc-lead-head { grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 860px) { .rc-sheet { width: min(100% - 48px, 680px); } }
 .rc-profile { display: flex; flex-direction: column; gap: var(--s8); min-width: 0; }
 .sheet .rc-lead { padding: 0; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
 .sheet .ypl-group { background: var(--state-hover); box-shadow: none; padding: var(--s1); }
@@ -98,7 +97,7 @@
 @media (min-width: 1100px) {
   .rc-poster-num { font-size: var(--fig-l); letter-spacing: var(--ls-display); }
   .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s8); }
-  .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); }
   /* a label and value row is as wide as it reads, not the width of the card */
   .rc-facts.rows { width: min(100%, 356px); justify-self: start; }
 }
@@ -122,12 +121,12 @@
 .r2-title { font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-primary); }
 .r2-meta, .r2-season { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .r2-res { display: grid; gap: var(--s2); }
-.r2-line { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: var(--s3); }
-.r2-line > .r2-rk { line-height: 28px; }
+.r2-line { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: start; gap: var(--s3); }
+.r2-line > .r2-rk { line-height: 32px; }
 .r2-names { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s2); }
 .r2-rk { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
 .r2-rk.gold { color: var(--text-primary); font-weight: 700; }
-.r2-name { display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 var(--s3); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; line-height: 1; }
+.r2-name { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 var(--s3); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; line-height: 1; }
 .r2-name.win { background: var(--accent); color: var(--text-on-accent); }
 .r2-name.mem { padding: 0 var(--s1); background: none; font-weight: 400; color: var(--text-secondary); }
 
@@ -153,7 +152,7 @@
 .rc-mon-lead { display: grid; gap: var(--s5); }
 .rc-mon-lead > .case { width: min(100%, 220px); }
 @media (min-width: 640px) { .rc-mon-lead { grid-template-columns: 220px minmax(0, 1fr); align-items: center; gap: var(--s8); } .rc-mon-lead .rc-lead-figs { grid-template-columns: minmax(0, 1fr); } }
-.rc-usage > div { grid-template-columns: 48px minmax(0, 1fr); }
+.rc-usage > div { grid-template-columns: 52px minmax(0, 1fr); }
 .rc-parties .case-who b { white-space: normal; }
 .rc-usage dd { font-weight: 400; color: var(--text-secondary); }
 
@@ -174,4 +173,4 @@
 .rc-name-link { position: relative; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; text-align: inherit; cursor: pointer; }
 /* the word keeps its own line box, so a row's title and grey line stay 4 apart; the finger gets 44px from a box laid around it */
 .rc-name-link::after { content: ""; position: absolute; inset: -12px -4px; }
-@media (hover: hover) { .rc-name-link:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; } }
+@media (hover: hover) { .rc-name-link:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .382em; } }

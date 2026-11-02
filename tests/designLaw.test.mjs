@@ -21,6 +21,8 @@ const TRACK = new Set(["0", "inherit", "var(--ls-body)", "var(--ls-lead)", "var(
 const trackFor = { "var(--fs-lead)": "var(--ls-lead)", "var(--fs-h3)": "var(--ls-h3)", "var(--fs-h2)": "var(--ls-title)", "var(--fs-h1)": "var(--ls-title)", "var(--fs-display)": "var(--ls-display)", "var(--fs-hero)": "var(--ls-display)" };
 const LEADING = new Set(["1", "inherit", "1.236em", "var(--lh-caption)", "var(--lh-body)", "var(--lh-label)", "var(--lh-lead)", "var(--lh-title)", "var(--lh-display)"]);
 const RADII = new Set([0]); // nothing is round: a control is a plane too
+// a length is a step of space, a line (1, 2), an icon (16, 24), the hand's floor (44) or a width of the series
+const SIZES = new Set([...SPACE, 1, 2, 16, 24, 44, 220, 356, 576, 932, 1200]);
 
 // ---------- declarations ----------
 // each CSS rule block's declarations, so a rule can read a declaration beside its font-size
@@ -44,7 +46,7 @@ function cssDecls(file) {
   return out;
 }
 // React adds px to bare numbers on length properties
-const unit = (prop, v) => /margin|padding|gap|size|radius/.test(prop) ? v.replace(/(^|[?:\s])(-?\d*\.?\d+)(?=$|[?:\s])/g, "$1$2px") : v;
+const unit = (prop, v) => /margin|padding|gap|size|radius|width|height/.test(prop) ? v.replace(/(^|[?:\s])(-?\d*\.?\d+)(?=$|[?:\s])/g, "$1$2px") : v;
 const kebab = k => k.replace(/[A-Z]/g, c => "-" + c.toLowerCase());
 function inlineDecls(file) {
   const out = [];
@@ -68,7 +70,7 @@ const COLOR = /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|\b(whi
 const RULES = {
   "color: literals live only in tokens.css (Color)": d => d.file !== "src/styles/tokens.css" && !/mask/.test(d.prop) && COLOR.test(d.value),
   "space: margin, padding and gap sit on the golden scale (Space and radius)": d => /^(margin|padding|gap|row-gap|column-gap)(-|$)/.test(d.prop) && pxs(d.value).some(n => !SPACE.has(n)),
-  "type: a size is a token, never a number (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--(fs-[\w]+|hero(-\d)?|display(-l)?|title|fig-[sml])\))$/.test(d.value),
+  "type: a size is a token, never a number (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--(fs-[\w]+|hero|display|title|fig-[sml])\))$/.test(d.value),
   "type: weights 400 600 700 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
   "type: tracking is a token and follows its size (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value) || (trackFor[sib(d, "font-size")] && trackFor[sib(d, "font-size")] !== d.value)),
   "type: line-heights on one set (Type)": d => d.prop === "line-height" && !LEADING.has(d.value),
@@ -78,6 +80,8 @@ const RULES = {
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
   "type: only reading text carries a measure, 36em (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value) && !(d.sel === ".prose" && d.value === "36em"),
   "golden: a split is equal or 1.618 to 1 (The golden law)": d => /^grid-template(-columns|-rows)?$/.test(d.prop) && [...d.value.matchAll(/(\d*\.?\d+)fr/g)].some(m => !["1", "1.618", "4.236"].includes(m[1])),
+  "eye: every length stands on the series (The eye)": d => /^((min-|max-)?(width|height)|top|right|bottom|left|inset|flex|flex-basis|grid-template(-columns|-rows)?)$/.test(d.prop) && !d.sel.startsWith("@") && pxs(d.value).some(n => !SIZES.has(n)),
+  "eye: an underline stands .382em under its word (The eye)": d => d.prop === "text-underline-offset" && d.value !== ".382em",
   "golden: a transition's scale comes from phi (The golden law)": d => (d.prop === "scale" || d.prop === "transform") && [...d.value.matchAll(/scale[XY]?\((\d*\.\d+)\)/g), ...(d.prop === "scale" ? [[0, d.value]] : [])].some(m => /^\d*\.\d+$/.test(m[1]) && ![".976", ".966", ".944", ".91", ".854", "1.034", "3.236"].includes(m[1])),
   "golden: a shadow stands on the steps of space (The golden law)": d => d.prop === "box-shadow" && /px/.test(noVars(d.value)) && !/^inset 0 (0 0 )?1px|^(inset )?0 0 0 /.test(d.value) && pxs(d.value).some(n => !SPACE.has(n)),
   "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
@@ -104,6 +108,10 @@ const TYPES = ["normal: #9FA19F", "fire: #E62829", "water: #2980EF", "electric: 
   "flying: #81B9EF", "psychic: #EF4179", "bug: #91A119", "rock: #AFA981", "ghost: #704170", "dragon: #5060E1", "dark: #624D4E", "steel: #60A1B8", "fairy: #EF70EF"]
   .map(t => `${TB} | .type-${t.split(":")[0]} | --type:${t.split(":")[1]}`);
 const EXCEPT = {
+  "eye: every length stands on the series (The eye)": {
+    "the Wing Y keeps its drawn proportion, 32 tall": [`${S} | .brand .logo | width: 48px`],
+    "the base a line is scaled from, never seen at this length": [`${S} | .pill-ind > i | width: 100px`],
+  },
   "depth: a z-index is a named step (Depth)": {
     "a stack orders itself: toasts by their place": ["src/components/common/Toaster.jsx | style | z-index: 10 - index"],
   },
@@ -117,15 +125,12 @@ const EXCEPT = {
   "space: margin, padding and gap sit on the golden scale (Space and radius)": {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
-      `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
-      `${TB} | .tb-slot:not(.empty) | padding-top: 48px`, `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
+      `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
       `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s5) 0 0 44px`,
       `${TB} | .tb-official-lookup | margin: var(--s5) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s5) 0 0 44px`],
-    "concentric inset: inner radius = outer radius - padding": [
-      `${K} | .calc-stepper button | margin: 2px`],
   },
   "type: line-heights on one set (Type)": {
-    "a rank cell sits on its neighbour's 28px line box": [`${R} | .r2-line > .r2-rk | line-height: 28px`],
+    "a rank cell sits on its neighbour's 32 line box": [`${R} | .r2-line > .r2-rk | line-height: 32px`],
   },
   "align: left by default, centre only for the four cases (Alignment)": {
     "(a) a label inside its control": [`${T} | button | text-align: center`, `${T} | .rs > i | text-align: center`, `${A} | .ed-grid input | text-align: center`,
@@ -236,6 +241,37 @@ test("the selection is one element (Plane and line)", () => {
   assert.doesNotMatch(src("src/components/common/Segmented.jsx"), /<i \/><i \/>/);
 });
 
+// The eye (31st round): a measure is what is seen. Each test below was off on rendered pixels before it was written down.
+test("a tone steps by phi as a contrast: words on the page, planes off it (The eye)", () => {
+  const prim = name => new RegExp(`--${name}:\\s*(#[0-9A-F]{6})`).exec(TOKENS)[1];
+  const lum = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(c => c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4).reduce((s, c, i) => s + c * [.2126, .7152, .0722][i], 0);
+  const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+  const white = prim("white"), navy = prim("navy-950"), ink = cr(prim("black"), white), inkN = cr(white, navy);
+  const near = (got, want, at) => assert.ok(Math.abs(got / want - 1) < .01, `${at}: ${got.toFixed(3)} for ${want.toFixed(3)}`);
+  [["gray-700", 1], ["gray-600", 2], ["gray-500", 3]].forEach(([n, p]) => near(cr(prim(n), white), ink / PHI ** p, n));
+  [["navy-200", 1], ["gray-400", 2]].forEach(([n, p]) => near(cr(prim(n), navy), inkN / PHI ** p, n));
+  [["gray-50", 5], ["gray-100", 4], ["gray-200", 3], ["gray-300", 2]].forEach(([n, p]) => near(cr(prim(n), white), 1 + PHI ** -p, n));
+  [["navy-925", 4], ["navy-900", 3], ["navy-800", 2], ["navy-700", 1]].forEach(([n, p]) => near(cr(prim(n), navy), 1 + PHI ** -p, n));
+  near(cr(prim("navy-600"), navy), 1 + PHI, "navy-600");
+});
+test("a title stands on a step on every screen (The eye)", () => {
+  assert.doesNotMatch(TOKENS.replace(/--hero: clamp\(var\(--fs-h2\), 13\.8vw, var\(--fs-h1\)\)/, ""), /--(title|display|hero|fig-\w):[^;]*vw/, "only the hero gives way on a narrow phone");
+});
+test("a distance is measured to the ink (The eye)", () => {
+  assert.match(TOKENS, /--trim: calc\(\(\.84em - 1lh\) \/ 2\)/, "Hangul fills .84 of its em");
+  for (const sel of [".ypl-row", ".hm-row"]) assert.deepEqual(decl(sel, "padding"), ["var(--row-pad) 0"], sel);
+  assert.deepEqual(decl(".case-label", "padding"), ["var(--row-pad) var(--s5)"], "a label's ink stands as far from the top as from the side");
+  for (const sel of [".ypl-head-h", ".hm-head h2", ".hm-cover h1"]) assert.deepEqual(decl(sel, "margin-block"), ["var(--trim)"], sel);
+  for (const sel of [".hm-say h1", ".hm-plane b"]) assert.deepEqual(decl(sel, "margin-top"), ["var(--trim)"], sel);
+});
+test("the bracket's card and its picture stand on one height (The eye)", () => {
+  const js = src("src/pages/BracketsPage.jsx");
+  const slot = +/BK_SLOT_H=(\d+)/.exec(js)[1];
+  assert.equal(+/--match-card:\s*(\d+)px/.exec(TOKENS)[1], slot * 2 + 8, "two slots and the card's padding");
+  assert.ok(SPACE.has(+/BK_PITCH0=(\d+)/.exec(js)[1]), "the pitch is a step");
+  assert.deepEqual(decl(".bk-slot", "height"), [slot + "px"]);
+});
+
 test("saved images stand on the same law (The golden law)", () => {
   const sizes = new Set(["13", "16", "20", "32", "52", "84", "136"]);
   for (const f of ["src/pages/BracketsPage.jsx", "src/components/teamSheetImage.js"]) {
@@ -314,7 +350,7 @@ test("a list row is 52 everywhere, from one token (law 3)", () => {
   for (const sel of [".ypl-row", ".pick-row"]) assert.deepEqual(decl(sel, "min-height"), ["var(--row-min)"], sel);
 });
 
-test("a sheet's actions sit 40 under its body and its padding over its edge: the sticky reaches over the padding (law 2)", () => {
+test("a sheet's actions sit 32 under its body and its padding over its edge: the sticky reaches over the padding (law 2)", () => {
   const bottoms = decl(".modal-actions", "bottom");
   assert.equal(bottoms.length, 2, "phone and desktop");
   for (const b of bottoms) assert.match(b, /^calc\(.*\* -1\)$/, "a sticky box stops at its scroller's padding, so bottom: 0 rides it high");

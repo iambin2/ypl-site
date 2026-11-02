@@ -194,7 +194,7 @@ function bkDrawTree(ctx,rounds,ev,nameOf,ox,oy,boxW,boxH,gapX,pitch0){
 
 async function downloadBracketPng(b,nameOf){
   await bkFonts();
-  const boxW=174,boxH=56,gapX=46,pitch0=boxH+22,padL=34,padT=92;
+  const boxW=220,boxH=84,gapX=52,pitch0=boxH+52,padL=32,padT=136;
   const S=2;
   // 측정용 가상 계산
   const blocks=[]; // {type, ...}
@@ -836,7 +836,7 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
 }
 
 /* ===== 대진표 보드 ===== */
-const BK_SLOT_H=42, BK_MATCH_H=BK_SLOT_H*2+4+10, BK_PITCH0=BK_MATCH_H+26; // 매치높이 98, 1라운드 세로간격
+const BK_SLOT_H=44, BK_MATCH_H=BK_SLOT_H*2+4*2, BK_PITCH0=136; // 매치높이 96(--match-card), 1라운드 세로간격은 황금 수열의 136
 function treeCenters(rounds){
   const centers=[];
   for(let r=0;r<rounds.length;r++){ centers[r]=[];

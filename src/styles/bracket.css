@@ -1,7 +1,7 @@
 /* =============================================================================
    YPL Navy — bracket: list, board, tree, draw, wizard, apply, team match
-   The match card is exactly 98px tall (4px padding, two 45px slots): BracketsPage.jsx
-   positions every card from that number, and the connectors meet at its centre, 49px.
+   The match card is exactly 96 tall (4 padding, two 44 slots): BracketsPage.jsx
+   positions every card from that number, and the connectors meet at its centre, 48.
    Match cards are opaque reading surfaces on the stage; there is no board behind the tree (C7, M3).
    ========================================================================== */
 
@@ -26,7 +26,7 @@
 .bk-board > .bk-hint { padding: var(--s3) var(--s5); background: var(--state-hover); font-size: var(--fs-body); color: var(--text-secondary); }
 .bk-champ-lead { margin-bottom: var(--s2); }
 .bk-places { margin: 0; display: grid; gap: var(--s2); }
-.bk-places > div { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: baseline; gap: var(--s3); }
+.bk-places > div { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: baseline; gap: var(--s3); }
 .bk-places dt { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); }
 .bk-places dd { margin: 0; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-primary); }
 .bk-cb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
@@ -40,8 +40,8 @@
 .bk-panel-head h4 { font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-label); }
 .bk-panel-head span { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .bk-submission-head { display: flex; align-items: center; gap: var(--s3); }
-.bk-submission-toggle { flex: 1; min-width: 0; min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3); text-align: left; }
-.bk-submission-refresh { width: 36px; height: 36px; flex: none; display: grid; place-items: center; color: var(--text-secondary); transition: transform var(--move-lift), color var(--move-tone), scale var(--move-press); }
+.bk-submission-toggle { flex: 1; min-width: 0; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3); text-align: left; }
+.bk-submission-refresh { width: 44px; height: 44px; flex: none; display: grid; place-items: center; color: var(--text-secondary); transition: transform var(--move-lift), color var(--move-tone), scale var(--move-press); }
 @media (hover: hover) { .bk-submission-refresh:hover:not(:disabled) { transform: rotate(90deg); color: var(--text-primary); } }
 .bk-submission-refresh:active:not(:disabled) { scale: .976; transition: transform var(--move-lift), color var(--move-tone), scale var(--move-down); }
 .bk-submission-title { font-size: var(--fs-body); font-weight: 700; }
@@ -80,7 +80,7 @@
 /* MatchCard: radius 12, padding 4, slots 8 (12 = 8 + 4) */
 .bk-match { position: relative; display: flex; flex-direction: column; padding: var(--s1); background: var(--surface); }
 .bk-slot {
-  width: 100%; height: 45px; flex: none; display: flex; align-items: center; gap: var(--s2);
+  width: 100%; height: 44px; flex: none; display: flex; align-items: center; gap: var(--s2);
   padding: 0 var(--s3); border: 0; background: transparent; text-align: left;
   font-size: var(--fs-caption); line-height: 1; font-weight: 600; color: var(--text-primary);
   transition: background-color var(--move-place), color var(--move-place);
@@ -101,13 +101,13 @@
 /* connectors: out of each card a fork to the centre of its pair, into each later card one leg */
 .bk-col2:not(:last-child) .bk-mpos::after {
   content: ""; position: absolute; left: 100%; pointer-events: none;
-  width: calc(var(--bk-gap) / 2); height: calc(var(--bk-pitch, 124px) / 2);
+  width: calc(var(--bk-gap) / 2); height: calc(var(--bk-pitch, 136px) / 2);
   border-right: var(--stroke-connector) solid var(--bk-line);
 }
-.bk-col2:not(:last-child) .bk-mpos:nth-child(odd)::after { top: 49px; border-top: var(--stroke-connector) solid var(--bk-line); }
-.bk-col2:not(:last-child) .bk-mpos:nth-child(even)::after { bottom: calc(100% - 49px); border-bottom: var(--stroke-connector) solid var(--bk-line); }
+.bk-col2:not(:last-child) .bk-mpos:nth-child(odd)::after { top: calc(var(--match-card) / 2); border-top: var(--stroke-connector) solid var(--bk-line); }
+.bk-col2:not(:last-child) .bk-mpos:nth-child(even)::after { bottom: calc(100% - var(--match-card) / 2); border-bottom: var(--stroke-connector) solid var(--bk-line); }
 .bk-col2:not(:first-child) .bk-mpos::before {
-  content: ""; position: absolute; right: 100%; top: 49px; pointer-events: none;
+  content: ""; position: absolute; right: 100%; top: calc(var(--match-card) / 2); pointer-events: none;
   width: calc(var(--bk-gap) / 2); border-top: var(--stroke-connector) solid var(--divider);
 }
 .bk-col2 .bk-mpos.won { --bk-line: var(--text-tertiary); }
@@ -141,7 +141,7 @@
 .bk-draw-h { display: flex; align-items: baseline; gap: var(--s3); font-size: var(--fs-h3); font-weight: 700; letter-spacing: var(--ls-h3); }
 .bk-draw-cnt { font-size: var(--fig-s); font-weight: 700; letter-spacing: var(--ls-title); color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .bk-slot.dwait { color: var(--text-tertiary); }
-.bk-slot.dwait i { display: block; width: 28px; height: 3px; background: var(--state-selected); }
+.bk-slot.dwait i { display: block; width: 32px; height: 4px; background: var(--state-selected); }
 .bk-slot.drolling { background: var(--state-selected); color: var(--text-primary); font-weight: 700; animation: y-pulse var(--move-place) infinite; }
 .bk-slot.dset { color: var(--text-primary); font-weight: 600; }
 .bk-slot.dset.pop { animation: bk-land var(--move-slide); }
@@ -160,7 +160,7 @@
 /* steps: chips joined by a short round-ended dash */
 .bk-stepper { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s5); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); }
 .bk-stepper span {
-  display: inline-flex; align-items: center; height: 28px; padding: 0 var(--s3); background: var(--state-selected);
+  display: inline-flex; align-items: center; height: 32px; padding: 0 var(--s3); background: var(--state-selected);
   transition: background-color var(--move-tone), color var(--move-tone);
 }
 .bk-stepper span.on { background: var(--accent); color: var(--text-on-accent); }
@@ -174,7 +174,7 @@
 }
 .bk-pin input:not([type="checkbox"]), .bk-team-card input { min-height: var(--target); padding: var(--s2) var(--s3); }
 .bk-pin-no {
-  width: 28px; height: 28px; flex: none; display: grid; place-items: center; font-size: var(--fs-caption); font-weight: 600; line-height: 1; color: var(--text-tertiary);
+  width: 32px; height: 32px; flex: none; display: grid; place-items: center; font-size: var(--fs-caption); font-weight: 600; line-height: 1; color: var(--text-tertiary);
 }
 .bk-pin-no.gold { color: var(--text-primary); }
 .bk-participant-name { flex: 1; min-width: 0; font-weight: 600; }
@@ -184,9 +184,9 @@
 .bk-participant-submission.missing { color: var(--text-secondary); }
 .bk-participant-absent { flex: none; font-size: var(--fs-caption); color: var(--text-tertiary); }
 .bk-participant-added input { flex: 1; }
-.bk-team-card { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1.618fr); }
+.bk-team-card { display: grid; grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1.618fr); }
 @media (max-width: 639px) {
-  .bk-team-card { grid-template-columns: 28px minmax(0, 1fr); }
+  .bk-team-card { grid-template-columns: 32px minmax(0, 1fr); }
   .bk-tc-mem { grid-column: 2; }
 }
 .bk-count { display: inline-flex; align-items: center; gap: var(--s2); }
@@ -225,7 +225,7 @@
 
 /* ---------- team match (lineup + tiebreaker) ---------- */
 .modal:has(.bk-team-match-modal) { width: min(932px, 100%); }
-.bk-bout-columns, .bk-bout-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 28px minmax(0, 1fr); align-items: center; gap: var(--s3); }
+.bk-bout-columns, .bk-bout-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 32px minmax(0, 1fr); align-items: center; gap: var(--s3); }
 .bk-bout-columns { margin-bottom: var(--s3); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); }
 /* team names head their columns on the picked names inside the dropdowns (dd-btn padding 20) */
 .bk-bout-columns strong { padding-left: var(--s8); color: var(--text-primary); }
