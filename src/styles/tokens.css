@@ -107,7 +107,7 @@
   --surface: var(--panel); --surface-float: var(--panel); --surface-pop: var(--panel); --plane-b: var(--panel); --window: var(--panel);
   --surface-raised: var(--panel-2); --surface-sunken: var(--panel-2); --control: var(--panel-2); --control-hover: var(--panel-2); --label: var(--panel-2); --bar-up: var(--panel-2);
   --state-hover: var(--panel-2); --state-selected: var(--panel-2); --state-pressed: var(--panel-2); --pop-hover: var(--panel-2); --pop-selected: var(--panel-2); --pod: var(--panel-2); --accent-subtle: var(--panel-2);
-  --text-primary: var(--lit); --text-link: var(--lit); --text-link-hover: var(--dim); --on-bar: var(--lit); --ind-fg: var(--lit);
+  --text-primary: var(--lit); --text-link: var(--lit); --text-link-hover: var(--dim); --on-bar: var(--lit); --on-label: var(--lit); --ind-fg: var(--lit);
   --text-secondary: var(--dim); --on-bar-2: var(--dim); --on-label-2: var(--dim);
   --text-tertiary: var(--mute); --text-disabled: var(--mute); --scrollbar: var(--mute);
   --accent: var(--lit); --accent-hover: var(--lit); --accent-active: var(--lit); --lens: var(--lit); --focus-ring: var(--lit); --selection-bg: var(--lit);
@@ -125,7 +125,7 @@
   --section: var(--s13); --chapter: var(--s21); --grid-gap: var(--s5); --target: var(--h-control); --row-min: var(--h-row); --match-card: 96px;
   --golden: 1.618; --trim: calc((.84em - 1lh) / 2); --row-pad: calc((var(--row-min) - 1.333rem) / 2);
   --focus-width: 2px; --focus-offset: -2px; --opacity-muted: .618; --opacity-ghost: .236; --stroke-connector: 1.5px;
-  --navy-up-hover: var(--lit); --on-label: var(--ground); --label-hover: var(--panel-2); --bar-up-hover: var(--panel-2); --slant: var(--panel-2); --plane-c: var(--panel-2); --plane-d: var(--panel-2);
+  --navy-up-hover: var(--lit); --label-hover: var(--panel-2); --bar-up-hover: var(--panel-2); --slant: var(--panel-2); --plane-c: var(--panel-2); --plane-d: var(--panel-2);
   --rank-n: var(--mute); --page-top: var(--s8); --t-wait: var(--t-light);
   --t-place: var(--t-light); --ease-place: var(--ease-out); --ease-leave: var(--ease-in);
   --move-down: var(--move-press); --move-place: var(--move-light); --move-slide: var(--move-light); --move-lift: var(--move-light); --move-wait: var(--move-light);

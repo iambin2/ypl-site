@@ -31,7 +31,7 @@
 .btn--sm .ic { width: 16px; height: 16px; }
 .btn--primary { --btn-bg: var(--accent); --btn-bg-hover: var(--accent-hover); --btn-fg: var(--text-on-accent); }
 .btn--destructive { --btn-bg: var(--danger-bg); --btn-bg-hover: var(--accent-hover); --btn-fg: var(--danger-text); }
-.btn--inverse { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--on-label); }
+.btn--inverse { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--ground); }
 .btn--tertiary { --btn-fg: var(--text-secondary); }
 @media (hover: hover) { .btn:hover:not(:disabled) { background: var(--btn-bg-hover); } }
 /* loading keeps the width: the words stay and turn clear under one spinner */
@@ -90,10 +90,10 @@
 @media (hover: hover) { .ypl-choice .seg-track > button:not([aria-selected="true"]):hover { background: var(--panel-2); color: var(--lit); } }
 
 /* ---------- PageHead (E3): the page opens on a navy plane; every distance in it is measured to the ink ---------- */
-.ypl-head { --text-primary: var(--on-bar); --text-secondary: var(--on-bar-2); --text-tertiary: var(--on-bar-2); --state-hover: var(--bar-up); --accent: var(--on-bar); --text-on-accent: var(--on-label); display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--page-top) * -1) calc(50% - 50vw) calc(var(--s8) - var(--section)); padding: var(--s8) calc(50vw - 50%); background: var(--bar); color: var(--on-bar); }
+.ypl-head { --text-primary: var(--on-bar); --text-secondary: var(--on-bar-2); --text-tertiary: var(--on-bar-2); --state-hover: var(--bar-up); --accent: var(--on-bar); --text-on-accent: var(--ground); display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--page-top) * -1) calc(50% - 50vw) calc(var(--s8) - var(--section)); padding: var(--s8) calc(50vw - 50%); background: var(--bar); color: var(--on-bar); }
 .ypl-head > .btn { align-self: flex-start; }
 .ypl-head .callout { color: var(--on-bar-2); }
-.ypl-head .btn--primary { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--on-label); }
+.ypl-head .btn--primary { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--ground); }
 .ypl-head .btn--secondary, .ypl-head .btn--tertiary { --btn-fg: var(--on-bar); }
 .ypl-head :is(input, .dd-btn) { --field-line: var(--on-bar-2); --focus-ring: var(--on-bar); color: var(--on-bar); }
 .ypl-head input::placeholder, .ypl-head .ls-ico, .ypl-head .search-input-icon { color: var(--on-bar-2); }
