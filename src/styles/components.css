@@ -436,3 +436,10 @@ button.case:active:not(:disabled) { scale: 1; }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):checked::after { content: ""; width: var(--s3); height: var(--s3); background: var(--ground); clip-path: polygon(14% 44%, 0 58%, 38% 92%, 100% 22%, 86% 8%, 38% 64%); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):focus-visible { outline: var(--line) solid var(--lit); outline-offset: var(--seam); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):disabled { background: var(--panel); cursor: default; }
+
+/* recently picked (c14): up to six square cells over the list, the Pokémon standing on the cell's floor */
+.pick-recent { display: grid; gap: var(--s2); margin-top: var(--s5); }
+.pick-recent-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.pick-recent-one { position: relative; display: grid; place-items: center; aspect-ratio: 1; overflow: hidden; transition: background-color var(--move-tone); }
+.pick-recent-one .mon { position: absolute; inset: var(--s1) var(--s1) 0; width: calc(100% - var(--s2)); height: calc(100% - var(--s1)); object-fit: contain; object-position: bottom; }
+@media (hover: hover) { .pick-recent-one:hover { background: var(--panel-2); } }

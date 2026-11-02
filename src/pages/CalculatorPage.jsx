@@ -667,7 +667,7 @@ export default function CalculatorPage() {
       )}
       </div>
 
-      {picker != null && <PickerSheet title={picker === "dex" ? "도감" : SIDE_NAMES[picker]} placeholder="이름, 영문 이름 검색" items={pokemonItems}
+      {picker != null && <PickerSheet title={picker === "dex" ? "도감" : SIDE_NAMES[picker]} placeholder="이름, 영문 이름 검색" items={pokemonItems} recentKey="ypl-recent-pokemon" recentLabel="최근 고른 포켓몬"
         selected={picker === "dex" ? dexName : sides[picker]?.name}
         onPick={name => picker === "dex" ? setDexName(name) : choosePokemon(picker, name)} onClose={() => setPicker(null)} />}
       {importFor != null && <PickerSheet title="내 팀에서 불러오기" placeholder="포켓몬이나 팀 이름 검색" items={importItems}

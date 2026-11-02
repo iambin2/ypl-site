@@ -7,8 +7,18 @@ import Modal from "./Modal.jsx";
    검색창에서 위아래 화살표로 행을 옮기고 엔터로 고른다(고를 수 없는 행은 건너뛴다).
    item: { value, label, sub?, search?, match?(query), img?, badges?, trailing?, disabled? } */
 const compact = text => String(text || "").toLowerCase().replace(/\s+/g, "");
+/* 최근 고른 것(c14): recentKey가 있으면 고른 값을 이 브라우저에 여섯까지 기억하고, 검색 전 맨 위에 그림으로 세운다. */
+const RECENT_MAX = 6;
+export function rememberRecent(list, value) { return [value, ...(list || []).filter(v => v !== value)].slice(0, RECENT_MAX); }
+const readRecent = key => { try { const list = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(list) ? list : []; } catch { return []; } };
+const writeRecent = (key, list) => { try { localStorage.setItem(key, JSON.stringify(list)); } catch { /* 이번 방문에만 기억하지 못한다 */ } };
 
-export default function PickerSheet({ title, placeholder, items, selected, onPick, onClose, emptyText = "검색 결과가 없습니다." }) {
+export default function PickerSheet({ title, placeholder, items, selected, onPick, onClose, emptyText = "검색 결과가 없습니다.", recentKey, recentLabel = "최근 고른 것" }) {
+  const recent = useMemo(() => {
+    if (!recentKey) return [];
+    const byValue = new Map(items.map(item => [item.value, item]));
+    return readRecent(recentKey).map(value => byValue.get(value)).filter(item => item && !item.disabled);
+  }, [items, recentKey]);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(-1);
   const listRef = useRef(null);
@@ -18,7 +28,7 @@ export default function PickerSheet({ title, placeholder, items, selected, onPic
     return items.filter(item => item.match ? item.match(query) : compact(item.search ?? item.label).includes(q));
   }, [items, query]);
   useEffect(() => { listRef.current?.children[cursor]?.scrollIntoView({ block: "nearest" }); }, [cursor]);
-  const pick = item => { onPick(item.value); onClose(); };
+  const pick = item => { if (recentKey) writeRecent(recentKey, rememberRecent(readRecent(recentKey), item.value)); onPick(item.value); onClose(); };
   const step = dir => {
     for (let i = 1; i <= shown.length; i++) {
       const next = ((cursor < 0 && dir < 0 ? 0 : cursor) + dir * i + shown.length) % shown.length;
@@ -45,6 +55,14 @@ export default function PickerSheet({ title, placeholder, items, selected, onPic
           role="combobox" aria-expanded="true" aria-controls="pick-list" aria-activedescendant={cursor >= 0 ? `pick-opt-${cursor}` : undefined} />
         {query && <button type="button" className="tb-clear" onClick={() => { setQuery(""); setCursor(-1); }} aria-label="검색어 지우기"><Icon n="x" size={16} /></button>}
       </div>
+      {!query && recent.length > 0 && <div className="pick-recent">
+        <p className="t12 dim">{recentLabel}</p>
+        <div className="stack pick-recent-row">{recent.map(item => (
+          <button type="button" key={item.value} className="pn stand pick-recent-one" onClick={() => pick(item)} aria-label={item.label} title={item.label}>
+            {item.img ? <img className="mon" src={item.img} alt="" onError={event => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="t12">{item.label}</span>}
+          </button>
+        ))}</div>
+      </div>}
       <div className="pick-list" id="pick-list" role="listbox" aria-label={title} ref={listRef}>
         {shown.map((item, index) => (
           <button type="button" key={item.value || "none"} id={`pick-opt-${index}`} role="option" aria-selected={item.value === selected} disabled={item.disabled}
