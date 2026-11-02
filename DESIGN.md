@@ -9,7 +9,7 @@ scale:
   weights: [400, 600, 700]
   radius: { sm: 12, lg: 24, pill: full }
   breakpoints: [640, 860, 1100]
-  content: { full: 1200, read: 720, sheet: 560 }
+  content: { full: 1200, read: 40em, sheet: 560 }
   z: { base: 0, raised: 1, sticky: 10, header: 20, overlay: 30, modal: 40, popover: 50, toast: 60, tooltip: 70, skip: 80, veil: 90 }
   motion: { step: 60, instant: 90, fast: 180, base: 260, slow: 480, snappy: 400, soft: 670, sweep: 900, loop: 1600 }
 ---
@@ -139,6 +139,8 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 - Content maximum width 1200px. Admin mode shows as a floating plate dock at the bottom (O2).
 
 ## Motion (H1–H5, I1–I4, J1–J4, K1–K10)
+
+A tone answering the pointer on one control (`background-color` or `color`, `--dur-fast`) is a state, not motion: it repaints one small box once. Whatever travels stays on transform and opacity, and a filter never animates.
 
 - **One curve law (10th round):** content that appears decelerates on the page rise's ease-out (sections, swaps, sheet tiles, the champion cell, the success check); floating layers that present (sheets, menus, dropdowns, toasts) and things already on screen that move or react (press, the lens, shared flights, reordering rows, rolling digits, the selected tab icon) use the springs. User-caused reactions mostly under 200ms, big changes longer. Reduced motion keeps opacity and drops travel and growth, in one rule at the end of `tokens.css`.
 - **Page transitions (23rd round):** no snapshots and no copy of the old page: copying it doubled the document in the one frame that already had to draw the next page. The old page goes at once and the new page rises 16px on the snappy spring. Back goes the other way and returns to the scroll position it left. A shared element's landing spot is measured before the page starts rising, so it lands once.

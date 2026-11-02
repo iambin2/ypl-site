@@ -332,7 +332,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 }
 .modal-actions .btn { flex: 1 1 0; }
 @media (min-width: 860px) {
-  .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 48px, 560px); max-height: calc(100dvh - 64px); border-radius: var(--r-lg); }
+  .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 48px, var(--sheet-w)); max-height: calc(100dvh - 64px); border-radius: var(--r-lg); }
   .grip { height: var(--s4); }
   .grip::after { display: none; }
   /* the body scrolls and clips, so the close button sits inside it, centred on the title's first line */

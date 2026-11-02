@@ -83,6 +83,7 @@ const RULES = {
   "matte: nothing blurs what is behind it (Material)": d => /backdrop-filter$/.test(d.prop),
   "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Material)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
   "matte: shadows are still, a shadow in a transition repaints its element every frame (Motion)": d => /^transition(-property)?$/.test(d.prop) && /box-shadow/.test(d.value),
+  "motion: a filter stands still, it repaints every frame it moves (Motion)": d => /^transition/.test(d.prop) && /\bfilter\b/.test(d.value),
   "motion: easing only through --ease-* and --spring-* (Motion)": d => /^(transition|animation)/.test(d.prop) && /cubic-bezier|\blinear\(|steps\(|\bease(-in|-out|-in-out)?\b/.test(noVars(d.value)),
   // a spring curve stretched or squeezed feels like a different spring (2026-10-27: 400, 460, 480, 520 and 560ms snappy were all in use)
   "motion: a spring runs at its natural length, var(--dur-snappy) or var(--dur-soft) (Motion)": d => /^(transition|animation)/.test(d.prop)
