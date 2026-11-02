@@ -58,6 +58,8 @@
 /* applicants (c8 신청자): the count lit, search and CSV in one row of 52, each entry a row */
 .fr-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: var(--s3); }
 .fr-bar { grid-template-columns: minmax(0, 1fr) auto; margin-bottom: var(--s3); }
+.fr-chips { margin-bottom: var(--s3); }
+.fr-sent { display: inline-flex; align-items: center; gap: var(--s2); }
 .fr-csv { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 700; transition: background-color var(--move-tone); }
 @media (hover: hover) { .fr-csv:hover { background: var(--panel-2); } }
 .fr-row { display: grid; grid-template-columns: var(--s5) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row2); padding: var(--s2) var(--pad); }

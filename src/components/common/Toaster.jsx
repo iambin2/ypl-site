@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import Icon from "./Icon.jsx";
-import { DUR, reduced, springs } from "./motion.js";
+import { Bang } from "./Board.jsx";
+import { DUR, EASE_OUT, reduced } from "./motion.js";
 
-/* K6: 토스트는 아래(폰은 탭 바 바로 위)에서 스프링으로 올라오고, 여러 개면 뒤로 겹쳐 쌓인다(Sonner 방식).
-   push 로 받은 문장을 4.66초 보여 준다. 실패를 알리는 문장에는 확인 표시 대신 안내 표시를 단다.
+/* A toast is an inverted 52 panel above the tab bar (DESIGN.md "Sheets, dialogs, toasts"). It switches on where it stands; a newer one
+   covers the one before. push 로 받은 문장을 4.66초 보여 준다. 실패를 알리는 문장은 ! 칸으로 시작한다.
    action({ label, run })이 있으면 밑줄 단어 하나를 달고, 누르면 그 일을 하고 사라진다(c8 되돌리기). */
 const LIFE = 4660;
 const failed = text => /못했|못해|실패|없습니다|확인하지/.test(text);
@@ -11,16 +11,16 @@ const failed = text => /못했|못해|실패|없습니다|확인하지/.test(tex
 function Toast({ item, index, onGone, onAct }) {
   const ref = useRef(null);
   useEffect(() => {
-    if (!reduced()) ref.current?.animate([{ transform: "translateY(100%) scale(.944)", opacity: 0 }, { transform: "translateY(0) scale(1)", opacity: 1 }], { duration: DUR.place, easing: springs().spring });
+    if (!reduced()) ref.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
   }, []);
   useEffect(() => {
     if (!item.out) return undefined;
-    const t = setTimeout(() => onGone(item.id), 260);
+    const t = setTimeout(() => onGone(item.id), DUR.leave);
     return () => clearTimeout(t);
   }, [item.out, item.id, onGone]);
   return (
-    <div ref={ref} className={"toast plate-l3" + (item.out ? " out" : "") + (index > 0 ? " behind" : "")} style={{ "--i": index, zIndex: 10 - index, opacity: index > 2 && !item.out ? 0 : undefined }}>
-      <Icon n={failed(item.text) ? "info" : "check"} size={20} />
+    <div ref={ref} className={"toast inv" + (item.out ? " out" : "") + (index > 0 ? " behind" : "")} style={{ zIndex: 10 - index }}>
+      {failed(item.text) && <Bang />}
       <span>{item.text}</span>
       {item.action && !item.out && <button type="button" className="toast-act" onClick={() => onAct(item)}>{item.action.label}</button>}
     </div>

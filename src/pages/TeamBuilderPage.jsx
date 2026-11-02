@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dropdown, Icon, Loader, Modal, Segmented, siteAlert, siteConfirm } from "../components/index.js";
-import { Cell, Dock, Mon, OptionRows, TabsLine } from "../components/common/Board.jsx";
+import { Bang, Cell, Dock, Mon, OptionRows, Steps, TabsLine } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
@@ -158,7 +158,7 @@ const PoolList = memo(function PoolList({ pool, detailData, displayPokemon, sort
         const canReplaceSelected = sameSpeciesMember?.uid === selectedUid && sameSpeciesMember.name !== pokemon.name;
         return (
           <button key={pokemon.name} className="tb-pokemon-row" onClick={() => onAdd(pokemon)} disabled={already && !canReplaceSelected}>
-            <img src={spriteUrl(pokemon.name)} alt="" loading="lazy" decoding="async" onError={onSpriteError()} />
+            <span className="stand tb-pic"><i className="floor" aria-hidden="true" /><Mon src={spriteUrl(pokemon.name)} loading="lazy" onError={onSpriteError()} /></span>
             <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{details?.num ? `#${String(details.num).padStart(4, "0")}` : ""}</small></span>
             <TypeBadges types={details?.types || []} />
             <BaseStatStrip stats={details?.baseStats} sortId={sortId} />
@@ -210,7 +210,7 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   if (result.status === "invalid") {
     title = "규정 위반";
     message = `${result.errors.length}개의 규정 위반을 확인했습니다.`;
-    icon = <Icon n="x" size={16} />;
+    icon = <Bang />;
   } else if (result.status === "valid") {
     title = "규정 통과";
     message = `${regulationName}, ${cupRuleSummary} 기준으로 포켓몬 구성과 세팅이 최종 검증을 통과했습니다.`;
@@ -220,7 +220,7 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
     message = teamLength || configuredSpecialRule
       ? "규정 위반은 확인되지 않았지만 최종 검증에 필요한 룰 설정 또는 팀 세팅이 아직 완료되지 않았습니다."
       : "포켓몬을 선택하고 각 포켓몬의 세팅을 완료해 주세요.";
-    icon = <Icon n="alert" size={16} />;
+    icon = null;
   }
 
   const messages = [
@@ -232,15 +232,18 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   return (
     <div className={`tb-validation ${result.status}`}>
       <div className="tb-validation-head">
-        <span className="tb-validation-icon">{icon}</span>
+        {icon && <span className="tb-validation-icon">{icon}</span>}
         <div><strong>{title}</strong><span>{message}</span></div>
       </div>
-      {messages.length > 0 && <ul>{messages.slice(0, 8).map(({ type, message: detail }, index) => <li className={type} key={`${type}-${detail}-${index}`}>{detail}</li>)}</ul>}
+      {messages.length > 0 && <ul>{messages.slice(0, 8).map(({ type, message: detail }, index) => <li className={type} key={`${type}-${detail}-${index}`}>{type === "error" && <Bang />}{detail}</li>)}</ul>}
       {messages.length > 8 && <div className="tb-more">외 {messages.length - 8}개</div>}
     </div>
   );
 }
 
+/* Party submission (c11): three steps on one panel, 팀 고르기, 확인, 제출. The team is the one in the builder; 확인 finds the
+   registration by name; 제출 writes a new numbered submission that is never deleted. The steps only show where the visitor
+   stands: every check and write is the same call as before. */
 function OfficialSubmissionPanel({
   eventId,
   eventContext,
@@ -248,6 +251,7 @@ function OfficialSubmissionPanel({
   eventContextError,
   regulationName,
   cupRuleSummary,
+  teamValid,
   registrationName,
   onRegistrationNameChange,
   onLookup,
@@ -261,82 +265,82 @@ function OfficialSubmissionPanel({
   onSubmissionPinChange,
   pinNeeded,
   onSubmit,
+  justSubmitted,
+  onAgain,
   revisions = [],
 }) {
   if (!eventId) return null;
   const eventGate = eventContext ? getSubmissionWriteGate(eventContext) : null;
-  const state = eventContextError || eventContextStatus === "error"
-    ? "invalid"
-    : !eventContext || eventContextStatus !== "ready"
-      ? "incomplete"
-      : eventGate && !eventGate.allowed
-        ? "invalid"
-      : !registration
-        ? "incomplete"
-        : eligibility?.eligible ? "valid" : "invalid";
-  const title = state === "valid"
-    ? "제출 준비 완료"
-    : state === "invalid"
-      ? "제출 불가"
-      : !registration ? "신청자 확인 필요" : "대회 확인 필요";
-  const icon = <Icon n={state === "valid" ? "check" : state === "invalid" ? "x" : "alert"} size={16} />;
-  const messages = [
+  const blocked = Boolean(eventContextError || eventContextStatus === "error" || (eventGate && !eventGate.allowed));
+  const ready = !blocked && eventContextStatus === "ready" && Boolean(registration) && Boolean(eligibility?.eligible);
+  const at = justSubmitted ? 4 : !teamValid ? 1 : !registration ? 2 : 3;
+  const errors = [
     ...(eventContextError ? [eventContextError] : []),
     ...(eventGate && !eventGate.allowed && !eligibility?.errors?.includes(eventGate.error) ? [eventGate.error] : []),
     ...(lookupError ? [lookupError] : []),
     ...(eligibility?.errors || []),
-    ...(eligibility?.warnings || []),
     ...(submissionError ? [submissionError] : []),
   ];
+  const notes = eligibility?.warnings || [];
   const latestSubmission = registration?.latestSubmission || null;
-  const submittedAt = latestSubmission?.submitted_at || latestSubmission?.submittedAt || null;
   const formatSubmissionTime = value => value ? formatDate(value, { time: true }) : "";
   return (
-    <div className={`tb-validation official-submission ${state}`}>
+    <div className="tb-validation official-submission">
       <div className="tb-validation-head">
-        <span className="tb-validation-icon">{icon}</span>
         <div>
-          <strong>{eventContext?.name || "공식 파티 제출 준비"}</strong>
-          <span>{title}{registration ? ` (${registration.registration.registration_name})` : ""}</span>
+          <strong>{eventContext?.name || "공식 파티 제출"}</strong>
+          {eventContext && <span>{[
+            regulationName || eventContext.regulation_id || "레귤레이션 확인 필요",
+            cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음",
+            eventContext.submission_target_at && `권장 제출 시각 ${formatDate(eventContext.submission_target_at, { time: true })}`,
+          ].filter(Boolean).join(", ")}</span>}
         </div>
       </div>
-      {eventContext && <div className="tb-official-meta">
-        <span>{regulationName || eventContext.regulation_id || "레귤레이션 확인 필요"}</span>
-        <span>{cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음"}</span>
-        {eventContext.submission_target_at && <span>권장 제출 시각 {formatDate(eventContext.submission_target_at, { time: true })}</span>}
-      </div>}
-      <div className="tb-official-lookup">
-        <input
-          className="tb-input"
-          value={registrationName}
-          onChange={event => onRegistrationNameChange(event.target.value)}
-          placeholder="신청자 본인의 이름을 입력해 주세요."
-          aria-label="신청자 이름"
-          autoComplete="name"
-          disabled={lookupBusy}
-        />
-        <Button type="button" size="sm" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()} loading={lookupBusy}>신청자 확인</Button>
-      </div>
-      {messages.length > 0 && <ul>{messages.slice(0, 8).map((message, index) => <li className={eligibility?.errors?.includes(message) || lookupError === message || eventContextError === message || submissionError === message ? "error" : "incomplete"} key={`${message}-${index}`}>{message}</li>)}</ul>}
-      {state === "valid" && pinNeeded && <div className="tb-official-lookup tb-official-pin">
-        <input
-          className="tb-input"
-          type="password"
-          value={submissionPin}
-          onChange={event => onSubmissionPinChange(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
-          placeholder="제출 비밀번호 (숫자 4자리)"
-          aria-label="제출 비밀번호"
-          inputMode="numeric"
-          autoComplete="off"
-        />
-        <span className="tb-field-meta">{latestSubmission ? "처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요." : "다시 제출할 때 필요합니다. 다른 사람이 내 이름으로 제출하지 못하게 막아 줍니다."}</span>
-      </div>}
-      {state === "valid" && <div className="tb-official-submit">
-        <Button type="button" variant="primary" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
-          {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출하기" : "파티 제출"}
-        </Button>
-        {submittedAt && <span className="tb-field-meta">제출 완료 시각 {formatSubmissionTime(submittedAt)}</span>}
-      </div>}
+      <Steps labels={["팀 고르기", "확인", "제출"]} at={at} />
+
+      {justSubmitted ? <div className="inv tb-submitted" role="status">
+        <Icon n="check" size={20} />
+        <span><b className="t15">제출했습니다.</b><span className="t12 reg">이 파티가 지금의 공식 파티입니다.</span></span>
+      </div> : null}
+      {justSubmitted ? <Button type="button" variant="second" onClick={onAgain}>다시 제출</Button> : <>
+        <p className={"tb-step-line t12" + (teamValid ? "" : " off")}>{teamValid ? <><Icon n="check" size={16} />지금 팀이 규정을 통과했습니다.</> : "팀을 구성해 규정을 통과하면 제출할 수 있습니다."}</p>
+        <div className="tb-official-lookup">
+          <input
+            className="tb-input"
+            value={registrationName}
+            onChange={event => onRegistrationNameChange(event.target.value)}
+            placeholder="신청자 본인의 이름을 입력해 주세요."
+            aria-label="신청자 이름"
+            autoComplete="name"
+            disabled={lookupBusy}
+          />
+          <Button type="button" variant="second" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()} loading={lookupBusy}>신청자 확인</Button>
+        </div>
+        {registration && <p className="tb-step-line t12"><Icon n="check" size={16} />{registration.registration.registration_name}님의 신청을 확인했습니다.</p>}
+        {(errors.length > 0 || notes.length > 0) && <ul>
+          {errors.slice(0, 8).map((message, index) => <li className="error" key={`e-${index}`}><Bang />{message}</li>)}
+          {notes.slice(0, 4).map((message, index) => <li key={`w-${index}`}>{message}</li>)}
+        </ul>}
+        {ready && pinNeeded && <div className="tb-official-pin">
+          <input
+            className="tb-input"
+            type="password"
+            value={submissionPin}
+            onChange={event => onSubmissionPinChange(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+            placeholder="제출 비밀번호 (숫자 4자리)"
+            aria-label="제출 비밀번호"
+            inputMode="numeric"
+            autoComplete="off"
+          />
+          <span className="t12 reg dim">{latestSubmission ? "처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요." : "다시 제출할 때 필요합니다. 다른 사람이 내 이름으로 제출하지 못하게 막아 줍니다."}</span>
+        </div>}
+        {ready && <div className="tb-official-submit">
+          <Button type="button" variant="main" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
+            {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출" : "파티 제출"}
+          </Button>
+        </div>}
+      </>}
+
       {revisions.length > 0 && <div className="tb-revisions">
         <p className="t12 dim">제출 기록</p>
         <div className="stack">{revisions.map((row, index) => (
@@ -394,6 +398,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
   const [registrationLookupError, setRegistrationLookupError] = useState("");
   const [registrationLookupBusy, setRegistrationLookupBusy] = useState(false);
   const [submissionBusy, setSubmissionBusy] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
   const [submissionPin, setSubmissionPin] = useState("");
   const [shareTeam, setShareTeam] = useState(null);
@@ -405,7 +410,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     flushSync(() => setStep(next));
     const bar = stepsRef.current;
     if (bar && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
-    place([...document.querySelectorAll(`.tb-page [data-tb-step="${next}"]`)], { step: STAGGER.row, y: 8 });
+    place([...document.querySelectorAll(`.tb-page [data-tb-step="${next}"]`)], { step: STAGGER.row });
   }, []);
   const draftTimerRef = useRef(null);
   const restoringDraftRef = useRef(false);
@@ -700,6 +705,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         submitted_at: saved.submittedAt,
         source: "team_builder",
       } } : current);
+      setJustSubmitted(true);
     } catch (error) {
       setSubmissionError(error?.message || "파티 제출을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
     } finally {
@@ -1305,7 +1311,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           regulationName={regulation.name}
           cupRuleSummary={currentCupRuleSummary}
           registrationName={registrationName}
-          onRegistrationNameChange={value => { setRegistrationName(value); setRegistration(null); setRegistrationLookupError(""); setSubmissionError(""); setSubmissionPin(""); }}
+          teamValid={validation.status === "valid"}
+          onRegistrationNameChange={value => { setRegistrationName(value); setRegistration(null); setRegistrationLookupError(""); setSubmissionError(""); setSubmissionPin(""); setJustSubmitted(false); }}
           onLookup={lookupSubmissionRegistration}
           lookupBusy={registrationLookupBusy}
           lookupError={registrationLookupError}
@@ -1317,12 +1324,23 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           onSubmissionPinChange={setSubmissionPin}
           pinNeeded={!admin}
           onSubmit={submitCurrentTeam}
+          justSubmitted={justSubmitted}
+          onAgain={() => { setJustSubmitted(false); setSubmissionPin(""); }}
           revisions={submissionRevisions}
         />
       </div>
 
       <div className="tb-layout">
         <div className="tb-panel tb-pool-panel" data-tb-step="pool">
+          {/* the six stay on top while picking (c7); a filled one opens its settings */}
+          <div className="tb-pool-six" aria-label={`팀 ${team.length} / ${regulation.maxTeamSize || 6}`}>
+            {Array.from({ length: regulation.maxTeamSize || 6 }, (_, index) => {
+              const member = team[index];
+              return member
+                ? <button type="button" key={member.uid} className="pn stand" onClick={() => { setSelectedUid(member.uid); changeStep("team"); }} aria-label={`${displayPokemon(member.pokemon)} 세팅`}><i className="floor" aria-hidden="true" /><Mon src={spriteUrl(member.pokemon.name)} /></button>
+                : <span key={`slot-${index}`} className="pn tb-pool-slot" aria-hidden="true"><Icon n="plus" size={16} /></span>;
+            })}
+          </div>
           <div className="tb-panel-head">
             <div><h2>포켓몬 선택</h2></div>
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
@@ -1567,7 +1585,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
                 <button type="button" className="tb-saved-open" onClick={() => loadSavedTeam(saved)} aria-label={`${saved.name} 불러오기`}>
                   <span className="tb-saved-head"><b className="t15">{saved.name}</b>{open ? <span className="t12 tb-saved-mark"><i className="lamp" aria-hidden="true" />열린 팀</span> : day && <span className="t12 reg dim">저장 {day}</span>}</span>
                   <span className="t12 reg dim">{`${savedReg?.shortName || saved.regulationId}${saved.cupRuleId !== "none" ? `, ${(CUP_RULES[saved.cupRuleId]?.shortName || "룰")}${type ? ` (${type.korean})` : ""}` : ""}, ${saved.members.length}/6마리`}</span>
-                  <span className="tb-saved-six">{saved.members.map((member, index) => <span key={index}><img src={spriteUrl(member.pokemonName)} alt="" loading="lazy" onError={onSpriteError()} /></span>)}</span>
+                  <span className="tb-saved-six">{saved.members.map((member, index) => <span key={index} className="stand"><i className="floor" aria-hidden="true" /><Mon src={spriteUrl(member.pokemonName)} loading="lazy" onError={onSpriteError()} /></span>)}</span>
                 </button>
                 <span className="tb-saved-actions">
                   <Button variant="link" onClick={() => duplicateSavedTeam(saved)}>복제</Button>

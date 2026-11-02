@@ -12,7 +12,8 @@
 .tb-steps, .calc-tabs { margin-bottom: 0; }
 
 /* the Pokémon to pick: panels joined by the seam, the picture, the name and its types, the stats, + */
-.tb-pokemon-list { display: grid; gap: var(--seam); }
+/* rows keep their content height inside the scrolling list: a fixed-height grid would squeeze them and clip the stats */
+.tb-pokemon-list { display: grid; grid-auto-rows: max-content; gap: var(--seam); }
 .tb-pokemon-row { background: var(--panel); box-shadow: none; }
 @media (hover: hover) { .tb-pokemon-row:not(:disabled):hover { background: var(--panel-2); } }
 
@@ -30,6 +31,14 @@
 @media (hover: none) { .tb-mon-remove { opacity: 1; } }
 @media (hover: hover) { .tb-mon-remove:hover { color: var(--lit); } }
 @media (min-width: 860px) { .tb-team-slots { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+/* the six on top of the list on a phone, where the team is a step away; on desktop the team stands beside the list */
+.tb-pool-six { display: none; }
+@media (max-width: 859px) {
+  .tb-pool-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); margin-bottom: var(--s5); }
+  .tb-pool-six > .pn { height: var(--h-row2); }
+  .tb-pool-six .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s1)); margin-inline: auto; }
+  .tb-pool-slot { display: grid; place-items: center; color: var(--mute); }
+}
 
 /* ---------- rules (c19): the regulation and the cup rule as option rows, the type as a grid of cells ---------- */
 .tb-rules { display: grid; gap: var(--s5); }
@@ -98,7 +107,7 @@
 .tb-saved-mark { display: inline-flex; align-items: center; gap: var(--s2); flex: none; }
 .tb-saved-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s2); }
 .tb-saved-six > span { aspect-ratio: 1; overflow: hidden; }
-.tb-saved-six img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tb-saved-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
 .tb-saved.inv .tb-saved-six > span { background: var(--panel); }
 .tb-saved-actions { display: flex; justify-content: flex-end; gap: var(--s5); padding: 0 var(--pad) var(--s2); }
 .tb-saved.inv .btn--link { --btn-fg: var(--ground); }
@@ -119,7 +128,6 @@
 .tb-page .tb-pokemon-list { margin-inline: 0; padding: 0; }
 
 /* the submission's rounds (c11): rows of 52, the newest is the official party with its lamp */
-.tb-revisions { display: grid; gap: var(--s2); margin: var(--s5) 0 0 calc(var(--s8) + var(--s3)); }
+.tb-revisions { display: grid; gap: var(--s2); margin: var(--s5) 0 0; }
 .tb-revision { display: grid; grid-template-columns: var(--s21) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 .tb-revision-now { display: inline-flex; align-items: center; gap: var(--s2); }
-@media (max-width: 639px) { .tb-revisions { margin-left: 0; } }

@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
-import { BackLink, Choice, Counter, Dock, Row, Status, TabsLine } from "../components/common/Board.jsx";
+import { BackLink, Choice, Counter, Dock, Row, Status, Steps, TabsLine } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
 import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
@@ -552,11 +552,10 @@ function BracketWizard({ data, onClose, onCreate }){
     if(target) swapPlaces(from.key,target.dataset.key);
     setHeld(null);
   };
-  const stepCell=(n,label)=><span className={"bk-step "+(step===n?"inv":"pn")} aria-current={step===n?"step":undefined}><span className="num">{n}</span>{step>n&&<Icon n="check" size={16}/>}{label}</span>;
   return (<div className="bk-create">
     <BackLink to="대진표" onClick={onClose}/>
     <header className="bk-head"><h2 className="t20">대진표 만들기</h2>{(linkedEvent?.name||name)&&<span className="t12 dim">{linkedEvent?.name||name}</span>}</header>
-    <div className={"stack bk-stepper"+(placeable?" three":"")}>{stepCell(1,"대회 설정")}{stepCell(2,"참가자 확정")}{placeable&&stepCell(3,"대진 배치")}</div>
+    <Steps labels={placeable?["대회 설정","참가자 확정","대진 배치"]:["대회 설정","참가자 확정"]} at={step}/>
     <div className="form-card swap" key={step}>
     {step===1&&<>
       <div className="field">
@@ -808,7 +807,7 @@ function BracketWizard({ data, onClose, onCreate }){
     {step===3&&placement&&<>
       {eventError&&<FormError>{eventError}</FormError>}
       <div className="stack bk-place-tools"><Button variant="second" onClick={redraw}>다시 추첨</Button></div>
-      <p className="t12 reg dim">M1과 M2, M3과 M4의 승자가 차례로 만납니다. 이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다. 부전승 자리는 추첨이 정합니다.</p>
+      <p className="t12 reg dim">이웃한 두 경기의 승자가 다음 라운드에서 만납니다. 이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다. 부전승 자리는 추첨이 정합니다.</p>
       <div className="stack bk-place" onPointerUp={dropPlace} onPointerLeave={()=>{ if(dragFrom.current&&!dragFrom.current.moved) dragFrom.current=null; }}>
         {placement.plan.map(([a,b],i)=><div className="pn bk-place-row" key={i}>
           <span className="t12 dim num">M{i+1}</span>{placeCell(a)}<span className="t12 dim">vs</span>{placeCell(b)}
@@ -1229,7 +1228,8 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       <div className="bk-cb-actions">
         <Button variant="second" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</Button>
         <Button variant="second" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</Button>
-        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<Button variant="main" onClick={()=>onApply(b,res)}>기록에 반영</Button>}
+        {/* the one main action docks above the bars on a scrolling screen (DESIGN.md "Controls") */}
+        {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<Dock><Button variant="main" onClick={()=>onApply(b,res)}>기록에 반영</Button></Dock>}
         {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={16}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<Button size="sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당에 등록하지 못했습니다. ${error?.message||"잠시 뒤 다시 시도해 주세요."}`);}finally{setHallOfFameBusy(false);}}} loading={hallOfFameBusy}>명예의 전당 재시도</Button>}{!readOnly&&admin&&<Button size="sm" onClick={undoApplied}>반영 취소</Button>}</>}
       </div>
     </section>}
@@ -2352,9 +2352,10 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         {statusTag(open)==="진행 중"&&<p className="bk-live t12"><Status live>진행 중</Status></p>}
         <h1 className="t20 bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
         <p className="t12 dim reg bk-open-line">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}{admin&&statusTag(open)!=="진행 중"?`, ${statusTag(open)}`:""}</p>
-        {!open.readOnly&&admin&&<div className="stack bk-actions"><Button variant="second" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}>{deletingId===open.id?"삭제 중…":"삭제"}</Button></div>}
       </header>
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
+      {/* a delete that cannot be undone stands last, after everything the bracket shows */}
+      {!open.readOnly&&admin&&<div className="stack bk-actions bk-delete"><Button variant="second" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}>{deletingId===open.id?"삭제 중…":"삭제"}</Button></div>}
     </div>}
     {wizard&&<BracketWizard data={data} onClose={()=>setWizard(false)} onCreate={create}/>}
      {apply&&<BracketApply b={apply.b} res={apply.res} data={data} save={save} flash={flash} refresh={refresh} onNormalizedApplied={loadNormalized} onClose={()=>{setApply(null);void loadNormalized();}}/>}

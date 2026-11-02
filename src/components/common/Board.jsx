@@ -46,10 +46,10 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
 
 /* A Pokémon standing in its panel (DESIGN.md "Where a Pokémon stands"): the parent is a .stand panel with a .floor band; the picture
    stands with its ink's feet on the band's top edge. Pictures that fail to load leave the floor empty. */
-export function Mon({ src, className = "" }) {
+export function Mon({ src, className = "", ...rest }) {
   if (!src) return null;
   const stand = img => { if (img?.complete && img.naturalWidth) standInk(img); };
-  return <img className={"mon" + (className ? " " + className : "")} src={src} alt="" decoding="async" ref={stand} onLoad={e => standInk(e.currentTarget)} />;
+  return <img className={"mon" + (className ? " " + className : "")} src={src} alt="" decoding="async" {...rest} ref={stand} onLoad={e => standInk(e.currentTarget)} />;
 }
 
 /* The current champion: one panel, the name, generation and season top left, 파티 보기 in the floor band, the Pokémon on the floor
@@ -154,6 +154,20 @@ export function TabsLine({ value, onChange, options, label }) {
     <div className="tabsline" role="tablist" aria-label={label}>
       {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}
     </div>
+  );
+}
+
+/* Steps of a flow (DESIGN.md "Controls"): a row of panels, 44; done dim with a check, current inverted, next muted. at is 1-based;
+   past the last step every step is done. */
+export function Steps({ labels, at }) {
+  return (
+    <ol className="stack steps" style={{ "--n": labels.length }}>
+      {labels.map((label, i) => {
+        const n = i + 1, state = n < at ? "done" : n === at ? "inv" : "next";
+        return <li key={label} className={"step " + (state === "inv" ? "inv" : "pn " + state)} aria-current={state === "inv" ? "step" : undefined}>
+          <span className="num">{n}</span>{state === "done" && <Icon n="check" size={16} />}{label}</li>;
+      })}
+    </ol>
   );
 }
 

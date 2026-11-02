@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { BackLink, Choice, Counter, Dock, Question, Row, Toast } from "../components/common/Board.jsx";
+import { BackLink, Chips, Choice, Counter, Dock, Question, Row, Toast } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
 import { PushLink } from "../components/common/PushControl.jsx";
 import Seg from "../components/common/Seg.jsx";
+import { isNewNotice, markNoticeSeen } from "../components/common/seenNotices.js";
 import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
-import { builderRouteSearch, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, listEventApplications, listEventRegistrationSubmissionStatuses, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
@@ -40,10 +41,10 @@ function eventFacts(a){
   return {next,rows};
 }
 
-/* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸 */
+/* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸. 새 글이면 램프가 켜진다(seenNotices.js) */
 const NoticeRow=({a,onOpen})=>{
-  const d=dotDate(a.date);
-  return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={false} onClick={onOpen}/>;
+  const d=dotDate(a.date), fresh=isNewNotice(a);
+  return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={fresh} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
 };
 
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어간다. 신청은 공지 위에 서는 한 장이고, 파티 제출은 팀 빌더로 간다.
@@ -105,6 +106,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   },[data.announcements]);
   // 공지를 여는 것은 기록 한 칸: 폰의 뒤로 가기가 목록으로 돌아오고, 공지 탭을 다시 누르면 목록이 된다
   useEffect(()=>{ const onPop=()=>setArticle(new URLSearchParams(window.location.search).get("notice")||null); popHandlers.add(onPop); return ()=>{ popHandlers.delete(onPop); }; },[]);
+  useEffect(()=>{ markNoticeSeen(article); },[article]);
   const openArticle=id=>{ listScroll.current=window.scrollY; const url=new URL(window.location.href); url.searchParams.set("notice",id);
     pushHistory({...window.history.state,notice:id},url); transition(()=>flushSync(()=>setArticle(id)),{shared:"n-"+id}); };
   const closeArticle=()=>{ const id=article; if(window.history.state?.notice) return backWith("n-"+id);
@@ -309,16 +311,28 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
     const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
-  /* c8 신청자: the count lit, a name search and CSV in one row, each entry a row with its answers in a grey line */
-  const [q,setQ]=useState("");
+  /* c8 신청자: the counts lit (신청, 파티 제출, 미제출), a name search and CSV in one row, chips for who has submitted, each entry a row
+     with its answers in a grey line and the lit lamp beside 제출. The submission state is read only, for an event-linked notice. */
+  const [q,setQ]=useState(""), [filter,setFilter]=useState("all"), [subs,setSubs]=useState(null);
+  useEffect(()=>{
+    if(!normalized||!form.eventId) return undefined;
+    let on=true;
+    listEventRegistrationSubmissionStatuses(form.eventId).then(rows=>{ if(on) setSubs(new Map(rows.map(x=>[x.registrationId,x]))); }).catch(error=>console.warn("submission statuses read failed",error));
+    return ()=>{ on=false; };
+  },[normalized,form.eventId]);
+  const sent=r=>Boolean(subs?.get(r.id)?.hasSubmission);
   const nameOf=r=>r.registrationName||(fields[0]?cell(r.answers&&r.answers[fields[0].id]):"");
-  const shown=q.trim()?resp.filter(r=>nameOf(r).includes(q.trim())):resp;
+  const sentCount=subs?resp.filter(sent).length:0;
+  const shown=resp.filter(r=>(!q.trim()||nameOf(r).includes(q.trim()))&&(filter==="all"||(filter==="sent")===sent(r)));
+  const cellsFor=n=>Math.max(2,String(n).length);
   return (<Modal title="신청자" hint={ann.title} onClose={onClose}>
-    <div className="stack fr-counters"><Counter label="신청" value={resp.length} cells={Math.max(2,String(resp.length).length)}/></div>
+    <div className="stack fr-counters"><Counter label="신청" value={resp.length} cells={cellsFor(resp.length)}/>
+      {subs&&<><Counter label="파티 제출" value={sentCount} cells={cellsFor(resp.length)}/><Counter label="미제출" value={resp.length-sentCount} cells={cellsFor(resp.length)}/></>}</div>
     {resp.length>0&&<div className="stack fr-bar">
       <label className="pn search-in"><Icon n="search" size={20}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="이름 검색" aria-label="이름 검색"/></label>
       <button type="button" className="pn fr-csv" onClick={csv}><Icon n="download" size={16}/>CSV</button>
     </div>}
+    {resp.length>0&&subs&&<div className="fr-chips"><Chips value={filter} onChange={setFilter} label="제출 여부" options={[["all",`전체 ${resp.length}`],["sent",`파티 제출 ${sentCount}`],["unsent",`미제출 ${resp.length-sentCount}`]]}/></div>}
     {resp.length===0?<p className="t15 reg dim fr-empty">아직 접수된 신청이 없습니다.</p>:
       <div className="stack fr-rows">{shown.map(r=>(<div className="pn fr-row" key={r.id}>
         <span className="t12 dim fr-no num">{resp.indexOf(r)+1}</span>
@@ -327,10 +341,11 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
           {fields.length>0&&<span className="t12 reg dim fr-answers">{fields.map(f=>`${f.label||"질문"} ${cell(r.answers&&r.answers[f.id])||"없음"}`).join(", ")}</span>}
         </div>
         <div className="fr-actions">
+          {subs&&(sent(r)?<span className="t12 fr-sent"><i className="lamp" aria-hidden="true"/>제출</span>:<span className="t12 dim">미제출</span>)}
           {onResetPin&&<Button variant="link" onClick={()=>onResetPin(r)}>비밀번호 초기화</Button>}
           {onDeleteResp&&<button type="button" className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} aria-label="삭제" title="삭제"><Icon n="trash" size={16}/></button>}
         </div>
       </div>))}
-      {!shown.length&&<p className="t15 reg dim fr-empty">이 이름의 신청이 없습니다.</p>}</div>}
+      {!shown.length&&<p className="t15 reg dim fr-empty">{q.trim()?"이 이름의 신청이 없습니다.":"해당하는 신청이 없습니다."}</p>}</div>}
   </Modal>);
 }

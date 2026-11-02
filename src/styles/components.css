@@ -26,8 +26,7 @@
 .btn--secondary, .btn--tertiary { --btn-bg: transparent; --btn-bg-hover: transparent; min-width: 0; padding-inline: 0; }
 .btn--secondary { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; }
 @media (hover: hover) { .btn--secondary:hover:not(:disabled) { text-decoration-thickness: var(--line); } .btn--tertiary:hover:not(:disabled) { --btn-fg: var(--lit); } }
-.btn .ic { width: 20px; height: 20px; transition: transform var(--move-light); }
-@media (hover: hover) { .btn--inverse:hover .ic, .btn--primary:hover .ic { transform: translateX(var(--s1)); } }
+.btn .ic { width: 20px; height: 20px; }
 .btn--sm .ic { width: 16px; height: 16px; }
 .btn--primary { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
 .btn--destructive { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
@@ -38,7 +37,6 @@
 .btn[aria-busy="true"] { color: transparent; }
 .btn[aria-busy="true"]:disabled { opacity: 1; }
 .btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; box-shadow: inset 0 0 0 var(--line) var(--btn-fg); animation: y-pulse var(--move-light) infinite; }
-@keyframes y-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; box-shadow: inset 0 0 0 var(--line) var(--btn-fg); animation: y-pulse var(--move-light) infinite; } }
 .form-error { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 /* section and whole-page errors: what went wrong, and one way to try again */
@@ -79,9 +77,9 @@
 .seg-sub .seg-track > button { font-size: var(--t12); line-height: var(--l12); }
 .seg-track > button[aria-selected="true"] { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
 @media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--lit); } }
-.ypl-choice { box-shadow: none; }
+.ypl-choice { display: flex; width: 100%; box-shadow: none; }
 .ypl-choice .seg-track { grid-auto-columns: 1fr; gap: var(--seam); width: 100%; }
-.ypl-choice .seg-track > button { padding: 0 var(--s3); background: var(--panel); color: var(--dim); }
+.ypl-choice .seg-track > button { padding: 0 var(--s3); background: var(--field-bg, var(--panel)); color: var(--dim); }
 .ypl-choice .seg-track > button[aria-selected="true"] { background: var(--lit); color: var(--ground); box-shadow: none; }
 @media (hover: hover) { .ypl-choice .seg-track > button:not([aria-selected="true"]):hover { background: var(--panel-2); color: var(--lit); } }
 
@@ -195,9 +193,9 @@
 .dd-menu {
   position: absolute; z-index: var(--z-popover); top: calc(100% + var(--s2)); left: 0; right: 0; min-width: calc(var(--s21) * 2 + var(--s13));
   max-height: min(calc(var(--s21) * 4 + var(--s5)), 61.8vh); overflow-y: auto; overscroll-behavior: contain; padding: 0; transform-origin: top center;
-  animation: dd-in var(--move-light);
+  animation: dd-in var(--move-tone);
 }
-@keyframes dd-in { from { opacity: 0; transform: scale(.91); } }
+@keyframes dd-in { from { opacity: 0; } }
 .dd-opt {
   width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding: var(--s2) var(--s3); border: 0; background: transparent; text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 600;
@@ -239,8 +237,9 @@
 .ypl-table :is(th, td):first-child { padding-left: 0; }
 .ypl-table :is(th, td):last-child { padding-right: 0; }
 @media (hover: hover) { .ypl-table tbody tr:hover td { background: var(--panel-2); } }
-.ypl-table tr.rise td { animation: row-rise var(--move-light) 1; }
-@keyframes row-rise { 0%, 25% { background: var(--panel-2); } 100% { background: transparent; } }
+/* a new row switches on once; a background is never animated */
+.ypl-table tr.rise td { animation: row-rise var(--move-tone) 1; }
+@keyframes row-rise { from { opacity: 0; } }
 .ypl-table .r { text-align: right; }
 .ypl-table .c { text-align: center; }
 .ypl-table .ypl-table__rank { text-align: left; }
@@ -278,8 +277,9 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 /* ---------- search field: a 48px line with the magnifier on it ---------- */
 .lsearch, .records-search-field, .tb-search-row { position: relative; width: 100%; }
 .lsearch { width: min(calc(var(--s21) * 4 + var(--s5)), 100%); }
-.lsearch input, .records-search-field input, .tb-search-row input { padding-left: var(--s8); padding-right: var(--s8); }
-.ls-ico, .search-input-icon { position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: flex; color: var(--mute); pointer-events: none; z-index: var(--z-raised); }
+/* the icon stands 12 in from the field's edge like every panel's first ink, and the words 12 after it, as in ListSearch */
+.lsearch input, .records-search-field input, .tb-search-row input { padding-left: calc(var(--pad) + 20px + var(--s3)); padding-right: var(--h-control); }
+.ls-ico, .search-input-icon { position: absolute; left: var(--pad); top: 50%; transform: translateY(-50%); display: flex; color: var(--mute); pointer-events: none; z-index: var(--z-raised); }
 .ls-ico .ic, .search-input-icon .ic { width: 20px; height: 20px; }
 .ls-clear, .tb-clear {
   position: absolute; right: 0; top: 50%; translate: 0 -50%; width: 44px; height: 44px; display: grid; place-items: center;
@@ -290,20 +290,16 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 .list-tools { display: flex; align-items: center; gap: var(--s3); }
 .list-count { font-size: var(--t12); color: var(--mute); white-space: nowrap; }
 
-/* ---------- Toast (K6): from below (phone: just above the tab bar), stacked behind each other ---------- */
+/* ---------- Toast: an inverted 52 panel just above the tab bar; a newer one covers the one before ---------- */
 .toaster { position: fixed; z-index: var(--z-toast); left: 0; right: 0; margin-inline: auto; width: min(100% - var(--gutter) * 2, calc(var(--s21) * 4 + var(--s5))); height: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }
 .is-admin .toaster { bottom: calc(env(safe-area-inset-bottom, 0px) + calc(var(--s21) + var(--s13))); }
 @media (min-width: 860px) { .toaster { bottom: var(--s8); } .is-admin .toaster { bottom: 84px; } }
 .toast {
-  position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--s2); min-height: 52px; padding: var(--s3) var(--s8); font-size: var(--t15); line-height: var(--l15); font-weight: 600; transform-origin: 50% 100%;
-  transform: translateY(calc(var(--i, 0) * -12px)) scale(calc(1 - var(--i, 0) * .056));
-  transition: transform var(--move-light), opacity var(--move-tone), translate var(--move-leave);
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: var(--s2) var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 600;
+  transition: opacity var(--move-leave);
 }
 .toast > span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.toast.out { opacity: 0; translate: 0 12px; }
-/* the words of a toast behind clear, so two sentences never overlap */
-.toast > * { transition: opacity var(--move-tone); }
-.toast.behind > * { opacity: 0; }
+.toast.out, .toast.behind { opacity: 0; }
 
 /* ---------- Sheet and dialog (M5, K10): one rule at 860px. Under it a sheet rises from the bottom and fills the width;
    from it a dialog sits in the middle. ---------- */
@@ -317,6 +313,13 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 /* the sheet (DESIGN.md "Sheets"): a panel plate with a hairline on its top edge, a 32 by 4 grip, its title at 20 and a × */
 .sheet { box-shadow: inset 0 1px 0 var(--rule); }
 .grip::after { content: ""; width: var(--s8); height: var(--s1); background: var(--mute); }
+/* the sheet is itself a panel, so the panels on it stand one tone up, like a field inside a panel; a Pokémon's cell keeps the
+   sheet's tone so its floor still reads, and a hover lifts to the hairline tone */
+.sheet .pn:not(.stand) { background: var(--panel-2); --field-bg: var(--rule); }
+/* each step in stands one tone up: a switch's track and a second action on the sheet's panels */
+.sheet .pn .sw:not(.on) { background: var(--rule); }
+.sheet .btn.btn--second { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); }
+@media (hover: hover) { .sheet button.pn:not(.stand):not(:disabled):hover, .sheet .pn.search-in:hover { background: var(--rule); } }
 .modal {
   position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   padding: var(--s2) var(--pad) calc(var(--s8) + env(safe-area-inset-bottom, 0px));
@@ -431,7 +434,7 @@ button.case:active:not(:disabled) { scale: 1; }
 
 /* ---------- a native checkbox is the board's check (c8, c12): a 20 square, off panel-2, on inverted with its mark ---------- */
 :where(.ypl) input[type="checkbox"]:not(.sr-only) { appearance: none; -webkit-appearance: none; display: inline-grid; place-items: center; background: var(--panel-2); cursor: pointer; transition: background-color var(--move-tone); }
-:where(.ypl) :is(.pn, .sheet .field, .bk-pin) input[type="checkbox"]:not(.sr-only):not(:checked) { background: var(--rule); }
+:where(.ypl) :is(.pn, .sheet .field, .sheet .fb-q, .bk-pin) input[type="checkbox"]:not(.sr-only):not(:checked) { background: var(--rule); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):checked { background: var(--lit); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):checked::after { content: ""; width: var(--s3); height: var(--s3); background: var(--ground); clip-path: polygon(14% 44%, 0 58%, 38% 92%, 100% 22%, 86% 8%, 38% 64%); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):focus-visible { outline: var(--line) solid var(--lit); outline-offset: var(--seam); }

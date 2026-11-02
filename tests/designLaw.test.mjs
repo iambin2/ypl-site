@@ -117,7 +117,6 @@ const EXCEPT = {
     "a stack orders itself: toasts by their place": ["src/components/common/Toaster.jsx | style | z-index: 10 - index"],
   },
   "opacity: 0, 1, a token, or an unlit bar (Colour and light)": {
-    "the fourth toast in a stack leaves": ["src/components/common/Toaster.jsx | style | opacity: index > 2 && !item.out ? 0 : undefined"],
   },
   "colour: literals live only in tokens.css (Colour and light)": {
     "Pokémon type colours are content, not chrome": TYPES,
@@ -127,9 +126,7 @@ const EXCEPT = {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "the bar ends on the page's edge by the icon's ink: half of 44 less 24": ["src/styles/shell.css | .iconbtn:last-child | margin-right: calc((var(--h-control) - 24px) / -2)"],
     "clears a fixed element by its size: a sprite, a checkbox, a status icon": [
-      `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
-      `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s5) 0 0 44px`,
-      `${TB} | .tb-official-lookup | margin: var(--s5) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s5) 0 0 44px`],
+      `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`],
   },
 };
 
@@ -252,7 +249,7 @@ test("pages move through the verbs of motion.js, never their own .animate() (Mot
 });
 test("keyframes are a closed list: a new one needs a new verb in DESIGN.md (Motion)", () => {
   const names = CSS.flatMap(f => [...read(join(STYLES, f)).matchAll(/@keyframes\s+([\w-]+)/g)].map(m => m[1])).sort();
-  assert.deepEqual(names, ["bk-land", "dd-in", "row-rise", "y-fade", "y-pop", "y-pulse", "y-rise", "y-spin", "y-swap"]);
+  assert.deepEqual(names, ["bk-land", "dd-in", "row-rise", "y-fade", "y-pop", "y-pulse", "y-rise", "y-swap"]);
 });
 test("script animations take their durations from DUR (Motion)", () => {
   const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\([^;]*?duration:\s*(\d+)/g)].filter(m => +m[1] > 0).map(m => `${rel(f)}: ${m[1]}`));
@@ -265,9 +262,8 @@ test("scripted animations move transform and opacity only (Motion)", () => {
 test("css keyframes move transform and opacity only (Motion)", () => {
   const css = CSS.map(f => read(join(STYLES, f))).join("\n");
   const blocks = [...css.matchAll(/@keyframes ([\w-]+) \{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/g)].map(([, name, body]) => ({ name, props: [...body.matchAll(/([\w-]+)\s*:/g)].map(m => m[1]) }));
-  const LOCAL = { "row-rise": "one row, once, when a ranking changes", "bk-land": "one bracket slot in the draw ceremony" };
   assert.ok(blocks.length > 6);
-  assert.deepEqual(blocks.filter(b => !LOCAL[b.name] && b.props.some(p => !["transform", "opacity"].includes(p))).map(b => `${b.name}: ${b.props}`), []);
+  assert.deepEqual(blocks.filter(b => b.props.some(p => !["transform", "opacity"].includes(p))).map(b => `${b.name}: ${b.props}`), []);
 });
 test("a page change copies nothing and flies nothing; there is no burst (Motion)", () => {
   const motion = src("src/components/common/motion.js");

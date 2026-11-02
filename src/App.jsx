@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import React, { lazy, useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react";
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
 import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
@@ -10,7 +10,7 @@ import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
 import TabBar, { MORE_ITEMS, useWideNav } from "./components/layout/Navigation.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
-import { DUR, reduced, themeTurn, transition } from "./components/common/motion.js";
+import { DUR, light, reduced, themeTurn, transition } from "./components/common/motion.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { onAdminSessionLost, signOutAdmin } from "./storage.js";
@@ -77,6 +77,9 @@ export default function App() {
   const [more,setMore]=useState(null);
   // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
+  // 첫 진입은 어느 화면이든 꺼진 판에서 켜진다(DESIGN.md "Motion"). 홈은 제 패널을 스스로 켠다.
+  const litOnce=useRef(false);
+  useLayoutEffect(()=>{ if(!data||litOnce.current)return; litOnce.current=true; if(view!=="home") light(document.getElementById("ypl-main")); },[data]);
   // 다크가 첫 방문이다(스코어보드). 고른 기록이 라이트면 라이트, "system"이면 기기의 설정을 따른다.
   // 예전 키는 열 때마다 저장돼 고른 기록이 아니라서 쓰지 않는다.
   const [themePref,setThemePref]=useState(()=>{

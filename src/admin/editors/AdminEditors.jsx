@@ -8,6 +8,7 @@ import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
 import { copyEventRules, eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
+import { formatDate } from "../../services/dateFormat.js";
 import { signInAdmin } from "../../storage.js";
 import Button from "../../components/common/Button.jsx";
 import Field, { FormError } from "../../components/common/Field.jsx";
@@ -136,12 +137,12 @@ function FormBuilder({ form, setForm, earlier = [] }){
       <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
       <div className="fb-q">
         <div className="fb-q-top fb-section-head"><span className="t12 dim">대회 설정</span>{earlier.length>0&&!form?.eventId&&<Button variant="link" onClick={()=>setPickEarlier(true)}>지난 대회에서 불러오기</Button>}</div>
-        {pickEarlier&&<PickerSheet title="지난 대회에서 불러오기" placeholder="공지 제목 검색" items={earlier.map(a=>({value:a.id,label:a.title||"(제목 없음)",sub:[a.date,a.form?.eventDraft?.name].filter(Boolean).join(", "),search:String(a.title||"").toLowerCase().replace(/\s+/g,"")}))}
+        {pickEarlier&&<PickerSheet title="지난 대회에서 불러오기" placeholder="공지 제목 검색" items={earlier.map(a=>({value:a.id,label:a.title||"(제목 없음)",sub:[formatDate(a.date),a.form?.eventDraft?.name].filter(Boolean).join(", "),search:String(a.title||"").toLowerCase().replace(/\s+/g,"")}))}
           onPick={id=>{ const from=earlier.find(a=>a.id===id); if(from) setForm(copyEventRules(from,form)); }} onClose={()=>setPickEarlier(false)}/>}
         <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
         <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
-        <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다.":""}.</div></div>
+        <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다.":"."}</div></div>
         <div className="cells fb-cells">
         <Cell label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Cell>
         <Cell label="구분">{isChampions?<span>해당 없음</span>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</Cell>
@@ -214,7 +215,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
     <FormBuilder form={form} setForm={setForm} earlier={earlier.filter(a=>a.id!==item?.id&&a.form?.enabled&&a.form?.eventDraft)}/>
     <div className={"fold"+(linkOpen?" open":"")}>
       <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>
-        <span className="fold-title"><Icon n="link" size={16}/> 링크 첨부 <span className="fold-note">(구글폼 등 외부 링크, 선택)</span></span>
+        <span className="fold-title">링크 첨부 <span className="fold-note">(구글폼 등 외부 링크, 선택)</span></span>
         {(link||link2)&&!linkOpen&&<span className="fold-badge">{[link,link2].filter(Boolean).length}</span>}
         <span className="fold-chev" aria-hidden="true"><Icon n="chev" size={16}/></span>
       </button>
@@ -303,7 +304,7 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
         <div className="ed-r2"><input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="우승" aria-label="우승"/><input value={r.ru} onChange={e=>upd(i,"ru",e.target.value)} placeholder="준우승" aria-label="준우승"/></div>
         <input value={r.sfText} onChange={e=>upd(i,"sfText",e.target.value)} placeholder="4강 (쉼표 구분)" aria-label="4강 (쉼표 구분)"/>
       </>:<>
-        <div className="ed-team"><span className="ed-rk gold"><Icon n="trophy" size={16}/> 우승 팀</span>
+        <div className="ed-team"><span className="ed-rk gold">우승 팀</span>
           <input value={r.win} onChange={e=>upd(i,"win",e.target.value)} placeholder="팀 이름 (선택)" aria-label="팀 이름 (선택)"/>
           <input value={r.winM} onChange={e=>upd(i,"winM",e.target.value)} placeholder="팀원 (쉼표 구분, 인원 제한 없음)" aria-label="팀원 (쉼표 구분, 인원 제한 없음)"/></div>
         <div className="ed-team"><span className="ed-rk">준우승 팀</span>

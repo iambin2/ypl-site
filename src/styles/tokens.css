@@ -180,7 +180,7 @@ label:has(input) { cursor: pointer; }
 .inv :is(.dim, .mute) { color: var(--ground); }
 /* older surface names: a panel, or the next tone */
 .plate, .plate-l3, .groove, .card { position: relative; }
-.plate, .plate-l3, .card, .dd-menu, .popover, .toast { background: var(--panel); }
+.plate, .plate-l3, .card, .dd-menu, .popover { background: var(--panel); }
 .groove { background: var(--panel-2); }
 
 /* ---------- lamps: an 8px square beside a word. Lit is new or next, amber is live now. A lamp never blinks and never moves. ---------- */

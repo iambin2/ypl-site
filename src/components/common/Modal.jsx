@@ -1,7 +1,7 @@
 import React, { useId, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "./Icon.jsx";
-import { DUR, EASE_IN, EASE_OUT, desktop, reduced, settleTitle, springTo, springs } from "./motion.js";
+import { DUR, EASE_IN, EASE_OUT, desktop, reduced, settleTitle, springTo } from "./motion.js";
 
 /* 닫힘 애니메이션 — 떠 있는 층은 부모가 상태를 지우는 순간 사라진다.
    그래서 React 가 떼어 낸 노드를 그 자리에 잠깐 다시 붙여 사라지는 모습만 재생하고 지운다.
@@ -40,37 +40,21 @@ export function useExitAnimation(ref, { replacedBy = null, inPlace = false, exit
   }, [ref, replacedBy, inPlace]);
 }
 
-/* ---------- what sits behind an open sheet: locked, inert, and on a phone drawn back a little ----------
+/* ---------- what sits behind an open sheet: locked and inert; it stands still under the veil ----------
    One count for every open sheet, so a confirm over a form does not unlock the page underneath. */
-let openSheets = 0, recedeAnim = null, receded = false;
+let openSheets = 0;
 const behind = () => [document.getElementById("ypl-main"), document.querySelector(".topbar"), document.querySelector(".tabbar"),
   document.querySelector(".site-foot"), document.querySelector(".admin-dock")].filter(Boolean);
-/* 폰의 시트는 상단 바 바로 아래까지 올라온다. 바가 시트 머리에 반쯤 걸려 보이지 않게 열린 동안 위로 비켜 둔다.
-   뒤 페이지는 네이비 위에서 물러난다: 페이지 뒤의 흰 바탕이 드러나면 회색 띠가 된다. */
-function recede(on) {
-  if (receded === on) return;
-  receded = on;
-  if (desktop()) return;
-  document.querySelector(".topbar")?.classList.toggle("hide", on);
-  const page = document.querySelector(".wrap"), root = document.documentElement;
-  if (!page || reduced()) return;
-  if (on) { page.style.transformOrigin = `50% ${innerHeight / 2 - page.getBoundingClientRect().top}px`; root.classList.add("receded"); }
-  recedeAnim?.cancel();
-  recedeAnim = page.animate([{ transform: on ? "none" : "scale(.966)" }, { transform: on ? "scale(.966)" : "none" }],
-    { duration: on ? DUR.lift : DUR.leave, easing: on ? springs().lift : EASE_OUT, fill: "forwards" });
-  if (!on) recedeAnim.finished.then(a => { a.cancel(); root.classList.remove("receded"); }).catch(() => {});
-}
 function holdPage(on) {
   if (on ? openSheets++ > 0 : --openSheets > 0) return;
   document.documentElement.style.overflow = on ? "hidden" : "";
   behind().forEach(el => { el.inert = on; });
-  recede(on);
 }
 
 /* 대화상자 — 폰은 아래에서 올라오는 매트 시트(끌어내려 닫기, 손을 뗀 속도를 이어받는 스프링),
    데스크톱은 가운데 창(M5). Esc 와 바깥 누름으로 닫히고, 열려 있는 동안 뒤 페이지는 스크롤되지 않는다.
    title 이 없으면 머리 없이 children 만 그린다(label 이 이름이 된다).
-   fly: { from: 누른 요소, selector: 시트 안의 제목 } 이면 시트 제목이 제자리로 살짝 내려앉는다(I2). */
+   fly: { from: 누른 요소, selector: 시트 안의 제목 } 이면 시트 제목이 한 박자 뒤에 켜진다. */
 export default function Modal({ title, hint, children, onClose, className = "", label, fly }) {
   const titleId = useId();
   const overlayRef = useRef(null);
@@ -86,7 +70,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
       const sheet = node.querySelector(".sheet"), scrim = node.querySelector(".scrim");
       if (reduced()) return [node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, fill: "forwards" })];
       const out = [scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" })];
-      if (desktop()) out.push(sheet.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.976)" }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
+      if (desktop()) out.push(sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
       else {
         const from = new DOMMatrix(getComputedStyle(sheet).transform).m42;
         out.push(sheet.animate([{ transform: `translateY(${from}px)` }, { transform: `translateY(${sheet.offsetHeight + 20}px)` }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
@@ -121,8 +105,8 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     flyRef.current = null;
     if (!reduced()) scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.leave, easing: EASE_OUT });
     if (desktop()) {
-      // 불투명은 한 톤에 끝내고 크기만 스프링을 탄다: 뒤의 글자가 창을 비쳐 보이지 않게.
-      if (!reduced()) { sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT }); sheet.animate([{ transform: "scale(.944)" }, { transform: "none" }], { duration: DUR.place, easing: springs().spring }); }
+      // a dialog switches on where it stands: nothing grows or flies (DESIGN.md "Motion")
+      if (!reduced()) sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
     } else {
       sheet.style.transform = `translateY(${sheet.offsetHeight + 20}px)`;
       slide(0);
@@ -159,11 +143,10 @@ export default function Modal({ title, hint, children, onClose, className = "", 
         overlay.dataset.gone = "1";
         scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" });
         // 바와 페이지는 시트가 나가는 동안 돌아온다. 시트 위의 시트가 나갈 때는 아래 시트가 페이지를 붙들고 있다.
-        if (openSheets === 1) recede(false);
         slide(sheet.offsetHeight + 20, Math.max(v, 0), true).then(() => {
           closeRef.current?.();
           // a parent that keeps the sheet open gets it back
-          setTimeout(() => { if (overlay.isConnected) { delete overlay.dataset.gone; scrim.getAnimations().forEach(a => a.cancel()); recede(true); slide(0); } }, 400);
+          setTimeout(() => { if (overlay.isConnected) { delete overlay.dataset.gone; scrim.getAnimations().forEach(a => a.cancel()); slide(0); } }, 400);
         });
       } else slide(0, v);
     };

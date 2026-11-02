@@ -29,7 +29,8 @@
 .bk-places { margin: var(--seam) 0 0; }
 .bk-places dd { margin: 0; }
 .bk-cb-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s5); }
-.bk-cb-actions > .btn--main { grid-column: 1 / -1; }
+.bk-cb-actions > .btn--main, .bk-cb-actions > .dock { grid-column: 1 / -1; }
+.bk-delete { margin-top: var(--s13); }
 .bk-applied { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
 
 /* ---------- the tree: column heads 12 dim, 12 above their boxes ---------- */
@@ -41,12 +42,13 @@
 .bk-col-h.gf { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 .bk-col-body { position: relative; width: 100%; }
 .bk-mpos { position: absolute; left: 0; right: 0; }
-/* eight players fit a phone to the final: three columns share the content width */
-@media (max-width: 639px) { .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap) * 2) / 3); } }
+/* eight players fit a phone to the final: three columns share the content width, and the boxes drop the seed to keep the names (c10) */
+@media (max-width: 639px) { .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap) * 2) / 3); } .bk-scroll .mb-seed { display: none; } }
 @media (min-width: 860px) { .bk-scroll { --bk-gap: var(--s8); --bk-w: 216px; margin-inline: 0; padding-inline: 0; } }
 
 /* a match box: two rows of 36 with the seam between; the winner inverts, the loser mutes, a waiting slot is muted words */
-.mb { position: relative; display: grid; gap: var(--seam); width: 100%; text-align: left; }
+/* one column the width of the tree's column: a long name ends in an ellipsis instead of widening the box over the lines */
+.mb { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--seam); width: 100%; text-align: left; }
 .mb-row {
   display: flex; align-items: center; gap: var(--s2); width: 100%; height: 36px; min-height: 0; padding: 0 var(--s3) 0 var(--s2);
   background: var(--panel); text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 700; color: var(--lit);

@@ -57,9 +57,11 @@
 /* ---------- page frame: the first line stands 32 under the bar ---------- */
 .page {
   width: min(100% - var(--gutter) * 2, var(--content)); min-height: 100svh; margin-inline: auto; outline: none;
-  padding-block: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s8)) calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s13));
+  padding-block: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s8)) var(--s13);
 }
-.is-admin .page { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--s13)); }
+/* the footer follows the page and carries the room for the tab bar, the admin strip and a docked action; with no footer yet the page does */
+.page.page--wait { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s13)); }
+.is-admin .page.page--wait { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--s13)); }
 /* the home and the hall run the full width */
 .page.page--full { width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height)); container-type: inline-size; }
 .sec { display: flex; flex-direction: column; gap: var(--s13); }

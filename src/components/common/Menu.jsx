@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "./Icon.jsx";
 import Modal, { useExitAnimation } from "./Modal.jsx";
-import { DUR, EASE_IN, EASE_OUT, desktop, reduced, springs } from "./motion.js";
+import { DUR, EASE_IN, EASE_OUT, desktop, reduced } from "./motion.js";
 
 /* Menu rows: icon, label, a check on the current one. href rows open outside the site.
    Up and down arrows move focus between rows (wrapping, skipping disabled ones); Enter is the row's own click. */
@@ -52,14 +52,14 @@ export function Popover({ anchor, onClose, children }) {
   const ref = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
-  useExitAnimation(ref, { exit: node => [node.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.96)" }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" })] });
+  useExitAnimation(ref, { exit: node => [node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" })] });
   useLayoutEffect(() => {
     const pop = ref.current, trigger = anchor?.current || anchor;
     if (!pop || !trigger) return undefined;
     const r = trigger.getBoundingClientRect(), w = pop.offsetWidth;
     const left = Math.max(16, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 16));
     Object.assign(pop.style, { left: left + "px", top: r.bottom + 8 + "px", transformOrigin: `${r.left + r.width / 2 - left}px -8px` });
-    if (!reduced()) { pop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT }); pop.animate([{ transform: "scale(.91)" }, { transform: "none" }], { duration: DUR.place, easing: springs().spring }); }
+    if (!reduced()) pop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
     pop.querySelector(".mi")?.focus({ preventScroll: true });
     const outside = e => { if (!pop.contains(e.target) && !trigger.contains(e.target)) closeRef.current?.(); };
     const key = e => { if (e.key === "Escape") { closeRef.current?.(); trigger.focus?.({ preventScroll: true }); } };

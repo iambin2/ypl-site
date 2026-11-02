@@ -40,8 +40,9 @@
 .bk-slot.dwait i { display: block; width: 32px; height: 4px; background: var(--panel-2); }
 .bk-slot.drolling { background: var(--panel-2); color: var(--lit); font-weight: 700; animation: y-pulse var(--move-light) infinite; }
 .bk-slot.dset { color: var(--lit); font-weight: 600; }
-.bk-slot.dset.pop { animation: bk-land var(--move-light); }
-@keyframes bk-land { from { background-color: var(--panel-2); transform: scale(1.034); } to { background-color: transparent; transform: none; } }
+/* a drawn name switches on in its slot */
+.bk-slot.dset.pop { animation: bk-land var(--move-tone); }
+@keyframes bk-land { from { opacity: 0; } }
 .bk-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s5); }
 .bk-group { padding: var(--s5); background: var(--panel); }
 .bk-group-h { margin-bottom: var(--s3); font-size: var(--t15); font-weight: 600; }
@@ -52,9 +53,6 @@
 .bk-create > .back { margin-bottom: calc(var(--s3) * -1); }
 .bk-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .bk-head h2 { margin: 0; }
-.bk-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.bk-step { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-control); padding: 0 var(--s3); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
-.bk-step.inv { color: var(--ground); font-weight: 700; }
 .form-card { display: grid; gap: var(--s5); }
 .form-card > .field { margin: 0; }
 .bk-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -160,7 +158,6 @@
 .pb-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
 
 /* ---------- 3 대진 배치 (c12): each first-round match a row, the two names as cells; the held name inverted ---------- */
-.bk-stepper.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .bk-place-tools { grid-template-columns: minmax(0, 1fr); }
 .bk-place-row { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--s2) 0 var(--pad); }
 .bk-place-name { min-height: var(--h-control); padding: 0 var(--s3); text-align: left; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: grab; transition: background-color var(--move-tone); }

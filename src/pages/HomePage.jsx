@@ -5,7 +5,8 @@ import ChampionSheet from "../components/common/ChampionSheet.jsx";
 import { light } from "../components/common/motion.js";
 import Seg from "../components/common/Seg.jsx";
 import { loadChampions, loadFacts, seenChampions, seenFacts } from "../components/home/homeFacts.js";
-import { dotDate } from "../services/dateFormat.js";
+import { isNewNotice } from "../components/common/seenNotices.js";
+import { dotDate, formatDate } from "../services/dateFormat.js";
 import { listNormalizedBracketRuntimes } from "../services/normalizedCompetitionService.js";
 import { freshRead } from "../services/readCache.js";
 import { liveMatches } from "../services/recordsAnalytics.js";
@@ -147,7 +148,7 @@ export default function HomePage({ data, go, admin }) {
     {season && <section className="ho-sec ho-rank" aria-labelledby="ho-rank">
       <SectionHead id="ho-rank" title={`${season.name} 순위`} link="전체 보기" onLink={() => go("records", { tab: "rank" })} />
       <div className="stack">
-        {season.rows.map(r => <Row key={r.name} lead={<span className="num t20">{r.rank}</span>} title={r.name}
+        {season.rows.map(r => <Row key={r.name} className={r.rank === 1 && season.rows.filter(o => o.rank === 1).length === 1 ? "inv" : ""} lead={<span className="num t20">{r.rank}</span>} title={r.name}
           value={<><span className="num t20">{r.points}</span><span className="t12 dim">점</span></>}
           onClick={() => go("records", { trainer: r.name })} label={`${r.rank}위 ${r.name}, ${r.points}점`} />)}
       </div>
@@ -157,7 +158,7 @@ export default function HomePage({ data, go, admin }) {
     {notices.length > 0 && <section className="ho-sec ho-news" aria-labelledby="ho-news">
       <SectionHead id="ho-news" title="공지" link="전체 보기" onLink={() => go("news")} />
       <div className="stack">
-        {notices.map(a => <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={false}
+        {notices.map(a => <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={isNewNotice(a)} label={isNewNotice(a) ? `${a.title}, ${formatDate(a.date)}, 새 글` : undefined}
           onClick={() => go("news", { notice: a.id })} />)}
       </div>
     </section>}

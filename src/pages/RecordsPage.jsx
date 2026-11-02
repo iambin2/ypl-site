@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Empty, ErrorNote, ListSearch, Loader, Modal, Pager, StandTable, sitePrompt } from "../components/index.js";
+import { Dropdown, Empty, ErrorNote, Icon, ListSearch, Loader, Modal, Pager, StandTable, sitePrompt } from "../components/index.js";
 import { Chips, Counter, Mon, Row, SectionHead, TabsLine } from "../components/common/Board.jsx";
 import { loadChampions, seenChampions } from "../components/home/homeFacts.js";
 import TeamSheet, { rosterSheet, useTeamDisplay } from "../components/common/TeamSheet.jsx";

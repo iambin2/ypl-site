@@ -67,19 +67,18 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
     {past.length > 0 && <section className="hof-past" aria-labelledby="hof-past-h">
       <SectionHead id="hof-past-h" title="이전 챔피언" />
       <div className="stack">
-        {past.map((c, i) => (
-          <button type="button" className="pn hof-row" key={c.id || i} onClick={() => setPop(c)} aria-label={`${genLabel(c)} ${c.name}, ${seasonLabel(c)} 우승 엔트리 보기`}>
+        {past.map((c, i) => (<React.Fragment key={c.id || i}>
+          <button type="button" className="pn hof-row" onClick={() => setPop(c)} aria-label={`${genLabel(c)} ${c.name}, ${seasonLabel(c)} 우승 엔트리 보기`}>
             <span className="hof-row-gen">{gen(c)}</span>
             <span className="hof-row-body">
               <span className="hof-row-top"><b className="t15">{c.name}</b><span className="t12 dim">{seasonLabel(c)} 우승</span></span>
               <span className="hof-minis">{partyOf(c).map((m, k) => <span className="stand hof-mini" key={k}><i className="floor" aria-hidden="true" /><Mon src={m.img} /></span>)}</span>
             </span>
           </button>
-        ))}
+          {/* the edit stands under its own row, named by the generation, so two reigns of one trainer never read alike */}
+          {admin && c.kind !== "normalized" && <Button variant="second" size="sm" onClick={() => setModal({ type: "champion", item: c })}>{[generationText(c.gen), c.name, "수정"].filter(Boolean).join(" ")}</Button>}
+        </React.Fragment>))}
       </div>
-      {admin && <div className="stack hof-actions">
-        {past.filter(c => c.kind !== "normalized").map(c => <Button key={"e" + c.id} variant="second" onClick={() => setModal({ type: "champion", item: c })}>{c.name} 수정</Button>)}
-      </div>}
     </section>}
 
     {pop && <ChampionSheet name={pop.name} hint={`${genLabel(pop)}, ${seasonLabel(pop)} 우승`} party={partyOf(pop)} onClose={() => setPop(null)}>
