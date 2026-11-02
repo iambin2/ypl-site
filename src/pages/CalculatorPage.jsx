@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Icon, Loader, PageHead, Segmented } from "../components/index.js";
+import { Dropdown, Icon, Loader, Segmented } from "../components/index.js";
+import { TabsLine } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { DEFAULT_REGULATION_ID, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData } from "../services/index.js";
@@ -640,11 +641,12 @@ export default function CalculatorPage() {
 
   const loading = detailStatus !== "ready";
   return (
-    <section className="sec" data-tab={tab}>
-      <PageHead plain="계산기" desc="포켓몬 챔피언스 레벨 50 기준으로 대미지, 스피드, 도감을 한 곳에서 확인합니다." />
+    <section className="sec calc-page" data-tab={tab}>
+      <h1 className="t32">계산기</h1>
+      <p className="t12 dim reg tb-desc">포켓몬 챔피언스 레벨 50 기준으로 대미지, 스피드, 도감을 한 곳에서 확인합니다.</p>
       <div className="calc-body">
       <div className="calc-tabs">
-        <Segmented value={tab} onChange={setTab} ariaLabel="계산기 보기" options={[["damage", "대미지"], ["speed", "스피드"], ["dex", "도감"]]} />
+        <TabsLine value={tab} onChange={setTab} label="계산기 보기" options={[["damage", "대미지"], ["speed", "스피드"], ["dex", "도감"]]} />
       </div>
 
       {detailStatus === "error" ? (

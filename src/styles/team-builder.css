@@ -1,11 +1,4 @@
-/* =============================================================================
-   YPL — team builder
-   Page frame is .sec + PageHead. Panels are plate; everything inside a panel
-   sits on fill-2 (PokemonSlot, StatRow, inputs). No rules: rows are split by
-   inset hairlines, the chosen slot rises on the hover tone with shadow-thumb.
-   ========================================================================== */
 
-.tb-hero-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
 
 /* ---------- plate panels ---------- */
 .tb-rule-card, .tb-panel, .tb-validation { padding: var(--pad); background: var(--surface); min-width: 0; }
@@ -50,7 +43,8 @@
 .tb-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 /* card-title */
 .tb-panel-head h2 { font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-lead); letter-spacing: var(--ls-lead); }
-@media (min-width: 1100px) { .tb-panel-head h2 { font-size: var(--fs-h3); letter-spacing: var(--ls-h3); } }
+@media (min-width: 1100px) { .tb-panel-head h2 { font-size: var(--fs-h3); letter-spacing: var(--ls-h3); }
+}
 .tb-pool-count { font-size: var(--fs-lead); letter-spacing: var(--ls-lead); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .tb-pool-count small { margin-left: var(--s1); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); }
 
@@ -73,7 +67,8 @@
   min-height: var(--row-min); padding: var(--s1) var(--s2); border: 0; background: transparent; text-align: left;
   transition: scale var(--move-press), background-color var(--move-tone), opacity var(--move-tone);
 }
-@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) { background: var(--state-hover); } }
+@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) { background: var(--state-hover); }
+}
 .tb-pokemon-row img { width: 52px; height: 52px; object-fit: contain; }
 /* 359마리를 다 그리되 화면 밖의 행은 그리기를 미룬다: 긴 목록도 스크롤이 가볍다 */
 .tb-pokemon-row { flex: none; content-visibility: auto; contain-intrinsic-size: auto 80px; }
@@ -98,7 +93,8 @@
   width: 32px; height: 32px; display: grid; place-items: center; color: var(--text-secondary);
   transition: background-color var(--move-tone), color var(--move-tone);
 }
-@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { background: var(--accent); color: var(--text-on-accent); } }
+@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { background: var(--accent); color: var(--text-on-accent); }
+}
 .tb-pool-empty { padding: var(--s13) var(--s3); font-size: var(--fs-body); color: var(--text-secondary); }
 
 /* ---------- TypeBadge: a fill chip; the type's own colour is the dot ---------- */
@@ -124,39 +120,7 @@
 
 /* PokemonSlot: fill-2 cells, 8px apart, phone 2 columns, desktop 3 */
 .tb-team-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); margin-top: var(--s5); }
-@media (min-width: 1100px) { .tb-team-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.tb-slot {
-  position: relative; min-height: 84px; display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: var(--s2);
-  padding: var(--s3); border: 0; background: var(--surface-raised); color: inherit; text-align: left;
-  transition: scale var(--move-press), background-color var(--move-tone);
-}
-@media (hover: hover) { .tb-slot:not(.empty):not(.active):hover { background: var(--state-selected); } }
-.tb-slot.active { background: var(--state-pressed); }
-.tb-slot.unresolved .tb-slot-copy small { color: var(--text-secondary); }
-.tb-slot.empty { grid-template-columns: 1fr; place-items: center; background: var(--state-hover); box-shadow: none; }
-.tb-slot.empty .tb-slot-no { position: static; }
-.tb-slot.empty .tb-slot-empty { display: none; }
-.tb-slot-no {
-  position: absolute; top: var(--s2); left: 12px; font-size: var(--fs-caption); font-weight: 600; line-height: 1; color: var(--text-tertiary); font-variant-numeric: tabular-nums;
-}
-.tb-slot-empty { font-size: var(--fs-caption); color: var(--text-tertiary); }
-.tb-slot-sprite { width: 52px; height: 52px; object-fit: contain; }
-/* the remove button sits above the name line, so the copy may run to the edge */
-.tb-slot-copy { min-width: 0; display: flex; flex-direction: column; }
-.tb-slot-copy strong { font-size: var(--fs-body); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tb-slot-copy small { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tb-slot-remove {
-  position: absolute; top: var(--s2); right: var(--s2); width: 24px; height: 24px; display: grid; place-items: center; color: var(--text-tertiary); opacity: 0;
-  transition: scale var(--move-press), opacity var(--move-tone),
-    background-color var(--move-tone), color var(--move-tone);
-}
-@media (hover: hover) { .tb-slot:hover .tb-slot-remove { opacity: 1; } }
-.tb-slot.active .tb-slot-remove, .tb-slot-remove:focus-visible { opacity: 1; }
-@media (hover: hover) { .tb-slot-remove:hover { background: var(--state-selected); color: var(--text-primary); } }
-@media (hover: none) { .tb-slot-remove { opacity: 1; } }
-@media (max-width: 639px), (pointer: coarse) {
-  .tb-slot { min-height: 136px; }
-  .tb-slot:not(.empty) { padding-top: var(--s13); }
+@media (min-width: 1100px) { .tb-team-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s5); font-size: var(--fs-caption); color: var(--text-tertiary); }
 
@@ -171,7 +135,8 @@
 .tb-editor-title { min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
 /* section-title */
 .tb-editor-title h2 { font-size: var(--fs-h2); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-@media (min-width: 1100px) { .tb-editor-title h2 { font-size: var(--fs-h2); letter-spacing: var(--ls-title); } }
+@media (min-width: 1100px) { .tb-editor-title h2 { font-size: var(--fs-h2); letter-spacing: var(--ls-title); }
+}
 .tb-editor-title > span { font-size: var(--fs-body); color: var(--text-secondary); }
 .tb-editor-title small { font-size: var(--fs-caption); color: var(--text-tertiary); }
 .tb-editor-title .tb-types { margin-top: var(--s1); }
@@ -225,8 +190,6 @@
   .tb-pool-panel { position: static; max-height: 576px; }
 }
 @media (max-width: 639px) {
-  .tb-hero-actions { width: 100%; }
-  .tb-hero-actions .btn { flex: 1; }
   .tb-editor-grid, .tb-moves { grid-template-columns: 1fr; }
   .tb-stat-row { grid-template-columns: 84px minmax(0, 1fr) 52px; gap: var(--s2); }
   .tb-final-stat { display: none; }
@@ -238,8 +201,6 @@
 .tb-steps { display: none; scroll-margin-top: calc(var(--nav-height) + var(--s2)); }
 @media (max-width: 859px) {
   .tb-steps { display: block; margin-bottom: calc(var(--s5) - var(--section)); }
-  .tb-steps .ypl-seg { display: flex; }
-  .tb-steps .seg-track { flex: 1; }
   .tb-page[data-step="rules"] [data-tb-step]:not([data-tb-step="rules"]),
   .tb-page[data-step="pool"] [data-tb-step]:not([data-tb-step="pool"]),
   .tb-page[data-step="team"] [data-tb-step]:not([data-tb-step="team"]) { display: none; }

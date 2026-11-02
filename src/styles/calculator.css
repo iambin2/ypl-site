@@ -8,8 +8,6 @@
 .calc-body, .calc-swap { display: flex; flex-direction: column; gap: var(--grid-gap); min-width: 0; }
 /* a control sits 16 above the content it drives; the panels below it are one set (--grid-gap) */
 .calc-tabs, .calc-side-switch { margin-bottom: calc(var(--s5) - var(--grid-gap)); }
-.calc-tabs .ypl-seg { display: inline-flex; }
-.calc-tabs .seg-track { flex: 1; }
 .calc-note { margin-top: var(--s3); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .calc-empty { padding: var(--s3) 0; font-size: var(--fs-body); color: var(--text-secondary); }
 

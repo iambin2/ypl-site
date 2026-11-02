@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Dropdown, Icon, Loader, Modal, PageHead, Segmented, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Icon, Loader, Modal, Segmented, siteAlert, siteConfirm } from "../components/index.js";
+import { Mon, TabsLine } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
@@ -173,29 +174,25 @@ const PoolList = memo(function PoolList({ pool, detailData, displayPokemon, sort
   );
 });
 
+/* 팀의 한 칸 (DESIGN.md "Team builder", docs/redesign-next c7): 포켓몬은 패널 안에서 이름 띠를 딛고 서고, 고른 칸의 이름 띠가 반전된다.
+   빈칸은 + 하나. 띠의 회색 줄은 도구와 기술 수. */
 function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onRemove }) {
   if (!member) {
-    return (
-      <div className="tb-slot empty">
-        <span className="tb-slot-no">{index + 1}</span>
-        <div className="tb-slot-empty">포켓몬을 추가해 주세요.</div>
-      </div>
-    );
+    return <div className="pn tb-mon empty" aria-label={`${index + 1}번 칸 비어 있음`}><Icon n="plus" size={20} /></div>;
   }
   const moveCount = member.moves.filter(Boolean).length;
   const unresolved = member.resolutionState === "unresolved";
   return (
-    <button type="button" className={"tb-slot" + (active ? " active" : "") + (unresolved ? " unresolved" : "")} onClick={onSelect}>
-      <span className="tb-slot-no">{index + 1}</span>
-      <img src={spriteUrl(member.pokemon.name)} alt="" className="tb-slot-sprite" onError={onSpriteError()} />
-      <span className="tb-slot-copy">
-        <strong>{displayName}</strong>
-        <small>{unresolved ? "현재 규칙에서 확인할 수 없는 포켓몬" : `${itemLabel || "도구 없음"}, 기술 ${moveCount}/4`}</small>
+    <button type="button" className={"pn stand tb-mon" + (active ? " active" : "") + (unresolved ? " unresolved" : "")} onClick={onSelect} aria-pressed={active}>
+      <Mon src={spriteUrl(member.pokemon.name)} />
+      <span className={"floor tb-mon-band" + (active ? " inv" : "")}>
+        <b className="t12">{displayName}</b>
+        <span className="t12 reg tb-mon-line">{unresolved ? "현재 규칙에서 확인할 수 없는 포켓몬" : `${itemLabel || "도구 없음"}, 기술 ${moveCount}/4`}</span>
       </span>
       <span
         role="button"
         tabIndex={0}
-        className="tb-slot-remove"
+        className="tb-mon-remove"
         aria-label={`${displayName} 제거`}
         onClick={event => { event.stopPropagation(); onRemove(); }}
         onKeyDown={event => {
@@ -1243,15 +1240,15 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
 
   return (
     <section className="sec tb-page" data-step={step}>
-      <PageHead plain="팀 빌더" desc="포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.">
-        <div className="tb-hero-actions">
-          <Button disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="tb-count-badge">{savedTeams.length}</span>}</Button>
-          <Button variant={!storageAvailable || (team.length === 0 && !currentSaved) ? "secondary" : "primary"} disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</Button>
+      <header className="tb-head"><h1 className="t32">팀 빌더</h1><span className="t12 dim">이 브라우저에 저장</span></header>
+      <p className="t12 dim reg tb-desc">포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
+        <div className="stack tb-hero-actions">
+          <Button variant="second" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="num"> {savedTeams.length}</span>}</Button>
+          <Button variant="second" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</Button>
         </div>
-      </PageHead>
 
       <div className="tb-steps" ref={stepsRef}>
-        <Segmented value={step} onChange={changeStep} ariaLabel="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
+        <TabsLine value={step} onChange={changeStep} label="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
       </div>
 
       <div className="tb-rule-card" data-tb-step="rules">

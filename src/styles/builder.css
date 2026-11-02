@@ -1,0 +1,32 @@
+/* =============================================================================
+   YPL Scoreboard: team builder and calculator, the rebuilt parts (TeamBuilderPage.jsx, CalculatorPage.jsx). Draft:
+   docs/redesign-next c7-builder-calc. The head and page tabs, and the team's six: each a panel with the Pokémon standing on its
+   name band, the chosen band inverted, an empty slot a +. team-builder.css and calculator.css still hold the rest.
+   ========================================================================== */
+
+/* the page's blocks stand 20 apart; the line under the title 8 */
+.tb-page.sec, .calc-page.sec { gap: var(--s5); }
+.tb-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
+.tb-desc { margin-top: calc(var(--s3) * -1); max-width: var(--read); }
+.tb-hero-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tb-steps, .calc-tabs { margin-bottom: 0; }
+
+/* the Pokémon to pick: panels joined by the seam, the picture, the name and its types, the stats, + */
+.tb-pokemon-list { display: grid; gap: var(--seam); }
+.tb-pokemon-row { background: var(--panel); box-shadow: none; }
+@media (hover: hover) { .tb-pokemon-row:not(:disabled):hover { background: var(--panel-2); } }
+
+.tb-team-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.tb-mon { --floor: var(--h-row); position: relative; display: block; width: 100%; aspect-ratio: 1 / 1.272; text-align: left; }
+.tb-mon.empty { display: grid; place-items: center; color: var(--mute); }
+.tb-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
+.tb-mon-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--s3); }
+.tb-mon-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-mon-line { color: var(--dim); }
+.tb-mon-band.inv .tb-mon-line { color: var(--ground); }
+.tb-mon.unresolved .tb-mon-line { color: var(--lit); }
+.tb-mon-remove { position: absolute; top: 0; right: 0; z-index: var(--z-raised); display: grid; place-items: center; width: var(--h-control); height: var(--h-control); color: var(--dim); opacity: 0; transition: opacity var(--move-tone); }
+.tb-mon:hover .tb-mon-remove, .tb-mon.active .tb-mon-remove, .tb-mon-remove:focus-visible { opacity: 1; }
+@media (hover: none) { .tb-mon-remove { opacity: 1; } }
+@media (hover: hover) { .tb-mon-remove:hover { color: var(--lit); } }
+@media (min-width: 860px) { .tb-team-slots { grid-template-columns: repeat(6, minmax(0, 1fr)); } }

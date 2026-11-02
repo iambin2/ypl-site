@@ -19,6 +19,7 @@ import "./styles/records.css";
 import "./styles/records-board.css";
 import "./styles/bracket.css";
 import "./styles/team-builder.css";
+import "./styles/builder.css";
 import "./styles/calculator.css";
 import "./styles/admin.css";
 
