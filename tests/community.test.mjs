@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { applyLocalWrite, assembleCommunityItems } from "../src/services/communityItems.js";
 import { buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../src/services/privateBracket.js";
 import { buildTeamSheet, makeMember, savedTeamSheet, serializeMembers } from "../src/services/teamBuilderCore.js";
 
@@ -36,7 +37,7 @@ test("private bracket: names are trimmed, deduplicated and split on lines or com
 test("private bracket and showcase never reach official data", () => {
   for (const file of ["src/services/privateBracket.js", "src/services/communityStore.js"]) {
     const source = readFileSync(file, "utf8");
-    assert.doesNotMatch(source, /normalizedCompetitionService|recordSync|RankingAward|saveSiteData|ypl_data_v4|SITE_DATA_KEY|\.rpc\(/, file);
+    assert.doesNotMatch(source, /normalizedCompetitionService|recordSync|RankingAward|saveSiteData|ypl_data_v4|SITE_DATA_KEY|\.rpc\((?!"community_write")/, file);
   }
   const store = readFileSync("src/services/communityStore.js", "utf8");
   assert.match(store, /SHOWCASE_KEY = "ypl_showcase_v1"/);
@@ -72,4 +73,38 @@ test("team sheet carries every field of the editor", () => {
   const [again] = savedTeamSheet(saved, { detailData: data });
   assert.equal(again.english, "Garchomp");
   assert.deepEqual(again.stats, row.stats);
+});
+
+test("community rows come back in the shape the boards read", () => {
+  const row = (id, parent_id, created_at, payload = {}) => ({ id, parent_id, created_at, payload, secret: false, has_pin: id === "a" });
+  const items = assembleCommunityItems([
+    row("c2", "a", "2026-10-03"), row("a", null, "2026-10-01", { title: "첫 글" }), row("c1", "a", "2026-10-02"), row("b", null, "2026-10-04"),
+  ]);
+  assert.deepEqual(items.map(item => item.id), ["b", "a"], "newest first");
+  assert.equal(items[1].title, "첫 글");
+  assert.equal(items[1].hasPin, true);
+  assert.deepEqual(items[1].comments.map(comment => comment.id), ["c1", "c2"], "comments oldest first");
+  assert.deepEqual(items[0].comments, []);
+});
+
+test("the offline store applies the same writes", () => {
+  let items = applyLocalWrite([], { action: "create", id: "p", payload: { title: "글" } });
+  items = applyLocalWrite(items, { action: "create", id: "c", parentId: "p", payload: { body: "댓글" } });
+  assert.equal(items[0].comments[0].body, "댓글");
+  items = applyLocalWrite(items, { action: "update", id: "c", payload: { body: "수정" } });
+  items = applyLocalWrite(items, { action: "update", id: "p", payload: { title: "새 제목" }, secret: true });
+  assert.equal(items[0].comments[0].body, "수정");
+  assert.equal(items[0].title, "새 제목");
+  assert.equal(items[0].secret, true);
+  items = applyLocalWrite(items, { action: "delete", id: "c" });
+  assert.deepEqual(items[0].comments, []);
+  assert.deepEqual(applyLocalWrite(items, { action: "delete", id: "p" }), []);
+});
+
+test("no public row keeps a pin and no visitor writes a shared row", () => {
+  const sources = ["src/pages/BoardPage.jsx", "src/pages/BracketsPage.jsx", "src/services/communityStore.js", "src/services/communityItems.js"].map(file => readFileSync(file, "utf8"));
+  for (const source of sources) assert.doesNotMatch(source, /pinHash|hashPin|pinMatches|updateCommunity|data\.board/);
+  const gates = readFileSync("docs/db/visitor_gates.sql", "utf8");
+  assert.match(gates, /revoke all on table public\.visitor_pins from public, anon, authenticated/);
+  assert.match(gates, /using \(not secret or/);
 });

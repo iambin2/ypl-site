@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
-import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
@@ -14,7 +14,8 @@ import { applyTitleAwards, evaluateTitleAwards } from "../services/titleAwards.j
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
-import { PRIVATE_BRACKETS_KEY, hashPin, pinMatches, readCommunity, shareLink, updateCommunity } from "../services/communityStore.js";
+import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
+import { PIN_DENIED } from "../services/communityItems.js";
 import { PRIVATE_BRACKET_MAX, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../services/privateBracket.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -892,7 +893,7 @@ function formatBracketSubmissionTime(value) {
     : "";
 }
 
-function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefresh }) {
+function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefresh, onResetPin }) {
   const renderMember = member => (
     <div className="bk-submission-member" key={member.registrationId}>
       <span className="bk-submission-member-name">{member.name}</span>
@@ -901,6 +902,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
           ? `제출 완료${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
           : "미제출"}
       </span>
+      {onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(member)}>비밀번호 초기화</button>}
     </div>
   );
 
@@ -1055,33 +1057,21 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     }
   };
   const res = b.format==="group" ? (b.knockout?elimResult(b.knockout):null) : elimResult(b.graph);
+  const resetPin=async(member)=>{
+    if(!(await siteConfirm({title:"제출 비밀번호 초기화",body:`${member.name}의 제출 비밀번호를 지웁니다. 다음 제출 때 새로 정하며, 제출한 파티는 그대로 남습니다.`,confirmLabel:"초기화"})))return;
+    try{ await resetSubmissionPin(member.registrationId); flash("제출 비밀번호를 초기화했습니다."); }
+    catch(error){ flash(error?.message||"제출 비밀번호를 초기화하지 못했습니다."); }
+  };
   const undoApplied=async()=>{
     if(readOnly)return;
     if(!b.applied)return;
     if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 대회의 기록 상태가 함께 되돌아갑니다.",confirmLabel:"반영 취소",danger:true})))return;
-    let previousHallOfFame=null;
-    let previousAwardRows=null;
-    let previousResultRows=null;
     try{
-      const hallOfFameCleanup=await removeChampionshipHallOfFameEntry(b.eventId);
-      if(hallOfFameCleanup.removed)previousHallOfFame=hallOfFameCleanup;
-      const awardCleanup=await deleteEventBracketRankingAwards(b.eventId,b);
-      if(!awardCleanup.skipped)previousAwardRows=awardCleanup.previousRows;
-      const resultCleanup=await deleteEventBracketResults(b.eventId,b);
-      if(!resultCleanup.skipped)previousResultRows=resultCleanup.previousRows;
-      await revertEventRecordApplication(b.eventId,[]);
+      await revertEventRecord(b.eventId);
       await onNormalizedReverted?.();
       flash("기록 반영을 취소했습니다.");
     }catch(error){
-      try{
-        if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
-        if(previousAwardRows!==null) await restoreEventBracketRankingAwards(b.eventId,previousAwardRows);
-        if(previousHallOfFame?.hallOfFameId) await ensureChampionshipHallOfFameEntry(b.eventId,{hallOfFameId:previousHallOfFame.hallOfFameId});
-      }catch(restoreError){
-        flash(`기록을 되돌리지 못했고 복구하지도 못했습니다. ${error?.message||"원인을 확인하지 못했습니다."} / ${restoreError?.message||"원인을 확인하지 못했습니다."}`);
-        return;
-      }
-      flash(`기록 반영 취소를 중단하고 이전 상태로 복구했습니다. ${error?.message||"원인을 확인하지 못했습니다."}`);
+      flash(`기록 반영을 취소하지 못했습니다. 바뀐 내용은 없습니다. ${error?.message||"원인을 확인하지 못했습니다."}`);
     }
   };
   return (<div className="bk-board swap">
@@ -1107,6 +1097,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       expanded={submissionStatusExpanded}
       onToggle={()=>setSubmissionStatusExpanded(value=>!value)}
       onRefresh={()=>setSubmissionStatusReloadKey(value=>value+1)}
+      onResetPin={admin?resetPin:null}
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
     {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"} seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
@@ -1313,9 +1304,6 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     try{ await commitRecords(); }finally{ setApplying(false); }
   };
   const commitRecords=async()=>{
-    let previousResultRows=null;
-    let previousAwardRows=null;
-    let finalSubmissionFreeze=null;
     try{
       const participants=b.participants||[];
       const actualParticipants=team ? participants.filter(p=>Array.isArray(p?.members)) : participants;
@@ -1324,60 +1312,25 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       }
       if(team) await validateEventTeamEntries(b.eventId,actualParticipants);
       else await validateEventParticipantEntries(b.eventId,participants);
-      const resultSync=await syncEventBracketResults(b.eventId,b,res);
-      if(!resultSync.skipped) previousResultRows=resultSync.previousRows;
-      const awardSync=await syncEventBracketRankingAwards(b.eventId,b);
-      previousAwardRows=awardSync.previousRows;
-      finalSubmissionFreeze=(await freezeEventFinalSubmissions(b.eventId)).snapshot;
+      const completed=await applyEventRecord(b.eventId,b,res,buildChampionshipRecordApplyCompletionOptions({
+        event: linkedContext?.event,
+        roundNumber: preview.roundNum,
+        revealOfficialRosters: true,
+      }));
+      await onNormalizedApplied?.(completed);
+      await finishWithTitles(linkedContext?.event);
     }catch(error){
-      try{
-        if(previousAwardRows!==null) await restoreEventBracketRankingAwards(b.eventId,previousAwardRows);
-        if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
-      }catch(restoreError){
-        flash(`기록을 확인하지 못했고 되돌리지도 못했습니다. ${error?.message||"원인을 확인하지 못했습니다."} / ${restoreError?.message||"원인을 확인하지 못했습니다."}`);
+      // 한 트랜잭션이라 반쯤 반영된 상태는 없다. 응답만 끊겼는지 대회 상태로 확인한다.
+      let currentEvent=null;
+      try{ currentEvent=await getEvent(b.eventId); }catch{ /* 확인하지 못하면 실패로 안내한다 */ }
+      if(isRecordApplyCompletionConfirmed(currentEvent,{requireTeamReveal:true})){
+        await onNormalizedApplied?.(currentEvent);
+        flash("응답이 끊겼지만 다시 확인해 보니 기록은 반영되었습니다.");
+        onClose();
         return;
       }
-      flash(`기록을 반영하기 전 확인을 끝내지 못했습니다. ${error?.message||"잠시 뒤 다시 시도해 주세요."}`);
-      return;
+      flash(`기록을 반영하지 못했습니다. 바뀐 내용은 없습니다. ${error?.message||"원인을 확인하지 못했습니다."}`);
     }
-
-    try{
-        const completionOptions=buildChampionshipRecordApplyCompletionOptions({
-          event: linkedContext?.event,
-          roundNumber: preview.roundNum,
-          revealOfficialRosters: true,
-        });
-        const completed=await completeApplicationEvent(b.eventId,completionOptions);
-        await onNormalizedApplied?.(completed);
-        try{
-          await ensureChampionshipHallOfFameEntry(b.eventId);
-        }catch(error){
-          flash(`기록은 반영했지만 명예의 전당에 등록하지 못했습니다. 챔피언스 운영에서 다시 시도해 주세요. ${error?.message||""}`);
-          onClose();
-          return;
-        }
-        await finishWithTitles(linkedContext?.event);
-      }catch(error){
-        let currentEvent=null;
-        try{ currentEvent=await getEvent(b.eventId); }catch{}
-        if(isRecordApplyCompletionConfirmed(currentEvent,{requireTeamReveal:true})){
-          await onNormalizedApplied?.(currentEvent);
-          flash("응답이 끊겼지만 다시 확인해 보니 기록은 반영되었습니다.");
-          onClose();
-          return;
-        }
-        try{
-          if(finalSubmissionFreeze!==null&&isFinalSubmissionRestoreAllowed(currentEvent)){
-            await restoreEventFinalSubmissions(b.eventId,finalSubmissionFreeze);
-          }
-          if(previousAwardRows!==null) await restoreEventBracketRankingAwards(b.eventId,previousAwardRows);
-          if(previousResultRows!==null) await restoreEventBracketResults(b.eventId,previousResultRows);
-          await refresh?.();
-          flash(`기록을 반영하지 못해 이전 상태로 되돌렸습니다. ${error?.message||"원인을 확인하지 못했습니다."}`);
-        }catch(restoreError){
-          flash(`기록을 반영하지 못했고 되돌리지도 못했습니다. ${error?.message||"원인을 확인하지 못했습니다."} / ${restoreError?.message||"원인을 확인하지 못했습니다."}`);
-        }
-      }
   };
   if(awards){
     const toggle=(key)=>setAwardPicks(cur=>{ const next=new Set(cur); next.has(key)?next.delete(key):next.add(key); return next; });
@@ -1731,8 +1684,9 @@ function BracketDraw({ b, onDone }){
    - 화면마다 "사설" 표시와 기록 미반영 안내가 붙고, 이미지에도 사설 대진표라고 적힌다.
    - 관리(결과 입력, 다시 추첨, 삭제)는 만들 때 정한 비밀번호로 연다. 사이트 관리자는 언제나 정리할 수 있다. */
 const PB_UNLOCK_KEY="ypl-private-brackets:unlocked";
-const readUnlocked=()=>{ try{ return new Set(JSON.parse(sessionStorage.getItem(PB_UNLOCK_KEY)||"[]")); }catch{ return new Set(); } };
-const writeUnlocked=set=>{ try{ sessionStorage.setItem(PB_UNLOCK_KEY,JSON.stringify([...set])); }catch{ /* 이 탭에서만 기억 못 함 */ } };
+// 연 대진표의 비밀번호. 쓸 때마다 서버가 확인하므로 이 탭이 닫힐 때까지 기억한다.
+const readUnlocked=()=>{ try{ return new Map(Object.entries(JSON.parse(sessionStorage.getItem(PB_UNLOCK_KEY)||"{}"))); }catch{ return new Map(); } };
+const writeUnlocked=map=>{ try{ sessionStorage.setItem(PB_UNLOCK_KEY,JSON.stringify(Object.fromEntries(map))); }catch{ /* 이 탭에서만 기억 못 함 */ } };
 const pbFormat=b=>b.double?"더블 엘리미네이션":"싱글 엘리미네이션";
 /* 우승 카드의 나머지 입상: 라벨과 값의 상자가 아니라 기록 > 대회 카드처럼 순위 이름표 뒤에 이름이 오는 줄(Consistency) */
 function Places({ res, nameOf }){
@@ -1827,41 +1781,55 @@ function PrivateBrackets({ admin, flash, tabs }){
     pushHistory({...window.history.state,pb:b.id},url); setDrawId(draw?b.id:null); transition(()=>flushSync(()=>setOpenId(b.id)),{shared:"pb-"+b.id}); };
   const closeBracket=()=>{ setDrawId(null); if(window.history.state?.pb) backWith(open?"pb-"+open.id:null);
     else { const url=new URL(window.location.href); url.searchParams.delete("pb"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setOpenId(null)),{shared:open?"pb-"+open.id:null,dir:"back"}); } };
-  const unlock=id=>{ const next=new Set(unlocked); next.add(id); setUnlocked(next); writeUnlocked(next); };
-  const lock=id=>{ const next=new Set(unlocked); next.delete(id); setUnlocked(next); writeUnlocked(next); };
-  const write=async(fn,done)=>{ setBusy(true); try{ setList(await updateCommunity(PRIVATE_BRACKETS_KEY,fn)); if(done)flash(done); return true; }
+  const unlock=(id,pin)=>{ const next=new Map(unlocked); next.set(id,pin); setUnlocked(next); writeUnlocked(next); };
+  const lock=id=>{ const next=new Map(unlocked); next.delete(id); setUnlocked(next); writeUnlocked(next); };
+  // 최신 대진표 위에서 바꿔, 다른 기기에서 입력한 결과를 덮지 않는다.
+  const write=async(id,change,done)=>{ setBusy(true);
+    try{
+      const current=(await readCommunity(PRIVATE_BRACKETS_KEY)).find(x=>x.id===id);
+      if(!current) throw new Error("삭제되었거나 찾을 수 없는 대진표입니다.");
+      const patch=change(current);
+      await patchCommunityItem(PRIVATE_BRACKETS_KEY,id,patch,{pin:unlocked.get(id)||""});
+      setList(items=>items.map(x=>x.id===id?{...x,...patch}:x));
+      if(done)flash(done); return true; }
     catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
 
   const create=async({pin,...input})=>{
     let b; try{ b=createPrivateBracket(input); }catch(error){ siteAlert("대진표를 만들 수 없습니다",error?.message||""); return; }
-    b.pinHash=await hashPin(b.id,pin);
-    if(!(await write(items=>[b,...items],"사설 대진표를 만들었습니다.")))return;
+    setBusy(true);
+    try{ await createCommunityItem(PRIVATE_BRACKETS_KEY,b.id,b,{pin}); await reload(); flash("사설 대진표를 만들었습니다."); }
+    catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
+    finally{ setBusy(false); }
     try{ localStorage.setItem("ypl-board-nick",b.host); }catch{ /* 기억 못 해도 된다 */ }
-    unlock(b.id); setCreating(false); openBracket(b,{draw:b.order==="random"});
+    unlock(b.id,pin); setCreating(false); openBracket(b,{draw:b.order==="random"});
   };
   const verifyPin=async(title)=>{
     const pin=await sitePrompt({title,body:"대진표를 만들 때 정한 관리 비밀번호를 입력해 주세요.",label:"관리 비밀번호",placeholder:"숫자 4자리",confirmLabel:"열기",secret:true,inputMode:"numeric"});
     if(pin===null)return false;
-    if(!(await pinMatches(open,pin))){ siteAlert("비밀번호가 일치하지 않습니다","만든 사람에게 확인해 주세요."); return false; }
-    unlock(open.id); return true;
+    const status=await verifyCommunityPin(PRIVATE_BRACKETS_KEY,open.id,pin).catch(()=>"failed");
+    if(status!=="ok"){ siteAlert(PIN_DENIED[status]||"비밀번호를 확인하지 못했습니다","만든 사람에게 확인해 주세요."); return false; }
+    unlock(open.id,pin); return true;
   };
   const askUnlock=async()=>{ if(await verifyPin("결과 입력")) flash("이제 승자를 눌러 결과를 입력할 수 있습니다."); };
   const startEdit=async()=>{ if(canEdit||await verifyPin("대진표 수정")) setEditing(true); };
-  const saveEdit=async v=>{ const id=open.id; if(await write(items=>items.map(x=>x.id===id?{...x,...v,updatedAt:new Date().toISOString()}:x),"수정했습니다.")) setEditing(false); };
+  const saveEdit=async v=>{ if(await write(open.id,()=>({...v,updatedAt:new Date().toISOString()}),"수정했습니다.")) setEditing(false); };
   const pick=(matchId,side)=>{ if(busy||!canEdit)return; const id=open.id; const at=new Date().toISOString();
     setList(items=>items.map(x=>x.id===id?withPick(x,matchId,side):x));
-    void write(items=>items.map(x=>x.id===id?{...withPick(x,matchId,side),updatedAt:at}:x)); };
+    void write(id,x=>({...withPick(x,matchId,side),updatedAt:at})); };
   const redraw=async()=>{ if(!(await siteConfirm({title:"다시 추첨",body:"참가자는 그대로 두고 대진을 새로 섞습니다.",confirmLabel:"다시 추첨"})))return;
     const id=open.id; let graph;
     try{ graph=buildPrivateGraph(open.participants.map(p=>p.id),{double:open.double,order:"random"}); }catch(error){ siteAlert("다시 추첨하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
-    if(await write(items=>items.map(x=>x.id===id?{...x,graph,order:"random",updatedAt:new Date().toISOString()}:x))) setDrawId(id); };
+    if(await write(id,()=>({graph,order:"random",updatedAt:new Date().toISOString()}))) setDrawId(id); };
   const del=async()=>{
+    let pin=unlocked.get(open.id)||"";
     if(!admin&&!unlocked.has(open.id)){
-      const pin=await sitePrompt({title:"대진표 삭제",body:"대진표를 만들 때 정한 관리 비밀번호를 입력해 주세요.",label:"관리 비밀번호",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"});
+      pin=await sitePrompt({title:"대진표 삭제",body:"대진표를 만들 때 정한 관리 비밀번호를 입력해 주세요.",label:"관리 비밀번호",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"});
       if(pin===null)return;
-      if(!(await pinMatches(open,pin))){ siteAlert("비밀번호가 일치하지 않습니다"); return; }
     } else if(!(await siteConfirm({title:"대진표 삭제",body:`‘${open.name}’ 사설 대진표를 삭제할까요? 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true}))) return;
-    const id=open.id; if(await write(items=>items.filter(x=>x.id!==id),"삭제됨")){ lock(id); closeBracket(); } };
+    const id=open.id;
+    try{ await deleteCommunityItem(PRIVATE_BRACKETS_KEY,id,pin); }
+    catch(error){ siteAlert("삭제하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
+    await reload(); flash("삭제됨"); lock(id); closeBracket(); };
   const share=async()=>{ const r=await shareLink({view:"bracket",tab:"private",pb:open.id},open.name); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(openId&&!open) return (<section className="sec"><div className="bk-open swap">

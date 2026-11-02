@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { WRITE_CONFLICT, retryOnConflict, writeRevisioned } from "../src/services/revisionedRow.js";
+import { WRITE_CONFLICT, writeRevisioned } from "../src/services/revisionedRow.js";
 
 // The two PostgREST shapes the helper uses, over one row. The row's revision rises the way the DB trigger raises it.
 function fakeTable(row) {
@@ -41,14 +41,4 @@ test("a row without a known revision is inserted as before", async () => {
 test("a database error is thrown, not read as a conflict", async () => {
   const table = { update: () => ({ eq() { return this; }, select: async () => ({ data: null, error: new Error("denied") }) }) };
   await assert.rejects(writeRevisioned(table, "k", 1, 1), /denied/);
-});
-
-test("conflicts retry from a fresh read, and give up with the conflict", async () => {
-  let calls = 0;
-  assert.equal(await retryOnConflict(async () => (++calls < 3 ? WRITE_CONFLICT : true)), true);
-  assert.equal(calls, 3);
-  calls = 0;
-  assert.equal(await retryOnConflict(async () => { calls += 1; return WRITE_CONFLICT; }), WRITE_CONFLICT);
-  assert.equal(calls, 4);
-  assert.equal(await retryOnConflict(async () => false), false);
 });

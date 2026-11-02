@@ -4,7 +4,7 @@ import { flushSync } from "react-dom";
 import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
-import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 import Button from "../components/common/Button.jsx";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
@@ -83,6 +83,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   useEffect(()=>{setPage(1);},[q]);
   const respAnn=respId?data.announcements.find(a=>a.id===respId):null;
   const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
+  const resetPin=async(row)=>{
+    if(!(await siteConfirm({title:"제출 비밀번호 초기화",body:`${row.registrationName}의 제출 비밀번호를 지웁니다. 다음 제출 때 새로 정하며, 제출한 파티는 그대로 남습니다.`,confirmLabel:"초기화"})))return;
+    try{ await resetSubmissionPin(row.id); siteAlert("제출 비밀번호를 초기화했습니다"); }
+    catch(error){ siteAlert("초기화하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+  };
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   const a=article?data.announcements.find(x=>x.id===article):null;
   const modals=<>
@@ -96,7 +101,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         return ok;
       }}
     />}
-    {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp}/>}
+    {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp} onResetPin={respAnn.form?.eventId?resetPin:null}/>}
   </>;
 
   if(a){
@@ -249,7 +254,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     </div>
   </Modal>);
 }
-function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride }){
+function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onResetPin }){
   const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const resp=[...(normalized?responsesOverride:(form.responses||[]))].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
   const cell=(v)=>Array.isArray(v)?v.join(", "):(v==null?"":String(v));
   const csv=()=>{
@@ -268,7 +273,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride }){
         <tbody>{resp.map((r,i)=>(<tr key={r.id}>
           <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
           {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
-          <td>{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={16}/></button>}</td>
+          <td>{onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(r)}>비밀번호 초기화</button>}{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={16}/></button>}</td>
         </tr>))}</tbody>
       </table></div>}
     <div className="modal-actions"><Button onClick={onClose}>닫기</Button></div>

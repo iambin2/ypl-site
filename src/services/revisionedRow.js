@@ -11,10 +11,3 @@ export async function writeRevisioned(table, key, value, revision) {
   if (revision != null && !data.length) return WRITE_CONFLICT;
   return data?.[0]?.revision;
 }
-
-// write 는 매번 최신 행을 다시 읽어 그 위에 쓴다.
-export async function retryOnConflict(write, attempts = 4) {
-  let result = WRITE_CONFLICT;
-  for (let i = 0; i < attempts && result === WRITE_CONFLICT; i += 1) result = await write();
-  return result;
-}

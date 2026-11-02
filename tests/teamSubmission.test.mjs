@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -81,4 +82,12 @@ test("snapshot submission requires exact Event registration and eligibility, the
     detailData,
   }), /이름을 정확히 확인/);
   assert.throws(() => buildTeamSnapshotSubmission({ event, registration, registrationName: "홍길동", eligibility: { eligible: false }, team, detailData }), /자격 검증/);
+});
+
+test("a stranger cannot submit by name: the only anon submission path checks a pin server-side", () => {
+  const gates = readFileSync("docs/db/visitor_gates.sql", "utf8");
+  const close = readFileSync("docs/db/visitor_gates_close.sql", "utf8");
+  assert.match(gates, /submit_registration_team_snapshot\(\s*p_event_id uuid,[\s\S]*?p_pin text/);
+  assert.match(gates, /visitor_pin_check\('submission'/);
+  assert.match(close, /revoke all on function ypl_schema_validation\.submit_registration_team_snapshot\(uuid, uuid, text, jsonb, jsonb\) from public, anon, authenticated/);
 });

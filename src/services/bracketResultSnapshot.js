@@ -162,3 +162,15 @@ export function buildBracketResultSyncPlan(existingRows = [], desiredRows = []) 
 
   return { inserts, updates, deleteIds };
 }
+
+// 계획이 적용된 뒤의 대진표 결과. 포인트 계획은 아직 쓰이지 않은 이 행들을 기준으로 만든다.
+export function projectResultRows(existingRows = [], plan = {}) {
+  const updates = new Map((plan.updates || []).map(update => [update.id, update.payload]));
+  const deleted = new Set(plan.deleteIds || []);
+  return [
+    ...(existingRows || [])
+      .filter(row => row?.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && !deleted.has(row.id))
+      .map(row => ({ ...row, ...(updates.get(row.id) || {}) })),
+    ...(plan.inserts || []).map(row => ({ ...row, source: NORMALIZED_BRACKET_RUNTIME_SOURCE })),
+  ];
+}

@@ -20,15 +20,21 @@ test("Champions Final HOF removal RPC is narrow, guarded, and admin-only", () =>
   assert.match(sql, /grant execute on function ypl_schema_validation\.remove_championship_final_hall_of_fame\(uuid\) to authenticated/);
 });
 
-test("normalized record revert removes HOF before Result and restores it after compensation", () => {
-  const remove = page.indexOf("removeChampionshipHallOfFameEntry(b.eventId)");
-  const awards = page.indexOf("deleteEventBracketRankingAwards(b.eventId,b)", remove);
-  const results = page.indexOf("deleteEventBracketResults(b.eventId,b)", remove);
-  const restoreResults = page.indexOf("restoreEventBracketResults(b.eventId,previousResultRows)", remove);
-  const restoreAwards = page.indexOf("restoreEventBracketRankingAwards(b.eventId,previousAwardRows)", restoreResults);
-  const restoreHof = page.indexOf("ensureChampionshipHallOfFameEntry(b.eventId,{hallOfFameId:previousHallOfFame.hallOfFameId})", restoreAwards);
-  assert.ok(remove >= 0 && remove < awards && awards < results);
-  assert.ok(restoreResults >= 0 && restoreResults < restoreAwards && restoreAwards < restoreHof);
+test("record revert is one transaction: HOF, then awards, then results, then release", () => {
+  const rpc = readFileSync("docs/db/record_apply_rpc.sql", "utf8");
+  const body = rpc.slice(rpc.indexOf("function ypl_schema_validation.revert_event_record"));
+  const remove = body.indexOf("remove_championship_final_hall_of_fame(p_event_id)");
+  const awards = body.indexOf("delete from ypl_schema_validation.ranking_awards", remove);
+  const results = body.indexOf("delete from ypl_schema_validation.results", awards);
+  const release = body.indexOf("release_championship_final_record_application(p_event_id)", results);
+  assert.ok(remove >= 0 && remove < awards && awards < results && results < release);
+  assert.match(page, /await revertEventRecord\(b\.eventId\)/);
+  assert.doesNotMatch(page, /restoreEventBracket|deleteEventBracket/);
+});
+
+test("record apply writes through one RPC and never compensates by hand", () => {
+  assert.match(page, /applyEventRecord\(b\.eventId,b,res,/);
+  assert.doesNotMatch(page, /syncEventBracket|freezeEventFinalSubmissions|completeApplicationEvent/);
 });
 
 test("HOF compensation can restore the exact previous identity", () => {

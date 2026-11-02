@@ -261,6 +261,9 @@ function OfficialSubmissionPanel({
   eligibility,
   submissionBusy,
   submissionError,
+  submissionPin,
+  onSubmissionPinChange,
+  pinNeeded,
   onSubmit,
 }) {
   if (!eventId) return null;
@@ -318,8 +321,21 @@ function OfficialSubmissionPanel({
         <Button type="button" size="sm" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()} loading={lookupBusy}>신청자 확인</Button>
       </div>
       {messages.length > 0 && <ul>{messages.slice(0, 8).map((message, index) => <li className={eligibility?.errors?.includes(message) || lookupError === message || eventContextError === message || submissionError === message ? "error" : "incomplete"} key={`${message}-${index}`}>{message}</li>)}</ul>}
+      {state === "valid" && pinNeeded && <div className="tb-official-lookup tb-official-pin">
+        <input
+          className="tb-input"
+          type="password"
+          value={submissionPin}
+          onChange={event => onSubmissionPinChange(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+          placeholder="제출 비밀번호 (숫자 4자리)"
+          aria-label="제출 비밀번호"
+          inputMode="numeric"
+          autoComplete="off"
+        />
+        <span className="tb-field-meta">{latestSubmission ? "처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요." : "다시 제출할 때 필요합니다. 다른 사람이 내 이름으로 제출하지 못하게 막아 줍니다."}</span>
+      </div>}
       {state === "valid" && <div className="tb-official-submit">
-        <Button type="button" variant="primary" onClick={onSubmit} disabled={submissionBusy}>
+        <Button type="button" variant="primary" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
           {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출하기" : "파티 제출"}
         </Button>
         {submittedAt && <span className="tb-field-meta">제출 완료 시각 {formatSubmissionTime(submittedAt)}</span>}
@@ -328,7 +344,7 @@ function OfficialSubmissionPanel({
   );
 }
 
-export default function TeamBuilderPage({ go, flash } = {}) {
+export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
   const initialRuleStateRef = useRef(null);
   if (!initialRuleStateRef.current) initialRuleStateRef.current = readInitialRuleState();
   const initialEventId = initialRuleStateRef.current.eventId;
@@ -371,6 +387,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
   const [registrationLookupBusy, setRegistrationLookupBusy] = useState(false);
   const [submissionBusy, setSubmissionBusy] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
+  const [submissionPin, setSubmissionPin] = useState("");
   const [shareTeam, setShareTeam] = useState(null);
   const [imageBusy, setImageBusy] = useState(false);
   /* N5: 폰에서는 같은 상태를 규정, 포켓몬 선택, 팀 구성의 세 단계로 나눠 보여 준다. 데스크톱은 한 화면. */
@@ -666,6 +683,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         cupRuleId,
         cupRuleSettings: { assignedType: cupRule.kind === "monotype" ? assignedTypeId : "" },
         detailData,
+        pin: submissionPin,
       });
       setRegistration(current => current ? { ...current, latestSubmission: {
         id: saved.submission_id,
@@ -682,7 +700,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     } finally {
       setSubmissionBusy(false);
     }
-  }, [eventContext, registration, submissionEligibility, submissionBusy, eventId, registrationName, team, regulationId, cupRuleId, cupRule.kind, assignedTypeId, detailData]);
+  }, [eventContext, registration, submissionEligibility, submissionBusy, eventId, registrationName, team, regulationId, cupRuleId, cupRule.kind, assignedTypeId, detailData, submissionPin]);
 
   const eligiblePool = useMemo(() => {
     const base = selectablePokemonPool;
@@ -1273,7 +1291,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           regulationName={regulation.name}
           cupRuleSummary={currentCupRuleSummary}
           registrationName={registrationName}
-          onRegistrationNameChange={value => { setRegistrationName(value); setRegistration(null); setRegistrationLookupError(""); setSubmissionError(""); }}
+          onRegistrationNameChange={value => { setRegistrationName(value); setRegistration(null); setRegistrationLookupError(""); setSubmissionError(""); setSubmissionPin(""); }}
           onLookup={lookupSubmissionRegistration}
           lookupBusy={registrationLookupBusy}
           lookupError={registrationLookupError}
@@ -1281,6 +1299,9 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           eligibility={submissionEligibility}
           submissionBusy={submissionBusy}
           submissionError={submissionError}
+          submissionPin={submissionPin}
+          onSubmissionPinChange={setSubmissionPin}
+          pinNeeded={!admin}
           onSubmit={submitCurrentTeam}
         />
       </div>

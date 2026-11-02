@@ -58,7 +58,7 @@ Season
 
 새 active bracket을 `public.site_data / ypl_data_v4.brackets`에 저장하거나 legacy graph를 fallback source로 사용하지 않는다. active runtime의 legacy dependency는 0이어야 한다.
 
-방문자 공간(게시판의 샘플과 파티 소개글, 사설 대진표)은 `public.site_data`의 별도 key(`ypl_showcase_v1`, `ypl_private_brackets_v1`)에만 저장한다(`src/services/communityStore.js`). 이 데이터는 Event, Registration, Result, RankingAward, 칭호, 명예의 전당과 어떤 경로로도 연결하지 않으며, 사설 대진표는 기록 반영 흐름을 갖지 않는다(`tests/community.test.mjs`).
+방문자 공간(자유게시판, 샘플과 파티 소개글, 사설 대진표)은 `public.community_items`에 행 단위로만 저장한다(`src/services/communityStore.js`, `docs/db/visitor_gates.sql`). 쓰기는 `community_write` 함수뿐이고, 비공개 글은 RLS가 가리며, 비밀번호는 방문자가 읽을 수 없는 `public.visitor_pins`에서 서버가 대조한다. 이 데이터는 Event, Registration, Result, RankingAward, 칭호, 명예의 전당과 어떤 경로로도 연결하지 않으며, 사설 대진표는 기록 반영 흐름을 갖지 않는다(`tests/community.test.mjs`).
 
 ### Historical legacy compatibility
 
@@ -99,7 +99,7 @@ EventRegistration
 
 ### Record apply와 roster 공개
 
-record apply는 실제 `EntryParticipant.registration_id`만 대상으로 최신 Submission을 freeze한다.
+record apply는 실제 `EntryParticipant.registration_id`만 대상으로 최신 Submission을 freeze한다. Result, RankingAward, freeze, Event 완료, Champions HOF는 `apply_event_record` 한 트랜잭션으로 함께 반영되고, 취소도 `revert_event_record` 한 트랜잭션이다(`docs/db/record_apply_rpc.sql`). 브라우저는 계획만 계산한다.
 
 ```text
 EntryParticipant.registration_id
@@ -333,8 +333,8 @@ Client/UI는 UX guard일 뿐 canonical integrity boundary가 아니다. RPC/serv
 
 2026-10-16부터 Production DB가 쓰기 권한의 관문이다 (`docs/db/access_lockdown.sql`, 근거와 검증과 되돌리기는 `docs/db-access-lockdown.md`).
 
-- `ypl_schema_validation` 22개 table과 `public.site_data` 모두 RLS가 켜져 있다. anon은 전부 읽을 수 있다.
-- anon이 쓰는 것은 다섯 가지뿐이다. 커뮤니티 `site_data` key 두 개(`ypl_showcase_v1`, `ypl_private_brackets_v1`) INSERT/UPDATE, 열린 Event의 신청서 `event_registrations` INSERT (열 단위 grant와 `visitor_apply` 정책), 공식 파티 제출 RPC `submit_registration_team_snapshot` (SECURITY DEFINER, 본문 검사가 관문), 공지 알림 구독 RPC `save_push_subscription`과 `delete_push_subscription` (SECURITY DEFINER, `docs/db/announcement_push.sql`). `push_subscriptions` table은 anon에게 닫혀 있고 endpoint는 알려진 푸시 서비스만 받는다. 대회에 연결하지 않은 신청서의 응답 RPC `submit_announcement_response` (SECURITY DEFINER, `docs/db/backend_hardening.sql`)는 `ypl_data_v4`를 열지 않고 켜진 신청서에 응답 하나만 덧붙인다.
+- `ypl_schema_validation` 22개 table과 `public.site_data` 모두 RLS가 켜져 있다. anon은 전부 읽을 수 있다. `visitor_pins`는 어떤 방문자 역할도 읽을 수 없다.
+- anon이 쓰는 것은 다섯 가지뿐이다. 방문자 공간 RPC `community_write` (SECURITY DEFINER, 글마다 서버가 비밀번호 대조), 열린 Event의 신청서 `event_registrations` INSERT (열 단위 grant와 `visitor_apply` 정책), 공식 파티 제출 RPC `submit_registration_team_snapshot` (6개 인자판, SECURITY DEFINER, 첫 제출이 정한 비밀번호를 재제출에 요구하고 운영진은 `reset_submission_pin`으로 초기화한다), 공지 알림 구독 RPC `save_push_subscription`과 `delete_push_subscription` (SECURITY DEFINER, `docs/db/announcement_push.sql`). `push_subscriptions` table은 anon에게 닫혀 있고 endpoint는 알려진 푸시 서비스만 받는다. 대회에 연결하지 않은 신청서의 응답 RPC `submit_announcement_response` (SECURITY DEFINER, `docs/db/backend_hardening.sql`)는 `ypl_data_v4`를 열지 않고 켜진 신청서에 응답 하나만 덧붙인다.
 - 그 밖의 모든 쓰기와 관리자 RPC 실행은 `authenticated` 역할만 가능하고, RLS `admin_write` 정책이 JWT `app_metadata.ypl_admin = true` 를 요구한다. 관리자는 Supabase Auth로 로그인한다 (`src/storage.js` 의 `signInAdmin`).
 - 챔피언스 RPC는 SECURITY INVOKER라 같은 RLS를 거친다. DEFINER로 남은 것은 파티 제출, 공지 알림 구독, `ensure_current_ypl_season` 계열, Qualifier direct selection 정리 trigger뿐이다.
 - TRUNCATE는 anon과 authenticated 모두에게 없다.

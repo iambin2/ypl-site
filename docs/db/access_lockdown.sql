@@ -97,18 +97,13 @@ create policy visitor_apply on ypl_schema_validation.event_registrations
                                          and p.display_name = event_registrations.registration_name))
   );
 
--- B3. site_data: 공개 읽기, 커뮤니티 두 key만 방문자 쓰기, 나머지는 관리자.
+-- B3. site_data: 공개 읽기, 쓰기는 관리자. 방문자 공간은 community_items 로 옮겼다(visitor_gates.sql).
 alter table public.site_data enable row level security;
 revoke all on public.site_data from anon, authenticated;
-grant select, insert, update on public.site_data to anon;
+grant select on public.site_data to anon;
 grant select, insert, update, delete on public.site_data to authenticated;
 
 create policy site_data_read on public.site_data for select to anon, authenticated using (true);
-create policy site_data_community_insert on public.site_data for insert to anon, authenticated
-  with check (key in ('ypl_showcase_v1', 'ypl_private_brackets_v1'));
-create policy site_data_community_update on public.site_data for update to anon, authenticated
-  using (key in ('ypl_showcase_v1', 'ypl_private_brackets_v1'))
-  with check (key in ('ypl_showcase_v1', 'ypl_private_brackets_v1'));
 create policy site_data_admin on public.site_data for all to authenticated
   using ((select ypl_schema_validation.is_ypl_admin()))
   with check ((select ypl_schema_validation.is_ypl_admin()));

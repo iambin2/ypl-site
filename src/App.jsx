@@ -65,8 +65,7 @@ function normalizeData(d){
   const tournaments=Array.isArray(d.tournaments)?d.tournaments.map(t=>t&&labelFix[t.label]?{...t,label:labelFix[t.label]}:t):d.tournaments;
   const titleGroups=Array.isArray(d.titleGroups)?d.titleGroups.map(g=>g&&groupDesc[g.key]?{...g,desc:groupDesc[g.key]}:g):d.titleGroups;
   const brackets=Array.isArray(d.brackets)?d.brackets:[];
-  const board=Array.isArray(d.board)?d.board:[];
-  return {...d,tournaments,titleGroups,brackets,board};
+  return {...d,tournaments,titleGroups,brackets};
 }
 
 /* ============================== 공통 ============================== */
@@ -230,7 +229,7 @@ export default function App() {
         {view==="board"&&<BoardPage data={data} admin={admin} save={save} flash={flash} go={go}/>}
         {view==="records"&&<RecordsPage data={data} admin={admin} setModal={setModal} save={save}/>}
         {view==="bracket"&&<BracketsPage data={data} admin={admin} save={save} flash={flash} refresh={refresh}/>}
-        {view==="builder"&&<TeamBuilderPage go={go} flash={flash}/>}
+        {view==="builder"&&<TeamBuilderPage go={go} flash={flash} admin={admin}/>}
         {view==="calc"&&<CalculatorPage/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal} go={go}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}

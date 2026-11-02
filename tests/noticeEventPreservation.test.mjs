@@ -87,7 +87,7 @@ test("UI preflights before any announcement save and blocked path has no mutatio
 
 test("allowed cancellation clears the Event announcement reference and never physically deletes Events", () => {
   const start = service.indexOf("export async function cancelApplicationEvent");
-  const body = service.slice(start, service.indexOf("export async function freezeEventFinalSubmissions", start));
+  const body = service.slice(start, service.indexOf("const EMPTY_RECORD_PLAN", start));
   assert.match(body, /delete registrationSettings\.announcementId/);
   assert.match(body, /status: "cancelled"/);
   assert.doesNotMatch(body, /\.delete\(\)/);

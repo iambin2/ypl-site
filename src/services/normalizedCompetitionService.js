@@ -6,14 +6,13 @@ import {
   resolveBracketMatchParentIds,
 } from "./bracketMatchSnapshot.js";
 import {
-  bracketResultIdentityState,
   buildBracketResultSyncPlan,
   buildEventBracketResultSnapshot,
+  projectResultRows,
 } from "./bracketResultSnapshot.js";
 import {
   buildBracketRankingAwardSyncPlan,
   buildEventRankingAwardSnapshot,
-  samePlacementAwardValues,
 } from "./bracketRankingAwardSnapshot.js";
 import {
   attachConfirmedTeamIdentities,
@@ -22,7 +21,6 @@ import {
 } from "./bracketTeamParticipants.js";
 import { buildSubmissionStatusRows, selectSubmissionRegistration } from "./teamBuilderCore.js";
 import { buildTeamSnapshotSubmission } from "./teamSubmission.js";
-import { normalizeFinalSubmissionFreezeSnapshot } from "./finalSubmissionLifecycle.js";
 import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
 import {
   projectNormalizedDoubleEliminationBracket,
@@ -371,8 +369,6 @@ export async function deleteNormalizedBracketRuntime({ runtimeId, eventId } = {}
 }
 
 const eventMatchMutationQueues = new Map();
-const eventResultMutationQueues = new Map();
-const eventRankingAwardMutationQueues = new Map();
 
 function queueEventMatchMutation(eventId, operation) {
   const previous = eventMatchMutationQueues.get(eventId) || Promise.resolve();
@@ -381,32 +377,6 @@ function queueEventMatchMutation(eventId, operation) {
   const clear = () => {
     if (eventMatchMutationQueues.get(eventId) === current) {
       eventMatchMutationQueues.delete(eventId);
-    }
-  };
-  current.then(clear, clear);
-  return current;
-}
-
-function queueEventResultMutation(eventId, operation) {
-  const previous = eventResultMutationQueues.get(eventId) || Promise.resolve();
-  const current = previous.catch(() => null).then(operation);
-  eventResultMutationQueues.set(eventId, current);
-  const clear = () => {
-    if (eventResultMutationQueues.get(eventId) === current) {
-      eventResultMutationQueues.delete(eventId);
-    }
-  };
-  current.then(clear, clear);
-  return current;
-}
-
-function queueEventRankingAwardMutation(eventId, operation) {
-  const previous = eventRankingAwardMutationQueues.get(eventId) || Promise.resolve();
-  const current = previous.catch(() => null).then(operation);
-  eventRankingAwardMutationQueues.set(eventId, current);
-  const clear = () => {
-    if (eventRankingAwardMutationQueues.get(eventId) === current) {
-      eventRankingAwardMutationQueues.delete(eventId);
     }
   };
   current.then(clear, clear);
@@ -656,69 +626,6 @@ async function readEventResults(eventId) {
   return data || [];
 }
 
-async function applyEventResultSyncPlan(eventId, plan, now) {
-  for (const update of plan.updates) {
-    const { data, error } = await db()
-      .from("results")
-      .update({
-        ...update.payload,
-        updated_at: update.payload.updated_at || now,
-      })
-      .eq("id", update.id)
-      .eq("event_id", eventId)
-      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
-      .select("id")
-      .maybeSingle();
-
-    if (error) fail(error, `결과 '${update.payload.entry_id}'를 수정하지 못했습니다.`);
-    if (!data) throw new Error(`결과 '${update.payload.entry_id}'가 동기화 중 변경되었습니다.`);
-  }
-
-  if (plan.inserts.length) {
-    const { data, error } = await db()
-      .from("results")
-      .insert(plan.inserts.map(row => ({
-        ...row,
-        event_id: eventId,
-        source: NORMALIZED_BRACKET_RUNTIME_SOURCE,
-        updated_at: row.updated_at || now,
-      })))
-      .select("id");
-
-    if (error) fail(error, "신규 결과를 생성하지 못했습니다.");
-    if ((data || []).length !== plan.inserts.length) {
-      throw new Error("일부 신규 결과가 저장되지 않았습니다.");
-    }
-  }
-
-  if (plan.deleteIds.length) {
-    const { data, error } = await db()
-      .from("results")
-      .delete()
-      .eq("event_id", eventId)
-      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
-      .in("id", plan.deleteIds)
-      .select("id");
-
-    if (error) fail(error, "더 이상 유효하지 않은 대진표 결과를 정리하지 못했습니다.");
-    if ((data || []).length !== plan.deleteIds.length) {
-      throw new Error("일부 남아 있는 결과가 삭제되지 않았습니다.");
-    }
-  }
-
-  return {
-    inserted: plan.inserts.length,
-    updated: plan.updates.length,
-    deleted: plan.deleteIds.length,
-  };
-}
-
-async function replaceEventRuntimeResultsNow(eventId, desiredRows) {
-  const existingRows = await readEventResults(eventId);
-  const plan = buildBracketResultSyncPlan(existingRows, desiredRows);
-  return applyEventResultSyncPlan(eventId, plan, new Date().toISOString());
-}
-
 async function validateResultEntries(eventId, desiredRows, entryType = "individual") {
   const entryIds = desiredRows.map(row => row.entry_id);
   const { data, error } = await db()
@@ -737,98 +644,6 @@ async function validateResultEntries(eventId, desiredRows, entryType = "individu
       throw new Error(`입상자 출전 정보 '${entryId}'가 현재 대회의 활성 ${entryLabel} 출전 정보와 일치하지 않습니다.`);
     }
   }
-}
-
-async function syncEventBracketResultsNow(eventId, bracket, result) {
-  if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("결과 대상 대회와 대진표 연결이 일치하지 않습니다.");
-  }
-
-  const snapshot = buildEventBracketResultSnapshot(bracket, result);
-  if (snapshot.skipped) {
-    return {
-      skipped: true,
-      reason: snapshot.reason,
-      inserted: 0,
-      updated: 0,
-      deleted: 0,
-      previousRows: [],
-    };
-  }
-
-  const event = await getEvent(eventId);
-  if (!event) throw new Error("결과를 연결할 대회를 찾을 수 없습니다.");
-  if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-    throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
-  }
-
-  await validateResultEntries(eventId, snapshot.rows, event.is_team_event ? "team" : "individual");
-  const existingRows = await readEventResults(eventId);
-  const previousRows = existingRows.filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
-  const plan = buildBracketResultSyncPlan(existingRows, snapshot.rows);
-
-  try {
-    const counts = await applyEventResultSyncPlan(eventId, plan, new Date().toISOString());
-    return { skipped: false, ...counts, previousRows };
-  } catch (error) {
-    try {
-      await replaceEventRuntimeResultsNow(eventId, previousRows);
-    } catch (restoreError) {
-      const combined = new Error(
-        `${error?.message || "결과를 동기화하지 못했습니다."} (이전 결과 기록도 복구하지 못했습니다. ${restoreError?.message || "원인을 확인하지 못했습니다."})`
-      );
-      combined.code = "YPL_RESULT_ROLLBACK_FAILED";
-      combined.cause = error;
-      throw combined;
-    }
-    throw error;
-  }
-}
-
-export async function syncEventBracketResults(eventId, bracket, result) {
-  if (!eventId) {
-    return {
-      skipped: true,
-      reason: "event_unlinked",
-      inserted: 0,
-      updated: 0,
-      deleted: 0,
-      previousRows: [],
-    };
-  }
-  return queueEventResultMutation(eventId, () => syncEventBracketResultsNow(eventId, bracket, result));
-}
-
-export async function deleteEventBracketResults(eventId, bracket) {
-  if (!eventId) return { skipped: true, reason: "event_unlinked", deleted: 0, previousRows: [] };
-  if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("정리할 결과의 대회와 대진표 연결이 일치하지 않습니다.");
-  }
-
-  const identityState = bracketResultIdentityState(bracket);
-  if (!identityState.eligible) {
-    return { skipped: true, reason: identityState.reason, deleted: 0, previousRows: [] };
-  }
-
-  return queueEventResultMutation(eventId, async () => {
-    const event = await getEvent(eventId);
-    if (!event) throw new Error("대진표 결과를 정리할 대회를 찾을 수 없습니다.");
-    if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-      throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
-    }
-
-    const existingRows = await readEventResults(eventId);
-    const previousRows = existingRows.filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
-    const plan = buildBracketResultSyncPlan(existingRows, []);
-    const counts = await applyEventResultSyncPlan(eventId, plan, new Date().toISOString());
-    return { skipped: false, ...counts, previousRows };
-  });
-}
-
-export async function restoreEventBracketResults(eventId, previousRows = []) {
-  if (!eventId) return { inserted: 0, updated: 0, deleted: 0 };
-  const snapshot = Array.isArray(previousRows) ? previousRows : [];
-  return queueEventResultMutation(eventId, () => replaceEventRuntimeResultsNow(eventId, snapshot));
 }
 
 async function readEventRankingAwards(eventId) {
@@ -869,220 +684,6 @@ async function readEventResultParticipants(eventId, resultRows) {
 
   if (error) fail(error, "결과의 출전 선수 정보를 확인하지 못했습니다.");
   return data || [];
-}
-
-async function readPlacementAwardByIdentity(eventId, resultId, playerId) {
-  const { data, error } = await db()
-    .from("ranking_awards")
-    .select(`
-      id,
-      event_id,
-      player_id,
-      result_id,
-      award_kind,
-      points_delta,
-      win_delta,
-      runner_up_delta,
-      top4_delta,
-      counts_series,
-      counts_season,
-      reason,
-      source,
-      created_at
-    `)
-    .eq("event_id", eventId)
-    .eq("result_id", resultId)
-    .eq("player_id", playerId)
-    .eq("award_kind", "placement")
-    .maybeSingle();
-
-  if (error) fail(error, "중복 방지 후 기존 입상 랭킹 포인트를 확인하지 못했습니다.");
-  return data || null;
-}
-
-async function applyEventRankingAwardSyncPlan(eventId, plan) {
-  for (const update of plan.updates) {
-    const { id: _id, created_at: _createdAt, ...payload } = update.payload;
-    const { data, error } = await db()
-      .from("ranking_awards")
-      .update(payload)
-      .eq("id", update.id)
-      .eq("event_id", eventId)
-      .eq("award_kind", "placement")
-      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
-      .select("id")
-      .maybeSingle();
-
-    if (error) fail(error, `입상 랭킹 포인트 '${update.id}'를 수정하지 못했습니다.`);
-    if (!data) throw new Error(`입상 랭킹 포인트 '${update.id}'가 동기화 중 변경되었습니다.`);
-  }
-
-  let inserted = 0;
-  for (const row of plan.inserts) {
-    const payload = {
-      ...row,
-      event_id: eventId,
-      source: NORMALIZED_BRACKET_RUNTIME_SOURCE,
-    };
-    const { data, error } = await db()
-      .from("ranking_awards")
-      .insert(payload)
-      .select("id")
-      .maybeSingle();
-
-    if (!error && data) {
-      inserted += 1;
-      continue;
-    }
-
-    if (String(error?.code || "") === "23505") {
-      const concurrent = await readPlacementAwardByIdentity(eventId, row.result_id, row.player_id);
-      if (
-        concurrent?.source === NORMALIZED_BRACKET_RUNTIME_SOURCE &&
-        samePlacementAwardValues(concurrent, row)
-      ) {
-        continue;
-      }
-    }
-
-    fail(error, "신규 입상 랭킹 포인트를 생성하지 못했습니다.");
-  }
-
-  if (plan.deleteIds.length) {
-    const { data, error } = await db()
-      .from("ranking_awards")
-      .delete()
-      .eq("event_id", eventId)
-      .eq("award_kind", "placement")
-      .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE)
-      .in("id", plan.deleteIds)
-      .select("id");
-
-    if (error) fail(error, "더 이상 유효하지 않은 대진표 입상 랭킹 포인트를 정리하지 못했습니다.");
-    if ((data || []).length !== plan.deleteIds.length) {
-      throw new Error("일부 남아 있는 입상 랭킹 포인트가 삭제되지 않았습니다.");
-    }
-  }
-
-  return {
-    inserted,
-    updated: plan.updates.length,
-    deleted: plan.deleteIds.length,
-  };
-}
-
-async function replaceEventRuntimeRankingAwardsNow(eventId, desiredRows) {
-  const existingRows = await readEventRankingAwards(eventId);
-  const plan = buildBracketRankingAwardSyncPlan(existingRows, desiredRows);
-  return applyEventRankingAwardSyncPlan(eventId, plan);
-}
-
-async function syncEventBracketRankingAwardsNow(eventId, bracket) {
-  if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("랭킹 포인트 대상 대회와 대진표 연결이 일치하지 않습니다.");
-  }
-
-  const identityState = bracketResultIdentityState(bracket);
-  if (!identityState.eligible) {
-    return {
-      skipped: true,
-      reason: identityState.reason,
-      inserted: 0,
-      updated: 0,
-      deleted: 0,
-      previousRows: [],
-    };
-  }
-
-  const event = await getEvent(eventId);
-  if (!event) throw new Error("랭킹 포인트를 연결할 대회를 찾을 수 없습니다.");
-  if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-    throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
-  }
-
-  const resultRows = await readEventResults(eventId);
-  const runtimeResults = resultRows.filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
-  const entryParticipants = await readEventResultParticipants(eventId, runtimeResults);
-  const snapshot = buildEventRankingAwardSnapshot(event, runtimeResults, entryParticipants);
-  if (!snapshot.skipped && !runtimeResults.length) {
-    throw new Error("랭킹 포인트를 생성할 대진표 결과가 없습니다.");
-  }
-  const existingRows = await readEventRankingAwards(eventId);
-  const previousRows = existingRows.filter(row =>
-    row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && row.award_kind === "placement"
-  );
-  const plan = buildBracketRankingAwardSyncPlan(existingRows, snapshot.rows);
-
-  try {
-    const counts = await applyEventRankingAwardSyncPlan(eventId, plan);
-    return { skipped: snapshot.skipped, reason: snapshot.reason, ...counts, previousRows };
-  } catch (error) {
-    try {
-      await replaceEventRuntimeRankingAwardsNow(eventId, previousRows);
-    } catch (restoreError) {
-      const combined = new Error(
-        `${error?.message || "랭킹 포인트를 동기화하지 못했습니다."} (이전 랭킹 포인트 기록도 복구하지 못했습니다. ${restoreError?.message || "원인을 확인하지 못했습니다."})`
-      );
-      combined.code = "YPL_RANKING_AWARD_ROLLBACK_FAILED";
-      combined.cause = error;
-      throw combined;
-    }
-    throw error;
-  }
-}
-
-export async function syncEventBracketRankingAwards(eventId, bracket) {
-  if (!eventId) {
-    return {
-      skipped: true,
-      reason: "event_unlinked",
-      inserted: 0,
-      updated: 0,
-      deleted: 0,
-      previousRows: [],
-    };
-  }
-  return queueEventRankingAwardMutation(
-    eventId,
-    () => syncEventBracketRankingAwardsNow(eventId, bracket)
-  );
-}
-
-export async function deleteEventBracketRankingAwards(eventId, bracket) {
-  if (!eventId) return { skipped: true, reason: "event_unlinked", deleted: 0, previousRows: [] };
-  if (!bracket || bracket.eventId !== eventId) {
-    throw new Error("정리할 랭킹 포인트의 대회와 대진표 연결이 일치하지 않습니다.");
-  }
-
-  const identityState = bracketResultIdentityState(bracket);
-  if (!identityState.eligible) {
-    return { skipped: true, reason: identityState.reason, deleted: 0, previousRows: [] };
-  }
-
-  return queueEventRankingAwardMutation(eventId, async () => {
-    const event = await getEvent(eventId);
-    if (!event) throw new Error("대진표 랭킹 포인트를 정리할 대회를 찾을 수 없습니다.");
-    if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
-      throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
-    }
-
-    const existingRows = await readEventRankingAwards(eventId);
-    const previousRows = existingRows.filter(row =>
-      row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && row.award_kind === "placement"
-    );
-    const plan = buildBracketRankingAwardSyncPlan(existingRows, []);
-    const counts = await applyEventRankingAwardSyncPlan(eventId, plan);
-    return { skipped: false, ...counts, previousRows };
-  });
-}
-
-export async function restoreEventBracketRankingAwards(eventId, previousRows = []) {
-  if (!eventId) return { inserted: 0, updated: 0, deleted: 0 };
-  const snapshot = Array.isArray(previousRows) ? previousRows : [];
-  return queueEventRankingAwardMutation(
-    eventId,
-    () => replaceEventRuntimeRankingAwardsNow(eventId, snapshot)
-  );
 }
 
 const EVENT_DETAIL_SELECT = `
@@ -1263,6 +864,18 @@ export async function findSubmissionRegistration(eventId, registrationName) {
   };
 }
 
+// 운영진 전용. 비밀번호를 잊었거나 다른 사람이 먼저 제출한 경우의 복구이며 파티 이력은 그대로 둔다.
+export async function resetSubmissionPin(registrationId) {
+  const { error } = await client.rpc("reset_submission_pin", { p_registration_id: registrationId });
+  if (error) fail(error, "제출 비밀번호를 초기화하지 못했습니다.");
+}
+
+const SUBMISSION_DENIED = {
+  pin_required: "제출 비밀번호를 숫자 4자리로 입력해 주세요.",
+  wrong_pin: "제출 비밀번호가 일치하지 않습니다. 잊었다면 운영진에게 초기화를 요청해 주세요.",
+  locked: "비밀번호를 여러 번 틀려 15분 동안 잠겼습니다. 운영진이 바로 풀어 줄 수 있습니다.",
+};
+
 export async function submitEventTeamSnapshot({
   eventId,
   registrationId,
@@ -1274,6 +887,7 @@ export async function submitEventTeamSnapshot({
   cupRuleId,
   cupRuleSettings,
   detailData,
+  pin = "",
   now = new Date(),
 } = {}) {
   const event = await getEvent(eventId);
@@ -1303,10 +917,12 @@ export async function submitEventTeamSnapshot({
     p_registration_name: payload.registrationName,
     p_snapshot: payload.snapshot,
     p_members: payload.members,
+    p_pin: pin,
   });
 
   if (error) fail(error, "파티 제출을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
   const row = Array.isArray(data) ? data[0] : data;
+  if (row?.denied) throw new Error(SUBMISSION_DENIED[row.denied] || "파티 제출을 저장하지 못했습니다.");
   if (!row?.submission_id || !row?.snapshot_id || !row?.revision) {
     throw new Error("파티 제출 저장 결과를 확인하지 못했습니다.");
   }
@@ -1735,91 +1351,56 @@ export async function cancelApplicationEvent(eventId, { preflight = null } = {})
   return { event_id: data.id, cancelled: data.status === "cancelled" };
 }
 
-export async function freezeEventFinalSubmissions(eventId) {
-  if (!eventId) return { snapshot: [] };
+const EMPTY_RECORD_PLAN = { inserts: [], updates: [], deleteIds: [] };
 
-  const { data, error } = await db().rpc("freeze_event_final_submissions", {
-    p_event_id: eventId,
-  });
-  if (error) fail(error, "참가자의 최종 제출을 고정하지 못했습니다.");
-  return { snapshot: normalizeFinalSubmissionFreezeSnapshot(data || []) };
-}
-
-export async function restoreEventFinalSubmissions(eventId, snapshot = []) {
-  if (!eventId) return null;
-  const normalizedSnapshot = normalizeFinalSubmissionFreezeSnapshot(snapshot);
-  const { error } = await db().rpc("restore_event_final_submissions", {
-    p_event_id: eventId,
-    p_snapshot: normalizedSnapshot.map((row) => ({
-      registration_id: row.registrationId,
-      previous_final_submission_id: row.previousFinalSubmissionId,
-      final_submission_id: row.finalSubmissionId,
-    })),
-  });
-  if (error) fail(error, "최종 제출을 이전 상태로 복구하지 못했습니다.");
-  return null;
-}
-
-export async function releaseEventFinalSubmissions(eventId) {
-  if (!eventId) return null;
-  const event = await getEvent(eventId);
-  const isChampionshipFinal = event?.event_type === "champions" && event?.championship_phase === "final";
-  const { data, error } = await db().rpc(
-    isChampionshipFinal ? "release_championship_final_record_application" : "release_event_final_submissions",
-    isChampionshipFinal ? { p_final_event_id: eventId } : { p_event_id: eventId },
-  );
-  if (error) fail(error, "최종 제출과 대회 기록 상태를 되돌리지 못했습니다.");
-  return Array.isArray(data) ? data[0] || null : data || null;
-}
-
-export async function completeApplicationEvent(eventId, {
-  revealOfficialRosters = false,
-  // Compatibility for older callers. Roster publication is not team-only.
-  revealFinalTeams = false,
-  championshipOrdinal = null,
-} = {}) {
-  if (!eventId) return null;
-
-  if (championshipOrdinal !== null && championshipOrdinal !== undefined) {
-    const ordinal = Number(championshipOrdinal);
-    if (!Number.isInteger(ordinal) || ordinal < 1) {
-      throw new Error("챔피언스 공식 회차는 1 이상의 정수여야 합니다.");
-    }
-    const { data, error } = await db().rpc("complete_championship_final_record_application", {
-      p_final_event_id: eventId,
-      p_ordinal: ordinal,
-    });
-    if (error) fail(error, "챔피언스 본선 기록 반영 상태를 저장하지 못했습니다.");
-    const row = Array.isArray(data) ? data[0] || null : data || null;
-    if (!row?.id || row.status !== "completed" || !row.record_applied_at || !row.team_revealed_at || Number(row.round_number) !== ordinal) {
-      throw new Error("챔피언스 본선 기록 반영 결과를 확인하지 못했습니다.");
-    }
-    return row;
+// 바꿀 Result와 RankingAward를 읽기만으로 계산한다. 쓰기는 apply_event_record 한 트랜잭션이 한다.
+async function buildEventRecordPlans(eventId, bracket, result) {
+  if (!bracket || bracket.eventId !== eventId) {
+    throw new Error("결과 대상 대회와 대진표 연결이 일치하지 않습니다.");
   }
+  const snapshot = buildEventBracketResultSnapshot(bracket, result);
+  if (snapshot.skipped) return { resultPlan: EMPTY_RECORD_PLAN, awardPlan: EMPTY_RECORD_PLAN };
 
-  const shouldRevealOfficialRosters = Boolean(revealOfficialRosters || revealFinalTeams);
-  const now = new Date().toISOString();
-  const completion = {
-    status: "completed",
-    record_applied_at: now,
-    updated_at: now,
-  };
-  if (shouldRevealOfficialRosters) completion.team_revealed_at = now;
+  const event = await getEvent(eventId);
+  if (!event) throw new Error("결과를 연결할 대회를 찾을 수 없습니다.");
+  if (Boolean(event.is_team_event) !== (bracket.mode === "team")) {
+    throw new Error("대회의 팀전 구분과 대진표 모드가 일치하지 않습니다.");
+  }
+  await validateResultEntries(eventId, snapshot.rows, event.is_team_event ? "team" : "individual");
 
-  let query = db()
-    .from("events")
-    .update(completion)
-    .eq("id", eventId)
-    .is("record_applied_at", null);
-  if (shouldRevealOfficialRosters) query = query.eq("team_reveal_mode", "on_record_apply");
-  const { data, error } = await query
-    .select("id, status, record_applied_at, team_revealed_at")
-    .maybeSingle();
+  const existingResults = await readEventResults(eventId);
+  const plan = buildBracketResultSyncPlan(existingResults, snapshot.rows);
+  // 포인트가 새 결과를 가리켜야 하므로 결과의 id를 여기서 정한다.
+  const resultPlan = { ...plan, inserts: plan.inserts.map(row => ({ ...row, id: databaseUuid() })) };
+  const resultRows = projectResultRows(existingResults, resultPlan);
+  const entryParticipants = await readEventResultParticipants(eventId, resultRows);
+  const awards = buildEventRankingAwardSnapshot(event, resultRows, entryParticipants);
+  if (!awards.skipped && !resultRows.length) throw new Error("랭킹 포인트를 생성할 대진표 결과가 없습니다.");
+  const awardPlan = buildBracketRankingAwardSyncPlan(await readEventRankingAwards(eventId), awards.rows);
+  return { resultPlan, awardPlan };
+}
 
-  if (error) fail(error, "대회 기록 반영 상태를 저장하지 못했습니다.");
-  if (!data) throw new Error(shouldRevealOfficialRosters
-    ? "대회가 이미 완료되었거나 기록 반영 시 공개 설정을 확인할 수 없습니다."
-    : "대회가 이미 완료되었거나 기록 반영 상태를 변경할 수 없습니다.");
+// 결과, 포인트, 최종 제출 고정, 대회 완료, 명예의 전당이 함께 반영되거나 함께 반영되지 않는다.
+export async function applyEventRecord(eventId, bracket, result, { revealOfficialRosters = false, championshipOrdinal = null } = {}) {
+  const { resultPlan, awardPlan } = await buildEventRecordPlans(eventId, bracket, result);
+  const champions = championshipOrdinal !== null && championshipOrdinal !== undefined;
+  const { data, error } = await db().rpc("apply_event_record", {
+    p_event_id: eventId,
+    p_result_plan: resultPlan,
+    p_award_plan: awardPlan,
+    p_reveal_rosters: Boolean(revealOfficialRosters),
+    p_championship_ordinal: champions ? championshipOrdinal : null,
+    p_hall_of_fame_id: champions ? databaseUuid() : null,
+  });
+  if (error) fail(error, "대회 기록을 반영하지 못했습니다.");
+  if (!data?.record_applied_at || data.status !== "completed") throw new Error("대회 기록 반영 결과를 확인하지 못했습니다.");
+  return data;
+}
+
+// 명예의 전당, 포인트, 결과, 최종 제출 고정, 대회 상태를 함께 되돌린다. 제출 이력과 참가 확정은 남는다.
+export async function revertEventRecord(eventId) {
+  const { data, error } = await db().rpc("revert_event_record", { p_event_id: eventId });
+  if (error) fail(error, "대회 기록 반영을 취소하지 못했습니다.");
   return data;
 }
 
@@ -2719,18 +2300,4 @@ export async function inspectEventParticipantIdentities(eventId, participants = 
       willCreateRegistration: !registration,
     };
   });
-}
-
-export async function revertEventRecordApplication(eventId, identityChanges = [], { reopenEvent = true } = {}) {
-  if (!eventId) return null;
-
-  const changes = Array.isArray(identityChanges) ? identityChanges : [];
-  await rollbackEventParticipantIdentityChanges(eventId, changes);
-
-  if (!reopenEvent) return null;
-
-  // 기록 반영 취소는 참가 확정을 취소하지 않는다. 전환 이전 bracket의
-  // recordMeta에만 남은 identityChanges가 있을 때에만 위 rollback이 동작한다.
-  // final submission 해제와 Event 상태 원복은 하나의 Event lock transaction으로 처리한다.
-  return releaseEventFinalSubmissions(eventId);
 }

@@ -7,12 +7,12 @@ import { CUP_RULES, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { championsData } from "../services/index.js";
 import { formatDate } from "../services/dateFormat.js";
 import { freshRead, peekRead } from "../services/readCache.js";
-import { SHOWCASE_KEY, hashPin, newCommunityId, pinMatches, readCommunity, shareLink, updateCommunity } from "../services/communityStore.js";
+import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem, newCommunityId, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
+import { PIN_DENIED } from "../services/communityItems.js";
 import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, savedTeamSheet, spriteUrl } from "../services/teamBuilderCore.js";
 import Button from "../components/common/Button.jsx";
 import Field from "../components/common/Field.jsx";
 
-const uid = () => Math.random().toString(36).slice(2, 9);
 const PAGE_SIZE = 10;
 
 /* ============================== BOARD (자유게시판) ============================== */
@@ -55,14 +55,33 @@ function BoardCompose({ onClose, onSubmit }){
   </Modal>);
 }
 
-/* 본인 확인. 자유게시판 글은 숫자를 그대로(pin), 샘플과 파티 글은 해시(pinHash)로 갖고 있다. 관리자는 묻지 않는다. */
-async function authorize(record,what,verb,admin){
-  if(admin) return verb!=="삭제"||siteConfirm({title:`${what} 삭제`,body:`이 ${what}을 삭제할까요? 삭제한 ${what}은 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true});
-  if(!record.pin&&!record.pinHash){ siteAlert(`비밀번호가 없는 ${what}입니다`,`관리자에게 ${verb} 요청을 해 주세요.`); return false; }
+/* 본인 확인. 비밀번호는 서버가 대조한다. 확인되면 뒤따르는 쓰기에 쓸 비밀번호를, 멈추면 null 을 돌려준다. 관리자는 묻지 않는다. */
+async function authorize(key,record,what,verb,admin){
+  if(admin){
+    if(verb==="삭제"&&!(await siteConfirm({title:`${what} 삭제`,body:`이 ${what}을 삭제할까요? 삭제한 ${what}은 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true}))) return null;
+    return "";
+  }
+  if(!record.hasPin){ siteAlert(`비밀번호가 없는 ${what}입니다`,`관리자에게 ${verb} 요청을 해 주세요.`); return null; }
   const pin=await sitePrompt({title:`${what} ${verb}`,body:`본인 ${what}을 ${verb}하려면 작성할 때 정한 비밀번호를 입력해 주세요.`,label:"비밀번호",placeholder:"숫자 4자리",confirmLabel:verb==="삭제"?"삭제":"확인",secret:true,inputMode:"numeric"});
-  if(pin===null) return false;
-  if(!(record.pinHash?await pinMatches(record,pin):pin===record.pin)){ siteAlert("비밀번호가 일치하지 않습니다","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요."); return false; }
-  return true;
+  if(pin===null) return null;
+  try{
+    const status=await verifyCommunityPin(key,record.id,pin);
+    if(status==="ok") return pin;
+    siteAlert(PIN_DENIED[status]||"비밀번호를 확인하지 못했습니다",status==="wrong_pin"?"작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.":"");
+  }catch(error){ siteAlert("비밀번호를 확인하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+  return null;
+}
+
+/* 게시판 한 칸의 읽기와 쓰기. 쓰기가 끝나면 서버의 목록을 다시 읽어, 화면이 저장되지 않은 내용을 보여 주지 않는다. */
+function useCommunityList(key,admin,flash){
+  const [posts,setPosts]=useState(()=>peekRead(key)||null);
+  const [loadError,setLoadError]=useState("");
+  const [fresh,setFresh]=useState(false);
+  const reload=async()=>{ try{ setPosts(await freshRead(key,()=>readCommunity(key))); setLoadError(""); }catch(error){ setLoadError(error?.message||"글을 불러오지 못했습니다."); }finally{ setFresh(true); } };
+  // 관리자 전용 글은 로그인한 뒤에야 내려온다.
+  useEffect(()=>{ void reload(); },[admin]); // eslint-disable-line react-hooks/exhaustive-deps
+  const run=async(write,done)=>{ try{ await write(); await reload(); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
+  return {posts,loadError,fresh,reload,run};
 }
 
 /* 글과 댓글 수정 시트. initial 에 있는 칸만 보여 준다(title, body, link, secret). */
@@ -109,9 +128,10 @@ function CommentForm({ onSubmit }){
 
 /* 게시판: 공지와 같은 문법. 목록에서 글을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문 제목 자리로 이어진다(I2).
    연 글은 주소(?post=)와 기록 한 칸에 남는다. 댓글과 삭제는 본문 화면에 모은다. */
-function FreeBoard({ data, admin, save, flash, tabs }){
+function FreeBoard({ admin, flash, tabs }){
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
-  const all=[...(data.board||[])].filter(p=>admin||!p.secret).sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
+  const {posts,loadError,fresh,reload,run}=useCommunityList(FREE_BOARD_KEY,admin,flash);
+  const all=[...(posts||[])].sort((a,b)=>(a.createdAt<b.createdAt?1:-1));
   const kw=q.trim().toLowerCase();
   const list=kw?all.filter(p=>[p.title,p.body,p.nick].some(t=>String(t||"").toLowerCase().includes(kw))):all;
   const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
@@ -127,20 +147,21 @@ function FreeBoard({ data, admin, save, flash, tabs }){
     pushHistory({...window.history.state,post:id},url); transition(()=>flushSync(()=>setArticle(id)),{shared:"b-"+id}); };
   const closePost=()=>{ const id=article; if(window.history.state?.post) return backWith("b-"+id);
     const url=new URL(window.location.href); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setArticle(null)),{shared:"b-"+id,dir:"back",scrollY:listScroll.current}); };
-  const addPost=(post)=>{ save({...data,board:[{...post,id:uid(),createdAt:new Date().toISOString(),comments:[]},...(data.board||[])]}); setCompose(false); flash("글을 등록했습니다."); };
   const [editing,setEditing]=useState(null);
-  const delPost=async(p)=>{ if(!(await authorize(p,"글","삭제",admin)))return; closePost(); save({...data,board:(data.board||[]).filter(x=>x.id!==p.id)}); flash("삭제됨"); };
-  const addComment=(p,c)=>{ save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:[...(x.comments||[]),{...c,id:uid(),createdAt:new Date().toISOString()}]}:x)}); flash("댓글을 등록했습니다."); };
-  const delComment=async(p,c)=>{ if(!(await authorize(c,"댓글","삭제",admin)))return;
-    save({...data,board:(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)}); };
-  const editPost=async(p)=>{ if(await authorize(p,"글","수정",admin)) setEditing({heading:"글 수정",initial:{title:p.title||"",body:p.body||"",link:p.link||"",secret:Boolean(p.secret)},
-    apply:v=>(data.board||[]).map(x=>x.id===p.id?{...x,...v,editedAt:new Date().toISOString()}:x)}); };
-  const editComment=async(p,c)=>{ if(await authorize(c,"댓글","수정",admin)) setEditing({heading:"댓글 수정",initial:{body:c.body||"",link:c.link||""},
-    apply:v=>(data.board||[]).map(x=>x.id===p.id?{...x,comments:(x.comments||[]).map(y=>y.id===c.id?{...y,...v,editedAt:new Date().toISOString()}:y)}:x)}); };
-  const saveEdit=v=>{ save({...data,board:editing.apply(v)}); setEditing(null); flash("수정했습니다."); };
+  const addPost=async({pin,secret,...post})=>{ if(await run(()=>createCommunityItem(FREE_BOARD_KEY,newCommunityId(),post,{pin,secret}),"글을 등록했습니다.")) setCompose(false); };
+  const delPost=async(p)=>{ const pin=await authorize(FREE_BOARD_KEY,p,"글","삭제",admin); if(pin===null)return; if(await run(()=>deleteCommunityItem(FREE_BOARD_KEY,p.id,pin),"삭제됨")) closePost(); };
+  const addComment=({pin,...c},p)=>run(()=>createCommunityItem(FREE_BOARD_KEY,newCommunityId(),c,{parentId:p.id,pin}),"댓글을 등록했습니다.");
+  const delComment=async(p,c)=>{ const pin=await authorize(FREE_BOARD_KEY,c,"댓글","삭제",admin); if(pin===null)return; await run(()=>deleteCommunityItem(FREE_BOARD_KEY,c.id,pin)); };
+  const editPost=async(p)=>{ const pin=await authorize(FREE_BOARD_KEY,p,"글","수정",admin); if(pin!==null) setEditing({heading:"글 수정",id:p.id,pin,initial:{title:p.title||"",body:p.body||"",link:p.link||"",secret:Boolean(p.secret)}}); };
+  const editComment=async(p,c)=>{ const pin=await authorize(FREE_BOARD_KEY,c,"댓글","수정",admin); if(pin!==null) setEditing({heading:"댓글 수정",id:c.id,pin,initial:{body:c.body||"",link:c.link||""}}); };
+  const saveEdit=async({secret,...v})=>{ if(await run(()=>patchCommunityItem(FREE_BOARD_KEY,editing.id,{...v,editedAt:new Date().toISOString()},{secret,pin:editing.pin}),"수정했습니다.")) setEditing(null); };
   const editSheet=editing&&<EditSheet {...editing} onClose={()=>setEditing(null)} onSave={saveEdit}/>;
 
   const p=article?all.find(x=>x.id===article):null;
+  if(article&&!p) return (<section className="sec"><article className="nb-article">
+    <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
+    {fresh?<Empty title="글을 찾을 수 없습니다" desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+  </article></section>);
   if(p){ const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
@@ -159,7 +180,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
           {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
             <div className="bd-cmt-main"><div className="bd-cmt-top"><b>{c.nick}</b><span className="bd-date tnum">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-del sm" onClick={()=>editComment(p,c)}>수정</button><button className="bd-del sm" onClick={()=>delComment(p,c)}>삭제</button></div><div className="bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div></div>
           </div>))}
-          <CommentForm onSubmit={(c)=>addComment(p,c)}/>
+          <CommentForm onSubmit={(c)=>addComment(c,p)}/>
         </div>
       </article>
       {editSheet}
@@ -175,7 +196,9 @@ function FreeBoard({ data, admin, save, flash, tabs }){
       </div>
     </PageHead>
     <div className="bd-list swap">
-      {list.length===0&&(kw
+      {loadError&&<ErrorNote action="다시 불러오기" onRetry={reload}>{loadError}</ErrorNote>}
+      {!loadError&&!posts&&!fresh&&<Loader/>}
+      {!loadError&&posts&&list.length===0&&(kw
         ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
         : <Empty title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const cc=(p.comments||[]).length;
@@ -314,10 +337,10 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       const picked=kind==="sample"?[members[index]]:members;
       const names=(kind==="sample"?[sheet[index]]:sheet).map(r=>r?.name).filter(Boolean);
       const post={ id, kind, format, nick:nick.trim().slice(0,20), title:(title.trim()||autoTitle).slice(0,60), body:body.trim().slice(0,4000),
-        pinHash:pin?await hashPin(id,pin):"", createdAt:new Date().toISOString(), names,
+        createdAt:new Date().toISOString(), names,
         team:{ name:team?.working?"":String(team?.name||"").slice(0,40), regulationId:team?.regulationId, cupRuleId:team?.cupRuleId||"none", cupRuleSettings:team?.cupRuleSettings||{assignedType:""}, members:picked },
         comments:[] };
-      await updateCommunity(SHOWCASE_KEY,list=>[post,...list]);
+      await createCommunityItem(SHOWCASE_KEY,id,post,{pin});
       try{ localStorage.setItem("ypl-board-nick",post.nick); }catch{ /* 기억 못 해도 된다 */ }
       onPosted?.(post);
     }catch(error){ siteAlert("글을 올리지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
@@ -354,11 +377,7 @@ function openInBuilder(post,go){
 
 function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const label=KIND_LABEL[kind];
-  const [posts,setPosts]=useState(()=>peekRead(SHOWCASE_KEY)||null);
-  const [loadError,setLoadError]=useState("");
-  const [fresh,setFresh]=useState(false);
-  const reload=async()=>{ try{ setPosts(await freshRead(SHOWCASE_KEY,()=>readCommunity(SHOWCASE_KEY))); setLoadError(""); }catch(error){ setLoadError(error?.message||"글을 불러오지 못했습니다."); }finally{ setFresh(true); } };
-  useEffect(()=>{ void reload(); },[]); // eslint-disable-line react-hooks/exhaustive-deps
+  const {posts,loadError,fresh,reload,run}=useCommunityList(SHOWCASE_KEY,admin,flash);
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   useEffect(()=>{setPage(1);},[q]);
   const [picking,setPicking]=useState(false); const [composeTeam,setComposeTeam]=useState(null);
@@ -379,19 +398,13 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const closePost=()=>{ const id=article; if(window.history.state?.post) backWith("s-"+id);
     else { const url=new URL(window.location.href); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setArticle(null)),{shared:"s-"+id,dir:"back",scrollY:listScroll.current}); } };
 
-  const mutate=async(fn,done)=>{ try{ setPosts(await updateCommunity(SHOWCASE_KEY,fn)); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
   const [editing,setEditing]=useState(null);
-  const delPost=async(post)=>{ if(!(await authorize(post,"글","삭제",admin)))return; if(await mutate(list=>list.filter(x=>x.id!==post.id),"삭제됨")) closePost(); };
-  const addComment=async(post,c)=>{ const id=newCommunityId(); const {pin,...rest}=c;
-    const comment={...rest,id,pinHash:pin?await hashPin(id,pin):"",createdAt:new Date().toISOString()};
-    await mutate(list=>list.map(x=>x.id===post.id?{...x,comments:[...(x.comments||[]),comment]}:x),"댓글을 등록했습니다."); };
-  const delComment=async(post,c)=>{ if(!(await authorize(c,"댓글","삭제",admin)))return;
-    await mutate(list=>list.map(x=>x.id===post.id?{...x,comments:(x.comments||[]).filter(y=>y.id!==c.id)}:x)); };
-  const editPost=async(post)=>{ if(await authorize(post,"글","수정",admin)) setEditing({heading:"글 수정",initial:{title:post.title||"",body:post.body||""},
-    apply:(list,v,at)=>list.map(x=>x.id===post.id?{...x,...v,body:v.body.slice(0,4000),editedAt:at}:x)}); };
-  const editComment=async(post,c)=>{ if(await authorize(c,"댓글","수정",admin)) setEditing({heading:"댓글 수정",initial:{body:c.body||"",link:c.link||""},
-    apply:(list,v,at)=>list.map(x=>x.id===post.id?{...x,comments:(x.comments||[]).map(y=>y.id===c.id?{...y,...v,editedAt:at}:y)}:x)}); };
-  const saveEdit=async v=>{ const at=new Date().toISOString(); if(await mutate(list=>editing.apply(list,v,at),"수정했습니다.")) setEditing(null); };
+  const delPost=async(post)=>{ const pin=await authorize(SHOWCASE_KEY,post,"글","삭제",admin); if(pin===null)return; if(await run(()=>deleteCommunityItem(SHOWCASE_KEY,post.id,pin),"삭제됨")) closePost(); };
+  const addComment=async(post,{pin,...c})=>{ await run(()=>createCommunityItem(SHOWCASE_KEY,newCommunityId(),c,{parentId:post.id,pin}),"댓글을 등록했습니다."); };
+  const delComment=async(post,c)=>{ const pin=await authorize(SHOWCASE_KEY,c,"댓글","삭제",admin); if(pin===null)return; await run(()=>deleteCommunityItem(SHOWCASE_KEY,c.id,pin)); };
+  const editPost=async(post)=>{ const pin=await authorize(SHOWCASE_KEY,post,"글","수정",admin); if(pin!==null) setEditing({heading:"글 수정",id:post.id,pin,cap:true,initial:{title:post.title||"",body:post.body||""}}); };
+  const editComment=async(post,c)=>{ const pin=await authorize(SHOWCASE_KEY,c,"댓글","수정",admin); if(pin!==null) setEditing({heading:"댓글 수정",id:c.id,pin,initial:{body:c.body||"",link:c.link||""}}); };
+  const saveEdit=async v=>{ const next=editing.cap?{...v,body:v.body.slice(0,4000)}:v; if(await run(()=>patchCommunityItem(SHOWCASE_KEY,editing.id,{...next,editedAt:new Date().toISOString()},{pin:editing.pin}),"수정했습니다.")) setEditing(null); };
   const [imageBusy,setImageBusy]=useState(false);
   const saveImage=async(post,sheet)=>{ if(imageBusy)return; setImageBusy(true);
     try{ const r=await saveTeamSheetImage(sheet,{title:post.title,meta:[FORMAT_LABEL[formatOf(post)],ruleSummary(post.team),`${sheet.length}마리`].join(", "),author:post.nick,date:new Date(post.createdAt)}); if(r==="downloaded")flash("이미지를 저장했습니다."); }

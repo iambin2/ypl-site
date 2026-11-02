@@ -41,6 +41,7 @@
 .tb-official-meta span { color: var(--text-secondary); }
 .tb-official-lookup { display: flex; gap: var(--s2); margin: var(--s4) 0 0 44px; max-width: 520px; }
 .tb-official-lookup .btn { height: 48px; }
+.tb-official-pin { flex-direction: column; }
 .tb-official-submit { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: var(--s4) 0 0 44px; }
 
 /* ---------- layout ---------- */

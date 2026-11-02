@@ -83,14 +83,10 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
   for (const statement of statements) {
     if (statement.startsWith("grant select ")) continue;
     // A visitor's own notice alert and survey answer: the rows stay closed to anon (docs/db/announcement_push.sql, backend_hardening.sql).
-    if (/^grant execute on function public\.((save|delete)_push_subscription|submit_announcement_response)\(/.test(statement)) continue;
+    if (/^grant execute on function public\.((save|delete)_push_subscription|submit_announcement_response|community_write)\(/.test(statement)) continue;
     const rpc = statement.match(/^grant execute on function ypl_schema_validation\.(\w+)\(/);
     if (rpc) { assert.ok(anonRpcs.has(rpc[1]), statement); continue; }
-    assert.ok(
-      /^grant insert \([^)]*\) on ypl_schema_validation\.event_registrations to anon$/.test(statement)
-        || statement === "grant select, insert, update on public.site_data to anon",
-      statement
-    );
+    assert.match(statement, /^grant insert \([^)]*\) on ypl_schema_validation\.event_registrations to anon$/);
   }
   const teamSql = readFileSync(new URL("../docs/db/team_submission_rpc.sql", import.meta.url), "utf8");
   assert.match(teamSql, /function ypl_schema_validation\.submit_registration_team_snapshot\([^$]*?security definer/i);
