@@ -1,3 +1,4 @@
+import { copyFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -48,6 +49,10 @@ function productionVersionPlugin() {
         fileName: "version.json",
         source: `${JSON.stringify({ version: buildId }, null, 2)}\n`,
       });
+    },
+    // GitHub Pages는 없는 주소에 404.html을 준다. 앱이 그대로 떠서 main.jsx가 StatusPage를 보여 준다.
+    closeBundle() {
+      copyFileSync("dist/index.html", "dist/404.html");
     },
   };
 }

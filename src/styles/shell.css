@@ -77,6 +77,8 @@
 @media (min-width: 1100px) { .navlink { padding: 0 var(--s2); } }
 
 /* ---------- page frame ---------- */
+/* the page for a missing address or a failed app: where to go next */
+.status-links { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--section); }
 /* a page holds the footer below the fold until its content arrives, so the footer never jumps */
 .page {
   width: min(100% - var(--gutter) * 2, var(--content)); min-height: 100svh; margin-inline: auto; outline: none;

@@ -2,18 +2,21 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <!-- 탭 아이콘: 2026-10-12 Wing Y 마크. 브라우저가 아이콘을 오래 캐시하므로 그림을 바꾸면 파일 이름도 바꾼다. -->
-    <link rel="icon" type="image/svg+xml" href="/favicon-ypl-navy.svg" />
+    <!-- 탭 아이콘: Wing Y를 칸에 크게 앉혔고, 어두운 탭에서는 SVG가 뒤집힌다. 브라우저가 아이콘을 오래 캐시하므로 그림을 바꾸면 파일 이름도 바꾼다. -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-ypl-2026-11-02.svg" />
     <!-- 홈 화면 앱: iOS는 여기서 연 앱에서만 공지 알림을 받을 수 있다 -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- 모바일 브라우저의 주소창은 상단 바와 같은 네이비입니다 -->
-    <meta name="theme-color" content="#081c3d" />
+    <!-- 주소창은 상단 바와 이어지고, 상단 바는 두 테마 모두 네이비다 -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#081c3d" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#081c3d" />
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="포켓몬 센터 연세점에서 열리는 배틀 리그 YPL의 대진표와 기록." />
     <meta property="og:title" content="YPL | Yonsei Pokémon League" />
-    <meta property="og:description" content="포켓몬 센터 연세점 공식 배틀 리그, 역대 성적과 칭호, 명예의 전당" />
+    <meta property="og:description" content="포켓몬 센터 연세점에서 열리는 배틀 리그 YPL의 대진표와 기록." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="YPL" />
     <meta property="og:url" content="https://iambin2.github.io/ypl-site/" />
