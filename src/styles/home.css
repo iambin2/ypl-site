@@ -42,16 +42,19 @@
 @media (min-width: 860px) {
   .ho {
     display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); column-gap: var(--s13); align-items: start;
-    grid-template-areas: "next reign" "rank news" "hall hall"; padding-top: var(--s5);
+    grid-template-areas: "next reign" "live reign" "rank news" "hall hall"; padding-top: var(--s5);
   }
   .ho-next { grid-area: next; }
   .ho-reign { grid-area: reign; margin-top: 0; }
+  .ho-live { grid-area: live; }
   .ho-rank { grid-area: rank; }
   .ho-news { grid-area: news; }
   .ho-hall { grid-area: hall; }
   .ho-label { justify-content: flex-start; }
   .ho-board { height: 240px; margin-top: var(--s5); gap: var(--s5); }
   .ho-days { width: auto; height: 240px; }
+  /* on the day the clock is 84: the board is as tall as the clock */
+  .ho-board.today { height: auto; }
   .ho-unit { font-size: var(--t32); line-height: 1; }
   .ho-title br { display: none; }
   .ho-title { min-height: 0; margin-top: var(--s8); font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); -webkit-line-clamp: 1; }
@@ -67,3 +70,7 @@
   .ho-news .row-lamp { width: var(--s13); }
   .ho-rail { margin-right: 0; }
 }
+
+/* 지금 경기 (c9, event day): a head, the two players as rows of 52, the round's progress */
+.ho-live-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); margin: 0; }
+.ho-live-row { display: flex; align-items: center; min-height: var(--h-row); padding: 0 var(--pad); margin: 0; font-weight: 700; }

@@ -6,6 +6,9 @@ import { light } from "../components/common/motion.js";
 import Seg from "../components/common/Seg.jsx";
 import { loadChampions, loadFacts, seenChampions, seenFacts } from "../components/home/homeFacts.js";
 import { dotDate } from "../services/dateFormat.js";
+import { listNormalizedBracketRuntimes } from "../services/normalizedCompetitionService.js";
+import { freshRead } from "../services/readCache.js";
+import { liveMatches } from "../services/recordsAnalytics.js";
 
 const DAY_MS = 86400000;
 /* "2026-10-04", "2026.10.04", "2026-10-04T15:21" → 그날 0시의 Date. 일까지 없으면 null. */
@@ -81,8 +84,18 @@ export default function HomePage({ data, go, admin }) {
     const upcoming = nextEvent(data.announcements);
     if (!upcoming) return null;
     const { a, draft, raw, dday } = upcoming;
-    return { today: dday === 0, dday, name: draft.name || a.title, date: dotDate(raw) };
+    return { today: dday === 0, dday, name: draft.name || a.title, date: dotDate(raw), eventId: a.form?.eventId || null };
   }, [data.announcements]);
+  /* 대회 당일의 지금 경기(c9): 그날 대회의 대진표를 대진표 화면과 같은 읽기로 가져와 아직 승자가 없는 경기를 보인다 */
+  const [live, setLive] = useState(null);
+  useEffect(() => {
+    if (!now?.today || !now.eventId) { setLive(null); return undefined; }
+    let on = true;
+    freshRead("brackets", listNormalizedBracketRuntimes)
+      .then(rows => { if (!on) return; const b = (rows || []).map(row => row.bracket).find(x => x?.eventId === now.eventId); setLive(b ? liveMatches(b) : null); })
+      .catch(error => { console.warn("home live matches read failed", error); if (on) setLive(null); });
+    return () => { on = false; };
+  }, [now?.today, now?.eventId]);
   const primary = !now ? ["공지 보기", "news"] : now.today ? ["대진표 보기", "bracket"] : ["이번 대회 신청", "news"];
   const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
   const reigning = champions?.[0] || null;
@@ -97,7 +110,7 @@ export default function HomePage({ data, go, admin }) {
           : <span className="ho-lamp dim"><i className={"lamp" + (now ? "" : " unlit")} aria-hidden="true" />{now ? "다음 대회까지" : "다음 대회"}</span>}
         {now?.date && <span className="dim"><Day d={now.date} /></span>}
       </p>
-      <div className="ho-board">
+      <div className={"ho-board" + (now?.today ? " today" : "")}>
         {now?.today
           ? <><Seg value={now.date?.clock || "  :  "} h={84} cells={4} label={now.date?.clock ? `${now.date.clock} 시작` : "시작 시각 미정"} /><span className="ho-unit">시작</span></>
           : <><Seg value={now ? String(now.dday).padStart(2, "0") : ""} h={120} cells={now?.dday >= 100 ? 3 : 2} label={now ? `${now.dday}일 남음` : "다음 대회 없음"} className="ho-days" /><span className={"ho-unit" + (now ? "" : " dim")}>일</span></>}
@@ -108,6 +121,16 @@ export default function HomePage({ data, go, admin }) {
         <Button variant="link" size="lg" className="ho-about" onClick={() => go("about")}>리그 소개</Button>
       </div>
     </section>
+
+    {live?.live.length > 0 && <section className="ho-sec ho-live" aria-labelledby="ho-live">
+      <SectionHead id="ho-live" title="지금 경기" link="대진표 전체" onLink={() => go("bracket")} />
+      <div className="stack">
+        <p className="pn ho-live-head t12"><span className="dim">{live.live[0].stage}</span><span className="ho-lamp"><i className="lamp sig" aria-hidden="true" />진행 중</span></p>
+        <p className="pn ho-live-row t15">{live.live[0].a}</p>
+        <p className="pn ho-live-row t15">{live.live[0].b}</p>
+        <p className="pn ho-live-head t12"><span className="dim">{live.stage} 진행</span><span>{live.done} / {live.total} 종료</span></p>
+      </div>
+    </section>}
 
     <div className="ho-reign">
       <ChampionPanel champion={reigning} onClick={() => setPop(reigning)} />

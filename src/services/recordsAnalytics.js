@@ -101,6 +101,37 @@ function evalGraph(graph) {
   return { win, lose, slotPlayer };
 }
 
+/* 지금 경기 (홈의 대회 당일, docs/redesign-next c9): 두 선수가 정해졌고 아직 승자가 없는 경기를 대진 순서대로,
+   그리고 그 첫 경기가 속한 라운드에서 끝난 경기 수. 읽기만 한다. */
+const STAGE_KO = { "Grand Final": "결승", "Reset Final": "리셋 결승" };
+function stageLabel(graph, stage) {
+  if (STAGE_KO[stage]) return STAGE_KO[stage];
+  const [, side, round] = stage.match(/^(?:(WB|LB) )?R(\d+)$/) || [];
+  if (side === "WB") return `승자조 ${round}라운드`;
+  if (side === "LB") return `패자조 ${round}라운드`;
+  const matches = graph.rounds?.[round - 1]?.length || 0;
+  return matches === 1 ? "결승" : `${matches * 2}강`;
+}
+export function liveMatches(bracket) {
+  const graph = bracket?.graph;
+  if (!graph) return { live: [], stage: "", done: 0, total: 0 };
+  const { slotPlayer } = evalGraph(graph);
+  const nameOf = pid => (bracket.participants || []).find(p => p.id === pid)?.name || "";
+  const real = collectGraphMatches(graph)
+    .map(({ match, stage }) => ({ match, stage, a: slotPlayer(match.a), b: slotPlayer(match.b) }))
+    .filter(row => row.a && row.b && row.a !== BYE && row.b !== BYE);
+  const live = real.filter(row => !row.match.winner);
+  if (!live.length) return { live: [], stage: "", done: 0, total: 0 };
+  const stage = live[0].stage;
+  const sameStage = collectGraphMatches(graph).filter(row => row.stage === stage);
+  return {
+    live: live.map(row => ({ id: row.match.id, stage: stageLabel(graph, row.stage), a: nameOf(row.a), b: nameOf(row.b) })),
+    stage: stageLabel(graph, stage),
+    done: sameStage.filter(({ match }) => match.winner || [slotPlayer(match.a), slotPlayer(match.b)].includes(BYE)).length,
+    total: sameStage.length,
+  };
+}
+
 function eliminationResult(graph) {
   if (!graph || !(graph.rounds || []).length) return null;
   const { win, lose } = evalGraph(graph);
