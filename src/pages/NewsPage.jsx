@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { excerptOf } from "../services/noticeExcerpt.js";
 import { flushSync } from "react-dom";
-import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, celebrate, centerOf, siteAlert, siteConfirm, transition } from "../components/index.js";
+import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
@@ -233,8 +233,6 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     if(typeof ok==="string"){ siteAlert(ok); return; }
     if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
     setDone(true);
-    // L5: 신청이 접수된 순간 흰 빛이 한 번 퍼진다
-    requestAnimationFrame(()=>celebrate?.(...centerOf(document.querySelector(".ff-ok"))));
   };
   if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={24}/></div><h4>신청이 접수되었습니다.</h4><p>신청해 주셔서 감사합니다.<br/>결과와 안내는 공지로 알려 드립니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><Button variant="primary" onClick={onClose}>닫기</Button></div></div></Modal>);
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해 주세요." onClose={onClose}>

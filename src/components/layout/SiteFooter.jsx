@@ -1,11 +1,11 @@
 import React from "react";
 import Icon from "../common/Icon.jsx";
 import { BrandMark, DISCORD_URL, Wordmark } from "./SiteHeader.jsx";
-import Button from "../common/Button.jsx";
 
 const YEAR_FOUNDED = 2023;
 
-/* 바닥글은 조용한 한 단락: 로고, 한 줄, 디스코드, 저작권. 메뉴는 탭 바와 상단 바가 이미 갖고 있어 되풀이하지 않는다. */
+/* 바닥글은 바탕 위, 머리카락 선 아래의 조용한 한 단락: 24 브랜드, 리그의 한 줄, 디스코드 참여, 12px 팬 사이트 안내.
+   메뉴는 탭 바와 상단 바가 이미 갖고 있어 되풀이하지 않는다. */
 export default function SiteFooter({ onNavigate, tagline }) {
   const year = new Date().getFullYear();
   const span = year > YEAR_FOUNDED ? `${YEAR_FOUNDED}–${year}` : `${YEAR_FOUNDED}`;
@@ -15,12 +15,10 @@ export default function SiteFooter({ onNavigate, tagline }) {
       <div className="site-foot-in">
         <div className="site-foot-mark">
           <button type="button" className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
-            <span className="brand-logo"><BrandMark /></span><Wordmark />
+            <BrandMark size={24} /><Wordmark />
           </button>
           {tagline && <p className="site-foot-tag">{tagline}</p>}
-          <Button size="sm" className="site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
-            디스코드 참여<Icon n="ext" size={16} />
-          </Button>
+          <a className="site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">디스코드 참여<Icon n="ext" size={16} /></a>
         </div>
 
         <div className="site-foot-rule">

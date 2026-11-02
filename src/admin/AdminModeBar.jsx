@@ -1,11 +1,10 @@
 import React from "react";
 
-/* O2: 관리자 모드는 하단에 떠 있는 매트 바로 표시한다. 폰에서는 탭 바 바로 위. */
+/* 관리자 모드는 모든 화면에서 탭 바 바로 위의 40 반전 띠다: 바탕색 램프, 관리자 모드, 오른쪽 끝에 로그아웃. */
 export default function AdminModeBar({ onLogout }) {
   return (
-    <div className="admin-dock plate" role="status">
-      <i className="live-dot" aria-hidden="true" /><b>관리자 모드</b>
-      <span className="admin-dock-note">각 섹션에서 추가, 수정, 삭제할 수 있습니다.</span>
+    <div className="admin-dock" role="status">
+      <i className="lamp" aria-hidden="true" /><b>관리자 모드</b>
       {onLogout && <button type="button" className="admin-dock-out" onClick={onLogout}>로그아웃</button>}
     </div>
   );

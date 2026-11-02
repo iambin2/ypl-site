@@ -10,10 +10,11 @@ const mq = q => typeof window !== "undefined" && window.matchMedia?.(q).matches;
 export const reduced = () => mq("(prefers-reduced-motion: reduce)");
 export const desktop = () => mq("(min-width: 860px)");
 
-/* one length for each verb of the motion law, the --t-* of tokens.css; a spring runs at its own, stretching it changes its feel */
-export const DUR = { press: 100, tone: 160, leave: 260, place: 420, lift: 680, seal: 1100, wait: 1780 };
+/* one length for each verb of the motion law, the --t-* of tokens.css: press, tone, leave, light. place, lift, seal and wait are the old
+   verbs, folded into light until the pages that call them are rebuilt. */
+export const DUR = { press: 100, tone: 160, leave: 260, light: 420, place: 420, lift: 420, seal: 420, wait: 420 };
 /* things that arrive together arrive one step apart */
-export const STAGGER = { row: 38, tile: 62 };
+export const STAGGER = { row: 38, display: 62, tile: 62 };
 
 /* ---------- the verbs of the motion law (DESIGN.md): pages and components move through these, never through their own .animate() ---------- */
 /* place: what arrives rises the shortest way into its place. step spaces out what arrives together. */
@@ -34,19 +35,8 @@ export function seal(caseEl, delay = 0) {
   caseEl?.querySelector(".case-band")?.animate([{ transform: "translateX(-162%) skewX(-12deg)" }, { transform: "translateX(340%) skewX(-12deg)" }], { duration: DUR.seal, delay, easing: EASE_IN_OUT });
 }
 
-let curves = null;
-/* the CSS springs as WAAPI easings; browsers without linear() get the ease-out curve */
-export function springs() {
-  if (curves) return curves;
-  let linear = false;
-  try { document.body.animate([], { easing: "linear(0, 1)" }); linear = true; } catch { /* no linear() */ }
-  const css = getComputedStyle(document.documentElement);
-  curves = {
-    spring: linear ? css.getPropertyValue("--spring").trim() : EASE_OUT,
-    lift: linear ? css.getPropertyValue("--spring-lift").trim() : EASE_OUT,
-  };
-  return curves;
-}
+/* the scoreboard has no spring: a board switches on. Old callers that still ask for one get the ease-out curve. */
+export function springs() { return { spring: EASE_OUT, lift: EASE_OUT }; }
 
 /* sampled at 120 a second so a 120Hz screen gets a real frame each refresh, not a straight line between two */
 const FPS = 120;
@@ -68,125 +58,22 @@ export function centerOf(el) {
   return [r.left + r.width / 2, r.top + r.height / 2];
 }
 
-/* L5: one white light spreads from the moment of the win, no confetti. P2: a short buzz on Android. */
-export function celebrate(x = innerWidth / 2, y = innerHeight * 0.38) {
-  let layer = document.getElementById("ypl-burst");
-  if (!layer) { layer = document.createElement("div"); layer.id = "ypl-burst"; layer.className = "burst"; layer.setAttribute("aria-hidden", "true"); document.body.append(layer); }
-  const glow = document.createElement("i"), ring = document.createElement("b");
-  for (const e of [glow, ring]) { e.style.setProperty("--x", x + "px"); e.style.setProperty("--y", y + "px"); layer.append(e); }
-  if (reduced()) { ring.remove(); glow.animate([{ opacity: 0 }, { opacity: 0.854 }, { opacity: 0 }], { duration: DUR.seal }).finished.then(() => glow.remove()); }
-  else {
-    glow.animate([{ opacity: 0, transform: "scale(.146)" }, { opacity: 1, offset: 0.236 }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.wait, easing: EASE_OUT }).finished.then(() => glow.remove());
-    ring.animate([{ opacity: 0.854, transform: "scale(.034)" }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.seal, easing: EASE_OUT }).finished.then(() => ring.remove());
-  }
-  try { navigator.vibrate?.([14, 50, 22]); } catch { /* not supported */ }
-}
-
-/* ---------- page transitions on the live page (I1, I2, I3) ----------
-   No snapshots (H5) and no copy of the old page (2026-11-01): copying it doubled the document for the one frame that already had to
-   draw the next page, which froze a phone for 130-330ms. The old page goes at once and the new one rises on the spring; a shared
-   element flies between its two places. */
-let flight = null;
-/* true while a back transition renders the page it returns to: what was already seen there (Roll) does not play again */
-let backing = false;
-export const returning = () => backing;
-const land = () => { if (!flight) return; flight.forEach(a => a.finish()); flight = null; };
+/* ---------- page change (DESIGN.md "Motion"): the old content goes at once; the new page's blocks light on top to bottom, 38 apart,
+   done by 260. Back does not replay: the page stands where it was left. The bars never move and nothing flies between pages. ---------- */
 const main = () => document.getElementById("ypl-main");
-function ghostLayer() {
-  let g = document.getElementById("ypl-ghosts");
-  if (!g) { g = document.createElement("div"); g.id = "ypl-ghosts"; g.setAttribute("aria-hidden", "true"); (document.querySelector(".ypl") || document.body).append(g); }
-  return g;
-}
-/* 복제본은 원래 부모 밖(#ypl-ghosts)에 놓인다. 부모에게서 물려받던 글자 모양(목록 제목의 굵기 등)을 그대로 들고 간다. */
-const INHERITED = ["font-family", "font-size", "font-weight", "font-style", "font-stretch", "font-variation-settings", "font-feature-settings", "font-variant-numeric",
-  "line-height", "letter-spacing", "word-spacing", "color", "text-align", "text-transform", "white-space", "word-break", "overflow-wrap", "text-wrap-mode", "text-wrap-style", "-webkit-font-smoothing"];
-/* 가장 가까운 잘라 내는 조상이 보여 주는 너비: 말줄임으로 잘린 목록 제목은 잘린 한 줄 그대로 난다 */
-function shownWidth(el, rect) {
-  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
-    if (getComputedStyle(p).overflowX === "visible") continue;
-    return Math.min(rect.width, p.getBoundingClientRect().left + p.clientLeft + p.clientWidth - rect.left);
-  }
-  return rect.width;
-}
-function clone(el, rect, cls, host) {
-  const c = el.cloneNode(true), cs = getComputedStyle(el);
-  c.removeAttribute("id"); c.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
-  c.querySelectorAll("iframe, video").forEach(e => { const p = document.createElement("div"); p.style.cssText = e.style.cssText; p.className = e.className; e.replaceWith(p); });
-  // 캔버스(홈 표지의 무대)는 복제하면 비어 있다. 마지막 그림을 옮겨 그린다.
-  const cvs = el.querySelectorAll("canvas");
-  c.querySelectorAll("canvas").forEach((d, i) => { const s = cvs[i]; if (!s?.width) return; d.width = s.width; d.height = s.height; try { d.getContext("2d").drawImage(s, 0, 0); } catch { /* 읽을 수 없는 캔버스는 비워 둔다 */ } });
-  c.classList.add(...cls.split(" "));
-  c.inert = true;
-  INHERITED.forEach(p => { const v = cs.getPropertyValue(p); if (v) c.style.setProperty(p, v); });
-  const width = cls.includes("fly") ? shownWidth(el, rect) : rect.width;
-  if (width < rect.width - 0.5) Object.assign(c.style, { overflow: "hidden", textOverflow: "ellipsis" });
-  Object.assign(c.style, { left: rect.left + "px", top: rect.top + "px", width: width + "px", height: rect.height + "px" });
-  host.append(c);
-  // 복제본은 CSS 입장 애니메이션(대진 선 그리기, 우승 노드, .swap)을 처음부터 다시 튼다. 이미 끝난 모습으로 둔다.
-  c.getAnimations({ subtree: true }).forEach(a => { if (a.animationName && a.timeline === document.timeline && a.effect.getComputedTiming().endTime !== Infinity) a.finish(); });
-  return c;
-}
-
-/* the navy plane a page opens on stands from the first frame: fading it would show the white page through it.
-   What stands on it and after it arrives. The home's first planes hold their facts, so they stand whole. */
-const PLANE = ".ypl-head, .hm-plate, .hm-cover";
-function arrivals(page) {
-  const plane = page.querySelector(PLANE);
-  if (!plane) return [page];
-  const out = plane.matches(".hm-plate") ? [] : [...plane.children];
-  for (let el = plane; el !== page; el = el.parentElement) out.push(...[...el.parentElement.children].filter(child => child !== el));
-  return out;
-}
-
 /* mutate() must render the next page synchronously (flushSync). scrollY is where the new page starts. */
-export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0 } = {}) {
-  land();
-  const m0 = main();
-  if (!m0 || typeof m0.animate !== "function") { mutate(); window.scrollTo(0, nextY); return; }
-  const move = !reduced(), anims = [], host = ghostLayer();
-  const oldEl = shared && m0.querySelector(`[data-vt="${shared}"]`), oldRect = oldEl?.getBoundingClientRect();
-  const oldFly = oldEl && clone(oldEl, oldRect, "fly fly-skin", host);
-
-  backing = dir === "back";
-  try { mutate(); } finally { backing = false; }
+export function transition(mutate, { dir = "forward", scrollY: nextY = 0 } = {}) {
+  mutate();
   window.scrollTo(0, nextY);
-  const m1 = main();
-  if (!m1) { host.replaceChildren(); return; }
-
-  // the landing spot is read before the page starts rising, so it lands once, exactly where it stays.
-  // A CSS entrance on a wrapper of the target (.swap) would move that spot under the flight; the page rise below covers it,
-  // so every .swap rise inside the new page is finished too instead of rising a second time inside the rising page.
-  const target = shared && m1.querySelector(`[data-vt="${shared}"]`);
-  m1.getAnimations({ subtree: true }).forEach(a => { if ((a.animationName === "y-swap" || (target && a.animationName && a.effect?.target?.contains?.(target))) && a.effect.getComputedTiming().endTime !== Infinity) a.finish(); });
-  const nr = target?.getBoundingClientRect();
-
-  const y = move ? (dir === "back" ? -12 : 12) : 0;
-  // starts faint, not empty: a screen with nothing on it for a frame is a flash of the page behind
-  arrivals(m1).forEach(el => anims.push(el.animate([{ opacity: .236, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: move ? springs().spring : "linear" })));
-
-  if (target && oldEl && nr.width > 0) {
-    const s = oldRect.width / nr.width, dx = oldRect.left - nr.left, dy = oldRect.top - nr.top;
-    const newFly = clone(target, nr, "fly fly-skin", host);
-    target.style.visibility = "hidden";
-    const t = { duration: move ? DUR.lift : 240, easing: move ? springs().lift : "linear" };
-    if (target.classList.contains("card")) {
-      const skin = document.createElement("div");
-      skin.className = "card fly"; skin.style.borderRadius = getComputedStyle(target).borderRadius; host.insertBefore(skin, oldFly);
-      const box = r => ({ left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
-      anims.push(skin.animate([box(oldRect), box(nr)], move ? t : { duration: 0 }));
-    }
-    const there = `translate(${dx}px,${dy}px) scale(${s})`, back = `translate(${-dx}px,${-dy}px) scale(${1 / s})`;
-    anims.push(newFly.animate(move ? [{ transform: there, opacity: 0 }, { opacity: 1, offset: 0.4 }, { transform: "none", opacity: 1 }] : [{ opacity: 0 }, { opacity: 1 }], t));
-    anims.push(oldFly.animate(move ? [{ transform: "none", opacity: 1 }, { opacity: 0, offset: 0.3 }, { transform: back, opacity: 0 }] : [{ opacity: 1 }, { opacity: 0 }], { ...t, fill: "forwards" }));
-  } else oldFly?.remove();
-
-  flight = anims;
-  const me = anims;
-  Promise.all(anims.map(a => a.finished.catch(() => {}))).then(() => {
-    if (flight !== me && flight) return;
-    host.replaceChildren();
-    m1.querySelectorAll("[data-vt]").forEach(n => { n.style.visibility = ""; });
-    if (flight === me) flight = null;
+  const m = main();
+  if (dir === "back" || reduced() || typeof m?.animate !== "function") return;
+  // the blocks on the first screen, top to bottom: the page's own children, or its sections' children when it is one column of sections
+  const top = m.children.length === 1 ? [...m.firstElementChild.children] : [...m.children];
+  const seen = top.filter(el => el.getBoundingClientRect().top < innerHeight);
+  const last = Math.floor((DUR.leave - DUR.press) / STAGGER.row);
+  seen.forEach((el, i) => {
+    const delay = Math.min(i, last) * STAGGER.row;
+    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.leave - delay, delay, easing: EASE_OUT, fill: "backwards" });
   });
 }
 
@@ -197,39 +84,6 @@ export function themeTurn(commit) {
   root.classList.add("theme-turn");
   commit();
   requestAnimationFrame(() => root.classList.remove("theme-turn"));
-}
-
-/* ---------- K3 selection lens ----------
-   The lens is one plane in one solid tone. Only transforms move, so it keeps running on the compositor while the next page renders.
-   The leading edge springs toward the target first and the trailing edge follows a beat later. A new target mid-flight starts from where it is. */
-const PILL_ON = ':scope > [aria-pressed="true"], :scope > [aria-current="page"], :scope > [aria-selected="true"], :scope > [data-current]';
-export function placePill(box, animate, target) {
-  const ind = box?.querySelector(":scope > .pill-ind");
-  if (!ind) return;
-  const on = target || box.querySelector(PILL_ON);
-  if (!on) { ind.dataset.off = ""; return; }
-  delete ind.dataset.off;
-  const part = ind.children[0];
-  const L = on.offsetLeft, R = L + on.offsetWidth, last = ind._lens;
-  // Already there, or on its way there: a re-placement from a font load or a resize observer must not cut the move short.
-  if (last && Math.abs(last.L - L) < 0.5 && Math.abs(last.R - R) < 0.5) return;
-  const from = last ? last.now?.() || [last.L, last.R] : null;
-  last?.anims?.forEach(a => a.cancel());
-  ind._lens = { L, R };
-  const pose = (l, r) => `translateX(${l}px) scaleX(${Math.max(0, r - l) / 100})`;
-  if (part) part.style.transform = pose(L, R);
-  if (!animate || !from || !part || reduced() || typeof ind.animate !== "function") return;
-  const [l0, r0] = from;
-  if (Math.abs(l0 - L) < 0.5 && Math.abs(r0 - R) < 0.5) return;
-  const right = L + R > l0 + r0;
-  const lead = springTo(right ? r0 : l0, right ? R : L, 0, 0.34, 0.72).values;
-  const trail = [...Array(Math.round(FPS / 15)).fill(right ? l0 : r0), ...springTo(right ? l0 : r0, right ? L : R, 0, 0.46, 0.9).values];
-  const n = Math.max(lead.length, trail.length), at = (v, i) => v[Math.min(i, v.length - 1)];
-  const track = [];
-  for (let i = 0; i < n; i++) track.push(right ? [at(trail, i), at(lead, i)] : [at(lead, i), at(trail, i)]);
-  const anim = part.animate(track.map(([l, r]) => ({ transform: pose(l, r) })), { duration: ((n - 1) * 1000) / FPS, easing: "linear" });
-  ind._lens.anims = [anim];
-  ind._lens.now = () => anim.playState === "running" ? track[Math.min(n - 1, Math.round(((anim.currentTime || 0) * FPS) / 1000))] : null;
 }
 
 /* I2 into a sheet, kept small: the pressed row stays where it is, and the sheet's title settles into place a short

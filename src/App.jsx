@@ -1,12 +1,12 @@
-import React, { lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
+import React, { lazy, useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
 import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
 import { WRITE_CONFLICT } from "./services/revisionedRow.js";
-import HomePage, { eventAction } from "./pages/HomePage.jsx";
+import HomePage from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
-import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/Navigation.jsx";
+import TabBar, { MORE_ITEMS, useWideNav } from "./components/layout/Navigation.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { DUR, reduced, themeTurn, transition } from "./components/common/motion.js";
@@ -76,21 +76,21 @@ export default function App() {
   const [more,setMore]=useState(null);
   // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
-  // 라이트가 기본이다(24차). 다크를 고른 기록이 있을 때만 다크로 연다. 예전 키는 고르지 않아도 다크가 저장돼 있어서 쓰지 않는다.
+  // 다크가 첫 방문이다(스코어보드). 라이트를 고른 기록이 있을 때만 라이트로 연다. 예전 키는 열 때마다 저장돼 고른 기록이 아니라서 쓰지 않는다.
   const [dark,setDark]=useState(()=>{
-    try{ return localStorage.getItem("ypl-theme-2")==="dark"; }catch(e){ return false; }
+    try{ return localStorage.getItem("ypl-theme")!=="light"; }catch(e){ return true; }
   });
   /* B6: 화면은 그 자리에 있고 색만 한 프레임에 바뀐다. 아무것도 움직이지 않는다. */
   const switchTheme=useCallback(()=>{
-    themeTurn(()=>flushSync(()=>setDark(d=>!d)));
-  },[]);
+    try{ localStorage.setItem("ypl-theme", dark?"light":"dark"); }catch(e){}
+    themeTurn(()=>flushSync(()=>setDark(!dark)));
+  },[dark]);
   /* 테마는 <html> 에 건다 — 페이지, 오버스크롤 영역, 스크롤바, 브라우저 주소창 색이 한 바탕을 쓴다. */
   useLayoutEffect(()=>{
     const root=document.documentElement;
     root.dataset.theme=dark?"dark":"light";
     root.style.colorScheme=dark?"dark":"light";
   },[dark]);
-  useEffect(()=>{ try{ localStorage.setItem("ypl-theme-2", dark?"dark":"light"); }catch(e){} },[dark]);
   /* 탭 제목 — 뒤로 가기 목록과 브라우저 탭에서 어디에 있었는지 구분되게 화면 이름을 붙인다. */
   useEffect(()=>{
     const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
@@ -105,7 +105,6 @@ export default function App() {
       const next=readInitialAppView(window.location.search);
       // 기록을 따르는 페이지 상태(열린 대진표)는 popHandlers 로 전환 안에서 바꾼다.
       // 공유 요소의 자리를 잰 다음, 페이지의 바뀐 화면까지 한 번에 그려야 그 요소가 제자리를 찾는다.
-      leadPills(next);
       afterPaint(()=>whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);}),{dir:to<from?"back":"forward",shared,scrollY})));
     };
     window.addEventListener("popstate",onPopState);
@@ -138,8 +137,7 @@ export default function App() {
       if(inside||url.href!==window.location.href) pushHistory({view:v},url);
     }
     // I1: 지금 화면은 바로 비키고, 새 화면이 맨 위에서 살짝 위로 올라온다.
-    // 누름의 반응이 먼저다: 알약을 이 프레임에 출발시키고, 새 페이지 그리기는 그 프레임이 나간 뒤에 한다.
-    leadPills(v);
+    // 누름의 반응이 먼저다: 눌림이 보인 프레임이 나간 뒤에 새 페이지를 그린다.
     afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
   },[view]);
   const flash=useCallback((m)=>setToast({id:Date.now()+Math.random(),text:m}),[]);
@@ -181,7 +179,6 @@ export default function App() {
       return error?.message||"신청을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
     }
   },[data,flash,refresh]);
-  const cta=useMemo(()=>data?eventAction(data.announcements):null,[data]);
   // 첫 화면이 그려지고 브라우저가 한가해지면 나머지 페이지 조각을 미리 받아 둔다. 첫 이동도 기다림 없이 전환된다.
   // 한 번에 하나씩, 앞 조각이 다 들어온 뒤 다음 한가한 틈에: 모두 한꺼번에 평가하면 폰에서 화면이 한동안 굳는다.
   const loaded=Boolean(data);
@@ -207,17 +204,17 @@ export default function App() {
   const toggleMore=el=>{ if(!more) setTimeout(()=>{ CalculatorPage.prefetch(); ChampionsPage.prefetch(); },DUR.lift); setMore(m=>m?null:el); };
   const wideNav=useWideNav();
   const moreItems=[
-    ...MORE_ITEMS.map(([key,label,icon])=>({key,label,icon,current:view===key,onSelect:()=>go(key)})),
+    ...MORE_ITEMS.map(([key,label])=>({key,label,current:view===key,onSelect:()=>go(key)})),
     {key:"sep",sep:true},
-    {key:"discord",label:"디스코드 참여",icon:"discord",href:DISCORD_URL},
-    {key:"admin",label:admin?"관리자 로그아웃":"관리자 로그인",icon:admin?"logout":"login",onSelect:onAdmin},
+    {key:"discord",label:"디스코드 참여",href:DISCORD_URL},
+    {key:"admin",label:admin?"관리자 로그아웃":"관리자 로그인",onSelect:onAdmin},
   ];
   return (
     <div className={"ypl"+(admin?" is-admin":"")}>
       {/* 키보드로 들어온 사람은 매번 바 전체를 지나야 본문에 닿았다. */}
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
-        moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null} cta={cta}/>
+        moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null}/>
 
       <div className="wrap"><main className={"page"+(view==="home"||view==="champions"?" page--full":"")+(data?"":" page--wait")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>

@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Dropdown, Icon, Loader, Modal, PageHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm } from "../components/index.js";
+import { Dropdown, Icon, Loader, Modal, PageHead, Segmented, siteAlert, siteConfirm } from "../components/index.js";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
@@ -693,8 +693,6 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         submitted_at: saved.submittedAt,
         source: "team_builder",
       } } : current);
-      // L5, P2: 제출이 저장된 순간 흰 빛이 한 번 퍼지고 안드로이드에서 짧게 진동한다
-      requestAnimationFrame(() => celebrate?.(...centerOf(document.querySelector(".tb-official-submit") || document.querySelector(".tb-validation-wrap"))));
     } catch (error) {
       setSubmissionError(error?.message || "파티 제출을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
     } finally {

@@ -1,6 +1,6 @@
 /* =============================================================================
-   YPL Navy — shell: the navy bar, tab bar, page frame, footer, admin dock, theme layer
-   The bar runs the full width; what stands in it keeps the content width, so its edges line up with the page (G3, G5).
+   YPL Scoreboard: shell. The bars are the ground tone with one hairline and stand still; the page scrolls between them.
+   Phone: a 56 top bar and a 64 tab bar. Desktop (860 and up): a 64 top bar on the 1200 content and no tab bar (DESIGN.md "Bars and navigation").
    ========================================================================== */
 
 .ypl { position: relative; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; isolation: isolate; overflow-x: clip; }
@@ -8,143 +8,84 @@
 
 .skip-link {
   position: fixed; top: var(--s3); left: var(--s3); z-index: var(--z-skip); clip-path: inset(50%); opacity: 0;
-  display: inline-flex; align-items: center; height: 44px; padding: 0 var(--s8);
-  background: var(--accent); color: var(--text-on-accent); font-size: var(--fs-body); font-weight: 600;
+  display: inline-flex; align-items: center; height: var(--h-control); padding: 0 var(--s5);
+  background: var(--lit); color: var(--ground); font-size: var(--t15); font-weight: 700;
 }
 .skip-link:focus { clip-path: none; opacity: 1; }
 
-/* ---------- top bar (G3, G4): the bars are the frame of the page, so they stand still and the page scrolls between them ---------- */
+/* ---------- top bar ---------- */
 .topbar {
   position: fixed; z-index: var(--z-header); top: 0; left: 0; right: 0; height: calc(env(safe-area-inset-top, 0px) + var(--nav-height));
   padding: env(safe-area-inset-top, 0px) max(var(--gutter), calc(50% - var(--content) / 2)) 0;
-  background: var(--tabs); color: var(--on-bar);
-  display: flex; align-items: center; gap: 0;
-  transition: translate var(--move-slide);
+  background: var(--ground); color: var(--lit); box-shadow: inset 0 -1px 0 var(--rule);
+  display: flex; align-items: center;
 }
-/* a sheet on a phone puts the top bar away (Modal.jsx) */
-.topbar.hide { translate: 0 calc(-100% - env(safe-area-inset-top, 0px)); transition: translate var(--move-leave); }
-.brand { position: relative; display: flex; align-items: center; gap: var(--s3); height: var(--target); flex: none; margin-right: auto; }
-.brand-logo { display: flex; }
-.brand .logo { display: block; width: 48px; height: 32px; translate: 0 1px; }
-.wordmark { display: block; height: 20px; width: auto; fill: currentColor; }
+/* the Wing Y 20 tall and the wordmark beside it, 8 apart, in the colour they stand on */
+.brand { display: flex; align-items: center; gap: var(--s2); height: var(--h-control); flex: none; margin-right: auto; color: var(--lit); }
+.logo { display: block; flex: none; color: inherit; overflow: visible; }
+.wordmark { display: block; height: calc(var(--s5) * .84); width: auto; fill: currentColor; }
 .navlinks { display: none; }
-.iconbtn { position: relative; display: grid; place-items: center; align-self: stretch; width: var(--target); flex: none; color: var(--on-bar); transition: color var(--move-tone); }
-/* the bar ends on the page's edge by its ink, not by the button's box */
-.iconbtn:last-child { margin-right: calc(var(--s3) * -1); }
-@media (hover: hover) { .iconbtn:hover { color: var(--on-bar-2); } }
-.bar-cta { flex: none; display: inline-flex; align-items: center; align-self: stretch; gap: var(--s1); margin-right: var(--s3); color: var(--on-bar); font-size: var(--fs-caption); line-height: 1; font-weight: 600; }
-.bar-cta .ic { transition: transform var(--move-slide); }
-@media (hover: hover) { .bar-cta:hover .ic { transform: translateX(var(--s1)); } }
-.theme-ic { display: grid; }
-.theme-ic > * { grid-area: 1 / 1; }
-.theme-ic .i-moon { opacity: 0; }
-:root[data-theme="light"] .theme-ic .i-sun { opacity: 0; }
-:root[data-theme="light"] .theme-ic .i-moon { opacity: 1; }
+.iconbtn { display: grid; place-items: center; width: var(--h-control); height: var(--h-control); flex: none; color: var(--lit); }
+/* the bar ends on the page's edge by the icon's ink, not by the button's box */
+.iconbtn:last-child { margin-right: calc((var(--h-control) - 24px) / -2); }
 
-/* ---------- tab bar (G1, G2, K3) ---------- */
+/* ---------- tab bar: the chosen tab is lit and bold with a 2px line along its top edge; the rest are muted ---------- */
 .tabbar {
   position: fixed; z-index: var(--z-header); left: 0; right: 0; bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height));
-  padding: 0 0 env(safe-area-inset-bottom, 0px); display: grid; grid-template-columns: repeat(5, 1fr);
-  background: var(--tabs); --lens: var(--on-bar); --ind-fg: var(--on-bar);
+  padding-bottom: env(safe-area-inset-bottom, 0px); display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--ground); box-shadow: inset 0 1px 0 var(--rule);
 }
-.tab { position: relative; z-index: var(--z-raised); padding-bottom: var(--s1); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); color: var(--on-bar-2); font-size: var(--fs-caption); line-height: 1; font-weight: 600; }
-.tab .ics { display: grid; }
-.tab .ics > * { grid-area: 1 / 1; transition: opacity var(--move-tone); }
-.tab .ic-on { opacity: 0; }
-.tab:is([aria-current="page"], [data-current]) { color: var(--ind-fg); }
-.tab:is([aria-current="page"], [data-current]) .ic-on { opacity: 1; }
-.tab:is([aria-current="page"], [data-current]) .ic-off { opacity: 0; }
-.tab:is([aria-current="page"], [data-current]) .ics { animation: tab-pop var(--move-slide); }
-@keyframes tab-pop { from { transform: scale(.854); } }
-/* K3: the selection is one line under its word, stretched and moved by transforms only (placePill). */
-.pill-ind { position: absolute; z-index: var(--z-raised); bottom: 0; left: 0; width: 0; height: var(--rule); pointer-events: none; transition: opacity var(--move-tone); }
-.pill-ind[data-off] { opacity: 0; }
-.pill-ind > i { position: absolute; top: 0; left: 0; height: 100%; background: var(--lens); will-change: transform; }
-.pill-ind > i { width: 100px; transform-origin: 0 50%; }
-.tabbar > .pill-ind { bottom: env(safe-area-inset-bottom, 0px); }
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1); color: var(--mute); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+.tab:is([aria-current="page"], [data-current]) { color: var(--lit); font-weight: 700; }
+.tab:is([aria-current="page"], [data-current])::before { content: ""; position: absolute; top: 0; left: 50%; width: var(--s8); height: var(--line); margin-left: calc(var(--s8) / -2); background: var(--lit); }
 /* a phone on its side: the bars give the height back */
-@media (max-width: 859px) and (max-height: 480px) { .tab { padding-bottom: 0; } .tab > span:last-of-type { display: none; } }
+@media (max-width: 859px) and (max-height: 480px) { .tab > span { display: none; } }
 
 @media (min-width: 860px) {
+  :root { --gutter: var(--s8); }
   .tabbar { display: none; }
-  .brand { margin-right: 0; }
-  .navlinks { position: relative; display: flex; align-self: stretch; gap: var(--s5); margin-left: var(--s8); margin-right: auto; padding: 0; --lens: var(--on-bar); --ind-fg: var(--on-bar); }
-  .navlink { position: relative; z-index: var(--z-raised); display: inline-flex; align-items: center; justify-content: center; height: 100%; padding: 0; font-size: var(--fs-body); line-height: 1; font-weight: 600; color: var(--on-bar-2); transition: color var(--move-tone), scale var(--move-press); }
-  .navlink:is([aria-current="page"], [data-current]) { color: var(--ind-fg); }
-  .navlink[aria-expanded="true"]:not([data-current]) { color: var(--on-bar); }
-  @media (hover: hover) { .navlink:not([aria-current="page"], [data-current]):hover { color: var(--on-bar); } }
-  /* the line stands under the word, as every underline does: on the bar's edge it floats on the navy that continues below */
-  .navlinks > .pill-ind { top: calc(50% + .882em); bottom: auto; font-size: var(--fs-body); }
-  .bar-cta { margin-right: var(--s5); font-size: var(--fs-body); }
+  .brand { margin-right: var(--s13); }
+  .brand .logo { height: 24px; width: auto; }
+  .brand .wordmark { height: calc(24px * .84); }
+  .navlinks { display: flex; align-self: stretch; gap: var(--s8); margin-right: auto; }
+  .navlink { display: inline-flex; align-items: center; height: 100%; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
+  .navlink:is([aria-current="page"], [data-current]) { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
+  .navlink[aria-expanded="true"] { color: var(--lit); }
+  @media (hover: hover) { .navlink:hover { color: var(--lit); } }
 }
 
-/* ---------- page frame ---------- */
-/* the page for a missing address or a failed app: where to go next */
-.status-links { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--section); }
-/* a page holds the footer below the fold until its content arrives, so the footer never jumps */
+/* ---------- page frame: the first line stands 32 under the bar ---------- */
 .page {
-  --page-top: var(--s8);
   width: min(100% - var(--gutter) * 2, var(--content)); min-height: 100svh; margin-inline: auto; outline: none;
-  padding-block: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--page-top)) calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s8));
+  padding-block: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s8)) calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s13));
 }
-@media (min-width: 860px) { .page { --page-top: var(--s13); padding-block: calc(var(--nav-height) + var(--page-top)) var(--s21); } }
-/* the home and the hall run the full width: their navy cover meets the bar */
-.page.page--full { width: 100%; padding-block: var(--nav-height) 0; container-type: inline-size; } /* 100vw counts the scrollbar's reserved gutter, 100cqw does not, so the left edge stays the content's */
-.sec { display: flex; flex-direction: column; gap: var(--section); }
-/* L1 the one loader: the Wing Y sits dim where the screen will be, and one solid band crosses it.
-   It waits a beat before it shows, so a quick load never flashes. */
-/* the optical middle of a screen is its golden line, 38.2% down */
-.y-loader > * { grid-row: 2; }
-.y-loader { display: grid; grid-template-rows: 1fr auto 1.618fr; justify-items: center; min-height: min(61.8vh, 576px); animation: y-fade var(--move-tone) var(--t-tone) backwards; }
-.y-loader.sm { min-height: 136px; }
-.y-loader-mark { display: grid; color: var(--text-primary); }
-.y-loader-mark > * { grid-area: 1 / 1; }
-.page--wait .y-loader-mark { color: var(--on-bar); }
-.y-loader-mark > :first-child { opacity: var(--opacity-ghost); }
-/* the mark is a still mask and only the band inside it moves, by transform, so the sweep stays on the compositor
-   while the main thread is busy with the load it stands for */
-.y-loader-light { position: relative; overflow: hidden; -webkit-mask: url("/brand/ypl-wing-y.svg") center / contain no-repeat; mask: url("/brand/ypl-wing-y.svg") center / contain no-repeat; }
-.y-loader-light::before { content: ""; position: absolute; top: 0; bottom: 0; left: 30.9%; width: 38.2%; background: currentColor; will-change: transform; animation: y-loader-sweep var(--move-wait) infinite; }
-@keyframes y-loader-sweep { from { transform: translateX(-38.2%) skewX(-12deg); } to { transform: translateX(38.2%) skewX(-12deg); } }
-@media (prefers-reduced-motion: reduce) { .y-loader-light { animation: y-pulse var(--move-wait) infinite; } .y-loader-light::before { width: 100%; background: currentColor; animation: none; } }
+.is-admin .page { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--s13)); }
+/* the home and the hall run the full width */
+.page.page--full { width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height)); container-type: inline-size; }
+.sec { display: flex; flex-direction: column; gap: var(--s13); }
+/* the page for a missing address or a failed app: where to go next */
+.status-links { display: flex; flex-wrap: wrap; gap: var(--seam); margin-top: var(--s13); }
+/* loading is the board switched off: the place is held and nothing moves */
+.y-loader { min-height: min(62vh, 576px); }
+.y-loader.sm { min-height: var(--s21); }
 
-/* page transitions (I1, I2): the new page rises at once; a shared element flies on top */
-#ypl-ghosts { position: relative; z-index: var(--z-sticky); }
-.fly { position: fixed; z-index: var(--z-sticky); margin: 0 !important; pointer-events: none; transform-origin: 0 0; }
-.fly-skin { background: none !important; box-shadow: none !important; }
-.fly-skin::after { display: none; }
-
-
-
-/* ---------- celebration (L5) ---------- */
-.burst { position: fixed; inset: 0; z-index: var(--z-toast); pointer-events: none; overflow: hidden; }
-.burst i, .burst b { position: absolute; left: var(--x); top: var(--y); opacity: 0; }
-.burst i { width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; background: var(--burst); }
-.burst b { width: 90vmax; height: 90vmax; margin: -45vmax 0 0 -45vmax; border: 1.5px solid var(--ring); }
-
-/* ---------- logo (F1): the top bar is a fixed landmark, so the mark never moves; it takes the colour it stands on ---------- */
-.logo { color: inherit; overflow: visible; }
-
-/* ---------- admin dock (O2): floating plate, above the tab bar on a phone ---------- */
+/* ---------- admin mode: a 40 inverted strip directly above the tab bar on every screen ---------- */
 .admin-dock {
-  position: fixed; z-index: var(--z-header); left: 0; right: 0; margin-inline: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s3));
-  width: fit-content; max-width: calc(100% - var(--gutter) * 2); height: 52px; padding: 0 var(--s2) 0 var(--s8);
-  display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); line-height: 1; white-space: nowrap;
+  position: fixed; z-index: var(--z-header); left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height));
+  height: var(--admin-height); padding: 0 max(var(--gutter), calc(50% - var(--content) / 2));
+  display: flex; align-items: center; gap: var(--s2); background: var(--lit); color: var(--ground); font-size: var(--t12); line-height: var(--l12); font-weight: 700;
 }
-.admin-dock b { font-weight: 600; }
-.admin-dock-note { color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; }
-.admin-dock-out { display: inline-flex; align-items: center; gap: var(--s1); height: 44px; margin-left: var(--s2); padding: 0 var(--s3); background: var(--state-selected); font-weight: 600; }
-@media (max-width: 639px) { .admin-dock-note { display: none; } }
-@media (min-width: 860px) { .admin-dock { bottom: var(--s8); } }
+.admin-dock .lamp { background: var(--ground); }
+.admin-dock-out { margin-left: auto; align-self: stretch; padding: 0 var(--s3); margin-right: calc(var(--s3) * -1); font-weight: 600; }
 
-/* ---------- footer: one navy block, the page's close ---------- */
-.site-foot { position: relative; flex: none; margin-top: auto; background: var(--bar); color: var(--on-bar-2); font-size: var(--fs-caption); }
-.site-foot-in { width: min(100% - var(--gutter) * 2, 1200px); margin: 0 auto; padding: var(--s13) 0 calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s8)); display: grid; gap: var(--s8); }
-@media (min-width: 860px) { .site-foot-in { padding: var(--s13) 0 var(--s13); } .is-admin .site-foot-in { padding-bottom: var(--s34); } }
+/* ---------- footer: on the ground under a hairline ---------- */
+.site-foot { position: relative; flex: none; margin-top: auto; background: var(--ground); color: var(--dim); box-shadow: inset 0 1px 0 var(--rule); }
+.site-foot-in { width: min(100% - var(--gutter) * 2, var(--content)); margin: 0 auto; padding: var(--s13) 0 calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--s13)); display: grid; gap: var(--s8); }
+.is-admin .site-foot-in { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--s13)); }
 .site-foot-mark { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s5); }
-.site-foot-mark .brand { color: var(--on-bar); }
-.site-foot-tag { font-size: var(--fs-body); color: var(--on-bar-2); }
-.site-foot .btn { --btn-fg: var(--on-bar); }
-.site-foot-dc { margin-left: auto; }
-.site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: var(--fs-caption); line-height: var(--lh-caption); }
+.site-foot .brand .logo { height: 24px; width: auto; }
+.site-foot .brand .wordmark { height: calc(24px * .84); }
+.site-foot-tag { font-size: var(--t15); line-height: var(--l15); color: var(--dim); }
+.site-foot-dc { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s1); min-height: var(--h-control); font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--lit); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
 @media (max-width: 639px) { .site-foot-dc { margin-left: 0; } .site-foot-tag { flex-basis: 100%; } }

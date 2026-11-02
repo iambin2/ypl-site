@@ -21,7 +21,7 @@
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
 @media (hover: hover) { .calc-toggle:not(.on):hover { color: var(--text-primary); } }
-.calc-toggle.on { color: var(--text-primary); box-shadow: inset 0 calc(var(--rule) * -1) 0 var(--accent); }
+.calc-toggle.on { color: var(--text-primary); box-shadow: inset 0 calc(var(--line) * -1) 0 var(--accent); }
 
 /* ---------- summary: who faces whom, who moves first, both directions ---------- */
 .calc-versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s8); }
@@ -30,7 +30,7 @@
   border: 0; background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--border-strong); color: inherit; text-align: left;
 }
 .calc-versus-mon:active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); }
-@media (hover: hover) { .calc-versus-mon:hover { box-shadow: inset 0 calc(var(--rule) * -1) 0 var(--accent); } }
+@media (hover: hover) { .calc-versus-mon:hover { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--accent); } }
 .calc-versus-mon img { width: 52px; height: 52px; object-fit: contain; flex: none; }
 .calc-versus-mon > span:last-child { min-width: 0; display: flex; flex-direction: column; }
 .calc-versus-mon small, .calc-mon-copy small { font-size: var(--fs-caption); color: var(--text-tertiary); }

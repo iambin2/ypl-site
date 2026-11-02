@@ -1,6 +1,6 @@
-import React, { useRef } from "react";
+import React from "react";
 import Icon from "../common/Icon.jsx";
-import { TABS, WIDE_TABS, current, tabOf, usePill, useWideNav } from "./Navigation.jsx";
+import { TABS, WIDE_TABS, current, tabOf, useWideNav } from "./Navigation.jsx";
 
 export const DISCORD_URL = "https://discord.gg/T7UZHhGvUh";
 
@@ -33,33 +33,28 @@ export function Wordmark() {
   );
 }
 
-/* G3: 화면 폭을 다 쓰는 네이비 바. 안의 내용은 본문과 같은 폭이라 가장자리가 본문과 한 줄에 맞는다.
-   폰은 로고, 대회 행동, 테마 버튼만. 넓은 데스크톱은 더보기가 없어 관리자 로그인이 테마 버튼 옆에 선다(onAdmin).
-   테마 버튼이 바의 끝에 서서, 데이터와 함께 늦게 오는 대회 행동이 다른 것을 밀지 않는다.
-   cta: 다음 대회가 잡혀 있을 때의 행동 [글자, 화면]. */
-export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, moreOpen, onMore, onAdmin, cta }) {
-  const nav = useRef(null);
+/* 바는 바탕 톤에 아래 머리카락 선 하나, 움직이지 않는다. 폰은 Wing Y와 워드마크, 오른쪽 끝에 테마 버튼.
+   데스크톱(860 이상)은 1200 안에 브랜드, 화면 이름(지금 화면은 아래 2px 선), 테마 버튼. 넓은 데스크톱은 더보기가 없어
+   관리자 로그인이 테마 버튼 옆에 선다(onAdmin). 테마 버튼은 바꿀 쪽을 보인다: 다크에서는 해, 라이트에서는 달. */
+export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, moreOpen, onMore, onAdmin }) {
   const wide = useWideNav();
   const cur = tabOf(view, wide);
-  usePill(nav, cur + (wide ? ":wide" : ""));
   const themeLabel = dark ? "라이트 테마로 바꾸기" : "다크 테마로 바꾸기";
   return (
     <header className="topbar">
       <button type="button" className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
-        <span className="brand-logo"><BrandMark /></span><Wordmark />
+        <BrandMark size={20} /><Wordmark />
       </button>
-      <nav className="navlinks" aria-label="주요 메뉴" ref={nav}>
-        <span className="pill-ind" aria-hidden="true"><i /></span>
+      <nav className="navlinks" aria-label="주요 메뉴">
         {(wide ? WIDE_TABS : TABS).map(([key, label]) => (
           <button key={key} type="button" className="navlink" data-tab={key} {...current(cur, key)}
             {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
       </nav>
-      {cta && <button type="button" className="bar-cta swap" onClick={() => onNavigate(cta[1])}>{cta[0]}<Icon n="arrow" size={16} /></button>}
-      {onAdmin && <button type="button" className="iconbtn" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={20} /></button>}
+      {onAdmin && <button type="button" className="iconbtn" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={24} /></button>}
       <button type="button" className="iconbtn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
-        <span className="theme-ic"><Icon n="sun" size={20} className="i-sun" /><Icon n="moon" size={20} className="i-moon" /></span>
+        <Icon n={dark ? "sun" : "moon"} size={24} />
       </button>
     </header>
   );

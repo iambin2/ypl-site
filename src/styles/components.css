@@ -24,8 +24,8 @@
 /* what is not the main action is a line under its word, and two of them stand a step apart */
 .btn--secondary + .btn, .btn--tertiary + .btn { margin-left: var(--s5); }
 .btn--secondary, .btn--tertiary { --btn-bg: transparent; --btn-bg-hover: transparent; min-width: 0; padding-inline: 0; }
-.btn--secondary { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: .382em; }
-@media (hover: hover) { .btn--secondary:hover:not(:disabled) { text-decoration-thickness: var(--rule); } .btn--tertiary:hover:not(:disabled) { --btn-fg: var(--text-primary); } }
+.btn--secondary { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; }
+@media (hover: hover) { .btn--secondary:hover:not(:disabled) { text-decoration-thickness: var(--line); } .btn--tertiary:hover:not(:disabled) { --btn-fg: var(--text-primary); } }
 .btn .ic { width: 20px; height: 20px; transition: transform var(--move-slide); }
 @media (hover: hover) { .btn--inverse:hover .ic, .btn--primary:hover .ic { transform: translateX(var(--s1)); } }
 .btn--sm .ic { width: 16px; height: 16px; }
@@ -37,7 +37,7 @@
 /* loading keeps the width: the words stay and turn clear under one spinner */
 .btn[aria-busy="true"] { color: transparent; }
 .btn[aria-busy="true"]:disabled { opacity: 1; }
-.btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; border: 2px solid var(--btn-fg); border-right-color: transparent; border-radius: 50%; animation: y-spin var(--t-wait) linear infinite; }
+.btn[aria-busy="true"]::after { content: ""; position: absolute; inset: 0; width: 20px; height: 20px; margin: auto; border: 2px solid var(--btn-fg); border-right-color: transparent; border-radius: 0; animation: y-spin var(--t-wait) linear infinite; }
 @keyframes y-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .btn[aria-busy="true"]::after { animation: none; } }
 .form-error { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; color: var(--text-primary); }
@@ -59,8 +59,9 @@
 /* a count is a number */
 .fold-badge, .tb-count-badge { min-width: 20px; height: 20px; padding: 0 var(--s2); display: inline-grid; place-items: center; color: var(--text-primary); font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 
-/* ---------- Segmented (K3): words on a hairline, one line under the chosen word ---------- */
-.ypl-seg { --lens: var(--accent); --ind-fg: var(--text-primary); --seg-line: var(--divider); position: relative; display: inline-flex; max-width: 100%; vertical-align: top; background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--seg-line); }
+/* ---------- Segmented: page tabs are words on a 44 line with a hairline under the row; the chosen word is lit, bold, with a 2px line
+   under it that switches on in place. choice: a few options as 44 panels in a row, the chosen one inverted (DESIGN.md "Controls"). ---------- */
+.ypl-seg { position: relative; display: inline-flex; max-width: 100%; vertical-align: top; box-shadow: inset 0 -1px 0 var(--rule); }
 .seg-track {
   position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: var(--s8); padding: 0;
   max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
@@ -76,12 +77,17 @@
   .lsearch { width: 100%; }
 }
 .seg-track > button {
-  position: relative; z-index: var(--z-raised); display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0; font-size: var(--fs-body); line-height: 1; font-weight: 600; color: var(--text-secondary); white-space: nowrap;
-  transition: color var(--move-tone), scale var(--move-press);
+  position: relative; display: inline-flex; align-items: center; justify-content: center; height: var(--h-control); padding: 0; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); white-space: nowrap;
+  transition: color var(--move-tone);
 }
-.seg-sub .seg-track > button { font-size: var(--fs-caption); }
-.seg-track > button[aria-selected="true"] { color: var(--ind-fg); }
-@media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--text-primary); } }
+.seg-sub .seg-track > button { font-size: var(--t12); line-height: var(--l12); }
+.seg-track > button[aria-selected="true"] { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
+@media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--lit); } }
+.ypl-choice { box-shadow: none; }
+.ypl-choice .seg-track { grid-auto-columns: 1fr; gap: var(--seam); width: 100%; }
+.ypl-choice .seg-track > button { padding: 0 var(--s3); background: var(--panel); color: var(--dim); }
+.ypl-choice .seg-track > button[aria-selected="true"] { background: var(--lit); color: var(--ground); box-shadow: none; }
+@media (hover: hover) { .ypl-choice .seg-track > button:not([aria-selected="true"]):hover { background: var(--panel-2); color: var(--lit); } }
 
 /* ---------- PageHead (E3): the page opens on a navy plane; every distance in it is measured to the ink ---------- */
 .ypl-head { --text-primary: var(--on-bar); --text-secondary: var(--on-bar-2); --text-tertiary: var(--on-bar-2); --state-hover: var(--bar-up); --accent: var(--on-bar); --text-on-accent: var(--on-label); display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--page-top) * -1) calc(50% - 50vw) calc(var(--s8) - var(--section)); padding: var(--s8) calc(50vw - 50%); background: var(--bar); color: var(--on-bar); }
@@ -124,7 +130,7 @@
 .ypl-row__meta { display: block; font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .ypl-row__title + .ypl-row__meta { margin-top: var(--s1); }
 .ypl-row__end { font-size: var(--fs-caption); color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (hover: hover) { :is(button, a).ypl-row:hover :is(.ypl-row__title, .nb-title, .bd-title) { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: .382em; } }
+@media (hover: hover) { :is(button, a).ypl-row:hover :is(.ypl-row__title, .nb-title, .bd-title) { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; } }
 
 /* ---------- Empty (L3): sentences only, on the content's left edge like the content it stands in for (alignment law) ---------- */
 .ypl-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s13) 0; }
@@ -153,10 +159,10 @@
   background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--field-line, var(--border-strong)); color: var(--text-primary); font-size: var(--fs-body); line-height: var(--lh-body);
   -webkit-appearance: none; appearance: none;
 }
-:where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus-visible { outline: none; box-shadow: inset 0 calc(var(--rule) * -1) 0 var(--focus-ring); }
+:where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus-visible { outline: none; box-shadow: inset 0 calc(var(--line) * -1) 0 var(--focus-ring); }
 :where(.ypl) textarea { min-height: 136px; resize: vertical; line-height: var(--lh-body); padding: var(--s3) 0; }
 :where(.ypl) :where(input[type="number"]) { font-variant-numeric: tabular-nums; }
-:where(.ypl) :is(input, textarea)[aria-invalid="true"] { box-shadow: inset 0 calc(var(--rule) * -1) 0 var(--text-primary); }
+:where(.ypl) :is(input, textarea)[aria-invalid="true"] { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--text-primary); }
 :where(.ypl) input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 .bk-check, .ed-auto, .fb-req { display: inline-flex; align-items: center; gap: var(--s3); min-height: var(--target); font-size: var(--fs-body); font-weight: 400; cursor: pointer; }
@@ -183,7 +189,7 @@
   color: var(--text-primary); text-align: left; font-size: var(--fs-body); font-weight: 600;
   transition: scale var(--move-press);
 }
-.dd.open .dd-btn { box-shadow: inset 0 calc(var(--rule) * -1) 0 var(--focus-ring); }
+.dd.open .dd-btn { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--focus-ring); }
 .dd-btn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-btn.ph > span { color: var(--text-tertiary); }
 .dd-chev { color: var(--text-tertiary); transition: transform var(--move-slide); }
@@ -268,7 +274,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
 .pg-btn:first-child:not(.on), .pg-btn:last-child:not(.on) { color: var(--text-primary); }
-.pg-btn.on { color: var(--text-primary); box-shadow: inset 0 calc(var(--rule) * -1) 0 var(--accent); }
+.pg-btn.on { color: var(--text-primary); box-shadow: inset 0 calc(var(--line) * -1) 0 var(--accent); }
 .pg-dots { padding: 0 var(--s1); color: var(--text-tertiary); }
 
 /* ---------- search field: a 48px line with the magnifier on it ---------- */

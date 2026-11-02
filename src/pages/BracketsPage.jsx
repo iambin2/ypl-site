@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
-import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Prose, Roll, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
+import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Prose, Roll, STAGGER, SectionHead, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import Case from "../components/common/Case.jsx";
 import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
@@ -1022,9 +1022,6 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
       flash(winnerEntryId?"승자를 저장했습니다.":"승자를 취소했습니다.");
-      // L5: 결승의 승자가 확정되는 순간 흰 빛이 한 번 퍼진다(데이터는 위에서 이미 저장됨)
-      const finalMatch=b.graph?.rounds?.[b.graph.rounds.length-1]?.[0];
-      if(winnerEntryId&&!b.double&&finalMatch?.id===matchId) requestAnimationFrame(()=>celebrate?.(...centerOf(document.querySelector(".bk-champ-node")||document.querySelector(".bk-tree"))));
     }catch(error){
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
