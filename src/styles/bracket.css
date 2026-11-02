@@ -180,10 +180,20 @@
 @media (hover: hover) { .bk-entry-chip.pn:hover { background: var(--panel-2); } }
 .bk-entry-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); margin: 0; }
 .bk-entry-live { display: inline-flex; align-items: center; gap: var(--s2); }
-.bk-entry-row { display: grid; grid-template-columns: var(--s5) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: calc(var(--h-row2) + var(--s5)); padding: 0 var(--pad); text-align: left; color: inherit; transition: background-color var(--move-tone); }
+.bk-entry-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; min-height: calc(var(--h-row2) + var(--s5)); color: inherit; transition: background-color var(--move-tone); }
 .bk-entry-row.inv { color: var(--ground); }
 .bk-entry-row.inv .dim { color: var(--ground); }
 .bk-entry-name { display: grid; gap: var(--s1); min-width: 0; }
 .bk-entry-name > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bk-entry-row.pn .bk-entry-name > span { color: var(--dim); }
 @media (hover: hover) { .bk-entry-row.pn:not(:disabled):hover { background: var(--panel-2); } }
+
+/* scores and 불참 (docs/db/match_outcome.sql): the pick takes the row, the score its − digit + at the end */
+.bk-entry-pick { display: grid; grid-template-columns: var(--s5) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); align-self: stretch; padding: 0 var(--pad); text-align: left; color: inherit; }
+.bk-entry-row.scored { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.bk-entry-score { display: flex; align-items: center; gap: var(--s2); padding-right: var(--s2); }
+.bk-entry-step { display: grid; place-items: center; width: var(--h-control); height: var(--h-control); background: var(--panel-2); color: var(--lit); transition: background-color var(--move-tone); }
+.bk-entry-row.inv .bk-entry-step { background: var(--panel); color: var(--lit); }
+.bk-entry-step:disabled { color: var(--mute); }
+.bk-entry-actions { grid-template-columns: minmax(0, 1fr); }
+.bk-entry-error { display: flex; align-items: center; gap: var(--s2); margin: 0; }

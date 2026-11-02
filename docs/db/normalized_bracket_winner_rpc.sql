@@ -263,7 +263,9 @@ begin
                     power(2, substring(m.source_node_key from '^single:r([0-9]+):m[0-9]+$')::integer - 1)::integer
                     - 1 + substring(m.source_node_key from '^single:r[0-9]+:m([0-9]+)$')::integer
                 )
-                or m.resolution is distinct from case when m.winner_entry_id is null then 'unknown' else 'played' end)
+                -- a decided Match is played, or forfeit when one player did not come (match_outcome.sql)
+                or not (case when m.winner_entry_id is null then m.resolution = 'unknown'
+                             else m.resolution in ('played', 'forfeit') end))
     ) then
         raise exception using errcode = 'P0001', message = 'normalized Match field가 Single canonical contract와 일치하지 않습니다.';
     end if;

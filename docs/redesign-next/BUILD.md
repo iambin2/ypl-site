@@ -6,7 +6,7 @@
 
 - 브랜치 `design/scoreboard`. 1단계(기반)가 끝났습니다: `tokens.css`의 새 토큰과 bridge 블록, `Seg.jsx`(7세그먼트), `Icon.jsx`(24 격자 아이콘), 상단 바와 탭 바, `Segmented`, `motion.js`, 새 `tests/designLaw.test.mjs`(`REBUILT` 목록).
 - **2026-11-02에 화면을 다시 만들었습니다.** 홈, 공지, 대진표, 기록, 더보기, 칭호와 명예의 전당과 소개, 게시판, 팀 빌더와 계산기(c7, c19), 관리자(대진표 만들기, 기록 반영, 공지 작성, 신청자: c8, c12, c17), 오류와 404가 시안대로 섰습니다. bridge 블록은 지웠고 모든 파일이 엄격한 규칙 아래에 있습니다(`REBUILT` 목록은 없어졌습니다). 공유 이미지는 `public/og-ypl-2026-11-02-board.png`입니다.
-- 6장의 기능은 사용자가 정해 모두 들어갔습니다(6장에 표시). 시안과 다르게 남은 것은 결과 입력의 ± 점수와 불참 처리 둘입니다. 경기 표(`matches`)에 개인전 게임 점수 칸이 없고, 승자를 저장하는 RPC(`set_normalized_single_bracket_winner`)는 불참(`resolution = forfeit`)을 받지 않아 DB를 바꿔야 합니다.
+- 6장의 기능은 사용자가 정해 모두 들어갔습니다(6장에 표시). 결과 입력의 ± 점수와 불참 처리는 `docs/db/match_outcome.sql`을 Supabase SQL Editor에서 실행하면 켜집니다. 그 전에는 화면이 지금처럼 동작하고 점수와 불참 단추만 보이지 않습니다.
 
 ## 2. 일하는 방법: 화면 하나씩, 시안과 나란히
 

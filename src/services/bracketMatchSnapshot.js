@@ -383,6 +383,11 @@ export function buildBracketMatchSyncPlan(existingRows = [], desiredRows = [], n
       ? (!existing || winnerChanged || participantChanged || !existing.played_at ? nowIso : existing.played_at)
       : null;
     const payload = { ...desired, played_at: playedAt };
+    // 불참(forfeit)은 결과 입력이 승자와 따로 남긴다(docs/db/match_outcome.sql). 승자가 그대로면 그 표시를 지키고,
+    // 승자가 바뀌면 played로 쓰며 DB 트리거가 점수와 불참을 함께 지운다.
+    if (existing && !winnerChanged && !participantChanged && existing.resolution === "forfeit" && payload.resolution === "played") {
+      payload.resolution = "forfeit";
+    }
 
     if (!existing) {
       inserts.push(payload);

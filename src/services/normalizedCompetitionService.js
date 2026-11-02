@@ -841,6 +841,32 @@ export async function findSubmissionRegistration(eventId, registrationName) {
   };
 }
 
+// 결과 입력의 게임 점수와 불참(docs/redesign-next c8, docs/db/match_outcome.sql). 경기 키마다 { score_a, score_b, resolution }.
+// 그 SQL을 실행하기 전에는 점수 열이 없어 읽기가 실패한다: null을 돌려주고, 화면은 점수와 불참을 보이지 않는다.
+export async function readMatchOutcomes(eventId) {
+  if (!eventId) return null;
+  const { data, error } = await db()
+    .from("matches")
+    .select("source_node_key, score_a, score_b, resolution")
+    .eq("event_id", eventId)
+    .eq("source", NORMALIZED_BRACKET_RUNTIME_SOURCE);
+  if (error) return null;
+  return new Map((data || []).map(row => [row.source_node_key, row]));
+}
+
+// 승자가 정해진 경기에 점수 또는 불참만 남긴다. 승자와 대진은 그대로이고, 검사는 RPC가 한다.
+export async function setNormalizedMatchOutcome({ eventId, sourceNodeKey, scoreA = null, scoreB = null, forfeit = false } = {}) {
+  const { data, error } = await db().rpc("set_normalized_match_outcome", {
+    p_event_id: eventId,
+    p_source_node_key: sourceNodeKey,
+    p_score_a: scoreA,
+    p_score_b: scoreB,
+    p_forfeit: Boolean(forfeit),
+  });
+  if (error) fail(error, "점수와 불참을 저장하지 못했습니다.");
+  return Array.isArray(data) ? data[0] || null : data || null;
+}
+
 // 지난 대회와 같게(c12): 기록에 반영된 가장 최근의 같은 종류(개인전, 팀전) 대회가 순위마다 준 점수. 읽기만 한다.
 export async function lastPlacementPoints({ isTeam = false } = {}) {
   const { data: events, error } = await db()

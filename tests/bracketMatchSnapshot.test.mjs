@@ -478,3 +478,15 @@ test("team series rejects missing or ambiguous stored member identity", () => {
     /확정 선수 순서 또는 선수 정보/
   );
 });
+
+test("a recorded forfeit survives a sync while its winner stands, and gives way when the winner changes", () => {
+  const existing = [{ id: "m1", source_node_key: "single:r1:m1", match_kind: "bracket", entry_a_id: "ea", entry_b_id: "eb", winner_entry_id: "ea", resolution: "forfeit", played_at: "2026-11-02T10:00:00Z" }];
+  const desired = winner => [{ source_node_key: "single:r1:m1", match_kind: "bracket", parent_match_id: null, round_number: 1, stage_label: "본선 1R", sequence_no: 1,
+    entry_a_id: "ea", entry_b_id: "eb", player_a_id: null, player_b_id: null, winner_entry_id: winner, winner_player_id: null, resolution: winner ? "played" : "unknown" }];
+  const kept = buildBracketMatchSyncPlan(existing, desired("ea"), "2026-11-02T11:00:00Z");
+  assert.ok(kept.updates.every(update => update.payload.resolution === "forfeit"));
+  const changed = buildBracketMatchSyncPlan(existing, desired("eb"), "2026-11-02T11:00:00Z");
+  assert.equal(changed.updates[0].payload.resolution, "played");
+  const cancelled = buildBracketMatchSyncPlan(existing, desired(null), "2026-11-02T11:00:00Z");
+  assert.equal(cancelled.updates[0].payload.resolution, "unknown");
+});
