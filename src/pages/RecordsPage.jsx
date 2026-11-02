@@ -170,8 +170,8 @@ export default function RecordsPage({ data, admin, setModal, save }) {
     <section className="rc">
       <header className="rc-head"><h1 className="t32">기록</h1>{since && <span className="t12 dim">{since}</span>}</header>
       <div className="stack rc-counts">
-        <Counter label="트레이너" value={normalizedRead.loading ? null : snapshot.trainers.length} unit="명" cells={snapshot.trainers.length >= 100 ? 3 : 2} />
         <Counter label="대회" value={normalizedRead.loading ? null : (snapshot.archives || []).length} unit="회" cells={(snapshot.archives || []).length >= 100 ? 3 : 2} />
+        <Counter label="트레이너" value={normalizedRead.loading ? null : snapshot.trainers.length} unit="명" cells={snapshot.trainers.length >= 100 ? 3 : 2} />
         <Counter label="챔피언" value={champions ? champions.length : null} unit="명" />
       </div>
       {normalizedRead.error && (

@@ -90,4 +90,5 @@
 .site-foot-tag { font-size: var(--t15); line-height: var(--l15); color: var(--dim); }
 .site-foot-dc { margin-left: auto; display: inline-flex; align-items: center; gap: var(--s1); min-height: var(--h-control); font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--lit); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .site-foot-rule { display: grid; gap: var(--s1); justify-items: start; font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
+.site-foot-admin { min-height: var(--h-control); font-weight: 600; color: var(--dim); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 @media (max-width: 639px) { .site-foot-dc { margin-left: 0; } .site-foot-tag { flex-basis: 100%; } }

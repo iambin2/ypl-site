@@ -12,6 +12,8 @@
 
 /* ---------- a counter: label 12 on top, a 40 display under it, 84 tall ---------- */
 .counter { height: var(--h-counter); padding: var(--pad); display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; }
+/* desktop: the 20 line of the label and the 40 display fill 84 with 12 above and under */
+@media (min-width: 860px) { .counter { padding-block: var(--s3); } }
 
 /* ---------- a row of a stack: 52, or 64 with a grey line; the record holder inverts ---------- */
 .row { display: flex; align-items: center; width: 100%; height: var(--h-row); text-align: left; }

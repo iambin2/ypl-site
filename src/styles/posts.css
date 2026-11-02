@@ -57,7 +57,7 @@
 .bd-img img { max-height: 576px; width: auto; }
 .bd-preview { margin-top: var(--s3); padding: var(--s3); background: var(--panel-2); }
 .bd-preview-h { margin-bottom: var(--s1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
-@media (min-width: 860px) { .bd { max-width: 709px; } .bd-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 860px) { .bd-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 /* an admin's small action in a row (비밀번호 초기화) */
 .bd-del { display: inline-flex; align-items: center; height: var(--h-strip); padding: 0 var(--s3); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 /* the search and 글쓰기 share one row: the field takes the rest, the main action its word */

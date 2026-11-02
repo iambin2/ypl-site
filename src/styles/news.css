@@ -4,8 +4,6 @@
    A notice: the back link 20 under the bar, its date line, the title at 32, the counters and the spec, the body, the docked action.
    ========================================================================== */
 
-@media (min-width: 860px) { .nw { max-width: 709px; } }
-
 .nw-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
 .nw-tools { display: flex; align-items: baseline; gap: var(--s5); }
 .nw-search, .nw-list { margin-top: var(--s5); }

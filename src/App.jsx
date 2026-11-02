@@ -224,7 +224,7 @@ export default function App() {
       {/* 키보드로 들어온 사람은 매번 바 전체를 지나야 본문에 닿았다. */}
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
-        moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null}/>
+        moreOpen={Boolean(more)} onMore={toggleMore}/>
 
       <div className="wrap"><main className={"page"+(data?"":" page--wait")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
@@ -242,7 +242,7 @@ export default function App() {
         </LazyContent>}
       </main>
       </div>
-      {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline}/>}
+      {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={wideNav&&!admin?onAdmin:null}/>}
 
       <TabBar view={view} onNavigate={go}/>
       {admin&&<AdminModeBar onLogout={logout}/>}

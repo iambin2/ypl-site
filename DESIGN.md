@@ -90,7 +90,7 @@ Outside the law on purpose: the 44 a finger needs; the 2px seam and the 1 and 2p
 | 52 | between sections; the desktop column gap |
 | 84 | between chapters on desktop |
 
-Outside beats inside by one step, and a container's padding is never smaller than the gap between its children. Desktop content is 1200 wide in two columns, 709 and 439, with 52 between them; both columns share their heading lines and their last line.
+Outside beats inside by one step, and a container's padding is never smaller than the gap between its children. Desktop content is 1200 wide. A page with two kinds of thing splits it in two columns, 709 and 439, with 52 between them (the home; the team builder's list 439 and editor 709, with its rules on the same lines); both columns share their heading lines and their last line. A page of one list or one kind of panel (공지, 기록, 칭호, 명예의 전당, 게시판, 소개) uses the whole 1200, so its head's right end and every row end on the bar's right edge. No page leaves a column empty.
 
 ## Colour and light
 
@@ -191,10 +191,10 @@ Albert Sans for Latin and digits, Freesentation for Korean, as before (unicode-r
 | Section and sheet title | 20/28, tracking -.01em | 700 | YPL 시즌 3 순위, 역대 챔피언, an event's name |
 | Row title, button, field | 15/20 | 700 titles and buttons, 600 fields and tabs | a notice row, a name, 이번 대회 신청 |
 | Reading | 15/24 | 400 | a notice body, an explanation |
-| Label and grey line | 12/16 | 600 labels, 400 grey lines | 다음 대회까지, 6대, YPL 시즌 2 우승, units |
+| Label and grey line | 12/16 on a phone, 15/20 on desktop | 600 labels, 400 grey lines | 다음 대회까지, 6대, YPL 시즌 2 우승, units |
 | Figure in a list | 15 or 20, tabular | 700 | points, ranks, base stat totals |
 
-What matters stands bold: 700 for titles, names and figures. A title stands first; nothing small sits above a title except a page's back link and a notice's date line. A long title holds two lines and ends in an ellipsis. Reading text is capped at 36em.
+Desktop is read from further away, so at 860 and up the label and grey line step up to 15/20 (one change to `--t12` and `--l12`); there they part from row titles by weight and light alone, which is the board's one emphasis anyway. What matters stands bold: 700 for titles, names and figures. A title stands first; nothing small sits above a title except a page's back link and a notice's date line. A long title holds two lines and ends in an ellipsis. Reading text is capped at 36em.
 
 ## Controls
 
@@ -226,7 +226,7 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 - **Phone tab bar:** 64, the ground tone with a hairline on top: 홈, 공지, 대진표, 기록, 더보기. The chosen tab is lit and 700 with a 2px line along its top edge; the rest are muted.
 - **Admin mode:** a 40 inverted strip directly above the tab bar on every screen: a ground lamp, 관리자 모드, and 로그아웃 at the right.
 - **더보기** is a page, not a popover: grouped rows (기록: 칭호, 명예의 전당; 함께하기: 게시판, 팀 빌더, 계산기; 리그: 소개, 디스코드 참여), then the theme as a three-way choice (어둡게, 밝게, 기기 설정) and 공지 알림 as a switch. Admin login is a row here.
-- **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one, the theme button at the right end. No tab bar.
+- **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one, the theme button at the right end. No tab bar. Where there is no 더보기 (1100 and up), 관리자 로그인 is an underlined word at the end of the footer, not an icon in the bar.
 - **Back:** a 12px dim link with a chevron, 20 under the bar, naming where it goes (← 공지).
 - **Nothing is tied to the scroll.** The bars do not move; a sideways list is the browser's own scroll.
 
@@ -275,7 +275,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 ## Layout and pages
 
-**Home, phone.** Under the bar: the label row (a lamp, 다음 대회까지, the date at the right), the countdown at 120 with 일, the event's name at 20 in two lines, the main action, then the champion panel (216, floor band 52), then three counters (대회, 트레이너, 시즌; 84 tall, cells 115, 116, 115). Below: the season's ranking as rows (tied ranks read 1, 1, 1 with a grey sentence under the stack saying how many share it), notices as rows with the lamp column, past champions as a sideways run of 132 by 204 panels whose name band is their floor.
+**Home, phone.** Under the bar: the label row (a lamp, 다음 대회까지, the date at the right), the countdown at 120 with 일, the event's name at 20 in two lines, the main action, then the champion panel (216, floor band 52), then three counters (대회, 트레이너, 시즌; 84 tall, cells 115, 116, 115). Below: the season's ranking as rows (tied ranks read 1, 1, 1 with a grey sentence under the stack saying how many share it), notices as rows with the lamp column, past champions as a sideways run of 132 by 204 panels whose name band is their floor; on desktop the run shares the full 1200 and scrolls only once the panels would fall under 132.
 
 **Home on event day.** The label turns amber, 오늘 대회 진행 중; the display shows the start time as a clock at 84 with 시작; the main action is 대진표 보기; the live match replaces the champion.
 
@@ -285,7 +285,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Party submission.** On the notice: a counter to the deadline (days and hours) and three status rows (신청, 선발전, 본선). The flow is three steps (팀 고르기, 확인, 제출): saved teams from the builder appear as panels with their six members; a team that breaks the rules is dimmed with `!` and the reason; the submitted one is recorded as a numbered submission that is never deleted, and the current one carries the lit lamp.
 
-**Brackets.** A tree of match boxes (two rows, 36 each, the seam between) joined by lines: a decided path is a 2px `--lit` line, an undecided one a 1px rule. The winner's row inverts, the loser's mutes, an unplayed slot is muted words (M3 승자). The live match carries the amber lamp beside its score. Eight players fit one phone screen to the final; sixteen and up scroll sideways. Double elimination switches 승자조, 패자조, 그랜드 파이널. 공식 and 사설 are page tabs; 사설 explains in one panel that it never reaches the records. A list view shows matches as score panels. Desktop shows the whole tree and a 우승 panel that lights when the final ends.
+**Brackets.** A tree of match boxes (two rows, 36 each, the seam between) joined by lines: a decided path is a 2px `--lit` line, an undecided one a 1px rule. The winner's row inverts, the loser's mutes, an unplayed slot is muted words (M3 승자). The live match carries the amber lamp beside its score. Eight players fit one phone screen to the final; sixteen and up scroll sideways. Double elimination switches 승자조, 패자조, 그랜드 파이널. 공식 and 사설 are page tabs; 사설 explains in one panel that it never reaches the records. A list view shows matches as score panels. Desktop shows the bracket's name at 32, then the whole tree and a 우승 panel that lights when the final ends; the places (준우승, 4강) and the images follow the tree, and the result does not name the winner a second time. The leg into a box lights with the fork once both roads into it are decided.
 
 **Records.** Page tabs 트레이너, 대회, 포켓몬, 랭킹. Counters on top; tables of 44 rows with the record holder inverted at 52; filters as chips; a trainer opens with three counters (우승, 준우승, 4강), titles as chips, recent events as rows with the result inverted when it is a win, and their most used Pokémon on floors.
 
@@ -293,7 +293,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Board.** Tabs 자유, 샘플, 파티; a search with 글쓰기 as the main action; rows of 64 with the comment count as words. A party post shows six cells with name and item, and two actions (팀 빌더에서 열기, 이미지 저장); comments as panels; a docked comment field.
 
-**Team builder.** Tabs 규정, 포켓몬 선택, 팀 구성, and a 내 팀 list. Six slots always on top. The list: picture cell, name, type ticks, base stat total, +. The editor: the six with the chosen name band inverted, spec panels, the points as bars on tracks (66 / 66), moves as four panels, a docked 현재 팀 저장 with 게시판에 올리기 beside it. Desktop: list 439, editor 709. The exported image uses the same panels and floors.
+**Team builder.** Tabs 규정, 포켓몬 선택, 팀 구성, and a 내 팀 list. Six slots always on top. The list: picture cell, name, type ticks, base stat total, +. The editor: the six with the chosen name band inverted, spec panels, the points as bars on tracks (66 / 66), moves as four panels, a docked 현재 팀 저장 with 게시판에 올리기 beside it. Desktop: list 439, editor 709, the save under the editor. A desktop list row is one line: picture, the name over its type ticks, one figure (the sorted stat with its letter, else the total), +. The exported image uses the same panels and floors.
 
 **Calculator.** Tabs 대미지, 스피드, 도감. Damage: two Pokémon panels, the result as a segment range with the exact range in type, a bar on a track, and the verdict (확정 2타). Speed: the base Pokémon's speed as a display and a line of rows with the base row inverted. Dex: picture, types, base stats as bars, defensive matchups as rows with the 4x row inverted.
 

@@ -343,10 +343,11 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
         ))}
       </div>
       {duel && <p className="t12 reg dim calc-speed-line"><b className="t12">{duel.speedA} : {duel.speedB}</b> {duel.first === "tie" ? "스피드가 같아 먼저 움직일 쪽은 무작위입니다." : `${josa(nameOf(duel.first === "a" ? 0 : 1), "이", "가")} 먼저 움직입니다${duel.trickRoom ? " (트릭룸)" : ""}.`}</p>}
-      <div className="calc-directions">
+      {/* with neither Pokémon chosen the two panels above already ask for them: the directions wait until one is */}
+      {(pokemons[0] || pokemons[1]) && <div className="calc-directions">
         <DirectionResults title={`${nameOf(0)}의 공격`} results={ready ? results[0] : []} detailData={detailData} emptyText={directionEmpty(0)} />
         <DirectionResults title={`${nameOf(1)}의 공격`} results={ready ? results[1] : []} detailData={detailData} emptyText={directionEmpty(1)} />
-      </div>
+      </div>}
 
       <div><FieldCard field={field} onChange={setField} /></div>
 

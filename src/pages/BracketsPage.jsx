@@ -987,6 +987,8 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
   const ev=evalGraph(g);
   const finalRes=elimResult(g);
   const pathOf=(m)=>{ const w=ev.win[m.id]; return !w||w===BYE?"":" won"; };
+  // the leg into a box lights once both roads into it are decided (a BYE counts as decided)
+  const fedOf=(ri,j)=>ri>0&&[2*j,2*j+1].every(k=>{ const f=g.rounds[ri-1][k]; return !f||ev.win[f.id]; })?" fed":"";
   const rlabel=(len)=>{ const names={1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"}; return names[len]||`${len*2}강`; };
   const { centers, totalH }=treeCenters(g.rounds);
   const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>;
@@ -994,7 +996,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
       <div className="bk-col-h t12 dim">{g.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
       <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
-        {r.map((m,j)=>(<div className={"bk-mpos"+pathOf(m)} key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>{card(m)}</div>))}
+        {r.map((m,j)=>(<div className={"bk-mpos"+pathOf(m)+fedOf(ri,j)} key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>{card(m)}</div>))}
       </div>
     </div>))}
     {g.kind!=="double"&&finalRes&&finalRes.champ&&<div className="bk-col2 bk-champ-col">

@@ -68,7 +68,9 @@
   .ho-rank .row-lead { width: var(--s21); }
   .ho-news .row-lead { width: calc(var(--s21) + var(--s3)); }
   .ho-news .row-lamp { width: var(--s13); }
-  .ho-rail { margin-right: 0; }
+  /* past champions share the full 1200; past ten they keep 132 and the run scrolls */
+  .ho-rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(132px, 1fr); margin-right: 0; }
+  .ho-past { width: auto; }
 }
 
 /* 지금 경기 (c9, event day): a head, the two players as rows of 52, the round's progress */

@@ -13,7 +13,6 @@
 .tt-rows .row-lead, .hof-row-gen { width: 64px; flex: none; }
 .tt-rows .row-value { padding-right: var(--pad); }
 .tt-off .row-main > b { color: var(--mute); }
-@media (min-width: 860px) { .tt, .hof, .about { max-width: 709px; } }
 
 /* ---------- hall of fame ---------- */
 .hof-desc { margin-top: var(--s2); }
@@ -34,7 +33,7 @@
 .hof-mini { --floor: 24%; height: var(--h-control); }
 .hof-mini .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
 .hof-sheet-act { margin-top: var(--s5); }
-@media (min-width: 860px) { .hof-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 860px) { .hof-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } .hof-mini { height: var(--s21); } }
 
 /* ---------- about ---------- */
 .ab-lede { margin-top: var(--s3); color: var(--dim); max-width: var(--read); }

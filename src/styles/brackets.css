@@ -23,6 +23,15 @@
 .bk-actions > :only-child { grid-column: 1 / -1; }
 .bk-pick-hint { margin-top: var(--s3); }
 .bk-board { display: grid; gap: var(--s8); margin-top: var(--s8); }
+/* desktop (c16): an open bracket's name is the page title; the whole tree comes first and its 우승 panel names the winner,
+   so the result below it keeps the places and the images and does not say 우승 a second time */
+@media (min-width: 860px) {
+  .bk-open-title { font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); }
+  .bk-board > .bk-result { order: 1; }
+  .bk-board:has(.bk-champ-node) .bk-winner { display: none; }
+  .bk-board:has(.bk-champ-node) .bk-places { margin-top: 0; }
+  .bk-champ-node b { font-size: var(--t20); line-height: var(--l20); }
+}
 
 /* the decided result: 우승 inverted, the places as spec rows, the images */
 .bk-winner { display: grid; gap: var(--s1); padding: var(--pad); }
@@ -57,7 +66,7 @@
 .mb-row.inv { background: var(--lit); color: var(--ground); }
 .mb-row.lost, .mb-row.wait { color: var(--mute); }
 .mb-row.wait { font-weight: 600; }
-.mb-seed { flex: none; width: var(--s3); color: var(--mute); }
+.mb-seed { flex: none; width: var(--s5); color: var(--mute); white-space: nowrap; }
 .mb-row.inv .mb-seed { color: var(--ground); }
 .mb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mb-score { flex: none; font-size: var(--t15); font-weight: 700; }
@@ -76,6 +85,7 @@
 .bk-col2:not(:first-child) .bk-mpos::before { content: ""; position: absolute; right: 100%; top: calc(var(--mb) / 2); width: calc(var(--bk-gap) / 2); height: var(--hair); background: var(--rule); pointer-events: none; }
 /* a decided road is a 2px lit line */
 .bk-col2:not(:last-child) .bk-mpos.won::after { --bk-line: var(--lit); --hair: var(--line); }
+.bk-col2:not(:first-child) .bk-mpos.fed::before { top: calc(var(--mb) / 2 - var(--line) / 2); height: var(--line); background: var(--lit); }
 .bk-col2:has(+ .bk-champ-col) .bk-mpos::after { display: none; }
 .bk-col2.bk-champ-col .bk-mpos::before { width: var(--bk-gap); height: var(--line); background: var(--lit); }
 

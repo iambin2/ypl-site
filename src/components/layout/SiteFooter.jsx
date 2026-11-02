@@ -5,8 +5,8 @@ import { BrandMark, DISCORD_URL, Wordmark } from "./SiteHeader.jsx";
 const YEAR_FOUNDED = 2023;
 
 /* 바닥글은 바탕 위, 머리카락 선 아래의 조용한 한 단락: 24 브랜드, 리그의 한 줄, 디스코드 참여, 12px 팬 사이트 안내.
-   메뉴는 탭 바와 상단 바가 이미 갖고 있어 되풀이하지 않는다. */
-export default function SiteFooter({ onNavigate, tagline }) {
+   메뉴는 탭 바와 상단 바가 이미 갖고 있어 되풀이하지 않는다. 더보기가 없는 넓은 데스크톱은 관리자 로그인이 여기 선다(onAdmin). */
+export default function SiteFooter({ onNavigate, tagline, onAdmin }) {
   const year = new Date().getFullYear();
   const span = year > YEAR_FOUNDED ? `${YEAR_FOUNDED}–${year}` : `${YEAR_FOUNDED}`;
 
@@ -27,6 +27,7 @@ export default function SiteFooter({ onNavigate, tagline }) {
             연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점이 운영하는 팬 사이트로, Nintendo, Creatures, GAME FREAK, The Pokémon Company와 관계가 없습니다.
             Pokémon 및 포켓몬스터는 각 회사의 상표입니다.
           </span>
+          {onAdmin && <button type="button" className="site-foot-admin" onClick={onAdmin}>관리자 로그인</button>}
         </div>
       </div>
     </footer>

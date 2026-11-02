@@ -124,6 +124,8 @@
 
 /* ---------- wide: both directions side by side ---------- */
 @media (min-width: 1100px) { .calc-directions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* desktop: the field's flags fill the row under the cells, joined by the seam */
+@media (min-width: 860px) { .calc-field > .calc-toggles { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }
 @media (max-width: 1099px) { .calc-dex-grid { grid-template-columns: 1fr; } }
 @media (max-width: 859px) {
   .calc-side-switch { display: block; }

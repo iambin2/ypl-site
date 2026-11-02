@@ -89,6 +89,8 @@
 .rc-usage dt { font-size: var(--t12); line-height: var(--l15); font-weight: 600; color: var(--dim); }
 .rc-usage dd { margin: 0; font-size: var(--t15); line-height: var(--l-read); }
 @media (min-width: 860px) {
-  .rc { max-width: 709px; }
+  /* the # column holds two figures at 15 beside the desktop's 20 padding */
+  .rc-th { grid-template-columns: 52px minmax(0, 1fr) 52px 52px 52px; }
+  .rc-tr .row-lead { width: 52px; }
   .rc-mons, .rc-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }

@@ -1392,7 +1392,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
             <Button type="button" size="sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
-              {sortId === "name" ? (sortReversed ? "ㅎ부터" : "ㄱ부터") : (sortReversed ? "낮은 순" : "높은 순")}
+              {sortId === "name" ? (sortReversed ? "역순" : "가나다순") : (sortReversed ? "낮은 순" : "높은 순")}
             </Button>
           </div>
           {cupRule.kind === "monotype" && !assignedTypeId ? (
@@ -1513,17 +1513,16 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               </>
             )}
           </div>
+          {/* the save stands under the editor it saves (c16); on a phone it docks above the tab bar */}
+          <Dock>
+            <div className="stack tb-dock">
+              <Button variant="main" icon="check" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "현재 팀 저장"}</Button>
+              <Button variant="second" disabled={team.length === 0 || detailStatus === "loading"} onClick={openShare}>게시판에 올리기</Button>
+            </div>
+          </Dock>
         </div>
       </div>
 
-      <div data-tb-step="team">
-        <Dock>
-          <div className="stack tb-dock">
-            <Button variant="main" icon="check" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "현재 팀 저장"}</Button>
-            <Button variant="second" disabled={team.length === 0 || detailStatus === "loading"} onClick={openShare}>게시판에 올리기</Button>
-          </div>
-        </Dock>
-      </div>
 
       {/* 목록 아래에 선다: 위에 있으면 첫 선택이 고르던 목록을 밀어낸다 */}
       {(team.length > 0 || cupRule.kind !== "none") && <div className="tb-validation-wrap" data-tb-step="team">
