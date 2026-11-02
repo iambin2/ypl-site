@@ -265,7 +265,7 @@ export default function HomePage({ data, go }) {
 
     <section className="hm-wrap hm-count">
       <div className="hm-count-hold">{showCounts && <h2 aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
-        <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언.</span>
+        <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언</span>
       </h2>}</div>
       <div className="hm-routes">
         {routes.map(([view, title, line], i) => <button type="button" className="hm-route" key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></button>)}

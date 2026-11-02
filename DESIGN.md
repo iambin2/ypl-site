@@ -174,6 +174,21 @@ What the browser draws is designed too, once, in `tokens.css`.
 - Smooth scrolling stops under reduced motion.
 - Print is the record in ink: no bars, footer, buttons or home stage, always light, links print their address.
 
+## Responsive
+
+- **Three breakpoints, where the content breaks, not for devices.** 640: under it a row of facts or fields stacks into one column. 860: under it the five tabs are a thumb's bottom bar and a sheet rises from the edge; from it the tabs join the top bar and a sheet is a dialog. 1100: there is room for every page's link in the bar, so 더보기 goes.
+- **Fluid type** only as the `clamp()` tokens in `tokens.css`, whose ends are steps of the type scale. The arena's wordmark is a picture, so its `clamp()` is a width.
+- **Space shrinks by rule, in one place.** Three tokens change at 860 and nothing else does: `--gutter` 16 to 32, `--section` 40 to 56, `--chapter` 80 to 120. Inside a component, space stays the same on every screen.
+- **No container queries.** A component's width follows the viewport everywhere but a sheet, and a sheet is a fixed 560 from 860 up, so a media query never lies. Add one when a component really sits at two widths on one screen.
+
+## Dark
+
+- Dark is its own set of token values, never an inversion, and only semantic tokens change.
+- **Up is lighter.** bg `navy-950`, card and sheet `navy-900`, raised and popover `navy-800`. A sheet is lifted by the dimmed page behind it. A dropdown, menu or toast opens with nothing dimmed, so it stands a tone above the card it covers (`--surface-pop`). Shadows are still there and do nothing on navy; depth here is tone alone.
+- **The accent loses its hue.** On navy the accent is white, the fullest step down in chroma, and the primary button inverts to white with black text.
+- **Pictures stay as drawn.** Sprites and artwork get no brightness correction: they are content, and every plate under them is solid. The slab's white label stays white in both themes.
+- **First visit is light, not the system's choice.** The user decided this in the 24th round. A chosen theme is stored in `ypl-theme-2` and set by the head script before the first paint, so it never flashes.
+
 ## Head and share surfaces
 
 - **Icons:** the Wing Y as drawn, never simplified: at tab size its feathers are its identity, so legibility comes from size. On a tab it sits 58 wide in a 64 tile with radius 12; `favicon-*.svg` inverts to a white tile on a dark browser. `favicon-32.png` and `favicon.ico` (16 and 32) are the fallbacks. `apple-touch-icon.png`, `icon-192.png` and `icon-512.png` are full-bleed navy with the mark inside the maskable safe zone, from `docs/brand/app-icon.html`. A changed picture takes a new file name, because browsers keep icons.

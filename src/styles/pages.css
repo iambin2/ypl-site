@@ -77,7 +77,7 @@
 .hm-tile img { width: 100%; height: 100%; object-fit: contain; }
 
 @media (min-width: 860px) {
-  .hm-hero { padding: 120px var(--gutter) var(--chapter); }
+  .hm-hero { padding: var(--chapter) var(--gutter); }
   .hm-next { flex-direction: row; justify-content: center; gap: var(--s2); margin-top: var(--s6); font-size: var(--fs-lead); letter-spacing: var(--ls-lead); }
   .hm-actions { margin-top: var(--s10); }
   .hm-track { --w: 280px; --win: 280px; gap: var(--s6); }
@@ -86,14 +86,14 @@
   .hm-who span { font-size: var(--fs-caption); }
   .hm-gen { font-size: var(--hero-4); }
   .hm-win { padding: var(--s4); }
-  .hm-count { padding-block: 120px; }
+  .hm-count { padding-block: var(--chapter); }
   .hm-count-hold { min-height: calc(var(--hero-2) * var(--lh-title) * 2); }
   .hm-count h2 > span { display: inline; }
   .hm-count h2 br { display: inline; }
   .hm-routes { grid-template-columns: repeat(4, 1fr); gap: var(--s6); margin-top: var(--chapter); }
   .hm-route b { font-size: var(--hero-4); letter-spacing: var(--ls-title); }
   .hm-route span { margin-top: var(--s2); font-size: var(--fs-body); }
-  .hm-notices { grid-template-columns: repeat(4, 1fr); gap: var(--s6); padding-bottom: 120px; }
+  .hm-notices { grid-template-columns: repeat(4, 1fr); gap: var(--s6); padding-bottom: var(--chapter); }
   .hm-notices h2 { font-size: var(--hero-4); letter-spacing: var(--ls-title); }
   .hm-list { grid-column: 2 / -1; }
   .hm-row { padding-bottom: var(--s6); }
@@ -179,7 +179,7 @@
    17px on a phone and 18px on desktop (N6). A list-like body (team sheets) lays its groups side by side. */
 /* a notice row is the board's row: the title first (a pinned label in front of it), then one quiet line of date and excerpt */
 .nb-list { display: flex; flex-direction: column; padding: var(--s2); }
-.nb-item { display: flex; flex-direction: column; justify-content: center; }
+.nb-item { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 0; }
 .nb-meta { display: flex; gap: var(--s2); min-width: 0; margin-top: var(--s1); }
 .nb-meta .tnum { flex: none; }
 .nb-title .pin { height: 24px; margin-right: var(--s2); padding: 0 var(--s2); font-size: var(--fs-caption); vertical-align: 2px; }

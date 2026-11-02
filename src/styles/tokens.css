@@ -106,7 +106,7 @@
 /* ---------- semantic: what components read. Dark here, light below. ---------- */
 :root {
   color-scheme: dark;
-  --bg: var(--navy-950); --surface: var(--navy-900); --surface-raised: var(--navy-800); --surface-sunken: var(--navy-925); --surface-float: var(--navy-900);
+  --bg: var(--navy-950); --surface: var(--navy-900); --surface-raised: var(--navy-800); --surface-sunken: var(--navy-925); --surface-float: var(--navy-900); --surface-pop: var(--navy-800); --pop-hover: var(--navy-700); --pop-selected: var(--navy-600);
   --overlay: rgb(4 14 31 / .6);
   --text-primary: var(--white); --text-secondary: var(--gray-300); --text-tertiary: var(--gray-400); --text-disabled: var(--gray-500); --text-on-accent: var(--black);
   --text-link: var(--white); --text-link-hover: var(--gray-300);
@@ -122,7 +122,7 @@
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: var(--white); --surface: var(--gray-50); --surface-raised: var(--gray-200); --surface-sunken: var(--gray-100); --surface-float: var(--white);
+  --bg: var(--white); --surface: var(--gray-50); --surface-raised: var(--gray-200); --surface-sunken: var(--gray-100); --surface-float: var(--white); --surface-pop: var(--white); --pop-hover: var(--state-hover); --pop-selected: var(--state-selected);
   --overlay: rgb(8 28 61 / .45);
   --text-primary: var(--black); --text-secondary: var(--gray-700); --text-tertiary: var(--gray-600); --text-disabled: var(--gray-500); --text-on-accent: var(--white);
   --text-link: var(--black); --text-link-hover: var(--gray-700);
@@ -236,6 +236,8 @@ label:has(input) { cursor: pointer; }
 .plate, .plate-l3, .groove, .card { position: relative; }
 .plate { background: var(--surface-float); box-shadow: var(--shadow-1); }
 .plate-l3 { background: var(--surface-float); box-shadow: var(--shadow-2); }
+/* what opens over a card has no dimmed page to lift it, so in the dark it stands one tone up */
+.dd-menu, .popover, .toast { background: var(--surface-pop); --state-hover: var(--pop-hover); --state-selected: var(--pop-selected); }
 .groove { background: var(--surface-sunken); }
 .card { background: var(--surface); border-radius: var(--r-lg); }
 
