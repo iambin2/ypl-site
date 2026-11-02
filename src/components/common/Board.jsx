@@ -120,6 +120,22 @@ export function Choice({ name, options, value, onChange, multiple = false }) {
 
 /* The main action's strip: on a phone it docks above the tab bar on the ground with a hairline, so it never scrolls away. toast stands
    above it: an inverted 52 panel, an error starting with the ! square, its one action an underlined word. */
+/* a cell: a label 12 over its value 15 in a 52 panel; a dropdown or pick field inside fills the cell (c7 spec cells, c8 fields) */
+export function Cell({ label, wide = false, className = "", children }) {
+  return <div className={"cell" + (wide ? " wide" : "") + (className ? " " + className : "")}><span className="cell-label">{label}</span>{children}</div>;
+}
+/* options as rows of 64: a title and a grey line, the chosen one inverted with a check (c19 rules, c8 settings) */
+export function OptionRows({ name, options, value, onChange, disabled = false }) {
+  return (
+    <div className="stack" role="radiogroup">
+      {options.map(op => <label key={op.value} className={"opt-row " + (value === op.value ? "inv" : "pn") + (disabled ? " off" : "")}>
+        <input type="radio" className="sr-only" name={name} checked={value === op.value} disabled={disabled} onChange={() => onChange(op.value)} />
+        <span className="opt-copy"><b className="t15">{op.title}</b>{op.line && <span className="t12 reg opt-line">{op.line}</span>}</span>
+        {value === op.value && <Icon n="check" size={20} />}
+      </label>)}
+    </div>
+  );
+}
 export function Dock({ toast, children }) {
   return <div className="dock">{toast}{children}</div>;
 }

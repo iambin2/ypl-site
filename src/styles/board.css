@@ -30,6 +30,7 @@
 /* ---------- where a Pokémon stands: in a panel, its ink's feet on the floor band's top edge (Mon, inkCentre.js standInk) ---------- */
 .stand { --floor: 24%; position: relative; overflow: hidden; }
 .floor { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor); background: var(--panel-2); }
+.floor.inv { background: var(--lit); }
 .mon { position: absolute; bottom: var(--floor); aspect-ratio: 1; object-fit: contain; object-position: 50% 100%; }
 
 /* ---------- the current champion: one panel, the floor band holds 파티 보기 ---------- */
@@ -88,6 +89,32 @@
 .check-row { display: flex; align-items: flex-start; gap: var(--s3); min-height: var(--s5); cursor: pointer; }
 .box { display: grid; place-items: center; width: var(--s5); height: var(--s5); flex: none; background: var(--panel-2); }
 .box.on { background: var(--lit); color: var(--ground); }
+
+/* ---------- a cell: a label 12 over a value 15 in a 52 panel; a control inside fills the cell, focus draws the 2px line ---------- */
+.cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+.cell { position: relative; display: grid; align-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-row); padding: 0 var(--pad); background: var(--panel); }
+.cell.wide { grid-column: 1 / -1; }
+.cell-label { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
+.cell > b, .cell > span:not(.cell-label) { font-size: var(--t15); line-height: var(--l15); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell :is(.dd, .pick-field) { position: static; }
+.cell .dd-btn { min-height: 0; background: none; box-shadow: none; line-height: var(--l15); }
+.cell .dd-btn::after { content: ""; position: absolute; inset: 0; }
+.cell .dd-btn:focus-visible { outline: none; }
+.cell:has(.dd.open), .cell:has(.dd-btn:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.cell .pick-clear { z-index: var(--z-raised); }
+.cell .tb-locked-item { min-height: 0; padding: 0; background: none; }
+@media (hover: hover) { .cell:has(.dd-btn:not(:disabled)):hover { background: var(--panel-2); } }
+
+/* ---------- option rows: 64 panels with a title and a line; the chosen one inverted with a check ---------- */
+.opt-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row2); padding: var(--s2) var(--pad); cursor: pointer; transition: background-color var(--move-tone); }
+.opt-copy { display: grid; gap: var(--s1); min-width: 0; }
+.opt-line { color: var(--dim); }
+.opt-row.inv .opt-line { color: var(--ground); }
+.opt-row.off { cursor: default; }
+.opt-row.pn.off { color: var(--mute); }
+.opt-row:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+.opt-row.inv:has(:focus-visible) { outline-color: var(--ground); }
+@media (hover: hover) { .opt-row.pn:not(.off):hover { background: var(--panel-2); } }
 
 /* ---------- the dock: the main action docks above the tab bar on a ground strip with a hairline ---------- */
 .dock { position: relative; }

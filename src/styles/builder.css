@@ -16,7 +16,7 @@
 .tb-pokemon-row { background: var(--panel); box-shadow: none; }
 @media (hover: hover) { .tb-pokemon-row:not(:disabled):hover { background: var(--panel-2); } }
 
-.tb-team-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.tb-team-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
 .tb-mon { --floor: var(--h-row); position: relative; display: block; width: 100%; aspect-ratio: 1 / 1.272; text-align: left; }
 .tb-mon.empty { display: grid; place-items: center; color: var(--mute); }
 .tb-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
@@ -30,3 +30,86 @@
 @media (hover: none) { .tb-mon-remove { opacity: 1; } }
 @media (hover: hover) { .tb-mon-remove:hover { color: var(--lit); } }
 @media (min-width: 860px) { .tb-team-slots { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+/* ---------- rules (c19): the regulation and the cup rule as option rows, the type as a grid of cells ---------- */
+.tb-rules { display: grid; gap: var(--s5); }
+.tb-rule-group { display: grid; gap: var(--s3); }
+.tb-rule-group > h2 { margin: 0; }
+.tb-type-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tb-type-opt { display: flex; align-items: center; min-height: var(--h-control); padding: 0 var(--s3); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; transition: background-color var(--move-tone); }
+.tb-type-opt.inv { color: var(--ground); }
+.tb-type-opt .tb-type { display: inline-flex; align-items: center; gap: var(--s2); }
+@media (hover: hover) { .tb-type-opt.pn:not(:disabled):hover { background: var(--panel-2); } }
+
+/* ---------- the team (c7): a line, the six as cells joined by the seam, the links ---------- */
+.tb-team { display: grid; gap: var(--s3); }
+.tb-team-head { display: flex; align-items: baseline; gap: var(--s3); }
+.tb-team-state { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-team-count { font-variant-numeric: tabular-nums; }
+.tb-mon { --floor: var(--h-strip); aspect-ratio: auto; height: calc(var(--h-row2) + var(--h-strip)); }
+.tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+.tb-team-links { display: flex; gap: var(--s5); flex: none; }
+
+/* ---------- the editor (c7): name, the spec cells, the points as bars, the moves as cells ---------- */
+.tb-editor { display: grid; gap: var(--s3); min-width: 0; }
+.tb-editor-empty { display: grid; gap: var(--s1); padding: var(--s5) var(--pad); }
+.tb-editor-head { display: grid; gap: var(--s1); }
+.tb-editor-head h2 { margin: 0; }
+.tb-editor-head .tb-types { margin-top: var(--s1); }
+.tb-editor .tb-field-meta { margin-top: 0; }
+.tb-editor-section { display: grid; gap: var(--s3); margin-top: var(--s5); }
+.tb-subhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.tb-subhead > b { font-variant-numeric: tabular-nums; }
+.tb-locked-item { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
+.tb-move-cell { padding-block: var(--s2); }
+.tb-move-meta:empty { display: none; }
+
+/* a point is a bar: the track a panel, the points lit; the range input lies over it unseen, so it still takes touch and keys */
+.tb-stats { display: grid; }
+.tb-stat-row { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr) var(--h-control) var(--s21); align-items: center; gap: var(--s3); min-height: var(--h-strip); }
+.tb-stat-key { color: var(--dim); white-space: nowrap; }
+.tb-bar { position: relative; height: var(--s2); background: var(--panel); }
+.tb-bar > i { position: absolute; inset: 0; background: var(--lit); transform-origin: left center; }
+.tb-bar > input[type="range"] { position: absolute; left: 0; right: 0; top: 50%; width: 100%; height: var(--h-strip); margin: 0; translate: 0 -50%; opacity: 0; cursor: pointer; }
+.tb-bar:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: var(--s1); }
+.tb-stat-number { min-height: var(--h-strip); padding: 0; background: none; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.tb-stat-number::-webkit-inner-spin-button, .tb-stat-number::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.tb-stat-number:focus-visible { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.tb-final-stat { text-align: right; }
+.tb-final-stat b { color: var(--lit); font-variant-numeric: tabular-nums; }
+@media (max-width: 639px) { .tb-stat-row { grid-template-columns: var(--s8) minmax(0, 1fr) var(--h-control); } .tb-final-stat { display: none; } }
+
+/* the dock: save, the main action, and posting, golden split */
+.tb-dock { grid-template-columns: 1.618fr 1fr; }
+
+/* ---------- my teams (c19): new and copy, the save line, each team a panel with its six; the open one inverted ---------- */
+.tb-library-top { grid-template-columns: 1.618fr 1fr; }
+.tb-library-save { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); margin-top: var(--s5); }
+.tb-library-save .cell { --field-bg: transparent; }
+.tb-team-name { min-height: 0; padding: 0; background: none; font-weight: 600; }
+.tb-team-name:focus-visible { box-shadow: none; }
+.tb-library-save .cell:has(input:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.tb-library-save-meta, .tb-save-message { margin-top: var(--s2); }
+.tb-saved-list { margin-top: var(--s5); }
+.tb-saved { display: grid; }
+.tb-saved-open { display: grid; gap: var(--s1); padding: var(--s3) var(--pad) var(--s2); text-align: left; color: inherit; }
+.tb-saved-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.tb-saved-head > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-saved-mark { display: inline-flex; align-items: center; gap: var(--s2); flex: none; }
+.tb-saved-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s2); }
+.tb-saved-six > span { aspect-ratio: 1; overflow: hidden; }
+.tb-saved-six img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tb-saved.inv .tb-saved-six > span { background: var(--panel); }
+.tb-saved-actions { display: flex; justify-content: flex-end; gap: var(--s5); padding: 0 var(--pad) var(--s2); }
+.tb-saved.inv .btn--link { --btn-fg: var(--ground); }
+@media (hover: hover) { .tb-saved.pn:hover { background: var(--panel-2); } }
+.tb-library-empty { margin-top: var(--s5); }
+
+/* the check under the editor stands a block apart, like every block on the page */
+.tb-page .tb-validation-wrap { margin-top: 0; }
+.tb-page .tb-layout { margin-top: 0; }
+@media (min-width: 860px) {
+  .tb-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .tb-rules > :is(.tb-rule-group:nth-child(3), p) { grid-column: 1 / -1; }
+  .tb-type-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}

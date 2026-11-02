@@ -1,13 +1,11 @@
 
 
 /* ---------- plate panels ---------- */
-.tb-rule-card, .tb-panel, .tb-validation { padding: var(--pad); background: var(--panel); min-width: 0; }
+.tb-panel, .tb-validation { padding: var(--pad); background: var(--panel); min-width: 0; }
 
 /* ---------- rules ---------- */
-.tb-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3); }
 .tb-field { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
 .tb-field > span { font-size: var(--t12); font-weight: 600; line-height: var(--l12); }
-.tb-rule-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); margin-top: var(--s5); font-size: var(--t12); color: var(--mute); }
 
 /* ---------- validation + official submission ---------- */
 .tb-validation-wrap { margin-top: calc(var(--s5) - var(--s13)); }
@@ -107,92 +105,21 @@
 .type-rock{--type:#AFA981}.type-ghost{--type:#704170}.type-dragon{--type:#5060E1}.type-dark{--type:#624D4E}
 .type-steel{--type:#60A1B8}.type-fairy{--type:#EF70EF}
 
-/* ---------- team ---------- */
-.tb-team-head { align-items: center; }
-.tb-team-title-line { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2) var(--s3); }
-.tb-current-team { font-size: var(--t12); font-weight: 600; color: var(--mute); }
-/* state chips: fill chip, the state in the text colour */
-.tb-dirty-badge, .tb-draft-badge, .tb-active-saved { color: var(--mute); }
-.tb-dirty-badge { color: var(--dim); }
-.tb-draft-badge.saved { color: var(--lit); }
-.tb-draft-badge.error { color: var(--lit); }
-.tb-active-saved { background: var(--lit); color: var(--ground); }
-
-/* PokemonSlot: fill-2 cells, 8px apart, phone 2 columns, desktop 3 */
-.tb-team-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); margin-top: var(--s5); }
-@media (min-width: 1100px) { .tb-team-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-.tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s5); font-size: var(--t12); color: var(--mute); }
-
 /* ---------- editor ---------- */
-.tb-editor-empty { min-height: calc(var(--s21) * 2 + var(--s13)); display: flex; flex-direction: column; justify-content: center; gap: var(--s2); padding: var(--s8) var(--s2); }
-.tb-editor-empty strong { font-size: var(--t15); font-weight: 600; }
-.tb-editor-empty span { font-size: var(--t15); color: var(--dim); }
-.tb-editor-head { display: flex; align-items: center; gap: var(--s5); }
-/* the chosen Pokémon stands on a pod, like every party on the site */
-.tb-editor-head img { width: 84px; height: 84px; object-fit: contain; flex: none; background: var(--panel-2);
-}
-.tb-editor-title { min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
-/* section-title */
-.tb-editor-title h2 { font-size: var(--t32); font-weight: 700; line-height: var(--l32); letter-spacing: var(--ls32); }
-@media (min-width: 1100px) { .tb-editor-title h2 { font-size: var(--t32); letter-spacing: var(--ls32); }
-}
-.tb-editor-title > span { font-size: var(--t15); color: var(--dim); }
-.tb-editor-title small { font-size: var(--t12); color: var(--mute); }
-.tb-editor-title .tb-types { margin-top: var(--s1); }
-.tb-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s8); }
 .tb-editor-section { margin-top: var(--s8); }
-.tb-subhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
-.tb-subhead strong { font-size: var(--t15); font-weight: 600; }
-.tb-subhead span { margin-left: var(--s2); font-size: var(--t12); color: var(--mute); }
-.tb-subhead > b { font-size: var(--t12); font-weight: 600; font-variant-numeric: tabular-nums; }
-.tb-subhead > b.over { color: var(--lit); }
 
-/* StatRow: six rows in one fill-2 group, inset hairlines between them */
-.tb-stats { display: flex; flex-direction: column; background: var(--panel-2); padding: 0 var(--s5); }
-.tb-stat-row {
-  display: grid; grid-template-columns: 84px minmax(0, 1fr) 52px 52px; align-items: center; gap: var(--s3);
-  min-height: var(--h-row);
-}
-.tb-stat-row + .tb-stat-row { box-shadow: inset 0 1px 0 var(--rule); }
-.tb-stat-label strong { display: block; font-size: var(--t15); font-weight: 600; }
-.tb-stat-label span { font-size: var(--t12); color: var(--mute); }
-.tb-stat-row input[type="range"] { width: 100%; height: 24px; }
-.tb-stat-number { min-height: 44px; padding: var(--s2); text-align: center; font-weight: 600; }
-.tb-final-stat { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s1); }
-.tb-final-stat span { font-size: var(--t12); color: var(--mute); }
-.tb-final-stat strong { font-size: var(--t20); letter-spacing: var(--ls20); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-.tb-locked-item {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: 52px; padding: 0 var(--s5);
-  background: var(--panel-2); color: var(--dim); font-weight: 600;
-}
 .tb-field-meta { margin-top: var(--s2); font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
-.tb-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
 
-/* ---------- dialogs: rule change, library (plate groups on the dialog's surface) ---------- */
+/* ---------- dialogs: rule change ---------- */
 .tb-rule-confirm-copy { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
 .tb-rule-confirm-copy + .tb-rule-confirm-copy { margin-top: var(--s3); }
 .tb-rule-confirm-list { margin: var(--s3) 0; padding: var(--s3) var(--s5) var(--s3) var(--s13); background: var(--panel); font-weight: 600; }
-.tb-library-save { padding: var(--s5); background: var(--panel); }
-.tb-library-save-meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-top: var(--s3); font-size: var(--t12); color: var(--mute); }
-.tb-library-save-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s5); }
-.tb-library-workspace-actions { display: flex; gap: var(--s2); }
-.tb-save-message { margin-top: var(--s3); font-size: var(--t15); font-weight: 600; color: var(--lit); }
-/* saved teams: one group; rows carry no rules, the space between them does (M1) */
-.tb-saved-list { display: flex; flex-direction: column; margin-top: var(--s5); padding: 0 var(--s2); background: var(--panel); }
-.tb-saved-list:empty { display: none; }
-.tb-saved-team { display: grid; gap: var(--s2); padding-block: var(--s2); }
-.tb-saved-actions { display: flex; justify-content: flex-end; gap: var(--s2); }
-.tb-library-empty { padding: var(--s8) var(--s2); font-size: var(--t15); color: var(--dim); }
 
 @media (max-width: 1099px) {
   .tb-layout { grid-template-columns: 1fr; }
   .tb-pool-panel { position: static; max-height: 576px; }
 }
 @media (max-width: 639px) {
-  .tb-editor-grid, .tb-moves { grid-template-columns: 1fr; }
-  .tb-stat-row { grid-template-columns: 84px minmax(0, 1fr) 52px; gap: var(--s2); }
-  .tb-final-stat { display: none; }
   .tb-validation ul, .tb-more, .tb-official-meta, .tb-official-lookup, .tb-official-submit { margin-left: 0; }
   .tb-official-lookup { flex-direction: column; }
 }
@@ -238,4 +165,3 @@
 .tb-chip small { font-size: var(--t12); font-weight: 400; }
 .tb-sort-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s3); align-items: center; margin-top: var(--s3); }
 
-.tb-move-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-bottom: var(--s3); }

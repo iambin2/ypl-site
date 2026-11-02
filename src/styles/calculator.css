@@ -1,209 +1,143 @@
 /* =============================================================================
-   YPL — calculator (대미지, 스피드, 도감)
-   Same material as the team builder: opaque tb-panel cards, fill-2 groups inside,
-   pill fields. One tool, so cards keep the grid gap, not a section's.
-   State reads through brightness and weight (B4); type colours stay as content.
+   YPL Scoreboard: the calculator (대미지, 스피드, 도감). Drafts: docs/redesign-next c7-builder-calc, c19-builder-calc-rest.
+   The two Pokémon stand in cells on their floors; the chosen move's damage is lit as a segment board over its bar; fields
+   are cells; the speed line is rows with the basis inverted; the dex is a head panel, bars and rows.
+   Bars, cells and the stat rows are the team builder's (builder.css, board.css).
    ========================================================================== */
 
 .calc-body, .calc-swap { display: flex; flex-direction: column; gap: var(--s5); min-width: 0; }
-/* a control sits 16 above the content it drives; the panels below it are one set (--grid-gap) */
-.calc-tabs, .calc-side-switch { margin-bottom: calc(var(--s5) - var(--s5)); }
-.calc-note { margin-top: var(--s3); font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
-.calc-empty { padding: var(--s3) 0; font-size: var(--t15); color: var(--dim); }
+.calc-empty { font-size: var(--t15); line-height: var(--l-read); }
 
-/* ---------- toggles: lite pills, an active one is inverted like a chosen chip ---------- */
-.calc-toggles { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); }
-.calc-toggle {
-  height: 44px; padding: 0; border: 0;
-  background: none; color: var(--dim); font-size: var(--t12); font-weight: 600; line-height: var(--l12);
-  transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
-}
-@media (hover: hover) { .calc-toggle:not(.on):hover { color: var(--lit); } }
-.calc-toggle.on { color: var(--lit); box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+/* ---------- toggles: 32 panels, an active one inverted ---------- */
+.calc-toggles { display: flex; flex-wrap: wrap; gap: var(--seam); }
+.calc-toggle { min-height: var(--h-strip); padding: 0 var(--s3); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; transition: background-color var(--move-tone), color var(--move-tone); }
+.calc-toggle.inv { color: var(--ground); }
+@media (hover: hover) { .calc-toggle.pn:hover { background: var(--panel-2); color: var(--lit); } }
 
-/* ---------- summary: who faces whom, who moves first, both directions ---------- */
-.calc-versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s8); }
-.calc-versus-mon {
-  display: flex; align-items: center; gap: var(--s3); min-width: 0; padding: var(--s2) 0;
-  border: 0; background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--mute); color: inherit; text-align: left;
-}
-.calc-versus-mon:active:not(:disabled) { scale: 1; }
-@media (hover: hover) { .calc-versus-mon:hover { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); } }
-.calc-versus-mon img { width: 52px; height: 52px; object-fit: contain; flex: none; }
-.calc-versus-mon > span:last-child { min-width: 0; display: flex; flex-direction: column; }
-.calc-versus-mon small, .calc-mon-copy small { font-size: var(--t12); color: var(--mute); }
-.calc-versus-mon strong { font-size: var(--t15); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.calc-mon-empty { width: 52px; height: 52px; flex: none; display: grid; place-items: center; color: var(--dim); }
+/* ---------- who faces whom: two cells, each Pokémon on its name band ---------- */
+.calc-versus { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.calc-vs { --floor: var(--h-row); position: relative; display: block; width: 100%; height: calc(var(--h-counter) + var(--h-row2) + var(--h-row)); text-align: left; }
+.calc-vs .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s5)); margin-inline: auto; }
+.calc-vs-label { position: absolute; left: var(--pad); top: var(--s2); z-index: var(--z-raised); }
+.calc-vs-empty { position: absolute; left: 0; right: 0; top: 0; bottom: var(--floor); display: grid; place-items: center; color: var(--mute); }
+.calc-vs-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--pad); }
+.calc-vs-band > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) { .calc-vs:hover .floor { background: var(--rule); } }
+.calc-speed-line b { color: var(--lit); font-variant-numeric: tabular-nums; }
 
-.calc-speed-line { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s5); padding: var(--s3) var(--s5); background: var(--panel-2); }
-.calc-speed-line p { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
-.fig-pair { flex: none; display: inline-flex; align-items: baseline; gap: var(--s2); }
-.fig-pair b { font-size: var(--t20); font-weight: 700; color: var(--mute); font-variant-numeric: tabular-nums; }
-.fig-pair b.on { color: var(--lit); font-weight: 700; }
-.fig-pair i { font-style: normal; font-size: var(--t12); color: var(--mute); }
+/* ---------- damage: the chosen move lit as a board, the other moves as rows ---------- */
+.calc-directions { display: grid; gap: var(--s5); align-items: start; }
+.calc-direction { display: grid; gap: var(--s3); min-width: 0; }
+.calc-direction > h2 { margin: 0; }
+.calc-board { display: grid; gap: var(--s2); padding: var(--s3) var(--pad) var(--s5); }
+.calc-board-seg { display: flex; align-items: flex-end; gap: var(--s2); margin-top: var(--s1); }
+.calc-board-seg > .t20 { line-height: 1; }
+.calc-board-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s2); }
+.calc-rolls { font-variant-numeric: tabular-nums; word-break: keep-all; }
+.calc-results { margin-top: var(--seam); }
+.calc-result .row-value { font-size: var(--t15); line-height: var(--l15); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.calc-result.quiet .row-value { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--mute); }
+.calc-result.inv .row-value, .calc-result.inv .dim { color: var(--ground); }
 
-.calc-directions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5) var(--s8); margin-top: var(--s5); }
-.calc-direction { min-width: 0; }
-.calc-direction h2 { margin-bottom: var(--s2); font-size: var(--t15); font-weight: 600; }
-.calc-results { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
-.calc-result + .calc-result { box-shadow: inset 0 1px 0 var(--rule); }
-.calc-result { padding-bottom: var(--s3); }
-.calc-result.quiet { padding-bottom: 0; }
-.calc-result-head {
-  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "move pct" "move ko"; align-items: center; column-gap: var(--s3);
-  min-height: var(--h-row); padding: var(--s2) var(--s1); border: 0; background: transparent; color: inherit; text-align: left;
-}
-button.calc-result-head { transition: scale var(--move-press), background-color var(--move-tone); }
-@media (hover: hover) { button.calc-result-head:hover { background: var(--panel-2); } }
-.calc-result-move { grid-area: move; min-width: 0; display: flex; flex-direction: column; }
-.calc-result-move strong { font-size: var(--t15); font-weight: 600; }
-.calc-result-move small { font-size: var(--t12); color: var(--mute); }
-.calc-result-pct { grid-area: pct; justify-self: end; font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.calc-result-ko { grid-area: ko; justify-self: end; font-size: var(--t12); font-weight: 600; color: var(--dim); white-space: nowrap; }
-.calc-result.quiet .calc-result-ko { grid-row: 1 / 3; color: var(--mute); font-weight: 400; }
-.calc-result-detail { margin-top: var(--s2); padding: var(--s3) var(--s5); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
-.calc-rolls { margin-top: var(--s1); color: var(--mute); font-variant-numeric: tabular-nums; word-break: keep-all; }
-
-/* HP bar: bright = HP left even after the highest roll, dim = the roll window, track = what is lost for sure */
-.calc-hpbar { position: relative; height: 8px; margin: 0 var(--s1); background: var(--panel-2); overflow: hidden; }
+/* the bar: lit is what the lowest roll takes, dim is the roll window, the track is the HP that stays */
+.calc-hpbar { position: relative; height: var(--s2); margin-top: var(--s2); background: var(--panel-2); overflow: hidden; }
 .calc-hpbar span { position: absolute; inset: 0; transform-origin: left center; transition: transform var(--move-tone); }
-.calc-hp-range { background: var(--mute); }
+.calc-hp-range { background: var(--dim); }
 .calc-hp-left { background: var(--lit); }
 
-/* ---------- field ---------- */
-.calc-field-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: var(--s3) var(--s8); align-items: center; margin-bottom: var(--s5); }
+/* ---------- field: the format, weather and terrain as cells, the flags ---------- */
+.calc-field { display: grid; gap: var(--seam); }
+.calc-field > .ypl-seg { display: flex; }
+.calc-field > .ypl-seg .seg-track { flex: 1; }
+.calc-field > .calc-toggles { margin-top: var(--s3); }
 
 /* ---------- the two sides: side by side on desktop, one at a time on a phone ---------- */
 .calc-side-switch { display: none; }
-.calc-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); align-items: start; }
-.calc-side { min-width: 0; }
+.calc-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s8); align-items: start; }
+.calc-side { display: grid; gap: var(--s5); min-width: 0; }
 .calc-side-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
-.calc-side-actions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--s2); }
-.calc-mon {
-  flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s3); padding: var(--s1) var(--s2) var(--s1) 0;
-  border: 0; background: transparent; color: inherit; text-align: left;
-  transition: scale var(--move-press), background-color var(--move-tone);
-}
-@media (hover: hover) { .calc-mon:hover { background: var(--panel-2); } }
-.calc-mon img { width: 84px; height: 84px; flex: none; object-fit: contain; background: var(--panel-2); }
-.calc-side-empty { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
-.calc-mon-copy { min-width: 0; display: flex; flex-direction: column; gap: var(--s1); }
-.calc-mon-copy strong { font-size: var(--t20); font-weight: 700; letter-spacing: var(--ls20); line-height: var(--l20); }
-.calc-mon-copy .tb-types { margin-top: var(--s1); }
+.calc-side-actions { flex: none; display: flex; gap: var(--s5); }
+.calc-mon { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s3); text-align: left; color: inherit; }
+.calc-mon img { width: var(--h-row2); height: var(--h-row2); flex: none; object-fit: contain; }
+.calc-mon-copy { min-width: 0; display: grid; gap: var(--s1); }
+.calc-hp { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--s3); }
+.calc-hp b { font-variant-numeric: tabular-nums; text-align: right; }
+.calc-section { margin-top: 0; }
+.calc-stat-row { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr) var(--h-control) calc(var(--s21) + var(--s5)) var(--h-control); align-items: center; gap: var(--s3); min-height: var(--h-control); }
+.calc-final { justify-self: end; font-variant-numeric: tabular-nums; }
 
-.calc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s5); }
-.calc-grid .dd-btn { width: 100%; }
-.calc-hp { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--s3); margin-top: var(--s5); font-size: var(--t12); font-weight: 600; }
-.calc-hp input[type="range"] { width: 100%; height: 24px; }
-.calc-hp b { font-size: var(--t15); font-variant-numeric: tabular-nums; text-align: right; }
-.calc-hp b small { font-size: var(--t12); font-weight: 400; color: var(--mute); }
-.calc-section { margin-top: var(--s8); }
-
-.calc-stat-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 52px 84px 44px; align-items: center; gap: var(--s2); min-height: var(--h-row); }
-.calc-stat-row + .calc-stat-row { box-shadow: inset 0 1px 0 var(--rule); }
-.calc-stat-row input[type="range"] { width: 100%; height: 24px; }
-.calc-final { justify-self: end; font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
-
-.calc-stepper { display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; height: 44px; background: var(--panel-2); }
-.calc-stepper button {
-  width: 32px; height: 32px; min-width: 0; min-height: 0; display: grid; place-items: center; border: 0;
-  background: transparent; color: var(--dim);
-  transition: scale var(--move-press), background-color var(--move-tone);
-}
+.calc-stepper { display: grid; grid-template-columns: var(--h-strip) minmax(0, 1fr) var(--h-strip); align-items: center; height: var(--h-strip); background: var(--panel); }
+.calc-stepper button { display: grid; place-items: center; width: var(--h-strip); height: var(--h-strip); color: var(--dim); transition: background-color var(--move-tone); }
 @media (hover: hover) { .calc-stepper button:hover:not(:disabled) { background: var(--panel-2); color: var(--lit); } }
-.calc-stepper button:disabled { opacity: var(--opacity-disabled); }
-.calc-stepper output { text-align: center; font-size: var(--t15); font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
+.calc-stepper button:disabled { color: var(--off); }
+.calc-stepper output { text-align: center; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
 .calc-stepper output.on { color: var(--lit); font-weight: 700; }
 
-.calc-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+/* ---------- speed: the basis lit, the line as rows ---------- */
+.calc-speed-me { display: grid; grid-template-columns: calc(var(--s21) + var(--s13)) minmax(0, 1fr) auto; align-items: stretch; gap: var(--s3); padding-right: var(--pad); }
+.calc-speed-me > .btn { align-self: center; }
+.calc-speed-board { display: grid; gap: var(--s1); padding: var(--s3) 0; }
+.calc-speed-none { display: grid; gap: var(--s3); justify-items: start; padding: var(--s5) var(--pad); }
+.calc-speed-controls { display: grid; gap: var(--seam); }
+.calc-speed-controls > .ypl-seg { display: flex; }
+.calc-speed-controls > .ypl-seg .seg-track { flex: 1; }
+.calc-tier-wrap { display: grid; gap: var(--s3); }
+.calc-tiers { list-style: none; display: grid; gap: var(--seam); margin: 0; padding: 0; }
+.calc-tier { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); content-visibility: auto; contain-intrinsic-size: auto 52px; }
+.calc-tier > b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.calc-tier-copy { min-width: 0; }
+.calc-tier-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calc-tier.slower { color: var(--dim); }
+.calc-tier.inv { content-visibility: visible; }
 
-/* ---------- speed ---------- */
-.calc-speed-basis { display: flex; flex-direction: column; gap: var(--s5); }
-.calc-speed-basis .ypl-seg { align-self: flex-start; }
-.calc-speed-me { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
-.calc-speed-me .fig { font-size: var(--t32); letter-spacing: var(--ls32); }
-.calc-speed-me p { flex: 1; min-width: calc(var(--s21) * 2 + var(--s13)); font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
-.calc-speed-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s3); align-items: center; }
-.calc-tier-search { margin-top: var(--s5); }
-.calc-tiers { list-style: none; display: flex; flex-direction: column; margin: var(--s3) calc(var(--s2) * -1) 0; padding: 0; }
-.calc-tier {
-  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
-  min-height: var(--h-row); padding: var(--s1) var(--s3) var(--s1) var(--s2);
-  content-visibility: auto; contain-intrinsic-size: auto 56px;
-}
-.calc-tier img { width: 44px; height: 44px; object-fit: contain; }
-.calc-tier-copy { min-width: 0; display: flex; flex-direction: column; }
-.calc-tier-copy strong { font-size: var(--t15); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.calc-tier-copy small { font-size: var(--t12); color: var(--mute); }
-.calc-tier > b { font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
-.calc-tier.slower { opacity: var(--opacity-disabled); }
-.calc-tier.tie > b { padding: 0 var(--s3); background: var(--panel-2); }
-/* the basis row is the one inverted row, like the champion cell */
-.calc-tier.me { background: var(--lit); color: var(--ground); content-visibility: visible; }
-.calc-tier.me .calc-tier-copy small { color: inherit; }
-
-/* ---------- dex ---------- */
-.calc-dex-empty { min-height: calc(var(--s21) * 2 + var(--s13)); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: var(--s2); }
-.calc-dex-empty strong { font-size: var(--t15); font-weight: 600; }
+/* ---------- dex: the head panel, bars, matchups ---------- */
+.calc-dex-empty { display: grid; gap: var(--s2); justify-items: start; padding: var(--s5) var(--pad); }
+.calc-dex-empty strong { font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
 .calc-dex-empty span { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
 .calc-dex-empty .btn { margin-top: var(--s3); }
-.calc-dex-actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s5); }
-.calc-dex-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); align-items: start; }
-.calc-base-row { display: grid; grid-template-columns: 52px 32px minmax(0, 1fr) 84px; align-items: center; gap: var(--s3); min-height: 52px; }
-.calc-base-row + .calc-base-row { box-shadow: inset 0 1px 0 var(--rule); }
-.calc-base-row strong { font-size: var(--t15); font-weight: 600; }
-.calc-base-row b { font-size: var(--t15); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-.calc-base-row small { font-size: var(--t12); color: var(--mute); text-align: right; font-variant-numeric: tabular-nums; }
-.calc-base-bar { height: 8px; background: var(--panel-2); overflow: hidden; }
-.calc-base-bar i { display: block; height: 100%; background: var(--lit); }
-.calc-abilities { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
-.calc-abilities li { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--t15); }
-.calc-abilities strong { font-weight: 600; }
-.calc-abilities small { font-size: var(--t12); color: var(--mute); }
-.calc-matchups { display: flex; flex-direction: column; }
-.calc-matchup { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: var(--s3); min-height: 52px; padding: var(--s2) 0; }
-.calc-matchup + .calc-matchup { box-shadow: inset 0 1px 0 var(--rule); }
-.calc-matchup > strong { font-size: var(--t15); font-weight: 700; font-variant-numeric: tabular-nums; }
+.calc-dex-head { grid-template-columns: calc(var(--s21) + var(--s13)) minmax(0, 1fr); }
+/* a figure cell: the Pokémon on a 20 floor band, 136 tall */
+.calc-fig { --floor: var(--s5); position: relative; display: block; min-height: calc(var(--s21) + var(--s13)); }
+.calc-fig .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s3)); margin-inline: auto; }
+.calc-dex-copy { display: grid; align-content: center; gap: var(--s1); padding: var(--s3) var(--pad); }
+.calc-dex-copy h2 { margin: 0; }
+.calc-dex-actions { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
+.calc-dex-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s8); align-items: start; }
+.calc-dex-block { display: grid; gap: var(--s3); min-width: 0; }
+.calc-base { display: grid; }
+.calc-base-row { display: grid; grid-template-columns: var(--s5) minmax(0, 1fr) var(--s8) calc(var(--s21) - var(--s5)); align-items: center; gap: var(--s3); min-height: var(--h-strip); }
+.calc-base-row > b { text-align: right; font-variant-numeric: tabular-nums; }
+.calc-base-row > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.calc-matchup { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr); align-items: center; gap: var(--s3); min-height: var(--h-row); padding: var(--s2) var(--pad); }
+.calc-matchup > b { font-variant-numeric: tabular-nums; }
 
-.calc-move-tools { display: grid; grid-template-columns: minmax(0, 1.618fr) repeat(3, minmax(0, 1fr)); gap: var(--s3); margin-bottom: var(--s3); }
+.calc-move-tools { display: grid; grid-template-columns: minmax(0, 1.618fr) repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.calc-move-tools .tb-search-row { margin: 0; }
 .calc-table-wrap { overflow-x: auto; margin: 0 calc(var(--s2) * -1); }
 .calc-table { width: 100%; border-collapse: collapse; font-size: var(--t15); }
 .calc-table th { padding: var(--s2); font-size: var(--t12); font-weight: 600; color: var(--mute); text-align: left; white-space: nowrap; }
-.calc-table td { padding: var(--s2); height: 52px; vertical-align: middle; white-space: nowrap; content-visibility: auto; }
+.calc-table td { padding: var(--s2); height: var(--h-row); vertical-align: middle; white-space: nowrap; content-visibility: auto; }
 .calc-table tbody tr + tr td { box-shadow: inset 0 1px 0 var(--rule); }
 .calc-table td strong { display: block; font-weight: 600; }
 .calc-table td small { display: block; font-size: var(--t12); color: var(--mute); }
 .calc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
-/* ---------- tablet and phone ---------- */
-@media (max-width: 1099px) {
-  .calc-directions, .calc-dex-grid { grid-template-columns: 1fr; }
-}
+/* ---------- wide: both directions side by side ---------- */
+@media (min-width: 1100px) { .calc-directions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1099px) { .calc-dex-grid { grid-template-columns: 1fr; } }
 @media (max-width: 859px) {
   .calc-side-switch { display: block; }
   .calc-side-switch .ypl-seg { display: flex; }
   .calc-side-switch .seg-track { flex: 1; }
   .calc-sides { grid-template-columns: 1fr; }
   .calc-sides[data-editing="0"] [data-calc-side="1"], .calc-sides[data-editing="1"] [data-calc-side="0"] { display: none; }
-  .calc-field-grid { grid-template-columns: 1fr 1fr; }
-  .calc-field-grid > .ypl-seg { grid-column: 1 / -1; display: flex; }
-  .calc-field-grid > .ypl-seg .seg-track { flex: 1; }
   .calc-move-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .calc-move-tools .tb-search-row { grid-column: 1 / -1; }
-  .calc-speed-controls { grid-template-columns: 1fr; }
-  .calc-speed-controls .ypl-seg { display: flex; }
-  .calc-speed-controls .seg-track { flex: 1; }
 }
 @media (max-width: 639px) {
-  /* 폰: 두 칸이 같은 모양으로 선다. 그림 위, 이름 아래, 가운데 정렬이라 긴 이름도 칸 폭을 다 쓴다. */
-  .calc-versus-mon { flex-direction: column; justify-content: center; gap: var(--s2); padding: var(--s3) var(--s2); text-align: center; }
-  .calc-versus-mon > span:last-child { align-items: center; max-width: 100%; }
-  .calc-versus-mon strong { white-space: normal; overflow-wrap: anywhere; line-height: var(--l15); }
-  .calc-grid, .calc-moves { grid-template-columns: 1fr; }
-  .calc-stat-row input[type="range"] { display: none; }
-  .calc-stat-row { grid-template-columns: minmax(0, 1fr) 52px 84px 44px; gap: var(--s2); }
-  .calc-stat-row .tb-stat-label strong, .calc-stat-row .tb-stat-label span { white-space: nowrap; }
+  .calc-stat-row { grid-template-columns: var(--s8) minmax(0, 1fr) var(--h-control) calc(var(--s21) + var(--s5)); }
+  .calc-final { display: none; }
   .calc-move-tools { grid-template-columns: 1fr 1fr; }
-  .calc-move-tools .tb-dd:last-child { grid-column: 1 / -1; }
+  .calc-move-tools .cell:last-child { grid-column: 1 / -1; }
   .calc-table th:nth-child(3), .calc-table td:nth-child(3) { display: none; }
 }

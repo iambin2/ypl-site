@@ -1,12 +1,12 @@
 import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dropdown, Icon, Loader, Modal, Segmented, siteAlert, siteConfirm } from "../components/index.js";
-import { Mon, TabsLine } from "../components/common/Board.jsx";
+import { Cell, Dock, Mon, OptionRows, TabsLine } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
 import { STAGGER, place } from "../components/common/motion.js";
-import { formatDate } from "../services/dateFormat.js";
+import { dotDate, formatDate } from "../services/dateFormat.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
 import {
@@ -61,7 +61,6 @@ import {
   resolveEventRuleSelection,
 } from "../services/teamBuilderCore.js";
 import Button from "../components/common/Button.jsx";
-import Case from "../components/common/Case.jsx";
 
 
 function readInitialRuleState() {
@@ -185,9 +184,8 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
   return (
     <button type="button" className={"pn stand tb-mon" + (active ? " active" : "") + (unresolved ? " unresolved" : "")} onClick={onSelect} aria-pressed={active}>
       <Mon src={spriteUrl(member.pokemon.name)} />
-      <span className={"floor tb-mon-band" + (active ? " inv" : "")}>
+      <span className={"floor tb-mon-band" + (active ? " inv" : "")} title={unresolved ? "현재 규칙에서 확인할 수 없는 포켓몬" : `${itemLabel || "도구 없음"}, 기술 ${moveCount}/4`}>
         <b className="t12">{displayName}</b>
-        <span className="t12 reg tb-mon-line">{unresolved ? "현재 규칙에서 확인할 수 없는 포켓몬" : `${itemLabel || "도구 없음"}, 기술 ${moveCount}/4`}</span>
       </span>
       <span
         role="button"
@@ -1240,41 +1238,36 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
 
   return (
     <section className="sec tb-page" data-step={step}>
-      <header className="tb-head"><h1 className="t32">팀 빌더</h1><span className="t12 dim">이 브라우저에 저장</span></header>
-      <p className="t12 dim reg tb-desc">포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 브라우저에 저장할 수 있습니다.</p>
-        <div className="stack tb-hero-actions">
-          <Button variant="second" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 && <span className="num"> {savedTeams.length}</span>}</Button>
-          <Button variant="second" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "팀 저장"}</Button>
-        </div>
+      <header className="tb-head"><h1 className="t32">팀 빌더</h1><Button variant="link" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 ? ` ${savedTeams.length}` : ""}</Button></header>
+      <p className="t12 dim reg tb-desc">포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 이 브라우저에 저장합니다.</p>
 
       <div className="tb-steps" ref={stepsRef}>
         <TabsLine value={step} onChange={changeStep} label="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
       </div>
 
-      <div className="tb-rule-card" data-tb-step="rules">
-        <div className="tb-rule-grid">
-          <label className="tb-field">
-            <span>레귤레이션{eventId ? " (대회 기준)" : ""}</span>
-            <Dropdown className="tb-dd" value={regulationId} onChange={switchRegulation} disabled={Boolean(eventId)} ariaLabel="레귤레이션"
-              options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, label: reg.name + (reg.status === "current" ? " (현행)" : reg.status === "past" ? " (이전)" : "") }))} />
-          </label>
-          <label className="tb-field">
-            <span>파이컵 추가 룰{eventId ? " (대회 기준)" : ""}</span>
-            <Dropdown className="tb-dd" value={cupRuleId} onChange={switchCupRule} disabled={Boolean(eventId)} ariaLabel="파이컵 추가 룰"
-              options={Object.values(CUP_RULES).map(rule => ({ value: rule.id, label: rule.name }))} />
-          </label>
-          {cupRule.kind === "monotype" && <label className="tb-field">
-            <span>지정 타입{eventId ? " (대회 기준)" : ""}</span>
-            <Dropdown className="tb-dd" value={assignedTypeId} onChange={switchCupRuleType} placeholder="타입을 선택해 주세요." ariaLabel="지정 타입"
-              options={TYPE_OPTIONS.map(type => ({ value: type.id, label: `${type.korean} (${type.english})` }))} />
-          </label>}
+      <div className="tb-rules" data-tb-step="rules">
+        <div className="tb-rule-group">
+          <h2 className="t12 dim">레귤레이션{eventId ? " (대회 기준)" : ""}</h2>
+          <OptionRows name="tb-regulation" value={regulationId} onChange={switchRegulation} disabled={Boolean(eventId)}
+            options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, title: reg.name, line: `${reg.status === "current" ? "현행" : "이전"}, ${periodText(reg.period)}` }))} />
         </div>
-        <div className="tb-rule-meta">
-          <span className={`tb-status-chip ${regulation.status}`}>{regulation.status === "current" ? "현행" : "이전"}</span>
-          <span>{periodText(regulation.period)}</span>
-          <span>{regulation.description}</span>
-          {cupRule.kind !== "none" && <span>{cupRule.description}</span>}
+        <div className="tb-rule-group">
+          <h2 className="t12 dim">파이컵 추가 룰{eventId ? " (대회 기준)" : ""}</h2>
+          <OptionRows name="tb-cup-rule" value={cupRuleId} onChange={switchCupRule} disabled={Boolean(eventId)}
+            options={Object.values(CUP_RULES).map(rule => ({ value: rule.id, title: rule.name, line: rule.description }))} />
         </div>
+        {cupRule.kind === "monotype" && <div className="tb-rule-group">
+          <h2 className="t12 dim">{cupRule.name}의 타입{eventId ? " (대회 기준)" : ""}</h2>
+          <div className="stack tb-type-grid" role="radiogroup" aria-label="지정 타입">
+            {TYPE_OPTIONS.map(type => (
+              <button type="button" key={type.id} role="radio" aria-checked={assignedTypeId === type.id} disabled={Boolean(eventId)}
+                className={"tb-type-opt " + (assignedTypeId === type.id ? "inv" : "pn")} onClick={() => switchCupRuleType(type.id)}>
+                <span className={`tb-type type-${type.id}`}>{type.korean}</span>
+              </button>
+            ))}
+          </div>
+        </div>}
+        <p className="t12 reg dim">{regulation.description}<br />능력 포인트는 개별 최대 32, 총합 최대 66입니다.</p>
       </div>
 
       <div className="tb-validation-wrap" data-tb-step="team">
@@ -1368,12 +1361,11 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         </div>
 
         <div className="tb-main-column" data-tb-step="team">
-          <div className="tb-panel">
-            <div className="tb-panel-head tb-team-head">
-              <div>
-                <div className="tb-team-title-line"><h2>팀 구성</h2><span className="tb-current-team">{currentSaved?.name || "저장되지 않은 팀"}</span>{dirty && <span className="tb-dirty-badge">변경사항 있음</span>}{hasWorkingState && draftText && <span className={`tb-draft-badge ${draftStatus}`} title={draftStatus === "saved" && draftSavedAt ? `마지막 임시저장: ${formatSavedDate(draftSavedAt)}` : undefined}>{draftText}</span>}</div>
-              </div>
-              <strong className="tb-pool-count">{team.length}<small> / {regulation.maxTeamSize || 6}</small></strong>
+          <div className="tb-team">
+            <div className="tb-team-head">
+              <h2 className="t20">팀 구성</h2>
+              <span className="t12 reg dim tb-team-state">{[currentSaved?.name || "저장되지 않은 팀", dirty && "변경사항 있음", hasWorkingState && draftText].filter(Boolean).join(", ")}</span>
+              <b className="t15 tb-team-count">{team.length} / {regulation.maxTeamSize || 6}</b>
             </div>
             <div className="tb-team-slots">
               {Array.from({ length: regulation.maxTeamSize || 6 }, (_, index) => {
@@ -1382,45 +1374,52 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               })}
             </div>
             <div className="tb-team-actions">
-              <span>{draftSavedAt && draftStatus === "saved" ? `마지막 임시저장 ${new Date(draftSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}` : "변경사항은 이 브라우저에 자동 임시저장됩니다."}</span>
-              <Button size="sm" onClick={resetTeam}>초기화</Button>
+              <span className="t12 reg dim">{draftSavedAt && draftStatus === "saved" ? `마지막 임시저장 ${new Date(draftSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}` : "변경사항은 이 브라우저에 자동 임시저장됩니다."}</span>
+              <span className="tb-team-links">
+                {team.length > 0 && <Button variant="link" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지 저장</Button>}
+                <Button variant="link" onClick={resetTeam}>초기화</Button>
+              </span>
             </div>
-            {team.length > 0 && <div className="tb-share-actions">
-              <Button size="sm" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지 저장</Button>
-              <Button size="sm" disabled={detailStatus === "loading"} onClick={openShare}>게시판에 올리기</Button>
-            </div>}
           </div>
 
-          <div className="tb-panel tb-editor">
+          <div className="tb-editor">
             {!selectedMember ? (
-              <div className="tb-editor-empty"><strong>세팅할 포켓몬을 선택해 주세요.</strong><span>왼쪽 목록에서 추가하거나 위 팀 슬롯을 선택하면 상세 설정을 편집할 수 있습니다.</span></div>
+              <div className="pn tb-editor-empty"><strong className="t15">세팅할 포켓몬을 선택해 주세요.</strong><span className="t15 reg dim">목록에서 추가하거나 위의 칸을 고르면 여기서 설정합니다.</span></div>
             ) : (
               <>
                 <div className="tb-editor-head">
-                  <img src={spriteUrl(selectedMember.pokemon.name)} alt="" onError={onSpriteError()} />
-                  <div className="tb-editor-title">
-                    <h2>{displayPokemon(selectedMember.pokemon)}</h2>
-                    {displayPokemon(selectedMember.pokemon) !== selectedMember.pokemon.name && <span>{selectedMember.pokemon.name}</span>}
-                    <small>{selectedDetails?.num != null ? `전국도감 #${String(selectedDetails.num).padStart(4, "0")}` : "전국도감 번호 확인 중…"}</small>
-                    <TypeBadges types={selectedDetails?.types || []} />
-                  </div>
+                  <h2 className="t20">{displayPokemon(selectedMember.pokemon)}</h2>
+                  <span className="t12 reg dim">{displayPokemon(selectedMember.pokemon) !== selectedMember.pokemon.name ? `${selectedMember.pokemon.name}, ` : ""}{selectedDetails?.num != null ? `전국도감 #${String(selectedDetails.num).padStart(4, "0")}` : "전국도감 번호 확인 중"}</span>
+                  <TypeBadges types={selectedDetails?.types || []} />
                 </div>
 
-                <div className="tb-editor-grid two">
-                  <label className="tb-field"><span>특성</span>
+                <div className="cells tb-spec">
+                  <Cell label="특성">
                     <Dropdown className="tb-dd" value={selectedMember.ability || ""} disabled={!selectedDetails?.abilities?.length}
                       onChange={value => updateMember(selectedMember.uid, { ability: value })} ariaLabel="특성"
-                      placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중…"}
+                      placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중"}
                       options={(selectedDetails?.abilities || []).map(ability => ({ value: ability, label: bilingualName(abilityName(ability), ability) }))} />
-                  </label>
-                  <label className="tb-field"><span>성격</span>
+                  </Cell>
+                  <Cell label="도구">
+                    {selectedRequiredItem ? (
+                      <div className="tb-locked-item" role="textbox" aria-readonly="true" aria-label="메가폼 전용 도구" title="선택한 메가폼에 필요한 도구로 자동 지정되며 변경할 수 없습니다.">
+                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><Icon n="lock" size={16} />
+                      </div>
+                    ) : (
+                      <PickField label="도구" value={selectedMember.item ? itemDisplay(detailData, selectedMember.item) : ""}
+                        placeholder={!detailData ? (detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중") : "도구 없음"}
+                        disabled={!detailData} onOpen={() => setPicker("item")} onClear={() => updateMember(selectedMember.uid, { item: "" })} />
+                    )}
+                  </Cell>
+                  <Cell label="성격" wide>
                     <Dropdown className="tb-dd" value={selectedMember.alignment || "serious"} onChange={value => updateMember(selectedMember.uid, { alignment: value })} ariaLabel="성격"
                       options={ALIGNMENTS.map(alignment => ({ value: alignment.id, label: alignmentDisplay(alignment) }))} />
-                  </label>
+                  </Cell>
                 </div>
+                <p className="t12 reg dim tb-field-meta">{selectedRequiredItem ? "메가폼의 도구는 자동으로 정해집니다. " : ""}{regulation.shortName}에서 쓸 수 있는 도구만, 같은 도구는 한 번만 씁니다.</p>
 
                 <div className="tb-editor-section">
-                  <div className="tb-subhead"><div><strong>능력 포인트</strong><span>개별 최대 32, 총합 최대 66</span></div><b className={STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0) > 66 ? "over" : ""}>{STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0)} / 66</b></div>
+                  <div className="tb-subhead"><span className="t12 dim">능력 포인트</span><b className={"t12" + (STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0) > 66 ? " over" : "")}>{STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0)} / 66</b></div>
                   <div className="tb-stats">
                     {STAT_KEYS.map(key => {
                       const nature = alignmentFor(selectedMember);
@@ -1429,10 +1428,10 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
                       const final = calculatedStat(base, point, key, nature);
                       return (
                         <div className="tb-stat-row" key={key}>
-                          <div className="tb-stat-label"><strong>{STAT_LABELS[key]}{nature.plus === key ? " ↑" : nature.minus === key ? " ↓" : ""}</strong><span>Base {base ?? "—"}</span></div>
-                          <input type="range" min="0" max="32" step="1" value={point} aria-label={`${STAT_LABELS[key]} 포인트`} onChange={event => updateStat(selectedMember, key, event.target.value)} />
-                          <input className="tb-stat-number" type="number" min="0" max="32" step="1" value={point} onChange={event => updateStat(selectedMember, key, event.target.value)} aria-label={`${STAT_LABELS[key]} Stat Point`} />
-                          <div className="tb-final-stat"><span>최종</span><strong>{final}</strong></div>
+                          <span className="t12 tb-stat-key" title={`${STAT_LABELS[key]}, 종족값 ${base ?? "확인 중"}`}>{STAT_LETTERS[key]}{nature.plus === key ? "↑" : nature.minus === key ? "↓" : ""}</span>
+                          <span className="tb-bar"><i style={{ transform: `scaleX(${point / 32})` }} /><input type="range" min="0" max="32" step="1" value={point} aria-label={`${STAT_LABELS[key]} 포인트`} onChange={event => updateStat(selectedMember, key, event.target.value)} /></span>
+                          <input className="tb-stat-number" type="number" min="0" max="32" step="1" inputMode="numeric" value={point} onChange={event => updateStat(selectedMember, key, event.target.value)} aria-label={`${STAT_LABELS[key]} Stat Point`} />
+                          <span className="t12 reg dim tb-final-stat">최종 <b>{final}</b></span>
                         </div>
                       );
                     })}
@@ -1440,42 +1439,27 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
                 </div>
 
                 <div className="tb-editor-section">
-                  <div className="tb-subhead"><div><strong>도구</strong><span>{regulation.shortName} 사용 가능, 같은 도구 중복 금지</span></div></div>
-                  {selectedRequiredItem ? (
-                    <>
-                      <div className="tb-locked-item" role="textbox" aria-readonly="true" aria-label="메가폼 전용 도구">
-                        <span>{itemDisplay(detailData, selectedRequiredItem)}</span><Icon n="lock" size={16} />
-                      </div>
-                      <div className="tb-field-meta">선택한 메가폼에 필요한 도구로 자동 지정되며 변경할 수 없습니다.</div>
-                    </>
-                  ) : (
-                    <PickField label="도구" value={selectedMember.item ? itemDisplay(detailData, selectedMember.item) : ""}
-                      placeholder={!detailData ? (detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중…") : "도구 없음"}
-                      disabled={!detailData} onOpen={() => setPicker("item")} onClear={() => updateMember(selectedMember.uid, { item: "" })} />
-                  )}
-                </div>
-
-                <div className="tb-editor-section">
-                  <div className="tb-subhead"><div><strong>기술</strong><span>학습 가능한 기술 중 4개 선택</span></div><b>{selectedMember.moves.filter(Boolean).length} / 4</b></div>
-                  <div className="tb-move-filters">
-                    <Dropdown className="tb-dd" value={moveTypeFilter} onChange={setMoveTypeFilter} ariaLabel="기술 타입 필터" disabled={!detailData}
-                      options={[{ value: "", label: "모든 타입" }, ...TYPE_OPTIONS.map(type => ({ value: type.id, label: type.korean }))]} />
-                    <Dropdown className="tb-dd" value={moveCategoryFilter} onChange={setMoveCategoryFilter} ariaLabel="기술 분류 필터" disabled={!detailData}
-                      options={MOVE_CATEGORY_OPTIONS} />
-                  </div>
-                  <div className="tb-moves">
+                  <div className="tb-subhead"><span className="t12 dim">기술, 배우는 기술 중 넷</span><b className="t12">{selectedMember.moves.filter(Boolean).length} / 4</b></div>
+                  <div className="cells">
+                    <Cell label="타입">
+                      <Dropdown className="tb-dd" value={moveTypeFilter} onChange={setMoveTypeFilter} ariaLabel="기술 타입 필터" disabled={!detailData}
+                        options={[{ value: "", label: "모든 타입" }, ...TYPE_OPTIONS.map(type => ({ value: type.id, label: type.korean }))]} />
+                    </Cell>
+                    <Cell label="분류">
+                      <Dropdown className="tb-dd" value={moveCategoryFilter} onChange={setMoveCategoryFilter} ariaLabel="기술 분류 필터" disabled={!detailData}
+                        options={MOVE_CATEGORY_OPTIONS} />
+                    </Cell>
                     {Array.from({ length: 4 }, (_, index) => {
                       const selectedMove = selectedMember.moves[index] || "";
                       const move = detailData?.moves?.[selectedMove];
                       return (
-                        <div className="tb-field tb-move-field" key={`${selectedMember.uid}-move-${index}`}>
-                          <span>기술 {index + 1}</span>
+                        <Cell label={`기술 ${index + 1}`} className="tb-move-cell" key={`${selectedMember.uid}-move-${index}`}>
                           <PickField label={`기술 ${index + 1}`} value={selectedMove ? moveName(detailData, selectedMove) : ""}
-                            placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : !detailData ? "데이터 불러오는 중…" : "기술 선택"}
+                            placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : !detailData ? "데이터 불러오는 중" : "기술 선택"}
                             typeId={championsData.toID(move?.type)} typeLabel={move ? TYPE_KO[move.type] || move.type : ""}
                             disabled={!detailData} onOpen={() => setPicker(index)} onClear={() => setMoveAt(index, "")} />
-                          <div className="tb-field-meta">{selectedMove ? moveMetadata(detailData, selectedMove) : (learnset.length || !detailData ? "" : "현재 포켓몬의 기술 목록을 불러오지 못했습니다.")}</div>
-                        </div>
+                          <span className="t12 reg dim tb-move-meta">{selectedMove ? moveMetadata(detailData, selectedMove) : (learnset.length || !detailData ? "" : "기술 목록을 불러오지 못했습니다.")}</span>
+                        </Cell>
                       );
                     })}
                   </div>
@@ -1483,8 +1467,16 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               </>
             )}
           </div>
-
         </div>
+      </div>
+
+      <div data-tb-step="team">
+        <Dock>
+          <div className="stack tb-dock">
+            <Button variant="main" icon="check" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "현재 팀 저장"}</Button>
+            <Button variant="second" disabled={team.length === 0 || detailStatus === "loading"} onClick={openShare}>게시판에 올리기</Button>
+          </div>
+        </Dock>
       </div>
 
       {/* 목록 아래에 선다: 위에 있으면 첫 선택이 고르던 목록을 밀어낸다 */}
@@ -1527,36 +1519,38 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
       </Modal>}
 
       {libraryOpen && <Modal title="내 팀" hint="불러오기 후 수정하고 다시 저장하면 기존 팀을 덮어씁니다." onClose={() => setLibraryOpen(false)}>
-        <div className="tb-library-save">
-          <label className="tb-field"><span>현재 팀 저장</span><input className="tb-input tb-team-name" maxLength={40} value={saveName} onChange={event => setSaveName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(); } }} placeholder="팀 이름" /></label>
-          <div className="tb-library-save-meta"><span>{regulation.name}, {currentCupRuleSummary}, {team.length}/6마리</span><span>이 브라우저에 저장됩니다.</span><span>미완성이거나 규정을 위반한 팀도 임시로 저장할 수 있습니다.</span></div>
-          <div className="tb-library-save-row">
-            <div className="tb-library-workspace-actions">
-              <Button size="sm" disabled={!storageAvailable} onClick={startNewTeam}>새 팀</Button>
-              <Button size="sm" disabled={!storageAvailable || team.length === 0} onClick={duplicateCurrentTeam}>현재 팀 복제</Button>
-            </div>
-            <Button variant="primary" size="sm" disabled={!storageAvailable || team.length === 0} onClick={saveCurrentTeam}>{currentSaved ? "변경사항 저장" : "새 팀 저장"}</Button>
-          </div>
-          {saveMessage && <div className="tb-save-message">{saveMessage}</div>}
+        <div className="stack tb-library-top">
+          <Button variant="main" icon="plus" disabled={!storageAvailable} onClick={startNewTeam}>새 팀</Button>
+          <Button variant="second" disabled={!storageAvailable || team.length === 0} onClick={duplicateCurrentTeam}>현재 팀 복제</Button>
         </div>
-        <div className="tb-saved-list">
+        <div className="tb-library-save">
+          <Cell label="현재 팀 저장"><input className="tb-team-name" maxLength={40} value={saveName} onChange={event => setSaveName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(); } }} placeholder="팀 이름" aria-label="팀 이름" /></Cell>
+          <Button variant="second" disabled={!storageAvailable || team.length === 0} onClick={saveCurrentTeam}>{currentSaved ? "변경사항 저장" : "새 팀 저장"}</Button>
+        </div>
+        <p className="t12 reg dim tb-library-save-meta">{regulation.name}, {currentCupRuleSummary}, {team.length}/6마리. 미완성이거나 규정을 위반한 팀도 저장할 수 있습니다.</p>
+        {saveMessage && <p className="t15 tb-save-message">{saveMessage}</p>}
+        <div className="stack tb-saved-list">
           {savedTeams.map(saved => {
             const savedReg = REGULATIONS[saved.regulationId];
             const type = TYPE_OPTIONS.find(option => option.id === saved.cupRuleSettings?.assignedType);
+            const open = saved.id === activeSavedTeamId;
+            const day = dotDate(saved.updatedAt)?.day;
             return (
-              <div className="tb-saved-team" key={saved.id}>
-                <Case title={saved.id === activeSavedTeamId ? `${saved.name} (현재)` : saved.name}
-                  line={`${savedReg?.shortName || saved.regulationId}${saved.cupRuleId !== "none" ? `, ${(CUP_RULES[saved.cupRuleId]?.shortName || "룰")}${type ? ` (${type.korean})` : ""}` : ""}, ${saved.members.length}/6마리`}
-                  party={saved.members.map(member => ({ name: member.pokemonName, img: spriteUrl(member.pokemonName) }))} onClick={() => loadSavedTeam(saved)} label={`${saved.name} 불러오기`} />
-                <div className="tb-saved-actions">
-                  <Button size="sm" onClick={() => duplicateSavedTeam(saved)}>복제</Button>
-                  <Button size="sm" onClick={() => deleteSavedTeam(saved)}>삭제</Button>
-                </div>
+              <div className={"tb-saved " + (open ? "inv" : "pn")} key={saved.id}>
+                <button type="button" className="tb-saved-open" onClick={() => loadSavedTeam(saved)} aria-label={`${saved.name} 불러오기`}>
+                  <span className="tb-saved-head"><b className="t15">{saved.name}</b>{open ? <span className="t12 tb-saved-mark"><i className="lamp" aria-hidden="true" />열린 팀</span> : day && <span className="t12 reg dim">저장 {day}</span>}</span>
+                  <span className="t12 reg dim">{`${savedReg?.shortName || saved.regulationId}${saved.cupRuleId !== "none" ? `, ${(CUP_RULES[saved.cupRuleId]?.shortName || "룰")}${type ? ` (${type.korean})` : ""}` : ""}, ${saved.members.length}/6마리`}</span>
+                  <span className="tb-saved-six">{saved.members.map((member, index) => <span key={index}><img src={spriteUrl(member.pokemonName)} alt="" loading="lazy" onError={onSpriteError()} /></span>)}</span>
+                </button>
+                <span className="tb-saved-actions">
+                  <Button variant="link" onClick={() => duplicateSavedTeam(saved)}>복제</Button>
+                  <Button variant="link" onClick={() => deleteSavedTeam(saved)}>삭제</Button>
+                </span>
               </div>
             );
           })}
-          {!savedTeams.length && <div className="tb-library-empty">아직 저장된 팀이 없습니다.</div>}
         </div>
+        {!savedTeams.length && <p className="t15 reg dim tb-library-empty">아직 저장된 팀이 없습니다.</p>}
       </Modal>}
     </section>
   );
