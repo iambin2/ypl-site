@@ -142,8 +142,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       </div>
     </PageHead>
     {list.length===0?(kw
-      ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
-      : <Empty title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
+      ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
+      : <Empty title="등록된 공지가 없습니다" desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
     : <div className="nb-list card">
       {shown.map(a=>{
         return (<button type="button" className="ypl-row nb-item" key={a.id} onClick={()=>openArticle(a.id)}>
@@ -172,7 +172,7 @@ function PushToggle(){
     if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다.","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
     setBusy(true);
     try{ if(on) await disablePush(); else await enablePush(); setOn(!on); }
-    catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||""); }
+    catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
     finally{ setBusy(false); }
   };
   return <Button type="button" size="sm" disabled={busy} onClick={toggle}>{on?"알림 끄기":"알림 받기"}</Button>;
@@ -194,7 +194,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
     </button>
     {open&&<div className="pr-body swap">
       {resp.length===0
-        ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자가 되어 보세요!</div>
+        ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자를 기다립니다.</div>
         : <div className="pr-list">
             {resp.map((r,i)=>(<div className="pr-row" key={r.id}>
               <span className="pr-name">{i+1}</span>
@@ -223,7 +223,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
   const toggleMulti=(id,opt)=>setAns(a=>{ const cur=Array.isArray(a[id])?a[id]:[]; return {...a,[id]:cur.includes(opt)?cur.filter(x=>x!==opt):[...cur,opt]}; });
   const submit=async()=>{
     if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요."); return; }
-    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답이 비어 있습니다.",`'${f.label||"질문"}' 항목에 답해 주세요.`); return; } } }
+    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답을 입력해 주세요.",`'${f.label||"질문"}' 항목에 답해 주세요.`); return; } } }
     setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
     if(typeof ok==="string"){ siteAlert(ok); return; }
     if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
@@ -235,17 +235,17 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
   return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해 주세요." onClose={onClose}>
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
-      {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력하세요." autoComplete="name"/></div>}
+      {form.eventId&&<div className="ff-q"><label className="ff-q-label">참가자 이름<span className="req">*</span></label><input type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/></div>}
       {fields.length===0&&!form.eventId&&<p className="bk-hint">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
         <label className="ff-q-label">{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
-        {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요."/>}
-        {f.type==="long"&&<textarea value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력하세요."/>}
+        {f.type==="short"&&<input type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
+        {f.type==="long"&&<textarea value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
         {f.type==="single"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+(ans[f.id]===op?" sel":"")} key={oi}><input type="radio" name={f.id} checked={ans[f.id]===op} onChange={()=>set(f.id,op)}/><span>{op}</span></label>))}</div>}
         {f.type==="multi"&&<div className="ff-choices">{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+((Array.isArray(ans[f.id])&&ans[f.id].includes(op))?" sel":"")} key={oi}><input type="checkbox" checked={Array.isArray(ans[f.id])&&ans[f.id].includes(op)} onChange={()=>toggleMulti(f.id,op)}/><span>{op}</span></label>))}</div>}
-        {f.type==="dropdown"&&<Dropdown value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택하세요."/>}
+        {f.type==="dropdown"&&<Dropdown value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택해 주세요."/>}
       </div>))}
-      <div className="modal-actions"><Button onClick={onClose} disabled={busy}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"제출 중… 잠시만요.":"제출하기"}</Button></div>
+      <div className="modal-actions"><Button onClick={onClose} disabled={busy}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"제출 중…":"제출하기"}</Button></div>
     </div>
   </Modal>);
 }

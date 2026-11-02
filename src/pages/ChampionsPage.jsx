@@ -94,7 +94,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       </Button>}
     </PageHead>
 
-    {!reigning && <Empty title="등록된 챔피언이 없습니다." desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
+    {!reigning && <Empty title="등록된 챔피언이 없습니다" desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
     {/* 현 챔피언: 홈 표지와 같은 무대. 홈의 명판처럼 이름을 새기고 그 아래 한 줄에 세대와 시즌을 둔 뒤, 우승 파티가 받침 없이 천장 빛 아래 바닥에 선다. */}
     {reigning && <section className="hof-stage" aria-labelledby="hof-reigning" ref={hallRef}>
       <div className="hof-stage-who">

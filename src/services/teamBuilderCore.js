@@ -961,7 +961,7 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
     incomplete.push("배틀 상세 데이터를 불러오는 중이라 최종 검증이 아직 완료되지 않았습니다.");
   }
   if (detailStatus === "error") {
-    incomplete.push("상세 배틀 데이터 연결에 실패해 기술과 도구의 사용 가능 여부를 최종 검증할 수 없습니다.");
+    incomplete.push("상세 배틀 데이터를 연결하지 못해 기술과 도구의 사용 가능 여부를 최종 검증할 수 없습니다.");
   }
 
   const complete = team.length === (regulation?.maxTeamSize || 6) && incomplete.length === 0;

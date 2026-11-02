@@ -218,7 +218,7 @@ export async function listNormalizedBracketRuntimes() {
 }
 
 function databaseUuid() {
-  if (!globalThis.crypto?.randomUUID) throw new Error("안전한 고유 ID 생성을 지원하지 않는 브라우저입니다.");
+  if (!globalThis.crypto?.randomUUID) throw new Error("이 브라우저에서는 저장할 수 없습니다. 최신 Chrome이나 Safari에서 다시 열어 주세요.");
   return globalThis.crypto.randomUUID();
 }
 
@@ -339,7 +339,7 @@ export async function setNormalizedSingleBracketWinner({ runtimeId, eventId, sou
     p_source_node_key: sourceNodeKey,
     p_winner_entry_id: winnerEntryId,
   });
-  if (error) fail(error, "싱글 토너먼트 대진표 승자 저장에 실패했습니다.");
+  if (error) fail(error, "싱글 토너먼트 대진표 승자를 저장하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
@@ -615,7 +615,7 @@ async function syncNormalizedBracketMatchesNow(eventId, bracket, source = NORMAL
       await replaceEventRuntimeMatchesNow(eventId, previousRows, source);
     } catch (restoreError) {
       throw new Error(
-        `${error?.message || "경기 동기화에 실패했습니다."} (이전 경기 기록 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
+        `${error?.message || "경기를 동기화하지 못했습니다."} (이전 경기 기록도 복구하지 못했습니다. ${restoreError?.message || "원인을 확인하지 못했습니다."})`
       );
     }
     throw error;
@@ -766,7 +766,7 @@ async function syncEventBracketResultsNow(eventId, bracket, result) {
       await replaceEventRuntimeResultsNow(eventId, previousRows);
     } catch (restoreError) {
       const combined = new Error(
-        `${error?.message || "결과 동기화에 실패했습니다."} (이전 결과 기록 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
+        `${error?.message || "결과를 동기화하지 못했습니다."} (이전 결과 기록도 복구하지 못했습니다. ${restoreError?.message || "원인을 확인하지 못했습니다."})`
       );
       combined.code = "YPL_RESULT_ROLLBACK_FAILED";
       combined.cause = error;
@@ -1012,7 +1012,7 @@ async function syncEventBracketRankingAwardsNow(eventId, bracket) {
       await replaceEventRuntimeRankingAwardsNow(eventId, previousRows);
     } catch (restoreError) {
       const combined = new Error(
-        `${error?.message || "랭킹 포인트 동기화에 실패했습니다."} (이전 랭킹 포인트 기록 복구 실패: ${restoreError?.message || "알 수 없는 오류"})`
+        `${error?.message || "랭킹 포인트를 동기화하지 못했습니다."} (이전 랭킹 포인트 기록도 복구하지 못했습니다. ${restoreError?.message || "원인을 확인하지 못했습니다."})`
       );
       combined.code = "YPL_RANKING_AWARD_ROLLBACK_FAILED";
       combined.cause = error;
@@ -1231,7 +1231,7 @@ export async function findSubmissionRegistration(eventId, registrationName) {
     .eq("registration_name", name)
     .in("registration_source", ["application", "advancement", "manual"]);
 
-  if (error) fail(error, "신청 정보를 확인하지 못했습니다.");
+  if (error) fail(error, "신청 정보를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
 
   const selected = selectSubmissionRegistration(data || [], name);
   if (!selected) return null;
@@ -1295,7 +1295,7 @@ export async function submitEventTeamSnapshot({
     p_members: payload.members,
   });
 
-  if (error) fail(error, "파티 제출을 저장하지 못했습니다.");
+  if (error) fail(error, "파티 제출을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.submission_id || !row?.snapshot_id || !row?.revision) {
     throw new Error("파티 제출 저장 결과를 확인하지 못했습니다.");
@@ -1815,7 +1815,7 @@ export async function completeApplicationEvent(eventId, {
 
 function newDatabaseId() {
   if (!globalThis.crypto?.randomUUID) {
-    throw new Error("이 브라우저에서는 안전한 고유 ID 생성을 지원하지 않습니다.");
+    throw new Error("이 브라우저에서는 저장할 수 없습니다. 최신 Chrome이나 Safari에서 다시 열어 주세요.");
   }
   return globalThis.crypto.randomUUID();
 }
@@ -2001,7 +2001,7 @@ async function preflightEventParticipantIdentities(
 function rollbackFailure(originalError, rollbackErrors) {
   const rollbackSummary = rollbackErrors.map(error => error.message).join(" / ");
   const combined = new Error(
-    `${originalError?.message || "참가자 확정에 실패했습니다."} (자동 되돌리기 실패: ${rollbackSummary})`
+    `${originalError?.message || "참가자를 확정하지 못했습니다."} (자동으로 되돌리지도 못했습니다. ${rollbackSummary})`
   );
   combined.code = "YPL_PARTICIPANT_CONFIRMATION_ROLLBACK_FAILED";
   combined.cause = originalError;
@@ -2043,7 +2043,7 @@ export async function rollbackEventParticipantIdentityChanges(
       .select("id");
     remember(error, `${change.name || "참가자"}의 출전 선수를 정리하지 못했습니다.`);
     if (requireExactRows && !error && (data || []).length !== 1) {
-      remember(new Error(`${change.name || "참가자"}의 출전 선수가 예상한 소속과 일치하지 않습니다.`), "출전 선수 소속 확인에 실패했습니다.");
+      remember(new Error(`${change.name || "참가자"}의 출전 선수가 예상한 소속과 일치하지 않습니다.`), "출전 선수 소속을 확인하지 못했습니다.");
     }
   }
 
@@ -2057,7 +2057,7 @@ export async function rollbackEventParticipantIdentityChanges(
       .select("id");
     remember(error, `${change.name || "참가자"}의 출전 정보를 정리하지 못했습니다.`);
     if (requireExactRows && !error && (data || []).length !== 1) {
-      remember(new Error(`${change.name || "참가자"}의 출전 정보가 예상한 소속과 일치하지 않습니다.`), "출전 정보 소속 확인에 실패했습니다.");
+      remember(new Error(`${change.name || "참가자"}의 출전 정보가 예상한 소속과 일치하지 않습니다.`), "출전 정보 소속을 확인하지 못했습니다.");
     }
   }
 
@@ -2073,7 +2073,7 @@ export async function rollbackEventParticipantIdentityChanges(
         .select("id");
       remember(error, `${change.name || "참가자"}의 신규 참가 등록을 정리하지 못했습니다.`);
       if (requireExactRows && !error && (data || []).length !== 1) {
-        remember(new Error(`${change.name || "참가자"}의 신규 참가 신청이 예상한 소속과 일치하지 않습니다.`), "참가 신청 소속 확인에 실패했습니다.");
+        remember(new Error(`${change.name || "참가자"}의 신규 참가 신청이 예상한 소속과 일치하지 않습니다.`), "참가 신청 소속을 확인하지 못했습니다.");
       }
       continue;
     }

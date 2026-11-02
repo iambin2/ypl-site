@@ -58,7 +58,7 @@ export function championsOperationsEnabled() {
 }
 
 function databaseUuid() {
-  if (!globalThis.crypto?.randomUUID) throw new Error("안전한 고유 ID 생성을 지원하지 않는 브라우저입니다.");
+  if (!globalThis.crypto?.randomUUID) throw new Error("이 브라우저에서는 저장할 수 없습니다. 최신 Chrome이나 Safari에서 다시 열어 주세요.");
   return globalThis.crypto.randomUUID();
 }
 

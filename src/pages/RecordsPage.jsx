@@ -169,7 +169,7 @@ function TrainerView({ snapshot, onOpen }) {
   const [all, setAll] = useState(false);
 
   const visible = snapshot.trainers.filter((t) => t.name.includes(query.trim()));
-  if (!snapshot.trainers.length) return <Empty title="트레이너 기록이 없습니다." />;
+  if (!snapshot.trainers.length) return <Empty title="트레이너 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
   const rows = all || query.trim() ? visible : visible.slice(0, LIST_SHOWN);
 
   return (
@@ -196,7 +196,7 @@ function TrainerView({ snapshot, onOpen }) {
             </li>
           )])}
         </ul>
-      ) : <Empty title="검색 결과가 없습니다." />}
+      ) : <Empty title="검색 결과가 없습니다" desc="다른 이름으로 검색해 주세요." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
         <Button type="button" className="ypl-table-more" onClick={() => setAll(true)}>{visible.length}명 전체 보기</Button>
       )}
@@ -293,7 +293,7 @@ function TrainerProfile({ snapshot, profile }) {
               );
             })}
           </ul>
-        ) : <Empty title="확인 가능한 대회 기록이 없습니다." />}
+        ) : <Empty title="확인 가능한 대회 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
         <Pager page={histCur} pages={histPages} onGo={setHistPage} />
       </section>
 
@@ -302,7 +302,7 @@ function TrainerProfile({ snapshot, profile }) {
         {favorites.length ? (
           <CountList items={favorites.slice(0, 6)} />
         ) : (
-          <Empty title="저장된 우승 엔트리가 없습니다." desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
+          <Empty title="저장된 우승 엔트리가 없습니다" desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
         )}
       </section>
     </div>
@@ -540,7 +540,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     return (parseInt(b.round.round) || 0) - (parseInt(a.round.round) || 0);
   });
 
-  if (!otours.length) return <Empty title="대회 기록이 없습니다." />;
+  if (!otours.length) return <Empty title="대회 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
 
   return (<>
     <FilterRow value={selectedTour ? selectedTour.key : "all"} onChange={setCategory} label="대회 종류"
@@ -564,7 +564,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
           <ul className="ypl-group sq rc-rounds swap">
             {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
           </ul>
-        ) : <Empty title="검색과 맞는 대회 기록이 없습니다." />}
+        ) : <Empty title="검색 결과가 없습니다" desc="다른 이름으로 검색해 주세요." />}
       </>
     )}
   </>);
@@ -581,7 +581,7 @@ function PokemonView({ snapshot }) {
   const current = open ? snapshot.pokemon.find((p) => p.name === open.key) : null;
 
   if (!snapshot.pokemon.length) {
-    return <Empty title="기록에 연결된 파티 엔트리가 없습니다." desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
+    return <Empty title="기록에 연결된 파티 엔트리가 없습니다" desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
   }
   const rows = all || normalized ? visible : visible.slice(0, LIST_SHOWN);
 
@@ -600,7 +600,7 @@ function PokemonView({ snapshot }) {
             </li>
           ))}
         </ul>
-      ) : <Empty title="검색 결과가 없습니다." />}
+      ) : <Empty title="검색 결과가 없습니다" desc="다른 이름으로 검색해 주세요." />}
       {!all && !normalized && visible.length > LIST_SHOWN && (
         <Button type="button" className="ypl-table-more" onClick={() => setAll(true)}>{visible.length}종 전체 보기</Button>
       )}
@@ -629,7 +629,7 @@ function PokemonView({ snapshot }) {
               <div className="rc-sech"><h4 id="rc-pk-pt-h">함께 많이 등록된 포켓몬</h4></div>
               {current.partners.length
                 ? <CountList items={current.partners.slice(0, 8)} />
-                : <Empty title="동반 엔트리 기록이 없습니다." />}
+                : <Empty title="동반 엔트리 기록이 없습니다" desc="파티 엔트리가 저장되면 이곳에 표시됩니다." />}
             </section>
 
             {current.champions.length > 0 && (
@@ -694,11 +694,11 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
         {options.length > 0 && <Segmented value={view.id} onChange={setSel} ariaLabel="랭킹 보기" options={options} />}
         {past.length > 0 && <Dropdown className="rc-past" value="" placeholder="지난 시즌 보기" ariaLabel="지난 기록" onChange={setSel} options={past.map((v) => ({ value: v.id, label: v.label }))} />}
         {admin && !normalizedMode && <>
-          <Button size="sm" onClick={addSeason}>+ 시즌</Button>
-          <Button size="sm" onClick={addEra}>+ 누적 탭</Button>
+          <Button size="sm" onClick={addSeason}>시즌 추가</Button>
+          <Button size="sm" onClick={addEra}>누적 탭 추가</Button>
         </>}
       </div>
-      {!view ? <Empty title="랭킹 기록이 없습니다." />
+      {!view ? <Empty title="랭킹 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />
         : view.era ? <RankView era={view.era} data={data} admin={admin} setModal={setModal} onName={onName} />
         : <SeasonView s={view.season} data={data} admin={admin} setModal={setModal} onName={onName} />}
       <p className="rc-note">
@@ -739,7 +739,7 @@ function SeasonView({ s, data, admin, setModal, onName }) {
   const hasNote = s.rows.some((r) => r.note);
   return (
     <div className="rc-rank">
-      {s.rows.length ? <Podium rows={s.rows} label={`${s.name} 성적`} onName={onName} /> : <Empty title={`${s.name} 성적은 아직 없습니다.`} />}
+      {s.rows.length ? <Podium rows={s.rows} label={`${s.name} 성적`} onName={onName} /> : <Empty title={`${s.name} 성적은 아직 없습니다`} desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
       {admin && s.source !== "normalized" && (
         <div className="rc-admin">
           <Button

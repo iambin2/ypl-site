@@ -48,7 +48,7 @@ test("Final wizard reuses ordinary participant confirmation without Champions ma
   assert.doesNotMatch(brackets, /placement="final"/);
   assert.doesNotMatch(brackets, /운영 대체 추가/);
   assert.match(brackets, /createChampionshipAdvancement/);
-  assert.match(brackets, /\+ 참가자 추가/);
+  assert.match(brackets, /참가자 추가/);
   assert.doesNotMatch(controls, /운영 대체 추가/);
   assert.doesNotMatch(controls, /불참 처리/);
   assert.doesNotMatch(controls, /본선 참가자/);

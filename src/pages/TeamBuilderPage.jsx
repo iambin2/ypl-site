@@ -177,7 +177,7 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
     return (
       <div className="tb-slot empty">
         <span className="tb-slot-no">{index + 1}</span>
-        <div className="tb-slot-empty">포켓몬을 추가하세요.</div>
+        <div className="tb-slot-empty">포켓몬을 추가해 주세요.</div>
       </div>
     );
   }
@@ -216,7 +216,7 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
     message = `${result.errors.length}개의 규정 위반을 확인했습니다.`;
     icon = <Icon n="x" size={16} />;
   } else if (result.status === "valid") {
-    title = "검증 통과";
+    title = "규정 통과";
     message = `${regulationName}, ${cupRuleSummary} 기준으로 포켓몬 구성과 세팅이 최종 검증을 통과했습니다.`;
     icon = <Icon n="check" size={16} />;
   } else {
@@ -290,7 +290,7 @@ function OfficialSubmissionPanel({
   ];
   const latestSubmission = registration?.latestSubmission || null;
   const submittedAt = latestSubmission?.submitted_at || latestSubmission?.submittedAt || null;
-  const formatSubmissionTime = value => value ? new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : "";
+  const formatSubmissionTime = value => value ? formatDate(value, { time: true }) : "";
   return (
     <div className={`tb-validation official-submission ${state}`}>
       <div className="tb-validation-head">
@@ -303,14 +303,14 @@ function OfficialSubmissionPanel({
       {eventContext && <div className="tb-official-meta">
         <span>{regulationName || eventContext.regulation_id || "레귤레이션 확인 필요"}</span>
         <span>{cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음"}</span>
-        {eventContext.submission_target_at && <span>권장 제출 시각 {new Date(eventContext.submission_target_at).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })}</span>}
+        {eventContext.submission_target_at && <span>권장 제출 시각 {formatDate(eventContext.submission_target_at, { time: true })}</span>}
       </div>}
       <div className="tb-official-lookup">
         <input
           className="tb-input"
           value={registrationName}
           onChange={event => onRegistrationNameChange(event.target.value)}
-          placeholder="신청자 본인의 이름을 입력하세요."
+          placeholder="신청자 본인의 이름을 입력해 주세요."
           aria-label="신청자 이름"
           autoComplete="name"
           disabled={lookupBusy}
@@ -644,7 +644,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     } catch (error) {
       setRegistrationLookupError(error?.code === "YPL_AMBIGUOUS_REGISTRATION"
         ? "동일한 이름의 신청자가 있어 자동으로 확인할 수 없습니다. 운영진에게 문의해 주세요."
-        : error?.message || "신청 정보를 확인하지 못했습니다.");
+        : error?.message || "신청 정보를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
     } finally {
       setRegistrationLookupBusy(false);
     }
@@ -678,7 +678,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
       // L5, P2: 제출이 저장된 순간 흰 빛이 한 번 퍼지고 안드로이드에서 짧게 진동한다
       requestAnimationFrame(() => celebrate?.(...centerOf(document.querySelector(".tb-official-submit") || document.querySelector(".tb-validation-wrap"))));
     } catch (error) {
-      setSubmissionError(error?.message || "파티 제출을 저장하지 못했습니다.");
+      setSubmissionError(error?.message || "파티 제출을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
     } finally {
       setSubmissionBusy(false);
     }
@@ -898,7 +898,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
 
   const saveWorkingTeam = useCallback(({ name, forceNew = false, allowEmpty = false } = {}) => {
     if (!storageAvailable) {
-      setSaveMessage("이 브라우저에서는 로컬 저장소를 사용할 수 없습니다.");
+      setSaveMessage("이 브라우저에서는 저장할 수 없습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요.");
       return null;
     }
     if (!allowEmpty && !team.length) {
@@ -930,7 +930,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     next.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
     if (!writeSavedTeams(next)) {
       setStorageAvailable(false);
-      setSaveMessage("팀을 저장하지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.");
+      setSaveMessage("팀을 저장하지 못했습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요.");
       return null;
     }
     setStorageAvailable(true);
@@ -1147,7 +1147,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
       const result = await saveTeamSheetImage(sheet, { title: teamTitle, meta: `${regulation.name}, ${currentCupRuleSummary}, ${team.length}마리` });
       if (result === "downloaded") flash?.("이미지를 저장했습니다.");
     } catch (error) {
-      siteAlert("이미지를 만들지 못했습니다.", error?.message || "");
+      siteAlert("이미지를 만들지 못했습니다.", error?.message || "잠시 뒤 다시 시도해 주세요.");
     } finally {
       setImageBusy(false);
     }
@@ -1220,9 +1220,9 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     else console.info(`[YPL] 한국어 번역 검사 통과: 도구 ${itemIds.size}, 기술 ${moveIds.size}, 특성 ${abilityNames.size}`);
   }, [detailData, koreanNames]);
 
-  const dataStatusText = detailStatus === "ready" ? "배틀 데이터 연결됨" : detailStatus === "error" ? "상세 데이터 연결 실패" : "배틀 데이터 불러오는 중";
+  const dataStatusText = detailStatus === "ready" ? "배틀 데이터 연결됨" : detailStatus === "error" ? "데이터 연결 안 됨" : "배틀 데이터 불러오는 중…";
   const localizationText = localizationStatus === "ready" ? "한국어 이름 사용" : localizationStatus === "error" ? "영문 이름 사용" : "한국어 이름 준비 중…";
-  const draftText = draftStatus === "saved" ? "임시저장됨" : draftStatus === "pending" ? "임시저장 중…" : draftStatus === "error" ? "임시저장 실패" : "";
+  const draftText = draftStatus === "saved" ? "임시저장됨" : draftStatus === "pending" ? "임시저장 중…" : draftStatus === "error" ? "임시저장 안 됨" : "";
   const hasWorkingState = team.length > 0 || Boolean(activeSavedTeamId) || cupRuleId !== "none" || Boolean(assignedTypeId);
 
   return (
@@ -1252,7 +1252,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
           </label>
           {cupRule.kind === "monotype" && <label className="tb-field">
             <span>지정 타입{eventId ? " (대회 기준)" : ""}</span>
-            <Dropdown className="tb-dd" value={assignedTypeId} onChange={switchCupRuleType} placeholder="타입을 선택하세요." ariaLabel="지정 타입"
+            <Dropdown className="tb-dd" value={assignedTypeId} onChange={switchCupRuleType} placeholder="타입을 선택해 주세요." ariaLabel="지정 타입"
               options={TYPE_OPTIONS.map(type => ({ value: type.id, label: `${type.korean} (${type.english})` }))} />
           </label>}
         </div>
@@ -1380,14 +1380,14 @@ export default function TeamBuilderPage({ go, flash } = {}) {
               <Button size="sm" onClick={resetTeam}>초기화</Button>
             </div>
             {team.length > 0 && <div className="tb-share-actions">
-              <Button size="sm" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지로 저장</Button>
+              <Button size="sm" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지 저장</Button>
               <Button size="sm" disabled={detailStatus === "loading"} onClick={openShare}>게시판에 올리기</Button>
             </div>}
           </div>
 
           <div className="tb-panel tb-editor">
             {!selectedMember ? (
-              <div className="tb-editor-empty"><strong>세팅할 포켓몬을 선택하세요.</strong><span>왼쪽 목록에서 추가하거나 위 팀 슬롯을 선택하면 상세 설정을 편집할 수 있습니다.</span></div>
+              <div className="tb-editor-empty"><strong>세팅할 포켓몬을 선택해 주세요.</strong><span>왼쪽 목록에서 추가하거나 위 팀 슬롯을 선택하면 상세 설정을 편집할 수 있습니다.</span></div>
             ) : (
               <>
                 <div className="tb-editor-head">
@@ -1395,7 +1395,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                   <div className="tb-editor-title">
                     <h2>{displayPokemon(selectedMember.pokemon)}</h2>
                     {displayPokemon(selectedMember.pokemon) !== selectedMember.pokemon.name && <span>{selectedMember.pokemon.name}</span>}
-                    <small>{selectedDetails?.num != null ? `National Dex #${String(selectedDetails.num).padStart(4, "0")}` : "전국도감 번호 확인 중"}</small>
+                    <small>{selectedDetails?.num != null ? `전국도감 #${String(selectedDetails.num).padStart(4, "0")}` : "전국도감 번호 확인 중…"}</small>
                     <TypeBadges types={selectedDetails?.types || []} />
                   </div>
                 </div>
@@ -1404,7 +1404,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                   <label className="tb-field"><span>특성</span>
                     <Dropdown className="tb-dd" value={selectedMember.ability || ""} disabled={!selectedDetails?.abilities?.length}
                       onChange={value => updateMember(selectedMember.uid, { ability: value })} ariaLabel="특성"
-                      placeholder={detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…"}
+                      placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중…"}
                       options={(selectedDetails?.abilities || []).map(ability => ({ value: ability, label: bilingualName(abilityName(ability), ability) }))} />
                   </label>
                   <label className="tb-field"><span>성격</span>
@@ -1444,7 +1444,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                     </>
                   ) : (
                     <PickField label="도구" value={selectedMember.item ? itemDisplay(detailData, selectedMember.item) : ""}
-                      placeholder={!detailData ? (detailStatus === "error" ? "데이터 연결 실패" : "데이터 로딩 중…") : "도구 없음"}
+                      placeholder={!detailData ? (detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중…") : "도구 없음"}
                       disabled={!detailData} onOpen={() => setPicker("item")} onClear={() => updateMember(selectedMember.uid, { item: "" })} />
                   )}
                 </div>
@@ -1465,7 +1465,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
                         <div className="tb-field tb-move-field" key={`${selectedMember.uid}-move-${index}`}>
                           <span>기술 {index + 1}</span>
                           <PickField label={`기술 ${index + 1}`} value={selectedMove ? moveName(detailData, selectedMove) : ""}
-                            placeholder={detailStatus === "error" ? "데이터 연결 실패" : !detailData ? "데이터 로딩 중…" : "기술 선택"}
+                            placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : !detailData ? "데이터 불러오는 중…" : "기술 선택"}
                             typeId={championsData.toID(move?.type)} typeLabel={move ? TYPE_KO[move.type] || move.type : ""}
                             disabled={!detailData} onOpen={() => setPicker(index)} onClear={() => setMoveAt(index, "")} />
                           <div className="tb-field-meta">{selectedMove ? moveMetadata(detailData, selectedMove) : (learnset.length || !detailData ? "" : "현재 포켓몬의 기술 목록을 불러오지 못했습니다.")}</div>
@@ -1493,7 +1493,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
         <ul className="tb-rule-confirm-list">
           {pendingRuleChange.removedMembers.map(member => <li key={member.uid}>{displayPokemon(member.pokemon)}</li>)}
         </ul>
-        <p className="tb-rule-confirm-copy">계속 변경하시겠습니까?</p>
+        <p className="tb-rule-confirm-copy">계속 변경할까요?</p>
         <div className="modal-actions">
           <Button type="button" onClick={() => setPendingRuleChange(null)}>취소</Button>
           <Button type="button" variant="primary" onClick={() => applyRuleChange(pendingRuleChange)}>규칙 변경</Button>

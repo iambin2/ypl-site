@@ -20,7 +20,7 @@ export default class LazyContent extends Component {
       <Loader small={!!this.props.onClose} />
     );
     return this.props.onClose
-      ? (failed ? <Modal title="불러오기 실패" onClose={this.props.onClose}>{content}</Modal> : <Modal label="불러오는 중" onClose={this.props.onClose}>{content}</Modal>)
+      ? (failed ? <Modal title="불러오지 못했습니다" onClose={this.props.onClose}>{content}</Modal> : <Modal label="불러오는 중" onClose={this.props.onClose}>{content}</Modal>)
       : <section className="sec">{content}</section>;
   }
 

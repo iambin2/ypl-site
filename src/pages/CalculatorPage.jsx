@@ -313,7 +313,7 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
   const duel = speedDuel({ a: engines[0], b: engines[1], sideA: sides[0], sideB: sides[1], field });
   const nameOf = index => pokemons[index] ? display(pokemons[index]) : SIDE_NAMES[index];
   const ready = engines[0] && engines[1];
-  const directionEmpty = from => !pokemons[from] ? `${SIDE_NAMES[from]}을 선택하세요.` : !pokemons[1 - from] ? `${SIDE_NAMES[1 - from]}을 선택하세요.` : "기술을 선택하면 대미지가 여기에 나옵니다.";
+  const directionEmpty = from => !pokemons[from] ? `${SIDE_NAMES[from]}을 선택해 주세요.` : !pokemons[1 - from] ? `${SIDE_NAMES[1 - from]}을 선택해 주세요.` : "기술을 선택하면 대미지가 여기에 나옵니다.";
   return (
     <>
       <div className="tb-panel">

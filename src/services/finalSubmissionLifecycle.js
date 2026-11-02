@@ -115,7 +115,7 @@ export async function compensateFinalSubmissionReleaseFailure({
 
   if (failures.length) {
     const error = new Error(failures.map(({ label, error: cause }) =>
-      `${label}: ${cause?.message || "알 수 없는 오류"}`
+      `${label}: ${cause?.message || "잠시 뒤 다시 시도해 주세요."}`
     ).join(" / "));
     error.code = "YPL_FINAL_SUBMISSION_RELEASE_COMPENSATION_FAILED";
     error.failures = failures;

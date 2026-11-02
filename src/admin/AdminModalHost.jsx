@@ -121,7 +121,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
                 },
               };
             } catch (error) {
-              flash(`대회 연결 실패: ${error.message}`);
+              flash(`대회를 연결하지 못했습니다. ${error.message}`);
               return;
             }
           }
@@ -139,12 +139,12 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
               try {
                 await cancelApplicationEvent(nextAnnouncement.form.eventId);
               } catch (error) {
-                flash?.(`공지 저장에 실패했고, 새로 만든 대회를 정리하는 데도 실패했습니다: ${error?.message || "알 수 없는 오류"}`);
+                flash?.(`공지를 저장하지 못했고 새로 만든 대회도 정리하지 못했습니다. ${error?.message || "원인을 확인하지 못했습니다."}`);
                 return;
               }
             }
 
-            flash?.("공지 저장에 실패했습니다. 대회 상태를 확인해 주세요.");
+            flash?.("공지를 저장하지 못했습니다. 대회 상태를 확인해 주세요.");
             return;
           }
 
@@ -159,7 +159,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
             try {
               preflight = await preflightAnnouncementDeletion(eventId);
             } catch (error) {
-              flash?.(`공지 삭제 가능 여부를 확인하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
+              flash?.(`공지 삭제 가능 여부를 확인하지 못했습니다. ${error?.message || "잠시 뒤 다시 시도해 주세요."}`);
               return;
             }
             if (!preflight.allowed) {
@@ -184,7 +184,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
             try {
               await cancelApplicationEvent(eventId, { preflight });
             } catch (error) {
-              flash?.(`공지는 삭제했지만 연결된 대회를 취소하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
+              flash?.(`공지는 삭제했지만 연결된 대회를 취소하지 못했습니다. ${error?.message || "원인을 확인하지 못했습니다."}`);
               return;
             }
           }

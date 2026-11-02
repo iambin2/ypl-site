@@ -143,7 +143,7 @@ export async function saveTeamSheetImage(sheet, options = {}) {
   if (!sheet.length) throw new Error("포켓몬을 1마리 이상 추가해 주세요.");
   const canvas = await renderTeamSheetCanvas(sheet, options);
   const blob = await new Promise(done => canvas.toBlob(done, "image/png"));
-  if (!blob) throw new Error("이미지를 만들지 못했습니다.");
+  if (!blob) throw new Error("잠시 뒤 다시 시도해 주세요.");
   const filename = `${String(options.title || "YPL 팀").replace(/[\\/:*?"<>|]+/g, " ").trim()}.png`;
   const file = typeof File === "function" ? new File([blob], filename, { type: "image/png" }) : null;
   if (file && matchMedia("(pointer: coarse)").matches && navigator.canShare?.({ files: [file] })) {

@@ -207,7 +207,7 @@ function Arena({ primary, go }) {
         <div className="hm-mark" ref={mark}><Wordmark /><span className="hm-shine" style={{ WebkitMask: MARK_MASK, mask: MARK_MASK }} aria-hidden="true"><i className="hm-band" ref={band} /></span></div>
       </div>
       <div className="hm-end">
-        <h2>다음 기록은 당신의 차례입니다</h2>
+        <h2>다음 기록을 남길 차례입니다</h2>
         <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
       </div>
     </section>
@@ -244,7 +244,7 @@ export default function HomePage({ data, go }) {
     const { a, draft, raw, dday } = upcoming, today = dday === 0;
     return { today, dday, name: draft.name || a.title, when: formatDate(raw, { time: true }) };
   }, [data.announcements]);
-  const primary = !now ? ["기록 보기", "records"] : now.today ? ["대진표 보기", "bracket"] : ["이번 대회 신청하기", "news"];
+  const primary = !now ? ["기록 보기", "records"] : now.today ? ["대진표 보기", "bracket"] : ["이번 대회 신청", "news"];
   const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
   const routes = [["bracket", "대진표", "지금 열린 대회의 대진과 결과"], ["records", "기록", "트레이너, 대회, 포켓몬, 랭킹"], ["champions", "명예의 전당", "역대 챔피언과 우승 엔트리"], ["builder", "팀 빌더", "현재 규정으로 팀을 짜고 저장"]];
   const showCounts = counts && counts.tournaments > 0 && counts.trainers > 0 && champions;

@@ -167,7 +167,7 @@ export default function App() {
         return true;
       }catch(error){
         // 중복 신청, 마감 같은 이유는 신청서가 그대로 보여 준다. 재시도 안내로 덮지 않는다.
-        return error?.message||"신청 저장에 실패했습니다.";
+        return error?.message||"신청을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
       }
     }
 

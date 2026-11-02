@@ -71,7 +71,7 @@ export const SINGLE_BRACKET_PROJECTION_CONTRACT = Object.freeze({
 const BYE = "\u2205BYE";
 
 function fail(message) {
-  throw new Error(`대진 계산 오류: ${message}`);
+  throw new Error(`대진을 계산하지 못했습니다. ${message}`);
 }
 
 function asArray(value) {

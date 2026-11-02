@@ -43,9 +43,9 @@ function BoardCompose({ onClose, onSubmit }){
         <Field label="닉네임"><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
         <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
       </div>
-      <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력하세요." maxLength={60}/></Field>
+      <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력해 주세요." maxLength={60}/></Field>
       <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></Field>
-      <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
+      <div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
       <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
@@ -59,7 +59,7 @@ function BoardCompose({ onClose, onSubmit }){
 async function authorize(record,what,verb,admin){
   if(admin) return verb!=="삭제"||siteConfirm({title:`${what} 삭제`,body:`이 ${what}을 삭제할까요? 삭제한 ${what}은 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true});
   if(!record.pin&&!record.pinHash){ siteAlert(`비밀번호가 없는 ${what}입니다.`,`관리자에게 ${verb} 요청을 해 주세요.`); return false; }
-  const pin=await sitePrompt({title:`${what} ${verb}`,body:`본인 ${what}을 ${verb}하려면 작성할 때 정한 비밀번호를 입력하세요.`,label:"비밀번호",placeholder:"숫자 4자리",confirmLabel:verb==="삭제"?"삭제":"확인",secret:true,inputMode:"numeric"});
+  const pin=await sitePrompt({title:`${what} ${verb}`,body:`본인 ${what}을 ${verb}하려면 작성할 때 정한 비밀번호를 입력해 주세요.`,label:"비밀번호",placeholder:"숫자 4자리",confirmLabel:verb==="삭제"?"삭제":"확인",secret:true,inputMode:"numeric"});
   if(pin===null) return false;
   if(!(record.pinHash?await pinMatches(record,pin):pin===record.pin)){ siteAlert("비밀번호가 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요."); return false; }
   return true;
@@ -81,7 +81,7 @@ function EditSheet({ heading, initial, onClose, onSave }){
     <div className="swap" key="edit">
       {has("title")&&<Field label="제목"><input value={v.title} onChange={set("title")} maxLength={60}/></Field>}
       {has("body")&&<Field label="내용"><textarea value={v.body} onChange={set("body")} rows={has("title")?6:3}/></Field>}
-      {has("link")&&<div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣으세요."/>
+      {has("link")&&<div className="field"><label>이미지 또는 유튜브 링크 (선택)</label><input value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
         {v.link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={v.link}/></div>}</div>}
       {has("secret")&&<label className="bk-check"><input type="checkbox" checked={v.secret} onChange={set("secret")}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>}
       <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
@@ -167,7 +167,7 @@ function FreeBoard({ data, admin, save, flash, tabs }){
   }
 
   return (<section className="sec">
-    <PageHead plain="게시판" desc="로그인 없이 닉네임으로 자유롭게 글과 댓글을 남기는 공간입니다.">
+    <PageHead plain="게시판" desc="로그인 없이 닉네임으로 글과 댓글을 남길 수 있습니다.">
       {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
@@ -176,8 +176,8 @@ function FreeBoard({ data, admin, save, flash, tabs }){
     </PageHead>
     <div className="bd-list swap">
       {list.length===0&&(kw
-        ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
-        : <Empty title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
+        ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
+        : <Empty title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const cc=(p.comments||[]).length;
         return (<button type="button" className={"ypl-row bd-head"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
           <span className="bd-main">
@@ -320,7 +320,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       await updateCommunity(SHOWCASE_KEY,list=>[post,...list]);
       try{ localStorage.setItem("ypl-board-nick",post.nick); }catch{ /* 기억 못 해도 된다 */ }
       onPosted?.(post);
-    }catch(error){ siteAlert("올리지 못했습니다.",error?.message||""); }
+    }catch(error){ siteAlert("글을 올리지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
     finally{ setBusy(false); }
   };
   return (<Modal title={`${KIND_LABEL[kind]} 소개글 쓰기`} hint={ruleSummary(team)} onClose={onClose}>
@@ -348,7 +348,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
 /* 게시판의 글을 팀 빌더로 넘긴다. 빌더가 내 팀에 새로 저장하고 연다. */
 function openInBuilder(post,go){
   try{ sessionStorage.setItem(INCOMING_TEAM_KEY,JSON.stringify({...post.team,name:(post.title||post.team?.name||"게시판에서 가져온 팀").slice(0,40)})); }
-  catch{ siteAlert("팀을 넘기지 못했습니다.","이 브라우저에서 저장소를 쓸 수 없습니다."); return; }
+  catch{ siteAlert("팀을 넘기지 못했습니다.","이 브라우저에서는 저장할 수 없습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요."); return; }
   go("builder");
 }
 
@@ -379,7 +379,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const closePost=()=>{ const id=article; if(window.history.state?.post) backWith("s-"+id);
     else { const url=new URL(window.location.href); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setArticle(null)),{shared:"s-"+id,dir:"back",scrollY:listScroll.current}); } };
 
-  const mutate=async(fn,done)=>{ try{ setPosts(await updateCommunity(SHOWCASE_KEY,fn)); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다.",error?.message||""); return false; } };
+  const mutate=async(fn,done)=>{ try{ setPosts(await updateCommunity(SHOWCASE_KEY,fn)); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
   const [editing,setEditing]=useState(null);
   const delPost=async(post)=>{ if(!(await authorize(post,"글","삭제",admin)))return; if(await mutate(list=>list.filter(x=>x.id!==post.id),"삭제됨")) closePost(); };
   const addComment=async(post,c)=>{ const id=newCommunityId(); const {pin,...rest}=c;
@@ -395,12 +395,12 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const [imageBusy,setImageBusy]=useState(false);
   const saveImage=async(post,sheet)=>{ if(imageBusy)return; setImageBusy(true);
     try{ const r=await saveTeamSheetImage(sheet,{title:post.title,meta:[FORMAT_LABEL[formatOf(post)],ruleSummary(post.team),`${sheet.length}마리`].join(", "),author:post.nick,date:new Date(post.createdAt)}); if(r==="downloaded")flash("이미지를 저장했습니다."); }
-    catch(error){ siteAlert("이미지를 만들지 못했습니다.",error?.message||""); } finally{ setImageBusy(false); } };
+    catch(error){ siteAlert("이미지를 만들지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); } finally{ setImageBusy(false); } };
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
     <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
-    {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+    {fresh?<Empty title="글을 찾을 수 없습니다" desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
     return (<section className="sec">
@@ -446,8 +446,8 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
       {list.length===0&&(kw
-        ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
-        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
+        ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
+        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
         return kind==="party"
           ? <button type="button" className="sc-tile card" key={post.id} onClick={()=>openPost(post.id)}>

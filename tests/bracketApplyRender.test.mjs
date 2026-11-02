@@ -113,7 +113,7 @@ for (const mode of ["single", "team"]) {
     function findPrepare(node) {
       if (!node) return null;
       if (Array.isArray(node)) return node.map(findPrepare).find(Boolean);
-      if (node.type === "button" && node.props.children?.[0] === "반영하기") return node;
+      if (node.type === "button" && node.props.children?.[0] === "기록 반영") return node;
       return findPrepare(node.props?.children);
     }
     const prepare = findPrepare(form);
