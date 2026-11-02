@@ -106,6 +106,20 @@ function getPlacementPointPolicy(event, isTeamEvent) {
   };
 }
 
+/* The points an applied event gave each place, read back from its placement awards (c12 "지난 대회와 같게").
+   null when it gave no champion points; a place it did not pay (a team event's 4강) reads 0. */
+export function placementPointsOf(awards = []) {
+  const placement = (awards || []).filter(row => !row.award_kind || row.award_kind === "placement");
+  const pointsOf = test => placement.find(test)?.points_delta;
+  const win = pointsOf(row => row.win_delta > 0);
+  if (win == null) return null;
+  return {
+    win: Number(win),
+    ru: Number(pointsOf(row => row.runner_up_delta > 0) ?? 0),
+    sf: Number(pointsOf(row => row.top4_delta > 0 && !(row.win_delta > 0) && !(row.runner_up_delta > 0)) ?? 0),
+  };
+}
+
 export function getIndividualPlacementPointPolicy(event) {
   return getPlacementPointPolicy(event, false);
 }

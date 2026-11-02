@@ -5,7 +5,7 @@ import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import { BackLink, Choice, Counter, Dock, Row, Status, TabsLine } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
-import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
@@ -1174,6 +1174,17 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   const [bumpSeason,setBumpSeason]=useState(true);
   const [rankKey,setRankKey]=useState((data.rankings||[])[0]?.key||"");
   const [ptWin,setPtWin]=useState(team?"30":"60"); const [ptRu,setPtRu]=useState(team?"20":"40"); const [ptSf,setPtSf]=useState(team?"0":"20");
+  /* 지난 대회와 같게(c12): 기록에 반영된 가장 최근의 같은 종류 대회가 준 점수를 칸에 넣는다. 저장은 반영할 때 한 번이다 */
+  const [lastPoints,setLastPoints]=useState({busy:false,note:""});
+  const copyLastPoints=async()=>{
+    setLastPoints({busy:true,note:""});
+    try{
+      const points=await lastPlacementPoints({isTeam:team});
+      if(!points){ setLastPoints({busy:false,note:"기록에 반영된 지난 대회가 없습니다."}); return; }
+      setPtWin(String(points.win)); setPtRu(String(points.ru)); if(!team) setPtSf(String(points.sf));
+      setLastPoints({busy:false,note:`${points.eventName||"지난 대회"}의 점수를 넣었습니다.`});
+    }catch(error){ setLastPoints({busy:false,note:error?.message||"지난 대회의 점수를 불러오지 못했습니다."}); }
+  };
   const [override,setOverride]=useState({});
   const linked=Boolean(b.eventId);
   const normalizedRuntime=b.projection?.source==="normalized";
@@ -1598,7 +1609,8 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         <Field label="대회 룰 (선택)"><input value={rule} onChange={e=>setRule(e.target.value)} placeholder="예: 모노타입 / 랜덤 배틀 / 6세대 63"/></Field>
 
         <div className="field">
-          <span className="field-label">등수별 점수{team?" (팀원별 고정 점수)":""}</span>
+          <div className="bk-pts-head"><span className="field-label">등수별 점수{team?" (팀원별 고정 점수)":""}</span><Button variant="link" onClick={copyLastPoints} disabled={lastPoints.busy} loading={lastPoints.busy}>지난 대회와 같게</Button></div>
+          {lastPoints.note&&<p className="t12 reg dim bk-pts-note">{lastPoints.note}</p>}
           <div className="bk-pts">
             <div className="bk-pt"><span>우승</span><input aria-label="우승 점수" value={ptWin} onChange={setPt(setPtWin)}/></div>
             <div className="bk-pt"><span>준우승</span><input aria-label="준우승 점수" value={ptRu} onChange={setPt(setPtRu)}/></div>

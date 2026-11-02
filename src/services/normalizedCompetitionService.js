@@ -13,6 +13,7 @@ import {
 import {
   buildBracketRankingAwardSyncPlan,
   buildEventRankingAwardSnapshot,
+  placementPointsOf,
 } from "./bracketRankingAwardSnapshot.js";
 import {
   attachConfirmedTeamIdentities,
@@ -838,6 +839,29 @@ export async function findSubmissionRegistration(eventId, registrationName) {
     registration: selected,
     latestSubmission: latestSubmission || null,
   };
+}
+
+// 지난 대회와 같게(c12): 기록에 반영된 가장 최근의 같은 종류(개인전, 팀전) 대회가 순위마다 준 점수. 읽기만 한다.
+export async function lastPlacementPoints({ isTeam = false } = {}) {
+  const { data: events, error } = await db()
+    .from("events")
+    .select("id, name, event_type, record_applied_at")
+    .eq("is_team_event", Boolean(isTeam))
+    .not("record_applied_at", "is", null)
+    .order("record_applied_at", { ascending: false })
+    .limit(10);
+  if (error) fail(error, "지난 대회의 점수를 불러오지 못했습니다.");
+  for (const event of (events || []).filter(row => row.event_type !== "champions")) {
+    const { data: awards, error: awardError } = await db()
+      .from("ranking_awards")
+      .select("award_kind, points_delta, win_delta, runner_up_delta, top4_delta")
+      .eq("event_id", event.id)
+      .eq("award_kind", "placement");
+    if (awardError) fail(awardError, "지난 대회의 점수를 불러오지 못했습니다.");
+    const points = placementPointsOf(awards || []);
+    if (points) return { ...points, eventName: event.name || "" };
+  }
+  return null;
 }
 
 // 한 신청의 제출 회차(c11 제출 기록). 읽기만 하며, 회차는 지워지지 않고 마지막 회차가 공식 파티다.

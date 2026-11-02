@@ -167,3 +167,5 @@
 .bk-place-name.inv { color: var(--ground); }
 .bk-place-name.bye { display: flex; align-items: center; color: var(--mute); font-weight: 600; cursor: default; }
 @media (hover: hover) { button.bk-place-name:not(.inv):hover { background: var(--panel-2); } }
+.bk-pts-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.bk-pts-note { margin: 0 0 var(--s2); }
