@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>YPL redesign drafts</title>
+<style>
+@font-face { font-family: "Albert Sans"; src: url("../../public/fonts/albert-sans-latin-wght.woff2") format("woff2"); font-weight: 100 900; unicode-range: U+0000-00FF, U+2000-206F, U+2190-2193; }
+@font-face { font-family: "Freesentation"; src: url("../../public/fonts/freesentation/Freesentation-4Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Freesentation"; src: url("../../public/fonts/freesentation/Freesentation-6SemiBold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Freesentation"; src: url("../../public/fonts/freesentation/Freesentation-7Bold.woff2") format("woff2"); font-weight: 700; }
+:root {
+  --navy: #081C3D; --navy-2: #13274C; --paper: #EEF1F6; --ink: #081C3D; --ink-2: #5B6880; --ink-3: #8C96A8; --line: #DADFE8;
+  --on: #FFFFFF; --on-2: #9FB0CC; --on-line: rgba(255,255,255,.14);
+  --font: "Albert Sans", "Freesentation", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); color: var(--ink); background: #D5DAE3; -webkit-font-smoothing: antialiased; word-break: keep-all; }
+.board { display: inline-block; padding: 84px; background: #E3E7EE; }
+.board > h1 { font-size: 32px; font-weight: 700; letter-spacing: -.01em; }
+.board > p.lede { margin-top: 12px; font-size: 16px; line-height: 1.6; color: var(--ink-2); max-width: 1100px; }
+.row { display: flex; gap: 52px; margin-top: 52px; align-items: flex-start; }
+.cap { margin-top: 20px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.ph { position: relative; width: 390px; height: 844px; overflow: hidden; background: #fff; }
+.num { font-family: "Albert Sans"; font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -.02em; }
+.wing { display: block; }
+.abs { position: absolute; }
+/* ---------- shared bars ---------- */
+.bar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+.brand { flex: none; } .bar .brand { display: flex; align-items: center; gap: 8px; }
+.bar .icons { display: flex; gap: 20px; align-items: center; }
+.tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: grid; grid-template-columns: repeat(5, 1fr); background: #fff; box-shadow: inset 0 1px 0 var(--line); }
+.tabs a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-3); position: relative; }
+.tabs a.on { color: var(--ink); font-weight: 700; }
+.tabs a.on::before { content: ""; position: absolute; top: 0; left: 50%; width: 32px; margin-left: -16px; height: 2px; background: var(--navy); }
+.tabs.dark { background: var(--navy); box-shadow: inset 0 1px 0 var(--on-line); }
+.tabs.dark a { color: var(--on-2); } .tabs.dark a.on { color: #fff; } .tabs.dark a.on::before { background: #fff; }
+.link { font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; font-size: 15px; font-weight: 700; background: var(--navy); color: #fff; }
+.btn.inv { background: #fff; color: var(--navy); }
+.label { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink-2); }
+.on .label, .label.on { color: var(--on-2); }
+.hair { height: 1px; background: var(--line); }
+.sprite { position: absolute; object-fit: contain; }
+
+/* ---------- A: ledger ---------- */
+.A .sec-h { display: flex; justify-content: space-between; align-items: baseline; padding: 32px 20px 12px; }
+.A .sec-h h2 { font-size: 20px; font-weight: 700; }
+.A .list { margin: 0 20px; }
+.A .li { display: grid; grid-template-columns: 84px 1fr; align-items: baseline; padding: 16px 0; box-shadow: inset 0 -1px 0 var(--line); }
+.A .li .d { font-size: 16px; } .A .li .d small { font-size: 12px; font-weight: 600; color: var(--ink-3); margin-left: 4px; font-family: "Freesentation"; letter-spacing: 0; }
+.A .li .t { font-size: 15px; font-weight: 600; line-height: 1.4; }
+.A .li .t span { display: block; margin-top: 4px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+
+/* ---------- B: golden tiling ---------- */
+.tile { position: absolute; overflow: hidden; }
+.tile.n { background: var(--navy); color: #fff; }
+.tile.p { background: var(--paper); }
+.tile svg.arc { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---------- records table, shared by A and B ---------- */
+.tbl { margin: 0 20px; }
+.tbl .th, .tbl .tr { display: grid; grid-template-columns: 32px 1fr 44px 44px 44px; align-items: center; }
+.tbl .th { height: 40px; font-size: 12px; font-weight: 600; color: var(--ink-3); box-shadow: inset 0 -1px 0 var(--line); }
+.tbl .th span:nth-child(n+3), .tbl .tr span:nth-child(n+3) { text-align: right; }
+.tbl .tr { height: 52px; font-size: 16px; box-shadow: inset 0 -1px 0 var(--line); }
+.tbl .tr .rk { font-size: 13px; color: var(--ink-3); }
+.tbl .tr .nm { font-weight: 700; font-size: 16px; }
+.tbl .tr .z { color: var(--ink-3); }
+.tbl .tr.lead { background: var(--navy); color: #fff; margin: 0 -20px; padding: 0 20px; box-shadow: none; height: 56px; }
+.tbl .tr.lead .rk { color: var(--on-2); }
+.tabsline { display: flex; gap: 28px; margin: 0 20px; box-shadow: inset 0 -1px 0 var(--line); }
+.tabsline a { padding: 14px 0; font-size: 16px; font-weight: 600; color: var(--ink-3); }
+.tabsline a.on { color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--navy); }
+.search { margin: 20px 20px 8px; height: 44px; display: flex; align-items: center; gap: 12px; box-shadow: inset 0 -1px 0 var(--ink); font-size: 15px; color: var(--ink-3); }
+
+/* ---------- C: night board ---------- */
+.C { background: var(--navy); color: #fff; }
+.C .tl { background: #0E2448; }
+.C .hl { box-shadow: inset 0 -1px 0 var(--on-line); }
+.C .meta { color: var(--on-2); }
+
+/* ---------- desktop ---------- */
+.desk { position: relative; width: 1440px; height: 900px; overflow: hidden; background: #fff; }
+.desk .dbar .brand { display: flex; align-items: center; gap: 8px; }
+.desk .dbar { height: 64px; background: var(--navy); color: #fff; display: flex; align-items: center; padding: 0 120px; gap: 52px; }
+.desk .dbar nav { display: flex; gap: 32px; font-size: 15px; font-weight: 600; color: var(--on-2); }
+.desk .dbar nav a.on { color: #fff; box-shadow: inset 0 -2px 0 #fff; padding-bottom: 6px; margin-bottom: -8px; }
+
+/* ---------- motion storyboard ---------- */
+.sb { display: flex; gap: 32px; margin-top: 32px; }
+.sb .fr { width: 234px; }
+.sb .fr .mini { width: 234px; height: 506px; overflow: hidden; position: relative; background: #fff; }
+.sb .fr .mini > .ph { transform: scale(.6); transform-origin: 0 0; }
+.sb .fr .t { margin-top: 12px; font-size: 13px; font-weight: 700; } .sb .fr .s { margin-top: 4px; font-size: 12px; line-height: 1.5; color: var(--ink-2); }
+.sb-row-title { margin-top: 52px; font-size: 20px; font-weight: 700; }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="wing" viewBox="0 0 1315.1 870.6"><path fill="currentColor" d="M0 0 L427.7 118 L657.5 430 L887.4 118 L1315.1 0 L1199.8 164 L947.9 233.5 L755.3 495.5 L755.3 536.5 L559.8 536.5 L559.8 495.5 L367.1 233.5 L115.3 164 Z M246.8 351.1 L149.5 212.7 L403.3 282.8 L506.3 422.7 Z M808.8 422.7 L911.7 282.8 L1165.6 212.7 L1068.3 351.1 Z M559.8 574.5 L755.3 574.5 L755.3 608.1 L916.1 732.5 L805.8 811.8 L713.7 639.1 L692.3 639.1 L751.1 811.8 L657.5 870.6 L564 811.8 L622.8 639.1 L601.3 639.1 L509.3 811.8 L399 732.5 L559.8 608.1 Z"/></symbol>
+  <symbol id="word" viewBox="0 0 310 100"><path fill="currentColor" fill-rule="evenodd" transform="skewX(-12) translate(21 0)" d="M0 0 H34.7 L55 27.7 L75.3 0 H110 L69 56 V100 H41 V56 Z M118 0 H188 A18 18 0 0 1 206 18 V46 A18 18 0 0 1 188 64 H146 V100 H118 Z M146 24 H178 V40 H146 Z M214 0 H242 V76 H286 V100 H214 Z"/></symbol>
+</defs></svg>
+
+<div id="root"></div>
+
+<script>
+const S = n => `../../public/sprites/pokemon/${n}.webp`;
+const I = {
+  home: '<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>',
+  news: '<path d="M4 9h3l9-4v14l-9-4H4zM7 15l1 5h3l-1-4"/>',
+  bracket: '<path d="M3 5h5v4H3zM3 15h5v4H3zM16 10h5v4h-5zM8 7h4v10H8M12 12h4"/>',
+  rec: '<path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6M2 20h20"/>',
+  more: '<path d="M5 12h.01M12 12h.01M19 12h.01"/>',
+  moon: '<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/>',
+  menu: '<path d="M4 8h16M4 16h16"/>',
+};
+const ic = (n, s = 22, w = 1.6) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${n === 'more' ? 3 : w}" stroke-linecap="square">${I[n]}</svg>`;
+const brand = (h = 20) => `<span class="brand"><svg class="wing" width="${h * 1.51}" height="${h}"><use href="#wing"/></svg><svg class="wing" width="${h * 2.6}" height="${h * .84}"><use href="#word"/></svg></span>`;
+const tabs = (on, dark) => `<nav class="tabs ${dark ? 'dark' : ''}">${[['home','홈'],['news','공지'],['bracket','대진표'],['rec','기록'],['more','더보기']].map(([k, l]) => `<a class="${k === on ? 'on' : ''}">${ic(k)}<span>${l}</span></a>`).join('')}</nav>`;
+/* quarter arc inside a tile, centre at one of its corners */
+const arc = (w, h, corner, color) => {
+  const r = Math.min(w, h), [cx, cy] = { tl: [0, 0], tr: [w, 0], bl: [0, h], br: [w, h] }[corner];
+  return `<svg class="arc" viewBox="0 0 ${w} ${h}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="1"/></svg>`;
+};
+const T = (x, y, w, h, cls, inner, a) => `<div class="tile ${cls}" style="left:${x + 1}px;top:${y + 1}px;width:${w - 2}px;height:${h - 2}px">${a || ''}${inner}</div>`;
+
+const records = [['정두호',8,6,8],['이종우',5,2,7],['김현민',4,3,2],['이병재',3,1,5],['허진욱',3,0,5],['이준영',2,3,7],['김원의',2,3,6],['이제빈',2,2,9],['이상준',2,2,1],['김다온',2,0,0],['임준하',1,3,1]];
+const table = n => `<div class="tbl"><div class="th"><span>#</span><span>트레이너</span><span>우승</span><span>준우승</span><span>4강</span></div>${records.slice(0, n).map((r, i) => `<div class="tr ${i === 0 ? 'lead' : ''}"><span class="rk num">${i + 1}</span><span class="nm">${r[0]}</span>${r.slice(1).map(v => `<span class="num ${v === 0 ? 'z' : ''}">${v}</span>`).join('')}</div>`).join('')}</div>`;
+const notices = [['10.28','수','제38회 파이컵 공지','좋아하는 포켓몬 NPC의 파티로 승부하는 NPC 배틀 7이 열립니다.'],['10.01','목','37회 파이컵 팀전 팀 편성 안내',''],['09.19','토','37회 파이컵 팀전 리전 워즈','9개 지역 팀으로 나뉘어 패권을 겨루는 팀전 토너먼트입니다.']];
+
+/* ====================================================== A. 기록부 ====================================================== */
+const A1 = `<div class="ph A">
+  <header class="bar" style="color:var(--navy)">${brand(20)}<span class="icons">${ic('moon', 22)}</span></header>
+  <div style="padding:32px 20px 0">
+    <div class="label">포켓몬 센터 연세점 공식 배틀 리그</div>
+    <h1 style="margin-top:12px;font-size:40px;line-height:1.18;font-weight:700;letter-spacing:-.02em">모든 승부가<br>기록이 됩니다.</h1>
+  </div>
+  <div class="abs" style="left:20px;top:240px;width:350px;height:216px;background:var(--navy);color:#fff;padding:20px">
+    <div style="display:flex;justify-content:space-between"><span class="label on">다음 대회</span><span class="label on">11월 7일 (토)</span></div>
+    <div class="num" style="font-size:84px;line-height:1;margin-top:12px">D-5</div>
+    <div style="position:absolute;left:20px;bottom:20px;width:190px;font-size:15px;font-weight:600;line-height:1.4">37회 파이컵 마스터 리그<br>NPC 배틀 7</div>
+    <a class="btn inv" style="position:absolute;right:20px;bottom:20px">신청 ${ic('arrow', 18, 2)}</a>
+  </div>
+  <div class="abs" style="left:20px;top:488px;width:350px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:20px;font-weight:700">현 챔피언</span><span class="link">명예의 전당</span></div>
+    <div style="display:flex;margin-top:12px;box-shadow:inset 0 1px 0 var(--ink)">
+      <div style="position:relative;width:134px;height:134px;background:var(--paper)"><img class="sprite" src="${S('garchomp')}" style="inset:8px;width:118px;height:118px"></div>
+      <div style="padding:16px 0 0 20px">
+        <div class="label">6대 챔피언</div>
+        <div style="font-size:32px;font-weight:700;margin-top:4px;letter-spacing:-.01em">김현민</div>
+        <div style="font-size:13px;color:var(--ink-2);margin-top:4px">YPL 시즌 2 우승</div>
+      </div>
+    </div>
+  </div>
+  <div class="abs" style="left:20px;top:668px;width:350px;display:grid;grid-template-columns:repeat(3,1fr);box-shadow:inset 0 1px 0 var(--line);padding-top:16px">
+    ${[['59','대회'],['71','트레이너'],['6','챔피언']].map(([n, l]) => `<div><div class="num" style="font-size:32px">${n}</div><div class="label" style="margin-top:2px">${l}</div></div>`).join('')}
+  </div>
+  ${tabs('home')}
+</div>`;
+
+const A2 = `<div class="ph A">
+  <header class="bar" style="color:var(--navy);box-shadow:inset 0 -1px 0 var(--line)">${brand(20)}<span class="icons">${ic('moon', 22)}</span></header>
+  <div class="sec-h" style="padding-top:20px"><h2>공지</h2><span class="link">전체 보기</span></div>
+  <div class="list">${notices.map(([d, w, t, s]) => `<div class="li"><span class="num d">${d}<small>${w}</small></span><span class="t">${t}${s ? `<span>${s}</span>` : ''}</span></div>`).join('')}</div>
+  <div class="sec-h"><h2>YPL 시즌 3</h2><span class="link">랭킹 전체</span></div>
+  <div style="margin:0 20px;display:flex;gap:20px;align-items:stretch;box-shadow:inset 0 1px 0 var(--ink);padding-top:16px">
+    <div style="width:134px"><div class="num" style="font-size:52px;line-height:1">30<span style="font-size:16px;margin-left:4px;font-family:Freesentation">점</span></div><div class="label" style="margin-top:8px">공동 1위, 3명</div></div>
+    <div style="flex:1">${['이상준','이준혁','양승규'].map(n => `<div style="height:40px;display:flex;align-items:center;font-size:16px;font-weight:700;box-shadow:inset 0 -1px 0 var(--line)">${n}</div>`).join('')}</div>
+  </div>
+  <div class="sec-h"><h2>역대 챔피언</h2><span class="link">명예의 전당</span></div>
+  <div style="margin:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    ${[['정두호','5대','YPL 시즌 1','lickilicky'],['이제빈','4대','클래식 시즌 4','abomasnow-mega']].map(([n, g, l, s]) => `<div><div style="position:relative;height:171px;background:var(--paper)"><img class="sprite" src="${S(s)}" style="inset:20px;width:131px;height:131px"></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:12px"><b style="font-size:16px">${n}</b><span class="num" style="font-size:13px;color:var(--ink-2)">${g}</span></div><div style="font-size:12px;color:var(--ink-2);margin-top:2px">${l} 우승</div></div>`).join('')}
+  </div>
+  ${tabs('home')}
+</div>`;
+
+const A3 = `<div class="ph A">
+  <header class="bar" style="color:var(--navy)">${brand(20)}<span class="icons">${ic('moon', 22)}</span></header>
+  <div style="padding:20px 20px 20px">
+    <h1 style="font-size:40px;font-weight:700;letter-spacing:-.02em">기록</h1>
+    <div style="font-size:13px;color:var(--ink-2);margin-top:8px">트레이너 71명, 대회 59회</div>
+  </div>
+  <div class="tabsline"><a class="on">트레이너</a><a>대회</a><a>포켓몬</a><a>랭킹</a></div>
+  <div class="search">${ic('search', 20)}트레이너 검색</div>
+  ${table(10)}
+  ${tabs('rec')}
+</div>`;
+
+/* ====================================================== B. 황금 분할 ====================================================== */
+/* the home cover: a 390 x 631 golden rectangle cut into squares 390, 241, 149, 92, 57 */
+const coverPhone = (style = []) => {
+  const st = i => style[i] || '';
+  const W = 'rgba(255,255,255,.12)', Nv = 'rgba(8,28,61,.12)';
+  return `<div class="abs" style="left:-1px;top:56px;width:392px;height:633px">
+  <div style="${st(0)}">${T(0, 0, 392, 391, 'n', `
+    <div class="abs" style="left:20px;top:20px;font-size:32px;line-height:1.18;font-weight:700;letter-spacing:-.02em">모든 승부가<br>기록이 됩니다.</div>
+    <img class="sprite" src="${S('garchomp')}" style="right:4px;bottom:36px;width:236px;height:236px">
+    <div class="abs" style="left:20px;bottom:20px"><div class="label on">현 챔피언, 6대</div><div style="font-size:20px;font-weight:700;margin-top:4px">김현민</div></div>
+    <span class="abs" style="right:20px;bottom:20px;color:var(--on-2)">${ic('arrow', 20)}</span>`, arc(390, 390, 'br', W))}</div>
+  <div style="${st(1)}">${T(0, 390, 242, 243, 'p', `
+    <div class="abs" style="left:20px;top:20px;right:20px;display:flex;justify-content:space-between"><span class="label">다음 대회</span><span class="label">11월 7일 (토)</span></div>
+    <div class="num abs" style="left:18px;top:44px;font-size:68px;line-height:1">D-5</div>
+    <div class="abs" style="left:20px;top:122px;width:200px;font-size:14px;font-weight:600;line-height:1.4">37회 파이컵 마스터 리그<br>NPC 배틀 7</div>
+    <a class="btn abs" style="left:20px;right:20px;bottom:20px;justify-content:space-between;height:40px;font-size:14px;padding:0 12px 0 16px">이번 대회 신청 ${ic('arrow', 18, 2)}</a>`, arc(241, 241, 'tr', Nv))}</div>
+  <div style="${st(2)}">${T(241, 482, 150, 151, 'n', `
+    <div class="abs" style="left:16px;bottom:16px"><div class="num" style="font-size:44px;line-height:1">59</div><div class="label on" style="margin-top:6px">지금까지의 대회</div></div>`, arc(149, 149, 'tl', W))}</div>
+  <div style="${st(3)}">${T(298, 390, 93, 93, 'p', `
+    <div class="abs" style="left:12px;bottom:10px"><div class="num" style="font-size:28px;line-height:1">71</div><div class="label" style="margin-top:4px;font-size:11px">트레이너</div></div>`, arc(92, 92, 'bl', Nv))}</div>
+  <div style="${st(4)}">${T(241, 390, 58, 93, 'n', `<svg class="abs" style="left:13px;top:36px;color:#fff" width="30" height="20"><use href="#wing"/></svg>`, '')}</div>
+  </div>`;
+};
+const B1 = (style) => `<div class="ph B">
+  <header class="bar" style="background:var(--navy);color:#fff">${brand(20)}<span class="icons">${ic('moon', 22)}</span></header>
+  ${coverPhone(style)}
+  <div class="abs" style="left:20px;right:20px;top:721px;display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:20px;font-weight:700">공지</span><span class="link">전체 보기</span></div>
+  ${tabs('home')}
+</div>`;
+
+const B2 = `<div class="ph B">
+  <header class="bar" style="background:var(--navy);color:#fff">${brand(20)}<span class="icons">${ic('moon', 22)}</span></header>
+  <div class="A">
+  <div class="sec-h" style="padding-top:24px"><h2>공지</h2><span class="link">전체 보기</span></div>
+  <div class="list">${notices.map(([d, w, t, s]) => `<div class="li"><span class="num d">${d}<small>${w}</small></span><span class="t">${t}${s ? `<span>${s}</span>` : ''}</span></div>`).join('')}</div>
+  </div>
+  <div style="margin:32px 0 0;position:relative;height:216px">
+    ${T(-1, 0, 217, 217, 'n', `<div class="abs" style="left:20px;top:20px"><div class="label on">YPL 시즌 3, 공동 1위</div></div><div class="num abs" style="left:18px;bottom:16px;font-size:84px;line-height:1">30<span style="font-size:16px;margin-left:6px;font-family:Freesentation;letter-spacing:0">점</span></div>`)}
+    ${T(215, 0, 176, 217, 'p', `<div style="padding:16px 20px">${['이상준','이준혁','양승규'].map((n, i) => `<div style="height:56px;display:flex;align-items:center;font-size:18px;font-weight:700;box-shadow:${i < 2 ? 'inset 0 -1px 0 var(--line)' : 'none'}">${n}</div>`).join('')}</div>`)}
+  </div>
+  <div class="A"><div class="sec-h"><h2>역대 챔피언</h2><span class="link">명예의 전당</span></div></div>
+  <div style="display:flex;gap:2px;padding-left:20px">
+    ${[['정두호','5','YPL 시즌 1','lickilicky'],['이제빈','4','클래식 시즌 4','abomasnow-mega'],['허진욱','3','클래식 시즌 3','kingambit']].map(([n, g, l, s]) => `<div style="flex:none;width:134px"><div style="position:relative;height:134px;background:var(--navy)"><img class="sprite" src="${S(s)}" style="inset:12px;width:110px;height:110px"></div><div style="height:82px;background:var(--paper);padding:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:15px">${n}</b><span class="num" style="font-size:20px">${g}<small style="font-size:11px;font-family:Freesentation;margin-left:2px">대</small></span></div><div style="font-size:12px;color:var(--ink-2);margin-top:4px">${l} 우승</div></div></div>`).join('')}
+  </div>
+  ${tabs('home')}
+</div>`;
+
+const B3 = `<div class="ph B">
+  <header class="bar" style="background:var(--navy);color:#fff">${brand(20)}<span class="icons">${ic('moon', 22)}</span></header>
+  <div class="abs" style="left:-1px;top:56px;width:392px;height:243px">
+    ${T(0, 0, 242, 242, 'n', `<h1 class="abs" style="left:20px;bottom:20px;font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1">기록</h1><div class="abs label on" style="left:20px;top:20px">2023년 5월부터</div>`)}
+    ${T(241, 0, 151, 150, 'p', `<div class="abs" style="left:16px;bottom:14px"><div class="num" style="font-size:44px;line-height:1">71</div><div class="label" style="margin-top:6px">트레이너</div></div>`)}
+    ${T(241, 149, 151, 94, 'n', `<div class="abs" style="left:16px;bottom:12px;display:flex;align-items:baseline;gap:8px"><span class="num" style="font-size:32px;line-height:1">59</span><span class="label on">대회</span></div>`)}
+  </div>
+  <div style="height:243px"></div>
+  <div class="tabsline" style="margin-top:8px"><a class="on">트레이너</a><a>대회</a><a>포켓몬</a><a>랭킹</a></div>
+  <div class="search">${ic('search', 20)}트레이너 검색</div>
+  ${table(6)}
+  ${tabs('rec')}
+</div>`;
+
+/* ====================================================== C. 전광판 ====================================================== */
+const C1 = `<div class="ph C">
+  <header class="bar hl">${brand(20)}<span class="icons" style="color:#fff">${ic('moon', 22)}</span></header>
+  <div style="padding:32px 20px 0">
+    <div class="label on">다음 대회, 11월 7일 (토)</div>
+    <div class="num" style="font-size:136px;line-height:.9;margin-top:16px;letter-spacing:-.04em">D-5</div>
+    <div style="font-size:20px;font-weight:700;margin-top:20px;line-height:1.3">37회 파이컵 마스터 리그<br>NPC 배틀 7</div>
+    <a class="btn inv" style="margin-top:20px;width:350px;height:52px;justify-content:space-between">이번 대회 신청 ${ic('arrow', 20, 2)}</a>
+  </div>
+  <div class="abs tl" style="left:20px;top:436px;width:350px;height:216px">
+    <img class="sprite" src="${S('garchomp')}" style="right:0;top:8px;width:200px;height:200px">
+    <div class="abs" style="left:20px;top:20px"><div class="label on">현 챔피언</div></div>
+    <div class="abs" style="left:20px;bottom:20px"><div style="font-size:32px;font-weight:700">김현민</div><div class="meta" style="font-size:13px;margin-top:4px">6대, YPL 시즌 2 우승</div></div>
+  </div>
+  <div class="abs" style="left:20px;top:654px;width:350px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px">
+    ${[['59','대회'],['71','트레이너'],['6','챔피언']].map(([n, l]) => `<div class="tl" style="height:52px;padding:0 12px;display:flex;align-items:center;gap:8px"><span class="num" style="font-size:20px">${n}</span><span class="label on">${l}</span></div>`).join('')}
+  </div>
+  ${tabs('home', true)}
+</div>`;
+
+const C2 = `<div class="ph C">
+  <header class="bar hl">${brand(20)}<span class="icons" style="color:#fff">${ic('moon', 22)}</span></header>
+  <div style="padding:24px 20px 12px;display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:20px;font-weight:700">공지</span><span class="link">전체 보기</span></div>
+  <div style="margin:0 20px">${notices.map(([d, w, t, s]) => `<div class="hl" style="display:grid;grid-template-columns:84px 1fr;padding:16px 0"><span class="num" style="font-size:16px">${d}<small class="meta" style="font-size:12px;margin-left:4px;font-family:Freesentation">${w}</small></span><span style="font-size:15px;font-weight:600;line-height:1.4">${t}${s ? `<span class="meta" style="display:block;font-size:13px;font-weight:400;margin-top:4px">${s}</span>` : ''}</span></div>`).join('')}</div>
+  <div style="padding:24px 20px 12px;font-size:20px;font-weight:700">YPL 시즌 3</div>
+  <div style="margin:0 20px;display:grid;grid-template-columns:134px 1fr;gap:2px">
+    <div class="tl" style="padding:16px;height:168px;display:flex;flex-direction:column;justify-content:space-between"><span class="label on">공동 1위</span><span class="num" style="font-size:52px;line-height:1">30</span></div>
+    <div class="tl" style="padding:0 16px">${['이상준','이준혁','양승규'].map((n, i) => `<div style="height:56px;display:flex;align-items:center;font-size:17px;font-weight:700;${i < 2 ? 'box-shadow:inset 0 -1px 0 var(--on-line)' : ''}">${n}</div>`).join('')}</div>
+  </div>
+  <div style="padding:32px 20px 12px;font-size:20px;font-weight:700">역대 챔피언</div>
+  <div style="display:flex;gap:2px;padding-left:20px">${[['정두호','lickilicky'],['이제빈','abomasnow-mega'],['허진욱','kingambit']].map(([n, s]) => `<div class="tl" style="flex:none;width:134px;height:134px;position:relative"><img class="sprite" src="${S(s)}" style="inset:16px 16px 32px;width:102px;height:86px"><b class="abs" style="left:12px;bottom:10px;font-size:14px">${n}</b></div>`).join('')}</div>
+  ${tabs('home', true)}
+</div>`;
+
+const C3 = `<div class="ph C">
+  <header class="bar hl">${brand(20)}<span class="icons" style="color:#fff">${ic('moon', 22)}</span></header>
+  <div style="padding:24px 20px 16px"><h1 style="font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1">기록</h1></div>
+  <div style="display:flex;gap:28px;margin:0 20px" class="hl">${['트레이너','대회','포켓몬','랭킹'].map((t, i) => `<a style="padding:14px 0;font-size:16px;font-weight:${i ? 600 : 700};color:${i ? 'var(--on-2)' : '#fff'};${i ? '' : 'box-shadow:inset 0 -2px 0 #fff'}">${t}</a>`).join('')}</div>
+  <div style="margin:20px 20px 8px;height:44px;display:flex;align-items:center;gap:12px;box-shadow:inset 0 -1px 0 #fff;font-size:15px;color:var(--on-2)">${ic('search', 20)}트레이너 검색</div>
+  <div style="margin:0 20px">${records.slice(0, 10).map((r, i) => `<div class="${i ? 'hl' : ''}" style="display:grid;grid-template-columns:32px 1fr 44px 44px 44px;align-items:center;height:${i ? 52 : 56}px;${i ? '' : 'background:#fff;color:var(--navy);margin:0 -20px;padding:0 20px'}"><span class="num" style="font-size:13px;opacity:.6">${i + 1}</span><b style="font-size:16px">${r[0]}</b>${r.slice(1).map(v => `<span class="num" style="text-align:right;${v === 0 ? 'opacity:.45' : ''}">${v}</span>`).join('')}</div>`).join('')}</div>
+  ${tabs('rec', true)}
+</div>`;
+
+/* ====================================================== B desktop ====================================================== */
+const Bdesk = (() => {
+  const W = 'rgba(255,255,255,.10)', Nv = 'rgba(8,28,61,.10)';
+  const ox = 120, oy = 96;
+  const t = (x, y, w, h, cls, inner, a) => `<div class="tile ${cls}" style="left:${ox + x + 1}px;top:${oy + y + 1}px;width:${w - 2}px;height:${h - 2}px">${a || ''}${inner}</div>`;
+  return `<div class="desk">
+  <div class="dbar">${brand(24)}<nav><a class="on">홈</a><a>공지</a><a>대진표</a><a>기록</a><a>칭호</a><a>명예의 전당</a><a>게시판</a><a>팀 빌더</a><a>계산기</a><a>소개</a></nav><span style="margin-left:auto;color:#fff">${ic('moon', 22)}</span></div>
+  ${t(0, 0, 742, 742, 'n', `
+    <div class="abs" style="left:52px;top:52px;font-size:68px;line-height:1.12;font-weight:700;letter-spacing:-.025em">모든 승부가<br>기록이 됩니다.</div>
+    <div class="abs" style="left:52px;top:220px;font-size:16px;color:var(--on-2)">포켓몬 센터 연세점의 공식 배틀 리그입니다.</div>
+    <img class="sprite" src="${S('garchomp')}" style="right:20px;bottom:40px;width:440px;height:440px">
+    <div class="abs" style="left:52px;bottom:52px"><div class="label on">현 챔피언, 6대</div><div style="font-size:32px;font-weight:700;margin-top:8px">김현민</div><div style="font-size:15px;color:var(--on-2);margin-top:4px">YPL 시즌 2 우승</div></div>`, arc(742, 742, 'br', W))}
+  ${t(742, 0, 458, 458, 'p', `
+    <div class="abs" style="left:32px;right:32px;top:32px;display:flex;justify-content:space-between"><span class="label">다음 대회</span><span class="label">11월 7일 (토)</span></div>
+    <div class="num abs" style="left:28px;top:72px;font-size:136px;line-height:1">D-5</div>
+    <div class="abs" style="left:32px;top:232px;font-size:20px;font-weight:700;line-height:1.35">37회 파이컵 마스터 리그<br>NPC 배틀 7</div>
+    <a class="btn abs" style="left:32px;bottom:32px;height:52px;padding:0 24px;font-size:16px">이번 대회 신청 ${ic('arrow', 20, 2)}</a>
+    <span class="link abs" style="left:236px;bottom:48px;font-size:15px">리그 소개</span>`, arc(458, 458, 'bl', Nv))}
+  ${t(916, 458, 284, 284, 'n', `<div class="abs" style="left:28px;bottom:28px"><div class="num" style="font-size:84px;line-height:1">59</div><div class="label on" style="margin-top:8px;font-size:13px">지금까지의 대회</div></div>`, arc(284, 284, 'tl', W))}
+  ${t(742, 568, 174, 174, 'p', `<div class="abs" style="left:20px;bottom:20px"><div class="num" style="font-size:52px;line-height:1">71</div><div class="label" style="margin-top:6px">트레이너</div></div>`, arc(174, 174, 'tr', Nv))}
+  ${t(742, 458, 110, 110, 'n', `<div class="abs" style="left:16px;bottom:14px"><div class="num" style="font-size:32px;line-height:1">6</div><div class="label on" style="margin-top:4px;font-size:11px">챔피언</div></div>`, arc(110, 110, 'br', W))}
+  ${t(852, 458, 64, 110, 'p', `<svg class="abs" style="left:14px;top:44px;color:var(--navy)" width="36" height="24"><use href="#wing"/></svg>`)}
+  </div>`;
+})();
+
+/* ====================================================== motion storyboard (B) ====================================================== */
+const hidden = 'opacity:0;transform:translateY(12px)';
+const half = 'opacity:.6;transform:translateY(5px)';
+const loadFrames = [
+  ['0 ms', '첫 그림', '상단 바와 표지 첫 칸의 남색이 HTML과 함께 칠해집니다. 흰 화면과 로딩 로고가 없습니다.', [ '', hidden, hidden, hidden, hidden ]],
+  ['100 ms', '나선 순서', '두 번째 칸부터 큰 칸에서 작은 칸 순서로 62ms 간격을 두고 12px 올라옵니다.', [ '', half, hidden, hidden, hidden ]],
+  ['260 ms', '', '세 칸째가 자리를 잡습니다. 숫자는 세지 않고 그대로 섭니다.', [ '', '', half, hidden, hidden ]],
+  ['520 ms', '정착', '마지막 칸의 날개가 서면 끝입니다. 전체 0.52초, 다시 오면 재생하지 않습니다.', [ '', '', '', '', '' ]],
+];
+const tapFrames = (() => {
+  const st = (p) => `<div class="abs" style="left:-1px;top:${56 + 390 * (1 - p) * 0}px;width:392px;height:633px;pointer-events:none"></div>`;
+  return 0;
+})();
+const mini = html => `<div class="mini">${html}</div>`;
+/* tap: the 59 tile grows into the records header */
+const growFrame = (p, label, desc) => {
+  const from = { x: 241, y: 482 + 56, w: 149, h: 149 }, to = { x: 0, y: 56, w: 390, h: 241 };
+  const L = (a, b) => a + (b - a) * p;
+  const box = `<div class="abs" style="left:${L(from.x, to.x)}px;top:${L(from.y, to.y)}px;width:${L(from.w, to.w)}px;height:${L(from.h, to.h)}px;background:var(--navy);z-index:3;color:#fff"><div class="abs" style="left:16px;bottom:16px"><div class="num" style="font-size:${L(44, 52)}px;line-height:1">59</div></div></div>`;
+  const veil = `<div class="abs" style="left:0;right:0;top:56px;height:631px;background:#fff;opacity:.62;z-index:2"></div>`;
+  const under = p < 1 ? B1(['', '', 'opacity:0', '', '']) : B3;
+  return [label, desc, `<div class="ph" style="position:relative">${under.replace('<div class="ph B">', '<div class="ph B" style="position:absolute;inset:0;opacity:' + (p < .6 ? 1 : 1) + '">')}${p > 0 && p < 1 ? veil + box : ''}</div>`];
+};
+
+const board = (title, lede, items, extra = '') => `<section class="board"><h1>${title}</h1><p class="lede">${lede}</p><div class="row">${items.map(([cap, html]) => `<div>${html}<div class="cap">${cap}</div></div>`).join('')}</div>${extra}</section>`;
+
+const which = new URLSearchParams(location.search).get('b') || 'A';
+const R = document.getElementById('root');
+if (which === 'A') R.innerHTML = board('시안 A. 기록부', '흰 종이 위에 남색 잉크만 씁니다. 회색 면을 걷어내고 선과 여백으로만 나눕니다. 남색 면은 한 화면에 하나, 다음 대회처럼 가장 중요한 것에만 섭니다. 차분하고 오래 봐도 피로하지 않은 기록 보관소의 인상입니다.', [['홈, 첫 화면', A1], ['홈, 아래', A2], ['기록', A3]]);
+if (which === 'B') R.innerHTML = board('시안 B. 황금 분할 (추천)', '홈의 첫 화면 자체가 하나의 황금 직사각형입니다. 390, 241, 149, 92, 57의 정사각형으로 잘려 나가며, 큰 칸일수록 중요한 정보가 앉습니다. 남색과 종이색 두 면만 번갈아 쓰고, 칸 사이는 2px 흰 이음매로 끊습니다. 하위 페이지는 같은 분할의 일부를 머리로 씁니다.', [['홈, 첫 화면', B1()], ['홈, 아래', B2], ['기록', B3]]);
+if (which === 'C') R.innerHTML = board('시안 C. 전광판', '남색이 바탕이 되는 어두운 우선 방향입니다. 경기장 전광판처럼 숫자가 주인공이고, 흰색은 글자와 하나의 주 행동에만 씁니다. 대회 당일 현장에서 가장 잘 보이지만, 정보가 많은 화면에서는 무겁습니다.', [['홈, 첫 화면', C1], ['홈, 아래', C2], ['기록', C3]]);
+if (which === 'D') R.innerHTML = `<section class="board"><h1>시안 B. 데스크톱 1440</h1><p class="lede">같은 분할이 가로로 눕습니다. 742, 458, 284, 174, 110의 정사각형. 헤드라인과 현 챔피언이 가장 큰 칸을, 다음 대회가 두 번째 칸을 가집니다.</p><div class="row">${Bdesk}</div></section>`;
+if (which === 'M') {
+  const fr = ([t, title, s, html]) => `<div class="fr">${mini(html)}<div class="t">${t}${title ? ', ' + title : ''}</div><div class="s">${s}</div></div>`;
+  const loads = loadFrames.map(([t, title, s, st]) => [t, title, s, B1(st)]);
+  const grows = [[ '0 ms', '누름', '칸이 0.976으로 눌립니다. 손을 떼는 순간 이동이 시작됩니다.', B1().replace('left:242px;top:483px', 'left:242px;top:483px;transform:scale(.976)') ],
+    ['160 ms', '칸이 자랍니다', '눌린 59 칸이 transform만으로 기록 페이지의 머리 칸 자리까지 커집니다. 다른 칸은 160ms에 걸쳐 사라집니다.', growFrame(.45)[2]],
+    ['420 ms', '도착', '머리 칸이 제자리에 닿으면 표와 탭이 12px 올라오며 섭니다.', growFrame(1)[2]],
+    ['뒤로', '되감기', '뒤로 가면 같은 칸이 원래 자리로 줄어듭니다. 사용자는 어디서 왔는지 눈으로 압니다.', B1()]];
+  R.innerHTML = `<section class="board"><h1>시안 B. 움직임</h1><p class="lede">움직임은 공간의 이야기만 합니다. 칸은 나선 순서로 서고, 누른 칸은 다음 페이지의 머리가 되며, 뒤로 가면 되돌아갑니다. transform과 opacity만 씁니다.</p>
+  <div class="sb-row-title">첫 진입</div><div class="sb">${loads.map(fr).join('')}</div>
+  <div class="sb-row-title">칸을 눌러 들어가기</div><div class="sb">${grows.map(fr).join('')}</div></section>`;
+}
+</script>
+</body></html>

@@ -1,0 +1,36 @@
+
+/* reading text and the parts the remaining screens add: fields, choices, sticky actions, the admin dock */
+.p15 { font-size: 15px; line-height: 24px; font-weight: 400; }
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back { display: flex; align-items: center; gap: 4px; margin: 20px 20px 0; }
+.fl { margin: 0 20px; }
+.fl > .t12 { display: block; margin-bottom: 8px; }
+.in { height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 12px; background: var(--panel); font-size: 15px; line-height: 20px; }
+.in.focus { box-shadow: inset 0 -2px 0 var(--lit); }
+.in .ph-t { color: var(--mute); }
+.choice { display: grid; gap: 2px; }
+.choice > span { height: 44px; display: flex; align-items: center; justify-content: center; background: var(--panel); font-size: 15px; font-weight: 600; color: var(--dim); }
+.choice > span.on { background: var(--lit); color: var(--ground); font-weight: 700; }
+.chips { display: flex; gap: 2px; margin: 0 20px; overflow: hidden; }
+.chips > span { flex: none; height: 32px; display: flex; align-items: center; padding: 0 12px; background: var(--panel); font-size: 12px; font-weight: 600; color: var(--dim); }
+.chips > span.on { background: var(--lit); color: var(--ground); }
+.btn2 { display: flex; align-items: center; justify-content: center; gap: 8px; height: 52px; background: var(--panel); font-size: 15px; font-weight: 700; color: var(--lit); }
+.dock { position: absolute; left: 0; right: 0; bottom: 64px; padding: 16px 20px; background: var(--ground); box-shadow: inset 0 1px 0 var(--rule); z-index: 3; }
+.admin { position: absolute; left: 0; right: 0; bottom: 64px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 20px; background: var(--lit); color: var(--ground); font-size: 12px; font-weight: 700; z-index: 5; }
+.admin .lamp { background: var(--ground); }
+.box { width: 20px; height: 20px; flex: none; background: var(--panel-2); display: grid; place-items: center; }
+.box.on { background: var(--lit); color: var(--ground); }
+.sw { width: 52px; height: 32px; padding: 4px; background: var(--panel-2); display: flex; flex: none; }
+.sw i { width: 24px; height: 24px; background: var(--mute); }
+.sw.on { justify-content: flex-end; background: var(--lit); } .sw.on i { background: var(--ground); }
+.ty { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--dim); }
+.ty i { width: 3px; height: 12px; display: block; }
+.toast { position: absolute; left: 20px; right: 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--lit); color: var(--ground); font-size: 15px; font-weight: 600; z-index: 6; }
+.track { position: relative; height: 8px; background: var(--panel-2); }
+.track b { position: absolute; top: 0; bottom: 0; left: 0; background: var(--lit); }
+.ld .ct * { color: transparent !important; }
+.ld .ct .seg, .ld .ct .seg * { color: var(--lit) !important; }
+.ld .seg .on { opacity: var(--off); }
+.ld img, .ld .ct .lamp { opacity: 0; }
+.ld .ct .btn { background: var(--panel); }
