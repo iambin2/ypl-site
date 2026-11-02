@@ -58,10 +58,21 @@ const homeLow = `<div class="ph">${bar()}<div class="ct">
   <div class="t12 dim" style="margin:12px 20px 0">고른 포켓몬은 패널의 바닥에 섭니다</div>
   <div class="fl" style="margin-top:8px;display:grid;grid-template-columns:56px 57px 57px 56px 57px 57px;gap:2px">${['garchomp', 'dragonite-mega', 'hydreigon'].map(s => `<span class="pn stand" style="height:64px"><span class="floor" style="height:12px"></span><img class="sprite" src="${S(s)}" style="bottom:6px;width:48px;height:48px"></span>`).join('')}${[1, 2, 3].map(() => `<span class="pn" style="height:64px;display:grid;place-items:center;color:var(--mute)">${ic('plus', 18)}</span>`).join('')}</div></div>${tabs('home')}</div>`;
 
+
+/* no event ahead: the real state on 2026-11-02. The display stays switched off, the title says where the date will appear */
+const champReal = champ.floor.replace("김현민", "정두호").replace("6대, YPL 시즌 2 우승", "5대, YPL 시즌 1 우승").replace('garchomp.webp', 'lickilicky.webp');
+const counterReal = `<div style="margin-top:2px;display:grid;grid-template-columns:115px 116px 115px;gap:2px">${[['60', '대회'], ['55', '트레이너'], ['3', '시즌']].map(([n, l]) => `<div class="pn" style="height:84px;padding:12px;display:flex;flex-direction:column;justify-content:space-between"><span class="t12 dim">${l}</span>${seg(n, 40, 2)}</div>`).join('')}</div>`;
+const homeNone = light => `<div class="ph ${light ? 'light' : ''}">${bar(light)}<div class="ct">
+  <div class="abs t12 dim" style="left:20px;right:20px;top:88px;display:flex;align-items:center;gap:8px"><span class="lamp" style="background:var(--panel-2)"></span>다음 대회</div>
+  <div class="abs" style="left:20px;top:116px;height:120px;display:flex;align-items:flex-end;gap:12px">${seg('  ', 120, 2)}<span class="t20 dim" style="line-height:20px">일</span></div>
+  <div class="abs t20" style="left:20px;right:20px;top:256px">다음 대회 일정은<br>공지에 올라옵니다.</div>
+  <a class="btn abs" style="left:20px;right:20px;top:332px">공지 보기 ${ic('arrow', 20, 2)}</a>
+  <div class="abs" style="left:20px;top:436px;width:350px">${champReal.replace('<div class="pn"', '<div class="pn" ')}${counterReal}</div></div>${tabs('home')}</div>`;
 const boardHTML = (title, lede, items) => `<section class="board"><h1>${title}</h1><p class="lede">${lede}</p><div class="row">${items.map(([cap, html]) => `<div>${html}<div class="cap">${cap}</div></div>`).join('')}</div></section>`;
 const k = new URLSearchParams(location.search).get('b') || '21';
 const R = document.getElementById('root');
 if (k === '21') R.innerHTML = boardHTML('C21. 포켓몬이 서는 자리', '바탕만 걷어 내면 포켓몬이 아무것도 딛지 않아 떠 보입니다. 별도의 그림 상자는 두지 않고, 이름과 같은 패널 안에서 발을 땅에 붙입니다. 땅은 한 단계 밝은 바닥 띠입니다. 세대 번호를 뒤에 켜 보았지만(나, 다) 포켓몬에 가려 숫자로 읽히지 않고 화면만 복잡해져, 바닥 띠 하나를 추천합니다.', [['지금: 떠 있음', home(champ.float)], ['가. 바닥 띠 (추천)', home(champ.floor)], ['나. 세대 번호', home(champ.number)], ['다. 번호와 바닥', home(champ.both)]]);
+if (k === '23') R.innerHTML = boardHTML('C23. 다음 대회가 없을 때', '지금 실제 데이터의 상태입니다. 카운트다운 판은 꺼진 채 자리를 지키고, 램프도 꺼집니다. 제목 자리에는 일정이 올라올 곳을 말하고, 주 행동은 공지 보기입니다. 챔피언과 대회, 트레이너 수는 2026-11-02의 실제 값이며, 시즌 수는 데이터에서 셉니다.', [['다음 대회 없음', homeNone(false)], ['밝은 모드', homeNone(true)]]);
 if (k === '22') R.innerHTML = boardHTML('C22. 같은 규칙을 모든 포켓몬에', '포켓몬은 언제나 패널 안, 바닥에 발을 붙이고 섭니다. 역대 챔피언 카드는 이름 띠가 곧 바닥이고 세대는 왼쪽 위 글자로 둡니다. 팀 슬롯도 얇은 바닥을 가집니다. 밝은 모드에서도 같은 구조입니다.', [['홈, 역대 챔피언과 팀 슬롯', homeLow], ['홈, 밝은 모드', home(champ.floor, true)]]);
 </script>
 </body></html>
