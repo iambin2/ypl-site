@@ -25,9 +25,12 @@ import "./styles/admin.css";
 
 /* 저장된 테마를 React 보다 먼저 <html> 에 건다.
    (이 한 줄이 없으면 밤에 들어온 사람은 흰 화면이 한 번 번쩍인 뒤 어두워진다.) */
-/* 처음 방문하면 다크로 연다(스코어보드). 라이트를 고른 사람만 라이트. */
+/* 처음 방문하면 다크로 연다(스코어보드). 라이트를 고른 사람만 라이트, 기기 설정을 고른 사람은 기기를 따른다. */
 function bootTheme() {
-  try { return localStorage.getItem("ypl-theme") !== "light"; } catch (e) { return true; }
+  try {
+    const t = localStorage.getItem("ypl-theme");
+    return t === "system" ? !matchMedia("(prefers-color-scheme: light)").matches : t !== "light";
+  } catch (e) { return true; }
 }
 const bootDark = bootTheme();
 document.documentElement.dataset.theme = bootDark ? "dark" : "light";

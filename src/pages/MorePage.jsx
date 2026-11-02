@@ -12,7 +12,8 @@ const GROUPS = [
   ["리그", [["about", "소개"]]],
 ];
 
-export default function MorePage({ go, dark, onTheme, admin, onAdmin }) {
+const THEMES = [["dark", "어둡게"], ["light", "밝게"], ["system", "기기 설정"]];
+export default function MorePage({ go, themePref, onTheme, admin, onAdmin }) {
   return (
     <section className="more">
       <h1 className="t32">더보기</h1>
@@ -29,7 +30,7 @@ export default function MorePage({ go, dark, onTheme, admin, onAdmin }) {
       ))}
       <div className="more-group">
         <p className="t12 dim more-label">설정</p>
-        <Choice name="theme" options={["어둡게", "밝게"]} value={dark ? "어둡게" : "밝게"} onChange={v => { if ((v === "어둡게") !== dark) onTheme(); }} />
+        <Choice name="theme" options={THEMES.map(([, label]) => label)} value={THEMES.find(([key]) => key === themePref)?.[1]} onChange={v => { const key = THEMES.find(([, label]) => label === v)?.[0]; if (key && key !== themePref) onTheme(key); }} />
         <div className="stack more-switch"><PushSwitch /></div>
       </div>
       <div className="more-group">

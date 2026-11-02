@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect, useLayoutEffect, useCallback } from "react";
+import React, { lazy, useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
 import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
@@ -77,15 +77,21 @@ export default function App() {
   const [more,setMore]=useState(null);
   // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
-  // 다크가 첫 방문이다(스코어보드). 라이트를 고른 기록이 있을 때만 라이트로 연다. 예전 키는 열 때마다 저장돼 고른 기록이 아니라서 쓰지 않는다.
-  const [dark,setDark]=useState(()=>{
-    try{ return localStorage.getItem("ypl-theme")!=="light"; }catch(e){ return true; }
+  // 다크가 첫 방문이다(스코어보드). 고른 기록이 라이트면 라이트, "system"이면 기기의 설정을 따른다.
+  // 예전 키는 열 때마다 저장돼 고른 기록이 아니라서 쓰지 않는다.
+  const [themePref,setThemePref]=useState(()=>{
+    try{ const t=localStorage.getItem("ypl-theme"); return t==="light"||t==="system"?t:"dark"; }catch(e){ return "dark"; }
   });
+  const lightQuery=useMemo(()=>typeof matchMedia==="function"?matchMedia("(prefers-color-scheme: light)"):null,[]);
+  const [systemLight,setSystemLight]=useState(()=>Boolean(lightQuery?.matches));
+  useEffect(()=>{ if(!lightQuery)return; const on=e=>setSystemLight(e.matches); lightQuery.addEventListener("change",on); return ()=>lightQuery.removeEventListener("change",on); },[lightQuery]);
+  const dark=themePref==="system"?!systemLight:themePref!=="light";
   /* B6: 화면은 그 자리에 있고 색만 한 프레임에 바뀐다. 아무것도 움직이지 않는다. */
-  const switchTheme=useCallback(()=>{
-    try{ localStorage.setItem("ypl-theme", dark?"light":"dark"); }catch(e){}
-    themeTurn(()=>flushSync(()=>setDark(!dark)));
-  },[dark]);
+  const chooseTheme=useCallback((pref)=>{
+    try{ localStorage.setItem("ypl-theme", pref); }catch(e){}
+    themeTurn(()=>flushSync(()=>setThemePref(pref)));
+  },[]);
+  const switchTheme=useCallback(()=>chooseTheme(dark?"light":"dark"),[dark,chooseTheme]);
   /* 테마는 <html> 에 건다 — 페이지, 오버스크롤 영역, 스크롤바, 브라우저 주소창 색이 한 바탕을 쓴다. */
   useLayoutEffect(()=>{
     const root=document.documentElement;
@@ -221,7 +227,7 @@ export default function App() {
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}
-        {view==="more"&&<MorePage go={go} dark={dark} onTheme={switchTheme} admin={admin} onAdmin={onAdmin}/>}
+        {view==="more"&&<MorePage go={go} themePref={themePref} onTheme={chooseTheme} admin={admin} onAdmin={onAdmin}/>}
         {view==="news"&&<NewsPage data={data} admin={admin} setModal={setModal} save={save} submitForm={submitForm} refresh={refresh} go={go}/>}
         {view==="board"&&<BoardPage data={data} admin={admin} save={save} flash={flash} go={go}/>}
         {view==="records"&&<RecordsPage data={data} admin={admin} setModal={setModal} save={save}/>}
