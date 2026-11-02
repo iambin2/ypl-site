@@ -385,7 +385,8 @@ $$;
 -- DEFINER so anon needs no snapshot INSERT or Event/Registration UPDATE; the
 -- body's Event state and Registration exact-match checks are the gate.
 revoke all on function ypl_schema_validation.submit_registration_team_snapshot(uuid, uuid, text, jsonb, jsonb) from public;
-grant execute on function ypl_schema_validation.submit_registration_team_snapshot(uuid, uuid, text, jsonb, jsonb) to anon, authenticated;
+-- 2026-11-02: visitors now enter through the six-argument gate in visitor_gates.sql, which calls this function itself.
+revoke all on function ypl_schema_validation.submit_registration_team_snapshot(uuid, uuid, text, jsonb, jsonb) from public, anon, authenticated;
 
 revoke all on function ypl_schema_validation.freeze_event_final_submissions(uuid) from public, anon, service_role;
 grant execute on function ypl_schema_validation.freeze_event_final_submissions(uuid) to authenticated;
