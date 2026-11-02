@@ -158,3 +158,12 @@
 /* private brackets: the official board and cards, marked "사설" (inverted chip) so they never read as an official event */
 .pb-chips { display: flex; align-items: center; gap: var(--s2); }
 .pb-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* ---------- 3 대진 배치 (c12): each first-round match a row, the two names as cells; the held name inverted ---------- */
+.bk-stepper.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bk-place-tools { grid-template-columns: minmax(0, 1fr); }
+.bk-place-row { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--s2) 0 var(--pad); }
+.bk-place-name { min-height: var(--h-control); padding: 0 var(--s3); text-align: left; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: grab; transition: background-color var(--move-tone); }
+.bk-place-name.inv { color: var(--ground); }
+.bk-place-name.bye { display: flex; align-items: center; color: var(--mute); font-weight: 600; cursor: default; }
+@media (hover: hover) { button.bk-place-name:not(.inv):hover { background: var(--panel-2); } }

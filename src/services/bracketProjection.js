@@ -104,6 +104,35 @@ export function shuffle(list, random = Math.random) {
   return out;
 }
 
+/* The first round as pairs of participant keys, a BYE as null in the second place: the keys shuffled, the BYEs on
+   random matches, one a match at most. The admin sees this plan and may swap players before the bracket is made
+   (docs/redesign-next c12, 대진 배치); without a plan the builders draw one exactly as before. */
+export function drawPlan(keys = []) {
+  const size = nextPowerOfTwo(keys.length);
+  const shuffled = shuffle(keys);
+  const byeMatches = new Set(shuffle(Array.from({ length: size / 2 }, (_, index) => index)).slice(0, size - keys.length));
+  let cursor = 0;
+  return Array.from({ length: size / 2 }, (_, match) => byeMatches.has(match) ? [shuffled[cursor++], null] : [shuffled[cursor++], shuffled[cursor++]]);
+}
+
+/* A plan must hold every participant once, as many pairs as the first round has matches, and a player first in
+   every pair; anything else fails closed. */
+export function slotsFromPlan(plan, entryOf) {
+  const keys = [...entryOf.keys()];
+  const size = nextPowerOfTwo(keys.length);
+  const placed = Array.isArray(plan) ? plan.flat().filter(key => key != null) : [];
+  if (!Array.isArray(plan) || plan.length !== size / 2 || placed.length !== keys.length || new Set(placed).size !== placed.length
+    || placed.some(key => !entryOf.has(key)) || plan.some(pair => !Array.isArray(pair) || pair.length !== 2 || pair[0] == null)) {
+    throw new Error("대진 배치가 참가자와 맞지 않습니다. 다시 추첨해 주세요.");
+  }
+  const slots = [];
+  plan.forEach(([first, second], match) => {
+    slots.push({ slot_no: match * 2 + 1, entry_id: entryOf.get(first) });
+    if (second != null) slots.push({ slot_no: match * 2 + 2, entry_id: entryOf.get(second) });
+  });
+  return slots;
+}
+
 function nodeKey(roundNumber, matchNumber) {
   return `single:r${roundNumber}:m${matchNumber}`;
 }

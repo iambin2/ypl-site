@@ -25,7 +25,8 @@ import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
 import {
   projectNormalizedDoubleEliminationBracket,
   projectNormalizedSingleEliminationBracket,
-  shuffle,
+  drawPlan,
+  slotsFromPlan,
 } from "./bracketProjection.js";
 import { readAll } from "./pagedRead.js";
 import {
@@ -235,7 +236,7 @@ function nextPowerOfTwo(value) {
   return result;
 }
 
-export function buildNormalizedSingleCreateAttempt(participants = []) {
+export function buildNormalizedSingleCreateAttempt(participants = [], { plan = null } = {}) {
   const input = (participants || []).map((participant, index) => ({
     participant_key: participant.id || `participant-${index + 1}`,
     display_name: String(participant.name || participant.display_name || "").trim(),
@@ -245,43 +246,18 @@ export function buildNormalizedSingleCreateAttempt(participants = []) {
     entry_participant_id: participant.entryParticipantId || participant.entry_participant_id || databaseUuid(),
   }));
   if (input.length < 2) throw new Error("싱글 토너먼트 대진표에는 참가자가 2명 이상 필요합니다.");
-  const size = nextPowerOfTwo(input.length);
-  const matchCount = size / 2;
-  const byeCount = size - input.length;
-  const shuffled = shuffle(input);
-  const matchOrder = shuffle(Array.from({ length: matchCount }, (_, index) => index));
-  const byeMatches = new Set(matchOrder.slice(0, byeCount));
-  const slots = [];
-  let cursor = 0;
-  for (let matchIndex = 0; matchIndex < matchCount; matchIndex += 1) {
-    const firstSlot = matchIndex * 2 + 1;
-    if (byeMatches.has(matchIndex)) {
-      slots.push({ slot_no: firstSlot, entry_id: shuffled[cursor++].entry_id });
-      continue;
-    }
-    slots.push({ slot_no: firstSlot, entry_id: shuffled[cursor++].entry_id });
-    slots.push({ slot_no: firstSlot + 1, entry_id: shuffled[cursor++].entry_id });
-  }
+  // a plan names participants by their participant_key (the wizard's id); without one the draw uses the list order as keys
+  const entryOf = new Map(input.map((participant, index) => [plan ? participant.participant_key : index, participant.entry_id]));
+  const slots = slotsFromPlan(plan || drawPlan([...entryOf.keys()]), entryOf);
   return { runtimeId: databaseUuid(), participants: input, slots };
 }
 
-export function buildNormalizedRuntimeCreateAttempt(participants = [], { runtimeId = databaseUuid() } = {}) {
+export function buildNormalizedRuntimeCreateAttempt(participants = [], { runtimeId = databaseUuid(), plan = null } = {}) {
   const actual = (participants || []).filter(Boolean);
   if (actual.length < 2) throw new Error("대진표에는 참가자 또는 팀이 2개 이상 필요합니다.");
-  const size = nextPowerOfTwo(actual.length);
-  const shuffled = shuffle(actual);
-  const matchOrder = shuffle(Array.from({ length: size / 2 }, (_, index) => index));
-  const byeMatches = new Set(matchOrder.slice(0, size - actual.length));
-  const slots = [];
-  let cursor = 0;
-  for (let matchIndex = 0; matchIndex < size / 2; matchIndex += 1) {
-    const slotNo = matchIndex * 2 + 1;
-    slots.push({ slot_no: slotNo, entry_id: shuffled[cursor++].entryId || shuffled[cursor - 1].entry_id });
-    if (!byeMatches.has(matchIndex)) {
-      const next = shuffled[cursor++];
-      slots.push({ slot_no: slotNo + 1, entry_id: next.entryId || next.entry_id });
-    }
-  }
+  // a plan names participants by the id they had in the wizard; without one the draw uses the list order as keys
+  const entryOf = new Map(actual.map((participant, index) => [plan ? participant.id : index, participant.entryId || participant.entry_id]));
+  const slots = slotsFromPlan(plan || drawPlan([...entryOf.keys()]), entryOf);
   return { runtimeId, participants: actual, slots };
 }
 

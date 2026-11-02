@@ -15,6 +15,7 @@ import { ChampionsBracketControls } from "../components/ChampionsBracketControls
 import { applyTitleAwards, evaluateTitleAwards } from "../services/titleAwards.js";
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
+import { drawPlan } from "../services/bracketProjection.js";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
@@ -300,6 +301,10 @@ function BracketWizard({ data, onClose, onCreate }){
   const [championshipManualBusy,setChampionshipManualBusy]=useState(false);
   const [creating,setCreating]=useState(false);
   const normalizedAttemptRef=useRef(null);
+  /* 3 대진 배치: 만들기 전에 추첨을 보여 주고 자리를 바꾼다. parts는 이 배치가 가리키는 참가자 그대로다 */
+  const [placement,setPlacement]=useState(null);
+  const [held,setHeld]=useState(null);
+  const dragFrom=useRef(null);
 
   useEffect(()=>{
     let cancelled=false;
@@ -421,7 +426,7 @@ function BracketWizard({ data, onClose, onCreate }){
         await setChampionshipQualifierDirectSelections(linkedEvent.id,directRegistrationIds);
       }catch(error){ setEventError(error?.message||"본선 직행자를 저장하지 못했습니다."); return; }
     }
-    const parts=buildParticipants();
+    const parts=(step===3&&placement?.parts)||buildParticipants();
     if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
     if(format!=="elim"){ setEventError("진행 중인 대회의 대진표는 토너먼트 방식만 지원합니다."); return; }
     if(linkedEvent?.championship_phase === "final"){
@@ -434,9 +439,9 @@ function BracketWizard({ data, onClose, onCreate }){
     if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다.","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
     let normalizedAttempt=null;
     if(eventId&&mode==="single"){
-      const attemptKey=JSON.stringify(parts.map(p=>[p.registrationId||null,p.name]));
+      const attemptKey=JSON.stringify([parts.map(p=>[p.registrationId||null,p.name]),(step===3&&placement?.plan)||null]);
       if(!normalizedAttemptRef.current||normalizedAttemptRef.current.attemptKey!==attemptKey){
-        normalizedAttemptRef.current={attemptKey,...buildNormalizedSingleCreateAttempt(parts)};
+        normalizedAttemptRef.current={attemptKey,...buildNormalizedSingleCreateAttempt(parts,{plan:(step===3&&placement?.plan)||null})};
       }
       normalizedAttempt=normalizedAttemptRef.current;
     }
@@ -457,6 +462,7 @@ function BracketWizard({ data, onClose, onCreate }){
             }))
           : parts,
         normalizedAttempt,
+        plan:(step===3&&placement?.plan)||null,
         graph:null, groups:null, knockout:null, status:"active", applied:null });
     }finally{
       setCreating(false);
@@ -519,11 +525,37 @@ function BracketWizard({ data, onClose, onCreate }){
     finally{ setChampionshipManualBusy(false); }
   };
   const confirmedCount=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;
+  const placeable=Boolean(eventId)&&format==="elim";
+  const startPlacement=()=>{
+    const parts=buildParticipants();
+    if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
+    setEventError("");
+    setHeld(null);
+    setPlacement({parts,plan:drawPlan(parts.map(p=>p.id))});
+    setStep(3);
+  };
+  const redraw=()=>{ setHeld(null); setPlacement(p=>p&&{...p,plan:drawPlan(p.parts.map(x=>x.id))}); };
+  const swapPlaces=(x,y)=>{ if(!x||!y||x===y)return; setPlacement(p=>({...p,plan:p.plan.map(pair=>pair.map(k=>k===x?y:k===y?x:k))})); };
+  const placeName=key=>placement?.parts.find(p=>p.id===key)?.name||"";
+  const tapPlace=key=>{ if(dragFrom.current?.moved){ dragFrom.current=null; return; } if(held==null) setHeld(key); else { swapPlaces(held,key); setHeld(null); } };
+  const placeCell=key=>key==null
+    ? <span className="bk-place-name bye t15">부전승</span>
+    : <button type="button" data-key={key} className={"bk-place-name t15 "+(held===key?"inv":"")} aria-pressed={held===key}
+        onPointerDown={e=>{ if(e.pointerType==="mouse") dragFrom.current={key,x:e.clientX,y:e.clientY,moved:false}; }}
+        onClick={()=>tapPlace(key)}>{placeName(key)}</button>;
+  const dropPlace=e=>{
+    const from=dragFrom.current; if(!from)return;
+    if(Math.hypot(e.clientX-from.x,e.clientY-from.y)<8){ dragFrom.current=null; return; }
+    from.moved=true;
+    const target=document.elementFromPoint(e.clientX,e.clientY)?.closest("[data-key]");
+    if(target) swapPlaces(from.key,target.dataset.key);
+    setHeld(null);
+  };
   const stepCell=(n,label)=><span className={"bk-step "+(step===n?"inv":"pn")} aria-current={step===n?"step":undefined}><span className="num">{n}</span>{step>n&&<Icon n="check" size={16}/>}{label}</span>;
   return (<div className="bk-create">
     <BackLink to="대진표" onClick={onClose}/>
     <header className="bk-head"><h2 className="t20">대진표 만들기</h2>{(linkedEvent?.name||name)&&<span className="t12 dim">{linkedEvent?.name||name}</span>}</header>
-    <div className="stack bk-stepper">{stepCell(1,"대회 설정")}{stepCell(2,"참가자 확정")}</div>
+    <div className={"stack bk-stepper"+(placeable?" three":"")}>{stepCell(1,"대회 설정")}{stepCell(2,"참가자 확정")}{placeable&&stepCell(3,"대진 배치")}</div>
     <div className="form-card swap" key={step}>
     {step===1&&<>
       <div className="field">
@@ -764,8 +796,27 @@ function BracketWizard({ data, onClose, onCreate }){
 
       <Dock>
         <div className="stack bk-dock">
-          <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>{eventId&&mode!=="team"?`${buildParticipants().length}명으로 대진표 만들기`:"대진표 만들기"}</Button>
+          {placeable
+            ? <Button variant="main" onClick={startPlacement}>{mode!=="team"?`${buildParticipants().length}명으로 추첨`:"추첨"}</Button>
+            : <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>{eventId&&mode!=="team"?`${buildParticipants().length}명으로 대진표 만들기`:"대진표 만들기"}</Button>}
           <Button variant="second" onClick={()=>setStep(1)}>이전</Button>
+        </div>
+      </Dock>
+    </>}
+
+    {step===3&&placement&&<>
+      {eventError&&<FormError>{eventError}</FormError>}
+      <div className="stack bk-place-tools"><Button variant="second" onClick={redraw}>다시 추첨</Button></div>
+      <p className="t12 reg dim">M1과 M2, M3과 M4의 승자가 차례로 만납니다. 이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다. 부전승 자리는 추첨이 정합니다.</p>
+      <div className="stack bk-place" onPointerUp={dropPlace} onPointerLeave={()=>{ if(dragFrom.current&&!dragFrom.current.moved) dragFrom.current=null; }}>
+        {placement.plan.map(([a,b],i)=><div className="pn bk-place-row" key={i}>
+          <span className="t12 dim num">M{i+1}</span>{placeCell(a)}<span className="t12 dim">vs</span>{placeCell(b)}
+        </div>)}
+      </div>
+      <Dock>
+        <div className="stack bk-dock">
+          <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>대결 확정</Button>
+          <Button variant="second" onClick={()=>{ setHeld(null); setStep(2); }}>이전</Button>
         </div>
       </Dock>
     </>}
@@ -2078,7 +2129,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
                 member_order:1,
               }),
             }));
-        const attempt=buildNormalizedRuntimeCreateAttempt(confirmedParticipants);
+        const attempt=buildNormalizedRuntimeCreateAttempt(confirmedParticipants,{plan:b.plan||null});
         runtimeId=attempt.runtimeId;
         await createNormalizedBracketRuntime({
           runtimeId:attempt.runtimeId,
