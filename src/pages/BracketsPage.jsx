@@ -428,7 +428,7 @@ function BracketWizard({ data, onClose, onCreate }){
       }catch(error){ setEventError(error?.message||"본선 대진표 생성 조건을 확인하지 못했습니다."); return; }
     }
     const useDbl = dbl && parts.length>=3;
-    if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다.","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
+    if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
     let normalizedAttempt=null;
     if(eventId&&mode==="single"){
       const attemptKey=JSON.stringify(parts.map(p=>[p.registrationId||null,p.name]));
@@ -785,7 +785,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const allPlayed=N>0&&games.every(w=>w); const tie=allPlayed&&a===b;
   const allPlayers=lineupA.every(Boolean)&&lineupB.every(Boolean);
   const decided=allPlayers&&allPlayed&&(!tie||(!!aceA&&!!aceB&&!!aceW));
-  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요.","실제 출전 선수와 모든 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력해 주세요.");return;}
+  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요","실제 출전 선수와 모든 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력해 주세요.");return;}
     const result=buildTeamMatchSeries(teamA,teamB,{lineupA,lineupB,games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null}); onSave(result.series,result.winnerSide); };
   const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={16}/>승</>:"승"}</button></div>;
   const displayTeamA=teamMatchDisplayName(teamA.name),displayTeamB=teamMatchDisplayName(teamB.name);
@@ -1248,11 +1248,11 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     return { deltas, roundNum, willRank, willSeason };
   };
   const prepare=()=>{
-    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다.","선발전은 순위와 포인트를 기록하지 않습니다. 챔피언스 운영에서 본선 진출자를 확정한 뒤 선발전을 종료해 주세요.");return;}
-    if(!curT){siteAlert("대회를 선택해 주세요.","회차를 추가할 대회를 먼저 선택해 주세요.");return;}
-    if(linkedContextBusy){siteAlert("잠시만 기다려 주세요.","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
-    if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다.",linkedContextError);return;}
-    if(!recordSeason){siteAlert("시즌을 선택해 주세요.","기록을 반영할 시즌을 먼저 선택해 주세요.");return;}
+    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다","선발전은 순위와 포인트를 기록하지 않습니다. 챔피언스 운영에서 본선 진출자를 확정한 뒤 선발전을 종료해 주세요.");return;}
+    if(!curT){siteAlert("대회를 선택해 주세요","회차를 추가할 대회를 먼저 선택해 주세요.");return;}
+    if(linkedContextBusy){siteAlert("잠시만 기다려 주세요","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
+    if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다",linkedContextError);return;}
+    if(!recordSeason){siteAlert("시즌을 선택해 주세요","기록을 반영할 시즌을 먼저 선택해 주세요.");return;}
     setPreview(buildResult());
   };
   // 기록 반영이 끝난 뒤, 고정된 공식 파티로 칭호 조건을 확인한다. 판정 실패는 기록 반영을 막지 않는다.
@@ -1741,11 +1741,11 @@ function PrivateBracketCreate({ onClose, onCreate }){
   const names=parseParticipantNames(namesText);
   const submit=async()=>{
     if(busy)return;
-    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요.");return;}
-    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요.","대진표를 만든 사람으로 표시됩니다.");return;}
-    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요.","결과 입력과 삭제에 필요합니다. 다른 사람은 대진표를 보기만 합니다.");return;}
-    if(names.length<2){siteAlert("참가자를 2명 이상 적어 주세요.","한 줄에 한 명씩, 또는 쉼표로 나눠 적습니다.");return;}
-    if(names.length>PRIVATE_BRACKET_MAX){siteAlert(`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다.`);return;}
+    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요");return;}
+    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요","대진표를 만든 사람으로 표시됩니다.");return;}
+    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요","결과 입력과 삭제에 필요합니다. 다른 사람은 대진표를 보기만 합니다.");return;}
+    if(names.length<2){siteAlert("참가자를 2명 이상 적어 주세요","한 줄에 한 명씩, 또는 쉼표로 나눠 적습니다.");return;}
+    if(names.length>PRIVATE_BRACKET_MAX){siteAlert(`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다`);return;}
     setBusy(true);
     try{ await onCreate({name,host,pin,names,double:double==="double",order,note}); }
     finally{ setBusy(false); }
@@ -1775,9 +1775,9 @@ function PrivateBracketEdit({ b, onClose, onSave }){
   const submit=async()=>{
     if(busy)return;
     const clean=names.map(n=>n.trim().slice(0,20));
-    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요.");return;}
-    if(clean.some(n=>!n)){siteAlert("참가자 이름을 입력해 주세요.");return;}
-    if(new Set(clean).size!==clean.length){siteAlert("같은 이름의 참가자가 있습니다.","이름이 겹치지 않게 고쳐 주세요.");return;}
+    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요");return;}
+    if(clean.some(n=>!n)){siteAlert("참가자 이름을 입력해 주세요");return;}
+    if(new Set(clean).size!==clean.length){siteAlert("같은 이름의 참가자가 있습니다","이름이 겹치지 않게 고쳐 주세요.");return;}
     setBusy(true);
     try{ await onSave({name:name.trim().slice(0,40),host:host.trim().slice(0,20),note:note.trim().slice(0,1000),
       participants:b.participants.map((p,i)=>({...p,name:clean[i]}))}); }
@@ -1822,10 +1822,10 @@ function PrivateBrackets({ admin, flash, tabs }){
   const unlock=id=>{ const next=new Set(unlocked); next.add(id); setUnlocked(next); writeUnlocked(next); };
   const lock=id=>{ const next=new Set(unlocked); next.delete(id); setUnlocked(next); writeUnlocked(next); };
   const write=async(fn,done)=>{ setBusy(true); try{ setList(await updateCommunity(PRIVATE_BRACKETS_KEY,fn)); if(done)flash(done); return true; }
-    catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
+    catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
 
   const create=async({pin,...input})=>{
-    let b; try{ b=createPrivateBracket(input); }catch(error){ siteAlert("대진표를 만들 수 없습니다.",error?.message||""); return; }
+    let b; try{ b=createPrivateBracket(input); }catch(error){ siteAlert("대진표를 만들 수 없습니다",error?.message||""); return; }
     b.pinHash=await hashPin(b.id,pin);
     if(!(await write(items=>[b,...items],"사설 대진표를 만들었습니다.")))return;
     try{ localStorage.setItem("ypl-board-nick",b.host); }catch{ /* 기억 못 해도 된다 */ }
@@ -1834,7 +1834,7 @@ function PrivateBrackets({ admin, flash, tabs }){
   const verifyPin=async(title)=>{
     const pin=await sitePrompt({title,body:"대진표를 만들 때 정한 관리 비밀번호를 입력해 주세요.",label:"관리 비밀번호",placeholder:"숫자 4자리",confirmLabel:"열기",secret:true,inputMode:"numeric"});
     if(pin===null)return false;
-    if(!(await pinMatches(open,pin))){ siteAlert("비밀번호가 일치하지 않습니다.","만든 사람에게 확인해 주세요."); return false; }
+    if(!(await pinMatches(open,pin))){ siteAlert("비밀번호가 일치하지 않습니다","만든 사람에게 확인해 주세요."); return false; }
     unlock(open.id); return true;
   };
   const askUnlock=async()=>{ if(await verifyPin("결과 입력")) flash("이제 승자를 눌러 결과를 입력할 수 있습니다."); };
@@ -1845,14 +1845,14 @@ function PrivateBrackets({ admin, flash, tabs }){
     void write(items=>items.map(x=>x.id===id?{...withPick(x,matchId,side),updatedAt:at}:x)); };
   const redraw=async()=>{ if(!(await siteConfirm({title:"다시 추첨",body:"참가자는 그대로 두고 대진을 새로 섞습니다.",confirmLabel:"다시 추첨"})))return;
     const id=open.id; let graph;
-    try{ graph=buildPrivateGraph(open.participants.map(p=>p.id),{double:open.double,order:"random"}); }catch(error){ siteAlert("다시 추첨하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
+    try{ graph=buildPrivateGraph(open.participants.map(p=>p.id),{double:open.double,order:"random"}); }catch(error){ siteAlert("다시 추첨하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
     if(await write(items=>items.map(x=>x.id===id?{...x,graph,order:"random",updatedAt:new Date().toISOString()}:x))) setDrawId(id); };
   const del=async()=>{
     if(!admin&&!unlocked.has(open.id)){
       const pin=await sitePrompt({title:"대진표 삭제",body:"대진표를 만들 때 정한 관리 비밀번호를 입력해 주세요.",label:"관리 비밀번호",placeholder:"숫자 4자리",confirmLabel:"삭제",secret:true,inputMode:"numeric"});
       if(pin===null)return;
-      if(!(await pinMatches(open,pin))){ siteAlert("비밀번호가 일치하지 않습니다."); return; }
-    } else if(!(await siteConfirm({title:"대진표 삭제",body:`'${open.name}' 사설 대진표를 삭제할까요? 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true}))) return;
+      if(!(await pinMatches(open,pin))){ siteAlert("비밀번호가 일치하지 않습니다"); return; }
+    } else if(!(await siteConfirm({title:"대진표 삭제",body:`‘${open.name}’ 사설 대진표를 삭제할까요? 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true}))) return;
     const id=open.id; if(await write(items=>items.filter(x=>x.id!==id),"삭제됨")){ lock(id); closeBracket(); } };
   const share=async()=>{ const r=await shareLink({view:"bracket",tab:"private",pb:open.id},open.name); if(r==="copied")flash("주소를 복사했습니다."); };
 
@@ -2160,9 +2160,9 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   };
   const del=async(b)=>{
     if(b.readOnly){ flash("이미 끝난 과거 대진표는 볼 수만 있습니다."); return; }
-    if(b.applied){siteAlert("기록 반영을 먼저 취소해 주세요.","기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
+    if(b.applied){siteAlert("기록 반영을 먼저 취소해 주세요","기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
     if(deletingRef.current)return;
-    if(!(await siteConfirm({title:"대진표 삭제",body:`'${b.name}' 대회를 삭제할까요?`,confirmLabel:"삭제",danger:true})))return;
+    if(!(await siteConfirm({title:"대진표 삭제",body:`‘${b.name}’ 대회를 삭제할까요?`,confirmLabel:"삭제",danger:true})))return;
     if(deletingRef.current)return;
     deletingRef.current=true;
     setDeletingId(b.id);

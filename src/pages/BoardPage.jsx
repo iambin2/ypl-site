@@ -35,7 +35,7 @@ function MediaEmbed({ url }){
 
 function BoardCompose({ onClose, onSubmit }){
   const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
-  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요.");return;}
+  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요");return;}
     onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
@@ -58,10 +58,10 @@ function BoardCompose({ onClose, onSubmit }){
 /* 본인 확인. 자유게시판 글은 숫자를 그대로(pin), 샘플과 파티 글은 해시(pinHash)로 갖고 있다. 관리자는 묻지 않는다. */
 async function authorize(record,what,verb,admin){
   if(admin) return verb!=="삭제"||siteConfirm({title:`${what} 삭제`,body:`이 ${what}을 삭제할까요? 삭제한 ${what}은 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true});
-  if(!record.pin&&!record.pinHash){ siteAlert(`비밀번호가 없는 ${what}입니다.`,`관리자에게 ${verb} 요청을 해 주세요.`); return false; }
+  if(!record.pin&&!record.pinHash){ siteAlert(`비밀번호가 없는 ${what}입니다`,`관리자에게 ${verb} 요청을 해 주세요.`); return false; }
   const pin=await sitePrompt({title:`${what} ${verb}`,body:`본인 ${what}을 ${verb}하려면 작성할 때 정한 비밀번호를 입력해 주세요.`,label:"비밀번호",placeholder:"숫자 4자리",confirmLabel:verb==="삭제"?"삭제":"확인",secret:true,inputMode:"numeric"});
   if(pin===null) return false;
-  if(!(record.pinHash?await pinMatches(record,pin):pin===record.pin)){ siteAlert("비밀번호가 일치하지 않습니다.","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요."); return false; }
+  if(!(record.pinHash?await pinMatches(record,pin):pin===record.pin)){ siteAlert("비밀번호가 일치하지 않습니다","작성할 때 입력한 숫자 4자리를 다시 확인해 주세요."); return false; }
   return true;
 }
 
@@ -72,8 +72,8 @@ function EditSheet({ heading, initial, onClose, onSave }){
   const has=k=>k in initial;
   const submit=async()=>{
     const next={...v}; for(const k of ["title","body","link"]) if(has(k)) next[k]=String(next[k]||"").trim();
-    if(has("title")&&!next.title){siteAlert("제목을 입력해 주세요.");return;}
-    if(!has("title")&&!next.body&&!next.link){siteAlert("내용이나 링크를 입력해 주세요.");return;}
+    if(has("title")&&!next.title){siteAlert("제목을 입력해 주세요");return;}
+    if(!has("title")&&!next.body&&!next.link){siteAlert("내용이나 링크를 입력해 주세요");return;}
     if(has("title")) next.title=next.title.slice(0,60);
     setBusy(true); try{ await onSave(next); }finally{ setBusy(false); }
   };
@@ -92,7 +92,7 @@ const Edited=({ at })=>at?<span className="bd-date">수정됨</span>:null;
 
 function CommentForm({ onSubmit }){
   const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
-  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요.");return;}
+  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요");return;}
     onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
   return (<div className="bd-cform">
     <div className="bd-cform-row">
@@ -306,8 +306,8 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
   const autoTitle=kind==="sample"?`${nameAt(index)} 샘플`:(team?.name&&!team.working?team.name:`${nameAt(0)} 파티`);
   const submit=async()=>{
     if(busy)return;
-    if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;}
-    if(!members.length){siteAlert("올릴 포켓몬이 없습니다.");return;}
+    if(!nick.trim()){siteAlert("닉네임을 입력해 주세요","글쓴이로 표시될 닉네임이 필요합니다.");return;}
+    if(!members.length){siteAlert("올릴 포켓몬이 없습니다");return;}
     setBusy(true);
     try{
       const id=newCommunityId();
@@ -320,7 +320,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       await updateCommunity(SHOWCASE_KEY,list=>[post,...list]);
       try{ localStorage.setItem("ypl-board-nick",post.nick); }catch{ /* 기억 못 해도 된다 */ }
       onPosted?.(post);
-    }catch(error){ siteAlert("글을 올리지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+    }catch(error){ siteAlert("글을 올리지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
     finally{ setBusy(false); }
   };
   return (<Modal title={`${KIND_LABEL[kind]} 소개글 쓰기`} hint={ruleSummary(team)} onClose={onClose}>
@@ -348,7 +348,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
 /* 게시판의 글을 팀 빌더로 넘긴다. 빌더가 내 팀에 새로 저장하고 연다. */
 function openInBuilder(post,go){
   try{ sessionStorage.setItem(INCOMING_TEAM_KEY,JSON.stringify({...post.team,name:(post.title||post.team?.name||"게시판에서 가져온 팀").slice(0,40)})); }
-  catch{ siteAlert("팀을 넘기지 못했습니다.","이 브라우저에서는 저장할 수 없습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요."); return; }
+  catch{ siteAlert("팀을 넘기지 못했습니다","이 브라우저에서는 저장할 수 없습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요."); return; }
   go("builder");
 }
 
@@ -379,7 +379,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const closePost=()=>{ const id=article; if(window.history.state?.post) backWith("s-"+id);
     else { const url=new URL(window.location.href); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setArticle(null)),{shared:"s-"+id,dir:"back",scrollY:listScroll.current}); } };
 
-  const mutate=async(fn,done)=>{ try{ setPosts(await updateCommunity(SHOWCASE_KEY,fn)); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
+  const mutate=async(fn,done)=>{ try{ setPosts(await updateCommunity(SHOWCASE_KEY,fn)); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
   const [editing,setEditing]=useState(null);
   const delPost=async(post)=>{ if(!(await authorize(post,"글","삭제",admin)))return; if(await mutate(list=>list.filter(x=>x.id!==post.id),"삭제됨")) closePost(); };
   const addComment=async(post,c)=>{ const id=newCommunityId(); const {pin,...rest}=c;
@@ -395,7 +395,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const [imageBusy,setImageBusy]=useState(false);
   const saveImage=async(post,sheet)=>{ if(imageBusy)return; setImageBusy(true);
     try{ const r=await saveTeamSheetImage(sheet,{title:post.title,meta:[FORMAT_LABEL[formatOf(post)],ruleSummary(post.team),`${sheet.length}마리`].join(", "),author:post.nick,date:new Date(post.createdAt)}); if(r==="downloaded")flash("이미지를 저장했습니다."); }
-    catch(error){ siteAlert("이미지를 만들지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); } finally{ setImageBusy(false); } };
+    catch(error){ siteAlert("이미지를 만들지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); } finally{ setImageBusy(false); } };
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">

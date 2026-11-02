@@ -24,7 +24,7 @@ export async function updateCommunity(key, mutate) {
   if (!Array.isArray(next)) throw new Error("저장할 목록이 올바르지 않습니다.");
   const value = { items: next };
   if (new Blob([JSON.stringify(value)]).size > COMMUNITY_MAX_BYTES) throw new Error("저장 공간이 가득 찼습니다. 관리자에게 오래된 글 정리를 요청해 주세요.");
-  if (!(await setData(key, value))) throw new Error("저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+  if (!(await setData(key, value))) throw new Error("잠시 뒤 다시 시도해 주세요.");
   return next;
 }
 

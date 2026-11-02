@@ -46,7 +46,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
   const [artwork,setArtwork]=useState(null);
   useEffect(()=>{ loadHallOfFameArtworkLookup().then(setArtwork,()=>setArtwork(new Map())); },[]);
   const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));
-  const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요.");return;}
+  const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요");return;}
     // site_data는 방문할 때마다 통째로 내려받으므로 base64 이미지는 저장하지 않는다. 그림은 이름으로 찾는다.
     const team=mons.filter(m=>m.name.trim()).map(m=>({name:m.name.trim(),img:m.img&&!m.img.startsWith("data:")?m.img:""}));
     onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,slabel:slabel.trim()||undefined,name:name.trim(),team}); };
@@ -93,7 +93,7 @@ const isChoice=(t)=>t==="single"||t==="multi"||t==="dropdown";
 function FormBuilder({ form, setForm }){
   const enabled=!!(form&&form.enabled);
   const fields=(form&&form.fields)||[];
-  const patchForm=(p)=>setForm({buttonLabel:"참가 신청하기",fields:[],responses:[],...(form||{}),...p});
+  const patchForm=(p)=>setForm({buttonLabel:"참가 신청",fields:[],responses:[],...(form||{}),...p});
   const setFields=(next)=>patchForm({fields:next});
   const addField=()=>setFields([...fields,{id:uid(),type:"short",label:"",required:false,options:[]}]);
   const patch=(id,p)=>setFields(fields.map(f=>f.id===id?{...f,...p}:f));
@@ -131,7 +131,7 @@ function FormBuilder({ form, setForm }){
       <span><Icon n="form" size={16}/> 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
     </label>
     {enabled&&<>
-      <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청하기"/></Field>
+      <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
       <div className="fb-q">
         <div className="fb-q-top"><strong>대회 연결 설정</strong></div>
         <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
@@ -197,7 +197,7 @@ function FormBuilder({ form, setForm }){
 }
 export function AnnEditor({ item, onClose, onSave, onDelete }) {
   const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||""),[link2,setLink2]=useState(item?.link2||""),[link2Label,setLink2Label]=useState(item?.link2Label||"");
-  const [form,setForm]=useState(item?.form||{enabled:false,buttonLabel:"참가 신청하기",fields:[],responses:[]});
+  const [form,setForm]=useState(item?.form||{enabled:false,buttonLabel:"참가 신청",fields:[],responses:[]});
   const [linkOpen,setLinkOpen]=useState(!!(item?.link||item?.link2)); // 이미 링크가 있으면 펼친 상태로 시작
   const championsDraft=form?.eventDraft?.eventType==="champions";
   const normalizedEventDraft=form?.enabled?{...(form.eventDraft||{}),eventType:form?.eventDraft?.eventType||"pokecup",division:championsDraft?null:normalizeApplicationEventDivision(form?.eventDraft?.division,Boolean(form?.eventDraft?.isTeamEvent),{preserveLegacy:Boolean(form?.eventId)}),isTeamEvent:championsDraft?false:Boolean(form?.eventDraft?.isTeamEvent),battleFormat:form?.eventDraft?.battleFormat||null,competitionFormat:championsDraft?null:(form?.eventDraft?.competitionFormat||null),regulationId:form?.eventDraft?.regulationId||Object.keys(REGULATIONS)[0]||null,cupRuleId:form?.eventDraft?.cupRuleId||"none"}:form?.eventDraft;
@@ -214,7 +214,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
       </button>
       {linkOpen&&<div className="fold-body swap">
         <Field label="링크 1 (선택)" hint="누르면 새 탭으로 이동합니다."><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></Field>
-        <Field label="링크 1 버튼 문구 (선택)"><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청하기"/></Field>
+        <Field label="링크 1 버튼 문구 (선택)"><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청"/></Field>
         <Field label="링크 2 (선택)"><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></Field>
         <Field label="링크 2 버튼 문구 (선택)" flush><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></Field>
       </div>}

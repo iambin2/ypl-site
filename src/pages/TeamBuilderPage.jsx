@@ -320,7 +320,7 @@ function OfficialSubmissionPanel({
       {messages.length > 0 && <ul>{messages.slice(0, 8).map((message, index) => <li className={eligibility?.errors?.includes(message) || lookupError === message || eventContextError === message || submissionError === message ? "error" : "incomplete"} key={`${message}-${index}`}>{message}</li>)}</ul>}
       {state === "valid" && <div className="tb-official-submit">
         <Button type="button" variant="primary" onClick={onSubmit} disabled={submissionBusy}>
-          {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출하기" : "파티 제출하기"}
+          {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출하기" : "파티 제출"}
         </Button>
         {submittedAt && <span className="tb-field-meta">제출 완료 시각 {formatSubmissionTime(submittedAt)}</span>}
       </div>}
@@ -960,7 +960,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     const saved = change.saved;
     const reg = REGULATIONS[saved.regulationId];
     if (!reg) {
-      siteAlert("팀을 불러올 수 없습니다.", `저장된 레귤레이션(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
+      siteAlert("팀을 불러올 수 없습니다", `저장된 레귤레이션(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
       return;
     }
     const restored = saved.members.map(member => memberFromSaved(member, reg, { detailData }));
@@ -975,7 +975,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
     setSaveName(saved.name);
     setSaveMessage("");
     setLibraryOpen(false);
-    if (unresolvedCount) siteAlert("일부 포켓몬을 확인할 수 없습니다.", `${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
+    if (unresolvedCount) siteAlert("일부 포켓몬을 확인할 수 없습니다", `${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
   }, [detailData]);
 
   const requestTeamChange = useCallback(change => {
@@ -1147,7 +1147,7 @@ export default function TeamBuilderPage({ go, flash } = {}) {
       const result = await saveTeamSheetImage(sheet, { title: teamTitle, meta: `${regulation.name}, ${currentCupRuleSummary}, ${team.length}마리` });
       if (result === "downloaded") flash?.("이미지를 저장했습니다.");
     } catch (error) {
-      siteAlert("이미지를 만들지 못했습니다.", error?.message || "잠시 뒤 다시 시도해 주세요.");
+      siteAlert("이미지를 만들지 못했습니다", error?.message || "잠시 뒤 다시 시도해 주세요.");
     } finally {
       setImageBusy(false);
     }
