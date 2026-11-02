@@ -8,7 +8,7 @@ import { ShowcaseCompose } from "./BoardPage.jsx";
 import { STAGGER, place } from "../components/common/motion.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
-import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
+import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, listRegistrationSubmissions, submitEventTeamSnapshot } from "../services/index.js";
 import {
   ALIGNMENTS,
   DRAFT_SAVE_DELAY_MS,
@@ -261,6 +261,7 @@ function OfficialSubmissionPanel({
   onSubmissionPinChange,
   pinNeeded,
   onSubmit,
+  revisions = [],
 }) {
   if (!eventId) return null;
   const eventGate = eventContext ? getSubmissionWriteGate(eventContext) : null;
@@ -335,6 +336,17 @@ function OfficialSubmissionPanel({
           {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출하기" : "파티 제출"}
         </Button>
         {submittedAt && <span className="tb-field-meta">제출 완료 시각 {formatSubmissionTime(submittedAt)}</span>}
+      </div>}
+      {revisions.length > 0 && <div className="tb-revisions">
+        <p className="t12 dim">제출 기록</p>
+        <div className="stack">{revisions.map((row, index) => (
+          <div className="pn tb-revision" key={row.id}>
+            <b className="t15">{row.revision}회차</b>
+            <span className="t12 reg dim num">{formatSubmissionTime(row.submitted_at)}</span>
+            {index === 0 ? <span className="t12 tb-revision-now"><i className="lamp" aria-hidden="true" />지금의 공식 파티</span> : <span className="t12 reg dim">이전 제출</span>}
+          </div>
+        ))}</div>
+        <p className="t12 reg dim">다시 제출하면 {revisions[0].revision + 1}회차로 남고, 이전 회차는 지워지지 않습니다.</p>
       </div>}
     </div>
   );
@@ -1231,6 +1243,20 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     else console.info(`[YPL] 한국어 번역 검사 통과: 도구 ${itemIds.size}, 기술 ${moveIds.size}, 특성 ${abilityNames.size}`);
   }, [detailData, koreanNames]);
 
+  /* c11 제출 기록: 신청을 확인했거나 새로 제출하면 회차를 다시 읽는다(읽기만 한다) */
+  const [submissionRevisions, setSubmissionRevisions] = useState([]);
+  const registrationIdForRevisions = registration?.registration?.id || null;
+  const latestRevisionId = registration?.latestSubmission?.id || null;
+  useEffect(() => {
+    let cancelled = false;
+    setSubmissionRevisions([]);
+    if (!registrationIdForRevisions || !latestRevisionId) return undefined;
+    listRegistrationSubmissions(registrationIdForRevisions)
+      .then(rows => { if (!cancelled) setSubmissionRevisions(rows); })
+      .catch(() => { /* 기록을 못 읽어도 제출은 그대로 된다 */ });
+    return () => { cancelled = true; };
+  }, [registrationIdForRevisions, latestRevisionId]);
+
   const dataStatusText = detailStatus === "ready" ? "배틀 데이터 연결됨" : detailStatus === "error" ? "데이터 연결 안 됨" : "배틀 데이터 불러오는 중…";
   const localizationText = localizationStatus === "ready" ? "한국어 이름 사용" : localizationStatus === "error" ? "영문 이름 사용" : "한국어 이름 준비 중…";
   const draftText = draftStatus === "saved" ? "임시저장됨" : draftStatus === "pending" ? "임시저장 중…" : draftStatus === "error" ? "임시저장 안 됨" : "";
@@ -1291,6 +1317,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           onSubmissionPinChange={setSubmissionPin}
           pinNeeded={!admin}
           onSubmit={submitCurrentTeam}
+          revisions={submissionRevisions}
         />
       </div>
 

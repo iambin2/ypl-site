@@ -864,6 +864,19 @@ export async function findSubmissionRegistration(eventId, registrationName) {
   };
 }
 
+// 한 신청의 제출 회차(c11 제출 기록). 읽기만 하며, 회차는 지워지지 않고 마지막 회차가 공식 파티다.
+export async function listRegistrationSubmissions(registrationId) {
+  if (!registrationId) return [];
+  const { data, error } = await db()
+    .from("registration_submissions")
+    .select("id, revision, submitted_at")
+    .eq("registration_id", registrationId)
+    .order("revision", { ascending: false })
+    .limit(20);
+  if (error) fail(error, "제출 기록을 불러오지 못했습니다.");
+  return data || [];
+}
+
 // 운영진 전용. 비밀번호를 잊었거나 다른 사람이 먼저 제출한 경우의 복구이며 파티 이력은 그대로 둔다.
 export async function resetSubmissionPin(registrationId) {
   const { error } = await client.rpc("reset_submission_pin", { p_registration_id: registrationId });
