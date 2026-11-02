@@ -203,7 +203,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
     <Field label="날짜"><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></Field>
     <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)}/></Field>
-    <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:136}}/></Field>
+    <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:"calc(var(--s21) + var(--s13))"}}/></Field>
     <FormBuilder form={form} setForm={setForm}/>
     <div className={"fold"+(linkOpen?" open":"")}>
       <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>

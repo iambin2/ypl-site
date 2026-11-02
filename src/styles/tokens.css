@@ -100,37 +100,6 @@
 }
 @media (min-width: 860px) { :root { --nav-height: 64px; --tab-height: 0px; --pad: var(--s5); } }
 
-/* ---------- bridge: names the YPL Navy page styles still read, each pointed at its scoreboard token.
-   A page that is rebuilt stops reading them; the block goes with the last one. ---------- */
-:root {
-  --bg: var(--ground); --bar: var(--ground); --tabs: var(--ground);
-  --surface: var(--panel); --surface-float: var(--panel); --surface-pop: var(--panel); --plane-b: var(--panel); --window: var(--panel);
-  --surface-raised: var(--panel-2); --surface-sunken: var(--panel-2); --control: var(--panel-2); --control-hover: var(--panel-2); --label: var(--panel-2); --bar-up: var(--panel-2);
-  --state-hover: var(--panel-2); --state-selected: var(--panel-2); --state-pressed: var(--panel-2); --pop-hover: var(--panel-2); --pop-selected: var(--panel-2); --pod: var(--panel-2); --accent-subtle: var(--panel-2);
-  --text-primary: var(--lit); --text-link: var(--lit); --text-link-hover: var(--dim); --on-bar: var(--lit); --on-label: var(--lit); --ind-fg: var(--lit);
-  --text-secondary: var(--dim); --on-bar-2: var(--dim); --on-label-2: var(--dim);
-  --text-tertiary: var(--mute); --text-disabled: var(--mute); --scrollbar: var(--mute);
-  --accent: var(--lit); --accent-hover: var(--lit); --accent-active: var(--lit); --lens: var(--lit); --focus-ring: var(--lit); --selection-bg: var(--lit);
-  --text-on-accent: var(--ground); --selection-text: var(--ground);
-  --border-subtle: var(--rule); --border-default: var(--rule); --border-strong: var(--mute); --divider: var(--rule); --ring: var(--rule); --burst: var(--panel-2);
-  --overlay: var(--veil); --shadow-1: none; --shadow-2: none;
-  --success-bg: var(--panel-2); --success-border: var(--rule); --success-text: var(--lit); --success-icon: var(--lit);
-  --warning-bg: var(--panel-2); --warning-border: var(--mute); --warning-text: var(--lit); --warning-icon: var(--lit);
-  --danger-bg: var(--lit); --danger-border: var(--lit); --danger-text: var(--ground); --danger-icon: var(--ground);
-  --info-bg: var(--panel-2); --info-border: var(--rule); --info-text: var(--lit); --info-icon: var(--lit);
-  --fs-caption: var(--t12); --fs-body: var(--t15); --fs-lead: var(--t20); --fs-h3: var(--t20); --fs-h2: var(--t32); --fs-h1: var(--t32); --fs-display: var(--t32); --fs-hero: var(--t32);
-  --title: var(--t20); --display: var(--t32); --hero: var(--t32); --fig-s: var(--t32); --fig-m: var(--t32); --fig-l: var(--t32);
-  --lh-caption: 1.333; --lh-label: 1.333; --lh-body: 1.6; --lh-lead: 1.4; --lh-title: 1.25; --lh-display: 1.25;
-  --ls-body: 0; --ls-lead: var(--ls20); --ls-h3: var(--ls20); --ls-title: var(--ls32); --ls-display: var(--ls32);
-  --section: var(--s13); --chapter: var(--s21); --grid-gap: var(--s5); --target: var(--h-control); --row-min: var(--h-row); --match-card: 96px;
-  --golden: 1.618; --trim: calc((.84em - 1lh) / 2); --row-pad: calc((var(--row-min) - 1.333rem) / 2);
-  --focus-width: 2px; --focus-offset: -2px; --opacity-muted: .618; --opacity-ghost: .236; --stroke-connector: 1.5px;
-  --navy-up-hover: var(--lit); --label-hover: var(--panel-2); --bar-up-hover: var(--panel-2); --slant: var(--panel-2); --plane-c: var(--panel-2); --plane-d: var(--panel-2);
-  --rank-n: var(--mute); --page-top: var(--s8); --t-wait: var(--t-light);
-  --t-place: var(--t-light); --ease-place: var(--ease-out); --ease-leave: var(--ease-in);
-  --move-down: var(--move-press); --move-place: var(--move-light); --move-slide: var(--move-light); --move-lift: var(--move-light); --move-wait: var(--move-light);
-}
-@media (min-width: 860px) { :root { --section: var(--s21); --grid-gap: var(--s8); } }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
 
 /* ---------- base ---------- */
@@ -155,7 +124,7 @@ body {
 ::selection { background: var(--lit); color: var(--ground); }
 h1, h2, h3, h4, h5, p { margin: 0; }
 p { text-wrap: pretty; }
-h1, h2, h3, h4 { font-weight: 700; line-height: var(--lh-title); text-wrap: balance; }
+h1, h2, h3, h4 { font-weight: 700; line-height: inherit; text-wrap: balance; }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; letter-spacing: inherit; background: none; border: 0; padding: 0; margin: 0; text-align: center; -webkit-tap-highlight-color: transparent; }
@@ -178,9 +147,9 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 input:-webkit-autofill { -webkit-text-fill-color: var(--lit); box-shadow: inset 0 0 0 100px var(--panel); }
 :where(button, .tab, .navlink) { user-select: none; }
 label:has(input) { cursor: pointer; }
-::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--mute); border: 4px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: var(--mute); }
 
 .tnum, .num { font-variant-numeric: tabular-nums; }
 .ic { flex: none; display: block; }
@@ -193,7 +162,7 @@ label:has(input) { cursor: pointer; }
 .t32 { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
 .read { font-size: var(--t15); line-height: var(--l-read); font-weight: 400; }
 .dim { color: var(--dim); } .mute { color: var(--mute); }
-/* bridge type classes, read by the page styles not yet rebuilt */
+/* older type class names, each one of the four sizes */
 .display { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); text-wrap: balance; }
 .title { font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); text-wrap: balance; }
 .headline { font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
@@ -209,7 +178,7 @@ label:has(input) { cursor: pointer; }
 /* inverted: decided, current or chosen. One in a group. */
 .inv { background: var(--lit); color: var(--ground); }
 .inv :is(.dim, .mute) { color: var(--ground); }
-/* bridge surfaces */
+/* older surface names: a panel, or the next tone */
 .plate, .plate-l3, .groove, .card { position: relative; }
 .plate, .plate-l3, .card, .dd-menu, .popover, .toast { background: var(--panel); }
 .groove { background: var(--panel-2); }

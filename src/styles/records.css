@@ -1,5 +1,5 @@
 
-.sheet .ypl-group { background: var(--state-hover); box-shadow: none; padding: var(--s1); }
+.sheet .ypl-group { background: var(--panel-2); box-shadow: none; padding: var(--s1); }
 /* a long history below the sheet's fold costs nothing while the sheet opens */
 .sheet .ypl-group > li { content-visibility: auto; contain-intrinsic-size: auto 60px; }
 .sheet .ypl-row { }

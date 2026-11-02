@@ -2,9 +2,7 @@
 // against the rules below. A deliberate exception is listed in EXCEPT under its reason; an exception that no longer occurs fails too, so
 // the list only shrinks.
 //
-// The build lands page by page. Page styles not yet rebuilt read the YPL Navy names through the bridge block in tokens.css, so the
-// general rules hold for every file at once, and REBUILT files are held to the strict ones too: only scoreboard tokens, only lengths on
-// the series. When the last page is rebuilt, REBUILT is every file and the bridge goes.
+// The build has landed: every file is held to the strict rules, only scoreboard tokens and only lengths on the series.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
@@ -20,21 +18,14 @@ const PHI = (1 + Math.sqrt(5)) / 2;
 
 // ---------- the scales (DESIGN.md "The golden law") ----------
 const TOKENS = src("src/styles/tokens.css");
-const BRIDGE_BLOCK = /\/\* ---------- bridge:[\s\S]*?\n:root \{([\s\S]*?)\n\}/.exec(TOKENS)[1];
+const BRIDGE_BLOCK = /\/\* ---------- bridge:[\s\S]*?\n:root \{([\s\S]*?)\n\}/.exec(TOKENS)?.[1] || "";
 const BRIDGE = new Set([...BRIDGE_BLOCK.matchAll(/(--[\w-]+):/g)].map(m => m[1]));
 const SPACE = new Set([0, ...[...TOKENS.matchAll(/--(?:s\d+|seam):\s*(\d+)px/g)].map(m => +m[1])]);
 const WEIGHTS = new Set(["400", "600", "700"]);
 // a length is a step of space, a line, an icon (16, 20, 24), a height (32, 44, 52, 64, 84), a bar (40, 56), a segment cell or a width of the layout
 const LENGTHS = new Set([...SPACE, 1, 2, 3, 16, 20, 24, 32, 36, 40, 44, 52, 56, 64, 84, 120, 132, 204, 216, 240, 439, 576, 709, 1200]);
 
-// these files are built to the scoreboard: no bridge names, only its own tokens
-const REBUILT = new Set([
-  "src/styles/shell.css", "src/styles/board.css", "src/styles/home.css",
-  "src/pages/HomePage.jsx", "src/components/common/Board.jsx", "src/components/common/Button.jsx",
-  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/styles/brackets.css", "src/styles/records-board.css", "src/styles/more.css", "src/styles/hall.css", "src/styles/posts.css", "src/styles/builder.css", "src/pages/StatusPage.jsx", "src/components/common/ErrorNote.jsx", "src/pages/BoardPage.jsx", "src/pages/TitlesPage.jsx", "src/pages/ChampionsPage.jsx", "src/pages/AboutPage.jsx", "src/components/common/ChampionSheet.jsx", "src/pages/MorePage.jsx", "src/components/common/PushControl.jsx", "src/pages/RecordsPage.jsx", "src/components/common/StandTable.jsx", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
-  "src/components/common/Seg.jsx", "src/components/common/seg.js", "src/components/common/Icon.jsx", "src/components/common/Loader.jsx", "src/components/common/Segmented.jsx",
-  "src/components/layout/Navigation.jsx", "src/components/layout/SiteHeader.jsx", "src/components/layout/SiteFooter.jsx", "src/admin/AdminModeBar.jsx",
-]);
+// every file is built to the scoreboard: the strict rules (only its own tokens, lengths on the series) hold everywhere
 
 // ---------- declarations ----------
 const BLOCKS = [];
@@ -75,7 +66,7 @@ const decl = (sel, prop) => DECLS.filter(d => d.sel === sel && d.prop === prop).
 const noVars = v => v.replace(/var\([^()]*(\([^()]*\))?[^()]*\)/g, "");
 const pxs = v => [...noVars(v).matchAll(/(-?\d*\.?\d+)px/g)].map(m => Math.abs(+m[1]));
 const fontFace = d => d.sel.startsWith("@font-face");
-const strict = d => REBUILT.has(d.file);
+const strict = () => true;
 // the comma-separated layers of a value, commas inside var() and calc() kept
 const layers = v => { const out = [""]; let depth = 0; for (const ch of v) { depth += ch === "(" ? 1 : ch === ")" ? -1 : 0; if (ch === "," && !depth) out.push(""); else out[out.length - 1] += ch; } return out.map(p => p.trim()); };
 const COLOR = /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|\b(white|black|red|green|blue|gray|grey)\b/i;
@@ -307,7 +298,7 @@ test("three breakpoints: 640, 860, 1100 (Layout)", () => {
   assert.deepEqual(widths.filter(w => ![639, 640, 859, 860, 1099, 1100].includes(w)), []);
 });
 test("the touch floor raises a control but never lowers a field or a row (Accessibility)", () => {
-  const floor = DECLS.filter(d => d.file === C && d.prop === "min-height" && d.value === "var(--target)" && d.sel.includes(".ypl button"));
+  const floor = DECLS.filter(d => d.file === C && d.prop === "min-height" && d.value === "var(--h-control)" && d.sel.includes(".ypl button"));
   assert.ok(floor.length > 0, "the touch floor is still there");
   assert.deepEqual(floor.filter(d => !d.sel.startsWith(":where(")).map(keyOf), [], "the floor's height must carry no weight (:where)");
 });
