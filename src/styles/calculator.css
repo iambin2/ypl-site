@@ -22,7 +22,6 @@
 .calc-vs-empty { position: absolute; left: 0; right: 0; top: 0; bottom: var(--floor); display: grid; place-items: center; color: var(--mute); }
 .calc-vs-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--pad); }
 .calc-vs-band > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (hover: hover) { .calc-vs:hover .floor { background: var(--rule); } }
 .calc-speed-line b { color: var(--lit); font-variant-numeric: tabular-nums; }
 
 /* ---------- damage: the chosen move lit as a board, the other moves as rows ---------- */

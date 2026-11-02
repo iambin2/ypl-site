@@ -106,7 +106,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     if (!reduced()) scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.leave, easing: EASE_OUT });
     if (desktop()) {
       // a dialog switches on where it stands: nothing grows or flies (DESIGN.md "Motion")
-      if (!reduced()) sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
+      if (!reduced()) sheet.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: DUR.light, easing: EASE_OUT });
     } else {
       sheet.style.transform = `translateY(${sheet.offsetHeight + 20}px)`;
       slide(0);

@@ -1,7 +1,22 @@
-import React from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import Icon from "./Icon.jsx";
 import Seg from "./Seg.jsx";
 import { standInk } from "./inkCentre.js";
+import { slideLine } from "./motion.js";
+
+/* one line slides under the chosen word of a row (motion.js slideLine); it follows the row when the window changes size */
+export function useSlideLine(key) {
+  const ref = useRef(null);
+  useLayoutEffect(() => { slideLine(ref.current); }, [key]);
+  useLayoutEffect(() => {
+    const row = ref.current;
+    if (!row || typeof ResizeObserver !== "function") return undefined;
+    const watch = new ResizeObserver(() => slideLine(row));
+    watch.observe(row);
+    return () => watch.disconnect();
+  }, []);
+  return ref;
+}
 
 /* The scoreboard's shared parts (DESIGN.md, docs/redesign-next/BUILD.md chapter 3). A screen is built from these, board.css and the
    panel classes of tokens.css (.pn, .pn2, .stack, .inv, .lamp). A panel is a door: given onClick it is a button. */
@@ -150,9 +165,11 @@ export function Toast({ error = false, action, onAction, children }) {
 
 /* Page tabs: words 15 on a 44 line with a hairline under the row; the chosen word is 700, lit, with a 2px line under it. */
 export function TabsLine({ value, onChange, options, label }) {
+  const ref = useSlideLine(value);
   return (
-    <div className="tabsline" role="tablist" aria-label={label}>
+    <div className="tabsline" role="tablist" aria-label={label} ref={ref}>
       {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}
+      <i className="slide-line" aria-hidden="true" />
     </div>
   );
 }

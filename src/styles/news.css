@@ -16,7 +16,25 @@
 .nw-recent + .nw-list { margin-top: var(--s3); }
 
 /* a notice: the back link stands 20 under the bar */
-.nw > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
+.nw-art-head > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
+/* a phone reads one column in the notice's own order: head, counters, spec, body, links, answers, admin */
+.nw-art { display: flex; flex-direction: column; }
+.nw-aside, .nw-main { display: contents; }
+.nw-art-head { order: 0; } .nw-counts { order: 1; } .nw-spec { order: 2; } .nw-body { order: 3; } .nw-more { order: 4; }
+.nw-resp { order: 5; } .nw-admin { order: 6; } .nw-main-act { order: 7; }
+.nw-others { display: none; }
+/* desktop: the body in 709, the event's facts, its actions and the other notices in 439 beside it, held in view */
+@media (min-width: 860px) {
+  .nw-art { display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); grid-template-areas: "head head" "main aside"; column-gap: var(--s13); align-items: start; }
+  .nw-art-head { grid-area: head; }
+  .nw-main { grid-area: main; display: block; margin-top: var(--s8); }
+  .nw-aside { grid-area: aside; display: grid; gap: var(--s5); position: sticky; top: calc(var(--nav-height) + var(--s5)); margin-top: var(--s8); }
+  .nw-aside > *, .nw-main > :first-child { margin-top: 0; }
+  .nw-aside > .nw-spec.joined { margin-top: calc(var(--seam) - var(--s5)); }
+  .nw-aside .dock { margin-top: 0; }
+  .nw-others { display: block; }
+  .nw-aside > .nw-others:not(:first-child) { margin-top: var(--s8); }
+}
 .nw-date { margin-top: var(--s3); }
 .nw-title { margin-top: var(--s2); }
 .nw-counts { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }

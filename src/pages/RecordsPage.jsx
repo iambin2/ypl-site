@@ -71,7 +71,7 @@ function PartySheet({ open, onClose, onTrainer }) {
   const display = useTeamDisplay(detailed);
   const sheet = rosterSheet(roster, display, set);
   return (
-    <Modal title={`${roster.owner}의 ${set ? "샘플" : "파티"}`} hint={[rosterTitle(roster), formatDate(roster.date)].filter(Boolean).join(", ")} className="rc-sheet" onClose={onClose}>
+    <Modal title={`${roster.owner}의 ${set ? "샘플" : "파티"}`} hint={[rosterTitle(roster), formatDate(roster.date)].filter(Boolean).join(", ")} className="rc-sheet wide" onClose={onClose}>
       {!detailed && <>
         <div className="rc-six">{rosterParty(roster).map((m, i) => <span className="pn stand rc-cell" key={i}><Mon src={m.img} /><span className="floor rc-band t12">{m.name}</span></span>)}</div>
         <p className="rc-lead-note">이 파티는 포켓몬 구성만 기록되어 있습니다.</p>
@@ -512,8 +512,13 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
               {partyRows.map((row, index) => {
                 const roster = row.roster?.pokemon?.length ? row.roster : null;
                 const line = [row.label, row.teamName && displayTeamName(row.teamName), !roster && "파티 미제출"].filter(Boolean).join(", ");
+                // 파티는 이름 대신 여섯 마리의 그림으로 읽는다. 이름은 읽는 사람을 위해 라벨에 남긴다.
+                const Box = roster ? "button" : "div";
                 return <li key={`${row.placement}:${row.name}:${index}`}>
-                  <Row title={row.name} line={[line, roster && (roster.pokemon || []).join(", ")].filter(Boolean).join(", ")} onClick={roster ? () => onParty({ roster }) : undefined} label={roster ? `${row.name} 파티 보기` : undefined} />
+                  <Box {...(roster ? { type: "button", onClick: () => onParty({ roster }), "aria-label": `${row.name} 파티 보기, ${(roster.pokemon || []).join(", ")}` } : {})} className="pn rc-party-row">
+                    <span className="rc-party-who"><b className="t15">{row.name}</b><span className="t12 dim">{line}</span></span>
+                    {roster && <span className="rc-party-six" aria-hidden="true">{rosterParty(roster).map((m, k) => <span className="stand rc-party-mon" key={k}><i className="floor" /><Mon src={m.img} /></span>)}</span>}
+                  </Box>
                 </li>;
               })}
             </ul>

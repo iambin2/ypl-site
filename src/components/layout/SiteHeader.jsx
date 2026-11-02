@@ -1,5 +1,6 @@
 import React from "react";
 import Icon from "../common/Icon.jsx";
+import { useSlideLine } from "../common/Board.jsx";
 import { TABS, WIDE_TABS, current, tabOf, useWideNav } from "./Navigation.jsx";
 
 export const DISCORD_URL = "https://discord.gg/T7UZHhGvUh";
@@ -39,18 +40,20 @@ export function Wordmark() {
 export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, moreOpen, onMore }) {
   const wide = useWideNav();
   const cur = tabOf(view, wide);
+  const navRef = useSlideLine(`${cur}:${wide}`);
   const themeLabel = dark ? "라이트 테마로 바꾸기" : "다크 테마로 바꾸기";
   return (
     <header className="topbar">
       <button type="button" className="brand" onClick={() => onNavigate("home")} aria-label="YPL 홈으로">
         <BrandMark size={20} /><Wordmark />
       </button>
-      <nav className="navlinks" aria-label="주요 메뉴">
+      <nav className="navlinks" aria-label="주요 메뉴" ref={navRef}>
         {(wide ? WIDE_TABS : TABS).map(([key, label]) => (
           <button key={key} type="button" className="navlink" data-tab={key} {...current(cur, key)}
             {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
+        <i className="slide-line" aria-hidden="true" />
       </nav>
       <button type="button" className="iconbtn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
         <Icon n={dark ? "sun" : "moon"} size={24} />

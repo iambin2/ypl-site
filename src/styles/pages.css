@@ -18,13 +18,15 @@
 .bk-t-head .nb-back { margin-bottom: calc(var(--s2) - var(--s5)); }
 .nb-a-title { width: fit-content; max-width: 100%; }
 /* 한 칸은 본문 너비를 넘지 않는다: 띄어 쓸 곳 없는 긴 주소가 칸을 넓혀 모든 문단이 카드 밖으로 잘리던 것 */
-.prose { max-width: 36em; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s8); }
+/* reading lines keep the 36em measure; a grid of cards in the body takes its column's whole width */
+.prose { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s8); }
+.prose > :not(.prose-grid) { max-width: var(--read); }
 .prose p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--t15); line-height: var(--l-read); color: var(--lit); }
 .prose h3 + p { margin-top: calc(var(--s5) - var(--s8)); }
 .prose a { color: var(--lit); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--mute); }
 .prose strong { font-weight: 600; }
-.prose-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: var(--s3); }
-.prose-grid p { padding: var(--s3) var(--s5); background: var(--panel-2); line-height: var(--l-read); }
+.prose-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: var(--seam); }
+.prose-grid p { padding: var(--s3) var(--s5); background: var(--panel); line-height: var(--l-read); }
 .prose-grid p::first-line { font-weight: 600; }
 @media (min-width: 860px) {
   .prose p { font-size: var(--t15); }
@@ -73,7 +75,7 @@
 .sc-sprites { display: flex; gap: var(--s1); min-width: 0; }
 .sc-sprites img { width: 44px; height: 44px; flex: none; object-fit: contain; }
 .sc-sprites.big { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
-.sc-sprites.big img { width: 100%; height: auto; aspect-ratio: 1; background: var(--panel-2); }
+.sc-sprites.big img { width: 100%; height: auto; aspect-ratio: 1; }
 .sc-grid:has(> .ypl-empty) { display: block; }
 @media (min-width: 860px) { .sc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -95,6 +97,9 @@
 @media (min-width: 1100px) { .sc-sheet.multi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .sc-sheet:not(.multi) { max-width: var(--sheet-w); }
+/* inside a sheet the cases count the sheet's width, not the screen's; nothing is painted behind a Pokémon */
+.sheet .sc-sheet.multi { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.sc-win .case-band { display: none; }
 .sc-mon { display: flex; flex-direction: column; }
 .sc-win { display: flex; flex-direction: column; align-items: center; gap: var(--s3); height: auto; padding: var(--s5); }
 .sc-win > img { position: relative; z-index: var(--z-raised); width: 61.8%; height: auto; aspect-ratio: 1; object-fit: contain; }

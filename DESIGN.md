@@ -175,10 +175,10 @@ A lamp never blinks and never moves. It is a word's companion, not a replacement
 
 **A Pokémon always stands in a panel with its feet on a floor.** It never floats on the ground and never gets a box of its own colour.
 
-- The floor is a band of `--panel-2` across the bottom of its panel, 24% of the cell, or the name band directly under the picture when there is one: one band, never two.
+- The floor is a place, not a paint (2026-11-03): nothing is drawn under a Pokémon. Where a name stands under the picture, that line of words is the floor; where none does, the floor shrinks to 4 and the picture takes the cell. Only a chosen member's name band lights (inverted).
 - The picture's feet touch the floor's top edge, measured on the picture's ink (`inkCentre.js` reads each sprite's alpha once), not on its box. Transparent margins differ by sprite, so a box alignment leaves some floating.
 - On the home, the current champion and the text that names it share one panel: the name, generation and season top left, "파티 보기" in the floor band, the Pokémon standing on the floor at the right.
-- A party of six is six panels with the seam, each with its floor; a chosen member's name band inverts.
+- A party of six is six cells, each with its floor; a chosen member's name band inverts. A list of parties shows the six as pictures, not as a line of names.
 - Sprites are transparent; no plate, glow, outline or shadow is added behind them.
 
 ## Type
@@ -211,7 +211,7 @@ Desktop is read from further away, so at 860 and up the label and grey line step
 | Check | A 20 square: off is `--panel-2`, on is inverted with a check |
 | Switch | 52 by 32: off is a muted square in `--panel-2`, on is inverted with the square at the right |
 | Steps of a flow | A row of three panels, 44: done dim with a check, current inverted, next muted |
-| Pager | Three panels: back, the page as `1 / 2`, next |
+| Pager | Three panels joined by the seam at their own width (52, 84, 52), centred: back, the page as `1 / 2`, next. A dead end keeps its panel and mutes its chevron |
 | Drag handle | Two lines, muted, at a row's right end |
 
 Every control has the five states: rest, press (scale .976, 100), chosen (inverted), disabled (muted, the main action drops to a panel), keyboard focus (a 2px `--lit` inset ring; on the main action, a ground ring inside a lit ring). Desktop hover lifts a panel to `--panel-2`. Nothing grows on hover.
@@ -239,7 +239,7 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 
 ## Motion
 
-**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn.
+**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The site is meant to feel finished, not still (2026-11-03): what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
 
 | Verb | When | Length | Curve |
 |---|---|---|---|
@@ -248,13 +248,17 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 | leave | a sheet or toast goes, a page's old content goes | 260 | ease-in |
 | light | things arrive by lighting: panels, then bars and words, then pictures | 420 in all | ease-out |
 
-- **First open:** the ground, the bars and every unlit segment are in the HTML's first paint, so there is no loading screen and no white frame. Panels come on top to bottom, 38 apart; then segment bars and titles light, 62 apart per display; pictures and grey lines come last. The last thing has landed by 420. On a return nothing replays.
-- **Page change:** the old content goes at once; the new page's panels come on top to bottom, 38 apart, done by 260. Back does not replay: the page stands where it was left. The bars never move.
+- **First open:** the ground, the bars and every unlit segment are in the HTML's first paint, so there is no loading screen and no white frame. Panels, page titles and section heads come on top to bottom, 38 apart (the stagger stops growing at 260), each rising 12 into place over 420; then segment bars light, 62 apart per display; pictures come last. On a return nothing replays.
+- **Below the first screen:** a panel waits dark and lights, rising the same 12, the first time it scrolls into view. It happens once; nothing is tied to the scroll after that.
+- **Page change:** the moment a page is pressed, the line under the top bar's words slides to it and the page being left dims; if the next page takes longer than 260 (its code, its data), the busy cell stands over it. The new page then lights as on first open. Back does not replay: the page stands where it was left. The bars never move.
+- **The sliding line:** the 2px line under the chosen word of a row of words (the top bar's pages, page tabs) is one line that slides to the chosen word over 420. The first placing does not move.
+- **The pointer:** a door lifts one tone; a Pokémon in a door steps 4 up off its floor; an arrow leans 4 toward where it goes (back leans back); a link's word brightens. All by transform or colour over 160. Nothing grows.
 - **A score changes:** the bars of the changed digit switch at once, as hardware does, and that cell brightens once (tone). Nothing rolls.
 - **A winner is decided:** the winner's row inverts and the loser's dims (tone); the amber lamp moves to the next live match. This is the celebration; there is no burst.
 - **Sheet:** the veil comes up to .72 (leave length, opacity) while the sheet rises by translateY (light length). It closes the same way, faster.
-- **Busy:** a main action that is sending shows one segment cell lighting its bars in turn, in place of its word.
-- **Loading** is the board switched off: every panel at its size, every segment unlit, no pictures and no lamps. Content lights into those panels, so nothing shifts. There is no spinner and no loader wordmark.
+- **Busy:** one segment cell lights its six outer bars in turn around the cell, 840 a turn. A sending main action shows it in place of its word; a place that is loading shows it at its centre. Each bar is its own box, so it keeps turning on the compositor while the page under it is drawn.
+- **Loading** is the board switched off with the busy cell in it: every panel at its size, every segment unlit, no pictures and no lamps. Content lights into those panels, so nothing shifts. There is no spinner other than the cell and no loader wordmark. A long list (the builder's 359) fills the frame after its page stands.
+- **Sheet on desktop:** the veil comes up while the dialog rises 12 into place over 420.
 - **Reduced motion:** everything appears at once; only tone remains.
 - **Theme change:** in one frame. Nothing moves.
 
@@ -281,19 +285,19 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Home, desktop.** Left column 709: label, countdown at 240, the event's name at 32 on one line, the main action and 리그 소개, then the season ranking. Right column 439: the champion panel, the party as six cells, the counters, then notices.
 
-**Notices.** Rows of 64: the title, a grey line with the date (and 고정 lit), a lamp column at the right end. A notice opens with its date line, the title at 32, two counters (대회까지, 신청 / 정원), spec rows (일시, 형식, 방식, 단위), the body, and the docked main action (참가 신청). The form docks 신청하기.
+**Notices.** Rows of 64: the title, a grey line with the date (and 고정 lit), a lamp column at the right end. A notice opens with its date line, the title at 32, two counters (대회까지, 신청 / 정원), spec rows (일시, 형식, 방식, 단위), the body, and the docked main action (참가 신청). On desktop the body takes 709 and the 439 beside it holds the counters, the spec, the links, the main action and 다른 공지 (five rows), held in view as the body scrolls. Body text keeps the 36em measure; a grid of cards in the body takes its column's whole width. The form docks 신청하기.
 
 **Party submission.** On the notice: a counter to the deadline (days and hours) and three status rows (신청, 선발전, 본선). The flow is three steps (팀 고르기, 확인, 제출): saved teams from the builder appear as panels with their six members; a team that breaks the rules is dimmed with `!` and the reason; the submitted one is recorded as a numbered submission that is never deleted, and the current one carries the lit lamp.
 
-**Brackets.** A tree of match boxes (two rows, 36 each, the seam between) joined by lines: a decided path is a 2px `--lit` line, an undecided one a 1px rule. The winner's row inverts, the loser's mutes, an unplayed slot is muted words (M3 승자). The live match carries the amber lamp beside its score. Eight players fit one phone screen to the final; sixteen and up scroll sideways. Double elimination switches 승자조, 패자조, 그랜드 파이널. 공식 and 사설 are page tabs; 사설 explains in one panel that it never reaches the records. A list view shows matches as score panels. Desktop shows the bracket's name at 32, then the whole tree and a 우승 panel that lights when the final ends; the places (준우승, 4강) and the images follow the tree, and the result does not name the winner a second time. The leg into a box lights with the fork once both roads into it are decided.
+**Brackets.** A tree of match boxes (two rows, 36 each, the seam between) joined by lines: a decided path is a 2px `--lit` line, an undecided one a 1px rule. The winner's row inverts, the loser's mutes, an unplayed slot is muted words (M3 승자). The live match carries the amber lamp beside its score. Eight players fit one phone screen to the final; sixteen and up scroll sideways. Double elimination switches 승자조, 패자조, 그랜드 파이널. 공식 and 사설 are page tabs; 사설 explains in one panel that it never reaches the records. A list view shows matches as score panels. Desktop shows the bracket's name at 32 with 우승 이미지 and 대진표 이미지 beside it once it is decided, a status strip while it runs (the amber lamp, 진행 중, and the round's progress such as 8강 2/4 종료), then the whole tree and a 우승 panel, 180 tall, that waits muted (결승이 끝나면 켜집니다.) and lights when the final ends; the places (준우승, 4강) and the images follow the tree, and the result does not name the winner a second time. The leg into a box lights with the fork once both roads into it are decided.
 
 **Records.** Page tabs 트레이너, 대회, 포켓몬, 랭킹. Counters on top; tables of 44 rows with the record holder inverted at 52; filters as chips; a trainer opens with three counters (우승, 준우승, 4강), titles as chips, recent events as rows with the result inverted when it is a win, and their most used Pokémon on floors.
 
-**Titles and hall of fame.** Generations as rows (the generation as a figure, the name, the season); the current holder inverts. The hall shows the current champion's party as six cells with floors and their names on the floor, then past champions as rows with their six members small.
+**Titles and hall of fame.** Titles: generations as rows (the generation as a figure, the name, the season); the current holder inverts. The hall hangs one reign large and the rest on a wall: the crown, one panel with an inverted 현 챔피언 tag, the generation lit in segments at 84 with 대, the name at 32, the season and which title it is (2번째 우승), and the six large with their names (439 and 709 on desktop); then three counters (세대, 챔피언, 최다 우승 with the name); then 역대 챔피언, a wall of plates, newest first, three across on desktop, each the generation at 40, the season, the name at 20 and the six. A plate opens the champion sheet, which on desktop is as wide as the content.
 
 **Board.** Tabs 자유, 샘플, 파티; a search with 글쓰기 as the main action; rows of 64 with the comment count as words. A party post shows six cells with name and item, and two actions (팀 빌더에서 열기, 이미지 저장); comments as panels; a docked comment field.
 
-**Team builder.** Tabs 규정, 포켓몬 선택, 팀 구성, and a 내 팀 list. Six slots always on top. The list: picture cell, name, type ticks, base stat total, +. The editor: the six with the chosen name band inverted, spec panels, the points as bars on tracks (66 / 66), moves as four panels, a docked 현재 팀 저장 with 게시판에 올리기 beside it. Desktop: list 439, editor 709, the save under the editor. A desktop list row is one line: picture, the name over its type ticks, one figure (the sorted stat with its letter, else the total), +. The exported image uses the same panels and floors.
+**Team builder.** Tabs 규정, 포켓몬 선택, 팀 구성, and a 내 팀 list. Six slots always on top. The list: picture cell, name, type ticks, base stat total, +. The editor: the six with the chosen name band inverted, spec panels, the points as bars on tracks (66 / 66), moves as four panels, a docked 현재 팀 저장 with 게시판에 올리기 beside it. Desktop: the rules as two cells in one row (레귤레이션, 파이컵 추가 룰), list 439, editor 709, the save under the editor. The list has the types as chips under its search (전체 359 first), one type at a time. A desktop list row is one line: picture, the name over its type ticks, one figure (the sorted stat with its letter, else the total), +. The exported image uses the same panels and floors.
 
 **Calculator.** Tabs 대미지, 스피드, 도감. Damage: two Pokémon panels, the result as a segment range with the exact range in type, a bar on a track, and the verdict (확정 2타). Speed: the base Pokémon's speed as a display and a line of rows with the base row inverted. Dex: picture, types, base stats as bars, defensive matchups as rows with the 4x row inverted.
 
@@ -361,7 +365,7 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 - Do not draw a reading number in segments, segments under 32, or a decimal point in segments.
 - Do not give a Pokémon a box of its own or let it float: it stands on a floor in a panel.
 - Do not blur, glow, gradient, sheen or grain anything.
-- Do not move what is lit: no sliding pages, no rolling digits, no bouncing cards. Switch it on.
+- Do not move what is lit: no sliding pages, no rolling digits, no bouncing cards. What arrives may rise 12 as it lights, and a pointer may nudge a picture or an arrow 4; nothing else travels.
 - Do not animate a shadow, filter, clip, mask or background; move transform and opacity on a picture already drawn.
 - Do not use View Transitions snapshots or copy the page for a transition.
 - Do not put a small label above a title, or repeat one fact twice on a screen.

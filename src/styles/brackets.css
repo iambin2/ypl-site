@@ -14,7 +14,11 @@
 
 /* an open bracket: the back link 20 under the bar, the live strip, its name at 20, a grey line */
 .bk-head-open > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
-.bk-live { margin-top: var(--s5); }
+.bk-strip { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-strip); margin-top: var(--s5); padding: 0 var(--s3); }
+.bk-strip > .dim { margin-left: auto; }
+.bk-open-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s5); }
+.bk-open-copy { min-width: 0; }
+.bk-tools { display: none; }
 .bk-open-title { margin-top: var(--s3); }
 .bk-open-line { margin-top: var(--s1); }
 .bk-note { margin-top: var(--s5); }
@@ -31,6 +35,13 @@
   .bk-board:has(.bk-champ-node) .bk-winner { display: none; }
   .bk-board:has(.bk-champ-node) .bk-places { margin-top: 0; }
   .bk-champ-node b { font-size: var(--t20); line-height: var(--l20); }
+  .bk-tools { display: grid; grid-auto-flow: column; flex: none; }
+  .bk-tools .btn { height: var(--h-control); padding: 0 var(--s5); }
+  .bk-cb-actions > .bk-img { display: none; }
+  /* the 우승 panel is a trophy's panel, taller than a match, centred on the final */
+  .bk-champ-col .bk-mpos { translate: 0 calc((var(--mb) - var(--s21) * 2 - var(--s3)) / 2); }
+  .bk-champ-col .bk-champ-node { height: calc(var(--s21) * 2 + var(--s3)); align-items: center; justify-content: center; text-align: center; }
+  .bk-col2.bk-champ-col .bk-mpos::before { top: calc(50% - var(--line) / 2); }
 }
 
 /* the decided result: 우승 inverted, the places as spec rows, the images */
@@ -87,11 +98,13 @@
 .bk-col2:not(:last-child) .bk-mpos.won::after { --bk-line: var(--lit); --hair: var(--line); }
 .bk-col2:not(:first-child) .bk-mpos.fed::before { top: calc(var(--mb) / 2 - var(--line) / 2); height: var(--line); background: var(--lit); }
 .bk-col2:has(+ .bk-champ-col) .bk-mpos::after { display: none; }
-.bk-col2.bk-champ-col .bk-mpos::before { width: var(--bk-gap); height: var(--line); background: var(--lit); }
+.bk-col2.bk-champ-col .bk-mpos::before { width: var(--bk-gap); height: var(--hair); background: var(--rule); }
+.bk-col2.bk-champ-col.on .bk-mpos::before { height: var(--line); background: var(--lit); }
 
 /* the champion: an inverted panel the size of a match box */
 .bk-champ-node { height: var(--mb); display: flex; flex-direction: column; justify-content: center; gap: var(--s1); padding: 0 var(--s3); }
 .bk-champ-node b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.bk-champ-node.wait { color: var(--mute); }
 
 /* double elimination: the losers' rounds as columns under the tree */
 .bk-lb { margin-top: var(--s8); }

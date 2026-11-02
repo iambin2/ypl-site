@@ -977,6 +977,17 @@ function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, ou
    경기 상자는 74(36, 이음매 2, 36). 첫 열의 상자는 94 간격(상자와 20)으로 서고, 다음 열은 앞의 두 상자 사이에 선다.
    끝난 경기의 승자 길은 2px의 켜진 선, 아직인 길은 1px 선이다. */
 const BK_ROW_H=36, BK_MATCH_H=BK_ROW_H*2+2, BK_PITCH0=BK_MATCH_H+20;
+const roundName=(len)=>({1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"})[len]||`${len*2}강`;
+/* 진행 중인 단일 토너먼트의 지금 라운드: 승자가 정해지지 않은 첫 라운드와 그 라운드에서 끝난 경기 수 (c16의 상태 띠) */
+function liveProgress(b){
+  const g=b.format==="group"?b.knockout:b.graph;
+  if(!g||g.kind==="double"||!g.rounds?.length) return "";
+  const ev=evalGraph(g);
+  const ri=g.rounds.findIndex(r=>r.some(m=>!ev.win[m.id]));
+  if(ri<0) return "";
+  const r=g.rounds[ri];
+  return `${roundName(r.length)} ${r.filter(m=>ev.win[m.id]).length}/${r.length} 종료`;
+}
 function treeCenters(rounds){
   const centers=[];
   for(let r=0;r<rounds.length;r++){ centers[r]=[];
@@ -989,7 +1000,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
   const pathOf=(m)=>{ const w=ev.win[m.id]; return !w||w===BYE?"":" won"; };
   // the leg into a box lights once both roads into it are decided (a BYE counts as decided)
   const fedOf=(ri,j)=>ri>0&&[2*j,2*j+1].every(k=>{ const f=g.rounds[ri-1][k]; return !f||ev.win[f.id]; })?" fed":"";
-  const rlabel=(len)=>{ const names={1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"}; return names[len]||`${len*2}강`; };
+  const rlabel=roundName;
   const { centers, totalH }=treeCenters(g.rounds);
   const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>;
   return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree">
@@ -999,11 +1010,14 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
         {r.map((m,j)=>(<div className={"bk-mpos"+pathOf(m)+fedOf(ri,j)} key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>{card(m)}</div>))}
       </div>
     </div>))}
-    {g.kind!=="double"&&finalRes&&finalRes.champ&&<div className="bk-col2 bk-champ-col">
+    {/* the 우승 panel stands from the start and lights when the final ends (c16) */}
+    {g.kind!=="double"&&!qualifier&&<div className={"bk-col2 bk-champ-col"+(finalRes?.champ?" on":"")}>
       <div className="bk-col-h t12 dim">우승</div>
       <div className="bk-col-body" style={{height:totalH}}>
         <div className="bk-mpos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
-          <div className="bk-champ-node inv"><span className="t12">우승</span><b className="t15">{nameOf(finalRes.champ)}</b></div>
+          {finalRes?.champ
+            ? <div className="bk-champ-node inv"><span className="t12">우승</span><b className="t15">{nameOf(finalRes.champ)}</b></div>
+            : <div className="pn bk-champ-node wait"><span className="t12">결승이 끝나면 켜집니다.</span></div>}
         </div>
       </div>
     </div>}
@@ -1247,8 +1261,8 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       {/* 날짜와 참가 수는 바로 위 대회 머리에 있다. 여기에는 결과만 한 번. */}
       {(res.ru||(res.sf&&res.sf.length>0))&&<Places res={res} nameOf={nameOf}/>}
       <div className="bk-cb-actions">
-        <Button variant="second" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</Button>
-        <Button variant="second" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</Button>
+        <Button variant="second" className="bk-img" onClick={()=>downloadChampionPng(b,res,nameOf)}>우승 이미지</Button>
+        <Button variant="second" className="bk-img" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</Button>
         {/* the one main action docks above the bars on a scrolling screen (DESIGN.md "Controls") */}
         {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<Dock><Button variant="main" onClick={()=>onApply(b,res)}>기록에 반영</Button></Dock>}
         {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={16}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<Button size="sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당에 등록하지 못했습니다. ${error?.message||"잠시 뒤 다시 시도해 주세요."}`);}finally{setHallOfFameBusy(false);}}} loading={hallOfFameBusy}>명예의 전당 재시도</Button>}{!readOnly&&admin&&<Button size="sm" onClick={undoApplied}>반영 취소</Button>}</>}
@@ -2367,17 +2381,28 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       {list.length>0&&<div className="stack bk-rows">{list.map(b=><BracketRow key={b.id} b={b} vt={"b-"+b.id} live={statusTag(b)==="진행 중"}
         line={lineOf(b)} end={admin&&statusTag(b)!=="진행 중"?statusTag(b):null} onOpen={()=>openBracket(b)}/>)}</div>}
     </div>}
-    {open&&!wizard&&<div className="bk-open">
+    {open&&!wizard&&(()=>{ const openRes=open.format==="group"?(open.knockout?elimResult(open.knockout):null):elimResult(open.graph);
+      const openName=pid=>{ const p=(open.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
+      return <div className="bk-open">
       <header className="bk-head-open">
         <BackLink to="대진표" onClick={deletingId===open.id?undefined:closeBracket}/>
-        {statusTag(open)==="진행 중"&&<p className="bk-live t12"><Status live>진행 중</Status></p>}
-        <h1 className="t20 bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
-        <p className="t12 dim reg bk-open-line">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}{admin&&statusTag(open)!=="진행 중"?`, ${statusTag(open)}`:""}</p>
+        <div className="bk-open-row">
+          <div className="bk-open-copy">
+            <h1 className="t20 bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
+            <p className="t12 dim reg bk-open-line">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}{admin&&statusTag(open)!=="진행 중"?`, ${statusTag(open)}`:""}</p>
+          </div>
+          {/* desktop (c16): the images stand beside the title; a phone keeps them under the result */}
+          {openRes?.done&&<div className="stack bk-tools">
+            <Button variant="second" size="sm" onClick={()=>downloadChampionPng(open,openRes,openName)}>우승 이미지</Button>
+            <Button variant="second" size="sm" onClick={()=>downloadBracketPng(open,openName)}>대진표 이미지</Button>
+          </div>}
+        </div>
+        {statusTag(open)==="진행 중"&&<p className="pn bk-strip t12"><Status live>진행 중</Status>{liveProgress(open)&&<span className="dim">{liveProgress(open)}</span>}</p>}
       </header>
        {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
       {/* a delete that cannot be undone stands last, after everything the bracket shows */}
       {!open.readOnly&&admin&&<div className="stack bk-actions bk-delete"><Button variant="second" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}>{deletingId===open.id?"삭제 중…":"삭제"}</Button></div>}
-    </div>}
+    </div>; })()}
     {wizard&&<BracketWizard data={data} onClose={()=>setWizard(false)} onCreate={create}/>}
      {apply&&<BracketApply b={apply.b} res={apply.res} data={data} save={save} flash={flash} refresh={refresh} onNormalizedApplied={loadNormalized} onClose={()=>{setApply(null);void loadNormalized();}}/>}
   </section>);

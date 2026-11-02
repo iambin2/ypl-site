@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { BackLink, Chips, Choice, Counter, Dock, Question, Row, Toast } from "../components/common/Board.jsx";
+import { BackLink, Chips, Choice, Counter, Dock, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
 import { PushLink } from "../components/common/PushControl.jsx";
 import Seg from "../components/common/Seg.jsx";
@@ -156,36 +156,48 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     ];
     const main=hasForm?[a.form.buttonLabel||"참가 신청",()=>setFill(a.id)]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:null;
     const seconds=hasForm?submits:submits.slice(1);
-    return (<section className="nw">
-      <BackLink to="공지" onClick={closeArticle}/>
-      <p className="t12 dim reg nw-date">{a.pinned&&"고정, "}{formatDate(a.date)}</p>
-      <h1 className="t32 nw-title" data-vt={"n-"+a.id}>{a.title}</h1>
-      {(next||applied!=null)&&<div className="stack nw-counts">
-        {next&&(next.dday===0
-          ? <Counter label={`${next.k?next.k+" ":""}오늘 진행 중`} lamp="sig" value={clock||"  :  "} cells={4} after={<span className="t15">시작</span>}/>
-          : <Counter label={`${next.k||"대회"}까지`} lamp value={String(next.dday).padStart(2,"0")} cells={next.dday>=100?3:2} unit="일" after={<span className="t15">일</span>}/>)}
-        {applied!=null&&<Counter label="신청" value={applied} cells={applied>=100?3:2} unit="명"/>}
-      </div>}
-      {facts?.rows.length>0&&<div className={"stack nw-spec"+(next||applied!=null?" joined":"")}>
-        {facts.rows.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
-      </div>}
-      {a.body&&<div className="nw-body"><Prose text={a.body}/></div>}
-      {(seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
-        {seconds.map(([label,id])=><Button variant="second" key={label} onClick={()=>openBuilder(id)}>{label}</Button>)}
-        {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
-        {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
-      </div>}
-      {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
-        ann={a}
-        responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
-        onRefresh={()=>refreshPublicResponses(a)}
-        updatedAt={seen[a.id]||""}
-      />}
-      {admin&&<div className="stack nw-admin">
-        {(hasForm||a.form?.eventId)&&<Button variant="second" onClick={()=>setRespId(a.id)}>응답 보기 {a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</Button>}
-        <Button variant="second" onClick={()=>setModal({type:"ann",item:a})}>수정</Button>
-      </div>}
-      {main&&<Dock><Button variant="main" onClick={main[1]}>{main[0]}</Button></Dock>}
+    const others=all.filter(x=>x.id!==a.id).slice(0,5);
+    // 데스크톱은 709와 439 두 단: 왼쪽은 본문, 오른쪽은 대회의 사실과 행동, 그 아래 다른 공지. 폰은 지금 순서 그대로 한 단.
+    return (<section className="nw nw-art">
+      <header className="nw-art-head">
+        <BackLink to="공지" onClick={closeArticle}/>
+        <p className="t12 dim reg nw-date">{a.pinned&&"고정, "}{formatDate(a.date)}</p>
+        <h1 className="t32 nw-title" data-vt={"n-"+a.id}>{a.title}</h1>
+      </header>
+      <aside className="nw-aside">
+        {(next||applied!=null)&&<div className="stack nw-counts">
+          {next&&(next.dday===0
+            ? <Counter label={`${next.k?next.k+" ":""}오늘 진행 중`} lamp="sig" value={clock||"  :  "} cells={4} after={<span className="t15">시작</span>}/>
+            : <Counter label={`${next.k||"대회"}까지`} lamp value={String(next.dday).padStart(2,"0")} cells={next.dday>=100?3:2} unit="일" after={<span className="t15">일</span>}/>)}
+          {applied!=null&&<Counter label="신청" value={applied} cells={applied>=100?3:2} unit="명"/>}
+        </div>}
+        {facts?.rows.length>0&&<div className={"stack nw-spec"+(next||applied!=null?" joined":"")}>
+          {facts.rows.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
+        </div>}
+        {(seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
+          {seconds.map(([label,id])=><Button variant="second" key={label} onClick={()=>openBuilder(id)}>{label}</Button>)}
+          {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
+          {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
+        </div>}
+        {admin&&<div className="stack nw-admin">
+          {(hasForm||a.form?.eventId)&&<Button variant="second" onClick={()=>setRespId(a.id)}>응답 보기 {a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</Button>}
+          <Button variant="second" onClick={()=>setModal({type:"ann",item:a})}>수정</Button>
+        </div>}
+        {main&&<div className="nw-main-act"><Dock><Button variant="main" onClick={main[1]}>{main[0]}</Button></Dock></div>}
+        {others.length>0&&<section className="nw-others" aria-labelledby="nw-others">
+          <SectionHead id="nw-others" title="다른 공지"/>
+          <div className="stack">{others.map(x=><NoticeRow key={x.id} a={x} onOpen={()=>openArticle(x.id)}/>)}</div>
+        </section>}
+      </aside>
+      <div className="nw-main">
+        {a.body&&<div className="nw-body"><Prose text={a.body}/></div>}
+        {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<div className="nw-resp"><PublicResponses
+          ann={a}
+          responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
+          onRefresh={()=>refreshPublicResponses(a)}
+          updatedAt={seen[a.id]||""}
+        /></div>}
+      </div>
       {modals}
     </section>);
   }

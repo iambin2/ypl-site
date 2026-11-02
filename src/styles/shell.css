@@ -47,9 +47,9 @@
   .brand { margin-right: var(--s13); }
   .brand .logo { height: 24px; width: auto; }
   .brand .wordmark { height: calc(24px * .84); }
-  .navlinks { display: flex; align-self: stretch; gap: var(--s8); margin-right: auto; }
+  .navlinks { position: relative; display: flex; align-self: stretch; gap: var(--s8); margin-right: auto; }
   .navlink { display: inline-flex; align-items: center; height: 100%; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
-  .navlink:is([aria-current="page"], [data-current]) { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
+  .navlink:is([aria-current="page"], [data-current]) { color: var(--lit); font-weight: 700; }
   .navlink[aria-expanded="true"] { color: var(--lit); }
   @media (hover: hover) { .navlink:hover { color: var(--lit); } }
 }
@@ -67,9 +67,26 @@
 .sec { display: flex; flex-direction: column; gap: var(--s13); }
 /* the page for a missing address or a failed app: where to go next */
 
-/* loading is the board switched off: the place is held and nothing moves */
-.y-loader { min-height: min(62vh, 576px); }
+/* loading (DESIGN.md "Motion", Busy): the place holds its size and one segment cell lights its bars in turn, around the cell.
+   It runs on the compositor, so it keeps turning while the page under it is being drawn. */
+.y-loader { display: grid; place-items: center; min-height: min(62vh, 576px); }
 .y-loader.sm { min-height: var(--s21); }
+.y-busy { position: relative; display: inline-grid; color: var(--lit); }
+.y-busy > * { grid-area: 1 / 1; }
+.y-bar { display: block; opacity: 0; animation: y-busy var(--move-light) infinite; animation-duration: calc(var(--t-light) * 2); }
+.y-bar .off, .y-bar .on polygon { display: none; }
+.y-bar.n1 .on polygon:nth-child(1), .y-bar.n2 .on polygon:nth-child(2), .y-bar.n3 .on polygon:nth-child(3),
+.y-bar.n4 .on polygon:nth-child(4), .y-bar.n5 .on polygon:nth-child(5), .y-bar.n6 .on polygon:nth-child(6) { display: inline; }
+.y-bar.n2 { animation-delay: calc(var(--t-light) * 2 / 6); }
+.y-bar.n3 { animation-delay: calc(var(--t-light) * 4 / 6); }
+.y-bar.n4 { animation-delay: calc(var(--t-light) * 6 / 6); }
+.y-bar.n5 { animation-delay: calc(var(--t-light) * 8 / 6); }
+.y-bar.n6 { animation-delay: calc(var(--t-light) * 10 / 6); }
+@keyframes y-busy { 0% { opacity: 1; } 50% { opacity: var(--off); } 100% { opacity: var(--off); } }
+@media (prefers-reduced-motion: reduce) { .y-bar { animation: none; } .y-bar.n1 { opacity: 1; } }
+/* going to a page that takes a moment (its code, its data): the page dims at once and the busy cell stands over it until the next lights */
+.page.is-going { opacity: var(--opacity-disabled); transition: opacity var(--move-tone); pointer-events: none; }
+.y-going { position: fixed; z-index: var(--z-sticky); left: 50%; top: calc(var(--nav-height) + var(--s21) * 2); translate: -50% 0; pointer-events: none; animation: y-fade var(--move-tone) backwards; animation-delay: var(--t-leave); }
 
 /* ---------- admin mode: a 40 inverted strip directly above the tab bar on every screen ---------- */
 .admin-dock {

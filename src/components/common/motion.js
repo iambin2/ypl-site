@@ -28,18 +28,49 @@ export function tone(els) {
   if (typeof document === "undefined") return;
   [].concat(els).forEach(el => el?.animate?.([{ opacity: .382 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT }));
 }
-/* light: a board switches on (DESIGN.md "Motion"). Nothing moves, only opacity: panels come on top to bottom 38 apart, then the lit
-   bars and titles 62 apart, pictures last; everything has landed by total (420 on the first open, 260 on a page change). A panel
-   that holds a display keeps its unlit bars, so only its lit bars and words come on. Only what is on the first screen lights. */
+/* light: a board switches on (DESIGN.md "Motion", 2026-11-03). Panels, titles and section heads come on top to bottom 38 apart, each
+   rising the last 12 into its place as it lights; then the lit bars and words of the displays 62 apart; pictures last. What lies below
+   the first screen waits dark and lights the same way the first time it scrolls into view. A panel that holds a display keeps its
+   unlit bars, so only its lit bars and words come on. */
+const RISE = [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }];
+let watcher = null;
+function rise(el, delay) {
+  el.classList.remove("rv");
+  el.animate(RISE, { duration: DUR.light, delay, easing: EASE_OUT, fill: "backwards" });
+}
+function revealLater(els) {
+  if (typeof IntersectionObserver !== "function") return;
+  watcher ||= new IntersectionObserver(entries => {
+    entries.filter(e => e.isIntersecting).forEach((e, i) => { watcher.unobserve(e.target); rise(e.target, i * STAGGER.row); });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  els.forEach(el => { el.classList.add("rv"); watcher.observe(el); });
+}
 export function light(root, total = DUR.light) {
   if (!root || reduced() || typeof root.animate !== "function") return;
   const seen = el => el.getBoundingClientRect().top < innerHeight;
   const last = total - DUR.tone;
+  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, h1, .sh, .hof-crown")]
+    .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .hof-crown, .sheet, .stack.chips, .chips"));
+  panels.filter(seen).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
+  revealLater(panels.filter(el => !seen(el)));
   const on = (els, start, step) => els.filter(seen).forEach((el, i) => el.animate([{ opacity: 0 }, { opacity: 1 }],
     { duration: DUR.tone, delay: Math.min(start + i * step, last), easing: EASE_OUT, fill: "backwards" }));
-  on([...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg))")].filter(el => !el.parentElement.closest(".pn, .inv")), 0, STAGGER.row);
   on([...root.querySelectorAll(".seg .on, :is(.pn, .inv):has(.seg) > :not(.seg, :has(.seg)), [data-light]")], Math.min(DUR.tone, last), STAGGER.display);
   on([...root.querySelectorAll("img")], last, 0);
+}
+
+/* the line under the chosen word of a row of words (the top bar's pages, page tabs) is one line that slides to the chosen word,
+   so a change of tab reads as one motion. Transform only; the first placing does not move. */
+export function slideLine(row) {
+  const line = row?.querySelector(":scope > .slide-line");
+  const cur = row?.querySelector(':scope > :is([aria-current="page"], [data-current], [aria-selected="true"])');
+  if (!line) return;
+  if (!cur) { line.style.opacity = "0"; return; }
+  const first = !line.dataset.placed;
+  if (first || reduced()) line.style.transition = "none";
+  line.style.opacity = "1";
+  line.style.transform = `translateX(${cur.offsetLeft}px) scaleX(${cur.offsetWidth})`;
+  if (first || reduced()) { line.getBoundingClientRect(); line.style.transition = ""; line.dataset.placed = "1"; }
 }
 /* the scoreboard has no spring: a board switches on. Old callers that still ask for one get the ease-out curve. */
 export function springs() { return { spring: EASE_OUT, lift: EASE_OUT }; }

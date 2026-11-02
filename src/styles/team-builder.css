@@ -69,7 +69,7 @@
   min-height: var(--h-row2); padding: var(--s3) var(--s3) var(--s3) 0; border: 0; background: transparent; text-align: left;
   transition: scale var(--move-press), background-color var(--move-tone), opacity var(--move-tone);
 }
-@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) { background: var(--panel-2); } .tb-pokemon-row:hover:not(:disabled) .floor { background: var(--rule); }
+@media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) { background: var(--panel-2); }
 }
 /* the picture cell runs the row's full height at its left edge, the Pokémon standing on the floor band at its foot */
 .tb-pic { --floor: calc(var(--h-row2) * .24); align-self: stretch; margin-block: calc(var(--s3) * -1); min-height: var(--h-row2); }

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { normTeam as normalizeLegacyParty } from "../services/legacyPartyImages.js";
 import { Empty } from "../components/index.js";
-import { Mon, SectionHead } from "../components/common/Board.jsx";
+import { Counter, Mon, SectionHead } from "../components/common/Board.jsx";
+import Seg from "../components/common/Seg.jsx";
 import Button from "../components/common/Button.jsx";
 import ChampionSheet from "../components/common/ChampionSheet.jsx";
 import { championsOperationsEnabled, fetchNormalizedChampionsHallOfFame } from "../services/index.js";
@@ -13,8 +14,10 @@ import {
 import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
 
 /* ============================== CHAMPIONS ==============================
-   (DESIGN.md "Titles and hall of fame", docs/redesign-next c6) 현 챔피언의 줄은 반전되고, 그 파티는 여섯 칸에 바닥을 딛고 이름을 바닥에 둔다.
-   이전 챔피언은 줄마다 세대, 이름, 시즌과 여섯 마리를 작게 둔다. 줄을 누르면 파티 시트가 열린다. */
+   (DESIGN.md "Titles and hall of fame") 전당은 한 사람을 크게, 나머지를 벽에 건다.
+   위: 현 챔피언의 판. 세대는 세그먼트로 켜지고, 이름은 32, 여섯 마리는 크게 이름과 함께 선다.
+   가운데: 전당의 숫자 셋(세대, 챔피언, 최다 우승). 아래: 이전 챔피언의 명판이 최신부터 벽에 걸린다.
+   명판은 세대, 이름, 시즌, 몇 번째 우승인지, 여섯 마리. 누르면 파티 시트가 열린다. */
 export default function ChampionsPage({ data, admin, setModal, normTeam = normalizeLegacyParty, go }) {
   const [normalizedChamps, setNormalizedChamps] = useState(null);
   const [artworkLookup, setArtworkLookup] = useState(null);
@@ -42,46 +45,63 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
   const seasonLabel = c => displaySeasonLabel(c.slabel) || ("시즌 " + c.season);
   const partyOf = c => normTeam(c.team).filter(m => m.name || m.img || m.pokemonId).slice(0, 6)
     .map(m => ({ name: m.name || "", img: resolveHallOfFameArtwork(m, artworkLookup) }));
-  const gen = c => c.generationNumber > 0 ? <span className="tt-gen"><span className="num t20">{c.generationNumber}</span><span className="t12 dim">대</span></span> : <span className="t12">{generationText(c.gen)}</span>;
+  const genNo = c => c.generationNumber > 0 ? c.generationNumber : 0;
+  // 몇 번째 우승인지: 오래된 것부터 세어 같은 이름이 다시 나오면 2번째, 3번째
+  const nth = new Map(); const seen = new Map();
+  champs.forEach(c => { const k = (seen.get(c.name) || 0) + 1; seen.set(c.name, k); nth.set(c, k); });
+  const most = [...seen.entries()].sort((a, b) => b[1] - a[1])[0];
+  const title = c => [seasonLabel(c) + " 우승", nth.get(c) > 1 ? `${nth.get(c)}번째 우승` : ""].filter(Boolean).join(", ");
 
   const reigning = champs.length ? champs[champs.length - 1] : null;
   const past = champs.slice(0, -1).reverse();
+  const plate = (c, h) => genNo(c) > 0
+    ? <span className="hof-gen"><Seg value={String(genNo(c))} h={h} cells={Math.max(2, String(genNo(c)).length)} label={`${genNo(c)}대`} /><span className={h > 40 ? "t20" : "t15"}>대</span></span>
+    : <span className="t15">{generationText(c.gen)}</span>;
 
   return (<section className="hof">
     <h1 className="t32">명예의 전당</h1>
     <p className="t12 dim reg hof-desc">챔피언스 시리즈를 제패한 역대 챔피언과 그날의 우승 엔트리를 보관합니다.</p>
     {!reigning && <Empty title="등록된 챔피언이 없습니다." desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
-    {reigning && <div className="hof-now">
-      <button type="button" className="inv hof-head" onClick={() => setPop(reigning)} aria-label={`${genLabel(reigning)} ${reigning.name}, ${seasonLabel(reigning)} 우승 엔트리 보기`}>
-        {gen(reigning)}<span className="hof-who"><b className="t15">{reigning.name}</b><span className="t12">{seasonLabel(reigning)} 우승, 현 챔피언</span></span>
-      </button>
-      <div className="hof-six">
-        {partyOf(reigning).map((m, i) => <span className="pn stand hof-cell" key={i}><Mon src={m.img} /><b className="floor hof-band t12">{m.name}</b></span>)}
+    {reigning && <section className="pn hof-crown" aria-label={`현 챔피언 ${reigning.name}`}>
+      <div className="hof-crown-who">
+        <span className="inv t12 hof-crown-tag">현 챔피언</span>
+        {plate(reigning, 84)}
+        <h2 className="t32 hof-crown-name">{reigning.name}</h2>
+        <p className="t15 dim reg">{title(reigning)}</p>
+        <div className="hof-crown-act">
+          {go && <Button variant="link" onClick={() => go("records", { trainer: reigning.name })}>{reigning.name} 기록 보기</Button>}
+          <Button variant="link" onClick={() => setPop(reigning)}>우승 엔트리 크게 보기</Button>
+        </div>
       </div>
-      {((go) || admin) && <div className="stack hof-actions">
-        {go && <Button variant="second" onClick={() => go("records", { trainer: reigning.name })}>{reigning.name} 기록 보기</Button>}
-        {admin && <Button variant="second" onClick={() => setModal({ type: "champion" })}>이전 챔피언 추가</Button>}
-      </div>}
-    </div>}
-
-    {past.length > 0 && <section className="hof-past" aria-labelledby="hof-past-h">
-      <SectionHead id="hof-past-h" title="이전 챔피언" />
-      <div className="stack">
-        {past.map((c, i) => (<React.Fragment key={c.id || i}>
-          <button type="button" className="pn hof-row" onClick={() => setPop(c)} aria-label={`${genLabel(c)} ${c.name}, ${seasonLabel(c)} 우승 엔트리 보기`}>
-            <span className="hof-row-gen">{gen(c)}</span>
-            <span className="hof-row-body">
-              <span className="hof-row-top"><b className="t15">{c.name}</b><span className="t12 dim">{seasonLabel(c)} 우승</span></span>
-              <span className="hof-minis">{partyOf(c).map((m, k) => <span className="stand hof-mini" key={k}><i className="floor" aria-hidden="true" /><Mon src={m.img} /></span>)}</span>
-            </span>
-          </button>
-          {/* the edit stands under its own row, named by the generation, so two reigns of one trainer never read alike */}
-          {admin && c.kind !== "normalized" && <Button variant="second" size="sm" onClick={() => setModal({ type: "champion", item: c })}>{[generationText(c.gen), c.name, "수정"].filter(Boolean).join(" ")}</Button>}
-        </React.Fragment>))}
+      <div className="hof-crown-six">
+        {partyOf(reigning).map((m, i) => <span className="stand hof-crown-mon" key={i}><Mon src={m.img} /><b className="floor hof-band t15">{m.name}</b></span>)}
       </div>
     </section>}
 
-    {pop && <ChampionSheet name={pop.name} hint={`${genLabel(pop)}, ${seasonLabel(pop)} 우승`} party={partyOf(pop)} onClose={() => setPop(null)}>
+    {champs.length > 1 && <div className="stack hof-facts">
+      <Counter label="세대" value={champs.length} unit="대" />
+      <Counter label="챔피언" value={seen.size} unit="명" />
+      {most && <Counter label={most[1] > 1 ? `최다 우승, ${most[0]}` : "최다 우승"} value={most[1]} unit="회" />}
+    </div>}
+
+    {admin && <div className="stack hof-actions"><Button variant="second" onClick={() => setModal({ type: "champion" })}>이전 챔피언 추가</Button></div>}
+
+    {past.length > 0 && <section className="hof-past" aria-labelledby="hof-past-h">
+      <SectionHead id="hof-past-h" title="역대 챔피언" />
+      <div className="hof-wall">
+        {past.map((c, i) => (<div className="hof-slot" key={c.id || i}>
+          <button type="button" className="pn hof-plate" onClick={() => setPop(c)} aria-label={`${genLabel(c)} ${c.name}, ${title(c)}, 우승 엔트리 보기`}>
+            <span className="hof-plate-top">{plate(c, 40)}<span className="t12 dim hof-plate-season">{title(c)}</span></span>
+            <b className="t20 hof-plate-name">{c.name}</b>
+            <span className="hof-plate-six">{partyOf(c).map((m, k) => <span className="stand hof-plate-mon" key={k}><i className="floor" aria-hidden="true" /><Mon src={m.img} /></span>)}</span>
+          </button>
+          {/* the edit stands under its own plate, named by the generation, so two reigns of one trainer never read alike */}
+          {admin && c.kind !== "normalized" && <Button variant="second" size="sm" onClick={() => setModal({ type: "champion", item: c })}>{[generationText(c.gen), c.name, "수정"].filter(Boolean).join(" ")}</Button>}
+        </div>))}
+      </div>
+    </section>}
+
+    {pop && <ChampionSheet name={pop.name} hint={`${genLabel(pop)}, ${title(pop)}`} party={partyOf(pop)} onClose={() => setPop(null)}>
       {go && <Button variant="main" onClick={() => { setPop(null); go("records", { trainer: pop.name }); }}>{pop.name} 기록 보기</Button>}
     </ChampionSheet>}
   </section>);

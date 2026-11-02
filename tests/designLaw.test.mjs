@@ -249,7 +249,7 @@ test("pages move through the verbs of motion.js, never their own .animate() (Mot
 });
 test("keyframes are a closed list: a new one needs a new verb in DESIGN.md (Motion)", () => {
   const names = CSS.flatMap(f => [...read(join(STYLES, f)).matchAll(/@keyframes\s+([\w-]+)/g)].map(m => m[1])).sort();
-  assert.deepEqual(names, ["bk-land", "dd-in", "row-rise", "y-fade", "y-pop", "y-pulse", "y-rise", "y-swap"]);
+  assert.deepEqual(names, ["bk-land", "dd-in", "row-rise", "y-busy", "y-fade", "y-pop", "y-pulse", "y-rise", "y-swap"]);
 });
 test("script animations take their durations from DUR (Motion)", () => {
   const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\([^;]*?duration:\s*(\d+)/g)].filter(m => +m[1] > 0).map(m => `${rel(f)}: ${m[1]}`));

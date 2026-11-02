@@ -135,3 +135,13 @@
 .tb-revisions { display: grid; gap: var(--s2); margin: var(--s5) 0 0; }
 .tb-revision { display: grid; grid-template-columns: var(--s21) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 .tb-revision-now { display: inline-flex; align-items: center; gap: var(--s2); }
+
+/* the rules on desktop (c16): two cells in one row; the option rows stay for a phone's 규정 step and the monotype's type grid stays */
+.tb-rules-line { display: none; }
+@media (min-width: 860px) {
+  .tb-rules-line { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tb-rules > .tb-rule-group:nth-child(-n + 2) { display: none; }
+  .tb-rules:not(:has(.tb-rule-group:nth-child(3))) { grid-template-columns: minmax(0, 1fr); }
+}
+/* the type chips stand 12 under the search, the list's sort under them */
+.tb-pool-panel > .chips { flex: none; margin-top: var(--s3); }

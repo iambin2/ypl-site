@@ -1,7 +1,7 @@
-import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dropdown, Icon, Loader, Modal, Segmented, siteAlert, siteConfirm } from "../components/index.js";
-import { Bang, Cell, Dock, Mon, OptionRows, Steps, TabsLine } from "../components/common/Board.jsx";
+import { Bang, Cell, Chips, Dock, Mon, OptionRows, Steps, TabsLine } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
@@ -368,6 +368,9 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
   const [selectedUid, setSelectedUid] = useState(null);
   const [query, setQuery] = useState("");
   const [searchChips, setSearchChips] = useState([]);
+  // 359행의 목록은 화면이 선 다음 프레임에 채운다: 누르면 빌더가 바로 서고, 목록 자리에서 바쁨 칸이 돌다가 켜진다.
+  const [poolShown, setPoolShown] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => startTransition(() => setPoolShown(true))); return () => cancelAnimationFrame(id); }, []);
   const [suggestIndex, setSuggestIndex] = useState(0);
   const [searchFocused, setSearchFocused] = useState(false);
   const [sortId, setSortId] = useState("name");
@@ -1278,6 +1281,17 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         <TabsLine value={step} onChange={changeStep} label="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
       </div>
 
+      {/* desktop (c16): the rules are two cells in one row; the option rows with their periods stay on a phone's 규정 step */}
+      <div className="cells tb-rules-line">
+        <Cell label={`레귤레이션${eventId ? " (대회 기준)" : ""}`}>
+          <Dropdown className="tb-dd" value={regulationId} onChange={switchRegulation} disabled={Boolean(eventId)} ariaLabel="레귤레이션"
+            options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, label: `${reg.name}, ${reg.status === "current" ? "현행" : "이전"}` }))} />
+        </Cell>
+        <Cell label={`파이컵 추가 룰${eventId ? " (대회 기준)" : ""}`}>
+          <Dropdown className="tb-dd" value={cupRuleId} onChange={switchCupRule} disabled={Boolean(eventId)} ariaLabel="파이컵 추가 룰"
+            options={Object.values(CUP_RULES).map(rule => ({ value: rule.id, label: rule.name }))} />
+        </Cell>
+      </div>
       <div className="tb-rules" data-tb-step="rules">
         <div className="tb-rule-group">
           <h2 className="t12 dim">레귤레이션{eventId ? " (대회 기준)" : ""}</h2>
@@ -1389,6 +1403,10 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               ))}
             </div>
           )}
+          {/* c7: the types as chips. One type at a time; it is the search's own type condition, so the search chips show it too */}
+          <Chips label="타입으로 거르기" value={searchChips.find(chip => chip.kind === "type")?.id || ""}
+            onChange={id => setSearchChips(current => [...current.filter(chip => chip.kind !== "type"), ...(id ? [{ kind: "type", id, label: TYPE_OPTIONS.find(type => type.id === id)?.korean || id }] : [])])}
+            options={[["", `전체 ${eligiblePool.length}`], ...TYPE_OPTIONS.map(type => [type.id, type.korean])]} />
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
             <Button type="button" size="sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
@@ -1402,7 +1420,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           ) : cupRule.kind === "monotype" && !detailData ? (
             <div className="tb-pool-empty">타입 데이터를 불러오지 못해 모노타입 포켓몬을 판정할 수 없습니다.</div>
           ) : (
-            <PoolList pool={filteredPool} detailData={detailData} displayPokemon={displayPokemon} sortId={sortId} occupancy={occupancy} selectedUid={selectedUid} onAdd={onAddPokemon} />
+            !poolShown ? <Loader small /> : <PoolList pool={filteredPool} detailData={detailData} displayPokemon={displayPokemon} sortId={sortId} occupancy={occupancy} selectedUid={selectedUid} onAdd={onAddPokemon} />
           )}
         </div>
 

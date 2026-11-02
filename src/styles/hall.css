@@ -14,26 +14,46 @@
 .tt-rows .row-value { padding-right: var(--pad); }
 .tt-off .row-main > b { color: var(--mute); }
 
-/* ---------- hall of fame ---------- */
+/* ---------- hall of fame: one reign large, the rest hung on a wall (2026-11-03) ---------- */
 .hof-desc { margin-top: var(--s2); }
-.hof-now { margin-top: var(--s5); display: grid; gap: var(--seam); }
-.hof-head { display: flex; align-items: center; width: 100%; height: var(--h-row2); text-align: left; }
-.hof-head > .tt-gen { width: 64px; flex: none; }
-.hof-who { display: grid; gap: var(--s1); min-width: 0; }
-.hof-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
-.hof-cell { --floor: var(--h-strip); aspect-ratio: 1; }
-.hof-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
+/* the crown: the reigning champion's board. The generation lights in segments, the name at 32, the six large with their names */
+.hof-crown { display: grid; gap: var(--s8); margin-top: var(--s8); padding: var(--s5) var(--pad); }
+.hof-crown-who { display: grid; justify-items: start; align-content: start; gap: var(--s2); min-width: 0; }
+.hof-crown-tag { padding: var(--s1) var(--s2); }
+.hof-gen { display: inline-flex; align-items: flex-end; gap: var(--s2); }
+.hof-crown .hof-gen { margin-top: var(--s3); }
+.hof-crown-name { margin-top: var(--s2); }
+.hof-crown-act { display: flex; flex-wrap: wrap; gap: var(--s5); margin-top: var(--s3); }
+.hof-crown-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.hof-crown-mon { --floor: var(--h-control); aspect-ratio: 1; }
+.hof-crown-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
 .hof-band { display: grid; place-items: center; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* the hall's three facts */
+.hof-facts { margin-top: var(--seam); grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .hof-actions { margin-top: var(--s5); }
+/* the wall: a plate per past reign, newest first */
 .hof-past { margin-top: var(--s13); }
-.hof-row { display: flex; align-items: center; width: 100%; padding: var(--pad) var(--pad) var(--pad) 0; text-align: left; }
-.hof-row-body { flex: 1; min-width: 0; display: grid; gap: var(--s2); }
-.hof-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); }
-.hof-minis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
-.hof-mini { --floor: 24%; height: var(--h-control); }
-.hof-mini .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+.hof-wall { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--seam); }
+.hof-slot { display: grid; gap: var(--seam); min-width: 0; }
+.hof-plate { display: grid; gap: var(--s2); width: 100%; height: 100%; padding: var(--s5) var(--pad) var(--s3); text-align: left; }
+.hof-plate-top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s3); }
+.hof-plate-season { text-align: right; }
+.hof-plate-name { margin-top: var(--s2); }
+.hof-plate-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: var(--s2); }
+.hof-plate-mon { aspect-ratio: 1; }
+.hof-plate-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+/* the champion sheet: the six with their names; on desktop as wide as the content, all six in one row */
+.hof-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.hof-cell { --floor: var(--h-control); aspect-ratio: 1; }
+.hof-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
 .hof-sheet-act { margin-top: var(--s5); }
-@media (min-width: 860px) { .hof-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } .hof-mini { height: var(--s21); } }
+@media (min-width: 860px) {
+  .hof-crown { grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); column-gap: var(--s13); padding: var(--s8) var(--pad); }
+  .hof-crown-six { align-self: center; }
+  .hof-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hof-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (min-width: 640px) and (max-width: 859px) { .hof-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ---------- about ---------- */
 .ab-lede { margin-top: var(--s3); color: var(--dim); max-width: var(--read); }

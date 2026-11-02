@@ -15,7 +15,7 @@ import { initHistory, popHandlers, popped, pushHistory } from "./components/layo
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { onAdminSessionLost, signOutAdmin } from "./storage.js";
 import LazyContent from "./components/common/LazyContent.jsx";
-import Loader from "./components/common/Loader.jsx";
+import Loader, { Busy } from "./components/common/Loader.jsx";
 
 /* 페이지 조각은 처음 필요할 때 불러오되, 한 번 불러오면 같은 컴포넌트로 바로 그린다.
    화면 전환은 새 페이지를 같은 틀 안에서 즉시 그려야 하므로(전환 중 "불러오는 중"이 끼지 않게)
@@ -75,6 +75,8 @@ export default function App() {
   const [data,setData]=useState(null); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
   const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(null); const [modal,setModal]=useState(null);
   const [more,setMore]=useState(null);
+  // 가는 중인 화면: 누른 즉시 바의 줄이 옮겨 가고 지금 화면은 흐려지며, 다음 화면이 늦으면 바쁨 칸이 선다.
+  const [going,setGoing]=useState(null);
   // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
   // 첫 진입은 어느 화면이든 꺼진 판에서 켜진다(DESIGN.md "Motion"). 홈은 제 패널을 스스로 켠다.
@@ -115,7 +117,8 @@ export default function App() {
       const next=readInitialAppView(window.location.search);
       // 기록을 따르는 페이지 상태(열린 대진표)는 popHandlers 로 전환 안에서 바꾼다.
       // 공유 요소의 자리를 잰 다음, 페이지의 바뀐 화면까지 한 번에 그려야 그 요소가 제자리를 찾는다.
-      afterPaint(()=>whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);}),{dir:to<from?"back":"forward",shared,scrollY})));
+      setGoing(next);
+      afterPaint(()=>whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);setGoing(null);}),{dir:to<from?"back":"forward",shared,scrollY})));
     };
     window.addEventListener("popstate",onPopState);
     return ()=>window.removeEventListener("popstate",onPopState);
@@ -148,7 +151,8 @@ export default function App() {
     }
     // I1: 지금 화면은 바로 비키고, 새 화면이 맨 위에서 살짝 위로 올라온다.
     // 누름의 반응이 먼저다: 눌림이 보인 프레임이 나간 뒤에 새 페이지를 그린다.
-    afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
+    if(v!==view) setGoing(v);
+    afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);setGoing(null);}),{shared:options.shared,scrollY:0})));
   },[view]);
   const flash=useCallback((m,action)=>setToast({id:Date.now()+Math.random(),text:m,action}),[]);
   useEffect(()=>{ onAdminSessionLost(()=>{ setAdmin(false); flash("로그인이 만료되었습니다. 다시 로그인해 주세요."); }); },[flash]);
@@ -223,10 +227,10 @@ export default function App() {
     <div className={"ypl"+(admin?" is-admin":"")}>
       {/* 키보드로 들어온 사람은 매번 바 전체를 지나야 본문에 닿았다. */}
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
-      <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
+      <SiteHeader view={going||view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
         moreOpen={Boolean(more)} onMore={toggleMore}/>
 
-      <div className="wrap"><main className={"page"+(data?"":" page--wait")} id="ypl-main" tabIndex={-1} key={view}>
+      <div className="wrap"><main className={"page"+(data?"":" page--wait")+(going?" is-going":"")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}
@@ -241,10 +245,11 @@ export default function App() {
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}
         </LazyContent>}
       </main>
+      {going&&<div className="y-going" role="status" aria-label="불러오는 중"><Busy/></div>}
       </div>
       {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={wideNav&&!admin?onAdmin:null}/>}
 
-      <TabBar view={view} onNavigate={go}/>
+      <TabBar view={going||view} onNavigate={go}/>
       {admin&&<AdminModeBar onLogout={logout}/>}
       {more&&<Menu anchor={more} title="더보기" items={moreItems} onClose={()=>setMore(null)}/>}
       <Toaster feed={toast}/>

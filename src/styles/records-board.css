@@ -94,3 +94,16 @@
   .rc-tr .row-lead { width: 52px; }
   .rc-mons, .rc-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
+
+/* an event's parties by member: the name and its line, then the six as pictures (2026-11-03: pictures over a list of names) */
+.rc-party-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s2); width: 100%; padding: var(--s3) var(--pad); text-align: left; }
+.rc-party-who { display: grid; gap: var(--s1); min-width: 0; }
+.rc-party-who > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-party-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
+.rc-party-mon { height: var(--h-row); }
+.rc-party-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+@media (min-width: 860px) {
+  .rc-party-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s5); padding-block: var(--s2); }
+  .rc-party-six { grid-template-columns: repeat(6, var(--h-row2)); }
+  .rc-party-mon { height: var(--h-row2); }
+}
