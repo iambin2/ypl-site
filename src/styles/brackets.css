@@ -1,0 +1,89 @@
+/* =============================================================================
+   YPL Scoreboard: brackets (BracketsPage.jsx, the parts a visitor sees). Drafts: docs/redesign-next c10-brackets,
+   c3-phone (the third frame), c16-desktop, c3-motion. A list is rows of 64 with the amber lamp on what runs; a bracket is a tree of
+   match boxes (two rows of 36 and a seam) joined by lines: a decided road is a 2px lit line, the rest a 1px rule.
+   The tree's geometry is in BracketsPage.jsx (BK_ROW_H, BK_PITCH0); the lines here meet the box at its middle.
+   ========================================================================== */
+
+.bk-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
+.bk-tabs { margin-top: var(--s8); }
+.bk-list, .bk-info, .bk-new { margin-top: var(--s5); }
+.bk-search, .bk-rows { margin-top: var(--s5); }
+.bk-rows .row { height: var(--h-row2); }
+.bk-info { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--pad); }
+
+/* an open bracket: the back link 20 under the bar, the live strip, its name at 20, a grey line */
+.bk-head-open > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
+.bk-live { margin-top: var(--s5); }
+.bk-open-title { margin-top: var(--s3); }
+.bk-open-line { margin-top: var(--s1); }
+.bk-note { margin-top: var(--s5); }
+.bk-head-open .bk-info { margin-top: var(--s5); }
+.bk-actions { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bk-actions > :only-child { grid-column: 1 / -1; }
+.bk-pick-hint { margin-top: var(--s3); }
+.bk-board { display: grid; gap: var(--s8); margin-top: var(--s8); }
+
+/* the decided result: 우승 inverted, the places as spec rows, the images */
+.bk-winner { display: grid; gap: var(--s1); padding: var(--pad); }
+.bk-places { margin: var(--seam) 0 0; }
+.bk-places dd { margin: 0; }
+.bk-cb-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s5); }
+.bk-cb-actions > .btn--main { grid-column: 1 / -1; }
+.bk-applied { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
+
+/* ---------- the tree: column heads 12 dim, 12 above their boxes ---------- */
+.bk-scroll { --bk-gap: var(--s5); --bk-line: var(--rule); --bk-w: calc(var(--s21) + var(--s13)); --mb: calc(36px * 2 + var(--seam)); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 0 var(--gutter) var(--s5); }
+.bk-scroll::-webkit-scrollbar { display: none; }
+.bk-tree { display: flex; align-items: flex-start; gap: var(--bk-gap); width: max-content; }
+.bk-col2 { position: relative; width: var(--bk-w); display: flex; flex-direction: column; }
+.bk-col-h { margin-bottom: var(--s3); }
+.bk-col-h.gf { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
+.bk-col-body { position: relative; width: 100%; }
+.bk-mpos { position: absolute; left: 0; right: 0; }
+/* eight players fit a phone to the final: three columns share the content width */
+@media (max-width: 639px) { .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap) * 2) / 3); } }
+@media (min-width: 860px) { .bk-scroll { --bk-gap: var(--s8); --bk-w: 216px; margin-inline: 0; padding-inline: 0; } }
+
+/* a match box: two rows of 36 with the seam between; the winner inverts, the loser mutes, a waiting slot is muted words */
+.mb { position: relative; display: grid; gap: var(--seam); width: 100%; text-align: left; }
+.mb-row {
+  display: flex; align-items: center; gap: var(--s2); width: 100%; height: 36px; min-height: 0; padding: 0 var(--s3) 0 var(--s2);
+  background: var(--panel); text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 700; color: var(--lit);
+  transition: background-color var(--move-tone), color var(--move-tone);
+}
+.mb-row.inv { background: var(--lit); color: var(--ground); }
+.mb-row.lost, .mb-row.wait { color: var(--mute); }
+.mb-row.wait { font-weight: 600; }
+.mb-seed { flex: none; width: var(--s3); color: var(--mute); }
+.mb-row.inv .mb-seed { color: var(--ground); }
+.mb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mb-score { flex: none; font-size: var(--t15); font-weight: 700; }
+.mb-row:disabled { cursor: default; opacity: 1; }
+.can-pick .mb-row:not(:disabled) { cursor: pointer; }
+@media (hover: hover) { .can-pick .mb-row:not(:disabled):not(.inv):hover, .mb.team-click:hover .mb-row:not(.inv) { background: var(--panel-2); } }
+.mb.team-click { cursor: pointer; }
+
+/* the lines: out of each box a fork to the middle of its pair, into each later box one leg */
+.bk-col2:not(:last-child) .bk-mpos::after {
+  content: ""; position: absolute; left: 100%; pointer-events: none; width: calc(var(--bk-gap) / 2); height: calc(var(--bk-pitch) / 2);
+  box-shadow: inset calc(var(--hair) * -1) 0 0 var(--bk-line);
+}
+.bk-col2:not(:last-child) .bk-mpos:nth-child(odd)::after { top: calc(var(--mb) / 2); box-shadow: inset calc(var(--hair) * -1) var(--hair) 0 var(--bk-line); }
+.bk-col2:not(:last-child) .bk-mpos:nth-child(even)::after { bottom: calc(100% - var(--mb) / 2); box-shadow: inset calc(var(--hair) * -1) calc(var(--hair) * -1) 0 var(--bk-line); }
+.bk-col2:not(:first-child) .bk-mpos::before { content: ""; position: absolute; right: 100%; top: calc(var(--mb) / 2); width: calc(var(--bk-gap) / 2); height: var(--hair); background: var(--rule); pointer-events: none; }
+/* a decided road is a 2px lit line */
+.bk-col2:not(:last-child) .bk-mpos.won::after { --bk-line: var(--lit); --hair: var(--line); }
+.bk-col2:has(+ .bk-champ-col) .bk-mpos::after { display: none; }
+.bk-col2.bk-champ-col .bk-mpos::before { width: var(--bk-gap); height: var(--line); background: var(--lit); }
+
+/* the champion: an inverted panel the size of a match box */
+.bk-champ-node { height: var(--mb); display: flex; flex-direction: column; justify-content: center; gap: var(--s1); padding: 0 var(--s3); }
+.bk-champ-node b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+
+/* double elimination: the losers' rounds as columns under the tree */
+.bk-lb { margin-top: var(--s8); }
+.bk-lb-h { margin-bottom: var(--s3); font-weight: 700; }
+.bk-cols { display: flex; gap: var(--bk-gap); align-items: flex-start; width: max-content; }
+.bk-col { width: var(--bk-w); display: flex; flex-direction: column; gap: var(--s3); }
+.bk-col .bk-col-h { margin-bottom: 0; }

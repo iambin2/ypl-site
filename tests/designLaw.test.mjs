@@ -31,7 +31,7 @@ const LENGTHS = new Set([...SPACE, 1, 2, 3, 16, 20, 24, 32, 36, 40, 44, 52, 56, 
 const REBUILT = new Set([
   "src/styles/shell.css", "src/styles/board.css", "src/styles/home.css",
   "src/pages/HomePage.jsx", "src/components/common/Board.jsx", "src/components/common/Button.jsx",
-  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
+  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/styles/brackets.css", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
   "src/components/common/Seg.jsx", "src/components/common/seg.js", "src/components/common/Icon.jsx", "src/components/common/Loader.jsx", "src/components/common/Segmented.jsx",
   "src/components/layout/Navigation.jsx", "src/components/layout/SiteHeader.jsx", "src/components/layout/SiteFooter.jsx", "src/admin/AdminModeBar.jsx",
 ]);
@@ -262,7 +262,7 @@ test("pages move through the verbs of motion.js, never their own .animate() (Mot
 });
 test("keyframes are a closed list: a new one needs a new verb in DESIGN.md (Motion)", () => {
   const names = CSS.flatMap(f => [...read(join(STYLES, f)).matchAll(/@keyframes\s+([\w-]+)/g)].map(m => m[1])).sort();
-  assert.deepEqual(names, ["bk-draw", "bk-land", "dd-in", "row-rise", "y-fade", "y-pop", "y-pulse", "y-rise", "y-spin", "y-swap"]);
+  assert.deepEqual(names, ["bk-land", "dd-in", "row-rise", "y-fade", "y-pop", "y-pulse", "y-rise", "y-spin", "y-swap"]);
 });
 test("script animations take their durations from DUR (Motion)", () => {
   const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\([^;]*?duration:\s*(\d+)/g)].filter(m => +m[1] > 0).map(m => `${rel(f)}: ${m[1]}`));

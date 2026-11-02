@@ -131,3 +131,17 @@ export function Toast({ error = false, action, onAction, children }) {
     </div>
   );
 }
+
+/* Page tabs: words 15 on a 44 line with a hairline under the row; the chosen word is 700, lit, with a 2px line under it. */
+export function TabsLine({ value, onChange, options, label }) {
+  return (
+    <div className="tabsline" role="tablist" aria-label={label}>
+      {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}
+    </div>
+  );
+}
+
+/* A status at a row's end: the amber lamp beside 진행 중 for what is live, otherwise the words dim. */
+export function Status({ live, children }) {
+  return <span className={"status t12" + (live ? "" : " dim")}>{live && <i className="lamp sig" aria-hidden="true" />}{children}</span>;
+}

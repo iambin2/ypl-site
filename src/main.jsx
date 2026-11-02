@@ -10,6 +10,7 @@ import "./styles/shell.css";
 import "./styles/board.css";
 import "./styles/home.css";
 import "./styles/news.css";
+import "./styles/brackets.css";
 import "./styles/pages.css";
 import "./styles/records.css";
 import "./styles/bracket.css";

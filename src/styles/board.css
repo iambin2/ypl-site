@@ -138,3 +138,13 @@
   --btn-bg: var(--panel); --btn-bg-hover: var(--panel-2); --btn-fg: var(--lit);
   width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 700; text-decoration: none;
 }
+
+/* ---------- page tabs: words on a 44 line, the chosen one 700 and lit with a 2px line under it ---------- */
+.tabsline { display: flex; gap: var(--s8); height: var(--h-control); box-shadow: inset 0 -1px 0 var(--rule); overflow-x: auto; scrollbar-width: none; }
+.tabsline > button { flex: none; display: flex; align-items: center; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
+.tabsline > button.on { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
+@media (hover: hover) { .tabsline > button:not(.on):hover { color: var(--dim); } }
+
+/* ---------- a status at a row's end ---------- */
+.status { display: inline-flex; align-items: center; gap: var(--s2); white-space: nowrap; }
+.row-value .status { display: flex; }
