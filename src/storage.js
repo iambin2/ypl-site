@@ -5,19 +5,30 @@
 // - 설정 안 하면 localStorage로 동작합니다(브라우저 1대에만 저장 = 진짜 공유 아님).
 // ============================================================================
 import { PostgrestClient } from "@supabase/postgrest-js";
+import { WRITE_CONFLICT, writeRevisioned } from "./services/revisionedRow.js";
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// 현장의 불안한 네트워크에서 조회가 멈추면 화면이 끝없이 불러오는 중에 머문다. 쓰기는 끊지 않는다: 저장됐는지 알 수 없게 된다.
+const READ_TIMEOUT_MS = 15000;
 
 // 관리자 로그인 세션. 메모리에만 두므로 새로고침하면 관리자 모드와 함께 풀린다.
 let session = null;
 let refreshTimer = 0;
+let refreshing = null;
+let expiresAt = 0;
+let onSessionLost = null;
+
+export const onAdminSessionLost = listener => { onSessionLost = listener; };
 
 // 관리자로 로그인했으면 그 토큰, 아니면 anon key로 요청한다. 쓰기 권한은 DB가 토큰을 보고 판정한다.
-const authFetch = (url, init = {}) => {
+const authFetch = async (url, init = {}) => {
+  // 폰이 잠기면 갱신 타이머가 멈춘다. 깨어난 뒤의 첫 저장이 만료된 토큰으로 실패하지 않게 여기서도 확인한다.
+  if (session && Date.now() >= expiresAt) await refreshSession();
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${session?.access_token || SUPA_KEY}`);
-  return fetch(url, { ...init, headers });
+  const read = !init.method || init.method === "GET" || init.method === "HEAD";
+  return fetch(url, { ...init, headers, signal: init.signal ?? (read ? AbortSignal.timeout?.(READ_TIMEOUT_MS) : undefined) });
 };
 
 // 환경변수가 둘 다 있을 때만 Supabase 클라이언트를 만듭니다.
@@ -41,14 +52,24 @@ async function requestToken(grant, body) {
   } catch {
     throw new Error("로그인 서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
   }
-  if (!response.ok) throw new Error("아이디 또는 비밀번호가 올바르지 않습니다.");
+  if (!response.ok) {
+    const rejected = new Error("아이디 또는 비밀번호가 올바르지 않습니다.");
+    rejected.rejected = true;
+    throw rejected;
+  }
   session = await response.json();
+  // 만료 1분 전에 갱신한다.
+  expiresAt = Date.now() + Math.max(session.expires_in - 60, 30) * 1000;
   clearTimeout(refreshTimer);
-  // 만료 1분 전에 갱신한다. 실패하면 세션을 버리고, 다음 쓰기는 권한 오류로 끝난다.
-  refreshTimer = setTimeout(
-    () => requestToken("refresh_token", { refresh_token: session.refresh_token }).catch(signOutAdmin),
-    Math.max(session.expires_in - 60, 30) * 1000,
-  );
+  refreshTimer = setTimeout(refreshSession, expiresAt - Date.now());
+}
+
+// 갱신 토큰은 한 번만 쓸 수 있어 동시에 두 번 보내면 세션이 폐기된다. 서버가 거절했을 때만 세션을 버린다.
+// 네트워크가 잠깐 끊긴 것이면 세션을 두고, 다음 요청이 다시 갱신한다.
+function refreshSession() {
+  return refreshing ||= requestToken("refresh_token", { refresh_token: session.refresh_token })
+    .catch(error => { if (error.rejected) { signOutAdmin(); onSessionLost?.(); } })
+    .finally(() => { refreshing = null; });
 }
 
 // 운영진 공용 아이디처럼 @ 가 없는 값은 내부 이메일로 바꾼다. .invalid 는 메일이 가지 않는 예약 도메인이라
@@ -81,6 +102,10 @@ export const STORAGE_MODE = (typeof window !== "undefined" && window.storage)
   ? "artifact"
   : (supa ? "supabase" : "local");
 
+// 키마다 마지막으로 읽은 행의 revision. 읽기에 성공한 키만 들어 있다.
+const revisions = new Map();
+const writeQueues = new Map();
+
 export async function getData(key) {
   // (1) Claude 아티팩트 환경
   if (typeof window !== "undefined" && window.storage) {
@@ -93,8 +118,9 @@ export async function getData(key) {
   if (supa) {
     try {
       const { data, error } = await supa
-        .from("site_data").select("value").eq("key", key).maybeSingle();
+        .from("site_data").select("*").eq("key", key).maybeSingle();
       if (error) { console.error(error); return null; }
+      revisions.set(key, data?.revision);
       return data ? data.value : null;
     } catch (e) { console.error(e); return null; }
   }
@@ -105,6 +131,7 @@ export async function getData(key) {
   } catch { return null; }
 }
 
+// true(저장), false(실패), WRITE_CONFLICT(읽은 뒤 다른 저장이 있었음) 중 하나를 돌려준다.
 export async function setData(key, value) {
   if (typeof window !== "undefined" && window.storage) {
     try {
@@ -113,12 +140,19 @@ export async function setData(key, value) {
     } catch { return false; }
   }
   if (supa) {
-    try {
-      const { error } = await supa
-        .from("site_data").upsert({ key, value }, { onConflict: "key" });
-      if (error) { console.error(error); return false; }
-      return true;
-    } catch (e) { console.error(e); return false; }
+    // 읽지 못한 행은 쓰지 않는다. 씨드를 띄운 화면의 저장이 진짜 데이터를 덮으면 안 된다.
+    if (!revisions.has(key)) return false;
+    // 같은 화면의 저장이 겹쳐도 앞 저장의 revision을 이어받도록 차례로 보낸다.
+    const queued = (writeQueues.get(key) || Promise.resolve()).then(async () => {
+      try {
+        const revision = await writeRevisioned(supa.from("site_data"), key, value, revisions.get(key));
+        if (revision === WRITE_CONFLICT) return WRITE_CONFLICT;
+        revisions.set(key, revision);
+        return true;
+      } catch (e) { console.error(e); return false; }
+    });
+    writeQueues.set(key, queued);
+    return queued;
   }
   try {
     localStorage.setItem(key, JSON.stringify(value));

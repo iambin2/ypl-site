@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
-import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addChampionshipQualifierManualRegistration, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, completeApplicationEvent, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteEventBracketRankingAwards, deleteEventBracketResults, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, removeChampionshipHallOfFameEntry, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, freezeEventFinalSubmissions, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isFinalSubmissionRestoreAllowed, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, restoreEventBracketRankingAwards, restoreEventBracketResults, restoreEventFinalSubmissions, revertEventRecordApplication, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, syncEventBracketRankingAwards, syncEventBracketResults, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
@@ -1974,17 +1974,21 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   const [deletingId,setDeletingId]=useState(null);
   const deletingRef=useRef(false);
   const open=list.find(b=>b.id===openId);
-  // 관람 중인 진행 대진표는 화면이 보이는 동안 15초마다 그 대회 하나만 다시 읽는다.
+  // 관람 중인 진행 대진표는 화면이 보이는 동안 15초마다 그 대회의 경기만 확인하고, 달라졌을 때 전체를 다시 읽는다.
+  // 경기 밖의 변화(기록 반영)는 2분마다의 전체 조회가 따라잡는다.
   // 관리자는 자기 쓰기 뒤에 이미 다시 읽고, 바뀐 것이 없으면 다시 그리지 않는다.
   const liveEventId=!admin&&!drawId&&open?.status==="active"&&open?.projection?.source==="normalized"?open.eventId:null;
   const liveRuntimeId=open?.projection?.runtimeId||null;
   useEffect(()=>{
     if(!liveEventId) return undefined;
-    let busy=false;
+    let busy=false, stamp=null, sameTicks=0;
     const tick=async()=>{
       if(busy||document.visibilityState!=="visible") return;
       busy=true;
       try{
+        const next=await readBracketMatchStamp(liveEventId);
+        if(next===stamp&&++sameTicks<8) return;
+        stamp=next; sameTicks=0;
         const loaded=await fetchNormalizedSingleBracketRuntime(liveEventId,liveRuntimeId);
         if(loaded?.bracket) setNormalizedBrackets(prev=>prev.map(b=>b.eventId===liveEventId&&JSON.stringify(b)!==JSON.stringify(loaded.bracket)?loaded.bracket:b));
       }catch{ /* 다음 차례에 다시 읽는다 */ }

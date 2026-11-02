@@ -406,63 +406,43 @@ export async function removeChampionshipHallOfFameEntry(eventId) {
     removed: Boolean(row?.removed),
   };
 }
+// 홈이 매번 부르는 조회다. 대회, 시즌, 선수, 결과, 출전, 고정 파티를 한 번의 왕복으로 읽는다.
+const HALL_OF_FAME_SELECT = `
+  id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note,
+  event:events(id, season_id, name, round_number, battle_format, competition_format, event_type, championship_phase,
+    season:seasons(id, series, number, name)),
+  player:players(id, display_name),
+  result:results!hall_of_fame_entries_result_id_fkey(id, event_id, entry_id, placement_code,
+    entry:entries!results_entry_id_fkey(id, event_id, entry_type, display_name,
+      participants:entry_participants(id, event_id, entry_id, registration_id, player_id, member_order,
+        registration:event_registrations(id, event_id, player_id, final_submission_id,
+          final_submission:registration_submissions!fk_event_registration_final_submission(id, registration_id, snapshot_id,
+            snapshot:team_snapshots(members:team_snapshot_members(id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot))
+          )
+        )
+      )
+    )
+  )
+`;
+
 export async function fetchNormalizedChampionsHallOfFame() {
   if (!championsOperationsEnabled()) return [];
-  const hof = await rows(db().from("hall_of_fame_entries").select("id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note").order("generation_number", { ascending: false }), "명예의 전당을 불러오지 못했습니다.");
-  if (!hof.length) return [];
-  const eventIds = [...new Set(hof.map((row) => row.event_id).filter(Boolean))];
-  const playerIds = hof.map((row) => row.player_id).filter(Boolean);
-  const resultIds = hof.map((row) => row.result_id).filter(Boolean);
-  const [events, players, results, artworkLookup, pokemonDirectory] = await Promise.all([
-    rowsFor("events", "id, season_id, name, round_number, battle_format, competition_format, event_type, championship_phase", "id", eventIds, "명예의 전당 대회를 불러오지 못했습니다."),
-    rowsFor("players", "id, display_name", "id", playerIds, "명예의 전당 선수를 불러오지 못했습니다."),
-    rowsFor("results", "id, event_id, entry_id, placement_code", "id", resultIds, "명예의 전당 결과를 불러오지 못했습니다."),
+  const [hof, artworkLookup, pokemonDirectory] = await Promise.all([
+    rows(db().from("hall_of_fame_entries").select(HALL_OF_FAME_SELECT).order("generation_number", { ascending: false }), "명예의 전당을 불러오지 못했습니다."),
     loadHallOfFameArtworkLookup().catch(() => new Map()),
     loadRecordsPokemonDirectory().catch(() => new Map()),
   ]);
-  const seasonIds = [...new Set(events.map((row) => row.season_id).filter(Boolean))];
-  const entryIds = results.map((row) => row.entry_id).filter(Boolean);
-  const [seasons, entries, participants] = await Promise.all([
-    rowsFor("seasons", "id, series, number, name", "id", seasonIds, "명예의 전당 시즌을 불러오지 못했습니다."),
-    rowsFor("entries", "id, event_id, entry_type, display_name", "id", entryIds, "명예의 전당 출전 정보를 불러오지 못했습니다."),
-    rowsFor("entry_participants", "id, event_id, entry_id, registration_id, player_id, member_order", "entry_id", entryIds, "명예의 전당 출전 선수를 불러오지 못했습니다."),
-  ]);
-  const registrationIds = participants.map((row) => row.registration_id).filter(Boolean);
-  // The final submission and its members come embedded in the registration rows (one round trip, not three).
-  const registrations = await rowsFor(
-    "event_registrations",
-    `id, event_id, player_id, final_submission_id,
-     final_submission:registration_submissions!fk_event_registration_final_submission(
-       id, registration_id, snapshot_id,
-       snapshot:team_snapshots(members:team_snapshot_members(id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot))
-     )`,
-    "id", registrationIds, "명예의 전당 참가 신청을 불러오지 못했습니다."
-  );
-  const submissions = registrations.map((row) => row.final_submission).filter(Boolean);
-  const members = [...new Map(submissions.flatMap((row) => row.snapshot?.members || []).map((member) => [member.id, member])).values()];
-  const eventById = new Map(events.map((row) => [row.id, row]));
-  const seasonById = new Map(seasons.map((row) => [row.id, row]));
-  const playerById = new Map(players.map((row) => [row.id, row]));
-  const resultById = new Map(results.map((row) => [row.id, row]));
-  const entryById = new Map(entries.map((row) => [row.id, row]));
-  const registrationById = new Map(registrations.map((row) => [row.id, row]));
-  const submissionById = new Map(submissions.map((row) => [row.id, row]));
   return hof.map((row) => {
-    const event = eventById.get(row.event_id) || {};
-    const season = seasonById.get(event.season_id) || {};
+    const event = row.event || {};
+    const season = event.season || {};
     const normalized = isNormalizedChampionsHallOfFame(event);
-    const result = resultById.get(row.result_id) || {};
-    const entry = entryById.get(result.entry_id) || {};
-    const participantRows = participants.filter((item) => item.entry_id === result.entry_id).sort((a, b) => Number(a.member_order || 0) - Number(b.member_order || 0));
-    const party = participantRows.flatMap((participant) => {
-      const registration = registrationById.get(participant.registration_id);
-      const submission = submissionById.get(registration?.final_submission_id);
-      return buildChampionshipHallOfFameParty(
-        members.filter((member) => member.snapshot_id === submission?.snapshot_id),
-        pokemonDirectory,
-        artworkLookup,
-      );
-    });
+    const entry = row.result?.entry || {};
+    const participantRows = [...(entry.participants || [])].sort((a, b) => Number(a.member_order || 0) - Number(b.member_order || 0));
+    const party = participantRows.flatMap((participant) => buildChampionshipHallOfFameParty(
+      participant.registration?.final_submission?.snapshot?.members || [],
+      pokemonDirectory,
+      artworkLookup,
+    ));
     return {
       id: row.id,
       kind: normalized ? "normalized" : "legacy",
@@ -470,7 +450,7 @@ export async function fetchNormalizedChampionsHallOfFame() {
       gen: normalized ? normalizedChampionLabel(row.generation_number, event.battle_format) : (row.generation_label || `${row.generation_number}대`),
       season: season.number || event.round_number || row.generation_number,
       slabel: normalized ? normalizedSeasonLabel(season) : (season.name || ""),
-      name: playerById.get(row.player_id)?.display_name || "알 수 없는 선수",
+      name: row.player?.display_name || "알 수 없는 선수",
       team: party,
       format: event.battle_format || null,
       eventName: event.name || "",

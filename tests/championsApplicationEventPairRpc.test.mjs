@@ -82,8 +82,8 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
   const anonRpcs = new Set(["submit_registration_team_snapshot", "is_ypl_admin", "resolve_ypl_season_for_date"]);
   for (const statement of statements) {
     if (statement.startsWith("grant select ")) continue;
-    // A visitor's own notice alert: the table itself stays closed to anon (docs/db/announcement_push.sql).
-    if (/^grant execute on function public\.(save|delete)_push_subscription\(/.test(statement)) continue;
+    // A visitor's own notice alert and survey answer: the rows stay closed to anon (docs/db/announcement_push.sql, backend_hardening.sql).
+    if (/^grant execute on function public\.((save|delete)_push_subscription|submit_announcement_response)\(/.test(statement)) continue;
     const rpc = statement.match(/^grant execute on function ypl_schema_validation\.(\w+)\(/);
     if (rpc) { assert.ok(anonRpcs.has(rpc[1]), statement); continue; }
     assert.ok(

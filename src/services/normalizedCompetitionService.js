@@ -175,6 +175,15 @@ export async function fetchNormalizedSingleBracketRuntime(eventId, runtimeId = n
   return readNormalizedBracketRuntimeFacts(eventId, runtimeId);
 }
 
+// 관람 화면의 15초 확인용. 경기 사실이 그대로면 대진표 전체(7개 요청)를 다시 읽지 않는다.
+export async function readBracketMatchStamp(eventId) {
+  const { data, error } = await db().from("matches")
+    .select("id, entry_a_id, entry_b_id, winner_entry_id, winner_player_id, updated_at")
+    .eq("event_id", eventId).order("id");
+  if (error) fail(error, "대진표를 불러오지 못했습니다.");
+  return JSON.stringify(data || []);
+}
+
 export async function fetchNormalizedBracketRuntime(eventId, runtimeId = null) {
   return readNormalizedBracketRuntimeFacts(eventId, runtimeId);
 }
@@ -1164,6 +1173,7 @@ export async function submitEventApplication({
   const name = String(registrationName || "").trim();
   if (!eventId) throw new Error("이 신청서에 연결된 대회가 없습니다.");
   if (!name) throw new Error("참가자 이름을 입력해 주세요.");
+  if (name.length > 100) throw new Error("이름은 100자 안으로 입력해 주세요.");
 
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
@@ -1180,11 +1190,8 @@ export async function submitEventApplication({
 
   if (existingError) fail(existingError, "기존 신청 여부를 확인하지 못했습니다.");
 
-  if (existing) {
-    const duplicate = new Error("이미 신청된 참가자입니다.");
-    duplicate.code = "YPL_ALREADY_REGISTERED";
-    throw duplicate;
-  }
+  const duplicate = () => Object.assign(new Error("이미 신청된 참가자입니다."), { code: "YPL_ALREADY_REGISTERED" });
+  if (existing) throw duplicate();
 
   const now = new Date().toISOString();
 
@@ -1202,6 +1209,9 @@ export async function submitEventApplication({
     .select()
     .single();
 
+  // 위 확인과 저장 사이에 같은 이름이 먼저 들어온 경우다. DB의 고유 제약이 막는다.
+  if (error?.code === "23505") throw duplicate();
+  if (error?.code === "23514") throw new Error("신청 내용이 너무 길어 저장할 수 없습니다.");
   if (error) fail(error, "참가 신청을 저장하지 못했습니다.");
   return data;
 }

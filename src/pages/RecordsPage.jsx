@@ -85,7 +85,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
     }
 
     setNormalizedRead((current) => current.data && !current.error ? current : { ...current, loading: true, error: null });
-    freshRead("records", fetchNormalizedRecordsSnapshot)
+    freshRead("records", fetchNormalizedRecordsSnapshot, admin ? 0 : 60000)
       .then((next) => {
         if (!cancelled) setNormalizedRead((current) => current.data === next && !current.loading && !current.error ? current : { loading: false, data: next, error: null });
       })

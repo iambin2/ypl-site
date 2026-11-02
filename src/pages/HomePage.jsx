@@ -217,7 +217,7 @@ function Arena({ primary, go }) {
 /* ============================== HOME ==============================
    24차: 하얀 페이지와 네이비 한 색. 이름 없이 문장으로 시작해 슬랩에 봉인된 챔피언, 리그의 숫자, 갈 곳, 공지를 지나 아레나로 닫는다.
    첫 등장은 1초 안에: 제목이 솟고, 슬랩이 가운데부터 스프링으로 서고, 사선 면 하나가 가운데 슬랩을 지나간다. */
-export default function HomePage({ data, go }) {
+export default function HomePage({ data, go, admin }) {
   const [enter] = useState(firstHero);
   const hero = useRef(null);
   const [champions, setChampions] = useState(null), [counts, setCounts] = useState(null), [pop, setPop] = useState(null);
@@ -225,7 +225,7 @@ export default function HomePage({ data, go }) {
   useEffect(() => {
     let live = true;
     loadChampions(data).then(rows => { if (live) setChampions(rows); }).catch(error => { console.warn("home champions read failed", error); if (live) setChampions([]); });
-    loadCounts(data).then(next => { if (live) setCounts(next); }).catch(error => console.warn("home counts read failed", error));
+    loadCounts(data, admin).then(next => { if (live) setCounts(next); }).catch(error => console.warn("home counts read failed", error));
     return () => { live = false; };
   }, [data]);
 

@@ -1,4 +1,5 @@
 import { getData, setData } from "../storage.js";
+import { retryOnConflict } from "./revisionedRow.js";
 
 /* 방문자가 자유롭게 쓰는 공간(샘플과 파티 소개글, 사설 대진표)은 site_data 의 별도 행에 둔다.
    - 모든 화면이 받는 사이트 데이터 행에 섞지 않는다: 그 행은 매 방문마다 내려받고 512 KB 상한이 있다.
@@ -16,15 +17,18 @@ export async function readCommunity(key) {
   return listOf(await getData(key));
 }
 
-/* 저장 직전에 최신 목록을 다시 읽어 그 위에 바꾼다. 두 사람이 거의 동시에 쓰면 늦게 쓴 쪽이 이긴다.
-   ponytail: 행 하나를 통째로 덮어쓴다. 동시 작성이 잦아지면 행 단위 테이블과 RPC로 옮긴다. */
+/* 저장 직전에 최신 목록을 다시 읽어 그 위에 바꾼다. 두 사람이 거의 동시에 쓰면 뒤 사람이 앞 글 위에서 다시 쓴다.
+   ponytail: 행 하나를 통째로 쓴다. 방문자가 행 전체를 직접 지울 수 있다. 악의적인 사용이 생기면 행 단위 테이블과 RPC로 옮긴다. */
 export async function updateCommunity(key, mutate) {
-  const current = await readCommunity(key);
-  const next = mutate(current);
-  if (!Array.isArray(next)) throw new Error("저장할 목록이 올바르지 않습니다.");
-  const value = { items: next };
-  if (new Blob([JSON.stringify(value)]).size > COMMUNITY_MAX_BYTES) throw new Error("저장 공간이 가득 찼습니다. 관리자에게 오래된 글 정리를 요청해 주세요.");
-  if (!(await setData(key, value))) throw new Error("잠시 뒤 다시 시도해 주세요.");
+  let next;
+  const saved = await retryOnConflict(async () => {
+    next = mutate(await readCommunity(key));
+    if (!Array.isArray(next)) throw new Error("저장할 목록이 올바르지 않습니다.");
+    const value = { items: next };
+    if (new Blob([JSON.stringify(value)]).size > COMMUNITY_MAX_BYTES) throw new Error("저장 공간이 가득 찼습니다. 관리자에게 오래된 글 정리를 요청해 주세요.");
+    return setData(key, value);
+  });
+  if (saved !== true) throw new Error("잠시 뒤 다시 시도해 주세요.");
   return next;
 }
 

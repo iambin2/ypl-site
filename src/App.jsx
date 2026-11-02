@@ -1,7 +1,8 @@
 import React, { lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
-import { loadSiteData, saveSiteData } from "./services/siteDataService.js";
+import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
+import { WRITE_CONFLICT } from "./services/revisionedRow.js";
 import HomePage, { eventAction } from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
@@ -12,7 +13,7 @@ import Toaster from "./components/common/Toaster.jsx";
 import { reduced, themeFade, transition } from "./components/common/motion.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
-import { signOutAdmin } from "./storage.js";
+import { onAdminSessionLost, signOutAdmin } from "./storage.js";
 import LazyContent from "./components/common/LazyContent.jsx";
 import Loader from "./components/common/Loader.jsx";
 
@@ -55,7 +56,6 @@ const whenReady = (v, run) => { if (ready(v)) run(); else PAGES[v].preload().the
    YPL — Yonsei Pokemon League  (Matte, docs/redesign-glass/DECISIONS.md 23차)
    방문자 조회, 관리자 편집, window.storage(shared) 영구저장
    ========================================================================= */
-const uid = () => Math.random().toString(36).slice(2, 9);
 
 /* 저장된(Supabase) 데이터의 일부 텍스트를 최신 표기로 교정 — 로드 시 메모리에서 적용 */
 function normalizeData(d){
@@ -146,14 +146,24 @@ export default function App() {
     showBars();
   },[view]);
   const flash=useCallback((m)=>setToast({id:Date.now()+Math.random(),text:m}),[]);
-  const save=useCallback(async(next,doneMessage="저장했습니다.")=>{const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};setData(sanitized);const ok=await saveSiteData(sanitized);flash(ok?doneMessage:"저장하지 못해 이 화면에만 반영됐습니다.");return ok;},[flash]);
+  useEffect(()=>{ onAdminSessionLost(()=>{ setAdmin(false); flash("로그인이 만료되었습니다. 다시 로그인해 주세요."); }); },[flash]);
+  const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
+  const save=useCallback(async(next,doneMessage="저장했습니다.")=>{
+    const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};
+    setData(sanitized);
+    const saved=await saveSiteData(sanitized);
+    // 다른 운영자가 먼저 저장했다. 덮어쓰지 않고 최신 내용을 불러온다. 편집 창은 열린 채로 남아 다시 저장할 수 있다.
+    if(saved===WRITE_CONFLICT){ await refresh(); flash("다른 운영자가 먼저 저장해 최신 내용을 불러왔습니다. 다시 저장해 주세요."); return false; }
+    flash(saved?doneMessage:"저장하지 못해 이 화면에만 반영됐습니다.");
+    return saved;
+  },[flash,refresh]);
   const submitForm=useCallback(async(annId,payload)=>{
     const announcement=(data.announcements||[]).find(a=>a.id===annId);
     const form=announcement?.form||{};
     const answers=payload?.answers&&typeof payload.answers==="object"?payload.answers:payload;
 
-    if(form.eventId){
-      try{
+    try{
+      if(form.eventId){
         const { submitEventApplication } = await import("./services/normalizedCompetitionService.js");
         await submitEventApplication({
           eventId:form.eventId,
@@ -163,50 +173,17 @@ export default function App() {
             announcementId:annId,
           },
         });
-        flash("신청을 접수했습니다.");
-        return true;
-      }catch(error){
-        // 중복 신청, 마감 같은 이유는 신청서가 그대로 보여 준다. 재시도 안내로 덮지 않는다.
-        return error?.message||"신청을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
+      }else{
+        if(!(await submitAnnouncementResponse(annId,answers||{}))) return false;
+        await refresh();
       }
+      flash("신청을 접수했습니다.");
+      return true;
+    }catch(error){
+      // 중복 신청, 마감 같은 이유는 신청서가 그대로 보여 준다. 재시도 안내로 덮지 않는다.
+      return error?.message||"신청을 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
     }
-
-    // 기존 legacy 신청서는 기존 저장 방식을 유지한다.
-    // 동시 제출로 인한 응답 유실 방지:
-    // 최신 데이터를 다시 읽어 내 응답을 덧붙여 저장한 뒤, 저장 결과를 재확인.
-    // 다른 사람의 저장에 덮여 내 응답이 사라졌으면 자동으로 다시 시도한다.
-    const resp={id:uid(),createdAt:new Date().toISOString(),answers:answers||{}};
-    const attach=(base)=>{
-      const announcements=(base.announcements||[]).map(a=>{
-        if(a.id!==annId) return a;
-        const cur=((a.form||{}).responses)||[];
-        if(cur.some(r=>r.id===resp.id)) return a;
-        return {...a,form:{...(a.form||{}),responses:[...cur,resp]}};
-      });
-      return {...base,announcements};
-    };
-    let ok=false;
-    const hasMine=(d)=>{ const a=(d.announcements||[]).find(x=>x.id===annId); return (((a||{}).form||{}).responses||[]).some(r=>r.id===resp.id); };
-    for(let attempt=0;attempt<8;attempt++){
-      const fresh=normalizeData((await loadSiteData())||data);
-      const next=attach(fresh);
-      setData(next);
-      ok=await saveSiteData(next);
-      if(!ok) break;
-      // 저장 확인: 뒤늦게 남의 저장에 덮이는 경우까지 잡기 위해 두 번 연속 확인
-      await new Promise(r=>setTimeout(r,120+Math.random()*180));
-      const c1=normalizeData((await loadSiteData())||next);
-      if(hasMine(c1)){
-        await new Promise(r=>setTimeout(r,200+Math.random()*250));
-        const c2=normalizeData((await loadSiteData())||c1);
-        if(hasMine(c2)){ setData(c2); flash("신청을 접수했습니다."); return true; }
-      }
-      await new Promise(r=>setTimeout(r,150+Math.random()*400*(attempt+1))); // 랜덤 백오프로 동시 충돌 분산
-    }
-    flash(ok?"신청 저장을 확인하지 못했습니다. 다시 시도해 주세요.":"이 화면에만 반영됨");
-    return false;
-  },[data,flash]);
-  const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
+  },[data,flash,refresh]);
   const cta=useMemo(()=>data?eventAction(data.announcements):null,[data]);
   // 첫 화면이 그려지고 브라우저가 한가해지면 나머지 페이지 조각을 미리 받아 둔다. 첫 이동도 기다림 없이 전환된다.
   // 한 번에 하나씩, 앞 조각이 다 들어온 뒤 다음 한가한 틈에: 모두 한꺼번에 평가하면 폰에서 화면이 한동안 굳는다.

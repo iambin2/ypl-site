@@ -195,7 +195,7 @@ export function placePill(box, animate, target) {
     `translateX(${r - h}px) scaleY(${sy})`,
   ];
   pose(L, R).forEach((t, k) => { if (parts[k]) parts[k].style.transform = t; });
-  if (!animate || !from || parts.length < 3 || reduced() || typeof ind.animate !== "function") return;
+  if (!animate || !from || !h || parts.length < 3 || reduced() || typeof ind.animate !== "function") return;
   const [l0, r0] = from;
   if (Math.abs(l0 - L) < 0.5 && Math.abs(r0 - R) < 0.5) return;
   const right = L + R > l0 + r0;
