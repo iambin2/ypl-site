@@ -1,0 +1,50 @@
+/* =============================================================================
+   YPL Scoreboard: titles, hall of fame, about (TitlesPage.jsx, ChampionsPage.jsx, AboutPage.jsx, ChampionSheet.jsx).
+   Draft: docs/redesign-next c6-titles-hall-about. Generations as rows with the figure first, the current holder inverted;
+   the champion's party as six cells standing on their name bands; past champions as rows with their six small.
+   ========================================================================== */
+
+/* ---------- titles ---------- */
+.tt-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
+.tt-tabs { margin-top: var(--s8); }
+.tt-desc, .tt-add { margin-top: var(--s5); }
+.tt-rows { margin-top: var(--s3); }
+.tt-gen { display: flex; align-items: baseline; justify-content: center; gap: var(--s1); }
+.tt-rows .row-lead, .hof-row-gen { width: 64px; flex: none; }
+.tt-rows .row-value { padding-right: var(--pad); }
+.tt-off .row-main > b { color: var(--mute); }
+@media (min-width: 860px) { .tt, .hof, .about { max-width: 709px; } }
+
+/* ---------- hall of fame ---------- */
+.hof-desc { margin-top: var(--s2); }
+.hof-now { margin-top: var(--s5); display: grid; gap: var(--seam); }
+.hof-head { display: flex; align-items: center; width: 100%; height: var(--h-row2); text-align: left; }
+.hof-head > .tt-gen { width: 64px; flex: none; }
+.hof-who { display: grid; gap: var(--s1); min-width: 0; }
+.hof-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.hof-cell { --floor: var(--h-strip); aspect-ratio: 1; }
+.hof-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
+.hof-band { display: grid; place-items: center; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hof-actions { margin-top: var(--s5); }
+.hof-past { margin-top: var(--s13); }
+.hof-row { display: flex; align-items: center; width: 100%; padding: var(--pad) var(--pad) var(--pad) 0; text-align: left; }
+.hof-row-body { flex: 1; min-width: 0; display: grid; gap: var(--s2); }
+.hof-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); }
+.hof-minis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
+.hof-mini { --floor: 24%; height: var(--h-control); }
+.hof-mini .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+.hof-sheet-act { margin-top: var(--s5); }
+@media (min-width: 860px) { .hof-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+/* ---------- about ---------- */
+.ab-lede { margin-top: var(--s3); color: var(--dim); max-width: var(--read); }
+.ab-sec { margin-top: var(--s13); }
+.ab-list { margin: 0; padding: 0; list-style: none; }
+.ab-step { display: flex; align-items: flex-start; padding: var(--pad) var(--pad) var(--pad) 0; }
+.ab-n { width: var(--s13); flex: none; text-align: center; }
+.ab-step-body { display: grid; gap: var(--s1); min-width: 0; }
+.ab-go { justify-self: start; display: inline-flex; align-items: center; gap: var(--s1); min-height: var(--h-control); margin-block: calc(var(--s3) - (var(--h-control) - var(--l12)) / 2) calc((var(--h-control) - var(--l12)) / -2); font-weight: 700; color: var(--lit); }
+.ab-time { display: grid; grid-template-columns: calc(var(--s21) + var(--s3)) minmax(0, 1fr); gap: var(--s3); padding: var(--pad); }
+.ab-panel { display: grid; gap: var(--s1); padding: var(--pad); }
+.ab-panel .read { margin-top: var(--s1); color: var(--dim); }
+.ab-note { margin-bottom: var(--s3); }

@@ -217,7 +217,7 @@ export default function App() {
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
         moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null}/>
 
-      <div className="wrap"><main className={"page"+(view==="champions"?" page--full":"")+(data?"":" page--wait")} id="ypl-main" tabIndex={-1} key={view}>
+      <div className="wrap"><main className={"page"+(data?"":" page--wait")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}

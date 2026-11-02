@@ -1,8 +1,8 @@
 import React from "react";
-import { Icon, PageHead, SectionHead } from "../components/index.js";
+import { Icon } from "../components/index.js";
+import { SectionHead } from "../components/common/Board.jsx";
 import { formatDate } from "../services/dateFormat.js";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
-import Button from "../components/common/Button.jsx";
 
 const FLOW = [
   { t: "매월 파이컵", d: "정규 대회에 출전합니다." },
@@ -39,86 +39,85 @@ const LEAGUES = [
 ];
 const dateText = t => t.until ? `${formatDate(t.date)} – ${formatDate(t.until)}` : formatDate(t.date);
 
+/* 대회와 리그는 같은 모양: 이름, 성격을 말하는 회색 줄, 설명 한 줄 */
 function Comps({ items }) {
   return (
-    <div className="ab-comps">
-      {items.map((c, i) => (
-        <div key={c.name} className="ab-comp">
-          <div className="ab-comp-h"><b>{c.name}</b><span className="y-chip">{c.tag}</span></div>
-          <p>{c.desc}</p>
+    <div className="stack">
+      {items.map(c => (
+        <div key={c.name} className="pn ab-panel">
+          <b className="t15">{c.name}</b>
+          <span className="t12 dim">{c.tag}</span>
+          <p className="read">{c.desc}</p>
         </div>
       ))}
     </div>
   );
 }
 
-/* ============================== ABOUT ============================== */
+/* ============================== ABOUT ==============================
+   (docs/redesign-next c6, the third frame) 제목과 한 문단, 그다음 구획마다 20 제목과 패널 스택. 번호는 20의 숫자로 앞에 선다. */
 export default function AboutPage({ go }) {
-  return (<section className="sec about">
-    <PageHead plain="소개" desc="연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점, 줄여서 포센연에서 시작한 배틀 리그의 발자취입니다." />
+  return (<section className="about">
+    <h1 className="t32">소개</h1>
+    <p className="read ab-lede">연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점, 줄여서 포센연에서 시작한 배틀 리그의 발자취입니다.</p>
 
     {/* 디스코드에서 넘어온 사람의 첫 질문: 나도 나갈 수 있나. */}
-    <section className="ab-block" id="join">
-      <SectionHead plain="참가하는" silver="법" />
-      <ol className="ab-flow ab-join">
+    <section className="ab-sec" id="join" aria-labelledby="ab-join">
+      <SectionHead id="ab-join" title="참가하는 법" />
+      <ol className="stack ab-list">
         {JOIN.map((s, i) => (
-          <li key={s.t}>
-            <span className="ab-flow-n">{i + 1}</span>
-            <b>{s.t}</b>
-            <span>{s.d}</span>
-            {s.href ? <Button size="sm" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></Button>
-              : <Button type="button" size="sm" onClick={() => go?.(s.to)}>{s.cta}</Button>}
+          <li key={s.t} className="pn ab-step">
+            <span className="num t20 ab-n">{i + 1}</span>
+            <span className="ab-step-body">
+              <b className="t15">{s.t}</b>
+              <span className="t12 dim reg">{s.d}</span>
+              {s.href ? <a className="ab-go t12" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
+                : <button type="button" className="ab-go t12" onClick={() => go?.(s.to)}>{s.cta}<Icon n="arrow" size={16} /></button>}
+            </span>
           </li>
         ))}
       </ol>
     </section>
 
-    <section className="ab-block">
-      <SectionHead plain="시즌의" silver="흐름" />
-      <ol className="ab-flow">
+    <section className="ab-sec" aria-labelledby="ab-time">
+      <SectionHead id="ab-time" title="리그 연혁" />
+      <ol className="stack ab-list">
+        {TIMELINE.map(t => (
+          <li key={t.date} className="pn ab-time">
+            <time className="num t15">{dateText(t)}</time>
+            <span className="ab-step-body"><b className="t15">{t.title}</b><span className="t12 dim reg">{t.body}</span></span>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section className="ab-sec" aria-labelledby="ab-flow">
+      <SectionHead id="ab-flow" title="시즌의 흐름" />
+      <ol className="stack ab-list">
         {FLOW.map((s, i) => (
-          <li key={s.t} className={i === FLOW.length - 1 ? "last" : ""}>
-            <span className="ab-flow-n">{i + 1}</span>
-            <b>{s.t}</b>
-            <span>{s.d}</span>
+          <li key={s.t} className={"ab-step " + (i === FLOW.length - 1 ? "inv" : "pn")}>
+            <span className="num t20 ab-n">{i + 1}</span>
+            <span className="ab-step-body"><b className="t15">{s.t}</b><span className="t12 dim reg">{s.d}</span></span>
           </li>
         ))}
       </ol>
     </section>
 
-    <section className="ab-block">
-      <SectionHead plain="YPL의" silver="기록" />
-      <div className="ab-records">
-        {RECORDS.map((r, i) => (
-          <div key={r.t} className="ab-rec">
-            <b>{r.t}</b>
-            <p>{r.d}</p>
-          </div>
-        ))}
+    <section className="ab-sec" aria-labelledby="ab-rec">
+      <SectionHead id="ab-rec" title="YPL의 기록" />
+      <div className="stack">
+        {RECORDS.map(r => <div key={r.t} className="pn ab-panel"><b className="t15">{r.t}</b><p className="read">{r.d}</p></div>)}
       </div>
     </section>
 
-    <section className="ab-block">
-      <SectionHead plain="리그" silver="연혁" />
-      <ol className="ab-timeline">
-        {TIMELINE.map((t, i) => (
-          <li key={t.date}>
-            <b>{t.title}</b>
-            <time className="tnum">{dateText(t)}</time>
-            <p>{t.body}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
-
-    <section className="ab-block">
-      <SectionHead plain="세 가지" silver="대회" />
+    <section className="ab-sec" aria-labelledby="ab-comps">
+      <SectionHead id="ab-comps" title="세 가지 대회" />
       <Comps items={COMPS} />
     </section>
 
-    <section className="ab-block">
-      <SectionHead plain="정규" silver="리그" />
-      <p className="ab-lead">2025년 6월부터 YPL은 두 개의 정규 리그로 운영됩니다.</p>
+    <section className="ab-sec" aria-labelledby="ab-leagues">
+      <SectionHead id="ab-leagues" title="정규 리그" />
+      <p className="t12 dim reg ab-note">2025년 6월부터 YPL은 두 개의 정규 리그로 운영됩니다.</p>
       <Comps items={LEAGUES} />
     </section>
   </section>);

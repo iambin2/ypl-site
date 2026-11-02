@@ -1,72 +1,10 @@
-/* =============================================================================
-   YPL Navy — records: trainers, tournament archive, Pokémon usage, rankings
-   A trainer or a Pokémon opens as a sheet (N3). Rankings lead with one hero card,
-   the next two side by side, then the table (M1, M2).
-   ========================================================================== */
 
-.records-read-state {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap;
-  padding: var(--s3) var(--s5); background: var(--state-hover);
-  font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary);
-}
-
-/* ---------- the profile sheet: on a sheet, the cards become tiles of the same tone ---------- */
-.rc-sheet .rc-lead-who { padding-right: var(--s13); }
-.rc-sheet .rc-lead-head { grid-template-columns: minmax(0, 1fr); }
-.sheet .rc-lead { padding: 0; background: none; box-shadow: none; border-radius: 0; overflow: visible; }
 .sheet .ypl-group { background: var(--state-hover); box-shadow: none; padding: var(--s1); }
 /* a long history below the sheet's fold costs nothing while the sheet opens */
 .sheet .ypl-group > li { content-visibility: auto; contain-intrinsic-size: auto 60px; }
 .sheet .ypl-row { }
 .sheet .ypl-empty { padding-block: var(--s8); }
-
-/* ---------- lead: the hero card with a score and tiles ---------- */
-.rc-lead-who { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); }
-.rc-lead-head { display: grid; gap: var(--s5); }
-.rc-lead-name { display: block; }
-.rc-lead-title.tied { font-size: var(--fs-h2); line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-.rc-lead-title.tied .rc-lead-name { display: inline; }
-.rc-lead-sub { font-size: var(--fs-body); color: var(--text-secondary); }
-.rc-lead-figs { position: relative; display: grid; gap: var(--s5); }
-.rc-poster { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); }
-.rc-poster-label { font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption); color: var(--text-secondary); }
-.rc-poster-fig { display: inline-flex; align-items: baseline; white-space: nowrap; }
-.rc-poster-num { font-size: var(--fig-m); font-weight: 700; line-height: 1; letter-spacing: var(--ls-title); font-variant-numeric: tabular-nums; }
-.rc-poster-num .roll { line-height: var(--lh-title); }
-.rc-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: var(--s2); }
-.rc-facts.rows { grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--s1) 0; background: var(--surface-raised); }
-.rc-facts.rows > div { flex-direction: row; align-items: baseline; justify-content: space-between; gap: var(--s5); padding: var(--s3) var(--s5); background: none; }
-.rc-facts.rows dt { flex: none; font-size: var(--fs-caption); }
-.rc-facts.rows dd { font-size: var(--fs-body); font-weight: 600; text-align: right; }
-.sheet .rc-facts.rows { background: var(--state-hover); }
-.rc-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--s1); padding: var(--s3) var(--s5); background: var(--surface-raised); }
-.sheet .rc-facts > div { background: var(--state-hover); }
-.sheet .rc-facts.rows > div { background: none; }
-@media (max-width: 639px) {
-  .sheet .rc-facts:not(.rows) > div { padding-inline: var(--s3);}
-}
-.rc-facts dt { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
-.rc-facts dd { margin: 0; font-size: var(--fs-lead); letter-spacing: var(--ls-lead); font-weight: 700; line-height: var(--lh-lead); white-space: nowrap; }
-.rc-facts dd .unit { letter-spacing: 0; }
-.rc-lead-note { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-secondary); }
-.rc-lead-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.rc-lead-cta { justify-self: stretch; }
-@media (min-width: 640px) {
-  .rc-lead-head { grid-template-columns: minmax(0, 1fr) 220px; align-items: end;}
-  .rc-lead-cta { justify-self: start;}
-}
-@media (min-width: 1100px) {
-  .rc-poster-num { font-size: var(--fig-l); letter-spacing: var(--ls-display);}
-  .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s8);}
-  .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));}
-  .sheet .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));}
-  .rc-facts.rows { width: min(100%, 356px); justify-self: start;}
-}
 .sheet .pager { margin-top: var(--s3); }
-.rc-mon-lead .rc-facts:not(.rows) { grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 640px) {
-  .rc-mon-lead .rc-lead-figs { grid-template-columns: minmax(0, 1fr);}
-}
 
 /* 이름 링크: 글자 그대로, 누를 수 있다는 것은 호버의 밑줄로만 알린다(무채색, 같은 종류는 같은 반응). */
 .rc-name-link { position: relative; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; text-align: inherit; cursor: pointer; }

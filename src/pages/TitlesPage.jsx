@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Icon, PageHead, Segmented } from "../components/index.js";
-import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
+import { Row, TabsLine } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
-import Case from "../components/common/Case.jsx";
+import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
 
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
 function shortName(name, key) {
@@ -12,17 +11,17 @@ function shortName(name, key) {
 }
 
 /* ============================== TITLES ==============================
-   분류는 세그먼트, 고른 분류는 리드 카드(달성 수가 실버 점수) 아래 매트 목록. */
+   (DESIGN.md "Titles and hall of fame", docs/redesign-next c6) 분류는 페이지 탭, 칭호는 줄이다.
+   역대 챔피언은 세대를 숫자로 앞에 세우고 현 챔피언의 줄만 반전된다. 주인이 없는 칭호는 흐린 줄로 미달성을 말한다. */
 export default function TitlesPage({ data, admin, setModal, go }) {
   const groups = data.titleGroups || [];
   const [openKey, setOpenKey] = useState(groups.length ? groups[0].key : null);
   const g = groups.find(x => x.key === openKey) || groups[0];
 
   const genOf = name => generationText(name);
-  const shortSeason = displaySeasonLabel;
   const championSeason = name => {
     const c = (data.champions || []).find(x => genOf(x.gen) === genOf(name));
-    return c ? shortSeason(c.slabel || ("시즌 " + c.season)) : "";
+    return c ? displaySeasonLabel(c.slabel || ("시즌 " + c.season)) : "";
   };
   const lastGen = (() => {
     const sorted = [...(data.champions || [])].sort((a, b) => (a.season || 0) - (b.season || 0));
@@ -31,48 +30,38 @@ export default function TitlesPage({ data, admin, setModal, go }) {
 
   const items = g ? (g.items || []) : [];
   const done = items.filter(it => (it.holders || []).length > 0).length;
-  const rate = g && (g.key === "type" || g.key === "region" || g.key === "champion");
-  const edit = it => admin ? () => setModal({ type: "title", groupKey: g.key, item: it }) : undefined;
-  // 보유자 이름을 누르면 그 트레이너의 기록 시트가 열린다. 관리자 모드에서는 행 전체가 편집 버튼이라 글자로 둔다.
+  const champion = g?.key === "champion";
+  const rows = champion ? [...items].sort((a, b) => (parseInt(genOf(b.name)) || 0) - (parseInt(genOf(a.name)) || 0)) : items;
+  // 보유자 이름을 누르면 그 트레이너의 기록 시트가 열린다. 관리자 모드에서는 줄 전체가 편집 버튼이라 글자로 둔다.
   const who = name => admin || !go ? name
     : <button type="button" className="rc-name-link" onClick={() => go("records", { trainer: name })}>{name}</button>;
   const whoList = names => names.map((name, i) => <React.Fragment key={name + i}>{i > 0 && ", "}{who(name)}</React.Fragment>);
 
-  return (<section className="sec">
-    <PageHead plain="칭호" desc="특정 조건을 달성한 트레이너에게 주는 명예의 기록입니다." />
+  return (<section className="tt">
+    <header className="tt-head"><h1 className="t32">칭호</h1>{g && <span className="t12 dim">{items.length}개 중 {done}개에 주인</span>}</header>
+    {groups.length > 1 && <div className="tt-tabs"><TabsLine value={g?.key} onChange={setOpenKey} label="칭호 분류" options={groups.map(x => [x.key, x.name])} /></div>}
 
-    {groups.length > 1 && <Segmented className="tt-seg" value={g?.key} onChange={setOpenKey} ariaLabel="칭호 분류"
-      options={groups.map(x => [x.key, x.name])} />}
-
-    {g && <div className="tt-view">
-      <section className="rc-lead" aria-labelledby="tt-group-name">
-        {/* 숫자를 늘어놓는 장식 칸 대신 이 분류가 무엇인지와 얼마나 채워졌는지를 한 문장으로 */}
-        <div className="rc-lead-who">
-          <h2 className="rc-lead-title tt-cond" id="tt-group-name">{g.desc || g.name}</h2>
-          <span className="caption">{rate ? `칭호 ${items.length}개 중 ${done}개에 주인이 있습니다.` : `칭호 ${items.length}개`}</span>
-        </div>
-        {admin && <Button size="sm" className="tt-add"
-          onClick={() => setModal({ type: "title", groupKey: g.key })}>
-          <Icon n="plus" size={16} />칭호 추가
-        </Button>}
-      </section>
-
-      <ul className="case-grid sm swap" key={g.key}>
-        {items.map(it => {
+    {g && <div className="swap" key={g.key}>
+      {g.desc && <p className="t12 dim reg tt-desc">{g.desc}</p>}
+      {admin && <div className="tt-add"><Button variant="second" onClick={() => setModal({ type: "title", groupKey: g.key })}>칭호 추가</Button></div>}
+      <div className="stack tt-rows">
+        {rows.map(it => {
           const holders = it.holders || [];
-          const champion = g.key === "champion";
-          const gen = champion ? genOf(it.name) : "";
-          const season = champion ? championSeason(it.name) : "";
-          return (
-            <li key={it.id}>
-              <Case title={champion ? `${gen} 챔피언` : shortName(it.name, g.key)} line={champion ? [season && `${season} 우승`, gen === lastGen && "현 챔피언"].filter(Boolean).join(", ") : null}
-                off={!holders.length} onClick={edit(it)} label={admin ? `${it.name} 수정` : undefined}>
-                <span className="tt-holders">{holders.length ? whoList(holders) : "미달성"}</span>
-              </Case>
-            </li>
-          );
+          const edit = admin ? () => setModal({ type: "title", groupKey: g.key, item: it }) : undefined;
+          if (champion) {
+            const gen = genOf(it.name), n = parseInt(gen) || null, season = championSeason(it.name), reigning = gen === lastGen;
+            const name = holders.join(", ");
+            return <Row key={it.id} className={"row--2" + (reigning ? " inv" : "")}
+              lead={<span className="tt-gen"><span className="num t20">{n ?? gen}</span>{n && <span className="t12 dim">대</span>}</span>}
+              title={name || "미달성"} line={season ? `${season} 우승` : undefined}
+              value={reigning ? <span className="t12">현 챔피언</span> : undefined}
+              onClick={edit || (!admin && go && holders.length === 1 ? () => go("records", { trainer: holders[0] }) : undefined)}
+              label={`${gen} 챔피언 ${name}`} />;
+          }
+          return <Row key={it.id} className={"row--2" + (holders.length ? "" : " tt-off")} title={shortName(it.name, g.key)}
+            line={holders.length ? whoList(holders) : "미달성"} onClick={edit} label={admin ? `${it.name} 수정` : undefined} />;
         })}
-      </ul>
+      </div>
     </div>}
   </section>);
 }

@@ -11,7 +11,6 @@ export { SiteDialogHost, siteAlert, siteConfirm, sitePrompt } from "./common/Sit
 export { default as Pager } from "./common/Pager.jsx";
 export { default as Prose } from "./common/Prose.jsx";
 export { default as Roll } from "./common/Roll.jsx";
-export { Poster, Facts } from "./common/LeadFigures.jsx";
 export { default as Segmented } from "./common/Segmented.jsx";
 export { default as PageHead, SectionHead } from "./common/PageHead.jsx";
 export { default as StandTable, rankRows } from "./common/StandTable.jsx";

@@ -1,67 +1,4 @@
-/* =============================================================================
-   YPL — pages: about, news, board, titles, hall of fame, forms
-   ========================================================================== */
 
-/* the hall of fame borrows these from the old home */
-.hm-wrap { width: min(100% - var(--gutter) * 2, var(--content)); margin-inline: auto; }
-.hm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s8); }
-.hm-actions .btn:not(.btn--inverse) { --btn-fg: var(--on-bar); }
-
-/* the hall's cover and the sheets share these */
-.hm-cover { --edge: max(var(--gutter), calc((100cqw - var(--content)) / 2)); padding-block: var(--s13); background: var(--bar); color: var(--on-bar); }
-.hm-cover h1 { margin-block: var(--trim); font-size: var(--display); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-.hm-party { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s5) var(--s2); }
-.hm-party li { display: flex; flex-direction: column; gap: var(--s2); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; text-align: center; }
-.hm-tile { display: block; aspect-ratio: 1; padding: var(--s2); background: var(--window); }
-.hm-tile img { width: 100%; height: 100%; object-fit: contain; }
-
-
-/* =========================== ABOUT ===========================
-   An ordinary document whose sections rise once as they first appear (N7, J1). */
-.ab-block { min-width: 0; }
-.ab-lead { margin: 0 0 var(--s5); color: var(--text-secondary); }
-.ab-records, .ab-timeline, .ab-comps { list-style: none; margin: 0; padding: 0; }
-
-.ab-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
-.ab-flow li { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; column-gap: var(--s3); row-gap: var(--s1); padding: var(--pad); background: var(--surface); }
-.ab-flow-n, .ab-flow b { font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-lead); letter-spacing: var(--ls-lead); }
-.ab-flow-n { grid-row: span 3; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
-.ab-flow li > :not(.ab-flow-n) { grid-column: 2; }
-/* the last step, the season champion, is marked by brightness alone (B4): a large inverse tile under the clear tab bar would hide its labels */
-.ab-flow li.last .ab-flow-n { color: var(--text-primary); }
-.ab-flow li > span:not(.ab-flow-n) { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-.ab-flow .btn { justify-self: start; margin-top: var(--s5); }
-.ab-join { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (min-width: 1100px) { .ab-flow { gap: var(--s5); } .ab-flow li > span:not(.ab-flow-n) { font-size: var(--fs-body); } }
-
-.ab-rec { padding: var(--s5); }
-.ab-rec b { font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); }
-.ab-rec p { margin-top: var(--s1); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-
-/* the event first, its date on the grey line under it, then the story */
-.ab-timeline li { display: grid; gap: var(--s1); padding: var(--s5); }
-.ab-timeline b { font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); }
-.ab-timeline time { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
-.ab-timeline p { margin-top: var(--s1); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-
-.ab-comp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); gap: var(--s3) var(--s8); align-items: baseline; padding: var(--s5); }
-.ab-comp-h { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
-.ab-comp-h b { font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-lead); letter-spacing: var(--ls-lead); }
-.ab-comp p { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-@media (min-width: 1100px) { .ab-comp-h b { font-size: var(--fs-h3); letter-spacing: var(--ls-h3); } .ab-comp p { font-size: var(--fs-body); } }
-
-
-@media (max-width: 1099px) {
-  .ab-flow:not(.ab-join) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ab-comp { grid-template-columns: 1fr; gap: var(--s2); }
-}
-/* 폰: 한 문장짜리 단계가 카드 한 장씩 화면을 차지하지 않게, 단계들을 카드 하나 안의 번호 목록으로 묶는다. */
-@media (max-width: 639px) {
-  .ab-block .ab-flow { grid-template-columns: 1fr; gap: 0; padding: 0; background: var(--surface); }
-  .ab-flow li { padding: var(--s5); background: none; box-shadow: none; }
-  .ab-flow-n, .ab-flow b { font-size: var(--fs-body); letter-spacing: 0; }
-  .ab-flow .btn { margin-top: var(--s2); }
-}
 
 /* =========================== NEWS ===========================
    A list card; a title opens the notice on its own screen and flies into place (I2).
@@ -74,7 +11,8 @@
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); height: 44px; padding: 0 var(--s3) 0 var(--s2);
   margin: 0 0 var(--s5) calc(var(--s2) * -1); font-size: var(--fs-body); line-height: 1; font-weight: 600; color: var(--text-secondary); width: fit-content;
 }
-@media (hover: hover) { .nb-back:hover { color: var(--text-primary); background: var(--state-hover); } }
+@media (hover: hover) { .nb-back:hover { color: var(--text-primary); background: var(--state-hover); }
+}
 .nb-a-head { gap: var(--s2); margin-bottom: var(--s8); }
 .ypl-head .nb-back { margin-block: calc(var(--s3) * -1) var(--s2); }
 .bk-t-head .nb-back { margin-bottom: calc(var(--s2) - var(--s5)); }
@@ -113,7 +51,8 @@
 .pr-vtext { min-width: 0; font-weight: 600; word-break: break-word; }
 .pr-foot { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); font-size: var(--fs-caption); color: var(--text-tertiary); }
 .pr-refresh { width: 44px; height: 44px; display: grid; place-items: center; color: var(--text-secondary); transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
-@media (hover: hover) { .pr-refresh:hover { color: var(--text-primary); } }
+@media (hover: hover) { .pr-refresh:hover { color: var(--text-primary); }
+}
 .pr-empty { padding: var(--s5) 0; font-size: var(--fs-body); color: var(--text-secondary); }
 .pr-wrap.compact { margin: 0 0 var(--s5); }
 
@@ -129,7 +68,8 @@
 .fr-idx { color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .fr-dt { white-space: nowrap; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .fr-del { width: 44px; height: 44px; display: grid; place-items: center; color: var(--text-secondary); transition: scale var(--move-press), color var(--move-tone); }
-@media (hover: hover) { .fr-del:hover { color: var(--text-primary); } }
+@media (hover: hover) { .fr-del:hover { color: var(--text-primary); }
+}
 .fr-empty { padding: var(--s8) var(--s5); color: var(--text-tertiary); }
 
 /* =========================== BOARD ===========================
@@ -151,7 +91,8 @@
 .bd-img img { max-height: 576px; width: auto; }
 .bd-tools { display: flex; justify-content: flex-end; gap: var(--s1); margin-top: var(--s3); }
 .bd-del { height: 44px; padding: 0 var(--s3); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
-@media (hover: hover) { .bd-del:hover { background: var(--state-selected); color: var(--text-primary); } }
+@media (hover: hover) { .bd-del:hover { background: var(--state-selected); color: var(--text-primary); }
+}
 .bd-del.sm { height: 32px; margin-left: auto; padding: 0 var(--s2); }
 .bd-del.sm + .bd-del.sm { margin-left: 0; }
 .bd-cmts { margin-top: var(--s3); padding: var(--pad); }
@@ -168,36 +109,13 @@
 .bd-cform-row .btn { flex: none; height: 52px; }
 .bd-preview { margin-top: var(--s3); padding: var(--s3) var(--s5); background: var(--state-hover); }
 .bd-preview-h { margin-bottom: var(--s1); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); }
-@media (max-width: 639px) { .bd-cform-pin { flex-basis: 136px; } }
+@media (max-width: 639px) { .bd-cform-pin { flex-basis: 136px; }
+}
 
 /* =========================== TITLES ===========================
    A segmented row of groups, the group's hero card (achieved count as the one big number),
    then its titles as one list. Titles without a holder sit dimmed. */
 /* a control sits 20 above the content it drives (records tabs, titles groups, builder steps) */
-.tt-seg, .records-main-tabs { margin-bottom: calc(var(--s5) - var(--section)); }
-.tt-seg { align-self: flex-start; }
-.tt-view { display: grid; gap: var(--s5); }
-.rc-lead-title.tt-cond { font-size: var(--fs-h2); line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-.tt-add { justify-self: start; }
-.tt-row { grid-template-columns: minmax(84px, 136px) minmax(0, 1fr); }
-.tt-who { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-.tt-off > * { opacity: var(--opacity-disabled); }
-
-/* ======================= HALL OF FAME =======================
-   Every champion is the same case. The reigning one stands large on the home's navy cover, the rest hang on the white page. */
-.hm-cover.hof-cover { display: grid; padding: 0; }
-.hof-lead { display: flex; flex-direction: column; gap: var(--s8); padding: var(--s8) var(--gutter); }
-.hof-cover .case-win { background: var(--bar-up); }
-.hof-desc { margin-top: calc(var(--s5) + var(--trim) - var(--s8)); margin-bottom: auto; color: var(--on-bar-2); }
-.hof-lead .hm-actions { margin-top: var(--s8); }
-.hof-past { padding-block: var(--section) var(--chapter); }
-.hof-cover .case-who b { font-size: var(--title); line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-.hof-past .headline { font-size: var(--title); line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-.hof-admin { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s5); }
-@media (min-width: 860px) {
-  .hm-cover.hof-cover { grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); }
-  .hof-lead { padding: var(--s13) var(--s13) var(--s13) var(--edge); }
-}
 
 /* =========================== BOARD: SAMPLES AND PARTIES ===========================
    The board's three tabs share one head. A party is a tile whose sprites stand on the pod; a sample is the board row with
@@ -208,7 +126,8 @@
 .sc-sprites.big { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
 .sc-sprites.big img { width: 100%; height: auto; aspect-ratio: 1; background: var(--pod); }
 .sc-grid:has(> .ypl-empty) { display: block; }
-@media (min-width: 860px) { .sc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 860px) { .sc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .sc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s5); }
 .sc-actions .bd-del { margin-left: auto; }
 .sc-actions .bd-del + .bd-del { margin-left: 0; }
@@ -222,8 +141,10 @@
   .sc-post.split > .bd-cmts { grid-area: cmts; margin-top: 0; }
 }
 .sc-sheet { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--grid-gap); }
-@media (min-width: 860px) { .sc-sheet.multi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .sc-sheet.multi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 860px) { .sc-sheet.multi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) { .sc-sheet.multi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .sc-sheet:not(.multi) { max-width: var(--sheet-w); }
 .sc-mon { display: flex; flex-direction: column; }
 .sc-win { display: flex; flex-direction: column; align-items: center; gap: var(--s3); height: auto; padding: var(--s5); }
@@ -254,7 +175,8 @@
 .sc-moves li b::before { content: ""; width: 4px; height: 12px; transform: skewX(-12deg); flex: none; background: var(--type, var(--text-tertiary)); }
 .sc-pick { list-style: none; display: flex; flex-direction: column; gap: var(--s1); padding: 0; }
 .sc-pick-row { display: flex; flex-direction: column; align-items: stretch; gap: var(--s2); width: 100%; padding: var(--s3); background: transparent; text-align: left; color: inherit; transition: scale var(--move-press), background-color var(--move-tone); }
-@media (hover: hover) { .sc-pick-row:hover { background: var(--state-hover); } }
+@media (hover: hover) { .sc-pick-row:hover { background: var(--state-hover); }
+}
 .sc-pick-main { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
 .sc-pick-main b { font-size: var(--fs-body); font-weight: 600; }
 .sc-pick-main small { font-size: var(--fs-caption); color: var(--text-tertiary); }
@@ -265,7 +187,3 @@
 .sc-choose-mon span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-choose-mon.on { background: var(--accent); color: var(--text-on-accent); }
 .tb-share-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--s2); margin-top: var(--s3); }
-
-/* titles: every title is a case with its holder in the window; an empty one takes the frame's tone */
-.tt-holders { font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-lead); letter-spacing: var(--ls-lead); overflow-wrap: anywhere; }
-.case.off .tt-holders { font-size: var(--fs-body); font-weight: 600; letter-spacing: var(--ls-body); }
