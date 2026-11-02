@@ -241,6 +241,7 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
     <div className="swap" key="fill">
       {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
       {form.eventId&&<div className="ff-q"><label className="ff-q-label" htmlFor="ff-name">참가자 이름<span className="req">*</span></label><input id="ff-name" aria-required="true" type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/></div>}
+      {form.eventDraft?.division==="both"&&<p className="bk-hint">루키와 마스터를 함께 접수합니다. 개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
       {fields.length===0&&!form.eventId&&<p className="bk-hint">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
         <label className="ff-q-label" htmlFor={`ff-${f.id}`}>{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
@@ -256,23 +257,26 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
 }
 function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onResetPin }){
   const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const resp=[...(normalized?responsesOverride:(form.responses||[]))].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const unified=normalized&&form.eventDraft?.division==="both";
+  const divisionLabel=r=>r.division==="master"?"마스터":r.division==="rookie"?"루키":"확인 필요";
   const cell=(v)=>Array.isArray(v)?v.join(", "):(v==null?"":String(v));
   const csv=()=>{
     const esc=(s)=>{ s=String(s==null?"":s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
-    const header=["번호","제출 시각",...(normalized?["참가자 이름"]:[]),...fields.map(f=>f.label||"질문")];
-    const rows=resp.map((r,i)=>[i+1,fmtDT(r.createdAt),...(normalized?[r.registrationName||""]:[]),...fields.map(f=>cell(r.answers&&r.answers[f.id]))]);
+    const header=["번호","제출 시각",...(normalized?["참가자 이름"]:[]),...(unified?["리그"]:[]),...fields.map(f=>f.label||"질문")];
+    const rows=resp.map((r,i)=>[i+1,fmtDT(r.createdAt),...(normalized?[r.registrationName||""]:[]),...(unified?[divisionLabel(r)]:[]),...fields.map(f=>cell(r.answers&&r.answers[f.id]))]);
     const text="\ufeff"+[header,...rows].map(row=>row.map(esc).join(",")).join("\r\n");
     const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
   return (<Modal title="신청 응답" hint={ann.title} onClose={onClose}>
     <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<Button size="sm" onClick={csv}><Icon n="download" size={16}/>CSV(엑셀) 내려받기</Button>}</div>
+    {unified&&<p className="bk-hint">마스터 {resp.filter(row=>row.division==="master").length}명, 루키 {resp.filter(row=>row.division==="rookie").length}명</p>}
     {resp.length===0?<div className="fr-empty">아직 접수된 신청이 없습니다.</div>:
       <div className="fr-scroll"><table className="fr-tbl">
-        <thead><tr><th>#</th><th>제출 시각</th>{normalized&&<th>참가자 이름</th>}{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
+        <thead><tr><th>#</th><th>제출 시각</th>{normalized&&<th>참가자 이름</th>}{unified&&<th>리그</th>}{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
         <tbody>{resp.map((r,i)=>(<tr key={r.id}>
           <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
-          {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
+          {normalized&&<td>{r.registrationName||""}</td>}{unified&&<td>{divisionLabel(r)}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
           <td>{onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(r)}>비밀번호 초기화</button>}{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={16}/></button>}</td>
         </tr>))}</tbody>
       </table></div>}

@@ -81,6 +81,14 @@ historical bracket은 winner 변경, participant/party 변경, delete, record ap
 - 기존 Event 수정은 기존 `season_id`와 `round_number`를 유지한다.
 - Event가 completed 또는 record-applied이면 official submission write를 막는다.
 
+### 루키와 마스터 통합 접수 (추가 DB 스크립트 적용 시)
+
+`league_intakes`는 하나의 공지와 Rookie/Master Event 두 개를 묶는다. 공지는 함께 접수하고 대진표 생성에서 리그를 선택한다. Registration, official submission, runtime, Result, RankingAward 및 기록 완료 상태는 여전히 각 Event가 소유한다. 신규 팀전은 Master로 고정하며 역사 Light 팀전은 보존한다.
+
+개인 Master 참가 또는 개인 Rookie/Light champion 이력으로 개인 Master 자격을 판정한다. 팀전은 자격 근거에서 제외한다. DB가 신청 destination과 양쪽 중복을 검사하고 EntryParticipant 생성 때 재검사한다. 공통 파티 제출 경로는 실제 Registration 소유 Event로 연결하고 Submission/final pointer를 복사하지 않는다. 양쪽 후속 사실 검사와 공지 삭제는 원자적 DB 처리다.
+
+`docs/db/league_intake.sql`을 운영 DB에 먼저 적용한 다음 프런트엔드를 배포한다. 이 확장은 아직 운영에 적용하지 않았다. 전환 제약, 적용 순서와 검증은 `docs/LEAGUE_INTAKE.md`를 따른다.
+
 ### Official submission
 
 공식 파티는 mutable Team Builder draft가 아니라 immutable revision chain이다.

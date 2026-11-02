@@ -247,6 +247,7 @@ export default function App() {
         data={data}
         setModal={setModal}
         save={save}
+        refresh={refresh}
         setAdmin={setAdmin}
         flash={flash}
       /></LazyContent>}
