@@ -40,7 +40,7 @@ function currentSeason(snapshot, data, rankRows) {
 
 /* 기록 화면의 스냅숏을 같은 캐시로 읽는다. 공식 기록을 못 읽으면 기록 화면처럼 기존 기록으로 센다.
    사실 몇 개를 위해 요청 11개가 나가므로, 다시 찾은 방문자는 6시간 안의 값을 쓴다. 대회가 끝나야 바뀌는 사실이다. */
-const FACTS_KEY = "ypl-home-facts";
+const FACTS_KEY = "ypl-home-facts-2";
 const FACTS_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const RECORDS_MAX_AGE_MS = 60 * 1000;
 
@@ -69,6 +69,7 @@ export async function loadFacts(data, admin = false) {
     latest: latest ? { winner: latest.win, name: latest.eventName || recordRoundTitle(latest.tournamentName, latest.round) } : null,
     first: dated[dated.length - 1]?.date || "",
     season: currentSeason(snapshot, data, rankRows),
+    seasons: (snapshot.ranking?.seasons || data.seasons || []).length,
   };
   // 공식 기록을 읽었을 때만 기억한다. 대체 집계가 6시간 남아 있으면 안 된다.
   if (raw) {

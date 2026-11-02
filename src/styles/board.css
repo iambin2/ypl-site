@@ -1,0 +1,57 @@
+/* =============================================================================
+   YPL Scoreboard: the shared parts (Board.jsx, Button.jsx main and link). DESIGN.md is the authority; docs/redesign-next/c-core.css
+   and c-kit.css are the drafts these were taken from. Panels, lamps and displays themselves live in tokens.css.
+   ========================================================================== */
+
+.reg { font-weight: 400; }
+
+/* ---------- a section: the title (20) and its link stand 12 above the stack ---------- */
+.sh { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); margin-bottom: var(--s3); }
+.sh-link { flex: none; font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: var(--hair); }
+@media (hover: hover) { .sh-link:hover { color: var(--lit); } }
+
+/* ---------- a counter: label 12 on top, a 40 display under it, 84 tall ---------- */
+.counter { height: var(--h-counter); padding: var(--pad); display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; }
+
+/* ---------- a row of a stack: 52, or 64 with a grey line; the record holder inverts ---------- */
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; width: 100%; height: var(--h-row); text-align: left; }
+.row--2 { height: var(--h-row2); }
+.row-main { display: grid; gap: var(--s1); min-width: 0; padding-right: var(--s3); }
+.row-main > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-main > b { font-weight: 700; }
+.row-value { padding-right: var(--pad); }
+.row-lamp { display: flex; justify-content: center; align-self: stretch; align-items: center; width: var(--s8); }
+
+/* ---------- desktop hover lifts a panel one tone; nothing grows ---------- */
+@media (hover: hover) { :is(button, a).pn:hover:not(:disabled) { background: var(--panel-2); } }
+
+/* ---------- where a Pokémon stands: in a panel, its ink's feet on the floor band's top edge (Mon, inkCentre.js standInk) ---------- */
+.stand { --floor: 24%; position: relative; overflow: hidden; }
+.floor { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor); background: var(--panel-2); }
+.mon { position: absolute; bottom: var(--floor); aspect-ratio: 1; object-fit: contain; object-position: 50% 100%; }
+
+/* ---------- the current champion: one panel, the floor band holds 파티 보기 ---------- */
+.champion { --floor: var(--s13); display: block; width: 100%; height: 216px; text-align: left; }
+.champion-who { position: absolute; top: var(--pad); left: var(--pad); display: grid; }
+.champion-who > b { margin-top: var(--s2); }
+.champion-who > .reg { margin-top: var(--s1); }
+.champion-more { position: absolute; left: var(--pad); bottom: 0; height: var(--floor); display: flex; align-items: center; gap: var(--s1); }
+.champion .mon { right: var(--pad); height: calc(100% - var(--floor)); }
+@media (hover: hover) { .champion:hover:not(:disabled) .floor { background: var(--rule); } }
+
+/* ---------- the main action: an inverted 52 panel, the word on the left and → on the right ---------- */
+.btn.btn--main {
+  --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground);
+  justify-content: space-between; width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5);
+  font-size: var(--t15); line-height: var(--l15); font-weight: 700;
+}
+/* a link: a 12px word underlined 4px under in --dim; 15 when it stands alone */
+.btn.btn--link {
+  --btn-bg: transparent; --btn-bg-hover: transparent; --btn-fg: var(--dim);
+  height: auto; min-width: 0; padding: 0; font-size: var(--t12); line-height: var(--l12); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: var(--hair);
+}
+.btn.btn--link.btn--lg { font-size: var(--t15); line-height: var(--l15); }
+@media (hover: hover) { .btn.btn--link:hover:not(:disabled) { --btn-fg: var(--lit); } }
+/* a lamp that is switched off keeps its place */
+.lamp.unlit { background: var(--panel-2); }

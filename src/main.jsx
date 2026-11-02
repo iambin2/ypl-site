@@ -7,6 +7,8 @@ import { isUnknownPath } from "./services/appRouting.js";
 import "./styles/tokens.css";
 import "./styles/components.css";
 import "./styles/shell.css";
+import "./styles/board.css";
+import "./styles/home.css";
 import "./styles/pages.css";
 import "./styles/records.css";
 import "./styles/bracket.css";
@@ -39,7 +41,7 @@ class AppBoundary extends Component {
 }
 
 // 스프라이트는 어디에 놓이든 잉크의 중앙으로 선다. load 는 올라오지 않아 잡는 단계에서 듣는다. 홈의 B면은 모서리에 서는 그림이다.
-document.addEventListener("load", e => { if (e.target.matches?.('img[src*="/sprites/pokemon/"]:not(.hm-b img)')) centreInk(e.target); }, true);
+document.addEventListener("load", e => { if (e.target.matches?.('img[src*="/sprites/pokemon/"]:not(.mon)')) centreInk(e.target); }, true);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

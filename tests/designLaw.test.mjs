@@ -29,7 +29,8 @@ const LENGTHS = new Set([...SPACE, 1, 2, 3, 16, 20, 24, 32, 36, 40, 44, 52, 56, 
 
 // these files are built to the scoreboard: no bridge names, only its own tokens
 const REBUILT = new Set([
-  "src/styles/shell.css",
+  "src/styles/shell.css", "src/styles/board.css", "src/styles/home.css",
+  "src/pages/HomePage.jsx", "src/components/common/Board.jsx", "src/components/common/Button.jsx",
   "src/components/common/Seg.jsx", "src/components/common/seg.js", "src/components/common/Icon.jsx", "src/components/common/Loader.jsx", "src/components/common/Segmented.jsx",
   "src/components/layout/Navigation.jsx", "src/components/layout/SiteHeader.jsx", "src/components/layout/SiteFooter.jsx", "src/admin/AdminModeBar.jsx",
 ]);

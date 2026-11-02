@@ -23,6 +23,18 @@ export function place(els, { delay = 0, step = 0, y = 12 } = {}) {
   [].concat(els).forEach((el, i) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }],
     { duration: DUR.place, delay: delay + i * step, easing: EASE_OUT, fill: "backwards" }));
 }
+/* light: a board switches on (DESIGN.md "Motion", first open). Nothing moves, only opacity: panels come on top to bottom 38 apart,
+   then the lit bars and titles 62 apart, pictures last; everything has landed by 420. Panels that hold a display keep their unlit bars
+   from the first paint, so only their lit bars and words come on. Only what is on the first screen lights; the rest simply stands. */
+export function light(root) {
+  if (!root || reduced() || typeof root.animate !== "function") return;
+  const seen = el => el.getBoundingClientRect().top < innerHeight;
+  const on = (els, start, step) => els.filter(seen).forEach((el, i) => el.animate([{ opacity: 0 }, { opacity: 1 }],
+    { duration: DUR.tone, delay: Math.min(start + i * step, DUR.light - DUR.tone), easing: EASE_OUT, fill: "backwards" }));
+  on([...root.querySelectorAll(".pn:not(:has(.seg))")], 0, STAGGER.row);
+  on([...root.querySelectorAll(".seg .on, .pn:has(.seg) > :not(.seg, :has(.seg)), [data-light]")], DUR.tone, STAGGER.display);
+  on([...root.querySelectorAll("img")], DUR.leave, 0);
+}
 /* stand: a case is heavier than a word: it comes up further on the larger spring and lands */
 export function stand(els, { delay = STAGGER.tile, step = STAGGER.tile } = {}) {
   if (reduced()) return;

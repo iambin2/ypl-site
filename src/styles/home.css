@@ -1,0 +1,71 @@
+/* =============================================================================
+   YPL Scoreboard: home (HomePage.jsx). Drafts: docs/redesign-next c23-home-no-event, c21 가, c3-phone, c3-desktop, c9.
+   Phone rhythm under the bar: 32, label 16, 12, display 120, 20, title 56, 20, action 52, 52, champion 216, seam, counters 84;
+   then sections 52 apart. Desktop: 709 and 439 in 1200 with 52 between; both columns share their heading line and their last line.
+   ========================================================================== */
+
+.ho-label { display: flex; justify-content: space-between; align-items: center; gap: var(--s5); }
+.ho-lamp { display: flex; align-items: center; gap: var(--s2); }
+.ho-wd { margin-left: var(--s1); }
+.ho-board { display: flex; align-items: flex-end; gap: var(--s3); height: 120px; margin-top: var(--s3); }
+/* the unit stands on the display's baseline */
+.ho-unit { font-size: var(--t20); line-height: var(--l15); font-weight: 700; }
+/* the event's name holds two lines and ends in an ellipsis; the place stays when it is shorter, so nothing below moves */
+.ho-title {
+  min-height: calc(var(--l20) * 2); margin-top: var(--s5);
+  font-size: var(--t20); line-height: var(--l20); letter-spacing: var(--ls20);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.ho-go { margin-top: var(--s5); }
+.ho-about { display: none; }
+
+.ho-reign { display: grid; gap: var(--seam); margin-top: var(--s13); }
+.ho-six { display: none; }
+.ho-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.ho-sec { margin-top: var(--s13); min-width: 0; }
+.ho-rank .row { grid-template-columns: var(--s13) minmax(0, 1fr) auto; }
+.ho-rank .row-lead { text-align: center; }
+.ho-rank .row-value { display: flex; align-items: baseline; gap: var(--s1); }
+.ho-tie { margin-top: var(--s2); }
+.ho-news .row { grid-template-columns: var(--s21) minmax(0, 1fr) auto; }
+.ho-news .row-lead { padding-left: var(--pad); }
+
+/* past champions: a sideways run to the screen's edge; the name band is their floor */
+.ho-rail { display: flex; gap: var(--seam); margin-right: calc(var(--gutter) * -1); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.ho-rail::-webkit-scrollbar { display: none; }
+.ho-past { --floor: var(--h-row2); --pad: var(--s3); flex: none; width: 132px; height: 204px; text-align: left; }
+.ho-past .mon { left: calc(50% - var(--s13)); height: calc(var(--s13) * 2); }
+.ho-gen { position: absolute; top: var(--s2); left: var(--pad); display: flex; align-items: baseline; gap: var(--s1); }
+.ho-band { display: grid; align-content: start; gap: var(--s1); padding: var(--pad); }
+.ho-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ho-band > b { font-weight: 700; }
+
+@media (min-width: 860px) {
+  .ho {
+    display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); column-gap: var(--s13); align-items: start;
+    grid-template-areas: "next reign" "rank news" "hall hall"; padding-top: var(--s5);
+  }
+  .ho-next { grid-area: next; }
+  .ho-reign { grid-area: reign; margin-top: 0; }
+  .ho-rank { grid-area: rank; }
+  .ho-news { grid-area: news; }
+  .ho-hall { grid-area: hall; }
+  .ho-label { justify-content: flex-start; }
+  .ho-board { height: 240px; margin-top: var(--s5); gap: var(--s5); }
+  .ho-days { width: auto; height: 240px; }
+  .ho-unit { font-size: var(--t32); line-height: 1; }
+  .ho-title br { display: none; }
+  .ho-title { min-height: 0; margin-top: var(--s8); font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); -webkit-line-clamp: 1; }
+  .ho-go { display: flex; align-items: center; gap: var(--s8); }
+  .ho-go .btn--main { width: 38.2%; }
+  .ho-about { display: inline-flex; }
+  .ho-reign .champion { --floor: var(--h-row2); height: calc(216px + var(--s13)); }
+  .ho-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .ho-six > .pn { height: var(--h-row2); }
+  .ho-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+  .ho-rank .row { grid-template-columns: var(--s21) minmax(0, 1fr) auto; }
+  .ho-news .row { grid-template-columns: calc(var(--s21) + var(--s3)) minmax(0, 1fr) var(--s13); }
+  .ho-news .row-lamp { width: var(--s13); }
+  .ho-rail { margin-right: 0; }
+}

@@ -26,3 +26,11 @@ export function formatDate(value, { now = new Date(), time = false } = {}) {
   if (!time || p.h == null) return day;
   return `${day} ${p.h < 12 ? "오전" : "오후"} ${p.h % 12 || 12}:${String(p.min).padStart(2, "0")}`;
 }
+
+/* 좁은 줄의 날짜(DESIGN.md "Numbers, dates, time"): 숫자와 점(11.07), 그 옆에 흐린 요일, 시각이 있으면 시계판의 13:00. 일까지 없으면 null. */
+export function dotDate(value) {
+  const p = parts(value);
+  if (!p?.d) return null;
+  const two = n => String(n).padStart(2, "0");
+  return { day: `${two(p.m)}.${two(p.d)}`, weekday: WEEKDAY[new Date(p.y, p.m - 1, p.d).getDay()], clock: p.h == null ? "" : `${two(p.h)}:${two(p.min)}` };
+}

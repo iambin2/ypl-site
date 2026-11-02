@@ -18,3 +18,10 @@ test("every stored date shape reads the same way", () => {
 test("missing or unreadable dates render as nothing, never a dash", () => {
   for (const value of [null, undefined, "", "-", "날짜 미정"]) assert.equal(formatDate(value, { now }), "");
 });
+
+test("a tight row reads digits and dots, with the weekday beside and a clock when there is a time", async () => {
+  const { dotDate } = await import("../src/services/dateFormat.js");
+  assert.deepEqual(dotDate("2026-11-07"), { day: "11.07", weekday: "토", clock: "" });
+  assert.deepEqual(dotDate("2026.11.07 13:00"), { day: "11.07", weekday: "토", clock: "13:00" });
+  assert.equal(dotDate("2026.08"), null);
+});
