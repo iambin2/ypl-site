@@ -87,7 +87,7 @@ const RULES = {
   "type: tracking is a token (Type)": d => d.prop === "letter-spacing" && !/^(0|inherit|var\(--ls(20|32|-[a-z0-9]+)\))$/.test(d.value),
   "type: one font stack (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
   "type: no uppercase label (Voice and tone)": d => d.prop === "text-transform" && d.value === "uppercase",
-  "type: only reading text carries a measure, 36em (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && /\d(ch|r?em)\b/.test(d.value) && !(d.sel === ".prose" && d.value === "36em"),
+  "type: a line runs to its column; nothing carries a narrower measure (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && (/\d(ch|r?em)\b/.test(d.value) || /var\(--read\)/.test(d.value)),
   "panels: nothing is round (Panels)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && !/^0(px)?$/.test(d.value),
   "panels: no shadow; a box-shadow only draws an inset hairline, rule or ring (Panels)": d => d.prop === "box-shadow" && !/^(none|var\(--shadow-[12]\))$/.test(d.value) && layers(d.value).some(p => !/^inset\s/.test(p)),
   "panels: no border (Panels)": d => strict(d) && /^border(-(top|right|bottom|left))?$/.test(d.prop) && !/^(0|none)$/.test(d.value),
@@ -140,6 +140,15 @@ for (const [rule, broken] of Object.entries(RULES)) {
     assert.deepEqual(stale, [], `listed in EXCEPT but no longer occurs; remove it:\n  ${stale.join("\n  ")}`);
   });
 }
+
+// ---------- a line breaks where its column ends or its sentence ends, never by hand (Type) ----------
+test("no hand-placed line break in the site's own copy (Type)", () => {
+  // the one allowed: the home's no-event sentence, set in two lines on a phone and hidden on desktop (home.css .ho-title br)
+  const allowed = new Set(["src/pages/HomePage.jsx"]);
+  const hits = SRC.filter(f => /\.jsx$/.test(f) && !rel(f).startsWith("src/admin/") && !allowed.has(rel(f)))
+    .flatMap(f => [...read(f).matchAll(/<br\s*\/?>/g)].map(() => rel(f)));
+  assert.deepEqual(hits, [], "let the line run to its column, or end the sentence");
+});
 
 // ---------- the numbers, written once in DESIGN.md and once in tokens.css ----------
 const DESIGN = src("DESIGN.md");

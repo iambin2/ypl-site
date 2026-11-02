@@ -11,7 +11,7 @@
 .rc-list { display: grid; min-width: 0; }
 .rc-more, .rc-pager { margin-top: var(--s5); }
 .rc-admin { margin-bottom: var(--s5); }
-.rc-note { margin-top: var(--s8); max-width: var(--read); }
+.rc-note { margin-top: var(--s8); }
 
 /* the trainers' table: # 40, the name, three figures of 52; the head strip is 32 */
 .rc-th { display: grid; grid-template-columns: 40px minmax(0, 1fr) 52px 52px 52px; align-items: center; height: var(--h-strip); margin-top: var(--s3); padding-right: var(--pad); }

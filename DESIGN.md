@@ -108,7 +108,8 @@ Two layers in `tokens.css`: primitives and semantic tokens. Components read sema
 | `--signal` | the amber lamp: live, and nothing else | `#FFB21A` | `#B36F00` |
 | `--off` | the opacity of an unlit segment bar | .08 | .06 |
 
-- **One hue, navy.** In light the words are navy, not black: the whole site is one colour on one ground. Pokémon type colours are content and stay as drawn; a type is a 3 by 12 tick in its colour beside its name.
+- **One hue, navy.** In light the words are navy, not black: the whole site is one colour on one ground. Pokémon type colours are content and stay as drawn.
+- **A type is one tag everywhere** (2026-11-03), a Pokémon's or a move's alike, on the page and in the saved image: a square tag 24 tall on `--panel-2` (the ground where it stands on a surface already one tone up), an 8 square in the type's colour, then the name at 12/600. Square and on whole pixels, never slanted, so every tag draws alike.
 - **Solid only.** No gradient, sheen, glow, soft light, blur or grain. Colour never comes from opacity, with three exceptions: an unlit segment bar, a disabled control, and the veil behind a sheet.
 - **Amber is a lamp, never a word.** It marks what is happening now: today's event, a live match, a private bracket in progress. The words beside it are lit.
 - **Status has no hue.** Done, waiting, error and success read through words, the lamp, inversion and the `!` square, never through a colour.
@@ -194,7 +195,9 @@ Albert Sans for Latin and digits, Freesentation for Korean, as before (unicode-r
 | Label and grey line | 12/16 on a phone, 15/20 on desktop | 600 labels, 400 grey lines | 다음 대회까지, 6대, YPL 시즌 2 우승, units |
 | Figure in a list | 15 or 20, tabular | 700 | points, ranks, base stat totals |
 
-Desktop is read from further away, so at 860 and up the label and grey line step up to 15/20 (one change to `--t12` and `--l12`); there they part from row titles by weight and light alone, which is the board's one emphasis anyway. What matters stands bold: 700 for titles, names and figures. A title stands first; nothing small sits above a title except a page's back link and a notice's date line. A long title holds two lines and ends in an ellipsis. Reading text is capped at 36em.
+Desktop is read from further away, so at 860 and up the label and grey line step up to 15/20 (one change to `--t12` and `--l12`); there they part from row titles by weight and light alone, which is the board's one emphasis anyway. What matters stands bold: 700 for titles, names and figures. A title stands first; nothing small sits above a title except a page's back link and a notice's date line. A long title holds two lines and ends in an ellipsis.
+
+**A line runs to its column** (2026-11-03). A line of words breaks where its column ends or where its sentence ends, never earlier: no measure narrower than the column (the desktop columns, 709 and 1200, are the measure), and no hand-placed break in the site's own copy. The one exception is the home's no-event sentence, set in two lines on a phone. `tests/designLaw.test.mjs` holds both.
 
 ## Controls
 
@@ -207,7 +210,7 @@ Desktop is read from further away, so at 860 and up the label and grey line step
 | Error on a field | The 2px line stays; under it an inverted 20 square with `!` and the sentence in 12px |
 | Choice (a few options) | Panels in a row, 44 tall, the chosen one inverted |
 | Chip (filters, counts) | 32 tall panels, 12px, the applied one inverted, the count in its word (전체 59) |
-| Page tabs | Words 15 on a 44 line with a hairline under the row; the chosen word is 700, lit, with a 2px line under it |
+| Page tabs | Words 15 on a 44 line with a hairline under the row; the chosen word is 700, lit, with a 2px line under it. The line is the word's own (its `::before`, exactly the word's width), so it can never stand off the word; a change of word only slides it in from where the old line stood |
 | Check | A 20 square: off is `--panel-2`, on is inverted with a check |
 | Switch | 52 by 32: off is a muted square in `--panel-2`, on is inverted with the square at the right |
 | Steps of a flow | A row of three panels, 44: done dim with a check, current inverted, next muted |
@@ -297,9 +300,9 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Titles and hall of fame.** Titles: generations as rows (the generation as a figure, the name, the season); the current holder inverts. The hall hangs one reign large and the rest on a wall: the crown, one panel with an inverted 현 챔피언 tag, the generation lit in segments at 84 with 대, the name at 32, the season and which title it is (2번째 우승), and the six large with their names (439 and 709 on desktop); then three counters (세대, 챔피언, 최다 우승 with the name); then 역대 챔피언, a wall of plates, newest first, three across on desktop, each the generation at 40, the season, the name at 20 and the six. A plate opens the champion sheet, which on desktop is as wide as the content.
 
-**Board.** Tabs 자유, 샘플, 파티; a search with 글쓰기 as the main action; rows of 64 with the comment count as words. A party post shows six cells with name and item, and two actions (팀 빌더에서 열기, 이미지 저장); comments as panels; a docked comment field.
+**Board.** Tabs 자유, 샘플, 파티; a search with 글쓰기 as the main action; rows of 64 with the comment count as words. Sample and party rows are the records' party rows: the title and its grey line, then the pictures (a party's six at the right in 64 cells on desktop; a sample's one leading its row). A post is the notices' two columns: the date line, the title at 32, the words, the cases (as many across as the 709 column holds) and the comments on the left; on the right from the same first line and held in view, the party's six with their names, 팀 빌더에서 열기 as the main action, then 이미지 저장, 링크 공유, 수정, 삭제. A sample's one Pokémon is not shown twice: its side column holds the actions only.
 
-**Team builder.** Tabs 규정, 포켓몬 선택, 팀 구성, and a 내 팀 list. Six slots always on top. The list: picture cell, name, type ticks, base stat total, +. The editor: the six as pictures that fill their slots, no name under them, the chosen slot inverted, spec panels, the points as bars on tracks (66 / 66), moves as four panels, a docked 현재 팀 저장 with 게시판에 올리기 beside it. Desktop: the rules as two cells in one row (레귤레이션, 파이컵 추가 룰), list 439, editor 709, the save under the editor. The list has the types as chips under its search (전체 359 first), one type at a time. A desktop list row is one line: picture, the name over its type ticks, one figure (the sorted stat with its letter, else the total), +. The exported image uses the same panels and floors.
+**Team builder.** Tabs 규정, 포켓몬 선택, 팀 구성, and a 내 팀 list. Six slots always on top. The list: picture cell with room around it, name, type tags, the six base stats as six even columns of letter over figure (the sorted one bold), the total as the row's figure, +. The editor: the six as pictures that fill their slots, no name under them, the chosen slot inverted, spec panels, the points as bars on tracks (66 / 66), moves as four panels, a docked 현재 팀 저장 with 게시판에 올리기 beside it. Desktop: the rules as two cells in one row (레귤레이션, 파이컵 추가 룰), list 439, editor 709, the save under the editor. The list has the types as chips under its search (전체 359 first), one type at a time. The exported image uses the same panels and floors.
 
 **Calculator.** Tabs 대미지, 스피드, 도감. Damage: two Pokémon panels (an empty one shows its + in the middle of the panel), the result as a segment range with the exact range in type, a bar on a track, and the verdict (확정 2타); then 배틀 조건 and 세부 설정 as sections. Speed: the base Pokémon's speed as a display and a line of rows (speed, picture, name, base) with the base row inverted; the opponents' modifier as a row of choices. Dex: picture, types, base stats as bars, defensive matchups as rows with the 4x row inverted.
 

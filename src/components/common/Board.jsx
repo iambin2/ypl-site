@@ -4,21 +4,10 @@ import Seg from "./Seg.jsx";
 import { standInk } from "./inkCentre.js";
 import { lightAfter, slideLine } from "./motion.js";
 
-/* one line slides under the chosen word of a row (motion.js slideLine); it follows the row when the window changes size */
+/* the chosen word's line slides from the word before it (motion.js slideLine); the line itself is the word's own ::before */
 export function useSlideLine(key) {
   const ref = useRef(null);
   useLayoutEffect(() => { slideLine(ref.current); }, [key]);
-  useLayoutEffect(() => {
-    const row = ref.current;
-    if (!row || typeof ResizeObserver !== "function") return undefined;
-    // a word widens when its bold face arrives after the first placing: every word is watched, and every font that lands
-    const again = () => slideLine(row);
-    const watch = new ResizeObserver(again);
-    watch.observe(row);
-    [...row.children].forEach(child => watch.observe(child));
-    document.fonts?.addEventListener?.("loadingdone", again);
-    return () => { watch.disconnect(); document.fonts?.removeEventListener?.("loadingdone", again); };
-  }, []);
   return ref;
 }
 /* after the first render, a change of value lights what the control swaps (motion.js lightAfter) */
@@ -179,7 +168,6 @@ export function TabsLine({ value, onChange, options, label }) {
   return (
     <div className="tabsline" role="tablist" aria-label={label} ref={ref}>
       {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}
-      <i className="slide-line" aria-hidden="true" />
     </div>
   );
 }

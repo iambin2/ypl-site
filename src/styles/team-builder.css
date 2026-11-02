@@ -101,11 +101,17 @@
 }
 .tb-pool-empty { padding: var(--s13) var(--s3); font-size: var(--t15); color: var(--dim); }
 
-/* ---------- TypeBadge: a fill chip; the type's own colour is the dot ---------- */
-.tb-types { display: flex; gap: var(--s1); flex-wrap: wrap; }
-.tb-type { --type: var(--mute); }
-/* a type is a 3 by 12 tick in its colour beside its name (DESIGN.md "Colour and light") */
-.tb-type::before { content: ""; width: 3px; height: 12px; flex: none; background: var(--type); }
+/* ---------- a type (DESIGN.md "Colour and light", 2026-11-03): one mark for a Pokémon's type and a move's type. A square tag 24 tall,
+   an 8 square in the type's colour, then its name. Square and on whole pixels, never slanted, so every tag draws alike. ---------- */
+.tb-types { display: flex; flex-wrap: wrap; gap: var(--seam); }
+.tb-type, .pick-type {
+  --type: var(--mute); display: inline-flex; align-items: center; gap: var(--s2); height: 24px; padding: 0 var(--s2);
+  background: var(--tag-bg, var(--panel-2)); color: var(--lit); font-size: var(--t12); line-height: var(--l12); font-weight: 600; white-space: nowrap;
+}
+.tb-type::before, .pick-type::before { content: ""; width: var(--s2); height: var(--s2); flex: none; background: var(--type); }
+/* on a surface already one tone up, the tag steps down to the ground so it still reads as its own square */
+:is(.sc-moves li, .sheet .pn, .tb-pokemon-row:hover, .cell:hover, .records-round-detail) { --tag-bg: var(--ground); }
+.tb-type-opt .tb-type { --tag-bg: transparent; padding: 0; color: inherit; }
 .type-normal{--type:#9FA19F}.type-fire{--type:#E62829}.type-water{--type:#2980EF}.type-electric{--type:#FAC000}
 .type-grass{--type:#3FA129}.type-ice{--type:#3FD8FF}.type-fighting{--type:#FF8000}.type-poison{--type:#9141CB}
 .type-ground{--type:#915121}.type-flying{--type:#81B9EF}.type-psychic{--type:#EF4179}.type-bug{--type:#91A119}
@@ -126,16 +132,21 @@
   .tb-layout { grid-template-columns: 1fr; }
   .tb-pool-panel { position: static; max-height: 576px; }
 }
-/* desktop (c16): a list row is one line, the picture, the name over its types, one figure (the sorted stat, else the total), + */
+/* desktop: a list row is the picture with room around it, the name, its type tags, and the six base stats as one quiet line
+   (letter dim, figure lit; the sorted one bold), the total as the row's figure at the right, then + */
+.tb-bst { display: none; }
 @media (min-width: 1100px) {
-  .tb-pokemon-row .tb-pokemon-copy { grid-column: 2; grid-row: 1; align-self: end; }
+  .tb-pokemon-row { grid-template-columns: var(--h-row2) minmax(0, 1fr) auto var(--h-strip); column-gap: var(--s3); row-gap: var(--s1); padding: var(--s3); }
+  .tb-pokemon-row > .tb-pic { grid-row: 1 / span 3; margin-block: 0; align-self: center; }
+  .tb-pokemon-row .tb-pokemon-copy { grid-column: 2; grid-row: 1; }
   .tb-pokemon-row .tb-pokemon-copy small { display: none; }
-  .tb-pokemon-row .tb-types { grid-column: 2; grid-row: 2; align-self: start; }
-  .tb-pokemon-row > .tb-add-mark { grid-row: 1 / span 2; }
-  .tb-base-strip { grid-column: 3; grid-row: 1 / span 2; display: flex; align-self: center; padding-top: 0; }
-  .tb-base-strip > span:not(.on), .tb-base-strip:not(:has(.on)) > span:last-child > i { display: none; }
-  .tb-base-strip:not(:has(.on)) > span:last-child { display: grid; }
-  .tb-base-strip > span { font-size: var(--t15); line-height: var(--l15); font-weight: 700; color: var(--lit); }
+  .tb-pokemon-row .tb-types { grid-column: 2; grid-row: 2; }
+  /* six equal columns, the letter over its figure, so the figures stand in columns from row to row like a table */
+  .tb-base-strip { grid-column: 2; grid-row: 3; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 var(--s1); padding-top: var(--s1); }
+  .tb-base-strip > span { display: grid; justify-items: start; gap: 0; color: var(--dim); }
+  .tb-base-strip > span:last-child { display: none; }
+  .tb-bst { display: block; grid-column: 3; grid-row: 1 / span 3; align-self: center; font-size: var(--t15); line-height: var(--l15); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tb-pokemon-row > .tb-add-mark { grid-column: 4; grid-row: 1 / span 3; align-self: center; }
 }
 
 /* ---------- N5: three steps on a phone, one screen on desktop ---------- */

@@ -18,9 +18,8 @@
 .bk-t-head .nb-back { margin-bottom: calc(var(--s2) - var(--s5)); }
 .nb-a-title { width: fit-content; max-width: 100%; }
 /* 한 칸은 본문 너비를 넘지 않는다: 띄어 쓸 곳 없는 긴 주소가 칸을 넓혀 모든 문단이 카드 밖으로 잘리던 것 */
-/* reading lines keep the 36em measure; a grid of cards in the body takes its column's whole width */
+/* a line runs to its column's edge (DESIGN.md "Type"); the column is the measure */
 .prose { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s8); }
-.prose > :not(.prose-grid) { max-width: var(--read); }
 .prose p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--t15); line-height: var(--l-read); color: var(--lit); }
 .prose h3 + p { margin-top: calc(var(--s5) - var(--s8)); }
 .prose a { color: var(--lit); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--mute); }
@@ -92,13 +91,9 @@
   .sc-post.split > .bd-cmts { grid-area: cmts; margin-top: 0; }
 }
 .sc-sheet { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
-@media (min-width: 860px) { .sc-sheet.multi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (min-width: 1100px) { .sc-sheet.multi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
+/* the cases count their column's width, not the screen's: two in a 709 column, three in 1200, one on a phone */
+.sc-sheet.multi { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .sc-sheet:not(.multi) { max-width: var(--sheet-w); }
-/* inside a sheet the cases count the sheet's width, not the screen's; nothing is painted behind a Pokémon */
-.sheet .sc-sheet.multi { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .sc-win .case-band { display: none; }
 .sc-mon { display: flex; flex-direction: column; }
 .sc-win { display: flex; flex-direction: column; align-items: center; gap: var(--s3); height: auto; padding: var(--s5); }
@@ -124,9 +119,9 @@
 .sc-sp em.on { font-weight: 600; color: var(--lit); }
 .sc-moves { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); margin: 0; padding: 0; }
 .sc-moves li { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; padding: var(--s2) var(--s3); background: var(--panel-2); }
-.sc-moves li b { display: flex; align-items: center; gap: var(--s2); min-width: 0; font-size: var(--t15); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sc-moves li small { font-size: var(--t12); color: var(--mute); }
-.sc-moves li b::before { content: ""; width: 4px; height: 12px; transform: skewX(-12deg); flex: none; background: var(--type, var(--mute)); }
+.sc-moves li b { display: block; min-width: 0; font-size: var(--t15); line-height: var(--l15); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-move-line { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.sc-moves li small { font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
 .sc-pick { list-style: none; display: flex; flex-direction: column; gap: var(--s1); padding: 0; }
 .sc-pick-row { display: flex; flex-direction: column; align-items: stretch; gap: var(--s2); width: 100%; padding: var(--s3); background: transparent; text-align: left; color: inherit; transition: scale var(--move-press), background-color var(--move-tone); }
 @media (hover: hover) { .sc-pick-row:hover { background: var(--panel-2); }

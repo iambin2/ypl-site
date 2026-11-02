@@ -10,7 +10,7 @@ import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem,
 import { PIN_DENIED } from "../services/communityItems.js";
 import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import Button from "../components/common/Button.jsx";
-import { BackLink, Chips, Mon, Row, TabsLine } from "../components/common/Board.jsx";
+import { BackLink, Chips, Dock, Mon, Row, SectionHead, TabsLine } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
 
 const dotDay=dotDate;
@@ -359,31 +359,36 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
     {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
+    // 공지와 같은 두 단(데스크톱): 왼쪽 709는 날짜, 제목, 소개, 세팅 카드, 댓글. 오른쪽 439는 같은 첫 줄에서 그림과 행동, 스크롤해도 남는다.
+    // 폰은 한 단으로 그림과 행동이 제목 바로 아래에 선다.
     return (<section className="bd">
-      <article>
-        <BackLink to={label} onClick={closePost}/>
-        <p className="t12 dim reg bd-date-line">{[label,FORMAT_LABEL[formatOf(p)],ruleSummary(p.team),p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
-        <h1 className="t20 bd-title-h" data-vt={"s-"+p.id}>{p.title}</h1>
-        <div className="bd-six">{(p.team?.members||[]).map((m,i)=><span className="pn stand bd-cell" key={i}><Mon src={spriteUrl(m.pokemonName)}/><span className="floor bd-band"><b className="t12">{(sheet[i]?.name)||m.pokemonName}</b></span></span>)}</div>
-        <div className="stack bd-actions">
-          <Button variant="second" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기</Button>
-          <Button variant="second" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
-          <Button variant="second" onClick={()=>share(p)}>링크 공유</Button>
-          <Button variant="second" onClick={()=>editPost(p)}>수정</Button>
-          <Button variant="second" onClick={()=>delPost(p)}>삭제</Button>
-        </div>
-        {/* 샘플은 카드 한 장이라, 넓은 화면에서는 카드를 왼쪽에 두고 소개와 댓글을 오른쪽 칸에 세운다(위 모서리를 카드와 맞춘다) */}
-        <div className={"sc-post"+(p.kind==="sample"?" split":"")}>
-        {p.body&&<div className="bd-body sc-body"><Prose text={p.body}/></div>}
-        <div className="sc-post-sheet">{display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
-          :!display?<Loader small/>:<TeamSheet sheet={sheet}/>}</div>
-        <div className="bd-cmts">
-          <h2 className="t20 bd-cmts-h">댓글{cc>0?<span className="dim"> {cc}</span>:""}</h2>
-          {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
-            <div className="bd-cmt-top"><b className="t12">{c.nick}</b><span className="t12 dim num">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-act t12" onClick={()=>editComment(p,c)}>수정</button><button className="bd-act t12" onClick={()=>delComment(p,c)}>삭제</button></div><div className="read bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div>
-          </div>))}
-          <CommentForm onSubmit={(c)=>addComment(p,c)}/>
-        </div>
+      <article className={"bd-art"+(p.kind==="sample"?" one":"")}>
+        <header className="bd-art-head">
+          <BackLink to={label} onClick={closePost}/>
+          <p className="t12 dim reg bd-date-line">{[label,FORMAT_LABEL[formatOf(p)],ruleSummary(p.team),p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
+          <h1 className="t32 bd-title-h" data-vt={"s-"+p.id}>{p.title}</h1>
+        </header>
+        <aside className="bd-aside">
+          <div className="bd-six">{(p.team?.members||[]).map((m,i)=><span className="pn stand bd-cell" key={i}><Mon src={spriteUrl(m.pokemonName)}/><span className="floor bd-band"><b className="t12">{(sheet[i]?.name)||m.pokemonName}</b></span></span>)}</div>
+          <Dock><Button variant="main" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기</Button></Dock>
+          <div className="stack bd-actions">
+            <Button variant="second" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
+            <Button variant="second" onClick={()=>share(p)}>링크 공유</Button>
+            <Button variant="second" onClick={()=>editPost(p)}>수정</Button>
+            <Button variant="second" onClick={()=>delPost(p)}>삭제</Button>
+          </div>
+        </aside>
+        <div className="bd-main">
+          {p.body&&<div className="bd-body"><Prose text={p.body}/></div>}
+          <div className="sc-post-sheet">{display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
+            :!display?<Loader small/>:<TeamSheet sheet={sheet}/>}</div>
+          <section className="bd-cmts" aria-labelledby={"bd-cmts-"+p.id}>
+            <SectionHead id={"bd-cmts-"+p.id} title={cc>0?`댓글 ${cc}`:"댓글"}/>
+            {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
+              <div className="bd-cmt-top"><b className="t12">{c.nick}</b><span className="t12 dim num">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-act t12" onClick={()=>editComment(p,c)}>수정</button><button className="bd-act t12" onClick={()=>delComment(p,c)}>삭제</button></div><div className="read bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div>
+            </div>))}
+            <CommentForm onSubmit={(c)=>addComment(p,c)}/>
+          </section>
         </div>
       </article>
       {editing&&<EditSheet {...editing} onClose={()=>setEditing(null)} onSave={saveEdit}/>}
@@ -402,9 +407,10 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
         const by=[post.nick,kind==="party"?REGULATIONS[post.team?.regulationId]?.shortName:post.names?.[0],cc>0&&`댓글 ${cc}`].filter(Boolean).join(", ");
-        return <button type="button" className="pn bd-post" key={post.id} onClick={()=>openPost(post.id)} aria-label={`${post.title}, ${by}`}>
+        // 기록의 파티 줄과 같은 꼴: 제목과 회색 줄, 그리고 그림(파티는 여섯, 샘플은 한 마리를 앞에)
+        return <button type="button" className={"pn bd-post"+(kind==="sample"?" one":"")} key={post.id} onClick={()=>openPost(post.id)} aria-label={`${post.title}, ${by}`}>
           <span className="bd-post-top"><b className="t15" data-vt={"s-"+post.id}>{post.title}</b><span className="t12 dim">{by}</span></span>
-          <span className="bd-minis">{(post.team?.members||[]).map((m,i)=><span className="stand bd-mini" key={i}><i className="floor" aria-hidden="true"/><Mon src={spriteUrl(m.pokemonName)}/></span>)}</span>
+          <span className="bd-minis" aria-hidden="true">{(post.team?.members||[]).map((m,i)=><span className="stand bd-mini" key={i}><i className="floor"/><Mon src={spriteUrl(m.pokemonName)}/></span>)}</span>
         </button>; })}
     </div>}
     <div className="bd-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>

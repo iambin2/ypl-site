@@ -53,7 +53,6 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
             {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
-        <i className="slide-line" aria-hidden="true" />
       </nav>
       <button type="button" className="iconbtn theme-btn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
         <Icon key={dark ? "sun" : "moon"} n={dark ? "sun" : "moon"} size={24} />

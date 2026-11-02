@@ -63,7 +63,7 @@ export default function TeamSheet({ sheet }) {
         </div>
         <ul className="sc-moves">{Array.from({ length: 4 }, (_, k) => {
           const mv = row.moves[k];
-          return <li key={k} className={mv ? `type-${mv.type?.id || ""}` : "empty"}>{mv ? <><b>{mv.name}</b><small>{[mv.type?.label, mv.category].filter(Boolean).join(" ")}</small></> : <small>기술 없음</small>}</li>;
+          return <li key={k} className={mv ? "" : "empty"}>{mv ? <><b>{mv.name}</b><span className="sc-move-line">{mv.type?.label && <span className={`tb-type type-${mv.type?.id || ""}`}>{mv.type.label}</span>}{mv.category && <small>{mv.category}</small>}</span></> : <small>기술 없음</small>}</li>;
         })}</ul>
       </div>
     </article>))}</div>;

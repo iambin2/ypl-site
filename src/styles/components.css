@@ -5,7 +5,7 @@
    ========================================================================== */
 
 .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
-.pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-type, .tb-status-chip, .tb-official-meta span, .rc-chip,
+.pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-status-chip, .tb-official-meta span, .rc-chip,
 .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved {
   position: relative;
 }
@@ -43,7 +43,7 @@
 .field--flush { margin-bottom: 0; }
 
 /* ---------- Chip and badge (M10): one 32px word for every label, tag and status; the dot rides in front only while live ---------- */
-.ypl-chip, .y-chip, .pin, .rc-chip, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-status-chip, .tb-type, .tb-official-meta span,
+.ypl-chip, .y-chip, .pin, .rc-chip, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-status-chip, .tb-official-meta span,
 .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .tb-chip {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: 32px; padding: 0; color: var(--lit); font-size: var(--t12); line-height: 1; font-weight: 600; white-space: nowrap;
 }
@@ -388,8 +388,7 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 .pick-field { position: relative; min-width: 0; }
 .pick-field .dd-btn { width: 100%; }
 .pick-field:has(.pick-clear) .dd-btn { padding-right: var(--s13); }
-.pick-type { --type: var(--mute); flex: none; display: inline-flex; align-items: center; gap: var(--s2); margin-left: auto; font-size: var(--t12); font-weight: 600; color: var(--dim); }
-.pick-type::before { content: ""; width: 4px; height: 12px; transform: skewX(-12deg); background: var(--type); }
+.pick-type { flex: none; margin-left: auto; }
 .pick-clear { right: var(--s2); }
 
 /* ---------- the case: a record on the plane, two flush planes with no frame: a light label over one navy window ---------- */

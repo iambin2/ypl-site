@@ -162,6 +162,7 @@ const PoolList = memo(function PoolList({ pool, detailData, displayPokemon, sort
             <span className="tb-pokemon-copy"><strong>{displayPokemon(pokemon)}</strong><small>{details?.num ? `#${String(details.num).padStart(4, "0")}` : ""}</small></span>
             <TypeBadges types={details?.types || []} />
             <BaseStatStrip stats={details?.baseStats} sortId={sortId} />
+            {details?.baseStats && <b className="tb-bst" aria-hidden="true">{STAT_KEYS.reduce((sum, key) => sum + (details.baseStats[key] || 0), 0)}</b>}
             <span className="tb-add-mark">
               <Icon n={canReplaceSelected ? "refresh" : already ? "check" : "plus"} size={16} />
             </span>
@@ -1315,7 +1316,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             ))}
           </div>
         </div>}
-        <p className="t12 reg dim">{regulation.description}<br />능력 포인트는 개별 최대 32, 총합 최대 66입니다.</p>
+        <p className="t12 reg dim">{regulation.description}, 능력 포인트는 개별 최대 32, 총합 최대 66입니다.</p>
       </div>
 
       <div className="tb-validation-wrap" data-tb-step="team">

@@ -45,8 +45,9 @@ async function fontsReady() {
   try { await Promise.all(["700 32px", "600 16px", "400 16px"].map(f => document.fonts.load(`${f} "Freesentation"`, "가").then(() => document.fonts.load(`${f} "Albert Sans"`)))); await document.fonts.ready; } catch { /* system font */ }
 }
 /* 타입은 워드마크의 12도로 기운 짧은 획이다 */
+/* a type's mark: an 8 square in its colour, centred on the 12 line it stands in (the page's type tag, DESIGN.md) */
 function tick(ctx, x, y, color) {
-  ctx.save(); ctx.transform(1, 0, -Math.tan(12 * Math.PI / 180), 1, x + 3, y); ctx.fillStyle = color; ctx.fillRect(0, 0, 4, 12); ctx.restore();
+  ctx.fillStyle = color; ctx.fillRect(Math.round(x + 2), Math.round(y + 2), 8, 8);
 }
 function typePill(ctx, c, x, y, type) {
   ctx.font = `700 13px ${FONT}`;

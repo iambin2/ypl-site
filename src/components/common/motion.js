@@ -59,18 +59,21 @@ export function light(root, total = DUR.light) {
   on([...root.querySelectorAll("img")], last, 0);
 }
 
-/* the line under the chosen word of a row of words (the top bar's pages, page tabs) is one line that slides to the chosen word,
-   so a change of tab reads as one motion. Transform only; the first placing does not move. */
+/* the line under the chosen word of a row of words (the top bar's pages, page tabs) belongs to the word: it is the word's own ::before,
+   exactly the word's width wherever fonts, zoom or the window take it. A change of word only animates it: the new word's line starts
+   where the old one stood and settles into place by transform. Nothing is measured once and kept. */
+const lastLine = new WeakMap();
 export function slideLine(row) {
-  const line = row?.querySelector(":scope > .slide-line");
   const cur = row?.querySelector(':scope > :is([aria-current="page"], [data-current], [aria-selected="true"])');
-  if (!line) return;
-  if (!cur) { line.style.opacity = "0"; return; }
-  const first = !line.dataset.placed;
-  if (first || reduced()) line.style.transition = "none";
-  line.style.opacity = "1";
-  line.style.transform = `translateX(${cur.offsetLeft}px) scaleX(${cur.offsetWidth})`;
-  if (first || reduced()) { line.getBoundingClientRect(); line.style.transition = ""; line.dataset.placed = "1"; }
+  if (!cur) return;
+  const now = { left: cur.offsetLeft, width: cur.offsetWidth };
+  const was = lastLine.get(row);
+  lastLine.set(row, now);
+  if (!was || reduced() || !now.width || (was.left === now.left && was.width === now.width) || typeof cur.animate !== "function") return;
+  try {
+    cur.animate([{ transform: `translateX(${was.left - now.left}px) scaleX(${was.width / now.width})` }, { transform: "none" }],
+      { duration: DUR.light, easing: EASE_OUT, pseudoElement: "::before" });
+  } catch { /* a browser without pseudo-element animation shows the line in place */ }
 }
 /* the scoreboard has no spring: a board switches on. Old callers that still ask for one get the ease-out curve. */
 export function springs() { return { spring: EASE_OUT, lift: EASE_OUT }; }
