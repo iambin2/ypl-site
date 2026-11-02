@@ -43,9 +43,6 @@
 .form-error { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--fs-caption); line-height: var(--lh-caption); font-weight: 600; color: var(--text-primary); }
 .form-error .ic { flex: none; }
 /* section and whole-page errors: what went wrong, and one way to try again */
-.error-note { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s3); padding: var(--s3) var(--s5); background: var(--surface); }
-.error-note p { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--fs-body); line-height: var(--lh-label); font-weight: 600; }
-.error-note .ic { flex: none; }
 .field--flush { margin-bottom: 0; }
 
 /* ---------- Chip and badge (M10): one 32px word for every label, tag and status; the dot rides in front only while live ---------- */

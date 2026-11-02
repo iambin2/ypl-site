@@ -64,7 +64,7 @@
 .page.page--full { width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height)); container-type: inline-size; }
 .sec { display: flex; flex-direction: column; gap: var(--s13); }
 /* the page for a missing address or a failed app: where to go next */
-.status-links { display: flex; flex-wrap: wrap; gap: var(--seam); margin-top: var(--s13); }
+
 /* loading is the board switched off: the place is held and nothing moves */
 .y-loader { min-height: min(62vh, 576px); }
 .y-loader.sm { min-height: var(--s21); }
