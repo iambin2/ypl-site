@@ -41,6 +41,8 @@ import {
   isChampionshipQualifier,
 } from "./championsCore.js";
 import { normalizeEventTitleAward } from "./titleAwards.js";
+import { isLeagueIntakeDraft, leagueIntakeId } from "./leagueIntake.js";
+import { availableChampionshipEditions, competitionFamily } from "./competitionEditions.js";
 
 const DATA_SCHEMA = import.meta.env.VITE_YPL_DATA_SCHEMA || "public";
 const CHAMPIONS_EVENT_SELECT_FIELDS = DATA_SCHEMA === "ypl_schema_validation"
@@ -63,6 +65,60 @@ function fail(error, fallback) {
 }
 
 export const NORMALIZED_DATA_SCHEMA = DATA_SCHEMA;
+
+export async function getLeagueIntakeEvents(event) {
+  const intakeId = leagueIntakeId(event);
+  if (!intakeId) return [event];
+  const { data: intake, error } = await db().from("league_intakes").select("id, master_event_id, rookie_event_id").eq("id", intakeId).single();
+  if (error) fail(error, "통합 접수의 리그 연결을 확인하지 못했습니다.");
+  if (![intake.master_event_id, intake.rookie_event_id].includes(event.id)) throw new Error("공지와 리그 연결이 일치하지 않습니다.");
+  const events = await Promise.all([intake.master_event_id, intake.rookie_event_id].map(getEvent));
+  if (events.some(row => !row || leagueIntakeId(row) !== intake.id || row.is_team_event || row.event_type !== "pokecup")
+      || events[0].division !== "master" || events[1].division !== "rookie" || events[0].season_id !== events[1].season_id) {
+    throw new Error("통합 접수의 대회 소유권이 일치하지 않습니다.");
+  }
+  return events;
+}
+
+export async function saveLeagueIntake({ eventId = null, announcementId, eventDraft = {} }) {
+  const existing = eventId ? await getEvent(eventId) : null;
+  if (eventId && !existing) throw new Error("수정할 대회를 찾을 수 없습니다.");
+  const seasonId = existing ? existing.season_id : (await getCurrentSeason()).id;
+  const { data, error } = await db().rpc("save_league_intake", {
+    p_announcement_id: announcementId,
+    p_season_id: seasonId,
+    p_existing_master_event_id: eventId,
+    p_settings: {
+      subtitle: draftSubtitle(eventDraft, { eventType: "pokecup", division: existing?.division || null }),
+      battle_format: eventDraft.battleFormat || null,
+      competition_format: eventDraft.competitionFormat || null,
+      regulation_id: eventDraft.regulationId || null,
+      cup_rule_id: eventDraft.cupRuleId || null,
+      cup_rule_settings: eventDraft.cupRuleSettings || {},
+      record_rule_label: String(eventDraft.recordRuleLabel || "").trim(),
+      title_award: normalizeEventTitleAward(eventDraft.titleAward),
+      held_on: eventDraft.heldOn || null,
+      submission_target_at: eventDraft.submissionTargetAt ? new Date(eventDraft.submissionTargetAt).toISOString() : null,
+    },
+  });
+  if (error) fail(error, "루키와 마스터 통합 접수를 저장하지 못했습니다.");
+  const intake = Array.isArray(data) ? data[0] : data;
+  if (!intake?.master_event_id || !intake?.rookie_event_id) throw new Error("통합 접수 저장 결과를 확인하지 못했습니다.");
+  const event = await getEvent(intake.master_event_id);
+  await getLeagueIntakeEvents(event);
+  return event;
+}
+
+export async function deleteLeagueIntakeNotice(eventId, announcementId) {
+  const event = await getEvent(eventId);
+  if (!leagueIntakeId(event)) throw new Error("통합 접수 공지가 아닙니다.");
+  const { data, error } = await db().rpc("delete_league_intake_notice", {
+    p_intake_id: leagueIntakeId(event), p_announcement_id: announcementId,
+  });
+  if (error) fail(error, "통합 접수 공지를 삭제하지 못했습니다.");
+  if (!Array.isArray(data?.announcements)) throw new Error("삭제 후 공지 원본을 확인하지 못했습니다.");
+  return data;
+}
 
 // P2-7 normalized bracket runtimes are intentionally enabled only in the Test
 // normalized schema. Production remains on the legacy ypl_data_v4 adapter
@@ -665,6 +721,7 @@ async function readEventResultParticipants(eventId, resultRows) {
 
 const EVENT_DETAIL_SELECT = `
   id,
+  competition_edition_id,
   name,
   event_type,
   division,
@@ -755,14 +812,15 @@ export async function submitEventApplication({
 
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
-  if (event.status !== "open") throw new Error("현재 참가 신청을 받고 있는 대회가 아닙니다.");
+  const intakeEvents = await getLeagueIntakeEvents(event);
+  if (!intakeEvents.some(row => row.status === "open" && !row.record_applied_at)) throw new Error("현재 참가 신청을 받고 있는 대회가 아닙니다.");
 
   const player = await findExistingApplicantPlayer(name);
 
   const { data: existing, error: existingError } = await db()
     .from("event_registrations")
     .select("id")
-    .eq("event_id", event.id)
+    .in("event_id", intakeEvents.map(row => row.id))
     .eq("registration_name", name)
     .maybeSingle();
 
@@ -798,12 +856,9 @@ export async function findSubmissionRegistration(eventId, registrationName) {
   const name = String(registrationName || "").trim();
   if (!eventId || !name) return null;
 
-  const event = await getEvent(eventId);
+  let event = await getEvent(eventId);
   if (!event) throw new Error("대회를 찾을 수 없습니다.");
-
-  if (!["open", "running"].includes(event.status) || event.record_applied_at) {
-    throw new Error("현재 파티를 제출할 수 없는 대회입니다.");
-  }
+  const intakeEvents = await getLeagueIntakeEvents(event);
 
   const { data, error } = await db()
     .from("event_registrations")
@@ -815,7 +870,7 @@ export async function findSubmissionRegistration(eventId, registrationName) {
       registration_source,
       final_submission_id
     `)
-    .eq("event_id", event.id)
+    .in("event_id", intakeEvents.map(row => row.id))
     .eq("registration_name", name)
     .in("registration_source", ["application", "advancement", "manual"]);
 
@@ -823,6 +878,10 @@ export async function findSubmissionRegistration(eventId, registrationName) {
 
   const selected = selectSubmissionRegistration(data || [], name);
   if (!selected) return null;
+  event = intakeEvents.find(row => row.id === selected.event_id);
+  if (!["open", "running"].includes(event.status) || event.record_applied_at) {
+    throw new Error("현재 파티를 제출할 수 없는 대회입니다.");
+  }
 
   const { data: latestSubmission, error: latestSubmissionError } = await db()
     .from("registration_submissions")
@@ -973,60 +1032,25 @@ export async function submitEventTeamSnapshot({
   };
 }
 
-export async function resolveAutomaticRoundNumber({
-  eventType = "pokecup",
-  division = null,
-  isTeamEvent = false,
-} = {}) {
-  const { data, error } = await db()
-    .from("events")
-    .select("event_type, division, is_team_event, round_number, status")
-    .not("round_number", "is", null)
-    .neq("status", "cancelled");
+export async function resolveAutomaticRoundNumber(options = {}) {
+  const family=competitionFamily(options);
+  if(!family) return null;
+  const query=db().from("competition_editions").select("id,family,round_number").eq("family",family);
+  const selected=options.competitionEditionId;
+  const {data,error}=await (selected?query.eq("id",selected):query.order("round_number",{ascending:false}).limit(1)).maybeSingle();
+  if(error) fail(error,"공식 회차를 확인하지 못했습니다.");
+  if(selected&&!data) throw new Error("선택한 대회 회차를 찾을 수 없습니다.");
+  // Preview only: the Event trigger reserves/validates the final round in its transaction.
+  return selected?data.round_number:(data?.round_number||0)+1;
+}
 
-  if (error) fail(error, "Event round number history could not be loaded.");
-
-  const candidates = (data || []).filter((row) => {
-    const rowRound = Number(row.round_number);
-    if (!Number.isInteger(rowRound) || rowRound < 1) return false;
-
-    if (eventType === "champions") {
-      return row.event_type === "champions";
-    }
-
-    // Team events borrow the ordinary individual Master sequence,
-    // but do not advance that sequence themselves.
-    if (isTeamEvent) {
-      return (
-        !Boolean(row.is_team_event) &&
-        row.event_type !== "champions" &&
-        row.division === "master"
-      );
-    }
-
-    // Historical Light events used both:
-    // event_type="light" and division="light".
-    if (division === "light" || eventType === "light") {
-      return (
-        !Boolean(row.is_team_event) &&
-        row.event_type !== "champions" &&
-        (row.division === "light" || row.event_type === "light")
-      );
-    }
-
-    return (
-      !Boolean(row.is_team_event) &&
-      row.event_type !== "champions" &&
-      row.division === division
-    );
-  });
-
-  const maxRound = candidates.reduce(
-    (max, row) => Math.max(max, Number(row.round_number) || 0),
-    0
-  );
-
-  return maxRound + 1;
+export async function listAvailableChampionshipEditions(battleFormat) {
+  const [editions,events]=await Promise.all([
+    db().from("competition_editions").select("id,family,round_number").eq("family","champions"),
+    db().from("events").select("competition_edition_id,battle_format").eq("event_type","champions"),
+  ]);
+  if(editions.error||events.error) fail(editions.error||events.error,"기존 챔피언스 회차를 불러오지 못했습니다.");
+  return availableChampionshipEditions(editions.data,events.data,battleFormat);
 }
 
 export async function saveApplicationEvent({
@@ -1034,6 +1058,8 @@ export async function saveApplicationEvent({
   announcementId = null,
   eventDraft = {},
 }) {
+  if (isLeagueIntakeDraft(eventDraft)) return saveLeagueIntake({ eventId, announcementId, eventDraft });
+  if (eventDraft.isTeamEvent && !eventId) eventDraft = { ...eventDraft, division: "master" };
   const nameFields = {
     eventType: eventDraft.eventType || "pokecup",
     division: eventDraft.division || null,
@@ -1049,6 +1075,7 @@ export async function saveApplicationEvent({
   if (eventId) {
     existingEvent = await getEvent(eventId);
     if (!existingEvent) throw new Error("수정할 대회를 찾을 수 없습니다.");
+    if (leagueIntakeId(existingEvent)) throw new Error("통합 접수 공지는 단일 리그로 변경할 수 없습니다.");
     // Historical ownership is immutable. A legacy Event without a Season stays
     // unassigned instead of being silently moved into the current YPL Season.
     seasonId = existingEvent.season_id;
@@ -1086,10 +1113,12 @@ export async function saveApplicationEvent({
     rankingEnabled: typeof requestedCompetitionSettings.rankingEnabled === "boolean"
       ? requestedCompetitionSettings.rankingEnabled
       : nameFields.division === "master" && nameFields.eventType !== "light", // 포인트는 마스터 리그(팀전 포함)만. 라이트와 루키는 없다.
+    ...(nameFields.division==="other"?{officialEvent:false,rankingEnabled:false}:{}),
   };
 
   const payload = {
     season_id: seasonId,
+    competition_edition_id: existingEvent?.competition_edition_id || null,
     name,
     round_number: roundNumber,
     event_type: eventDraft.eventType || "pokecup",
@@ -1217,17 +1246,21 @@ export async function getEventRecordContext(eventId) {
 
 export async function listEventApplications(eventId) {
   if (!eventId) return [];
+  const event = await getEvent(eventId);
+  if (!event) throw new Error("신청 대회를 찾을 수 없습니다.");
+  const intakeEvents = await getLeagueIntakeEvents(event);
 
   const { data, error } = await db()
     .from("event_registrations")
     .select(`
       id,
+      event_id,
       registration_name,
       registration_data,
       registered_at,
       created_at
     `)
-    .eq("event_id", eventId)
+    .in("event_id", intakeEvents.map(row => row.id))
     .eq("registration_source", "application")
     .order("registered_at", { ascending: true });
 
@@ -1237,6 +1270,7 @@ export async function listEventApplications(eventId) {
     id: row.id,
     createdAt: row.registered_at || row.created_at,
     registrationName: row.registration_name,
+    division: intakeEvents.find(event => event.id === row.event_id)?.division || null,
     answers: row.registration_data?.answers || {},
   }));
 }
@@ -1338,6 +1372,11 @@ export async function preflightAnnouncementDeletion(eventId) {
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
   const events = [event];
+  if (leagueIntakeId(event)) {
+    return buildAnnouncementDeletionPreflight(await Promise.all((await getLeagueIntakeEvents(event)).map(async row => ({
+      ...(await countAnnouncementDeletionFacts(row)), division: row.division,
+    }))));
+  }
   if (event.event_type === "champions" && event.championship_phase === "qualifier" && event.championship_final_event_id) {
     const finalEvent = await getEvent(event.championship_final_event_id);
     if (!finalEvent || finalEvent.event_type !== "champions" || finalEvent.championship_phase !== "final") {
@@ -1359,6 +1398,12 @@ export async function cancelApplicationEvent(eventId, { preflight = null } = {})
   }
 
   const event = await getEvent(eventId);
+  if (leagueIntakeId(event)) {
+    const { data, error } = await db().rpc("cancel_league_intake", { p_intake_id: leagueIntakeId(event) });
+    if (error) fail(error, "루키와 마스터 접수를 취소하지 못했습니다.");
+    if (data !== true) throw new Error("통합 접수 취소 결과를 확인하지 못했습니다.");
+    return { cancelled: true };
+  }
   if (event?.event_type === "champions" && event?.championship_phase === "qualifier" && event?.championship_final_event_id) {
     const { data, error } = await db().rpc("cancel_championship_application_event_pair", {
       p_qualifier_event_id: event.id,

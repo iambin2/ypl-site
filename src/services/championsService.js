@@ -93,7 +93,7 @@ export async function saveChampionshipApplicationEventPair({
             ? legacyDraftOrdinal
             : await resolveAutomaticRoundNumber({ eventType: "champions" })
       )
-    : await resolveAutomaticRoundNumber({ eventType: "champions" });
+    : await resolveAutomaticRoundNumber({ eventType: "champions", competitionEditionId: draft.competitionEditionId });
 
   if (!Number.isInteger(ordinal) || ordinal < 1) {
     throw new Error("Champions round number could not be resolved.");
@@ -102,6 +102,7 @@ export async function saveChampionshipApplicationEventPair({
     ...(existingQualifier?.registration_settings || {}),
     ...(draft.registrationSettings || {}),
     ...(announcementId ? { announcementId } : {}),
+    ...(!existingQualifier && draft.competitionEditionId ? { competitionEditionId: draft.competitionEditionId } : {}),
   };
   const recordRuleLabel = String(
     draft.recordRuleLabel ??
@@ -121,7 +122,7 @@ export async function saveChampionshipApplicationEventPair({
     p_final_event_id: finalEventId,
     p_season_id: seasonId,
     p_announcement_id: announcementId,
-    p_base_name: formatEventName({ eventType: "champions", round: ordinal, subtitle: draftSubtitle(draft, { eventType: "champions" }) }),
+    p_base_name: formatEventName({ eventType: "champions", battleFormat: draft.battleFormat, round: ordinal, subtitle: draftSubtitle(draft, { eventType: "champions", battleFormat: draft.battleFormat }) }),
     p_round_number: ordinal,
     p_battle_format: draft.battleFormat,
     p_generation: ordinal,

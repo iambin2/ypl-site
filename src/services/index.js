@@ -13,4 +13,5 @@ export * from "./appRouting.js";
 export * from "./championsCore.js";
 export * from "./championsService.js";
 export * from "./eventName.js";
+export * from "./leagueIntake.js";
 export * from "./dateFormat.js";

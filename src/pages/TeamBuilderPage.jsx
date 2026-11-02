@@ -669,6 +669,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         setRegistrationLookupError("해당 이름의 참가 신청을 찾을 수 없습니다.");
       } else {
         setRegistration(result);
+        setEventContext(result.event);
       }
     } catch (error) {
       setRegistrationLookupError(error?.code === "YPL_AMBIGUOUS_REGISTRATION"
@@ -685,7 +686,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     setSubmissionError("");
     try {
       const saved = await submitEventTeamSnapshot({
-        eventId,
+        eventId: registration.event.id,
         registrationId: registration.registration.id,
         registrationName,
         registrationSource: registration.registration.registration_source,

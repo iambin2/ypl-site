@@ -79,7 +79,9 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
     .flatMap(name => readFileSync(new URL(name, dir), "utf8").replace(/--.*$/gm, "").split(";"))
     .map(statement => statement.replace(/\s+/g, " ").trim().toLowerCase())
     .filter(statement => statement.startsWith("grant ") && /\bto\b[^;]*\banon\b/.test(statement));
-  const anonRpcs = new Set(["submit_registration_team_snapshot", "is_ypl_admin", "resolve_ypl_season_for_date"]);
+  // Eligibility only reads already-public participation/results. It is also
+  // called by the intake INSERT trigger; this adds no visitor mutation RPC.
+  const anonRpcs = new Set(["submit_registration_team_snapshot", "is_ypl_admin", "resolve_ypl_season_for_date", "has_individual_master_eligibility"]);
   for (const statement of statements) {
     if (statement.startsWith("grant select ")) continue;
     // A visitor's own notice alert and survey answer: the rows stay closed to anon (docs/db/announcement_push.sql, backend_hardening.sql).

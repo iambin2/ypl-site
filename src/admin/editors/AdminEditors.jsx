@@ -3,7 +3,9 @@ import React, { useEffect, useState } from "react";
 import { normTeam as normalizeLegacyParty } from "../../services/legacyPartyImages.js";
 import { Dropdown, Modal, Segmented, siteAlert } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
-import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, normalizeApplicationEventDivision } from "../../services/bracketTeamParticipants.js";
+import { getApplicationEventTypeLabel } from "../../services/bracketTeamParticipants.js";
+import { announcementEventType, changeAnnouncementEventType, normalizedAnnouncementDivision } from "../../services/leagueIntake.js";
+import { listAvailableChampionshipEditions } from "../../services/normalizedCompetitionService.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
@@ -104,30 +106,46 @@ function FormBuilder({ form, setForm, earlier = [] }){
   const move=(i,d)=>{ const j=i+d; if(j<0||j>=fields.length)return; const a=[...fields]; [a[i],a[j]]=[a[j],a[i]]; setFields(a); };
   const changeType=(f,v)=>patch(f.id,{type:v,options:isChoice(v)?((f.options&&f.options.length)?f.options:["선택지 1"]):[]});
   const eventDraft=form?.eventDraft||{};
-  const eventTypeValue=eventDraft.eventType||"pokecup";
+  const eventTypeValue=announcementEventType(eventDraft);
   const legacyLightEvent=eventTypeValue==="light";
   const eventTypeOptions=[
     ...(legacyLightEvent?[{value:"light",label:`${getApplicationEventTypeLabel("light")} (기존)`,disabled:true}]:[]),
     {value:"pokecup",label:getApplicationEventTypeLabel("pokecup")},
+    {value:"general",label:"일반 대회"},
     {value:"champions",label:getApplicationEventTypeLabel("champions")},
   ];
   const isChampions=eventTypeValue==="champions";
+  const isGeneral=eventTypeValue==="general";
+  const [editions,setEditions]=useState([]),[editionError,setEditionError]=useState(""),[editionBusy,setEditionBusy]=useState(false);
+  const battleFormat=eventDraft.battleFormat||"";
+  useEffect(()=>{
+    let cancelled=false;
+    setEditions([]);setEditionError("");setEditionBusy(false);
+    if(!enabled||!isChampions||form?.eventId||!battleFormat)return;
+    setEditionBusy(true);
+    listAvailableChampionshipEditions(battleFormat).then(rows=>{if(!cancelled)setEditions(rows);})
+      .catch(error=>{if(!cancelled)setEditionError(error.message);})
+      .finally(()=>{if(!cancelled)setEditionBusy(false);});
+    return ()=>{cancelled=true;};
+  },[enabled,isChampions,form?.eventId,battleFormat]);
   const isTeamEvent=!isChampions&&Boolean(eventDraft.isTeamEvent);
-  const divisionOptions=getApplicationEventDivisionOptions(isTeamEvent);
-  const divisionValue=normalizeApplicationEventDivision(eventDraft.division,isTeamEvent,{preserveLegacy:Boolean(form?.eventId)});
+  const divisionValue=normalizedAnnouncementDivision(form);
+  const divisionOptions=isTeamEvent?[divisionValue]:isGeneral?["other"]:["both","light"];
+  const competitionOptions=[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},...(divisionValue==="both"?[]:[{value:"round_robin",label:"리그전"}])];
   const hasLegacyDivision=!divisionOptions.includes(divisionValue);
   const divisionDropdownOptions=[
-    ...(hasLegacyDivision?[{value:"__legacy__",label:"기존 미분류",disabled:true}]:[]),
-    ...divisionOptions.map(value=>({value,label:value[0].toUpperCase()+value.slice(1)})),
+    ...(hasLegacyDivision?[{value:"__legacy__",label:divisionValue==="master"?"기존 마스터 단독 접수":divisionValue==="rookie"?"기존 루키 단독 접수":"기존 미분류",disabled:true}]:[]),
+    ...divisionOptions.map(value=>({value,label:value==="both"?"루키와 마스터 동시 접수":value==="light"?"파이컵 라이트":"마스터 리그"})),
   ];
   // 대회 이름은 조립된다(services/eventName.js). 운영진은 부제만 쓰고, 완성될 이름을 여기서 미리 본다.
   const eventLinked=isEventLinked(form);
-  const nameFields={eventType:eventTypeValue,division:isChampions?null:divisionValue,isTeamEvent};
+  const nameFields={eventType:eventTypeValue,division:isChampions||divisionValue==="both"?null:divisionValue,isTeamEvent,battleFormat};
   const subtitleValue=eventDraft.subtitle??eventSubtitleOf(eventDraft.name,nameFields);
   const draftRound=Number((String(eventDraft.name||"").match(/^(\d+)회/)||[])[1])||null;
-  const roundKnown=Boolean(form?.eventId&&draftRound);
+  const chosenRound=form?.eventId?draftRound:editions.find(ed=>ed.id===eventDraft.competitionEditionId)?.round_number;
+  const roundKnown=Boolean(chosenRound);
   const nameBase=eventNameBase(nameFields);
-  const namePreview=(nameBase&&!roundKnown?"N회 ":"")+formatEventName({...nameFields,round:roundKnown?draftRound:null,subtitle:subtitleValue});
+  const namePreview=(nameBase&&!roundKnown?"N회 ":"")+formatEventName({...nameFields,round:roundKnown?chosenRound:null,subtitle:subtitleValue});
   return (<div className="fb-wrap">
     <button type="button" className="pn row switch-row fb-switch" role="switch" aria-checked={enabled} onClick={()=>patchForm({enabled:!enabled})}>
       <span className="row-main"><b className="t15">대회 신청 받기</b><span className="t12 dim">사이트에서 바로 신청받습니다.</span></span>
@@ -144,15 +162,21 @@ function FormBuilder({ form, setForm, earlier = [] }){
         {eventLinked&&<>
         <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다.":"."}</div></div>
         <div className="cells fb-cells">
-        <Cell label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Cell>
-        <Cell label="구분">{isChampions?<span>해당 없음</span>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</Cell>
-        <Cell label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Cell>
-        <Cell label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Cell>
-        <Cell label="대진 방식" wide={isChampions}>{isChampions?<span>선발전 {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""}, 본선 {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</span>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</Cell>
+        <Cell label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent||Boolean(form?.leagueIntakeId)} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:changeAnnouncementEventType(eventDraft,eventType)})} options={eventTypeOptions}/></Cell>
+        <Cell label="접수 구분">{isChampions||isTeamEvent||isGeneral?<span>{isChampions?"해당 없음":isGeneral?"일반 대회":divisionValue==="light"?"기존 라이트 팀전":"마스터"}</span>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} disabled={Boolean(form?.leagueIntakeId)} ariaLabel="접수 구분" onChange={value=>patchForm({eventDraft:{...eventDraft,subtitle:subtitleValue,division:value}})} options={divisionDropdownOptions}/>}</Cell>
+        <Cell label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions||isGeneral||Boolean(form?.eventId)} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:nextTeam?"master":"both"}});}} options={[{value:"individual",label:`개인전${isChampions||isGeneral?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Cell>
+        <Cell label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null,competitionEditionId:null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Cell>
+        {isChampions&&!form?.eventId&&<Cell label="챔피언스 회차" wide><Dropdown value={eventDraft.competitionEditionId||"__new__"} disabled={!battleFormat||editionBusy} ariaLabel="챔피언스 회차" onChange={value=>patchForm({eventDraft:{...eventDraft,competitionEditionId:value==="__new__"?null:value}})} options={[{value:"__new__",label:"새 회차 생성"},...editions.map(ed=>({value:ed.id,label:`${ed.round_number}회에 ${battleFormat==="doubles"?"더블":"싱글"} 추가`}))]}/></Cell>}
+        <Cell label="대진 방식" wide={isChampions}>{isChampions?<span>선발전 {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""}, 본선 {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</span>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={competitionOptions}/>}</Cell>
         <Cell label="레귤레이션"><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></Cell>
         <Cell label="파이컵 추가 룰"><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></Cell>
         </div>
-        {isChampions&&<div className="field"><span className="field-label">본선 정원</span><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8" aria-label="8"/><div className="fb-note">회차는 이전 챔피언스 회차에 이어 자동으로 매겨집니다.</div></div>}
+        {isGeneral&&<div className="fb-note">공식 회차와 랭킹에 포함하지 않는 일반 대회입니다.</div>}
+        {isTeamEvent&&divisionValue!=="light"&&<div className="fb-note">팀전은 마스터로 진행합니다.</div>}
+        {!isChampions&&!isTeamEvent&&divisionValue==="both"&&<div className="fb-note">개인 마스터 참가 또는 개인 루키나 라이트 우승 이력으로 리그를 배정합니다. 대진표 생성에서 리그를 선택합니다.</div>}
+        {isChampions&&!form?.eventId&&<div className="fb-note">{battleFormat?"새 회차를 만들거나 기존 회차에 다른 종목을 추가합니다. 선발전과 본선은 같은 회차를 사용합니다.":"챔피언스 회차는 배틀 형식을 먼저 선택해 주세요."}</div>}
+        {editionError&&<FormError>{editionError}</FormError>}
+        {isChampions&&<div className="field"><span className="field-label">본선 정원</span><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8" aria-label="8"/><div className="fb-note">선발전과 본선은 같은 챔피언스 회차로 진행합니다.</div></div>}
         <Field label={<>기록 표시 룰 <span className="fb-note">(선택, 자유 입력)</span></>}><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></Field>
         {!isChampions&&<div className="bk-grow2">
           <Field label={<>칭호 보상 <span className="fb-note">(선택)</span></>}><input value={eventDraft.titleAward?.name||""} onChange={e=>patchForm({eventDraft:{...eventDraft,titleAward:{scope:"champion",...(eventDraft.titleAward||{}),name:e.target.value}}})} placeholder="예: 초신성"/></Field>
@@ -203,11 +227,13 @@ function FormBuilder({ form, setForm, earlier = [] }){
   </div>);
 }
 export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
+  const [announcementId]=useState(()=>item?.id||uid());
   const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||""),[link2,setLink2]=useState(item?.link2||""),[link2Label,setLink2Label]=useState(item?.link2Label||"");
   const [form,setForm]=useState(item?.form||{enabled:false,buttonLabel:"참가 신청",fields:[],responses:[]});
   const [linkOpen,setLinkOpen]=useState(!!(item?.link||item?.link2)); // 이미 링크가 있으면 펼친 상태로 시작
   const championsDraft=form?.eventDraft?.eventType==="champions";
-  const normalizedEventDraft=form?.enabled?{...(form.eventDraft||{}),eventType:form?.eventDraft?.eventType||"pokecup",division:championsDraft?null:normalizeApplicationEventDivision(form?.eventDraft?.division,Boolean(form?.eventDraft?.isTeamEvent),{preserveLegacy:Boolean(form?.eventId)}),isTeamEvent:championsDraft?false:Boolean(form?.eventDraft?.isTeamEvent),battleFormat:form?.eventDraft?.battleFormat||null,competitionFormat:championsDraft?null:(form?.eventDraft?.competitionFormat||null),regulationId:form?.eventDraft?.regulationId||Object.keys(REGULATIONS)[0]||null,cupRuleId:form?.eventDraft?.cupRuleId||"none"}:form?.eventDraft;
+  const normalizedEventDraft=form?.enabled?{...(form.eventDraft||{}),eventType:form?.eventDraft?.eventType||"pokecup",division:normalizedAnnouncementDivision(form),isTeamEvent:championsDraft?false:Boolean(form?.eventDraft?.isTeamEvent),battleFormat:form?.eventDraft?.battleFormat||null,competitionFormat:championsDraft?null:(form?.eventDraft?.competitionFormat||null),regulationId:form?.eventDraft?.regulationId||Object.keys(REGULATIONS)[0]||null,cupRuleId:form?.eventDraft?.cupRuleId||"none"}:form?.eventDraft;
+  if(form?.enabled&&normalizedEventDraft) normalizedEventDraft.subtitle=normalizedEventDraft.subtitle??eventSubtitleOf(normalizedEventDraft.name,{eventType:normalizedEventDraft.eventType,division:normalizedEventDraft.division==="both"?null:normalizedEventDraft.division,isTeamEvent:normalizedEventDraft.isTeamEvent,battleFormat:normalizedEventDraft.battleFormat});
   return (<Modal title={item?"공지 수정":"공지 작성"} onClose={onClose}>
     <Field label="날짜"><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></Field>
     <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)}/></Field>
@@ -227,7 +253,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
       </div>}
     </div>
     <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="stack ann-actions">{onDelete&&<Button variant="link" className="ann-delete" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
+    <div className="stack ann-actions">{onDelete&&<Button variant="link" className="ann-delete" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>onSave({id:announcementId,date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
   </Modal>);
 }
 export function StandingsEditor({ title, rows, onClose, onSave }) {

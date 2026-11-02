@@ -41,6 +41,7 @@ const AWARD_FIELDS = [
 
 function eventDivision(event) {
   const division = String(event?.division || "").trim().toLowerCase();
+  if (division === "other") return null;
   if (["master", "light", "rookie"].includes(division)) return division;
 
   const eventType = String(event?.event_type || "").trim().toLowerCase();

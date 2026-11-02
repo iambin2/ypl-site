@@ -1,6 +1,6 @@
 import React from "react";
 import { siteConfirm } from "../components/index.js";
-import { announcementDeletionBlockedMessage, isEventLinked, cancelApplicationEvent, notifyAnnouncement, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
+import { announcementDeletionBlockedMessage, isEventLinked, isLeagueIntakeDraft, cancelApplicationEvent, deleteLeagueIntakeNotice, notifyAnnouncement, preflightAnnouncementDeletion, saveApplicationEvent, saveChampionshipApplicationEventPair } from "../services/index.js";
 import {
   AnnEditor,
   ChampionEditor,
@@ -11,7 +11,7 @@ import {
   TitleItemEditor,
 } from "./editors/AdminEditors.jsx";
 
-export default function AdminModalHost({ modal, data, setModal, save, setAdmin, flash, normTeam }) {
+export default function AdminModalHost({ modal, data, setModal, save, refresh, setAdmin, flash, normTeam }) {
   if (!modal) return null;
   const close = () => setModal(null);
   // 삭제는 되돌릴 수 없다. 게시판 글 삭제와 같은 확인을 한 번 거친다.
@@ -114,10 +114,11 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
                 form: {
                   ...announcement.form,
                   eventId: event.id,
+                  leagueIntakeId: event.registration_settings?.leagueIntakeId || null,
                   // 공지 안의 이름 사본은 저장된 대회 이름을 그대로 따른다(챔피언스는 선발전 접미사를 뺀 기본 이름).
                   eventDraft: {
                     ...announcement.form.eventDraft,
-                    name: champions ? event.name.replace(/\s*(·\s*)?선발전$/, "") : event.name,
+                    name: champions ? event.name.replace(/\s*(·\s*)?선발전$/, "") : isLeagueIntakeDraft(announcement.form.eventDraft) ? event.registration_settings.intakeName : event.name,
                   },
                 },
               };
@@ -169,6 +170,18 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
             }
           }
           if (!(await askDelete("공지 삭제", "이 공지를 삭제할까요?"))) return;
+
+          if (eventId && isLeagueIntakeDraft(modal.item.form?.eventDraft)) {
+            try {
+              await deleteLeagueIntakeNotice(eventId, modal.item.id);
+              await refresh();
+              flash?.("삭제했습니다.");
+              close();
+            } catch (error) {
+              flash?.(`통합 접수 공지를 삭제하지 못했습니다: ${error?.message || "알 수 없는 오류"}`);
+            }
+            return;
+          }
 
           const nextData = {
             ...data,

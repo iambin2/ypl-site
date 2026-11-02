@@ -31,6 +31,8 @@ Test에서 검증한 normalized architecture는 새 Production `YPL_DB` (`rqffro
 
 ### Active normalized Event
 
+공식 회차는 `competition_editions`의 regular/champions/light 세 계열로 관리한다. 신규 Event는 `competition_edition_id`를 가지며 정규 파이컵의 마스터/루키/팀전은 같은 regular 회차 체계를 사용한다. Champions 싱글/더블과 각 선발전/본선은 명시적으로 같은 회차에 연결한다. 서버가 계열별 잠금으로 회차를 예약한다. 과거 기록은 회차 catalogue만 등록하고 경기/파티/포인트를 변경하지 않는다. 상세 규칙은 [COMPETITION_EDITIONS.md](COMPETITION_EDITIONS.md)를 따른다.
+
 신규 active Event-linked runtime의 canonical facts는 normalized schema에 있다.
 
 ```text
@@ -60,6 +62,8 @@ Season
 
 방문자 공간(자유게시판, 샘플과 파티 소개글, 사설 대진표)은 `public.community_items`에 행 단위로만 저장한다(`src/services/communityStore.js`, `docs/db/visitor_gates.sql`). 쓰기는 `community_write` 함수뿐이고, 비공개 글은 RLS가 가리며, 비밀번호는 방문자가 읽을 수 없는 `public.visitor_pins`에서 서버가 대조한다. 이 데이터는 Event, Registration, Result, RankingAward, 칭호, 명예의 전당과 어떤 경로로도 연결하지 않으며, 사설 대진표는 기록 반영 흐름을 갖지 않는다(`tests/community.test.mjs`).
 
+사설 대진표의 수정은 DB가 발급한 `updatedAt` 토큰을 `_expectedUpdatedAt`으로 제출한다. `community_write`가 행 잠금 아래 토큰을 비교하므로 같은 대진표를 두 기기가 읽었어도 뒤늦은 저장으로 먼저 입력한 결과를 덮지 않는다. 충돌하면 화면은 최신 값을 다시 읽고 재입력을 안내한다. 일반 게시판의 쓰기 형식은 유지한다. 적용 스크립트는 `docs/db/private_bracket_conflict_guard.sql`, 검증 범위는 [COMPETITION_FLOW_VERIFICATION.md](COMPETITION_FLOW_VERIFICATION.md)를 따른다.
+
 ### Historical legacy compatibility
 
 `site_data.ypl_data_v4.brackets`의 legacy graph는 다음 조건의 completed historical display에만 허용한다.
@@ -80,6 +84,14 @@ historical bracket은 winner 변경, participant/party 변경, delete, record ap
 - 이름 기반 연결은 같은 Event 안에서 `registration_name` exact match만 허용한다. fuzzy match나 동명이인 임의 선택은 금지한다.
 - 기존 Event 수정은 기존 `season_id`와 `round_number`를 유지한다.
 - Event가 completed 또는 record-applied이면 official submission write를 막는다.
+
+### 루키와 마스터 통합 접수
+
+`league_intakes`는 하나의 공지와 Rookie/Master Event 두 개를 묶는다. 공지는 함께 접수하고 대진표 생성에서 리그를 선택한다. Registration, official submission, runtime, Result, RankingAward 및 기록 완료 상태는 여전히 각 Event가 소유한다. 신규 팀전은 Master로 고정하며 역사 Light 팀전은 보존한다.
+
+개인 Master 참가 또는 개인 Rookie/Light champion 이력으로 개인 Master 자격을 판정한다. 팀전은 자격 근거에서 제외한다. DB가 신청 destination과 양쪽 중복을 검사하고 EntryParticipant 생성 때 재검사한다. 공통 파티 제출 경로는 실제 Registration 소유 Event로 연결하고 Submission/final pointer를 복사하지 않는다. 양쪽 후속 사실 검사와 공지 삭제는 원자적 DB 처리다.
+
+2026-11-02 운영 DB에 통합 접수와 공식 회차 확장을 적용했다. 이후 재설치 시에도 DB 스크립트를 먼저 적용한 다음 프런트엔드를 배포한다. 전환 제약, 적용 순서와 검증은 `docs/LEAGUE_INTAKE.md`와 `docs/COMPETITION_EDITIONS.md`를 따른다.
 
 ### Official submission
 

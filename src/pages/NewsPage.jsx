@@ -283,6 +283,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
       {form.eventId&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
         <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{setRegistrationName(e.target.value);setErrors(x=>({...x,name:""}));}} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
       </Question>}
+      {form.eventDraft?.division==="both"&&<p className="t12 dim reg">루키와 마스터를 함께 접수합니다. 개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
       {fields.length===0&&!form.eventId&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>{ const label=f.label||`질문 ${i+1}`, id=`ff-${f.id}`, error=errors[f.id];
         const text={id,className:"in","aria-required":f.required||undefined,"aria-invalid":error?true:undefined,value:ans[f.id]||"",onChange:e=>set(f.id,e.target.value),placeholder:"답변을 입력해 주세요."};
@@ -302,11 +303,13 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
 }
 function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onResetPin }){
   const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const resp=[...(normalized?responsesOverride:(form.responses||[]))].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const unified=normalized&&form.eventDraft?.division==="both";
+  const divisionLabel=r=>r.division==="master"?"마스터":r.division==="rookie"?"루키":"확인 필요";
   const cell=(v)=>Array.isArray(v)?v.join(", "):(v==null?"":String(v));
   const csv=()=>{
     const esc=(s)=>{ s=String(s==null?"":s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
-    const header=["번호","제출 시각",...(normalized?["참가자 이름"]:[]),...fields.map(f=>f.label||"질문")];
-    const rows=resp.map((r,i)=>[i+1,fmtDT(r.createdAt),...(normalized?[r.registrationName||""]:[]),...fields.map(f=>cell(r.answers&&r.answers[f.id]))]);
+    const header=["번호","제출 시각",...(normalized?["참가자 이름"]:[]),...(unified?["리그"]:[]),...fields.map(f=>f.label||"질문")];
+    const rows=resp.map((r,i)=>[i+1,fmtDT(r.createdAt),...(normalized?[r.registrationName||""]:[]),...(unified?[divisionLabel(r)]:[]),...fields.map(f=>cell(r.answers&&r.answers[f.id]))]);
     const text="\ufeff"+[header,...rows].map(row=>row.map(esc).join(",")).join("\r\n");
     const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
@@ -328,6 +331,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
   return (<Modal title="신청자" hint={ann.title} onClose={onClose}>
     <div className="stack fr-counters"><Counter label="신청" value={resp.length} cells={cellsFor(resp.length)}/>
       {subs&&<><Counter label="파티 제출" value={sentCount} cells={cellsFor(resp.length)}/><Counter label="미제출" value={resp.length-sentCount} cells={cellsFor(resp.length)}/></>}</div>
+    {unified&&<p className="t12 reg dim">마스터 {resp.filter(row=>row.division==="master").length}명, 루키 {resp.filter(row=>row.division==="rookie").length}명</p>}
     {resp.length>0&&<div className="stack fr-bar">
       <label className="pn search-in"><Icon n="search" size={20}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="이름 검색" aria-label="이름 검색"/></label>
       <button type="button" className="pn fr-csv" onClick={csv}><Icon n="download" size={16}/>CSV</button>
@@ -337,7 +341,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
       <div className="stack fr-rows">{shown.map(r=>(<div className="pn fr-row" key={r.id}>
         <span className="t12 dim fr-no num">{resp.indexOf(r)+1}</span>
         <div className="fr-main">
-          <div className="fr-name"><b className="t15">{nameOf(r)||"이름 없음"}</b><span className="t12 reg dim num">{fmtDT(r.createdAt)}</span></div>
+          <div className="fr-name"><b className="t15">{nameOf(r)||"이름 없음"}</b>{unified&&<span className="t12 dim">{divisionLabel(r)}</span>}<span className="t12 reg dim num">{fmtDT(r.createdAt)}</span></div>
           {fields.length>0&&<span className="t12 reg dim fr-answers">{fields.map(f=>`${f.label||"질문"} ${cell(r.answers&&r.answers[f.id])||"없음"}`).join(", ")}</span>}
         </div>
         <div className="fr-actions">

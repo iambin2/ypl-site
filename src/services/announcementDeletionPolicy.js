@@ -32,8 +32,9 @@ export function buildAnnouncementDeletionPreflight(eventFacts = []) {
     allowed: !chosen,
     reason: chosen?.reason || null,
     phase: chosen?.phase || null,
+    division: chosen?.division || null,
     counts: chosen?.counts || emptyAnnouncementDeletionCounts(),
-    byPhase: Object.fromEntries(facts.map(fact => [fact.phase || "ordinary", fact.counts || emptyAnnouncementDeletionCounts()])),
+    byPhase: Object.fromEntries(facts.map(fact => [fact.phase || fact.division || "ordinary", fact.counts || emptyAnnouncementDeletionCounts()])),
   };
 }
 
@@ -56,7 +57,8 @@ export function announcementDeletionBlockedMessage(preflight) {
   const champions = Boolean(preflight?.phase);
   const phase = preflight?.phase === "qualifier" ? "선발전" : preflight?.phase === "final" ? "본선" : "";
   const target = champions ? "이 챔피언스 공지를" : "공지를";
-  const prefix = champions ? `${phase}에 ` : "";
+  const league = preflight?.division === "master" ? "마스터 리그" : preflight?.division === "rookie" ? "루키 리그" : "";
+  const prefix = champions ? `${phase}에 ` : league ? `${league}에 ` : "";
   switch (preflight?.reason) {
     case "record_applied":
       return `${prefix}이미 기록이 반영된 대회라 ${target} 삭제할 수 없습니다. 먼저 기록 반영을 취소해 주세요.`;

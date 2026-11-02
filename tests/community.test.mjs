@@ -2,10 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { applyLocalWrite, assembleCommunityItems } from "../src/services/communityItems.js";
-import { buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../src/services/privateBracket.js";
+import { buildPrivateBracketPatch, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../src/services/privateBracket.js";
 import { buildTeamSheet, makeMember, savedTeamSheet, serializeMembers } from "../src/services/teamBuilderCore.js";
 
 const firstRound = graph => graph.rounds[0].flatMap(match => [match.a, match.b]);
+
+test("an older visible draw cannot select a winner on another device's redraw",()=>{
+  const current={updatedAt:"new-draw",graph:{match:{a:"different player"}}};
+  let changed=false;
+  assert.throws(()=>buildPrivateBracketPatch(current,"old-draw",()=>{changed=true;}),/다른 기기/);
+  assert.equal(changed,false);
+  assert.deepEqual(buildPrivateBracketPatch(current,"new-draw",x=>({graph:x.graph})),{graph:current.graph});
+  assert.throws(()=>buildPrivateBracketPatch(null,null,()=>({})),/찾을 수 없는/);
+});
 
 test("private bracket: a random draw seats everyone once and spreads the byes", () => {
   const ids = ["a", "b", "c", "d", "e", "f"];
@@ -32,6 +41,16 @@ test("private bracket: double elimination needs three, otherwise it stays single
 
 test("private bracket: names are trimmed, deduplicated and split on lines or commas", () => {
   assert.deepEqual(parseParticipantNames(" 지우 \n이슬,웅\n지우\n\n"), ["지우", "이슬", "웅"]);
+});
+
+test("private brackets seat every participant once for 2 to 64 players in either format within the DB size limit",()=>{
+  for(let n=2;n<=64;n++)for(const double of [false,true]) {
+    const bracket=createPrivateBracket({names:Array.from({length:n},(_,i)=>`참가자 ${i}`),double,random:()=>0.42});
+    const seats=firstRound(bracket.graph);
+    assert.equal(new Set(seats.filter(s=>s.pid).map(s=>s.pid)).size,n);
+    assert.ok(bracket.graph.rounds[0].every(m=>!(m.a.bye&&m.b.bye)));
+    assert.ok(Buffer.byteLength(JSON.stringify(bracket))<=32768);
+  }
 });
 
 test("private bracket and showcase never reach official data", () => {

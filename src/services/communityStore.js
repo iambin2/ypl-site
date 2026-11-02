@@ -40,7 +40,9 @@ async function write(key, action, { id, parentId = null, payload = null, secret 
 // 쓰기 전에 비밀번호만 확인한다. ok 가 아니면 PIN_DENIED 의 이유로 안내한다.
 export const verifyCommunityPin = (key, id, pin) => write(key, "verify", { id, pin });
 export const createCommunityItem = (key, id, payload, { parentId, secret, pin } = {}) => write(key, "create", { id, parentId, payload, secret, pin });
-export const patchCommunityItem = (key, id, payload, { secret, pin } = {}) => write(key, "update", { id, payload, secret, pin });
+export const patchCommunityItem = (key, id, payload, { secret, pin, expectedUpdatedAt } = {}) => write(key, "update", {
+  id, payload: key===PRIVATE_BRACKETS_KEY ? {...payload,_expectedUpdatedAt:expectedUpdatedAt??null} : payload, secret, pin,
+});
 export const deleteCommunityItem = (key, id, pin) => write(key, "delete", { id, pin });
 
 export const newCommunityId = () => crypto.randomUUID().replaceAll("-", "").slice(0, 12);

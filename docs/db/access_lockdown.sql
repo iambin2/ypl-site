@@ -115,7 +115,7 @@ begin
   for f in
     select p.oid::regprocedure from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'ypl_schema_validation' and p.prokind = 'f'
-       and p.proname not in ('submit_registration_team_snapshot', 'is_ypl_admin', 'resolve_ypl_season_for_date')
+       and p.proname not in ('submit_registration_team_snapshot', 'is_ypl_admin', 'resolve_ypl_season_for_date', 'has_individual_master_eligibility')
   loop
     execute format('revoke execute on function %s from public, anon', f);
   end loop;

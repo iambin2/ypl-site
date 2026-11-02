@@ -12,10 +12,10 @@ export function cleanEventNamePart(value) {
 }
 
 /* 정규 체계의 이름 앞부분. 체계 밖의 대회(정모 이벤트 같은 기타 구분)는 null이고, 부제가 곧 이름이다. */
-export function eventNameBase({ round, eventType, division, isTeamEvent } = {}) {
+export function eventNameBase({ round, eventType, division, isTeamEvent, battleFormat } = {}) {
   const n = Number(round);
   const prefix = Number.isInteger(n) && n > 0 ? `${n}회 ` : "";
-  if (eventType === "champions") return `${prefix}챔피언스 시리즈`;
+  if (eventType === "champions") return `${prefix}챔피언스 시리즈${battleFormat==="singles"?" 싱글":battleFormat==="doubles"?" 더블":""}`;
   const light = eventType === "light" || division === "light";
   if (isTeamEvent && (light || division === "master")) return `${prefix}파이컵${light ? " 라이트" : ""} 팀전`;
   if (light) return `${prefix}파이컵 라이트`;

@@ -20,7 +20,8 @@ import Seg from "../components/common/Seg.jsx";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
-import { PRIVATE_BRACKET_MAX, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../services/privateBracket.js";
+import { PRIVATE_BRACKET_MAX, buildPrivateBracketPatch, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../services/privateBracket.js";
+import { leagueIntakeId, leagueIntakeOptions } from "../services/leagueIntake.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -306,6 +307,7 @@ function BracketWizard({ data, onClose, onCreate }){
   const [placement,setPlacement]=useState(null);
   const [held,setHeld]=useState(null);
   const dragFrom=useRef(null);
+  const eventRequestRef=useRef(0);
 
   useEffect(()=>{
     let cancelled=false;
@@ -319,10 +321,12 @@ function BracketWizard({ data, onClose, onCreate }){
     return ()=>{ cancelled=true; };
   },[]);
   const selectLinkedEvent=async(id,{preserveDirectIds=null,preserveSelectedIds=null}={})=>{
+    const request=++eventRequestRef.current;
     setEventId(id);
     normalizedAttemptRef.current=null;
     setEventError("");
     setEventRegs([]);
+    setSelectedRegistrationIds([]);
     setSubmissionStatuses([]);
     setSubmissionStatusError("");
     setDirectRegistrationIds([]);
@@ -330,7 +334,7 @@ function BracketWizard({ data, onClose, onCreate }){
     setChampionshipManualCandidates([]);
     setChampionshipManualPlayerId("");
     setChampionshipManualReason("");
-    if(!id) return;
+    if(!id){setEventBusy(false);return;}
 
     const event=events.find(x=>x.id===id);
     if(!event) return;
@@ -356,7 +360,8 @@ function BracketWizard({ data, onClose, onCreate }){
       const regs = registrationResult.value || [];
       let statuses=[];
       try{ statuses=await listEventRegistrationSubmissionStatuses(id,regs); }
-      catch(statusError){ setSubmissionStatusError(statusError?.message || "제출 상태를 불러오지 못했습니다."); }
+      catch(statusError){ if(request===eventRequestRef.current)setSubmissionStatusError(statusError?.message || "제출 상태를 불러오지 못했습니다."); }
+      if(request!==eventRequestRef.current)return;
       setEventRegs(regs);
       setSubmissionStatuses(statuses || []);
       const directIds = directSelectionResult.status === "fulfilled" ? directSelectionResult.value : [];
@@ -380,10 +385,11 @@ function BracketWizard({ data, onClose, onCreate }){
         setTeams(Array(8).fill(null).map(()=>({name:"",members:""})));
       }
     }catch(error){
+      if(request!==eventRequestRef.current)return;
       setEventError(error?.message||"신청자 목록을 불러오지 못했습니다.");
       setSubmissionStatusError(error?.message || "제출 상태를 불러오지 못했습니다.");
     }finally{
-      setEventBusy(false);
+      if(request===eventRequestRef.current)setEventBusy(false);
     }
   };
 
@@ -488,6 +494,8 @@ function BracketWizard({ data, onClose, onCreate }){
     );
   };
   const linkedEvent=events.find(event=>event.id===eventId)||null;
+  const selectedIntakeId=leagueIntakeId(linkedEvent);
+  const intakeEvents=selectedIntakeId?events.filter(event=>leagueIntakeId(event)===selectedIntakeId):[];
   const linkedAnnouncement=(data?.announcements||[]).find(announcement=>
     announcement.id===linkedEvent?.registration_settings?.announcementId
   );
@@ -562,10 +570,12 @@ function BracketWizard({ data, onClose, onCreate }){
         <label htmlFor="bk-reg-event">신청 대회 선택</label>
         <Dropdown
           id="bk-reg-event"
-          value={manualMode?"__manual__":eventId}
+          value={manualMode?"__manual__":selectedIntakeId?`intake:${selectedIntakeId}`:eventId}
           onChange={v=>{
             if(v==="__manual__"){
               setManualMode(true);
+              eventRequestRef.current++;
+              setEventBusy(false);
               normalizedAttemptRef.current=null;
               setEventId("");
               setEventRegs([]);
@@ -573,14 +583,23 @@ function BracketWizard({ data, onClose, onCreate }){
               return;
             }
             setManualMode(false);
-            selectLinkedEvent(v);
+            const selected=v.startsWith("intake:")
+              ? events.find(event=>leagueIntakeId(event)===v.slice(7)&&event.division==="master")||events.find(event=>leagueIntakeId(event)===v.slice(7))
+              : events.find(event=>event.id===v);
+            selectLinkedEvent(selected?.id||"");
           }}
           placeholder={eventBusy?"불러오는 중…":"대회를 선택해 주세요."}
           options={[
-            ...events.map(ev=>({value:ev.id,label:championshipEventPickerLabel(ev)})),
+            ...leagueIntakeOptions(events).map(option=>({value:option.value,label:option.label||championshipEventPickerLabel(option.event)})),
             {value:"__manual__",label:"연결하지 않고 새로 만들기"}
           ]}
         />
+        {selectedIntakeId&&<div className="field">
+          <span className="field-label">대진표 리그</span>
+          <Segmented value={linkedEvent.division} onChange={division=>{const event=intakeEvents.find(row=>row.division===division);if(event)selectLinkedEvent(event.id);}} ariaLabel="대진표 리그" options={intakeEvents.map(event=>[event.division,event.division==="master"?"마스터":"루키"])}/>
+          <div className="fb-note">선택한 리그의 신청자만 대진표에 포함합니다. 각 리그의 결과와 기록은 따로 반영됩니다.</div>
+        </div>}
+        {linkedEvent?.is_team_event&&linkedEvent.division==="master"&&<div className="bk-hint">팀전은 마스터로 진행합니다.</div>}
         {eventError&&<FormError>{eventError}</FormError>}
         {eventId&&!eventBusy&&
           <div className="bk-hint">
@@ -620,7 +639,7 @@ function BracketWizard({ data, onClose, onCreate }){
 
       <Dock>
         <div className="stack bk-dock">
-          <Button variant="main" onClick={()=>setStep(2)} disabled={!manualMode&&!eventId}>다음</Button>
+          <Button variant="main" onClick={()=>setStep(2)} disabled={!manualMode&&(!eventId||eventBusy)}>다음</Button>
           <Button variant="second" onClick={onClose}>취소</Button>
         </div>
       </Dock>
@@ -667,7 +686,7 @@ function BracketWizard({ data, onClose, onCreate }){
             );
           })}
 
-          {!linkedEvent?.championship_phase && addedParticipants.map((name,i)=>(
+          {!linkedEvent?.championship_phase && !selectedIntakeId && addedParticipants.map((name,i)=>(
             <div className="bk-pin bk-participant-confirm-row bk-participant-added" key={`added-${i}`}>
               <span className="bk-pin-no gold">+</span>
               <input
@@ -711,7 +730,7 @@ function BracketWizard({ data, onClose, onCreate }){
             disabled={championshipManualBusy}
           >
             참가자 추가
-          </Button> : <Button
+          </Button> : !selectedIntakeId&&<Button
             type="button"
             size="sm"
             onClick={()=>setAddedParticipants(prev=>[...prev,""])}
@@ -1590,7 +1609,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     <div className="swap" key="form">
       <p className="t12 dim bk-apply-meta">순위, {team?"팀전":"개인전"}
           {linked&&linkedContext?.event?.division
-            ? `, ${linkedContext.event.division==="master"?"마스터 리그":linkedContext.event.division==="rookie"?"루키 리그":linkedContext.event.division==="light"?"파이컵 라이트":linkedContext.event.division}`
+            ? `, ${linkedContext.event.division==="master"?"마스터 리그":linkedContext.event.division==="rookie"?"루키 리그":linkedContext.event.division==="light"?"파이컵 라이트":linkedContext.event.division==="other"?"일반 대회":linkedContext.event.division}`
             : ""}</p>
       <dl className="stack bk-apply-places">
         {placements.map((pl,i)=><div className={(i===0?"inv":"pn")+" spec-row"} key={pl.label+pl.pid}><dt className="t12">{pl.label}</dt><dd className="t15">{nameOf(pl.pid)}</dd></div>)}
@@ -1933,14 +1952,14 @@ function PrivateBrackets({ admin, flash, tabs }){
     else { const url=new URL(window.location.href); url.searchParams.delete("pb"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setOpenId(null)),{shared:open?"pb-"+open.id:null,dir:"back"}); } };
   const unlock=(id,pin)=>{ const next=new Map(unlocked); next.set(id,pin); setUnlocked(next); writeUnlocked(next); };
   const lock=id=>{ const next=new Map(unlocked); next.delete(id); setUnlocked(next); writeUnlocked(next); };
-  // 최신 대진표 위에서 바꿔, 다른 기기에서 입력한 결과를 덮지 않는다.
+  // Read the current draw, then let the DB reject a competing save by its token.
   const write=async(id,change,done)=>{ setBusy(true);
     try{
+      const expectedUpdatedAt=(list||[]).find(x=>x.id===id)?.updatedAt;
       const current=(await readCommunity(PRIVATE_BRACKETS_KEY)).find(x=>x.id===id);
-      if(!current) throw new Error("삭제되었거나 찾을 수 없는 대진표입니다.");
-      const patch=change(current);
-      await patchCommunityItem(PRIVATE_BRACKETS_KEY,id,patch,{pin:unlocked.get(id)||""});
-      setList(items=>items.map(x=>x.id===id?{...x,...patch}:x));
+      const patch=buildPrivateBracketPatch(current,expectedUpdatedAt,change);
+      await patchCommunityItem(PRIVATE_BRACKETS_KEY,id,patch,{pin:unlocked.get(id)||"",expectedUpdatedAt:current.updatedAt});
+      await reload();
       if(done)flash(done); return true; }
     catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
 
