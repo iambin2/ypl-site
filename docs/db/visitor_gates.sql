@@ -163,7 +163,7 @@ declare
   v_parent public.community_items%rowtype;
   v_pin text := nullif(p_pin, '');
   v_status text;
-  c_reserved constant text[] := array['id', 'pin', 'pinHash', 'comments', 'secret', 'createdAt', 'hasPin'];
+  c_reserved constant text[] := array['id', 'pin', 'pinHash', 'comments', 'secret', 'createdAt', 'hasPin', '_expectedUpdatedAt'];
 begin
   if p_action = 'create' then
     if p_board not in ('free', 'showcase', 'private_bracket')
@@ -194,7 +194,9 @@ begin
       end if;
     end if;
     insert into public.community_items (id, board, parent_id, payload, secret, has_pin)
-    values (p_id, p_board, p_parent_id, p_payload - c_reserved,
+    values (p_id, p_board, p_parent_id, case when p_board='private_bracket' then
+              (p_payload - c_reserved) || jsonb_build_object('updatedAt',clock_timestamp())
+            else p_payload - c_reserved end,
             coalesce(v_parent.secret, p_secret, false), v_pin is not null);
     if v_pin is not null then
       insert into public.visitor_pins (scope, subject, pin_hash)
@@ -219,8 +221,17 @@ begin
     if jsonb_typeof(p_payload) is distinct from 'object' then
       raise exception using errcode = 'P0001', message = '저장할 글이 올바르지 않습니다.';
     end if;
+    -- The row lock serializes saves; the token also rejects an older reader.
+    -- Old clients without a token must refresh instead of overwriting results.
+    if v_item.board='private_bracket' and
+       (not (p_payload ? '_expectedUpdatedAt') or
+        p_payload->'_expectedUpdatedAt' is distinct from coalesce(v_item.payload->'updatedAt','null'::jsonb)) then
+      return 'stale';
+    end if;
     update public.community_items i
-       set payload = i.payload || (p_payload - c_reserved), secret = coalesce(p_secret, i.secret)
+       set payload = i.payload || (p_payload - c_reserved) || case when i.board='private_bracket'
+             then jsonb_build_object('updatedAt',clock_timestamp()) else '{}'::jsonb end,
+           secret = coalesce(p_secret, i.secret)
      where i.id = p_id;
     if p_secret is not null then
       update public.community_items i set secret = p_secret where i.parent_id = p_id;

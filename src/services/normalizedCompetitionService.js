@@ -1074,6 +1074,7 @@ export async function saveApplicationEvent({
     rankingEnabled: typeof requestedCompetitionSettings.rankingEnabled === "boolean"
       ? requestedCompetitionSettings.rankingEnabled
       : nameFields.division === "master" && nameFields.eventType !== "light", // 포인트는 마스터 리그(팀전 포함)만. 라이트와 루키는 없다.
+    ...(nameFields.division==="other"?{officialEvent:false,rankingEnabled:false}:{}),
   };
 
   const payload = {

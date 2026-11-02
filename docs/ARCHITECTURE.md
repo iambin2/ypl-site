@@ -62,6 +62,8 @@ Season
 
 방문자 공간(자유게시판, 샘플과 파티 소개글, 사설 대진표)은 `public.community_items`에 행 단위로만 저장한다(`src/services/communityStore.js`, `docs/db/visitor_gates.sql`). 쓰기는 `community_write` 함수뿐이고, 비공개 글은 RLS가 가리며, 비밀번호는 방문자가 읽을 수 없는 `public.visitor_pins`에서 서버가 대조한다. 이 데이터는 Event, Registration, Result, RankingAward, 칭호, 명예의 전당과 어떤 경로로도 연결하지 않으며, 사설 대진표는 기록 반영 흐름을 갖지 않는다(`tests/community.test.mjs`).
 
+사설 대진표의 수정은 DB가 발급한 `updatedAt` 토큰을 `_expectedUpdatedAt`으로 제출한다. `community_write`가 행 잠금 아래 토큰을 비교하므로 같은 대진표를 두 기기가 읽었어도 뒤늦은 저장으로 먼저 입력한 결과를 덮지 않는다. 충돌하면 화면은 최신 값을 다시 읽고 재입력을 안내한다. 일반 게시판의 쓰기 형식은 유지한다. 적용 스크립트는 `docs/db/private_bracket_conflict_guard.sql`, 검증 범위는 [COMPETITION_FLOW_VERIFICATION.md](COMPETITION_FLOW_VERIFICATION.md)를 따른다.
+
 ### Historical legacy compatibility
 
 `site_data.ypl_data_v4.brackets`의 legacy graph는 다음 조건의 completed historical display에만 허용한다.

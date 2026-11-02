@@ -1,5 +1,17 @@
 export const MASTER_ELIGIBILITY_POLICY = "individual-master-or-rookie-light-champion-v1";
 
+export function announcementEventType(draft = {}) {
+  return (draft.eventType||"pokecup")==="pokecup"&&draft.division==="other" ? "general" : draft.eventType||"pokecup";
+}
+
+export function changeAnnouncementEventType(draft = {}, type) {
+  const {officialEvent,rankingEnabled,...settings}=draft.competitionSettings||{};
+  return {...draft,eventType:type==="general"?"pokecup":type,
+    division:type==="general"?"other":type==="champions"?null:"both",isTeamEvent:false,
+    competitionEditionId:null,...(type==="champions"?{competitionFormat:null}:{}),
+    competitionSettings:type==="general"?{...settings,officialEvent:false,rankingEnabled:false}:settings};
+}
+
 export function isLeagueIntakeDraft(draft = {}) {
   return (draft.eventType || "pokecup") === "pokecup" && !draft.isTeamEvent && draft.division === "both";
 }

@@ -4,7 +4,7 @@ import { normTeam as normalizeLegacyParty } from "../../services/legacyPartyImag
 import { Dropdown, Modal, Segmented, siteAlert } from "../../components/index.js";
 import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventTypeLabel } from "../../services/bracketTeamParticipants.js";
-import { normalizedAnnouncementDivision } from "../../services/leagueIntake.js";
+import { announcementEventType, changeAnnouncementEventType, normalizedAnnouncementDivision } from "../../services/leagueIntake.js";
 import { listAvailableChampionshipEditions } from "../../services/normalizedCompetitionService.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
@@ -102,14 +102,16 @@ function FormBuilder({ form, setForm }){
   const move=(i,d)=>{ const j=i+d; if(j<0||j>=fields.length)return; const a=[...fields]; [a[i],a[j]]=[a[j],a[i]]; setFields(a); };
   const changeType=(f,v)=>patch(f.id,{type:v,options:isChoice(v)?((f.options&&f.options.length)?f.options:["선택지 1"]):[]});
   const eventDraft=form?.eventDraft||{};
-  const eventTypeValue=eventDraft.eventType||"pokecup";
+  const eventTypeValue=announcementEventType(eventDraft);
   const legacyLightEvent=eventTypeValue==="light";
   const eventTypeOptions=[
     ...(legacyLightEvent?[{value:"light",label:`${getApplicationEventTypeLabel("light")} (기존)`,disabled:true}]:[]),
     {value:"pokecup",label:getApplicationEventTypeLabel("pokecup")},
+    {value:"general",label:"일반 대회"},
     {value:"champions",label:getApplicationEventTypeLabel("champions")},
   ];
   const isChampions=eventTypeValue==="champions";
+  const isGeneral=eventTypeValue==="general";
   const [editions,setEditions]=useState([]),[editionError,setEditionError]=useState(""),[editionBusy,setEditionBusy]=useState(false);
   const battleFormat=eventDraft.battleFormat||"";
   useEffect(()=>{
@@ -124,7 +126,7 @@ function FormBuilder({ form, setForm }){
   },[enabled,isChampions,form?.eventId,battleFormat]);
   const isTeamEvent=!isChampions&&Boolean(eventDraft.isTeamEvent);
   const divisionValue=normalizedAnnouncementDivision(form);
-  const divisionOptions=isTeamEvent?[divisionValue]:["both","light"];
+  const divisionOptions=isTeamEvent?[divisionValue]:isGeneral?["other"]:["both","light"];
   const competitionOptions=[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},...(divisionValue==="both"?[]:[{value:"round_robin",label:"리그전"}])];
   const hasLegacyDivision=!divisionOptions.includes(divisionValue);
   const divisionDropdownOptions=[
@@ -153,9 +155,9 @@ function FormBuilder({ form, setForm }){
         <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
         <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다.":""}.</div></div>
-        <Field label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Field>
-        {isChampions||isTeamEvent?<div className="field"><span className="field-label">접수 구분</span><div className="bk-hint">{isChampions?"챔피언스는 구분 없이 진행합니다.":divisionValue==="light"?"기존 라이트 팀전":"팀전은 마스터로 진행합니다."}</div></div>:<Field label="접수 구분" hint={divisionValue==="both"?"개인 마스터 참가 또는 개인 루키나 라이트 우승 이력으로 리그를 배정합니다. 대진표 생성에서 리그를 선택합니다.":undefined}><Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} disabled={Boolean(form?.leagueIntakeId)} ariaLabel="접수 구분" onChange={value=>patchForm({eventDraft:{...eventDraft,subtitle:subtitleValue,division:value}})} options={divisionDropdownOptions}/></Field>}
-        <Field label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions||Boolean(form?.eventId)} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:nextTeam?"master":"both"}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Field>
+        <Field label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent||Boolean(form?.leagueIntakeId)} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:changeAnnouncementEventType(eventDraft,eventType)})} options={eventTypeOptions}/></Field>
+        {isChampions||isTeamEvent||isGeneral?<div className="field"><span className="field-label">접수 구분</span><div className="bk-hint">{isChampions?"챔피언스는 구분 없이 진행합니다.":isGeneral?"공식 회차와 랭킹에 포함하지 않는 일반 대회입니다.":divisionValue==="light"?"기존 라이트 팀전":"팀전은 마스터로 진행합니다."}</div></div>:<Field label="접수 구분" hint={divisionValue==="both"?"개인 마스터 참가 또는 개인 루키나 라이트 우승 이력으로 리그를 배정합니다. 대진표 생성에서 리그를 선택합니다.":undefined}><Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} disabled={Boolean(form?.leagueIntakeId)} ariaLabel="접수 구분" onChange={value=>patchForm({eventDraft:{...eventDraft,subtitle:subtitleValue,division:value}})} options={divisionDropdownOptions}/></Field>}
+        <Field label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions||isGeneral||Boolean(form?.eventId)} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:nextTeam?"master":"both"}});}} options={[{value:"individual",label:`개인전${isChampions||isGeneral?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Field>
         <Field label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null,competitionEditionId:null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Field>
         {isChampions&&!form?.eventId&&<Field label="챔피언스 회차" error={editionError} hint={battleFormat?"새 회차를 만들거나 기존 회차에 다른 종목을 추가합니다. 선발전과 본선은 같은 회차를 사용합니다.":"배틀 형식을 먼저 선택해 주세요."}><Dropdown value={eventDraft.competitionEditionId||"__new__"} disabled={!battleFormat||editionBusy} ariaLabel="챔피언스 회차" onChange={value=>patchForm({eventDraft:{...eventDraft,competitionEditionId:value==="__new__"?null:value}})} options={[{value:"__new__",label:"새 회차 생성"},...editions.map(ed=>({value:ed.id,label:`${ed.round_number}회에 ${battleFormat==="doubles"?"더블":"싱글"} 추가`}))]}/></Field>}
         <div className="field"><span className="field-label">대진 방식</span>{isChampions?<div className="bk-applybox"><div><b>선발전</b> {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} (고정)</div><div><b>본선</b> {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</div></div>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={competitionOptions}/>}</div>

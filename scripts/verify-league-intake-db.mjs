@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import { buildEventRankingAwardSnapshot } from "../src/services/bracketRankingAwardSnapshot.js";
+import { verifyCompetitionFlows } from "./competition-flow-checks.mjs";
 
 const { PGlite } = await import(process.argv[2] ? pathToFileURL(resolve(process.argv[2])).href : "@electric-sql/pglite");
 const pg = new PGlite();
@@ -88,7 +89,7 @@ try {
   await pg.exec(sql("normalized_bracket_runtime_grants.sql"));
   await pg.exec(sql("team_submission_rpc.sql"));
   // Use the current PIN gate and close the legacy visitor submission API.
-  // The unrelated community migration is intentionally outside this fixture.
+  // The additional flow checks load the community section separately below.
   const visitorGates = sql("visitor_gates.sql");
   await pg.exec(visitorGates.slice(0, visitorGates.indexOf("-- 3.")));
   await pg.exec(sql("visitor_gates_close.sql").match(/revoke all on function ypl_schema_validation\.submit_registration_team_snapshot[^;]+;/)[0]);
@@ -284,6 +285,7 @@ try {
     assert.equal(await scalar("select count(*)::int from registration_submissions s join event_registrations r on r.id=s.registration_id where r.event_id=$1",[pair.rookie_event_id]),2);
     assert.equal(await scalar("select count(*)::int from event_registrations where event_id=$1 and final_submission_id is not null",[pair.rookie_event_id]),0);
   });
+  await verifyCompetitionFlows({pg,q,scalar,as,check,season});
   await check("A non-admin authenticated token cannot create or cancel a pair",async()=>{
     await pg.exec(`select set_config('request.jwt.claims','{}',false)`);
     await rejects(()=>save("non-admin"),/관리자 권한/);

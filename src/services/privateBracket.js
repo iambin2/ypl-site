@@ -1,9 +1,16 @@
 import { deterministicDoubleGraph, shuffle } from "./bracketProjection.js";
+import { PIN_DENIED } from "./communityItems.js";
 const newCommunityId = () => Math.random().toString(36).slice(2, 10);
 
 /* 사설 대진표: 누구나 만드는 연습용 토너먼트. 공식 대진표와 같은 그래프 모양(rounds, lb, gf, reset)이라
    같은 보드로 그리지만, 저장은 communityStore 의 별도 행에만 하고 기록, 랭킹, 대회(Event)와 이어지지 않는다. */
 export const PRIVATE_BRACKET_MAX = 64;
+
+export function buildPrivateBracketPatch(current, expectedUpdatedAt, change) {
+  if(!current)throw new Error("삭제되었거나 찾을 수 없는 대진표입니다.");
+  if((current.updatedAt??null)!==(expectedUpdatedAt??null))throw new Error(PIN_DENIED.stale);
+  return change(current);
+}
 
 export function parseParticipantNames(text = "") {
   const seen = new Set();

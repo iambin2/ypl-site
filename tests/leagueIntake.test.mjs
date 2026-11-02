@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import test from "node:test";
-import { isLeagueIntakeDraft, leagueIntakeOptions, normalizedAnnouncementDivision } from "../src/services/leagueIntake.js";
+import { announcementEventType, changeAnnouncementEventType, isLeagueIntakeDraft, leagueIntakeOptions, normalizedAnnouncementDivision } from "../src/services/leagueIntake.js";
+import { getIndividualPlacementPointPolicy } from "../src/services/bracketRankingAwardSnapshot.js";
 import { announcementDeletionBlockedMessage, buildAnnouncementDeletionPreflight } from "../src/services/announcementDeletionPolicy.js";
 import { availableChampionshipEditions, competitionFamily } from "../src/services/competitionEditions.js";
 
@@ -17,6 +18,23 @@ test("new ordinary notices default to unified intake and new teams are Master", 
 });
 
 const master = { id: "master", division: "master", event_type: "pokecup", season_id: "season", status: "completed", record_applied_at: "now", registration_settings: { leagueIntakeId: "group", intakeName: "파이컵 테스트" } };
+
+test("seminars keep their existing other classification and the general editor never reserves a regular round",()=>{
+  const seminar={eventType:"pokecup",division:"other",name:"배틀부 세미나 미니대회 1조"};
+  assert.equal(announcementEventType(seminar),"general");
+  const draft=changeAnnouncementEventType({eventType:"champions",competitionEditionId:"edition",competitionSettings:{rankingEnabled:true,officialEvent:true,recordRuleLabel:"보존"}},"general");
+  assert.equal(draft.eventType,"pokecup");assert.equal(draft.division,"other");
+  assert.equal(competitionFamily(draft),null);assert.equal(isLeagueIntakeDraft(draft),false);
+  assert.equal(draft.competitionEditionId,null);assert.equal(draft.competitionSettings.rankingEnabled,false);
+  assert.equal(draft.competitionSettings.recordRuleLabel,"보존");
+  const ordinary=changeAnnouncementEventType(draft,"pokecup");
+  assert.equal(ordinary.division,"both");assert.equal(ordinary.competitionSettings.officialEvent,undefined);
+});
+
+test("an explicit other Event never inherits Master points even with stale or missing ranking settings",()=>{
+  for(const settings of [{},{rankingEnabled:true},{rankingEnabled:false}])
+    assert.equal(getIndividualPlacementPointPolicy({event_type:"pokecup",division:"other",is_team_event:false,competition_settings:settings}).enabled,false);
+});
 const rookie = { ...master, id: "rookie", division: "rookie", status: "open", record_applied_at: null };
 test("the bracket picker groups ordinary leagues and preserves independent Champions phases", () => {
   const options = leagueIntakeOptions([rookie, master, { id: "qualifier" }, { id: "final" }]);

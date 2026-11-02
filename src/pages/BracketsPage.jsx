@@ -17,7 +17,7 @@ import { freshRead, peekRead } from "../services/readCache.js";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
-import { PRIVATE_BRACKET_MAX, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../services/privateBracket.js";
+import { PRIVATE_BRACKET_MAX, buildPrivateBracketPatch, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../services/privateBracket.js";
 import { leagueIntakeId, leagueIntakeOptions } from "../services/leagueIntake.js";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -1456,7 +1456,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         <div className="bk-ab-meta">
           {team?"팀전":"개인전"}
           {linked&&linkedContext?.event?.division
-            ? `, ${linkedContext.event.division==="master"?"마스터 리그":linkedContext.event.division==="rookie"?"루키 리그":linkedContext.event.division==="light"?"파이컵 라이트":linkedContext.event.division}`
+            ? `, ${linkedContext.event.division==="master"?"마스터 리그":linkedContext.event.division==="rookie"?"루키 리그":linkedContext.event.division==="light"?"파이컵 라이트":linkedContext.event.division==="other"?"일반 대회":linkedContext.event.division}`
             : ""}
         </div>
         <div>우승 <b>{nameOf(res.champ)}</b></div>
@@ -1803,14 +1803,14 @@ function PrivateBrackets({ admin, flash, tabs }){
     else { const url=new URL(window.location.href); url.searchParams.delete("pb"); window.history.replaceState(window.history.state,"",url); transition(()=>flushSync(()=>setOpenId(null)),{shared:open?"pb-"+open.id:null,dir:"back"}); } };
   const unlock=(id,pin)=>{ const next=new Map(unlocked); next.set(id,pin); setUnlocked(next); writeUnlocked(next); };
   const lock=id=>{ const next=new Map(unlocked); next.delete(id); setUnlocked(next); writeUnlocked(next); };
-  // 최신 대진표 위에서 바꿔, 다른 기기에서 입력한 결과를 덮지 않는다.
+  // Read the current draw, then let the DB reject a competing save by its token.
   const write=async(id,change,done)=>{ setBusy(true);
     try{
+      const expectedUpdatedAt=(list||[]).find(x=>x.id===id)?.updatedAt;
       const current=(await readCommunity(PRIVATE_BRACKETS_KEY)).find(x=>x.id===id);
-      if(!current) throw new Error("삭제되었거나 찾을 수 없는 대진표입니다.");
-      const patch=change(current);
-      await patchCommunityItem(PRIVATE_BRACKETS_KEY,id,patch,{pin:unlocked.get(id)||""});
-      setList(items=>items.map(x=>x.id===id?{...x,...patch}:x));
+      const patch=buildPrivateBracketPatch(current,expectedUpdatedAt,change);
+      await patchCommunityItem(PRIVATE_BRACKETS_KEY,id,patch,{pin:unlocked.get(id)||"",expectedUpdatedAt:current.updatedAt});
+      await reload();
       if(done)flash(done); return true; }
     catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
 
