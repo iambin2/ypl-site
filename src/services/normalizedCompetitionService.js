@@ -40,6 +40,7 @@ import {
 } from "./championsCore.js";
 import { normalizeEventTitleAward } from "./titleAwards.js";
 import { isLeagueIntakeDraft, leagueIntakeId } from "./leagueIntake.js";
+import { availableChampionshipEditions, competitionFamily } from "./competitionEditions.js";
 
 const DATA_SCHEMA = import.meta.env.VITE_YPL_DATA_SCHEMA || "public";
 const CHAMPIONS_EVENT_SELECT_FIELDS = DATA_SCHEMA === "ypl_schema_validation"
@@ -743,6 +744,7 @@ async function readEventResultParticipants(eventId, resultRows) {
 
 const EVENT_DETAIL_SELECT = `
   id,
+  competition_edition_id,
   name,
   event_type,
   division,
@@ -991,60 +993,25 @@ export async function submitEventTeamSnapshot({
   };
 }
 
-export async function resolveAutomaticRoundNumber({
-  eventType = "pokecup",
-  division = null,
-  isTeamEvent = false,
-} = {}) {
-  const { data, error } = await db()
-    .from("events")
-    .select("event_type, division, is_team_event, round_number, status")
-    .not("round_number", "is", null)
-    .neq("status", "cancelled");
+export async function resolveAutomaticRoundNumber(options = {}) {
+  const family=competitionFamily(options);
+  if(!family) return null;
+  const query=db().from("competition_editions").select("id,family,round_number").eq("family",family);
+  const selected=options.competitionEditionId;
+  const {data,error}=await (selected?query.eq("id",selected):query.order("round_number",{ascending:false}).limit(1)).maybeSingle();
+  if(error) fail(error,"공식 회차를 확인하지 못했습니다.");
+  if(selected&&!data) throw new Error("선택한 대회 회차를 찾을 수 없습니다.");
+  // Preview only: the Event trigger reserves/validates the final round in its transaction.
+  return selected?data.round_number:(data?.round_number||0)+1;
+}
 
-  if (error) fail(error, "Event round number history could not be loaded.");
-
-  const candidates = (data || []).filter((row) => {
-    const rowRound = Number(row.round_number);
-    if (!Number.isInteger(rowRound) || rowRound < 1) return false;
-
-    if (eventType === "champions") {
-      return row.event_type === "champions";
-    }
-
-    // Team events borrow the ordinary individual Master sequence,
-    // but do not advance that sequence themselves.
-    if (isTeamEvent) {
-      return (
-        !Boolean(row.is_team_event) &&
-        row.event_type !== "champions" &&
-        row.division === "master"
-      );
-    }
-
-    // Historical Light events used both:
-    // event_type="light" and division="light".
-    if (division === "light" || eventType === "light") {
-      return (
-        !Boolean(row.is_team_event) &&
-        row.event_type !== "champions" &&
-        (row.division === "light" || row.event_type === "light")
-      );
-    }
-
-    return (
-      !Boolean(row.is_team_event) &&
-      row.event_type !== "champions" &&
-      row.division === division
-    );
-  });
-
-  const maxRound = candidates.reduce(
-    (max, row) => Math.max(max, Number(row.round_number) || 0),
-    0
-  );
-
-  return maxRound + 1;
+export async function listAvailableChampionshipEditions(battleFormat) {
+  const [editions,events]=await Promise.all([
+    db().from("competition_editions").select("id,family,round_number").eq("family","champions"),
+    db().from("events").select("competition_edition_id,battle_format").eq("event_type","champions"),
+  ]);
+  if(editions.error||events.error) fail(editions.error||events.error,"기존 챔피언스 회차를 불러오지 못했습니다.");
+  return availableChampionshipEditions(editions.data,events.data,battleFormat);
 }
 
 export async function saveApplicationEvent({
@@ -1111,6 +1078,7 @@ export async function saveApplicationEvent({
 
   const payload = {
     season_id: seasonId,
+    competition_edition_id: existingEvent?.competition_edition_id || null,
     name,
     round_number: roundNumber,
     event_type: eventDraft.eventType || "pokecup",

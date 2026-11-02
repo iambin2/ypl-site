@@ -72,7 +72,18 @@ try {
   await participant("TeamOnly",historic.team,true);
   await participant("TeamLightChampion",historic.teamLight,true);
   await participant("LightParticipant",historic.light);
+  await q("update events set round_number=$2 where id=$1",[historic.master,36]);
+  await q("update events set round_number=$2 where id=$1",[historic.rookie,36]);
+  await q("update events set round_number=$2 where id=$1",[historic.team,37]);
+  await q("update events set round_number=$2 where id=$1",[historic.light,7]);
+  for(let n=1;n<=6;n++)await q("insert into events(season_id,name,round_number,event_type,status,date_precision) values($1,$2,$3,'champions','completed','unknown')",[season,`${n}회 챔피언스 시리즈`,n]);
+  const repairEvent=await scalar("insert into events(season_id,name,round_number,event_type,division,status,date_precision,battle_format,competition_format,regulation_id,cup_rule_id,registration_settings) values($1,'37회 파이컵 마스터 리그 NPC 배틀',37,'pokecup','master','open','unknown','singles','single_elimination','reg','none','{\"announcementId\":\"repair\"}') returning id",[season]);
+  const repairRegs=[];
+  for(const name of ["Master","TeamOnly"])repairRegs.push(await scalar("insert into event_registrations(event_id,registration_name,registration_source) values($1,$2,'application') returning id",[repairEvent,name]));
+  await pg.exec(sql("competition_editions.sql"));
   await pg.exec(sql("league_intake.sql"));
+  await pg.exec(sql("champions_qualifier_direct_setup_rpc.sql").split("create or replace function")[0]);
+  await pg.exec(sql("champions_application_event_pair_rpc.sql"));
   await pg.exec(sql("normalized_bracket_runtime_rpc.sql"));
   await pg.exec(sql("normalized_bracket_runtime_grants.sql"));
   await pg.exec(sql("team_submission_rpc.sql"));
@@ -89,11 +100,42 @@ try {
   await as("authenticated");
   await pg.exec(`select set_config('request.jwt.claims','{"app_metadata":{"ypl_admin":true}}',false)`);
   const save = async (id = "notice") => (await q("select * from save_league_intake($1,$2,null,$3)",[id,season,settings]))[0];
+  await check("The current notice repairs to 38 and splits existing registrations without changing their IDs",async()=>{
+    await pg.exec("begin");
+    await q("select correct_pristine_event_round($1,38)",[repairEvent]);
+    const pair=(await q("select * from save_league_intake('repair',$1,$2,$3)",[season,repairEvent,settings]))[0];
+    const rows=await q("select round_number,competition_edition_id from events where id in($1,$2)",[pair.master_event_id,pair.rookie_event_id]);
+    assert.deepEqual(rows.map(r=>r.round_number),[38,38]);assert.equal(rows[0].competition_edition_id,rows[1].competition_edition_id);
+    assert.deepEqual((await q("select id from event_registrations where event_id in($1,$2) order by id",[pair.master_event_id,pair.rookie_event_id])).map(r=>r.id),[...repairRegs].sort());
+    assert.equal(await scalar("select event_id from event_registrations where id=$1",[repairRegs[0]]),pair.master_event_id);
+    assert.equal(await scalar("select event_id from event_registrations where id=$1",[repairRegs[1]]),pair.rookie_event_id);
+    await pg.exec("rollback");
+  });
+  await check("Three counters include team history, Champions formats share 7, and retry adds no edition",async()=>{
+    await pg.exec("begin");
+    const team=await scalar("insert into events(season_id,name,round_number,event_type,division,is_team_event,status,date_precision,registration_settings) values($1,'999회 파이컵 팀전',999,'pokecup','master',true,'open','unknown','{\"announcementId\":\"team38\"}') returning round_number",[season]);
+    assert.equal(team,38);
+    const regular=await save("after-team");
+    assert.deepEqual((await q("select round_number from events where id in($1,$2)",[regular.master_event_id,regular.rookie_event_id])).map(r=>r.round_number),[39,39]);
+    assert.equal(await scalar("insert into events(season_id,name,round_number,event_type,division,status,date_precision) values($1,'999회 파이컵 라이트',999,'pokecup','light','open','unknown') returning round_number",[season]),8);
+    const championPair=async(format,edition=null)=>{
+      const qualifier=randomUUID(),final=randomUUID();
+      await q("select * from save_championship_application_event_pair($1,$2,$3,$4,$5,999,$6,999,4,null,'reg','none','{}',$7,'{}',null,null,null,null)",[qualifier,final,season,randomUUID(),`999회 챔피언스 시리즈 ${format}`,format,edition?{competitionEditionId:edition}:{}]);
+      return q("select id,round_number,competition_edition_id,competition_settings from events where id in($1,$2)",[qualifier,final]);
+    };
+    const singles=await championPair("singles");
+    assert.ok(singles.every(r=>r.round_number===7&&r.competition_settings.championship.generation===7),JSON.stringify(singles));
+    const doubles=await championPair("doubles",singles[0].competition_edition_id);
+    assert.ok(doubles.every(r=>r.round_number===7&&r.competition_edition_id===singles[0].competition_edition_id));
+    assert.ok((await championPair("singles")).every(r=>r.round_number===8));
+    await pg.exec("rollback");
+  });
   const group = await save();
-  await check("Pair creation is idempotent and independently numbers Master and Rookie", async () => {
+  await check("Pair creation is idempotent and assigns 38 to both leagues after team round 37", async () => {
     assert.equal((await save()).id,group.id);
     const rows=await q("select division,round_number,competition_settings from events where id in($1,$2)",[group.master_event_id,group.rookie_event_id]);
     assert.equal(rows.length,2);
+    assert.ok(rows.every(r=>r.round_number===38));
     assert.equal(rows.find(row=>row.division==="rookie").competition_settings.rankingEnabled,false);
     assert.equal(rows.find(row=>row.division==="master").competition_settings.rankingEnabled,true);
   });
@@ -131,12 +173,13 @@ try {
   }
   await check("An existing three-applicant notice converts without changing application IDs, answers, season or round",async()=>{
     const old=await legacyEvent("legacy");
+    const oldIdentity=(await q("select season_id,round_number from events where id=$1",[old]))[0];
     const registrations=[];
     for(const name of ["Master","TeamOnly","FreshLegacyApplicant"]) registrations.push({name,...await apply(name,old)});
     await q("update event_registrations set registration_data=$1 where id=$2",[{answers:{original:"preserved"}},registrations[1].id]);
     const converted=(await q("select * from save_league_intake('legacy',$1,$2,$3)",[season,old,settings]))[0];
     assert.equal(converted.master_event_id,old);
-    assert.deepEqual((await q("select season_id,round_number from events where id=$1",[old]))[0],{season_id:season,round_number:37});
+    assert.deepEqual((await q("select season_id,round_number from events where id=$1",[old]))[0],oldIdentity);
     for(const registration of registrations) {
       const row=(await q("select * from event_registrations where id=$1",[registration.id]))[0];
       assert.equal(row.event_id,registration.name==="Master"?old:converted.rookie_event_id);
@@ -181,7 +224,7 @@ try {
   });
   await check("New teams must be Master and a grouped Event cannot change its league",async()=>{
     await rejects(()=>q("insert into events(season_id,name,event_type,division,is_team_event,status,date_precision) values($1,'team','pokecup','rookie',true,'open','unknown')",[season]),/새 팀전/);
-    await rejects(()=>q("update events set division='rookie' where id=$1",[group.master_event_id]),/리그와 소유권/);
+    await rejects(()=>q("update events set division='rookie' where id=$1",[group.master_event_id]),/리그와 소유권|회차와 구분/);
     await q("update events set name='historical light team' where id=$1",[historic.teamLight]);
   });
   await check("Real runtime, official submissions and record apply/revert remain independent for both leagues",async()=>{

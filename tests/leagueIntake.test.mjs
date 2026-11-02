@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import test from "node:test";
 import { isLeagueIntakeDraft, leagueIntakeOptions, normalizedAnnouncementDivision } from "../src/services/leagueIntake.js";
 import { announcementDeletionBlockedMessage, buildAnnouncementDeletionPreflight } from "../src/services/announcementDeletionPolicy.js";
+import { availableChampionshipEditions, competitionFamily } from "../src/services/competitionEditions.js";
 
 test("new ordinary notices default to unified intake and new teams are Master", () => {
   assert.equal(normalizedAnnouncementDivision({}), "both");
@@ -86,6 +87,37 @@ test("admin response list combines both leagues and includes the actual division
   ]});
   const rows=await service.listEventApplications(master.id);
   assert.deepEqual(rows.map(row=>row.division),["master","rookie"]);
+});
+
+test("only three edition families exist, independent of team or participant league",()=>{
+  for(const division of [null,"both","master","rookie"])assert.equal(competitionFamily({division,isTeamEvent:true}),"regular");
+  assert.equal(competitionFamily({event_type:"light",is_team_event:true}),"light");
+  assert.equal(competitionFamily({division:"light"}),"light");
+  assert.equal(competitionFamily({event_type:"champions",division:"master"}),"champions");
+  assert.equal(competitionFamily({division:"other"}),null);
+});
+
+test("Champions can add the other format to 7 but cannot reuse legacy editions or occupied formats",()=>{
+  const editions=[{id:"six",family:"champions",round_number:6},{id:"seven",family:"champions",round_number:7}];
+  const events=[{competition_edition_id:"seven",battle_format:"singles"}];
+  assert.deepEqual(availableChampionshipEditions(editions,events,"doubles").map(e=>e.id),["seven"]);
+  assert.deepEqual(availableChampionshipEditions(editions,events,"singles"),[]);
+  assert.deepEqual(availableChampionshipEditions(editions,events,null),[]);
+});
+
+test("both ordinary leagues and teams preview the same counter; Light and Champions stay separate",async()=>{
+  const {tables}=database();
+  tables.competition_editions=[{id:"regular",family:"regular",round_number:37},{id:"light",family:"light",round_number:7},{id:"champions",family:"champions",round_number:6}];
+  for(const options of [{division:"master"},{division:"rookie"},{division:"master",isTeamEvent:true}])assert.equal(await service.resolveAutomaticRoundNumber(options),38);
+  assert.equal(await service.resolveAutomaticRoundNumber({division:"light"}),8);
+  assert.equal(await service.resolveAutomaticRoundNumber({eventType:"champions"}),7);
+});
+
+test("adding a Champions format uses the selected edition rather than incrementing it",async()=>{
+  const {tables}=database();tables.competition_editions=[{id:"seven",family:"champions",round_number:7}];
+  assert.equal(await service.resolveAutomaticRoundNumber({eventType:"champions",competitionEditionId:"seven"}),7);
+  assert.equal(await service.resolveAutomaticRoundNumber({eventType:"champions"}),8);
+  await assert.rejects(()=>service.resolveAutomaticRoundNumber({division:"master",competitionEditionId:"seven"}),/회차를 찾을 수/);
 });
 
 test("duplicate on the other league is caught before an application INSERT", async () => {

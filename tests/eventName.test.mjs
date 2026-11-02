@@ -20,6 +20,8 @@ test("every event kind assembles to one grammar", () => {
     [{ round: 37, eventType: "pokecup", division: "master", isTeamEvent: true, subtitle: "리전 워즈" }, "37회 파이컵 팀전 리전 워즈"],
     [{ round: 8, eventType: "pokecup", division: "light", isTeamEvent: true }, "8회 파이컵 라이트 팀전"],
     [{ round: 7, eventType: "champions" }, "7회 챔피언스 시리즈"],
+    [{ round: 7, eventType: "champions", battleFormat:"singles" }, "7회 챔피언스 시리즈 싱글"],
+    [{ round: 7, eventType: "champions", battleFormat:"doubles" }, "7회 챔피언스 시리즈 더블"],
     [{ round: 24, eventType: "pokecup" }, "24회 파이컵"],
     [{ eventType: "pokecup", division: "other", subtitle: "배틀부 세미나 미니대회 1조" }, "배틀부 세미나 미니대회 1조"],
   ];

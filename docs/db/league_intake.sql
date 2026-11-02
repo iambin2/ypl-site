@@ -67,7 +67,7 @@ declare
   g ypl_schema_validation.league_intakes%rowtype;
   old_master ypl_schema_validation.events%rowtype;
   old_rookie ypl_schema_validation.events%rowtype;
-  mid uuid; rid uuid; gid uuid; d text; eid uuid; n integer; subtitle text;
+  mid uuid; rid uuid; gid uuid; d text; eid uuid; n integer; subtitle text; edition uuid;
   common jsonb; current_event ypl_schema_validation.events%rowtype;
   registration ypl_schema_validation.event_registrations%rowtype;
   resolved_player uuid; player_count integer; target uuid;
@@ -125,31 +125,36 @@ begin
       end if;
     end loop;
   end if;
-  perform pg_advisory_xact_lock(hashtextextended('ordinary-league-rounds',0));
+  -- One ordinary competition owns both leagues, including rounds after teams.
+  if old_master.id is not null then
+    select id,round_number into edition,n from ypl_schema_validation.competition_editions
+      where family='regular' and (id=old_master.competition_edition_id or
+        (old_master.competition_edition_id is null and round_number=old_master.round_number));
+    if edition is null then raise exception '기존 대회의 공식 회차를 확인할 수 없습니다.'; end if;
+  else
+    select id,round_number into edition,n from ypl_schema_validation.reserve_competition_edition('regular');
+  end if;
   foreach d in array array['master','rookie'] loop
     eid := case when d = 'master' then mid else rid end;
     current_event := case when d = 'master' then old_master else old_rookie end;
     if current_event.id is not null then
-      n := current_event.round_number;
+      if current_event.round_number is distinct from n then raise exception '통합 접수의 양쪽 회차가 일치하지 않습니다.'; end if;
       if current_event.status = 'cancelled' and ypl_schema_validation.league_intake_has_downstream(array[mid,rid]) then raise exception '취소된 접수에 후속 기록이 있습니다.'; end if;
-    else
-      select coalesce(max(round_number),0)+1 into n from ypl_schema_validation.events
-        where division = d and not is_team_event and event_type <> 'champions' and status <> 'cancelled';
     end if;
     insert into ypl_schema_validation.events (
-      id, season_id, name, round_number, event_type, division, battle_format, competition_format,
+      id, season_id, name, round_number, competition_edition_id, event_type, division, battle_format, competition_format,
       competition_settings, is_team_event, regulation_id, cup_rule_id, cup_rule_settings,
       registration_settings, held_on, date_precision, status, submission_target_at, team_reveal_mode
     ) values (
       eid, p_season_id, concat(n,'회 파이컵 ',case when d='master' then '마스터' else '루키' end,' 리그',case when subtitle<>'' then ' '||subtitle else '' end),
-      n, 'pokecup', d, p_settings->>'battle_format', p_settings->>'competition_format',
+      n, edition, 'pokecup', d, p_settings->>'battle_format', p_settings->>'competition_format',
       jsonb_build_object('recordRuleLabel',coalesce(p_settings->>'record_rule_label',''),'titleAward',p_settings->'title_award','rankingEnabled',d='master'),
       false, p_settings->>'regulation_id', p_settings->>'cup_rule_id', coalesce(p_settings->'cup_rule_settings','{}'::jsonb),
-      jsonb_build_object('announcementId',p_announcement_id,'leagueIntakeId',gid,'intakeName',concat('파이컵',case when subtitle<>'' then ' '||subtitle else '' end)),
+      jsonb_build_object('announcementId',p_announcement_id,'leagueIntakeId',gid,'competitionEditionId',edition,'intakeName',concat(n,'회 파이컵',case when subtitle<>'' then ' '||subtitle else '' end)),
       nullif(p_settings->>'held_on','')::date, case when nullif(p_settings->>'held_on','') is null then 'unknown' else 'exact' end,
       coalesce(nullif(current_event.status,'cancelled'),'open'), nullif(p_settings->>'submission_target_at','')::timestamptz, 'on_record_apply'
     ) on conflict (id) do update set
-      name=excluded.name, battle_format=excluded.battle_format, competition_format=excluded.competition_format,
+      name=excluded.name, competition_edition_id=excluded.competition_edition_id, battle_format=excluded.battle_format, competition_format=excluded.competition_format,
       competition_settings=excluded.competition_settings, regulation_id=excluded.regulation_id, cup_rule_id=excluded.cup_rule_id,
       cup_rule_settings=excluded.cup_rule_settings, registration_settings=excluded.registration_settings,
       held_on=excluded.held_on, date_precision=excluded.date_precision, submission_target_at=excluded.submission_target_at,

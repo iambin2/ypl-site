@@ -93,7 +93,8 @@ begin
         ) values (
             p_final_event_id, p_season_id, btrim(p_base_name) || ' 본선', p_round_number,
             'champions', null, p_battle_format, 'single_elimination', v_settings, false,
-            p_regulation_id, p_cup_rule_id, coalesce(p_cup_rule_settings, '{}'::jsonb), '{}'::jsonb,
+            p_regulation_id, p_cup_rule_id, coalesce(p_cup_rule_settings, '{}'::jsonb),
+            jsonb_strip_nulls(jsonb_build_object('competitionEditionId',p_registration_settings->'competitionEditionId')),
             p_final_held_on, case when p_final_held_on is null then 'unknown' else 'exact' end, 'open', p_final_submission_target_at,
             'final', null, null
         );
