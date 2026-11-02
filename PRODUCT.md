@@ -45,7 +45,7 @@ Not a generic club homepage: every record on the site is derived from real, oper
 - Channel roles: this site is the league's first and official source of notices and records; Discord is where battles are actually played and streamed. Copy must not call Discord the first place for news.
 - Unofficial fan site: Pokémon trademarks belong to Nintendo · Creatures · GAME FREAK; the footer disclaimer stays.
 - Standing direction preference (2026-09-11): the category standard — a professional league site (esports-league canon: schedule, results, standings, champions) played straight, held to the craft bar of Apple / Nike brand sites (restraint, generous space, confident type, precise motion). No novelty concept worlds.
-- Visual system: YPL Navy. Its authority is `docs/redesign-glass/DECISIONS.md`, and `DESIGN.md` is the summary recorded from the shipped site (Freesentation and Albert Sans, solid tones, space instead of rules). Smooth motion comes first: whatever moves runs on the compositor.
+- Visual system: YPL Scoreboard (shipped 2026-11-03). Its authority is `DESIGN.md`, with the reference drafts in `docs/redesign-next/` (Freesentation and Albert Sans, square panels on a 2px seam, seven-segment numbers, one amber lamp). Smooth motion comes first: whatever moves runs on the compositor.
 
 ## Evidence on Hand
 

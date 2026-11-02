@@ -2,7 +2,7 @@
 name: YPL — Yonsei Pokémon League (Scoreboard)
 description: "A stadium scoreboard in navy. The ground is a board switched off; facts light up on square panels joined by a 2px seam; numbers are real seven-segment displays; one amber lamp means live. Every measure comes from one ratio, phi. Dark first, light equal."
 source: "approved drafts in docs/redesign-next/ (C3 to C22, drafts-c*.html, c-core.css); tokens will live in src/styles/tokens.css; tests/designLaw.test.mjs is rewritten to this file as the build lands"
-status: "Approved 2026-11-02 and built on branch design/scoreboard (docs/redesign-next/BUILD.md). The site in production follows YPL Navy (git history of this file) until that branch is merged."
+status: "Approved 2026-11-02, built on branch design/scoreboard (docs/redesign-next/BUILD.md) and deployed to production 2026-11-03."
 scale:
   base: 4
   seam: 2
@@ -29,7 +29,7 @@ Two things carry over from every earlier system and do not change: the golden ra
 
 ## Status
 
-This file was rewritten on 2026-11-02 from the approved drafts in `docs/redesign-next/` and the site was rebuilt to it on branch `design/scoreboard`; `src/styles/tokens.css` and `tests/designLaw.test.mjs` hold it, with no bridge to the previous system (YPL Navy, in this file's git history). A change to the law goes here first, then into the drafts or the code.
+This file was rewritten on 2026-11-02 from the approved drafts in `docs/redesign-next/` and the site was rebuilt to it on branch `design/scoreboard` and shipped on 2026-11-03; `src/styles/tokens.css` and `tests/designLaw.test.mjs` hold it, with no bridge to the previous system (YPL Navy, in this file's git history). A change to the law goes here first, then into the drafts or the code.
 
 The drafts are the reference build: `drafts-c3.html` (home, records, light, desktop, motion, measures), `drafts-c4.html` (notices, board, titles, hall, about, builder, calculator, admin, edge cases), `drafts-c5.html` (brackets, party submission, admin bracket making, more, records tabs, sheets, errors, footer, desktop, states and motion, builder and calculator rest, push, icons, share image), `drafts-c6.html` (where a Pokémon stands). `c-core.css` and `c-core.js` hold the tokens and the seven-segment drawing they share.
 
