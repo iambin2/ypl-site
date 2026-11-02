@@ -153,10 +153,10 @@
 
 /* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
 :root {
-  --grid-gap: var(--s5); --content: 1200px; --sheet-w: 576px; --nav-height: 52px; --tab-height: 52px; --target: 44px; --row-min: 52px; --match-card: 96px;
+  --grid-gap: var(--s5); --pad: var(--s5); --content: 1200px; --sheet-w: 576px; --nav-height: 52px; --tab-height: 52px; --target: 44px; --row-min: 52px; --match-card: 96px;
   --hair: 1px; --rule: 2px; --stroke-connector: 1.5px;
 }
-@media (min-width: 860px) { :root { --nav-height: 84px; --grid-gap: var(--s8); } }
+@media (min-width: 860px) { :root { --nav-height: 84px; --grid-gap: var(--s8); --pad: var(--s8); } }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
 
 /* ---------- base ---------- */

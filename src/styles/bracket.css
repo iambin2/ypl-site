@@ -36,8 +36,8 @@
 .bk-applied { display: inline-flex; align-items: center; gap: var(--s1); padding: 0 var(--s2); font-size: var(--fs-caption); font-weight: 600; color: var(--text-secondary); }
 
 /* ---------- panels: submission status, Champions qualifier ---------- */
-.bk-submission { padding: 0 var(--s8); background: var(--surface); }
-.bk-qualifier { padding: var(--s8); }
+.bk-submission { padding: 0 var(--pad); background: var(--surface); }
+.bk-qualifier { padding: var(--pad); }
 .bk-panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .bk-panel-head > div { display: grid; gap: var(--s1); min-width: 0; }
 .bk-panel-head h4 { font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-label); }

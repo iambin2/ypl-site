@@ -33,7 +33,7 @@
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */
-.fb-wrap { margin: var(--s5) 0; padding: var(--s8); background: var(--surface); }
+.fb-wrap { margin: var(--s5) 0; padding: var(--pad); background: var(--surface); }
 .fb-wrap > .bk-check { font-weight: 600; }
 /* a question is a fill-2 cell inside the plate; concentric 32 - 16 = 16 */
 .fb-q { margin-bottom: var(--s3); padding: var(--s5); background: var(--state-hover); }

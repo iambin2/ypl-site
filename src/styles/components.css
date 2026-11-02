@@ -20,8 +20,7 @@
 }
 /* the main action is the one plane in its area: 1 high to phi squared wide, 52 by 136, and the 32 from its side to the word is phi times the 20 from its top to the ink */
 .btn--sm { height: 44px; min-width: 84px; padding: 0 var(--s5); }
-.btn--md { height: 52px; min-width: 136px; padding: 0 var(--s8); }
-.btn--lg { height: 52px; min-width: 136px; padding: 0 var(--s8); }
+.btn--md, .btn--lg { height: 52px; min-width: 136px; padding: 0 var(--s8); }
 /* what is not the main action is a line under its word, and two of them stand a step apart */
 .btn--secondary + .btn, .btn--tertiary + .btn { margin-left: var(--s5); }
 .btn--secondary, .btn--tertiary { --btn-bg: transparent; --btn-bg-hover: transparent; min-width: 0; padding-inline: 0; }
@@ -134,14 +133,14 @@
 
 /* ---------- Lead card: the one hero card on a records screen ---------- */
 .rc-lead {
-  position: relative; overflow: hidden; display: grid; gap: var(--s5); padding: var(--s8); background: var(--surface);
+  position: relative; overflow: hidden; display: grid; gap: var(--s5); padding: var(--pad); background: var(--surface);
 }
 .rc-lead-title { margin-block: var(--trim); font-size: var(--display); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-display); }
 
 
 
 /* ---------- generic card for forms and panels ---------- */
-.card.form-card { padding: var(--s8); }
+.card.form-card { padding: var(--pad); }
 
 /* ---------- Field (M7): label, a word on a line, hint ---------- */
 .field { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s5); min-width: 0; }
@@ -172,7 +171,7 @@
 .row-actions { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .row-actions > div { display: flex; gap: var(--s2); flex-wrap: wrap; }
 .edit-row { display: flex; justify-content: flex-end; gap: var(--s2); margin-top: var(--s5); }
-.pts-note { padding: var(--s5) var(--s8); background: var(--state-hover); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
+.pts-note { padding: var(--s5) var(--pad); background: var(--state-hover); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .pts-note b { color: var(--text-primary); font-weight: 600; }
 
 /* ---------- Dropdown (M6): a word on a line; desktop opens a plate menu that grows from it, a phone a sheet ---------- */
@@ -313,7 +312,6 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 .grip { flex: none; height: 20px; display: grid; place-items: center; touch-action: none; cursor: grab; }
 .grip::after { content: ""; width: 52px; height: 4px; background: var(--text-tertiary); opacity: var(--opacity-disabled); }
 .modal {
-  --pad: var(--s5);
   position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   padding: var(--s2) var(--pad) calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
@@ -339,7 +337,7 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
   .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 52px, var(--sheet-w)); max-height: calc(100dvh - 52px); }
   .grip::after { display: none; }
   /* the body scrolls and clips, so the close button sits inside it, centred on the title's first line */
-  .modal { --pad: var(--s8); padding: var(--s2) var(--pad) var(--s8); }
+  .modal { padding: var(--s2) var(--pad) var(--s8); }
   .modal-x { right: 0; top: 0; }
   .modal-actions { bottom: calc(var(--s8) * -1); margin-bottom: calc(var(--s8) * -1); padding-bottom: 0; }
 }

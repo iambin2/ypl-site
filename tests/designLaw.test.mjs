@@ -74,7 +74,7 @@ const RULES = {
   "type: weights 400 600 700 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
   "type: tracking is a token and follows its size (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value) || (trackFor[sib(d, "font-size")] && trackFor[sib(d, "font-size")] !== d.value)),
   "type: line-heights on one set (Type)": d => d.prop === "line-height" && !LEADING.has(d.value),
-  "type: big figures sit on the --fig scale, 28px and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
+  "type: big figures sit on the --fig scale, 32 and up (Type)": d => d.prop === "font-size" && /\.(fig|rc-poster-num|bk-draw-cnt)(?![\w-])/.test(d.sel) && !/^var\(--fig-[sml]\)$/.test(d.value),
   // one stack everywhere: Freesentation for Korean, Albert Sans for Latin and digits
   "type: one font stack; YPL Figures only with the brand (Type)": d => d.prop === "font-family" && !fontFace(d) && !/^(inherit|var\(--font\))$/.test(d.value),
   "type: no uppercase label (Type, Don't)": d => d.prop === "text-transform" && d.value === "uppercase",
@@ -84,11 +84,11 @@ const RULES = {
   "eye: an underline stands .382em under its word (The eye)": d => d.prop === "text-underline-offset" && d.value !== ".382em",
   "golden: a transition's scale comes from phi (The golden law)": d => (d.prop === "scale" || d.prop === "transform") && [...d.value.matchAll(/scale[XY]?\((\d*\.\d+)\)/g), ...(d.prop === "scale" ? [[0, d.value]] : [])].some(m => /^\d*\.\d+$/.test(m[1]) && ![".976", ".966", ".944", ".91", ".854", "1.034", "3.236"].includes(m[1])),
   "golden: a shadow stands on the steps of space (The golden law)": d => d.prop === "box-shadow" && /px/.test(noVars(d.value)) && !/^inset 0 (0 0 )?1px|^(inset )?0 0 0 /.test(d.value) && pxs(d.value).some(n => !SPACE.has(n)),
-  "align: left by default, centre only for the four cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
+  "align: left by default, centre only for the three cases (Alignment)": d => d.prop === "text-align" && d.value === "center",
   "align: right only for trailing values and number columns (Alignment)": d => d.prop === "text-align" && /right|end/.test(d.value),
   "radius: nothing is round (The plane)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && pxs(d.value).some(n => !RADII.has(n)),
-  "matte: nothing blurs what is behind it (Material)": d => /backdrop-filter$/.test(d.prop),
-  "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Material)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
+  "matte: nothing blurs what is behind it (Stage and surfaces)": d => /backdrop-filter$/.test(d.prop),
+  "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Stage and surfaces)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
   "matte: shadows are still, a shadow in a transition repaints its element every frame (Motion)": d => /^transition(-property)?$/.test(d.prop) && /box-shadow/.test(d.value),
   "motion: a filter stands still, it repaints every frame it moves (Motion)": d => /^transition/.test(d.prop) && /\bfilter\b/.test(d.value),
   // the verbs of the motion law: length and curve come as one token, so no element can invent a third way to move
@@ -96,7 +96,7 @@ const RULES = {
     && (/cubic-bezier|\blinear\(|steps\(|\bease(-in|-out|-in-out)?\b|\d(ms|s)\b/.test(noVars(d.value)) || /var\(--(ease|spring)/.test(d.value)),
   "type: paragraphs are pretty, only headlines balance (Type)": d => d.prop === "text-wrap" && !((/pretty/.test(d.value) && d.sel === "p") || (/balance/.test(d.value) && /^(h1, h2, h3, h4|\.display|\.title|\.hof-plate)$/.test(d.sel))),
   "color: components read semantic tokens, never primitives (Color)": d => d.file !== "src/styles/tokens.css" && /var\(--(navy|gray)-\d+|var\(--white\)/.test(d.value),
-  "depth: a z-index is a named step (Depth)": d => d.prop === "z-index" && !/^(auto|calc\(var\(--z-sticky\) \+ 1\)|var\(--z-[a-z]+\))$/.test(d.value),
+  "depth: a z-index is a named step (Space and radius)": d => d.prop === "z-index" && !/^(auto|calc\(var\(--z-sticky\) \+ 1\)|var\(--z-[a-z]+\))$/.test(d.value),
   "opacity: 0, 1 or a token (Color)": d => d.prop === "opacity" && !/^(0|1|var\(--opacity-[a-z]+\))$/.test(d.value),
   "motion: a duration is a token (Motion)": d => /^(transition|animation)/.test(d.prop) && /(?<![\w.-])\d*\.?\d+m?s\b/.test(noVars(d.value)),
 };
@@ -112,7 +112,7 @@ const EXCEPT = {
     "the Wing Y keeps its drawn proportion, 32 tall": [`${S} | .brand .logo | width: 48px`],
     "the base a line is scaled from, never seen at this length": [`${S} | .pill-ind > i | width: 100px`],
   },
-  "depth: a z-index is a named step (Depth)": {
+  "depth: a z-index is a named step (Space and radius)": {
     "a stack orders itself: toasts by their place": ["src/components/common/Toaster.jsx | style | z-index: 10 - index"],
   },
   "opacity: 0, 1 or a token (Color)": {
@@ -132,7 +132,7 @@ const EXCEPT = {
   "type: line-heights on one set (Type)": {
     "a rank cell sits on its neighbour's 32 line box": [`${R} | .r2-line > .r2-rk | line-height: 32px`],
   },
-  "align: left by default, centre only for the four cases (Alignment)": {
+  "align: left by default, centre only for the three cases (Alignment)": {
     "(a) a label inside its control": [`${T} | button | text-align: center`, `${T} | .rs > i | text-align: center`, `${A} | .ed-grid input | text-align: center`,
       `${B} | .bk-count input | text-align: center`, `${B} | .bk-pt input | text-align: center`, `${B} | .bk-alloc-row input | text-align: center`,
       `${K} | .calc-stepper output | text-align: center`, `${TB} | .tb-stat-number | text-align: center`],
@@ -217,8 +217,8 @@ test("planes hold, lines operate: the main action is the one plane, the rest is 
   assert.doesNotMatch(TOKENS, /--r-[a-z]+:/, "there is no radius token");
   const alive = /live-dot|ypl-ping|aria-busy/;
   assert.deepEqual(DECLS.filter(d => /radius/.test(d.prop) && !/^0$/.test(d.value) && !alive.test(d.sel)).map(keyOf), [], "only what is alive is round");
-  assert.deepEqual(decl(".btn--lg", "height"), ["52px"]);
-  assert.deepEqual(decl(".btn--lg", "min-width"), ["136px"], "the main action is 1 to phi squared");
+  assert.deepEqual(decl(".btn--md, .btn--lg", "height"), ["52px"]);
+  assert.deepEqual(decl(".btn--md, .btn--lg", "min-width"), ["136px"], "the main action is 1 to phi squared");
   assert.deepEqual(decl(".btn--secondary", "text-decoration"), ["underline"]);
   assert.ok(decl(".pill-ind", "height").includes("var(--rule)"), "the selection is a line");
   assert.deepEqual(decl(".ypl-group", "background"), [], "a list is rows on hairlines, not a grey box");
@@ -263,6 +263,13 @@ test("a distance is measured to the ink (The eye)", () => {
   assert.deepEqual(decl(".case-label", "padding"), ["var(--row-pad) var(--s5)"], "a label's ink stands as far from the top as from the side");
   for (const sel of [".ypl-head-h", ".hm-head h2", ".hm-cover h1"]) assert.deepEqual(decl(sel, "margin-block"), ["var(--trim)"], sel);
   for (const sel of [".hm-say h1", ".hm-plane b"]) assert.deepEqual(decl(sel, "margin-top"), ["var(--trim)"], sel);
+});
+test("a plane pads its words by one token: 20 on a phone, 32 from 860 (The golden law, Plane padding)", () => {
+  assert.match(TOKENS, /--grid-gap: var\(--s5\); --pad: var\(--s5\);/);
+  assert.match(TOKENS, /--grid-gap: var\(--s8\); --pad: var\(--s8\);/);
+  const planes = DECLS.filter(d => /^padding(-inline)?$/.test(d.prop) && /background: var\(--surface\)/.test(Object.entries(BLOCKS[d.blk] ?? {}).map(([k, v]) => `${k}: ${v}`).join(";")));
+  assert.ok(planes.length >= 6, "the planes are still found");
+  assert.deepEqual(planes.filter(d => /var\(--s8\)/.test(d.value)).map(keyOf), [], "a plane on the page pads var(--pad), not a fixed 32");
 });
 test("the bracket's card and its picture stand on one height (The eye)", () => {
   const js = src("src/pages/BracketsPage.jsx");
@@ -403,12 +410,12 @@ test("css keyframes move transform and opacity only (Motion)", () => {
   assert.ok(blocks.length > 8);
   assert.deepEqual(blocks.filter(b => !LOCAL[b.name] && b.props.some(p => !["transform", "opacity"].includes(p))).map(b => `${b.name}: ${b.props}`), []);
 });
-test("the bars and the page never hold a backdrop or a page copy (Material, Motion)", () => {
+test("the bars and the page never hold a backdrop or a page copy (Stage and surfaces, Motion)", () => {
   assert.doesNotMatch(src("src/components/common/motion.js"), /"ghost"/, "a page change copies nothing");
   assert.doesNotMatch(TOKENS, /@property --(stage|surface|fg)\b/, "theme change restyles once, under the veil");
 });
 
-test("a sheet fills the width under 860 and clips its corners (Sheets)", () => {
+test("a sheet fills the width under 860 and clips its corners (Motion, Sheets)", () => {
   const css = read(join(STYLES, "components.css"));
   const base = css.match(/^\.sheet \{([^}]*)\}/m)[1];
   assert.match(base, /width: 100%/, "a narrower sheet floats round on top and square below");

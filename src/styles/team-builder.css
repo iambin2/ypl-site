@@ -8,7 +8,7 @@
 .tb-hero-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
 
 /* ---------- plate panels ---------- */
-.tb-rule-card, .tb-panel, .tb-validation { padding: var(--s8); background: var(--surface); min-width: 0; }
+.tb-rule-card, .tb-panel, .tb-validation { padding: var(--pad); background: var(--surface); min-width: 0; }
 
 /* ---------- rules ---------- */
 .tb-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3); }
