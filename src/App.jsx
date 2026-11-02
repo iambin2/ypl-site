@@ -94,7 +94,9 @@ export default function App() {
   /* 탭 제목 — 뒤로 가기 목록과 브라우저 탭에서 어디에 있었는지 구분되게 화면 이름을 붙인다. */
   useEffect(()=>{
     const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
-    document.title=label?`${label} | YPL`:"YPL | Yonsei Pokémon League";
+    document.title=label?`${label} | YPL`:"YPL | 연세 포켓몬 리그 Yonsei Pokémon League";
+    // 검색 엔진에 화면 주소만 알린다. eventId와 배포 갱신용 __ypl_v 같은 덧붙은 값은 뺀다.
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href",`https://iambin2.github.io/ypl-site/${view==="home"?"":`?view=${view}`}`);
   },[view]);
   useEffect(()=>{
     initHistory();
