@@ -55,7 +55,11 @@
 .tb-team-head { display: flex; align-items: baseline; gap: var(--s3); }
 .tb-team-state { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-team-count { font-variant-numeric: tabular-nums; }
-.tb-mon { --floor: var(--h-strip); aspect-ratio: auto; height: calc(var(--h-row2) + var(--h-strip)); }
+.tb-mon { aspect-ratio: auto; height: calc(var(--h-row2) + var(--h-strip)); }
+/* the Pokémon fills its slot; a slot it is in has no floor band, so the picture takes the cell */
+.tb-mon .mon { height: calc(100% - var(--floor) - var(--s1)); }
+.tb-mon.unresolved .mon { opacity: var(--opacity-disabled); }
+@media (min-width: 860px) { .tb-mon { height: calc(var(--h-counter) + var(--s13)); } }
 .tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .tb-team-links { display: flex; gap: var(--s5); flex: none; }
 

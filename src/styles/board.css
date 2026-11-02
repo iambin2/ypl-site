@@ -27,7 +27,11 @@
 .row-lamp { flex: none; display: flex; justify-content: center; align-self: stretch; align-items: center; width: var(--s8); }
 
 /* ---------- desktop hover lifts a panel one tone; nothing grows ---------- */
-@media (hover: hover) { :is(button, a).pn:hover:not(:disabled) { background: var(--panel-2); } }
+@media (hover: hover) {
+  :is(button, a).pn:not(.inv):hover:not(:disabled) { background: var(--panel-2); }
+  /* the lit one stays lit under a pointer: it steps one tone down and keeps its words in the ground's colour */
+  :is(button, a).inv:hover:not(:disabled) { background: var(--dim); color: var(--ground); }
+}
 
 /* ---------- where a Pokémon stands: in a panel, its ink's feet on the floor band's top edge (Mon, inkCentre.js standInk) ---------- */
 .stand { --floor: 24%; position: relative; overflow: hidden; }
@@ -208,7 +212,10 @@
 .switch-row { justify-content: space-between; padding-right: var(--pad); }
 .sw { display: flex; width: var(--s13); height: var(--h-strip); padding: var(--s1); flex: none; background: var(--panel-2); transition: background-color var(--move-tone); }
 .sw i { width: 24px; height: 24px; background: var(--mute); }
-.sw.on { justify-content: flex-end; background: var(--lit); }
+.sw.on { background: var(--lit); }
+/* the square slides across the track as the switch turns */
+.sw i { transition: transform var(--move-tone), background-color var(--move-tone); }
+.sw.on i { transform: translateX(calc(var(--s13) - var(--s1) * 2 - 24px)); }
 .sw.on i { background: var(--ground); }
 
 /* ---------- errors and empty (DESIGN.md "Errors and empty"): the ! square and a sentence, then one way out ---------- */
@@ -240,8 +247,12 @@
   :is(.btn--main, .champion, .ab-go, .site-foot-dc):hover:not(:disabled) .ic { transform: translateX(var(--s1)); }
   .back:hover .ic { transform: translateX(calc(var(--s1) * -1)); }
   .site-foot-admin:hover, .site-foot-dc:hover { color: var(--lit); }
-  .row:hover .row-main > b { color: var(--lit); }
+  .row:not(.inv):hover .row-main > b { color: var(--lit); }
 }
 /* below the first screen a panel waits dark until it scrolls into view (motion.js light) */
 .rv { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .rv { opacity: 1; } .mon, .slide-line { transition: none; } }
+
+/* a Pokémon that just joined a team or a cell rises into it */
+.tb-mon .mon, .tb-pool-six .mon { animation: y-rise var(--move-light) backwards; }
+@media (prefers-reduced-motion: reduce) { .tb-mon .mon, .tb-pool-six .mon, .theme-fade .theme-btn .ic { animation: none; } }

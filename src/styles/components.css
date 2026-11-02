@@ -310,8 +310,9 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 .sheet .pn .sw:not(.on) { background: var(--rule); }
 .sheet .btn.btn--second { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); }
 @media (hover: hover) { .sheet button.pn:not(.stand):not(:disabled):hover, .sheet .pn.search-in:hover { background: var(--rule); } }
+/* a sheet only scrolls down: nothing in it may push it sideways, and its rows of chips wrap instead of running off */
 .modal {
-  position: relative; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  position: relative; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
   padding: var(--s2) var(--pad) calc(var(--s8) + env(safe-area-inset-bottom, 0px));
 }
 .modal > h3 { padding-right: 52px; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
@@ -332,6 +333,9 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
   gap: var(--seam); background: var(--ground);
 }
 .modal-actions .btn { flex: 1 1 0; }
+.sheet .chips { flex-wrap: wrap; overflow-x: visible; }
+/* in a sheet's bottom strip every action is a plane: a word action (취소, 나중에 within forms) stands as a second action panel */
+.modal-actions .btn.btn--link { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); --btn-fg: var(--lit); justify-content: center; height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 700; text-decoration: none; }
 @media (min-width: 860px) {
   .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 52px, var(--sheet-w)); max-height: calc(100dvh - 52px); }
   /* a sheet that shows a whole party is as wide as the content, so six cases stand side by side instead of crushing */

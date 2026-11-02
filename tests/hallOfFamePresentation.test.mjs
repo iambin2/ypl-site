@@ -44,3 +44,13 @@ test("forms use Showdown base-forme sprites and legacy form spellings resolve", 
   assert.match(resolveHallOfFameArtwork({ name: "다투곰(블러드문)" }, lookup), /pokemon\/ursaluna-bloodmoon\.webp$/);
   assert.match(resolveHallOfFameArtwork({ pokemonId: "kommoo" }, lookup), /pokemon\/kommoo\.webp$/);
 });
+
+test("a mega named without its letter falls back to its species, never to a guessed form", () => {
+  const lookup = buildHallOfFameArtworkLookup(new Map([
+    ["charizard", { pokemonId: "charizard", canonicalName: "Charizard", baseSpecies: "Charizard", forme: "", displayName: "리자몽" }],
+    ["charizardmegax", { pokemonId: "charizardmegax", canonicalName: "Charizard-Mega-X", baseSpecies: "Charizard", forme: "Mega-X", displayName: "메가리자몽X" }],
+  ]));
+  assert.match(resolveHallOfFameArtwork({ name: "메가리자몽" }, lookup), /pokemon\/charizard\.webp$/);
+  assert.match(resolveHallOfFameArtwork({ name: "메가리자몽X" }, lookup), /pokemon\/charizard-megax\.webp$/);
+  assert.equal(resolveHallOfFameArtwork({ name: "메가없는몬" }, lookup), "");
+});

@@ -45,18 +45,27 @@
 .r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s3); }
 .r2-title { font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
 .r2-meta { font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
-.r2-res { display: grid; gap: var(--s1); }
-.r2-line { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr); align-items: start; gap: var(--s2); }
-.r2-rk { font-size: var(--t12); line-height: var(--l15); font-weight: 600; color: var(--dim); white-space: nowrap; }
-.r2-names { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
-.r2-name.win { font-weight: 700; }
-.r2-name.mem { font-size: var(--t12); font-weight: 400; color: var(--dim); }
-.records-round-toggle { width: 100%; display: flex; align-items: flex-start; gap: var(--s3); text-align: left; }
+/* the placings: a strip each, joined by the seam. The place is a cell of its own: 우승 inverted, 준우승 lit, 4강 dim; the names beside it,
+   the winner's at 20, a team's members after its name in the grey of a line */
+.r2-res { display: grid; gap: var(--seam); }
+.r2-line { display: grid; grid-template-columns: var(--s21) minmax(0, 1fr); gap: var(--seam); min-height: var(--h-control); }
+.r2-rk { display: flex; align-items: center; padding: 0 var(--s3); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 700; color: var(--lit); white-space: nowrap; }
+.r2-line.sf .r2-rk { color: var(--dim); font-weight: 600; }
+.r2-rk.inv { background: var(--lit); color: var(--ground); }
+.r2-names { display: flex; flex-wrap: wrap; align-items: baseline; align-content: center; gap: var(--s1) var(--s3); padding: var(--s2) var(--s3); background: var(--panel-2); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.r2-line.win .r2-name:not(.mem) { font-size: var(--t20); line-height: var(--l20); letter-spacing: var(--ls20); }
+.r2-line.sf .r2-name:not(.mem) { font-weight: 600; }
+.r2-name.mem { font-weight: 400; color: var(--dim); }
+.records-round-toggle { width: 100%; display: flex; align-items: center; gap: var(--s3); min-height: var(--h-control); margin-top: var(--s3); text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--dim); transition: color var(--move-tone); }
+@media (hover: hover) { .records-round-toggle:hover { color: var(--lit); } }
 .records-round-summary { flex: 1; min-width: 0; }
-.r2-res + .records-round-toggle { margin-top: var(--s3); align-items: center; font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
-.records-round-chevron { flex: none; display: grid; place-items: center; width: var(--s5); height: var(--s5); color: var(--dim); }
+.records-round-chevron { flex: none; display: grid; place-items: center; width: var(--s5); height: var(--s5); color: var(--dim); transition: rotate var(--move-light); }
 .records-round-toggle[aria-expanded="true"] .records-round-chevron { rotate: 180deg; }
 .records-round-detail { margin: var(--s3) 0 0; padding: 0; list-style: none; }
+.records-round-detail > li { animation: y-rise var(--move-light) backwards; }
+.records-round-detail > li:nth-child(2) { animation-delay: calc(var(--t-press) * .38); }
+.records-round-detail > li:nth-child(3) { animation-delay: calc(var(--t-press) * .76); }
+.records-round-detail > li:nth-child(n + 4) { animation-delay: calc(var(--t-press) * 1.14); }
 .records-round-detail .row { background: var(--panel-2); }
 
 /* Pokémon: panels of three across, each standing on its name band */
@@ -69,13 +78,11 @@
 
 /* a trainer or a Pokémon in its sheet */
 .rc-profile { display: grid; min-width: 0; }
-.rc-who { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s5); }
-.rc-who .dd { flex: none; }
-.rc-joined { margin-top: var(--s2); }
-.rc-chips-label { margin-top: var(--s5); }
-.rc-titles { margin-top: var(--s2); }
+.rc-profile > .rc-counts { margin-top: 0; }
+.rc-seasons { margin-top: var(--s3); }
 .rc-titles > * { cursor: default; }
 .rc-sec { margin-top: var(--s13); min-width: 0; }
+.sheet .rc-sec { margin-top: var(--s8); }
 .rc-place { display: inline-flex; align-items: center; height: var(--s5); padding: 0 var(--s2); font-weight: 700; }
 .rc-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
 .rc-cell { --floor: var(--s13); height: calc(var(--s21) + var(--s13)); }
@@ -106,4 +113,13 @@
   .rc-party-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s5); padding-block: var(--s2); }
   .rc-party-six { grid-template-columns: repeat(6, var(--h-row2)); }
   .rc-party-mon { height: var(--h-row2); }
+}
+
+/* the Pokémon sheet's head: the picture beside its three counters on desktop, over them on a phone */
+.rc-mon-top { display: grid; gap: var(--seam); }
+.rc-mon-top .rc-counts { margin-top: 0; }
+.rc-mon-lead { --floor: var(--s1); }
+@media (min-width: 860px) {
+  .rc-mon-top { grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); align-items: stretch; }
+  .rc-mon-top .rc-counts { grid-template-columns: minmax(0, 1fr); }
 }

@@ -190,7 +190,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       {sheet && (() => {
         const profile = profileOf(snapshot, sheet.key);
         return profile ? (
-          <Modal label={`${profile.name} 기록`} className="rc-sheet" onClose={closeTrainer} fly={sheet.from ? { from: sheet.from, selector: ".rc-name" } : undefined}>
+          <Modal title={profile.name} hint={trainerHint(profile)} className="rc-sheet wide" onClose={closeTrainer}>
             <TrainerProfile snapshot={snapshot} profile={profile} onParty={setParty} />
           </Modal>
         ) : null;
@@ -198,6 +198,11 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       {party && <PartySheet open={party} onClose={() => setParty(null)} onTrainer={(name) => { setParty(null); openTrainer(name); }} />}
     </section>
   );
+}
+
+/* 트레이너 시트의 머리 아래 한 줄: 참가 횟수와 가진 챔피언 세대 */
+function trainerHint(profile) {
+  return [`참가 ${profile.history.length}회`, ...profile.champions.map((c) => `${generationText(c.gen)} 챔피언`)].join(", ");
 }
 
 /* 이름이나 키로 트레이너 기록을 찾는다. 다른 페이지의 링크는 이름만 알고 있다. */
@@ -283,30 +288,21 @@ function TrainerProfile({ snapshot, profile, onParty }) {
 
   return (
     <div className="rc-profile">
-      <section aria-labelledby="rc-trainer-name">
-        <div className="rc-who">
-          <h3 className="t32 rc-name" id="rc-trainer-name">{profile.name}</h3>
-          <Dropdown
-            value={season}
-            onChange={(value) => { setSeason(value); setHistPage(1); }}
-            ariaLabel="시즌 필터"
-            options={[{ value: "", label: "전체 기록" }, ...snapshot.seasons.map((name) => ({ value: name, label: name }))]}
-          />
+      {/* the party sheet's order (c14): the facts first, then what the trainer did, top to bottom, one column that only scrolls down */}
+      <div className="stack rc-counts">
+        <Counter label="우승" value={championships} unit="회" />
+        <Counter label="준우승" value={runnerUps} unit="회" />
+        <Counter label="4강" value={top4} unit="회" />
+      </div>
+      {snapshot.seasons.length > 0 && <div className="rc-seasons"><Chips label="시즌" value={season} onChange={(value) => { setSeason(value); setHistPage(1); }}
+        options={[["", "전체 기록"], ...snapshot.seasons.map((name) => [name, name])]} /></div>}
+      {(profile.champions.length > 0 || restTitles.length > 0) && <section className="rc-sec" aria-labelledby="rc-title-h">
+        <SectionHead id="rc-title-h" title="칭호" />
+        <div className="chips rc-titles">
+          {profile.champions.map((c, i) => <span key={`c${i}`} className="inv">{genLabel(c.gen)}</span>)}
+          {restTitles.map((title, i) => <span key={`t${i}`} className="pn">{title.name}</span>)}
         </div>
-        <div className="stack rc-counts">
-          <Counter label="우승" value={championships} unit="회" />
-          <Counter label="준우승" value={runnerUps} unit="회" />
-          <Counter label="4강" value={top4} unit="회" />
-        </div>
-        <p className="t12 dim reg rc-joined">참가 <span className="num">{history.length}</span>회</p>
-        {(profile.champions.length > 0 || restTitles.length > 0) && (<>
-          <p className="t12 dim rc-chips-label">칭호</p>
-          <div className="chips rc-titles">
-            {profile.champions.map((c, i) => <span key={`c${i}`} className="inv">{genLabel(c.gen)}</span>)}
-            {restTitles.map((title, i) => <span key={`t${i}`} className="pn">{title.name}</span>)}
-          </div>
-        </>)}
-      </section>
+      </section>}
 
       <section className="rc-sec" aria-labelledby="rc-hist-h">
         <SectionHead id="rc-hist-h" title="최근 대회" />
@@ -333,7 +329,10 @@ function TrainerProfile({ snapshot, profile, onParty }) {
         <SectionHead id="rc-party-h" title={`사용한 파티 ${parties.length}개`} />
         <div className="stack">
           {(allParties ? parties : parties.slice(0, 4)).map((roster) => (
-            <Row key={roster.id || roster.snapshotId} title={rosterTitle(roster)} line={[formatDate(roster.date), roster.team && displayTeamName(roster.teamName), (roster.pokemon || []).join(", ")].filter(Boolean).join(", ")} onClick={() => onParty({ roster })} label={`${rosterTitle(roster)} 파티 보기`} />
+            <button type="button" key={roster.id || roster.snapshotId} className="pn rc-party-row" onClick={() => onParty({ roster })} aria-label={`${rosterTitle(roster)} 파티 보기, ${(roster.pokemon || []).join(", ")}`}>
+              <span className="rc-party-who"><b className="t15">{rosterTitle(roster)}</b><span className="t12 dim">{[formatDate(roster.date), roster.team && displayTeamName(roster.teamName)].filter(Boolean).join(", ")}</span></span>
+              <span className="rc-party-six" aria-hidden="true">{rosterParty(roster).map((m, k) => <span className="stand rc-party-mon" key={k}><i className="floor" /><Mon src={m.img} /></span>)}</span>
+            </button>
           ))}
         </div>
         {!allParties && parties.length > 4 && <div className="rc-more"><Button variant="second" onClick={() => setAllParties(true)}>{parties.length}개 전체 보기</Button></div>}
@@ -462,12 +461,12 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
     const meta = [formatDate(r.date), r.season, championshipEmphasis && "챔피언스 시리즈", r.team && "팀전", rule]
       .filter((part, i, all) => part && !title.includes(part) && all.indexOf(part) === i).join(", ");
     const head = <span className="r2-head"><span className="r2-title">{title}</span>{meta && <span className="r2-meta">{meta}</span>}</span>;
-    /* 순위마다 한 줄: 이름표 열 뒤에 이름. 팀전은 팀마다 줄을 나눈다. */
+    /* 순위마다 한 줄의 띠: 왼쪽은 순위의 칸(우승은 반전, 준우승은 켜짐, 4강은 흐림), 오른쪽은 이름(우승은 20). 팀전은 팀마다 줄을 나눈다. */
     const resultLines = (lines) => (
       <div className="r2-res">
         {lines.map(([placement, label, entries]) => entries.map((entry, k) => (
-          <div className="r2-line" key={`${placement}:${k}`}>
-            <span className={"r2-rk" + (placement === "win" ? " gold" : "")}>{k === 0 ? label : ""}</span>
+          <div className={"r2-line " + placement} key={`${placement}:${k}`}>
+            <span className={"r2-rk" + (placement === "win" ? " inv" : "")}>{k === 0 ? label : ""}</span>
             <span className="r2-names">
               {entry.names.map((name, n) => <span key={`${name}:${n}`} className={"r2-name" + (placement === "win" ? " win" : "")}>{name}</span>)}
               {entry.members?.length > 0 && <NameChips list={entry.members} kind="mem" />}
@@ -489,21 +488,13 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
     return (
       <li className={"pn round2" + (championshipEmphasis ? " champ" : "")} key={key}>
         <div className="r2-main">
-          {toggleable && !r.team ? (
-            <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
-              <div className="records-round-summary">
-                {head}
-                {individualResults()}
-              </div>
-              <span className="records-round-chevron" aria-hidden="true"><Icon n="chev" size={16} /></span>
-            </button>
-          ) : <>
           {head}
           {!r.team && individualResults()}
-          {r.team && teamResults()}</>}
-          {toggleable && r.team && (
+          {r.team && teamResults()}
+          {/* one way to open the parties for every event: a line that names what it opens */}
+          {toggleable && (
             <button type="button" className="records-round-toggle" aria-expanded={expanded} onClick={toggle}>
-              <span className="records-round-summary">팀원별 공식 파티</span>
+              <span className="records-round-summary">{r.team ? "팀원별 공식 파티" : "입상자별 공식 파티"}</span>
               <span className="records-round-chevron" aria-hidden="true"><Icon n="chev" size={16} /></span>
             </button>
           )}
@@ -611,28 +602,24 @@ function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
   const natureOf = (id) => natureName(ALIGNMENTS.find((a) => a.id === id));
   const [more, setMore] = useState(false);
   return (
-    <Modal label={`${pokemon.name} 기록`} className="rc-sheet" onClose={onClose}>
+    <Modal title={pokemon.name} hint={`채용 ${rank}위, 채용률 ${pokemon.entryRate.toFixed(1)}%`} className="rc-sheet wide" onClose={onClose}>
       <div className="rc-profile">
-        <section aria-labelledby="rc-pokemon-name">
-          <div className="pn stand rc-mon-lead">
-            <span className="rc-mon-who"><h3 className="t20" id="rc-pokemon-name">{pokemon.name}</h3><span className="t12 dim">{rank}위</span></span>
-            <Mon src={pictureOf(pokemon.name, pokemon.spriteName)} />
-            <i className="floor" aria-hidden="true" />
-          </div>
+        {/* the party sheet's order: the picture and the facts first, then the samples and the parties, one column that only scrolls down */}
+        <div className="rc-mon-top">
+          <div className="pn stand rc-mon-lead"><Mon src={pictureOf(pokemon.name, pokemon.spriteName)} /><i className="floor" aria-hidden="true" /></div>
           <div className="stack rc-counts">
             <Counter label="등록 엔트리" value={pokemon.entries} unit="회" cells={pokemon.entries >= 100 ? 3 : 2} />
             <Counter label="사용 트레이너" value={pokemon.trainerCount} unit="명" cells={pokemon.trainerCount >= 100 ? 3 : 2} />
             <Counter label="우승 엔트리" value={pokemon.wins} unit="회" />
           </div>
-          <p className="t12 dim reg rc-joined">채용률 <span className="num">{pokemon.entryRate.toFixed(1)}%</span></p>
-        </section>
+        </div>
         <p className="t12 dim reg rc-lead-note">
           채용률은 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
           실제 경기 선출 여부는 기록하지 않으므로 포켓몬 승률은 표시하지 않습니다.
         </p>
 
         {samples.length > 0 && <section className="rc-sec" aria-labelledby="rc-pk-use-h">
-          <SectionHead id="rc-pk-use-h" title="많이 쓴 구성 (샘플 {samples.length}개 기준)" />
+          <SectionHead id="rc-pk-use-h" title={`많이 쓴 구성 (샘플 ${samples.length}개 기준)`} />
           {detail ? <dl className="sc-facts rc-usage">
             <div><dt>도구</dt><dd>{line(usage.items, (id) => itemName(detail, id))}</dd></div>
             <div><dt>특성</dt><dd>{line(usage.abilities, abilityName)}</dd></div>

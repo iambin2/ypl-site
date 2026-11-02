@@ -182,11 +182,12 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
   const moveCount = member.moves.filter(Boolean).length;
   const unresolved = member.resolutionState === "unresolved";
   return (
-    <button type="button" className={"pn stand tb-mon" + (active ? " active" : "") + (unresolved ? " unresolved" : "")} onClick={onSelect} aria-pressed={active}>
+    /* the picture is the slot: no name under it (the editor below names the chosen one); the chosen slot inverts */
+    <button type="button" className={"stand tb-mon" + (active ? " inv active" : " pn") + (unresolved ? " unresolved" : "")} onClick={onSelect} aria-pressed={active}
+      aria-label={`${displayName}, ${itemLabel || "도구 없음"}, 기술 ${moveCount}/4${unresolved ? ", 현재 규칙에서 확인할 수 없는 포켓몬" : ""}`}
+      title={unresolved ? "현재 규칙에서 확인할 수 없는 포켓몬" : `${displayName}, ${itemLabel || "도구 없음"}, 기술 ${moveCount}/4`}>
+      <i className="floor" aria-hidden="true" />
       <Mon src={spriteUrl(member.pokemon.name)} />
-      <span className={"floor tb-mon-band" + (active ? " inv" : "")} title={unresolved ? "현재 규칙에서 확인할 수 없는 포켓몬" : `${itemLabel || "도구 없음"}, 기술 ${moveCount}/4`}>
-        <b className="t12">{displayName}</b>
-      </span>
       <span
         role="button"
         tabIndex={0}

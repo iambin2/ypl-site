@@ -19,7 +19,8 @@
 .calc-vs { --floor: var(--h-row); position: relative; display: block; width: 100%; height: calc(var(--h-counter) + var(--h-row2) + var(--h-row)); text-align: left; }
 .calc-vs .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s5)); margin-inline: auto; }
 .calc-vs-label { position: absolute; left: var(--pad); top: var(--s2); z-index: var(--z-raised); }
-.calc-vs-empty { position: absolute; left: 0; right: 0; top: 0; bottom: var(--floor); display: grid; place-items: center; color: var(--mute); }
+/* an empty side: the + stands in the middle of the whole panel, its words on the band below */
+.calc-vs-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mute); }
 .calc-vs-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--pad); }
 .calc-vs-band > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calc-speed-line b { color: var(--lit); font-variant-numeric: tabular-nums; }
@@ -82,7 +83,10 @@
 .calc-speed-controls > .ypl-seg .seg-track { flex: 1; }
 .calc-tier-wrap { display: grid; gap: var(--s3); }
 .calc-tiers { list-style: none; display: grid; gap: var(--seam); margin: 0; padding: 0; }
-.calc-tier { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); content-visibility: auto; contain-intrinsic-size: auto 52px; }
+/* a line of the speed line: the speed, the Pokémon's picture, its name, its base */
+.calc-tier { display: grid; grid-template-columns: var(--s13) var(--h-control) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); content-visibility: auto; contain-intrinsic-size: auto 52px; }
+.calc-tier-mon { width: var(--h-control); height: var(--h-control); }
+.calc-tier-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
 .calc-tier > b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .calc-tier-copy { min-width: 0; }
 .calc-tier-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -142,3 +146,6 @@
   .calc-move-tools .cell:last-child { grid-column: 1 / -1; }
   .calc-table th:nth-child(3), .calc-table td:nth-child(3) { display: none; }
 }
+
+/* the damage page reads as three parts: who faces whom, the battle's conditions, each side's settings */
+.calc-sec > .sh, .calc-swap > .sh { margin-top: var(--s5); }

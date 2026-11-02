@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown, Icon, Loader, Segmented } from "../components/index.js";
-import { Cell, Mon, Row, TabsLine } from "../components/common/Board.jsx";
+import { Cell, Chips, Mon, Row, SectionHead, TabsLine } from "../components/common/Board.jsx";
 import Seg from "../components/common/Seg.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { DEFAULT_REGULATION_ID, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
@@ -349,8 +349,9 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
         <DirectionResults title={`${nameOf(1)}의 공격`} results={ready ? results[1] : []} detailData={detailData} emptyText={directionEmpty(1)} />
       </div>}
 
-      <div><FieldCard field={field} onChange={setField} /></div>
+      <section className="calc-sec" aria-labelledby="calc-field-h"><SectionHead id="calc-field-h" title="배틀 조건" /><FieldCard field={field} onChange={setField} /></section>
 
+      <SectionHead id="calc-sides-h" title="세부 설정" />
       <div className="calc-side-switch">
         <Segmented value={String(editing)} onChange={value => setEditing(Number(value))} ariaLabel="편집할 포켓몬" options={[["0", SIDE_NAMES[0]], ["1", SIDE_NAMES[1]]]} />
       </div>
@@ -391,6 +392,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
   const meRow = me == null ? null : (
     <li className="calc-tier inv" ref={meRef} key="me">
       <b className="t15">{me}</b>
+      <span className="stand calc-tier-mon"><i className="floor" aria-hidden="true" /><Mon src={spriteUrl(pokemons[basis].name)} /></span>
       <span className="calc-tier-copy"><strong className="t15">{display(pokemons[basis])}</strong></span>
       <span className="t12">{SIDE_NAMES[basis]}, 현재 설정</span>
     </li>
@@ -418,7 +420,8 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
 
       <div className="calc-speed-controls">
         <Segmented value={spread} onChange={setSpread} ariaLabel="상대 스피드 기준" options={Object.entries(SPEED_SPREAD_LABELS)} />
-        <Cell label="보정"><Dropdown className="tb-dd" value={modifier} onChange={setModifier} ariaLabel="상대 스피드 보정" options={SPEED_MODIFIERS} /></Cell>
+        {/* the opponents' speed modifier as a row of choices, so which one is on reads at a glance */}
+        <Chips label="상대 스피드 보정" value={modifier} onChange={setModifier} options={SPEED_MODIFIERS.map(m => [m.value, m.label])} />
       </div>
       <p className="t12 reg dim">최속은 32포인트에 스피드 상승 성격, 준속은 32포인트에 무보정 성격, 무보정은 0포인트, 최저는 0포인트에 스피드 하락 성격입니다.</p>
       <div className="calc-tier-wrap">
@@ -433,6 +436,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
               {index === meIndex && meRow}
               <li className={"pn calc-tier" + (me == null ? "" : row.speed > me ? " faster" : row.speed === me ? " tie" : " slower")}>
                 <b className="t15">{row.speed}</b>
+                <span className="stand calc-tier-mon"><i className="floor" aria-hidden="true" /><Mon src={spriteUrl(row.pokemon.name)} loading="lazy" /></span>
                 <span className="calc-tier-copy"><strong className="t15">{display(row.pokemon)}</strong></span>
                 <span className="t12 reg dim">종족값 {row.base}{me != null && row.speed === me ? ", 동속" : ""}</span>
               </li>

@@ -202,14 +202,18 @@ label:has(input) { cursor: pointer; }
 
 /* ---------- shared keyframes: things arrive by lighting ---------- */
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes y-rise { from { opacity: 0; } to { opacity: 1; } }
+@keyframes y-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes y-pop { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
 .swap { animation: y-swap var(--move-leave) backwards; }
 @keyframes y-swap { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .dd-menu, .bk-submission-detail, .records-round-detail) { animation: none; } }
-/* theme change: the page turns in one frame, and a control's own tone transition sits it out */
+/* theme change: the page turns in one frame under a clearing wash of the old ground (motion.js themeTurn) */
 .theme-turn * { transition: none !important; }
+.theme-fade * { transition: none !important; }
+.theme-wash { position: fixed; inset: 0; z-index: var(--z-skip); pointer-events: none; }
+.theme-fade .theme-btn .ic { animation: y-turn var(--move-light) backwards; }
+@keyframes y-turn { from { opacity: 0; transform: rotate(-90deg); } }
 
 /* ---------- print: the record, in ink, without the site around it ---------- */
 @media print {

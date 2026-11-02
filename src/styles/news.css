@@ -23,18 +23,6 @@
 .nw-art-head { order: 0; } .nw-counts { order: 1; } .nw-spec { order: 2; } .nw-body { order: 3; } .nw-more { order: 4; }
 .nw-resp { order: 5; } .nw-admin { order: 6; } .nw-main-act { order: 7; }
 .nw-others { display: none; }
-/* desktop: the body in 709, the event's facts, its actions and the other notices in 439 beside it, held in view */
-@media (min-width: 860px) {
-  .nw-art { display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); grid-template-areas: "head head" "main aside"; column-gap: var(--s13); align-items: start; }
-  .nw-art-head { grid-area: head; }
-  .nw-main { grid-area: main; display: block; margin-top: var(--s8); }
-  .nw-aside { grid-area: aside; display: grid; gap: var(--s5); position: sticky; top: calc(var(--nav-height) + var(--s5)); margin-top: var(--s8); }
-  .nw-aside > *, .nw-main > :first-child { margin-top: 0; }
-  .nw-aside > .nw-spec.joined { margin-top: calc(var(--seam) - var(--s5)); }
-  .nw-aside .dock { margin-top: 0; }
-  .nw-others { display: block; }
-  .nw-aside > .nw-others:not(:first-child) { margin-top: var(--s8); }
-}
 .nw-date { margin-top: var(--s3); }
 .nw-title { margin-top: var(--s2); }
 .nw-counts { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -52,3 +40,19 @@
 .nw-done { display: flex; align-items: flex-start; gap: var(--s3); margin-top: var(--s5); padding: var(--s5); }
 .nw-done .box.on { background: var(--ground); color: var(--lit); }
 .nw-done p { margin-top: var(--s1); }
+
+/* desktop: two columns that share their top line. Left, 709: the back link, date, title and body. Right, 439, beside the title from its
+   first line and held in view: the event's counters and spec, its main action, its links, then 다른 공지 */
+@media (min-width: 860px) {
+  .nw-art { display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); grid-template-areas: "head aside" "main aside"; grid-template-rows: auto 1fr; column-gap: var(--s13); align-items: start; }
+  .nw-art-head { grid-area: head; }
+  .nw-main { grid-area: main; display: block; margin-top: var(--s8); }
+  .nw-aside { grid-area: aside; display: grid; gap: var(--s5); position: sticky; top: calc(var(--nav-height) + var(--s8)); }
+  .nw-aside > *, .nw-main > :first-child { margin-top: 0; }
+  .nw-aside > .nw-counts { order: 1; } .nw-aside > .nw-spec { order: 2; } .nw-aside > .nw-main-act { order: 3; }
+  .nw-aside > .nw-more { order: 4; } .nw-aside > .nw-admin { order: 5; } .nw-aside > .nw-others { order: 6; }
+  .nw-aside > .nw-spec.joined { margin-top: calc(var(--seam) - var(--s5)); }
+  .nw-aside .dock { margin-top: 0; }
+  .nw-others { display: block; }
+  .nw-aside > .nw-others:not(:only-child) { margin-top: var(--s8); }
+}

@@ -55,8 +55,8 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
         ))}
         <i className="slide-line" aria-hidden="true" />
       </nav>
-      <button type="button" className="iconbtn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
-        <Icon n={dark ? "sun" : "moon"} size={24} />
+      <button type="button" className="iconbtn theme-btn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
+        <Icon key={dark ? "sun" : "moon"} n={dark ? "sun" : "moon"} size={24} />
       </button>
     </header>
   );

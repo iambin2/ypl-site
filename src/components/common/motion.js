@@ -105,13 +105,35 @@ export function transition(mutate, { dir = "forward", scrollY: nextY = 0 } = {})
   if (dir !== "back") light(main(), DUR.leave);
 }
 
-/* ---------- theme change (B6): nothing moves. The page turns in one frame with nothing over it, and a control's own tone transition sits
-   this frame out, so no surface trails the words on it. ---------- */
+/* ---------- theme change (2026-11-03): the page turns in one frame and a wash of the old ground clears off it over 420, so the change reads
+   as a cross-fade with nothing restyled frame by frame. The theme button's sun and moon turn in. Reduced motion turns in one frame. ---------- */
+let themeTimer = 0;
 export function themeTurn(commit) {
   const root = document.documentElement;
-  root.classList.add("theme-turn");
+  if (reduced()) {
+    root.classList.add("theme-turn");
+    commit();
+    requestAnimationFrame(() => root.classList.remove("theme-turn"));
+    return;
+  }
+  // the page turns in one frame; a wash of the old ground lies over it and clears (opacity only, one layer, on the compositor)
+  const old = getComputedStyle(root).getPropertyValue("--ground").trim();
+  clearTimeout(themeTimer);
+  root.classList.add("theme-fade");
   commit();
-  requestAnimationFrame(() => root.classList.remove("theme-turn"));
+  const wash = document.createElement("div");
+  wash.className = "theme-wash";
+  wash.style.background = old;
+  document.body.appendChild(wash);
+  wash.animate([{ opacity: .618 }, { opacity: 0 }], { duration: DUR.light, easing: EASE_IN_OUT, fill: "forwards" }).finished.finally(() => wash.remove());
+  themeTimer = setTimeout(() => root.classList.remove("theme-fade"), DUR.light);
+}
+
+/* what follows a control that swaps the content under it (page tabs, filter chips) lights again, as a page does */
+export function lightAfter(el) {
+  let at = el;
+  while (at && !at.nextElementSibling && at.id !== "ypl-main") at = at.parentElement;
+  for (let n = at?.nextElementSibling; n; n = n.nextElementSibling) light(n, DUR.leave);
 }
 
 /* into a sheet: the pressed row stays where it is, and the sheet's title lights a beat after the sheet starts to rise */

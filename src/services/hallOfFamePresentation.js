@@ -106,6 +106,10 @@ export function resolveHallOfFameArtwork(member = {}, lookup) {
     const image = lookup?.get?.(key(candidate));
     if (image) return image;
   }
+  // An old record may name a mega without its letter ("메가리자몽" where X and Y both exist). The species' own picture is never the
+  // wrong form, so it stands in rather than an empty cell.
+  const name = String(member?.name || "");
+  if (name.startsWith("메가")) return lookup?.get?.(key(name.slice(2))) || "";
   return "";
 }
 

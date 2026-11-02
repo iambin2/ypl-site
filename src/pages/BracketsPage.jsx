@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
@@ -997,24 +997,53 @@ function treeCenters(rounds){
 function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=false, seedOf }){
   const ev=evalGraph(g);
   const finalRes=elimResult(g);
-  const pathOf=(m)=>{ const w=ev.win[m.id]; return !w||w===BYE?"":" won"; };
-  // the leg into a box lights once both roads into it are decided (a BYE counts as decided)
-  const fedOf=(ri,j)=>ri>0&&[2*j,2*j+1].every(k=>{ const f=g.rounds[ri-1][k]; return !f||ev.win[f.id]; })?" fed":"";
   const rlabel=roundName;
   const { centers, totalH }=treeCenters(g.rounds);
+  /* the lines: one drawing over the whole tree, measured from the boxes as they stand (offsets, so a lighting rise never bends them).
+     Out of each box a road to the middle of its pair and on into the next box; a decided road is a 2px lit line drawn over the rest,
+     so it runs unbroken from the winner's box to the next. */
+  const treeRef=useRef(null);
+  const [wires,setWires]=useState(null);
+  const won=m=>{ const w=ev.win[m.id]; return Boolean(w)&&w!==BYE; };
+  const winKey=g.rounds.map(r=>r.map(m=>ev.win[m.id]||"").join(",")).join("|")+(finalRes?.champ||"");
+  useLayoutEffect(()=>{
+    const tree=treeRef.current;
+    if(!tree||g.kind==="double") return undefined;
+    const at=el=>{ let x=0,y=0; for(let n=el;n&&n!==tree;n=n.offsetParent){ x+=n.offsetLeft; y+=n.offsetTop; } return { x, y, w:el.offsetWidth, h:el.offsetHeight }; };
+    const draw=()=>{
+      const box=(ri,j)=>{ const el=tree.querySelector(`[data-r="${ri}"][data-j="${j}"] > .mb`); return el?at(el):null; };
+      const dim=[], lit=[];
+      for(let ri=1;ri<g.rounds.length;ri++) g.rounds[ri].forEach((m,j)=>{
+        const t=box(ri,j); if(!t) return;
+        const ty=t.y+t.h/2; let xm=null; const roads=[];
+        [2*j,2*j+1].forEach(k=>{ const f=g.rounds[ri-1][k]; const b=f&&box(ri-1,k); if(!b) return;
+          const fy=b.y+b.h/2, fx=b.x+b.w; xm=Math.round((fx+t.x)/2);
+          (won(f)?lit:dim).push(`M${fx} ${fy}H${xm}V${ty}`); roads.push(won(f)); });
+        if(xm!=null) (roads.every(Boolean)?lit:dim).push(`M${xm} ${ty}H${t.x}`);
+      });
+      const fin=box(g.rounds.length-1,0), champ=tree.querySelector(".bk-champ-col .bk-champ-node");
+      if(fin&&champ){ const c=at(champ); (finalRes?.champ?lit:dim).push(`M${fin.x+fin.w} ${fin.y+fin.h/2}H${c.x}`); }
+      setWires({ w:tree.scrollWidth, h:tree.scrollHeight, dim:dim.join(""), lit:lit.join("") });
+    };
+    draw();
+    const watch=typeof ResizeObserver==="function"?new ResizeObserver(draw):null;
+    watch?.observe(tree);
+    return ()=>watch?.disconnect();
+  },[winKey,g.rounds.length,g.kind]);
   const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>;
-  return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree">
+  return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree" ref={treeRef}>
+    {wires&&<svg className="bk-wires" width={wires.w} height={wires.h} aria-hidden="true"><path className="dim" d={wires.dim}/><path className="lit" d={wires.lit}/></svg>}
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
       <div className="bk-col-h t12 dim">{g.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
       <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
-        {r.map((m,j)=>(<div className={"bk-mpos"+pathOf(m)+fedOf(ri,j)} key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>{card(m)}</div>))}
+        {r.map((m,j)=>(<div className="bk-mpos" data-r={ri} data-j={j} key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>{card(m)}</div>))}
       </div>
     </div>))}
     {/* the 우승 panel stands from the start and lights when the final ends (c16) */}
     {g.kind!=="double"&&!qualifier&&<div className={"bk-col2 bk-champ-col"+(finalRes?.champ?" on":"")}>
       <div className="bk-col-h t12 dim">우승</div>
       <div className="bk-col-body" style={{height:totalH}}>
-        <div className="bk-mpos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
+        <div className="bk-mpos bk-champ-pos" style={{top:(centers[g.rounds.length-1][0]-BK_MATCH_H/2)+"px"}}>
           {finalRes?.champ
             ? <div className="bk-champ-node inv"><span className="t12">우승</span><b className="t15">{nameOf(finalRes.champ)}</b></div>
             : <div className="pn bk-champ-node wait"><span className="t12">결승이 끝나면 켜집니다.</span></div>}

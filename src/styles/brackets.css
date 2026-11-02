@@ -39,9 +39,8 @@
   .bk-tools .btn { height: var(--h-control); padding: 0 var(--s5); }
   .bk-cb-actions > .bk-img { display: none; }
   /* the 우승 panel is a trophy's panel, taller than a match, centred on the final */
-  .bk-champ-col .bk-mpos { translate: 0 calc((var(--mb) - var(--s21) * 2 - var(--s3)) / 2); }
+  .bk-champ-pos { translate: 0 calc((var(--mb) - var(--s21) * 2 - var(--s3)) / 2); }
   .bk-champ-col .bk-champ-node { height: calc(var(--s21) * 2 + var(--s3)); align-items: center; justify-content: center; text-align: center; }
-  .bk-col2.bk-champ-col .bk-mpos::before { top: calc(50% - var(--line) / 2); }
 }
 
 /* the decided result: 우승 inverted, the places as spec rows, the images */
@@ -86,20 +85,13 @@
 @media (hover: hover) { .can-pick .mb-row:not(:disabled):not(.inv):hover, .mb.team-click:hover .mb-row:not(.inv) { background: var(--panel-2); } }
 .mb.team-click { cursor: pointer; }
 
-/* the lines: out of each box a fork to the middle of its pair, into each later box one leg */
-.bk-col2:not(:last-child) .bk-mpos::after {
-  content: ""; position: absolute; left: 100%; pointer-events: none; width: calc(var(--bk-gap) / 2); height: calc(var(--bk-pitch) / 2);
-  box-shadow: inset calc(var(--hair) * -1) 0 0 var(--bk-line);
-}
-.bk-col2:not(:last-child) .bk-mpos:nth-child(odd)::after { top: calc(var(--mb) / 2); box-shadow: inset calc(var(--hair) * -1) var(--hair) 0 var(--bk-line); }
-.bk-col2:not(:last-child) .bk-mpos:nth-child(even)::after { bottom: calc(100% - var(--mb) / 2); box-shadow: inset calc(var(--hair) * -1) calc(var(--hair) * -1) 0 var(--bk-line); }
-.bk-col2:not(:first-child) .bk-mpos::before { content: ""; position: absolute; right: 100%; top: calc(var(--mb) / 2); width: calc(var(--bk-gap) / 2); height: var(--hair); background: var(--rule); pointer-events: none; }
-/* a decided road is a 2px lit line */
-.bk-col2:not(:last-child) .bk-mpos.won::after { --bk-line: var(--lit); --hair: var(--line); }
-.bk-col2:not(:first-child) .bk-mpos.fed::before { top: calc(var(--mb) / 2 - var(--line) / 2); height: var(--line); background: var(--lit); }
-.bk-col2:has(+ .bk-champ-col) .bk-mpos::after { display: none; }
-.bk-col2.bk-champ-col .bk-mpos::before { width: var(--bk-gap); height: var(--hair); background: var(--rule); }
-.bk-col2.bk-champ-col.on .bk-mpos::before { height: var(--line); background: var(--lit); }
+/* the lines: one svg over the tree (BracketsPage ElimBoard), measured from the boxes. A road not yet decided is a 1px muted line,
+   a decided one a 2px lit line laid over it, square-capped so its corners close */
+.bk-tree { position: relative; }
+.bk-wires { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.bk-wires path { fill: none; stroke-linejoin: miter; }
+.bk-wires .dim { stroke: var(--mute); stroke-width: 1; }
+.bk-wires .lit { stroke: var(--lit); stroke-width: 2; stroke-linecap: square; }
 
 /* the champion: an inverted panel the size of a match box */
 .bk-champ-node { height: var(--mb); display: flex; flex-direction: column; justify-content: center; gap: var(--s1); padding: 0 var(--s3); }
