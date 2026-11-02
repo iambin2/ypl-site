@@ -1020,7 +1020,13 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       }
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
-      flash(winnerEntryId?"승자를 저장했습니다.":"승자를 취소했습니다.");
+      /* c8 되돌리기: 새로 정한 승자만 되돌린다. 같은 쪽을 다시 누르는 것(승자 취소)과 같은 일이고, 그사이 바뀌었으면 하지 않는다.
+         이미 있던 승자를 바꾼 것은 아래 경기가 지워지므로 정확히 되돌릴 수 없어 붙이지 않는다. */
+      const undo=winnerEntryId&&!match.winner?{label:"되돌리기",run:()=>{
+        const now=collectGraphMatches(latestRef.current.b.graph).find(row=>row.id===matchId);
+        if(now?.winner===side) void latestRef.current.pickNormalized(matchId,side);
+      }}:undefined;
+      flash(winnerEntryId?"승자를 저장했습니다.":"승자를 취소했습니다.",undo);
     }catch(error){
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
@@ -1030,6 +1036,8 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       setMatchMutationBusy(false);
     }
   };
+  const latestRef=useRef(null);
+  latestRef.current={b,pickNormalized};
   const pick=(matchId,side)=>{
     if(readOnly||locked)return;
     void pickNormalized(matchId,side);

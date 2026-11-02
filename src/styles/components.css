@@ -443,3 +443,4 @@ button.case:active:not(:disabled) { scale: 1; }
 .pick-recent-one { position: relative; display: grid; place-items: center; aspect-ratio: 1; overflow: hidden; transition: background-color var(--move-tone); }
 .pick-recent-one .mon { position: absolute; inset: var(--s1) var(--s1) 0; width: calc(100% - var(--s2)); height: calc(100% - var(--s1)); object-fit: contain; object-position: bottom; }
 @media (hover: hover) { .pick-recent-one:hover { background: var(--panel-2); } }
+.toast .toast-act { margin-left: auto; }

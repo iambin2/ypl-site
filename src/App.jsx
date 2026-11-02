@@ -147,7 +147,7 @@ export default function App() {
     // 누름의 반응이 먼저다: 눌림이 보인 프레임이 나간 뒤에 새 페이지를 그린다.
     afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
   },[view]);
-  const flash=useCallback((m)=>setToast({id:Date.now()+Math.random(),text:m}),[]);
+  const flash=useCallback((m,action)=>setToast({id:Date.now()+Math.random(),text:m,action}),[]);
   useEffect(()=>{ onAdminSessionLost(()=>{ setAdmin(false); flash("로그인이 만료되었습니다. 다시 로그인해 주세요."); }); },[flash]);
   const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
   const save=useCallback(async(next,doneMessage="저장했습니다.")=>{
