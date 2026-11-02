@@ -7,10 +7,12 @@ import { getApplicationEventDivisionOptions, getApplicationEventTypeLabel, norma
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
-import { eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
+import { copyEventRules, eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
 import { signInAdmin } from "../../storage.js";
 import Button from "../../components/common/Button.jsx";
 import Field, { FormError } from "../../components/common/Field.jsx";
+import { Cell } from "../../components/common/Board.jsx";
+import PickerSheet from "../../components/common/PickerSheet.jsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -89,7 +91,8 @@ const Q_TYPES=[
   {value:"dropdown",label:"드롭다운"},
 ];
 const isChoice=(t)=>t==="single"||t==="multi"||t==="dropdown";
-function FormBuilder({ form, setForm }){
+function FormBuilder({ form, setForm, earlier = [] }){
+  const [pickEarlier,setPickEarlier]=useState(false);
   const enabled=!!(form&&form.enabled);
   const fields=(form&&form.fields)||[];
   const patchForm=(p)=>setForm({buttonLabel:"참가 신청",fields:[],responses:[],...(form||{}),...p});
@@ -125,26 +128,30 @@ function FormBuilder({ form, setForm }){
   const nameBase=eventNameBase(nameFields);
   const namePreview=(nameBase&&!roundKnown?"N회 ":"")+formatEventName({...nameFields,round:roundKnown?draftRound:null,subtitle:subtitleValue});
   return (<div className="fb-wrap">
-    <label className="bk-check" style={{marginBottom:enabled?"var(--s5)":0}}>
-      <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
-      <span><Icon n="form" size={16}/> 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
-    </label>
+    <button type="button" className="pn row switch-row fb-switch" role="switch" aria-checked={enabled} onClick={()=>patchForm({enabled:!enabled})}>
+      <span className="row-main"><b className="t15">대회 신청 받기</b><span className="t12 dim">사이트에서 바로 신청받습니다.</span></span>
+      <span className={"sw" + (enabled ? " on" : "")} aria-hidden="true"><i /></span>
+    </button>
     {enabled&&<>
       <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
       <div className="fb-q">
-        <div className="fb-q-top"><strong>대회 연결 설정</strong></div>
+        <div className="fb-q-top fb-section-head"><span className="t12 dim">대회 설정</span>{earlier.length>0&&!form?.eventId&&<Button variant="link" onClick={()=>setPickEarlier(true)}>지난 대회에서 불러오기</Button>}</div>
+        {pickEarlier&&<PickerSheet title="지난 대회에서 불러오기" placeholder="공지 제목 검색" items={earlier.map(a=>({value:a.id,label:a.title||"(제목 없음)",sub:[a.date,a.form?.eventDraft?.name].filter(Boolean).join(", "),search:String(a.title||"").toLowerCase().replace(/\s+/g,"")}))}
+          onPick={id=>{ const from=earlier.find(a=>a.id===id); if(from) setForm(copyEventRules(from,form)); }} onClose={()=>setPickEarlier(false)}/>}
         <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
         <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
         <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다.":""}.</div></div>
-        <Field label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Field>
-        <div className="field"><span className="field-label">구분</span>{isChampions?<div className="bk-hint">해당 없음. 챔피언스는 구분 없이 진행합니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
-        <Field label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Field>
-        <Field label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Field>
-        <div className="field"><span className="field-label">대진 방식</span>{isChampions?<div className="bk-applybox"><div><b>선발전</b> {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""} (고정)</div><div><b>본선</b> {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</div></div>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</div>
+        <div className="cells fb-cells">
+        <Cell label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Cell>
+        <Cell label="구분">{isChampions?<span>해당 없음</span>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</Cell>
+        <Cell label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Cell>
+        <Cell label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Cell>
+        <Cell label="대진 방식" wide={isChampions}>{isChampions?<span>선발전 {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""}, 본선 {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</span>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"round_robin",label:"리그전"}]}/>}</Cell>
+        <Cell label="레귤레이션"><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></Cell>
+        <Cell label="파이컵 추가 룰"><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></Cell>
+        </div>
         {isChampions&&<div className="field"><span className="field-label">본선 정원</span><input type="number" min="2" value={form?.eventDraft?.finalCapacity||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalCapacity:e.target.value}})} placeholder="8" aria-label="8"/><div className="fb-note">회차는 이전 챔피언스 회차에 이어 자동으로 매겨집니다.</div></div>}
-        <Field label="레귤레이션"><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></Field>
-        <Field label="파이컵 추가 룰"><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></Field>
         <Field label={<>기록 표시 룰 <span className="fb-note">(선택, 자유 입력)</span></>}><input value={(form?.eventDraft?.recordRuleLabel)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),recordRuleLabel:e.target.value}})} placeholder="예: 모노타입 챌린지"/></Field>
         {!isChampions&&<div className="bk-grow2">
           <Field label={<>칭호 보상 <span className="fb-note">(선택)</span></>}><input value={eventDraft.titleAward?.name||""} onChange={e=>patchForm({eventDraft:{...eventDraft,titleAward:{scope:"champion",...(eventDraft.titleAward||{}),name:e.target.value}}})} placeholder="예: 초신성"/></Field>
@@ -194,7 +201,7 @@ function FormBuilder({ form, setForm }){
     </>}
   </div>);
 }
-export function AnnEditor({ item, onClose, onSave, onDelete }) {
+export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
   const [date,setDate]=useState(item?.date||new Date().toISOString().slice(0,10)),[title,setTitle]=useState(item?.title||""),[body,setBody]=useState(item?.body||""),[pinned,setPinned]=useState(item?.pinned||false),[link,setLink]=useState(item?.link||""),[linkLabel,setLinkLabel]=useState(item?.linkLabel||""),[link2,setLink2]=useState(item?.link2||""),[link2Label,setLink2Label]=useState(item?.link2Label||"");
   const [form,setForm]=useState(item?.form||{enabled:false,buttonLabel:"참가 신청",fields:[],responses:[]});
   const [linkOpen,setLinkOpen]=useState(!!(item?.link||item?.link2)); // 이미 링크가 있으면 펼친 상태로 시작
@@ -204,7 +211,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
     <Field label="날짜"><input value={date} onChange={e=>setDate(e.target.value)} placeholder="2024-05-26"/></Field>
     <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)}/></Field>
     <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} style={{minHeight:"calc(var(--s21) + var(--s13))"}}/></Field>
-    <FormBuilder form={form} setForm={setForm}/>
+    <FormBuilder form={form} setForm={setForm} earlier={earlier.filter(a=>a.id!==item?.id&&a.form?.enabled&&a.form?.eventDraft)}/>
     <div className={"fold"+(linkOpen?" open":"")}>
       <button type="button" className="fold-head" onClick={()=>setLinkOpen(v=>!v)}>
         <span className="fold-title"><Icon n="link" size={16}/> 링크 첨부 <span className="fold-note">(구글폼 등 외부 링크, 선택)</span></span>
@@ -218,8 +225,8 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
         <Field label="링크 2 버튼 문구 (선택)" flush><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></Field>
       </div>}
     </div>
-    <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
+    <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
+    <div className="stack ann-actions">{onDelete&&<Button variant="link" className="ann-delete" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
   </Modal>);
 }
 export function StandingsEditor({ title, rows, onClose, onSave }) {

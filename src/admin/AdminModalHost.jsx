@@ -88,6 +88,7 @@ export default function AdminModalHost({ modal, data, setModal, save, setAdmin, 
     return (
       <AnnEditor
         item={modal.item}
+        earlier={data.announcements || []}
         onClose={close}
         onSave={async (announcement) => {
           let nextAnnouncement = announcement;

@@ -55,20 +55,19 @@
 .pr-wrap.compact { margin: 0 0 var(--s5); }
 
 
-/* responses table (admin) */
-.fr-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
-.fr-tot { font-size: var(--t15); font-weight: 600; }
-.fr-scroll { overflow: auto; max-height: 50vh; background: var(--panel-2); }
-.fr-tbl { width: 100%; font-size: var(--t12); }
-.fr-tbl th { position: sticky; top: 0; z-index: var(--z-raised); padding: var(--s3); background: var(--panel); text-align: left; font-size: var(--t12); font-weight: 600; color: var(--mute); white-space: nowrap; }
-.fr-tbl td { padding: var(--s3); vertical-align: top; }
-.fr-tbl tbody tr + tr td { box-shadow: inset 0 1px 0 var(--rule); }
-.fr-idx { color: var(--mute); font-variant-numeric: tabular-nums; }
-.fr-dt { white-space: nowrap; color: var(--mute); font-variant-numeric: tabular-nums; }
-.fr-del { width: 44px; height: 44px; display: grid; place-items: center; color: var(--dim); transition: scale var(--move-press), color var(--move-tone); }
-@media (hover: hover) { .fr-del:hover { color: var(--lit); }
-}
-.fr-empty { padding: var(--s8) var(--s5); color: var(--mute); }
+/* applicants (c8 신청자): the count lit, search and CSV in one row of 52, each entry a row */
+.fr-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: var(--s3); }
+.fr-bar { grid-template-columns: minmax(0, 1fr) auto; margin-bottom: var(--s3); }
+.fr-csv { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 700; transition: background-color var(--move-tone); }
+@media (hover: hover) { .fr-csv:hover { background: var(--panel-2); } }
+.fr-row { display: grid; grid-template-columns: var(--s5) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row2); padding: var(--s2) var(--pad); }
+.fr-main { display: grid; gap: var(--s1); min-width: 0; }
+.fr-name { display: flex; align-items: baseline; gap: var(--s3); min-width: 0; }
+.fr-answers { overflow-wrap: anywhere; }
+.fr-actions { display: flex; align-items: center; gap: var(--s2); }
+.fr-del { width: var(--h-control); height: var(--h-control); display: grid; place-items: center; color: var(--dim); transition: color var(--move-tone); }
+@media (hover: hover) { .fr-del:hover { color: var(--lit); } }
+.fr-empty { padding: var(--s5) 0; }
 .sc-sprites { display: flex; gap: var(--s1); min-width: 0; }
 .sc-sprites img { width: 44px; height: 44px; flex: none; object-fit: contain; }
 .sc-sprites.big { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }

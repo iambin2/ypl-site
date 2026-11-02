@@ -109,11 +109,12 @@ for (const mode of ["single", "team"]) {
     const html = renderToStaticMarkup(form);
     assert.doesNotMatch(html, /불러오는 중|not defined/);
     assert.match(html, /YPL Season 3/);
-    assert.ok(html.includes(mode === "team" ? "우승 30점, 준우승 20점" : "우승 60점, 준우승 40점, 4강 20점"));
+    // the points stand as rows: the place, then what it adds
+    assert.match(html, mode === "team" ? /우승<\/span><b[^>]*>\+30<\/b>[\s\S]*준우승<\/span><b[^>]*>\+20<\/b>/ : /우승<\/span><b[^>]*>\+60<\/b>[\s\S]*준우승<\/span><b[^>]*>\+40<\/b>/);
     function findPrepare(node) {
       if (!node) return null;
       if (Array.isArray(node)) return node.map(findPrepare).find(Boolean);
-      if (node.type === "button" && node.props.children?.[0] === "기록 반영") return node;
+      if (node.type === "button" && [].concat(node.props.children)[0] === "기록에 반영") return node;
       return findPrepare(node.props?.children);
     }
     const prepare = findPrepare(form);

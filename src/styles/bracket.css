@@ -33,43 +33,44 @@
 
 /* ---------- draw animation ---------- */
 .bk-drawwrap { display: flex; flex-direction: column; gap: var(--s5); }
-.bk-draw-h { display: flex; align-items: baseline; gap: var(--s3); font-size: var(--t20); font-weight: 700; letter-spacing: var(--ls20); }
-.bk-draw-cnt { font-size: var(--t32); font-weight: 700; letter-spacing: var(--ls32); color: var(--mute); font-variant-numeric: tabular-nums; }
+.bk-draw-h { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.bk-draw-h h2 { margin: 0; }
+.bk-draw-cnt { color: var(--dim); }
 .bk-slot.dwait { color: var(--mute); }
 .bk-slot.dwait i { display: block; width: 32px; height: 4px; background: var(--panel-2); }
 .bk-slot.drolling { background: var(--panel-2); color: var(--lit); font-weight: 700; animation: y-pulse var(--move-light) infinite; }
 .bk-slot.dset { color: var(--lit); font-weight: 600; }
 .bk-slot.dset.pop { animation: bk-land var(--move-light); }
 @keyframes bk-land { from { background-color: var(--panel-2); transform: scale(1.034); } to { background-color: transparent; transform: none; } }
-.bk-draw-actions { display: flex; justify-content: flex-end; }
 .bk-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s5); }
 .bk-group { padding: var(--s5); background: var(--panel); }
 .bk-group-h { margin-bottom: var(--s3); font-size: var(--t15); font-weight: 600; }
 .bk-draw-mem { display: flex; flex-direction: column; overflow: hidden; background: var(--panel-2); }
 
-/* ---------- wizard ---------- */
-.bk-create { max-width: 576px; }
-.bk-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s8); }
-.bk-head h2 { font-size: var(--t20); font-weight: 700; line-height: var(--l20); letter-spacing: var(--ls20); }
-@media (min-width: 1100px) { .bk-head h2 { font-size: var(--t32); letter-spacing: var(--ls32); } }
-/* steps: chips joined by a short round-ended dash */
-.bk-stepper { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s5); font-size: var(--t12); font-weight: 600; color: var(--mute); }
-.bk-stepper span {
-  display: inline-flex; align-items: center; height: 32px; padding: 0 var(--s3); background: var(--panel-2);
-  transition: background-color var(--move-tone), color var(--move-tone);
-}
-.bk-stepper span.on { background: var(--lit); color: var(--ground); }
-.bk-stepper i { width: 16px; height: 2px; background: var(--panel-2); }
-.form-card .modal-actions { position: static; margin: var(--s8) 0 0; padding: 0; background: transparent; }
+/* ---------- wizard (c12): back link, title and event, steps as panels joined by the seam, the main action docked ---------- */
+.bk-create { display: grid; gap: var(--s5); max-width: var(--sheet-w); }
+.bk-create > .back { margin-bottom: calc(var(--s3) * -1); }
+.bk-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.bk-head h2 { margin: 0; }
+.bk-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bk-step { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-control); padding: 0 var(--s3); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
+.bk-step.inv { color: var(--ground); font-weight: 700; }
+.form-card { display: grid; gap: var(--s5); }
+.form-card > .field { margin: 0; }
+.bk-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bk-dock { grid-template-columns: 1.618fr 1fr; }
 
-.bk-fill { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s5); }
+/* participants: rows of 52 joined by the seam, the box, the number, the name, the state at the end */
+.bk-fill { display: flex; flex-direction: column; gap: var(--seam); }
 .bk-pin, .bk-team-card {
-  display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: var(--s2) var(--s3);
-  background: var(--panel-2); animation: y-rise var(--move-light) backwards;
+  display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: var(--s1) var(--pad);
+  background: var(--panel);
 }
+@media (hover: hover) { label.bk-pin:hover { background: var(--panel-2); } }
+.bk-pin:has(input[type="checkbox"]:not(:checked)) .bk-participant-name { color: var(--dim); }
 .bk-pin input:not([type="checkbox"]), .bk-team-card input { min-height: var(--h-control); padding: var(--s2) var(--s3); }
 .bk-pin-no {
-  width: 32px; height: 32px; flex: none; display: grid; place-items: center; font-size: var(--t12); font-weight: 600; line-height: 1; color: var(--mute);
+  width: var(--s5); height: var(--h-strip); flex: none; display: grid; place-items: center; font-size: var(--t12); font-weight: 600; line-height: 1; color: var(--mute);
 }
 .bk-pin-no.gold { color: var(--lit); }
 .bk-participant-name { flex: 1; min-width: 0; font-weight: 600; }
@@ -92,7 +93,13 @@
 @media (hover: hover) { .bk-count button:hover { background: var(--panel-2); } }
 .bk-count input { width: 84px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* ---------- apply (record) ---------- */
+/* ---------- apply (record, c12 last frame): the places as rows with the winner inverted, the points as rows, the action and later ---------- */
+.bk-apply-meta { margin: 0 0 var(--s3); }
+.bk-apply-places { margin: 0 0 var(--s5); }
+.bk-apply-places .spec-row dd { margin: 0; }
+.bk-apply-point { display: grid; grid-template-columns: minmax(0, 1fr) auto var(--s13); align-items: center; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); }
+.bk-apply-point b { text-align: right; }
+.bk-apply-actions { margin-top: var(--s8); }
 .bk-applybox { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s5); background: var(--panel-2); font-size: var(--t15); }
 .bk-ab-meta { font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .bk-chg { display: flex; flex-direction: column; background: var(--panel-2); padding: 0 var(--s5); }

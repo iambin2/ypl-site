@@ -178,16 +178,16 @@
 .pts-note { padding: var(--s5) var(--pad); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
 .pts-note b { color: var(--lit); font-weight: 600; }
 
-/* ---------- Dropdown (M6): a word on a line; desktop opens a plate menu that grows from it, a phone a sheet ---------- */
+/* ---------- Dropdown: a 52 field panel like the inputs, the chosen value and a chevron; desktop opens a menu under it, a phone a sheet ---------- */
 .dd { position: relative; width: 100%; min-width: 0; }
 .dd-btn {
-  position: relative; width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
-  padding: 0; border: 0;
-  background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--field-line, var(--mute));
-  color: var(--lit); text-align: left; font-size: var(--t15); font-weight: 600;
-  transition: scale var(--move-press);
+  position: relative; width: 100%; min-height: var(--h-row); display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  padding: 0 var(--pad); border: 0;
+  background: var(--field-bg, var(--panel)); box-shadow: none;
+  color: var(--lit); text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 600;
+  transition: background-color var(--move-tone);
 }
-.dd.open .dd-btn { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.dd.open .dd-btn, .dd-btn:focus-visible { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
 .dd-btn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-btn.ph > span { color: var(--mute); }
 .dd-chev { color: var(--mute); transition: transform var(--move-light); }
@@ -428,3 +428,11 @@ button.case:active:not(:disabled) { scale: 1; }
 @media (min-width: 640px) { .case-grid:not(.sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 860px) { .case-grid.sm { grid-template-columns: repeat(4, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(5):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .case-grid:not(.sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(5, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(5):last-child) { grid-template-columns: repeat(5, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(6):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------- a native checkbox is the board's check (c8, c12): a 20 square, off panel-2, on inverted with its mark ---------- */
+:where(.ypl) input[type="checkbox"]:not(.sr-only) { appearance: none; -webkit-appearance: none; display: inline-grid; place-items: center; background: var(--panel-2); cursor: pointer; transition: background-color var(--move-tone); }
+:where(.ypl) :is(.pn, .sheet .field, .bk-pin) input[type="checkbox"]:not(.sr-only):not(:checked) { background: var(--rule); }
+:where(.ypl) input[type="checkbox"]:not(.sr-only):checked { background: var(--lit); }
+:where(.ypl) input[type="checkbox"]:not(.sr-only):checked::after { content: ""; width: var(--s3); height: var(--s3); background: var(--ground); clip-path: polygon(14% 44%, 0 58%, 38% 92%, 100% 22%, 86% 8%, 38% 64%); }
+:where(.ypl) input[type="checkbox"]:not(.sr-only):focus-visible { outline: var(--line) solid var(--lit); outline-offset: var(--seam); }
+:where(.ypl) input[type="checkbox"]:not(.sr-only):disabled { background: var(--panel); cursor: default; }

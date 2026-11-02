@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  copyEventRules,
   cleanEventNamePart,
   eventSubtitleOf,
   formatEventName,
@@ -65,4 +66,25 @@ test("the DB guard and the Champions RPC agree with the formatter", () => {
   assert.match(guard, /add constraint events_name_clean/);
   const rpc = readFileSync("docs/db/champions_application_event_pair_rpc.sql", "utf8");
   assert.doesNotMatch(rpc, /' · (본선|선발전)'/);
+});
+
+test("copying an earlier event takes its rules and questions, never its name, dates, link or answers", () => {
+  const earlier = { id: "a1", form: { enabled: true, buttonLabel: "신청", eventId: "ev-old", responses: [{ id: "r" }],
+    fields: [{ id: "f1", type: "single", label: "팀 지망", options: ["불", "물"] }],
+    eventDraft: { name: "37회 파이컵", subtitle: "리전 워즈", heldOn: "2026-10-31", eventType: "pokecup", division: "master", battleFormat: "singles", competitionFormat: "double_elimination", regulationId: "m-c", cupRuleId: "monotype" } } };
+  const into = { enabled: false, buttonLabel: "참가 신청", fields: [], responses: [], eventDraft: { heldOn: "2026-11-14" } };
+  const out = copyEventRules(earlier, into);
+  assert.equal(out.enabled, true);
+  assert.equal(out.eventId, undefined);
+  assert.deepEqual(out.responses, []);
+  assert.equal(out.eventDraft.heldOn, "2026-11-14");
+  assert.equal(out.eventDraft.name, undefined);
+  assert.equal(out.eventDraft.subtitle, undefined);
+  assert.equal(out.eventDraft.linked, true);
+  assert.equal(out.eventDraft.competitionFormat, "double_elimination");
+  assert.equal(out.eventDraft.cupRuleId, "monotype");
+  assert.equal(out.fields.length, 1);
+  assert.notEqual(out.fields[0].id, "f1");
+  assert.notEqual(out.fields[0].options, earlier.form.fields[0].options);
+  assert.deepEqual(out.fields[0].options, ["불", "물"]);
 });

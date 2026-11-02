@@ -113,3 +113,7 @@
   .tb-rules > :is(.tb-rule-group:nth-child(3), p) { grid-column: 1 / -1; }
   .tb-type-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
+
+/* the Pokémon to pick stand on the ground like every list: no panel around the panels */
+.tb-page .tb-pool-panel { padding: 0; background: none; }
+.tb-page .tb-pokemon-list { margin-inline: 0; padding: 0; }

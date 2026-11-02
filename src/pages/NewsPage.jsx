@@ -309,17 +309,28 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
     const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
-  return (<Modal title="신청 응답" hint={ann.title} onClose={onClose}>
-    <div className="fr-bar"><span className="fr-tot">총 {resp.length}건</span>{resp.length>0&&<Button size="sm" onClick={csv}><Icon n="download" size={16}/>CSV(엑셀) 내려받기</Button>}</div>
-    {resp.length===0?<div className="fr-empty">아직 접수된 신청이 없습니다.</div>:
-      <div className="fr-scroll"><table className="fr-tbl">
-        <thead><tr><th>#</th><th>제출 시각</th>{normalized&&<th>참가자 이름</th>}{fields.map(f=>(<th key={f.id}>{f.label||"질문"}</th>))}<th></th></tr></thead>
-        <tbody>{resp.map((r,i)=>(<tr key={r.id}>
-          <td className="fr-idx">{i+1}</td><td className="fr-dt">{fmtDT(r.createdAt)}</td>
-          {normalized&&<td>{r.registrationName||""}</td>}{fields.map(f=>(<td key={f.id}>{cell(r.answers&&r.answers[f.id])}</td>))}
-          <td>{onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(r)}>비밀번호 초기화</button>}{onDeleteResp&&<button className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} title="삭제"><Icon n="trash" size={16}/></button>}</td>
-        </tr>))}</tbody>
-      </table></div>}
-    <div className="modal-actions"><Button onClick={onClose}>닫기</Button></div>
+  /* c8 신청자: the count lit, a name search and CSV in one row, each entry a row with its answers in a grey line */
+  const [q,setQ]=useState("");
+  const nameOf=r=>r.registrationName||(fields[0]?cell(r.answers&&r.answers[fields[0].id]):"");
+  const shown=q.trim()?resp.filter(r=>nameOf(r).includes(q.trim())):resp;
+  return (<Modal title="신청자" hint={ann.title} onClose={onClose}>
+    <div className="stack fr-counters"><Counter label="신청" value={resp.length} cells={Math.max(2,String(resp.length).length)}/></div>
+    {resp.length>0&&<div className="stack fr-bar">
+      <label className="pn search-in"><Icon n="search" size={20}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="이름 검색" aria-label="이름 검색"/></label>
+      <button type="button" className="pn fr-csv" onClick={csv}><Icon n="download" size={16}/>CSV</button>
+    </div>}
+    {resp.length===0?<p className="t15 reg dim fr-empty">아직 접수된 신청이 없습니다.</p>:
+      <div className="stack fr-rows">{shown.map(r=>(<div className="pn fr-row" key={r.id}>
+        <span className="t12 dim fr-no num">{resp.indexOf(r)+1}</span>
+        <div className="fr-main">
+          <div className="fr-name"><b className="t15">{nameOf(r)||"이름 없음"}</b><span className="t12 reg dim num">{fmtDT(r.createdAt)}</span></div>
+          {fields.length>0&&<span className="t12 reg dim fr-answers">{fields.map(f=>`${f.label||"질문"} ${cell(r.answers&&r.answers[f.id])||"없음"}`).join(", ")}</span>}
+        </div>
+        <div className="fr-actions">
+          {onResetPin&&<Button variant="link" onClick={()=>onResetPin(r)}>비밀번호 초기화</Button>}
+          {onDeleteResp&&<button type="button" className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} aria-label="삭제" title="삭제"><Icon n="trash" size={16}/></button>}
+        </div>
+      </div>))}
+      {!shown.length&&<p className="t15 reg dim fr-empty">이 이름의 신청이 없습니다.</p>}</div>}
   </Modal>);
 }

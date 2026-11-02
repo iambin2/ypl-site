@@ -110,3 +110,14 @@
 /* a field inside a tinted group in a sheet stands on the sheet's own colour, or it would match the group */
 .sheet :is(.fb-wrap, .ed-round, .tb-library-save, .bk-group) :is(input:not([type="checkbox"], [type="radio"]), textarea, .dd-btn) { background: var(--panel); }
 .sheet :is(.fb-q, .ed-team, .bk-applybox, .bk-chg, .bk-pin, .bk-team-card, .bk-series-row, .bk-ace) { background: var(--panel-2); }
+
+/* ---------- notice editor (c8 middle): taking entries is a switch row, the event settings cells, save is the main action ---------- */
+.fb-switch { width: 100%; text-align: left; }
+.fb-wrap > .fb-switch { margin-bottom: var(--s5); }
+.fb-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.fb-cells { margin-bottom: var(--s5); }
+.fb-cells .cell { --field-bg: transparent; }
+.sheet .fb-cells .cell { background: var(--panel); }
+.ann-actions { grid-template-columns: 1fr 1.618fr; margin-top: var(--s8); }
+.ann-actions:has(.ann-delete) { grid-template-columns: auto 1fr 1.618fr; align-items: center; }
+.ann-delete { padding-right: var(--s3); }
