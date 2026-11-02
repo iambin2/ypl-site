@@ -31,6 +31,7 @@ const LENGTHS = new Set([...SPACE, 1, 2, 3, 16, 20, 24, 32, 36, 40, 44, 52, 56, 
 const REBUILT = new Set([
   "src/styles/shell.css", "src/styles/board.css", "src/styles/home.css",
   "src/pages/HomePage.jsx", "src/components/common/Board.jsx", "src/components/common/Button.jsx",
+  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
   "src/components/common/Seg.jsx", "src/components/common/seg.js", "src/components/common/Icon.jsx", "src/components/common/Loader.jsx", "src/components/common/Segmented.jsx",
   "src/components/layout/Navigation.jsx", "src/components/layout/SiteHeader.jsx", "src/components/layout/SiteFooter.jsx", "src/admin/AdminModeBar.jsx",
 ]);
@@ -313,8 +314,9 @@ test("the touch floor raises a control but never lowers a field or a row (Access
   assert.ok(floor.length > 0, "the touch floor is still there");
   assert.deepEqual(floor.filter(d => !d.sel.startsWith(":where(")).map(keyOf), [], "the floor's height must carry no weight (:where)");
 });
+// a notice is the one exception: its date line stands above its title (Type)
 test("a title comes first: no date, chip or label above it (Type)", () => {
-  for (const f of ["src/pages/NewsPage.jsx", "src/pages/BoardPage.jsx"])
+  for (const f of ["src/pages/BoardPage.jsx"])
     for (const [head] of src(f).matchAll(/<header className="nb-a-head">[\s\S]*?<\/header>/g))
       assert.ok(head.indexOf("<h1") < head.indexOf("nb-a-meta"), `${f}: the article title stands above its grey line`);
 });

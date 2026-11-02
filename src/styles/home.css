@@ -24,12 +24,10 @@
 .ho-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .ho-sec { margin-top: var(--s13); min-width: 0; }
-.ho-rank .row { grid-template-columns: var(--s13) minmax(0, 1fr) auto; }
-.ho-rank .row-lead { text-align: center; }
+.ho-rank .row-lead { width: var(--s13); text-align: center; }
 .ho-rank .row-value { display: flex; align-items: baseline; gap: var(--s1); }
 .ho-tie { margin-top: var(--s2); }
-.ho-news .row { grid-template-columns: var(--s21) minmax(0, 1fr) auto; }
-.ho-news .row-lead { padding-left: var(--pad); }
+.ho-news .row-lead { width: var(--s21); padding-left: var(--pad); }
 
 /* past champions: a sideways run to the screen's edge; the name band is their floor */
 .ho-rail { display: flex; gap: var(--seam); margin-right: calc(var(--gutter) * -1); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
@@ -64,8 +62,8 @@
   .ho-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .ho-six > .pn { height: var(--h-row2); }
   .ho-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
-  .ho-rank .row { grid-template-columns: var(--s21) minmax(0, 1fr) auto; }
-  .ho-news .row { grid-template-columns: calc(var(--s21) + var(--s3)) minmax(0, 1fr) var(--s13); }
+  .ho-rank .row-lead { width: var(--s21); }
+  .ho-news .row-lead { width: calc(var(--s21) + var(--s3)); }
   .ho-news .row-lamp { width: var(--s13); }
   .ho-rail { margin-right: 0; }
 }

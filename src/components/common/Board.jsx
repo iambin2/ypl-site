@@ -17,14 +17,15 @@ export function SectionHead({ id, title, link, onLink }) {
   );
 }
 
-/* A counter: a 84 panel, its label 12 on top, a 40 display of two cells under it. value null is the board switched off. */
-export function Counter({ label, value, unit = "", cells = 2, onClick }) {
+/* A counter: a 84 panel, its label 12 on top, a 40 display under it. value null is the board switched off.
+   lamp lights the label's lamp ("sig" for amber), after is the unit in type on the display's baseline (일, / 32). */
+export function Counter({ label, value, unit = "", cells = 2, onClick, lamp, after, h = 40 }) {
   const { as: Box, props } = door(onClick);
   const lit = value != null;
   return (
     <Box className="pn counter" {...props} aria-label={lit ? `${label} ${value}${unit}` : label}>
-      <span className="t12 dim">{label}</span>
-      <Seg value={lit ? value : ""} h={40} cells={cells} label={lit ? `${value}${unit}` : ""} />
+      <span className="t12 dim counter-label">{lamp && <i className={"lamp" + (lamp === "sig" ? " sig" : "")} aria-hidden="true" />}{label}</span>
+      <span className="counter-board"><Seg value={lit ? value : ""} h={h} cells={cells} label={lit ? `${value}${unit}` : ""} />{after}</span>
     </Box>
   );
 }
@@ -68,5 +69,65 @@ export function ChampionPanel({ champion, onClick }) {
         <Mon src={champion.party[0]?.img} />
       </>}
     </button>
+  );
+}
+
+/* ---------- controls (DESIGN.md "Controls") ---------- */
+
+/* the ! square an error starts with: the error reads by it and a sentence, never by a colour */
+export const Bang = () => <span className="bang" aria-hidden="true">!</span>;
+
+/* A back link: 12 dim with a chevron, naming where it goes. */
+export function BackLink({ to, onClick }) {
+  return <button type="button" className="back t12 dim" onClick={onClick}><Icon n="back" size={16} />{to}</button>;
+}
+
+/* A field: its label 12 dim, 8 above the control; an error keeps the 2px line and adds the ! square and a sentence under it.
+   group is true for a row of choices, which a label cannot point at. */
+export function Question({ id, label, required = false, error, group = false, children }) {
+  const Label = group ? "span" : "label";
+  return (
+    <div className={"q" + (error ? " has-error" : "")} role={group ? "group" : undefined} aria-labelledby={group ? `${id}-label` : undefined}>
+      <Label className="q-label t12 dim" id={`${id}-label`} htmlFor={group ? undefined : id}>{label}{required && " *"}</Label>
+      {children}
+      {error && <p className="q-error t12" id={`${id}-error`} role="alert"><Bang />{error}</p>}
+    </div>
+  );
+}
+
+/* Choice: a few options as 44 panels in a row, the chosen one inverted. multiple turns it into checks: 20 squares beside their words. */
+export function Choice({ name, options, value, onChange, multiple = false }) {
+  if (multiple) {
+    const list = Array.isArray(value) ? value : [];
+    return (
+      <div className="checks">
+        {options.map((op, i) => <label className="check-row" key={i}>
+          <input type="checkbox" className="sr-only" checked={list.includes(op)} onChange={() => onChange(list.includes(op) ? list.filter(x => x !== op) : [...list, op])} />
+          <span className={"box" + (list.includes(op) ? " on" : "")} aria-hidden="true">{list.includes(op) && <Icon n="check" size={16} />}</span>
+          <span className="t15 reg">{op}</span>
+        </label>)}
+      </div>
+    );
+  }
+  return (
+    <div className="choice stack" role="radiogroup">
+      {options.map((op, i) => <label className={"choice-opt " + (value === op ? "inv" : "pn")} key={i}>
+        <input type="radio" className="sr-only" name={name} checked={value === op} onChange={() => onChange(op)} />{op}
+      </label>)}
+    </div>
+  );
+}
+
+/* The main action's strip: on a phone it docks above the tab bar on the ground with a hairline, so it never scrolls away. toast stands
+   above it: an inverted 52 panel, an error starting with the ! square, its one action an underlined word. */
+export function Dock({ toast, children }) {
+  return <div className="dock">{toast}{children}</div>;
+}
+export function Toast({ error = false, action, onAction, children }) {
+  return (
+    <div className="toast-panel inv" role={error ? "alert" : "status"}>
+      <span className="toast-say">{error && <Bang />}{children}</span>
+      {action && <button type="button" className="toast-act" onClick={onAction}>{action}</button>}
+    </div>
   );
 }

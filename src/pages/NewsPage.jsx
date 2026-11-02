@@ -1,17 +1,52 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { excerptOf } from "../services/noticeExcerpt.js";
 import { flushSync } from "react-dom";
-import { Dropdown, Empty, Icon, ListSearch, Modal, PageHead, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
-import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
-import { formatDate } from "../services/dateFormat.js";
-import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { BackLink, Choice, Counter, Dock, Question, Row, Toast } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
+import Seg from "../components/common/Seg.jsx";
+import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
+import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
+import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
+import { dotDate, formatDate } from "../services/dateFormat.js";
+import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
 const PAGE_SIZE=8;
-/* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어가고, 누른 제목이 본문의 제목 자리로 이어진다(I2).
-   신청, 파티 제출, 링크, 공개 응답은 본문 화면에 모은다. 연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
+const DAY_MS=86400000;
+/* 그날 0시까지 남은 날. 일까지 없으면 null. */
+function daysTo(raw, now=new Date()){
+  const n=String(raw||"").match(/\d+/g);
+  if(!n||n.length<3) return null;
+  const day=new Date(+n[0],+n[1]-1,+n[2]);
+  return Number.isNaN(day.getTime())?null:Math.round((day-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/DAY_MS);
+}
+const FORMAT={double_elimination:"더블 엘리미네이션",single_elimination:"싱글 엘리미네이션",round_robin:"리그전"};
+const BATTLE={singles:"싱글 배틀",doubles:"더블 배틀"};
+
+/* 대회 공지의 판과 표(DESIGN.md "Notices"): 공지의 대회 정보(eventDraft)만 읽는다. */
+function eventFacts(a){
+  const d=a.form?.eventDraft; if(!d) return null;
+  const champions=d.eventType==="champions";
+  const held=champions?[["선발전",d.qualifierHeldOn??d.heldOn],["본선",d.finalHeldOn]]:[["",d.heldOn]];
+  const next=held.map(([k,raw])=>({k,raw,dday:daysTo(raw)})).filter(x=>x.dday!=null&&x.dday>=0).sort((p,q)=>p.dday-q.dday)[0]||null;
+  const rows=[
+    ...held.filter(([,raw])=>raw).map(([k,raw])=>[k?`${k} 일시`:"일시",formatDate(raw,{time:true})]),
+    ...(BATTLE[d.battleFormat]?[["형식",BATTLE[d.battleFormat]]]:[]),
+    ...(champions?[["방식",`선발전 ${FORMAT[CHAMPIONSHIP_QUALIFIER_FORMAT]}, 본선 ${FORMAT[CHAMPIONSHIP_FINAL_FORMAT]}`]]:FORMAT[d.competitionFormat]?[["방식",FORMAT[d.competitionFormat]]]:[]),
+    ["단위",d.isTeamEvent?"팀전":"개인전"],
+    ...(champions?[["선발전 제출",d.qualifierSubmissionTargetAt],["본선 제출",d.finalSubmissionTargetAt]]:[["파티 제출",d.submissionTargetAt]]).filter(([,t])=>t).map(([k,t])=>[k,`${formatDate(t,{time:true})}까지`]),
+  ];
+  return {next,rows};
+}
+
+/* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸 */
+const NoticeRow=({a,onOpen})=>{
+  const d=dotDate(a.date);
+  return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={false} onClick={onOpen}/>;
+};
+
+/* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어간다. 신청은 공지 위에 서는 한 장이고, 파티 제출은 팀 빌더로 간다.
+   연 공지는 주소(?notice=)와 기록 한 칸에 남는다. (docs/redesign-next c4, c11, c15, c17, c20) */
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
@@ -82,7 +117,6 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const shown=list.slice((cur-1)*PAGE_SIZE,cur*PAGE_SIZE);
   useEffect(()=>{setPage(1);},[q]);
   const respAnn=respId?data.announcements.find(a=>a.id===respId):null;
-  const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
   const resetPin=async(row)=>{
     if(!(await siteConfirm({title:"제출 비밀번호 초기화",body:`${row.registrationName}의 제출 비밀번호를 지웁니다. 다음 제출 때 새로 정하며, 제출한 파티는 그대로 남습니다.`,confirmLabel:"초기화"})))return;
     try{ await resetSubmissionPin(row.id); siteAlert("제출 비밀번호를 초기화했습니다."); }
@@ -90,81 +124,94 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   };
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   const a=article?data.announcements.find(x=>x.id===article):null;
+  useEffect(()=>{ setFill(null); },[article]);
   const modals=<>
-    {fillAnn&&<FormFillModal
-      ann={fillAnn}
-      responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null}
-      onClose={()=>setFill(null)}
+    {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp} onResetPin={respAnn.form?.eventId?resetPin:null}/>}
+  </>;
+
+  const fillAnn=a&&fill===a.id?a:null;
+  if(fillAnn){
+    return (<FormPage ann={fillAnn} responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null} onBack={()=>setFill(null)}
       onSubmit={async answers=>{
         const ok=await submitForm(fillAnn.id,answers);
         if(ok===true&&fillAnn.form?.eventId) await refreshEventApplications(fillAnn);
         return ok;
-      }}
-    />}
-    {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp} onResetPin={respAnn.form?.eventId?resetPin:null}/>}
-  </>;
+      }}/>);
+  }
 
   if(a){
     const hasForm=a.form&&a.form.enabled; const championshipSubmission=championshipSubmissionEvents[a.id];
     const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
-    return (<section className="sec">
-      <article className="nb-article">
-        <header className="ypl-head nb-a-head">
-          <button type="button" className="nb-back" onClick={closeArticle}><Icon n="back" size={20}/><span>공지</span></button>
-          <h1 className="title nb-a-title" data-vt={"n-"+a.id}>{a.title}</h1>
-          <p className="caption tnum nb-a-meta">{formatDate(a.date)}{a.pinned&&<span className="pin">고정</span>}</p>
-        </header>
-        {a.body&&<div className="nb-body card"><Prose text={a.body}/></div>}
-        {(a.link||a.link2||hasForm||a.form?.eventId)&&<div className="ann-formbtns">
-          {hasForm&&<Button variant="primary" className="ann-apply" onClick={()=>setFill(a.id)}>{a.form.buttonLabel||"참가 신청"}</Button>}
-          {a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"&&<Button className="ann-apply ann-submit" onClick={()=>openBuilder(a.form.eventId)}>파티 제출</Button>}
-          {championshipSubmission?.isChampionship&&<>
-            <Button className="ann-apply ann-submit" onClick={()=>openBuilder(championshipSubmission.qualifierEvent.id)}>선발전 파티 제출</Button>
-            <Button className="ann-apply ann-submit" onClick={()=>openBuilder(championshipSubmission.finalEvent.id)}>본선 파티 제출</Button>
-          </>}
-          {a.link&&<Button className="ann-link" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
-          {a.link2&&<Button className="ann-link alt" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
-          {admin&&(hasForm||a.form?.eventId)&&<Button variant="tertiary" className="ann-resp" onClick={()=>setRespId(a.id)}>응답 보기 <span className="rc">{a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</span></Button>}
-        </div>}
-        {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
-          ann={a}
-          responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
-          onRefresh={()=>refreshPublicResponses(a)}
-          updatedAt={seen[a.id]||""}
-        />}
-        {admin&&<div className="edit-row"><Button size="sm" onClick={()=>setModal({type:"ann",item:a})}>수정</Button></div>}
-      </article>
+    const facts=eventFacts(a);
+    const next=facts?.next;
+    const applied=a.form?.eventId&&eventResponses[a.id]?eventResponses[a.id].length:null;
+    const clock=next?.dday===0?dotDate(next.raw)?.clock:"";
+    // 주 행동은 하나다: 신청을 받으면 참가 신청, 아니면 파티 제출. 나머지는 패널 버튼으로 선다.
+    const submits=[
+      ...(a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"?[["파티 제출",a.form.eventId]]:[]),
+      ...(championshipSubmission?.isChampionship?[["선발전 파티 제출",championshipSubmission.qualifierEvent.id],["본선 파티 제출",championshipSubmission.finalEvent.id]]:[]),
+    ];
+    const main=hasForm?[a.form.buttonLabel||"참가 신청",()=>setFill(a.id)]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:null;
+    const seconds=hasForm?submits:submits.slice(1);
+    return (<section className="nw">
+      <BackLink to="공지" onClick={closeArticle}/>
+      <p className="t12 dim reg nw-date">{a.pinned&&"고정, "}{formatDate(a.date)}</p>
+      <h1 className="t32 nw-title" data-vt={"n-"+a.id}>{a.title}</h1>
+      {(next||applied!=null)&&<div className="stack nw-counts">
+        {next&&(next.dday===0
+          ? <Counter label={`${next.k?next.k+" ":""}오늘 진행 중`} lamp="sig" value={clock||"  :  "} cells={4} after={<span className="t15">시작</span>}/>
+          : <Counter label={`${next.k||"대회"}까지`} lamp value={String(next.dday).padStart(2,"0")} cells={next.dday>=100?3:2} unit="일" after={<span className="t15">일</span>}/>)}
+        {applied!=null&&<Counter label="신청" value={applied} cells={applied>=100?3:2} unit="명"/>}
+      </div>}
+      {facts?.rows.length>0&&<div className={"stack nw-spec"+(next||applied!=null?" joined":"")}>
+        {facts.rows.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
+      </div>}
+      {a.body&&<div className="nw-body"><Prose text={a.body}/></div>}
+      {(seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
+        {seconds.map(([label,id])=><Button variant="second" key={label} onClick={()=>openBuilder(id)}>{label}</Button>)}
+        {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
+        {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
+      </div>}
+      {hasForm&&(a.form.fields||[]).some(f=>f.public)&&<PublicResponses
+        ann={a}
+        responsesOverride={a.form?.eventId?(eventResponses[a.id]||[]):null}
+        onRefresh={()=>refreshPublicResponses(a)}
+        updatedAt={seen[a.id]||""}
+      />}
+      {admin&&<div className="stack nw-admin">
+        {(hasForm||a.form?.eventId)&&<Button variant="second" onClick={()=>setRespId(a.id)}>응답 보기 {a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</Button>}
+        <Button variant="second" onClick={()=>setModal({type:"ann",item:a})}>수정</Button>
+      </div>}
+      {main&&<Dock><Button variant="main" onClick={main[1]}>{main[0]}</Button></Dock>}
       {modals}
     </section>);
   }
 
-  return (<section className="sec">
-    <PageHead plain="공지">
-      <div className="y-page-aside">
-        <ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/>
-        <PushToggle/>
-        {admin&&<Button variant="primary" size="sm" onClick={()=>setModal({type:"ann"})}><Icon n="plus" size={16}/>공지 작성</Button>}
-      </div>
-    </PageHead>
+  return (<section className="nw">
+    <header className="nw-head">
+      <h1 className="t32">공지</h1>
+      <span className="nw-tools">
+        {admin&&<Button variant="link" onClick={()=>setModal({type:"ann"})}>공지 작성</Button>}
+        <PushLink/>
+      </span>
+    </header>
+    <div className="nw-search"><ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/></div>
     {list.length===0?(kw
-      ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
+      ? <>
+        <div className="pn nw-none"><Seg value={0} h={40} cells={2} label="0건"/><div><b className="t15">맞는 공지가 없습니다.</b><p className="t12 dim reg">{`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}</p></div></div>
+        {all.length>0&&<><p className="t12 dim nw-recent">최근 공지</p><div className="stack nw-list">{all.slice(0,3).map(a=><NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div></>}
+      </>
       : <Empty title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
-    : <div className="nb-list card">
-      {shown.map(a=>{
-        return (<button type="button" className="ypl-row nb-item" key={a.id} onClick={()=>openArticle(a.id)}>
-          <span className="nb-title">{a.pinned&&<span className="pin">고정</span>}<span data-vt={"n-"+a.id}>{a.title}</span></span>
-          <span className="nb-meta caption"><span className="tnum">{formatDate(a.date)}</span>{excerptOf(a.body,a.title)&&<span className="nb-excerpt">{excerptOf(a.body,a.title)}</span>}</span>
-        </button>);})}
-    </div>}
-    <Pager page={cur} pages={pages} onGo={setPage}/>
+    : <div className="stack nw-list">{shown.map(a=><NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div>}
+    <div className="nw-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
     {modals}
   </section>);
 }
 
-/* ===== 새 공지 알림 받기 ===== */
-function PushToggle(){
+/* ===== 새 공지 알림 받기: 켜기 전에 이유를 먼저 말하는 시트, 끄기는 바로 ===== */
+function PushLink(){
   const [mode]=useState(currentPushMode);
-  const [on,setOn]=useState(false); const [busy,setBusy]=useState(mode==="ready");
+  const [on,setOn]=useState(false); const [busy,setBusy]=useState(mode==="ready"); const [ask,setAsk]=useState(false);
   useEffect(()=>{
     if(mode!=="ready") return;
     let cancelled=false;
@@ -172,15 +219,28 @@ function PushToggle(){
     return ()=>{cancelled=true;};
   },[mode]);
   if(mode==="none") return null;
-  const toggle=async()=>{
-    if(mode==="install") return siteAlert("홈 화면에 추가해 주세요.","아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.");
-    if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다.","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
+  const flip=async()=>{
     setBusy(true);
-    try{ if(on) await disablePush(); else await enablePush(); setOn(!on); }
+    try{ if(on) await disablePush(); else await enablePush(); setOn(!on); setAsk(false); }
     catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
     finally{ setBusy(false); }
   };
-  return <Button type="button" size="sm" disabled={busy} onClick={toggle}>{on?"알림 끄기":"알림 받기"}</Button>;
+  const press=()=>{
+    if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다.","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
+    if(on) return flip();
+    setAsk(true);
+  };
+  return (<>
+    <button type="button" className="nw-push t12" disabled={busy} onClick={press}><Icon n="bell" size={16}/>{on?"알림 끄기":"알림 받기"}</button>
+    {ask&&<Modal title="새 공지를 알림으로 받습니다." onClose={()=>setAsk(false)}>
+      <div className="nw-ask">
+        <p className="read dim">대회 공지와 결과가 올라오면 이 기기로 알려 드립니다. 언제든 공지 화면에서 끌 수 있습니다.</p>
+        {mode==="install"&&<p className="pn2 nw-note t12 reg dim"><Icon n="info" size={20}/><span>아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.</span></p>}
+        {mode==="ready"&&<Button variant="main" icon="bell" disabled={busy} onClick={flip}>알림 받기</Button>}
+        <Button variant="link" className="nw-later" onClick={()=>setAsk(false)}>나중에</Button>
+      </div>
+    </Modal>}
+  </>);
 }
 
 /* ===== 공개 응답 목록 (예: 실시간 밴 리스트) ===== */
@@ -220,37 +280,57 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
   </div>);
 }
 
-/* ===== 신청서 폼 — 참가자 작성 / 관리자 응답 보기 ===== */
-function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
+
+/* ===== 참가 신청: 공지 위에 서는 한 장. 신청은 화면 아래에 붙은 한 버튼이고, 빠진 답은 그 칸 아래에서 알린다. ===== */
+function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
   const form=ann.form||{}; const fields=form.fields||[];
   const [ans,setAns]=useState({}); const [registrationName,setRegistrationName]=useState(""); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
-  const set=(id,v)=>setAns(a=>({...a,[id]:v}));
-  const toggleMulti=(id,opt)=>setAns(a=>{ const cur=Array.isArray(a[id])?a[id]:[]; return {...a,[id]:cur.includes(opt)?cur.filter(x=>x!==opt):[...cur,opt]}; });
+  const [errors,setErrors]=useState({}); const [failed,setFailed]=useState("");
+  const set=(id,v)=>{ setAns(a=>({...a,[id]:v})); setErrors(e=>({...e,[id]:""})); };
   const submit=async()=>{
-    if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요."); return; }
-    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답을 입력해 주세요.",`‘${f.label||"질문"}’ 항목에 답해 주세요.`); return; } } }
+    const next={};
+    if(form.eventId&&!registrationName.trim()) next.name="참가자 이름을 입력해 주세요.";
+    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty) next[f.id]=`‘${f.label||"질문"}’ 항목에 답해 주세요.`; } }
+    setErrors(next); setFailed("");
+    const first=Object.keys(next)[0];
+    if(first){ document.getElementById(first==="name"?"ff-name":`ff-${first}`)?.focus(); return; }
     setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
-    if(typeof ok==="string"){ siteAlert(ok); return; }
-    if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
+    if(typeof ok==="string"){ setFailed(ok); return; }
+    if(ok===false){ setFailed("신청 저장을 확인하지 못했습니다."); return; }
     setDone(true);
   };
-  if(done) return (<Modal title={ann.title} onClose={onClose}><div className="ff-done"><div className="ff-ok" aria-hidden="true"><Icon n="check" size={24}/></div><h4>신청이 접수되었습니다.</h4><p>신청해 주셔서 감사합니다.<br/>결과와 안내는 공지로 알려 드립니다.</p><div className="modal-actions" style={{justifyContent:"center"}}><Button variant="primary" onClick={onClose}>닫기</Button></div></div></Modal>);
-  return (<Modal title={ann.title} hint="아래 신청서를 작성한 뒤 제출해 주세요." onClose={onClose}>
-    <div className="swap" key="fill">
-      {(fields||[]).some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
-      {form.eventId&&<div className="ff-q"><label className="ff-q-label" htmlFor="ff-name">참가자 이름<span className="req">*</span></label><input id="ff-name" aria-required="true" type="text" value={registrationName} onChange={e=>setRegistrationName(e.target.value)} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/></div>}
-      {fields.length===0&&!form.eventId&&<p className="bk-hint">등록된 질문이 없습니다.</p>}
-      {fields.map((f,i)=>(<div className="ff-q" key={f.id}>
-        <label className="ff-q-label" htmlFor={`ff-${f.id}`}>{f.label||`질문 ${i+1}`}{f.required&&<span className="req">*</span>}</label>
-        {f.type==="short"&&<input id={`ff-${f.id}`} aria-required={f.required||undefined} type="text" value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
-        {f.type==="long"&&<textarea id={`ff-${f.id}`} aria-required={f.required||undefined} value={ans[f.id]||""} onChange={e=>set(f.id,e.target.value)} placeholder="답변을 입력해 주세요."/>}
-        {f.type==="single"&&<div className="ff-choices" role="radiogroup" aria-label={f.label||`질문 ${i+1}`}>{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+(ans[f.id]===op?" sel":"")} key={oi}><input type="radio" name={f.id} checked={ans[f.id]===op} onChange={()=>set(f.id,op)}/><span>{op}</span></label>))}</div>}
-        {f.type==="multi"&&<div className="ff-choices" role="group" aria-label={f.label||`질문 ${i+1}`}>{(f.options||[]).map((op,oi)=>(<label className={"ff-choice"+((Array.isArray(ans[f.id])&&ans[f.id].includes(op))?" sel":"")} key={oi}><input type="checkbox" checked={Array.isArray(ans[f.id])&&ans[f.id].includes(op)} onChange={()=>toggleMulti(f.id,op)}/><span>{op}</span></label>))}</div>}
-        {f.type==="dropdown"&&<Dropdown id={`ff-${f.id}`} value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택해 주세요."/>}
-      </div>))}
-      <div className="modal-actions"><Button onClick={onClose} disabled={busy}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"제출 중…":"제출"}</Button></div>
+  const required=form.eventId||fields.some(f=>f.required);
+  if(done) return (<section className="nw">
+    <BackLink to={ann.title} onClick={onBack}/>
+    <h1 className="t20 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
+    <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">신청이 접수되었습니다.</b><p className="t12 reg">결과와 안내는 공지로 알려 드립니다.</p></div></div>
+    <Dock><Button variant="main" onClick={onBack}>공지 보기</Button></Dock>
+  </section>);
+  return (<section className="nw">
+    <BackLink to={ann.title} onClick={onBack}/>
+    <h1 className="t20 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
+    {required&&<p className="t12 dim reg nw-req">* 표시는 필수입니다.</p>}
+    {fields.some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
+    <div className="nw-fields">
+      {form.eventId&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
+        <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{setRegistrationName(e.target.value);setErrors(x=>({...x,name:""}));}} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
+      </Question>}
+      {fields.length===0&&!form.eventId&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
+      {fields.map((f,i)=>{ const label=f.label||`질문 ${i+1}`, id=`ff-${f.id}`, error=errors[f.id];
+        const text={id,className:"in","aria-required":f.required||undefined,"aria-invalid":error?true:undefined,value:ans[f.id]||"",onChange:e=>set(f.id,e.target.value),placeholder:"답변을 입력해 주세요."};
+        return (<Question key={f.id} id={id} label={label} required={f.required} error={error} group={f.type==="single"||f.type==="multi"}>
+          {f.type==="short"&&<input type="text" {...text}/>}
+          {f.type==="long"&&<textarea {...text}/>}
+          {(f.type==="single"||f.type==="multi")&&<Choice name={f.id} options={f.options||[]} value={ans[f.id]} onChange={v=>set(f.id,v)} multiple={f.type==="multi"}/>}
+          {f.type==="dropdown"&&<Dropdown id={id} value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택해 주세요."/>}
+        </Question>);
+      })}
     </div>
-  </Modal>);
+    <Dock toast={failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>}>
+      <Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":"신청하기"}</Button>
+      <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p>
+    </Dock>
+  </section>);
 }
 function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onResetPin }){
   const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const resp=[...(normalized?responsesOverride:(form.responses||[]))].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));

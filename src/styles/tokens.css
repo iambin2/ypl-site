@@ -237,7 +237,7 @@ label:has(input) { cursor: pointer; }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
 .swap { animation: y-swap var(--move-leave) backwards; }
 @keyframes y-swap { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .ff-ok, .dd-menu, .bk-submission-detail, .records-round-detail) { animation: none; } }
+@media (prefers-reduced-motion: reduce) { :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .dd-menu, .bk-submission-detail, .records-round-detail) { animation: none; } }
 /* theme change: the page turns in one frame, and a control's own tone transition sits it out */
 .theme-turn * { transition: none !important; }
 

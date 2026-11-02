@@ -14,13 +14,15 @@
 .counter { height: var(--h-counter); padding: var(--pad); display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; }
 
 /* ---------- a row of a stack: 52, or 64 with a grey line; the record holder inverts ---------- */
-.row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; width: 100%; height: var(--h-row); text-align: left; }
+.row { display: flex; align-items: center; width: 100%; height: var(--h-row); text-align: left; }
 .row--2 { height: var(--h-row2); }
-.row-main { display: grid; gap: var(--s1); min-width: 0; padding-right: var(--s3); }
+.row-main { flex: 1; display: grid; gap: var(--s1); min-width: 0; padding-right: var(--s3); }
+.row-main:first-child { padding-left: var(--pad); }
+.row-lead { flex: none; }
 .row-main > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-main > b { font-weight: 700; }
-.row-value { padding-right: var(--pad); }
-.row-lamp { display: flex; justify-content: center; align-self: stretch; align-items: center; width: var(--s8); }
+.row-value { flex: none; padding-right: var(--pad); }
+.row-lamp { flex: none; display: flex; justify-content: center; align-self: stretch; align-items: center; width: var(--s8); }
 
 /* ---------- desktop hover lifts a panel one tone; nothing grows ---------- */
 @media (hover: hover) { :is(button, a).pn:hover:not(:disabled) { background: var(--panel-2); } }
@@ -55,3 +57,84 @@
 @media (hover: hover) { .btn.btn--link:hover:not(:disabled) { --btn-fg: var(--lit); } }
 /* a lamp that is switched off keeps its place */
 .lamp.unlit { background: var(--panel-2); }
+
+/* ---------- a back link: 12 dim with a chevron, naming where it goes ---------- */
+.back { display: flex; width: fit-content; align-items: center; gap: var(--s1); min-height: var(--h-control); margin-block: calc((var(--h-control) - var(--l12)) / -2); }
+@media (hover: hover) { .back:hover { color: var(--lit); } }
+
+/* ---------- a field: its label 8 above a 52 panel; focus draws a 2px line along the bottom ---------- */
+.q { display: grid; gap: var(--s2); min-width: 0; }
+.q + .q { margin-top: var(--s5); }
+.q .in, .q .dd-btn {
+  width: 100%; height: var(--h-row); min-height: var(--h-row); padding: 0 var(--pad); background: var(--panel); box-shadow: none;
+  font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--lit);
+}
+.q textarea.in { height: auto; min-height: calc(var(--h-row) * 2); padding-block: var(--s3); line-height: var(--l-read); font-weight: 400; }
+.q .in:focus-visible, .q.has-error .in { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.q .in::placeholder { color: var(--mute); font-weight: 400; }
+.q-error { display: flex; align-items: center; gap: var(--s2); }
+.bang { display: grid; place-items: center; width: var(--s5); height: var(--s5); flex: none; background: var(--lit); color: var(--ground); font-size: var(--t12); line-height: 1; font-weight: 700; }
+.inv .bang { background: var(--ground); color: var(--lit); }
+
+/* choice: panels in a row, 44 tall, the chosen one inverted */
+.choice { grid-template-columns: repeat(auto-fit, minmax(var(--s21), 1fr)); }
+.choice-opt { display: flex; align-items: center; justify-content: center; min-height: var(--h-control); padding: 0 var(--s3); text-align: center; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--dim); cursor: pointer; transition: background-color var(--move-tone), color var(--move-tone); }
+.choice-opt.inv { font-weight: 700; }
+.choice-opt:has(:focus-visible), .check-row:has(:focus-visible) .box { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+.choice-opt.inv:has(:focus-visible) { outline-color: var(--ground); }
+@media (hover: hover) { .choice-opt.pn:hover { background: var(--panel-2); } }
+/* check: a 20 square, off is panel-2, on is inverted with a check */
+.checks { display: grid; gap: var(--s3); }
+.check-row { display: flex; align-items: flex-start; gap: var(--s3); min-height: var(--s5); cursor: pointer; }
+.box { display: grid; place-items: center; width: var(--s5); height: var(--s5); flex: none; background: var(--panel-2); }
+.box.on { background: var(--lit); color: var(--ground); }
+
+/* ---------- the dock: the main action docks above the tab bar on a ground strip with a hairline ---------- */
+.dock { position: relative; }
+@media (min-width: 860px) { .dock { margin-top: var(--s8); } }
+@media (max-width: 859px) {
+  .dock {
+    position: fixed; z-index: var(--z-sticky); left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height));
+    display: grid; align-content: center; min-height: var(--h-counter); padding: var(--s3) var(--gutter); background: var(--ground); box-shadow: inset 0 1px 0 var(--rule);
+  }
+  .is-admin .dock { bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height)); }
+  /* the page keeps the dock's height clear under its last line */
+  .page:has(.dock) { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--h-counter) + var(--s13)); }
+  .is-admin .page:has(.dock) { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--h-counter) + var(--s13)); }
+}
+.dock-note { margin-top: var(--s2); text-align: center; }
+
+/* ---------- a toast: an inverted 52 panel above the docked action; its one action an underlined word ---------- */
+.toast-panel { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
+.toast-say { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.toast-act { flex: none; min-height: var(--h-control); font-size: var(--t12); line-height: var(--l12); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: var(--hair); }
+.dock > .toast-panel { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(100% + var(--s3)); }
+@media (min-width: 860px) { .dock > .toast-panel { position: static; margin-bottom: var(--s3); } .dock > .toast-panel { left: auto; right: auto; } }
+
+/* ---------- pager: three panels, back, the page as 1 / 2, next ---------- */
+.pager { grid-template-columns: var(--s13) minmax(0, 1fr) var(--s13); }
+.pager > * { display: flex; align-items: center; justify-content: center; height: var(--h-row); font-weight: 700; }
+.pager-of { margin: 0 var(--s2); font-weight: 600; }
+
+/* ---------- search: a 52 field panel with the icon; focus draws the 2px line ---------- */
+.search { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.search-in { display: flex; align-items: center; gap: var(--s3); flex: 1; min-width: 0; height: var(--h-row); padding: 0 var(--pad); color: var(--mute); cursor: text; }
+.search-in:has(input:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.search-in input { flex: 1; min-width: 0; min-height: 0; height: 100%; padding: 0; background: none; box-shadow: none; font-size: var(--t15); line-height: var(--l15); color: var(--lit); }
+.search-in input:focus-visible { box-shadow: none; }
+.search-clear { display: grid; place-items: center; width: var(--h-control); height: var(--h-control); margin-right: calc(var(--pad) * -1); color: var(--dim); }
+.search-count { flex: none; }
+
+/* ---------- a spec: key and value rows of 44 inside a stack ---------- */
+.spec-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; min-height: var(--h-control); padding: var(--s3) var(--pad); }
+
+/* a counter's lamp stands 8 before its label; its unit stands on the display's baseline */
+.counter-label { display: flex; align-items: center; gap: var(--s2); }
+.counter-board { display: flex; align-items: flex-end; gap: var(--s1); }
+.counter-board > .t15 { line-height: 1; }
+
+/* a second action: a panel button, 52 tall, the word centred, lit */
+.btn.btn--second {
+  --btn-bg: var(--panel); --btn-bg-hover: var(--panel-2); --btn-fg: var(--lit);
+  width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 700; text-decoration: none;
+}

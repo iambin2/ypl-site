@@ -6,7 +6,7 @@
 
 .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
 .pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-type, .tb-status-chip, .tb-official-meta span, .rc-chip,
-.bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .ff-choice {
+.bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved {
   position: relative;
 }
 
@@ -118,7 +118,7 @@
 
 /* ---------- List: rows on hairlines; the lines stop on the same edges as the words, and a hovered row underlines its title (M1) ---------- */
 .ypl-group { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-:is(.ypl-group, .bd-list, .nb-list, .hm-list, .ab-records, .ab-timeline, .ab-comps) > * + * { box-shadow: inset 0 var(--hair) 0 var(--divider); }
+:is(.ypl-group, .bd-list, .hm-list, .ab-records, .ab-timeline, .ab-comps) > * + * { box-shadow: inset 0 var(--hair) 0 var(--divider); }
 .ypl-row, .pick-row {
   transition: background-color var(--move-tone), scale var(--move-press);
 }
