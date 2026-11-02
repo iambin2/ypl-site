@@ -51,7 +51,7 @@ function recede(on) {
   if (on) main.style.transformOrigin = `50% ${innerHeight / 2 - main.getBoundingClientRect().top}px`;
   recedeAnim?.cancel();
   recedeAnim = main.animate([{ transform: on ? "none" : "scale(.965)" }, { transform: on ? "scale(.965)" : "none" }],
-    { duration: on ? DUR.soft : DUR.base, easing: on ? springs().soft : EASE_OUT, fill: "forwards" });
+    { duration: on ? DUR.lift : DUR.leave, easing: on ? springs().lift : EASE_OUT, fill: "forwards" });
   if (!on) recedeAnim.finished.then(a => a.cancel()).catch(() => {});
 }
 function holdPage(on) {
@@ -80,12 +80,12 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     replacedBy: ".overlay",
     exit: node => {
       const sheet = node.querySelector(".sheet"), scrim = node.querySelector(".scrim");
-      if (reduced()) return [node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.fast, fill: "forwards" })];
-      const out = [scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.base, easing: EASE_OUT, fill: "forwards" })];
-      if (desktop()) out.push(sheet.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.97)" }], { duration: DUR.fast, easing: EASE_IN, fill: "forwards" }));
+      if (reduced()) return [node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.tone, fill: "forwards" })];
+      const out = [scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" })];
+      if (desktop()) out.push(sheet.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.97)" }], { duration: DUR.tone, easing: EASE_IN, fill: "forwards" }));
       else {
         const from = new DOMMatrix(getComputedStyle(sheet).transform).m42;
-        out.push(sheet.animate([{ transform: `translateY(${from}px)` }, { transform: `translateY(${sheet.offsetHeight + 20}px)` }], { duration: DUR.base, easing: EASE_IN, fill: "forwards" }));
+        out.push(sheet.animate([{ transform: `translateY(${from}px)` }, { transform: `translateY(${sheet.offsetHeight + 20}px)` }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
       }
       return out;
     },
@@ -112,9 +112,9 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     const flyTarget = flyRef.current && body.querySelector(flyRef.current.selector);
     settleTitle(flyTarget);
     flyRef.current = null;
-    if (!reduced()) scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.base, easing: EASE_OUT });
+    if (!reduced()) scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.leave, easing: EASE_OUT });
     if (desktop()) {
-      if (!reduced()) sheet.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: DUR.snappy, easing: springs().snappy });
+      if (!reduced()) sheet.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: springs().spring });
     } else {
       sheet.style.transform = `translateY(${sheet.offsetHeight + 20}px)`;
       slide(0);
@@ -149,7 +149,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
       const [t0, y0] = d.pts[0], dt = e.timeStamp - t0, v = dt > 0 ? ((e.clientY - y0) / dt) * 1000 : 0;
       if (curY() > sheet.offsetHeight * 0.3 || v > 700) {
         overlay.dataset.gone = "1";
-        scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.base, easing: EASE_OUT, fill: "forwards" });
+        scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" });
         slide(sheet.offsetHeight + 20, Math.max(v, 0)).then(() => {
           closeRef.current?.();
           // a parent that keeps the sheet open gets it back

@@ -6,10 +6,10 @@
 
 .records-read-state {
   display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap;
-  padding: var(--s3) var(--s4); border-radius: var(--r-sm); background: var(--state-hover);
+  padding: var(--s3) var(--s5); border-radius: var(--r-sm); background: var(--state-hover);
   font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary);
 }
-.rc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
+.rc-filter { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s5); }
 .rc-filter[role="group"] { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .rc-filter[role="group"]::-webkit-scrollbar { display: none; }
 .rc-filter[role="group"] > .btn { flex: none; }
@@ -18,19 +18,19 @@
 }
 .rc-past .dd-btn.ph > span { color: var(--text-primary); }
 @media (min-width: 860px) { .rc-filter > .rc-past { width: auto; flex: none; } }
-.rc-note { margin-top: var(--s6); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
+.rc-note { margin-top: var(--s8); font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .rc-admin { margin: 0; }
 
 /* section head inside a view: a headline and a quiet count */
 .rc-sec { min-width: 0; }
-.rc-sech { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-bottom: var(--s4); }
+.rc-sech { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--s1) var(--s3); margin-bottom: var(--s5); }
 .rc-sech h4 { font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-lead); letter-spacing: var(--ls-lead); }
 .rc-sech > span { font-size: var(--fs-caption); color: var(--text-tertiary); }
 .rc-sech .ed-pencil { margin-left: auto; }
 
 /* ---------- pick lists: trainers and Pokémon ---------- */
-.rc-list { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
-.rc-list > .ypl-table-more { margin-top: calc(var(--s3) - var(--s4)); }
+.rc-list { display: flex; flex-direction: column; gap: var(--s5); min-width: 0; }
+.rc-list > .ypl-table-more { margin-top: calc(var(--s3) - var(--s5)); }
 .rc-search { display: flex; align-items: center; gap: var(--s3); }
 .rc-search .records-search-field { flex: 1; max-width: 440px; }
 .rc-search > span { flex: none; font-size: var(--fs-caption); color: var(--text-tertiary); }
@@ -46,7 +46,7 @@
 .rc-stat b { font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-label); }
 .rc-stat span { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .rc-stat.zero b { color: var(--text-tertiary); font-weight: 600; }
-.rc-pick-chev { color: var(--text-tertiary); transition: transform var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
+.rc-pick-chev { color: var(--text-tertiary); transition: transform var(--move-slide), color var(--move-tone); }
 @media (hover: hover) { .rc-pick-row:hover .rc-pick-chev { color: var(--text-primary); transform: translateX(2px); } }
 .rc-rail-n { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 @media (min-width: 860px) {
@@ -55,7 +55,7 @@
 }
 
 /* ---------- the profile sheet: on a sheet, the cards become tiles of the same tone ---------- */
-.rc-sheet .rc-lead-who { padding-right: var(--s10); }
+.rc-sheet .rc-lead-who { padding-right: var(--s13); }
 .rc-sheet .rc-lead-head { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 860px) { .rc-sheet { width: min(100% - 48px, 680px); } }
 .rc-profile { display: flex; flex-direction: column; gap: var(--s8); min-width: 0; }
@@ -64,16 +64,16 @@
 /* a long history below the sheet's fold costs nothing while the sheet opens */
 .sheet .ypl-group > li { content-visibility: auto; contain-intrinsic-size: auto 60px; }
 .sheet .ypl-row { border-radius: var(--r-sm); }
-.sheet .ypl-empty { padding-block: var(--s6); }
+.sheet .ypl-empty { padding-block: var(--s8); }
 
 /* ---------- lead: the hero card with a score and tiles ---------- */
 .rc-lead-who { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); }
-.rc-lead-head { display: grid; gap: var(--s4); }
+.rc-lead-head { display: grid; gap: var(--s5); }
 .rc-lead-name { display: block; }
 .rc-lead-title.tied { font-size: var(--fs-h2); line-height: var(--lh-title); letter-spacing: var(--ls-title); }
 .rc-lead-title.tied .rc-lead-name { display: inline; }
 .rc-lead-sub { font-size: var(--fs-body); color: var(--text-secondary); }
-.rc-lead-figs { position: relative; display: grid; gap: var(--s4); }
+.rc-lead-figs { position: relative; display: grid; gap: var(--s5); }
 .rc-poster { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); }
 .rc-poster-label { font-size: var(--fs-caption); font-weight: 600; line-height: var(--lh-caption); color: var(--text-secondary); }
 .rc-poster-fig { display: inline-flex; align-items: baseline; white-space: nowrap; }
@@ -81,11 +81,11 @@
 .rc-poster-num .roll { line-height: var(--lh-title); }
 .rc-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: var(--s2); }
 .rc-facts.rows { grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--s1) 0; border-radius: var(--r-sm); background: var(--surface-raised); }
-.rc-facts.rows > div { flex-direction: row; align-items: baseline; justify-content: space-between; gap: var(--s4); padding: var(--s3) var(--s4); background: none; }
+.rc-facts.rows > div { flex-direction: row; align-items: baseline; justify-content: space-between; gap: var(--s5); padding: var(--s3) var(--s5); background: none; }
 .rc-facts.rows dt { flex: none; font-size: var(--fs-caption); }
 .rc-facts.rows dd { font-size: var(--fs-body); font-weight: 600; text-align: right; }
 .sheet .rc-facts.rows { background: var(--state-hover); }
-.rc-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--s1); padding: var(--s3) var(--s4); border-radius: var(--r-sm); background: var(--surface-raised); }
+.rc-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--s1); padding: var(--s3) var(--s5); border-radius: var(--r-sm); background: var(--surface-raised); }
 .sheet .rc-facts > div { background: var(--state-hover); }
 .sheet .rc-facts.rows > div { background: none; }
 .rc-facts dt { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
@@ -97,7 +97,7 @@
 @media (min-width: 640px) { .rc-lead-head { grid-template-columns: minmax(0, 1fr) 220px; align-items: end; } .rc-lead-cta { justify-self: start; } }
 @media (min-width: 1100px) {
   .rc-poster-num { font-size: var(--fig-l); letter-spacing: var(--ls-display); }
-  .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s6); }
+  .rc-lead-figs { grid-template-columns: auto minmax(0, 1fr); align-items: end; gap: var(--s8); }
   .rc-facts:not(.rows) { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
   /* a label and value row is as wide as it reads, not the width of the card */
   .rc-facts.rows { width: min(100%, 360px); justify-self: start; }
@@ -110,15 +110,15 @@
 .rc-place { font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-secondary); white-space: nowrap; }
 .rc-place.win { font-weight: 700; color: var(--text-primary); }
 .sheet .pager { margin-top: var(--s3); }
-.rc-sec .pager { margin-top: var(--s4); }
+.rc-sec .pager { margin-top: var(--s5); }
 
 /* ---------- tournament archive ---------- */
-.rc-list-search { margin-bottom: var(--s4); }
+.rc-list-search { margin-bottom: var(--s5); }
 
-.round2 { display: grid; gap: var(--s2); padding: var(--s4); border-radius: var(--r-sm); }
+.round2 { display: grid; gap: var(--s2); padding: var(--s5); border-radius: var(--r-sm); }
 .round2.champ { background: var(--surface-raised); }
 .r2-main { min-width: 0; }
-.r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s4); }
+.r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s5); }
 .r2-title { font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); color: var(--text-primary); }
 .r2-meta, .r2-season { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-tertiary); }
 .r2-res { display: grid; gap: var(--s2); }
@@ -133,40 +133,41 @@
 
 .records-round-toggle { width: 100%; display: flex; align-items: flex-start; gap: var(--s3); padding: 0; border: 0; background: transparent; text-align: left; }
 /* the team toggle sits under the result lines as its own block: 16px away, its label centred on the chevron */
-.r2-res + .records-round-toggle { margin-top: var(--s4); align-items: center; }
+.r2-res + .records-round-toggle { margin-top: var(--s5); align-items: center; }
 .records-round-summary { flex: 1; min-width: 0; font-size: var(--fs-body); font-weight: 600; }
-.records-round-chevron { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--state-selected); color: var(--text-secondary); transition: transform var(--dur-snappy) var(--spring-snappy), color var(--dur-fast) var(--ease-out); }
+.records-round-chevron { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--state-selected); color: var(--text-secondary); transition: transform var(--move-slide), color var(--move-tone); }
 .records-round-chevron svg { width: 12px; height: 8px; }
 .records-round-toggle[aria-expanded="true"] .records-round-chevron { transform: rotate(180deg); }
 @media (hover: hover) { .records-round-toggle:hover .records-round-chevron { color: var(--text-primary); } }
-.records-round-detail { margin-top: var(--s3); animation: y-swap var(--dur-slow) var(--ease-out) backwards; }
-.records-round-party-row { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: var(--s1) var(--s3); padding: var(--s2) 0; }
-.records-round-party-row + .records-round-party-row { box-shadow: inset 0 1px 0 var(--divider); }
-.records-round-party-row .r2-name { height: auto; padding: 0; background: none; font-size: var(--fs-body); }
-.records-round-party-row .r2-name.win { color: var(--text-primary); font-weight: 700; }
-.records-party-sprites, .records-party-missing { grid-column: 1 / -1; }
-.records-party-sprites { display: flex; flex-wrap: wrap; gap: var(--s1); }
-.records-party-sprites img { width: 40px; height: 40px; object-fit: contain; }
-.records-party-sprite-fallback { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: var(--s1); overflow: hidden; border-radius: var(--r-sm); background: var(--state-hover); color: var(--text-tertiary); font-size: var(--fs-caption); line-height: var(--lh-caption); text-align: center; }
-.records-party-missing { font-size: var(--fs-caption); color: var(--text-tertiary); }
-@media (min-width: 640px) {
-  .records-round-party-row { grid-template-columns: 56px minmax(72px, 160px) minmax(0, 1fr); }
-  .records-party-sprites, .records-party-missing { grid-column: auto; }
-}
+.records-round-detail { margin-top: var(--s5); animation: y-swap var(--move-place) backwards; }
+/* parties are cases, one or two across in a sheet and up to three on a page */
+.rc-parties { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
+@media (min-width: 640px) { .rc-parties { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .r2-main .rc-parties { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rc-sec > .ypl-table-more { margin-top: var(--s3); }
+/* a Pokémon's name in a list stands beside its picture */
+.ypl-row.rc-count { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.rc-count-pic { display: block; width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--window); }
+.rc-count-pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* a Pokémon's sheet opens on its card */
+.rc-mon-lead { display: grid; gap: var(--s5); }
+.rc-mon-lead > .case { width: min(100%, 200px); padding-right: var(--s3); }
+@media (min-width: 640px) { .rc-mon-lead { grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: var(--s8); } .rc-mon-lead .rc-lead-figs { grid-template-columns: minmax(0, 1fr); } }
+.rc-usage > div { grid-template-columns: 48px minmax(0, 1fr); }
+.rc-parties .case-who b { white-space: normal; }
+.rc-usage dd { font-weight: 400; color: var(--text-secondary); }
 
-/* ---------- rankings: hero card, two rank cards, then the table ---------- */
-/* the cards are one set (--grid-gap); the table sits a block (16) under them, as a list under the lead on 칭호 */
+/* ---------- rankings: the podium is cases, the first standing across the two after it, then the table ---------- */
 .rc-rank { display: grid; gap: var(--grid-gap); }
-.rc-rank .ypl-table-wrap { margin-top: calc(var(--s4) - var(--grid-gap)); }
-.rc-podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--grid-gap); }
-.rc-rankcard { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s6); }
-.rc-rankcard b { font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-lead); letter-spacing: var(--ls-lead); overflow-wrap: anywhere; }
-.rc-rankcard-n { margin-bottom: var(--s1); color: var(--rank-n); }
-.rc-rankcard-n.r1 { color: var(--rank-1); } .rc-rankcard-n.r2 { color: var(--rank-2); } .rc-rankcard-n.r3 { color: var(--rank-3); }
-.rc-rankcard-pts { display: inline-flex; align-items: baseline; }
-.rc-rankcard-score { font-size: var(--fs-lead); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-@media (min-width: 1100px) {
-  .rc-rankcard b { font-size: var(--fs-h3); }
+.rc-rank .ypl-table-wrap { margin-top: calc(var(--s5) - var(--grid-gap)); }
+.rc-podium { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.rc-podium > li:first-child { grid-column: 1 / -1; }
+.rc-podium-pts { font-size: var(--fig-m); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
+.rc-podium-pts small { margin-left: var(--s1); font-size: var(--fs-body); font-weight: 600; letter-spacing: var(--ls-body); }
+@media (min-width: 860px) {
+  .rc-podium { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s8); }
+  .rc-podium > li:first-child { grid-column: auto; }
+  .rc-podium-pts { font-size: var(--fig-l); }
 }
 
 /* 이름 링크: 글자 그대로, 누를 수 있다는 것은 호버의 밑줄로만 알린다(무채색, 같은 종류는 같은 반응). */

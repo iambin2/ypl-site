@@ -7,7 +7,6 @@ import HomePage, { eventAction } from "./pages/HomePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
 import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/Navigation.jsx";
-import { showBars, useScrollChrome } from "./components/layout/Stage.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { reduced, themeFade, transition } from "./components/common/motion.js";
@@ -97,7 +96,6 @@ export default function App() {
     const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
     document.title=label?`${label} | YPL`:"YPL | Yonsei Pokémon League";
   },[view]);
-  useScrollChrome();
   useEffect(()=>{
     initHistory();
     const onPopState=()=>{
@@ -107,7 +105,6 @@ export default function App() {
       // 공유 요소의 자리를 잰 다음, 페이지의 바뀐 화면까지 한 번에 그려야 그 요소가 제자리를 찾는다.
       leadPills(next);
       afterPaint(()=>whenReady(next,()=>transition(()=>flushSync(()=>{popHandlers.forEach(f=>f());setView(next);setMore(null);}),{dir:to<from?"back":"forward",shared,scrollY})));
-      showBars();
     };
     window.addEventListener("popstate",onPopState);
     return ()=>window.removeEventListener("popstate",onPopState);
@@ -142,7 +139,6 @@ export default function App() {
     // 누름의 반응이 먼저다: 알약을 이 프레임에 출발시키고, 새 페이지 그리기는 그 프레임이 나간 뒤에 한다.
     leadPills(v);
     afterPaint(()=>whenReady(v,()=>transition(()=>flushSync(()=>{if(v===view)popHandlers.forEach(f=>f());setView(v);setMore(null);}),{shared:options.shared,scrollY:0})));
-    showBars();
   },[view]);
   const flash=useCallback((m)=>setToast({id:Date.now()+Math.random(),text:m}),[]);
   useEffect(()=>{ onAdminSessionLost(()=>{ setAdmin(false); flash("로그인이 만료되었습니다. 다시 로그인해 주세요."); }); },[flash]);
@@ -219,9 +215,8 @@ export default function App() {
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
         moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null} cta={cta}/>
-      <div className="edge-b" aria-hidden="true"/>
 
-      <div className="wrap"><main className={"page"+(view==="home"?" page--home":"")} id="ypl-main" tabIndex={-1} key={view}>
+      <div className="wrap"><main className={"page"+(view==="home"||view==="champions"?" page--full":"")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}

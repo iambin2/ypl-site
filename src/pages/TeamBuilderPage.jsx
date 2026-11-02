@@ -4,7 +4,7 @@ import { Dropdown, Icon, Loader, Modal, PageHead, Segmented, celebrate, centerOf
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
-import { DUR, EASE_OUT, reduced } from "../components/common/motion.js";
+import { STAGGER, place } from "../components/common/motion.js";
 import { formatDate } from "../services/dateFormat.js";
 import { CUP_RULES, DEFAULT_REGULATION_ID, KO, REGULATIONS, TYPE_OPTIONS, resolveRegulationId } from "../data/index.js";
 import { championsData, findSubmissionRegistration, getEvent, getSubmissionWriteGate, submitEventTeamSnapshot } from "../services/index.js";
@@ -60,6 +60,7 @@ import {
   resolveEventRuleSelection,
 } from "../services/teamBuilderCore.js";
 import Button from "../components/common/Button.jsx";
+import Case from "../components/common/Case.jsx";
 
 
 function readInitialRuleState() {
@@ -397,8 +398,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     flushSync(() => setStep(next));
     const bar = stepsRef.current;
     if (bar && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
-    if (!reduced()) document.querySelectorAll(`.tb-page [data-tb-step="${next}"]`).forEach((el, i) =>
-      el.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: i * 40, easing: EASE_OUT, fill: "backwards" }));
+    place([...document.querySelectorAll(`.tb-page [data-tb-step="${next}"]`)], { step: STAGGER.row, y: 8 });
   }, []);
   const draftTimerRef = useRef(null);
   const restoringDraftRef = useRef(false);
@@ -978,7 +978,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     const saved = change.saved;
     const reg = REGULATIONS[saved.regulationId];
     if (!reg) {
-      siteAlert("팀을 불러올 수 없습니다", `저장된 레귤레이션(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
+      siteAlert("팀을 불러올 수 없습니다.", `저장된 레귤레이션(${saved.regulationId})을 현재 팀 빌더에서 찾을 수 없습니다.`);
       return;
     }
     const restored = saved.members.map(member => memberFromSaved(member, reg, { detailData }));
@@ -993,7 +993,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     setSaveName(saved.name);
     setSaveMessage("");
     setLibraryOpen(false);
-    if (unresolvedCount) siteAlert("일부 포켓몬을 확인할 수 없습니다", `${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
+    if (unresolvedCount) siteAlert("일부 포켓몬을 확인할 수 없습니다.", `${unresolvedCount}마리는 현재 ${reg.shortName} 데이터에서 확인할 수 없습니다. 원본 데이터는 보존되며 복구 후 제출할 수 있습니다.`);
   }, [detailData]);
 
   const requestTeamChange = useCallback(change => {
@@ -1165,7 +1165,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
       const result = await saveTeamSheetImage(sheet, { title: teamTitle, meta: `${regulation.name}, ${currentCupRuleSummary}, ${team.length}마리` });
       if (result === "downloaded") flash?.("이미지를 저장했습니다.");
     } catch (error) {
-      siteAlert("이미지를 만들지 못했습니다", error?.message || "잠시 뒤 다시 시도해 주세요.");
+      siteAlert("이미지를 만들지 못했습니다.", error?.message || "잠시 뒤 다시 시도해 주세요.");
     } finally {
       setImageBusy(false);
     }
@@ -1549,11 +1549,9 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             const type = TYPE_OPTIONS.find(option => option.id === saved.cupRuleSettings?.assignedType);
             return (
               <div className="tb-saved-team" key={saved.id}>
-                <button type="button" className="tb-saved-main tb-saved-load" onClick={() => loadSavedTeam(saved)}>
-                  <strong>{saved.name}{saved.id === activeSavedTeamId && <span className="tb-active-saved">현재</span>}</strong>
-                  <span>{savedReg?.shortName || saved.regulationId}{saved.cupRuleId !== "none" ? `, ${(CUP_RULES[saved.cupRuleId]?.shortName || "룰")}${type ? ` (${type.korean})` : ""}` : ""}, {saved.members.length}/6마리, {formatSavedDate(saved.updatedAt)} 수정</span>
-                  <div className="tb-saved-icons">{saved.members.map((member, index) => <img key={`${member.pokemonName}-${index}`} src={spriteUrl(member.pokemonName)} alt="" title={member.pokemonName} onError={onSpriteError()} />)}</div>
-                </button>
+                <Case title={saved.id === activeSavedTeamId ? `${saved.name} (현재)` : saved.name}
+                  line={`${savedReg?.shortName || saved.regulationId}${saved.cupRuleId !== "none" ? `, ${(CUP_RULES[saved.cupRuleId]?.shortName || "룰")}${type ? ` (${type.korean})` : ""}` : ""}, ${saved.members.length}/6마리`}
+                  party={saved.members.map(member => ({ name: member.pokemonName, img: spriteUrl(member.pokemonName) }))} onClick={() => loadSavedTeam(saved)} label={`${saved.name} 불러오기`} />
                 <div className="tb-saved-actions">
                   <Button size="sm" onClick={() => duplicateSavedTeam(saved)}>복제</Button>
                   <Button variant="destructive" size="sm" onClick={() => deleteSavedTeam(saved)}>삭제</Button>

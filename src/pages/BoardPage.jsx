@@ -4,13 +4,14 @@ import { Empty, Icon, ListSearch, Loader, Modal, PageHead, Pager, Prose, Segment
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { CUP_RULES, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
-import { championsData } from "../services/index.js";
 import { formatDate } from "../services/dateFormat.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem, newCommunityId, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
-import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, savedTeamSheet, spriteUrl } from "../services/teamBuilderCore.js";
+import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import Button from "../components/common/Button.jsx";
+import Case from "../components/common/Case.jsx";
+import TeamSheet, { sheetOf, useTeamDisplay } from "../components/common/TeamSheet.jsx";
 import Field from "../components/common/Field.jsx";
 
 const PAGE_SIZE = 10;
@@ -35,7 +36,7 @@ function MediaEmbed({ url }){
 
 function BoardCompose({ onClose, onSubmit }){
   const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
-  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요");return;}
+  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
@@ -61,14 +62,14 @@ async function authorize(key,record,what,verb,admin){
     if(verb==="삭제"&&!(await siteConfirm({title:`${what} 삭제`,body:`이 ${what}을 삭제할까요? 삭제한 ${what}은 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true}))) return null;
     return "";
   }
-  if(!record.hasPin){ siteAlert(`비밀번호가 없는 ${what}입니다`,`관리자에게 ${verb} 요청을 해 주세요.`); return null; }
+  if(!record.hasPin){ siteAlert(`비밀번호가 없는 ${what}입니다.`,`관리자에게 ${verb} 요청을 해 주세요.`); return null; }
   const pin=await sitePrompt({title:`${what} ${verb}`,body:`본인 ${what}을 ${verb}하려면 작성할 때 정한 비밀번호를 입력해 주세요.`,label:"비밀번호",placeholder:"숫자 4자리",confirmLabel:verb==="삭제"?"삭제":"확인",secret:true,inputMode:"numeric"});
   if(pin===null) return null;
   try{
     const status=await verifyCommunityPin(key,record.id,pin);
     if(status==="ok") return pin;
-    siteAlert(PIN_DENIED[status]||"비밀번호를 확인하지 못했습니다",status==="wrong_pin"?"작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.":"");
-  }catch(error){ siteAlert("비밀번호를 확인하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+    siteAlert(PIN_DENIED[status]||"비밀번호를 확인하지 못했습니다.",status==="wrong_pin"?"작성할 때 입력한 숫자 4자리를 다시 확인해 주세요.":"");
+  }catch(error){ siteAlert("비밀번호를 확인하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
   return null;
 }
 
@@ -80,7 +81,7 @@ function useCommunityList(key,admin,flash){
   const reload=async()=>{ try{ setPosts(await freshRead(key,()=>readCommunity(key))); setLoadError(""); }catch(error){ setLoadError(error?.message||"글을 불러오지 못했습니다."); }finally{ setFresh(true); } };
   // 관리자 전용 글은 로그인한 뒤에야 내려온다.
   useEffect(()=>{ void reload(); },[admin]); // eslint-disable-line react-hooks/exhaustive-deps
-  const run=async(write,done)=>{ try{ await write(); await reload(); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
+  const run=async(write,done)=>{ try{ await write(); await reload(); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
   return {posts,loadError,fresh,reload,run};
 }
 
@@ -91,8 +92,8 @@ function EditSheet({ heading, initial, onClose, onSave }){
   const has=k=>k in initial;
   const submit=async()=>{
     const next={...v}; for(const k of ["title","body","link"]) if(has(k)) next[k]=String(next[k]||"").trim();
-    if(has("title")&&!next.title){siteAlert("제목을 입력해 주세요");return;}
-    if(!has("title")&&!next.body&&!next.link){siteAlert("내용이나 링크를 입력해 주세요");return;}
+    if(has("title")&&!next.title){siteAlert("제목을 입력해 주세요.");return;}
+    if(!has("title")&&!next.body&&!next.link){siteAlert("내용이나 링크를 입력해 주세요.");return;}
     if(has("title")) next.title=next.title.slice(0,60);
     setBusy(true); try{ await onSave(next); }finally{ setBusy(false); }
   };
@@ -111,7 +112,7 @@ const Edited=({ at })=>at?<span className="bd-date">수정됨</span>:null;
 
 function CommentForm({ onSubmit }){
   const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
-  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요");return;}
+  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
   return (<div className="bd-cform">
     <div className="bd-cform-row">
@@ -160,7 +161,7 @@ function FreeBoard({ admin, flash, tabs }){
   const p=article?all.find(x=>x.id===article):null;
   if(article&&!p) return (<section className="sec"><article className="nb-article">
     <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
-    {fresh?<Empty title="글을 찾을 수 없습니다" desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+    {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const cc=(p.comments||[]).length;
     return (<section className="sec">
@@ -199,8 +200,8 @@ function FreeBoard({ admin, flash, tabs }){
       {loadError&&<ErrorNote action="다시 불러오기" onRetry={reload}>{loadError}</ErrorNote>}
       {!loadError&&!posts&&!fresh&&<Loader/>}
       {!loadError&&posts&&list.length===0&&(kw
-        ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
-        : <Empty title="아직 글이 없습니다" desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
+        ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
+        : <Empty title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
       {shown.map(p=>{ const cc=(p.comments||[]).length;
         return (<button type="button" className={"ypl-row bd-head"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
           <span className="bd-main">
@@ -226,23 +227,6 @@ const FORMAT_TABS=[["single","싱글"],["double","더블"]];
 const FORMAT_LABEL=Object.fromEntries(FORMAT_TABS);
 const formatOf=post=>post?.format==="double"?"double":"single";
 
-let teamDisplay=null;
-function loadTeamDisplay(){
-  return teamDisplay ||= Promise.all([championsData.load(),championsData.loadSpeciesNames()])
-    .then(([detailData,names])=>({detailData,koreanNames:names.koreanByEnglish}))
-    .catch(error=>{ teamDisplay=null; throw error; });
-}
-function useTeamDisplay(enabled=true){
-  const [state,setState]=useState(null);
-  useEffect(()=>{ if(!enabled)return undefined; let live=true;
-    loadTeamDisplay().then(d=>live&&setState(d),()=>live&&setState("error"));
-    return ()=>{ live=false; }; },[enabled]);
-  return state;
-}
-function sheetOf(team,display){
-  if(!display||display==="error") return [];
-  return savedTeamSheet(team,{...display,legalItems:championsData.legalItems(display.detailData,team?.regulationId)});
-}
 export function ruleSummary(team){
   const reg=REGULATIONS[team?.regulationId]; const cup=CUP_RULES[team?.cupRuleId];
   const type=TYPE_OPTIONS.find(t=>t.id===team?.cupRuleSettings?.assignedType);
@@ -252,38 +236,6 @@ function PartySprites({ members=[], big=false }){
   return <span className={"sc-sprites"+(big?" big":"")} aria-hidden="true">
     {members.map((m,i)=><img key={i} src={spriteUrl(m.pokemonName)} alt="" loading="lazy" decoding="async" onError={onSpriteError()}/>)}
   </span>;
-}
-
-/* 팀 시트: 빌더 편집기에 있는 모든 값을 한 카드에. 이미지 저장도 같은 모델을 그린다. */
-function TeamSheetView({ sheet }){
-  return <div className={"sc-sheet"+(sheet.length>1?" multi":"")}>{sheet.map((row,i)=>(
-    <article className="sc-mon card" key={i}>
-      <header className="sc-mon-head">
-        <img className="sc-mon-sprite" src={row.sprite} alt="" onError={onSpriteError()}/>
-        <div className="sc-mon-who">
-          <h3 className="sc-mon-name">{row.name}</h3>
-          <span className="sc-mon-sub">{[row.english!==row.name?row.english:"",row.num!=null?`No. ${String(row.num).padStart(4,"0")}`:""].filter(Boolean).join("  ")}</span>
-          <div className="tb-types">{row.types.map(t=><span key={t.id} className={`tb-type type-${t.id}`}>{t.label}</span>)}</div>
-        </div>
-      </header>
-      {row.unresolved&&<p className="bk-hint">지금 데이터에서 확인할 수 없는 포켓몬입니다.</p>}
-      <dl className="sc-facts">
-        <div><dt>특성</dt><dd>{row.ability||"없음"}</dd></div>
-        <div><dt>도구</dt><dd>{row.item||"없음"}</dd></div>
-        <div><dt>성격</dt><dd>{row.nature}<small>{row.natureEffect}</small></dd></div>
-      </dl>
-      <div className="sc-stats" role="table" aria-label={`${row.name} 능력치`}>
-        <div className="sc-stat sc-stat-h" role="row"><span role="columnheader">능력</span><span role="columnheader">종족값</span><span role="columnheader">능력 포인트 {row.spTotal} / 66</span><span role="columnheader">최종</span></div>
-        {row.stats.map(st=>(<div className="sc-stat" role="row" key={st.key}>
-          <b role="cell">{st.label}{st.mark==="+"?" ↑":st.mark==="-"?" ↓":""}</b>
-          <span role="cell" className="tnum">{st.base??""}</span>
-          <span role="cell" className="sc-sp"><i style={{"--sp":st.sp/32}}/><em className={"tnum"+(st.sp?" on":"")}>{st.sp}</em></span>
-          <strong role="cell" className="tnum">{st.final}</strong>
-        </div>))}
-      </div>
-      <ul className="sc-moves">{Array.from({length:4},(_,k)=>{ const mv=row.moves[k];
-        return <li key={k} className={mv?`type-${mv.type?.id||""}`:"empty"}>{mv?<><b>{mv.name}</b><small>{[mv.type?.label,mv.category].filter(Boolean).join(" ")}</small></>:<small>기술 없음</small>}</li>; })}</ul>
-    </article>))}</div>;
 }
 
 function readLocalTeams(){
@@ -329,8 +281,8 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
   const autoTitle=kind==="sample"?`${nameAt(index)} 샘플`:(team?.name&&!team.working?team.name:`${nameAt(0)} 파티`);
   const submit=async()=>{
     if(busy)return;
-    if(!nick.trim()){siteAlert("닉네임을 입력해 주세요","글쓴이로 표시될 닉네임이 필요합니다.");return;}
-    if(!members.length){siteAlert("올릴 포켓몬이 없습니다");return;}
+    if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;}
+    if(!members.length){siteAlert("올릴 포켓몬이 없습니다.");return;}
     setBusy(true);
     try{
       const id=newCommunityId();
@@ -343,7 +295,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       await createCommunityItem(SHOWCASE_KEY,id,post,{pin});
       try{ localStorage.setItem("ypl-board-nick",post.nick); }catch{ /* 기억 못 해도 된다 */ }
       onPosted?.(post);
-    }catch(error){ siteAlert("글을 올리지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+    }catch(error){ siteAlert("글을 올리지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
     finally{ setBusy(false); }
   };
   return (<Modal title={`${KIND_LABEL[kind]} 소개글 쓰기`} hint={ruleSummary(team)} onClose={onClose}>
@@ -371,7 +323,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
 /* 게시판의 글을 팀 빌더로 넘긴다. 빌더가 내 팀에 새로 저장하고 연다. */
 function openInBuilder(post,go){
   try{ sessionStorage.setItem(INCOMING_TEAM_KEY,JSON.stringify({...post.team,name:(post.title||post.team?.name||"게시판에서 가져온 팀").slice(0,40)})); }
-  catch{ siteAlert("팀을 넘기지 못했습니다","이 브라우저에서는 저장할 수 없습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요."); return; }
+  catch{ siteAlert("팀을 넘기지 못했습니다.","이 브라우저에서는 저장할 수 없습니다. 시크릿 창이라면 일반 창에서 다시 열어 주세요."); return; }
   go("builder");
 }
 
@@ -408,12 +360,12 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const [imageBusy,setImageBusy]=useState(false);
   const saveImage=async(post,sheet)=>{ if(imageBusy)return; setImageBusy(true);
     try{ const r=await saveTeamSheetImage(sheet,{title:post.title,meta:[FORMAT_LABEL[formatOf(post)],ruleSummary(post.team),`${sheet.length}마리`].join(", "),author:post.nick,date:new Date(post.createdAt)}); if(r==="downloaded")flash("이미지를 저장했습니다."); }
-    catch(error){ siteAlert("이미지를 만들지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); } finally{ setImageBusy(false); } };
+    catch(error){ siteAlert("이미지를 만들지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); } finally{ setImageBusy(false); } };
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
     <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
-    {fresh?<Empty title="글을 찾을 수 없습니다" desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+    {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
     return (<section className="sec">
@@ -434,7 +386,7 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
         <div className={"sc-post"+(p.kind==="sample"?" split":"")}>
         {p.body&&<div className="nb-body card sc-body"><Prose text={p.body}/></div>}
         <div className="sc-post-sheet">{display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
-          :!display?<Loader small/>:<TeamSheetView sheet={sheet}/>}</div>
+          :!display?<Loader small/>:<TeamSheet sheet={sheet}/>}</div>
         <div className="bd-cmts card">
           <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
           {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
@@ -457,26 +409,16 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
       </div>
     </PageHead>
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
-    {!posts&&!loadError?<Loader/>:<div className={(kind==="party"?"sc-grid":"bd-list")+" swap"}>
+    {!posts&&!loadError?<Loader/>:<div className={"case-grid sc-grid swap"+(kind==="party"?"":" sm")}>
       {list.length===0&&(kw
-        ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
-        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
+        ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
+        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
+        const title=<span data-vt={"s-"+post.id}>{post.title}</span>;
+        const by=[post.nick,kind==="party"?REGULATIONS[post.team?.regulationId]?.shortName:post.names?.[0],cc>0&&`댓글 ${cc}`].filter(Boolean).join(", ");
         return kind==="party"
-          ? <button type="button" className="sc-tile card" key={post.id} onClick={()=>openPost(post.id)}>
-              <PartySprites members={post.team?.members}/>
-              <span className="sc-tile-foot">
-                <span className="bd-main"><span className="bd-title" data-vt={"s-"+post.id}>{post.title}</span>
-                  <span className="bd-meta"><b className="bd-nick">{post.nick}</b><span>{REGULATIONS[post.team?.regulationId]?.shortName||""}</span><span className="bd-date tnum">{fmtDT(post.createdAt)}</span></span></span>
-                {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
-              </span>
-            </button>
-          : <button type="button" className="ypl-row bd-head sc-row" key={post.id} onClick={()=>openPost(post.id)}>
-              <img className="sc-row-sprite" src={spriteUrl(post.team?.members?.[0]?.pokemonName)} alt="" loading="lazy" decoding="async" onError={onSpriteError()}/>
-              <span className="bd-main"><span className="bd-title" data-vt={"s-"+post.id}>{post.title}</span>
-                <span className="bd-meta"><b className="bd-nick">{post.nick}</b><span>{post.names?.[0]||""}</span><span className="bd-date tnum">{fmtDT(post.createdAt)}</span></span></span>
-              {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
-            </button>; })}
+          ? <Case key={post.id} title={title} line={by} party={(post.team?.members||[]).map(m=>({name:m.pokemonName,img:spriteUrl(m.pokemonName)}))} onClick={()=>openPost(post.id)} label={`${post.title}, ${by}`}/>
+          : <Case key={post.id} title={title} line={by} sprite={spriteUrl(post.team?.members?.[0]?.pokemonName)} onClick={()=>openPost(post.id)} label={`${post.title}, ${by}`}/>; })}
     </div>}
     <Pager page={cur} pages={pages} onGo={setPage}/>
     {picking&&<TeamPicker kind={kind} go={go} onClose={()=>setPicking(false)} onPick={t=>{setPicking(false);setComposeTeam(t);}}/>}

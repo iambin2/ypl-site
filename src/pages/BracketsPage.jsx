@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
-import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Poster, Prose, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
+import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, PageHead, Prose, Roll, STAGGER, SectionHead, Segmented, celebrate, centerOf, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
+import Case from "../components/common/Case.jsx";
 import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
@@ -429,7 +430,7 @@ function BracketWizard({ data, onClose, onCreate }){
       }catch(error){ setEventError(error?.message||"본선 대진표 생성 조건을 확인하지 못했습니다."); return; }
     }
     const useDbl = dbl && parts.length>=3;
-    if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
+    if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다.","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
     let normalizedAttempt=null;
     if(eventId&&mode==="single"){
       const attemptKey=JSON.stringify(parts.map(p=>[p.registrationId||null,p.name]));
@@ -789,7 +790,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const allPlayed=N>0&&games.every(w=>w); const tie=allPlayed&&a===b;
   const allPlayers=lineupA.every(Boolean)&&lineupB.every(Boolean);
   const decided=allPlayers&&allPlayed&&(!tie||(!!aceA&&!!aceB&&!!aceW));
-  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요","실제 출전 선수와 모든 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력해 주세요.");return;}
+  const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요.","실제 출전 선수와 모든 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력해 주세요.");return;}
     const result=buildTeamMatchSeries(teamA,teamB,{lineupA,lineupB,games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null}); onSave(result.series,result.winnerSide); };
   const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={16}/>승</>:"승"}</button></div>;
   const displayTeamA=teamMatchDisplayName(teamA.name),displayTeamB=teamMatchDisplayName(teamB.name);
@@ -1243,11 +1244,11 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     return { deltas, roundNum, willRank, willSeason };
   };
   const prepare=()=>{
-    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다","선발전은 순위와 포인트를 기록하지 않습니다. 챔피언스 운영에서 본선 진출자를 확정한 뒤 선발전을 종료해 주세요.");return;}
-    if(!curT){siteAlert("대회를 선택해 주세요","회차를 추가할 대회를 먼저 선택해 주세요.");return;}
-    if(linkedContextBusy){siteAlert("잠시만 기다려 주세요","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
-    if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다",linkedContextError);return;}
-    if(!recordSeason){siteAlert("시즌을 선택해 주세요","기록을 반영할 시즌을 먼저 선택해 주세요.");return;}
+    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다.","선발전은 순위와 포인트를 기록하지 않습니다. 챔피언스 운영에서 본선 진출자를 확정한 뒤 선발전을 종료해 주세요.");return;}
+    if(!curT){siteAlert("대회를 선택해 주세요.","회차를 추가할 대회를 먼저 선택해 주세요.");return;}
+    if(linkedContextBusy){siteAlert("잠시만 기다려 주세요.","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
+    if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다.",linkedContextError);return;}
+    if(!recordSeason){siteAlert("시즌을 선택해 주세요.","기록을 반영할 시즌을 먼저 선택해 주세요.");return;}
     setPreview(buildResult());
   };
   // 기록 반영이 끝난 뒤, 고정된 공식 파티로 칭호 조건을 확인한다. 판정 실패는 기록 반영을 막지 않는다.
@@ -1703,11 +1704,11 @@ function PrivateBracketCreate({ onClose, onCreate }){
   const names=parseParticipantNames(namesText);
   const submit=async()=>{
     if(busy)return;
-    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요");return;}
-    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요","대진표를 만든 사람으로 표시됩니다.");return;}
-    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요","결과 입력과 삭제에 필요합니다. 다른 사람은 대진표를 보기만 합니다.");return;}
-    if(names.length<2){siteAlert("참가자를 2명 이상 적어 주세요","한 줄에 한 명씩, 또는 쉼표로 나눠 적습니다.");return;}
-    if(names.length>PRIVATE_BRACKET_MAX){siteAlert(`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다`);return;}
+    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요.");return;}
+    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요.","대진표를 만든 사람으로 표시됩니다.");return;}
+    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요.","결과 입력과 삭제에 필요합니다. 다른 사람은 대진표를 보기만 합니다.");return;}
+    if(names.length<2){siteAlert("참가자를 2명 이상 적어 주세요.","한 줄에 한 명씩, 또는 쉼표로 나눠 적습니다.");return;}
+    if(names.length>PRIVATE_BRACKET_MAX){siteAlert(`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다.`);return;}
     setBusy(true);
     try{ await onCreate({name,host,pin,names,double:double==="double",order,note}); }
     finally{ setBusy(false); }
@@ -1737,9 +1738,9 @@ function PrivateBracketEdit({ b, onClose, onSave }){
   const submit=async()=>{
     if(busy)return;
     const clean=names.map(n=>n.trim().slice(0,20));
-    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요");return;}
-    if(clean.some(n=>!n)){siteAlert("참가자 이름을 입력해 주세요");return;}
-    if(new Set(clean).size!==clean.length){siteAlert("같은 이름의 참가자가 있습니다","이름이 겹치지 않게 고쳐 주세요.");return;}
+    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요.");return;}
+    if(clean.some(n=>!n)){siteAlert("참가자 이름을 입력해 주세요.");return;}
+    if(new Set(clean).size!==clean.length){siteAlert("같은 이름의 참가자가 있습니다.","이름이 겹치지 않게 고쳐 주세요.");return;}
     setBusy(true);
     try{ await onSave({name:name.trim().slice(0,40),host:host.trim().slice(0,20),note:note.trim().slice(0,1000),
       participants:b.participants.map((p,i)=>({...p,name:clean[i]}))}); }
@@ -1792,13 +1793,13 @@ function PrivateBrackets({ admin, flash, tabs }){
       await patchCommunityItem(PRIVATE_BRACKETS_KEY,id,patch,{pin:unlocked.get(id)||""});
       setList(items=>items.map(x=>x.id===id?{...x,...patch}:x));
       if(done)flash(done); return true; }
-    catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
+    catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); void reload(); return false; } finally{ setBusy(false); } };
 
   const create=async({pin,...input})=>{
-    let b; try{ b=createPrivateBracket(input); }catch(error){ siteAlert("대진표를 만들 수 없습니다",error?.message||""); return; }
+    let b; try{ b=createPrivateBracket(input); }catch(error){ siteAlert("대진표를 만들 수 없습니다.",error?.message||""); return; }
     setBusy(true);
     try{ await createCommunityItem(PRIVATE_BRACKETS_KEY,b.id,b,{pin}); await reload(); flash("사설 대진표를 만들었습니다."); }
-    catch(error){ siteAlert("저장하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
+    catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
     finally{ setBusy(false); }
     try{ localStorage.setItem("ypl-board-nick",b.host); }catch{ /* 기억 못 해도 된다 */ }
     unlock(b.id,pin); setCreating(false); openBracket(b,{draw:b.order==="random"});
@@ -1807,7 +1808,7 @@ function PrivateBrackets({ admin, flash, tabs }){
     const pin=await sitePrompt({title,body:"대진표를 만들 때 정한 관리 비밀번호를 입력해 주세요.",label:"관리 비밀번호",placeholder:"숫자 4자리",confirmLabel:"열기",secret:true,inputMode:"numeric"});
     if(pin===null)return false;
     const status=await verifyCommunityPin(PRIVATE_BRACKETS_KEY,open.id,pin).catch(()=>"failed");
-    if(status!=="ok"){ siteAlert(PIN_DENIED[status]||"비밀번호를 확인하지 못했습니다","만든 사람에게 확인해 주세요."); return false; }
+    if(status!=="ok"){ siteAlert(PIN_DENIED[status]||"비밀번호를 확인하지 못했습니다.","만든 사람에게 확인해 주세요."); return false; }
     unlock(open.id,pin); return true;
   };
   const askUnlock=async()=>{ if(await verifyPin("결과 입력")) flash("이제 승자를 눌러 결과를 입력할 수 있습니다."); };
@@ -1818,7 +1819,7 @@ function PrivateBrackets({ admin, flash, tabs }){
     void write(id,x=>({...withPick(x,matchId,side),updatedAt:at})); };
   const redraw=async()=>{ if(!(await siteConfirm({title:"다시 추첨",body:"참가자는 그대로 두고 대진을 새로 섞습니다.",confirmLabel:"다시 추첨"})))return;
     const id=open.id; let graph;
-    try{ graph=buildPrivateGraph(open.participants.map(p=>p.id),{double:open.double,order:"random"}); }catch(error){ siteAlert("다시 추첨하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
+    try{ graph=buildPrivateGraph(open.participants.map(p=>p.id),{double:open.double,order:"random"}); }catch(error){ siteAlert("다시 추첨하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
     if(await write(id,()=>({graph,order:"random",updatedAt:new Date().toISOString()}))) setDrawId(id); };
   const del=async()=>{
     let pin=unlocked.get(open.id)||"";
@@ -1828,13 +1829,13 @@ function PrivateBrackets({ admin, flash, tabs }){
     } else if(!(await siteConfirm({title:"대진표 삭제",body:`‘${open.name}’ 사설 대진표를 삭제할까요? 되돌릴 수 없습니다.`,confirmLabel:"삭제",danger:true}))) return;
     const id=open.id;
     try{ await deleteCommunityItem(PRIVATE_BRACKETS_KEY,id,pin); }
-    catch(error){ siteAlert("삭제하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
+    catch(error){ siteAlert("삭제하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
     await reload(); flash("삭제됨"); lock(id); closeBracket(); };
   const share=async()=>{ const r=await shareLink({view:"bracket",tab:"private",pb:open.id},open.name); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(openId&&!open) return (<section className="sec"><div className="bk-open swap">
     <button type="button" className="nb-back" onClick={closeBracket}><Icon n="back" size={20}/><span>사설 대진표</span></button>
-    {fresh?<Empty title="대진표를 찾을 수 없습니다" desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
+    {fresh?<Empty title="대진표를 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </div></section>);
 
   if(open){ const res=elimResult(open.graph); const live=!res?.done; const pngBracket={...open,private:true};
@@ -1886,8 +1887,8 @@ function PrivateBrackets({ admin, flash, tabs }){
     {tabs}
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!list&&!loadError?<Loader/>:shown.length===0
-      ? (kw?<Empty className="swap" title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
-           :<Empty className="swap" title="아직 사설 대진표가 없습니다" desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다.">
+      ? (kw?<Empty className="swap" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
+           :<Empty className="swap" title="아직 사설 대진표가 없습니다." desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다.">
               <Button variant="primary" size="sm" onClick={()=>setCreating(true)}><Icon n="plus" size={16}/>첫 사설 대진표 만들기</Button>
             </Empty>)
       : <ul className="ypl-group swap">{shown.map(b=>(<li key={b.id}>
@@ -2140,7 +2141,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   };
   const del=async(b)=>{
     if(b.readOnly){ flash("이미 끝난 과거 대진표는 볼 수만 있습니다."); return; }
-    if(b.applied){siteAlert("기록 반영을 먼저 취소해 주세요","기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
+    if(b.applied){siteAlert("기록 반영을 먼저 취소해 주세요.","기록 반영 취소 후 대진표를 삭제할 수 있습니다.");return;}
     if(deletingRef.current)return;
     if(!(await siteConfirm({title:"대진표 삭제",body:`‘${b.name}’ 대회를 삭제할까요?`,confirmLabel:"삭제",danger:true})))return;
     if(deletingRef.current)return;
@@ -2199,23 +2200,17 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     {!open&&!wizard&&<div className="bk-list swap">
       {!normalizedInitialReady
         ? <Loader/>
-        : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다" desc="참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.">
+        : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다." desc="참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.">
             {admin&&<Button variant="primary" size="sm" onClick={()=>setWizard(true)}><Icon n="plus" size={16}/>첫 대진표 만들기</Button>}
           </Empty>}
       {list.length>0&&(()=>{ const lead=list[0]; const live=statusTag(lead)==="진행 중"; return (
-        <section className="rc-lead" aria-labelledby="bk-lead-name">
-          <div className="rc-lead-who">
-            <h2 className="rc-lead-title" id="bk-lead-name" data-vt={"b-"+lead.id}>{lead.name}</h2>
-            <span className="rc-lead-sub bk-lead-sub">{live&&<i className="live-dot" aria-hidden="true"/>}{/* 형식과 날짜는 대회를 설명하는 말이라 칸이 아니라 이 회색 줄에 선다(상세 머리, 목록 행과 같은 줄). 큰 숫자는 참가 수 하나 */}
-              {[live?"지금 진행 중인 대회":"가장 최근 대회", admin&&!live&&statusTag(lead),
-                !String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")&&(lead.mode==="team"?"팀전":"개인전"),
-                bracketFormat(lead), lead.createdAt&&formatDate(lead.createdAt)].filter(Boolean).join(", ")}</span>
-          </div>
-          <div className="rc-lead-figs">
-            <Poster label="참가" value={lead.participants.length} unit={lead.mode==="team"?"팀":"명"}/>
-          </div>
-          <Button variant="primary" className="rc-lead-cta" onClick={()=>openBracket(lead)}>대진표 보기</Button>
-        </section>); })()}
+        <Case title={<span id="bk-lead-name" data-vt={"b-"+lead.id}>{lead.name}</span>}
+          line={[live?"지금 진행 중인 대회":"가장 최근 대회", admin&&!live&&statusTag(lead),
+            !String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")&&(lead.mode==="team"?"팀전":"개인전"),
+            bracketFormat(lead), lead.createdAt&&formatDate(lead.createdAt)].filter(Boolean).join(", ")}
+          onClick={()=>openBracket(lead)} label={`${lead.name} 대진표 보기`} className="bk-lead">
+          <span className="rc-podium-pts">{live&&<i className="live-dot" aria-hidden="true"/>}<Roll value={lead.participants.length}/><small>{lead.mode==="team"?"팀":"명"}</small></span>
+        </Case>); })()}
       {list.length>1&&<section>
         <SectionHead plain="이전" silver="대진표"/>
         <ul className="ypl-group">{list.slice(1).map(b=>(<li key={b.id}>

@@ -1,8 +1,10 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Modal from "../components/common/Modal.jsx";
+import Case from "../components/common/Case.jsx";
+import ChampionSheet from "../components/common/ChampionSheet.jsx";
 import Roll from "../components/common/Roll.jsx";
-import { DUR, EASE_IN_OUT, EASE_OUT, STAGGER, reduced, springs } from "../components/common/motion.js";
+import { DUR, EASE_IN_OUT, EASE_OUT, place, reduced, seal, stand } from "../components/common/motion.js";
 import { WORDMARK_PATH, Wordmark } from "../components/layout/SiteHeader.jsx";
+import Icon from "../components/common/Icon.jsx";
 import { arenaField } from "../components/home/arenaField.js";
 import { loadChampions, loadCounts } from "../components/home/homeFacts.js";
 import { formatDate } from "../services/dateFormat.js";
@@ -48,58 +50,31 @@ export function eventAction(announcements) {
 let heroPending = true, arenaPending = true;
 const firstHero = () => heroPending;
 
-const rise = (el, delay = 0, y = 16) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay, easing: EASE_OUT, fill: "backwards" });
-/* 빛의 띠: 경계가 또렷한 사선 면 하나가 포켓몬 뒤를 지나간다 */
-const sweep = slab => slab?.querySelector(".hm-sweep")?.animate([{ transform: "translateX(-140%) skewX(-12deg)" }, { transform: "translateX(340%) skewX(-12deg)" }], { duration: DUR.sweep, easing: EASE_IN_OUT });
-
 const MARK_MASK = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 310 100'><path transform='skewX(-12) translate(21 0)' fill-rule='evenodd' d='${WORDMARK_PATH}'/></svg>`)}") center / 100% 100% no-repeat`;
 
-/* 슬랩 띠: 최신 챔피언이 가운데 서고, 앞에 옛 챔피언 셋이 돌아 들어온다. 자동으로 돌지 않고 스크롤에 붙어 옆으로 흐른다. */
-const FLOW = .5;
-function SlabBelt({ champions, enter, onOpen }) {
-  const track = useRef(null);
-  const head = champions.slice(-Math.min(3, champions.length - 1));
-  const belt = [...head, ...champions], center = head.length;
+/* 슬랩 레일: 최신 챔피언이 맨 앞에 서고 옆으로 밀면 옛 챔피언이 이어진다. 브라우저의 가로 스크롤이라 손가락과 어긋날 일이 없다.
+   마우스로는 옆으로 밀 수 없어 포인터가 있는 넓은 화면에만 화살표를 둔다. */
+function SlabRail({ champions, enter, onOpen }) {
+  const rail = useRef(null);
   useLayoutEffect(() => {
-    const el = track.current, move = !reduced(), slabs = [...el.children];
-    let step = 0, base = 0, active = center;
-    const measure = () => {
-      step = slabs.length > 1 ? slabs[1].offsetLeft - slabs[0].offsetLeft : 0;
-      base = el.parentElement.clientWidth / 2 - (slabs[center].offsetLeft + slabs[center].offsetWidth / 2);
-    };
-    const place = () => {
-      const run = move ? Math.max(0, scrollY) * FLOW : 0;
-      el.style.transform = `translate3d(${(base - run).toFixed(1)}px,0,0)`;
-      const now = step ? center + Math.round(run / step) : center;
-      if (now !== active) { active = now; sweep(slabs[now]); }
-    };
-    const resize = () => { measure(); place(); };
-    resize();
-    document.fonts?.ready.then(resize);
-    let timer = 0;
-    if (move && enter) {
-      slabs.forEach((s, i) => s.animate(
-        [{ opacity: 0, transform: "translateY(64px) scale(.96)" }, { opacity: 1, offset: .35 }, { opacity: 1, transform: "none" }],
-        { duration: DUR.soft, delay: 60 + Math.abs(i - center) * 70, easing: springs().soft, fill: "backwards" }));
-      timer = setTimeout(() => sweep(slabs[center]), 540);
-    }
-    addEventListener("scroll", place, { passive: true });
-    addEventListener("resize", resize);
-    return () => { clearTimeout(timer); removeEventListener("scroll", place); removeEventListener("resize", resize); };
-  }, [center, enter]);
+    if (!enter) return undefined;
+    const slabs = [...rail.current.children];
+    stand(slabs);
+    seal(slabs[0], 540);
+    return undefined;
+  }, [enter]);
+  const push = dir => {
+    const el = rail.current, [first, second] = el.children;
+    el.scrollBy({ left: dir * (second ? second.offsetLeft - first.offsetLeft : 0), behavior: reduced() ? "auto" : "smooth" });
+  };
   return (
     <section className="hm-belt" aria-label="역대 챔피언">
-      <div className="hm-track" ref={track}>
-        {belt.map((c, i) => (
-          <button type="button" className={"hm-slab" + (c === champions[0] ? " cur" : "")} key={i} onClick={() => onOpen(c)}
-            aria-label={`${c.label} 챔피언 ${c.name}, ${c.line}`} tabIndex={i < center ? -1 : 0}>
-            <span className="hm-label">
-              <span className="hm-who"><b>{c.name}</b><span>{c.line}</span></span>
-              {c.generation > 0 && <strong className="hm-gen">{c.generation}<small>대</small></strong>}
-            </span>
-            <span className="hm-win"><i className="hm-sweep" aria-hidden="true" />{c.party[0]?.img && <img src={c.party[0].img} alt="" loading={Math.abs(i - center) < 3 ? "eager" : "lazy"} decoding="async" />}</span>
-          </button>
-        ))}
+      <div className="hm-arrows">
+        <button type="button" className="hm-arrow is-back" onClick={() => push(-1)} aria-label="이전 챔피언"><Icon n="arrow" size={20} /></button>
+        <button type="button" className="hm-arrow" onClick={() => push(1)} aria-label="다음 챔피언"><Icon n="arrow" size={20} /></button>
+      </div>
+      <div className="hm-rail" ref={rail}>
+        {champions.map(c => <Case key={c.key} title={c.name} line={c.line} fig={c.generation || null} unit="대" sprite={c.party[0]?.img || ""} onClick={() => onOpen(c)} label={`${c.label} 챔피언 ${c.name}, ${c.line}`} />)}
       </div>
     </section>
   );
@@ -107,8 +82,8 @@ function SlabBelt({ champions, enter, onOpen }) {
 
 /* 슬랩이 오기 전에 같은 크기의 빈 케이스가 자리를 지킨다: 아래가 밀려 내려가지 않는다 */
 const SlabGhosts = () => (
-  <div className="hm-belt" aria-hidden="true"><div className="hm-track is-ghost">
-    {[0, 1, 2, 3, 4].map(i => <div className="hm-slab is-ghost" key={i}><span className="hm-label" /><span className="hm-win" /></div>)}
+  <div className="hm-belt" aria-hidden="true"><div className="hm-rail is-ghost">
+    {[0, 1, 2, 3, 4, 5].map(i => <Case key={i} title="" sprite="" />)}
   </div></div>
 );
 
@@ -142,7 +117,7 @@ function Arena({ primary, go }) {
   /* 파동은 몬스터볼에서 나가는 또렷한 원 하나다 */
   const fireWave = () => {
     if (reduced()) return;
-    wave.current.animate([{ transform: `${waveAt.current} scale(.05)`, opacity: .9 }, { transform: `${waveAt.current} scale(1)`, opacity: 0 }], { duration: 1500, easing: EASE_OUT });
+    wave.current.animate([{ transform: `${waveAt.current} scale(.05)`, opacity: .9 }, { transform: `${waveAt.current} scale(1)`, opacity: 0 }], { duration: DUR.wait, easing: EASE_OUT });
   };
   /* 처음 화면에 들어올 때 한 번: 선이 가운데에서 그어지고, 몬스터볼이 켜지고, 파동이 지나고, 띠 하나가 YPL을 지나간다 */
   useEffect(() => {
@@ -157,13 +132,13 @@ function Arena({ primary, go }) {
       st.classList.remove("pre");
       const play = (s, kf, o) => st.querySelectorAll(s).forEach(el => el.animate(kf, { easing: EASE_OUT, fill: "backwards", ...o }));
       const fade = [{ opacity: 0 }, { opacity: 1 }];
-      play(".hm-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: DUR.slow, delay: 120 });
-      play(".hm-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: DUR.slow, delay: 150 });
-      play(".hm-ring", fade, { duration: DUR.slow, delay: 240 });
-      play(".hm-ball", fade, { duration: DUR.base, delay: 360 });
-      play(".hm-lit", fade, { duration: DUR.slow, delay: 420 });
-      play(".hm-mark > .wordmark", fade, { duration: DUR.slow, delay: 300 });
-      band.current.animate([{ transform: "translateX(-160%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], { duration: DUR.sweep, delay: 600, easing: EASE_IN_OUT });
+      play(".hm-line", [{ transform: "scaleX(0)" }, { transform: "none" }], { duration: DUR.place, delay: 120 });
+      play(".hm-rect", [{ opacity: 0, transform: "scaleY(.2)" }, { opacity: 1, transform: "none" }], { duration: DUR.place, delay: 150 });
+      play(".hm-ring", fade, { duration: DUR.place, delay: 240 });
+      play(".hm-ball", fade, { duration: DUR.leave, delay: 360 });
+      play(".hm-lit", fade, { duration: DUR.place, delay: 420 });
+      play(".hm-mark > .wordmark", fade, { duration: DUR.place, delay: 300 });
+      band.current.animate([{ transform: "translateX(-160%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], { duration: DUR.seal, delay: 600, easing: EASE_IN_OUT });
       timer = setTimeout(fireWave, 360);
     }, { threshold: .3 });
     once.observe(st);
@@ -207,7 +182,7 @@ function Arena({ primary, go }) {
         <div className="hm-mark" ref={mark}><Wordmark /><span className="hm-shine" style={{ WebkitMask: MARK_MASK, mask: MARK_MASK }} aria-hidden="true"><i className="hm-band" ref={band} /></span></div>
       </div>
       <div className="hm-end">
-        <h2>다음 기록을 남길 차례입니다</h2>
+        <h2>다음 기록을 남길 차례입니다.</h2>
         <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
       </div>
     </section>
@@ -215,8 +190,8 @@ function Arena({ primary, go }) {
 }
 
 /* ============================== HOME ==============================
-   24차: 하얀 페이지와 네이비 한 색. 이름 없이 문장으로 시작해 슬랩에 봉인된 챔피언, 리그의 숫자, 갈 곳, 공지를 지나 아레나로 닫는다.
-   첫 등장은 1초 안에: 제목이 솟고, 슬랩이 가운데부터 스프링으로 서고, 사선 면 하나가 가운데 슬랩을 지나간다. */
+   기록부 한 권: 네이비 앞표지(문장, 다음 대회, 봉인된 챔피언), 흰 속지(리그의 숫자, 공지, 갈 곳), 네이비 뒤표지(아레나).
+   첫 등장은 1초 안에: 문장이 솟고, 슬랩이 앞에서부터 스프링으로 서고, 사선 면 하나가 현재 챔피언을 지나간다. */
 export default function HomePage({ data, go, admin }) {
   const [enter] = useState(firstHero);
   const hero = useRef(null);
@@ -231,10 +206,10 @@ export default function HomePage({ data, go, admin }) {
 
   useLayoutEffect(() => {
     heroPending = false;
-    if (!enter || reduced()) return;
+    if (!enter) return;
     const q = s => [...hero.current.querySelectorAll(s)];
-    q(".hm-ln").forEach((el, i) => rise(el, 60 + i * 90));
-    q(".hm-next, .hm-actions").forEach((el, i) => rise(el, 240 + i * 80));
+    place(q(".hm-ln"), { delay: 60, step: 100 });
+    place(q(".hm-next, .hm-actions"), { delay: 260, step: 100 });
   }, [enter]);
 
   /* 대회 단계: 남은 날과 주 행동이 같은 계산을 읽는다 */
@@ -250,46 +225,50 @@ export default function HomePage({ data, go, admin }) {
   const showCounts = counts && counts.tournaments > 0 && counts.trainers > 0 && champions;
 
   return (<div className="hm">
-    <section className="hm-hero" ref={hero}>
-      <h1><span className="hm-ln">모든 승부가</span><br /><span className="hm-ln">기록이 됩니다</span></h1>
-      {now
-        ? <p className="hm-next">{now.today && <i className="live-dot" aria-hidden="true" />}<b className="tnum">{now.today ? "오늘" : `D-${now.dday}`}</b> <span>{now.name}</span> <span className="hm-when">{now.when}</span></p>
-        : <p className="hm-next">다음 대회 일정은 공지에 올라옵니다.</p>}
-      <div className="hm-actions">
-        <Button type="button" variant="primary" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
-        <Button type="button" size="lg" onClick={() => go("about")}>리그 소개</Button>
-      </div>
-    </section>
+    <div className="hm-cover">
+      <section className="hm-lead" ref={hero}>
+        <h1><span className="hm-ln">모든 승부가</span> <span className="hm-ln">기록이 됩니다.</span></h1>
+        <div className="hm-now">
+          {now
+            ? <p className="hm-next">{now.today && <i className="live-dot" aria-hidden="true" />}<b className="tnum">{now.today ? "오늘" : `D-${now.dday}`}</b><span><strong>{now.name}</strong>{now.when}</span></p>
+            : <p className="hm-next">다음 대회 일정은 공지에 올라옵니다.</p>}
+          <div className="hm-actions">
+            <Button type="button" variant="inverse" size="lg" onClick={() => go(primary[1])}>{primary[0]}</Button>
+            <Button type="button" size="lg" onClick={() => go("about")}>리그 소개</Button>
+          </div>
+        </div>
+      </section>
+      {champions?.length ? <SlabRail champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <SlabGhosts />}
+    </div>
 
-        {champions?.length ? <SlabBelt champions={champions} enter={enter} onOpen={setPop} /> : champions ? null : <SlabGhosts />}
+    <div className="hm-wrap hm-figs" role="group" aria-label="리그의 숫자">
+      {showCounts && [[counts.tournaments, "회", "대회"], [counts.trainers, "명", "트레이너"], [champions.length, "명", "챔피언"]].map(([n, unit, label]) => (
+        <Case key={label} title={label}><span className="hm-fig"><Roll value={n} /><small>{unit}</small></span></Case>
+      ))}
+    </div>
 
-    <section className="hm-wrap hm-count">
-      <div className="hm-count-hold">{showCounts && <h2 aria-label={`${counts.tournaments}번의 대회, ${counts.trainers}명의 트레이너, ${champions.length}명의 챔피언.`}>
-        <span><Roll natural value={counts.tournaments} />번의 대회,</span> <span><Roll natural value={counts.trainers} />명의 트레이너,</span><br /><span><Roll natural value={champions.length} />명의 챔피언</span>
-      </h2>}</div>
-      <div className="hm-routes">
-        {routes.map(([view, title, line], i) => <button type="button" className="hm-route" key={view} data-tab={view} onClick={() => go(view)}><b>{title}</b><span>{line}</span></button>)}
-      </div>
-    </section>
-
-    {notices.length > 0 && <section className="hm-wrap hm-notices">
-      <h2>공지</h2>
-      <div className="hm-list">
-        {notices.map((a, i) => {
-          const excerpt = excerptOf(a.body, a.title);
-          return <button type="button" className="hm-row" key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></button>;
-        })}
-        <button type="button" className="hm-all" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
-      </div>
-    </section>}
+    <div className="hm-wrap hm-board">
+      {notices.length > 0 && <section className="hm-notices">
+        <div className="hm-head">
+          <h2>공지</h2>
+          <button type="button" className="hm-all" data-tab="news" onClick={() => go("news")}>공지 전체 보기</button>
+        </div>
+        <div className="hm-list">
+          {notices.map(a => {
+            const excerpt = excerptOf(a.body, a.title);
+            return <button type="button" className="hm-row" key={a.id} onClick={() => go("news", { notice: a.id })}><b>{a.title}</b><span>{formatDate(a.date)}{excerpt && `, ${excerpt}`}</span></button>;
+          })}
+        </div>
+      </section>}
+      <nav className="hm-routes" aria-label="바로 가기">
+        {routes.map(([view, title, line]) => <Case key={view} title={title} line={line} data-tab={view} onClick={() => go(view)} />)}
+      </nav>
+    </div>
 
     <Arena primary={primary} go={go} />
 
-    {pop && <Modal title={pop.name} hint={`${pop.label} 챔피언, ${pop.line}`} className="hm-sheet" onClose={() => setPop(null)}>
-      <ul className="hm-party">
-        {pop.party.map((m, i) => <li key={i}><span className="hm-tile">{m.img && <img src={m.img} alt="" />}</span>{m.name}</li>)}
-      </ul>
-      <div className="modal-actions"><Button type="button" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button></div>
-    </Modal>}
+    {pop && <ChampionSheet name={pop.name} hint={`${pop.label} 챔피언, ${pop.line}`} party={pop.party} onClose={() => setPop(null)}>
+      <Button type="button" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button>
+    </ChampionSheet>}
   </div>);
 }

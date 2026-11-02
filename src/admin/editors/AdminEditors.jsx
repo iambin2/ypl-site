@@ -45,7 +45,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
   const [artwork,setArtwork]=useState(null);
   useEffect(()=>{ loadHallOfFameArtworkLookup().then(setArtwork,()=>setArtwork(new Map())); },[]);
   const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));
-  const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요");return;}
+  const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요.");return;}
     // site_data는 방문할 때마다 통째로 내려받으므로 base64 이미지는 저장하지 않는다. 그림은 이름으로 찾는다.
     const team=mons.filter(m=>m.name.trim()).map(m=>({name:m.name.trim(),img:m.img&&!m.img.startsWith("data:")?m.img:""}));
     onSave({id:item?.id||uid(),gen:gen.trim(),season:parseInt(season)||0,slabel:slabel.trim()||undefined,name:name.trim(),team}); };
@@ -125,7 +125,7 @@ function FormBuilder({ form, setForm }){
   const nameBase=eventNameBase(nameFields);
   const namePreview=(nameBase&&!roundKnown?"N회 ":"")+formatEventName({...nameFields,round:roundKnown?draftRound:null,subtitle:subtitleValue});
   return (<div className="fb-wrap">
-    <label className="bk-check" style={{marginBottom:enabled?"var(--s4)":0}}>
+    <label className="bk-check" style={{marginBottom:enabled?"var(--s5)":0}}>
       <input type="checkbox" checked={enabled} onChange={e=>patchForm({enabled:e.target.checked})}/>
       <span><Icon n="form" size={16}/> 신청서 첨부 <i>(사이트에서 바로 신청받기)</i></span>
     </label>
@@ -136,7 +136,7 @@ function FormBuilder({ form, setForm }){
         <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
         <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
-        <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다":""}.</div></div>
+        <div className="field"><span className="field-label">{nameBase?"부제":"대회 이름"} {nameBase&&<span className="fb-note">(선택)</span>}</span><input value={subtitleValue} onChange={e=>patchForm({eventDraft:{...eventDraft,subtitle:e.target.value}})} placeholder={nameBase?"예: 리전 워즈":"예: 배틀부 세미나 미니대회 1조"}/><div className="fb-note">대회 이름은 {namePreview||"(이름 없음)"}{nameBase&&!roundKnown?". 회차는 저장할 때 자동으로 매겨집니다.":""}.</div></div>
         <Field label="대회 종류"><Dropdown value={eventTypeValue} disabled={legacyLightEvent} ariaLabel="대회 종류" onChange={eventType=>patchForm({eventDraft:{...(form?.eventDraft||{}),eventType,...(eventType==="champions"?{division:null,isTeamEvent:false,competitionFormat:null}:{})}})} options={eventTypeOptions}/></Field>
         <div className="field"><span className="field-label">구분</span>{isChampions?<div className="bk-hint">해당 없음. 챔피언스는 구분 없이 진행합니다.</div>:<Dropdown value={hasLegacyDivision?"__legacy__":divisionValue} ariaLabel="구분" onChange={value=>patchForm({eventDraft:{...eventDraft,division:value}})} options={divisionDropdownOptions}/>}</div>
         <Field label="참가 단위"><Dropdown value={isTeamEvent?"team":"individual"} disabled={isChampions} ariaLabel="참가 단위" onChange={value=>{const nextTeam=value==="team";patchForm({eventDraft:{...eventDraft,isTeamEvent:nextTeam,division:normalizeApplicationEventDivision(eventDraft.division,nextTeam)}});}} options={[{value:"individual",label:`개인전${isChampions?" (고정)":""}`},{value:"team",label:"팀전"}]}/></Field>
@@ -280,8 +280,8 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
     onSave(out);
   };
   return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력해 주세요. 저장하면 날짜순으로 자동 정렬되며, 화살표 버튼으로 순서를 직접 바꿀 수도 있습니다." onClose={onClose}>
-    <div className="pts-note" style={{marginBottom:"var(--s4)"}}>포인트 기준은 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점입니다. 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
-    <div style={{display:"flex",alignItems:"center",gap:"var(--s3)",flexWrap:"wrap",marginBottom:"var(--s4)"}}>
+    <div className="pts-note" style={{marginBottom:"var(--s5)"}}>포인트 기준은 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점입니다. 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
+    <div style={{display:"flex",alignItems:"center",gap:"var(--s3)",flexWrap:"wrap",marginBottom:"var(--s5)"}}>
       <Button size="sm" onClick={add}>회차 추가 (맨 아래)</Button>
       <Button size="sm" onClick={sortNow}>날짜순 정렬</Button>
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>

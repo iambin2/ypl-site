@@ -15,9 +15,9 @@ export function assembleCommunityItems(rows = []) {
 }
 
 export const PIN_DENIED = {
-  wrong_pin: "비밀번호가 일치하지 않습니다",
-  locked: "여러 번 틀려 15분 동안 잠겼습니다",
-  no_pin: "비밀번호가 없는 글입니다. 관리자에게 요청해 주세요",
+  wrong_pin: "비밀번호가 일치하지 않습니다.",
+  locked: "여러 번 틀려 15분 동안 잠겼습니다.",
+  no_pin: "비밀번호가 없는 글입니다. 관리자에게 요청해 주세요.",
 };
 
 /* Supabase가 없는 환경(로컬 저장, 아티팩트)의 같은 동작. 지킬 공유 데이터가 없어 비밀번호는 보지 않는다. */

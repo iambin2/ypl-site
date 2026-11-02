@@ -10,7 +10,7 @@ const failed = text => /못했|못해|실패|없습니다|확인하지/.test(tex
 function Toast({ item, index, onGone }) {
   const ref = useRef(null);
   useEffect(() => {
-    if (!reduced()) ref.current?.animate([{ transform: "translateY(120%) scale(.94)", opacity: 0 }, { transform: "translateY(0) scale(1)", opacity: 1 }], { duration: DUR.snappy, easing: springs().snappy });
+    if (!reduced()) ref.current?.animate([{ transform: "translateY(120%) scale(.94)", opacity: 0 }, { transform: "translateY(0) scale(1)", opacity: 1 }], { duration: DUR.place, easing: springs().spring });
   }, []);
   useEffect(() => {
     if (!item.out) return undefined;

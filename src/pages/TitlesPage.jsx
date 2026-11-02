@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Icon, PageHead, Segmented } from "../components/index.js";
 import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
 import Button from "../components/common/Button.jsx";
+import Case from "../components/common/Case.jsx";
 
 /* 그룹 이름이 이미 종류를 말하므로 항목 이름에서 접미사를 덜어낸다. */
 function shortName(name, key) {
@@ -31,7 +32,6 @@ export default function TitlesPage({ data, admin, setModal, go }) {
   const items = g ? (g.items || []) : [];
   const done = items.filter(it => (it.holders || []).length > 0).length;
   const rate = g && (g.key === "type" || g.key === "region" || g.key === "champion");
-  const Row = admin ? "button" : "div";
   const edit = it => admin ? () => setModal({ type: "title", groupKey: g.key, item: it }) : undefined;
   // 보유자 이름을 누르면 그 트레이너의 기록 시트가 열린다. 관리자 모드에서는 행 전체가 편집 버튼이라 글자로 둔다.
   const who = name => admin || !go ? name
@@ -57,31 +57,18 @@ export default function TitlesPage({ data, admin, setModal, go }) {
         </Button>}
       </section>
 
-      <ul className="ypl-group swap" key={g.key}>
+      <ul className="case-grid sm swap" key={g.key}>
         {items.map(it => {
           const holders = it.holders || [];
-          if (g.key === "champion") {
-            const gen = genOf(it.name);
-            const now = gen === lastGen;
-            const season = championSeason(it.name);
-            return (
-              <li key={it.id}>
-                <Row className={"ypl-row" + (holders.length ? "" : " tt-off")} onClick={edit(it)}>
-                  <span>
-                    <span className="ypl-row__title">{holders[0] ? who(holders[0]) : "미달성"}</span>
-                    <span className="ypl-row__meta">{gen} 챔피언{season ? `, ${season} 우승` : ""}</span>
-                  </span>
-                  {now && <span className="ypl-chip ypl-chip--ink">현 챔피언</span>}
-                </Row>
-              </li>
-            );
-          }
+          const champion = g.key === "champion";
+          const gen = champion ? genOf(it.name) : "";
+          const season = champion ? championSeason(it.name) : "";
           return (
             <li key={it.id}>
-              <Row className={"ypl-row tt-row" + (holders.length ? "" : " tt-off")} onClick={edit(it)}>
-                <span className="ypl-row__title">{shortName(it.name, g.key)}</span>
-                <span className="tt-who">{holders.length ? whoList(holders) : "미달성"}</span>
-              </Row>
+              <Case title={champion ? `${gen} 챔피언` : shortName(it.name, g.key)} line={champion ? [season && `${season} 우승`, gen === lastGen && "현 챔피언"].filter(Boolean).join(", ") : null}
+                off={!holders.length} onClick={edit(it)} label={admin ? `${it.name} 수정` : undefined}>
+                <span className="tt-holders">{holders.length ? whoList(holders) : "미달성"}</span>
+              </Case>
             </li>
           );
         })}

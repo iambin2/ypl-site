@@ -117,7 +117,11 @@ export async function fetchNormalizedRecordsSnapshot() {
           id, registration_id, snapshot_id, revision, submitted_at, source,
           snapshot:team_snapshots(
             id, schema_version, regulation_id, cup_rule_id, source_type, source_reference,
-            members:team_snapshot_members(id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot)
+            members:team_snapshot_members(
+              id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot, ability_id, nature_id, item_id,
+              stat_hp, stat_atk, stat_def, stat_spa, stat_spd, stat_spe,
+              move_1_id, move_2_id, move_3_id, move_4_id
+            )
           )
         )
       `,

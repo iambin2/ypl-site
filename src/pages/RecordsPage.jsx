@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Dropdown, Empty, ErrorNote, Facts, Icon, Loader, Modal, PageHead, Pager, Poster, Roll, Segmented, StandTable, rankRows, sitePrompt } from "../components/index.js";
+import Case, { Sprite } from "../components/common/Case.jsx";
+import TeamSheet, { rosterSheet, useTeamDisplay } from "../components/common/TeamSheet.jsx";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { formatDate } from "../services/dateFormat.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
-import { spriteUrl } from "../services/teamBuilderCore.js";
+import { ALIGNMENTS, abilityName, itemName, moveName, natureName, spriteUrl } from "../services/teamBuilderCore.js";
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
+import { buildHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../services/hallOfFamePresentation.js";
 import { freshRead, peekRead } from "../services/readCache.js";
-import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows } from "../services/recordsPresentation.js";
+import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows, pokemonSamples, sampleUsage } from "../services/recordsPresentation.js";
 import {
   fetchNormalizedRecordsSnapshot,
   normalizedRecordsReadEnabled,
@@ -52,11 +55,51 @@ const compareHistoryRecency = (a, b) => {
   return String(a?.id || "").localeCompare(String(b?.id || ""));
 };
 
+const RECORD_TABS = [["trainer", "트레이너"], ["tour", "대회"], ["pokemon", "포켓몬"], ["rank", "랭킹"]];
+// 옛 기록은 포켓몬을 한글 이름으로만 안다. 전당과 같은 사전으로 그림을 찾는다.
+let artwork = new Map();
+const pictureOf = (name, spriteName) => spriteName ? spriteUrl(spriteName) : resolveHallOfFameArtwork({ name }, artwork);
+const rosterParty = (roster) => (roster.pokemon || []).map((name, i) => ({ name, img: pictureOf(name, roster.spriteNames?.[i]) }));
+const rosterTitle = (roster) => roster.championSeries ? "챔피언스 시리즈" : roster.eventName || recordRoundTitle(roster.tournamentName, roster.round);
+const hasSets = (roster) => (roster.sets || []).some((set) => set?.move_1_id);
+
+/* 파티 또는 샘플 한 벌: 공식 제출본을 팀 시트로 되살린다. 세부 값이 없는 옛 파티는 포켓몬 이름까지만 있다. */
+function PartySheet({ open, onClose, onTrainer }) {
+  const { roster, set } = open;
+  const detailed = hasSets(roster);
+  const display = useTeamDisplay(detailed);
+  const sheet = rosterSheet(roster, display, set);
+  return (
+    <Modal title={`${roster.owner}의 ${set ? "샘플" : "파티"}`} hint={[rosterTitle(roster), formatDate(roster.date)].filter(Boolean).join(", ")} className="rc-sheet" onClose={onClose}>
+      {!detailed && <>
+        <ul className="hm-party">{rosterParty(roster).map((m, i) => <li key={i}><span className="hm-tile"><img src={m.img} alt="" /></span>{m.name}</li>)}</ul>
+        <p className="rc-lead-note">이 파티는 포켓몬 구성만 기록되어 있습니다.</p>
+      </>}
+      {detailed && display === "error" && <ErrorNote>배틀 데이터를 불러오지 못해 세부 샘플을 보여 줄 수 없습니다.</ErrorNote>}
+      {detailed && !display && <Loader small />}
+      {detailed && sheet.length > 0 && <TeamSheet sheet={sheet} />}
+      <div className="modal-actions"><Button variant="primary" onClick={() => onTrainer(roster.owner)}>{roster.owner} 기록 보기</Button></div>
+    </Modal>
+  );
+}
+
 /* ============================== RECORDS ============================== */
 // The Pokémon directory comes from files that only change with a deploy, so one load serves the visit.
 let directorySeen = null;
 export default function RecordsPage({ data, admin, setModal, save }) {
-  const [tab, setTab] = useState(() => (new URLSearchParams(window.location.search).get("tab") === "rank" ? "rank" : "trainer"));
+  const [tab, setTabState] = useState(() => {
+    const asked = new URLSearchParams(window.location.search).get("tab");
+    return RECORD_TABS.some(([key]) => key === asked) ? asked : "trainer";
+  });
+  // 어느 탭인지 주소에 남는다: 새로고침과 공유가 같은 탭으로 돌아온다.
+  const setTab = (next) => {
+    setTabState(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", next);
+    window.history.replaceState(window.history.state, "", url);
+  };
+  // 파티 시트도 페이지 하나가 연다. 대회, 트레이너, 포켓몬이 같은 시트를 쓴다.
+  const [party, setParty] = useState(null);
   // 트레이너 시트는 페이지 하나가 연다. 목록, 랭킹 표, 그리고 다른 페이지에서 온 ?trainer=<이름> 링크가 같은 시트를 쓴다.
   const [sheet, setSheet] = useState(() => {
     const name = new URLSearchParams(window.location.search).get("trainer");
@@ -102,6 +145,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
     loadRecordsPokemonDirectory()
       .then((directory) => {
         directorySeen = directory;
+        artwork = buildHallOfFameArtworkLookup(directory);
         if (!cancelled) setPokemonDirectory(directory);
       })
       .catch((error) => console.warn("Records Pokémon localization unavailable", error));
@@ -131,24 +175,25 @@ export default function RecordsPage({ data, admin, setModal, save }) {
           value={tab}
           onChange={setTab}
           ariaLabel="기록 보기"
-          options={[["trainer", "트레이너"], ["tour", "대회"], ["pokemon", "포켓몬"], ["rank", "랭킹"]]}
+          options={RECORD_TABS}
         />
       </div>
 
       <div className="swap" key={tab}>
         {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} />}
-        {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} />}
-        {tab === "pokemon" && <PokemonView snapshot={snapshot} />}
+        {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} onParty={setParty} />}
+        {tab === "pokemon" && <PokemonView snapshot={snapshot} onParty={setParty} />}
         {tab === "rank" && <RankingHub snapshot={snapshot} data={data} admin={admin} setModal={setModal} save={save} onName={openTrainer} />}
       </div>
       {sheet && (() => {
         const profile = profileOf(snapshot, sheet.key);
         return profile ? (
           <Modal label={`${profile.name} 기록`} className="rc-sheet" onClose={closeTrainer} fly={sheet.from ? { from: sheet.from, selector: ".rc-lead-title" } : undefined}>
-            <TrainerProfile snapshot={snapshot} profile={profile} />
+            <TrainerProfile snapshot={snapshot} profile={profile} onParty={setParty} />
           </Modal>
         ) : null;
       })()}
+      {party && <PartySheet open={party} onClose={() => setParty(null)} onTrainer={(name) => { setParty(null); openTrainer(name); }} />}
     </section>
   );
 }
@@ -169,7 +214,7 @@ function TrainerView({ snapshot, onOpen }) {
   const [all, setAll] = useState(false);
 
   const visible = snapshot.trainers.filter((t) => t.name.includes(query.trim()));
-  if (!snapshot.trainers.length) return <Empty title="트레이너 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
+  if (!snapshot.trainers.length) return <Empty title="트레이너 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
   const rows = all || query.trim() ? visible : visible.slice(0, LIST_SHOWN);
 
   return (
@@ -196,7 +241,7 @@ function TrainerView({ snapshot, onOpen }) {
             </li>
           )])}
         </ul>
-      ) : <Empty title="검색 결과가 없습니다" desc="다른 이름으로 검색해 주세요." />}
+      ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
         <Button type="button" className="ypl-table-more" onClick={() => setAll(true)}>{visible.length}명 전체 보기</Button>
       )}
@@ -204,9 +249,10 @@ function TrainerView({ snapshot, onOpen }) {
   );
 }
 
-function TrainerProfile({ snapshot, profile }) {
+function TrainerProfile({ snapshot, profile, onParty }) {
   const [season, setSeason] = useState("");
   const [histPage, setHistPage] = useState(1);
+  const [allParties, setAllParties] = useState(false);
 
   const seasonMatch = (value) => !season || value === season;
   const placements = profile.placements.filter((p) => seasonMatch(p.season));
@@ -239,6 +285,8 @@ function TrainerProfile({ snapshot, profile }) {
   const shownTitles = new Set(profile.champions.map((c) => genLabel(c.gen)));
   const restTitles = profile.titles.filter((t) => !shownTitles.has(t.name) && !(/챔피언\s*$/.test(t.name) && shownTitles.has(genLabel(t.name))));
   const historyRows = history.slice().sort(compareHistoryRecency).slice((histCur - 1) * HIST_PER_PAGE, histCur * HIST_PER_PAGE);
+  const parties = rosters.slice().sort(compareHistoryRecency);
+  const rosterOf = (event) => rosters.find((roster) => event.eventId && roster.eventId === event.eventId);
 
   return (
     <div className="rc-profile">
@@ -275,34 +323,48 @@ function TrainerProfile({ snapshot, profile }) {
               const rule = displayRecordMeta(event.rule);
               const label = event.resultLabel || placementLabel(event.placement, event.team);
               const meta = [event.season, teamName, rule].filter(Boolean).join(", ");
+              const roster = rosterOf(event);
+              const body = <>
+                <span className="rc-hist-main">
+                  <span className="ypl-row__title">{event.championSeries
+                    ? "챔피언스 시리즈"
+                    : event.eventName || recordRoundTitle(event.tournamentName, event.round)}</span>
+                  {meta && <span className="ypl-row__meta">{meta}</span>}
+                </span>
+                <span className="rc-hist-end">
+                  <span className={"rc-place" + (event.placement === "win" ? " win" : "")}>{label}</span>
+                  <span className="ypl-row__end">{formatDate(event.date)}</span>
+                </span>
+              </>;
               return (
                 <li key={`${event.id}:${event.playerId || profile.playerId || profile.key}:${event.placement}`}>
-                  <div className="ypl-row rc-hist-row">
-                    <span className="rc-hist-main">
-                      <span className="ypl-row__title">{event.championSeries
-                        ? "챔피언스 시리즈"
-                        : event.eventName || recordRoundTitle(event.tournamentName, event.round)}</span>
-                      {meta && <span className="ypl-row__meta">{meta}</span>}
-                    </span>
-                    <span className="rc-hist-end">
-                      <span className={"rc-place" + (event.placement === "win" ? " win" : "")}>{label}</span>
-                      <span className="ypl-row__end">{formatDate(event.date)}</span>
-                    </span>
-                  </div>
+                  {roster
+                    ? <button type="button" className="ypl-row rc-hist-row" onClick={() => onParty({ roster })}>{body}</button>
+                    : <div className="ypl-row rc-hist-row">{body}</div>}
                 </li>
               );
             })}
           </ul>
-        ) : <Empty title="확인 가능한 대회 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
+        ) : <Empty title="확인 가능한 대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
         <Pager page={histCur} pages={histPages} onGo={setHistPage} />
       </section>
+
+      {parties.length > 0 && <section className="rc-sec" aria-labelledby="rc-party-h">
+        <div className="rc-sech"><h4 id="rc-party-h">사용한 파티</h4><span className="tnum">{parties.length}개</span></div>
+        <ul className="rc-parties">
+          {(allParties ? parties : parties.slice(0, 4)).map((roster) => (
+            <li key={roster.id || roster.snapshotId}><Case title={rosterTitle(roster)} line={[formatDate(roster.date), roster.team && displayTeamName(roster.teamName)].filter(Boolean).join(", ")} party={rosterParty(roster)} onClick={() => onParty({ roster })} label={`${rosterTitle(roster)} 파티 보기`} /></li>
+          ))}
+        </ul>
+        {!allParties && parties.length > 4 && <Button type="button" className="ypl-table-more" onClick={() => setAllParties(true)}>{parties.length}개 전체 보기</Button>}
+      </section>}
 
       <section className="rc-sec" aria-labelledby="rc-fav-h">
         <div className="rc-sech"><h4 id="rc-fav-h">자주 쓴 포켓몬</h4></div>
         {favorites.length ? (
-          <CountList items={favorites.slice(0, 6)} />
+          <CountList items={favorites.slice(0, 6)} sprites={snapshot.pokemon} />
         ) : (
-          <Empty title="저장된 우승 엔트리가 없습니다" desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
+          <Empty title="저장된 우승 엔트리가 없습니다." desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
         )}
       </section>
     </div>
@@ -335,11 +397,16 @@ function FilterRow({ value, onChange, options, label }) {
   );
 }
 
-function CountList({ items }) {
+/* sprites: 포켓몬 목록을 주면 이름 앞에 그림이 선다 */
+function CountList({ items, sprites }) {
+  const sprite = (name) => pictureOf(name, sprites.find((p) => p.name === name)?.spriteName);
   return (
     <ul className="ypl-group">
       {items.map((item) => (
-        <li key={item.name}><div className="ypl-row"><span className="ypl-row__title">{item.name}</span><span className="ypl-row__end">{item.entries}회</span></div></li>
+        <li key={item.name}><div className={"ypl-row" + (sprites ? " rc-count" : "")}>
+          {sprites && <span className="rc-count-pic"><Sprite src={sprite(item.name)} name="" /></span>}
+          <span className="ypl-row__title">{item.name}</span><span className="ypl-row__end">{item.entries}회</span>
+        </div></li>
       ))}
     </ul>
   );
@@ -350,37 +417,7 @@ function NameChips({ list, kind }) {
   return <>{(list || []).map((n, i) => <span key={i} className={"r2-name " + (kind || "")}>{n}</span>)}</>;
 }
 
-function PartySprite({ pokemon, spriteName }) {
-  const [failed, setFailed] = useState(false);
-  if (!spriteName || failed) {
-    return <span className="records-party-sprite-fallback" title={`${pokemon} 이미지를 불러오지 못했습니다.`}>{pokemon}</span>;
-  }
-  return (
-    <img
-      src={spriteUrl(spriteName)}
-      alt=""
-      title={pokemon}
-      onError={() => setFailed(true)}
-    />
-  );
-}
-
-function PartySprites({ roster }) {
-  if (!roster?.pokemon?.length) return null;
-  return (
-    <span className="records-party-sprites" aria-label={`${roster.owner}의 공식 파티`}>
-      {roster.pokemon.map((pokemon, index) => (
-        <PartySprite
-          key={`${roster.snapshotId || roster.id}:${index}`}
-          pokemon={pokemon}
-          spriteName={roster.spriteNames ? roster.spriteNames[index] : pokemon}
-        />
-      ))}
-    </span>
-  );
-}
-
-function TournamentArchiveView({ snapshot, data, admin, setModal }) {
+function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
   const legacyTours = data.tournaments || [];
   const archiveKeys = [...new Set((snapshot.archives || []).map((row) => row.tournamentKey).filter(Boolean))];
   const keys = [
@@ -405,7 +442,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
   const otours = [...tours].sort((a, b) => rank(a) - rank(b));
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
-  const [openRoundKey, setOpenRoundKey] = useState(null);
+  // 대회는 여러 개를 함께 펼쳐 비교할 수 있다. 하나를 연다고 다른 것이 닫히지 않는다.
+  const [openRounds, setOpenRounds] = useState(() => new Set());
   const selectedTour = category === "all" ? null : tours.find((x) => x.key === category) || otours[0];
   const split = (value) => String(value || "").split("/").map((x) => x.trim()).filter(Boolean);
 
@@ -433,6 +471,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       ...(round.ruMembers || []),
       ...(round.sf || []),
       ...((round.sfMembers || []).flat ? (round.sfMembers || []).flat() : []),
+      ...(round.rosters || []).flatMap((roster) => roster.pokemon || []),
     ].join(" ").toLowerCase().includes(normalized);
   };
 
@@ -453,12 +492,16 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     const rule = displayRecordMeta(r.rule);
     const partyRows = r.team ? buildTeamPartyPreviewRows(r) : buildIndividualPartyPreviewRows(r);
     const toggleable = r.source === "normalized" && partyRows.length > 0;
-    const expanded = openRoundKey === key;
-    const toggle = () => setOpenRoundKey((current) => current === key ? null : key);
+    const expanded = openRounds.has(key);
+    const toggle = () => setOpenRounds((current) => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
     const championshipEmphasis = championSeries && r.championshipPhase !== "qualifier";
     // 대회 이름은 다른 화면과 같은 조립 이름("37회 파이컵 팀전 리전 워즈")을 쓴다. 이름이 이미 말한 것은 회색 줄에서 뺀다.
     // 챔피언스 시리즈는 회차를 쓰지 않는다(트레이너 이력과 같은 규칙). 예전 기록은 회차와 리그로 이름을 짓는다.
-    const rl = championSeries ? "" : r.round ? (/^d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
+    const rl = championSeries ? "" : r.round ? (/^\d+$/.test(String(r.round)) ? String(r.round) + "회" : r.round) : "";
     const title = championSeries ? "챔피언스 시리즈" : r.eventName || (rl ? `${rl} ${leagueTitle(tour.label)}` : leagueTitle(tour.label));
     const meta = [formatDate(r.date), r.season, championshipEmphasis && "챔피언스 시리즈", r.team && "팀전", rule]
       .filter((part, i, all) => part && !title.includes(part) && all.indexOf(part) === i).join(", ");
@@ -509,22 +552,15 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
             </button>
           )}
           {toggleable && expanded && (
-            <div className="records-round-detail">
-              <div className="records-round-party-list">
-                {partyRows.map((row, index) => (
-                  <div className="records-round-party-row" key={`${row.placement}:${row.name}:${index}`}>
-                    <span className={"r2-rk" + (row.placement === "win" ? " gold" : "")}>{row.label}</span>
-                    <div>
-                      <span className={"r2-name" + (row.placement === "win" ? " win" : "")}>{row.name}</span>
-                      {row.teamName && <div className="r2-season">{displayTeamName(row.teamName)}</div>}
-                    </div>
-                    {row.roster?.pokemon?.length
-                      ? <PartySprites roster={row.roster} />
-                      : <span className="records-party-missing">파티 미제출</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ul className="records-round-detail rc-parties">
+              {partyRows.map((row, index) => {
+                const roster = row.roster?.pokemon?.length ? row.roster : null;
+                const line = [row.label, row.teamName && displayTeamName(row.teamName), !roster && "파티 미제출"].filter(Boolean).join(", ");
+                return <li key={`${row.placement}:${row.name}:${index}`}>
+                  <Case title={row.name} line={line} party={roster ? rosterParty(roster) : undefined} onClick={roster ? () => onParty({ roster }) : undefined} label={roster ? `${row.name} 파티 보기` : undefined} />
+                </li>;
+              })}
+            </ul>
           )}
         </div>
       </li>
@@ -540,7 +576,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
     return (parseInt(b.round.round) || 0) - (parseInt(a.round.round) || 0);
   });
 
-  if (!otours.length) return <Empty title="대회 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
+  if (!otours.length) return <Empty title="대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
 
   return (<>
     <FilterRow value={selectedTour ? selectedTour.key : "all"} onChange={setCategory} label="대회 종류"
@@ -559,29 +595,31 @@ function TournamentArchiveView({ snapshot, data, admin, setModal }) {
       </div>
     ) : (
       <>
-        <div className="rc-list-search"><RailSearch value={query} onChange={setQuery} placeholder="대회명, 시즌, 룰, 입상자 검색" count={`${allRows.length}건`} /></div>
+        <div className="rc-list-search"><RailSearch value={query} onChange={setQuery} placeholder="대회명, 시즌, 룰, 입상자, 포켓몬 검색" count={`${allRows.length}건`} /></div>
         {allRows.length ? (
           <ul className="ypl-group sq rc-rounds swap">
             {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
           </ul>
-        ) : <Empty title="검색 결과가 없습니다" desc="다른 이름으로 검색해 주세요." />}
+        ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
       </>
     )}
   </>);
 }
 
 /* ============================== POKEMON ============================== */
-function PokemonView({ snapshot }) {
+/* 포켓몬은 도감처럼 카드로 고른다. 카드를 누르면 많이 쓴 구성과, 누가 어느 대회에서 어떤 샘플을 썼는지가 열린다. */
+function PokemonView({ snapshot, onParty }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(null);
   const [all, setAll] = useState(false);
   const normalized = query.trim().toLowerCase();
 
   const visible = snapshot.pokemon.filter((p) => p.name.toLowerCase().includes(normalized));
-  const current = open ? snapshot.pokemon.find((p) => p.name === open.key) : null;
+  const current = open ? snapshot.pokemon.find((p) => p.name === open) : null;
+  const rankOf = (pokemon) => snapshot.pokemon.findIndex((p) => p.entries === pokemon.entries) + 1;
 
   if (!snapshot.pokemon.length) {
-    return <Empty title="기록에 연결된 파티 엔트리가 없습니다" desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
+    return <Empty title="기록에 연결된 파티 엔트리가 없습니다." desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
   }
   const rows = all || normalized ? visible : visible.slice(0, LIST_SHOWN);
 
@@ -589,68 +627,99 @@ function PokemonView({ snapshot }) {
     <div className="rc-list">
       <RailSearch value={query} onChange={setQuery} placeholder="포켓몬 검색" count={`${visible.length}종`} />
       {visible.length ? (
-        <ul className="ypl-group rc-pick">
+        <ul className="case-grid sm">
           {rows.map((pokemon) => (
-            <li key={pokemon.name}>
-              <button type="button" className="ypl-row rc-pick-row rc-pick-row--rank" onClick={(e) => setOpen({ key: pokemon.name, from: e.currentTarget.querySelector(".ypl-row__title") })}>
-                <span className="rc-rail-n tnum">{snapshot.pokemon.findIndex((p) => p.entries === pokemon.entries) + 1}</span>
-                <span className="ypl-row__title">{pokemon.name}</span>
-                <span className="ypl-row__end">{pokemon.entries}회</span>
-              </button>
-            </li>
+            <li key={pokemon.name}><Case title={pokemon.name} line={`${rankOf(pokemon)}위, ${pokemon.entries}회`} sprite={pictureOf(pokemon.name, pokemon.spriteName)} onClick={() => setOpen(pokemon.name)} label={`${pokemon.name}, ${rankOf(pokemon)}위, ${pokemon.entries}회 등록`} /></li>
           ))}
         </ul>
-      ) : <Empty title="검색 결과가 없습니다" desc="다른 이름으로 검색해 주세요." />}
+      ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
       {!all && !normalized && visible.length > LIST_SHOWN && (
         <Button type="button" className="ypl-table-more" onClick={() => setAll(true)}>{visible.length}종 전체 보기</Button>
       )}
-      {current && (
-        <Modal label={`${current.name} 기록`} className="rc-sheet" onClose={() => setOpen(null)} fly={{ from: open.from, selector: ".rc-lead-title" }}>
-          <div className="rc-profile">
-            <section className="rc-lead" aria-labelledby="rc-pokemon-name">
-              <div className="rc-lead-who">
-                <h3 className="rc-lead-title" id="rc-pokemon-name">{current.name}</h3>
-              </div>
-              <div className="rc-lead-figs">
-                <Poster label="등록 엔트리" value={current.entries} unit="회" />
-                <Facts items={[["엔트리 채용률", `${current.entryRate.toFixed(1)}%`], ["사용 트레이너", `${current.trainerCount}명`], ["우승 엔트리", `${current.wins}회`]]} />
-              </div>
-              <p className="rc-lead-note">
-                채용률은 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
-                실제 경기 선출 여부는 기록하지 않으므로 포켓몬 승률은 표시하지 않습니다.
-              </p>
-            </section>
-
-            <section className="rc-sec" aria-labelledby="rc-pk-tr-h">
-              <div className="rc-sech"><h4 id="rc-pk-tr-h">많이 등록한 트레이너</h4></div>
-              <CountList items={current.trainers.slice(0, 8)} />
-            </section>
-            <section className="rc-sec" aria-labelledby="rc-pk-pt-h">
-              <div className="rc-sech"><h4 id="rc-pk-pt-h">함께 많이 등록된 포켓몬</h4></div>
-              {current.partners.length
-                ? <CountList items={current.partners.slice(0, 8)} />
-                : <Empty title="동반 엔트리 기록이 없습니다" desc="파티 엔트리가 저장되면 이곳에 표시됩니다." />}
-            </section>
-
-            {current.champions.length > 0 && (
-              <section className="rc-sec" aria-labelledby="rc-pk-ch-h">
-                <div className="rc-sech"><h4 id="rc-pk-ch-h">역대 챔피언 엔트리</h4></div>
-                <ul className="ypl-group">
-                  {current.champions.map((item, index) => (
-                    <li key={`${item.gen}:${index}`}>
-                      <div className="ypl-row">
-                        <span className="ypl-row__title">{generationText(item.gen)} {item.name}</span>
-                        <span className="ypl-row__end">{item.season}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-        </Modal>
-      )}
+      {current && <PokemonSheet snapshot={snapshot} pokemon={current} rank={rankOf(current)} onClose={() => setOpen(null)} onParty={onParty} />}
     </div>
+  );
+}
+
+function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
+  const samples = useMemo(() => pokemonSamples(snapshot.rosters, pokemon.name), [snapshot.rosters, pokemon.name]);
+  const usage = useMemo(() => sampleUsage(samples), [samples]);
+  const display = useTeamDisplay(samples.length > 0);
+  const detail = display && display !== "error" ? display.detailData : null;
+  const line = (rows, name) => rows.slice(0, 3).map((row) => `${name(row.id)} ${row.rate}%`).join(", ");
+  const natureOf = (id) => natureName(ALIGNMENTS.find((a) => a.id === id));
+  const [more, setMore] = useState(false);
+  return (
+    <Modal label={`${pokemon.name} 기록`} className="rc-sheet" onClose={onClose}>
+      <div className="rc-profile">
+        <section className="rc-mon-lead" aria-labelledby="rc-pokemon-name">
+          <Case title={<span id="rc-pokemon-name" role="heading" aria-level={3}>{pokemon.name}</span>} line={`${rank}위`} sprite={pictureOf(pokemon.name, pokemon.spriteName)} />
+          <div className="rc-lead-figs">
+            <Poster label="등록 엔트리" value={pokemon.entries} unit="회" />
+            <Facts items={[["채용률", `${pokemon.entryRate.toFixed(1)}%`], ["사용 트레이너", `${pokemon.trainerCount}명`], ["우승 엔트리", `${pokemon.wins}회`]]} />
+          </div>
+        </section>
+        <p className="rc-lead-note">
+          채용률은 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
+          실제 경기 선출 여부는 기록하지 않으므로 포켓몬 승률은 표시하지 않습니다.
+        </p>
+
+        {samples.length > 0 && <section className="rc-sec" aria-labelledby="rc-pk-use-h">
+          <div className="rc-sech"><h4 id="rc-pk-use-h">많이 쓴 구성</h4><span className="tnum">샘플 {samples.length}개 기준</span></div>
+          {detail ? <dl className="sc-facts rc-usage">
+            <div><dt>도구</dt><dd>{line(usage.items, (id) => itemName(detail, id))}</dd></div>
+            <div><dt>특성</dt><dd>{line(usage.abilities, abilityName)}</dd></div>
+            <div><dt>성격</dt><dd>{line(usage.natures, natureOf)}</dd></div>
+            <div><dt>기술</dt><dd>{usage.moves.slice(0, 6).map((row) => `${moveName(detail, row.id)} ${row.rate}%`).join(", ")}</dd></div>
+          </dl> : display === "error" ? <ErrorNote>배틀 데이터를 불러오지 못해 구성을 보여 줄 수 없습니다.</ErrorNote> : <Loader small />}
+        </section>}
+
+        {samples.length > 0 && <section className="rc-sec" aria-labelledby="rc-pk-sm-h">
+          <div className="rc-sech"><h4 id="rc-pk-sm-h">사용한 샘플</h4></div>
+          <ul className="ypl-group">
+            {(more ? samples : samples.slice(0, 8)).map(({ roster, set }) => (
+              <li key={roster.id}>
+                <button type="button" className="ypl-row rc-hist-row" onClick={() => onParty({ roster, set })}>
+                  <span className="rc-hist-main">
+                    <span className="ypl-row__title">{roster.owner}</span>
+                    <span className="ypl-row__meta">{rosterTitle(roster)}{detail ? `, ${[set.item_id && itemName(detail, set.item_id), set.ability_id && abilityName(set.ability_id)].filter(Boolean).join(", ")}` : ""}</span>
+                  </span>
+                  <span className="ypl-row__end">{formatDate(roster.date)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {!more && samples.length > 8 && <Button type="button" className="ypl-table-more" onClick={() => setMore(true)}>{samples.length}개 전체 보기</Button>}
+        </section>}
+
+        <section className="rc-sec" aria-labelledby="rc-pk-tr-h">
+          <div className="rc-sech"><h4 id="rc-pk-tr-h">많이 등록한 트레이너</h4></div>
+          <CountList items={pokemon.trainers.slice(0, 8)} />
+        </section>
+        <section className="rc-sec" aria-labelledby="rc-pk-pt-h">
+          <div className="rc-sech"><h4 id="rc-pk-pt-h">함께 많이 등록된 포켓몬</h4></div>
+          {pokemon.partners.length
+            ? <CountList items={pokemon.partners.slice(0, 8)} sprites={snapshot.pokemon} />
+            : <Empty title="동반 엔트리 기록이 없습니다." desc="파티 엔트리가 저장되면 이곳에 표시됩니다." />}
+        </section>
+
+        {pokemon.champions.length > 0 && (
+          <section className="rc-sec" aria-labelledby="rc-pk-ch-h">
+            <div className="rc-sech"><h4 id="rc-pk-ch-h">역대 챔피언 엔트리</h4></div>
+            <ul className="ypl-group">
+              {pokemon.champions.map((item, index) => (
+                <li key={`${item.gen}:${index}`}>
+                  <div className="ypl-row">
+                    <span className="ypl-row__title">{generationText(item.gen)} {item.name}</span>
+                    <span className="ypl-row__end">{item.season}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+    </Modal>
   );
 }
 
@@ -698,7 +767,7 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
           <Button size="sm" onClick={addEra}>누적 탭 추가</Button>
         </>}
       </div>
-      {!view ? <Empty title="랭킹 기록이 없습니다" desc="대회 결과가 확정되면 이곳에 표시됩니다." />
+      {!view ? <Empty title="랭킹 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />
         : view.era ? <RankView era={view.era} data={data} admin={admin} setModal={setModal} onName={onName} />
         : <SeasonView s={view.season} data={data} admin={admin} setModal={setModal} onName={onName} />}
       <p className="rc-note">
@@ -739,7 +808,7 @@ function SeasonView({ s, data, admin, setModal, onName }) {
   const hasNote = s.rows.some((r) => r.note);
   return (
     <div className="rc-rank">
-      {s.rows.length ? <Podium rows={s.rows} label={`${s.name} 성적`} onName={onName} /> : <Empty title={`${s.name} 성적은 아직 없습니다`} desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
+      {s.rows.length ? <Podium rows={s.rows} label={`${s.name} 성적`} onName={onName} /> : <Empty title={`${s.name} 성적은 아직 없습니다.`} desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
       {admin && s.source !== "normalized" && (
         <div className="rc-admin">
           <Button
@@ -773,34 +842,17 @@ const recordLine = (r) => [["우승", r.win], ["준우승", r.ru], ["4강", r.to
 
 function Podium({ rows, label, onName }) {
   const { leaders, next } = podiumSplit(rows);
-  const leader = leaders[0];
-  if (!leader) return null;
-  const tied = leaders.length > 1;
+  if (!leaders[0]) return null;
   const nameOf = (r) => onName ? <button type="button" className="rc-name-link" onClick={(e) => onName(r.name, e.currentTarget)}>{r.name}</button> : r.name;
-  const facts = [["우승", leader.win], ["준우승", leader.ru], ["4강", leader.top4]].filter(([, n]) => n);
-  if (leader.note) facts.push(["비고", leader.note]);
-  return (<>
-    <section className="rc-lead" aria-label={`${label} ${tied ? "공동 " : ""}${leader.rank}위`}>
-      <div className="rc-lead-who">
-        <h3 className={"rc-lead-title" + (tied ? " tied" : "")}>{leaders.map((r, i) => <span className="rc-lead-name" key={r.name}>{i > 0 && ", "}{nameOf(r)}</span>)}</h3>
-        <span className="rc-lead-sub">{label} {tied ? `공동 ${leader.rank}위, ${leaders.length}명` : `${leader.rank}위`}</span>
-      </div>
-      <div className="rc-lead-figs">
-        <Poster label="포인트" value={leader.points || 0} unit="점" />
-        {!tied && facts.length > 0 && <Facts items={facts} />}
-      </div>
-    </section>
-    {next.length > 0 && (
-      <ol className="rc-podium">
-        {next.map((r, i) => (
-          <li className="rc-rankcard card" key={i}>
-            <span className={"rc-rankcard-n fig r" + Math.min(r.rank, 3)}>{r.rank}</span>
-            <b>{nameOf(r)}</b>
-            <span className="rc-rankcard-pts"><span className="rc-rankcard-score"><Roll value={r.points || 0} /></span><span className="unit">점</span></span>
-            {(recordLine(r) || r.note) && <span className="meta">{[recordLine(r), r.note].filter(Boolean).join(" ")}</span>}
-          </li>
-        ))}
-      </ol>
-    )}
-  </>);
+  return (
+    <ol className="rc-podium" aria-label={label}>
+      {[...leaders, ...next].map((r) => (
+        <li key={r.name}>
+          <Case title={nameOf(r)} line={[recordLine(r), r.note].filter(Boolean).join(", ")} fig={r.rank} unit="위">
+            <span className="rc-podium-pts"><Roll value={r.points || 0} /><small>점</small></span>
+          </Case>
+        </li>
+      ))}
+    </ol>
+  );
 }

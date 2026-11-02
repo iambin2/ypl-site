@@ -14,7 +14,7 @@ const rel = f => relative(ROOT, f).replaceAll("\\", "/");
 
 // ---------- the scales (DESIGN.md "Space and radius", "Type") ----------
 const TOKENS = read(join(STYLES, "tokens.css"));
-const SPACE = new Set([0, 80, 120, ...[...TOKENS.matchAll(/--s\d+:\s*(\d+)px/g)].map(m => +m[1])]); // --s1..--s14, --chapter 80/120
+const SPACE = new Set([0, ...[...TOKENS.matchAll(/--s\d+:\s*(\d+)px/g)].map(m => +m[1])]); // 4 times a Fibonacci number
 const WEIGHTS = new Set(["400", "600", "700"]);
 // a size comes with its tracking: the scale pairs them in tokens.css
 const TRACK = new Set(["0", "inherit", "var(--ls-body)", "var(--ls-lead)", "var(--ls-h3)", "var(--ls-title)", "var(--ls-display)"]);
@@ -67,7 +67,7 @@ const COLOR = /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(|\b(whi
 // ---------- the law: each rule names its DESIGN.md section ----------
 const RULES = {
   "color: literals live only in tokens.css (Color)": d => d.file !== "src/styles/tokens.css" && !/mask/.test(d.prop) && COLOR.test(d.value),
-  "space: margin, padding and gap sit on the 4px scale (Space and radius)": d => /^(margin|padding|gap|row-gap|column-gap)(-|$)/.test(d.prop) && pxs(d.value).some(n => !SPACE.has(n)),
+  "space: margin, padding and gap sit on the golden scale (Space and radius)": d => /^(margin|padding|gap|row-gap|column-gap)(-|$)/.test(d.prop) && pxs(d.value).some(n => !SPACE.has(n)),
   "type: a size is a token, never a number (Type)": d => d.prop === "font-size" && !/^(inherit|var\(--(fs-[\w]+|hero(-\d)?|display(-l)?|title|fig-[sml])\))$/.test(d.value),
   "type: weights 400 600 700 (Type)": d => d.prop === "font-weight" && !fontFace(d) && !WEIGHTS.has(d.value) && !/^(inherit|var\()/.test(d.value),
   "type: tracking is a token and follows its size (Type)": d => d.prop === "letter-spacing" && (!TRACK.has(d.value) || (trackFor[sib(d, "font-size")] && trackFor[sib(d, "font-size")] !== d.value)),
@@ -84,10 +84,9 @@ const RULES = {
   "matte: nothing blurs itself; a blur repaints or recomposites every frame it moves (Material)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(/.test(d.value),
   "matte: shadows are still, a shadow in a transition repaints its element every frame (Motion)": d => /^transition(-property)?$/.test(d.prop) && /box-shadow/.test(d.value),
   "motion: a filter stands still, it repaints every frame it moves (Motion)": d => /^transition/.test(d.prop) && /\bfilter\b/.test(d.value),
-  "motion: easing only through --ease-* and --spring-* (Motion)": d => /^(transition|animation)/.test(d.prop) && /cubic-bezier|\blinear\(|steps\(|\bease(-in|-out|-in-out)?\b/.test(noVars(d.value)),
-  // a spring curve stretched or squeezed feels like a different spring (2026-10-27: 400, 460, 480, 520 and 560ms snappy were all in use)
-  "motion: a spring runs at its natural length, var(--dur-snappy) or var(--dur-soft) (Motion)": d => /^(transition|animation)/.test(d.prop)
-    && [...d.value.matchAll(/(\S+)\s+var\(--spring-(snappy|soft)\)/g)].some(([, dur, kind]) => dur !== `var(--dur-${kind})`),
+  // the verbs of the motion law: length and curve come as one token, so no element can invent a third way to move
+  "motion: a transition or an animation reads a --move token (Motion)": d => /^(transition|animation)(-duration|-timing-function)?$/.test(d.prop)
+    && (/cubic-bezier|\blinear\(|steps\(|\bease(-in|-out|-in-out)?\b|\d(ms|s)\b/.test(noVars(d.value)) || /var\(--(ease|spring)/.test(d.value)),
   "type: paragraphs are pretty, only headlines balance (Type)": d => d.prop === "text-wrap" && !((/pretty/.test(d.value) && d.sel === "p") || (/balance/.test(d.value) && /^(h1, h2, h3, h4|\.display|\.title|\.hof-plate)$/.test(d.sel))),
   "color: components read semantic tokens, never primitives (Color)": d => d.file !== "src/styles/tokens.css" && /var\(--(navy|gray)-\d+|var\(--white\)/.test(d.value),
   "depth: a z-index is a named step (Depth)": d => d.prop === "z-index" && !/^(auto|calc\(var\(--z-sticky\) \+ 1\)|var\(--z-[a-z]+\))$/.test(d.value),
@@ -103,7 +102,7 @@ const TYPES = ["normal: #9FA19F", "fire: #E62829", "water: #2980EF", "electric: 
   .map(t => `${TB} | .type-${t.split(":")[0]} | --type:${t.split(":")[1]}`);
 const EXCEPT = {
   "depth: a z-index is a named step (Depth)": {
-    "a stack orders itself: toasts by their place, the V of the party by its depth": ["src/components/common/Toaster.jsx | style | z-index: 10 - index", "src/styles/pages.css | .hx-mon | z-index: calc(var(--s) * 10)"],
+    "a stack orders itself: toasts by their place": ["src/components/common/Toaster.jsx | style | z-index: 10 - index"],
   },
   "opacity: 0, 1 or a token (Color)": {
     "the fourth toast in a stack leaves": ["src/components/common/Toaster.jsx | style | opacity: index > 2 && !item.out ? 0 : undefined"],
@@ -112,15 +111,14 @@ const EXCEPT = {
     "Pokémon type colours are content, not chrome": TYPES,
     "a video letterbox is black in both themes": [`${P} | .bd-yt | background: #000`],
   },
-  "space: margin, padding and gap sit on the 4px scale (Space and radius)": {
+  "space: margin, padding and gap sit on the golden scale (Space and radius)": {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "clears a fixed element by its size: the bars, a field's icon, the sheet's close button, a sprite, a checkbox, a status icon": [
-      `${S} | .page | padding-block: calc(env(safe-area-inset-top, 0px) + 92px) calc(env(safe-area-inset-bottom, 0px) + 116px)`, `${S} | .page | padding-block: 112px 96px`,
-      `${S} | .site-foot-in | padding: var(--s10) 0 calc(env(safe-area-inset-bottom, 0px) + 112px)`, `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
+      `${S} | .is-admin .site-foot-in | padding-bottom: 104px`,
       `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-left: 48px`, `${C} | .lsearch input, .records-search-field input, .tb-search-row input | padding-right: 48px`,
-      `${C} | .modal > h3 | padding-right: 52px`, `${TB} | .tb-slot:not(.empty) | padding-top: 48px`, `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
-      `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s4) 0 0 44px`,
-      `${TB} | .tb-official-lookup | margin: var(--s4) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s4) 0 0 44px`],
+      `${TB} | .tb-slot:not(.empty) | padding-top: 48px`, `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`,
+      `${TB} | .tb-validation ul | margin: var(--s3) 0 0 44px`, `${TB} | .tb-more | margin: var(--s2) 0 0 44px`, `${TB} | .tb-official-meta | margin: var(--s5) 0 0 44px`,
+      `${TB} | .tb-official-lookup | margin: var(--s5) 0 0 44px`, `${TB} | .tb-official-submit | margin: var(--s5) 0 0 44px`],
     "concentric inset: inner radius = outer radius - padding": [
       `${K} | .calc-stepper button | margin: 2px`],
   },
@@ -133,9 +131,9 @@ const EXCEPT = {
       `${K} | .calc-stepper output | text-align: center`, `${TB} | .tb-stat-number | text-align: center`],
     "(b) a short mark in a narrow fixed cell, and the head of such a column": [`${B} | .bk-seed | text-align: center`, `${B} | .bk-series-no | text-align: center`,
       `${B} | .bk-series-vs | text-align: center`, `${C} | .ypl-table .c | text-align: center`,
-      `${R} | .records-party-sprite-fallback | text-align: center`, `${A} | .ed-head | text-align: center`],
-    "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`, `${P} | .hm-party li | text-align: center`],
-    "(d) a symmetric stage": [`${P} | .hm-hero | text-align: center`, `${P} | .hm-close | text-align: center`, `${P} | .hof-stage | text-align: center`, `${P} | .hof-stage-who, .hofm-top | text-align: center`, `${P} | .hof-plate | text-align: center`],
+      `${A} | .ed-head | text-align: center`],
+    "(c) a caption under its picture": [`${K} | .calc-versus-mon | text-align: center`, `${P} | .hm-party li | text-align: center`, `${C} | .case-name | text-align: center`],
+    "(d) a symmetric stage": [`${P} | .hm-close | text-align: center`],
   },
   "align: right only for trailing values and number columns (Alignment)": {
     "a trailing value or a number column": [`${K} | .calc-hp b | text-align: right`, `${K} | .calc-base-row b | text-align: right`, `${K} | .calc-base-row small | text-align: right`,
@@ -158,6 +156,14 @@ for (const [rule, broken] of Object.entries(RULES)) {
   });
 }
 
+test("a sentence ends with a period wherever it stands: headline, empty state, error or toast (Voice)", () => {
+  const close = /(니다|세요|에요|예요|해요|돼요|네요)\s*$/;
+  const hits = SRC.flatMap(f => read(f).split("\n").flatMap((l, i) => /^\s*(\/\/|\/?\*)/.test(l) ? []
+    : [...l.matchAll(/"([^"\n]*[가-힣][^"\n]*)"|`([^`\n]*[가-힣][^`\n]*)`|>([^<>{}\n]*[가-힣][^<>{}\n]*)</g)]
+      .map(m => m[1] ?? m[2] ?? m[3]).filter(t => close.test(t)).map(t => `${rel(f)}:${i + 1}: ${t}`)));
+  assert.deepEqual(hits, [], "end it with a period");
+});
+
 test("Korean copy has no middle dot separators (Type)", () => {
   const hits = SRC.flatMap(f => read(f).split("\n").map((l, i) => ({ l, at: `${rel(f)}:${i + 1}` })))
     .filter(({ l }) => l.includes("·") && !/^\s*(\/\/|\/?\*)/.test(l) && !/\/[^/\n]*·[^/\n]*\/[gimsuy]*/.test(l)); // a regex that strips dots is fine
@@ -178,9 +184,29 @@ test("a tab switch moves: the lens slides and the new view rises (Motion, K3)", 
 });
 
 test("springs in script run at their natural length too (Motion)", () => {
-  const hits = SRC.flatMap(f => [...read(f).matchAll(/\{[^{}]*springs\(\)\.(snappy|soft)[^{}]*\}/g)]
-    .filter(([obj, kind]) => !obj.includes(`DUR.${kind}`)).map(([obj]) => `${rel(f)}: ${obj}`));
-  assert.deepEqual(hits, [], "use { duration: DUR.snappy | DUR.soft } with springs()");
+  const hits = SRC.flatMap(f => [...read(f).matchAll(/\{[^{}]*springs\(\)\.(spring|lift)[^{}]*\}/g)]
+    .filter(([obj, kind]) => !obj.includes(kind === "lift" ? "DUR.lift" : "DUR.place")).map(([obj]) => `${rel(f)}: ${obj}`));
+  assert.deepEqual(hits, [], "use { duration: DUR.place } with springs().spring and DUR.lift with springs().lift");
+});
+
+// One law for space and time: each step of a scale is 1.618 times the last, give or take what the 4px grid and whole milliseconds allow.
+test("space and time step by the golden ratio (Space and radius, Motion)", () => {
+  const steps = pattern => [...TOKENS.matchAll(pattern)].map(m => +m[1]);
+  for (const scale of [steps(/--s\d+:\s*(\d+)px/g), steps(/--t-[a-z]+:\s*(\d+)ms/g)]) {
+    assert.ok(scale.length >= 7, scale.join());
+    scale.slice(3).forEach((v, i) => assert.ok(Math.abs(v / scale[i + 2] - 1.618) < .08, `${scale[i + 2]} to ${v}`));
+  }
+});
+
+// A new thing that moves is one of the verbs. These files are where the verbs that need the finger or a measurement live; the arena is one event of its own.
+const ANIMATES = new Set(["src/components/common/motion.js", "src/components/common/Modal.jsx", "src/components/common/Menu.jsx", "src/components/common/Dropdown.jsx",
+  "src/components/common/Toaster.jsx", "src/components/common/StandTable.jsx", "src/pages/HomePage.jsx"]);
+test("pages move through the verbs of motion.js, never their own .animate() (Motion)", () => {
+  assert.deepEqual(SRC.filter(f => /\.animate\(/.test(read(f)) && !ANIMATES.has(rel(f))).map(rel), [], "use place, stand or seal from motion.js");
+});
+test("keyframes are a closed list: a new one needs a new verb in DESIGN.md (Motion)", () => {
+  const names = readdirSync(STYLES).flatMap(f => [...read(join(STYLES, f)).matchAll(/@keyframes\s+([\w-]+)/g)].map(m => m[1])).sort();
+  assert.deepEqual(names, ["bk-draw", "bk-land", "dd-in", "edge-fade-l", "edge-fade-r", "ping", "row-rise", "tab-pop", "y-fade", "y-loader-sweep", "y-pop", "y-pulse", "y-rise", "y-spin", "y-swap"]);
 });
 
 // 2026-10-27 consistency pass: the rules below were each broken somewhere before they were written down (DESIGN.md "Consistency").
@@ -267,7 +293,7 @@ test("three breakpoints: 640, 860, 1100 (Layout)", () => {
 
 test("script animations take their durations from DUR (Motion)", () => {
   const hits = SRC.flatMap(f => [...read(f).matchAll(/\.animate\([^;]*?duration:\s*(\d+)/g)].filter(m => +m[1] > 0).map(m => `${rel(f)}: ${m[1]}`));
-  assert.deepEqual(hits.filter(h => !/motion\.js: (1600|1150|1200)|HomePage\.jsx: 1500/.test(h)), []);
+  assert.deepEqual(hits, []);
 });
 
 test("an explanatory sentence reads in one grey (law 4)", () => {

@@ -91,8 +91,10 @@
   --hero: clamp(var(--fs-h1), 6.67vw, var(--fs-hero)); --hero-2: clamp(var(--fs-h2), 5vw, var(--fs-display)); --hero-3: clamp(var(--fs-h2), 4vw, var(--fs-h1)); --hero-4: var(--fs-h2);
   --fig-s: var(--fs-h2); --fig-m: var(--fs-h1); --fig-l: var(--fs-display);
 
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px; --s10: 40px; --s14: 56px;
-  --section: var(--s10); --chapter: 80px; --gutter: 16px;
+  /* the golden law: space is 4px times a Fibonacci number, so every step is about 1.618 times the one before. A token is named for its number. */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s5: 20px; --s8: 32px; --s13: 52px; --s21: 84px; --s34: 136px;
+  --section: var(--s13); --chapter: var(--s21); --gutter: var(--s5);
+  --golden: 1.618; /* the larger part of a split, and the height of a card to its width */
   /* the slab's rule: outer 24 = inner 12 + padding 12 */
   --r-sm: 12px; --r-lg: 24px; --r-pill: 999px;
   --shadow-1: 0 12px 32px -16px rgb(8 28 61 / .28); --shadow-2: 0 24px 64px -24px rgb(8 28 61 / .4);
@@ -117,8 +119,8 @@
   --state-hover: var(--navy-800); --state-selected: var(--navy-700); --state-pressed: var(--navy-600);
   --lens: var(--navy-700); --ind-fg: var(--white); --tabs: var(--navy-800); --pod: var(--navy-925);
   --rank-1: var(--white); --rank-2: var(--gray-300); --rank-3: var(--gray-400); --rank-n: var(--gray-400);
-  --case: var(--navy-800); --case-cur: var(--white);
-  --burst: var(--navy-800); --ring: var(--gray-300); --recede: .07;
+  --case: var(--navy-800);
+  --burst: var(--navy-800); --ring: var(--gray-300);
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -133,8 +135,8 @@
   --state-hover: var(--gray-100); --state-selected: var(--gray-200); --state-pressed: var(--gray-300);
   --lens: var(--white); --ind-fg: var(--black); --tabs: var(--navy-950); --pod: var(--gray-200);
   --rank-1: var(--black); --rank-2: var(--gray-700); --rank-3: var(--gray-600); --rank-n: var(--gray-600);
-  --case: var(--gray-200); --case-cur: var(--navy-950);
-  --burst: var(--gray-200); --ring: var(--gray-600); --recede: .025;
+  --case: var(--gray-200);
+  --burst: var(--gray-200); --ring: var(--gray-600);
 }
 /* status never takes a hue (24th round): it reads through words, icons and weight, so the four kinds resolve to the same tones */
 :root {
@@ -142,22 +144,26 @@
   --warning-bg: var(--surface-raised); --warning-border: var(--border-strong); --warning-text: var(--text-primary); --warning-icon: var(--text-primary);
   --danger-bg: var(--accent); --danger-border: var(--accent); --danger-text: var(--text-on-accent); --danger-icon: var(--text-on-accent);
   --info-bg: var(--surface-raised); --info-border: var(--border-subtle); --info-text: var(--text-primary); --info-icon: var(--text-primary);
-  --dur-step: 60ms; --dur-instant: 90ms; --dur-fast: 180ms; --dur-base: 260ms; --dur-slow: 480ms; --dur-loop: 1.6s;
-  --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-in: cubic-bezier(.5, 0, .75, 0); --ease-in-out: cubic-bezier(.65, 0, .35, 1);
-  /* H1/H2 springs, 3.1% and 1.1% overshoot, natural length 400ms and 670ms */
-  --dur-snappy: 400ms; --dur-soft: 670ms;
-  --spring-snappy: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
-  --spring-soft: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
+  /* the motion law. Time steps by the same 1.618 as space, one step for each verb, and a leave takes the step below its entrance. */
+  --t-press: 100ms; --t-tone: 160ms; --t-leave: 260ms; --t-place: 420ms; --t-lift: 680ms; --t-seal: 1100ms; --t-wait: 1780ms;
+  --ease-place: cubic-bezier(.22, 1, .36, 1); --ease-leave: cubic-bezier(.5, 0, .75, 0); --ease-seal: cubic-bezier(.65, 0, .35, 1);
+  /* one spring at two sizes, 3.1% and 1.1% past its mark, each at its own natural length */
+  --spring: linear(0, 0.0213, 0.0765, 0.1538, 0.244, 0.34, 0.4363, 0.5288, 0.6149, 0.6928, 0.7617, 0.8212, 0.8716, 0.9132, 0.9469, 0.9734, 0.9937, 1.0087, 1.0191, 1.0259, 1.0298, 1.0314, 1.0313, 1.0299, 1.0278, 1.025, 1.0221, 1.019, 1.016, 1.0132, 1.0107, 1.0084, 1.0064, 1.0047, 1.0032, 1.0021, 1);
+  --spring-lift: linear(0, 0.0241, 0.0846, 0.1672, 0.2612, 0.3587, 0.4541, 0.5438, 0.6255, 0.6982, 0.7613, 0.8152, 0.8602, 0.8972, 0.9271, 0.9507, 0.9691, 0.983, 0.9932, 1.0005, 1.0055, 1.0086, 1.0103, 1.011, 1.011, 1.0105, 1.0097, 1.0087, 1.0076, 1.0066, 1.0055, 1.0046, 1.0037, 1.003, 1.0023, 1.0018, 1);
+  /* a CSS transition or animation reads one of these and nothing else */
+  --move-down: var(--t-press) var(--ease-place); --move-press: var(--t-place) var(--spring); --move-tone: var(--t-tone) var(--ease-place);
+  --move-place: var(--t-place) var(--ease-place); --move-slide: var(--t-place) var(--spring); --move-lift: var(--t-lift) var(--spring-lift);
+  --move-leave: var(--t-leave) var(--ease-leave); --move-seal: var(--t-seal) var(--ease-seal); --move-wait: var(--t-wait) var(--ease-seal);
 }
-@media (min-width: 860px) { :root { --section: var(--s14); --chapter: 120px; --gutter: 32px; } }
+@media (min-width: 860px) { :root { --section: var(--s21); --chapter: var(--s34); --gutter: var(--s13); } }
 
 
 /* ---------- layout constants (one name per value; the old alias layer was folded into the names above) ---------- */
 :root {
-  --grid-gap: 16px; --content: 1200px; --sheet-w: 560px; --nav-height: 56px; --target: 44px; --row-min: 60px; --match-card: 98px;
+  --grid-gap: var(--s5); --content: 1200px; --sheet-w: 560px; --nav-height: 60px; --tab-height: 64px; --target: 44px; --row-min: 60px; --match-card: 98px;
   --hair: 1px; --stroke-connector: 1.5px;
 }
-@media (min-width: 860px) { :root { --nav-height: 72px; --grid-gap: 24px; } }
+@media (min-width: 860px) { :root { --nav-height: 72px; --grid-gap: var(--s8); } }
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
 
 /* ---------- base ---------- */
@@ -239,8 +245,8 @@ label:has(input) { cursor: pointer; }
 .card { background: var(--surface); border-radius: var(--r-lg); }
 
 /* ---------- K1 press, K2 hover highlight ---------- */
-:where(button, .press) { transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-:where(button, .press):active:not(:disabled) { scale: .97; transition: scale var(--dur-instant) var(--ease-out); }
+:where(button, .press) { transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
+:where(button, .press):active:not(:disabled) { scale: .97; transition: scale var(--move-down); }
 @media (prefers-reduced-motion: reduce) { :where(button, .press):active:not(:disabled) { scale: 1; opacity: var(--opacity-muted); } }
 /* every disabled control looks the same and says so by its cursor */
 :where(button, input, select, textarea):disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
@@ -248,7 +254,7 @@ label:has(input) { cursor: pointer; }
 /* ---------- K4 rolling numbers ---------- */
 .roll { display: inline-flex; align-items: flex-end; font-variant-numeric: tabular-nums; line-height: var(--lh-title); }
 .rd { display: inline-block; height: 1.25em; overflow: hidden; }
-.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.25em)); transition: transform var(--dur-soft) var(--spring-soft); }
+.rs { display: flex; flex-direction: column; transform: translateY(calc(var(--d) * -1.25em)); transition: transform var(--move-lift); }
 .rs > i { font-style: normal; height: 1.25em; line-height: 1.25em; text-align: center; }
 .roll--natural { font-variant-numeric: normal; }
 .roll--natural .rd { position: relative; }
@@ -258,7 +264,7 @@ label:has(input) { cursor: pointer; }
 
 /* ---------- live dot: always beside words, pings while something is in progress ---------- */
 .live-dot, .ypl-ping { position: relative; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--text-primary); }
-.live-dot::after, .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ping var(--dur-loop) var(--ease-out) infinite; }
+.live-dot::after, .ypl-ping::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: ping var(--move-wait) infinite; }
 @keyframes ping { from { transform: scale(1); opacity: var(--opacity-muted); } to { transform: scale(3.2); opacity: 0; } }
 
 /* ---------- sideways runs (bracket, segmented, filter rows): the edge that hides more content fades.
@@ -281,7 +287,7 @@ label:has(input) { cursor: pointer; }
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
-.swap { animation: y-swap var(--dur-slow) var(--ease-out) var(--dur-step) backwards; }
+.swap { animation: y-swap var(--move-place) backwards; }
 @keyframes y-swap { from { opacity: 0; transform: translateY(8px); } }
 
 /* ---------- motion law: appearing content decelerates (ease-out), floating layers and things that move spring ----------
@@ -298,7 +304,7 @@ label:has(input) { cursor: pointer; }
 /* ---------- print: the record, in ink, without the site around it ---------- */
 @media print {
   :root, :root[data-theme] { --bg: var(--white); --surface: var(--white); --surface-raised: var(--white); --text-primary: var(--black); --text-secondary: var(--gray-700); --text-tertiary: var(--gray-600); }
-  .topbar, .tabbar, .edge-b, .admin-dock, .site-foot, .hm-belt, .hm-close, .btn, .veil, .skip-link { display: none !important; }
+  .topbar, .tabbar, .admin-dock, .site-foot, .hm-cover, .hm-close, .btn, .veil, .skip-link { display: none !important; }
   .page { width: 100%; min-height: 0; padding: 0; }
   .card, .ypl-group { break-inside: avoid; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: var(--fs-caption); }

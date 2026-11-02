@@ -351,6 +351,7 @@ function normalizedRosters(raw, models, pokemonDirectory) {
         pokemonId: cleanName(member.pokemon_id),
         name: resolveRecordsPokemonName(member.pokemon_id, member.pokemon_name_snapshot, pokemonDirectory),
         spriteName: resolveRecordsSpriteName(member.pokemon_id, member.pokemon_name_snapshot, pokemonDirectory),
+        set: member,
       }))
       .filter((member) => member.name);
     if (!resolvedMembers.length) return [];
@@ -369,6 +370,9 @@ function normalizedRosters(raw, models, pokemonDirectory) {
       pokemon: resolvedMembers.map((member) => member.name),
       pokemonIds: resolvedMembers.map((member) => member.pokemonId),
       spriteNames: resolvedMembers.map((member) => member.spriteName),
+      // Same gate as the party above: nothing here exists before team_revealed_at.
+      sets: resolvedMembers.map((member) => member.set),
+      regulationId: event.regulation_id || "",
       placement: PLACEMENT[result?.placement_code] || "participant",
       team: Boolean(event.is_team_event),
       snapshotId: submission.snapshot_id,

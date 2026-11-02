@@ -36,9 +36,9 @@ export default function StandTable({ rows, showNote, total, onName }) {
     if (before.size && !reduced()) {
       for (const tr of trs) {
         const f = before.get(tr.dataset.k), l = next.get(tr.dataset.k);
-        if (f == null) { tr.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.base, easing: EASE_OUT }); continue; }
+        if (f == null) { tr.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.leave, easing: EASE_OUT }); continue; }
         if (Math.abs(f - l) < 0.5) continue;
-        tr.animate([{ transform: `translateY(${f - l}px)` }, { transform: "none" }], { duration: DUR.soft, easing: springs().soft });
+        tr.animate([{ transform: `translateY(${f - l}px)` }, { transform: "none" }], { duration: DUR.lift, easing: springs().lift });
         if (l < f) { tr.classList.remove("rise"); void tr.offsetWidth; tr.classList.add("rise"); }
       }
     }

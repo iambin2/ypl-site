@@ -10,10 +10,29 @@ const mq = q => typeof window !== "undefined" && window.matchMedia?.(q).matches;
 export const reduced = () => mq("(prefers-reduced-motion: reduce)");
 export const desktop = () => mq("(min-width: 860px)");
 
-/* a spring runs at its natural length, the same as --dur-snappy and --dur-soft in tokens.css; stretching it changes its feel */
-export const DUR = { instant: 90, fast: 180, base: 260, slow: 480, sweep: 900, snappy: 400, soft: 670 };
-/* a draw ceremony lands its rows one by one */
+/* one length for each verb of the motion law, the --t-* of tokens.css; a spring runs at its own, stretching it changes its feel */
+export const DUR = { press: 100, tone: 160, leave: 260, place: 420, lift: 680, seal: 1100, wait: 1780 };
+/* things that arrive together arrive one step apart */
 export const STAGGER = { row: 40, tile: 60 };
+
+/* ---------- the verbs of the motion law (DESIGN.md): pages and components move through these, never through their own .animate() ---------- */
+/* place: what arrives rises the shortest way into its place. step spaces out what arrives together. */
+export function place(els, { delay = 0, step = 0, y = 16 } = {}) {
+  if (reduced()) return;
+  [].concat(els).forEach((el, i) => el?.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }],
+    { duration: DUR.place, delay: delay + i * step, easing: EASE_OUT, fill: "backwards" }));
+}
+/* stand: a case is heavier than a word: it comes up further on the larger spring and lands */
+export function stand(els, { delay = 60, step = STAGGER.tile } = {}) {
+  if (reduced()) return;
+  [].concat(els).forEach((el, i) => el?.animate([{ opacity: 0, transform: "translateY(64px) scale(.96)" }, { opacity: 1, offset: .35 }, { opacity: 1, transform: "none" }],
+    { duration: DUR.lift, delay: delay + i * step, easing: springs().lift, fill: "backwards" }));
+}
+/* seal: one solid slanted band crosses a case's window behind what it holds. Once, for an event, never for a habit. */
+export function seal(caseEl, delay = 0) {
+  if (reduced()) return;
+  caseEl?.querySelector(".case-band")?.animate([{ transform: "translateX(-140%) skewX(-12deg)" }, { transform: "translateX(340%) skewX(-12deg)" }], { duration: DUR.seal, delay, easing: EASE_IN_OUT });
+}
 
 let curves = null;
 /* the CSS springs as WAAPI easings; browsers without linear() get the ease-out curve */
@@ -23,8 +42,8 @@ export function springs() {
   try { document.body.animate([], { easing: "linear(0, 1)" }); linear = true; } catch { /* no linear() */ }
   const css = getComputedStyle(document.documentElement);
   curves = {
-    snappy: linear ? css.getPropertyValue("--spring-snappy").trim() : EASE_OUT,
-    soft: linear ? css.getPropertyValue("--spring-soft").trim() : EASE_OUT,
+    spring: linear ? css.getPropertyValue("--spring").trim() : EASE_OUT,
+    lift: linear ? css.getPropertyValue("--spring-lift").trim() : EASE_OUT,
   };
   return curves;
 }
@@ -55,10 +74,10 @@ export function celebrate(x = innerWidth / 2, y = innerHeight * 0.38) {
   if (!layer) { layer = document.createElement("div"); layer.id = "ypl-burst"; layer.className = "burst"; layer.setAttribute("aria-hidden", "true"); document.body.append(layer); }
   const glow = document.createElement("i"), ring = document.createElement("b");
   for (const e of [glow, ring]) { e.style.setProperty("--x", x + "px"); e.style.setProperty("--y", y + "px"); layer.append(e); }
-  if (reduced()) { ring.remove(); glow.animate([{ opacity: 0 }, { opacity: 0.8 }, { opacity: 0 }], { duration: 1200 }).finished.then(() => glow.remove()); }
+  if (reduced()) { ring.remove(); glow.animate([{ opacity: 0 }, { opacity: 0.8 }, { opacity: 0 }], { duration: DUR.seal }).finished.then(() => glow.remove()); }
   else {
-    glow.animate([{ opacity: 0, transform: "scale(.12)" }, { opacity: 1, offset: 0.22 }, { opacity: 0, transform: "scale(1)" }], { duration: 1600, easing: EASE_OUT }).finished.then(() => glow.remove());
-    ring.animate([{ opacity: 0.9, transform: "scale(.03)" }, { opacity: 0, transform: "scale(1)" }], { duration: 1150, easing: EASE_OUT }).finished.then(() => ring.remove());
+    glow.animate([{ opacity: 0, transform: "scale(.12)" }, { opacity: 1, offset: 0.22 }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.wait, easing: EASE_OUT }).finished.then(() => glow.remove());
+    ring.animate([{ opacity: 0.9, transform: "scale(.03)" }, { opacity: 0, transform: "scale(1)" }], { duration: DUR.seal, easing: EASE_OUT }).finished.then(() => ring.remove());
   }
   try { navigator.vibrate?.([14, 50, 22]); } catch { /* not supported */ }
 }
@@ -131,13 +150,13 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   const nr = target?.getBoundingClientRect();
 
   const y = move ? (dir === "back" ? -16 : 16) : 0;
-  anims.push(m1.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.snappy, easing: move ? springs().snappy : "linear" }));
+  anims.push(m1.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: move ? springs().spring : "linear" }));
 
   if (target && oldEl && nr.width > 0) {
     const s = oldRect.width / nr.width, dx = oldRect.left - nr.left, dy = oldRect.top - nr.top;
     const newFly = clone(target, nr, "fly fly-skin", host);
     target.style.visibility = "hidden";
-    const t = { duration: move ? DUR.soft : 240, easing: move ? springs().soft : "linear" };
+    const t = { duration: move ? DUR.lift : 240, easing: move ? springs().lift : "linear" };
     if (target.classList.contains("card")) {
       const skin = document.createElement("div");
       skin.className = "card fly"; skin.style.borderRadius = getComputedStyle(target).borderRadius; host.insertBefore(skin, oldFly);
@@ -168,7 +187,7 @@ export function themeFade(commit) {
   veil.style.background = getComputedStyle(document.documentElement).getPropertyValue("--bg");
   document.body.append(veil);
   commit();
-  veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.base, easing: EASE_OUT }).finished.finally(() => veil.remove());
+  veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT }).finished.finally(() => veil.remove());
 }
 
 /* ---------- K3 liquid selection lens ----------
@@ -219,5 +238,5 @@ export function placePill(box, animate, target) {
 export function settleTitle(target) {
   if (!target || reduced() || typeof target.animate !== "function") return;
   target.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }],
-    { duration: DUR.slow, delay: 90, easing: EASE_OUT, fill: "backwards" });
+    { duration: DUR.place, delay: 90, easing: EASE_OUT, fill: "backwards" });
 }

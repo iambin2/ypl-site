@@ -85,8 +85,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const fillAnn=fill?data.announcements.find(a=>a.id===fill):null;
   const resetPin=async(row)=>{
     if(!(await siteConfirm({title:"제출 비밀번호 초기화",body:`${row.registrationName}의 제출 비밀번호를 지웁니다. 다음 제출 때 새로 정하며, 제출한 파티는 그대로 남습니다.`,confirmLabel:"초기화"})))return;
-    try{ await resetSubmissionPin(row.id); siteAlert("제출 비밀번호를 초기화했습니다"); }
-    catch(error){ siteAlert("초기화하지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+    try{ await resetSubmissionPin(row.id); siteAlert("제출 비밀번호를 초기화했습니다."); }
+    catch(error){ siteAlert("초기화하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
   };
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   const a=article?data.announcements.find(x=>x.id===article):null;
@@ -147,8 +147,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       </div>
     </PageHead>
     {list.length===0?(kw
-      ? <Empty title="검색 결과가 없습니다" desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
-      : <Empty title="등록된 공지가 없습니다" desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
+      ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}/>
+      : <Empty title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
     : <div className="nb-list card">
       {shown.map(a=>{
         return (<button type="button" className="ypl-row nb-item" key={a.id} onClick={()=>openArticle(a.id)}>
@@ -173,11 +173,11 @@ function PushToggle(){
   },[mode]);
   if(mode==="none") return null;
   const toggle=async()=>{
-    if(mode==="install") return siteAlert("홈 화면에 추가해 주세요","아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.");
-    if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
+    if(mode==="install") return siteAlert("홈 화면에 추가해 주세요.","아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.");
+    if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다.","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
     setBusy(true);
     try{ if(on) await disablePush(); else await enablePush(); setOn(!on); }
-    catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+    catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
     finally{ setBusy(false); }
   };
   return <Button type="button" size="sm" disabled={busy} onClick={toggle}>{on?"알림 끄기":"알림 받기"}</Button>;
@@ -227,11 +227,11 @@ function FormFillModal({ ann, responsesOverride=null, onClose, onSubmit }){
   const set=(id,v)=>setAns(a=>({...a,[id]:v}));
   const toggleMulti=(id,opt)=>setAns(a=>{ const cur=Array.isArray(a[id])?a[id]:[]; return {...a,[id]:cur.includes(opt)?cur.filter(x=>x!==opt):[...cur,opt]}; });
   const submit=async()=>{
-    if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요"); return; }
-    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답을 입력해 주세요",`‘${f.label||"질문"}’ 항목에 답해 주세요.`); return; } } }
+    if(form.eventId&&!registrationName.trim()){ siteAlert("참가자 이름을 입력해 주세요."); return; }
+    for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty){ siteAlert("필수 응답을 입력해 주세요.",`‘${f.label||"질문"}’ 항목에 답해 주세요.`); return; } } }
     setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
     if(typeof ok==="string"){ siteAlert(ok); return; }
-    if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다","잠시 후 다시 제출해 주세요."); return; }
+    if(ok===false){ siteAlert("신청 저장을 확인하지 못했습니다.","잠시 후 다시 제출해 주세요."); return; }
     setDone(true);
     // L5: 신청이 접수된 순간 흰 빛이 한 번 퍼진다
     requestAnimationFrame(()=>celebrate?.(...centerOf(document.querySelector(".ff-ok"))));

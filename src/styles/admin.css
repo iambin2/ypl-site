@@ -9,8 +9,8 @@
 .fb-ic, .ed-del, .ed-mv, .ed-x {
   width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%;
   background: var(--state-hover); color: var(--text-secondary);
-  transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  transition: scale var(--move-press), background-color var(--move-tone),
+    color var(--move-tone), opacity var(--move-tone);
 }
 @media (hover: hover) {
   :is(.fb-ic, .ed-mv):hover:not(:disabled) { background: var(--state-selected); color: var(--text-primary); }
@@ -25,7 +25,7 @@
   --r: var(--r-sm);
   aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; cursor: pointer;
   background: var(--surface-raised);
-  transition: background-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--move-tone);
 }
 @media (hover: hover) { .ch-img:hover { background-color: var(--state-selected); } }
 .ch-img img { width: 82%; height: 82%; object-fit: contain; }
@@ -34,10 +34,10 @@
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */
-.fb-wrap { --r: var(--r-lg); margin: var(--s4) 0; padding: var(--s6); background: var(--surface); }
+.fb-wrap { --r: var(--r-lg); margin: var(--s5) 0; padding: var(--s8); background: var(--surface); }
 .fb-wrap > .bk-check { font-weight: 600; }
 /* a question is a fill-2 cell inside the plate; concentric 32 - 16 = 16 */
-.fb-q { --r: calc(var(--r-lg) - var(--s4)); margin-bottom: var(--s3); padding: var(--s4); background: var(--state-hover); }
+.fb-q { --r: calc(var(--r-lg) - var(--s5)); margin-bottom: var(--s3); padding: var(--s5); background: var(--state-hover); }
 .fb-q-top { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); }
 .fb-q-top strong { font-size: var(--fs-body); font-weight: 600; }
 .fb-q-top .dd { width: 220px; }
@@ -60,22 +60,22 @@
 .fb-addopt {
   align-self: flex-start; height: 36px; padding: 0 var(--s3); border: 0; border-radius: var(--r-pill); background: transparent;
   font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary);
-  transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
 .fb-addq {
   --r: var(--r-sm);
   width: 100%; min-height: var(--row-min); margin-top: var(--s1); border: 0; background: var(--state-hover);
   font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary);
-  transition: scale var(--dur-snappy) var(--spring-snappy), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
 @media (hover: hover) {
   .fb-addopt:hover { background: var(--state-hover); color: var(--text-primary); }
   .fb-addq:hover { background: var(--state-selected); color: var(--text-primary); }
 }
-.fb-q-foot { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); margin-top: var(--s2); }
+.fb-q-foot { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); margin-top: var(--s2); }
 .fb-req { min-height: 36px; }
 .fb-note { font-size: var(--fs-caption); font-weight: 400; color: var(--text-tertiary); }
-.fb-reveal { animation: y-rise var(--dur-soft) var(--ease-out) backwards; }
+.fb-reveal { animation: y-rise var(--move-lift) backwards; }
 
 /* ---------- standings editor ---------- */
 .ed-grid {
@@ -90,7 +90,7 @@
 .ed-x { width: 24px; height: 24px; margin-left: var(--s2); }
 
 /* ---------- rounds editor ---------- */
-.ed-round { --r: var(--r-sm); display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s3); padding: var(--s4); background: var(--surface); }
+.ed-round { --r: var(--r-sm); display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s3); padding: var(--s5); background: var(--surface); }
 .ed-round input { min-height: var(--target); padding: var(--s2) var(--s3); }
 .ed-rtop { display: flex; align-items: center; gap: var(--s2); }
 .ed-w { flex: 1 1 130px; min-width: 0; }

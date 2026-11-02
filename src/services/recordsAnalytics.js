@@ -862,6 +862,7 @@ export function buildPokemonStats(rosters, champions) {
       };
 
       cur.entries += 1;
+      cur.spriteName ||= roster.spriteNames?.[roster.pokemon.indexOf(name)] || "";
       cur.trainers.set(roster.owner, (cur.trainers.get(roster.owner) || 0) + 1);
       if (roster.placement === "win") cur.wins += 1;
       if (roster.placement === "ru") cur.runnerUps += 1;
@@ -894,6 +895,7 @@ export function buildPokemonStats(rosters, champions) {
   return [...map.values()]
     .map((item) => ({
       name: item.name,
+      spriteName: item.spriteName,
       entries: item.entries,
       entryRate: totalEntries ? (item.entries / totalEntries) * 100 : 0,
       trainerCount: item.trainers.size,

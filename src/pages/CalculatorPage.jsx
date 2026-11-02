@@ -391,7 +391,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
           {pokemons[basis] && me != null ? (
             <div className="calc-speed-me">
               <span className="fig">{me}</span>
-              <p>{display(pokemons[basis])}의 스피드입니다. 비교한 {rows.length}마리 중 {faster}마리가 더 빠르고{ties ? `, ${ties}마리가 같습니다` : ""}.</p>
+              <p>{display(pokemons[basis])}의 스피드입니다. 비교한 {rows.length}마리 중 {faster}마리가 더 빠릅니다.{ties ? ` ${ties}마리는 같습니다.` : ""}</p>
               <Button type="button" size="sm" onClick={() => { setQuery(""); requestAnimationFrame(() => meRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })); }}>내 위치 보기</Button>
             </div>
           ) : (

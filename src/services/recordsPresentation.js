@@ -50,3 +50,29 @@ export function buildIndividualPartyPreviewRows(round) {
   });
   return rows;
 }
+
+/* The samples of one Pokémon in the official rosters that kept their sets, newest first. An old roster holds names only and has none. */
+export function pokemonSamples(rosters, name) {
+  return asArray(rosters).flatMap((roster) => {
+    const set = asArray(roster.sets)[asArray(roster.pokemon).indexOf(name)];
+    return set?.move_1_id ? [{ roster, set }] : [];
+  }).sort((a, b) => String(b.roster.date || "").localeCompare(String(a.roster.date || "")));
+}
+
+/* How often each item, ability, nature and move appears across those samples, most used first. */
+export function sampleUsage(samples) {
+  const total = asArray(samples).length;
+  const tally = (read) => {
+    const counts = new Map();
+    for (const { set } of asArray(samples)) for (const id of new Set(read(set).filter(Boolean))) counts.set(id, (counts.get(id) || 0) + 1);
+    return [...counts.entries()].map(([id, count]) => ({ id, count, rate: Math.round((count / total) * 100) }))
+      .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
+  };
+  return {
+    total,
+    items: tally((set) => [set.item_id]),
+    abilities: tally((set) => [set.ability_id]),
+    natures: tally((set) => [set.nature_id]),
+    moves: tally((set) => [set.move_1_id, set.move_2_id, set.move_3_id, set.move_4_id]),
+  };
+}
