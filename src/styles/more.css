@@ -1,0 +1,10 @@
+/* =============================================================================
+   YPL Scoreboard: 더보기 (MorePage.jsx). Draft: docs/redesign-next c13-more-records, the first frame.
+   Grouped rows under a 12 label, 20 between groups, then the theme as a choice, notice alerts as a switch, and admin login.
+   ========================================================================== */
+
+.more-group { margin-top: var(--s8); }
+.more-label { margin-bottom: var(--s3); }
+.more-group .row-value { display: flex; color: var(--dim); }
+.more-switch { margin-top: var(--seam); }
+@media (min-width: 860px) { .more { max-width: 439px; } }

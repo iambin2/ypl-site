@@ -1,4 +1,4 @@
-export const APP_VIEWS = new Set(["home", "about", "news", "board", "records", "bracket", "builder", "titles", "champions", "calc"]);
+export const APP_VIEWS = new Set(["home", "about", "news", "board", "records", "bracket", "builder", "titles", "champions", "calc", "more"]);
 
 /* 사이트는 base 경로 하나뿐이다. base 밖(개발 서버 외의 환경)은 판단하지 않는다. */
 export function isUnknownPath(pathname, base) {

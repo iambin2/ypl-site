@@ -79,7 +79,7 @@
 /* choice: panels in a row, 44 tall, the chosen one inverted */
 .choice { grid-template-columns: repeat(auto-fit, minmax(var(--s21), 1fr)); }
 .choice-opt { display: flex; align-items: center; justify-content: center; min-height: var(--h-control); padding: 0 var(--s3); text-align: center; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--dim); cursor: pointer; transition: background-color var(--move-tone), color var(--move-tone); }
-.choice-opt.inv { font-weight: 700; }
+.choice-opt.inv { color: var(--ground); font-weight: 700; }
 .choice-opt:has(:focus-visible), .check-row:has(:focus-visible) .box { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .choice-opt.inv:has(:focus-visible) { outline-color: var(--ground); }
 @media (hover: hover) { .choice-opt.pn:hover { background: var(--panel-2); } }
@@ -157,3 +157,15 @@
 .chips > * { flex: none; display: flex; align-items: center; height: var(--h-strip); min-height: var(--h-strip); padding: 0 var(--s3); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); white-space: nowrap; }
 .chips > .inv { color: var(--ground); font-weight: 700; }
 @media (hover: hover) { .chips > .pn:hover { background: var(--panel-2); } }
+
+/* ---------- notice alerts (PushControl.jsx): a 12px word with the bell, a switch row, and the sheet that says why first ---------- */
+.push-link { display: inline-flex; align-items: center; gap: var(--s1); min-height: var(--h-control); margin-block: calc((var(--h-control) - var(--l12)) / -2); color: var(--lit); }
+.push-ask { display: grid; gap: var(--s5); }
+.push-note { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--pad); }
+.push-later { justify-self: center; }
+/* a switch: 52 by 32; off is a muted square in panel-2, on is inverted with the square at the right */
+.switch-row { justify-content: space-between; padding-right: var(--pad); }
+.sw { display: flex; width: var(--s13); height: var(--h-strip); padding: var(--s1); flex: none; background: var(--panel-2); transition: background-color var(--move-tone); }
+.sw i { width: 24px; height: 24px; background: var(--mute); }
+.sw.on { justify-content: flex-end; background: var(--lit); }
+.sw.on i { background: var(--ground); }

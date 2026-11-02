@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
 const SCREENS = {
   home: "", news: "?view=news", bracket: "?view=bracket", "records-trainer": "?view=records&tab=trainer", "records-tour": "?view=records&tab=tour",
   "records-pokemon": "?view=records&tab=pokemon", "records-rank": "?view=records&tab=rank", titles: "?view=titles", champions: "?view=champions",
-  board: "?view=board", builder: "?view=builder", calc: "?view=calc", about: "?view=about", missing: "no-such-page",
+  board: "?view=board", builder: "?view=builder", calc: "?view=calc", about: "?view=about", more: "?view=more", missing: "no-such-page",
 };
 const pick = only ? only.split(",") : Object.keys(SCREENS);
 mkdirSync(out, { recursive: true });

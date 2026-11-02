@@ -4,6 +4,7 @@ import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js
 import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
 import { WRITE_CONFLICT } from "./services/revisionedRow.js";
 import HomePage from "./pages/HomePage.jsx";
+import MorePage from "./pages/MorePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
 import TabBar, { MORE_ITEMS, useWideNav } from "./components/layout/Navigation.jsx";
@@ -93,7 +94,7 @@ export default function App() {
   },[dark]);
   /* 탭 제목 — 뒤로 가기 목록과 브라우저 탭에서 어디에 있었는지 구분되게 화면 이름을 붙인다. */
   useEffect(()=>{
-    const label=(NAV_ITEMS.find(([key])=>key===view)||[])[1];
+    const label=view==="more"?"더보기":(NAV_ITEMS.find(([key])=>key===view)||[])[1];
     document.title=label?`${label} | YPL`:"YPL | 연세 포켓몬 리그 Yonsei Pokémon League";
     // 검색 엔진에 화면 주소만 알린다. eventId와 배포 갱신용 __ypl_v 같은 덧붙은 값은 뺀다.
     document.querySelector('link[rel="canonical"]')?.setAttribute("href",`https://iambin2.github.io/ypl-site/${view==="home"?"":`?view=${view}`}`);
@@ -220,6 +221,7 @@ export default function App() {
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}
+        {view==="more"&&<MorePage go={go} dark={dark} onTheme={switchTheme} admin={admin} onAdmin={onAdmin}/>}
         {view==="news"&&<NewsPage data={data} admin={admin} setModal={setModal} save={save} submitForm={submitForm} refresh={refresh} go={go}/>}
         {view==="board"&&<BoardPage data={data} admin={admin} save={save} flash={flash} go={go}/>}
         {view==="records"&&<RecordsPage data={data} admin={admin} setModal={setModal} save={save}/>}
@@ -233,7 +235,7 @@ export default function App() {
       </div>
       {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline}/>}
 
-      <TabBar view={view} moreOpen={Boolean(more)} onNavigate={go} onMore={toggleMore}/>
+      <TabBar view={view} onNavigate={go}/>
       {admin&&<AdminModeBar onLogout={logout}/>}
       {more&&<Menu anchor={more} title="더보기" items={moreItems} onClose={()=>setMore(null)}/>}
       <Toaster feed={toast}/>

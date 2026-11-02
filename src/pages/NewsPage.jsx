@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { BackLink, Choice, Counter, Dock, Question, Row, Toast } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
+import { PushLink } from "../components/common/PushControl.jsx";
 import Seg from "../components/common/Seg.jsx";
 import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
-import { builderRouteSearch, currentPushMode, disablePush, enablePush, isPushOn, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, listEventApplications, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
@@ -206,41 +207,6 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     <div className="nw-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
     {modals}
   </section>);
-}
-
-/* ===== 새 공지 알림 받기: 켜기 전에 이유를 먼저 말하는 시트, 끄기는 바로 ===== */
-function PushLink(){
-  const [mode]=useState(currentPushMode);
-  const [on,setOn]=useState(false); const [busy,setBusy]=useState(mode==="ready"); const [ask,setAsk]=useState(false);
-  useEffect(()=>{
-    if(mode!=="ready") return;
-    let cancelled=false;
-    isPushOn().then(value=>{if(!cancelled)setOn(value);}).catch(console.error).finally(()=>{if(!cancelled)setBusy(false);});
-    return ()=>{cancelled=true;};
-  },[mode]);
-  if(mode==="none") return null;
-  const flip=async()=>{
-    setBusy(true);
-    try{ if(on) await disablePush(); else await enablePush(); setOn(!on); setAsk(false); }
-    catch(error){ siteAlert("알림 설정을 바꾸지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
-    finally{ setBusy(false); }
-  };
-  const press=()=>{
-    if(mode==="unsupported") return siteAlert("이 브라우저에서는 알림을 켤 수 없습니다.","카카오톡이나 디스코드 안에서 열었다면 최신 Chrome이나 Safari에서 다시 열어 주세요.");
-    if(on) return flip();
-    setAsk(true);
-  };
-  return (<>
-    <button type="button" className="nw-push t12" disabled={busy} onClick={press}><Icon n="bell" size={16}/>{on?"알림 끄기":"알림 받기"}</button>
-    {ask&&<Modal title="새 공지를 알림으로 받습니다." onClose={()=>setAsk(false)}>
-      <div className="nw-ask">
-        <p className="read dim">대회 공지와 결과가 올라오면 이 기기로 알려 드립니다. 언제든 공지 화면에서 끌 수 있습니다.</p>
-        {mode==="install"&&<p className="pn2 nw-note t12 reg dim"><Icon n="info" size={20}/><span>아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.</span></p>}
-        {mode==="ready"&&<Button variant="main" icon="bell" disabled={busy} onClick={flip}>알림 받기</Button>}
-        <Button variant="link" className="nw-later" onClick={()=>setAsk(false)}>나중에</Button>
-      </div>
-    </Modal>}
-  </>);
 }
 
 /* ===== 공개 응답 목록 (예: 실시간 밴 리스트) ===== */

@@ -16,17 +16,17 @@ export const useWideNav = () => useSyncExternalStore(onWide, wideNow, () => fals
 export const WIDE_TABS = [...TABS.filter(([k]) => k !== "more"), ...MORE_ITEMS];
 
 /* 더보기 안의 화면에 있을 때는 더보기 칸이 선택 표시를 받지만, 페이지 자체는 아니므로 aria-current 는 달지 않는다. */
-export const current = (cur, key) => cur !== key ? {} : key === "more" ? { "data-current": "" } : { "aria-current": "page" };
+/* 더보기는 이제 페이지다: 더보기 안의 화면(칭호 등)에 있을 때는 선택 표시만 받고, 더보기 페이지에서는 그 페이지다. */
+export const current = (cur, key, view) => cur !== key ? {} : key === "more" && view !== "more" ? { "data-current": "" } : { "aria-current": "page" };
 
 /* 고른 칸은 켜진 글자(700)와 윗변의 2px 선. 선은 미끄러지지 않고 그 자리에서 켜진다. */
-export default function TabBar({ view, moreOpen, onNavigate, onMore }) {
+export default function TabBar({ view, onNavigate }) {
   const cur = tabOf(view);
   return (
     <nav className="tabbar" aria-label="주요 메뉴">
       {TABS.map(([key, label, ic]) => (
-        <button key={key} type="button" className="tab" data-tab={key} {...current(cur, key)}
-          {...(key === "more" ? { "aria-haspopup": "menu", "aria-expanded": moreOpen } : {})}
-          onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>
+        <button key={key} type="button" className="tab" data-tab={key} {...current(cur, key, view)}
+          onClick={() => onNavigate(key)}>
           <Icon n={ic} size={24} />
           <span>{label}</span>
         </button>

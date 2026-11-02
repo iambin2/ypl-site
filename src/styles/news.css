@@ -8,7 +8,6 @@
 
 .nw-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
 .nw-tools { display: flex; align-items: baseline; gap: var(--s5); }
-.nw-push { display: inline-flex; align-items: center; gap: var(--s1); min-height: var(--h-control); margin-block: calc((var(--h-control) - var(--l12)) / -2); color: var(--lit); }
 .nw-search, .nw-list { margin-top: var(--s5); }
 .nw-list .row { height: var(--h-row2); }
 .nw-pin { margin-left: var(--s2); font-weight: 600; color: var(--lit); }
@@ -37,8 +36,3 @@
 .nw-done { display: flex; align-items: flex-start; gap: var(--s3); margin-top: var(--s5); padding: var(--s5); }
 .nw-done .box.on { background: var(--ground); color: var(--lit); }
 .nw-done p { margin-top: var(--s1); }
-
-/* the push sheet: why first, the iPhone's condition in a panel, then the action */
-.nw-ask { display: grid; gap: var(--s5); }
-.nw-note { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--pad); }
-.nw-later { justify-self: center; }
