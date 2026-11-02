@@ -127,6 +127,17 @@ function clone(el, rect, cls, host) {
   return c;
 }
 
+/* the navy plane a page opens on stands from the first frame: fading it would show the white page through it.
+   What stands on it and after it arrives. The home's first planes hold their facts, so they stand whole. */
+const PLANE = ".ypl-head, .hm-plate, .hm-cover";
+function arrivals(page) {
+  const plane = page.querySelector(PLANE);
+  if (!plane) return [page];
+  const out = plane.matches(".hm-plate") ? [] : [...plane.children];
+  for (let el = plane; el !== page; el = el.parentElement) out.push(...[...el.parentElement.children].filter(child => child !== el));
+  return out;
+}
+
 /* mutate() must render the next page synchronously (flushSync). scrollY is where the new page starts. */
 export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0 } = {}) {
   land();
@@ -150,7 +161,8 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   const nr = target?.getBoundingClientRect();
 
   const y = move ? (dir === "back" ? -12 : 12) : 0;
-  anims.push(m1.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: move ? springs().spring : "linear" }));
+  // starts faint, not empty: a screen with nothing on it for a frame is a flash of the page behind
+  arrivals(m1).forEach(el => anims.push(el.animate([{ opacity: .236, transform: `translateY(${y}px)` }, { opacity: 1, transform: "none" }], { duration: DUR.place, easing: move ? springs().spring : "linear" })));
 
   if (target && oldEl && nr.width > 0) {
     const s = oldRect.width / nr.width, dx = oldRect.left - nr.left, dy = oldRect.top - nr.top;
@@ -178,16 +190,13 @@ export function transition(mutate, { shared, dir = "forward", scrollY: nextY = 0
   });
 }
 
-/* ---------- theme change (B6): nothing moves. The page turns at once under one still sheet of the old stage and the sheet fades,
-   a single opacity on the compositor (.veil). ---------- */
-export function themeFade(commit) {
-  if (reduced()) { commit(); return; }
-  const veil = document.createElement("div");
-  veil.className = "veil";
-  veil.style.background = getComputedStyle(document.documentElement).getPropertyValue("--bg");
-  document.body.append(veil);
+/* ---------- theme change (B6): nothing moves. The page turns in one frame with nothing over it, and a control's own tone transition sits
+   this frame out, so no surface trails the words on it. ---------- */
+export function themeTurn(commit) {
+  const root = document.documentElement;
+  root.classList.add("theme-turn");
   commit();
-  veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT }).finished.finally(() => veil.remove());
+  requestAnimationFrame(() => root.classList.remove("theme-turn"));
 }
 
 /* ---------- K3 selection lens ----------

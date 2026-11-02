@@ -78,7 +78,7 @@
   --fs-caption: .8125rem; --fs-body: 1rem; --fs-lead: 1.25rem; --fs-h3: 1.25rem; --fs-h2: 2rem; --fs-h1: 3.25rem; --fs-display: 5.25rem; --fs-hero: 8.5rem;
   /* leading is 1 + a power of 1/phi: the bigger the type, the closer its lines. Tracking is a power of 1/phi over ten. */
   --lh-caption: 1.382; --lh-body: 1.618; --lh-label: 1.382; --lh-lead: 1.382; --lh-title: 1.236; --lh-display: 1.146;
-  --ls-body: .009em; --ls-lead: -.009em; --ls-h3: -.009em; --ls-title: -.0146em; --ls-display: -.0236em;
+  --ls-body: .009em; --ls-lead: -.009em; --ls-h3: -.009em; --ls-title: -.0146em; --ls-display: 0;
   /* a title stands on a step on every screen; only the hero gives way on a phone too narrow for its sentence */
   --title: var(--fs-h3); --display: var(--fs-h2); --hero: clamp(var(--fs-h2), 13.8vw, var(--fs-h1));
   --fig-s: var(--fs-h2); --fig-m: var(--fs-h1); --fig-l: var(--fs-display);
@@ -91,7 +91,7 @@
   --trim: calc((.84em - 1lh) / 2); --row-pad: calc((var(--row-min) - 1.382rem) / 2);
   --shadow-1: 0 12px 32px -20px rgb(8 28 61 / .236); --shadow-2: 0 20px 52px -20px rgb(8 28 61 / .382);
   --focus-width: 2px; --focus-offset: 2px; --opacity-disabled: .382; --opacity-muted: .618; --opacity-ghost: .236;
-  --z-base: 0; --z-raised: 1; --z-sticky: 10; --z-header: 20; --z-modal: 40; --z-popover: 50; --z-toast: 60; --z-skip: 80; --z-veil: 90;
+  --z-base: 0; --z-raised: 1; --z-sticky: 10; --z-header: 20; --z-modal: 40; --z-popover: 50; --z-toast: 60; --z-skip: 80;
 
   /* the bars, the footer and the home's first and last planes are navy in both themes */
   --bar: var(--navy-950); --on-bar: var(--white); --on-bar-2: var(--navy-200); --bar-up: var(--navy-800); --navy-up-hover: var(--gray-300); --bar-up-hover: var(--navy-700); --band: var(--navy-300);
@@ -166,13 +166,18 @@
 html {
   background-color: var(--bg);
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
-  scrollbar-color: var(--scrollbar) transparent; scrollbar-width: thin;
+  /* 페이지에는 스크롤바를 그리지 않는다: 자리를 비워 두면 네이비 바와 면 옆에 흰 띠가 서고, 자리가 없으니 시트가 잠가도 화면이 옆으로 튀지 않는다 */
+  scrollbar-color: var(--scrollbar) transparent; scrollbar-width: none;
   overscroll-behavior-x: none;
   accent-color: var(--accent); caret-color: var(--text-primary);
-  /* 스크롤바 자리를 모든 페이지에서 비워 둔다: 짧은 페이지와 긴 페이지를 오갈 때, 시트가 스크롤을 잠글 때 화면이 옆으로 튀지 않는다 */
-  scrollbar-gutter: stable;
   scroll-padding-top: var(--nav-height);
 }
+html::-webkit-scrollbar { display: none; }
+/* 페이지가 서기 전에는 네이비: 첫 화면의 면이 흰 바탕을 지나 도착하지 않는다. 시트 뒤로 물러난 페이지도 네이비 위에 있다. */
+html:not(:has(.page:not(.page--wait))), :root.receded { background-color: var(--bar); }
+.receded .wrap { position: relative; background: var(--bg); }
+/* the top of the page lies under the bar and is white: with the bar away it must not stand as a band over the navy head */
+.receded .wrap::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(env(safe-area-inset-top, 0px) + var(--nav-height)); background: var(--bar); }
 body {
   margin: 0; color: var(--text-primary);
   font: 400 var(--fs-body)/var(--lh-body) var(--font); letter-spacing: var(--ls-body);
@@ -268,7 +273,8 @@ label:has(input) { cursor: pointer; }
 @keyframes y-pop { from { opacity: 0; transform: scale(.944); } to { opacity: 1; transform: none; } }
 @keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
 .swap { animation: y-swap var(--move-place) backwards; }
-@keyframes y-swap { from { opacity: 0; transform: translateY(8px); } }
+/* 탭을 바꿀 때 내용이 빈 프레임이 없도록 옅게 선 채로 시작한다 */
+@keyframes y-swap { from { opacity: var(--opacity-ghost); transform: translateY(8px); } }
 
 /* ---------- motion law: appearing content decelerates (ease-out), floating layers and things that move spring ----------
    reduced motion (H4): no travel or growth, opacity only; reactions that only grow are dropped.
@@ -277,14 +283,13 @@ label:has(input) { cursor: pointer; }
   :root :is(.swap, .bk-champ-node, .bk-pin, .bk-team-card, .fb-reveal, .ff-ok, .dd-menu, .bk-submission-detail, .records-round-detail) { animation-name: y-fade; }
   :root :is(.tab:is([aria-current="page"], [data-current]) .ics, .bk-slot.dset.pop) { animation: none; }
 }
-/* B6 theme change (2026-11-01): the page turns at once under one still sheet of the old stage, and that sheet fades. One opacity on the
-   compositor; the typed colour tokens that used to fade restyled the whole document every frame (15ms a frame on a mid-range phone). */
-.veil { position: fixed; inset: 0; z-index: var(--z-veil); pointer-events: none; }
+/* B6 theme change: the page turns in one frame. A control's own tone transition sits it out, so no surface trails the words on it. */
+.theme-turn * { transition: none !important; }
 
 /* ---------- print: the record, in ink, without the site around it ---------- */
 @media print {
   :root, :root[data-theme] { --bg: var(--white); --surface: var(--white); --surface-raised: var(--white); --text-primary: var(--black); --text-secondary: var(--gray-700); --text-tertiary: var(--gray-600); }
-  .topbar, .tabbar, .admin-dock, .site-foot, .hm-cover, .hm-plate, .hm-close, .btn, .veil, .skip-link { display: none !important; }
+  .topbar, .tabbar, .admin-dock, .site-foot, .hm-cover, .hm-plate, .hm-close, .btn, .skip-link { display: none !important; }
   .page { width: 100%; min-height: 0; padding: 0; }
   .card, .ypl-group { break-inside: avoid; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: var(--fs-caption); }

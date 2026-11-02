@@ -1306,16 +1306,6 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         />
       </div>
 
-      {(team.length > 0 || cupRule.kind !== "none") && <div className="tb-validation-wrap" data-tb-step="team">
-        <ValidationPanel
-          result={validation}
-          regulationName={regulation.name}
-          cupRuleSummary={currentCupRuleSummary}
-          teamLength={team.length}
-          configuredSpecialRule={cupRule.kind !== "none"}
-        />
-      </div>}
-
       <div className="tb-layout">
         <div className="tb-panel tb-pool-panel" data-tb-step="pool">
           <div className="tb-panel-head">
@@ -1502,6 +1492,17 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         </div>
       </div>
 
+      {/* 목록 아래에 선다: 위에 있으면 첫 선택이 고르던 목록을 밀어낸다 */}
+      {(team.length > 0 || cupRule.kind !== "none") && <div className="tb-validation-wrap" data-tb-step="team">
+        <ValidationPanel
+          result={validation}
+          regulationName={regulation.name}
+          cupRuleSummary={currentCupRuleSummary}
+          teamLength={team.length}
+          configuredSpecialRule={cupRule.kind !== "none"}
+        />
+      </div>}
+
       {selectedMember && picker === "item" && <PickerSheet title="도구" placeholder="도구 이름 검색 (한글, 영문)" items={itemPickItems}
         selected={selectedMember.item || ""} onPick={id => updateMember(selectedMember.uid, { item: id })} onClose={() => setPicker(null)} />}
       {selectedMember && typeof picker === "number" && <PickerSheet title={`기술 ${picker + 1}`} placeholder="기술 이름 검색 (한글, 영문)" items={movePickItems(picker)}
@@ -1554,7 +1555,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
                   party={saved.members.map(member => ({ name: member.pokemonName, img: spriteUrl(member.pokemonName) }))} onClick={() => loadSavedTeam(saved)} label={`${saved.name} 불러오기`} />
                 <div className="tb-saved-actions">
                   <Button size="sm" onClick={() => duplicateSavedTeam(saved)}>복제</Button>
-                  <Button variant="destructive" size="sm" onClick={() => deleteSavedTeam(saved)}>삭제</Button>
+                  <Button size="sm" onClick={() => deleteSavedTeam(saved)}>삭제</Button>
                 </div>
               </div>
             );

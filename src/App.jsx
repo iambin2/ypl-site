@@ -9,7 +9,7 @@ import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
 import TabBar, { MORE_ITEMS, leadPills, useWideNav } from "./components/layout/Navigation.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
-import { reduced, themeFade, transition } from "./components/common/motion.js";
+import { DUR, reduced, themeTurn, transition } from "./components/common/motion.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { onAdminSessionLost, signOutAdmin } from "./storage.js";
@@ -80,9 +80,9 @@ export default function App() {
   const [dark,setDark]=useState(()=>{
     try{ return localStorage.getItem("ypl-theme-2")==="dark"; }catch(e){ return false; }
   });
-  /* B6: 화면은 그 자리에 있고 색만 다음 테마로 번진다. 아무것도 움직이지 않는다. */
+  /* B6: 화면은 그 자리에 있고 색만 한 프레임에 바뀐다. 아무것도 움직이지 않는다. */
   const switchTheme=useCallback(()=>{
-    themeFade(()=>flushSync(()=>setDark(d=>!d)));
+    themeTurn(()=>flushSync(()=>setDark(d=>!d)));
   },[]);
   /* 테마는 <html> 에 건다 — 페이지, 오버스크롤 영역, 스크롤바, 브라우저 주소창 색이 한 바탕을 쓴다. */
   useLayoutEffect(()=>{
@@ -203,7 +203,8 @@ export default function App() {
   },[]);
   const logout=()=>{ signOutAdmin(); setAdmin(false); };
   const onAdmin=()=>{ setMore(null); admin?logout():setModal({type:"login"}); };
-  const toggleMore=el=>{ if(!more){ CalculatorPage.prefetch(); ChampionsPage.prefetch(); } setMore(m=>m?null:el); };
+  // 무거운 조각은 시트가 다 올라온 뒤에 받는다: 여는 순간에 평가하면 시트가 굳는다.
+  const toggleMore=el=>{ if(!more) setTimeout(()=>{ CalculatorPage.prefetch(); ChampionsPage.prefetch(); },DUR.lift); setMore(m=>m?null:el); };
   const wideNav=useWideNav();
   const moreItems=[
     ...MORE_ITEMS.map(([key,label,icon])=>({key,label,icon,current:view===key,onSelect:()=>go(key)})),
@@ -218,7 +219,7 @@ export default function App() {
       <SiteHeader view={view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
         moreOpen={Boolean(more)} onMore={toggleMore} onAdmin={wideNav&&!admin?onAdmin:null} cta={cta}/>
 
-      <div className="wrap"><main className={"page"+(view==="home"||view==="champions"?" page--full":"")} id="ypl-main" tabIndex={-1} key={view}>
+      <div className="wrap"><main className={"page"+(view==="home"||view==="champions"?" page--full":"")+(data?"":" page--wait")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}

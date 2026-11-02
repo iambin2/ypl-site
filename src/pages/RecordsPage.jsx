@@ -628,8 +628,8 @@ function PokemonView({ snapshot, onParty }) {
       <RailSearch value={query} onChange={setQuery} placeholder="포켓몬 검색" count={`${visible.length}종`} />
       {visible.length ? (
         <ul className="case-grid sm">
-          {rows.map((pokemon) => (
-            <li key={pokemon.name}><Case title={pokemon.name} line={`${rankOf(pokemon)}위, ${pokemon.entries}회`} sprite={pictureOf(pokemon.name, pokemon.spriteName)} onClick={() => setOpen(pokemon.name)} label={`${pokemon.name}, ${rankOf(pokemon)}위, ${pokemon.entries}회 등록`} /></li>
+          {rows.map((pokemon, i) => (
+            <li key={pokemon.name}><Case eager={i < 8} title={pokemon.name} line={`${rankOf(pokemon)}위, ${pokemon.entries}회`} sprite={pictureOf(pokemon.name, pokemon.spriteName)} onClick={() => setOpen(pokemon.name)} label={`${pokemon.name}, ${rankOf(pokemon)}위, ${pokemon.entries}회 등록`} /></li>
           ))}
         </ul>
       ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
@@ -760,8 +760,8 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
   return (
     <>
       <div className="rc-filter">
-        {options.length > 0 && <Segmented value={view.id} onChange={setSel} ariaLabel="랭킹 보기" options={options} />}
-        {past.length > 0 && <Dropdown className="rc-past" value="" placeholder="지난 시즌 보기" ariaLabel="지난 기록" onChange={setSel} options={past.map((v) => ({ value: v.id, label: v.label }))} />}
+        {options.length > 0 && <Segmented className="seg-sub" value={view.id} onChange={setSel} ariaLabel="랭킹 보기" options={options} />}
+        {past.length > 0 && <Dropdown className="rc-past" value="" placeholder="지난 시즌 보기" ariaLabel="지난 시즌 보기" onChange={setSel} options={past.map((v) => ({ value: v.id, label: v.label }))} />}
         {admin && !normalizedMode && <>
           <Button size="sm" onClick={addSeason}>시즌 추가</Button>
           <Button size="sm" onClick={addEra}>누적 탭 추가</Button>
@@ -845,7 +845,7 @@ function Podium({ rows, label, onName }) {
   if (!leaders[0]) return null;
   const nameOf = (r) => onName ? <button type="button" className="rc-name-link" onClick={(e) => onName(r.name, e.currentTarget)}>{r.name}</button> : r.name;
   return (
-    <ol className="rc-podium" aria-label={label}>
+    <ol className={"rc-podium" + (leaders.length > 1 ? " even" : "") + (leaders.length > 2 ? " all" : "")} aria-label={label}>
       {[...leaders, ...next].map((r) => (
         <li key={r.name}>
           <Case title={nameOf(r)} line={[recordLine(r), r.note].filter(Boolean).join(", ")} fig={r.rank} unit="위">

@@ -109,8 +109,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     const openBuilder=(eventId)=>{if(go)go("builder",{eventId});else window.location.search=builderRouteSearch(eventId,window.location.search);};
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back" onClick={closeArticle}><Icon n="back" size={20}/><span>공지</span></button>
-        <header className="nb-a-head">
+        <header className="ypl-head nb-a-head">
+          <button type="button" className="nb-back" onClick={closeArticle}><Icon n="back" size={20}/><span>공지</span></button>
           <h1 className="title nb-a-title" data-vt={"n-"+a.id}>{a.title}</h1>
           <p className="caption tnum nb-a-meta">{formatDate(a.date)}{a.pinned&&<span className="pin">고정</span>}</p>
         </header>

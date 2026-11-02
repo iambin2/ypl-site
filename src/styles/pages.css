@@ -6,7 +6,7 @@
    One sheet cut by phi. The first screen is four flush planes, each a golden section of the last and each one fact: the next event, the
    champion, the last winner, the count. Below it time runs down the page, from now to the first record, and the page ends on the same navy.
    No plane floats, so nothing needs a shadow, a line or a gap: tone alone divides them. */
-.hm { --edge: max(var(--gutter), calc((100cqw - var(--content)) / 2)); }
+.hm { --edge: max(var(--gutter), calc((100cqw - var(--content)) / 2)); --split: calc(var(--edge) + min(100cqw - var(--edge) * 2, var(--content)) * .618); }
 .hm-wrap { width: min(100% - var(--gutter) * 2, var(--content)); margin-inline: auto; }
 
 .hm-plate {
@@ -36,17 +36,18 @@
 .hm-b { grid-area: b; background: var(--plane-b); }
 .hm-b b { padding-right: var(--s8); }
 .hm-b small { max-width: 61.8%; }
+.hm-keep { display: inline-block; }
+.hm-b img.hm-wait { opacity: 0; }
 .hm-b img { position: absolute; z-index: var(--z-raised); right: var(--s3); bottom: var(--s3); width: 61.8%; height: 61.8%; object-fit: contain; object-position: 100% 100%; }
 /* the signature stands still behind the champion; the seal crosses it once */
 .hm-slant { position: absolute; top: -10%; bottom: -10%; right: 14.6%; width: 38.2%; background: var(--slant); transform: skewX(-12deg); }
-.hm-b .case-band { background: var(--slant); }
+.hm-b .case-band { background: var(--state-pressed); }
 .hm-c { grid-area: c; background: var(--plane-c); }
-.hm-c > .ic { top: auto; bottom: var(--s5); }
+.hm-c b { padding-right: var(--s5); }
 .hm-d { grid-area: d; flex-direction: row; align-items: baseline; align-content: flex-start; flex-wrap: wrap; gap: var(--s1); background: var(--plane-d); color: var(--on-bar); }
 .hm-d b { font-size: var(--fig-s); line-height: 1; letter-spacing: var(--ls-title); }
 .hm-d em { font-size: var(--fs-body); font-weight: 600; }
 .hm-d small { flex-basis: 100%; color: var(--on-bar-2); }
-.hm-d > .ic { display: none; }
 @media (hover: hover) {
   .hm-b:hover { background: var(--state-pressed); }
   .hm-c:hover { background: var(--state-selected); }
@@ -56,12 +57,12 @@
 /* the sheet goes on under the first screen: two planes for now, a wall for the past, two for the start */
 .hm-now { display: grid; }
 .hm-now > .hm-sec { padding: var(--section) var(--gutter); background: var(--surface); }
-.hm-now > .hm-sec + .hm-sec { background: var(--plane-c); }
+.hm-now > .hm-sec + .hm-sec { --border-subtle: var(--border-default); background: var(--surface-raised); }
 .hm-ledger { padding-block: var(--section); }
 .hm-sec { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
 .hm-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s5); }
 .hm-head h2 { margin-block: var(--trim); font-size: var(--title); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
-.hm-all { position: relative; flex: none; min-height: var(--target); margin-block: calc(var(--s3) * -1); font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary); }
+.hm-all { position: relative; flex: none; min-height: var(--target); margin-block: calc(var(--s3) * -1); font-size: var(--fs-body); font-weight: 600; color: var(--text-secondary); text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: .382em; }
 .hm-list { list-style: none; display: grid; margin: 0; padding: 0; --divider: var(--border-subtle); }
 .hm-row { display: flex; align-items: center; gap: var(--s3); width: 100%; min-width: 0; min-height: var(--row-min); padding: var(--row-pad) 0; text-align: left; }
 .hm-row > span { flex: 1; min-width: 0; }
@@ -80,9 +81,9 @@
 .hm-first { padding: var(--section) var(--gutter); background: var(--bar); }
 .hm-close h2 { margin-top: var(--trim); font-size: var(--display); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
 .hm-close .hm-actions { margin-top: var(--s8); }
-.hm-close dl { display: flex; align-items: flex-end; gap: var(--s13); margin: 0; padding: var(--section) var(--gutter); background: var(--plane-d); }
+.hm-close dl { display: flex; align-items: flex-end; gap: var(--s13); margin: 0; padding: var(--section) var(--gutter); background: var(--bar); }
 .hm-close dl > div { display: flex; flex-direction: column; gap: var(--s1); }
-.hm-close dd { margin: 0; font-size: var(--fig-s); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); font-variant-numeric: tabular-nums; }
+.hm-close dd { margin: 0; font-size: var(--fig-m); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); font-variant-numeric: tabular-nums; }
 .hm-close dd small { margin-left: var(--s1); font-size: var(--fs-caption); font-weight: 600; letter-spacing: var(--ls-body); }
 .hm-close dt { order: 1; font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--on-bar-2); }
 
@@ -104,8 +105,12 @@
   .hm-when b { font-size: var(--fig-m); }
   .hm-next { gap: var(--s8); }
   .hm-plane { gap: var(--s2); padding: var(--s8); }
-  .hm-plane > .ic { top: var(--s8); right: var(--s8); bottom: auto; }
+  .hm-plane > .ic { top: var(--s8); right: var(--s8); }
+  .hm-b > .ic { right: var(--edge); }
   .hm-c b, .hm-b b { padding-right: var(--s8); }
+  /* a small plane stands its fact on its bottom edge, under the air the picture has beside it */
+  .hm-c { justify-content: flex-end; }
+  .hm-d { align-content: flex-end; }
   .hm-plane b { font-size: var(--fs-h2); letter-spacing: var(--ls-title); }
   .hm-plane small { font-size: var(--fs-body); font-weight: 400; line-height: var(--lh-label); }
   .hm-d small { font-size: var(--fs-caption); }
@@ -114,10 +119,20 @@
   .hm-now, .hm-close { grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); }
   .hm-now > :only-child { grid-column: 1 / -1; }
   .hm-now > .hm-sec, .hm-first { padding: var(--section) var(--s13) var(--section) var(--edge); }
-  .hm-now > .hm-sec + .hm-sec, .hm-close dl { padding: var(--section) var(--edge) var(--section) var(--s13); }
+  /* the words of the column under the planes stand on the planes' own edge */
+  .hm-now > .hm-sec + .hm-sec, .hm-close dl { padding: var(--section) var(--edge) var(--section) var(--s8); }
+  /* the two lists stand row for row: a row of one line takes the height of a title and its grey line */
+  .hm-now > .hm-sec + .hm-sec .hm-row { min-height: calc(var(--row-pad) * 2 + 1.382rem + var(--s1) + 1.123rem); }
 }
 /* five stand across the content's width, so the last ends on the page's right edge */
-@media (min-width: 1100px) { .hm-rail > .case { flex-basis: calc((100% - var(--s1) * 4) / 5); } .hm-d b { font-size: var(--fig-m); } .hm-d em { font-size: var(--fs-lead); } .hm-d > .ic { display: block; } }
+@media (min-width: 1100px) {
+  .hm-rail > .case { flex-basis: calc((100% - var(--s1) * 4) / 5); }
+  .hm-d b { font-size: var(--fig-m); }
+  .hm-d em { font-size: var(--fs-lead); }
+  /* the split stands on the content, so a wide screen keeps the same columns and only the planes run on */
+  .hm-plate { grid-template-columns: minmax(0, var(--split)) minmax(0, 1.618fr) minmax(0, 1fr); }
+  .hm-now, .hm-close { grid-template-columns: minmax(0, var(--split)) minmax(0, 1fr); }
+}
 /* a mouse cannot push the rail sideways, so it gets two arrows beside the section's title */
 @media (min-width: 860px) and (hover: hover) {
   .hm-arrows { display: flex; margin-left: auto; }
@@ -192,7 +207,9 @@
   margin: 0 0 var(--s5) calc(var(--s2) * -1); font-size: var(--fs-body); line-height: 1; font-weight: 600; color: var(--text-secondary); width: fit-content;
 }
 @media (hover: hover) { .nb-back:hover { color: var(--text-primary); background: var(--state-hover); } }
-.nb-a-head { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s8); }
+.nb-a-head { gap: var(--s2); margin-bottom: var(--s8); }
+.ypl-head .nb-back { margin-block: calc(var(--s3) * -1) var(--s2); }
+.bk-t-head .nb-back { margin-bottom: calc(var(--s2) - var(--s5)); }
 .nb-a-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); }
 .nb-a-title { width: fit-content; max-width: 100%; }
 .nb-body { padding: var(--s8); }

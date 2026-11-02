@@ -11,7 +11,7 @@ scale:
   line: { hair: 1, rule: 2 }
   breakpoints: [640, 860, 1100]
   content: { full: 1200, read: 36em, sheet: 576 }
-  z: { base: 0, raised: 1, sticky: 10, header: 20, overlay: 30, modal: 40, popover: 50, toast: 60, tooltip: 70, skip: 80, veil: 90 }
+  z: { base: 0, raised: 1, sticky: 10, header: 20, overlay: 30, modal: 40, popover: 50, toast: 60, tooltip: 70, skip: 80 }
   motion: { press: 100, tone: 160, leave: 260, place: 420, lift: 680, seal: 1100, wait: 1780 }
 ---
 
@@ -46,7 +46,7 @@ Decision codes in brackets (C7, K3 ...) point to `docs/redesign-glass/DECISIONS.
 | Space | 4 times a Fibonacci number | 4, 8, 12, 20, 32, 52, 84, 136 |
 | Type | the steps of space above reading size | 13 and 16 to read, then 20, 32, 52, 84, 136 |
 | Leading | 1 + a power of 1/phi, closer as type grows | 1.618 reading, 1.382 labels and captions, 1.236 titles, 1.146 the home's sentence |
-| Tracking | a power of 1/phi over ten | .009 body, -.009 small headings, -.0146 titles, -.0236 display |
+| Tracking | a power of 1/phi over ten, and none on display type | .009 body, -.009 small headings, -.0146 titles, 0 display, because Freesentation's bold Hangul touches at any negative tracking at 84 |
 | Time | each verb 1.618 times the last | 100, 160, 260, 420, 680, 1100, 1780 |
 | Stagger | 100ms by 1/phi and 1/phi squared | 62 tiles, 38 rows |
 | Travel | a step of space | 8 in a control, 12 content, 32 a case |
@@ -61,6 +61,7 @@ Decision codes in brackets (C7, K3 ...) point to `docs/redesign-glass/DECISIONS.
 | Saved images | the same scale, weights and square corners | team sheet, champion image, bracket image |
 | Height | the steps of space, and the hand's floor | 20, 32, 44, 52 |
 | Tone | a contrast, words over phi to the n, planes 1 + a power of 1/phi | see The eye |
+| Home split | from 1100 the split stands on the content, 61.8% of its width from the left edge, so a wide screen keeps the same two columns | |
 
 Some things stay outside the law on purpose, each for a reason: the 44 floor a finger needs, because a hand is not a ratio; the reading sizes 13 and 16; icons at 16, 20 and 24, the grid Phosphor is drawn on; the 12 degree slant, which is the brand's; navy `#081C3D` and black `#111111`, the owner's choice; the proportion of the Wing Y; and the content width and breakpoints, which sit where the content breaks.
 
@@ -84,7 +85,7 @@ Some things stay outside the law on purpose, each for a reason: the 44 floor a f
 5. **A title stands on a step on every screen.** No type token is fluid but the hero, which gives way only on a phone too narrow for its sentence. `--title` is 20 then 32, `--display` 32 then 52, `--hero` 52 then 84 from 1100. A size changes where space changes, in `tokens.css`.
 6. **A tone steps by phi, as a contrast.** The eye reads a tone as a ratio against what is behind it. Words go down from black by phi: 18.9, 11.7, 7.2, 4.5 on white, 16.9, 10.4, 6.4 on navy. Planes rise from the page by 1 + a power of 1/phi: 1.09, 1.146, 1.236, 1.382 on white, and the navy steps stand one further up, 1.146, 1.236, 1.382, 1.618, 2.618, because a dark plane needs more to be seen. Navy `#081C3D` and black `#111111` stay the owner's. Where a floor of contrast and a step meet, the floor wins.
 7. **One edge is one number on the screen.** `100vw` counts the scrollbar's reserved gutter and left the home and the hall 6 off the content on a desktop, so the full-width pages read `100cqw`.
-8. **An underline stands .382em under its word,** everywhere.
+8. **An underline stands .382em under its word,** everywhere, the top bar's selection line included. The bar and the home's first plane are one navy, so a line on the bar's edge would float, belonging to nothing.
 
 | What | Before | After |
 |---|---|---|
@@ -124,7 +125,7 @@ Lines come in two weights: `--hair` for what rests, `--rule` for what is chosen 
 3. **One tone parts by a seam of 4.** Planes of the same tone in a wall (cases, a party, a podium) stand 4 apart, so a wall still reads as one sheet.
 4. **A plane holds one fact and is a door.** Pressing it goes where the fact lives. What meets its neighbours answers a press in tone and never in size; only the main action, standing free, gives under the finger.
 5. **A split is 1.618 to 1, and the smaller part may be split again.** The home's first screen is three cuts of this; the hall's cover, the home's notices and season, and the close are one.
-6. **A page opens on navy.** The page head is a navy plane that continues the bar across the full width, on every page. Text in it stands on the page's left edge.
+6. **A page opens on navy.** The page head is a navy plane that continues the bar across the full width, on every page, a notice, a post and a bracket's own page included. Text in it stands on the page's left edge. A plane is drawn before anything arrives, on a first load too: the loader stands on navy, and white appears only with content.
 
 7. **A sheet's actions sit on its edge.** The main action is a plane to the sheet's corner; the other is a word beside it. The close is an X alone in the corner.
 
@@ -197,8 +198,8 @@ Freesentation for Korean (static, cut into core and rest slices), Albert Sans fo
 | h3 | 20 | 1.382 | -.009em | 700 | card and sheet titles |
 | h2 | 32 | 1.236 | -.0146em | 700 | section titles, small figures |
 | h1 | 52 | 1.236 | -.0146em | 700 | page titles, figures |
-| display | 84 | 1.236 | -.0236em | 700 | large figures |
-| hero | 52, 84 | 1.146 | -.0236em | 700 | the home's sentence |
+| display | 84 | 1.236 | 0 | 700 | large figures |
+| hero | 52, 84 | 1.146 | 0 | 700 | the home's sentence |
 
 Sizes are tokens, never numbers. A title stands on a step on every screen (`--title`, `--display`, `--hero`); only the hero gives way, on a phone too narrow for its sentence. What matters stands bold: 700 for titles, names and figures. Scoreboard figures use tabular digits on `--fig-s`, `--fig-m`, `--fig-l`; a number inside a sentence keeps its natural width (`Roll natural`). Reading text is capped at 36em, about 36 Hangul, and paragraphs use `text-wrap: pretty`; headlines balance. YPL Figures belongs to the brand. No small uppercase label sits above a title. The wordmark is drawn, never typeset; on the top bar it is 20px tall beside a 32px Wing Y, 12px apart. Korean copy uses plain prose, no middle dots. Page titles are the plain name. A notice or post body reads the few pieces of Markdown admins paste: a block opening with `#` is a headline over its text, `**bold**` is 600, `[text](url)` and bare addresses are underlined links. Hangul outside Freesentation's 2,780 syllables falls back to the system face.
 
@@ -264,7 +265,7 @@ Everything else is left: page and section heads, sheet and dialog titles, rows, 
 ## Layout and navigation (G1–G7)
 
 - Phone: full-width navy top bar (logo, theme, event action) and a navy tab bar of five against the bottom edge: 홈, 공지, 대진표, 기록, 더보기. 더보기 holds 칭호, 명예의 전당, 게시판, 팀 빌더, 계산기, 소개, Discord and admin login.
-- Desktop (860px+): the same navy bar, 84 tall, with the five after the logo; 더보기 opens a popover. Wide desktop (1100px+): every page has its own link and there is no 더보기; Discord stays in the footer, and admin login is a sign-in icon button left of the theme button (hidden in admin mode, where the bottom admin bar logs out). The event action stands at the end of the bar when an event is ahead and room allows (hidden 1100-1279px). It stands on every page, the home included, so it never appears or disappears as pages change.
+- Desktop (860px+): the same navy bar, 84 tall, with the five after the logo; 더보기 opens a popover. Wide desktop (1100px+): every page has its own link and there is no 더보기; Discord stays in the footer, and admin login is a sign-in icon button left of the theme button (hidden in admin mode, where the bottom admin bar logs out). The event action stands left of the theme button when an event is ahead, and the theme button ends the bar, so nothing in the bar moves when the action arrives with the data. It stands on every page, the home included, so it never appears or disappears as pages change.
 - **Nothing is tied to the scroll (25th round).** A bar that follows the page runs on the main thread while the page scrolls on the compositor, so it trails the finger, stops half away and has to finish on its own. So the bars do not move at all and the page scrolls between them, and a sideways picture is the browser's own scroll. No scroll listener moves anything on the site. The one bar move left is an event: a phone sheet puts the top bar away.
 - Content maximum width 1200px. Admin mode shows as a floating plate dock at the bottom (O2).
 
@@ -296,21 +297,21 @@ The laws, each enforced by `tests/designLaw.test.mjs`:
 Four rules a test cannot see:
 
 - **The eye stays where it is.** Words are never in motion for their own sake: nothing types, rolls, cycles or follows the pointer on the home. What arrives comes the short way and stops. A number on the home simply stands.
-- **Press answers first.** A tap starts the selection line in that frame (`leadPills`); drawing the next page waits until that frame is out (`afterPaint`).
+- **Press answers first.** A tap starts the selection line in that frame (`leadPills`); drawing the next page waits until that frame is out (`afterPaint`). Work a tap only prepares for (fetching the next pages) waits until what the tap opened has landed.
 - **A seal is an event, never a habit.** It plays when the site opens on the home, on the hall's first visit, and for a winner. It never plays on a hover or a list.
 - **Things that arrive together arrive 62 apart (rows 38), and the last has landed within 420 of the first.** Hover moves a thing one tone; nothing lifts on hover.
 
 Where the verbs meet:
 
-- **Page change:** the old page goes at once, the new page is placed. Back places it the other way and returns to the scroll position it left. A shared element's landing spot is measured before the page rises, so it lands once. No snapshots and no copy of the old page.
-- **Sheets:** under 860 a sheet lifts from the bottom at the full width, drags down to close and leaves at the finger's speed, and the page behind recedes to .966. From 860 the same content is a centred dialog. Every sheet has the X at its top right.
+- **Page change:** the old page goes at once. The navy plane the new page opens on stands from the first frame; only what stands on it and after it is placed, because a fading plane shows the white page through itself. Back places it the other way and returns to the scroll position it left. A shared element's landing spot is measured before the page rises, so it lands once. No snapshots and no copy of the old page.
+- **Sheets:** under 860 a sheet lifts from the bottom at the full width, drags down to close and leaves at the finger's speed, and the page behind recedes to .966 on navy. A sheet that leaves gives the bar and the page back as it goes, not after it has gone. From 860 the same content is a centred dialog. Every sheet has the X at its top right. What floats up reaches full opacity in one tone and keeps its spring on the transform, so nothing shows through it on the way.
 - **Selection:** one 2px line slides and stretches under the words: the leading edge goes first, the trailing edge follows a beat later. Moved by transforms only.
 - **Tab switch:** every page tab slides its line and the new view is placed with `.swap`, including tabs that remount the bar.
 - **Numbers** roll digit by digit. **Ranking rows** slide to their new place (FLIP).
-- **Theme change:** nothing moves. The page turns at once under one still sheet of the old stage's colour and the sheet fades, one tone.
-- **Home entrance:** each time the site is opened on the home: the planes are already there, the sentence and then the event are placed on them, the champion is placed and one seal crosses behind them. Nothing else moves. On a return everything stands.
+- **Theme change:** nothing moves. The page turns in one frame with no sheet over it: a sheet of either stage's colour wipes the words and the navy planes for a beat, and the planes that stay navy must not blink.
+- **Home entrance:** each time the site is opened on the home: the planes are already there, the sentence and then the event are placed on them. The facts of the three planes arrive together, once all are read, and an arrow stands only with its fact. The champion waits for its picture to be decoded, then it is placed and one seal crosses behind it, in a tone one step darker than the plane. Nothing else moves. On a return everything stands: the facts are kept, so a return never refills a plane or moves the page under the scroll position it restores.
 - **Celebration:** one flat disc and a ring spread from the moment; Android gets a short buzz.
-- **Loading:** one shared `Loader`, no words: the Wing Y dim where the screen will be, one solid band crossing it. It appears after a beat so a quick load never flashes. Reduced motion pulses instead of sweeping.
+- **Loading:** one shared `Loader`, no words: the Wing Y dim where the screen will be, on navy while the site itself loads, one solid band crossing it. It appears after a beat so a quick load never flashes. Reduced motion pulses instead of sweeping.
 - **Reduced motion** keeps opacity and drops travel and growth, in one rule at the end of `tokens.css`; `place`, `stand` and `seal` do nothing.
 
 ## States
@@ -322,7 +323,7 @@ Every control follows one rule, set once in `tokens.css`: hover moves it one ton
 What the browser draws is designed too, once, in `tokens.css`.
 
 - Selection and accent read the brand: `--selection-bg` and `accent-color` follow `--accent`, so checkboxes and ranges need no rule of their own. The text cursor is the text colour.
-- Scrollbars are thin in `--scrollbar`, the same on the page and in inner scrollers. `scrollbar-gutter: stable` holds their place, so a sheet that locks the page moves nothing. `scroll-padding-top` clears the bar. Sideways overscroll is off; pull to refresh stays, because a venue phone uses it.
+- The page itself has no drawn scrollbar: on a desktop its gutter stood as a white stripe beside the navy bar and planes, and with no gutter a sheet that locks the page moves nothing. Inner scrollers are thin in `--scrollbar`. `scroll-padding-top` clears the bar. Sideways overscroll is off; pull to refresh stays, because a venue phone uses it.
 - Number fields lose the browser's spin arrows and fields lose its autofill yellow; `color-scheme` sets the rest.
 - Controls are not selectable text. `pointer` means clickable, `not-allowed` means disabled. Tap highlight is off because every control answers with its own press.
 - Images drag as the browser's default, except sprites, which are set to stay put.
@@ -331,6 +332,7 @@ What the browser draws is designed too, once, in `tokens.css`.
 
 ## Responsive
 
+- **A phone on its side (height under 480):** the bars give the height back: the tab bar is 44 with its icons alone, and the hero is 32.
 - **Three breakpoints, where the content breaks, not for devices.** 640: under it a row of facts or fields stacks into one column. 860: under it the five tabs are a thumb's bottom bar and a sheet rises from the edge; from it the tabs join the top bar and a sheet is a dialog. 1100: there is room for every page's link in the bar, so 더보기 goes.
 - **Type changes in one place.** `--title`, `--display` and `--hero` step at 860, and the hero again at 1100. Only the hero gives way on a very narrow phone.
 - **Space changes in one place.** `--gutter`, `--section`, `--chapter` and `--grid-gap` change at 860 and nothing else does. Inside a component, space stays the same on every screen.
@@ -432,13 +434,13 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 ## Components
 
 - **The case (`Case.jsx`), a record on the plane.** Two flush planes with no frame: a light label over one navy window. With one picture it is the golden rectangle cut once, a square window and the label that is left. The label is a title, one grey line and at most one figure on the right. The window holds one thing: a sprite (`sprite`, then the case is a golden card), a party of six (`party`), or a figure or a name (`children`). Without any of these it is a label alone. It is the same object at every size and it means one thing: **this is a record**. So a champion, a Pokémon, a party, a title, a rank, a tournament's lead, a saved team and a sample all stand in it, and anything that holds a record uses it before it invents a surface. `off` empties the window for what nobody holds yet. A case with `onClick` is a button: hover moves its label one tone. A wall of cases is `.case-grid` (one to three across, `.sm` two to five), with a seam of 4. A team sheet is a case with a fourth face, the spec. What is not a record stays out: forms, notices, reading, tables, a bracket's match cards.
-- Buttons: one component, `Button.jsx`. `variant` is primary (one per area), secondary, tertiary, destructive or inverse (on navy); `size` is sm 44 at least 84 wide, md and lg 52 by 136 at least. Labels are words; an icon only for leaving the site, creating or the next step. `loading` keeps the width: the words clear under one spinner. `className` only places the button.
+- Buttons: one component, `Button.jsx`. `variant` is primary (one per area), secondary, tertiary, destructive (the confirm of a dialog that only deletes; beside a save, 삭제 is a word) or inverse (on navy); `size` is sm 44 at least 84 wide, md and lg 52 by 136 at least. Labels are words; an icon only for leaving the site, creating or the next step. `loading` keeps the width: the words clear under one spinner. `className` only places the button.
 - Chips (M10): one 32 tall word (13, 600) for every label, tag and status; inverted only for a decided winner and an applied search filter; the dot appears only while something is live. A count is a 20 tall number (`.fold-badge`, `.tb-count-badge`), never one mark inside another.
-- Segmented (K3): words on a hairline, one line under the chosen word; scrolls sideways without a bar when the labels do not fit.
+- Segmented (K3): words on a hairline, one line under the chosen word; scrolls sideways without a bar when the labels do not fit. A page's tabs are 16, 600, stand on the white page under the head, and a second row (`.seg-sub`) is 13.
 - Fields: `Field.jsx` keeps the label visible and linked, and sets the hint or error under the control with `aria-describedby`. The placeholder never replaces a label. A form-level error is `FormError`: an icon and weight, never colour alone, shown on submit.
 - Dropdowns and menus (M6): desktop popover that grows from its trigger; phone sheet.
 - Tables (M1, M2): hairlines between rows on the words' edges, 52 rows at least, header labels share their column's alignment (see Alignment).
-- Toasts (K6): from below (phone: just above the tab bar), stacked like Sonner, 4.66s.
+- Toasts (K6): from below (phone: just above the tab bar), stacked like Sonner, 4.66s. The words of a toast behind clear in one tone, so two sentences never overlap.
 - Icons (M8, M9): Phosphor Regular, Fill only for the selected tab; copied as paths into `Icon.jsx`.
 - Empty states are sentences only (L3), on the left edge where the content would stand; errors are a calm sentence and a retry button (L4).
 - Dates (one formatter, `src/services/dateFormat.js`): "10월 4일 (일)" this year, "2025년 10월 4일 (토)" otherwise, "2026년 8월" when only the month is known, "오후 4:00" appended for times. A missing date hides its field; never a dash.
@@ -447,10 +449,10 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 
 ## Pages (N1–N7)
 
-- Home (27th round): one sheet cut by phi, and time running down it. The first screen fills the space between the bars with four flush planes, each a golden section of the last, one fact each, and the eye turns from the largest to the smallest: A the sentence, what YPL is, the next event with its D-day and the action; B the reigning champion, the picture at 61.8% over the still 12 degree slant, pressing it opens the entry; C the last winner; D the number of events. On a phone A sits over B, and C over D beside it; on desktop A stands left of them. A plane is a door: it goes where its fact lives, so the home needs no list of places to go. Tone alone divides the planes, and a press moves a plane's tone, never its size. Below, the sheet goes back in time: now (the three latest notices and the current season's top three as two planes, split 1.618 to 1), the past champions (a wall of cases, five across the content on desktop), and the first record, two planes with the month it began and the league's totals, meeting the footer. One fact stands once on the page, and every fact is read from the same records and hall of fame as its own screen, never typed. Reduced motion stands everything at once.
+- Home (27th round): one sheet cut by phi, and time running down it. The first screen fills the space between the bars with four flush planes, each a golden section of the last, one fact each, and the eye turns from the largest to the smallest: A the sentence, what YPL is, the next event with its D-day and the action; B the reigning champion, the picture at 61.8% over the still 12 degree slant, pressing it opens the entry; C the last winner; D the number of events. On a phone A sits over B, and C over D beside it; on desktop A stands left of them. A plane is a door: it goes where its fact lives, so the home needs no list of places to go. Tone alone divides the planes, and a press moves a plane's tone, never its size. Below, the sheet goes back in time: now (the three latest notices and the current season's top three as two planes, split 1.618 to 1), the past champions (a wall of cases, five across the content on desktop, its arrows only when it overflows), and the first record, one navy with the month it began and the league's totals, running into the footer. On desktop the planes C and D stand their fact on the bottom edge; an arrow stands at the top right of A plane's door, and the count has none. One fact stands once on the page, and every fact is read from the same records and hall of fame as its own screen, never typed. Reduced motion stands everything at once.
 - Notices and board: list card with the same row (rule 2): the title first, a pinned or admin-only label in front of it, then one line of date and excerpt (notices) or name and time (posts); a notice or post opens on its own screen at the full content width, its body in one opaque reading card. A run of three or more short lists in the body (team sheets) lays out as tiles side by side. A post's comments sit in a second card below. The notice list's head carries one small soft button after its search, 알림 받기 or 알림 끄기, its words alone; where push cannot work it stays and explains why when pressed (on iOS outside the home-screen app, how to add the site; in an in-app browser, to open Chrome or Safari).
 - Records (2026-11-02): the tab stays in the address (`?tab=`). 트레이너: a list that opens a sheet with the figures, the event history (a row with a party opens it), every party they brought as cases, and their Pokémon with pictures. 대회: filtered by a row of small buttons; any number of rounds stay open at once so they can be compared, each opening its participants as party cases, and the search also finds a Pokémon. 포켓몬: a wall of golden cases in order of use; a case opens the Pokémon's sheet with what is used most (items, abilities, natures, moves with their rate), who used which sample in which event, the trainers and the partners. Any party or sample opens as a team sheet, read from the official snapshot. It shows what was revealed with the party and nothing sooner: the same `team_revealed_at` gate. An old roster holds names only and says so. 랭킹: the current season with one control, the podium as cases (rank in the label, points in the window), then the table.
-- Brackets: opaque match cards on the stage, lines lit as winners are decided and drawn once, the champion's road brightest, the champion cell inverted.
+- Brackets: opaque match cards on the stage, lines lit as winners are decided and drawn once, the champion's road brightest, the champion cell inverted. The lead case names the winner beside the count, and a finished bracket's page states its winner above the tree, so the tree opens on its first round.
 - Hall of fame (28th round): every champion is the same case with the whole winning entry in its window. The page opens on two flush planes split 1 to 1.618: the title, its sentence and the record button, and the reigning champion's case. The past champions hang on the white page as a wall, newest first. Pressing any case opens the same sheet as the home's slabs, where the Pokémon are named. The first visit in each visit to the site plays an entrance once: the words are placed, the case stands, a seal crosses the window.
 - Team builder: three steps on a phone (규정, 포켓몬 선택, 팀 구성), one screen on desktop; same state either way. The team saves as one PNG sheet in the current theme (every field of the editor) and posts straight to the board.
 - Board tabs 자유, 샘플, 파티: a sample is a golden case, a party a party case; a post shows the team sheet, one case for each Pokémon, and opens in the builder. Titles are cases with the holder in the window, and an unclaimed title has an empty window. Brackets tabs 공식, 사설: a private bracket uses the official board with an inverted "사설" chip and a sentence that it never reaches records; its images say so too.

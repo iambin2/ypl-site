@@ -38,6 +38,8 @@
     <link rel="preload" href="/fonts/freesentation/slices/600-core.d9b517d9.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/freesentation/slices/700-core.4b540ac2.woff2" as="font" type="font/woff2" crossorigin />
     <!-- font-preloads:end -->
+    <!-- 첫 그림부터 네이비: CSS가 오기 전의 빈 화면이 흰색이면 네이비 첫 화면으로 넘어갈 때 번쩍인다 -->
+    <style>html{background:#081c3d}</style>
     <!-- 첫 그림부터 고른 테마로: 번들이 도는 뒤에 바꾸면 다크를 고른 사람에게 흰 화면이 잠깐 보인다 -->
     <script>var t;try{t=localStorage.getItem("ypl-theme-2")}catch(e){}if(t!=="dark"){document.documentElement.dataset.theme="light";document.documentElement.style.colorScheme="light"}</script>
     <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />

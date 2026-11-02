@@ -39,7 +39,8 @@ export function leadPills(view) {
   if (typeof document === "undefined") return;
   document.querySelectorAll(".tabbar, .navlinks").forEach(box => {
     const target = box.querySelector(`[data-tab="${view}"]`) || (MORE_ITEMS.some(([k]) => k === view) ? box.querySelector('[data-tab="more"]') : null);
-    if (target && box.offsetParent !== null) placePill(box, true, target);
+    // 탭 바는 fixed 라 offsetParent 가 언제나 null 이다. 보이는지는 상자가 그려졌는지로 본다.
+    if (target && box.getClientRects().length) placePill(box, true, target);
   });
 }
 

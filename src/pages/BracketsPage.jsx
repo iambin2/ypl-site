@@ -1833,15 +1833,15 @@ function PrivateBrackets({ admin, flash, tabs }){
     await reload(); flash("삭제됨"); lock(id); closeBracket(); };
   const share=async()=>{ const r=await shareLink({view:"bracket",tab:"private",pb:open.id},open.name); if(r==="copied")flash("주소를 복사했습니다."); };
 
-  if(openId&&!open) return (<section className="sec"><div className="bk-open swap">
-    <button type="button" className="nb-back" onClick={closeBracket}><Icon n="back" size={20}/><span>사설 대진표</span></button>
+  if(openId&&!open) return (<section className="sec"><div className="bk-open">
+    <header className="ypl-head bk-t-head"><button type="button" className="nb-back" onClick={closeBracket}><Icon n="back" size={20}/><span>사설 대진표</span></button></header>
     {fresh?<Empty title="대진표를 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </div></section>);
 
   if(open){ const res=elimResult(open.graph); const live=!res?.done; const pngBracket={...open,private:true};
-    return (<section className="sec"><div className="bk-open swap">
-      <button type="button" className="nb-back" onClick={closeBracket}><Icon n="back" size={20}/><span>사설 대진표</span></button>
-      <header className="bk-t-head card">
+    return (<section className="sec"><div className="bk-open">
+      <header className="ypl-head bk-t-head">
+        <button type="button" className="nb-back" onClick={closeBracket}><Icon n="back" size={20}/><span>사설 대진표</span></button>
         <div className="bk-t-body">
           <h1 className="title bk-open-title" data-vt={"pb-"+open.id}>{open.name}</h1>
           <p className="callout">{open.host?`${open.host} 개설, `:""}{pbFormat(open)}, {open.participants.length}명{open.createdAt?`, ${formatDate(open.createdAt)}`:""}</p>
@@ -2190,6 +2190,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   const tabsEl=()=><div className="bd-tabs"><Segmented value={tab} onChange={changeTab} ariaLabel="대진표 종류" options={[["official","공식"],["private","사설"]]}/></div>;
   if(tab==="private"&&!open) return <PrivateBrackets admin={admin} flash={flash} tabs={tabsEl()}/>;
   const bracketFormat=(b)=>b.format==="group"?"조별예선과 본선":(b.double?"더블 엘리미네이션":"싱글 엘리미네이션");
+  const winnerOf=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); return r?.done?(b.participants||[]).find(p=>p.id===r.champ)?.name||"":""; };
   const statusTag=(b)=>{ const r=b.format==="group"?(b.knockout?elimResult(b.knockout):null):elimResult(b.graph); if(b.applied||(r&&r.done))return admin?(b.applied?"기록 반영됨":"기록 반영 전"):"종료"; return"진행 중"; };
   return (<section className="sec">
     {!open&&<PageHead plain="대진표">
@@ -2209,6 +2210,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             !String(lead.name||"").includes(lead.mode==="team"?"팀전":"개인전")&&(lead.mode==="team"?"팀전":"개인전"),
             bracketFormat(lead), lead.createdAt&&formatDate(lead.createdAt)].filter(Boolean).join(", ")}
           onClick={()=>openBracket(lead)} label={`${lead.name} 대진표 보기`} className="bk-lead">
+          {!live&&winnerOf(lead)&&<span className="bk-lead-win"><b>{winnerOf(lead)}</b><small>우승</small></span>}
           <span className="rc-podium-pts">{live&&<i className="live-dot" aria-hidden="true"/>}<Roll value={lead.participants.length}/><small>{lead.mode==="team"?"팀":"명"}</small></span>
         </Case>); })()}
       {list.length>1&&<section>
@@ -2228,9 +2230,9 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         </li>))}</ul>
       </section>}
     </div>}
-    {open&&!wizard&&<div className="bk-open swap">
-      <button type="button" className="nb-back" disabled={deletingId===open.id} onClick={closeBracket}><Icon n="back" size={20}/><span>대진표</span></button>
-      <header className="bk-t-head card">
+    {open&&!wizard&&<div className="bk-open">
+      <header className="ypl-head bk-t-head">
+        <button type="button" className="nb-back" disabled={deletingId===open.id} onClick={closeBracket}><Icon n="back" size={20}/><span>대진표</span></button>
         <div className="bk-t-body">
           <h1 className="title bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
           <p className="callout">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}</p>

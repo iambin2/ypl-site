@@ -65,7 +65,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
       </div>); })}</div>
       <div className="bk-hint">포켓몬 이름을 입력하면 이미지가 자동으로 표시됩니다. 폼이 있는 포켓몬은 팀 빌더에 나오는 이름 그대로 입력해 주세요.</div>
     </div>
-    <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
+    <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 
@@ -78,7 +78,7 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
     {!partner&&<Field label="설명 (선택)"><input value={desc} onChange={e=>setDesc(e.target.value)}/></Field>}
     <Field label={partner?"파트너 포켓몬":"해당자"}><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></Field>
     {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
-    <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
+    <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 const Q_TYPES=[
@@ -219,7 +219,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete }) {
       </div>}
     </div>
     <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} style={{width:"auto"}} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="modal-actions">{onDelete&&<Button variant="destructive" onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
+    <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={()=>onSave({id:item?.id||uid(),date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
   </Modal>);
 }
 export function StandingsEditor({ title, rows, onClose, onSave }) {

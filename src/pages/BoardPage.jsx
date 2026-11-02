@@ -160,14 +160,14 @@ function FreeBoard({ admin, flash, tabs }){
 
   const p=article?all.find(x=>x.id===article):null;
   if(article&&!p) return (<section className="sec"><article className="nb-article">
-    <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
+    <header className="ypl-head nb-a-head"><button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button></header>
     {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
-        <header className="nb-a-head">
+        <header className="ypl-head nb-a-head">
+          <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
           <h1 className="title nb-a-title" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
           <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
         </header>
@@ -190,12 +190,12 @@ function FreeBoard({ admin, flash, tabs }){
 
   return (<section className="sec">
     <PageHead plain="게시판" desc="로그인 없이 닉네임으로 글과 댓글을 남길 수 있습니다.">
-      {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
         <Button variant="primary" size="sm" onClick={()=>setCompose(true)}><Icon n="plus" size={16}/>글쓰기</Button>
       </div>
     </PageHead>
+    {tabs}
     <div className="bd-list swap">
       {loadError&&<ErrorNote action="다시 불러오기" onRetry={reload}>{loadError}</ErrorNote>}
       {!loadError&&!posts&&!fresh&&<Loader/>}
@@ -364,14 +364,14 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
   if(article&&!p) return (<section className="sec"><article className="nb-article">
-    <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
+    <header className="ypl-head nb-a-head"><button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button></header>
     {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
   </article></section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
     return (<section className="sec">
       <article className="nb-article">
-        <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
-        <header className="nb-a-head">
+        <header className="ypl-head nb-a-head">
+          <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
           <h1 className="title nb-a-title" data-vt={"s-"+p.id}>{p.title}</h1>
           <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
         </header>
@@ -402,12 +402,12 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
 
   return (<section className="sec">
     <PageHead plain="게시판" desc={kind==="sample"?"포켓몬 한 마리의 세팅과 운용법을 나누는 곳입니다. 팀 빌더에서 바로 올리고 가져갈 수 있습니다.":"파티 전체를 소개하는 곳입니다. 마음에 드는 파티는 내 팀 빌더로 바로 가져갈 수 있습니다."}>
-      {tabs}
       <div className="y-page-aside">
         <ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이 검색" count={list.length}/>
         <Button variant="primary" size="sm" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</Button>
       </div>
     </PageHead>
+    {tabs}
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!posts&&!loadError?<Loader/>:<div className={"case-grid sc-grid swap"+(kind==="party"?"":" sm")}>
       {list.length===0&&(kw
@@ -433,6 +433,6 @@ export default function BoardPage(props){
   const changeTab=t=>{ setTab(t); replaceUrl("tab",t==="free"?"":t); };
   const changeFormat=f=>{ setFormat(f); replaceUrl("format",f==="double"?f:""); };
   const tabs=<div className="bd-tabs"><Segmented value={tab} onChange={changeTab} ariaLabel="게시판 종류" options={BOARD_TABS}/>
-    {tab!=="free"&&<Segmented value={format} onChange={changeFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/>}</div>;
+    {tab!=="free"&&<Segmented className="seg-sub" value={format} onChange={changeFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/>}</div>;
   return tab==="free"?<FreeBoard {...props} tabs={tabs}/>:<ShowcaseBoard key={tab} kind={tab} format={format} setFormat={changeFormat} {...props} tabs={tabs}/>;
 }

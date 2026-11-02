@@ -62,7 +62,6 @@
 
 /* ---------- Segmented (K3): words on a hairline, one line under the chosen word ---------- */
 .ypl-seg { --lens: var(--accent); --ind-fg: var(--text-primary); --seg-line: var(--divider); position: relative; display: inline-flex; max-width: 100%; vertical-align: top; background: none; box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--seg-line); }
-.ypl-head .ypl-seg { --lens: var(--on-bar); --ind-fg: var(--on-bar); --seg-line: var(--bar-up); --text-secondary: var(--on-bar-2); --text-primary: var(--on-bar); }
 .seg-track {
   position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: var(--s8); padding: 0;
   max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
@@ -73,18 +72,21 @@
   .ypl-seg { display: flex; width: 100%; }
   .seg-track { width: 100%; }
   .y-page-aside { width: 100%; }
-  .y-page-aside > .list-tools { flex: 1 1 100%; }
+  /* a search and its one action share a row, so a head stays a head */
+  .y-page-aside > .list-tools { flex: 1 1 136px; min-width: 0; }
   .lsearch { width: 100%; }
 }
 .seg-track > button {
-  position: relative; z-index: var(--z-raised); display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0; font-size: var(--fs-caption); line-height: 1; font-weight: 600; color: var(--text-secondary); white-space: nowrap;
+  position: relative; z-index: var(--z-raised); display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0; font-size: var(--fs-body); line-height: 1; font-weight: 600; color: var(--text-secondary); white-space: nowrap;
   transition: color var(--move-tone), scale var(--move-press);
 }
+.seg-sub .seg-track > button { font-size: var(--fs-caption); }
 .seg-track > button[aria-selected="true"] { color: var(--ind-fg); }
 @media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--text-primary); } }
 
 /* ---------- PageHead (E3): the page opens on a navy plane; every distance in it is measured to the ink ---------- */
-.ypl-head { display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--page-top) * -1) calc(50% - 50vw) calc(var(--s8) - var(--section)); padding: var(--s8) calc(50vw - 50%); background: var(--bar); color: var(--on-bar); }
+.ypl-head { --text-primary: var(--on-bar); --text-secondary: var(--on-bar-2); --text-tertiary: var(--on-bar-2); --state-hover: var(--bar-up); --accent: var(--on-bar); --text-on-accent: var(--on-label); display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--page-top) * -1) calc(50% - 50vw) calc(var(--s8) - var(--section)); padding: var(--s8) calc(50vw - 50%); background: var(--bar); color: var(--on-bar); }
+.ypl-head > .btn { align-self: flex-start; }
 .ypl-head .callout { color: var(--on-bar-2); }
 .ypl-head .btn--primary { --btn-bg: var(--on-bar); --btn-bg-hover: var(--navy-up-hover); --btn-fg: var(--on-label); }
 .ypl-head .btn--secondary, .ypl-head .btn--tertiary { --btn-fg: var(--on-bar); }
@@ -96,7 +98,6 @@
 .ypl-head-desc { margin-block: var(--trim); }
 /* whatever the head carries under its title (search, tabs, actions) starts 32 under the title or its line; controls after it keep 20 */
 .ypl-head > :is(.ypl-head-row, .ypl-head-desc) + :not(.ypl-head-desc) { margin-top: calc(var(--s8) - var(--s5)); }
-.ypl-head .bd-tabs { margin-bottom: 0; }
 .y-page-aside { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 
 /* ---------- Section head: a headline, a quiet link on the right; 20 to the content ---------- */
@@ -297,6 +298,9 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 }
 .toast > span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .toast.out { opacity: 0; translate: 0 12px; }
+/* the words of a toast behind clear, so two sentences never overlap */
+.toast > * { transition: opacity var(--move-tone); }
+.toast.behind > * { opacity: 0; }
 
 /* ---------- Sheet and dialog (M5, K10): one rule at 860px. Under it a sheet rises from the bottom and fills the width;
    from it a dialog sits in the middle. ---------- */
@@ -397,6 +401,9 @@ button.case:active:not(:disabled) { scale: 1; }
 .case-fig small { margin-left: var(--s1); font-size: var(--fs-caption); font-weight: 600; }
 .case-win { position: relative; display: block; flex: 1; overflow: hidden; min-height: 0; padding: var(--s5); background: var(--window); color: var(--on-bar); }
 .case-win img { position: relative; z-index: var(--z-raised); display: block; width: 100%; height: 100%; object-fit: contain; }
+/* a picture arrives in one tone on a window that already stands */
+.case-win img.fade { opacity: 0; transition: opacity var(--move-tone); }
+.case-win img.fade.in { opacity: 1; }
 .case-band { position: absolute; top: -10%; bottom: -10%; left: 0; width: 38.2%; background: var(--bar-up); transform: translateX(-162%) skewX(-12deg); }
 /* one picture: the golden rectangle cut once, a square window and the label that is left */
 .case.one { aspect-ratio: 1 / var(--golden); }
@@ -415,5 +422,5 @@ button.case:active:not(:disabled) { scale: 1; }
 .case-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s1); }
 .case-grid.sm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 640px) { .case-grid:not(.sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 860px) { .case-grid.sm { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .case-grid:not(.sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 860px) { .case-grid.sm { grid-template-columns: repeat(4, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(5):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .case-grid:not(.sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(5, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(5):last-child) { grid-template-columns: repeat(5, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(6):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

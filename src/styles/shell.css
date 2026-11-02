@@ -23,14 +23,16 @@
 }
 /* a sheet on a phone puts the top bar away (Modal.jsx) */
 .topbar.hide { translate: 0 calc(-100% - env(safe-area-inset-top, 0px)); transition: translate var(--move-leave); }
-.brand { position: relative; display: flex; align-items: center; gap: var(--s3); height: var(--target); flex: none; }
+.brand { position: relative; display: flex; align-items: center; gap: var(--s3); height: var(--target); flex: none; margin-right: auto; }
 .brand-logo { display: flex; }
 .brand .logo { display: block; width: 48px; height: 32px; translate: 0 1px; }
 .wordmark { display: block; height: 20px; width: auto; fill: currentColor; }
 .navlinks { display: none; }
-.iconbtn { position: relative; display: grid; place-items: center; align-self: stretch; width: var(--target); margin-left: auto; flex: none; color: var(--on-bar); transition: color var(--move-tone); }
+.iconbtn { position: relative; display: grid; place-items: center; align-self: stretch; width: var(--target); flex: none; color: var(--on-bar); transition: color var(--move-tone); }
+/* the bar ends on the page's edge by its ink, not by the button's box */
+.iconbtn:last-child { margin-right: calc(var(--s3) * -1); }
 @media (hover: hover) { .iconbtn:hover { color: var(--on-bar-2); } }
-.bar-cta { flex: none; display: inline-flex; align-items: center; align-self: stretch; gap: var(--s1); margin-left: var(--s3); color: var(--on-bar); font-size: var(--fs-caption); line-height: 1; font-weight: 600; }
+.bar-cta { flex: none; display: inline-flex; align-items: center; align-self: stretch; gap: var(--s1); margin-right: var(--s3); color: var(--on-bar); font-size: var(--fs-caption); line-height: 1; font-weight: 600; }
 .bar-cta .ic { transition: transform var(--move-slide); }
 @media (hover: hover) { .bar-cta:hover .ic { transform: translateX(var(--s1)); } }
 .theme-ic { display: grid; }
@@ -60,16 +62,20 @@
 .pill-ind > i { position: absolute; top: 0; left: 0; height: 100%; background: var(--lens); will-change: transform; }
 .pill-ind > i { width: 100px; transform-origin: 0 50%; }
 .tabbar > .pill-ind { bottom: env(safe-area-inset-bottom, 0px); }
+/* a phone on its side: the bars give the height back */
+@media (max-width: 859px) and (max-height: 480px) { .tab { padding-bottom: 0; } .tab > span:last-of-type { display: none; } }
 
 @media (min-width: 860px) {
   .tabbar { display: none; }
+  .brand { margin-right: 0; }
   .navlinks { position: relative; display: flex; align-self: stretch; gap: var(--s5); margin-left: var(--s8); margin-right: auto; padding: 0; --lens: var(--on-bar); --ind-fg: var(--on-bar); }
   .navlink { position: relative; z-index: var(--z-raised); display: inline-flex; align-items: center; justify-content: center; height: 100%; padding: 0; font-size: var(--fs-body); line-height: 1; font-weight: 600; color: var(--on-bar-2); transition: color var(--move-tone), scale var(--move-press); }
   .navlink:is([aria-current="page"], [data-current]) { color: var(--ind-fg); }
   .navlink[aria-expanded="true"]:not([data-current]) { color: var(--on-bar); }
   @media (hover: hover) { .navlink:not([aria-current="page"], [data-current]):hover { color: var(--on-bar); } }
-  .iconbtn { margin-left: 0; }
-  .bar-cta { margin-left: var(--s5); font-size: var(--fs-body); }
+  /* the line stands under the word, as every underline does: on the bar's edge it floats on the navy that continues below */
+  .navlinks > .pill-ind { top: calc(50% + .882em); bottom: auto; font-size: var(--fs-body); }
+  .bar-cta { margin-right: var(--s5); font-size: var(--fs-body); }
 }
 
 /* ---------- page frame ---------- */
@@ -93,6 +99,7 @@
 .y-loader.sm { min-height: 136px; }
 .y-loader-mark { display: grid; color: var(--text-primary); }
 .y-loader-mark > * { grid-area: 1 / 1; }
+.page--wait .y-loader-mark { color: var(--on-bar); }
 .y-loader-mark > :first-child { opacity: var(--opacity-ghost); }
 /* the mark is a still mask and only the band inside it moves, by transform, so the sweep stays on the compositor
    while the main thread is busy with the load it stands for */

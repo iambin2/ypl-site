@@ -18,7 +18,7 @@ function Toast({ item, index, onGone }) {
     return () => clearTimeout(t);
   }, [item.out, item.id, onGone]);
   return (
-    <div ref={ref} className={"toast plate-l3" + (item.out ? " out" : "")} style={{ "--i": index, zIndex: 10 - index, opacity: index > 2 && !item.out ? 0 : undefined }}>
+    <div ref={ref} className={"toast plate-l3" + (item.out ? " out" : "") + (index > 0 ? " behind" : "")} style={{ "--i": index, zIndex: 10 - index, opacity: index > 2 && !item.out ? 0 : undefined }}>
       <Icon n={failed(item.text) ? "info" : "check"} size={20} />
       <span>{item.text}</span>
     </div>

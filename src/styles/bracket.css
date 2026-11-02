@@ -8,6 +8,10 @@
 /* ---------- list: the newest bracket leads, the rest in one list ---------- */
 .bk-list { display: grid; gap: var(--section); }
 .bk-lead .case-who b, .bk-lead .case-who > span { white-space: normal; }
+.bk-lead .case-say { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: var(--s5); }
+.bk-lead-win { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
+.bk-lead-win b { font-size: var(--title); font-weight: 700; line-height: var(--lh-title); letter-spacing: var(--ls-title); }
+.bk-lead-win small { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--on-bar-2); }
 .bk-lead .live-dot { display: inline-block; margin-right: var(--s2); vertical-align: middle; background: var(--on-bar); }
 .bk-row-main { min-width: 0; display: grid; gap: var(--s1); }
 .bk-row-end { display: grid; justify-items: end; gap: var(--s1); }
@@ -16,8 +20,7 @@
 
 /* ---------- open board: back, the head card of the event, then the tree ---------- */
 .bk-open { display: flex; flex-direction: column; gap: var(--s8); }
-.bk-open > .nb-back { margin-bottom: calc(var(--s5) - var(--s8)); }
-.bk-t-head { display: flex; flex-direction: column; gap: var(--s5); padding: var(--s8); }
+.bk-t-head { margin-bottom: 0; }
 .bk-t-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .bk-t-body { display: flex; flex-direction: column; gap: var(--s2); }
 .bk-open-title { width: fit-content; max-width: 100%; }

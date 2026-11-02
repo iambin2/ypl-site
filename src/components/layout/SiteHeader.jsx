@@ -34,7 +34,8 @@ export function Wordmark() {
 }
 
 /* G3: 화면 폭을 다 쓰는 네이비 바. 안의 내용은 본문과 같은 폭이라 가장자리가 본문과 한 줄에 맞는다.
-   폰은 로고, 테마 버튼, 대회 행동만. 넓은 데스크톱은 더보기가 없어 관리자 로그인이 테마 버튼 옆에 선다(onAdmin).
+   폰은 로고, 대회 행동, 테마 버튼만. 넓은 데스크톱은 더보기가 없어 관리자 로그인이 테마 버튼 옆에 선다(onAdmin).
+   테마 버튼이 바의 끝에 서서, 데이터와 함께 늦게 오는 대회 행동이 다른 것을 밀지 않는다.
    cta: 다음 대회가 잡혀 있을 때의 행동 [글자, 화면]. */
 export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, moreOpen, onMore, onAdmin, cta }) {
   const nav = useRef(null);
@@ -55,11 +56,11 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{label}</button>
         ))}
       </nav>
+      {cta && <button type="button" className="bar-cta swap" onClick={() => onNavigate(cta[1])}>{cta[0]}<Icon n="arrow" size={16} /></button>}
       {onAdmin && <button type="button" className="iconbtn" onClick={onAdmin} aria-label="관리자 로그인" title="관리자 로그인"><Icon n="login" size={20} /></button>}
       <button type="button" className="iconbtn" onClick={onToggleTheme} aria-label={themeLabel} title={themeLabel}>
         <span className="theme-ic"><Icon n="sun" size={20} className="i-sun" /><Icon n="moon" size={20} className="i-moon" /></span>
       </button>
-      {cta && <button type="button" className="bar-cta" onClick={() => onNavigate(cta[1])}>{cta[0]}<Icon n="arrow" size={16} /></button>}
     </header>
   );
 }
