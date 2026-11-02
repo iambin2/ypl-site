@@ -13,6 +13,7 @@ import "./styles/news.css";
 import "./styles/brackets.css";
 import "./styles/more.css";
 import "./styles/hall.css";
+import "./styles/posts.css";
 import "./styles/pages.css";
 import "./styles/records.css";
 import "./styles/records-board.css";

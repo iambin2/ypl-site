@@ -16,9 +16,7 @@
 .nb-a-head { gap: var(--s2); margin-bottom: var(--s8); }
 .ypl-head .nb-back { margin-block: calc(var(--s3) * -1) var(--s2); }
 .bk-t-head .nb-back { margin-bottom: calc(var(--s2) - var(--s5)); }
-.nb-a-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); }
 .nb-a-title { width: fit-content; max-width: 100%; }
-.nb-body { padding: var(--pad); }
 /* 한 칸은 본문 너비를 넘지 않는다: 띄어 쓸 곳 없는 긴 주소가 칸을 넓혀 모든 문단이 카드 밖으로 잘리던 것 */
 .prose { max-width: 36em; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s8); }
 .prose p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-primary); }
@@ -71,56 +69,6 @@
 @media (hover: hover) { .fr-del:hover { color: var(--text-primary); }
 }
 .fr-empty { padding: var(--s8) var(--s5); color: var(--text-tertiary); }
-
-/* =========================== BOARD ===========================
-   One list surface; a post opens on its own screen like a notice (I2), with the same body card and its comments below. */
-.bd-list { display: flex; flex-direction: column; padding: 0; }
-.bd-list:has(> .ypl-empty) { padding: 0; background: none; box-shadow: none; }
-.bd-main, .bd-cmt-main { min-width: 0; }
-.bd-lock { display: inline-flex; align-items: center; gap: var(--s1); height: 20px; margin-right: var(--s2); padding: 0 var(--s2); background: var(--accent); color: var(--text-on-accent); font-size: var(--fs-caption); font-weight: 600; vertical-align: 2px; line-height: 1; }
-.nb-a-meta .bd-lock { margin-right: 0; }
-.bd-lock .ic { width: 16px; height: 16px; }
-.bd-meta { display: flex; gap: var(--s2); margin-top: var(--s1); font-size: var(--fs-caption); color: var(--text-tertiary); }
-.bd-nick { font-weight: 400; color: var(--text-secondary); }
-.bd-cc { font-size: var(--fs-caption); color: var(--text-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.nb-body .bd-yt, .nb-body .bd-img { max-width: 932px; }
-.bd-yt { position: relative; aspect-ratio: 16 / 9; margin-top: var(--s5); overflow: hidden; background: #000; }
-.nb-body > .bd-yt:first-child, .nb-body > .bd-img:first-child { margin-top: 0; }
-.bd-yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bd-img { display: inline-block; margin-top: var(--s5); }
-.bd-img img { max-height: 576px; width: auto; }
-.bd-tools { display: flex; justify-content: flex-end; gap: var(--s1); margin-top: var(--s3); }
-.bd-del { height: 44px; padding: 0 var(--s3); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone); }
-@media (hover: hover) { .bd-del:hover { background: var(--state-selected); color: var(--text-primary); }
-}
-.bd-del.sm { height: 32px; margin-left: auto; padding: 0 var(--s2); }
-.bd-del.sm + .bd-del.sm { margin-left: 0; }
-.bd-cmts { margin-top: var(--s3); padding: var(--pad); }
-.bd-cmts-h { padding-bottom: var(--s2); font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-label); }
-.bd-cmt { padding: var(--s3) 0; }
-.bd-cmt + .bd-cmt { box-shadow: inset 0 1px 0 var(--divider); }
-.bd-cmt-top { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-caption); }
-.bd-cmt-top .bd-date { color: var(--text-tertiary); }
-.bd-cmt-body { margin-top: var(--s1); white-space: pre-wrap; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-secondary); }
-.bd-cform { display: flex; flex-direction: column; gap: var(--s2); margin-top: var(--s3); }
-.bd-cform-row { display: flex; gap: var(--s2); }
-.bd-cform-nick, .bd-cform-body { flex: 1; min-width: 0; }
-.bd-cform-pin { flex: 0 0 136px; }
-.bd-cform-row .btn { flex: none; height: 52px; }
-.bd-preview { margin-top: var(--s3); padding: var(--s3) var(--s5); background: var(--state-hover); }
-.bd-preview-h { margin-bottom: var(--s1); font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); }
-@media (max-width: 639px) { .bd-cform-pin { flex-basis: 136px; }
-}
-
-/* =========================== TITLES ===========================
-   A segmented row of groups, the group's hero card (achieved count as the one big number),
-   then its titles as one list. Titles without a holder sit dimmed. */
-/* a control sits 20 above the content it drives (records tabs, titles groups, builder steps) */
-
-/* =========================== BOARD: SAMPLES AND PARTIES ===========================
-   The board's three tabs share one head. A party is a tile whose sprites stand on the pod; a sample is the board row with
-   its Pokémon in front. A post opens like any post, with the team sheet as opaque cards (every field of the builder). */
-.bd-tabs { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: calc(var(--s5) - var(--section)); }
 .sc-sprites { display: flex; gap: var(--s1); min-width: 0; }
 .sc-sprites img { width: 44px; height: 44px; flex: none; object-fit: contain; }
 .sc-sprites.big { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }

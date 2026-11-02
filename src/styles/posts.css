@@ -1,0 +1,65 @@
+/* =============================================================================
+   YPL Scoreboard: board (BoardPage.jsx). Draft: docs/redesign-next c5-board. The list and a post keep the notices' rules:
+   rows of 64, a back link, the date line, the title; a party post stands as six cells on their floors; comments are panels.
+   ========================================================================== */
+
+.bd-tabs { margin-top: var(--s8); }
+.bd-format { margin-top: var(--s3); }
+.bd-desc { margin-top: var(--s5); }
+.bd-tools { margin-top: var(--s5); }
+.bd-list { margin-top: var(--s5); }
+.bd-list .row { height: var(--h-row2); }
+.bd-day { margin-left: var(--s2); }
+.bd-pager { margin-top: var(--s5); }
+
+/* a party or a sample: its title, a grey line, the six small on their floors */
+.bd-post { display: grid; gap: var(--s2); width: 100%; padding: var(--pad); text-align: left; }
+.bd-post-top { display: grid; gap: var(--s1); min-width: 0; }
+.bd-post-top > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-minis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
+.bd-mini { --floor: 24%; height: var(--h-control); }
+.bd-mini .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+
+/* a post */
+.bd > .back:first-child, .bd article > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
+.bd-date-line { margin-top: var(--s3); }
+.bd-title-h { margin-top: var(--s2); }
+.bd-body { margin-top: var(--s5); }
+.bd-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s5); }
+.bd-cell { --floor: var(--h-row); aspect-ratio: 1 / 1.272; }
+.bd-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
+.bd-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--s3); }
+.bd-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-actions { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bd-actions > :first-child:nth-last-child(odd) { grid-column: 1 / -1; }
+.sc-post-sheet { margin-top: var(--s8); }
+
+/* comments: panels, the name 12 bold with its time dim, the words read at 15 */
+.bd-cmts { margin-top: var(--s13); display: grid; gap: var(--seam); }
+.bd-cmts-h { margin-bottom: var(--s3); }
+.bd-cmt { padding: var(--pad); }
+.bd-cmt-top { display: flex; align-items: center; gap: var(--s2); }
+.bd-cmt-body { margin-top: var(--s1); white-space: pre-wrap; overflow-wrap: anywhere; }
+.bd-act { min-height: var(--h-control); margin-block: calc((var(--h-control) - var(--l12)) / -2); padding: 0 var(--s1); font-weight: 600; color: var(--dim); }
+.bd-act:first-of-type { margin-left: auto; }
+@media (hover: hover) { .bd-act:hover { color: var(--lit); } }
+.bd-cform { margin-top: var(--s5); }
+.bd-cform-row { display: flex; gap: var(--seam); }
+.bd-cform input { flex: 1; min-width: 0; height: var(--h-row); min-height: var(--h-row); padding: 0 var(--pad); background: var(--panel); box-shadow: none; font-size: var(--t15); line-height: var(--l15); }
+.bd-cform input:focus-visible { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.bd-cform-pin { flex: 0 0 calc(var(--s21) + var(--s13)); }
+.bd-cform .btn { flex: none; width: auto; height: var(--h-row); }
+
+/* a picture or a video a post links */
+.bd-yt { position: relative; aspect-ratio: 16 / 9; margin-top: var(--s5); overflow: hidden; background: #000; }
+.bd-yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bd-img { display: inline-block; margin-top: var(--s5); }
+.bd-img img { max-height: 576px; width: auto; }
+.bd-preview { margin-top: var(--s3); padding: var(--s3); background: var(--panel-2); }
+.bd-preview-h { margin-bottom: var(--s1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
+@media (min-width: 860px) { .bd { max-width: 709px; } .bd-six { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+/* an admin's small action in a row (비밀번호 초기화) */
+.bd-del { display: inline-flex; align-items: center; height: var(--h-strip); padding: 0 var(--s3); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
+/* the search and 글쓰기 share one row: the field takes the rest, the main action its word */
+.bd-tools { grid-template-columns: minmax(0, 1fr) auto; }
+.bd-tools .btn--main { width: auto; flex-direction: row-reverse; gap: var(--s3); }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Empty, Icon, ListSearch, Loader, Modal, PageHead, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition, ErrorNote } from "../components/index.js";
+import { Empty, Icon, ListSearch, Loader, Modal, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition, ErrorNote } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { CUP_RULES, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
@@ -10,7 +10,10 @@ import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem,
 import { PIN_DENIED } from "../services/communityItems.js";
 import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import Button from "../components/common/Button.jsx";
-import Case from "../components/common/Case.jsx";
+import { BackLink, Chips, Mon, Row, TabsLine } from "../components/common/Board.jsx";
+import { dotDate } from "../services/dateFormat.js";
+
+const dotDay=dotDate;
 import TeamSheet, { sheetOf, useTeamDisplay } from "../components/common/TeamSheet.jsx";
 import Field from "../components/common/Field.jsx";
 
@@ -108,13 +111,13 @@ function EditSheet({ heading, initial, onClose, onSave }){
     </div>
   </Modal>);
 }
-const Edited=({ at })=>at?<span className="bd-date">수정됨</span>:null;
+const Edited=({ at })=>at?<span>, 수정됨</span>:null;
 
 function CommentForm({ onSubmit }){
   const [nick,setNick]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState("");
   const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
-  return (<div className="bd-cform">
+  return (<div className="bd-cform stack">
     <div className="bd-cform-row">
       <input className="bd-cform-nick" value={nick} onChange={e=>setNick(e.target.value)} placeholder="닉네임" aria-label="닉네임" maxLength={20}/>
       <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="비밀번호(선택)" aria-label="비밀번호(선택)" inputMode="numeric"/>
@@ -159,27 +162,24 @@ function FreeBoard({ admin, flash, tabs }){
   const editSheet=editing&&<EditSheet {...editing} onClose={()=>setEditing(null)} onSave={saveEdit}/>;
 
   const p=article?all.find(x=>x.id===article):null;
-  if(article&&!p) return (<section className="sec"><article className="nb-article">
-    <header className="ypl-head nb-a-head"><button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button></header>
+  if(article&&!p) return (<section className="bd"><BackLink to="게시판" onClick={closePost}/>
     {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
-  </article></section>);
+  </section>);
   if(p){ const cc=(p.comments||[]).length;
-    return (<section className="sec">
-      <article className="nb-article">
-        <header className="ypl-head nb-a-head">
-          <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>게시판</span></button>
-          <h1 className="title nb-a-title" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
-          <p className="caption nb-a-meta">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/></p>
-        </header>
-        {(p.body||p.link)&&<div className="nb-body card">
+    return (<section className="bd">
+      <article>
+        <BackLink to="게시판" onClick={closePost}/>
+        <p className="t12 dim reg bd-date-line">{[p.secret&&"관리자 전용",p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
+        <h1 className="t20 bd-title-h" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
+        {(p.body||p.link)&&<div className="bd-body">
           <Prose text={p.body}/>
           {p.link&&<MediaEmbed url={p.link}/>}
         </div>}
-        <div className="bd-tools"><button className="bd-del" onClick={()=>editPost(p)}>수정</button><button className="bd-del" onClick={()=>delPost(p)}>삭제</button></div>
-        <div className="bd-cmts card">
-          <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
-          {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
-            <div className="bd-cmt-main"><div className="bd-cmt-top"><b>{c.nick}</b><span className="bd-date tnum">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-del sm" onClick={()=>editComment(p,c)}>수정</button><button className="bd-del sm" onClick={()=>delComment(p,c)}>삭제</button></div><div className="bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div></div>
+        <div className="stack bd-actions"><Button variant="second" onClick={()=>editPost(p)}>수정</Button><Button variant="second" onClick={()=>delPost(p)}>삭제</Button></div>
+        <div className="bd-cmts">
+          <h2 className="t20 bd-cmts-h">댓글{cc>0?<span className="dim"> {cc}</span>:""}</h2>
+          {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
+            <div className="bd-cmt-top"><b className="t12">{c.nick}</b><span className="t12 dim num">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-act t12" onClick={()=>editComment(p,c)}>수정</button><button className="bd-act t12" onClick={()=>delComment(p,c)}>삭제</button></div><div className="read bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div>
           </div>))}
           <CommentForm onSubmit={(c)=>addComment(c,p)}/>
         </div>
@@ -188,30 +188,22 @@ function FreeBoard({ admin, flash, tabs }){
     </section>);
   }
 
-  return (<section className="sec">
-    <PageHead plain="게시판" desc="로그인 없이 닉네임으로 글과 댓글을 남길 수 있습니다.">
-      <div className="y-page-aside">
-        <ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이 검색" count={list.length}/>
-        <Button variant="primary" size="sm" onClick={()=>setCompose(true)}><Icon n="plus" size={16}/>글쓰기</Button>
-      </div>
-    </PageHead>
+  return (<section className="bd">
+    <h1 className="t32">게시판</h1>
     {tabs}
-    <div className="bd-list swap">
+    <div className="bd-tools stack"><ListSearch q={q} setQ={setQ} placeholder="제목, 내용, 글쓴이" count={list.length}/><Button variant="main" icon="plus" onClick={()=>setCompose(true)}>글쓰기</Button></div>
+    <div className="stack bd-list swap">
       {loadError&&<ErrorNote action="다시 불러오기" onRetry={reload}>{loadError}</ErrorNote>}
       {!loadError&&!posts&&!fresh&&<Loader/>}
       {!loadError&&posts&&list.length===0&&(kw
         ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
         : <Empty title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
-      {shown.map(p=>{ const cc=(p.comments||[]).length;
-        return (<button type="button" className={"ypl-row bd-head"+(p.secret?" secret":"")} key={p.id} onClick={()=>openPost(p.id)}>
-          <span className="bd-main">
-            <span className="bd-title">{p.secret&&<span className="bd-lock"><Icon n="lock" size={16}/> 관리자 전용</span>}<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span></span>
-            <span className="bd-meta"><b className="bd-nick">{p.nick}</b><span className="bd-date tnum">{fmtDT(p.createdAt)}</span></span>
-          </span>
-          {cc>0&&<span className="bd-cc">댓글 {cc}</span>}
-        </button>);})}
+      {shown.map(p=>{ const cc=(p.comments||[]).length; const d=dotDay(p.createdAt);
+        return <Row key={p.id} title={<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span>}
+          line={<>{p.secret&&"관리자 전용, "}{p.nick}{d&&<span className="bd-day"><span className="num">{d.day}</span> {d.weekday}</span>}</>}
+          value={cc>0?<span className="t12 dim">댓글 {cc}</span>:undefined} onClick={()=>openPost(p.id)}/>;})}
     </div>
-    <Pager page={cur} pages={pages} onGo={setPage}/>
+    <div className="bd-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
     {compose&&<BoardCompose onClose={()=>setCompose(false)} onSubmit={addPost}/>}
   </section>);
 }
@@ -363,34 +355,32 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
     catch(error){ siteAlert("이미지를 만들지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); } finally{ setImageBusy(false); } };
   const share=async(post)=>{ const r=await shareLink({view:"board",tab:post.kind,...(formatOf(post)==="double"&&{format:"double"}),post:post.id},post.title); if(r==="copied")flash("주소를 복사했습니다."); };
 
-  if(article&&!p) return (<section className="sec"><article className="nb-article">
-    <header className="ypl-head nb-a-head"><button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button></header>
+  if(article&&!p) return (<section className="bd"><BackLink to={label} onClick={closePost}/>
     {fresh?<Empty title="글을 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다."/>:<Loader/>}
-  </article></section>);
+  </section>);
   if(p){ const sheet=sheetOf(p.team,display); const cc=(p.comments||[]).length;
-    return (<section className="sec">
-      <article className="nb-article">
-        <header className="ypl-head nb-a-head">
-          <button type="button" className="nb-back" onClick={closePost}><Icon n="back" size={20}/><span>{label}</span></button>
-          <h1 className="title nb-a-title" data-vt={"s-"+p.id}>{p.title}</h1>
-          <p className="caption nb-a-meta"><b className="bd-nick">{p.nick}</b><span className="tnum">{fmtDT(p.createdAt)}</span><Edited at={p.editedAt}/><span>{FORMAT_LABEL[formatOf(p)]}</span><span>{ruleSummary(p.team)}</span></p>
-        </header>
-        <div className="sc-actions">
-          <Button variant="primary" size="sm" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기<Icon n="arrow" size={16}/></Button>
-          <Button size="sm" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
-          <Button size="sm" onClick={()=>share(p)}>링크 공유</Button>
-          <button className="bd-del" onClick={()=>editPost(p)}>수정</button>
-          <button className="bd-del" onClick={()=>delPost(p)}>삭제</button>
+    return (<section className="bd">
+      <article>
+        <BackLink to={label} onClick={closePost}/>
+        <p className="t12 dim reg bd-date-line">{[label,FORMAT_LABEL[formatOf(p)],ruleSummary(p.team),p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
+        <h1 className="t20 bd-title-h" data-vt={"s-"+p.id}>{p.title}</h1>
+        <div className="bd-six">{(p.team?.members||[]).map((m,i)=><span className="pn stand bd-cell" key={i}><Mon src={spriteUrl(m.pokemonName)}/><span className="floor bd-band"><b className="t12">{(sheet[i]?.name)||m.pokemonName}</b></span></span>)}</div>
+        <div className="stack bd-actions">
+          <Button variant="second" onClick={()=>openInBuilder(p,go)}>팀 빌더에서 열기</Button>
+          <Button variant="second" disabled={!sheet.length||imageBusy} onClick={()=>saveImage(p,sheet)} loading={imageBusy}>이미지 저장</Button>
+          <Button variant="second" onClick={()=>share(p)}>링크 공유</Button>
+          <Button variant="second" onClick={()=>editPost(p)}>수정</Button>
+          <Button variant="second" onClick={()=>delPost(p)}>삭제</Button>
         </div>
         {/* 샘플은 카드 한 장이라, 넓은 화면에서는 카드를 왼쪽에 두고 소개와 댓글을 오른쪽 칸에 세운다(위 모서리를 카드와 맞춘다) */}
         <div className={"sc-post"+(p.kind==="sample"?" split":"")}>
-        {p.body&&<div className="nb-body card sc-body"><Prose text={p.body}/></div>}
+        {p.body&&<div className="bd-body sc-body"><Prose text={p.body}/></div>}
         <div className="sc-post-sheet">{display==="error"?<ErrorNote>배틀 데이터를 불러오지 못해 세팅을 보여 줄 수 없습니다. 팀 빌더에서 열면 확인할 수 있습니다.</ErrorNote>
           :!display?<Loader small/>:<TeamSheet sheet={sheet}/>}</div>
-        <div className="bd-cmts card">
-          <h2 className="bd-cmts-h">댓글{cc>0?` ${cc}`:""}</h2>
-          {(p.comments||[]).map(c=>(<div className="bd-cmt" key={c.id}>
-            <div className="bd-cmt-main"><div className="bd-cmt-top"><b>{c.nick}</b><span className="bd-date tnum">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-del sm" onClick={()=>editComment(p,c)}>수정</button><button className="bd-del sm" onClick={()=>delComment(p,c)}>삭제</button></div><div className="bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div></div>
+        <div className="bd-cmts">
+          <h2 className="t20 bd-cmts-h">댓글{cc>0?<span className="dim"> {cc}</span>:""}</h2>
+          {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
+            <div className="bd-cmt-top"><b className="t12">{c.nick}</b><span className="t12 dim num">{fmtDT(c.createdAt)}</span><Edited at={c.editedAt}/><button className="bd-act t12" onClick={()=>editComment(p,c)}>수정</button><button className="bd-act t12" onClick={()=>delComment(p,c)}>삭제</button></div><div className="read bd-cmt-body">{c.body}{c.link&&<MediaEmbed url={c.link}/>}</div>
           </div>))}
           <CommentForm onSubmit={(c)=>addComment(p,c)}/>
         </div>
@@ -400,27 +390,24 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
     </section>);
   }
 
-  return (<section className="sec">
-    <PageHead plain="게시판" desc={kind==="sample"?"포켓몬 한 마리의 세팅과 운용법을 나누는 곳입니다. 팀 빌더에서 바로 올리고 가져갈 수 있습니다.":"파티 전체를 소개하는 곳입니다. 마음에 드는 파티는 내 팀 빌더로 바로 가져갈 수 있습니다."}>
-      <div className="y-page-aside">
-        <ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이 검색" count={list.length}/>
-        <Button variant="primary" size="sm" onClick={()=>setPicking(true)}><Icon n="plus" size={16}/>{label} 올리기</Button>
-      </div>
-    </PageHead>
+  return (<section className="bd">
+    <h1 className="t32">게시판</h1>
     {tabs}
+    <p className="t12 dim reg bd-desc">{kind==="sample"?"포켓몬 한 마리의 세팅과 운용법을 나누는 곳입니다. 팀 빌더에서 바로 올리고 가져갈 수 있습니다.":"파티 전체를 소개하는 곳입니다. 마음에 드는 파티는 내 팀 빌더로 바로 가져갈 수 있습니다."}</p>
+    <div className="bd-tools stack"><ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이" count={list.length}/><Button variant="main" icon="plus" onClick={()=>setPicking(true)}>{label} 올리기</Button></div>
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
-    {!posts&&!loadError?<Loader/>:<div className={"case-grid sc-grid swap"+(kind==="party"?"":" sm")}>
+    {!posts&&!loadError?<Loader/>:<div className="stack bd-list swap">
       {list.length===0&&(kw
         ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
         : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
-        const title=<span data-vt={"s-"+post.id}>{post.title}</span>;
         const by=[post.nick,kind==="party"?REGULATIONS[post.team?.regulationId]?.shortName:post.names?.[0],cc>0&&`댓글 ${cc}`].filter(Boolean).join(", ");
-        return kind==="party"
-          ? <Case key={post.id} title={title} line={by} party={(post.team?.members||[]).map(m=>({name:m.pokemonName,img:spriteUrl(m.pokemonName)}))} onClick={()=>openPost(post.id)} label={`${post.title}, ${by}`}/>
-          : <Case key={post.id} title={title} line={by} sprite={spriteUrl(post.team?.members?.[0]?.pokemonName)} onClick={()=>openPost(post.id)} label={`${post.title}, ${by}`}/>; })}
+        return <button type="button" className="pn bd-post" key={post.id} onClick={()=>openPost(post.id)} aria-label={`${post.title}, ${by}`}>
+          <span className="bd-post-top"><b className="t15" data-vt={"s-"+post.id}>{post.title}</b><span className="t12 dim">{by}</span></span>
+          <span className="bd-minis">{(post.team?.members||[]).map((m,i)=><span className="stand bd-mini" key={i}><i className="floor" aria-hidden="true"/><Mon src={spriteUrl(m.pokemonName)}/></span>)}</span>
+        </button>; })}
     </div>}
-    <Pager page={cur} pages={pages} onGo={setPage}/>
+    <div className="bd-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
     {picking&&<TeamPicker kind={kind} go={go} onClose={()=>setPicking(false)} onPick={t=>{setPicking(false);setComposeTeam(t);}}/>}
     {composeTeam&&<ShowcaseCompose team={composeTeam} kind={kind} format={format} onClose={()=>setComposeTeam(null)} onPosted={post=>{ setComposeTeam(null); flash("글을 올렸습니다."); void reload(); if(post.format!==format) setFormat(post.format); if(post.kind!==kind) go?.("board",{tab:post.kind,format:post.format}); }}/>}
   </section>);
@@ -432,7 +419,7 @@ export default function BoardPage(props){
   const replaceUrl=(key,value)=>{ const url=new URL(window.location.href); if(value)url.searchParams.set(key,value); else url.searchParams.delete(key); url.searchParams.delete("post"); window.history.replaceState(window.history.state,"",url); };
   const changeTab=t=>{ setTab(t); replaceUrl("tab",t==="free"?"":t); };
   const changeFormat=f=>{ setFormat(f); replaceUrl("format",f==="double"?f:""); };
-  const tabs=<div className="bd-tabs"><Segmented value={tab} onChange={changeTab} ariaLabel="게시판 종류" options={BOARD_TABS}/>
-    {tab!=="free"&&<Segmented className="seg-sub" value={format} onChange={changeFormat} ariaLabel="배틀 형식" options={FORMAT_TABS}/>}</div>;
+  const tabs=<div className="bd-tabs"><TabsLine value={tab} onChange={changeTab} label="게시판 종류" options={BOARD_TABS}/>
+    {tab!=="free"&&<div className="bd-format"><Chips value={format} onChange={changeFormat} label="배틀 형식" options={FORMAT_TABS}/></div>}</div>;
   return tab==="free"?<FreeBoard {...props} tabs={tabs}/>:<ShowcaseBoard key={tab} kind={tab} format={format} setFormat={changeFormat} {...props} tabs={tabs}/>;
 }

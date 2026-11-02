@@ -365,8 +365,8 @@ td.ypl-table__pts { font-size: var(--fs-body); font-weight: 700; line-height: 1;
 /* Compact desktop controls keep a full touch target on phones and touch screens.
    The floor's height has no weight (:where), so it raises a 36px control to 44 but never lowers a 48px field or a 60px row. */
 @media (max-width: 639px), (pointer: coarse) {
-  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); }
-  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--target); }
+  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.tabsline > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--target); }
+  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.tabsline > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--target); }
   /* a 36px segment and a 40px bar link keep their look; a finger gets 44 */
   :is(.navlink, .seg-track > button)::after { content: ""; position: absolute; inset: calc(var(--s1) * -1) 0; }
 }

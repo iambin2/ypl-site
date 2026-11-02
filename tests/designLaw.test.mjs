@@ -31,7 +31,7 @@ const LENGTHS = new Set([...SPACE, 1, 2, 3, 16, 20, 24, 32, 36, 40, 44, 52, 56, 
 const REBUILT = new Set([
   "src/styles/shell.css", "src/styles/board.css", "src/styles/home.css",
   "src/pages/HomePage.jsx", "src/components/common/Board.jsx", "src/components/common/Button.jsx",
-  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/styles/brackets.css", "src/styles/records-board.css", "src/styles/more.css", "src/styles/hall.css", "src/pages/TitlesPage.jsx", "src/pages/ChampionsPage.jsx", "src/pages/AboutPage.jsx", "src/components/common/ChampionSheet.jsx", "src/pages/MorePage.jsx", "src/components/common/PushControl.jsx", "src/pages/RecordsPage.jsx", "src/components/common/StandTable.jsx", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
+  "src/styles/news.css", "src/pages/NewsPage.jsx", "src/styles/brackets.css", "src/styles/records-board.css", "src/styles/more.css", "src/styles/hall.css", "src/styles/posts.css", "src/pages/BoardPage.jsx", "src/pages/TitlesPage.jsx", "src/pages/ChampionsPage.jsx", "src/pages/AboutPage.jsx", "src/components/common/ChampionSheet.jsx", "src/pages/MorePage.jsx", "src/components/common/PushControl.jsx", "src/pages/RecordsPage.jsx", "src/components/common/StandTable.jsx", "src/components/common/Pager.jsx", "src/components/common/ListSearch.jsx",
   "src/components/common/Seg.jsx", "src/components/common/seg.js", "src/components/common/Icon.jsx", "src/components/common/Loader.jsx", "src/components/common/Segmented.jsx",
   "src/components/layout/Navigation.jsx", "src/components/layout/SiteHeader.jsx", "src/components/layout/SiteFooter.jsx", "src/admin/AdminModeBar.jsx",
 ]);
@@ -130,7 +130,7 @@ const EXCEPT = {
   },
   "colour: literals live only in tokens.css (Colour and light)": {
     "Pokémon type colours are content, not chrome": TYPES,
-    "a video letterbox is black in both themes": [`${P} | .bd-yt | background: #000`],
+    "a video letterbox is black in both themes": ["src/styles/posts.css | .bd-yt | background: #000"],
   },
   "space: margin, padding and gap sit on the golden scale (Space)": {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
@@ -310,12 +310,6 @@ test("the touch floor raises a control but never lowers a field or a row (Access
   const floor = DECLS.filter(d => d.file === C && d.prop === "min-height" && d.value === "var(--target)" && d.sel.includes(".ypl button"));
   assert.ok(floor.length > 0, "the touch floor is still there");
   assert.deepEqual(floor.filter(d => !d.sel.startsWith(":where(")).map(keyOf), [], "the floor's height must carry no weight (:where)");
-});
-// a notice is the one exception: its date line stands above its title (Type)
-test("a title comes first: no date, chip or label above it (Type)", () => {
-  for (const f of ["src/pages/BoardPage.jsx"])
-    for (const [head] of src(f).matchAll(/<header className="nb-a-head">[\s\S]*?<\/header>/g))
-      assert.ok(head.indexOf("<h1") < head.indexOf("nb-a-meta"), `${f}: the article title stands above its grey line`);
 });
 test("every sheet closes the same way: the X is not tied to a title (Sheets, dialogs, toasts)", () => {
   assert.doesNotMatch(src("src/components/common/Modal.jsx"), /title !== undefined && <>\s*<button type="button" className="modal-x/);
