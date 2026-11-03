@@ -4,7 +4,7 @@ import Icon from "../components/common/Icon.jsx";
 import { PushSwitch } from "../components/common/PushControl.jsx";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
 
-/* 더보기 (DESIGN.md "Bars and navigation", docs/redesign-next c13): 탭 바에 없는 화면을 묶음 제목 아래 같은 줄로 두고,
+/* 더보기 (DESIGN.md "Bars and navigation"): 탭 바에 없는 화면을 묶음 제목 아래 같은 줄로 두고,
    그 아래에 설정(테마, 공지 알림)과 관리자 로그인을 둔다. 줄은 52, 오른쪽 끝에 → 또는 바깥으로 나가는 표시. */
 const GROUPS = [
   ["기록", [["titles", "칭호"], ["champions", "명예의 전당"]]],

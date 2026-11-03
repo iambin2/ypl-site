@@ -1,6 +1,6 @@
 /* =============================================================================
-   YPL Scoreboard: brackets (BracketsPage.jsx, the parts a visitor sees). Drafts: docs/redesign-next c10-brackets,
-   c3-phone (the third frame), c16-desktop, c3-motion. A list is rows of 64 with the amber lamp on what runs; a bracket is a tree of
+   YPL Scoreboard: brackets (BracketsPage.jsx, the parts a visitor sees).
+   A list is rows of 64 with the amber lamp on what runs; a bracket is a tree of
    match boxes (two rows of 36 and a seam) joined by lines: a decided road is a 2px lit line, the rest a 1px rule.
    The tree's geometry is in BracketsPage.jsx (BK_ROW_H, BK_PITCH0); the lines here meet the box at its middle.
    ========================================================================== */
@@ -27,7 +27,7 @@
 .bk-actions > :only-child { grid-column: 1 / -1; }
 .bk-pick-hint { margin-top: var(--s3); }
 .bk-board { display: grid; gap: var(--s8); margin-top: var(--s8); }
-/* desktop (c16): an open bracket's name is the page title; the whole tree comes first and its 우승 panel names the winner,
+/* desktop: an open bracket's name is the page title; the whole tree comes first and its 우승 panel names the winner,
    so the result below it keeps the places and the images and does not say 우승 a second time */
 @media (min-width: 860px) {
   .bk-open-title { font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); }
@@ -53,7 +53,7 @@
 .bk-applied { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
 
 /* ---------- the tree: column heads 12 dim, 12 above their boxes ---------- */
-.bk-scroll { --bk-gap: var(--s5); --bk-line: var(--rule); --bk-w: calc(var(--s21) + var(--s13)); --mb: calc(36px * 2 + var(--seam)); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 0 var(--gutter) var(--s5); }
+.bk-scroll { --bk-gap: var(--s5); --bk-w: calc(var(--s21) + var(--s13)); --mb: calc(36px * 2 + var(--seam)); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 0 var(--gutter) var(--s5); }
 .bk-scroll::-webkit-scrollbar { display: none; }
 .bk-tree { display: flex; align-items: flex-start; gap: var(--bk-gap); width: max-content; }
 .bk-col2 { position: relative; width: var(--bk-w); display: flex; flex-direction: column; }
@@ -61,7 +61,7 @@
 .bk-col-h.gf { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 .bk-col-body { position: relative; width: 100%; }
 .bk-mpos { position: absolute; left: 0; right: 0; }
-/* eight players fit a phone to the final: three columns share the content width, and the boxes drop the seed to keep the names (c10) */
+/* eight players fit a phone to the final: three columns share the content width, and the boxes drop the seed to keep the names */
 @media (max-width: 639px) { .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap) * 2) / 3); } .bk-scroll .mb-seed { display: none; } }
 @media (min-width: 860px) { .bk-scroll { --bk-gap: var(--s8); --bk-w: 216px; margin-inline: 0; padding-inline: 0; } }
 

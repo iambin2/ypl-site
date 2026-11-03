@@ -16,7 +16,7 @@ const SHOWN = 12;
 /* 0인 성적은 쓰지 않는다: "우승 2, 4강 1" */
 const recordLine = (r) => [["우승", r.win], ["준우승", r.ru], ["4강", r.top4]].filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).join(", ");
 
-/* A ranking (DESIGN.md "Records"): the top three stand as the home's podium (C24), and the table goes on from the fourth in rows of 52
+/* A ranking (DESIGN.md "Records"): the top three stand as the home's podium, and the table goes on from the fourth in rows of 52
    under a 32 head strip, the rank at 20, the points at 20 with 점. A tie reads in the podium's equal columns; only when more than
    three share first place does a grey sentence under the stack say how many. The record line (우승 2, 4강 1) and a note stand under
    the name. rows are raw; they are ranked here. */

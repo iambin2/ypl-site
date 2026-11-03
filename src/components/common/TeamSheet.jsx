@@ -41,7 +41,6 @@ export default function TeamSheet({ sheet, idPrefix = "" }) {
         <span className="case-who"><b>{row.name}</b><span>{[row.english !== row.name ? row.english : "", row.num != null ? `No. ${String(row.num).padStart(4, "0")}` : ""].filter(Boolean).join("  ")}</span></span>
       </header>
       <div className="case-win sc-win">
-        <i className="case-band" aria-hidden="true" />
         <img src={row.sprite} alt="" onError={onSpriteError()} />
         <div className="tb-types">{row.types.map(t => <span key={t.id} className={`tb-type type-${t.id}`}>{t.label}</span>)}</div>
       </div>

@@ -1,5 +1,5 @@
 /* =============================================================================
-   YPL Scoreboard: home (HomePage.jsx). Drafts: docs/redesign-next c23-home-no-event, c21 가, c3-phone, c3-desktop, c9.
+   YPL Scoreboard: home (HomePage.jsx).
    Phone rhythm under the bar: 32, label 16, 12, display 120, 20, title 56, 20, action 52, 52, champion 216, seam, counters 84;
    then sections 52 apart. Desktop: 709 and 439 in 1200 with 52 between; both columns share their heading line and their last line.
    ========================================================================== */
@@ -28,7 +28,7 @@
 .ho-sec { margin-top: var(--s13); min-width: 0; }
 .ho-news .row-lead { width: var(--s21); padding-left: var(--pad); }
 
-/* past champions as a line score (C24): a column a generation, the number lit on the next tone, the Pokémon on its floor, the name and
+/* past champions as a line score: a column a generation, the number lit on the next tone, the Pokémon on its floor, the name and
    season; five share a phone's width, more keep 64 and the run scrolls to the screen's edge */
 .ho-line { display: grid; grid-template-columns: repeat(var(--n), minmax(64px, 1fr)); gap: var(--seam); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
 .ho-line::-webkit-scrollbar { display: none; }
@@ -65,7 +65,7 @@
   .ho-due { width: 38.2%; }
   .ho-about { display: inline-flex; }
   .ho-reign .champion { --floor: var(--h-row2); height: calc(216px + var(--s13)); }
-  /* the two columns end on one line in every state (C24): whichever is shorter lets its last panel take the rest. The champion panel
+  /* the two columns end on one line in every state: whichever is shorter lets its last panel take the rest. The champion panel
      grows when the hero is taller (a deadline counter); the main action stands on the column's floor when the hero is shorter (event
      day). Under them, the podium's columns or the lead notice grow, so the ranking and the notices end together. */
   /* with no live match the live row would take the champion's extra height instead of the hero, so it leaves the grid */
@@ -88,6 +88,6 @@
   .ho-col { grid-template-rows: var(--h-row) calc(var(--h-counter) + var(--s13)) var(--h-row); }
 }
 
-/* 지금 경기 (c9, event day): a head, the two players as rows of 52, the round's progress */
+/* 지금 경기 (event day): a head, the two players as rows of 52, the round's progress */
 .ho-live-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); margin: 0; }
 .ho-live-row { display: flex; align-items: center; min-height: var(--h-row); padding: 0 var(--pad); margin: 0; font-weight: 700; }

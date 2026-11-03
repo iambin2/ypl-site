@@ -57,9 +57,9 @@ function Comps({ items }) {
 }
 
 /* ============================== ABOUT ==============================
-   (docs/redesign-next c6, the third frame) 제목과 한 문단, 그다음 구획마다 20 제목과 패널 스택. 번호는 20의 숫자로 앞에 선다. */
+   제목과 한 문단, 그다음 구획마다 20 제목과 패널 스택. 번호는 20의 숫자로 앞에 선다. */
 export default function AboutPage({ go, data, admin }) {
-  // 리그의 숫자(C25 A): 홈의 카운터와 같은 계산이라 새로 세는 것이 없다. 이미 센 값은 첫 그림부터 쓴다.
+  // 리그의 숫자: 홈의 카운터와 같은 계산이라 새로 세는 것이 없다. 이미 센 값은 첫 그림부터 쓴다.
   const [facts, setFacts] = useState(() => admin ? null : seenFacts());
   useEffect(() => {
     let live = true;

@@ -1,6 +1,6 @@
 /* =============================================================================
-   YPL Scoreboard: team builder and calculator, the rebuilt parts (TeamBuilderPage.jsx, CalculatorPage.jsx). Draft:
-   docs/redesign-next c7-builder-calc. The head and page tabs, and the team's six: each a panel with the Pokémon standing on its
+   YPL Scoreboard: team builder and calculator, the rebuilt parts (TeamBuilderPage.jsx, CalculatorPage.jsx).
+   The head and page tabs, and the team's six: each a panel with the Pokémon standing on its
    name band, the chosen band inverted, an empty slot a +. team-builder.css and calculator.css still hold the rest.
    ========================================================================== */
 
@@ -8,7 +8,6 @@
 .tb-page.sec, .calc-page.sec { gap: var(--s5); }
 .tb-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
 .tb-desc { margin-top: calc(var(--s3) * -1); }
-.tb-hero-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tb-steps, .calc-tabs { margin-bottom: 0; }
 
 /* the Pokémon to pick: panels joined by the seam, the picture, the name and its types, the stats, + */
@@ -21,11 +20,6 @@
 .tb-mon { --floor: var(--h-row); position: relative; display: block; width: 100%; aspect-ratio: 1 / 1.272; text-align: left; }
 .tb-mon.empty { display: grid; place-items: center; color: var(--mute); }
 .tb-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
-.tb-mon-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--s3); }
-.tb-mon-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tb-mon-line { color: var(--dim); }
-.tb-mon-band.inv .tb-mon-line { color: var(--ground); }
-.tb-mon.unresolved .tb-mon-line { color: var(--lit); }
 .tb-mon-remove { position: absolute; top: 0; right: 0; z-index: var(--z-raised); display: grid; place-items: center; width: var(--h-control); height: var(--h-control); color: var(--dim); opacity: 0; transition: opacity var(--move-tone); }
 .tb-mon:hover .tb-mon-remove, .tb-mon.active .tb-mon-remove, .tb-mon-remove:focus-visible { opacity: 1; }
 @media (hover: none) { .tb-mon-remove { opacity: 1; } }
@@ -40,7 +34,7 @@
   .tb-pool-slot { display: grid; place-items: center; color: var(--mute); }
 }
 
-/* ---------- rules (c19): the regulation and the cup rule as option rows, the type as a grid of cells ---------- */
+/* ---------- rules: the regulation and the cup rule as option rows, the type as a grid of cells ---------- */
 .tb-rules { display: grid; gap: var(--s5); }
 .tb-rule-group { display: grid; gap: var(--s3); }
 .tb-rule-group > h2 { margin: 0; }
@@ -49,7 +43,7 @@
 .tb-type-opt.inv { color: var(--ground); }
 @media (hover: hover) { .tb-type-opt.pn:not(:disabled):hover { background: var(--panel-2); } }
 
-/* ---------- the team (c7): a line, the six as cells joined by the seam, the links ---------- */
+/* ---------- the team: a line, the six as cells joined by the seam, the links ---------- */
 .tb-team { display: grid; gap: var(--s3); }
 .tb-team-head { display: flex; align-items: baseline; gap: var(--s3); }
 .tb-team-state { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -62,7 +56,7 @@
 .tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .tb-team-links { display: flex; gap: var(--s5); flex: none; }
 
-/* ---------- the editor (c7): name, the spec cells, the points as bars, the moves as cells ---------- */
+/* ---------- the editor: name, the spec cells, the points as bars, the moves as cells ---------- */
 .tb-editor { display: grid; gap: var(--s3); min-width: 0; }
 .tb-editor-empty { display: grid; gap: var(--s1); padding: var(--s5) var(--pad); }
 .tb-editor-head { display: grid; gap: var(--s1); }
@@ -94,7 +88,7 @@
 /* the dock: save, the main action, and posting, golden split */
 .tb-dock { grid-template-columns: 1.618fr 1fr; }
 
-/* ---------- my teams (c19): new and copy, the save line, each team a panel with its six; the open one inverted ---------- */
+/* ---------- my teams: new and copy, the save line, each team a panel with its six; the open one inverted ---------- */
 .tb-library-top { grid-template-columns: 1.618fr 1fr; }
 .tb-library-save { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); margin-top: var(--s5); }
 .tb-library-save .cell { --field-bg: transparent; }
@@ -134,12 +128,12 @@
 .tb-page .tb-pool-panel { padding: 0; background: none; }
 .tb-page .tb-pokemon-list { margin-inline: 0; padding: 0; }
 
-/* the submission's rounds (c11): rows of 52, the newest is the official party with its lamp */
+/* the submission's rounds: rows of 52, the newest is the official party with its lamp */
 .tb-revisions { display: grid; gap: var(--s2); margin: var(--s5) 0 0; }
 .tb-revision { display: grid; grid-template-columns: var(--s21) minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 .tb-revision-now { display: inline-flex; align-items: center; gap: var(--s2); }
 
-/* the rules on desktop (c16): two cells in one row; the option rows stay for a phone's 규정 step and the monotype's type grid stays */
+/* the rules on desktop: two cells in one row; the option rows stay for a phone's 규정 step and the monotype's type grid stays */
 .tb-rules-line { display: none; }
 @media (min-width: 860px) {
   .tb-rules-line { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }

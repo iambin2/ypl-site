@@ -5,18 +5,6 @@
    The article uses the content width like every other page: the body is one opaque reading card (N6).
    A list-like body (team sheets) lays its groups side by side. */
 /* a notice row is the board's row: the title first (a pinned label in front of it), then one quiet line of date and excerpt */
-
-.nb-article { display: flex; flex-direction: column; min-width: 0; }
-.nb-back {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); height: 44px; padding: 0 var(--s3) 0 var(--s2);
-  margin: 0 0 var(--s5) calc(var(--s2) * -1); font-size: var(--t15); line-height: 1; font-weight: 600; color: var(--dim); width: fit-content;
-}
-@media (hover: hover) { .nb-back:hover { color: var(--lit); background: var(--panel-2); }
-}
-.nb-a-head { gap: var(--s2); margin-bottom: var(--s8); }
-.ypl-head .nb-back { margin-block: calc(var(--s3) * -1) var(--s2); }
-.bk-t-head .nb-back { margin-bottom: calc(var(--s2) - var(--s5)); }
-.nb-a-title { width: fit-content; max-width: 100%; }
 /* 한 칸은 본문 너비를 넘지 않는다: 띄어 쓸 곳 없는 긴 주소가 칸을 넓혀 모든 문단이 카드 밖으로 잘리던 것 */
 /* a line runs to its column's edge (DESIGN.md "Type"); the column is the measure */
 .prose { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s8); }
@@ -56,7 +44,7 @@
 .pr-wrap.compact { margin: 0 0 var(--s5); }
 
 
-/* applicants (c8 신청자): the count lit, search and CSV in one row of 52, each entry a row */
+/* applicants (신청자): the count lit, search and CSV in one row of 52, each entry a row */
 .fr-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: var(--s3); }
 .fr-bar { grid-template-columns: minmax(0, 1fr) auto; margin-bottom: var(--s3); }
 .fr-chips { margin-bottom: var(--s3); }
@@ -75,21 +63,7 @@
 .sc-sprites img { width: 44px; height: 44px; flex: none; object-fit: contain; }
 .sc-sprites.big { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
 .sc-sprites.big img { width: 100%; height: auto; aspect-ratio: 1; }
-.sc-grid:has(> .ypl-empty) { display: block; }
-@media (min-width: 860px) { .sc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-.sc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s5); }
-.sc-actions .bd-del { margin-left: auto; }
-.sc-actions .bd-del + .bd-del { margin-left: 0; }
-.sc-body { margin-bottom: var(--s3); }
-.sc-post { display: flex; flex-direction: column; min-width: 0; }
 /* a sample is one card: on a wide screen the card stands left and the post's words and comments take the right column */
-@media (min-width: 860px) {
-  .sc-post.split { display: grid; grid-template-columns: minmax(0, var(--sheet-w)) minmax(0, 1fr); grid-template-rows: auto auto 1fr; grid-template-areas: "sheet body" "sheet cmts" "sheet ."; column-gap: var(--s5); align-items: start; }
-  .sc-post.split > .sc-body { grid-area: body; }
-  .sc-post.split > .sc-post-sheet { grid-area: sheet; }
-  .sc-post.split > .bd-cmts { grid-area: cmts; margin-top: 0; }
-}
 /* cases stand from their top edge: a row never stretches a shorter case, so every picture window is the same height */
 .sc-sheet { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); align-items: start; }
 .sc-mon { height: auto; scroll-margin-top: calc(var(--nav-height) + var(--s5)); }
@@ -97,7 +71,6 @@
 /* the cases count their column's width, not the screen's: two in a 709 column, three in 1200, one on a phone */
 .sc-sheet.multi { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .sc-sheet:not(.multi) { max-width: var(--sheet-w); }
-.sc-win .case-band { display: none; }
 .sc-mon { display: flex; flex-direction: column; }
 .sc-win { display: flex; flex-direction: column; align-items: center; gap: var(--s3); height: auto; padding: var(--s5); }
 .sc-win > img { position: relative; z-index: var(--z-raised); width: 61.8%; height: auto; aspect-ratio: 1; object-fit: contain; }
@@ -139,4 +112,3 @@
 .sc-choose-mon img { width: 52px; height: 52px; object-fit: contain; }
 .sc-choose-mon span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-choose-mon.on { background: var(--lit); color: var(--ground); }
-.tb-share-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--s2); margin-top: var(--s3); }

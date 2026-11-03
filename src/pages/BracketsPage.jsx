@@ -948,7 +948,7 @@ function MatchSheet({ g, m, ev, nameOf, onClose }){
   </Modal>);
 }
 
-/* ===== 결과 입력 (docs/redesign-next c8) =====
+/* ===== 결과 입력 =====
    경기 칩으로 경기를 고르고 이긴 줄을 눌러 승자를 정한다. 대진표의 줄을 누르는 것과 같은 일이며(같은 줄을 다시 누르면 취소),
    저장은 누를 때마다 된다. 개인전의 게임 점수와 불참은 경기 데이터에 칸이 없어 다루지 않는다. */
 const stageOf=(g,m)=>{
@@ -1016,7 +1016,7 @@ function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, ou
    끝난 경기의 승자 길은 2px의 켜진 선, 아직인 길은 1px 선이다. */
 const BK_ROW_H=36, BK_MATCH_H=BK_ROW_H*2+2, BK_PITCH0=BK_MATCH_H+20;
 const roundName=(len)=>({1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"})[len]||`${len*2}강`;
-/* 진행 중인 단일 토너먼트의 지금 라운드: 승자가 정해지지 않은 첫 라운드와 그 라운드에서 끝난 경기 수 (c16의 상태 띠) */
+/* 진행 중인 단일 토너먼트의 지금 라운드: 승자가 정해지지 않은 첫 라운드와 그 라운드에서 끝난 경기 수 (상태 띠) */
 function liveProgress(b){
   const g=b.format==="group"?b.knockout:b.graph;
   if(!g||g.kind==="double"||!g.rounds?.length) return "";
@@ -1080,7 +1080,7 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
         {r.map((m,j)=>(<div className="bk-mpos" data-r={ri} data-j={j} key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>{card(m)}</div>))}
       </div>
     </div>))}
-    {/* the 우승 panel stands from the start and lights when the final ends (c16) */}
+    {/* the 우승 panel stands from the start and lights when the final ends */}
     {g.kind!=="double"&&!qualifier&&<div className={"bk-col2 bk-champ-col"+(finalRes?.champ?" on":"")}>
       <div className="bk-col-h t12 dim">우승</div>
       <div className="bk-col-body" style={{height:totalH}}>
@@ -1268,7 +1268,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       }
       await refreshNormalized?.();
       setChampionshipRefreshKey(value=>value+1);
-      /* c8 되돌리기: 새로 정한 승자만 되돌린다. 같은 쪽을 다시 누르는 것(승자 취소)과 같은 일이고, 그사이 바뀌었으면 하지 않는다.
+      /* 되돌리기: 새로 정한 승자만 되돌린다. 같은 쪽을 다시 누르는 것(승자 취소)과 같은 일이고, 그사이 바뀌었으면 하지 않는다.
          이미 있던 승자를 바꾼 것은 아래 경기가 지워지므로 정확히 되돌릴 수 없어 붙이지 않는다. */
       const undo=winnerEntryId&&!match.winner?{label:"되돌리기",run:()=>{
         const now=collectGraphMatches(latestRef.current.b.graph).find(row=>row.id===matchId);
@@ -1383,7 +1383,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   const [bumpSeason,setBumpSeason]=useState(true);
   const [rankKey,setRankKey]=useState((data.rankings||[])[0]?.key||"");
   const [ptWin,setPtWin]=useState(team?"30":"60"); const [ptRu,setPtRu]=useState(team?"20":"40"); const [ptSf,setPtSf]=useState(team?"0":"20");
-  /* 지난 대회와 같게(c12): 기록에 반영된 가장 최근의 같은 종류 대회가 준 점수를 칸에 넣는다. 저장은 반영할 때 한 번이다 */
+  /* 지난 대회와 같게: 기록에 반영된 가장 최근의 같은 종류 대회가 준 점수를 칸에 넣는다. 저장은 반영할 때 한 번이다 */
   const [lastPoints,setLastPoints]=useState({busy:false,note:""});
   const copyLastPoints=async()=>{
     setLastPoints({busy:true,note:""});
@@ -2162,7 +2162,7 @@ function PrivateBrackets({ admin, flash, tabs }){
    old record has none) instead of 종료 on every row */
 function BracketRow({ b, vt, live, line, end, onOpen, lead=false }){
   const d=dotDate(b.createdAt);
-  /* the newest of a list stands as a lead panel (C24): its date lit, the amber lamp while it runs */
+  /* the newest of a list stands as a lead panel: its date lit, the amber lamp while it runs */
   if(lead) return <Lead date={d?.day} title={<span data-vt={vt}>{b.name}</span>} line={[line,end].filter(Boolean).join(", ")}
     lamp={live?"진행 중":null} sig={live} onClick={onOpen} label={`${b.name}, ${[line,live?"진행 중":end].filter(Boolean).join(", ")}`}/>;
   return <Row title={<span data-vt={vt}>{b.name}</span>} line={line} onClick={onOpen}
@@ -2482,7 +2482,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             <h1 className="t20 bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
             <p className="t12 dim reg bk-open-line">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}{admin&&statusTag(open)!=="진행 중"?`, ${statusTag(open)}`:""}</p>
           </div>
-          {/* desktop (c16): the images stand beside the title; a phone keeps them under the result */}
+          {/* desktop: the images stand beside the title; a phone keeps them under the result */}
           {openRes?.done&&<div className="stack bk-tools">
             <Button variant="second" size="sm" onClick={()=>downloadChampionPng(open,openRes,openName)}>우승 이미지</Button>
             <Button variant="second" size="sm" onClick={()=>downloadBracketPng(open,openName)}>대진표 이미지</Button>

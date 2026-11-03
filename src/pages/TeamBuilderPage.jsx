@@ -174,7 +174,7 @@ const PoolList = memo(function PoolList({ pool, detailData, displayPokemon, sort
   );
 });
 
-/* 팀의 한 칸 (DESIGN.md "Team builder", docs/redesign-next c7): 포켓몬은 패널 안에서 이름 띠를 딛고 서고, 고른 칸의 이름 띠가 반전된다.
+/* 팀의 한 칸 (DESIGN.md "Team builder"): 포켓몬은 패널 안에서 이름 띠를 딛고 서고, 고른 칸의 이름 띠가 반전된다.
    빈칸은 + 하나. 띠의 회색 줄은 도구와 기술 수. */
 function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onRemove }) {
   if (!member) {
@@ -243,7 +243,7 @@ function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, c
   );
 }
 
-/* Party submission (c11): three steps on one panel, 팀 고르기, 확인, 제출. The team is the one in the builder; 확인 finds the
+/* Party submission: three steps on one panel, 팀 고르기, 확인, 제출. The team is the one in the builder; 확인 finds the
    registration by name; 제출 writes a new numbered submission that is never deleted. The steps only show where the visitor
    stands: every check and write is the same call as before. */
 function OfficialSubmissionPanel({
@@ -1255,7 +1255,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     else console.info(`[YPL] 한국어 번역 검사 통과: 도구 ${itemIds.size}, 기술 ${moveIds.size}, 특성 ${abilityNames.size}`);
   }, [detailData, koreanNames]);
 
-  /* c11 제출 기록: 신청을 확인했거나 새로 제출하면 회차를 다시 읽는다(읽기만 한다) */
+  /* 제출 기록: 신청을 확인했거나 새로 제출하면 회차를 다시 읽는다(읽기만 한다) */
   const [submissionRevisions, setSubmissionRevisions] = useState([]);
   const registrationIdForRevisions = registration?.registration?.id || null;
   const latestRevisionId = registration?.latestSubmission?.id || null;
@@ -1283,7 +1283,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         <TabsLine value={step} onChange={changeStep} label="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
       </div>
 
-      {/* desktop (c16): the rules are two cells in one row; the option rows with their periods stay on a phone's 규정 step */}
+      {/* desktop: the rules are two cells in one row; the option rows with their periods stay on a phone's 규정 step */}
       <div className="cells tb-rules-line">
         <Cell label={`레귤레이션${eventId ? " (대회 기준)" : ""}`}>
           <Dropdown className="tb-dd" value={regulationId} onChange={switchRegulation} disabled={Boolean(eventId)} ariaLabel="레귤레이션"
@@ -1349,7 +1349,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
 
       <div className="tb-layout">
         <div className="tb-panel tb-pool-panel" data-tb-step="pool">
-          {/* the six stay on top while picking (c7); a filled one opens its settings */}
+          {/* the six stay on top while picking; a filled one opens its settings */}
           <div className="tb-pool-six" aria-label={`팀 ${team.length} / ${regulation.maxTeamSize || 6}`}>
             {Array.from({ length: regulation.maxTeamSize || 6 }, (_, index) => {
               const member = team[index];
@@ -1382,7 +1382,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             />
             {(query || searchChips.length > 0) && <button className="tb-clear" onClick={() => { setQuery(""); setSearchChips([]); }} aria-label="검색 조건 모두 지우기"><Icon n="x" size={16} /></button>}
             {showSuggestions && (
-              <div className="dd-menu plate-l3 tb-suggest" id="tb-search-suggest" role="listbox" aria-label="검색 조건 후보">
+              <div className="dd-menu plate tb-suggest" id="tb-search-suggest" role="listbox" aria-label="검색 조건 후보">
                 {searchSuggestions.map((entry, index) => (
                   <React.Fragment key={`${entry.kind}:${entry.id}`}>
                     {(index === 0 || searchSuggestions[index - 1].kind !== entry.kind) && <div className="tb-suggest-head">{SEARCH_KIND_LABEL[entry.kind]}</div>}
@@ -1405,7 +1405,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               ))}
             </div>
           )}
-          {/* c7: the types as chips. One type at a time; it is the search's own type condition, so the search chips show it too */}
+          {/* the types as chips. One type at a time; it is the search's own type condition, so the search chips show it too */}
           <Chips label="타입으로 거르기" value={searchChips.find(chip => chip.kind === "type")?.id || ""}
             onChange={id => setSearchChips(current => [...current.filter(chip => chip.kind !== "type"), ...(id ? [{ kind: "type", id, label: TYPE_OPTIONS.find(type => type.id === id)?.korean || id }] : [])])}
             options={[["", `전체 ${eligiblePool.length}`], ...TYPE_OPTIONS.map(type => [type.id, type.korean])]} />
@@ -1533,7 +1533,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               </>
             )}
           </div>
-          {/* the save stands under the editor it saves (c16); on a phone it docks above the tab bar */}
+          {/* the save stands under the editor it saves; on a phone it docks above the tab bar */}
           <Dock>
             <div className="stack tb-dock">
               <Button variant="main" icon="check" disabled={!storageAvailable || (team.length === 0 && !currentSaved)} onClick={() => openLibrary(true)}>{currentSaved ? (dirty ? "변경사항 저장" : "저장됨") : "현재 팀 저장"}</Button>

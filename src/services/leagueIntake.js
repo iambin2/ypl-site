@@ -1,5 +1,3 @@
-export const MASTER_ELIGIBILITY_POLICY = "individual-master-or-rookie-light-champion-v1";
-
 export function announcementEventType(draft = {}) {
   return (draft.eventType||"pokecup")==="pokecup"&&draft.division==="other" ? "general" : draft.eventType||"pokecup";
 }

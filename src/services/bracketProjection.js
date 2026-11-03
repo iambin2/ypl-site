@@ -106,7 +106,7 @@ export function shuffle(list, random = Math.random) {
 
 /* The first round as pairs of participant keys, a BYE as null in the second place: the keys shuffled, the BYEs on
    random matches, one a match at most. The admin sees this plan and may swap players before the bracket is made
-   (docs/redesign-next c12, 대진 배치); without a plan the builders draw one exactly as before. */
+   (대진 배치); without a plan the builders draw one exactly as before. */
 export function drawPlan(keys = []) {
   const size = nextPowerOfTwo(keys.length);
   const shuffled = shuffle(keys);

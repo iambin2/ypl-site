@@ -69,7 +69,7 @@ export function Popover({ anchor, onClose, children }) {
     window.addEventListener("resize", resize);
     return () => { document.removeEventListener("pointerdown", outside); window.removeEventListener("keydown", key); window.removeEventListener("resize", resize); };
   }, [anchor]);
-  const node = <div className="popover plate-l3" ref={ref}>{children}</div>;
+  const node = <div className="popover plate" ref={ref}>{children}</div>;
   const host = typeof document !== "undefined" ? (document.querySelector(".ypl") || document.body) : null;
   return host ? createPortal(node, host) : node;
 }

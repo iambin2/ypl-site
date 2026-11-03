@@ -12,7 +12,7 @@ export default function Prose({ text }) {
       {groups.map((g, i) => g.grid
         ? <div className="prose-grid" key={i}>{g.items.map((b, k) => <p key={k}>{inline(b)}</p>)}</div>
         : g.items.map((b, k) => { const { heading, body } = headingOf(b);
-          return <React.Fragment key={i + "-" + k}>{heading && <h3 className="headline">{inline(heading)}</h3>}{body && <p>{inline(body)}</p>}</React.Fragment>; }))}
+          return <React.Fragment key={i + "-" + k}>{heading && <h3 className="t20">{inline(heading)}</h3>}{body && <p>{inline(body)}</p>}</React.Fragment>; }))}
     </div>
   );
 }

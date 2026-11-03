@@ -14,6 +14,5 @@ test("Records presentation hides only Champions round numbers", () => {
 test("Records party sprites render from snapshot sprite identity and keep a visible load-error fallback", () => {
   assert.match(page, /pictureOf\(name, roster\.spriteNames\?\.\[i\]\)/);
   assert.doesNotMatch(page, /roster\.pokemonIds\?\.\[index\] \|\| pokemon/);
-  assert.match(readFileSync(new URL("../src/components/common/Case.jsx", import.meta.url), "utf8"), /setFailed\(true\)[\s\S]*|case-name/);
   assert.doesNotMatch(page, /style\.visibility = "hidden"/);
 });

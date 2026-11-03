@@ -53,7 +53,7 @@ export function light(root, total = DUR.light) {
   const last = total - DUR.tone;
   /* [data-rise]: a grey line under a stack (a tie, a note) lights with the stack instead of standing lit before it.
      .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board.
-     .podium-col, .lead, .ho-col (C24): panels that hold a display but rise as a whole, like a counter; a line score's column rises as
+     .podium-col, .lead, .ho-col: panels that hold a display but rise as a whole, like a counter; a line score's column rises as
      one, its three cells together */
   const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, .podium-col, .lead, .ho-col, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
     .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .ho-col, .hof-crown, .sheet, .stack.chips, .chips"));
@@ -94,8 +94,6 @@ export function forgetLine(row) {
   const key = lineKey(row), placed = lastLine.get(key);
   setTimeout(() => { if (placed?.row === row && lastLine.get(key) === placed) lastLine.delete(key); });
 }
-/* the scoreboard has no spring: a board switches on. Old callers that still ask for one get the ease-out curve. */
-export function springs() { return { spring: EASE_OUT, lift: EASE_OUT }; }
 
 /* sampled at 120 a second so a 120Hz screen gets a real frame each refresh, not a straight line between two */
 const FPS = 120;
@@ -109,12 +107,6 @@ export function springTo(from, to, v0, response = 0.42, zeta = 0.86) {
   }
   out.push(to);
   return { values: out, duration: ((out.length - 1) * 1000) / FPS };
-}
-
-export function centerOf(el) {
-  if (!el) return [];
-  const r = el.getBoundingClientRect();
-  return [r.left + r.width / 2, r.top + r.height / 2];
 }
 
 /* ---------- page change (DESIGN.md "Motion"): the old content goes at once; the new page's panels light top to bottom, 38 apart, and

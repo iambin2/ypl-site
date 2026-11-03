@@ -1,6 +1,6 @@
 # YPL Wing Y
 
-Replaced 2026-10-12 with the mark the user supplied (`ypl-wing-y-2026-10-12-reference.webp`): two raised wings, each a long top feather and two shorter ones, meeting in a Y; a straight band cut across the neck; a fan tail of three feathers split by two slits.
+Replaced 2026-10-12 with the mark the user supplied (the reference raster is in git history): two raised wings, each a long top feather and two shorter ones, meeting in a Y; a straight band cut across the neck; a fan tail of three feathers split by two slits.
 
 - Production vector: `public/brand/ypl-wing-y.svg` (transparent, currentColor, viewBox 0 0 1315.1 870.6), refined 2026-10-27 (below).
 - The same geometry is used in `SiteHeader.jsx` (`MARK_PATH`) for the header and footer, and in `public/favicon-wing-2026-11-02.svg`, whose `favicon-32.png` and `favicon.ico` are rendered from it.
@@ -17,4 +17,4 @@ Shipped F read as too thin ("멸치"): the 0.84 squeeze had thinned the diagonal
 
 The reference raster was traced with OpenCV (contours, then a 2.5px polygon approximation): six polygons, every edge straight. Left and right were then averaged around the axis (x = 766 in the reference) so the mark is exactly symmetric; one traced vertex on the left inner wing edge, a slight bend absent on the right, was dropped. Overlaid on the reference the vector matches within about 3px at 1536px wide.
 
-The 2026-10-07 Wing Y (curved Beziers, concept C) and `newlogo.*` remain historical in git and the lab files under `docs/redesign-glass/lab/`.
+Earlier marks (the 2026-10-07 curved Wing Y and `newlogo.*`) live only in git history.

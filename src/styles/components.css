@@ -4,9 +4,8 @@
    sheets, toasts, empty and loading states. Every label sits on the ink centre of its control.
    ========================================================================== */
 
-.ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
-.pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win), .tb-status-chip, .tb-official-meta span, .rc-chip,
-.bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved {
+.pin, .ann-link, .r2-name:not(.win),
+.bk-alloc-tag, .bk-participant-submission, .bk-exist {
   position: relative;
 }
 
@@ -22,16 +21,14 @@
 .btn--sm { height: 44px; min-width: 84px; padding: 0 var(--s5); }
 .btn--md, .btn--lg { height: 52px; min-width: calc(var(--s21) + var(--s13)); padding: 0 var(--s8); }
 /* what is not the main action is a line under its word, and two of them stand a step apart */
-.btn--secondary + .btn, .btn--tertiary + .btn { margin-left: var(--s5); }
-.btn--secondary, .btn--tertiary { --btn-bg: transparent; --btn-bg-hover: transparent; min-width: 0; padding-inline: 0; }
+.btn--secondary + .btn { margin-left: var(--s5); }
+.btn--secondary { --btn-bg: transparent; --btn-bg-hover: transparent; min-width: 0; padding-inline: 0; }
 .btn--secondary { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; }
-@media (hover: hover) { .btn--secondary:hover:not(:disabled) { text-decoration-thickness: var(--line); } .btn--tertiary:hover:not(:disabled) { --btn-fg: var(--lit); } }
+@media (hover: hover) { .btn--secondary:hover:not(:disabled) { text-decoration-thickness: var(--line); } }
 .btn .ic { width: 20px; height: 20px; }
 .btn--sm .ic { width: 16px; height: 16px; }
 .btn--primary { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
 .btn--destructive { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
-.btn--inverse { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
-.btn--tertiary { --btn-fg: var(--dim); }
 @media (hover: hover) { .btn:hover:not(:disabled) { background: var(--btn-bg-hover); } }
 /* loading keeps the width: the words stay and turn clear under the busy cell (DESIGN.md "Busy": a sending main action shows it in place of its word) */
 .btn[aria-busy="true"] { color: transparent; }
@@ -42,15 +39,11 @@
 .field--flush { margin-bottom: 0; }
 
 /* ---------- Chip and badge (M10): one 32px word for every label, tag and status; the dot rides in front only while live ---------- */
-.ypl-chip, .y-chip, .pin, .rc-chip, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-status-chip, .tb-official-meta span,
-.tb-dirty-badge, .tb-draft-badge, .tb-active-saved, .tb-chip {
+.pin, .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-chip {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: 32px; padding: 0; color: var(--lit); font-size: var(--t12); line-height: 1; font-weight: 600; white-space: nowrap;
 }
-.ypl-chip--ink { padding: 0 var(--s2); background: var(--lit); color: var(--ground); box-shadow: none; }
-.y-chip { color: var(--dim); }
-.y-chip .ic, .ypl-chip .ic { width: 16px; height: 16px; }
 /* a count is a number */
-.fold-badge, .tb-count-badge { min-width: 20px; height: 20px; padding: 0 var(--s2); display: inline-grid; place-items: center; color: var(--lit); font-size: var(--t12); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.fold-badge { min-width: 20px; height: 20px; padding: 0 var(--s2); display: inline-grid; place-items: center; color: var(--lit); font-size: var(--t12); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 
 /* ---------- Segmented: page tabs are words on a 44 line with a hairline under the row; the chosen word is lit, bold, with a 2px line
    under it that switches on in place. choice: a few options as 44 panels in a row, the chosen one inverted (DESIGN.md "Controls"). ---------- */
@@ -64,16 +57,11 @@
 @media (max-width: 859px) {
   .ypl-seg { display: flex; width: 100%; }
   .seg-track { width: 100%; }
-  .y-page-aside { width: 100%; }
-  /* a search and its one action share a row, so a head stays a head */
-  .y-page-aside > .list-tools { flex: 1 1 136px; min-width: 0; }
-  .lsearch { width: 100%; }
 }
 .seg-track > button {
   position: relative; display: inline-flex; align-items: center; justify-content: center; height: var(--h-control); padding: 0; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); white-space: nowrap;
   transition: color var(--move-tone);
 }
-.seg-sub .seg-track > button { font-size: var(--t12); line-height: var(--l12); }
 .seg-track > button[aria-selected="true"] { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
 @media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--lit); } }
 .ypl-choice { display: flex; width: 100%; box-shadow: none; }
@@ -82,64 +70,16 @@
 .ypl-choice .seg-track > button[aria-selected="true"] { background: var(--lit); color: var(--ground); box-shadow: none; }
 @media (hover: hover) { .ypl-choice .seg-track > button:not([aria-selected="true"]):hover { background: var(--panel-2); color: var(--lit); } }
 
-/* ---------- PageHead (E3): the page opens on a navy plane; every distance in it is measured to the ink ---------- */
-.ypl-head { --text-primary: var(--lit); --text-secondary: var(--dim); --text-tertiary: var(--dim); --state-hover: var(--panel-2); --accent: var(--lit); --text-on-accent: var(--ground); display: flex; flex-direction: column; gap: var(--s5); margin: calc(var(--s8) * -1) calc(50% - 50vw) calc(var(--s8) - var(--s13)); padding: var(--s8) calc(50vw - 50%); background: var(--ground); color: var(--lit); }
-.ypl-head > .btn { align-self: flex-start; }
-.ypl-head .callout { color: var(--dim); }
-.ypl-head .btn--primary { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
-.ypl-head .btn--secondary, .ypl-head .btn--tertiary { --btn-fg: var(--lit); }
-.ypl-head :is(input, .dd-btn) { --field-line: var(--dim); --focus-ring: var(--lit); color: var(--lit); }
-.ypl-head input::placeholder, .ypl-head .ls-ico, .ypl-head .search-input-icon { color: var(--dim); }
-@media (min-width: 860px) { .ypl-head { padding-block: var(--s13); } }
-.ypl-head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s5); flex-wrap: wrap; }
-.ypl-head-h { min-width: 0; margin-block: calc((.84em - 1lh) / 2); }
-.ypl-head-desc { margin-block: calc((.84em - 1lh) / 2); }
-/* whatever the head carries under its title (search, tabs, actions) starts 32 under the title or its line; controls after it keep 20 */
-.ypl-head > :is(.ypl-head-row, .ypl-head-desc) + :not(.ypl-head-desc) { margin-top: calc(var(--s8) - var(--s5)); }
-.y-page-aside { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
-
-/* ---------- Section head: a headline, a quiet link on the right; 20 to the content ---------- */
-.ypl-sech { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s5); flex-wrap: wrap; }
-.ypl-sech > div { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
-.ypl-more {
-  flex: none; display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); height: 44px; padding: 0 var(--s2) 0 var(--s3);
-  margin-right: calc(var(--s2) * -1); font-size: var(--t12); line-height: 1; font-weight: 600; color: var(--dim);
-  transition: color var(--move-tone), scale var(--move-press);
-}
-.ypl-more .ic { width: 16px; height: 16px; transition: transform var(--move-tone); }
-@media (hover: hover) { .ypl-more:hover { color: var(--lit); } .ypl-more:hover .ic { transform: translateX(var(--s1)); } }
-
 /* ---------- List: rows on hairlines; the lines stop on the same edges as the words, and a hovered row underlines its title (M1) ---------- */
-.ypl-group { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-:is(.ypl-group, .bd-list, .hm-list, .ab-records, .ab-timeline, .ab-comps) > * + * { box-shadow: inset 0 var(--hair) 0 var(--rule); }
-.ypl-row, .pick-row {
+:is(.bd-list, .ab-comps) > * + * { box-shadow: inset 0 var(--hair) 0 var(--rule); }
+.pick-row {
   transition: background-color var(--move-tone), scale var(--move-press);
 }
-.ypl-row {
-  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
-  min-height: var(--h-row); padding: calc((var(--h-row) - 1.333rem) / 2) 0; border: 0; background-color: transparent; color: inherit; text-align: left;
-}
-.ypl-row__title, .nb-title, .bd-title { display: block; font-size: var(--t15); font-weight: 600; line-height: var(--l15); color: var(--lit); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ypl-row__meta { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
-.ypl-row__title + .ypl-row__meta { margin-top: var(--s1); }
-.ypl-row__end { font-size: var(--t12); color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (hover: hover) { :is(button, a).ypl-row:hover :is(.ypl-row__title, .nb-title, .bd-title) { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; } }
 
 /* ---------- Empty (L3): sentences only, on the content's left edge like the content it stands in for (alignment law) ---------- */
 .ypl-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s13) 0; }
 .ypl-empty b { font-size: var(--t15); font-weight: 600; }
 .ypl-empty p { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
-
-/* ---------- Lead card: the one hero card on a records screen ---------- */
-.rc-lead {
-  position: relative; overflow: hidden; display: grid; gap: var(--s5); padding: var(--pad); background: var(--panel);
-}
-.rc-lead-title { margin-block: calc((.84em - 1lh) / 2); font-size: var(--t32); font-weight: 700; line-height: var(--l32); letter-spacing: var(--ls32); }
-
-
-
-/* ---------- generic card for forms and panels ---------- */
-.card.form-card { padding: var(--pad); }
 
 /* ---------- Field (M7): label, a word on a line, hint ---------- */
 .field { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s5); min-width: 0; }
@@ -153,7 +93,7 @@
   -webkit-appearance: none; appearance: none;
 }
 /* a field is a 52 panel (DESIGN.md "Controls"); inside a sheet or a panel it is one tone up. Focus draws a 2px line along the bottom. */
-:where(.sheet, .pn, .plate, .tb-rule-card, .tb-panel, .tb-validation, .tb-library-save, .tb-saved-list, .fb-wrap, .ed-round, .bk-submission, .bk-group) { --field-bg: var(--panel-2); }
+:where(.sheet, .pn, .plate, .tb-panel, .tb-validation, .tb-library-save, .tb-saved-list, .fb-wrap, .ed-round, .bk-submission, .bk-group) { --field-bg: var(--panel-2); }
 :where(.ypl) :is(input:where(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])), textarea):focus-visible { outline: none; box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
 :where(.ypl) textarea { min-height: calc(var(--s21) + var(--s13)); resize: vertical; line-height: var(--l-read); padding: var(--s3) var(--pad); }
 :where(.ypl) :where(input[type="number"]) { font-variant-numeric: tabular-nums; }
@@ -168,10 +108,8 @@
 @media (max-width: 639px) { .bk-grow2 { grid-template-columns: 1fr; } }
 /* an explanatory sentence (a sheet's hint, a note in a form, an empty state, a page description) reads in one grey */
 .bk-hint, .hint { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
-.req { margin-left: var(--s1); color: var(--dim); }
 .row-actions { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .row-actions > div { display: flex; gap: var(--s2); flex-wrap: wrap; }
-.edit-row { display: flex; justify-content: flex-end; gap: var(--s2); margin-top: var(--s5); }
 .pts-note { padding: var(--s5) var(--pad); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
 .pts-note b { color: var(--lit); font-weight: 600; }
 
@@ -225,56 +163,18 @@
 .popover { position: fixed; z-index: var(--z-popover); min-width: calc(var(--s21) * 2 + var(--s13)); padding: 0; }
 .popover .mi { height: 44px; font-size: var(--t15); }
 
-/* ---------- Table (M1, M2): no row rules, generous rows; headers share their column's alignment ---------- */
-.ypl-table-wrap { padding: 0; }
-.ypl-table-wrap.card { background: none; }
-.ypl-table tbody tr + tr td { box-shadow: inset 0 var(--hair) 0 var(--rule); }
-.ypl-table { width: 100%; font-variant-numeric: tabular-nums; border-collapse: separate; border-spacing: 0; }
-.ypl-table th { height: 44px; padding: 0 var(--s2); text-align: left; vertical-align: middle; font-size: var(--t12); line-height: 1; font-weight: 600; color: var(--mute); white-space: nowrap; }
-.ypl-table td { height: var(--h-row); padding: var(--s2); vertical-align: middle; transition: background-color var(--move-tone); }
-.ypl-table :is(th, td):first-child { padding-left: 0; }
-.ypl-table :is(th, td):last-child { padding-right: 0; }
-@media (hover: hover) { .ypl-table tbody tr:hover td { background: var(--panel-2); } }
-/* a new row switches on once; a background is never animated */
-.ypl-table .r { text-align: right; }
-.ypl-table .c { text-align: center; }
-.ypl-table .ypl-table__rank { text-align: left; }
-.ypl-table__rank { width: 52px; }
-td.ypl-table__rank { font-size: var(--t20); line-height: 1; font-weight: 700; color: var(--mute); }
-.ypl-table__name { display: block; font-size: var(--t15); font-weight: 600; line-height: var(--l15); }
-.ypl-table__meta { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--mute); }
-.ypl-table__n { width: 84px; }
-td.ypl-table__n { font-weight: 600; color: var(--dim); }
-td.ypl-table__n.zero { font-weight: 400; color: var(--mute); }
-td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; white-space: nowrap; }
-.ypl-table__note { font-size: var(--t12); color: var(--mute); }
-.ypl-table .wide { display: none; }
-.ypl-table-more { width: 100%; margin-top: var(--s3); }
-@media (max-width: 639px) { .ypl-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
-@media (min-width: 640px) {
-  .ypl-table { table-layout: fixed; }
-  .ypl-table th.r:last-child { width: calc(var(--s21) + var(--s13)); }
-  .ypl-table .wide { display: table-cell; }
-  .ypl-table .narrow { display: none; }
-  .ypl-table__n { width: 84px; }
-}
-
-
 /* ---------- search field: a 48px line with the magnifier on it ---------- */
-.lsearch, .records-search-field, .tb-search-row { position: relative; width: 100%; }
-.lsearch { width: min(calc(var(--s21) * 4 + var(--s5)), 100%); }
+.tb-search-row { position: relative; width: 100%; }
 /* the icon stands 12 in from the field's edge like every panel's first ink, and the words 12 after it, as in ListSearch */
-.lsearch input, .records-search-field input, .tb-search-row input { padding-left: calc(var(--pad) + 20px + var(--s3)); padding-right: var(--h-control); }
-.ls-ico, .search-input-icon { position: absolute; left: var(--pad); top: 50%; transform: translateY(-50%); display: flex; color: var(--mute); pointer-events: none; z-index: var(--z-raised); }
-.ls-ico .ic, .search-input-icon .ic { width: 20px; height: 20px; }
-.ls-clear, .tb-clear {
+.tb-search-row input { padding-left: calc(var(--pad) + 20px + var(--s3)); padding-right: var(--h-control); }
+.search-input-icon { position: absolute; left: var(--pad); top: 50%; transform: translateY(-50%); display: flex; color: var(--mute); pointer-events: none; z-index: var(--z-raised); }
+.search-input-icon .ic { width: 20px; height: 20px; }
+.tb-clear {
   position: absolute; right: 0; top: 50%; translate: 0 -50%; width: 44px; height: 44px; display: grid; place-items: center;
   border: 0; color: var(--dim);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
-@media (hover: hover) { :is(.ls-clear, .tb-clear):hover { color: var(--lit); } }
-.list-tools { display: flex; align-items: center; gap: var(--s3); }
-.list-count { font-size: var(--t12); color: var(--mute); white-space: nowrap; }
+@media (hover: hover) { .tb-clear:hover { color: var(--lit); } }
 
 /* ---------- Toast: an inverted 52 panel just above the tab bar; a newer one covers the one before ---------- */
 .toaster { position: fixed; z-index: var(--z-toast); left: 0; right: 0; margin-inline: auto; width: min(100% - var(--gutter) * 2, calc(var(--s21) * 4 + var(--s5))); height: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }
@@ -358,8 +258,8 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 /* Compact desktop controls keep a full touch target on phones and touch screens.
    The floor's height has no weight (:where), so it raises a 36px control to 44 but never lowers a 48px field or a 60px row. */
 @media (max-width: 639px), (pointer: coarse) {
-  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.tabsline > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp { min-width: var(--h-control); }
-  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.tabsline > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link, .ypl .ann-apply, .ypl .ann-resp) { min-height: var(--h-control); }
+  .ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.tabsline > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link { min-width: var(--h-control); }
+  :where(.ypl button:not(.tab):not(.navlink):not(.seg-track > button):not(.tabsline > button):not(.rc-name-link), .ypl [role="button"], .ypl .btn, .ypl .ann-link) { min-height: var(--h-control); }
   /* a 36px segment and a 40px bar link keep their look; a finger gets 44 */
   :is(.navlink, .seg-track > button)::after { content: ""; position: absolute; inset: calc(var(--s1) * -1) 0; }
 }
@@ -389,41 +289,14 @@ td.ypl-table__pts { font-size: var(--t15); font-weight: 700; line-height: 1; whi
 
 /* ---------- the case: a record on the plane, two flush planes with no frame: a light label over one navy window ---------- */
 .case { display: flex; flex-direction: column; width: 100%; height: 100%; color: var(--lit); text-align: left; }
-button.case:active:not(:disabled) { scale: 1; }
 .case-label { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); min-height: var(--h-row); padding: calc((var(--h-row) - 1.333rem) / 2) var(--s5); background: var(--panel-2); color: var(--lit); transition: background-color var(--move-tone); }
-@media (hover: hover) { button.case:hover .case-label { background: var(--panel-2); } }
 .case-who { flex: 1; min-width: 0; }
 .case-who b { display: block; overflow: hidden; font-size: var(--t15); font-weight: 700; line-height: var(--l15); text-overflow: ellipsis; white-space: nowrap; }
 .case-who > span { display: block; margin-top: var(--s1); overflow: hidden; font-size: var(--t12); font-weight: 600; line-height: var(--l12); color: var(--dim); text-overflow: ellipsis; white-space: nowrap; }
-.case-fig { flex: none; font-size: var(--t32); font-weight: 700; line-height: 1; }
-.case-fig small { margin-left: var(--s1); font-size: var(--t12); font-weight: 600; }
 .case-win { position: relative; display: block; flex: 1; overflow: hidden; min-height: 0; padding: var(--s5); background: var(--panel); color: var(--lit); }
 .case-win img { position: relative; z-index: var(--z-raised); display: block; width: 100%; height: 100%; object-fit: contain; }
-/* a picture arrives in one tone on a window that already stands */
-.case-win img.fade { opacity: 0; transition: opacity var(--move-tone); }
-.case-win img.fade.in { opacity: 1; }
-.case-band { position: absolute; top: -10%; bottom: -10%; left: 0; width: 38.2%; background: var(--panel-2); transform: translateX(-162%) skewX(-12deg); }
-/* one picture: the golden rectangle cut once, a square window and the label that is left */
-.case.one { aspect-ratio: 1 / 1.618; }
-.case.one .case-label { flex: 1; }
-.case.one .case-win { flex: none; aspect-ratio: 1; }
-/* a party */
-.case-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); align-items: center; }
-.case-mon { position: relative; z-index: var(--z-raised); display: grid; place-items: center; aspect-ratio: 1; min-width: 0; }
-.case-name { font-size: var(--t12); font-weight: 600; line-height: var(--l12); color: var(--dim); text-align: center; }
-/* a figure or a name */
-.case-say { display: flex; flex-direction: column; justify-content: center; }
-.case-say > :not(.case-band) { position: relative; z-index: var(--z-raised); }
-/* nobody holds it yet: the window stays empty */
-.case.off .case-win { background: var(--panel-2); color: var(--mute); }
-/* a wall of cases: planes of one tone part by a seam of 4 */
-.case-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s1); }
-.case-grid.sm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 640px) { .case-grid:not(.sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 860px) { .case-grid.sm { grid-template-columns: repeat(4, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(5):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .case-grid:not(.sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); } .case-grid.sm { grid-template-columns: repeat(5, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(5):last-child) { grid-template-columns: repeat(5, minmax(0, 1fr)); } .case-grid.sm:has(> :nth-child(6):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* ---------- a native checkbox is the board's check (c8, c12): a 20 square, off panel-2, on inverted with its mark ---------- */
+/* ---------- a native checkbox is the board's check: a 20 square, off panel-2, on inverted with its mark ---------- */
 :where(.ypl) input[type="checkbox"]:not(.sr-only) { appearance: none; -webkit-appearance: none; display: inline-grid; place-items: center; background: var(--panel-2); cursor: pointer; transition: background-color var(--move-tone); }
 :where(.ypl) :is(.pn, .sheet .field, .sheet .fb-q, .bk-pin) input[type="checkbox"]:not(.sr-only):not(:checked) { background: var(--rule); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):checked { background: var(--lit); }
@@ -431,7 +304,7 @@ button.case:active:not(:disabled) { scale: 1; }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):focus-visible { outline: var(--line) solid var(--lit); outline-offset: var(--seam); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):disabled { background: var(--panel); cursor: default; }
 
-/* recently picked (c14): up to six square cells over the list, the Pokémon standing on the cell's floor */
+/* recently picked: up to six square cells over the list, the Pokémon standing on the cell's floor */
 .pick-recent { display: grid; gap: var(--s2); margin-top: var(--s5); }
 .pick-recent-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .pick-recent-one { position: relative; display: grid; place-items: center; aspect-ratio: 1; overflow: hidden; transition: background-color var(--move-tone); }

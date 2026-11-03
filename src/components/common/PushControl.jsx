@@ -5,7 +5,7 @@ import Icon from "./Icon.jsx";
 import Modal from "./Modal.jsx";
 import { siteAlert } from "./SiteDialog.jsx";
 
-/* 새 공지 알림 (docs/redesign-next c20): 켜기 전에 이유를 먼저 말하는 시트를 띄우고, 끄기는 바로 한다.
+/* 새 공지 알림: 켜기 전에 이유를 먼저 말하는 시트를 띄우고, 끄기는 바로 한다.
    공지 화면은 12px 단어(PushLink)로, 더보기는 스위치 줄(PushSwitch)로 같은 상태를 쓴다. */
 function usePush() {
   const [mode] = useState(currentPushMode);

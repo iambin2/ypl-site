@@ -82,13 +82,13 @@ node tests/championsCore.test.mjs
 
 ### 보안 상태 (알고 계셔야 할 것)
 
-현재 앱 테이블과 `public.site_data` 에는 RLS가 켜져 있지 않고, anon 키로 쓰기가 가능합니다. 동아리 내부용으로는 통용되지만 완전한 보안은 아닙니다. Auth/RLS 강화와 RPC 권한 정리는 기능 호환성을 유지한 채 진행할 별도 후속 작업으로 남아 있습니다(`docs/ARCHITECTURE.md` §10).
+`public` 과 `ypl_schema_validation` 의 모든 테이블에 RLS가 켜져 있고, anon 키로는 테이블에 직접 쓸 수 없습니다. 방문자 쓰기(게시판, 신청, 파티 제출)는 서버가 검사하는 RPC로만 들어가고, 운영 쓰기는 `app_metadata.ypl_admin` 계정만 할 수 있습니다. SQL 원본은 `docs/db/` 에 있습니다.
 
 ---
 
 ## 5. 관리자 로그인
 
-- 화면 우측 상단 **관리자** 버튼
+- **더보기** 화면의 관리자 로그인 줄 (데스크톱 넓은 화면에서는 푸터 끝의 **관리자 로그인**)
 - 운영진 공용 아이디와 비밀번호로 로그인합니다. 비밀번호는 운영진끼리만 공유하고 저장소에 적지 않습니다.
 - 실제 계정은 Supabase Auth에 있습니다. `@` 없는 아이디는 `아이디@ypl.invalid` 이메일로 바뀌어 로그인하고(`src/storage.js`), `app_metadata.ypl_admin = true` 를 붙인 계정만 DB 쓰기가 허용됩니다. 일반 가입은 꺼 두었습니다.
 - 세션은 메모리에만 있어 새로고침하면 다시 로그인해야 합니다.
@@ -107,9 +107,8 @@ ypl-site/
 ├─ .github/workflows/        # 배포, Champions 데이터 주간 갱신, Supabase 유지
 ├─ docs/
 │  ├─ ARCHITECTURE.md         # 데이터 구조와 불변식 (정본)
-│  ├─ brand/                  # 로고 원본, 링크 미리보기 원본
-│  ├─ redesign-glass/         # 디자인 결정 기록(DECISIONS.md)과 참고 빌드
-│  └─ db/
+│  ├─ brand/                  # 앱 아이콘과 링크 미리보기 원본, Wing Y 기록
+│  └─ db/                     # Supabase SQL (정규화 스키마, RPC, 권한)
 ├─ scripts/                   # 운영 스크립트 (아래 7절)
 ├─ tests/                     # node:test 회귀 테스트
 ├─ public/
@@ -118,16 +117,20 @@ ypl-site/
    ├─ App.jsx                 # 셸 — 뷰 상태, 사이트 데이터, 관리자 모드
    ├─ storage.js              # 저장 어댑터 (artifact → Supabase → localStorage)
    ├─ pages/                  # 화면 (홈, 기록, 대진표, 칭호, 팀 빌더, 계산기 …)
-   ├─ components/             # 공용 UI (common/, layout/)
+   ├─ components/             # 공용 UI (common/Board.jsx가 전광판 부품, layout/은 상단 바와 탭 바)
    ├─ admin/                  # 관리자 모드 (에디터, 모달, 모드 바)
    ├─ services/               # 도메인 로직 — 대진 lifecycle, projection, 기록, 챔피언스
    ├─ data/                   # 팀 빌더와 계산기 데이터
-   └─ styles/                 # tokens.css 기반 CSS 8개 파일
+   └─ styles/                 # tokens.css(토큰)와 board.css(공용 부품), 화면별 CSS
 ```
 
 화면 이동은 라우터 라이브러리 없이 `?view=` 쿼리스트링으로 처리합니다 (`src/services/appRouting.js`).
 
-디자인을 고칠 때는 `src/styles/tokens.css` 의 토큰을 먼저 확인하세요. 라이트/다크 두 테마가 `<html data-theme>` 위에 얹혀 있어서, 색을 직접 써 넣으면 한쪽 테마가 조용히 깨집니다. 전체 디자인 시스템은 [`DESIGN.md`](DESIGN.md), 제품 원칙과 브랜드 규칙은 [`PRODUCT.md`](PRODUCT.md) 에 있습니다.
+### 디자인: YPL Scoreboard
+
+사이트는 경기장의 전광판입니다. 꺼진 남색 판 위에 사실이 직각 패널로 켜지고, 숫자는 7세그먼트로, 지금 살아 있는 것은 호박색 램프 하나로 알립니다. 꾸미지 않고 데이터에서 읽은 사실만 보이며, 강조는 색이 아니라 빛(켜짐, 흐림, 꺼짐, 반전)으로만 합니다. 간격, 글자 크기, 높이, 시간은 모두 황금비 하나에서 나옵니다.
+
+규칙과 그 이유는 [`DESIGN.md`](DESIGN.md) 가 유일한 기준이고, 제품 원칙과 브랜드 규칙은 [`PRODUCT.md`](PRODUCT.md) 에 있습니다. 값은 `src/styles/tokens.css`, 공용 부품은 `src/components/common/Board.jsx` 와 `src/styles/board.css` 에 있고, `tests/designLaw.test.mjs` 가 모든 CSS를 규칙대로 검사합니다. 라이트/다크 두 테마가 `<html data-theme>` 위에 얹혀 있어서, 색을 직접 써 넣으면 한쪽 테마가 조용히 깨집니다.
 
 ---
 

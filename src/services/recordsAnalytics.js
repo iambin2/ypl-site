@@ -101,7 +101,7 @@ function evalGraph(graph) {
   return { win, lose, slotPlayer };
 }
 
-/* 지금 경기 (홈의 대회 당일, docs/redesign-next c9): 두 선수가 정해졌고 아직 승자가 없는 경기를 대진 순서대로,
+/* 지금 경기 (홈의 대회 당일): 두 선수가 정해졌고 아직 승자가 없는 경기를 대진 순서대로,
    그리고 그 첫 경기가 속한 라운드에서 끝난 경기 수. 읽기만 한다. */
 const STAGE_KO = { "Grand Final": "결승", "Reset Final": "리셋 결승" };
 function stageLabel(graph, stage) {

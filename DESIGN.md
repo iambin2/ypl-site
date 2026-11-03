@@ -1,8 +1,8 @@
 ---
 name: YPL — Yonsei Pokémon League (Scoreboard)
 description: "A stadium scoreboard in navy. The ground is a board switched off; facts light up on square panels joined by a 2px seam; numbers are real seven-segment displays; one amber lamp means live. Every measure comes from one ratio, phi. Dark first, light equal."
-source: "approved drafts in docs/redesign-next/ (C3 to C22, drafts-c*.html, c-core.css); tokens will live in src/styles/tokens.css; tests/designLaw.test.mjs is rewritten to this file as the build lands"
-status: "Approved 2026-11-02, built on branch design/scoreboard (docs/redesign-next/BUILD.md) and deployed to production 2026-11-03."
+source: "this file; the values in src/styles/tokens.css, the shared parts in src/components/common/Board.jsx and src/styles/board.css, the measurable rules in tests/designLaw.test.mjs"
+status: "Live in production since 2026-11-03. The site as built is the reference; there are no drafts to follow."
 scale:
   base: 4
   seam: 2
@@ -14,7 +14,7 @@ scale:
   line: { hair: 1, rule: 2 }
   height: { strip: 32, control: 44, row: 52, row2: 64, counter: 84 }
   breakpoints: [640, 860, 1100]
-  content: { full: 1200, columns: [709, 439], read: 36em, sheet: 576 }
+  content: { full: 1200, columns: [709, 439], sheet: 576 }
   motion: { press: 100, tone: 160, leave: 260, light: 420 }
   stagger: { row: 38, display: 62 }
 ---
@@ -25,13 +25,22 @@ scale:
 
 The site is one scoreboard. The navy ground is the board switched off. Everything the site says stands on a square panel that lifts one tone off the ground, and panels join with a 2px seam like the modules of a real board. Light is the only emphasis: a thing is lit, dim, muted or off, and the one decided or current thing in a group is inverted. Numbers the board announces are drawn as real seven-segment displays, with their unlit bars still faintly there. Nothing flies across the screen; things switch on.
 
-Two things carry over from every earlier system and do not change: the golden ratio behind the square forms, and the navy `#081C3D`.
+Two things never change: the golden ratio behind every measure, and the navy `#081C3D`.
 
-## Status
+## Philosophy
 
-This file was rewritten on 2026-11-02 from the approved drafts in `docs/redesign-next/` and the site was rebuilt to it on branch `design/scoreboard` and shipped on 2026-11-03; `src/styles/tokens.css` and `tests/designLaw.test.mjs` hold it, with no bridge to the previous system (YPL Navy, in this file's git history). A change to the law goes here first, then into the drafts or the code.
+YPL is the league's official record, read on a phone at the venue between matches. So the site behaves like the board in a stadium, not like a club homepage.
 
-The drafts are the reference build: `drafts-c3.html` (home, records, light, desktop, motion, measures), `drafts-c4.html` (notices, board, titles, hall, about, builder, calculator, admin, edge cases), `drafts-c5.html` (brackets, party submission, admin bracket making, more, records tabs, sheets, errors, footer, desktop, states and motion, builder and calculator rest, push, icons, share image), `drafts-c6.html` (where a Pokémon stands). `c-core.css` and `c-core.js` hold the tokens and the seven-segment drawing they share.
+- **It reports, it does not decorate.** Every figure on a screen is read from data: the days to the next event, the reigning champion, the counts, the season's top three, the past champions. Where there is no fact the board stays dark; it never fills the space with an illustration or a claim.
+- **What is happening now comes first.** The home opens on the next event as a countdown, then the champion, then the league in numbers, then time runs down the page: the season, the notices, the past champions. On event day the same place shows the start time and the live match.
+- **Emphasis is light, not colour.** One hue, navy. A thing is lit, dim, muted or off, the one decided or current thing inverts, and the only other colour is an amber lamp that means live. A visitor learns the board in one visit because it never says one thing two ways.
+- **Hardware, not graphics.** Square panels joined by a seam, numbers in real seven-segment cells with their dark bars showing, a lamp housing that stays even when it is off. Nothing is rounded, shadowed, blurred or glowing, because a board is none of those.
+- **It switches on; it does not fly.** Things arrive by lighting and rising the last 12 into place, and nothing that is lit moves again. Motion is there so the site feels finished, never to perform.
+- **One ratio decides.** Space, type, heights, splits and time all come from phi, so no value is chosen by eye and every screen, the admin included, is the same board.
+
+## Where the law lives
+
+This file is the law. `src/styles/tokens.css` holds its numbers, `src/components/common/Board.jsx` and `src/styles/board.css` its shared parts (rows, counters, a Pokémon on its floor, fields, choices, tabs, chips, the dock, toasts), and `tests/designLaw.test.mjs` checks every measurable rule on every stylesheet and inline style. A new screen is built from those parts. A change to the law goes here first, then into the code; history is in git, not here.
 
 ## Principles
 
@@ -73,7 +82,7 @@ A number is written once; other chapters name the token and its job. History goe
 | Stagger | 100 by 1/phi and 1/phi squared | 62 between displays, 38 between rows |
 | Press | 1 minus 1/phi to the 8th | .976 |
 | Unlit bar | a faint step of light | 8% in dark, 6% in light |
-| Floor band | a quarter of a picture cell, or the name band under it | 24% |
+| Floor | a quarter of a picture cell, or the line of words under it | 24% |
 
 Outside the law on purpose: the 44 a finger needs; the 2px seam and the 1 and 2px lines; the icon grid of 16, 20 and 24; the Wing Y's own proportion; navy `#081C3D`; the content width and breakpoints, which sit where content breaks.
 
@@ -100,7 +109,7 @@ Two layers in `tokens.css`: primitives and semantic tokens. Components read sema
 |---|---|---|---|
 | `--ground` | the board, switched off | `#081C3D` | `#FFFFFF` |
 | `--panel` | every surface that holds something | `#0E2449` | `#EEF1F6` |
-| `--panel-2` | one step up: a floor band, a hover, a track, a field inside a panel | `#12294F` | `#E6EAF1` |
+| `--panel-2` | one step up: a hover, a track, a tag, a field inside a panel | `#12294F` | `#E6EAF1` |
 | `--rule` | a hairline | `#1D365F` | `#D9DEE7` |
 | `--lit` | lit: titles, names, figures, the main action's fill | `#FFFFFF` | `#081C3D` |
 | `--dim` | dim: labels, grey lines, units | `#A8B8D3` | `#46536C` |
@@ -109,7 +118,7 @@ Two layers in `tokens.css`: primitives and semantic tokens. Components read sema
 | `--off` | the opacity of an unlit segment bar | .08 | .06 |
 
 - **One hue, navy.** In light the words are navy, not black: the whole site is one colour on one ground. Pokémon type colours are content and stay as drawn.
-- **A type is one tag everywhere** (2026-11-03), a Pokémon's or a move's alike, on the page and in the saved image: a square tag 24 tall on `--panel-2` (the ground where it stands on a surface already one tone up), an 8 square in the type's colour, then the name at 12/600. Square and on whole pixels, never slanted, so every tag draws alike.
+- **A type is one tag everywhere**, a Pokémon's or a move's alike, on the page and in the saved image: a square tag 24 tall on `--panel-2` (the ground where it stands on a surface already one tone up), an 8 square in the type's colour, then the name at 12/600. Square and on whole pixels, never slanted, so every tag draws alike.
 - **Solid only.** No gradient, sheen, glow, soft light, blur or grain. Colour never comes from opacity, with three exceptions: an unlit segment bar, a disabled control, and the veil behind a sheet.
 - **Amber is a lamp, never a word.** It marks what is happening now: today's event, a live match, a private bracket in progress. The words beside it are lit.
 - **Status has no hue.** Done, waiting, error and success read through words, the lamp, inversion and the `!` square, never through a colour.
@@ -161,7 +170,7 @@ An 8px square. Two kinds and no others.
 | Amber (`--signal`) | live now | 신청 접수 중 (an event taking applications), a deadline on its last day (파티 제출 마감까지), 오늘 대회 진행 중 and the bar's fixture on event day, the live match (beside its score), a running private bracket |
 | Unlit (`--panel-2`) | the lamp's housing | the bar's fixture when nothing is live |
 
-**The lamp is a fixture of the board** (2026-11-03, C24). The top bar keeps an 8px housing just left of the theme button: dark while nothing is live, so a first visitor learns where the board lights. On event day it lights amber with 진행 중 beside it and opens the bracket; the bracket tab (and the desktop word 대진표) carries the same lamp, and every page but the home and the bracket opens with an inverted 44 strip: the lamp, the event's name with 진행 중, and 대진표 → at the right.
+**The lamp is a fixture of the board.** The top bar keeps an 8px housing just left of the theme button: dark while nothing is live, so a first visitor learns where the board lights. On event day it lights amber with 진행 중 beside it and opens the bracket; the bracket tab (and the desktop word 대진표) carries the same lamp, and every page but the home and the bracket opens with an inverted 44 strip: the lamp, the event's name with 진행 중, and 대진표 → at the right.
 
 A lamp never blinks and never moves. It is a word's companion, not a replacement: it always stands beside a word that says the same thing.
 
@@ -179,9 +188,9 @@ A lamp never blinks and never moves. It is a word's companion, not a replacement
 
 **A Pokémon always stands in a panel with its feet on a floor.** It never floats on the ground and never gets a box of its own colour.
 
-- The floor is a place, not a paint (2026-11-03): nothing is drawn under a Pokémon. Where a name stands under the picture, that line of words is the floor; where none does, the floor shrinks to 4 and the picture takes the cell. Only a chosen member's name band lights (inverted).
+- The floor is a place, not a paint: nothing is drawn under a Pokémon. Where a name stands under the picture, that line of words is the floor; where none does, the floor shrinks to 4 and the picture takes the cell. Only a chosen member's name band lights (inverted).
 - The picture's feet touch the floor's top edge, measured on the picture's ink (`inkCentre.js` reads each sprite's alpha once), not on its box. Transparent margins differ by sprite, so a box alignment leaves some floating.
-- On the home, the current champion and the text that names it share one panel: the name, generation and season top left, "파티 보기" in the floor band, the Pokémon standing on the floor at the right.
+- On the home, the current champion and the text that names it share one panel: the name, generation and season top left, "파티 보기" in its floor (52, 64 on desktop), the Pokémon standing on that floor at the right.
 - A party of six is six cells, each with its floor; a chosen member's name band inverts. A list of parties shows the six as pictures, not as a line of names.
 - Sprites are transparent; no plate, glow, outline or shadow is added behind them.
 
@@ -200,7 +209,7 @@ Albert Sans for Latin and digits, Freesentation for Korean, as before (unicode-r
 
 Desktop is read from further away, so at 860 and up the label and grey line step up to 15/20 (one change to `--t12` and `--l12`); there they part from row titles by weight and light alone, which is the board's one emphasis anyway. What matters stands bold: 700 for titles, names and figures. A title stands first; nothing small sits above a title except a page's back link and a notice's date line. A long title holds two lines and ends in an ellipsis.
 
-**A line runs to its column** (2026-11-03). A line of words breaks where its column ends or where its sentence ends, never earlier: no measure narrower than the column (the desktop columns, 709 and 1200, are the measure), and no hand-placed break in the site's own copy. The one exception is the home's no-event sentence, set in two lines on a phone. `tests/designLaw.test.mjs` holds both.
+**A line runs to its column.** A line of words breaks where its column ends or where its sentence ends, never earlier: no measure narrower than the column (the desktop columns, 709 and 1200, are the measure), and no hand-placed break in the site's own copy. The one exception is the home's no-event sentence, set in two lines on a phone. `tests/designLaw.test.mjs` holds both.
 
 ## Controls
 
@@ -218,13 +227,12 @@ Desktop is read from further away, so at 860 and up the label and grey line step
 | Switch | 52 by 32: off is a muted square in `--panel-2`, on is inverted with the square at the right |
 | Steps of a flow | A row of three panels, 44: done dim with a check, current inverted, next muted |
 | Pager | Three panels joined by the seam at their own width (52, 84, 52), centred: back, the page as `1 / 2`, next. A dead end keeps its panel and mutes its chevron |
-| Drag handle | Two lines, muted, at a row's right end |
 
 Every control has the five states: rest, press (scale .976, 100), chosen (inverted), disabled (muted, the main action drops to a panel), keyboard focus (a 2px `--lit` inset ring; on the main action, a ground ring inside a lit ring). Desktop hover lifts a panel to `--panel-2`. Nothing grows on hover.
 
 ## Icons
 
-Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no curves where a corner will do. Sizes 16, 20, 24. The tab bar: 홈 (a house), 공지 (a page with lines), 대진표 (a bracket's arm into a box), 기록 (three bars), 더보기 (three filled 3px squares, like lamps). The theme button: a sun with eight rays, a crescent moon. Others: back, chevron, down, plus, close (×), check, search, bell, download, image, external, info, lock, drag, trophy. An icon only says what words cannot: going back or on (← →), creating (+), leaving the site (external), closing (×). Phosphor is retired.
+Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no curves where a corner will do. Sizes 16, 20, 24. The tab bar: 홈 (a house), 공지 (a page with lines), 대진표 (a bracket's arm into a box), 기록 (three bars), 더보기 (three filled 3px squares, like lamps). The theme button: a sun with eight rays, a crescent moon. Others: back, chevrons, up, down, plus, minus, close (×), check, search, bell, download, image, external, link, info, alert, lock, edit, trash, refresh, login, logout, form. An icon only says what words cannot: going back or on (← →), creating (+), leaving the site (external), closing (×). `Icon.jsx` holds them all; an unknown name draws nothing.
 
 ## Bars and navigation
 
@@ -239,14 +247,14 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 ## Sheets, dialogs, toasts
 
 - **A sheet** rises from the bottom over a veil of `--ground` at .72 (never black). It is a `--panel` plate with a hairline on its top edge, a 32 by 4 grip, its title at 20 and a × at the top right. Pull down or press the veil to close.
-- **Every sheet is built like the party sheet** (2026-11-03): its title and one grey line under it, then its content in one column that only scrolls down (nothing in a sheet scrolls sideways; rows of chips wrap), then its actions as planes along the bottom edge, a word action standing as a second action panel. A sheet that shows a record (a party, a trainer, a Pokémon, a champion) is as wide as the content on desktop; a form, a question or a single sample (one case) keeps 576, so no sheet stands half empty.
+- **Every sheet is built like the party sheet:** its title and one grey line under it, then its content in one column that only scrolls down (nothing in a sheet scrolls sideways; rows of chips wrap), then its actions as planes along the bottom edge, a word action standing as a second action panel. A sheet that shows a record (a party, a trainer, a Pokémon, a champion) is as wide as the content on desktop; a form, a question or a single sample (one case) keeps 576, so no sheet stands half empty.
 - **A dialog** is a panel laid on the veil, its title, a sentence saying why, then what to do. A dialog that refuses (공지를 지울 수 없습니다) lists what blocks it as rows.
 - **A toast** is an inverted panel, 52, above the docked action or the tab bar, with its one action as an underlined word (되돌리기, 다시 시도). An error toast starts with the `!` square.
 - **Confirm by undo.** Where an action can be undone (saving a result, moving a seed), it acts at once and offers 되돌리기, rather than asking first. A delete that cannot be undone still asks.
 
 ## Motion
 
-**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The site is meant to feel finished, not still (2026-11-03): what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
+**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The site is meant to feel finished, not still: what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
 
 | Verb | When | Length | Curve |
 |---|---|---|---|
@@ -289,13 +297,13 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 ## Layout and pages
 
-**Home, phone.** Under the bar: the label row (a lamp, 다음 대회까지, or the amber lamp and 신청 접수 중 while the event takes applications, the date at the right), the countdown at 120 with 일, the event's name at 20 in two lines, on the event day before its start a counter 파티 제출 마감까지 with the hours left and 시간 under an amber lamp (party submission closes when the event starts, 2026-11-03; on the days before, the countdown already says it, so there is no counter; it opens the notice), the main action, then the champion panel (216, floor band 52), then three counters (대회, 트레이너, 시즌; 84 tall, cells 115, 116, 115). Below, each section is its own module of the board, so the page has a beat (C24): the season's ranking as a podium, the top three as three columns like the counters (the rank, the name, the points lit in segments at 40 with 점; a tie reads as equal columns and needs no sentence, a sole leader's column inverts); the notices as a lead panel (the date as 월 and 일 displays at 32, 새 글 with its lamp, the title at 20 in two lines, a grey line) and the rest as rows; the past champions as a line score, one column a generation: the number lit at 32 on `--panel-2`, the Pokémon on its floor, the name and season, five across a phone, more scroll sideways.
+**Home, phone.** Under the bar: the label row (a lamp, 다음 대회까지, or the amber lamp and 신청 접수 중 while the event takes applications, the date at the right), the countdown at 120 with 일, the event's name at 20 in two lines, on the event day before its start a counter 파티 제출 마감까지 with the hours left and 시간 under an amber lamp (party submission closes when the event starts; on the days before, the countdown already says it, so there is no counter; it opens the notice), the main action, then the champion panel (216, its floor 52), then three counters (대회, 트레이너, 시즌; 84 tall, cells 115, 116, 115). With no event ahead the countdown stays dark, its lamp is an unlit housing, the name's place says 다음 대회 일정은 공지에 올라옵니다. and the main action is 공지 보기. Below, each section is its own module of the board, so the page has a beat: the season's ranking as a podium, the top three as three columns like the counters (the rank, the name, the points lit in segments at 40 with 점; a tie reads as equal columns and needs no sentence, a sole leader's column inverts); the notices as a lead panel (the date as 월 and 일 displays at 32, 새 글 with its lamp, the title at 20 in two lines, a grey line) and the rest as rows; the past champions as a line score, one column a generation: the number lit at 32 on `--panel-2`, the Pokémon on its floor, the name and season, five across a phone, more scroll sideways.
 
-**Home on event day.** The label turns amber, 오늘 대회 진행 중; the display shows the start time as a clock at 84 with 시작; the main action is 대진표 보기; the live match replaces the champion.
+**Home on event day.** The label turns amber, 오늘 대회 진행 중; the display shows the start time as a clock at 84 with 시작; the main action is 대진표 보기; 지금 경기 stands under it while a match is undecided: its stage with the amber lamp and 진행 중, the two players as rows of 52, and the round's progress (8강 진행, 2 / 4 종료). The champion stays where it is.
 
-**Home, desktop.** Left column 709: label, countdown at 240, the event's name at 32 on one line, the 파티 제출 마감까지 counter on the event day before the start, the main action and 리그 소개, then the season ranking. Right column 439: the champion panel, the party as six cells, the counters, then notices.
+**Home, desktop.** Left column 709: label, countdown at 240, the event's name at 32 on one line, the 파티 제출 마감까지 counter on the event day before the start, the main action (38.2% of the column) and 리그 소개, then 지금 경기 on event day, then the season ranking. Right column 439: the champion panel (its floor 64), the party as six cells, the counters, then notices. The past champions run the full 1200 under both. The two columns end on one line in every state: the champion panel, the podium's columns or the lead notice take what is left.
 
-**Notices.** The first notice of the first page (no search) is the home's lead panel; the rest are rows of 64: the title, a grey line with the date (and 고정 lit), a lamp column at the right end. A notice opens with its date line, the title at 32, two counters (대회까지, 신청 / 정원), spec rows (일시 with its start time, 형식, 방식, 단위, 신청 마감), the body, and the docked main action (참가 신청; once the closing time passes it becomes the party submission, or a muted 신청 마감). On desktop the two columns share their top line: the back link, date, title and body take 709, and the 439 beside them, from the same first line and held in view as the body scrolls, holds the counters, the spec, the main action, the links, then 다른 공지 (five rows). Body text keeps the 36em measure; a grid of cards in the body takes its column's whole width. The form docks 신청하기.
+**Notices.** The first notice of the first page (no search) is the home's lead panel; the rest are rows of 64: the title, a grey line with the date (and 고정 lit), a lamp column at the right end. A notice opens with its date line, the title at 32, two counters (대회까지, 신청 / 정원), spec rows (일시 with its start time, 형식, 방식, 단위, 신청 마감), the body, and the docked main action (참가 신청; once the closing time passes it becomes the party submission, or a muted 신청 마감). On desktop the two columns share their top line: the back link, date, title and body take 709, and the 439 beside them, from the same first line and held in view as the body scrolls, holds the counters, the spec, the main action, the links, then 다른 공지 (five rows). Body text runs to its column (709); a grid of cards in the body takes the same width. The form docks 신청하기.
 
 **Party submission.** On the notice: a counter to the deadline (days and hours) and three status rows (신청, 선발전, 본선). The flow is three steps (팀 고르기, 확인, 제출): saved teams from the builder appear as panels with their six members; a team that breaks the rules is dimmed with `!` and the reason; the submitted one is recorded as a numbered submission that is never deleted, and the current one carries the lit lamp.
 
@@ -305,9 +313,9 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Titles and hall of fame.** Titles: generations as rows (the generation as a figure, the name, the season); the current holder inverts. The hall hangs one reign large and the rest on a wall: the crown, one panel with an inverted 현 챔피언 tag, the generation lit in segments at 84 with 대, the name at 32, the season and which title it is (2번째 우승), and the six large with their names (439 and 709 on desktop); then three counters (세대, 챔피언, 최다 우승 with the name); then 역대 챔피언, a wall of plates, newest first, three across on desktop, each the generation at 40, the season, the name at 20 and the six. A plate opens the champion sheet, which on desktop is as wide as the content.
 
-**The champion sheet** (2026-11-03) is the hall's, not a record's: a reign is decided, so it opens with a seal, the sheet's one inverted panel, saying 현 챔피언 (or 명예의 전당 for a past reign) and the generation lit in segments at 84 with 대 챔피언; the title is the name and the grey line the season. A reign won after the sets were kept (the final submission's ability, item, nature, points and moves) hangs its six as plaques joined by the seam, one, two or three across: the picture on its floor and the facts split 1 to 1.618 (the name at 20, the type tags, 도구, 특성, 성격 with its arrows), and under both the four moves two by two, each one step up with its type tag under its name. The points table stays in the records' party sheet. An earlier reign keeps the six on their name bands and one muted line saying only the party was recorded. New champions get their plaques with no step by an operator.
+**The champion sheet** is the hall's, not a record's: a reign is decided, so it opens with a seal, the sheet's one inverted panel, saying 현 챔피언 (or 명예의 전당 for a past reign) and the generation lit in segments at 84 with 대 챔피언; the title is the name and the grey line the season. A reign won after the sets were kept (the final submission's ability, item, nature, points and moves) hangs its six as plaques joined by the seam, one, two or three across: the picture on its floor and the facts split 1 to 1.618 (the name at 20, the type tags, 도구, 특성, 성격 with its arrows), and under both the four moves two by two, each one step up with its type tag under its name. The points table stays in the records' party sheet. An earlier reign keeps the six on their name bands and one muted line saying only the party was recorded. New champions get their plaques with no step by an operator.
 
-**About** (2026-11-03, C25 A). The title at 32, then the league in numbers before it is explained: one wide counter 첫 대회 with the year (four cells) and the month (two cells) at 40, each followed by its unit in type (년, 월), and under it 대회 and 트레이너 as two counters side by side, doors to the records' tabs as on the home; on desktop the three stand in one row, as the home's counters do. The figures are the home's facts, so nothing new is counted. Then the paragraph and the sections (참가하는 법 first).
+**About.** The title at 32, then the league in numbers before it is explained: one wide counter 첫 대회 with the year (four cells) and the month (two cells) at 40, each followed by its unit in type (년, 월), and under it 대회 and 트레이너 as two counters side by side, doors to the records' tabs as on the home; on desktop the three stand in one row, as the home's counters do. The figures are the home's facts, so nothing new is counted. Then the paragraph and the sections (참가하는 법 first).
 
 **Board.** Tabs 자유, 샘플, 파티; a search with 글쓰기 as the main action; rows of 64 with the comment count as words. Sample and party rows are the records' party rows: the title and its grey line, then the pictures (a party's six at the right in 64 cells on desktop; a sample's one leading its row). A sample or party post shows a team and lets people take it, so it is laid out for that, not as a notice. A party: the six large across the page with their names (each opens its settings below), the actions joined under them by the seam (팀 빌더에서 열기 as the main action, then 이미지 저장, 링크 공유, 수정, 삭제 in one row), the author's words, 포켓몬별 세팅 three across, the comments in a 709 column. A sample: its one case stands at the left (439) held in view; the actions, the words and the comments run at the right (709). Cases stand from their top edge and an empty move slot keeps a filled one's height, so every case in a row is the same length.
 
@@ -315,7 +323,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Calculator.** Tabs 대미지, 스피드, 도감. Damage: two Pokémon panels (an empty one shows its + in the middle of the panel), the result as a segment range with the exact range in type, a bar on a track, and the verdict (확정 2타); then 배틀 조건 and 세부 설정 as sections. Speed: the base Pokémon's speed as a display and a line of rows (speed, picture, name, base) with the base row inverted; the opponents' modifier as a row of choices. Dex: picture, types, base stats as bars, defensive matchups as rows with the 4x row inverted.
 
-**Admin.** Result entry: match chips (done with a check, current inverted), the match with ± around each score, 불참 처리 and 부전승, docked 저장하고 다음 경기, and an undo toast. Making a bracket: three steps (대회 설정, 참가자 확정, 대진 배치); points copied from the last event; party submitters checked first; draw, redraw, drag to swap; 대결 확정. Recording: the placings and the points to add, previewed, then 기록에 반영 with 나중에. Notice editing: title, body, the notify check, 대회 신청 받기 as a switch with its 신청 마감 시각, the event day with its 시작 시각 (both required before saving while the event is ahead, 2026-11-03; party submission closes at that start, so there is no separate submission time), settings copied from a past event. Applicants: counters, search with CSV, chips (전체, 파티 제출, 미제출), rows with the submission lamp.
+**Admin.** Result entry: match chips (done with a check, current inverted), the match with ± around each score, 불참 처리 and 부전승, docked 저장하고 다음 경기, and an undo toast. Making a bracket: three steps (대회 설정, 참가자 확정, 대진 배치); points copied from the last event; party submitters checked first; draw, redraw, and swap two players by dragging one onto the other or pressing both (the held one inverts); 대결 확정. Recording: the placings and the points to add, previewed, then 기록에 반영 with 나중에. Notice editing: title, body, the notify check, 대회 신청 받기 as a switch with its 신청 마감 시각, the event day with its 시작 시각 (both required before saving while the event is ahead; party submission closes at that start, so there is no separate submission time), settings copied from a past event. Applicants: counters, search with CSV, chips (전체, 파티 제출, 미제출), rows with the submission lamp.
 
 **Errors and empty.** An error is the `!` square and a sentence, then one way out (다시 시도). A connection drop keeps the board switched off with a toast. An empty search shows a dark 0 display and two sentences. 404 lights 404 on the board with 홈으로 and two shortcuts.
 
@@ -325,7 +333,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 - **Tab icon:** the Wing Y alone, 64 wide on a transparent ground, no tile. `favicon-*.svg` is navy on a light browser and white on a dark one; `favicon-32.png` and `favicon.ico` are the fallbacks. The YPL letters are not used at tab size: at 16 they are about 5px tall and cannot be read.
 - **App icons:** a navy square with the white Wing Y inside the maskable safe zone, because a home screen fills transparency with black.
-- **Share image** (2026-11-03): 1200 by 630, the navy ground and the brand alone, the mark and the wordmark centred by their ink. No sentence, no counters, no Pokémon: nothing on it can go out of date.
+- **Share image:** 1200 by 630, the navy ground and the brand alone, the mark and the wordmark centred by their ink. No sentence, no counters, no Pokémon: nothing on it can go out of date.
 - **theme-color:** navy in both themes. A changed picture takes a new file name, because browsers keep icons.
 
 ## Logo
@@ -387,4 +395,4 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 
 ## Open
 
-Decided in the drafts but to be checked on a real phone when built: the strength of the unlit bars (8% and 6%), the 44 touch floor on the bracket's 36 rows (the whole match box is the target), and each sprite's feet on its floor.
+Measured in the browser but not yet on a real phone at the venue: the strength of the unlit bars (8% and 6%), the 44 touch floor on the bracket's 36 rows (the whole match box is the target), and each sprite's feet on its floor.

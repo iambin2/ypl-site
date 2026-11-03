@@ -1,6 +1,6 @@
 /* =============================================================================
-   YPL Scoreboard: notices (NewsPage.jsx). Drafts: docs/redesign-next c4-notices, c17-light-notices, c11 (the notice), c15 (errors),
-   c20 (the push sheet). List: the title at 32, 알림 받기 on its baseline, the search 20 under, rows of 64, the pager.
+   YPL Scoreboard: notices (NewsPage.jsx).
+   List: the title at 32, 알림 받기 on its baseline, the search 20 under, rows of 64, the pager.
    A notice: the back link 20 under the bar, its date line, the title at 32, the counters and the spec, the body, the docked action.
    ========================================================================== */
 

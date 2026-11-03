@@ -1,7 +1,7 @@
 /* =============================================================================
-   YPL Scoreboard: records (RecordsPage.jsx, StandTable.jsx). Drafts: docs/redesign-next c3-records-light (the first frame),
-   c13-more-records (events, ranking, a trainer). Counters on top; page tabs; tables of 44 rows under a 32 head strip with the
-   record holder inverted at 52; filters as chips; Pokémon on their floors. records.css still holds what the titles page borrows.
+   YPL Scoreboard: records (RecordsPage.jsx, StandTable.jsx).
+   Counters on top; page tabs; tables of 44 rows under a 32 head strip with the
+   record holder inverted at 52; filters as chips; Pokémon on their floors. records.css holds the record sheets and the name link.
    ========================================================================== */
 
 .rc-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
@@ -40,7 +40,7 @@
 /* events: a panel each, its name and grey line, the placings as lines, the winner bold */
 .rc-list-search { margin-top: var(--s5); }
 .rc-rounds { margin: var(--s5) 0 0; padding: 0; list-style: none; }
-/* a season's chapter (C24): its name at 20 and its number of events lit at 32, 32 above it and 12 to its first event */
+/* a season's chapter: its name at 20 and its number of events lit at 32, 32 above it and 12 to its first event */
 .rc-chapter { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s3); padding: var(--s8) 0 var(--s3); }
 .rc-chapter:first-child { padding-top: 0; }
 .rc-chapter-n { display: flex; align-items: flex-end; gap: var(--s1); }

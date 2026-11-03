@@ -29,23 +29,23 @@ Not a generic club homepage: every record on the site is derived from real, oper
 
 ## Capabilities and Constraints
 
-- Views: 홈, 소개, 공지, 게시판, 기록 (트레이너/대회/포켓몬/랭킹), 대진표, 칭호, 명예의 전당, 팀 빌더 (도구). URL routing via `?view=`.
-- Anonymous board posts and comments by nickname; notice search; application and party submission from notices.
-- Client-side admin mode (soft gate) with editors, modals, bracket runtime controls, record apply/revert.
+- Views: 홈, 소개, 공지, 게시판 (자유, 샘플, 파티), 기록 (트레이너, 대회, 포켓몬, 랭킹), 대진표 (공식, 사설), 칭호, 명예의 전당, 팀 빌더, 계산기, 더보기. URL routing via `?view=`.
+- Anonymous board posts and comments by nickname; notice search; application and party submission from notices; notice alerts by Web Push.
+- Admin mode behind the shared Supabase Auth login, with editors, bracket making and result entry, record apply and revert. The database is the integrity boundary.
 - React 18 + Vite, deployed to GitHub Pages; data from Supabase normalized schema. Frontend redesign must not change data behavior.
-- Light and dark themes with a user toggle are a required feature. Light is the default (2026-11-01).
+- Light and dark themes with a user toggle (어둡게, 밝게, 기기 설정) are a required feature. Dark is the first visit; a chosen theme is kept and set before the first paint.
 
 ## Brand Commitments
 
-- Name: YPL — Yonsei Pokémon League, 포켓몬 센터 연세점. The user explicitly released every visual element (wordmark, color, type) for redesign except the light/dark theme feature.
-- The site has one colour, navy `#081C3D` on white, by the user's decision of 2026-11-01 that replaced neutral-only (itself the 2026-09-11 replacement of Yonsei Blue): a darkened Yonsei blue, used in solid fills only. Text is black `#111111` (2026-11-02). The user prefers complete solid colours like psacard.com over half-hearted gradients. No trophy gold and no status hue.
-- The brand mark is the user-approved Wing Y (`public/brand/ypl-wing-y.svg`), the user's 2026-10-12 mark as refined on 2026-10-27 (candidate H, the user's pick): two raised wings, each a broad top feather and one shorter one, meet in a Y; under a straight band cut across the neck, a fan tail of three feathers split by two slits. Every edge is straight and the mark is exactly symmetric. Preserve its proportions. The wordmark is the solid slanted YPL the user picked on 2026-11-01 (candidate B, no band). Earlier marks live only in git history.
-- Copy is plain Korean prose: no middle-dot (·) separators, and short intro sentences should sit on one line at laptop width.
-- Tone: an official league site, not a fan site. The home page stays clean and professional, as simple as psacard.com (DECISIONS 27차, 2026-11-02): one sheet cut by the golden ratio, the plane as the whole site's core form (DECISIONS 28차): four planes with one fact each (the next event, the champion, the last winner, the count), then time running down the page through the notices, the season and the past champions to the first record.
+- Name: YPL — Yonsei Pokémon League, 포켓몬 센터 연세점.
+- The site has one hue, navy `#081C3D` (a darkened Yonsei blue), in solid fills only: in dark it is the ground, in light it is the words, so the whole site is one colour on one ground. The one other colour is the amber lamp, which means live and is never text. No gradient, no trophy gold, no status hue; the user prefers complete solid colours like psacard.com.
+- The brand mark is the user-approved Wing Y (`public/brand/ypl-wing-y.svg`), the user's 2026-10-12 mark as refined on 2026-10-27 (candidate H, the user's pick): two raised wings, each a broad top feather and one shorter one, meet in a Y; under a straight band cut across the neck, a fan tail of three feathers split by two slits. Every edge is straight and the mark is exactly symmetric. Preserve its proportions. The wordmark is the solid slanted YPL (`public/brand/ypl-wordmark.svg`). Both are used as drawn, never redrawn. Earlier marks live only in git history.
+- Copy is plain Korean prose in 합니다체: no middle-dot (·) separators, no exclamation marks, no em dashes (DESIGN.md "Voice and tone").
+- Tone: an official league site, not a fan site, as plain as psacard.com. The home is the league's scoreboard: the next event as a countdown, the reigning champion, the league in numbers, then time running down the page through the season's top three, the notices and the past champions.
 - Channel roles: this site is the league's first and official source of notices and records; Discord is where battles are actually played and streamed. Copy must not call Discord the first place for news.
-- Unofficial fan site: Pokémon trademarks belong to Nintendo · Creatures · GAME FREAK; the footer disclaimer stays.
+- Unofficial fan site: Pokémon trademarks belong to Nintendo, Creatures and GAME FREAK; the footer disclaimer stays.
 - Standing direction preference (2026-09-11): the category standard — a professional league site (esports-league canon: schedule, results, standings, champions) played straight, held to the craft bar of Apple / Nike brand sites (restraint, generous space, confident type, precise motion). No novelty concept worlds.
-- Visual system: YPL Scoreboard (shipped 2026-11-03). Its authority is `DESIGN.md`, with the reference drafts in `docs/redesign-next/` (Freesentation and Albert Sans, square panels on a 2px seam, seven-segment numbers, one amber lamp). Smooth motion comes first: whatever moves runs on the compositor.
+- Visual system: YPL Scoreboard, live since 2026-11-03. `DESIGN.md` is its only authority (its Philosophy chapter says why): a navy board switched off, facts lit on square panels joined by a 2px seam, seven-segment numbers, one amber lamp for what is live, every measure from phi. Smooth motion comes first: whatever moves runs on the compositor.
 
 ## Evidence on Hand
 

@@ -11,7 +11,7 @@ function shortName(name, key) {
 }
 
 /* ============================== TITLES ==============================
-   (DESIGN.md "Titles and hall of fame", docs/redesign-next c6) 분류는 페이지 탭, 칭호는 줄이다.
+   (DESIGN.md "Titles and hall of fame") 분류는 페이지 탭, 칭호는 줄이다.
    역대 챔피언은 세대를 숫자로 앞에 세우고 현 챔피언의 줄만 반전된다. 주인이 없는 칭호는 흐린 줄로 미달성을 말한다. */
 export default function TitlesPage({ data, admin, setModal, go }) {
   const groups = data.titleGroups || [];

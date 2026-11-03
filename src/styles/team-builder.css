@@ -3,10 +3,6 @@
 /* ---------- plate panels ---------- */
 .tb-panel, .tb-validation { padding: var(--pad); background: var(--panel); min-width: 0; }
 
-/* ---------- rules ---------- */
-.tb-field { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
-.tb-field > span { font-size: var(--t12); font-weight: 600; line-height: var(--l12); }
-
 /* ---------- validation + official submission ---------- */
 .tb-validation-wrap { margin-top: calc(var(--s5) - var(--s13)); }
 .tb-validation-wrap:empty { display: none; }
@@ -26,7 +22,7 @@
 .tb-official-lookup { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); margin: var(--s5) 0 0; max-width: var(--sheet-w); }
 .tb-official-lookup .btn--second { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); width: auto; }
 .tb-official-pin { display: grid; gap: var(--s2); margin: var(--s5) 0 0; max-width: var(--sheet-w); }
-/* c11: the three steps under the title, what each step found as a line with a check or the ! square, and the inverted 제출했습니다 */
+/* the three steps under the title, what each step found as a line with a check or the ! square, and the inverted 제출했습니다 */
 .official-submission { display: grid; gap: var(--s5); }
 .official-submission > * { margin-top: 0; }
 /* inside the panel the steps and the second action stand one tone up, like a field inside a panel */

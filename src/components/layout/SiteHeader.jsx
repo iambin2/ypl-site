@@ -54,7 +54,7 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{key === "bracket" && live && <i className="lamp sig" aria-hidden="true" />}{label}</button>
         ))}
       </nav>
-      {/* the lamp's fixture (C24): its housing is dark until something is live; on event day it lights with its word and opens the bracket */}
+      {/* the lamp's fixture: its housing is dark until something is live; on event day it lights with its word and opens the bracket */}
       {live
         ? <button type="button" className="onair t12" onClick={() => onNavigate("bracket")} aria-label={`${live.name} 진행 중, 대진표 보기`}><i className="lamp sig" aria-hidden="true" />진행 중</button>
         : <i className="lamp unlit onair-off" aria-hidden="true" />}

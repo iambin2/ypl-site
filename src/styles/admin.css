@@ -1,8 +1,6 @@
 /* =============================================================================
-   YPL — admin editors: champion, form builder, standings, rounds
-   AdminStrip card: an editor's groups sit on plate, the inputs inside on fill-2.
-   Small round tool buttons are 32px circles (36px buttons are the floor for
-   text; icon tools inside a dense editor row may sit at 32).
+   YPL Scoreboard: admin editors (champion, form builder, standings, rounds).
+   An editor's groups are panels; the fields inside them stand one tone up (--panel-2).
    ========================================================================== */
 
 /* one round tool button for every editor */
@@ -114,7 +112,7 @@
 .sheet :is(.fb-q, .ed-round, .tb-library-save, .bk-group) :is(input:not([type="checkbox"], [type="radio"]), textarea, .dd-btn) { background: var(--panel); }
 .sheet :is(.fb-q, .ed-team, .bk-applybox, .bk-chg, .bk-pin, .bk-team-card, .bk-series-row, .bk-ace) { background: var(--panel-2); }
 
-/* ---------- notice editor (c8 middle): taking entries is a switch row, the event settings cells, save is the main action ---------- */
+/* ---------- notice editor: taking entries is a switch row, the event settings cells, save is the main action ---------- */
 .fb-switch { width: 100%; text-align: left; }
 .fb-wrap > .fb-switch { margin-bottom: var(--s5); }
 .fb-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }

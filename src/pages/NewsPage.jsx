@@ -48,7 +48,7 @@ function eventFacts(a){
 }
 
 /* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸. 새 글이면 램프가 켜진다(seenNotices.js) */
-/* 목록의 첫 공지(첫 쪽, 검색 없음)는 홈과 같은 큰 판으로 선다(C24): 날짜가 월과 일의 디스플레이로 켜진다 */
+/* 목록의 첫 공지(첫 쪽, 검색 없음)는 홈과 같은 큰 판으로 선다: 날짜가 월과 일의 디스플레이로 켜진다 */
 const NoticeLead=({a,onOpen})=>{
   const d=dotDate(a.date), fresh=isNewNotice(a);
   return <Lead date={d?.day} title={a.title} lamp={fresh&&"새 글"} line={[a.pinned&&"고정",d&&`${d.weekday}요일`].filter(Boolean).join(", ")}
@@ -60,7 +60,7 @@ const NoticeRow=({a,onOpen})=>{
 };
 
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어간다. 신청은 공지 위에 서는 한 장이고, 파티 제출은 팀 빌더로 간다.
-   연 공지는 주소(?notice=)와 기록 한 칸에 남는다. (docs/redesign-next c4, c11, c15, c17, c20) */
+   연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
   const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
@@ -378,7 +378,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
     const blob=new Blob([text],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download=`${String(ann.title||"응답").replace(/[\\/:*?"<>|]/g,"_")}_응답.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   };
-  /* c8 신청자: the counts lit (신청, 파티 제출, 미제출), a name search and CSV in one row, chips for who has submitted, each entry a row
+  /* 신청자: the counts lit (신청, 파티 제출, 미제출), a name search and CSV in one row, chips for who has submitted, each entry a row
      with its answers in a grey line and the lit lamp beside 제출. The submission state is read only, for an event-linked notice. */
   const [q,setQ]=useState(""), [filter,setFilter]=useState("all"), [subs,setSubs]=useState(null);
   useEffect(()=>{

@@ -50,7 +50,7 @@
 .bk-group-h { margin-bottom: var(--s3); font-size: var(--t15); font-weight: 600; }
 .bk-draw-mem { display: flex; flex-direction: column; overflow: hidden; background: var(--panel-2); }
 
-/* ---------- wizard (c12): back link, title and event, steps as panels joined by the seam, the main action docked ---------- */
+/* ---------- wizard: back link, title and event, steps as panels joined by the seam, the main action docked ---------- */
 .bk-create { display: grid; gap: var(--s5); max-width: var(--sheet-w); }
 .bk-create > .back { margin-bottom: calc(var(--s3) * -1); }
 .bk-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
@@ -93,7 +93,7 @@
 @media (hover: hover) { .bk-count button:hover { background: var(--panel-2); } }
 .bk-count input { width: 84px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* ---------- apply (record, c12 last frame): the places as rows with the winner inverted, the points as rows, the action and later ---------- */
+/* ---------- apply (record): the places as rows with the winner inverted, the points as rows, the action and later ---------- */
 .bk-apply-meta { margin: 0 0 var(--s3); }
 .bk-apply-places { margin: 0 0 var(--s5); }
 .bk-apply-places .spec-row dd { margin: 0; }
@@ -155,11 +155,7 @@
   .bk-series-no { text-align: left; }
 }
 
-/* private brackets: the official board and cards, marked "사설" (inverted chip) so they never read as an official event */
-.pb-chips { display: flex; align-items: center; gap: var(--s2); }
-.pb-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
-
-/* ---------- 3 대진 배치 (c12): each first-round match a row, the two names as cells; the held name inverted ---------- */
+/* ---------- 3 대진 배치: each first-round match a row, the two names as cells; the held name inverted ---------- */
 .bk-place-tools { grid-template-columns: minmax(0, 1fr); }
 .bk-place-row { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--s2) 0 var(--pad); }
 .bk-place-name { min-height: var(--h-control); padding: 0 var(--s3); text-align: left; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: grab; transition: background-color var(--move-tone); }
@@ -169,7 +165,7 @@
 .bk-pts-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .bk-pts-note { margin: 0 0 var(--s2); }
 
-/* ---------- 결과 입력 (c8): match chips, the match's head, its two players as rows; the winner inverted ---------- */
+/* ---------- 결과 입력: match chips, the match's head, its two players as rows; the winner inverted ---------- */
 .bk-entry { display: grid; gap: var(--s3); margin-bottom: var(--s8); }
 .bk-entry > h2 { margin: 0; }
 .bk-entry-chips { display: flex; flex-wrap: wrap; gap: var(--seam); }

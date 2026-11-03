@@ -9,7 +9,7 @@ import { DUR, EASE_IN, desktop } from "./motion.js";
 function DropdownMenu({ children, ariaLabel }){
   const ref=useRef(null);
   useExitAnimation(ref,{ inPlace:true, exit:node=>[node.animate([{opacity:1},{opacity:0}],{duration: DUR.tone,easing:EASE_IN,fill:"forwards"})] });
-  return <div className="dd-menu plate-l3" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
+  return <div className="dd-menu plate" role="listbox" aria-label={ariaLabel} ref={ref}>{children}</div>;
 }
 
 /* M6: 데스크톱은 칸 아래로 커지며 열리는 매트 메뉴, 폰은 같은 항목이 바텀시트로 올라온다. */

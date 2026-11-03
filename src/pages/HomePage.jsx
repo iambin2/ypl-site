@@ -42,7 +42,7 @@ function nextEvent(announcements, now = new Date()) {
   return best;
 }
 
-/* 오늘 열리는 대회(C24): 바의 램프, 대진표 탭의 램프, 다른 화면의 진행 띠가 읽는다. 없으면 null. */
+/* 오늘 열리는 대회: 바의 램프, 대진표 탭의 램프, 다른 화면의 진행 띠가 읽는다. 없으면 null. */
 export function todayEvent(announcements) {
   const upcoming = nextEvent(announcements);
   return upcoming?.dday === 0 ? { name: upcoming.draft.name || upcoming.a.title } : null;
@@ -58,7 +58,7 @@ const Day = ({ d }) => d && <span className="num">{d.day}<span className="dim ho
 
 
 /* ============================== HOME ==============================
-   전광판 한 장 (DESIGN.md "Layout and pages", docs/redesign-next c3, c21 가, c23).
+   전광판 한 장 (DESIGN.md "Layout and pages").
    첫 화면: 다음 대회까지의 날(없으면 꺼진 판), 대회 이름, 주 행동, 현 챔피언의 패널, 세 카운터. 아래: 시즌 순위, 공지, 역대 챔피언.
    데스크톱은 709와 439의 두 단이고, 두 단은 머리글 줄과 마지막 줄을 함께 쓴다. */
 export default function HomePage({ data, go, admin }) {
@@ -96,7 +96,7 @@ export default function HomePage({ data, go, admin }) {
       // 파티 제출은 대회 시작까지다: 그 전날까지는 남은 날이 위의 카운트다운과 같아서, 그날 시작 전에만 남은 시간을 센다
       open: dday > 0 && applicationsOpen(a.form), due: dday === 0 ? submissionDue(draft) : null };
   }, [data.announcements]);
-  /* 대회 당일의 지금 경기(c9): 그날 대회의 대진표를 대진표 화면과 같은 읽기로 가져와 아직 승자가 없는 경기를 보인다 */
+  /* 대회 당일의 지금 경기: 그날 대회의 대진표를 대진표 화면과 같은 읽기로 가져와 아직 승자가 없는 경기를 보인다 */
   const [live, setLive] = useState(null);
   useEffect(() => {
     if (!now?.today || !now.eventId) { setLive(null); return undefined; }

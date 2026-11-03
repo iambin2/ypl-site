@@ -951,7 +951,7 @@ export async function findSubmissionRegistration(eventId, registrationName) {
   };
 }
 
-// 결과 입력의 게임 점수와 불참(docs/redesign-next c8, docs/db/match_outcome.sql). 경기 키마다 { score_a, score_b, resolution }.
+// 결과 입력의 게임 점수와 불참(docs/db/match_outcome.sql). 경기 키마다 { score_a, score_b, resolution }.
 // 그 SQL을 실행하기 전에는 점수 열이 없어 읽기가 실패한다: null을 돌려주고, 화면은 점수와 불참을 보이지 않는다.
 export async function readMatchOutcomes(eventId) {
   if (!eventId) return null;
@@ -977,7 +977,7 @@ export async function setNormalizedMatchOutcome({ eventId, sourceNodeKey, scoreA
   return Array.isArray(data) ? data[0] || null : data || null;
 }
 
-// 지난 대회와 같게(c12): 기록에 반영된 가장 최근의 같은 종류(개인전, 팀전) 대회가 순위마다 준 점수. 읽기만 한다.
+// 지난 대회와 같게: 기록에 반영된 가장 최근의 같은 종류(개인전, 팀전) 대회가 순위마다 준 점수. 읽기만 한다.
 export async function lastPlacementPoints({ isTeam = false } = {}) {
   const { data: events, error } = await db()
     .from("events")
@@ -1000,7 +1000,7 @@ export async function lastPlacementPoints({ isTeam = false } = {}) {
   return null;
 }
 
-// 한 신청의 제출 회차(c11 제출 기록). 읽기만 하며, 회차는 지워지지 않고 마지막 회차가 공식 파티다.
+// 한 신청의 제출 회차(제출 기록). 읽기만 하며, 회차는 지워지지 않고 마지막 회차가 공식 파티다.
 export async function listRegistrationSubmissions(registrationId) {
   if (!registrationId) return [];
   const { data, error } = await db()

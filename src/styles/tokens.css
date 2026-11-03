@@ -88,10 +88,10 @@
   /* a strip, the touch floor, a row, a two-line row, a counter */
   --h-strip: 32px; --h-control: 44px; --h-row: 52px; --h-row2: 64px; --h-counter: 84px;
   --hair: 1px; --line: 2px; --lamp: 8px;
-  --gutter: var(--s5); --pad: var(--s3); --content: 1200px; --sheet-w: 576px; --read: 36em;
+  --gutter: var(--s5); --pad: var(--s3); --content: 1200px; --sheet-w: 576px;
   --nav-height: 56px; --tab-height: 64px; --admin-height: 40px;
-  --opacity-disabled: .382; --opacity-veil: .72;
-  --z-base: 0; --z-raised: 1; --z-sticky: 10; --z-header: 20; --z-modal: 40; --z-popover: 50; --z-toast: 60; --z-skip: 80;
+  --opacity-disabled: .382;
+  --z-raised: 1; --z-sticky: 10; --z-header: 20; --z-modal: 40; --z-popover: 50; --z-toast: 60; --z-skip: 80;
   /* time: each verb about 1.618 times the last. A transition reads one --move and nothing else. */
   --t-press: 100ms; --t-tone: 160ms; --t-leave: 260ms; --t-light: 420ms;
   --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-in: cubic-bezier(.5, 0, .75, 0);
@@ -163,13 +163,9 @@ label:has(input) { cursor: pointer; }
 .t32 { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
 .read { font-size: var(--t15); line-height: var(--l-read); font-weight: 400; }
 .dim { color: var(--dim); } .mute { color: var(--mute); }
-/* older type class names, each one of the four sizes */
-.display { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); text-wrap: balance; }
+/* a section or sheet title that balances its two lines; a grey line under a row */
 .title { font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); text-wrap: balance; }
-.headline { font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
-.callout { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
-.caption, .meta { font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
-.fig { font-size: var(--t32); font-weight: 700; line-height: 1; letter-spacing: var(--ls32); font-variant-numeric: tabular-nums; }
+.meta { font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
 .unit { font-size: var(--t12); font-weight: 600; line-height: var(--l12); color: var(--dim); margin-left: var(--s1); }
 
 /* ---------- panels: every surface is a square panel one tone off the ground, joined by the seam ---------- */
@@ -179,13 +175,12 @@ label:has(input) { cursor: pointer; }
 /* inverted: decided, current or chosen. One in a group. */
 .inv { background: var(--lit); color: var(--ground); }
 .inv :is(.dim, .mute) { color: var(--ground); }
-/* older surface names: a panel, or the next tone */
-.plate, .plate-l3, .groove, .card { position: relative; }
-.plate, .plate-l3, .card, .dd-menu, .popover { background: var(--panel); }
-.groove { background: var(--panel-2); }
+/* a panel that holds positioned parts (a sheet, a menu) */
+.plate { position: relative; }
+.plate, .dd-menu, .popover { background: var(--panel); }
 
 /* ---------- lamps: an 8px square beside a word. Lit is new or next, amber is live now. A lamp never blinks and never moves. ---------- */
-.lamp, .live-dot, .ypl-ping { display: inline-block; flex: none; width: var(--lamp); height: var(--lamp); background: var(--lit); }
+.lamp { display: inline-block; flex: none; width: var(--lamp); height: var(--lamp); background: var(--lit); }
 .lamp.sig { background: var(--signal); }
 .inv .lamp { background: var(--ground); }
 
@@ -232,7 +227,6 @@ label:has(input) { cursor: pointer; }
   :root, :root[data-theme] { --ground: var(--white); --panel: var(--white); --panel-2: var(--white); --lit: var(--navy); --dim: var(--slate); --mute: var(--slate-2); }
   .topbar, .tabbar, .admin-dock, .site-foot, .btn, .skip-link { display: none !important; }
   .page { width: 100%; min-height: 0; padding: 0; }
-  .card, .ypl-group { break-inside: avoid; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: var(--t12); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

@@ -179,7 +179,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
   const node = (
     <div className="overlay" ref={overlayRef}>
       <div className="scrim" onClick={() => closeRef.current?.()} />
-      <section className={"sheet plate-l3" + (className ? " " + className : "")} role="dialog" aria-modal="true"
+      <section className={"sheet plate" + (className ? " " + className : "")} role="dialog" aria-modal="true"
         aria-labelledby={title !== undefined ? titleId : undefined} aria-label={title !== undefined ? undefined : label}
         tabIndex={-1} ref={sheetRef}>
         <div className="grip" aria-hidden="true" />

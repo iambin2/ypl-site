@@ -107,7 +107,7 @@ function getPlacementPointPolicy(event, isTeamEvent) {
   };
 }
 
-/* The points an applied event gave each place, read back from its placement awards (c12 "지난 대회와 같게").
+/* The points an applied event gave each place, read back from its placement awards ("지난 대회와 같게").
    null when it gave no champion points; a place it did not pay (a team event's 4강) reads 0. */
 export function placementPointsOf(awards = []) {
   const placement = (awards || []).filter(row => !row.award_kind || row.award_kind === "placement");

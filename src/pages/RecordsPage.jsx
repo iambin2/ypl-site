@@ -291,7 +291,7 @@ function TrainerProfile({ snapshot, profile, onParty }) {
 
   return (
     <div className="rc-profile">
-      {/* the party sheet's order (c14): the facts first, then what the trainer did, top to bottom, one column that only scrolls down */}
+      {/* the party sheet's order: the facts first, then what the trainer did, top to bottom, one column that only scrolls down */}
       <div className="stack rc-counts">
         <Counter label="우승" value={championships} unit="회" />
         <Counter label="준우승" value={runnerUps} unit="회" />
@@ -531,7 +531,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
 
   if (!otours.length) return <Empty title="대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
 
-  /* 59개 대회가 같은 블록으로 이어지지 않도록 시즌마다 장을 나눈다(C24): 시즌 이름 20과 그 시즌의 대회 수를 32의 세그먼트로.
+  /* 59개 대회가 같은 블록으로 이어지지 않도록 시즌마다 장을 나눈다: 시즌 이름 20과 그 시즌의 대회 수를 32의 세그먼트로.
      시즌이 없는 옛 기록은 연도로 묶는다. items 는 이미 최신순이다. */
   const chapterOf = (round) => {
     const year = String(round.date || "").match(/\d{4}/)?.[0];

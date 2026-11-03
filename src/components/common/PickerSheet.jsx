@@ -7,7 +7,7 @@ import Modal from "./Modal.jsx";
    검색창에서 위아래 화살표로 행을 옮기고 엔터로 고른다(고를 수 없는 행은 건너뛴다).
    item: { value, label, sub?, search?, match?(query), img?, badges?, trailing?, disabled? } */
 const compact = text => String(text || "").toLowerCase().replace(/\s+/g, "");
-/* 최근 고른 것(c14): recentKey가 있으면 고른 값을 이 브라우저에 여섯까지 기억하고, 검색 전 맨 위에 그림으로 세운다. */
+/* 최근 고른 것: recentKey가 있으면 고른 값을 이 브라우저에 여섯까지 기억하고, 검색 전 맨 위에 그림으로 세운다. */
 const RECENT_MAX = 6;
 export function rememberRecent(list, value) { return [value, ...(list || []).filter(v => v !== value)].slice(0, RECENT_MAX); }
 const readRecent = key => { try { const list = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(list) ? list : []; } catch { return []; } };

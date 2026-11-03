@@ -1,5 +1,5 @@
 /* =============================================================================
-   YPL Scoreboard: the calculator (대미지, 스피드, 도감). Drafts: docs/redesign-next c7-builder-calc, c19-builder-calc-rest.
+   YPL Scoreboard: the calculator (대미지, 스피드, 도감).
    The two Pokémon stand in cells on their floors; the chosen move's damage is lit as a segment board over its bar; fields
    are cells; the speed line is rows with the basis inverted; the dex is a head panel, bars and rows.
    Bars, cells and the stat rows are the team builder's (builder.css, board.css).

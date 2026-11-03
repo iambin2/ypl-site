@@ -32,7 +32,7 @@ function useLightOnChange(ref, value) {
   useEffect(() => { if (first.current) { first.current = false; return; } lightAfter(ref.current); }, [value]);
 }
 
-/* The scoreboard's shared parts (DESIGN.md, docs/redesign-next/BUILD.md chapter 3). A screen is built from these, board.css and the
+/* The scoreboard's shared parts (DESIGN.md). A screen is built from these, board.css and the
    panel classes of tokens.css (.pn, .pn2, .stack, .inv, .lamp). A panel is a door: given onClick it is a button. */
 const door = onClick => onClick ? { as: "button", props: { type: "button", onClick } } : { as: "div", props: {} };
 
@@ -75,7 +75,7 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
   );
 }
 
-/* The top three of a ranking (DESIGN.md "Home, phone", C24): three columns like the counters, the rank, the name and the points lit
+/* The top three of a ranking (DESIGN.md "Home, phone"): three columns like the counters, the rank, the name and the points lit
    in segments with 점. A tie reads as equal columns; a sole leader's column inverts. Points past 999 stay in type, since four cells
    do not fit a third of a phone. rows are ranked ({ rank, name, points }); onName opens the trainer. */
 export function Podium({ rows, onName }) {
@@ -98,7 +98,7 @@ export function Podium({ rows, onName }) {
   );
 }
 
-/* A lead panel (C24): the first of a list stands large so the list has a beat. The date as 월 and 일 displays at 32, the lamp with
+/* A lead panel: the first of a list stands large so the list has a beat. The date as 월 and 일 displays at 32, the lamp with
    its word at the right (sig for amber), the title at 20 in two lines, a grey line. date is "10.28" (dotDate's day). */
 export function Lead({ date, title, line, lamp, sig = false, onClick, label }) {
   const { as: Box, props } = door(onClick);
@@ -115,7 +115,7 @@ export function Lead({ date, title, line, lamp, sig = false, onClick, label }) {
   );
 }
 
-/* The live strip (C24): on event day every page but the home and the bracket opens with it: the amber lamp, the event's name with
+/* The live strip: on event day every page but the home and the bracket opens with it: the amber lamp, the event's name with
    진행 중, and 대진표 → at the right. A panel, not inverted: amber on the lit fill would fall under the lamp's contrast of 3. */
 export function LiveStrip({ name, onGo }) {
   return (
@@ -205,11 +205,11 @@ export function Choice({ name, options, value, onChange, multiple = false }) {
 
 /* The main action's strip: on a phone it docks above the tab bar on the ground with a hairline, so it never scrolls away. toast stands
    above it: an inverted 52 panel, an error starting with the ! square, its one action an underlined word. */
-/* a cell: a label 12 over its value 15 in a 52 panel; a dropdown or pick field inside fills the cell (c7 spec cells, c8 fields) */
+/* a cell: a label 12 over its value 15 in a 52 panel; a dropdown or pick field inside fills the cell (spec cells, fields) */
 export function Cell({ label, wide = false, className = "", children }) {
   return <div className={"cell" + (wide ? " wide" : "") + (className ? " " + className : "")}><span className="cell-label">{label}</span>{children}</div>;
 }
-/* options as rows of 64: a title and a grey line, the chosen one inverted with a check (c19 rules, c8 settings) */
+/* options as rows of 64: a title and a grey line, the chosen one inverted with a check (rules, settings) */
 export function OptionRows({ name, options, value, onChange, disabled = false }) {
   return (
     <div className="stack" role="radiogroup">

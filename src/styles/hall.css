@@ -1,6 +1,6 @@
 /* =============================================================================
    YPL Scoreboard: titles, hall of fame, about (TitlesPage.jsx, ChampionsPage.jsx, AboutPage.jsx, ChampionSheet.jsx).
-   Draft: docs/redesign-next c6-titles-hall-about. Generations as rows with the figure first, the current holder inverted;
+   Generations as rows with the figure first, the current holder inverted;
    the champion's party as six cells standing on their name bands; past champions as rows with their six small.
    ========================================================================== */
 
@@ -10,7 +10,7 @@
 .tt-desc, .tt-add { margin-top: var(--s5); }
 .tt-rows { margin-top: var(--s3); }
 .tt-gen { display: flex; align-items: baseline; justify-content: center; gap: var(--s1); }
-.tt-rows .row-lead, .hof-row-gen { width: 64px; flex: none; }
+.tt-rows .row-lead { width: 64px; flex: none; }
 .tt-rows .row-value { padding-right: var(--pad); }
 .tt-off .row-main > b { color: var(--mute); }
 
@@ -80,7 +80,7 @@
 
 /* ---------- about ---------- */
 .ab-lede { margin-top: var(--s3); color: var(--dim); }
-/* the league in numbers (C25 A): the first event across the width, 대회 and 트레이너 under it; the month stands 8 from 년 */
+/* the league in numbers: the first event across the width, 대회 and 트레이너 under it; the month stands 8 from 년 */
 .ab-nums { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ab-nums > :first-child { grid-column: 1 / -1; }
 .ab-nums + .ab-lede { margin-top: var(--s5); }

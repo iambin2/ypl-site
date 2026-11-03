@@ -9,30 +9,31 @@ description: Pre- and post-flight for any visual or presentation change in the Y
 
 ## Before editing
 
-1. Read the relevant section of `DESIGN.md` — it is a real design system with named rules, not a mood board. Colors, typography, elevation, and per-component specs are all specified.
-2. Check `src/styles/tokens.css` for an existing token before writing any literal color, radius, shadow, duration, or easing. Both themes live there under `<html data-theme>`; a hardcoded color breaks dark mode silently.
+1. Read `DESIGN.md`: its Philosophy chapter, then the section for what you are changing. It is the YPL Scoreboard law, with every value and the reason for it.
+2. Build from the shared parts in `src/components/common/Board.jsx` and `src/styles/board.css`, and take every value from `src/styles/tokens.css`. Both themes live there under `<html data-theme>`; a hardcoded color breaks one theme silently. If a new value or pattern seems needed, propose a change to `DESIGN.md` first.
 3. Confirm the change is presentation-only. If it touches anything in `src/services/`, it is a data change — stop and read `docs/ARCHITECTURE.md` first.
 
 ## Standing constraints
 
 These come from the site owner and override generic design instincts:
 
-- Neutral only — black, white, grey. No brand hue, no trophy gold. Status colors only where they carry meaning.
-- No accent stripes, no decorative outlines, no middle-dot (·) separators in Korean copy.
-- Consistency across public pages, admin editors, and bracket runtime — one visual language, three surfaces.
-- Motion is Apple-grade: precise, short, purposeful. Respect `prefers-reduced-motion`.
-- Phone-first. Check the venue-phone case before the desktop case.
-- Category standard played straight. No novelty concept worlds — that direction was already rejected.
+- One hue, navy `#081C3D`; light is the only emphasis (lit, dim, muted, off, inverted). Amber is the one lamp, for live things, and never text. No status hue, no trophy gold.
+- No radius, border, outline, shadow, gradient, glow or blur. Panels join by the 2px seam.
+- Numbers the board announces are seven-segment displays, never under 32; everything read in a line is type.
+- A Pokémon stands in a panel on its floor, placed by its ink; it never floats or gets a box.
+- Things switch on, they do not fly: transform and opacity only, on the four verbs and their lengths in DESIGN.md "Motion". Respect `prefers-reduced-motion`.
+- Korean copy in 합니다체: no exclamation marks, no em dashes, no middle-dot (·) separators.
+- One visual language for public pages, admin editors and the bracket runtime. Phone-first: check the venue phone before the desktop.
 
 ## After editing
 
 ```bash
 node scripts/class-coverage.mjs   # className tokens with no CSS rule
-npm test                          # 249 service-layer regression tests
+npm test                          # service tests and the design law
 ```
 
-`class-coverage.mjs` reports a baseline of ~43 unmatched tokens (dynamic and composed class names). What matters is whether **your** change added new ones — a new unstyled class means a rule that never landed.
+`class-coverage.mjs` also lists dynamic and composed class names. What matters is whether **your** change added new ones: a new unstyled class means a rule that never landed. A rule whose class nothing renders any more is deleted, not kept.
 
-`npm test` must stay green. These tests cover services, not the DOM, so a failure after a styling-only edit means the edit was not styling-only.
+`npm test` must stay green. `tests/designLaw.test.mjs` fails on a value outside the law: fix the value, never widen its `EXCEPT` to silence it. A failure in a service test after a styling-only edit means the edit was not styling-only.
 
-Then verify in the browser rather than asking the user to check: `npm run dev`, load the page, and confirm both themes and a mobile viewport.
+Then verify in the browser rather than asking the user to check: `npm run dev`, load the page, and confirm both themes at 390 and 1440. Measure distances on rendered ink (DESIGN.md "The eye"), not in the CSS.
