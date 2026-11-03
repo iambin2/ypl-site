@@ -52,9 +52,9 @@ export function light(root, total = DUR.light) {
   const last = total - DUR.tone;
   /* [data-rise]: a grey line under a stack (a tie, a note) lights with the stack instead of standing lit before it.
      .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board.
-     .podium-col, .lead, .ho-col: panels that hold a display but rise as a whole, like a counter; a line score's column rises as
+     .champion, .podium-col, .lead, .ho-col: panels that hold a display but rise as a whole, like a counter; a line score's column rises as
      one, its three cells together */
-  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, .podium-col, .lead, .ho-col, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
+  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, .champion, .podium-col, .lead, .ho-col, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
     .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .ho-col, .hof-crown, .sheet, .stack.chips, .chips"));
   panels.filter(seen).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
   revealLater(panels.filter(el => !seen(el)));
@@ -75,9 +75,9 @@ const lineKey = row => row.getAttribute("aria-label") || row;
 export function slideLine(row) {
   const cur = row?.querySelector(':scope > :is([aria-current="page"], [data-current], [aria-selected="true"])');
   if (!cur) return false;
-  // the line is the word's width: a word with room around it for the pointer (the top bar) measures inside that room
-  const pad = getComputedStyle(cur);
-  const now = { left: cur.offsetLeft + parseFloat(pad.paddingLeft), width: cur.offsetWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight), row };
+  // measured from the line itself (its ::before), wherever the stylesheet places it inside the word's room
+  const line = getComputedStyle(cur, "::before");
+  const now = { left: cur.offsetLeft + (parseFloat(line.left) || 0), width: parseFloat(line.width) || cur.offsetWidth, row };
   const was = lastLine.get(lineKey(row));
   lastLine.set(lineKey(row), now);
   const moved = Boolean(was && now.width && (was.left !== now.left || was.width !== now.width));

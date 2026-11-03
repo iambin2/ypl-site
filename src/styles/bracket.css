@@ -52,9 +52,10 @@
 .bk-draw-mem { display: flex; flex-direction: column; overflow: hidden; background: var(--panel-2); }
 
 /* ---------- wizard: back link, title and event, steps as panels joined by the seam, the main action docked ---------- */
-/* a form for the whole page: a sheet's width on a phone, the desktop's main column (709) on desktop */
+/* making a bracket is the page's one kind of thing: a sheet's width on a phone, the whole 1200 on desktop like every list page,
+   with its actions in the 439 at the right end, as a notice's main action stands */
 .bk-create { display: grid; gap: var(--s5); max-width: var(--sheet-w); }
-@media (min-width: 860px) { .bk-create { max-width: 709px; } }
+@media (min-width: 860px) { .bk-create { max-width: none; } .bk-create .dock { justify-self: end; width: 439px; } }
 .bk-create > .back { margin-bottom: calc(var(--s3) * -1); }
 .bk-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .bk-head h2 { margin: 0; }

@@ -29,7 +29,13 @@
 .ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--s1); font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .ch-name { min-height: var(--h-control); padding: var(--s2) var(--s3); font-size: var(--t15); }
 /* the names offered as one types need no browser arrow: the list opens under the field as it is typed */
-.ch-name::-webkit-calendar-picker-indicator { display: none !important; } /* a phone browser shows it with its own !important */
+/* the title editor's holders: chosen names as chips (× takes one out), then a field that offers the known names and its 추가 */
+.holder-pick { display: grid; gap: var(--s2); }
+.holder-chips > * { gap: var(--s1); }
+.holder-add { display: flex; gap: var(--seam); }
+.holder-add input { flex: 1; min-width: 0; }
+.holder-add .btn { flex: none; width: auto; height: auto; }
+:is(.ch-name, .holder-add input)::-webkit-calendar-picker-indicator { display: none !important; } /* a phone browser shows it with its own !important */
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */

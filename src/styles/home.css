@@ -84,7 +84,8 @@
   .ho-news .lead { flex: 1 0 auto; align-content: start; }
   .ho-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .ho-six > .pn { height: var(--h-row2); }
-  .ho-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+  /* the six keep 8 of air over their heads, as the line score's pictures do, instead of touching the cell's top */
+  .ho-six .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
   .ho-news .row-lead { width: calc(var(--s21) + var(--s3)); }
   .ho-news .row-lamp { width: var(--s13); }
   /* the line score shares the full 1200: the Pokémon cell grows to a counter's height */

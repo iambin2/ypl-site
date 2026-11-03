@@ -412,7 +412,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
         </div>
         <div className="fr-actions">
           {subs&&(sent(r)?<span className="t12 fr-sent"><i className="lamp" aria-hidden="true"/>제출</span>:<span className="t12 dim">미제출</span>)}
-          {onResetPin&&<Button variant="link" onClick={()=>onResetPin(r)}>비밀번호 초기화</Button>}
+          {/* the PIN is set by a first submission: a row with nothing submitted has none to reset */}{onResetPin&&(!subs||sent(r))&&<Button variant="link" onClick={()=>onResetPin(r)}>비밀번호 초기화</Button>}
           {onDeleteResp&&<button type="button" className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} aria-label="삭제" title="삭제"><Icon n="trash" size={16}/></button>}
         </div>
       </div>))}

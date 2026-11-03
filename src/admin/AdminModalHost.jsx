@@ -57,6 +57,7 @@ export default function AdminModalHost({ modal, data, setModal, save, refresh, s
     return (
       <TitleItemEditor
         groupKey={modal.groupKey}
+        data={data}
         item={modal.item}
         onClose={close}
         onSave={(item) => {

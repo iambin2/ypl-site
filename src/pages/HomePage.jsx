@@ -73,6 +73,16 @@ export default function HomePage({ data, go, admin }) {
     loadFacts(data, admin).then(next => { if (live) setFacts(next); }).catch(error => { console.warn("home facts read failed", error); if (live) setFacts(seen => seen || {}); });
     return () => { live = false; };
   }, [data]);
+  /* the reign and the league's numbers are one block of the board: on a first visit the champion waits for the counters (its picture
+     is fetched meanwhile) so the block lights at once, never longer than a second; a returning visitor has both from the first frame */
+  const [waited, setWaited] = useState(false);
+  useEffect(() => {
+    if (!champions || facts || waited) return undefined;
+    const src = champions[0]?.party[0]?.img;
+    if (src) { const picture = new Image(); picture.fetchPriority = "high"; picture.src = src; }
+    const timer = setTimeout(() => setWaited(true), 1000);
+    return () => clearTimeout(timer);
+  }, [champions, facts, waited]);
 
   useLayoutEffect(() => {
     firstOpen = false;
@@ -109,7 +119,8 @@ export default function HomePage({ data, go, admin }) {
   }, [now?.today, now?.eventId]);
   const primary = !now ? ["공지 보기", "news"] : now.today ? ["대진표 보기", "bracket"] : now.open ? ["이번 대회 신청", "news"] : ["대회 공지 보기", "news", { notice: now.noticeId }];
   const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
-  const reigning = champions?.[0] || null;
+  const reigning = (facts || waited) ? champions?.[0] || null : null;
+  const readingReign = !reigning && (!champions || (champions.length > 0 && !(facts || waited)));
   const season = facts?.season;
 
   return (<div className="ho" ref={root}>
@@ -150,8 +161,9 @@ export default function HomePage({ data, go, admin }) {
 
     <div className="ho-reign">
       <ChampionPanel champion={reigning} onClick={() => setPop(reigning)} />
-      {reigning?.party.length > 0 && <div className="stack ho-six" role="img" aria-label={reigning.party.map(m => m.name).filter(Boolean).join(", ")}>
-        {reigning.party.map((m, i) => <span className="pn stand" key={i}><i className="floor" aria-hidden="true" /><Mon src={m.img} /></span>)}
+      {/* the six stand switched off at their size while the reign is read, so the column does not grow when they light */}
+      {(reigning?.party.length > 0 || readingReign) && <div className="stack ho-six" role="img" aria-label={reigning ? reigning.party.map(m => m.name).filter(Boolean).join(", ") : "현 챔피언의 파티"}>
+        {(reigning ? reigning.party : Array(6).fill(null)).map((m, i) => <span className="pn stand" key={i}><i className="floor" aria-hidden="true" />{m && <Mon src={m.img} />}</span>)}
       </div>}
       <div className="stack ho-counts">
         <Counter label="대회" value={facts?.tournaments ?? null} unit="회" onClick={() => go("records", { tab: "tour" })} />

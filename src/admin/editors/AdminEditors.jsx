@@ -69,14 +69,44 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
   </Modal>);
 }
 
-export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
+/* 해당자를 고른다: 이름을 치면 아는 이름(기록의 트레이너, 파트너는 포켓몬)이 아래에 나오고, Enter나 추가로 칩이 된다.
+   칩의 ×로 뺀다. 저장되는 모양(이름 배열)은 그대로다. */
+function HolderPicker({ id, names, value, onChange, placeholder }) {
+  const [draft,setDraft]=useState("");
+  const add=()=>{ const n=draft.trim(); if(n&&!value.includes(n)) onChange([...value,n]); setDraft(""); };
+  return (<div className="holder-pick">
+    {value.length>0&&<div className="chips holder-chips">{value.map(n=><button type="button" key={n} className="pn" onClick={()=>onChange(value.filter(x=>x!==n))} aria-label={`${n} 빼기`}>{n}<Icon n="x" size={16}/></button>)}</div>}
+    <div className="holder-add">
+      <input id={id} value={draft} list={`${id}-names`} placeholder={placeholder} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } }}/>
+      <Button variant="second" size="sm" onClick={add} disabled={!draft.trim()}>추가</Button>
+    </div>
+    <datalist id={`${id}-names`}>{names.filter(n=>!value.includes(n)).map(n=><option key={n} value={n}/>)}</datalist>
+  </div>);
+}
+
+export function TitleItemEditor({ groupKey, item, data, onClose, onSave, onDelete }) {
   const partner=groupKey==="partner";
-  const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[raw,setRaw]=useState((item?.holders||[]).join(", "));
-  const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders:raw.split(/[,\n]/).map(s=>s.trim()).filter(Boolean)});
-  return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름에는 트레이너를, 아래에는 파트너 포켓몬을 쉼표(,)로 구분해 입력해 주세요.":"해당자를 쉼표(,)로 구분해 입력해 주세요. 예: 정두호, 이제빈"} onClose={onClose}>
+  const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[holders,setHolders]=useState(item?.holders||[]);
+  // 고를 이름: 파트너는 포켓몬 이름, 그 밖은 기록의 트레이너(이미 칭호를 받은 이름과 챔피언을 먼저, 기록을 읽으면 더한다)
+  const [names,setNames]=useState(()=>partner?[]:[...new Set([...(data?.titleGroups||[]).flatMap(g=>g.key==="partner"?[]:(g.items||[]).flatMap(t=>t.holders||[])),...(data?.champions||[]).map(c=>c.name)].filter(Boolean))]);
+  useEffect(()=>{
+    let on=true;
+    const more=list=>on&&setNames(cur=>[...new Set([...cur,...list.filter(Boolean)])]);
+    if(partner){ loadRecordsPokemonDirectory().then(d=>more([...d.values()].map(r=>r.displayName)),()=>{}); return ()=>{ on=false; }; }
+    (async()=>{ try{
+      const [{freshRead},normalized,projection]=await Promise.all([import("../../services/readCache.js"),import("../../services/normalizedRecordsService.js"),import("../../services/normalizedRecordsProjection.js")]);
+      if(!normalized.normalizedRecordsReadEnabled()) return;
+      const raw=await freshRead("records",normalized.fetchNormalizedRecordsSnapshot,60*1000);
+      more((projection.buildNormalizedRecordsProjection(data,raw,null).trainers||[]).map(t=>t.name));
+    }catch{ /* 고를 이름이 적을 뿐, 직접 칠 수 있다 */ } })();
+    return ()=>{ on=false; };
+  },[]);
+  const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders});
+  return (<Modal title={item?"칭호 수정":"칭호 추가"} hint={partner?"이름에는 트레이너를, 아래에는 파트너 포켓몬을 고릅니다.":"해당자를 이름으로 골라 더합니다."} onClose={onClose}>
     <Field label={partner?"트레이너":"칭호 이름"}><input value={name} onChange={e=>setName(e.target.value)}/></Field>
     {!partner&&<Field label="설명 (선택)"><input value={desc} onChange={e=>setDesc(e.target.value)}/></Field>}
-    <Field label={partner?"파트너 포켓몬":"해당자"}><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></Field>
+    <div className="field"><label htmlFor="title-holder">{partner?"파트너 포켓몬":"해당자"}</label>
+      <HolderPicker id="title-holder" names={names} value={holders} onChange={setHolders} placeholder={partner?"예: 한카리아스":"예: 정두호"}/></div>
     {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
     <div className="modal-actions">{onDelete&&<Button variant="second" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>저장</Button></div>
   </Modal>);

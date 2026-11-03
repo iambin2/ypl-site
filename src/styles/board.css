@@ -69,7 +69,8 @@
 .champion { --floor: var(--s13); display: block; width: 100%; height: 216px; text-align: left; }
 /* read like a counter: its label at the top, the fact (the name and its line) standing on the floor beside the Pokémon */
 .champion-who { position: absolute; top: var(--pad); bottom: calc(var(--floor) + var(--s1)); left: var(--pad); display: flex; flex-direction: column; align-items: flex-start; }
-.champion-who > b { margin-top: auto; }
+.champion-who > :nth-child(2) { margin-top: auto; }
+.champion-gen + b { margin-top: var(--s2); }
 .champion-who > .reg { margin-top: var(--s1); }
 .champion-more { position: absolute; left: var(--pad); bottom: 0; height: var(--floor); display: flex; align-items: center; gap: var(--s1); }
 .champion .mon { right: var(--pad); height: calc(100% - var(--floor)); }

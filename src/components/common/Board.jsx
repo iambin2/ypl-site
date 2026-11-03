@@ -152,10 +152,12 @@ export function ChampionPanel({ champion, onClick }) {
       aria-label={champion ? `현 챔피언 ${champion.name}, ${champion.label}, ${champion.line}, 파티 보기` : "현 챔피언"}>
       <i className="floor" aria-hidden="true" />
       {champion && <>
+        {/* read like a counter: 현 챔피언 on top, and on the floor the generation lit as the line score lights it, the name, the season */}
         <span className="champion-who">
           <span className="t12 dim">현 챔피언</span>
+          {champion.generation > 0 && <span className="counter-board champion-gen"><Seg value={String(champion.generation)} h={40} cells={champion.generation >= 10 ? 2 : 1} label={champion.label} /><span className="t15">대</span></span>}
           <b className="t20">{champion.name}</b>
-          <span className="t12 dim reg">{champion.label}, {champion.line}</span>
+          <span className="t12 dim reg">{champion.generation > 0 ? champion.line : `${champion.label}, ${champion.line}`}</span>
         </span>
         <span className="champion-more t12">파티 보기<Icon n="arrow" size={16} /></span>
         {/* the first screen's largest picture: asked for before the rest */}
