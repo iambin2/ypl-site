@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Dropdown, Empty, ErrorNote, Icon, ListSearch, Loader, Modal, Pager, StandTable, sitePrompt } from "../components/index.js";
-import { Chips, Counter, Mon, Row, SectionHead, TabsLine } from "../components/common/Board.jsx";
+import { Chips, Counter, Mon, Row, SectionHead, TabsLine, useArrival } from "../components/common/Board.jsx";
 import { loadChampions, seenChampions } from "../components/home/homeFacts.js";
 import TeamSheet, { rosterSheet, useTeamDisplay } from "../components/common/TeamSheet.jsx";
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
@@ -19,6 +19,7 @@ import { syncTournamentRounds } from "../services/recordSync.js";
 import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
 import { generationText } from "../services/seasonLabel.js";
 import Button from "../components/common/Button.jsx";
+import Seg from "../components/common/Seg.jsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -71,7 +72,8 @@ function PartySheet({ open, onClose, onTrainer }) {
   const display = useTeamDisplay(detailed);
   const sheet = rosterSheet(roster, display, set);
   return (
-    <Modal title={`${roster.owner}의 ${set ? "샘플" : "파티"}`} hint={[rosterTitle(roster), formatDate(roster.date)].filter(Boolean).join(", ")} className="rc-sheet wide" onClose={onClose}>
+    // a party is six and takes the content's width; a sample is one case, which keeps the sheet's own 576 instead of leaving the right empty
+    <Modal title={`${roster.owner}의 ${set ? "샘플" : "파티"}`} hint={[rosterTitle(roster), formatDate(roster.date)].filter(Boolean).join(", ")} className={"rc-sheet" + (set ? "" : " wide")} onClose={onClose}>
       {!detailed && <>
         <div className="rc-six">{rosterParty(roster).map((m, i) => <span className="pn stand rc-cell" key={i}><Mon src={m.img} /><span className="floor rc-band t12">{m.name}</span></span>)}</div>
         <p className="rc-lead-note">이 파티는 포켓몬 구성만 기록되어 있습니다.</p>
@@ -166,6 +168,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
   const dated = (snapshot.archives || []).map((a) => String(a.date || "").match(/\d+/g)).filter((n) => n?.length >= 2).sort((a, b) => (a[0] + a[1].padStart(2, "0")).localeCompare(b[0] + b[1].padStart(2, "0")));
   const since = dated[0] ? `${dated[0][0]}년 ${+dated[0][1]}월부터` : "";
 
+  const arrived = useArrival(!normalizedRead.loading);
   return (
     <section className="rc">
       <header className="rc-head"><h1 className="t32">기록</h1>{since && <span className="t12 dim">{since}</span>}</header>
@@ -179,7 +182,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       )}
       <div className="rc-tabs"><TabsLine value={tab} onChange={setTab} label="기록 보기" options={RECORD_TABS} /></div>
 
-      <div className="swap rc-body" key={tab}>
+      <div className="swap rc-body" key={tab} ref={arrived}>
         {normalizedRead.loading ? <Loader small /> : <>
         {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} />}
         {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} onParty={setParty} />}
@@ -368,9 +371,6 @@ function CountList({ items, sprites }) {
 }
 
 /* ============================== TOURNAMENT ARCHIVE ============================== */
-function NameChips({ list, kind }) {
-  return <>{(list || []).map((n, i) => <span key={i} className={"r2-name " + (kind || "")}>{n}</span>)}</>;
-}
 
 function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
   const legacyTours = data.tournaments || [];
@@ -469,7 +469,8 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
             <span className={"r2-rk" + (placement === "win" ? " inv" : "")}>{k === 0 ? label : ""}</span>
             <span className="r2-names">
               {entry.names.map((name, n) => <span key={`${name}:${n}`} className={"r2-name" + (placement === "win" ? " win" : "")}>{name}</span>)}
-              {entry.members?.length > 0 && <NameChips list={entry.members} kind="mem" />}
+              {/* a team's members always take the line under its name, as a grey line with commas, so no strip wraps differently */}
+              {entry.members?.length > 0 && <span className="r2-mems">{entry.members.join(", ")}</span>}
             </span>
           </div>
         )))}
@@ -530,6 +531,27 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
 
   if (!otours.length) return <Empty title="대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
 
+  /* 59개 대회가 같은 블록으로 이어지지 않도록 시즌마다 장을 나눈다(C24): 시즌 이름 20과 그 시즌의 대회 수를 32의 세그먼트로.
+     시즌이 없는 옛 기록은 연도로 묶는다. items 는 이미 최신순이다. */
+  const chapterOf = (round) => {
+    const year = String(round.date || "").match(/\d{4}/)?.[0];
+    return round.season || (year ? `${year}년` : "");
+  };
+  const withChapters = (items, roundOf, render) => {
+    const counts = new Map();
+    items.forEach((item) => { const c = chapterOf(roundOf(item)); counts.set(c, (counts.get(c) || 0) + 1); });
+    let last = null;
+    return items.flatMap((item, i) => {
+      const c = chapterOf(roundOf(item));
+      const head = c && c !== last ? [<li className="rc-chapter" data-rise key={`chapter:${c}:${i}`}>
+        <h3 className="t20">{c}</h3>
+        <span className="rc-chapter-n"><Seg value={String(counts.get(c))} h={32} cells={2} label={`${counts.get(c)}회`} /><span className="t15">회</span></span>
+      </li>] : [];
+      last = c;
+      return [...head, render(item)];
+    });
+  };
+
   return (<>
     <Chips value={selectedTour ? selectedTour.key : "all"} onChange={setCategory} label="대회 종류"
       options={[["all", `전체 ${(snapshot.archives || []).length}`], ...otours.map((tour) => [tour.key, `${tour.label} ${(tour.rounds || []).length}`])]} />
@@ -538,7 +560,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
       <div className="swap" key={category}>
         {admin && selectedTour.legacy && <div className="rc-admin"><Button variant="second" onClick={openRoundEditor}>회차 편집</Button></div>}
         <ul className="stack rc-rounds">
-          {sortRounds(selectedTour.rounds).map((r, i) => renderRound(selectedTour, r, r.id || i, false))}
+          {withChapters(sortRounds(selectedTour.rounds).map((r, i) => [r, r.id || i]), ([r]) => r, ([r, key]) => renderRound(selectedTour, r, key, false))}
         </ul>
       </div>
     ) : (
@@ -546,7 +568,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
         <div className="rc-list-search"><ListSearch q={query} setQ={setQuery} placeholder="대회명, 시즌, 룰, 입상자, 포켓몬 검색" count={allRows.length} /></div>
         {allRows.length ? (
           <ul className="stack rc-rounds swap">
-            {allRows.map(({ tour, round, key }) => renderRound(tour, round, key, true))}
+            {withChapters(allRows, (row) => row.round, ({ tour, round, key }) => renderRound(tour, round, key, true))}
           </ul>
         ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
       </>

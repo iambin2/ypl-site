@@ -39,6 +39,8 @@ test("completed bracket opens record application with the supplied save callback
     require: name => name === "react" ? react
       : name.endsWith("historicalBracketReadModel.js") ? { buildBracketPageList: rows => rows }
       : name.endsWith("components/index.js") ? { Button: "button", ErrorNote: "div", Field: "div", FormError: "p", Icon: "span", Loader: "div" }
+      // the page's one hook from the shared parts: the list's arrival light, a ref that never lights here
+      : name.endsWith("common/Board.jsx") ? { useArrival: () => ({ current: null }) }
       : {},
   });
   function findElement(node, name) {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { BackLink, Chips, Choice, Counter, Dock, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
+import { BackLink, Chips, Choice, Counter, Dock, Lead, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
 import { PushLink } from "../components/common/PushControl.jsx";
 import Seg from "../components/common/Seg.jsx";
@@ -9,6 +9,7 @@ import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, site
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
+import { applicationsClosed } from "../services/announcementTimes.js";
 import { builderRouteSearch, listEventApplications, listEventRegistrationSubmissionStatuses, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
@@ -29,10 +30,13 @@ const BATTLE={singles:"싱글 배틀",doubles:"더블 배틀"};
 function eventFacts(a){
   const d=a.form?.eventDraft; if(!d) return null;
   const champions=d.eventType==="champions";
-  const held=champions?[["선발전",d.qualifierHeldOn??d.heldOn],["본선",d.finalHeldOn]]:[["",d.heldOn]];
-  const next=held.map(([k,raw])=>({k,raw,dday:daysTo(raw)})).filter(x=>x.dday!=null&&x.dday>=0).sort((p,q)=>p.dday-q.dday)[0]||null;
+  // each day with its start time (announcementTimes.js); a date written with a time of its own keeps it
+  const held=champions?[["선발전",d.qualifierHeldOn??d.heldOn,d.qualifierStartTime],["본선",d.finalHeldOn,d.finalStartTime]]:[["",d.heldOn,d.startTime]];
+  const at=(raw,time)=>time&&!/\d{1,2}:\d{2}/.test(String(raw))?`${String(raw).slice(0,10)}T${time}`:raw;
+  const next=held.map(([k,raw,time])=>({k,raw:at(raw,time),dday:daysTo(raw)})).filter(x=>x.dday!=null&&x.dday>=0).sort((p,q)=>p.dday-q.dday)[0]||null;
   const rows=[
-    ...held.filter(([,raw])=>raw).map(([k,raw])=>[k?`${k} 일시`:"일시",formatDate(raw,{time:true})]),
+    ...held.filter(([,raw])=>raw).map(([k,raw,time])=>[k?`${k} 일시`:"일시",formatDate(at(raw,time),{time:true})]),
+    ...(a.form?.closesAt?[["신청 마감",`${formatDate(a.form.closesAt,{time:true})}까지`]]:[]),
     ...(BATTLE[d.battleFormat]?[["형식",BATTLE[d.battleFormat]]]:[]),
     ...(champions?[["방식",`선발전 ${FORMAT[CHAMPIONSHIP_QUALIFIER_FORMAT]}, 본선 ${FORMAT[CHAMPIONSHIP_FINAL_FORMAT]}`]]:FORMAT[d.competitionFormat]?[["방식",FORMAT[d.competitionFormat]]]:[]),
     ["단위",d.isTeamEvent?"팀전":"개인전"],
@@ -42,6 +46,12 @@ function eventFacts(a){
 }
 
 /* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸. 새 글이면 램프가 켜진다(seenNotices.js) */
+/* 목록의 첫 공지(첫 쪽, 검색 없음)는 홈과 같은 큰 판으로 선다(C24): 날짜가 월과 일의 디스플레이로 켜진다 */
+const NoticeLead=({a,onOpen})=>{
+  const d=dotDate(a.date), fresh=isNewNotice(a);
+  return <Lead date={d?.day} title={a.title} lamp={fresh&&"새 글"} line={[a.pinned&&"고정",d&&`${d.weekday}요일`].filter(Boolean).join(", ")}
+    label={`${a.title}, ${formatDate(a.date)}${fresh?", 새 글":""}`} onClick={onOpen}/>;
+};
 const NoticeRow=({a,onOpen})=>{
   const d=dotDate(a.date), fresh=isNewNotice(a);
   return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={fresh&&"새 글"} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
@@ -154,8 +164,9 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       ...(a.form?.eventId&&a.form?.eventDraft?.eventType!=="champions"?[["파티 제출",a.form.eventId]]:[]),
       ...(championshipSubmission?.isChampionship?[["선발전 파티 제출",championshipSubmission.qualifierEvent.id],["본선 파티 제출",championshipSubmission.finalEvent.id]]:[]),
     ];
-    const main=hasForm?[a.form.buttonLabel||"참가 신청",()=>setFill(a.id)]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:null;
-    const seconds=hasForm?submits:submits.slice(1);
+    const open=hasForm&&!applicationsClosed(a.form);
+    const main=open?[a.form.buttonLabel||"참가 신청",()=>setFill(a.id)]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:hasForm?["신청 마감",null]:null;
+    const seconds=open?submits:submits.slice(1);
     const others=all.filter(x=>x.id!==a.id).slice(0,5);
     // 데스크톱은 709와 439 두 단: 왼쪽은 본문, 오른쪽은 대회의 사실과 행동, 그 아래 다른 공지. 폰은 지금 순서 그대로 한 단.
     return (<section className="nw nw-art">
@@ -183,7 +194,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
           {(hasForm||a.form?.eventId)&&<Button variant="second" onClick={()=>setRespId(a.id)}>응답 보기 {a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</Button>}
           <Button variant="second" onClick={()=>setModal({type:"ann",item:a})}>수정</Button>
         </div>}
-        {main&&<div className="nw-main-act"><Dock><Button variant="main" onClick={main[1]}>{main[0]}</Button></Dock></div>}
+        {main&&<div className="nw-main-act"><Dock><Button variant="main" onClick={main[1]||undefined} disabled={!main[1]}>{main[0]}</Button></Dock></div>}
         {others.length>0&&<section className="nw-others" aria-labelledby="nw-others">
           <SectionHead id="nw-others" title="다른 공지"/>
           <div className="stack">{others.map(x=><NoticeRow key={x.id} a={x} onOpen={()=>openArticle(x.id)}/>)}</div>
@@ -217,7 +228,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         {all.length>0&&<><p className="t12 dim nw-recent">최근 공지</p><div className="stack nw-list">{all.slice(0,3).map(a=><NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div></>}
       </>
       : <Empty title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
-    : <div className="stack nw-list">{shown.map(a=><NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div>}
+    : <div className="stack nw-list">{shown.map((a,i)=>i===0&&cur===1&&!kw?<NoticeLead key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>:<NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div>}
     <div className="nw-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
     {modals}
   </section>);

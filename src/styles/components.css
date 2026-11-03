@@ -5,7 +5,7 @@
    ========================================================================== */
 
 .ypl-chip:not(.ypl-chip--ink), .y-chip, .pin,
-.pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win):not(.mem), .tb-status-chip, .tb-official-meta span, .rc-chip,
+.pg-btn:not(.on), .ann-link, .ann-submit, .ann-resp, .bk-pill, .r2-name:not(.win), .tb-status-chip, .tb-official-meta span, .rc-chip,
 .bk-alloc-tag, .bk-participant-submission, .bk-exist, .tb-dirty-badge, .tb-draft-badge, .tb-active-saved {
   position: relative;
 }

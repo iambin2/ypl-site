@@ -40,6 +40,12 @@
 /* events: a panel each, its name and grey line, the placings as lines, the winner bold */
 .rc-list-search { margin-top: var(--s5); }
 .rc-rounds { margin: var(--s5) 0 0; padding: 0; list-style: none; }
+/* a season's chapter (C24): its name at 20 and its number of events lit at 32, 32 above it and 12 to its first event */
+.rc-chapter { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s3); padding: var(--s8) 0 var(--s3); }
+.rc-chapter:first-child { padding-top: 0; }
+.rc-chapter-n { display: flex; align-items: flex-end; gap: var(--s1); }
+/* the ranking's podium stands 20 under the season choice */
+.rc-rank > .podium:first-child, .rc-rank > .rc-admin + .podium { margin-top: var(--s5); }
 .round2 { display: grid; padding: var(--pad); }
 .r2-main { min-width: 0; }
 .r2-head { display: grid; gap: var(--s1); margin-bottom: var(--s3); }
@@ -53,9 +59,10 @@
 .r2-line.sf .r2-rk { color: var(--dim); font-weight: 600; }
 .r2-rk.inv { background: var(--lit); color: var(--ground); }
 .r2-names { display: flex; flex-wrap: wrap; align-items: baseline; align-content: center; gap: var(--s1) var(--s3); padding: var(--s2) var(--s3); background: var(--panel-2); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
-.r2-line.win .r2-name:not(.mem) { font-size: var(--t20); line-height: var(--l20); letter-spacing: var(--ls20); }
-.r2-line.sf .r2-name:not(.mem) { font-weight: 600; }
-.r2-name.mem { font-weight: 400; color: var(--dim); }
+.r2-line.win .r2-name { font-size: var(--t20); line-height: var(--l20); letter-spacing: var(--ls20); }
+.r2-line.sf .r2-name { font-weight: 600; }
+/* a team's members: the whole line under the team's name, 12 dim with commas, wrapping only inside that line */
+.r2-mems { flex-basis: 100%; font-size: var(--t12); line-height: var(--l12); font-weight: 400; color: var(--dim); }
 .records-round-toggle { width: 100%; display: flex; align-items: center; gap: var(--s3); min-height: var(--h-control); margin-top: var(--s3); text-align: left; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--dim); transition: color var(--move-tone); }
 @media (hover: hover) { .records-round-toggle:hover { color: var(--lit); } }
 .records-round-summary { flex: 1; min-width: 0; }

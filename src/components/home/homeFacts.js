@@ -9,14 +9,26 @@ export function seenChampions() {
   if (shownChampions) return shownChampions;
   try { const saved = JSON.parse(localStorage.getItem(CHAMPIONS_KEY)); return Array.isArray(saved) ? saved : null; } catch { return null; }
 }
+/* 전당 읽기(조각, 전당 조회, 그림 사전)는 site_data 가 필요 없다. 첫 화면이 홈이면 앱이 시작할 때 site_data 와 나란히 출발해
+   첫 화면의 가장 큰 그림(현 챔피언)이 site_data, 홈의 첫 그림, 조각 받기를 차례로 기다리지 않는다(LCP 대기 73%).
+   한 번 쓰면 비운다: 다시 찾은 홈과 데이터 갱신은 새로 읽는다. */
+let warm = null;
+export function warmChampions() {
+  return warm ||= (async () => {
+    const [hall, service, labels] = await Promise.all([
+      import("../../services/hallOfFamePresentation.js"), import("../../services/championsService.js"), import("../../services/seasonLabel.js"),
+    ]);
+    const [normalized, lookup] = await Promise.all([
+      service.championsOperationsEnabled() ? service.fetchNormalizedChampionsHallOfFame().catch(() => []) : null,
+      hall.loadHallOfFameArtworkLookup().catch(() => new Map()),
+    ]);
+    return { hall, labels, normalized, lookup };
+  })();
+}
 export async function loadChampions(data) {
-  const [hall, service, labels] = await Promise.all([
-    import("../../services/hallOfFamePresentation.js"), import("../../services/championsService.js"), import("../../services/seasonLabel.js"),
-  ]);
-  const [normalized, lookup] = await Promise.all([
-    service.championsOperationsEnabled() ? service.fetchNormalizedChampionsHallOfFame().catch(() => []) : null,
-    hall.loadHallOfFameArtworkLookup().catch(() => new Map()),
-  ]);
+  const reading = warmChampions();
+  warm = null;
+  const { hall, labels, normalized, lookup } = await reading;
   const member = m => typeof m === "string" ? { name: m, img: "", pokemonId: "" } : { name: m?.name || "", img: m?.img || "", pokemonId: m?.pokemonId || "" };
   const rows = hall.mergeHallOfFame(data.champions, normalized).reverse().map((c, i) => ({
     key: `${c.gen}-${c.name}-${i}`, name: c.name, generation: c.generationNumber || 0, label: labels.generationText(c.gen),

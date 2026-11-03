@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
 import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
 import { WRITE_CONFLICT } from "./services/revisionedRow.js";
-import HomePage from "./pages/HomePage.jsx";
+import HomePage, { todayEvent } from "./pages/HomePage.jsx";
 import MorePage from "./pages/MorePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
@@ -16,6 +16,11 @@ import AdminModeBar from "./admin/AdminModeBar.jsx";
 import { onAdminSessionLost, signOutAdmin } from "./storage.js";
 import LazyContent from "./components/common/LazyContent.jsx";
 import Loader, { Busy } from "./components/common/Loader.jsx";
+import { Arrived, LiveStrip } from "./components/common/Board.jsx";
+import { warmChampions } from "./components/home/homeFacts.js";
+
+// 첫 화면이 홈이면 현 챔피언의 읽기를 site_data 와 나란히 출발시킨다: 첫 화면의 가장 큰 그림이 그 끝에 있다(homeFacts.js).
+if (typeof window !== "undefined" && readInitialAppView(window.location.search) === "home") warmChampions();
 
 /* 페이지 조각은 처음 필요할 때 불러오되, 한 번 불러오면 같은 컴포넌트로 바로 그린다.
    화면 전환은 새 페이지를 같은 틀 안에서 즉시 그려야 하므로(전환 중 "불러오는 중"이 끼지 않게)
@@ -80,8 +85,9 @@ export default function App() {
   // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
   useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
   // 첫 진입은 어느 화면이든 꺼진 판에서 켜진다(DESIGN.md "Motion"). 홈은 제 패널을 스스로 켠다.
+  // 켜는 때는 화면의 코드와 내용이 실제로 놓인 순간이다(Arrived, 지연 경계 안): 데이터가 온 순간에 켜면 코드를 받는 중인 화면은 로더만 켜졌다.
   const litOnce=useRef(false);
-  useLayoutEffect(()=>{ if(!data||litOnce.current)return; litOnce.current=true; if(view!=="home") light(document.getElementById("ypl-main")); },[data]);
+  const firstLight=()=>{ if(litOnce.current)return; litOnce.current=true; if(view!=="home") light(document.getElementById("ypl-main")); };
   // 다크가 첫 방문이다(스코어보드). 고른 기록이 라이트면 라이트, "system"이면 기기의 설정을 따른다.
   // 예전 키는 열 때마다 저장돼 고른 기록이 아니라서 쓰지 않는다.
   const [themePref,setThemePref]=useState(()=>{
@@ -218,6 +224,8 @@ export default function App() {
   // 무거운 조각은 시트가 다 올라온 뒤에 받는다: 여는 순간에 평가하면 시트가 굳는다.
   const toggleMore=el=>{ if(!more) setTimeout(()=>{ CalculatorPage.prefetch(); ChampionsPage.prefetch(); },DUR.lift); setMore(m=>m?null:el); };
   const wideNav=useWideNav();
+  // 오늘 열리는 대회(C24): 바의 램프, 대진표 탭의 램프, 홈과 대진표 밖의 화면을 여는 진행 띠
+  const live=useMemo(()=>data?todayEvent(data.announcements):null,[data]);
   const moreItems=[
     ...MORE_ITEMS.map(([key,label])=>({key,label,current:view===key,onSelect:()=>go(key)})),
     {key:"sep",sep:true},
@@ -228,11 +236,13 @@ export default function App() {
     <div className={"ypl"+(admin?" is-admin":"")}>
       {/* 키보드로 들어온 사람은 매번 바 전체를 지나야 본문에 닿았다. */}
       <a className="skip-link" href="#ypl-main">본문으로 건너뛰기</a>
-      <SiteHeader view={going||view} onNavigate={go} dark={dark} onToggleTheme={switchTheme}
+      <SiteHeader view={going||view} onNavigate={go} dark={dark} onToggleTheme={switchTheme} live={live}
         moreOpen={Boolean(more)} onMore={toggleMore}/>
 
       <div className="wrap"><main className={"page"+(data?"":" page--wait")+(going?" is-going":"")} id="ypl-main" tabIndex={-1} key={view}>
         {!data ? <Loader/> : <LazyContent>
+        <Arrived onArrive={firstLight}/>
+        {live&&view!=="home"&&view!=="bracket"&&<LiveStrip name={live.name} onGo={()=>go("bracket")}/>}
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
         {view==="about"&&<AboutPage go={go}/>}
         {view==="more"&&<MorePage go={go} themePref={themePref} onTheme={chooseTheme} admin={admin} onAdmin={onAdmin}/>}
@@ -250,7 +260,7 @@ export default function App() {
       </div>
       {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={wideNav&&!admin?onAdmin:null}/>}
 
-      <TabBar view={going||view} onNavigate={go}/>
+      <TabBar view={going||view} onNavigate={go} live={live}/>
       {admin&&<AdminModeBar onLogout={logout}/>}
       {more&&<Menu anchor={more} title="더보기" items={moreItems} onClose={()=>setMore(null)}/>}
       <Toaster feed={toast}/>

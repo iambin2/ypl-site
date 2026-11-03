@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>YPL scoreboard C24, below the hero and the lamp</title>
+<link rel="stylesheet" href="c-core.css">
+<style>
+/* C24 (2026-11-03): a draft outside the law on purpose. The home under the hero has three sections of one kind of row; here each
+   section is its own module of a stadium board, so the page has a beat: a big lit module, a mixed one, a dense grid. The amber lamp
+   becomes a fixture of the board that is always there and lights when something is live. */
+.ph.tall { height: auto; padding-bottom: 64px; }
+.ph.tall .tabs { position: absolute; }
+.flow { padding: 0 20px; }
+.sec { margin-top: 52px; }
+.sh2 { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.grid { display: grid; gap: 2px; }
+.stand { position: relative; overflow: hidden; }
+.stand img { position: absolute; left: 0; right: 0; margin: auto; object-fit: contain; object-position: 50% 100%; }
+.hint { font-size: 13px; line-height: 1.55; color: #5B6880; max-width: 390px; margin-top: 12px; }
+.hint b { color: #081C3D; }
+.strip { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; }
+.lampbox { width: 8px; height: 8px; background: var(--panel-2); flex: none; display: inline-block; }
+.lampbox.sig { background: var(--signal); }
+.lampbox.lit { background: var(--lit); }
+/* the bar's lamp: a fixture at the right end of the top bar */
+.bar .fix { display: flex; align-items: center; gap: 16px; }
+.bar .onair { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; font-weight: 700; }
+.tabs a .tl { position: absolute; top: 10px; left: calc(50% + 8px); width: 8px; height: 8px; background: var(--signal); }
+.cols { display: flex; gap: 52px; align-items: flex-start; margin-top: 52px; }
+.cols > div { flex: none; }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="wing" viewBox="0 0 1315.1 870.6"><path fill="currentColor" d="M0 0 L427.7 118 L657.5 430 L887.4 118 L1315.1 0 L1199.8 164 L947.9 233.5 L755.3 495.5 L755.3 536.5 L559.8 536.5 L559.8 495.5 L367.1 233.5 L115.3 164 Z M246.8 351.1 L149.5 212.7 L403.3 282.8 L506.3 422.7 Z M808.8 422.7 L911.7 282.8 L1165.6 212.7 L1068.3 351.1 Z M559.8 574.5 L755.3 574.5 L755.3 608.1 L916.1 732.5 L805.8 811.8 L713.7 639.1 L692.3 639.1 L751.1 811.8 L657.5 870.6 L564 811.8 L622.8 639.1 L601.3 639.1 L509.3 811.8 L399 732.5 L559.8 608.1 Z"/></symbol>
+  <symbol id="word" viewBox="0 0 310 100"><path fill="currentColor" fill-rule="evenodd" transform="skewX(-12) translate(21 0)" d="M0 0 H34.7 L55 27.7 L75.3 0 H110 L69 56 V100 H41 V56 Z M118 0 H188 A18 18 0 0 1 206 18 V46 A18 18 0 0 1 188 64 H146 V100 H118 Z M146 24 H178 V40 H146 Z M214 0 H242 V76 H286 V100 H214 Z"/></symbol>
+</defs></svg>
+<div id="root"></div>
+<script src="c-core.js"></script>
+<script>
+/* ---------- data, as the site has it on 2026-11-03 ---------- */
+const STAND = [['1', '이상준', 30], ['1', '이준혁', 30], ['1', '양승규', 30]];
+const LEAD = [['1', '이상준', 60], ['2', '이준혁', 40], ['3', '양승규', 30]];
+const NEWS = [['10.28', '수', '제38회 파이컵 공지', true], ['10.01', '목', '37회 파이컵 팀전 팀 편성 안내'], ['09.19', '토', '37회 파이컵 팀전 리전 워즈']];
+const HALL = [['5', '정두호', 'alomomola', 'YPL 시즌 1'], ['4', '이제빈', 'abomasnow', '클래식 4'], ['3', '허진욱', 'torkoal', '클래식 3'], ['2', '이종우', 'blaziken-mega', '클래식 2'], ['1', '정두호', 'lopunny-mega', '클래식 1']];
+
+/* ---------- the shell, with the bar's lamp as a fixture: unlit by default, amber with its word when something is live ---------- */
+const lampBar = (state, light) => `<header class="bar">${brand(20)}<span class="fix">${
+  state === 'live' ? `<span class="onair"><span class="lampbox sig"></span>진행 중</span>` : state === 'off' ? `<span class="lampbox"></span>` : ''}${ic(light ? 'moon' : 'sun', 22)}</span></header>`;
+const tabsLive = on => tabs(on).replace('<span>대진표</span>', '<span>대진표</span><i class="tl"></i>');
+const sh = (t, l) => `<div class="sh2"><span class="t20">${t}</span>${l ? `<span class="link">${l}</span>` : ''}</div>`;
+
+/* ---------- now: three sections of the same 52 row ---------- */
+const nowLow = () => `<div class="ph tall">${bar()}<div class="flow">
+  <div class="sec" style="margin-top:32px">${sh('YPL 시즌 3 순위', '전체 보기')}<div class="grid">${STAND.map(([r, n, p]) => `<div class="pn" style="height:52px;display:flex;align-items:center"><span class="num t20" style="width:52px;text-align:center">${r}</span><b class="t15" style="flex:1">${n}</b><span style="padding-right:12px"><b class="num t20">${p}</b> <span class="t12 dim">점</span></span></div>`).join('')}</div><p class="t12 mute reg" style="margin-top:8px">3명이 공동 1위입니다.</p></div>
+  <div class="sec">${sh('공지', '전체 보기')}<div class="grid">${NEWS.map(([d, w, t, nw]) => `<div class="pn" style="height:52px;display:flex;align-items:center"><span class="t15 num" style="width:84px;padding-left:12px">${d}<span class="dim" style="margin-left:4px">${w}</span></span><b class="t15" style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${t}</b><span style="width:32px;display:grid;place-items:center">${nw ? '<span class="lamp"></span>' : ''}</span></div>`).join('')}</div></div>
+  <div class="sec">${sh('역대 챔피언', '명예의 전당')}<div style="display:flex;gap:2px;margin-right:-20px;overflow:hidden">${HALL.slice(0, 3).map(([g, n, s, l]) => `<div class="pn stand" style="flex:none;width:132px;height:204px"><span style="position:absolute;left:12px;top:8px"><span class="num t20">${g}</span><span class="t12 dim">대</span></span><img src="${S(s)}" style="bottom:64px;width:104px;height:104px"><div style="position:absolute;left:0;right:0;bottom:0;height:64px;padding:12px"><b class="t15">${n}</b><div class="t12 dim reg" style="margin-top:4px">${l}</div></div></div>`).join('')}</div></div>
+  </div>${tabs('home')}</div>`;
+
+/* ---------- draft: the standings as a lit module. Three columns like the counters above them, the points lit in segments.
+   A tie reads as three equal columns; a sole leader inverts. The season's progress is a strip of lit cells, like innings. ---------- */
+const standings = (rows, done = 4, total = 8) => {
+  const solo = rows.filter(r => r[0] === '1').length === 1;
+  return `${sh('YPL 시즌 3 순위', '전체 보기')}
+  <div class="grid" style="grid-template-columns:115px 116px 115px">${rows.map(([r, n, p], i) => `<div class="${solo && i === 0 ? 'inv' : 'pn'}" style="height:136px;padding:12px;display:flex;flex-direction:column;justify-content:space-between">
+    <span class="t12 ${solo && i === 0 ? '' : 'dim'}">${r}위</span><b class="t15" style="margin-top:-12px">${n}</b>
+    <span style="display:flex;align-items:flex-end;gap:4px">${seg(String(p), 40, 2)}<span class="t12 ${solo && i === 0 ? '' : 'dim'}">점</span></span></div>`).join('')}</div>
+  <div class="pn strip" style="margin-top:2px;justify-content:space-between"><span class="t12 dim">시즌 진행</span><span style="display:flex;gap:4px">${Array.from({ length: total }, (_, k) => `<span class="lampbox ${k < done ? 'lit' : ''}"></span>`).join('')}</span><span class="t12 num">${done} / ${total}</span></div>`;
+};
+/* the notices as a message board: the newest is a big panel with its date lit, the rest are rows */
+const notices = () => `${sh('공지', '전체 보기')}<div class="grid">
+  <div class="pn" style="padding:12px;display:grid;gap:12px"><span style="display:flex;justify-content:space-between;align-items:flex-start">${seg(NEWS[0][0], 32)}<span class="t12" style="display:flex;align-items:center;gap:8px">새 글<span class="lamp"></span></span></span><b class="t20">${NEWS[0][2]}</b><span class="t12 dim">고정, ${NEWS[0][1]}요일</span></div>
+  ${NEWS.slice(1).map(([d, w, t]) => `<div class="pn" style="height:52px;display:flex;align-items:center"><span class="t15 num" style="width:84px;padding-left:12px">${d}<span class="dim" style="margin-left:4px">${w}</span></span><b class="t15" style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-right:12px">${t}</b></div>`).join('')}</div>`;
+/* the hall as a line score: generations as columns, the number lit, the Pokémon on its floor, the name under it */
+const lineScore = () => `${sh('역대 챔피언', '명예의 전당')}
+  <div class="grid" style="grid-template-columns:repeat(5,1fr)">${HALL.map(([g]) => `<div class="pn2" style="height:52px;display:grid;place-items:center">${seg(g, 32, 1)}</div>`).join('')}
+  ${HALL.map(([, , s]) => `<div class="pn stand" style="height:76px"><img src="${S(s)}" style="bottom:4px;width:64px;height:64px"></div>`).join('')}
+  ${HALL.map(([, n, , l]) => `<div class="pn" style="height:52px;padding:8px 4px;text-align:center"><b class="t12" style="display:block">${n}</b><span class="dim reg" style="font-size:11px;line-height:16px">${l}</span></div>`).join('')}</div>`;
+const draftLow = (rows, light = false) => `<div class="ph tall ${light ? 'light' : ''}">${lampBar('off', light)}<div class="flow">
+  <div class="sec" style="margin-top:32px">${standings(rows)}</div>
+  <div class="sec">${notices()}</div>
+  <div class="sec">${lineScore()}</div>
+  </div>${tabs('home')}</div>`;
+
+/* ---------- the lamp: the hero with its fixture. off: the lamp's housing is dark; open: 신청 접수 중 is live, and the last day of a
+   deadline lights its counter's lamp; live: the event is on, the bar's lamp lights with its word on every page ---------- */
+const hero = state => `<div class="ph">${lampBar(state === 'live' ? 'live' : 'off')}<div class="flow">
+  <div class="t12 dim" style="margin-top:32px;display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:8px">${
+    state === 'open' ? '<span class="lampbox sig"></span><span style="color:var(--lit)">신청 접수 중</span>' : state === 'live' ? '<span class="lampbox sig"></span><span style="color:var(--lit)">오늘 대회 진행 중</span>' : '<span class="lampbox lit"></span>다음 대회까지'}</span><span class="num">11.07 토</span></div>
+  <div style="margin-top:12px;height:120px;display:flex;align-items:flex-end;gap:12px">${state === 'live' ? seg('13:00', 84, 4) + '<span class="t20" style="line-height:20px">시작</span>' : seg('04', 120, 2) + '<span class="t20" style="line-height:20px">일</span>'}</div>
+  <div class="t20" style="margin-top:20px;min-height:56px">38회 파이컵 NPC 배틀 7</div>
+  ${state === 'live' ? '' : `<div class="pn" style="margin-top:20px;height:84px;padding:12px;display:flex;flex-direction:column;justify-content:space-between"><span class="t12 dim" style="display:flex;align-items:center;gap:8px"><span class="lampbox ${state === 'open' ? 'sig' : 'lit'}"></span>${state === 'open' ? '<span style="color:var(--lit)">파티 제출 마감까지</span>' : '파티 제출까지'}</span><span style="display:flex;align-items:flex-end;gap:4px">${state === 'open' ? seg('06', 40, 2) + '<span class="t15">시간</span>' : seg('03', 40, 2) + '<span class="t15">일</span>'}</span></div>`}
+  <a class="btn" style="margin-top:20px">${state === 'live' ? '대진표 보기' : '이번 대회 신청'} ${ic('arrow', 20, 2)}</a>
+  ${state === 'live' ? '' : `<div class="pn stand" style="margin-top:52px;height:216px"><div style="position:absolute;left:12px;top:12px"><div class="t12 dim">현 챔피언</div><div class="t20" style="margin-top:8px">김현민</div><div class="t12 dim reg" style="margin-top:4px">6대, YPL 시즌 2 우승</div></div><span class="t12" style="position:absolute;left:12px;bottom:18px;display:flex;align-items:center;gap:4px">파티 보기 ${ic('arrow', 16, 1.5)}</span><img src="${S('garchomp')}" style="left:auto;right:12px;bottom:52px;width:164px;height:164px"></div>`}
+  ${state === 'live' ? `<div class="sec" style="margin-top:32px">${sh('지금 경기', '대진표 전체')}<div class="grid"><div class="pn strip" style="justify-content:space-between"><span class="t12 dim">4강</span><span class="t12" style="display:flex;align-items:center;gap:8px"><span class="lampbox sig"></span>진행 중</span></div><div class="pn" style="height:52px;padding:0 12px;display:flex;align-items:center;justify-content:space-between"><b class="t15">칼로스 제니스</b>${seg('1', 32, 1)}</div><div class="pn" style="height:52px;padding:0 12px;display:flex;align-items:center;justify-content:space-between"><b class="t15">알로라 가디언즈</b>${seg('0', 32, 1)}</div></div></div>` : ''}
+  </div>${state === 'live' ? tabsLive('home') : tabs('home')}</div>`;
+/* live, seen from another page: the bar's lamp and the bracket tab's lamp follow the visitor everywhere */
+const recordsLive = () => `<div class="ph">${lampBar('live')}<div class="flow">
+  <div style="margin-top:32px;display:flex;justify-content:space-between;align-items:baseline"><span class="t32">기록</span><span class="t12 dim">2023년 5월부터</span></div>
+  <div class="grid" style="margin-top:20px;grid-template-columns:115px 116px 115px">${[['59', '대회'], ['71', '트레이너'], ['6', '챔피언']].map(([n, l]) => `<div class="pn" style="height:84px;padding:12px;display:flex;flex-direction:column;justify-content:space-between"><span class="t12 dim">${l}</span>${seg(n, 40, 2)}</div>`).join('')}</div>
+  <div class="inv strip" style="margin-top:20px;height:44px;justify-content:space-between"><span class="t12" style="display:flex;align-items:center;gap:8px"><span class="lampbox sig"></span>38회 파이컵 진행 중, 4강 1 / 2 종료</span><span class="t12" style="display:flex;align-items:center;gap:4px">대진표 ${ic('arrow', 16, 1.5)}</span></div>
+  <div class="grid" style="margin-top:20px">${[['1', '정두호', 8, 6, 8], ['2', '이종우', 5, 2, 7], ['3', '김현민', 4, 3, 2], ['4', '이병재', 3, 1, 5]].map(([r, n, a, b, c], i) => `<div class="${i ? 'pn' : 'inv'}" style="height:${i ? 44 : 52}px;display:flex;align-items:center;padding:0 12px;gap:12px"><span class="t12 num" style="width:20px">${r}</span><b class="t15" style="flex:1">${n}</b><b class="num t20" style="width:32px;text-align:right">${a}</b><b class="num t20" style="width:32px;text-align:right">${b}</b><b class="num t20" style="width:32px;text-align:right">${c}</b></div>`).join('')}</div>
+  </div>${tabsLive('rec')}</div>`;
+
+const frame = (inner, cap, hint) => `<div><div>${inner}</div><div class="cap">${cap}</div>${hint ? `<p class="hint">${hint}</p>` : ''}</div>`;
+document.getElementById('root').innerHTML = `<div class="board">
+  <h1>C24 히어로 아래의 리듬과 호박색 램프 (초안, 법칙 밖)</h1>
+  <p class="lede">지금 홈은 히어로 아래 세 섹션이 모두 52 높이의 같은 행이라 박자가 없습니다. 초안은 섹션마다 경기장 전광판의 다른 모듈을 씁니다: 크게 켜진 순위 판, 큰 판 하나와 작은 행이 섞인 공지, 촘촘한 격자의 역대 챔피언. 재료(남색 판, 2px 이음매, 직각, 7세그먼트, 빛만의 강조)는 그대로입니다. 램프는 늘 같은 자리에 있는 판의 부품이 되어, 평소에는 꺼진 집만 보이고 무언가 살아 있을 때 켜집니다.</p>
+  <div class="cols">
+    ${frame(nowLow(), '지금: 같은 행이 세 번', '순위, 공지, 역대 챔피언이 모두 같은 높이, 같은 톤의 행입니다. 어디가 중요한지 눈이 고를 수 없습니다.')}
+    ${frame(draftLow(STAND), '초안: 세 개의 다른 모듈', '<b>순위 판</b>은 위의 카운터와 같은 세 칸으로 점수를 세그먼트로 켜고, 공동 1위는 같은 세 칸으로 저절로 읽혀 각주가 필요 없습니다. 아래 띠는 시즌 진행을 칸으로 켭니다. <b>공지</b>는 새 글 하나만 크게(날짜를 세그먼트로), 나머지는 행으로. <b>역대 챔피언</b>은 야구 전광판의 이닝 표처럼 세대를 열로 세워 다섯이 한 화면에 들어옵니다.')}
+    ${frame(draftLow(LEAD, true), '초안, 단독 선두, 라이트', '선두가 한 명이면 그 칸이 반전됩니다. 같은 모듈이 동점과 단독 선두를 모두 말합니다.')}
+  </div>
+  <div class="cols">
+    ${frame(hero('off'), '램프 1: 평소, 꺼진 램프의 집', '상단 바 오른쪽에 램프의 자리가 늘 있습니다(어두운 칸). 처음 온 사람도 “여기에 무언가 켜진다”는 걸 알게 됩니다. 다음 대회와 마감은 흰 램프입니다.')}
+    ${frame(hero('open'), '램프 2: 신청 접수 중, 마감 당일', '신청을 받는 동안은 지금 열려 있는 일이라 호박색입니다. 마감 당일에는 마감 카운터의 램프도 호박색으로 바뀌고 시간으로 셉니다.')}
+    ${frame(hero('live'), '램프 3: 대회 당일, 홈', '바의 램프가 “진행 중”과 함께 켜지고, 대진표 탭에도 같은 램프가 섭니다. 히어로는 시작 시각과 지금 경기를 보입니다.')}
+    ${frame(recordsLive(), '램프 3: 대회 당일, 다른 화면', '어느 화면에 있어도 바와 탭의 램프가 대회가 진행 중임을 알립니다. 기록 같은 화면 맨 위에는 반전된 띠가 진행 상황과 대진표로 가는 길을 보입니다.')}
+  </div>
+</div>`;
+</script>
+</body></html>

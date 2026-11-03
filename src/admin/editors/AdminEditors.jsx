@@ -11,6 +11,7 @@ import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
 import { copyEventRules, eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
 import { formatDate } from "../../services/dateFormat.js";
+import { missingAnnouncementTimes } from "../../services/announcementTimes.js";
 import { signInAdmin } from "../../storage.js";
 import Button from "../../components/common/Button.jsx";
 import Field, { FormError } from "../../components/common/Field.jsx";
@@ -153,6 +154,7 @@ function FormBuilder({ form, setForm, earlier = [] }){
     </button>
     {enabled&&<>
       <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
+      <Field label="신청 마감 시각" hint="이 시각이 지나면 신청 버튼이 닫히고, 홈의 신청 접수 중 램프가 꺼집니다."><input type="datetime-local" value={form?.closesAt||""} onChange={e=>patchForm({closesAt:e.target.value})}/></Field>
       <div className="fb-q">
         <div className="fb-q-top fb-section-head"><span className="t12 dim">대회 설정</span>{earlier.length>0&&!form?.eventId&&<Button variant="link" onClick={()=>setPickEarlier(true)}>지난 대회에서 불러오기</Button>}</div>
         {pickEarlier&&<PickerSheet title="지난 대회에서 불러오기" placeholder="공지 제목 검색" items={earlier.map(a=>({value:a.id,label:a.title||"(제목 없음)",sub:[formatDate(a.date),a.form?.eventDraft?.name].filter(Boolean).join(", "),search:String(a.title||"").toLowerCase().replace(/\s+/g,"")}))}
@@ -187,12 +189,19 @@ function FormBuilder({ form, setForm, earlier = [] }){
             <Field label="선발전 날짜"><input type="date" value={eventDraft.qualifierHeldOn??eventDraft.heldOn??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierHeldOn:e.target.value}})}/></Field>
             <Field label="본선 날짜"><input type="date" value={eventDraft.finalHeldOn||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalHeldOn:e.target.value}})}/></Field>
           </div>
+          <div className="bk-grow2">
+            <Field label="선발전 시작 시각"><input type="time" value={eventDraft.qualifierStartTime||""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierStartTime:e.target.value}})}/></Field>
+            <Field label="본선 시작 시각"><input type="time" value={eventDraft.finalStartTime||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalStartTime:e.target.value}})}/></Field>
+          </div>
           <div className="bk-grow2" style={{marginBottom:0}}>
             <Field label={<>선발전 파티 제출 권장 시각 <span className="fb-note">(선택)</span></>}><input type="datetime-local" value={eventDraft.qualifierSubmissionTargetAt??eventDraft.submissionTargetAt??""} onChange={e=>patchForm({eventDraft:{...eventDraft,qualifierSubmissionTargetAt:e.target.value}})}/></Field>
             <Field label={<>본선 파티 제출 권장 시각 <span className="fb-note">(선택)</span></>}><input type="datetime-local" value={eventDraft.finalSubmissionTargetAt||""} onChange={e=>patchForm({eventDraft:{...eventDraft,finalSubmissionTargetAt:e.target.value}})}/></Field>
           </div>
         </> : <>
-          <Field label="대회일"><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></Field>
+          <div className="bk-grow2">
+            <Field label="대회일"><input type="date" value={(form?.eventDraft?.heldOn)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),heldOn:e.target.value}})}/></Field>
+            <Field label="시작 시각"><input type="time" value={(form?.eventDraft?.startTime)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),startTime:e.target.value}})}/></Field>
+          </div>
           <Field label={<>파티 제출 권장 시각 <span className="fb-note">(선택)</span></>} flush><input type="datetime-local" value={(form?.eventDraft?.submissionTargetAt)||""} onChange={e=>patchForm({eventDraft:{...(form?.eventDraft||{}),submissionTargetAt:e.target.value}})}/></Field>
         </>}
         </>}
@@ -253,7 +262,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
       </div>}
     </div>
     <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="stack ann-actions">{onDelete&&<Button variant="link" className="ann-delete" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>onSave({id:announcementId,date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}})}>저장</Button></div>
+    <div className="stack ann-actions">{onDelete&&<Button variant="link" className="ann-delete" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>{ const missing=missingAnnouncementTimes(form); if(missing.length){ siteAlert(`${missing.join(", ")}을 입력해 주세요.`,"신청을 받는 공지는 신청이 언제 닫히고 대회가 몇 시에 시작하는지 알려야 합니다. 홈의 전광판이 이 시각으로 마감과 시작을 셉니다."); return; } onSave({id:announcementId,date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}}); }}>저장</Button></div>
   </Modal>);
 }
 export function StandingsEditor({ title, rows, onClose, onSave }) {

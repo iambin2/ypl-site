@@ -26,24 +26,24 @@
 .ho-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .ho-sec { margin-top: var(--s13); min-width: 0; }
-.ho-rank .row-lead { width: var(--s13); text-align: center; }
-.ho-rank .row-value { display: flex; align-items: baseline; gap: var(--s1); }
-.ho-tie { margin-top: var(--s2); }
 .ho-news .row-lead { width: var(--s21); padding-left: var(--pad); }
 
-/* past champions: a sideways run to the screen's edge; the name band is their floor */
-.ho-rail { display: flex; gap: var(--seam); margin-right: calc(var(--gutter) * -1); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-.ho-rail::-webkit-scrollbar { display: none; }
-.ho-past { --floor: var(--h-row2); --pad: var(--s3); flex: none; width: 132px; height: 204px; text-align: left; }
-.ho-past .mon { left: calc(50% - var(--s13)); height: calc(var(--s13) * 2); }
-.ho-gen { position: absolute; top: var(--s2); left: var(--pad); display: flex; align-items: baseline; gap: var(--s1); }
-.ho-band { display: grid; align-content: start; gap: var(--s1); padding: var(--pad); }
-.ho-band > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ho-band > b { font-weight: 700; }
+/* past champions as a line score (C24): a column a generation, the number lit on the next tone, the Pokémon on its floor, the name and
+   season; five share a phone's width, more keep 64 and the run scrolls to the screen's edge */
+.ho-line { display: grid; grid-template-columns: repeat(var(--n), minmax(64px, 1fr)); gap: var(--seam); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.ho-line::-webkit-scrollbar { display: none; }
+.ho-col { display: grid; grid-template-rows: var(--h-row) calc(var(--h-row) + var(--s8)) var(--h-row); gap: var(--seam); min-width: 0; text-align: center; }
+.ho-col-gen { display: grid; place-items: center; }
+.ho-col-mon { --floor: var(--s1); }
+.ho-col-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s1)); margin-inline: auto; }
+.ho-col-who { display: grid; align-content: center; gap: 0; min-width: 0; padding: 0 var(--s1); }
+.ho-col-who > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ho-col-who > b { font-weight: 700; }
+@media (hover: hover) { .ho-col:hover > .pn { background: var(--panel-2); } .ho-col:hover > .pn2 { background: var(--rule); } }
 
 @media (min-width: 860px) {
   .ho {
-    display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); column-gap: var(--s13); align-items: start;
+    display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); column-gap: var(--s13); align-items: stretch;
     grid-template-areas: "next reign" "live reign" "rank news" "hall hall"; padding-top: var(--s5);
   }
   .ho-next { grid-area: next; }
@@ -65,15 +65,27 @@
   .ho-due { width: 38.2%; }
   .ho-about { display: inline-flex; }
   .ho-reign .champion { --floor: var(--h-row2); height: calc(216px + var(--s13)); }
+  /* the two columns end on one line in every state (C24): whichever is shorter lets its last panel take the rest. The champion panel
+     grows when the hero is taller (a deadline counter); the main action stands on the column's floor when the hero is shorter (event
+     day). Under them, the podium's columns or the lead notice grow, so the ranking and the notices end together. */
+  /* with no live match the live row would take the champion's extra height instead of the hero, so it leaves the grid */
+  .ho:not(:has(> .ho-live)) { grid-template-areas: "next reign" "rank news" "hall hall"; }
+  .ho-reign { display: flex; flex-direction: column; }
+  .ho-reign .champion { flex: 1 0 auto; }
+  .ho-next { display: flex; flex-direction: column; }
+  .ho-next > .ho-go { margin-top: auto; padding-top: var(--s5); }
+  .ho-rank, .ho-news { display: flex; flex-direction: column; }
+  .ho-rank > .podium { flex: 1 0 auto; }
+  .ho-rank .podium-col { height: auto; min-height: calc(var(--h-counter) + var(--h-row)); }
+  .ho-news > .stack { flex: 1 0 auto; display: flex; flex-direction: column; }
+  .ho-news .lead { flex: 1 0 auto; align-content: start; }
   .ho-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .ho-six > .pn { height: var(--h-row2); }
   .ho-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
-  .ho-rank .row-lead { width: var(--s21); }
   .ho-news .row-lead { width: calc(var(--s21) + var(--s3)); }
   .ho-news .row-lamp { width: var(--s13); }
-  /* past champions share the full 1200; past ten they keep 132 and the run scrolls */
-  .ho-rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(132px, 1fr); margin-right: 0; }
-  .ho-past { width: auto; }
+  /* the line score shares the full 1200: the Pokémon cell grows to a counter's height */
+  .ho-col { grid-template-rows: var(--h-row) calc(var(--h-counter) + var(--s13)) var(--h-row); }
 }
 
 /* 지금 경기 (c9, event day): a head, the two players as rows of 52, the round's progress */

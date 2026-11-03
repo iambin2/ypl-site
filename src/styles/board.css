@@ -27,6 +27,25 @@
 .row-lamp { flex: none; display: flex; justify-content: center; align-self: stretch; align-items: center; width: var(--s8); }
 .row-lamp-word { flex: none; font-weight: 600; white-space: nowrap; }
 
+/* ---------- a ranking's top three (C24): columns as tall as a counter and a row, the points on the columns' common baseline ---------- */
+.podium { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+.podium-col { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); min-width: 0; height: calc(var(--h-counter) + var(--h-row)); padding: var(--pad); text-align: left; }
+.podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.podium-pts { display: flex; align-items: flex-end; gap: var(--s1); margin-top: auto; }
+
+/* ---------- a lead panel (C24): the date lit, the title at 20 in two lines ---------- */
+.lead { display: grid; gap: var(--s3); width: 100%; padding: var(--pad); text-align: left; }
+.lead-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s3); }
+.lead-date { display: flex; align-items: flex-end; gap: var(--s1); }
+.lead-date > .seg + span { margin-right: var(--s2); }
+.lead-lamp { display: flex; align-items: center; gap: var(--s2); }
+.lead-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-weight: 700; }
+
+/* ---------- the live strip (C24): 44, the amber lamp and the event, 대진표 → at the right; 20 above the page's first line ---------- */
+.live-strip { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); width: 100%; min-height: var(--h-control); margin-bottom: var(--s5); padding: 0 var(--pad); text-align: left; }
+.live-strip-say { display: flex; align-items: center; gap: var(--s2); min-width: 0; font-weight: 700; }
+.live-strip-go { display: flex; align-items: center; gap: var(--s1); flex: none; color: var(--dim); }
+
 /* ---------- desktop hover lifts a panel one tone; nothing grows ---------- */
 @media (hover: hover) {
   :is(button, a).pn:not(.inv):hover:not(:disabled) { background: var(--panel-2); }

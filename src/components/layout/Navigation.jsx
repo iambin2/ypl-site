@@ -20,17 +20,19 @@ export const WIDE_TABS = [...TABS.filter(([k]) => k !== "more"), ...MORE_ITEMS];
 export const current = (cur, key, view) => cur !== key ? {} : key === "more" && view !== "more" ? { "data-current": "" } : { "aria-current": "page" };
 
 /* 고른 칸은 켜진 글자(700)와 윗변의 2px 선. 선은 미끄러지지 않고 그 자리에서 켜진다. */
-export default function TabBar({ view, onNavigate }) {
+export default function TabBar({ view, onNavigate, live = null }) {
   const cur = tabOf(view);
   return (
     <nav className="tabbar" aria-label="주요 메뉴">
-      {TABS.map(([key, label, ic]) => (
-        <button key={key} type="button" className="tab" data-tab={key} {...current(cur, key, view)}
-          onClick={() => onNavigate(key)}>
+      {TABS.map(([key, label, ic]) => {
+        const lit = key === "bracket" && live;
+        return <button key={key} type="button" className="tab" data-tab={key} {...current(cur, key, view)}
+          onClick={() => onNavigate(key)} aria-label={lit ? `${label}, 진행 중` : undefined}>
           <Icon n={ic} size={24} />
+          {lit && <i className="lamp sig tab-lamp" aria-hidden="true" />}
           <span>{label}</span>
-        </button>
-      ))}
+        </button>;
+      })}
     </nav>
   );
 }

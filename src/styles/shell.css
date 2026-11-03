@@ -28,6 +28,10 @@
 .iconbtn { display: grid; place-items: center; width: var(--h-control); height: var(--h-control); flex: none; color: var(--lit); }
 /* the bar ends on the page's edge by the icon's ink, not by the button's box */
 .iconbtn:last-child { margin-right: calc((var(--h-control) - 24px) / -2); }
+/* the lamp's fixture (C24): a dark housing beside the theme button, lit amber with 진행 중 on event day */
+.onair-off { margin-right: var(--s2); }
+.onair { display: flex; align-items: center; gap: var(--s2); height: var(--h-control); padding: 0 var(--s2); font-weight: 700; color: var(--lit); }
+.tab-lamp { position: absolute; top: var(--s3); left: calc(50% + var(--s3)); }
 
 /* ---------- tab bar: the chosen tab is lit and bold with a 2px line along its top edge; the rest are muted ---------- */
 .tabbar {
@@ -48,7 +52,7 @@
   .brand .logo { height: 24px; width: auto; }
   .brand .wordmark { height: calc(24px * .84); }
   .navlinks { position: relative; display: flex; align-self: stretch; gap: var(--s8); margin-right: auto; }
-  .navlink { position: relative; display: inline-flex; align-items: center; height: 100%; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
+  .navlink { position: relative; display: inline-flex; align-items: center; gap: var(--s2); height: 100%; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
   .navlink:is([aria-current="page"], [data-current]) { color: var(--lit); font-weight: 700; }
   .navlink[aria-expanded="true"] { color: var(--lit); }
   @media (hover: hover) { .navlink:hover { color: var(--lit); } }

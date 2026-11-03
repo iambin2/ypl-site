@@ -1,8 +1,8 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChampionPanel, Counter, Mon, Row, SectionHead } from "../components/common/Board.jsx";
+import { ChampionPanel, Counter, Lead, Mon, Podium, Row, SectionHead } from "../components/common/Board.jsx";
 import Button from "../components/common/Button.jsx";
 import ChampionSheet from "../components/common/ChampionSheet.jsx";
-import { light } from "../components/common/motion.js";
+import { DUR, light } from "../components/common/motion.js";
 import Seg from "../components/common/Seg.jsx";
 import { loadChampions, loadFacts, seenChampions, seenFacts } from "../components/home/homeFacts.js";
 import { isNewNotice } from "../components/common/seenNotices.js";
@@ -11,6 +11,7 @@ import { listNormalizedBracketRuntimes } from "../services/normalizedCompetition
 import { freshRead } from "../services/readCache.js";
 import { liveMatches } from "../services/recordsAnalytics.js";
 import { submissionDue } from "../services/submissionDue.js";
+import { applicationsOpen } from "../services/announcementTimes.js";
 
 const DAY_MS = 86400000;
 /* "2026-10-04", "2026.10.04", "2026-10-04T15:21" → 그날 0시의 Date. 일까지 없으면 null. */
@@ -28,22 +29,23 @@ function nextEvent(announcements, now = new Date()) {
     const draft = a?.form?.enabled ? a.form.eventDraft : null;
     if (!draft) continue;
     const champions = draft.eventType === "champions";
-    const dates = champions ? [draft.qualifierHeldOn ?? draft.heldOn, draft.finalHeldOn] : [draft.heldOn];
-    for (const raw of dates) {
+    // each day with its start time (HH:MM, announcementTimes.js): the event-day clock reads it
+    const dates = champions ? [[draft.qualifierHeldOn ?? draft.heldOn, draft.qualifierStartTime], [draft.finalHeldOn, draft.finalStartTime]] : [[draft.heldOn, draft.startTime]];
+    for (const [raw, time] of dates) {
       const day = dayOf(raw);
       if (!day) continue;
       const dday = Math.round((day - today) / DAY_MS);
       if (dday < 0 || (best && best.dday <= dday)) continue;
-      best = { a, draft, champions, raw, dday };
+      best = { a, draft, champions, raw, time, dday };
     }
   }
   return best;
 }
 
-/* 상단 바의 대회 행동: 다음 대회가 있을 때만 [글자, 화면]. 오늘 열리면 대진표로 간다. */
-export function eventAction(announcements) {
+/* 오늘 열리는 대회(C24): 바의 램프, 대진표 탭의 램프, 다른 화면의 진행 띠가 읽는다. 없으면 null. */
+export function todayEvent(announcements) {
   const upcoming = nextEvent(announcements);
-  return !upcoming ? null : upcoming.dday === 0 ? ["대진표", "bracket"] : ["대회 신청", "news"];
+  return upcoming?.dday === 0 ? { name: upcoming.draft.name || upcoming.a.title } : null;
 }
 
 /* 첫 등장은 사이트에 들어올 때마다 한 번이다. 판정은 처음 그릴 때 받아 두고 그려진 뒤에 지운다
@@ -54,11 +56,6 @@ const opening = () => firstOpen;
 /* 좁은 줄의 날짜: 11.07, 그 옆에 흐린 요일 */
 const Day = ({ d }) => d && <span className="num">{d.day}<span className="dim ho-wd">{d.weekday}</span></span>;
 
-/* 같은 순위가 둘 이상이면 스택 아래의 회색 문장이 몇 명인지 말한다 */
-function tieNote(rows) {
-  const tied = rows.find(r => rows.filter(o => o.rank === r.rank).length > 1);
-  return tied ? `${rows.filter(o => o.rank === tied.rank).length}명이 공동 ${tied.rank}위입니다.` : "";
-}
 
 /* ============================== HOME ==============================
    전광판 한 장 (DESIGN.md "Layout and pages", docs/redesign-next c3, c21 가, c23).
@@ -80,13 +77,23 @@ export default function HomePage({ data, go, admin }) {
     firstOpen = false;
     if (enter) light(root.current);
   }, [enter]);
+  /* the season's ranking and the past champions come after the first paint (homeFacts.js): a section that appears later switches on
+     the moment it appears, as the rest of the board did, instead of standing there lit */
+  const litSecs = useRef(null);
+  useLayoutEffect(() => {
+    const secs = [...root.current.querySelectorAll(":scope > .ho-sec")];
+    if (!litSecs.current) { litSecs.current = new Set(secs); return; }
+    secs.filter(sec => !litSecs.current.has(sec)).forEach(sec => { litSecs.current.add(sec); light(sec, DUR.leave); });
+  });
 
   /* 대회 단계: 남은 날과 주 행동이 같은 계산을 읽는다 */
   const now = useMemo(() => {
     const upcoming = nextEvent(data.announcements);
     if (!upcoming) return null;
-    const { a, draft, champions, raw, dday } = upcoming;
-    return { today: dday === 0, dday, name: draft.name || a.title, date: dotDate(raw), eventId: a.form?.eventId || null, noticeId: a.id, due: dday > 0 ? submissionDue(draft, champions) : null };
+    const { a, draft, champions, raw, time, dday } = upcoming;
+    const date = dotDate(raw);
+    return { today: dday === 0, dday, name: draft.name || a.title, date: date && { ...date, clock: time || date.clock }, eventId: a.form?.eventId || null, noticeId: a.id,
+      open: dday > 0 && applicationsOpen(a.form), due: dday > 0 ? submissionDue(draft, champions) : null };
   }, [data.announcements]);
   /* 대회 당일의 지금 경기(c9): 그날 대회의 대진표를 대진표 화면과 같은 읽기로 가져와 아직 승자가 없는 경기를 보인다 */
   const [live, setLive] = useState(null);
@@ -98,18 +105,19 @@ export default function HomePage({ data, go, admin }) {
       .catch(error => { console.warn("home live matches read failed", error); if (on) setLive(null); });
     return () => { on = false; };
   }, [now?.today, now?.eventId]);
-  const primary = !now ? ["공지 보기", "news"] : now.today ? ["대진표 보기", "bracket"] : ["이번 대회 신청", "news"];
+  const primary = !now ? ["공지 보기", "news"] : now.today ? ["대진표 보기", "bracket"] : now.open ? ["이번 대회 신청", "news"] : ["대회 공지 보기", "news", { notice: now.noticeId }];
   const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
   const reigning = champions?.[0] || null;
   const season = facts?.season;
-  const tie = season ? tieNote(season.rows) : "";
 
   return (<div className="ho" ref={root}>
     <section className="ho-next" aria-labelledby="ho-title">
       <p className="ho-label t12" data-light>
         {now?.today
           ? <span className="ho-lamp"><i className="lamp sig" aria-hidden="true" />오늘 대회 진행 중</span>
-          : <span className="ho-lamp dim"><i className={"lamp" + (now ? "" : " unlit")} aria-hidden="true" />{now ? "다음 대회까지" : "다음 대회"}</span>}
+          : now?.open
+            ? <span className="ho-lamp"><i className="lamp sig" aria-hidden="true" />신청 접수 중</span>
+            : <span className="ho-lamp dim"><i className={"lamp" + (now ? "" : " unlit")} aria-hidden="true" />{now ? "다음 대회까지" : "다음 대회"}</span>}
         {now?.date && <span className="dim"><Day d={now.date} /></span>}
       </p>
       <div className={"ho-board" + (now?.today ? " today" : "")}>
@@ -119,11 +127,11 @@ export default function HomePage({ data, go, admin }) {
       </div>
       <h1 className="ho-title" id="ho-title" data-light>{now ? now.name : <>다음 대회 일정은{" "}<br />공지에 올라옵니다.</>}</h1>
       {now?.due && <div className="stack ho-due">
-        <Counter label="파티 제출까지" lamp value={String(now.due.value).padStart(2, "0")} cells={now.due.value >= 100 ? 3 : 2} unit={now.due.unit}
+        <Counter label={now.due.unit === "시간" ? "파티 제출 마감까지" : "파티 제출까지"} lamp={now.due.unit === "시간" ? "sig" : true} value={String(now.due.value).padStart(2, "0")} cells={now.due.value >= 100 ? 3 : 2} unit={now.due.unit}
           after={<span className="t15">{now.due.unit}</span>} onClick={() => go("news", { notice: now.noticeId })} />
       </div>}
       <div className="ho-go">
-        <Button variant="main" onClick={() => go(primary[1])}>{primary[0]}</Button>
+        <Button variant="main" onClick={() => go(primary[1], primary[2])}>{primary[0]}</Button>
         <Button variant="link" size="lg" className="ho-about" data-light onClick={() => go("about")}>리그 소개</Button>
       </div>
     </section>
@@ -152,29 +160,28 @@ export default function HomePage({ data, go, admin }) {
 
     {season && <section className="ho-sec ho-rank" aria-labelledby="ho-rank">
       <SectionHead id="ho-rank" title={`${season.name} 순위`} link="전체 보기" onLink={() => go("records", { tab: "rank" })} />
-      <div className="stack">
-        {season.rows.map(r => <Row key={r.name} className={r.rank === 1 && season.rows.filter(o => o.rank === 1).length === 1 ? "inv" : ""} lead={<span className="num t20">{r.rank}</span>} title={r.name}
-          value={<><span className="num t20">{r.points}</span><span className="t12 dim">점</span></>}
-          onClick={() => go("records", { trainer: r.name })} label={`${r.rank}위 ${r.name}, ${r.points}점`} />)}
-      </div>
-      {tie && <p className="ho-tie t12 mute reg" data-rise>{tie}</p>}
+      <Podium rows={season.rows} onName={name => go("records", { trainer: name })} />
     </section>}
 
     {notices.length > 0 && <section className="ho-sec ho-news" aria-labelledby="ho-news">
       <SectionHead id="ho-news" title="공지" link="전체 보기" onLink={() => go("news")} />
       <div className="stack">
-        {notices.map(a => <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={isNewNotice(a) && "새 글"} label={isNewNotice(a) ? `${a.title}, ${formatDate(a.date)}, 새 글` : undefined}
-          onClick={() => go("news", { notice: a.id })} />)}
+        {notices.map((a, i) => i === 0
+          ? <Lead key={a.id} date={dotDate(a.date)?.day} title={a.title} lamp={isNewNotice(a) && "새 글"}
+              line={[a.pinned && "고정", dotDate(a.date) && `${dotDate(a.date).weekday}요일`].filter(Boolean).join(", ")}
+              label={`${a.title}, ${formatDate(a.date)}${isNewNotice(a) ? ", 새 글" : ""}`} onClick={() => go("news", { notice: a.id })} />
+          : <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={isNewNotice(a) && "새 글"} label={isNewNotice(a) ? `${a.title}, ${formatDate(a.date)}, 새 글` : undefined}
+              onClick={() => go("news", { notice: a.id })} />)}
       </div>
     </section>}
 
     {champions?.length > 1 && <section className="ho-sec ho-hall" aria-labelledby="ho-hall">
       <SectionHead id="ho-hall" title="역대 챔피언" link="명예의 전당" onLink={() => go("champions")} />
-      <div className="ho-rail">
-        {champions.slice(1).map(c => <button type="button" className="pn stand ho-past" key={c.key} onClick={() => setPop(c)} aria-label={`${c.label} 챔피언 ${c.name}, ${c.line}`}>
-          {c.generation > 0 && <span className="ho-gen"><span className="num t20">{c.generation}</span><span className="t12 dim">대</span></span>}
-          <Mon src={c.party[0]?.img} />
-          <span className="floor ho-band"><b className="t15">{c.name}</b><span className="t12 dim reg">{c.line.replace(/ 우승$/, "")}</span></span>
+      <div className="ho-line" style={{ "--n": champions.length - 1 }}>
+        {champions.slice(1).map(c => <button type="button" className="ho-col" key={c.key} onClick={() => setPop(c)} aria-label={`${c.label} 챔피언 ${c.name}, ${c.line}`}>
+          <span className="pn2 ho-col-gen" aria-hidden="true">{c.generation > 0 ? <Seg value={String(c.generation)} h={32} cells={1} label="" /> : <span className="t12">{c.label}</span>}</span>
+          <span className="pn stand ho-col-mon"><i className="floor" aria-hidden="true" /><Mon src={c.party[0]?.img} loading="lazy" /></span>
+          <span className="pn ho-col-who"><b className="t12">{c.name}</b><span className="t12 dim reg">{c.line.replace(/ 우승$/, "")}</span></span>
         </button>)}
       </div>
     </section>}

@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
-import { BackLink, Choice, Counter, Dock, Row, Status, Steps, TabsLine } from "../components/common/Board.jsx";
+import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, useArrival } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
 import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
@@ -2000,6 +2000,7 @@ function PrivateBracketEdit({ b, onClose, onSave }){
 
 function PrivateBrackets({ admin, flash, tabs }){
   const [list,setList]=useState(()=>peekRead(PRIVATE_BRACKETS_KEY)||null);
+  const listArrived=useArrival(Boolean(list));
   const [fresh,setFresh]=useState(false);
   const [loadError,setLoadError]=useState("");
   const reload=async()=>{ try{ setList(await freshRead(PRIVATE_BRACKETS_KEY,()=>readCommunity(PRIVATE_BRACKETS_KEY))); setLoadError(""); }catch(error){ setLoadError(error?.message||"사설 대진표를 불러오지 못했습니다."); }finally{ setFresh(true); } };
@@ -2123,7 +2124,7 @@ function PrivateBrackets({ admin, flash, tabs }){
     {!list&&!loadError?<Loader/>:shown.length===0
       ? (kw?<Empty className="swap" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
            :<Empty className="swap" title="아직 사설 대진표가 없습니다." desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다."/>)
-      : <div className="stack bk-rows">{shown.map(b=><BracketRow key={b.id} b={b} vt={"pb-"+b.id} live={pbStatus(b)==="진행 중"}
+      : <div className="stack bk-rows" ref={listArrived}>{shown.map((b,i)=><BracketRow key={b.id} b={b} lead={i===0&&!kw} vt={"pb-"+b.id} live={pbStatus(b)==="진행 중"}
           line={`${b.host?`${b.host} 개설, `:""}${b.participants.length}명, ${pbFormat(b)}${pbChamp(b)?`, 우승 ${pbChamp(b)}`:""}`} onOpen={()=>openBracket(b)}/>)}</div>}
     {creating&&<PrivateBracketCreate onClose={()=>setCreating(false)} onCreate={create}/>}
   </section>);
@@ -2132,8 +2133,11 @@ function PrivateBrackets({ admin, flash, tabs }){
 
 /* only what runs carries a status: an ended bracket says 우승 in its grey line, so its end shows the date alone (nothing when the
    old record has none) instead of 종료 on every row */
-function BracketRow({ b, vt, live, line, end, onOpen }){
+function BracketRow({ b, vt, live, line, end, onOpen, lead=false }){
   const d=dotDate(b.createdAt);
+  /* the newest of a list stands as a lead panel (C24): its date lit, the amber lamp while it runs */
+  if(lead) return <Lead date={d?.day} title={<span data-vt={vt}>{b.name}</span>} line={[line,end].filter(Boolean).join(", ")}
+    lamp={live?"진행 중":null} sig={live} onClick={onOpen} label={`${b.name}, ${[line,live?"진행 중":end].filter(Boolean).join(", ")}`}/>;
   return <Row title={<span data-vt={vt}>{b.name}</span>} line={line} onClick={onOpen}
     value={live?<Status live>진행 중</Status>:end?<Status>{end}</Status>:d?<Status><span className="num">{d.day}</span></Status>:null}/>;
 }
@@ -2416,6 +2420,8 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   };
   // 공식과 사설은 한 화면의 두 탭(?tab=private). 사설 탭은 공식 대진표의 상태와 저장을 전혀 쓰지 않는다.
   const [tab,setTab]=useState(()=>new URLSearchParams(window.location.search).get("tab")==="private"?"private":"official");
+  // the list comes from the server after the page stands: it lights the moment it arrives
+  const listArrived=useArrival(normalizedInitialReady);
   const changeTab=t=>{ setTab(t); const url=new URL(window.location.href); if(t==="private")url.searchParams.set("tab","private"); else url.searchParams.delete("tab"); url.searchParams.delete("pb"); window.history.replaceState(window.history.state,"",url); };
   const tabsEl=()=><div className="bk-tabs"><TabsLine value={tab} onChange={changeTab} label="대진표 종류" options={[["official","공식"],["private","사설"]]}/></div>;
   if(tab==="private"&&!open) return <PrivateBrackets admin={admin} flash={flash} tabs={tabsEl()}/>;
@@ -2430,13 +2436,13 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     </header>}
     {!open&&!wizard&&normalizedLoadError&&<ErrorNote>대진표를 불러오지 못했습니다. {normalizedLoadError}</ErrorNote>}
     {!open&&!wizard&&tabsEl()}
-    {!open&&!wizard&&<div className="bk-list swap">
+    {!open&&!wizard&&<div className="bk-list swap" ref={listArrived}>
       {!normalizedInitialReady
         ? <Loader/>
         : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다." desc="참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.">
             {admin&&<Button variant="second" onClick={()=>setWizard(true)}>첫 대진표 만들기</Button>}
           </Empty>}
-      {list.length>0&&<div className="stack bk-rows">{list.map(b=><BracketRow key={b.id} b={b} vt={"b-"+b.id} live={statusTag(b)==="진행 중"}
+      {list.length>0&&<div className="stack bk-rows">{list.map((b,i)=><BracketRow key={b.id} b={b} lead={i===0} vt={"b-"+b.id} live={statusTag(b)==="진행 중"}
         line={lineOf(b)} end={admin&&statusTag(b)!=="진행 중"?statusTag(b):null} onOpen={()=>openBracket(b)}/>)}</div>}
     </div>}
     {open&&!wizard&&(()=>{ const openRes=open.format==="group"?(open.knockout?elimResult(open.knockout):null):elimResult(open.graph);

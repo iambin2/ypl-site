@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef } from "react";
 import Icon from "./Icon.jsx";
 import Seg from "./Seg.jsx";
 import { standInk } from "./inkCentre.js";
-import { forgetLine, lightAfter, place, slideLine } from "./motion.js";
+import { DUR, forgetLine, light, lightAfter, place, slideLine } from "./motion.js";
 
 /* the chosen word's line slides from the word before it (motion.js slideLine); the line itself is the word's own ::before.
    lights: a change of word also lights what the row swaps, even when the page drew the row afresh for the new word. */
@@ -12,6 +12,20 @@ export function useSlideLine(key, lights = false) {
   useLayoutEffect(() => { const row = ref.current; return () => forgetLine(row); }, []);
   return ref;
 }
+/* what a page reads after it stands (a list of brackets, the records) lights the moment it arrives, once, as the page did; content that
+   was already there when the page lit is left alone, so nothing lights twice. Returns the ref for the part that waits. */
+export function useArrival(ready) {
+  const ref = useRef(null), waited = useRef(!ready);
+  useLayoutEffect(() => { if (ready && waited.current) { waited.current = false; light(ref.current, DUR.leave); } }, [ready]);
+  return ref;
+}
+/* the first page of a visit lights when its code and content are actually in place (inside the lazy boundary), not when the site's
+   data arrives: a page whose code was still loading used to light its loader and then appear unlit */
+export function Arrived({ onArrive }) {
+  useLayoutEffect(() => { onArrive(); }, []);
+  return null;
+}
+
 /* after the first render, a change of value lights what the control swaps (motion.js lightAfter) */
 function useLightOnChange(ref, value) {
   const first = useRef(true);
@@ -58,6 +72,57 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
       {typeof lamp === "string" && <span className="row-lamp-word t12">{lamp}</span>}
       {lamp != null && <span className="row-lamp">{lamp && <i className="lamp" aria-hidden="true" />}</span>}
     </Box>
+  );
+}
+
+/* The top three of a ranking (DESIGN.md "Home, phone", C24): three columns like the counters, the rank, the name and the points lit
+   in segments with 점. A tie reads as equal columns; a sole leader's column inverts. Points past 999 stay in type, since four cells
+   do not fit a third of a phone. rows are ranked ({ rank, name, points }); onName opens the trainer. */
+export function Podium({ rows, onName }) {
+  const top = rows.slice(0, 3);
+  const solo = rows.filter(r => r.rank === 1).length === 1;
+  return (
+    <div className="stack podium" style={{ "--n": top.length }}>
+      {top.map((r, i) => {
+        const pts = r.points || 0;
+        const { as: Box, props } = door(onName ? e => onName(r.name, e.currentTarget) : null);
+        return <Box key={`${r.name}#${i}`} className={(solo && i === 0 ? "inv" : "pn") + " podium-col"} {...props} aria-label={`${r.rank}위 ${r.name}, ${pts}점`}>
+          <span className="t12 dim">{r.rank}위</span>
+          <b className="t15 podium-name">{r.name}</b>
+          <span className="podium-pts">{pts < 1000
+            ? <Seg value={String(pts)} h={40} cells={Math.max(2, String(pts).length)} label={`${pts}점`} />
+            : <b className="num t20">{pts.toLocaleString("ko-KR")}</b>}<span className="t12 dim">점</span></span>
+        </Box>;
+      })}
+    </div>
+  );
+}
+
+/* A lead panel (C24): the first of a list stands large so the list has a beat. The date as 월 and 일 displays at 32, the lamp with
+   its word at the right (sig for amber), the title at 20 in two lines, a grey line. date is "10.28" (dotDate's day). */
+export function Lead({ date, title, line, lamp, sig = false, onClick, label }) {
+  const { as: Box, props } = door(onClick);
+  const [m, d] = String(date || "").split(".");
+  return (
+    <Box className="pn lead" {...props} aria-label={label}>
+      <span className="lead-top">
+        {m && d ? <span className="lead-date" aria-hidden="true"><Seg value={m} h={32} cells={2} label="" /><span className="t15">월</span><Seg value={d} h={32} cells={2} label="" /><span className="t15">일</span></span> : <span />}
+        {lamp && <span className="t12 lead-lamp">{lamp}<i className={"lamp" + (sig ? " sig" : "")} aria-hidden="true" /></span>}
+      </span>
+      <b className="t20 lead-title">{title}</b>
+      {line && <span className="t12 dim reg">{line}</span>}
+    </Box>
+  );
+}
+
+/* The live strip (C24): on event day every page but the home and the bracket opens with it: the amber lamp, the event's name with
+   진행 중, and 대진표 → at the right. A panel, not inverted: amber on the lit fill would fall under the lamp's contrast of 3. */
+export function LiveStrip({ name, onGo }) {
+  return (
+    <button type="button" className="pn live-strip" onClick={onGo}>
+      <span className="live-strip-say t12"><i className="lamp sig" aria-hidden="true" />{name} 진행 중</span>
+      <span className="live-strip-go t12">대진표<Icon n="arrow" size={16} /></span>
+    </button>
   );
 }
 

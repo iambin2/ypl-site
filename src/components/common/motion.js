@@ -52,9 +52,11 @@ export function light(root, total = DUR.light) {
   const seen = el => el.getBoundingClientRect().top < innerHeight;
   const last = total - DUR.tone;
   /* [data-rise]: a grey line under a stack (a tie, a note) lights with the stack instead of standing lit before it.
-     .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board */
-  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
-    .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .hof-crown, .sheet, .stack.chips, .chips"));
+     .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board.
+     .podium-col, .lead, .ho-col (C24): panels that hold a display but rise as a whole, like a counter; a line score's column rises as
+     one, its three cells together */
+  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, .podium-col, .lead, .ho-col, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
+    .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .ho-col, .hof-crown, .sheet, .stack.chips, .chips"));
   panels.filter(seen).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
   revealLater(panels.filter(el => !seen(el)));
   const on = (els, start, step) => els.filter(seen).forEach((el, i) => el.animate([{ opacity: 0 }, { opacity: 1 }],
