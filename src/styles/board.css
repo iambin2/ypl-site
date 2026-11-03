@@ -11,9 +11,10 @@
 @media (hover: hover) { .sh-link:hover { color: var(--lit); } }
 
 /* ---------- a counter: label 12 on top, a 40 display under it, 84 tall ---------- */
-.counter { height: var(--h-counter); padding: var(--pad); display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; }
-/* desktop: the 20 line of the label and the 40 display fill 84 with 12 above and under */
-@media (min-width: 860px) { .counter { padding-block: var(--s3); } }
+/* 8 above the label's line box and 8 under it put about 12 of ink above the label and between it and the digits (the eye law) */
+.counter { height: var(--h-counter); padding: var(--pad); padding-top: var(--s2); display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; }
+/* desktop: the 20 line of the label, 8, and the 40 display fill 84 with 8 above and under */
+@media (min-width: 860px) { .counter { padding-block: var(--s2); } }
 
 /* ---------- a row of a stack: 52, or 64 with a grey line; the record holder inverts ---------- */
 .row { display: flex; align-items: center; width: 100%; height: var(--h-row); text-align: left; }
