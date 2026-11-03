@@ -28,9 +28,8 @@
 .pr-wrap.fold { margin: var(--s5) 0 0; }
 .pr-title { flex: 1; display: flex; align-items: center; gap: var(--s2); min-width: 0; font-size: var(--t15); }
 .pr-body { padding: 0 var(--s5) var(--s5); }
-.pr-list { display: flex; flex-direction: column; }
-.pr-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--s3); align-items: baseline; padding: var(--s3) 0; }
-.pr-row + .pr-row { box-shadow: inset 0 1px 0 var(--rule); }
+.pr-list { display: grid; gap: var(--seam); }
+.pr-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--s3); align-items: baseline; padding: var(--s3) var(--pad); background: var(--rule); }
 .pr-name { font-size: var(--t12); font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
 .pr-vals { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
 .pr-val { display: flex; gap: var(--s3); font-size: var(--t15); }

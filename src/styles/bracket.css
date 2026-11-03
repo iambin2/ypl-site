@@ -23,13 +23,14 @@
 .bk-submission-group { padding: var(--s2) var(--s5); background: var(--panel-2); }
 .bk-submission-group-head { display: flex; justify-content: space-between; padding: var(--s2) 0; font-size: var(--t15); font-weight: 600; }
 .bk-submission-group-head span { font-weight: 400; color: var(--mute); font-variant-numeric: tabular-nums; }
-.bk-submission-members { display: flex; flex-direction: column; }
-.bk-submission-individuals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: var(--s8); }
-.bk-submission-member { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; font-size: var(--t15); box-shadow: inset 0 1px 0 var(--rule); }
+.bk-submission-members { display: grid; gap: var(--seam); }
+.bk-submission-individuals { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.bk-submission-member { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-control); padding: var(--s2) var(--s3); background: var(--panel-2); font-size: var(--t15); }
+.bk-submission-group .bk-submission-member { background: var(--rule); }
 .bk-submission-member-name { font-weight: 600; }
 .bk-submission-member .bd-del { flex: none; white-space: nowrap; }
-/* a team group already stands one tone up (--panel-2), so its button takes the ground, as a type tag does */
-.bk-submission-group .bd-del { background: var(--ground); }
+/* a member's row already stands one tone up, so its button takes the ground, as a type tag does */
+.bk-submission-member .bd-del { background: var(--ground); }
 .bk-submission-state { flex: 1; font-size: var(--t12); color: var(--mute); font-weight: 600; font-variant-numeric: tabular-nums; }
 .bk-submission-state.submitted { color: var(--lit); font-weight: 700; }
 .bk-submission-empty { padding-bottom: var(--s5); font-size: var(--t15); color: var(--mute); }
@@ -107,9 +108,8 @@
 .bk-apply-actions { margin-top: var(--s8); }
 .bk-applybox { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s5); background: var(--panel-2); font-size: var(--t15); }
 .bk-ab-meta { font-size: var(--t12); font-weight: 600; color: var(--mute); }
-.bk-chg { display: flex; flex-direction: column; background: var(--panel-2); padding: 0 var(--s5); }
-.bk-chg-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: var(--h-control); padding: var(--s3) 0; font-size: var(--t15); }
-.bk-chg-row + .bk-chg-row { box-shadow: inset 0 1px 0 var(--rule); }
+.bk-chg { display: grid; gap: var(--seam); }
+.bk-chg-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: var(--h-control); padding: var(--s3) var(--s5); background: var(--panel-2); font-size: var(--t15); }
 .bk-exist { flex: none; color: var(--dim); }
 .bk-exist.new { color: var(--lit); }
 .bk-chg-pts { display: inline-flex; align-items: center; gap: var(--s1); margin-left: auto; font-variant-numeric: tabular-nums; color: var(--dim); }

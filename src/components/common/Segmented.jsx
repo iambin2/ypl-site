@@ -10,7 +10,7 @@ export default function Segmented({ value, onChange, options, ariaLabel, classNa
     if (on && track.scrollWidth > track.clientWidth) track.scrollTo({ left: on.offsetLeft - track.clientWidth / 2 + on.offsetWidth / 2, behavior: reduced() ? "auto" : "smooth" });
   }, [value]);
   return (
-    <div className={"ypl-seg ypl-choice" + (className ? " " + className : "")}>
+    <div className={"ypl-seg" + (className ? " " + className : "")}>
       <div className="seg-track" role="tablist" aria-label={ariaLabel} ref={ref}>
         {options.map(([key, label]) => (
           <button key={String(key)} type="button" role="tab" aria-selected={key === value} onClick={() => onChange(key)}>{label}</button>

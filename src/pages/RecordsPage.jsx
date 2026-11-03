@@ -6,7 +6,7 @@ import TeamSheet, { rosterSheet, useTeamDisplay } from "../components/common/Tea
 import { buildRecordsSnapshot, displayRecordMeta, displayTeamName } from "../services/recordsAnalytics.js";
 import { formatDate } from "../services/dateFormat.js";
 import { buildNormalizedRecordsProjection } from "../services/normalizedRecordsProjection.js";
-import { ALIGNMENTS, abilityName, itemName, moveName, natureName, spriteUrl } from "../services/teamBuilderCore.js";
+import { ALIGNMENTS, STAT_KEYS, STAT_LABELS, TYPE_KO, abilityName, dexRecord, itemName, moveName, natureName, spriteUrl } from "../services/teamBuilderCore.js";
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { buildHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../services/hallOfFamePresentation.js";
 import { freshRead, peekRead } from "../services/readCache.js";
@@ -358,14 +358,9 @@ function TrainerProfile({ snapshot, profile, onParty }) {
 /* 포켓몬의 횟수: 그림이 있으면 바닥 띠 위에 선 여섯 칸, 없으면 줄 */
 function CountList({ items, sprites }) {
   const sprite = (name) => pictureOf(name, sprites.find((p) => p.name === name)?.spriteName);
-  if (sprites) return (
+  return (
     <div className="rc-six">
       {items.map((item) => <span className="pn stand rc-cell" key={item.name}><Mon src={sprite(item.name)} /><span className="floor rc-band"><b className="t12">{item.name}</b><span className="t12 dim num">{item.entries}회</span></span></span>)}
-    </div>
-  );
-  return (
-    <div className="stack">
-      {items.map((item) => <Row key={item.name} title={item.name} value={<span className="t15 num">{item.entries}<span className="t12 dim">회</span></span>} />)}
     </div>
   );
 }
@@ -615,39 +610,103 @@ function PokemonView({ snapshot, onParty }) {
   );
 }
 
+/* A figure read as a bar on its track, the calculator's bar (DESIGN.md "Records"): the name (a move's type tag before it), the bar, the
+   figure. share is 0 to 1. In a ranking the sole leader inverts, as the record holder does. */
+function BarRow({ name, tag, note, share, value, top = false, keyed = false }) {
+  return (
+    <div className={(top ? "inv" : "pn") + " rc-bar" + (keyed ? " keyed" : "")}>
+      <span className="rc-bar-name">{tag}<b className="t15">{name}</b>{note && <span className="t12 dim reg">{note}</span>}</span>
+      <span className="tb-bar" aria-hidden="true"><i style={{ transform: `scaleX(${Math.min(1, Math.max(0, share))})` }} /></span>
+      <b className="t15 num rc-bar-fig">{value}</b>
+    </div>
+  );
+}
+const typeTag = (type) => type ? <span className={`tb-type type-${type.toLowerCase()}`}>{TYPE_KO[type] || type}</span> : null;
+/* a ranking as bars: its label, then the rows ([{ key, name, tag, note, count, rate }], most first); columns runs them down two columns */
+function BarGroup({ label, rows, total, unit = "%", columns = 1 }) {
+  const lead = rows.length > 1 && rows[0].count > rows[1].count;
+  return (
+    <div className="rc-group">
+      <div className="tb-subhead"><span className="t12 dim">{label}</span></div>
+      <div className={"stack rc-bars" + (columns > 1 ? " two" : "")} style={{ "--rows": Math.ceil(rows.length / columns) }}>
+        {rows.map((row, i) => <BarRow key={row.key} name={row.name} tag={row.tag} note={row.note} share={row.count / total}
+          value={unit === "%" ? `${row.rate}%` : `${row.count}${unit}`} top={lead && i === 0} />)}
+      </div>
+    </div>
+  );
+}
+
+/* The Pokémon sheet (2026-11-04): the Pokémon is its subject, so it stands large on its panel with its rank lit beside it and its types
+   on its floor; four counters read the record; then the statistics as bars: its base stats, the points the samples gave it, and the
+   moves, items, abilities and natures they chose. The samples and parties follow as doors. */
 function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
   const samples = useMemo(() => pokemonSamples(snapshot.rosters, pokemon.name), [snapshot.rosters, pokemon.name]);
   const usage = useMemo(() => sampleUsage(samples), [samples]);
-  const display = useTeamDisplay(samples.length > 0);
+  const display = useTeamDisplay(true);
   const detail = display && display !== "error" ? display.detailData : null;
-  const line = (rows, name) => rows.slice(0, 3).map((row) => `${name(row.id)} ${row.rate}%`).join(", ");
-  const natureOf = (id) => natureName(ALIGNMENTS.find((a) => a.id === id));
+  const dex = detail && pokemon.spriteName ? dexRecord(detail, { name: pokemon.spriteName }) : null;
+  // the points each sample gave, averaged per stat (the party sheet's model, so a mega or a form reads as it was saved)
+  const spread = useMemo(() => {
+    if (!detail || !samples.length) return null;
+    const rows = samples.map(({ roster, set }) => rosterSheet(roster, display, set)[0]).filter(Boolean);
+    return rows.length ? { n: rows.length, avg: STAT_KEYS.map((key, k) => rows.reduce((sum, row) => sum + row.stats[k].sp, 0) / rows.length) } : null;
+  }, [samples, display]);
+  const named = (rows, read) => rows.map((row) => ({ ...row, key: row.id, ...read(row.id) }));
+  const effect = (a) => a?.plus ? `${STAT_LABELS[a.plus]}↑ ${STAT_LABELS[a.minus]}↓` : "보정 없음";
   const [more, setMore] = useState(false);
+  const total = dex ? STAT_KEYS.reduce((sum, key) => sum + (dex.baseStats?.[key] || 0), 0) : 0;
+  const trainers = pokemon.trainers.slice(0, 8).map((t) => ({ key: t.name, name: t.name, count: t.entries }));
   return (
-    <Modal title={pokemon.name} hint={`채용 ${rank}위, 채용률 ${pokemon.entryRate.toFixed(1)}%`} className="rc-sheet wide" onClose={onClose}>
+    <Modal title={pokemon.name} hint={dex ? `${dex.name}, 전국도감 ${String(dex.num).padStart(4, "0")}` : undefined} className="rc-sheet wide" onClose={onClose}>
       <div className="rc-profile">
-        {/* the party sheet's order: the picture and the facts first, then the samples and the parties, one column that only scrolls down */}
-        <div className="rc-mon-top">
-          <div className="pn stand rc-mon-lead"><Mon src={pictureOf(pokemon.name, pokemon.spriteName)} /><i className="floor" aria-hidden="true" /></div>
-          <div className="stack rc-counts">
-            <Counter label="등록 엔트리" value={pokemon.entries} unit="회" cells={pokemon.entries >= 100 ? 3 : 2} />
-            <Counter label="사용 트레이너" value={pokemon.trainerCount} unit="명" cells={pokemon.trainerCount >= 100 ? 3 : 2} />
-            <Counter label="우승 엔트리" value={pokemon.wins} unit="회" />
+        <div className="rc-pk-top">
+          <div className="pn stand rc-pk-stage">
+            <span className="rc-pk-rank">
+              <span className="t12 dim">채용 순위</span>
+              <span className="counter-board"><Seg value={String(rank)} h={84} cells={rank >= 100 ? 3 : 2} label={`채용 ${rank}위`} /><span className="t20">위</span></span>
+            </span>
+            <span className="floor rc-pk-floor">{dex && dex.types.map((type) => <React.Fragment key={type}>{typeTag(type)}</React.Fragment>)}</span>
+            <Mon src={pictureOf(pokemon.name, pokemon.spriteName)} />
+          </div>
+          <div className="stack rc-pk-counts">
+            <Counter label="채용률" value={Math.round(pokemon.entryRate)} unit="%" cells={pokemon.entryRate >= 99.5 ? 3 : 2} after={<span className="t15">%</span>} />
+            <Counter label="등록 엔트리" value={pokemon.entries} unit="회" cells={pokemon.entries >= 100 ? 3 : 2} after={<span className="t15">회</span>} />
+            <Counter label="사용 트레이너" value={pokemon.trainerCount} unit="명" cells={pokemon.trainerCount >= 100 ? 3 : 2} after={<span className="t15">명</span>} />
+            <Counter label="우승 엔트리" value={pokemon.wins} unit="회" after={<span className="t15">회</span>} />
           </div>
         </div>
         <p className="t12 dim reg rc-lead-note">
-          채용률은 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
+          채용률 {pokemon.entryRate.toFixed(1)}%는 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
           실제 경기 선출 여부는 기록하지 않으므로 포켓몬 승률은 표시하지 않습니다.
         </p>
 
+        {dex && <section className="rc-sec" aria-labelledby="rc-pk-st-h">
+          <SectionHead id="rc-pk-st-h" title="능력치" />
+          <div className="rc-pk-cols" style={{ "--n": spread ? 2 : 1 }}>
+            <div className="rc-group">
+              <div className="tb-subhead"><span className="t12 dim">종족값</span><b className="t12">합계 {total}</b></div>
+              <div className="stack">{STAT_KEYS.map((key) => <BarRow key={key} keyed name={STAT_LABELS[key]} share={(dex.baseStats?.[key] || 0) / 200} value={dex.baseStats?.[key] ?? ""} />)}</div>
+            </div>
+            {spread && <div className="rc-group">
+              <div className="tb-subhead"><span className="t12 dim">평균 능력 포인트 (샘플 {spread.n}개)</span><b className="t12">한 능력 최대 32</b></div>
+              <div className="stack">{STAT_KEYS.map((key, k) => <BarRow key={key} keyed name={STAT_LABELS[key]} share={spread.avg[k] / 32} value={Math.round(spread.avg[k] * 10) / 10} />)}</div>
+            </div>}
+          </div>
+        </section>}
+
         {samples.length > 0 && <section className="rc-sec" aria-labelledby="rc-pk-use-h">
           <SectionHead id="rc-pk-use-h" title={`많이 쓴 구성 (샘플 ${samples.length}개 기준)`} />
-          {detail ? <dl className="sc-facts rc-usage">
-            <div><dt>도구</dt><dd>{line(usage.items, (id) => itemName(detail, id))}</dd></div>
-            <div><dt>특성</dt><dd>{line(usage.abilities, abilityName)}</dd></div>
-            <div><dt>성격</dt><dd>{line(usage.natures, natureOf)}</dd></div>
-            <div><dt>기술</dt><dd>{usage.moves.slice(0, 6).map((row) => `${moveName(detail, row.id)} ${row.rate}%`).join(", ")}</dd></div>
-          </dl> : display === "error" ? <ErrorNote>배틀 데이터를 불러오지 못해 구성을 보여 줄 수 없습니다.</ErrorNote> : <Loader small />}
+          {detail ? <div className="rc-pk-use">
+            <BarGroup label="기술" columns={2} total={usage.total} rows={named(usage.moves.slice(0, 8), (id) => ({ name: moveName(detail, id), tag: typeTag(detail.moves?.[id]?.type) }))} />
+            <div className="rc-pk-cols" style={{ "--n": 3 }}>
+              <BarGroup label="도구" total={usage.total} rows={named(usage.items.slice(0, 3), (id) => ({ name: itemName(detail, id) }))} />
+              <BarGroup label="특성" total={usage.total} rows={named(usage.abilities.slice(0, 3), (id) => ({ name: abilityName(id) }))} />
+              <BarGroup label="성격" total={usage.total} rows={named(usage.natures.slice(0, 3), (id) => {
+                const a = ALIGNMENTS.find((x) => x.id === id);
+                return { name: natureName(a), note: effect(a) };
+              })} />
+            </div>
+          </div> : display === "error" ? <ErrorNote>배틀 데이터를 불러오지 못해 구성을 보여 줄 수 없습니다.</ErrorNote> : <Loader small />}
         </section>}
 
         {samples.length > 0 && <section className="rc-sec" aria-labelledby="rc-pk-sm-h">
@@ -662,7 +721,7 @@ function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
 
         <section className="rc-sec" aria-labelledby="rc-pk-tr-h">
           <SectionHead id="rc-pk-tr-h" title="많이 등록한 트레이너" />
-          <CountList items={pokemon.trainers.slice(0, 8)} />
+          <BarGroup label={`등록 엔트리 ${pokemon.entries}회 중`} unit="회" total={pokemon.entries} rows={trainers} />
         </section>
         <section className="rc-sec" aria-labelledby="rc-pk-pt-h">
           <SectionHead id="rc-pk-pt-h" title="함께 많이 등록된 포켓몬" />

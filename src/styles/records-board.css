@@ -91,10 +91,6 @@
 .rc-cell { --floor: var(--s13); height: calc(var(--s21) + var(--s13)); }
 .rc-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
 .rc-lead-note { margin-top: var(--s5); }
-.rc-usage { margin: 0; display: grid; gap: var(--seam); }
-.rc-usage > div { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr); gap: var(--s3); padding: var(--s3) var(--pad); background: var(--panel); }
-.rc-usage dt { font-size: var(--t12); line-height: var(--l15); font-weight: 600; color: var(--dim); }
-.rc-usage dd { margin: 0; font-size: var(--t15); line-height: var(--l-read); }
 @media (min-width: 860px) {
   /* the # column holds two figures at 15 beside the desktop's 20 padding */
   .rc-th { grid-template-columns: 52px minmax(0, 1fr) 52px 52px 52px; }
@@ -115,14 +111,36 @@
   .rc-party-mon { height: var(--h-row2); }
 }
 
-/* the Pokémon sheet's head (2026-11-03): the Pokémon is the subject, so its panel takes the golden 709 and it stands in the middle of
-   its floor; the three counters are the narrow 439 readout beside it on desktop, as tall as the panel, and three across under it on a phone */
-.rc-mon-top { display: grid; gap: var(--seam); }
-.rc-mon-top .rc-counts { margin-top: 0; }
-.rc-mon-lead { --floor: var(--s1); height: 216px; }
-.rc-mon-lead .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s5)); margin-inline: auto; }
+/* the Pokémon sheet (2026-11-04). The Pokémon is the subject: it stands large at the right of the golden 709 panel, its rank lit at 84 at
+   the top left and its types on its floor; four counters are the 439 readout beside it (two by two under it on a phone). */
+.rc-pk-top { display: grid; gap: var(--seam); }
+.rc-pk-stage { --floor: var(--s13); height: 216px; }
+.rc-pk-rank { position: absolute; top: var(--pad); left: var(--pad); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s3); }
+.rc-pk-floor { position: absolute; left: var(--pad); bottom: 0; height: var(--floor); display: flex; align-items: center; gap: var(--seam); }
+.rc-pk-stage .mon { right: var(--pad); height: calc(100% - var(--floor) - var(--s3)); }
+.rc-pk-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* the statistics: groups of bars on their tracks, each a label (8 above) and a stack of 44 rows: the name, the bar, the figure.
+   The name takes the golden major beside the bar; a stat's name is one short word, so its row gives the bar the room. */
+.rc-pk-use { display: grid; gap: var(--s5); }
+.rc-pk-cols { display: grid; gap: var(--s5); }
+.rc-group { display: grid; gap: var(--s2); align-content: start; min-width: 0; }
+.rc-bar { display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr) var(--s13); align-items: center; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); }
+.rc-bar.keyed { grid-template-columns: var(--s13) minmax(0, 1fr) var(--s13); }
+.rc-bar-name { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.rc-bar-name > :not(.tb-type) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-bar-name > .tb-type { flex: none; }
+.rc-bar-fig { text-align: right; }
+/* the track steps down to the ground as a tag does on a panel; the sole leader's row inverts, its bar ground on a dim track */
+.rc-bar .tb-bar { background: var(--ground); }
+.rc-bar.inv .tb-bar { background: var(--dim); }
+.rc-bar.inv .tb-bar > i { background: var(--ground); }
 @media (min-width: 860px) {
-  .rc-mon-top { grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); align-items: stretch; }
-  .rc-mon-lead { height: auto; }
-  .rc-mon-top .rc-counts { grid-template-columns: minmax(0, 1fr); }
+  .rc-pk-top { grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); align-items: stretch; }
+  .rc-pk-stage { --floor: var(--h-row2); height: auto; }
+  .rc-pk-stage .mon { right: var(--s13); }
+  .rc-pk-counts { grid-template-columns: minmax(0, 1fr); }
+  .rc-pk-cols { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+  /* the moves run down two columns, so the first four read as a column */
+  .rc-bars.two { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), auto); grid-auto-flow: column; }
 }

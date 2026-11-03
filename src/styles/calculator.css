@@ -47,8 +47,6 @@
 
 /* ---------- field: the format, weather and terrain as cells, the flags ---------- */
 .calc-field { display: grid; gap: var(--seam); }
-.calc-field > .ypl-seg { display: flex; }
-.calc-field > .ypl-seg .seg-track { flex: 1; }
 .calc-field > .calc-toggles { margin-top: var(--s3); }
 
 /* ---------- the two sides: side by side on desktop, one at a time on a phone ---------- */
@@ -79,8 +77,6 @@
 .calc-speed-board { display: grid; gap: var(--s1); padding: var(--s3) 0; }
 .calc-speed-none { display: grid; gap: var(--s3); justify-items: start; padding: var(--s5) var(--pad); }
 .calc-speed-controls { display: grid; gap: var(--seam); }
-.calc-speed-controls > .ypl-seg { display: flex; }
-.calc-speed-controls > .ypl-seg .seg-track { flex: 1; }
 .calc-tier-wrap { display: grid; gap: var(--s3); }
 .calc-tiers { list-style: none; display: grid; gap: var(--seam); margin: 0; padding: 0; }
 /* a line of the speed line: the speed, the Pokémon's picture, its name, its base */
@@ -116,11 +112,14 @@
 
 .calc-move-tools { display: grid; grid-template-columns: minmax(0, 1.618fr) repeat(3, minmax(0, 1fr)); gap: var(--seam); }
 .calc-move-tools .tb-search-row { margin: 0; }
-.calc-table-wrap { overflow-x: auto; margin: 0 calc(var(--s2) * -1); }
-.calc-table { width: 100%; border-collapse: collapse; font-size: var(--t15); }
+.calc-table-wrap { overflow-x: auto; }
+/* the moves: rows of 52 panels joined by the seam, as every list on the board */
+.calc-table { width: 100%; border-collapse: separate; border-spacing: 0 var(--seam); margin-top: calc(var(--seam) * -1); font-size: var(--t15); }
 .calc-table th { padding: var(--s2); font-size: var(--t12); font-weight: 600; color: var(--mute); text-align: left; white-space: nowrap; }
 .calc-table td { padding: var(--s2); height: var(--h-row); vertical-align: middle; white-space: nowrap; content-visibility: auto; }
-.calc-table tbody tr + tr td { box-shadow: inset 0 1px 0 var(--rule); }
+.calc-table td { background: var(--panel); }
+.calc-table :is(th, td):first-child { padding-left: var(--pad); }
+.calc-table :is(th, td):last-child { padding-right: var(--pad); }
 .calc-table td strong { display: block; font-weight: 600; }
 .calc-table td small { display: block; font-size: var(--t12); color: var(--mute); }
 .calc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -132,8 +131,6 @@
 @media (max-width: 1099px) { .calc-dex-grid { grid-template-columns: 1fr; } }
 @media (max-width: 859px) {
   .calc-side-switch { display: block; }
-  .calc-side-switch .ypl-seg { display: flex; }
-  .calc-side-switch .seg-track { flex: 1; }
   .calc-sides { grid-template-columns: 1fr; }
   .calc-sides[data-editing="0"] [data-calc-side="1"], .calc-sides[data-editing="1"] [data-calc-side="0"] { display: none; }
   /* the side the switch brings up lights as swapped content does (a display change restarts the animation) */

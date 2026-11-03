@@ -118,7 +118,7 @@
 .sheet .fb-wrap { padding: 0; background: none; }
 /* a field inside a tinted group in a sheet stands on the sheet's own colour, or it would match the group */
 .sheet :is(.fb-q, .ed-round, .tb-library-save, .bk-group) :is(input:not([type="checkbox"], [type="radio"]), textarea, .dd-btn) { background: var(--panel); }
-.sheet :is(.fb-q, .ed-team, .bk-applybox, .bk-chg, .bk-pin, .bk-team-card, .bk-series-row, .bk-ace) { background: var(--panel-2); }
+.sheet :is(.fb-q, .ed-team, .bk-applybox, .bk-pin, .bk-team-card, .bk-series-row, .bk-ace) { background: var(--panel-2); }
 
 /* ---------- notice editor: taking entries is a switch row, the event settings cells, save is the main action ---------- */
 .fb-switch { width: 100%; text-align: left; }

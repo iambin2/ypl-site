@@ -90,6 +90,9 @@ const RULES = {
   "type: a line runs to its column; nothing carries a narrower measure (Type)": d => /^max-(width|inline-size)$/.test(d.prop) && (/\d(ch|r?em)\b/.test(d.value) || /var\(--read\)/.test(d.value)),
   "panels: nothing is round (Panels)": d => /radius/.test(d.prop) && !d.prop.startsWith("--") && !/^0(px)?$/.test(d.value),
   "panels: no shadow; a box-shadow only draws an inset hairline, rule or ring (Panels)": d => d.prop === "box-shadow" && !/^(none|var\(--shadow-[12]\))$/.test(d.value) && layers(d.value).some(p => !/^inset\s/.test(p)),
+  "panels: no line between rows; a hairline edges only the bars, the dock, a tab row, a sheet and the footer (Panels)": d =>
+    (d.prop === "box-shadow" && layers(d.value).some(p => /^inset 0 (-?1px|-?var\(--hair\)) 0 var\(--rule\)$/.test(p)))
+    || (d.prop === "height" && /^(1px|var\(--hair\))$/.test(d.value) && BLOCKS[d.blk]?.background === "var(--rule)"),
   "panels: no border (Panels)": d => strict(d) && /^border(-(top|right|bottom|left))?$/.test(d.prop) && !/^(0|none)$/.test(d.value),
   "light: nothing blurs what is behind it (Don't)": d => /backdrop-filter$/.test(d.prop),
   "light: nothing blurs or glows (Don't)": d => /^(-webkit-)?filter$/.test(d.prop) && /blur\(|drop-shadow\(/.test(d.value),
@@ -113,6 +116,12 @@ const TYPES = ["normal: #9FA19F", "fire: #E62829", "water: #2980EF", "electric: 
   "flying: #81B9EF", "psychic: #EF4179", "bug: #91A119", "rock: #AFA981", "ghost: #704170", "dragon: #5060E1", "dark: #624D4E", "steel: #60A1B8", "fairy: #EF70EF"]
   .map(t => `${TB} | .type-${t.split(":")[0]} | --type:${t.split(":")[1]}`);
 const EXCEPT = {
+  "panels: no line between rows; a hairline edges only the bars, the dock, a tab row, a sheet and the footer (Panels)": {
+    "the edges DESIGN.md names (Panels 2)": [
+      "src/styles/shell.css | .topbar | box-shadow: inset 0 -1px 0 var(--rule)", "src/styles/shell.css | .tabbar | box-shadow: inset 0 1px 0 var(--rule)",
+      "src/styles/board.css | .dock | box-shadow: inset 0 1px 0 var(--rule)", "src/styles/board.css | .tabsline-frame | box-shadow: inset 0 -1px 0 var(--rule)",
+      `${C} | .sheet | box-shadow: inset 0 1px 0 var(--rule)`, "src/styles/shell.css | .site-foot | box-shadow: inset 0 1px 0 var(--rule)"],
+  },
   "depth: a z-index is a named step": {
     "a stack orders itself: toasts by their place": ["src/components/common/Toaster.jsx | style | z-index: 10 - index"],
   },

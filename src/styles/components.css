@@ -38,33 +38,23 @@
 /* a count is a number */
 .fold-badge { min-width: 20px; height: 20px; padding: 0 var(--s2); display: inline-grid; place-items: center; color: var(--lit); font-size: var(--t12); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 
-/* ---------- Segmented: page tabs are words on a 44 line with a hairline under the row; the chosen word is lit, bold, with a 2px line
-   under it that switches on in place. choice: a few options as 44 panels in a row, the chosen one inverted (DESIGN.md "Controls"). ---------- */
-.ypl-seg { position: relative; display: inline-flex; max-width: 100%; vertical-align: top; box-shadow: inset 0 -1px 0 var(--rule); }
+/* ---------- Segmented is a choice (DESIGN.md "Controls"): a few options as 44 panels in a row joined by the seam, the chosen one
+   inverted, spanning the width so its edges line up with what is under it; past the width the row scrolls with no bar. Page tabs are TabsLine. ---------- */
+.ypl-seg { position: relative; display: flex; width: 100%; max-width: 100%; vertical-align: top; }
 .seg-track {
-  position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: var(--s8); padding: 0;
-  max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+  position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--seam); width: 100%; max-width: 100%; padding: 0;
+  overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
 }
 .seg-track::-webkit-scrollbar { display: none; }
-/* on a phone every control spans the content width, so its edges line up with the lists under it */
-@media (max-width: 859px) {
-  .ypl-seg { display: flex; width: 100%; }
-  .seg-track { width: 100%; }
-}
 .seg-track > button {
-  position: relative; display: inline-flex; align-items: center; justify-content: center; height: var(--h-control); padding: 0; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); white-space: nowrap;
+  position: relative; display: inline-flex; align-items: center; justify-content: center; height: var(--h-control); padding: 0 var(--s3);
+  background: var(--field-bg, var(--panel)); font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--dim); white-space: nowrap;
   transition: color var(--move-tone);
 }
-.seg-track > button[aria-selected="true"] { color: var(--lit); font-weight: 700; box-shadow: inset 0 -2px 0 var(--lit); }
-@media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { color: var(--lit); } }
-.ypl-choice { display: flex; width: 100%; box-shadow: none; }
-.ypl-choice .seg-track { grid-auto-columns: 1fr; gap: var(--seam); width: 100%; }
-.ypl-choice .seg-track > button { padding: 0 var(--s3); background: var(--field-bg, var(--panel)); color: var(--dim); }
-.ypl-choice .seg-track > button[aria-selected="true"] { background: var(--lit); color: var(--ground); box-shadow: none; }
-@media (hover: hover) { .ypl-choice .seg-track > button:not([aria-selected="true"]):hover { background: var(--panel-2); color: var(--lit); } }
+.seg-track > button[aria-selected="true"] { background: var(--lit); color: var(--ground); font-weight: 700; }
+@media (hover: hover) { .seg-track > button:not([aria-selected="true"]):hover { background: var(--panel-2); color: var(--lit); } }
 
-/* ---------- List: rows on hairlines; the lines stop on the same edges as the words, and a hovered row underlines its title (M1) ---------- */
-:is(.bd-list, .ab-comps) > * + * { box-shadow: inset 0 var(--hair) 0 var(--rule); }
+/* ---------- Picker rows ---------- */
 .pick-row {
   transition: background-color var(--move-tone), scale var(--move-press);
 }
@@ -152,7 +142,7 @@
 .mi.on { background: var(--panel-2); }
 @media (hover: hover) { .mi:hover:not(.on) { background: var(--panel-2); } }
 .mi:focus-visible { outline-offset: calc(2px * -1); background: var(--panel-2); }
-.mi-sep { height: 1px; margin: var(--s2) var(--s3); background: var(--rule); }
+.mi-sep { height: var(--seam); background: var(--ground); }
 .popover { position: fixed; z-index: var(--z-popover); min-width: calc(var(--s21) * 2 + var(--s13)); padding: 0; }
 .popover .mi { height: 44px; font-size: var(--t15); }
 
@@ -192,13 +182,13 @@
 /* the sheet (DESIGN.md "Sheets"): a panel plate with a hairline on its top edge, a 32 by 4 grip, its title at 20 and a × */
 .sheet { box-shadow: inset 0 1px 0 var(--rule); }
 .grip::after { content: ""; width: var(--s8); height: var(--s1); background: var(--mute); }
-/* the sheet is itself a panel, so the panels on it stand one tone up, like a field inside a panel; a Pokémon's cell keeps the
-   sheet's tone so its floor still reads, and a hover lifts to the hairline tone. An inverted row (a winner) stays inverted. */
-.sheet .pn:not(.stand, .inv) { background: var(--panel-2); --field-bg: var(--rule); }
+/* the sheet is itself a panel, so every panel on it stands one tone up, a Pokémon's cell included (nothing is painted under a
+   Pokémon, so its cell is the only thing it stands in), and a hover lifts to the hairline tone. An inverted row stays inverted. */
+.sheet .pn:not(.inv) { background: var(--panel-2); --field-bg: var(--rule); }
 /* each step in stands one tone up: a switch's track and a second action on the sheet's panels */
 .sheet .pn .sw:not(.on) { background: var(--rule); }
 .sheet .btn.btn--second { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); }
-@media (hover: hover) { .sheet button.pn:not(.stand, .inv):not(:disabled):hover, .sheet .pn.search-in:hover { background: var(--rule); } }
+@media (hover: hover) { .sheet button.pn:not(.inv):not(:disabled):hover, .sheet .pn.search-in:hover { background: var(--rule); } }
 /* a sheet only scrolls down: nothing in it may push it sideways, and its rows of chips wrap instead of running off */
 .modal {
   position: relative; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
