@@ -34,17 +34,6 @@ export function LoginModal({ onClose, onSuccess }) {
     <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"확인 중…":"로그인"}</Button></div>
   </Modal>);
 }
-export function MetaEditor({ meta, onClose, onSave }) {
-  const [m,setM]=useState({...meta}); const f=k=>e=>setM({...m,[k]:e.target.value});
-  return (<Modal title="메인 정보 수정" onClose={onClose}>
-    <Field label="리그 정식 이름"><input value={m.fullName} onChange={f("fullName")}/></Field>
-    <Field label="한 줄 소개"><input value={m.tagline} onChange={f("tagline")}/></Field>
-    <Field label="현 챔피언 대수"><input value={m.currentChampionGen} onChange={f("currentChampionGen")} placeholder="5대"/></Field>
-    <Field label="현 챔피언"><input value={m.currentChampion} onChange={f("currentChampion")}/></Field>
-    <Field label="홈 소개글"><textarea value={m.intro} onChange={f("intro")}/></Field>
-    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={()=>onSave(m)}>저장</Button></div>
-  </Modal>);
-}
 export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = normalizeLegacyParty }) {
   const [gen,setGen]=useState(item?.gen||""),[season,setSeason]=useState(item?.season||""),[name,setName]=useState(item?.name||""),[slabel,setSlabel]=useState(item?.slabel||"");
   const [mons,setMons]=useState(()=>{ const t=normTeam(item?.team); const a=[]; for(let i=0;i<6;i++)a.push(t[i]||{name:"",img:""}); return a; });

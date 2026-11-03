@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
 import { loadSiteData, saveSiteData, seenSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
 import { WRITE_CONFLICT } from "./services/revisionedRow.js";
+import { listEventsAwaitingRecord } from "./services/normalizedCompetitionService.js";
 import HomePage, { todayEvent } from "./pages/HomePage.jsx";
 import MorePage from "./pages/MorePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
@@ -167,6 +168,13 @@ export default function App() {
   },[view]);
   const flash=useCallback((m,action)=>setToast({id:Date.now()+Math.random(),text:m,action}),[]);
   useEffect(()=>{ onAdminSessionLost(()=>{ setAdmin(false); flash("로그인이 만료되었습니다. 다시 로그인해 주세요."); }); },[flash]);
+  // 대회일이 지났는데 기록 반영 전인 대회를 로그인 때 한 번 알린다. 확인하지 못하면 조용히 넘어간다.
+  useEffect(()=>{
+    if(!admin) return;
+    listEventsAwaitingRecord().then(rows=>{
+      if(rows.length) flash(`기록 반영 전인 지난 대회 ${rows.length}개: ${rows.map(row=>row.name).join(", ")}`,{label:"대진표",run:()=>go("bracket")});
+    }).catch(()=>{});
+  },[admin]);
   const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
   const save=useCallback(async(next,doneMessage="저장했습니다.")=>{
     const sanitized={...next,brackets:Array.isArray(next?.brackets)?next.brackets.filter(b=>b?.projection?.source!=="normalized"):next?.brackets};

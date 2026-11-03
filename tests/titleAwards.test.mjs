@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { applyTitleAwards, evaluateTitleAwards, normalizeEventTitleAward, pokemonRegion } from "../src/services/titleAwards.js";
+import { applyTitleAwards, evaluateTitleAwards, normalizeEventTitleAward, pokemonRegion, revertTitleAwards } from "../src/services/titleAwards.js";
 
 const pokedex = {
   squirtle: { id: "squirtle", num: 7, name: "Squirtle", types: ["Water"] },
@@ -126,4 +126,28 @@ test("bus driver goes to champion-team members who won every bout they played", 
 test("empty title award is not stored", () => {
   assert.equal(normalizeEventTitleAward({ name: "  " }), null);
   assert.deepEqual(normalizeEventTitleAward({ name: " RED ", scope: "x" }), { name: "RED", scope: "champion" });
+});
+
+test("reverting a record takes back only the titles that event gave", () => {
+  const start = [
+    { key: "type", items: [{ id: "t1", name: "물 엑스퍼트", holders: ["기존"] }] },
+    { key: "event", items: [] },
+    { key: "etc", items: [{ id: "e1", name: "슈퍼루키", holders: [] }] },
+  ];
+  const awards = [
+    { groupKey: "type", title: "물 엑스퍼트", holder: "정두호", eventId: "ev1" },
+    { groupKey: "event", title: "초신성", holder: "정두호", desc: "우승", eventId: "ev1" },
+    { groupKey: "etc", title: "슈퍼루키", holder: "이종우", eventId: "ev2" },
+  ];
+  const granted = applyTitleAwards(start, awards, () => "new");
+  assert.deepEqual(granted[0].items[0].holders, ["기존", "정두호"]);
+
+  const reverted = revertTitleAwards(granted, "ev1");
+  assert.deepEqual(reverted[0].items[0], { id: "t1", name: "물 엑스퍼트", holders: ["기존"] });
+  assert.deepEqual(reverted[1].items, []);
+  assert.equal(reverted[2], granted[2]);
+  assert.deepEqual(reverted[2].items[0].holders, ["이종우"]);
+
+  assert.equal(revertTitleAwards(reverted, "ev1"), reverted);
+  assert.equal(revertTitleAwards(start, "ev3"), start);
 });

@@ -190,21 +190,48 @@ export function evaluateTitleAwards({
   return candidates;
 }
 
-/* 후보를 titleGroups 에 반영한다. 없는 칭호는 만들고, 이미 있는 해당자는 건너뛴다. */
+/* 후보를 titleGroups 에 반영한다. 없는 칭호는 만들고, 이미 있는 해당자는 건너뛴다.
+   award.eventId 가 있으면 그 대회가 준 해당자(grants)와 만든 칭호(createdBy)를 남겨 반영 취소 때 되돌린다. */
 export function applyTitleAwards(titleGroups = [], awards = [], makeId = () => Math.random().toString(36).slice(2, 9)) {
   return titleGroups.map((group) => {
     const mine = awards.filter((award) => award.groupKey === group?.key);
     if (!mine.length) return group;
     const items = [...(group.items || [])];
     for (const award of mine) {
+      const grant = award.eventId ? [{ holder: award.holder, eventId: award.eventId }] : [];
       const index = items.findIndex((item) => clean(item?.name) === award.title);
       if (index < 0) {
-        items.push({ id: makeId(), name: award.title, ...(award.desc ? { desc: award.desc } : {}), holders: [award.holder] });
+        items.push({ id: makeId(), name: award.title, ...(award.desc ? { desc: award.desc } : {}), holders: [award.holder], ...(grant.length ? { grants: grant, createdBy: award.eventId } : {}) });
         continue;
       }
       const holders = items[index].holders || [];
-      if (!holders.map(clean).includes(award.holder)) items[index] = { ...items[index], holders: [...holders, award.holder] };
+      if (!holders.map(clean).includes(award.holder)) {
+        items[index] = { ...items[index], holders: [...holders, award.holder], ...(grant.length ? { grants: [...(items[index].grants || []), ...grant] } : {}) };
+      }
     }
     return { ...group, items };
   });
+}
+
+/* 기록 반영 취소: 그 대회가 준 해당자를 빼고, 그 대회가 만든 칭호가 비면 지운다. 바뀐 것이 없으면 같은 배열을 돌려준다. */
+export function revertTitleAwards(titleGroups = [], eventId) {
+  if (!eventId) return titleGroups;
+  let changed = false;
+  const next = titleGroups.map((group) => {
+    const items = group?.items || [];
+    if (!items.some((item) => item?.createdBy === eventId || (item?.grants || []).some((grant) => grant.eventId === eventId))) return group;
+    changed = true;
+    return {
+      ...group,
+      items: items.flatMap((item) => {
+        const granted = (item.grants || []).filter((grant) => grant.eventId === eventId).map((grant) => clean(grant.holder));
+        const holders = (item.holders || []).filter((holder) => !granted.includes(clean(holder)));
+        if (item.createdBy === eventId && !holders.length) return [];
+        const { grants = [], createdBy, ...rest } = item;
+        const kept = grants.filter((grant) => grant.eventId !== eventId);
+        return [{ ...rest, holders, ...(kept.length ? { grants: kept } : {}), ...(createdBy && createdBy !== eventId ? { createdBy } : {}) }];
+      }),
+    };
+  });
+  return changed ? next : titleGroups;
 }

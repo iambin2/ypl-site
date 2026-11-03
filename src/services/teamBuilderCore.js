@@ -1050,11 +1050,18 @@ export function validateSubmissionEligibility({
   };
 }
 
-export function buildSubmissionStatusRows(registrations = [], submissions = []) {
+/* deadline: 대회의 파티 제출 마감(대회 시작). 마감 뒤 제출도 받으므로 운영진이 볼 수 있게 그 시각들을 남긴다. */
+export function buildSubmissionStatusRows(registrations = [], submissions = [], deadline = null) {
   const latestByRegistration = new Map();
+  const lateByRegistration = new Map();
+  const deadlineMs = deadline ? new Date(deadline).getTime() : NaN;
   for (const submission of Array.isArray(submissions) ? submissions : []) {
     const registrationId = submission?.registration_id || submission?.registrationId;
     if (!registrationId) continue;
+    const submittedAt = submission?.submitted_at || submission?.submittedAt || null;
+    if (submittedAt && new Date(submittedAt).getTime() > deadlineMs) {
+      lateByRegistration.set(registrationId, [...(lateByRegistration.get(registrationId) || []), submittedAt].sort());
+    }
     const revision = Number(submission?.revision || 0);
     const previous = latestByRegistration.get(registrationId);
     if (!previous || revision > previous.revision) {
@@ -1072,6 +1079,7 @@ export function buildSubmissionStatusRows(registrations = [], submissions = []) 
       hasSubmission: Boolean(latest),
       latestRevision: latest?.revision || null,
       latestSubmittedAt: latest?.submittedAt || null,
+      lateSubmittedAt: lateByRegistration.get(registration?.id) || [],
     };
   });
 }
@@ -1091,6 +1099,7 @@ export function buildBracketSubmissionStatusModel(bracket = {}, statuses = []) {
       name: name || status?.registrationName || "이름 없음",
       hasSubmission: Boolean(status?.hasSubmission),
       latestSubmittedAt: status?.latestSubmittedAt || null,
+      lateSubmittedAt: status?.lateSubmittedAt || [],
     };
   };
 

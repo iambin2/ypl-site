@@ -267,6 +267,14 @@ export async function listChampionshipQualifierDirectSelectionIds(qualifierEvent
   return values.map(row => row.qualifier_registration_id).filter(Boolean);
 }
 
+// 시즌 랭킹 순 직행 추천(docs/db/champions_direct_recommendation.sql). 그 SQL 전이거나 읽지 못하면 null 이라 추천만 숨는다.
+export async function recommendChampionshipDirectEntrants(qualifierEventId, count = 4) {
+  if (!qualifierEventId) return null;
+  const { data, error } = await db().rpc("recommend_championship_direct_entrants", { p_qualifier_event_id: qualifierEventId, p_count: count });
+  if (error) return null;
+  return (data || []).map(row => ({ registrationId: row.registration_id, name: row.registration_name, rank: row.season_rank, points: Number(row.points) }));
+}
+
 export async function resolveChampionshipSubmissionEvents(eventId) {
   const event = await readEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");

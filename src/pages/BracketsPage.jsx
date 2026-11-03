@@ -5,14 +5,14 @@ import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, useArrival } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
-import { addChampionshipQualifierManualRegistration, applyEventRecord, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
 import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
 import { buildBracketPageList } from "../services/historicalBracketReadModel.js";
 import { beginNormalizedBracketDraw, completeNormalizedBracketDraw } from "../services/bracketDrawLifecycle.js";
 import { ChampionsBracketControls } from "../components/ChampionsBracketControls.jsx";
-import { applyTitleAwards, evaluateTitleAwards } from "../services/titleAwards.js";
+import { applyTitleAwards, evaluateTitleAwards, revertTitleAwards } from "../services/titleAwards.js";
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { drawPlan } from "../services/bracketProjection.js";
@@ -497,6 +497,17 @@ function BracketWizard({ data, onClose, onCreate }){
     );
   };
   const linkedEvent=events.find(event=>event.id===eventId)||null;
+  /* 직행 추천: 시즌 랭킹 상위 4명 가운데 신청한 사람(docs/db/champions_direct_recommendation.sql). 고르는 것은 운영자다 */
+  const [directPicks,setDirectPicks]=useState([]);
+  const qualifierId=linkedEvent?.championship_phase==="qualifier"?linkedEvent.id:null;
+  useEffect(()=>{
+    let live=true;
+    setDirectPicks([]);
+    if(qualifierId) recommendChampionshipDirectEntrants(qualifierId).then(rows=>{ if(live) setDirectPicks(rows||[]); });
+    return ()=>{ live=false; };
+  },[qualifierId]);
+  const pickFor=id=>directPicks.find(pick=>pick.registrationId===id);
+  const takeDirectPicks=()=>{ const ids=directPicks.map(pick=>pick.registrationId); setDirectRegistrationIds(ids); setSelectedRegistrationIds(prev=>prev.filter(id=>!ids.includes(id))); };
   const selectedIntakeId=leagueIntakeId(linkedEvent);
   const intakeEvents=selectedIntakeId?events.filter(event=>leagueIntakeId(event)===selectedIntakeId):[];
   const linkedAnnouncement=(data?.announcements||[]).find(announcement=>
@@ -650,8 +661,9 @@ function BracketWizard({ data, onClose, onCreate }){
       {eventId&&mode!=="team" ? <>
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
           <span className="field-label">본선 직행자 선택</span>
-          <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.</div>
-          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{checked?"본선 직행":""}</span></label>;})}</div>
+          <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.{directPicks.length>0&&` 시즌 랭킹 상위 신청자 ${directPicks.length}명을 추천합니다.`}</div>
+          {directPicks.length>0&&<Button variant="second" size="sm" onClick={takeDirectPicks}>추천대로 선택</Button>}
+          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{[checked&&"본선 직행",pickFor(reg.id)&&`추천, 시즌 ${pickFor(reg.id).rank}위`].filter(Boolean).join(", ")}</span></label>;})}</div>
         </div>}
         <div className="stack bk-counters">
           <Counter label="신청" value={eventRegs.length} cells={Math.max(2,String(eventRegs.length).length)}/>
@@ -1100,7 +1112,8 @@ function formatBracketSubmissionTime(value) {
     : "";
 }
 
-function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefresh, onResetPin }) {
+/* 마감 뒤 제출은 막지 않는다(어쩔 수 없는 사람을 위해). 운영진에게만 그 기록을 보인다. */
+function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefresh, onResetPin, showLate = false }) {
   const renderMember = member => (
     <div className="bk-submission-member" key={member.registrationId}>
       <span className="bk-submission-member-name">{member.name}</span>
@@ -1109,9 +1122,11 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
           ? `제출 완료${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
           : "미제출"}
       </span>
+      {showLate&&member.lateSubmittedAt?.length>0&&<span className="bk-submission-late">마감 뒤 제출 {member.lateSubmittedAt.map(formatBracketSubmissionTime).join(", ")}</span>}
       {onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(member)}>비밀번호 초기화</button>}
     </div>
   );
+  const lateCount = showLate ? (model.mode === "team" ? model.teams.flatMap(team => team.members) : model.participants || []).filter(member => member.lateSubmittedAt?.length).length : 0;
 
   return (
     <section className="bk-submission sq" aria-label="파티 제출 현황">
@@ -1125,7 +1140,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
         >
           <span className="bk-submission-title">파티 제출 현황</span>
           <span className="bk-submission-summary">
-            {busy && model.total === 0 ? "불러오는 중…" : `${model.submitted} / ${model.total} 제출`}
+            {busy && model.total === 0 ? "불러오는 중…" : `${model.submitted} / ${model.total} 제출${lateCount ? `, 마감 뒤 ${lateCount}명` : ""}`}
             <span className={"bk-submission-chevron"+(expanded?" open":"")} aria-hidden="true"><Icon n="chev" size={16}/></span>
           </span>
         </button>
@@ -1162,7 +1177,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
   );
 }
 
-function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false, refreshNormalized, onNormalizedReverted }){
+function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false, refreshNormalized, onNormalizedReverted, data, save }){
   const nameOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
   const teamMode=b.mode==="team";
   const locked=!!b.applied||deleting||readOnly;
@@ -1303,10 +1318,18 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const undoApplied=async()=>{
     if(readOnly)return;
     if(!b.applied)return;
-    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적과 연결된 대회의 기록 상태가 함께 되돌아갑니다.",confirmLabel:"반영 취소",danger:true})))return;
+    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적, 이 대회로 받은 칭호와 연결된 대회의 기록 상태가 함께 되돌아갑니다.",confirmLabel:"반영 취소",danger:true})))return;
     try{
       await revertEventRecord(b.eventId);
       await onNormalizedReverted?.();
+      // 칭호는 site_data 에 산다. 기록이 이미 되돌아갔으니 칭호 저장이 실패해도 취소 자체는 끝난 것이다.
+      const currentTitles=data?.titleGroups||[];
+      const titleGroups=revertTitleAwards(currentTitles,b.eventId);
+      if(titleGroups!==currentTitles){
+        const ok=await save({...data,titleGroups},"기록 반영과 이 대회로 받은 칭호를 취소했습니다.");
+        if(!ok) flash("기록 반영은 취소했지만 칭호는 되돌리지 못했습니다. 칭호 화면에서 확인해 주세요.");
+        return;
+      }
       flash("기록 반영을 취소했습니다.");
     }catch(error){
       flash(`기록 반영을 취소하지 못했습니다. 바뀐 내용은 없습니다. ${error?.message||"원인을 확인하지 못했습니다."}`);
@@ -1334,6 +1357,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       onToggle={()=>setSubmissionStatusExpanded(value=>!value)}
       onRefresh={()=>setSubmissionStatusReloadKey(value=>value+1)}
       onResetPin={admin?resetPin:null}
+      showLate={admin}
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
     {admin&&!locked&&b.format==="elim"&&b.graph&&!(res&&res.done)&&<ResultEntry g={b.graph} nameOf={nameOf} busy={matchMutationBusy} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} outcomeOn={Boolean(outcomes)} onOutcome={saveOutcome}
@@ -1540,7 +1564,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   };
   const grantTitles=async()=>{
     setAwardBusy(true);
-    const chosen=awards.filter(a=>awardPicks.has(a.key));
+    const chosen=awards.filter(a=>awardPicks.has(a.key)).map(a=>({...a,eventId:b.eventId}));
     const ok=await save({...data,titleGroups:applyTitleAwards(data.titleGroups||[],chosen)});
     setAwardBusy(false);
     flash(ok?"기록과 칭호에 반영했습니다.":"기록은 반영했지만 칭호는 저장하지 못해 이 화면에만 반영됐습니다.");
@@ -2466,7 +2490,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         </div>
         {statusTag(open)==="진행 중"&&<p className="pn bk-strip t12"><Status live>진행 중</Status>{liveProgress(open)&&<span className="dim">{liveProgress(open)}</span>}</p>}
       </header>
-       {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
+       {drawId===open.id ? <BracketDraw b={open} onDone={()=>setDrawId(completeNormalizedBracketDraw())}/> : <BracketBoard b={open} admin={admin} flash={flash} readOnly={open.readOnly} refreshNormalized={loadNormalized} onNormalizedReverted={loadNormalized} data={data} save={save} deleting={deletingId===open.id} onApply={(b,res)=>setApply({b,res})}/>}
       {/* a delete that cannot be undone stands last, after everything the bracket shows */}
       {!open.readOnly&&admin&&<div className="stack bk-actions bk-delete"><Button variant="second" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}>{deletingId===open.id?"삭제 중…":"삭제"}</Button></div>}
     </div>; })()}

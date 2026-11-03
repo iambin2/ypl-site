@@ -286,6 +286,20 @@ export async function listNormalizedBracketRuntimes() {
   return listNormalizedSingleBracketRuntimes();
 }
 
+// 대회일(한국 날짜)이 지났는데 기록 반영 전인 대회. 운영자가 반영을 잊지 않게 로그인 때 알린다.
+export async function listEventsAwaitingRecord(now = new Date()) {
+  const today = now.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  const { data, error } = await db()
+    .from("events")
+    .select("id, name, held_on")
+    .in("status", ["open", "running"])
+    .is("record_applied_at", null)
+    .lt("held_on", today)
+    .order("held_on", { ascending: true });
+  if (error) fail(error, "기록 반영 전인 대회를 확인하지 못했습니다.");
+  return data || [];
+}
+
 function databaseUuid() {
   if (!globalThis.crypto?.randomUUID) throw new Error("이 브라우저에서는 저장할 수 없습니다. 최신 Chrome이나 Safari에서 다시 열어 주세요.");
   return globalThis.crypto.randomUUID();
@@ -1352,14 +1366,18 @@ export async function listEventRegistrationSubmissionStatuses(eventId, knownRegi
   }
   if (!registrationRows.length) return [];
   const registrationIds = registrationRows.map(registration => registration.id).filter(Boolean);
-  const { data: submissions, error: submissionError } = await db()
-    .from("registration_submissions")
-    .select("registration_id, revision, submitted_at")
-    .in("registration_id", registrationIds)
-    .order("revision", { ascending: false });
+  const [{ data: submissions, error: submissionError }, { data: event }] = await Promise.all([
+    db()
+      .from("registration_submissions")
+      .select("registration_id, revision, submitted_at")
+      .in("registration_id", registrationIds)
+      .order("revision", { ascending: false }),
+    // 마감 시각을 모르면 마감 뒤 제출 표시만 빠진다. 제출 현황은 그대로 보인다.
+    db().from("events").select("submission_target_at").eq("id", eventId).maybeSingle(),
+  ]);
 
   if (submissionError) fail(submissionError, "대회 참가자 제출 상태를 불러오지 못했습니다.");
-  return buildSubmissionStatusRows(registrationRows, submissions || []);
+  return buildSubmissionStatusRows(registrationRows, submissions || [], event?.submission_target_at || null);
 }
 
 async function countAnnouncementDeletionFacts(event) {

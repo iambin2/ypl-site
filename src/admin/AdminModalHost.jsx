@@ -5,7 +5,6 @@ import {
   AnnEditor,
   ChampionEditor,
   LoginModal,
-  MetaEditor,
   RoundsEditor,
   StandingsEditor,
   TitleItemEditor,
@@ -31,10 +30,6 @@ export default function AdminModalHost({ modal, data, setModal, save, refresh, s
         }}
       />
     );
-  }
-
-  if (modal.type === "meta") {
-    return <MetaEditor meta={data.meta} onClose={close} onSave={(meta) => { save({ ...data, meta }); close(); }} />;
   }
 
   if (modal.type === "champion") {
@@ -67,7 +62,8 @@ export default function AdminModalHost({ modal, data, setModal, save, refresh, s
         onSave={(item) => {
           const titleGroups = data.titleGroups.map((group) => group.key !== modal.groupKey ? group : {
             ...group,
-            items: modal.item ? group.items.map((entry) => entry.id === item.id ? item : entry) : [...group.items, item],
+            // 대회가 준 기록(grants, createdBy)은 편집기에 없으니 기존 항목에서 이어받는다.
+            items: modal.item ? group.items.map((entry) => entry.id === item.id ? { ...entry, ...item } : entry) : [...group.items, item],
           });
           save({ ...data, titleGroups });
           close();

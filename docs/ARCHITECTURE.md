@@ -127,6 +127,7 @@ EntryParticipant.registration_id
 - official roster 공개가 필요한 `on_record_apply` Event는 apply 후 `status=completed`, `record_applied_at`, `team_revealed_at`을 모두 가진다.
 - revert는 Result/Award rollback과 pointer release, Event 공개 상태 해제를 수행하되 immutable Submission/Snapshot history는 보존한다.
 - 공개된 normalized Event는 final pointer가 없는 참가자를 legacy party로 보충하지 않는다.
+- 칭호는 `site_data.titleGroups`의 이름 기반 기록이라 트랜잭션 밖이다. 반영 뒤 운영자가 고른 칭호는 그 Event id를 `grants`/`createdBy`로 남기고, 반영 취소가 그 Event가 준 해당자만 되돌린다(`revertTitleAwards`).
 
 ## 4. Bracket runtime
 
@@ -230,7 +231,7 @@ Qualifier X와 Final Y는 Player identity만 공유한다. Submission, Snapshot,
 
 Qualifier setup은 다음 순서다.
 
-1. Qualifier EventRegistration 중 direct entrant를 선택하고 normalized direct selection fact로 저장한다.
+1. Qualifier EventRegistration 중 direct entrant를 선택하고 normalized direct selection fact로 저장한다. 화면은 선발전 시즌 랭킹 상위 신청자 4명을 추천만 한다(`recommend_championship_direct_entrants`, `docs/db/champions_direct_recommendation.sql`). 고르는 것은 운영자다.
 2. direct entrant를 제외한 Registration 중 actual Qualifier participant를 확정한다.
 3. direct entrant와 no-show는 Qualifier Entry를 만들지 않는다.
 4. actual participant만 Entry/EntryParticipant와 Double Elimination runtime에 들어간다.

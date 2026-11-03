@@ -277,9 +277,18 @@ test("submission status read model uses the highest revision and does not requir
     { registration_id: "reg-a", revision: 2, submitted_at: "2026-09-05T02:41:00Z" },
   ]);
   assert.deepEqual(rows, [
-    { registrationId: "reg-a", registrationName: "A", hasSubmission: true, latestRevision: 2, latestSubmittedAt: "2026-09-05T02:41:00Z" },
-    { registrationId: "reg-b", registrationName: "B", hasSubmission: false, latestRevision: null, latestSubmittedAt: null },
+    { registrationId: "reg-a", registrationName: "A", hasSubmission: true, latestRevision: 2, latestSubmittedAt: "2026-09-05T02:41:00Z", lateSubmittedAt: [] },
+    { registrationId: "reg-b", registrationName: "B", hasSubmission: false, latestRevision: null, latestSubmittedAt: null, lateSubmittedAt: [] },
   ]);
+});
+
+test("submission status keeps every revision sent after the deadline for the staff log", () => {
+  const [row] = buildSubmissionStatusRows([{ id: "reg-a", registration_name: "A" }], [
+    { registration_id: "reg-a", revision: 3, submitted_at: "2026-09-05T03:00:00Z" },
+    { registration_id: "reg-a", revision: 1, submitted_at: "2026-09-05T01:00:00Z" },
+    { registration_id: "reg-a", revision: 2, submitted_at: "2026-09-05T02:30:00Z" },
+  ], "2026-09-05T02:00:00Z");
+  assert.deepEqual(row.lateSubmittedAt, ["2026-09-05T02:30:00Z", "2026-09-05T03:00:00Z"]);
 });
 
 test("team bracket submission status groups EntryParticipant registrations and keeps non-submitters", () => {
