@@ -28,6 +28,8 @@
 .ch-img img { width: 82%; height: 82%; object-fit: contain; }
 .ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--s1); font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .ch-name { min-height: var(--h-control); padding: var(--s2) var(--s3); font-size: var(--t15); }
+/* the names offered as one types need no browser arrow: the list opens under the field as it is typed */
+.ch-name::-webkit-calendar-picker-indicator { display: none; }
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */

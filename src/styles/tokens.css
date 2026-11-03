@@ -60,7 +60,7 @@
 :root {
   --navy: #081C3D; --navy-1: #0E2449; --navy-2: #12294F; --navy-3: #1D365F; --white: #FFFFFF;
   --mist: #A8B8D3; --haze: #8196B9; --amber: #FFB21A;
-  --paper-1: #EEF1F6; --paper-2: #E6EAF1; --paper-3: #D9DEE7; --slate: #46536C; --slate-2: #5C6981; --amber-deep: #B36F00;
+  --paper-1: #E8ECF2; --paper-2: #DDE2EA; --paper-3: #CED5E0; --slate: #46536C; --slate-2: #56637A; --amber-deep: #B36F00;
 }
 /* ---------- semantic: what components read (DESIGN.md "Colour and light"). Dark here, light below. ---------- */
 :root {
