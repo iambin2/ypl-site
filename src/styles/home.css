@@ -59,7 +59,10 @@
   .ho-board.today { height: auto; }
   .ho-unit { font-size: var(--t32); line-height: 1; }
   .ho-title br { display: none; }
-  .ho-title { min-height: 0; margin-top: var(--s8); font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); -webkit-line-clamp: 1; }
+  /* the display takes the column's golden major; the event's name stands in the minor beside it, its last line on the digits' floor */
+  .ho-next { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s13); align-content: start; }
+  .ho-next > :not(.ho-board, .ho-title) { grid-column: 1 / -1; }
+  .ho-title { align-self: end; min-height: 0; margin-top: 0; font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); -webkit-line-clamp: 3; }
   .ho-go { display: flex; align-items: center; gap: var(--s8); }
   .ho-go .btn--main { width: 38.2%; }
   .ho-due { width: 38.2%; }
@@ -72,8 +75,9 @@
   .ho:not(:has(> .ho-live)) { grid-template-areas: "next reign" "rank news" "hall hall"; }
   .ho-reign { display: flex; flex-direction: column; }
   .ho-reign .champion { flex: 1 0 auto; }
-  .ho-next { display: flex; flex-direction: column; }
-  .ho-next > .ho-go { margin-top: auto; padding-top: var(--s5); }
+  .ho-next { grid-template-rows: auto auto auto 1fr; }
+  .ho-next > .ho-due { grid-row: 3; }
+  .ho-next > .ho-go { grid-row: 4; align-self: end; padding-top: var(--s8); }
   .ho-rank, .ho-news { display: flex; flex-direction: column; }
   .ho-rank > .podium { flex: 1 0 auto; }
   .ho-rank .podium-col { height: auto; min-height: calc(var(--h-counter) + var(--h-row)); }

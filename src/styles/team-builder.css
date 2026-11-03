@@ -106,7 +106,9 @@
 }
 .tb-type::before, .pick-type::before { content: ""; width: var(--s2); height: var(--s2); flex: none; background: var(--type); }
 /* on a surface already one tone up, the tag steps down to the ground so it still reads as its own square */
-:is(.sc-moves li, .sheet .pn, .tb-pokemon-row:hover, .cell:hover, .records-round-detail) { --tag-bg: var(--ground); }
+:is(.sc-moves li, .sheet .pn, .records-round-detail) { --tag-bg: var(--ground); }
+/* only a real pointer lifts a row, so only a real pointer steps its tags down: a finger's tap leaves no hover behind */
+@media (hover: hover) { :is(.tb-pokemon-row:hover, .cell:hover) { --tag-bg: var(--ground); } }
 .tb-type-opt .tb-type { --tag-bg: transparent; padding: 0; color: inherit; }
 .type-normal{--type:#9FA19F}.type-fire{--type:#E62829}.type-water{--type:#2980EF}.type-electric{--type:#FAC000}
 .type-grass{--type:#3FA129}.type-ice{--type:#3FD8FF}.type-fighting{--type:#FF8000}.type-poison{--type:#9141CB}

@@ -171,7 +171,7 @@ function FreeBoard({ admin, flash, tabs }){
       <article>
         <BackLink to="게시판" onClick={closePost}/>
         <p className="t12 dim reg bd-date-line">{[p.secret&&"관리자 전용",p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
-        <h1 className="t20 bd-title-h" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
+        <h1 className="t32 bd-title-h" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
         {(p.body||p.link)&&<div className="bd-body">
           <Prose text={p.body}/>
           {p.link&&<MediaEmbed url={p.link}/>}

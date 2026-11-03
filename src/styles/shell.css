@@ -51,8 +51,11 @@
   .brand { margin-right: var(--s13); }
   .brand .logo { height: 24px; width: auto; }
   .brand .wordmark { height: calc(24px * .84); }
-  .navlinks { position: relative; display: flex; align-self: stretch; gap: var(--s8); margin-right: auto; }
-  .navlink { position: relative; display: inline-flex; align-items: center; gap: var(--s2); height: 100%; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
+  /* a word takes the bar's height and 12 on each side for the pointer; the words stand 32 apart, as before */
+  .navlinks { position: relative; display: flex; align-self: stretch; gap: var(--s2); margin: 0 auto 0 calc(var(--s3) * -1); }
+  .navlink { position: relative; display: inline-flex; align-items: center; gap: var(--s2); height: 100%; padding: 0 var(--s3); font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
+  /* the chosen word's line stays the word's own width, inside the room around it */
+  .navlinks .navlink:is([aria-current="page"], [data-current])::before { left: var(--s3); right: var(--s3); }
   .navlink:is([aria-current="page"], [data-current]) { color: var(--lit); font-weight: 700; }
   .navlink[aria-expanded="true"] { color: var(--lit); }
   @media (hover: hover) { .navlink:hover { color: var(--lit); } }

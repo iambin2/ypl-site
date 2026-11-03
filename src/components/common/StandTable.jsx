@@ -20,11 +20,11 @@ const recordLine = (r) => [["우승", r.win], ["준우승", r.ru], ["4강", r.to
    under a 32 head strip, the rank at 20, the points at 20 with 점. A tie reads in the podium's equal columns; only when more than
    three share first place does a grey sentence under the stack say how many. The record line (우승 2, 4강 1) and a note stand under
    the name. rows are raw; they are ranked here. */
-export default function StandTable({ rows, total, onName, open = false, onMore }) {
+export default function StandTable({ rows, total, onName, open = false, onMore, shown: limit = SHOWN }) {
   const ranked = rankRows(rows);
   if (!ranked.length) return null;
   const rest = ranked.slice(3);
-  const shown = open ? rest : rest.slice(0, SHOWN);
+  const shown = open ? rest : rest.slice(0, limit);
   const tops = ranked.filter((r) => r.rank === 1).length;
   const seen = new Map();
   return (<>
@@ -42,6 +42,6 @@ export default function StandTable({ rows, total, onName, open = false, onMore }
       </div>
     </>}
     {tops > 3 && <p className="rank-tie t12 mute reg">{tops}명이 공동 1위입니다.</p>}
-    {!open && rest.length > SHOWN && onMore && <div className="rank-more"><Button variant="second" onClick={onMore}>{total || ranked.length}명 전체 보기</Button></div>}
+    {!open && rest.length > limit && onMore && <div className="rank-more"><Button variant="second" onClick={onMore}>{total || ranked.length}명 전체 보기</Button></div>}
   </>);
 }

@@ -65,8 +65,9 @@
 
 /* ---------- the current champion: one panel, the floor band holds 파티 보기 ---------- */
 .champion { --floor: var(--s13); display: block; width: 100%; height: 216px; text-align: left; }
-.champion-who { position: absolute; top: var(--pad); left: var(--pad); display: grid; }
-.champion-who > b { margin-top: var(--s2); }
+/* read like a counter: its label at the top, the fact (the name and its line) standing on the floor beside the Pokémon */
+.champion-who { position: absolute; top: var(--pad); bottom: calc(var(--floor) + var(--s1)); left: var(--pad); display: flex; flex-direction: column; align-items: flex-start; }
+.champion-who > b { margin-top: auto; }
 .champion-who > .reg { margin-top: var(--s1); }
 .champion-more { position: absolute; left: var(--pad); bottom: 0; height: var(--floor); display: flex; align-items: center; gap: var(--s1); }
 .champion .mon { right: var(--pad); height: calc(100% - var(--floor)); }
@@ -205,7 +206,10 @@
 .step { display: flex; align-items: center; gap: var(--s2); min-width: 0; min-height: var(--h-control); padding: 0 var(--s3); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--mute); white-space: nowrap; }
 .step.done { color: var(--dim); }
 .step.inv { color: var(--ground); font-weight: 700; }
-.tabsline { display: flex; gap: var(--s8); height: var(--h-control); box-shadow: inset 0 -1px 0 var(--rule); overflow-x: auto; scrollbar-width: none; }
+/* the frame draws the row's hairline; the words scroll inside it */
+.tabsline-frame { box-shadow: inset 0 -1px 0 var(--rule); }
+.tabsline { display: flex; gap: var(--s8); height: var(--h-control); overflow-x: auto; scrollbar-width: none; }
+.tabsline::-webkit-scrollbar { display: none; }
 .tabsline > button { position: relative; flex: none; min-width: 0; display: flex; align-items: center; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--mute); transition: color var(--move-tone); }
 .tabsline { position: relative; }
 .tabsline > button.on { color: var(--lit); font-weight: 700; }
@@ -223,6 +227,14 @@
 .chips > * { flex: none; display: flex; align-items: center; height: var(--h-strip); min-height: var(--h-strip); padding: 0 var(--s3); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); white-space: nowrap; }
 .chips > .inv { color: var(--ground); font-weight: 700; }
 @media (hover: hover) { .chips > .pn:hover { background: var(--panel-2); } }
+/* a chip is a 32 strip but takes a finger's 44: its target runs 6 past it above and below, inside room the row keeps for it */
+.chips { padding-block: calc((var(--h-control) - var(--h-strip)) / 2); margin-block: calc((var(--h-control) - var(--h-strip)) / -2); }
+.chips > * { position: relative; }
+.chips > ::after { content: ""; position: absolute; inset: calc((var(--h-control) - var(--h-strip)) / -2) 0; }
+/* a phone's sideways row runs on to the screen's edge, so a word cut there says the row goes on (DESIGN.md "Bars and navigation") */
+@media (max-width: 859px) {
+  .page :is(.tabsline, .chips:not(.sheet .chips)) { margin-right: calc(var(--gutter) * -1); padding-right: var(--gutter); }
+}
 
 /* ---------- notice alerts (PushControl.jsx): a 12px word with the bell, a switch row, and the sheet that says why first ---------- */
 .push-link { display: inline-flex; align-items: center; gap: var(--s1); min-height: var(--h-control); margin-block: calc((var(--h-control) - var(--l12)) / -2); color: var(--lit); }

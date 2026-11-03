@@ -51,14 +51,17 @@
 .bk-draw-mem { display: flex; flex-direction: column; overflow: hidden; background: var(--panel-2); }
 
 /* ---------- wizard: back link, title and event, steps as panels joined by the seam, the main action docked ---------- */
+/* a form for the whole page: a sheet's width on a phone, the desktop's main column (709) on desktop */
 .bk-create { display: grid; gap: var(--s5); max-width: var(--sheet-w); }
+@media (min-width: 860px) { .bk-create { max-width: 709px; } }
 .bk-create > .back { margin-bottom: calc(var(--s3) * -1); }
 .bk-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .bk-head h2 { margin: 0; }
 .form-card { display: grid; gap: var(--s5); }
 .form-card > .field { margin: 0; }
 .bk-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.bk-dock { grid-template-columns: 1.618fr 1fr; }
+/* back stands first and the step forward last, as in a sheet's bottom planes: 1 to 1.618 */
+.bk-dock { grid-template-columns: 1fr 1.618fr; }
 
 /* participants: rows of 52 joined by the seam, the box, the number, the name, the state at the end */
 .bk-fill { display: flex; flex-direction: column; gap: var(--seam); }

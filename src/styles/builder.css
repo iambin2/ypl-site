@@ -141,4 +141,4 @@
   .tb-rules:not(:has(.tb-rule-group:nth-child(3))) { grid-template-columns: minmax(0, 1fr); }
 }
 /* the type chips stand 12 under the search, the list's sort under them */
-.tb-pool-panel > .chips { flex: none; margin-top: var(--s3); }
+.tb-pool-panel > .chips { flex: none; margin-top: calc(var(--s3) - (var(--h-control) - var(--h-strip)) / 2); }

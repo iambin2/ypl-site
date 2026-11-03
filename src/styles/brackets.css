@@ -30,11 +30,11 @@
 /* desktop: an open bracket's name is the page title; the whole tree comes first and its 우승 panel names the winner,
    so the result below it keeps the places and the images and does not say 우승 a second time */
 @media (min-width: 860px) {
-  .bk-open-title { font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); }
   .bk-board > .bk-result { order: 1; }
   .bk-board:has(.bk-champ-node) .bk-winner { display: none; }
   .bk-board:has(.bk-champ-node) .bk-places { margin-top: 0; }
-  .bk-champ-node b { font-size: var(--t20); line-height: var(--l20); }
+  /* the decided winner reads at the page title's size: the one fact the whole tree leads to */
+  .bk-champ-node b { font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); }
   .bk-tools { display: grid; grid-auto-flow: column; flex: none; }
   .bk-tools .btn { height: var(--h-control); padding: 0 var(--s5); }
   .bk-cb-actions > .bk-img { display: none; }
@@ -61,9 +61,19 @@
 .bk-col-h.gf { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 .bk-col-body { position: relative; width: 100%; }
 .bk-mpos { position: absolute; left: 0; right: 0; }
-/* eight players fit a phone to the final: three columns share the content width, and the boxes drop the seed to keep the names */
-@media (max-width: 639px) { .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap) * 2) / 3); } .bk-scroll .mb-seed { display: none; } }
-@media (min-width: 860px) { .bk-scroll { --bk-gap: var(--s8); --bk-w: 216px; margin-inline: 0; padding-inline: 0; } }
+/* a phone shows two rounds at a time, names whole: two columns share the content width, the boxes drop the seed to keep the names,
+   and the tree stops round by round as it is swiped (the browser's own scroll, snapping) */
+@media (max-width: 639px) {
+  .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap)) / 2); scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); }
+  .bk-scroll .bk-col2 { scroll-snap-align: start; }
+  .bk-scroll .mb-seed { display: none; }
+}
+@media (min-width: 860px) {
+  .bk-scroll { --bk-gap: var(--s8); --bk-w: 216px; margin-inline: 0; padding-inline: 0; }
+  /* a short tree runs the full 1200: its columns share what is left, so the tree ends on the bar's right edge like every row */
+  .bk-scroll > .bk-tree { min-width: 100%; }
+  .bk-tree > .bk-col2 { flex: 1 0 var(--bk-w); width: auto; }
+}
 
 /* a match box: two rows of 36 with the seam between; the winner inverts, the loser mutes, a waiting slot is muted words */
 /* one column the width of the tree's column: a long name ends in an ellipsis instead of widening the box over the lines */

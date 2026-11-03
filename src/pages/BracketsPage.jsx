@@ -576,7 +576,7 @@ function BracketWizard({ data, onClose, onCreate }){
   };
   return (<div className="bk-create">
     <BackLink to="대진표" onClick={onClose}/>
-    <header className="bk-head"><h2 className="t20">대진표 만들기</h2>{(linkedEvent?.name||name)&&<span className="t12 dim">{linkedEvent?.name||name}</span>}</header>
+    <header className="bk-head"><h1 className="t32">대진표 만들기</h1>{(linkedEvent?.name||name)&&<span className="t12 dim">{linkedEvent?.name||name}</span>}</header>
     <Steps labels={placeable?["대회 설정","참가자 확정","대진 배치"]:["대회 설정","참가자 확정"]} at={step}/>
     <div className="form-card swap" key={step}>
     {step===1&&<>
@@ -653,8 +653,8 @@ function BracketWizard({ data, onClose, onCreate }){
 
       <Dock>
         <div className="stack bk-dock">
-          <Button variant="main" onClick={()=>setStep(2)} disabled={!manualMode&&(!eventId||eventBusy)}>다음</Button>
           <Button variant="second" onClick={onClose}>취소</Button>
+          <Button variant="main" onClick={()=>setStep(2)} disabled={!manualMode&&(!eventId||eventBusy)}>다음</Button>
         </div>
       </Dock>
     </>}    {step===2&&<>
@@ -830,10 +830,10 @@ function BracketWizard({ data, onClose, onCreate }){
 
       <Dock>
         <div className="stack bk-dock">
+          <Button variant="second" onClick={()=>setStep(1)}>이전</Button>
           {placeable
             ? <Button variant="main" onClick={startPlacement}>{mode!=="team"?`${buildParticipants().length}명으로 추첨`:"추첨"}</Button>
             : <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>{eventId&&mode!=="team"?`${buildParticipants().length}명으로 대진표 만들기`:"대진표 만들기"}</Button>}
-          <Button variant="second" onClick={()=>setStep(1)}>이전</Button>
         </div>
       </Dock>
     </>}
@@ -849,8 +849,8 @@ function BracketWizard({ data, onClose, onCreate }){
       </div>
       <Dock>
         <div className="stack bk-dock">
-          <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>대결 확정</Button>
           <Button variant="second" onClick={()=>{ setHeld(null); setStep(2); }}>이전</Button>
+          <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>대결 확정</Button>
         </div>
       </Dock>
     </>}
@@ -1888,8 +1888,8 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       </>}
 
       <div className="stack bk-dock bk-apply-actions">
-        <Button variant="main" icon="check" onClick={prepare} disabled={linked&&linkedContextBusy}>기록에 반영</Button>
         <Button variant="second" onClick={onClose}>나중에</Button>
+        <Button variant="main" icon="check" onClick={prepare} disabled={linked&&linkedContextBusy}>기록에 반영</Button>
       </div>
     </div>
   </Modal>);
@@ -2111,7 +2111,7 @@ function PrivateBrackets({ admin, flash, tabs }){
       <header className="bk-head-open">
         <BackLink to="사설 대진표" onClick={closeBracket}/>
         {live&&<p className="bk-live t12"><Status live>{pbStatus(open)}</Status></p>}
-        <h1 className="t20 bk-open-title" data-vt={"pb-"+open.id}>{open.name}</h1>
+        <h1 className="t32 bk-open-title" data-vt={"pb-"+open.id}>{open.name}</h1>
         <p className="t12 dim reg bk-open-line">사설, {open.host?`${open.host} 개설, `:""}{pbFormat(open)}, {open.participants.length}명{open.createdAt?`, ${formatDate(open.createdAt)}`:""}</p>
         {open.note&&<div className="bk-note"><Prose text={open.note}/></div>}
         <p className="pn2 bk-info t12 reg dim"><Icon n="info" size={20}/><span>누구나 만들 수 있는 사설 대진표입니다. 결과는 공식 기록, 랭킹, 칭호에 반영되지 않습니다.</span></p>
@@ -2479,7 +2479,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         <BackLink to="대진표" onClick={deletingId===open.id?undefined:closeBracket}/>
         <div className="bk-open-row">
           <div className="bk-open-copy">
-            <h1 className="t20 bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
+            <h1 className="t32 bk-open-title" data-vt={"b-"+open.id}>{open.name}</h1>
             <p className="t12 dim reg bk-open-line">{open.mode==="team"?"팀전":"개인전"}, {bracketFormat(open)}, {(open.participants||[]).length}{open.mode==="team"?"팀":"명"}{open.createdAt?`, ${formatDate(open.createdAt)}`:""}{admin&&statusTag(open)!=="진행 중"?`, ${statusTag(open)}`:""}</p>
           </div>
           {/* desktop: the images stand beside the title; a phone keeps them under the result */}

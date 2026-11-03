@@ -298,7 +298,7 @@
 
 /* ---------- a native checkbox is the board's check: a 20 square, off panel-2, on inverted with its mark ---------- */
 :where(.ypl) input[type="checkbox"]:not(.sr-only) { appearance: none; -webkit-appearance: none; display: inline-grid; place-items: center; background: var(--panel-2); cursor: pointer; transition: background-color var(--move-tone); }
-:where(.ypl) :is(.pn, .sheet .field, .sheet .fb-q, .bk-pin) input[type="checkbox"]:not(.sr-only):not(:checked) { background: var(--rule); }
+:where(.ypl) :is(.pn, .sheet, .bk-pin) input[type="checkbox"]:not(.sr-only):not(:checked) { background: var(--rule); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):checked { background: var(--lit); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):checked::after { content: ""; width: var(--s3); height: var(--s3); background: var(--ground); clip-path: polygon(14% 44%, 0 58%, 38% 92%, 100% 22%, 86% 8%, 38% 64%); }
 :where(.ypl) input[type="checkbox"]:not(.sr-only):focus-visible { outline: var(--line) solid var(--lit); outline-offset: var(--seam); }

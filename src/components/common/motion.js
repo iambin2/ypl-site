@@ -76,7 +76,9 @@ const lineKey = row => row.getAttribute("aria-label") || row;
 export function slideLine(row) {
   const cur = row?.querySelector(':scope > :is([aria-current="page"], [data-current], [aria-selected="true"])');
   if (!cur) return false;
-  const now = { left: cur.offsetLeft, width: cur.offsetWidth, row };
+  // the line is the word's width: a word with room around it for the pointer (the top bar) measures inside that room
+  const pad = getComputedStyle(cur);
+  const now = { left: cur.offsetLeft + parseFloat(pad.paddingLeft), width: cur.offsetWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight), row };
   const was = lastLine.get(lineKey(row));
   lastLine.set(lineKey(row), now);
   const moved = Boolean(was && now.width && (was.left !== now.left || was.width !== now.width));

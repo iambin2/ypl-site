@@ -76,18 +76,26 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
 }
 
 /* The top three of a ranking (DESIGN.md "Home, phone"): three columns like the counters, the rank, the name and the points lit
-   in segments with 점. A tie reads as equal columns; a sole leader's column inverts. Points past 999 stay in type, since four cells
-   do not fit a third of a phone. rows are ranked ({ rank, name, points }); onName opens the trainer. */
+   in segments with 점. A tie reads as equal columns, each rank named 공동; a sole leader's column inverts. Points past 999 stay in
+   type, since four cells do not fit a third of a phone. rows are ranked ({ rank, name, points }); onName opens the trainer.
+   rows null is the board switched off: three dark columns at their size while the ranking is read. */
 export function Podium({ rows, onName }) {
+  if (!rows) return (
+    <div className="stack podium" style={{ "--n": 3 }} aria-hidden="true">
+      {[0, 1, 2].map(i => <div key={i} className="pn podium-col"><span className="podium-pts"><Seg value="" h={40} cells={2} label="" /></span></div>)}
+    </div>
+  );
   const top = rows.slice(0, 3);
   const solo = rows.filter(r => r.rank === 1).length === 1;
+  const shared = rank => rows.filter(r => r.rank === rank).length > 1;
   return (
     <div className="stack podium" style={{ "--n": top.length }}>
       {top.map((r, i) => {
         const pts = r.points || 0;
+        const rank = `${shared(r.rank) ? "공동 " : ""}${r.rank}위`;
         const { as: Box, props } = door(onName ? e => onName(r.name, e.currentTarget) : null);
-        return <Box key={`${r.name}#${i}`} className={(solo && i === 0 ? "inv" : "pn") + " podium-col"} {...props} aria-label={`${r.rank}위 ${r.name}, ${pts}점`}>
-          <span className="t12 dim">{r.rank}위</span>
+        return <Box key={`${r.name}#${i}`} className={(solo && i === 0 ? "inv" : "pn") + " podium-col"} {...props} aria-label={`${rank} ${r.name}, ${pts}점`}>
+          <span className="t12 dim">{rank}</span>
           <b className="t15 podium-name">{r.name}</b>
           <span className="podium-pts">{pts < 1000
             ? <Seg value={String(pts)} h={40} cells={Math.max(2, String(pts).length)} label={`${pts}점`} />
@@ -237,8 +245,10 @@ export function Toast({ error = false, action, onAction, children }) {
 export function TabsLine({ value, onChange, options, label }) {
   const ref = useSlideLine(value, true);
   return (
-    <div className="tabsline" role="tablist" aria-label={label} ref={ref}>
-      {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}
+    <div className="tabsline-frame">
+      <div className="tabsline" role="tablist" aria-label={label} ref={ref}>
+        {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}
+      </div>
     </div>
   );
 }

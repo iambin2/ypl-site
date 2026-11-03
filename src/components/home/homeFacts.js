@@ -53,7 +53,8 @@ function currentSeason(snapshot, data, rankRows) {
   const normalized = seasons.some(s => s.source === "normalized") || (snapshot.ranking?.series || []).some(s => s.source === "normalized");
   const season = normalized ? seasons[0] : seasons[seasons.length - 1];
   if (!season?.rows?.length) return null;
-  return { name: season.name, rows: rankRows(season.rows).slice(0, 3).map(({ rank, name, points }) => ({ rank, name, points: points || 0 })) };
+  // the podium's three and the two rows that go on from the fourth (HomePage)
+  return { name: season.name, rows: rankRows(season.rows).slice(0, 5).map(({ rank, name, points }) => ({ rank, name, points: points || 0 })) };
 }
 
 /* 기록 화면의 스냅숏을 같은 캐시로 읽는다. 공식 기록을 못 읽으면 기록 화면처럼 기존 기록으로 센다.

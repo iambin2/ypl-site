@@ -4,6 +4,7 @@ import Button from "../components/common/Button.jsx";
 import ChampionSheet from "../components/common/ChampionSheet.jsx";
 import { DUR, light } from "../components/common/motion.js";
 import Seg from "../components/common/Seg.jsx";
+import StandTable from "../components/common/StandTable.jsx";
 import { loadChampions, loadFacts, seenChampions, seenFacts } from "../components/home/homeFacts.js";
 import { isNewNotice } from "../components/common/seenNotices.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
@@ -155,13 +156,16 @@ export default function HomePage({ data, go, admin }) {
       <div className="stack ho-counts">
         <Counter label="대회" value={facts?.tournaments ?? null} unit="회" onClick={() => go("records", { tab: "tour" })} />
         <Counter label="트레이너" value={facts?.trainers ?? null} unit="명" onClick={() => go("records", { tab: "trainer" })} />
-        <Counter label="시즌" value={facts?.seasons ?? null} unit="개" onClick={() => go("records", { tab: "rank" })} />
+        <Counter label="역대 시즌" value={facts?.seasons ?? null} unit="개" onClick={() => go("records", { tab: "rank" })} />
       </div>
     </div>
 
-    {season && <section className="ho-sec ho-rank" aria-labelledby="ho-rank">
-      <SectionHead id="ho-rank" title={`${season.name} 순위`} link="전체 보기" onLink={() => go("records", { tab: "rank" })} />
-      <Podium rows={season.rows} onName={name => go("records", { trainer: name })} />
+    {/* while the ranking is read its place stands switched off, so the notices under it do not move when it lights */}
+    {(season || !facts) && <section className="ho-sec ho-rank" aria-labelledby="ho-rank">
+      <SectionHead id="ho-rank" title={season ? `${season.name} 순위` : " "} link={season && "전체 보기"} onLink={() => go("records", { tab: "rank" })} />
+      {season
+        ? <StandTable rows={season.rows} shown={2} onName={name => go("records", { trainer: name })} />
+        : <Podium rows={null} />}
     </section>}
 
     {notices.length > 0 && <section className="ho-sec ho-news" aria-labelledby="ho-news">
