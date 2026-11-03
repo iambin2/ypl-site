@@ -175,7 +175,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       <div className="stack rc-counts">
         <Counter label="대회" value={normalizedRead.loading ? null : (snapshot.archives || []).length} unit="회" cells={(snapshot.archives || []).length >= 100 ? 3 : 2} />
         <Counter label="트레이너" value={normalizedRead.loading ? null : snapshot.trainers.length} unit="명" cells={snapshot.trainers.length >= 100 ? 3 : 2} />
-        <Counter label="챔피언" value={champions ? champions.length : null} unit="명" />
+        <Counter label="역대 챔피언" value={champions ? champions.length : null} unit="대" />
       </div>
       {normalizedRead.error && (
         <ErrorNote onRetry={() => setReloadKey((value) => value + 1)}>공식 기록을 읽지 못해 아래에는 기존 기록만 표시됩니다. 다시 시도해 주세요.</ErrorNote>

@@ -1362,7 +1362,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             <div><h2>포켓몬 선택</h2></div>
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
           </div>
-          {(detailStatus!=="ready"||localizationStatus!=="ready")&&<div className="tb-data-line"><span className={`tb-dot ${detailStatus}`}/>{[detailStatus!=="ready"&&dataStatusText,localizationStatus!=="ready"&&localizationText].filter(Boolean).join(", ")}</div>}
+          {(detailStatus!=="ready"||localizationStatus!=="ready")&&<div className="tb-data-line">{detailStatus==="error"?<Bang/>:<i className={"lamp"+(detailStatus==="ready"?"":" unlit")} aria-hidden="true"/>}{[detailStatus!=="ready"&&dataStatusText,localizationStatus!=="ready"&&localizationText].filter(Boolean).join(", ")}</div>}
           <div className="tb-search-row">
             <span className="search-input-icon" aria-hidden="true"><Icon n="search" size={20}/></span>
             <input
@@ -1412,7 +1412,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
             <Button type="button" size="sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
-              {sortId === "name" ? (sortReversed ? "역순" : "가나다순") : (sortReversed ? "낮은 순" : "높은 순")}
+              {sortId === "name" ? (sortReversed ? "ㅎ부터" : "ㄱ부터") : (sortReversed ? "낮은 순" : "높은 순")}
             </Button>
           </div>
           {cupRule.kind === "monotype" && !assignedTypeId ? (
@@ -1430,7 +1430,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           <div className="tb-team">
             <div className="tb-team-head">
               <h2 className="t20">팀 구성</h2>
-              <span className="t12 reg dim tb-team-state">{[currentSaved?.name || "저장되지 않은 팀", dirty && "변경사항 있음", hasWorkingState && draftText].filter(Boolean).join(", ")}</span>
+              <span className="t12 reg dim tb-team-state">{/* one state a word: a new team says only that it is new; a saved one says when it has changed since */}{[currentSaved?.name || "새 팀", currentSaved && dirty && "변경사항 있음", hasWorkingState && draftText].filter(Boolean).join(", ")}</span>
               <b className="t15 tb-team-count">{team.length} / {regulation.maxTeamSize || 6}</b>
             </div>
             <div className="tb-team-slots">

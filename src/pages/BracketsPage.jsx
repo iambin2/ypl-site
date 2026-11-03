@@ -2166,7 +2166,7 @@ function BracketRow({ b, vt, live, line, end, onOpen, lead=false }){
   if(lead) return <Lead date={d?.day} title={<span data-vt={vt}>{b.name}</span>} line={[line,end].filter(Boolean).join(", ")}
     lamp={live?"진행 중":null} sig={live} onClick={onOpen} label={`${b.name}, ${[line,live?"진행 중":end].filter(Boolean).join(", ")}`}/>;
   return <Row title={<span data-vt={vt}>{b.name}</span>} line={line} onClick={onOpen}
-    value={live?<Status live>진행 중</Status>:end?<Status>{end}</Status>:d?<Status><span className="num">{d.day}</span></Status>:null}/>;
+    value={live?<Status live>진행 중</Status>:end?<Status>{end}</Status>:d?<Status><span className="num">{d.day}<span className="wd">{d.weekday}</span></span></Status>:null}/>;
 }
 
 /* ===== 대진표 메인 ===== */

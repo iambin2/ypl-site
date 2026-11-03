@@ -111,7 +111,7 @@ export default function AboutPage({ go, data, admin }) {
       <SectionHead id="ab-flow" title="시즌의 흐름" />
       <ol className="stack ab-list">
         {FLOW.map((s, i) => (
-          <li key={s.t} className={"ab-step " + (i === FLOW.length - 1 ? "inv" : "pn")}>
+          <li key={s.t} className="ab-step pn">
             <span className="num t20 ab-n">{i + 1}</span>
             <span className="ab-step-body"><b className="t15">{s.t}</b><span className="t12 dim reg">{s.d}</span></span>
           </li>

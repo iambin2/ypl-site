@@ -232,6 +232,8 @@
 .sheet .chips { flex-wrap: wrap; overflow-x: visible; }
 /* in a sheet's bottom strip every action is a plane: a word action (취소, 나중에 within forms) stands as a second action panel */
 .modal-actions .btn.btn--link { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); --btn-fg: var(--lit); justify-content: center; height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 700; text-decoration: none; }
+/* between a phone and the desktop a sheet still rises from the bottom, on the content's 576 column (tokens.css) */
+@media (min-width: 640px) and (max-width: 859px) { .sheet { left: 50%; right: auto; width: var(--content); translate: -50% 0; } }
 @media (min-width: 860px) {
   .sheet { top: 50%; bottom: auto; left: 50%; right: auto; margin: 0; translate: -50% -50%; width: min(100% - 52px, var(--sheet-w)); max-height: calc(100dvh - 52px); }
   /* a sheet that shows a whole party is as wide as the content, so six cases stand side by side instead of crushing */

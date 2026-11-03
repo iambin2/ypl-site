@@ -46,7 +46,8 @@
 .hof-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
 .hof-cell { --floor: var(--h-control); aspect-ratio: 1; }
 .hof-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
-.hof-sheet-act { margin-top: var(--s5); }
+.hof-sheet-act { display: grid; justify-items: start; gap: var(--s5); margin-top: var(--s5); }
+.hof-sheet-act > .btn--main { justify-self: stretch; }
 /* the seal on top of the sheet: the one inverted panel, the generation lit at 84; the party joins it by the seam */
 .hof-seal { display: grid; justify-items: start; gap: var(--s3); margin-bottom: var(--seam); padding: var(--pad); }
 .hof-sheet-note { margin-top: var(--s3); }

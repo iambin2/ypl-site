@@ -41,7 +41,8 @@
 .bk-draw-cnt { color: var(--dim); }
 .bk-slot.dwait { color: var(--mute); }
 .bk-slot.dwait i { display: block; width: 32px; height: 4px; background: var(--panel-2); }
-.bk-slot.drolling { background: var(--panel-2); color: var(--lit); font-weight: 700; animation: y-pulse var(--move-light) infinite; }
+/* the slot being drawn is lit one tone up; the names rolling through it are its motion, so it does not breathe as well */
+.bk-slot.drolling { background: var(--panel-2); color: var(--lit); font-weight: 700; }
 .bk-slot.dset { color: var(--lit); font-weight: 600; }
 /* a drawn name switches on in its slot */
 .bk-slot.dset.pop { animation: y-fade var(--move-tone); }

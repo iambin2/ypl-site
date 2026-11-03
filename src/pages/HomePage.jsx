@@ -55,7 +55,7 @@ let firstOpen = true;
 const opening = () => firstOpen;
 
 /* 좁은 줄의 날짜: 11.07, 그 옆에 흐린 요일 */
-const Day = ({ d }) => d && <span className="num">{d.day}<span className="dim ho-wd">{d.weekday}</span></span>;
+const Day = ({ d }) => d && <span className="num">{d.day}<span className="dim wd">{d.weekday}</span></span>;
 
 
 /* ============================== HOME ==============================
@@ -193,7 +193,9 @@ export default function HomePage({ data, go, admin }) {
 
     {pop && <ChampionSheet name={pop.name} line={pop.line} generation={pop.generation} genText={pop.label} reigning={pop.key === reigning?.key}
       party={pop.party} sets={pop.sets} regulationId={pop.regulationId} onClose={() => setPop(null)}>
-      <Button type="button" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button>
+      {/* the same sheet carries the same action wherever it opens (명예의 전당): the champion's record, and the hall beside it */}
+      <Button variant="main" onClick={() => { setPop(null); go("records", { trainer: pop.name }); }}>{pop.name} 기록 보기</Button>
+      <Button variant="link" size="lg" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button>
     </ChampionSheet>}
   </div>);
 }

@@ -9,6 +9,7 @@ import { listAvailableChampionshipEditions } from "../../services/normalizedComp
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
+import { loadRecordsPokemonDirectory } from "../../services/recordsPokemon.js";
 import { copyEventRules, eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
 import { formatDate } from "../../services/dateFormat.js";
 import { missingAnnouncementTimes } from "../../services/announcementTimes.js";
@@ -39,6 +40,9 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
   const [mons,setMons]=useState(()=>{ const t=normTeam(item?.team); const a=[]; for(let i=0;i<6;i++)a.push(t[i]||{name:"",img:""}); return a; });
   const [artwork,setArtwork]=useState(null);
   useEffect(()=>{ loadHallOfFameArtworkLookup().then(setArtwork,()=>setArtwork(new Map())); },[]);
+  // the names the pictures are found by, offered as the operator types (the browser's own list): a name is picked, not guessed
+  const [monNames,setMonNames]=useState([]);
+  useEffect(()=>{ loadRecordsPokemonDirectory().then(d=>setMonNames([...new Set([...d.values()].map(r=>r.displayName).filter(Boolean))]),()=>{}); },[]);
   const setMon=(i,patch)=>setMons(ms=>ms.map((m,j)=>j===i?{...m,...patch}:m));
   const submit=()=>{ if(!name.trim()){siteAlert("챔피언 이름을 입력해 주세요.");return;}
     // site_data는 방문할 때마다 통째로 내려받으므로 base64 이미지는 저장하지 않는다. 그림은 이름으로 찾는다.
@@ -56,9 +60,10 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
         <div className="ch-imgwrap">
           <div className="ch-img">{img?<img src={img} alt="" loading="lazy" decoding="async"/>:<span className="ch-plus">{m.name.trim()?"이미지 없음":""}</span>}</div>
         </div>
-        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value,img:""})} placeholder={`이름 ${i+1}`} aria-label={`이름 ${i+1}`}/>
+        <input className="ch-name" value={m.name} onChange={e=>setMon(i,{name:e.target.value,img:""})} list="ch-mon-names" placeholder="포켓몬 이름" aria-label={`${i+1}번째 포켓몬`}/>
       </div>); })}</div>
-      <div className="bk-hint">포켓몬 이름을 입력하면 이미지가 자동으로 표시됩니다. 폼이 있는 포켓몬은 팀 빌더에 나오는 이름 그대로 입력해 주세요.</div>
+      <datalist id="ch-mon-names">{monNames.map(n=><option key={n} value={n}/>)}</datalist>
+      <div className="bk-hint">이름을 입력하면 맞는 포켓몬이 아래에 나오고, 고르면 그림이 바로 표시됩니다.</div>
     </div>
     <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
   </Modal>);
@@ -142,7 +147,7 @@ function FormBuilder({ form, setForm, earlier = [] }){
       <span className={"sw" + (enabled ? " on" : "")} aria-hidden="true"><i /></span>
     </button>
     {enabled&&<>
-      <Field label="신청 버튼 문구"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
+      <Field label="신청 버튼 문구" hint="버튼의 말은 짧은 명사로, 마침표 없이 적습니다. 예: 참가 신청"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
       <Field label="신청 마감 시각" hint="이 시각이 지나면 신청 버튼이 닫히고, 홈의 신청 접수 중 램프가 꺼집니다."><input type="datetime-local" value={form?.closesAt||""} onChange={e=>patchForm({closesAt:e.target.value})}/></Field>
       <div className="fb-q">
         <div className="fb-q-top fb-section-head"><span className="t12 dim">대회 설정</span>{earlier.length>0&&!form?.eventId&&<Button variant="link" onClick={()=>setPickEarlier(true)}>지난 대회에서 불러오기</Button>}</div>
@@ -240,7 +245,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
       </button>
       {linkOpen&&<div className="fold-body">
         <Field label="링크 1 (선택)" hint="누르면 새 탭으로 이동합니다."><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://forms.gle/..."/></Field>
-        <Field label="링크 1 버튼 문구 (선택)"><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청"/></Field>
+        <Field label="링크 1 버튼 문구 (선택)" hint="버튼의 말은 짧은 명사로, 마침표 없이 적습니다. 예: 참가 신청"><input value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} placeholder="참가 신청"/></Field>
         <Field label="링크 2 (선택)"><input value={link2} onChange={e=>setLink2(e.target.value)} placeholder="https://..."/></Field>
         <Field label="링크 2 버튼 문구 (선택)" flush><input value={link2Label} onChange={e=>setLink2Label(e.target.value)} placeholder="랜덤 파트너 추첨"/></Field>
       </div>}

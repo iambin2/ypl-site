@@ -6,7 +6,6 @@
 
 .ho-label { display: flex; justify-content: space-between; align-items: center; gap: var(--s5); }
 .ho-lamp { display: flex; align-items: center; gap: var(--s2); }
-.ho-wd { margin-left: var(--s1); }
 .ho-board { display: flex; align-items: flex-end; gap: var(--s3); height: 120px; margin-top: var(--s3); }
 /* the unit stands on the display's baseline */
 .ho-unit { font-size: var(--t20); line-height: var(--l15); font-weight: 700; }

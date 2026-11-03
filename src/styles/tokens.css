@@ -99,6 +99,9 @@
   --move-leave: var(--t-leave) var(--ease-in); --move-light: var(--t-light) var(--ease-out);
 }
 /* desktop is read from further away: the label and grey line step up to 15/20 and part from row titles by weight and light (DESIGN.md "Type") */
+/* between a phone and the desktop (a tablet, a phone on its side) the phone's board stands as one 576 column on the ground,
+   with the bars, the dock and the footer on the same lines, instead of a phone stretched to the window (DESIGN.md "Space") */
+@media (min-width: 640px) and (max-width: 859px) { :root { --content: var(--sheet-w); } }
 @media (min-width: 860px) { :root { --nav-height: 64px; --tab-height: 0px; --pad: var(--s5); --t12: var(--t15); --l12: var(--l15); } }
 
 @media (min-resolution: 2dppx) { :root { --hair: .5px; } }
@@ -199,7 +202,6 @@ label:has(input) { cursor: pointer; }
 /* ---------- shared keyframes: things arrive by lighting ---------- */
 @keyframes y-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes y-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes y-pulse { 0%, 100% { opacity: 1; } 50% { opacity: var(--opacity-disabled); } }
 /* content a control swaps in lights as a page does: an arrival, so the light verb and its ease-out */
 .swap { animation: y-fade var(--move-light) backwards; }
 /* a fold opens: its chevron turns and its rows rise in one after another, 38 apart */

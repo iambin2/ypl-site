@@ -14,6 +14,8 @@ import { applicationsClosed, partyDeadlines } from "../services/announcementTime
 import { builderRouteSearch, findApplicantNameRecord, listEventApplications, playerNameKey, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
+/* a tight row's time: digits and dots on one line (10.28 수 17:18), so a list of applicants keeps one height */
+const rowDT=iso=>{ const d=dotDate(iso); return d?`${d.day} ${d.weekday}${d.clock?" "+d.clock:""}`:fmtDT(iso); };
 
 const PAGE_SIZE=8;
 const DAY_MS=86400000;
@@ -56,7 +58,7 @@ const NoticeLead=({a,onOpen})=>{
 };
 const NoticeRow=({a,onOpen})=>{
   const d=dotDate(a.date), fresh=isNewNotice(a);
-  return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={fresh&&"새 글"} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
+  return <Row title={a.title} line={<>{a.pinned&&<><b className="nw-pin">고정</b>, </>}{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}</>} lamp={fresh&&"새 글"} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
 };
 
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어간다. 신청은 공지 위에 서는 한 장이고, 파티 제출은 팀 빌더로 간다.
@@ -355,7 +357,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
       })}
     </div>
     <Dock toast={failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>}>
-      <Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":"신청하기"}</Button>
+      <Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":"신청"}</Button>
       <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p>
     </Dock>
   </section>);
@@ -405,7 +407,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
       <div className="stack fr-rows">{shown.map(r=>(<div className="pn fr-row" key={r.id}>
         <span className="t12 dim fr-no num">{resp.indexOf(r)+1}</span>
         <div className="fr-main">
-          <div className="fr-name"><b className="t15">{nameOf(r)||"이름 없음"}</b>{unified&&<span className="t12 dim">{divisionLabel(r)}</span>}<span className="t12 reg dim num">{fmtDT(r.createdAt)}</span></div>
+          <div className="fr-name"><b className="t15">{nameOf(r)||"이름 없음"}</b>{unified&&<span className="t12 dim">{divisionLabel(r)}</span>}<span className="t12 reg dim num fr-when">{rowDT(r.createdAt)}</span></div>
           {fields.length>0&&<span className="t12 reg dim fr-answers">{fields.map(f=>`${f.label||"질문"} ${cell(r.answers&&r.answers[f.id])||"없음"}`).join(", ")}</span>}
         </div>
         <div className="fr-actions">

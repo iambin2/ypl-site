@@ -4,7 +4,6 @@
 
 export const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
 export const EASE_IN = "cubic-bezier(.5,0,.75,0)";
-export const EASE_IN_OUT = "cubic-bezier(.65,0,.35,1)";
 
 const mq = q => typeof window !== "undefined" && window.matchMedia?.(q).matches;
 export const reduced = () => mq("(prefers-reduced-motion: reduce)");
@@ -121,8 +120,9 @@ export function transition(mutate, { dir = "forward", scrollY: nextY = 0 } = {})
   if (dir !== "back") light(main(), DUR.leave);
 }
 
-/* ---------- theme change (2026-11-03): the page turns in one frame and a wash of the old ground clears off it over 420, so the change reads
-   as a cross-fade with nothing restyled frame by frame. The theme button's sun and moon turn in. Reduced motion turns in one frame. ---------- */
+/* ---------- theme change: the page turns in one frame and a wash of the old ground leaves it (leave, 260, fast at first), so the change reads
+   as a cross-fade without dwelling in the muddy middle of navy over white. Nothing is restyled frame by frame. The theme button's sun and
+   moon turn in. Reduced motion turns in one frame. ---------- */
 let themeTimer = 0;
 export function themeTurn(commit) {
   const root = document.documentElement;
@@ -141,7 +141,7 @@ export function themeTurn(commit) {
   wash.className = "theme-wash";
   wash.style.background = old;
   document.body.appendChild(wash);
-  wash.animate([{ opacity: .618 }, { opacity: 0 }], { duration: DUR.light, easing: EASE_IN_OUT, fill: "forwards" }).finished.finally(() => wash.remove());
+  wash.animate([{ opacity: .618 }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_OUT, fill: "forwards" }).finished.finally(() => wash.remove());
   themeTimer = setTimeout(() => root.classList.remove("theme-fade"), DUR.light);
 }
 

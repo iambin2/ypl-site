@@ -119,15 +119,16 @@ function CommentForm({ onSubmit }){
   const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","댓글 작성자로 표시될 닉네임이 필요합니다.");return;} if(!body.trim()&&!link.trim()){siteAlert("댓글이나 링크를 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),body:body.trim(),pin:pin.trim(),link:link.trim()}); setBody(""); setPin(""); setLink(""); };
   return (<div className="bd-cform stack">
+    {/* each field is a cell: its label 12 over what is typed, so a placeholder never stands in for the label (DESIGN.md "Controls") */}
     <div className="bd-cform-row">
-      <input className="bd-cform-nick" value={nick} onChange={e=>setNick(e.target.value)} placeholder="닉네임" aria-label="닉네임" maxLength={20}/>
-      <input className="bd-cform-pin" value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="비밀번호(선택)" aria-label="비밀번호(선택)" inputMode="numeric"/>
+      <label className="cell bd-cform-nick"><span className="cell-label">닉네임</span><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></label>
+      <label className="cell bd-cform-pin"><span className="cell-label">비밀번호 (선택)</span><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="숫자 4자리" inputMode="numeric"/></label>
     </div>
     <div className="bd-cform-row">
-      <input className="bd-cform-body" value={body} onChange={e=>setBody(e.target.value)} placeholder="댓글 달기…" aria-label="댓글 달기…" onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
+      <label className="cell bd-cform-body"><span className="cell-label">댓글</span><input value={body} onChange={e=>setBody(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}}/></label>
       <Button variant="primary" size="sm" onClick={submit}>등록</Button>
     </div>
-    <input className="bd-cform-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 또는 유튜브 링크 (선택)" aria-label="이미지 또는 유튜브 링크 (선택)"/>
+    <label className="cell bd-cform-link"><span className="cell-label">이미지 또는 유튜브 링크 (선택)</span><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://"/></label>
   </div>);
 }
 
