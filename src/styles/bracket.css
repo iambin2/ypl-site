@@ -25,9 +25,9 @@
 .bk-submission-group-head span { font-weight: 400; color: var(--mute); font-variant-numeric: tabular-nums; }
 .bk-submission-members { display: flex; flex-direction: column; }
 .bk-submission-individuals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); column-gap: var(--s8); }
-.bk-submission-member { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; font-size: var(--t15); box-shadow: inset 0 1px 0 var(--rule); }
+.bk-submission-member { display: flex; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; font-size: var(--t15); box-shadow: inset 0 1px 0 var(--rule); }
 .bk-submission-member-name { font-weight: 600; }
-.bk-submission-late { flex-basis: 100%; font-size: var(--t12); color: var(--mute); font-variant-numeric: tabular-nums; }
+.bk-submission-late { display: block; color: var(--dim); font-weight: 400; }
 .bk-submission-state { font-size: var(--t12); color: var(--mute); font-weight: 600; font-variant-numeric: tabular-nums; }
 .bk-submission-state.submitted { color: var(--lit); font-weight: 700; }
 .bk-submission-empty { padding-bottom: var(--s5); font-size: var(--t15); color: var(--mute); }

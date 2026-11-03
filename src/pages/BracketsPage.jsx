@@ -662,8 +662,8 @@ function BracketWizard({ data, onClose, onCreate }){
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
           <span className="field-label">본선 직행자 선택</span>
           <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.{directPicks.length>0&&` 시즌 랭킹 상위 신청자 ${directPicks.length}명을 추천합니다.`}</div>
-          {directPicks.length>0&&<Button variant="second" size="sm" onClick={takeDirectPicks}>추천대로 선택</Button>}
-          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{[checked&&"본선 직행",pickFor(reg.id)&&`추천, 시즌 ${pickFor(reg.id).rank}위`].filter(Boolean).join(", ")}</span></label>;})}</div>
+          {directPicks.length>0&&!(directPicks.length===directRegistrationIds.length&&directPicks.every(pick=>directRegistrationIds.includes(pick.registrationId)))&&<Button variant="second" size="sm" onClick={takeDirectPicks}>추천대로 선택</Button>}
+          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{[checked?"본선 직행":pickFor(reg.id)&&"추천",pickFor(reg.id)&&`시즌 ${pickFor(reg.id).rank}위`].filter(Boolean).join(", ")}</span></label>;})}</div>
         </div>}
         <div className="stack bk-counters">
           <Counter label="신청" value={eventRegs.length} cells={Math.max(2,String(eventRegs.length).length)}/>
@@ -1119,10 +1119,11 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
       <span className="bk-submission-member-name">{member.name}</span>
       <span className={`bk-submission-state${member.hasSubmission ? " submitted" : ""}`}>
         {member.hasSubmission
-          ? `제출 완료${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
+          ? `${showLate&&member.lateSubmittedAt?.length ? "마감 뒤 제출" : "제출 완료"}${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
           : "미제출"}
+        {/* 마감 뒤 제출이 있으면 마지막 제출도 마감 뒤다. 그 시각은 바로 위에 있으니 여기에는 횟수와 처음만 */}
+        {showLate&&member.lateSubmittedAt?.length>1&&<span className="bk-submission-late">마감 뒤 {member.lateSubmittedAt.length}번 제출, 처음 {formatBracketSubmissionTime(member.lateSubmittedAt[0])}</span>}
       </span>
-      {showLate&&member.lateSubmittedAt?.length>0&&<span className="bk-submission-late">마감 뒤 제출 {member.lateSubmittedAt.map(formatBracketSubmissionTime).join(", ")}</span>}
       {onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(member)}>비밀번호 초기화</button>}
     </div>
   );
@@ -1318,7 +1319,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const undoApplied=async()=>{
     if(readOnly)return;
     if(!b.applied)return;
-    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적, 이 대회로 받은 칭호와 연결된 대회의 기록 상태가 함께 되돌아갑니다.",confirmLabel:"반영 취소",danger:true})))return;
+    if(!(await siteConfirm({title:"기록 반영 취소",body:"이 대진표의 기록 반영을 취소할까요? 회차, 랭킹, 시즌 성적, 이 대회로 받은 칭호, 연결된 대회의 기록 상태가 함께 되돌아갑니다.",confirmLabel:"반영 취소",danger:true})))return;
     try{
       await revertEventRecord(b.eventId);
       await onNormalizedReverted?.();

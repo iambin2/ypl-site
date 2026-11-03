@@ -172,7 +172,7 @@ export default function App() {
   useEffect(()=>{
     if(!admin) return;
     listEventsAwaitingRecord().then(rows=>{
-      if(rows.length) flash(`기록 반영 전인 지난 대회 ${rows.length}개: ${rows.map(row=>row.name).join(", ")}`,{label:"대진표",run:()=>go("bracket")});
+      if(rows.length) flash(`지난 대회 ${rows.length}개가 아직 기록 반영 전입니다.`,{label:"대진표",run:()=>go("bracket")});
     }).catch(()=>{});
   },[admin]);
   const refresh=useCallback(async()=>{ const fresh=await loadSiteData(); if(fresh) setData(normalizeData(fresh)); },[]);
