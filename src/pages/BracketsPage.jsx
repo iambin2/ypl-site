@@ -1106,10 +1106,10 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
   </div>);
 }
 
+// 좁은 줄의 날짜(DESIGN.md "Numbers, dates, time"): 09.13 15:50, 날짜와 시각은 한 줄에
 function formatBracketSubmissionTime(value) {
-  return value
-    ? formatDate(value, { time: true })
-    : "";
+  const at = dotDate(value);
+  return at ? [at.day, at.clock].filter(Boolean).join(" ") : "";
 }
 
 /* 마감 뒤 제출은 막지 않는다(어쩔 수 없는 사람을 위해). 운영진에게만 그 횟수를 상태 자리에 보인다: 마지막 제출도 마감 뒤라 그 시각이 곁에 선다.
@@ -1120,7 +1120,7 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
       <span className="bk-submission-member-name">{member.name}</span>
       <span className={`bk-submission-state${member.hasSubmission ? " submitted" : ""}`}>
         {member.hasSubmission
-          ? `${showLate&&member.lateSubmittedAt?.length ? `마감 뒤 ${member.lateSubmittedAt.length}번` : "제출 완료"}${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
+          ? `${showLate&&member.lateSubmittedAt?.length ? `마감 뒤 ${member.lateSubmittedAt.length}번` : "제출 완료"}${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` ${formatBracketSubmissionTime(member.latestSubmittedAt)}` : ""}`
           : "미제출"}
       </span>
       {onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(member)}>비밀번호 초기화</button>}
