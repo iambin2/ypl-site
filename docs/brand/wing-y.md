@@ -4,7 +4,7 @@ Replaced 2026-10-12 with the mark the user supplied (`ypl-wing-y-2026-10-12-refe
 
 - Production vector: `public/brand/ypl-wing-y.svg` (transparent, currentColor, viewBox 0 0 1315.1 870.6), refined 2026-10-27 (below).
 - The same geometry is used in `SiteHeader.jsx` (`MARK_PATH`) for the header and footer, and in `public/favicon-wing-2026-11-02.svg`, whose `favicon-32.png` and `favicon.ico` are rendered from it.
-- Share image: `public/og-ypl-2026-11-02-board.png` (DESIGN.md "Head and share surfaces": the brand, the home's sentence and two counters lit at that day's values), rendered at 1200 x 630 from `docs/brand/og-ypl.html` (headless Chrome with `--disable-lcd-text`, so it stays achromatic). Messengers and browsers cache these, so a new picture gets a new file name.
+- Share image: `public/og-ypl-2026-11-03-logo.png` (DESIGN.md "Head and share surfaces": the brand alone on the navy ground, centred by ink), rendered at 1200 x 630 from `docs/brand/og-ypl.html` (headless Chrome with `--disable-lcd-text`, so it stays achromatic). Messengers and browsers cache these, so a new picture gets a new file name.
 - Preserve the proportions, the straight edges and the symmetry.
 
 ## Refinement (2026-10-27, candidate F, then H)

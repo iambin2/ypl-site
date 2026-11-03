@@ -316,7 +316,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 - **Tab icon:** the Wing Y alone, 64 wide on a transparent ground, no tile. `favicon-*.svg` is navy on a light browser and white on a dark one; `favicon-32.png` and `favicon.ico` are the fallbacks. The YPL letters are not used at tab size: at 16 they are about 5px tall and cannot be read.
 - **App icons:** a navy square with the white Wing Y inside the maskable safe zone, because a home screen fills transparency with black.
-- **Share image:** 1200 by 630, the navy ground, the brand, the home's sentence (모든 승부가 기록이 됩니다.) and two counters lit.
+- **Share image** (2026-11-03): 1200 by 630, the navy ground and the brand alone, the mark and the wordmark centred by their ink. No sentence, no counters, no Pokémon: nothing on it can go out of date.
 - **theme-color:** navy in both themes. A changed picture takes a new file name, because browsers keep icons.
 
 ## Logo
