@@ -136,6 +136,8 @@
   .calc-side-switch .seg-track { flex: 1; }
   .calc-sides { grid-template-columns: 1fr; }
   .calc-sides[data-editing="0"] [data-calc-side="1"], .calc-sides[data-editing="1"] [data-calc-side="0"] { display: none; }
+  /* the side the switch brings up lights as swapped content does (a display change restarts the animation) */
+  .calc-sides [data-calc-side] { animation: y-fade var(--move-light) backwards; }
   .calc-move-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .calc-move-tools .tb-search-row { grid-column: 1 / -1; }
 }

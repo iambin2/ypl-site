@@ -2,12 +2,14 @@ import React, { useEffect, useLayoutEffect, useRef } from "react";
 import Icon from "./Icon.jsx";
 import Seg from "./Seg.jsx";
 import { standInk } from "./inkCentre.js";
-import { lightAfter, slideLine } from "./motion.js";
+import { forgetLine, lightAfter, slideLine } from "./motion.js";
 
-/* the chosen word's line slides from the word before it (motion.js slideLine); the line itself is the word's own ::before */
-export function useSlideLine(key) {
+/* the chosen word's line slides from the word before it (motion.js slideLine); the line itself is the word's own ::before.
+   lights: a change of word also lights what the row swaps, even when the page drew the row afresh for the new word. */
+export function useSlideLine(key, lights = false) {
   const ref = useRef(null);
-  useLayoutEffect(() => { slideLine(ref.current); }, [key]);
+  useLayoutEffect(() => { if (slideLine(ref.current) && lights) lightAfter(ref.current); }, [key]);
+  useLayoutEffect(() => { const row = ref.current; return () => forgetLine(row); }, []);
   return ref;
 }
 /* after the first render, a change of value lights what the control swaps (motion.js lightAfter) */
@@ -163,8 +165,7 @@ export function Toast({ error = false, action, onAction, children }) {
 
 /* Page tabs: words 15 on a 44 line with a hairline under the row; the chosen word is 700, lit, with a 2px line under it. */
 export function TabsLine({ value, onChange, options, label }) {
-  const ref = useSlideLine(value);
-  useLightOnChange(ref, value);
+  const ref = useSlideLine(value, true);
   return (
     <div className="tabsline" role="tablist" aria-label={label} ref={ref}>
       {options.map(([key, text]) => <button type="button" role="tab" key={key} aria-selected={value === key} className={value === key ? "on" : undefined} onClick={() => onChange(key)}>{text}</button>)}

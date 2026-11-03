@@ -213,11 +213,11 @@ label:has(input) { cursor: pointer; }
 :is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > :nth-child(3) { animation-delay: calc(var(--t-press) * .76); }
 :is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > :nth-child(n + 4) { animation-delay: calc(var(--t-press) * 1.14); }
 /* what arrives on its own, after the page stands, rises into place too: a toast, an error, a check's mark */
-:is(.toast-panel, .q-error, .error-note) { animation: y-rise var(--move-light) backwards; }
+:is(.toast-panel, .q-error, .error-note, .form-error, .bk-entry-error) { animation: y-rise var(--move-light) backwards; }
 .box .ic, input[type="checkbox"]:checked::after { animation: y-fade var(--move-tone) backwards; }
 @media (prefers-reduced-motion: reduce) {
   :root input[type="checkbox"]:checked::after,
-  :root :is(.swap, .fb-reveal, .dd-menu, .toast-panel, .q-error, .error-note, .box .ic),
+  :root :is(.swap, .calc-sides [data-calc-side], .fb-reveal, .dd-menu, .toast-panel, .q-error, .error-note, .form-error, .bk-entry-error, .box .ic),
   :root :is(.records-round-detail, .bk-submission-groups, .bk-submission-individuals, .fold-body, .pr-list) > * { animation: none; }
 }
 /* theme change: the page turns in one frame under a clearing wash of the old ground (motion.js themeTurn) */

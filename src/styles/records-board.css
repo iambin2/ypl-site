@@ -83,9 +83,6 @@
 .rc-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
 .rc-cell { --floor: var(--s13); height: calc(var(--s21) + var(--s13)); }
 .rc-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
-.rc-mon-lead { --floor: 24%; height: 216px; }
-.rc-mon-who { position: absolute; top: var(--pad); left: var(--pad); z-index: var(--z-raised); display: grid; gap: var(--s1); }
-.rc-mon-lead .mon { right: var(--pad); height: calc(100% - var(--floor)); }
 .rc-lead-note { margin-top: var(--s5); }
 .rc-usage { margin: 0; display: grid; gap: var(--seam); }
 .rc-usage > div { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr); gap: var(--s3); padding: var(--s3) var(--pad); background: var(--panel); }
@@ -111,11 +108,14 @@
   .rc-party-mon { height: var(--h-row2); }
 }
 
-/* the Pokémon sheet's head: the picture beside its three counters on desktop, over them on a phone */
+/* the Pokémon sheet's head (2026-11-03): the Pokémon is the subject, so its panel takes the golden 709 and it stands in the middle of
+   its floor; the three counters are the narrow 439 readout beside it on desktop, as tall as the panel, and three across under it on a phone */
 .rc-mon-top { display: grid; gap: var(--seam); }
 .rc-mon-top .rc-counts { margin-top: 0; }
-.rc-mon-lead { --floor: var(--s1); }
+.rc-mon-lead { --floor: var(--s1); height: 216px; }
+.rc-mon-lead .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s5)); margin-inline: auto; }
 @media (min-width: 860px) {
-  .rc-mon-top { grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); align-items: stretch; }
+  .rc-mon-top { grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); align-items: stretch; }
+  .rc-mon-lead { height: auto; }
   .rc-mon-top .rc-counts { grid-template-columns: minmax(0, 1fr); }
 }

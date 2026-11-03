@@ -61,19 +61,31 @@ export function light(root, total = DUR.light) {
 
 /* the line under the chosen word of a row of words (the top bar's pages, page tabs) belongs to the word: it is the word's own ::before,
    exactly the word's width wherever fonts, zoom or the window take it. A change of word only animates it: the new word's line starts
-   where the old one stood and settles into place by transform. Nothing is measured once and kept. */
-const lastLine = new WeakMap();
+   where the old one stood and settles into place by transform. Nothing is measured once and kept.
+   A row is remembered by its name, so a page that draws its tabs afresh on a change of tab (the board, the brackets) still slides its
+   line; a row that leaves forgets its line, so coming back to the page places it without moving. Returns whether the word changed. */
+const lastLine = new Map();
+const lineKey = row => row.getAttribute("aria-label") || row;
 export function slideLine(row) {
   const cur = row?.querySelector(':scope > :is([aria-current="page"], [data-current], [aria-selected="true"])');
-  if (!cur) return;
-  const now = { left: cur.offsetLeft, width: cur.offsetWidth };
-  const was = lastLine.get(row);
-  lastLine.set(row, now);
-  if (!was || reduced() || !now.width || (was.left === now.left && was.width === now.width) || typeof cur.animate !== "function") return;
+  if (!cur) return false;
+  const now = { left: cur.offsetLeft, width: cur.offsetWidth, row };
+  const was = lastLine.get(lineKey(row));
+  lastLine.set(lineKey(row), now);
+  const moved = Boolean(was && now.width && (was.left !== now.left || was.width !== now.width));
+  if (!moved || reduced() || typeof cur.animate !== "function") return moved;
   try {
     cur.animate([{ transform: `translateX(${was.left - now.left}px) scaleX(${was.width / now.width})` }, { transform: "none" }],
       { duration: DUR.light, easing: EASE_OUT, pseudoElement: "::before" });
   } catch { /* a browser without pseudo-element animation shows the line in place */ }
+  return moved;
+}
+/* a row that unmounts forgets its line a beat later, unless the line was placed again meanwhile: by a row of the same name in the same
+   commit, or by the same row mounting again (StrictMode's trial unmount) */
+export function forgetLine(row) {
+  if (!row) return;
+  const key = lineKey(row), placed = lastLine.get(key);
+  setTimeout(() => { if (placed?.row === row && lastLine.get(key) === placed) lastLine.delete(key); });
 }
 /* the scoreboard has no spring: a board switches on. Old callers that still ask for one get the ease-out curve. */
 export function springs() { return { spring: EASE_OUT, lift: EASE_OUT }; }
@@ -132,11 +144,11 @@ export function themeTurn(commit) {
   themeTimer = setTimeout(() => root.classList.remove("theme-fade"), DUR.light);
 }
 
-/* what follows a control that swaps the content under it (page tabs, filter chips) lights again, as a page does */
+/* what follows a control that swaps the content under it (page tabs, filter chips) lights again, as a page does: everything after it in
+   the page, at every level up to the page itself, not only the first level that has a next sibling */
 export function lightAfter(el) {
-  let at = el;
-  while (at && !at.nextElementSibling && at.id !== "ypl-main") at = at.parentElement;
-  for (let n = at?.nextElementSibling; n; n = n.nextElementSibling) light(n, DUR.leave);
+  for (let at = el; at && at.id !== "ypl-main"; at = at.parentElement)
+    for (let n = at.nextElementSibling; n; n = n.nextElementSibling) light(n, DUR.leave);
 }
 
 /* into a sheet: the pressed row stays where it is, and the sheet's title lights a beat after the sheet starts to rise */
