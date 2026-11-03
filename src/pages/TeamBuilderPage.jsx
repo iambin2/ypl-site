@@ -693,7 +693,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
       const saved = await submitEventTeamSnapshot({
         eventId: registration.event.id,
         registrationId: registration.registration.id,
-        registrationName,
+        registrationName: registration.registration.registration_name,
         registrationSource: registration.registration.registration_source,
         eligibility: submissionEligibility,
         team,

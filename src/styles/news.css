@@ -37,6 +37,7 @@
 .nw-form-title { margin-top: var(--s3); }
 .nw-req { margin-top: var(--s1); }
 .nw-fields { margin-top: var(--s5); }
+.nw-fields > * + * { margin-top: var(--s5); }
 .nw-done { display: flex; align-items: flex-start; gap: var(--s3); margin-top: var(--s5); padding: var(--s5); }
 .nw-done .box.on { background: var(--ground); color: var(--lit); }
 .nw-done p { margin-top: var(--s1); }

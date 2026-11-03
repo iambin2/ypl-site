@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { BackLink, Chips, Choice, Counter, Dock, Lead, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
+import { BackLink, Chips, Choice, Counter, Dock, Lead, OptionRows, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
+import { DUR, light } from "../components/common/motion.js";
 import Button from "../components/common/Button.jsx";
 import { PushLink } from "../components/common/PushControl.jsx";
 import Seg from "../components/common/Seg.jsx";
@@ -10,7 +11,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
-import { builderRouteSearch, listEventApplications, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, findApplicantNameRecord, listEventApplications, playerNameKey, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
@@ -278,24 +279,42 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
   const form=ann.form||{}; const fields=form.fields||[];
   const [ans,setAns]=useState({}); const [registrationName,setRegistrationName]=useState(""); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
   const [errors,setErrors]=useState({}); const [failed,setFailed]=useState("");
+  // 같은 이름의 기록: 이름 칸을 떠나면 읽고, 기록이 있으면 그 기록을 보이고 본인인지 묻는다. 동명이인은 다음 글자의 이름(이제빈 B)으로
+  // 신청해 남의 기록에 합쳐지지 않는다. 읽지 못하면 묻지 않고 예전처럼 신청한다(DB가 이름 하나에 선수 한 명을 지킨다).
+  const [record,setRecord]=useState(null); const [who,setWho]=useState(""); const [alias,setAlias]=useState("");
+  const lookups=useRef(new Map()), latest=useRef(""), recordRef=useRef(null);
+  // 같음은 선수 이름의 규칙대로: 띄어쓰기만 바꿔 다시 쳐도 같은 확인이고, 블록이 꺼졌다 켜지지 않는다.
+  const lookup=typed=>{ const key=playerNameKey(typed); if(!lookups.current.has(key)) lookups.current.set(key,findApplicantNameRecord(typed).catch(()=>null)); return lookups.current.get(key); };
+  const checkName=()=>{ const key=playerNameKey(registrationName); latest.current=key; if(form.eventId&&key) lookup(registrationName).then(r=>{ if(latest.current===key) setRecord(r&&{key,...r}); }); };
+  const shown=form.eventId&&record&&record.key===playerNameKey(registrationName)?record:null;
+  useLayoutEffect(()=>{ if(shown) light(recordRef.current,DUR.leave); },[shown?.key]);
   const set=(id,v)=>{ setAns(a=>({...a,[id]:v})); setErrors(e=>({...e,[id]:""})); };
   const submit=async()=>{
-    const next={};
-    if(form.eventId&&!registrationName.trim()) next.name="참가자 이름을 입력해 주세요.";
+    const next={}; const typed=registrationName.trim();
+    if(form.eventId&&!typed) next.name="참가자 이름을 입력해 주세요.";
+    setBusy(true); setFailed("");
+    // 이름 칸에서 바로 신청하기를 누르면 확인이 아직 읽는 중이다. 같은 읽기를 기다린다.
+    const found=form.eventId&&typed?await lookup(typed):null;
+    if(found){ latest.current=playerNameKey(typed); setRecord({key:latest.current,...found}); if(!who) next.who="본인인지 선택해 주세요."; }
     for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty) next[f.id]=`‘${f.label||"질문"}’ 항목에 답해 주세요.`; } }
-    setErrors(next); setFailed("");
+    // 막 읽은 기록의 본인 확인이 그려진 뒤에 그 칸으로 간다
+    flushSync(()=>setErrors(next));
     const first=Object.keys(next)[0];
-    if(first){ document.getElementById(first==="name"?"ff-name":`ff-${first}`)?.focus(); return; }
-    setBusy(true); const ok=await onSubmit({registrationName:registrationName.trim(),answers:ans}); setBusy(false);
+    // 신청하기가 다시 켜진 다음 프레임에 옮긴다. 꺼진 버튼이 포커스를 body로 떨어뜨린 뒤여야 남는다.
+    // 본인 확인의 입력은 화면에 보이지 않는 칸이라, 그 질문을 화면 가운데로 가져온 뒤 포커스만 옮긴다.
+    if(first){ setBusy(false); requestAnimationFrame(()=>{ if(first!=="who"){ document.getElementById(first==="name"?"ff-name":`ff-${first}`)?.focus(); return; }
+      const input=document.querySelector('input[name="ff-who"]'); input?.closest(".q")?.scrollIntoView({block:"center"}); input?.focus({preventScroll:true}); }); return; }
+    const name=found&&who==="other"?found.alias:typed;
+    const ok=await onSubmit({registrationName:name,answers:ans}); setBusy(false);
     if(typeof ok==="string"){ setFailed(ok); return; }
     if(ok===false){ setFailed("신청 저장을 확인하지 못했습니다."); return; }
-    setDone(true);
+    setAlias(name===typed?"":name); setDone(true);
   };
   const required=form.eventId||fields.some(f=>f.required);
   if(done) return (<section className="nw">
     <BackLink to={ann.title} onClick={onBack}/>
     <h1 className="t20 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
-    <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">신청이 접수되었습니다.</b><p className="t12 reg">결과와 안내는 공지로 알려 드립니다.</p></div></div>
+    <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">신청이 접수되었습니다.</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>
     <Dock><Button variant="main" onClick={onBack}>공지 보기</Button></Dock>
   </section>);
   return (<section className="nw">
@@ -305,8 +324,24 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
     {fields.some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
     <div className="nw-fields">
       {form.eventId&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
-        <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{setRegistrationName(e.target.value);setErrors(x=>({...x,name:""}));}} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
+        <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{ if(playerNameKey(e.target.value)!==playerNameKey(registrationName)) setWho(""); setRegistrationName(e.target.value);setErrors(x=>({...x,name:"",who:""}));}} onBlur={checkName} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
       </Question>}
+      {/* 같은 이름의 기록은 기록 화면의 최근 대회 줄 그대로, 최근 세 번. 그 아래 본인 확인이 두 줄의 선택지로 선다. */}
+      {shown&&<div ref={recordRef}>
+        <Question id="ff-record" label="같은 이름의 기록" group>
+          <div className="stack">
+            {shown.events.slice(0,3).map((e,i)=><Row key={i} title={e.name} line={formatDate(e.date)||undefined}
+              value={<span className={"rc-place t12"+(e.placement==="champion"?" inv":" dim")}>{e.label}</span>}/>)}
+          </div>
+          {shown.events.length>3&&<p className="t12 dim reg" data-rise>모두 {shown.events.length}회 참가했습니다.</p>}
+        </Question>
+        <Question id="ff-who" label="본인 확인" required group error={errors.who}>
+          <OptionRows name="ff-who" value={who} onChange={v=>{setWho(v);setErrors(x=>({...x,who:""}));}} options={[
+            {value:"self",title:"본인",line:`${shown.player.display_name} 기록에 이어서 신청합니다.`},
+            ...(shown.alias?[{value:"other",title:"동명이인",line:`${shown.alias} 이름으로 새로 신청합니다.`}]:[]),
+          ]}/>
+        </Question>
+      </div>}
       {form.eventDraft?.division==="both"&&<p className="t12 dim reg">루키와 마스터를 함께 접수합니다. 개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
       {fields.length===0&&!form.eventId&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>{ const label=f.label||`질문 ${i+1}`, id=`ff-${f.id}`, error=errors[f.id];

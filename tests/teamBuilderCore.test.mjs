@@ -15,6 +15,9 @@ import {
   buildBracketSubmissionStatusModel,
   buildSubmissionStatusRows,
   selectSubmissionRegistration,
+  findPlayerByName,
+  nextAliasName,
+  playerNameKey,
   resolveEventRuleSelection,
   validateSubmissionEligibility,
   validateTeam,
@@ -364,4 +367,25 @@ test("submission registration selection trims exact names, preserves NULL Player
     ], "홍길동"),
     error => error.code === "YPL_AMBIGUOUS_REGISTRATION"
   );
+  assert.equal(selectSubmissionRegistration(registrations, " 홍 길동 ").id, "reg-a");
+});
+
+test("a player name is one player regardless of spacing and case", () => {
+  assert.equal(playerNameKey(" Ash  Ketchum "), "ashketchum");
+  const players = [{ id: "p1", display_name: "홍길동" }, { id: "p2", display_name: "Red" }];
+  assert.equal(findPlayerByName(players, "홍 길동").id, "p1");
+  assert.equal(findPlayerByName(players, "red").id, "p2");
+  assert.equal(findPlayerByName(players, "김철수"), null);
+  assert.equal(findPlayerByName(players, "  "), null);
+  assert.throws(() => findPlayerByName([...players, { id: "p3", display_name: "홍길 동" }], "홍길동"), /2명 이상/);
+});
+
+test("a namesake is offered the next free letter after the name", () => {
+  const players = [{ display_name: "이제빈" }];
+  assert.equal(nextAliasName(players, "이제빈"), "이제빈 B");
+  const more = [...players, { display_name: "이제빈 B" }, { display_name: "이제빈c" }];
+  assert.equal(nextAliasName(more, "이제빈"), "이제빈 D");
+  assert.equal(nextAliasName(more, "이제빈 B"), "이제빈 D");
+  const full = Array.from({ length: 25 }, (_, i) => ({ display_name: `Red ${String.fromCharCode(66 + i)}` }));
+  assert.equal(nextAliasName(full, "Red"), null);
 });

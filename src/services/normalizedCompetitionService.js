@@ -20,7 +20,7 @@ import {
   buildTeamMemberCandidates,
   getConfirmedTeamMemberIdentities,
 } from "./bracketTeamParticipants.js";
-import { buildSubmissionStatusRows, selectSubmissionRegistration } from "./teamBuilderCore.js";
+import { buildSubmissionStatusRows, findPlayerByName, nextAliasName, playerNameKey, selectSubmissionRegistration } from "./teamBuilderCore.js";
 import { buildTeamSnapshotSubmission } from "./teamSubmission.js";
 import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
 import { partyDeadlines } from "./announcementTimes.js";
@@ -789,37 +789,71 @@ export async function listSubmissionEvents() {
   return data || [];
 }
 
+// 이름 비교는 띄어쓰기와 대소문자를 무시해야 해서 PostgREST 필터로 좁히지 않고 전부 읽는다.
+// ponytail: 선수 전체 읽기, 수천 명이 되면 같은 식의 생성 열을 두고 그 열로 거른다.
+async function loadPlayerNames() {
+  const { data, error } = await db().from("players").select("id, display_name");
+  if (error) fail(error, "참가자 정보를 확인하지 못했습니다.");
+  return data || [];
+}
+
+// 신청 단계에서는 기존 Player에 연결만 하고, 새 이름은 Player를 만들지 않고 기록 반영 단계로 넘긴다.
 async function findExistingApplicantPlayer(registrationName) {
   const name = String(registrationName || "").trim();
   if (!name) throw new Error("참가자 이름을 입력해 주세요.");
+  return findPlayerByName(await loadPlayerNames(), name);
+}
 
-  const { data: matches, error } = await db()
-    .from("players")
-    .select("id, display_name")
-    .eq("display_name", name);
+const RECORD_DATE_LENGTH = { exact: 10, month: 7, year: 4 };
 
-  if (error) fail(error, "참가자 정보를 확인하지 못했습니다.");
+// 신청 화면의 동명이인 확인: 같은 이름의 선수, 그 선수가 나간 대회(최근 순, 성적), 동명이인이 쓸 다음 이름. 기록이 없는 이름이면 null.
+export async function findApplicantNameRecord(registrationName) {
+  const name = String(registrationName || "").trim();
+  if (!name) return null;
+  const players = await loadPlayerNames();
+  const player = findPlayerByName(players, name);
+  if (!player) return null;
 
-  // 신청 단계에서는 기존 Player가 정확히 1명일 때만 연결한다.
-  // 신규 이름 또는 동명이인은 Player를 생성/확정하지 않고 기록 반영 단계로 넘긴다.
-  return (matches || []).length === 1 ? matches[0] : null;
+  const { data, error } = await db()
+    .from("entry_participants")
+    .select("entries(events(name, held_on, date_precision), results!results_entry_id_fkey(placement_code, placement_label))")
+    .eq("player_id", player.id);
+  if (error) fail(error, "같은 이름의 기록을 불러오지 못했습니다.");
+
+  const events = (data || [])
+    .map(row => {
+      const event = row.entries?.events;
+      const result = row.entries?.results?.[0];
+      return {
+        name: event?.name || "",
+        date: String(event?.held_on || "").slice(0, RECORD_DATE_LENGTH[event?.date_precision] || 0),
+        placement: result?.placement_code || "",
+        label: result?.placement_label || "참가",
+      };
+    })
+    .filter(event => event.name)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  return { player, events, alias: nextAliasName(players, player.display_name) };
 }
 export async function submitEventApplication({
   eventId,
   registrationName,
   registrationData = {},
 }) {
-  const name = String(registrationName || "").trim();
+  const typed = String(registrationName || "").trim();
   if (!eventId) throw new Error("이 신청서에 연결된 대회가 없습니다.");
-  if (!name) throw new Error("참가자 이름을 입력해 주세요.");
-  if (name.length > 100) throw new Error("이름은 100자 안으로 입력해 주세요.");
+  if (!typed) throw new Error("참가자 이름을 입력해 주세요.");
+  if (typed.length > 100) throw new Error("이름은 100자 안으로 입력해 주세요.");
 
   const event = await getEvent(eventId);
   if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
   const intakeEvents = await getLeagueIntakeEvents(event);
   if (!intakeEvents.some(row => row.status === "open" && !row.record_applied_at)) throw new Error("현재 참가 신청을 받고 있는 대회가 아닙니다.");
 
-  const player = await findExistingApplicantPlayer(name);
+  // 기존 선수와 표기만 다르면 그 선수의 이름으로 신청한다. DB의 이름 확인과 신청 정책이 정확한 표기를 요구한다.
+  const player = await findExistingApplicantPlayer(typed);
+  const name = player?.display_name || typed;
 
   const { data: existing, error: existingError } = await db()
     .from("event_registrations")
@@ -875,7 +909,6 @@ export async function findSubmissionRegistration(eventId, registrationName) {
       final_submission_id
     `)
     .in("event_id", intakeEvents.map(row => row.id))
-    .eq("registration_name", name)
     .in("registration_source", ["application", "advancement", "manual"]);
 
   if (error) fail(error, "신청 정보를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
@@ -1615,7 +1648,7 @@ async function preflightEventParticipantIdentities(
         throw new Error(`${participant.name}의 참가 신청이 이 대회에 속하지 않거나 존재하지 않습니다.`);
       }
     } else {
-      const matches = registrationRows.filter(row => row.registration_name === participant.name);
+      const matches = registrationRows.filter(row => playerNameKey(row.registration_name) === playerNameKey(participant.name));
       if (matches.length > 1) {
         throw new Error(`'${participant.name}' 이름의 참가 신청이 중복되어 있습니다. 참가 확정 전에 확인이 필요합니다.`);
       }
@@ -1635,30 +1668,24 @@ async function preflightEventParticipantIdentities(
     };
   });
 
-  const namesToResolve = [...new Set(plans.filter(plan => !plan.playerId).map(plan => plan.identityName))];
-  let players = [];
-  if (namesToResolve.length) {
-    const { data, error } = await db()
-      .from("players")
-      .select("id, display_name")
-      .in("display_name", namesToResolve);
-
-    if (error) fail(error, "참가자 선수 정보를 확인하지 못했습니다.");
-    players = data || [];
-  }
+  const players = plans.some(plan => !plan.playerId) ? await loadPlayerNames() : [];
 
   for (const plan of plans) {
     if (plan.playerId) continue;
-    const matches = players.filter(player => player.display_name === plan.identityName);
-    if (matches.length > 1) {
-      throw new Error(`'${plan.identityName}' 이름의 선수가 2명 이상 존재합니다. 관리자가 직접 확인해야 합니다.`);
+    const player = findPlayerByName(players, plan.identityName);
+    if (player && player.display_name !== plan.identityName) {
+      // 신청 이름은 바꾸지 않는다. 운영진이 표기를 맞춘 뒤 다시 확정한다.
+      if (plan.registration) {
+        throw new Error(`'${plan.identityName}' 참가 신청이 기존 선수 '${player.display_name}'과 표기만 다릅니다. 신청 이름을 맞춘 뒤 다시 확정해 주세요.`);
+      }
+      plan.identityName = player.display_name;
     }
-    plan.playerId = matches[0]?.id || null;
+    plan.playerId = player?.id || null;
   }
 
   const claimedIdentity = new Map();
   for (const plan of plans) {
-    const key = plan.playerId ? `player:${plan.playerId}` : `new:${plan.identityName}`;
+    const key = plan.playerId ? `player:${plan.playerId}` : `new:${playerNameKey(plan.identityName)}`;
     if (claimedIdentity.has(key)) {
       throw new Error(`'${plan.identityName}' 참가자가 대진표에 중복되어 있습니다. 식별 정보를 자동 확정할 수 없습니다.`);
     }
@@ -2294,7 +2321,7 @@ export async function inspectEventParticipantIdentities(eventId, participants = 
 
     if (!registration) {
       const matches = (registrations || []).filter(
-        row => row.registration_name === participant.name
+        row => playerNameKey(row.registration_name) === playerNameKey(participant.name)
       );
 
       if (matches.length > 1) {
@@ -2312,22 +2339,9 @@ export async function inspectEventParticipantIdentities(eventId, participants = 
     };
   });
 
-  const namesToCheck = [...new Set(
-    rows
-      .filter(row => !row.registrationAmbiguous && !row.registration?.player_id)
-      .map(row => row.identityName)
-  )];
-
-  let players = [];
-  if (namesToCheck.length) {
-    const { data, error } = await db()
-      .from("players")
-      .select("id, display_name")
-      .in("display_name", namesToCheck);
-
-    if (error) fail(error, "선수 정보를 확인하지 못했습니다.");
-    players = data || [];
-  }
+  const players = rows.some(row => !row.registrationAmbiguous && !row.registration?.player_id)
+    ? await loadPlayerNames()
+    : [];
 
   return rows.map(row => {
     const { participant, registration, identityName, registrationAmbiguous } = row;
@@ -2355,7 +2369,7 @@ export async function inspectEventParticipantIdentities(eventId, participants = 
       };
     }
 
-    const matches = players.filter(player => player.display_name === identityName);
+    const matches = players.filter(player => playerNameKey(player.display_name) === playerNameKey(identityName));
 
     if (matches.length > 1) {
       return {

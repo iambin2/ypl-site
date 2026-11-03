@@ -81,7 +81,8 @@ historical bracket은 winner 변경, participant/party 변경, delete, record ap
 `Event`는 season, event type, division, battle format, competition format, rule, schedule, record lifecycle의 canonical owner다.
 
 - 신청은 `EventRegistration`이다.
-- 이름 기반 연결은 같은 Event 안에서 `registration_name` exact match만 허용한다. fuzzy match나 동명이인 임의 선택은 금지한다.
+- 이름 기반 연결은 같은 Event 안에서 `registration_name` match만 허용한다. 같음은 띄어쓰기와 대소문자만 무시하며(`playerNameKey`), 그 밖의 fuzzy match나 동명이인 임의 선택은 금지한다.
+- 선수 이름 하나에 Player 한 명이다. `docs/db/player_name_unique.sql`의 고유 색인이 같은 규칙으로 지킨다. 신청 화면은 기존 선수의 이름이면 그 선수의 최근 대회를 보이고 본인인지 묻는다. 동명이인은 비어 있는 다음 글자의 이름(`nextAliasName`, 이제빈 B, C …)으로 신청한다.
 - 기존 Event 수정은 기존 `season_id`와 `round_number`를 유지한다.
 - Event가 completed 또는 record-applied이면 official submission write를 막는다.
 

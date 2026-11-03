@@ -1137,12 +1137,37 @@ export function buildBracketSubmissionStatusModel(bracket = {}, statuses = []) {
   };
 }
 
+// 선수 이름의 같음. 띄어쓰기와 대소문자만 다른 이름은 같은 선수다(docs/db/player_name_unique.sql의 고유 색인과 같은 규칙).
+export const playerNameKey = name => String(name || "").replace(/\s+/g, "").toLowerCase();
+
+// 이름이 같은 Player. DB 색인이 둘을 허락하지 않지만, 색인 전의 데이터가 둘이면 고르지 않고 멈춘다.
+export function findPlayerByName(players = [], name = "") {
+  const key = playerNameKey(name);
+  if (!key) return null;
+  const matches = (Array.isArray(players) ? players : []).filter(player => playerNameKey(player?.display_name) === key);
+  if (matches.length > 1) throw new Error(`'${String(name).trim()}' 이름의 선수가 2명 이상 존재합니다. 관리자가 직접 확인해야 합니다.`);
+  return matches[0] || null;
+}
+
+// 동명이인이 쓸 다음 이름: 이제빈 B, 이제빈 C …. 이미 있는 선수의 이름은 건너뛰고, 기존 이름 끝의 글자(이제빈 B)는 떼고 센다.
+// ponytail: Z까지만 센다. 한 이름에 스물다섯 명이 넘으면 null이고, 신청 화면은 동명이인 선택지를 내지 않는다.
+export function nextAliasName(players = [], name = "") {
+  const base = String(name || "").trim().replace(/\s+[A-Z]$/, "");
+  if (!base) return null;
+  const taken = new Set((Array.isArray(players) ? players : []).map(player => playerNameKey(player?.display_name)));
+  for (let code = 66; code <= 90; code += 1) {
+    const alias = `${base} ${String.fromCharCode(code)}`;
+    if (!taken.has(playerNameKey(alias))) return alias;
+  }
+  return null;
+}
+
 export function selectSubmissionRegistration(registrations = [], registrationName = "") {
-  const name = String(registrationName || "").trim();
-  if (!name) return null;
+  const key = playerNameKey(registrationName);
+  if (!key) return null;
   const matches = (Array.isArray(registrations) ? registrations : []).filter(registration =>
     ["application", "advancement", "manual"].includes(registration?.registration_source || registration?.registrationSource)
-    && String(registration?.registration_name || registration?.registrationName || "") === name
+    && playerNameKey(registration?.registration_name || registration?.registrationName) === key
   );
   if (matches.length > 1) {
     const ambiguous = new Error("동일한 이름의 신청자가 있어 자동으로 확인할 수 없습니다. 운영진에게 문의해 주세요.");
