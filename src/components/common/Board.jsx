@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef } from "react";
 import Icon from "./Icon.jsx";
 import Seg from "./Seg.jsx";
 import { standInk } from "./inkCentre.js";
-import { forgetLine, lightAfter, slideLine } from "./motion.js";
+import { forgetLine, lightAfter, place, slideLine } from "./motion.js";
 
 /* the chosen word's line slides from the word before it (motion.js slideLine); the line itself is the word's own ::before.
    lights: a change of word also lights what the row swaps, even when the page drew the row afresh for the new word. */
@@ -46,7 +46,8 @@ export function Counter({ label, value, unit = "", cells = 2, onClick, lamp, aft
 }
 
 /* A row of a stack: 52 for one line, 64 with a grey line. lead is the cell on the left (a rank, a date), value the figure on the right,
-   lamp the lamp column at the end (true lights it, false keeps the column dark). className sets the columns. */
+   lamp the lamp column at the end (true lights it, false keeps the column dark; a word lights it and stands beside it, since a lamp
+   is a word's companion: 새 글). className sets the columns. */
 export function Row({ lead, title, line, value, lamp, onClick, className = "", label }) {
   const { as: Box, props } = door(onClick);
   return (
@@ -54,6 +55,7 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
       {lead != null && <span className="row-lead">{lead}</span>}
       <span className="row-main"><b className="t15">{title}</b>{line && <span className="t12 dim">{line}</span>}</span>
       {value != null && <span className="row-value">{value}</span>}
+      {typeof lamp === "string" && <span className="row-lamp-word t12">{lamp}</span>}
       {lamp != null && <span className="row-lamp">{lamp && <i className="lamp" aria-hidden="true" />}</span>}
     </Box>
   );
@@ -63,8 +65,10 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
    stands with its ink's feet on the band's top edge. Pictures that fail to load leave the floor empty. */
 export function Mon({ src, className = "", ...rest }) {
   if (!src) return null;
-  const stand = img => { if (img?.complete && img.naturalWidth) standInk(img); };
-  return <img className={"mon" + (className ? " " + className : "")} src={src} alt="" decoding="async" {...rest} ref={stand} onLoad={e => standInk(e.currentTarget)} />;
+  // a picture still loading when its panel lit comes on by tone once it has loaded, instead of popping in (DESIGN.md "Motion")
+  const stand = img => { if (!img) return; if (img.complete && img.naturalWidth) standInk(img); else img.dataset.late = ""; };
+  const loaded = img => { standInk(img); if (img.dataset.late != null) { delete img.dataset.late; place(img); } };
+  return <img className={"mon" + (className ? " " + className : "")} src={src} alt="" decoding="async" {...rest} ref={stand} onLoad={e => loaded(e.currentTarget)} />;
 }
 
 /* The current champion: one panel, the name, generation and season top left, 파티 보기 in the floor band, the Pokémon on the floor
@@ -81,7 +85,8 @@ export function ChampionPanel({ champion, onClick }) {
           <span className="t12 dim reg">{champion.label}, {champion.line}</span>
         </span>
         <span className="champion-more t12">파티 보기<Icon n="arrow" size={16} /></span>
-        <Mon src={champion.party[0]?.img} />
+        {/* the first screen's largest picture: asked for before the rest */}
+        <Mon src={champion.party[0]?.img} fetchpriority="high" />
       </>}
     </button>
   );

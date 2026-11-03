@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import StatusPage from "./pages/StatusPage.jsx";
-import { isUnknownPath } from "./services/appRouting.js";
+import { isUnknownPath, isUnknownView } from "./services/appRouting.js";
 import "./styles/tokens.css";
 import "./styles/components.css";
 import "./styles/shell.css";
@@ -55,7 +55,7 @@ document.addEventListener("load", e => { if (e.target.matches?.('img[src*="/spri
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {isUnknownPath(window.location.pathname, import.meta.env.BASE_URL)
+    {isUnknownPath(window.location.pathname, import.meta.env.BASE_URL) || isUnknownView(window.location.search)
       ? <StatusPage title="페이지를 찾을 수 없습니다." desc="삭제되었거나 주소가 잘못되었습니다." />
       : <AppBoundary><App /></AppBoundary>}
   </React.StrictMode>

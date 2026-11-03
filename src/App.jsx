@@ -204,8 +204,9 @@ export default function App() {
     let handle=null, stopped=false;
     const later=f=>window.requestIdleCallback?window.requestIdleCallback(f,{timeout:2000}):setTimeout(f,400);
     const next=()=>{ if(stopped||!queue.length) return; handle=later(()=>{ if(!stopped) queue.shift().prefetch().then(next); }); };
-    next();
-    return ()=>{ stopped=true; if(window.requestIdleCallback) window.cancelIdleCallback(handle); else clearTimeout(handle); };
+    // 첫 화면의 기록과 챔피언 그림이 먼저 받는다: 한가한 틈은 네트워크를 기다리는 동안에도 오므로 조각들이 그 줄에 끼어들었다(LCP 대기 72%).
+    const first=setTimeout(next,2000);
+    return ()=>{ stopped=true; clearTimeout(first); if(window.requestIdleCallback) window.cancelIdleCallback(handle); else clearTimeout(handle); };
   },[loaded]);
   useEffect(()=>{
     const intent=e=>{ const v=e.target.closest?.("[data-tab]")?.dataset.tab; if(PAGES[v]) PAGES[v].prefetch(); };

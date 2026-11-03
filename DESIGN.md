@@ -157,7 +157,7 @@ An 8px square. Two kinds and no others.
 
 | Lamp | Means | Where |
 |---|---|---|
-| Lit (`--lit`) | new, or next | a new notice at the end of its row, 다음 대회까지, a submitted party, the current submission |
+| Lit (`--lit`) | new, or next | a new notice at the end of its row beside 새 글, 다음 대회까지, 파티 제출까지, a submitted party, the current submission |
 | Amber (`--signal`) | live now | 오늘 대회 진행 중, the live match (beside its score), a running private bracket |
 
 A lamp never blinks and never moves. It is a word's companion, not a replacement: it always stands beside a word that says the same thing.
@@ -253,7 +253,9 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 | light | things arrive by lighting: panels, then bars and words, then pictures | 420 in all | ease-out |
 
 - **First open:** the ground, the bars and every unlit segment are in the HTML's first paint, so there is no loading screen and no white frame. Panels, page titles and section heads come on top to bottom, 38 apart (the stagger stops growing at 260), each rising 12 into place over 420; then segment bars light, 62 apart per display; pictures come last. On a return nothing replays.
-- **Below the first screen:** a panel waits dark and lights, rising the same 12, the first time it scrolls into view. It happens once; nothing is tied to the scroll after that.
+- **Below the first screen:** a panel waits dark and lights, rising the same 12, the first time it nears the view (a screen's fifth before it arrives, so a reader does not meet dark panels), top to bottom. A grey line under a stack lights with the stack. It happens once; nothing is tied to the scroll after that.
+- **A unit lights with its digits.** 일 beside the countdown is a word of the display and comes on with its lit bars, never before them.
+- **A picture that arrives late** (a sprite still loading when its panel lit) comes on by tone when it has loaded, so no picture pops in.
 - **Page change:** the moment a page is pressed, the line under the top bar's words slides to it and the page being left dims; if the next page takes longer than 260 (its code, its data), the busy cell stands over it. The new page then lights as on first open. Back does not replay: the page stands where it was left. The bars never move.
 - **The sliding line:** the 2px line under the chosen word of a row of words (the top bar's pages, page tabs) is one line that slides to the chosen word over 420. The first placing does not move.
 - **The pointer:** a door lifts one tone; a Pokémon in a door steps 4 up off its floor; an arrow leans 4 toward where it goes (back leans back); a link's word brightens. All by transform or colour over 160. Nothing grows.
@@ -284,11 +286,11 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 ## Layout and pages
 
-**Home, phone.** Under the bar: the label row (a lamp, 다음 대회까지, the date at the right), the countdown at 120 with 일, the event's name at 20 in two lines, the main action, then the champion panel (216, floor band 52), then three counters (대회, 트레이너, 시즌; 84 tall, cells 115, 116, 115). Below: the season's ranking as rows (tied ranks read 1, 1, 1 with a grey sentence under the stack saying how many share it), notices as rows with the lamp column, past champions as a sideways run of 132 by 204 panels whose name band is their floor; on desktop the run shares the full 1200 and scrolls only once the panels would fall under 132.
+**Home, phone.** Under the bar: the label row (a lamp, 다음 대회까지, the date at the right), the countdown at 120 with 일, the event's name at 20 in two lines, while that event's party submission time is still ahead a counter 파티 제출까지 (2026-11-03: days with 일, and on its last day hours with 시간; it opens the notice), the main action, then the champion panel (216, floor band 52), then three counters (대회, 트레이너, 시즌; 84 tall, cells 115, 116, 115). Below: the season's ranking as rows (tied ranks read 1, 1, 1 with a grey sentence under the stack saying how many share it), notices as rows with the lamp column, past champions as a sideways run of 132 by 204 panels whose name band is their floor; on desktop the run shares the full 1200 and scrolls only once the panels would fall under 132.
 
 **Home on event day.** The label turns amber, 오늘 대회 진행 중; the display shows the start time as a clock at 84 with 시작; the main action is 대진표 보기; the live match replaces the champion.
 
-**Home, desktop.** Left column 709: label, countdown at 240, the event's name at 32 on one line, the main action and 리그 소개, then the season ranking. Right column 439: the champion panel, the party as six cells, the counters, then notices.
+**Home, desktop.** Left column 709: label, countdown at 240, the event's name at 32 on one line, the 파티 제출까지 counter when there is one, the main action and 리그 소개, then the season ranking. Right column 439: the champion panel, the party as six cells, the counters, then notices.
 
 **Notices.** Rows of 64: the title, a grey line with the date (and 고정 lit), a lamp column at the right end. A notice opens with its date line, the title at 32, two counters (대회까지, 신청 / 정원), spec rows (일시, 형식, 방식, 단위), the body, and the docked main action (참가 신청). On desktop the two columns share their top line: the back link, date, title and body take 709, and the 439 beside them, from the same first line and held in view as the body scrolls, holds the counters, the spec, the main action, the links, then 다른 공지 (five rows). Body text keeps the 36em measure; a grid of cards in the body takes its column's whole width. The form docks 신청하기.
 

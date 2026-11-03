@@ -10,6 +10,7 @@ import { dotDate, formatDate } from "../services/dateFormat.js";
 import { listNormalizedBracketRuntimes } from "../services/normalizedCompetitionService.js";
 import { freshRead } from "../services/readCache.js";
 import { liveMatches } from "../services/recordsAnalytics.js";
+import { submissionDue } from "../services/submissionDue.js";
 
 const DAY_MS = 86400000;
 /* "2026-10-04", "2026.10.04", "2026-10-04T15:21" → 그날 0시의 Date. 일까지 없으면 null. */
@@ -84,8 +85,8 @@ export default function HomePage({ data, go, admin }) {
   const now = useMemo(() => {
     const upcoming = nextEvent(data.announcements);
     if (!upcoming) return null;
-    const { a, draft, raw, dday } = upcoming;
-    return { today: dday === 0, dday, name: draft.name || a.title, date: dotDate(raw), eventId: a.form?.eventId || null };
+    const { a, draft, champions, raw, dday } = upcoming;
+    return { today: dday === 0, dday, name: draft.name || a.title, date: dotDate(raw), eventId: a.form?.eventId || null, noticeId: a.id, due: dday > 0 ? submissionDue(draft, champions) : null };
   }, [data.announcements]);
   /* 대회 당일의 지금 경기(c9): 그날 대회의 대진표를 대진표 화면과 같은 읽기로 가져와 아직 승자가 없는 경기를 보인다 */
   const [live, setLive] = useState(null);
@@ -114,12 +115,16 @@ export default function HomePage({ data, go, admin }) {
       <div className={"ho-board" + (now?.today ? " today" : "")}>
         {now?.today
           ? <><Seg value={now.date?.clock || "  :  "} h={84} cells={4} label={now.date?.clock ? `${now.date.clock} 시작` : "시작 시각 미정"} /><span className="ho-unit">시작</span></>
-          : <><Seg value={now ? String(now.dday).padStart(2, "0") : ""} h={120} cells={now?.dday >= 100 ? 3 : 2} label={now ? `${now.dday}일 남음` : "다음 대회 없음"} className="ho-days" /><span className={"ho-unit" + (now ? "" : " dim")}>일</span></>}
+          : <><Seg value={now ? String(now.dday).padStart(2, "0") : ""} h={120} cells={now?.dday >= 100 ? 3 : 2} label={now ? `${now.dday}일 남음` : "다음 대회 없음"} className="ho-days" /><span className={"ho-unit" + (now ? "" : " dim")} data-light>일</span></>}
       </div>
       <h1 className="ho-title" id="ho-title" data-light>{now ? now.name : <>다음 대회 일정은{" "}<br />공지에 올라옵니다.</>}</h1>
+      {now?.due && <div className="stack ho-due">
+        <Counter label="파티 제출까지" lamp value={String(now.due.value).padStart(2, "0")} cells={now.due.value >= 100 ? 3 : 2} unit={now.due.unit}
+          after={<span className="t15">{now.due.unit}</span>} onClick={() => go("news", { notice: now.noticeId })} />
+      </div>}
       <div className="ho-go">
         <Button variant="main" onClick={() => go(primary[1])}>{primary[0]}</Button>
-        <Button variant="link" size="lg" className="ho-about" onClick={() => go("about")}>리그 소개</Button>
+        <Button variant="link" size="lg" className="ho-about" data-light onClick={() => go("about")}>리그 소개</Button>
       </div>
     </section>
 
@@ -152,13 +157,13 @@ export default function HomePage({ data, go, admin }) {
           value={<><span className="num t20">{r.points}</span><span className="t12 dim">점</span></>}
           onClick={() => go("records", { trainer: r.name })} label={`${r.rank}위 ${r.name}, ${r.points}점`} />)}
       </div>
-      {tie && <p className="ho-tie t12 mute reg">{tie}</p>}
+      {tie && <p className="ho-tie t12 mute reg" data-rise>{tie}</p>}
     </section>}
 
     {notices.length > 0 && <section className="ho-sec ho-news" aria-labelledby="ho-news">
       <SectionHead id="ho-news" title="공지" link="전체 보기" onLink={() => go("news")} />
       <div className="stack">
-        {notices.map(a => <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={isNewNotice(a)} label={isNewNotice(a) ? `${a.title}, ${formatDate(a.date)}, 새 글` : undefined}
+        {notices.map(a => <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={isNewNotice(a) && "새 글"} label={isNewNotice(a) ? `${a.title}, ${formatDate(a.date)}, 새 글` : undefined}
           onClick={() => go("news", { notice: a.id })} />)}
       </div>
     </section>}

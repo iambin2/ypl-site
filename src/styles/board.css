@@ -25,6 +25,7 @@
 .row-main > b { font-weight: 700; }
 .row-value { flex: none; padding-right: var(--pad); }
 .row-lamp { flex: none; display: flex; justify-content: center; align-self: stretch; align-items: center; width: var(--s8); }
+.row-lamp-word { flex: none; font-weight: 600; white-space: nowrap; }
 
 /* ---------- desktop hover lifts a panel one tone; nothing grows ---------- */
 @media (hover: hover) {

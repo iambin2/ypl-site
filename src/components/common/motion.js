@@ -38,24 +38,29 @@ function rise(el, delay) {
   el.classList.remove("rv");
   el.animate(RISE, { duration: DUR.light, delay, easing: EASE_OUT, fill: "backwards" });
 }
+/* a fifth of a screen before it arrives, so a reader does not meet panels still dark; top to bottom whatever order the observer reports */
 function revealLater(els) {
   if (typeof IntersectionObserver !== "function") return;
   watcher ||= new IntersectionObserver(entries => {
-    entries.filter(e => e.isIntersecting).forEach((e, i) => { watcher.unobserve(e.target); rise(e.target, i * STAGGER.row); });
-  }, { rootMargin: "0px 0px -8% 0px" });
+    entries.filter(e => e.isIntersecting).sort((p, q) => p.boundingClientRect.top - q.boundingClientRect.top)
+      .forEach((e, i) => { watcher.unobserve(e.target); rise(e.target, Math.min(i * STAGGER.row, DUR.leave)); });
+  }, { rootMargin: "0px 0px 20% 0px" });
   els.forEach(el => { el.classList.add("rv"); watcher.observe(el); });
 }
 export function light(root, total = DUR.light) {
   if (!root || reduced() || typeof root.animate !== "function") return;
   const seen = el => el.getBoundingClientRect().top < innerHeight;
   const last = total - DUR.tone;
-  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, h1, .sh, .hof-crown")]
+  /* [data-rise]: a grey line under a stack (a tie, a note) lights with the stack instead of standing lit before it.
+     .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board */
+  const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
     .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .hof-crown, .sheet, .stack.chips, .chips"));
   panels.filter(seen).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
   revealLater(panels.filter(el => !seen(el)));
   const on = (els, start, step) => els.filter(seen).forEach((el, i) => el.animate([{ opacity: 0 }, { opacity: 1 }],
     { duration: DUR.tone, delay: Math.min(start + i * step, last), easing: EASE_OUT, fill: "backwards" }));
-  on([...root.querySelectorAll(".seg .on, :is(.pn, .inv):has(.seg) > :not(.seg, :has(.seg)), [data-light]")], Math.min(DUR.tone, last), STAGGER.display);
+  // a counter's unit (일, 명) is a word of its display: it comes on with the lit bars, not before them
+  on([...root.querySelectorAll(".seg .on, :is(.pn, .inv):has(.seg) > :not(.seg, :has(.seg)), .counter-board > :not(.seg), [data-light]")], Math.min(DUR.tone, last), STAGGER.display);
   on([...root.querySelectorAll("img")], last, 0);
 }
 

@@ -887,19 +887,25 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
    두 줄, 36씩, 사이에 이음매. 이긴 줄은 반전되고 진 줄은 흐려진다. 아직 정해지지 않은 자리는 흐린 글자다.
    점수는 게임별 승자가 있을 때(팀전 시리즈)만 이긴 게임 수로 쓰고, 없으면 승자만 보인다. */
 const seriesScore=(m,side)=>{ const s=m?.series; if(!s?.games) return null; return s.games.filter(w=>w===side).length+(s.ace?.winner===side?1:0); };
-function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam, seedOf }){
+const slotName=(pid,nameOf)=>pid===BYE?"부전승":(pid?nameOf(pid):"대기");
+const sideScore=(m,side)=>seriesScore(m,side)??(side==="a"?m.scoreA:m.scoreB)??null;
+function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam, seedOf, onOpen }){
   if(!m) return null;
   const pa=ev.sp(m.a), pb=ev.sp(m.b);
   const decided=!!m.winner;
   const bothReal=pa&&pb&&pa!==BYE&&pb!==BYE;
   const line=(side,pid,Tag,extra)=>{
-    const isWin=decided&&m.winner===side, isBye=pid===BYE, lost=decided&&!isWin, n=seedOf?seedOf(pid):null, score=seriesScore(m,side)??(side==="a"?m.scoreA:m.scoreB)??null;
+    const isWin=decided&&m.winner===side, isBye=pid===BYE, lost=decided&&!isWin, n=seedOf?seedOf(pid):null, score=sideScore(m,side);
     return <Tag {...extra} className={"mb-row"+(isWin?" inv":"")+(lost?" lost":"")+(isBye||!pid?" wait":"")}>
       <i className="mb-seed num t12" aria-hidden={!n}>{n||""}</i>
-      <span className="mb-name">{pid===BYE?"부전승":(pid?nameOf(pid):"대기")}</span>
+      <span className="mb-name">{slotName(pid,nameOf)}</span>
       {lost&&m.forfeit?<span className="mb-score t12">불참</span>:score!=null&&<span className="mb-score num">{score}</span>}
     </Tag>;
   };
+  /* a visitor presses the whole box (DESIGN.md "Open": the whole match box is the target): on a phone the names end in an ellipsis,
+     so the sheet says them in full with the result */
+  if(!admin&&onOpen&&[pa,pb].some(pid=>pid&&pid!==BYE))
+    return <button type="button" className={"mb can-open"+(compact?" cmp":"")} onClick={()=>onOpen(m)} aria-label={`${slotName(pa,nameOf)}, ${slotName(pb,nameOf)}, 경기 보기`}>{line("a",pa,"span")}{line("b",pb,"span")}</button>;
   if(teamMode){
     const clickable=admin&&(bothReal||decided);
     const Box=clickable?"button":"div";
@@ -908,6 +914,23 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
   const canPick=admin&&bothReal;
   const pickProps=side=>({type:"button",disabled:!canPick,onClick:()=>canPick&&onPick(m.id,side),title:canPick?(decided?"다른 쪽을 누르면 승자 변경, 같은 쪽을 다시 누르면 취소":"눌러서 승자 선택"):""});
   return <div className={"mb"+(compact?" cmp":"")+(canPick?" can-pick":"")}>{line("a",pa,"button",pickProps("a"))}{line("b",pb,"button",pickProps("b"))}</div>;
+}
+/* a match's sheet: the round, the two sides at full length with the winner inverted and named 승자, the score; a team match adds its bouts */
+function MatchSheet({ g, m, ev, nameOf, onClose }){
+  const s=m.series, bouts=Array.isArray(s?.games)?s.games:[];
+  const side=(key,pid)=>{
+    const win=m.winner===key, lost=Boolean(m.winner)&&!win, score=sideScore(m,key);
+    return <Row key={key} className={win?"inv":""} title={slotName(pid,nameOf)} line={win?"승자":lost?(m.forfeit?"불참":"패배"):"결과 전"}
+      value={score!=null&&!(lost&&m.forfeit)?<span className="num t20">{score}</span>:null}/>;
+  };
+  const bout=(label,a,b,w)=><Row key={label} title={`${a||"미정"}, ${b||"미정"}`} line={`${label}, ${w==="a"?a:w==="b"?b:"결과 전"}${w?" 승리":""}`}/>;
+  return (<Modal title={stageOf(g,m)} hint={m.winner?"결과가 확정된 경기입니다.":"아직 결과가 없는 경기입니다."} onClose={onClose}>
+    <div className="stack">{side("a",ev.sp(m.a))}{side("b",ev.sp(m.b))}</div>
+    {bouts.length>0&&<div className="stack mb-bouts">
+      {bouts.map((w,i)=>bout(`${i+1}경기`,s.lineupA?.[i],s.lineupB?.[i],w))}
+      {s.ace&&bout("타이브레이커",s.ace.a,s.ace.b,s.ace.winner)}
+    </div>}
+  </Modal>);
 }
 
 /* ===== 결과 입력 (docs/redesign-next c8) =====
@@ -1030,8 +1053,11 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
     watch?.observe(tree);
     return ()=>watch?.disconnect();
   },[winKey,g.rounds.length,g.kind]);
-  const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf}/>;
-  return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree" ref={treeRef}>
+  const [seen,setSeen]=useState(null);
+  const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf} onOpen={setSeen}/>;
+  return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}>
+  {seen&&<MatchSheet g={g} m={seen} ev={ev} nameOf={nameOf} onClose={()=>setSeen(null)}/>}
+  <div className="bk-tree" ref={treeRef}>
     {wires&&<svg className="bk-wires" width={wires.w} height={wires.h} aria-hidden="true"><path className="dim" d={wires.dim}/><path className="lit" d={wires.lit}/></svg>}
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
       <div className="bk-col-h t12 dim">{g.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
@@ -1908,6 +1934,7 @@ function Places({ res, nameOf }){
   return <dl className="stack bk-places">{lines.map(([label,names])=><div className="pn spec-row" key={label}><dt className="t12 dim">{label}</dt><dd className="t15">{names.join(", ")}</dd></div>)}</dl>;
 }
 const pbStatus=b=>elimResult(b.graph)?.done?"종료":"진행 중";
+const pbChamp=b=>{ const r=elimResult(b.graph); return r?.done?b.participants.find(p=>p.id===r.champ)?.name||"":""; };
 const pbHasPicks=b=>collectGraphMatches(b.graph).some(m=>m.winner);
 
 function PrivateBracketCreate({ onClose, onCreate }){
@@ -2097,16 +2124,18 @@ function PrivateBrackets({ admin, flash, tabs }){
       ? (kw?<Empty className="swap" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
            :<Empty className="swap" title="아직 사설 대진표가 없습니다." desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다."/>)
       : <div className="stack bk-rows">{shown.map(b=><BracketRow key={b.id} b={b} vt={"pb-"+b.id} live={pbStatus(b)==="진행 중"}
-          line={`${b.host?`${b.host} 개설, `:""}${b.participants.length}명, ${pbFormat(b)}`} onOpen={()=>openBracket(b)}/>)}</div>}
+          line={`${b.host?`${b.host} 개설, `:""}${b.participants.length}명, ${pbFormat(b)}${pbChamp(b)?`, 우승 ${pbChamp(b)}`:""}`} onOpen={()=>openBracket(b)}/>)}</div>}
     {creating&&<PrivateBracketCreate onClose={()=>setCreating(false)} onCreate={create}/>}
   </section>);
 }
 /* ===== 사설 대진표 끝 ===== */
 
+/* only what runs carries a status: an ended bracket says 우승 in its grey line, so its end shows the date alone (nothing when the
+   old record has none) instead of 종료 on every row */
 function BracketRow({ b, vt, live, line, end, onOpen }){
   const d=dotDate(b.createdAt);
   return <Row title={<span data-vt={vt}>{b.name}</span>} line={line} onClick={onOpen}
-    value={live?<Status live>진행 중</Status>:<Status>{end||(d?<><span className="num">{d.day}</span> 종료</>:"종료")}</Status>}/>;
+    value={live?<Status live>진행 중</Status>:end?<Status>{end}</Status>:d?<Status><span className="num">{d.day}</span></Status>:null}/>;
 }
 
 /* ===== 대진표 메인 ===== */

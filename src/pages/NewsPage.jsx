@@ -44,7 +44,7 @@ function eventFacts(a){
 /* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸. 새 글이면 램프가 켜진다(seenNotices.js) */
 const NoticeRow=({a,onOpen})=>{
   const d=dotDate(a.date), fresh=isNewNotice(a);
-  return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={fresh} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
+  return <Row title={a.title} line={<>{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}{a.pinned&&<b className="nw-pin">고정</b>}</>} lamp={fresh&&"새 글"} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
 };
 
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어간다. 신청은 공지 위에 서는 한 장이고, 파티 제출은 팀 빌더로 간다.

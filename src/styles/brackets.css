@@ -82,8 +82,10 @@
 .mb-score { flex: none; font-size: var(--t15); font-weight: 700; }
 .mb-row:disabled { cursor: default; opacity: 1; }
 .can-pick .mb-row:not(:disabled) { cursor: pointer; }
-@media (hover: hover) { .can-pick .mb-row:not(:disabled):not(.inv):hover, .mb.team-click:hover .mb-row:not(.inv) { background: var(--panel-2); } }
+@media (hover: hover) { .can-pick .mb-row:not(:disabled):not(.inv):hover, .mb:is(.team-click, .can-open):hover .mb-row:not(.inv) { background: var(--panel-2); } }
 .mb.team-click { cursor: pointer; }
+/* a visitor's match sheet: the bouts of a team match stand 20 under the two sides */
+.mb-bouts { margin-top: var(--s5); }
 
 /* the lines: one svg over the tree (BracketsPage ElimBoard), measured from the boxes. A road not yet decided is a 1px muted line,
    a decided one a 2px lit line laid over it, square-capped so its corners close */
