@@ -1112,17 +1112,16 @@ function formatBracketSubmissionTime(value) {
     : "";
 }
 
-/* 마감 뒤 제출은 막지 않는다(어쩔 수 없는 사람을 위해). 운영진에게만 그 기록을 보인다. */
+/* 마감 뒤 제출은 막지 않는다(어쩔 수 없는 사람을 위해). 운영진에게만 그 횟수를 상태 자리에 보인다: 마지막 제출도 마감 뒤라 그 시각이 곁에 선다.
+   따로 줄을 두면 격자의 한 줄이 통째로 높아진다. */
 function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefresh, onResetPin, showLate = false }) {
   const renderMember = member => (
     <div className="bk-submission-member" key={member.registrationId}>
       <span className="bk-submission-member-name">{member.name}</span>
       <span className={`bk-submission-state${member.hasSubmission ? " submitted" : ""}`}>
         {member.hasSubmission
-          ? `${showLate&&member.lateSubmittedAt?.length ? "마감 뒤 제출" : "제출 완료"}${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
+          ? `${showLate&&member.lateSubmittedAt?.length ? `마감 뒤 ${member.lateSubmittedAt.length}번` : "제출 완료"}${formatBracketSubmissionTime(member.latestSubmittedAt) ? ` (${formatBracketSubmissionTime(member.latestSubmittedAt)})` : ""}`
           : "미제출"}
-        {/* 마감 뒤 제출이 있으면 마지막 제출도 마감 뒤다. 그 시각은 바로 위에 있으니 여기에는 횟수와 처음만 */}
-        {showLate&&member.lateSubmittedAt?.length>1&&<span className="bk-submission-late">마감 뒤 {member.lateSubmittedAt.length}번 제출, 처음 {formatBracketSubmissionTime(member.lateSubmittedAt[0])}</span>}
       </span>
       {onResetPin&&<button type="button" className="bd-del sm" onClick={()=>onResetPin(member)}>비밀번호 초기화</button>}
     </div>
