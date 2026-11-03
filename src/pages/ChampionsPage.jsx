@@ -53,6 +53,8 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
   const title = c => [seasonLabel(c) + " 우승", nth.get(c) > 1 ? `${nth.get(c)}번째 우승` : ""].filter(Boolean).join(", ");
 
   const reigning = champs.length ? champs[champs.length - 1] : null;
+  // the merge builds new rows on every render, so an open sheet's row is never the same object: a reign is its generation and name
+  const sameReign = (a, b) => Boolean(a && b) && a.generationNumber === b.generationNumber && a.name === b.name && a.format === b.format;
   const past = champs.slice(0, -1).reverse();
   const plate = (c, h) => genNo(c) > 0
     ? <span className="hof-gen"><Seg value={String(genNo(c))} h={h} cells={Math.max(2, String(genNo(c)).length)} label={`${genNo(c)}대`} /><span className={h > 40 ? "t20" : "t15"}>대</span></span>
@@ -101,7 +103,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       </div>
     </section>}
 
-    {pop && <ChampionSheet name={pop.name} line={title(pop)} generation={genNo(pop)} genText={generationText(pop.gen)} reigning={pop === reigning}
+    {pop && <ChampionSheet name={pop.name} line={title(pop)} generation={genNo(pop)} genText={generationText(pop.gen)} reigning={sameReign(pop, reigning)}
       party={partyOf(pop)} sets={pop.sets} regulationId={pop.regulationId} onClose={() => setPop(null)}>
       {go && <Button variant="main" onClick={() => { setPop(null); go("records", { trainer: pop.name }); }}>{pop.name} 기록 보기</Button>}
     </ChampionSheet>}
