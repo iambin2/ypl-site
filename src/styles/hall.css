@@ -80,6 +80,12 @@
 
 /* ---------- about ---------- */
 .ab-lede { margin-top: var(--s3); color: var(--dim); }
+/* the league in numbers (C25 A): the first event across the width, 대회 and 트레이너 under it; the month stands 8 from 년 */
+.ab-nums { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ab-nums > :first-child { grid-column: 1 / -1; }
+.ab-nums + .ab-lede { margin-top: var(--s5); }
+.ab-month { margin-left: var(--s1); }
+@media (min-width: 860px) { .ab-nums { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ab-nums > :first-child { grid-column: auto; } }
 .ab-sec { margin-top: var(--s13); }
 .ab-list { margin: 0; padding: 0; list-style: none; }
 .ab-step { display: flex; align-items: flex-start; padding: var(--pad) var(--pad) var(--pad) 0; }

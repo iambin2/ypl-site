@@ -350,6 +350,7 @@ Client/UI는 UX guard일 뿐 canonical integrity boundary가 아니다. RPC/serv
 - 그 밖의 모든 쓰기와 관리자 RPC 실행은 `authenticated` 역할만 가능하고, RLS `admin_write` 정책이 JWT `app_metadata.ypl_admin = true` 를 요구한다. 관리자는 Supabase Auth로 로그인한다 (`src/storage.js` 의 `signInAdmin`).
 - 챔피언스 RPC는 SECURITY INVOKER라 같은 RLS를 거친다. DEFINER로 남은 것은 파티 제출, 공지 알림 구독, `ensure_current_ypl_season` 계열, Qualifier direct selection 정리 trigger뿐이다.
 - TRUNCATE는 anon과 authenticated 모두에게 없다.
-- `site_data` 쓰기는 읽은 `revision`이 그대로일 때만 성공한다 (`src/services/revisionedRow.js`, 트리거는 `docs/db/backend_hardening.sql`). 읽기에 실패한 행은 쓰지 않으므로, 씨드를 띄운 화면의 저장이 실제 데이터를 덮지 않는다.
+- `site_data` 쓰기는 읽은 `revision`이 그대로일 때만 성공한다 (`src/services/revisionedRow.js`, 트리거는 `docs/db/backend_hardening.sql`). 읽기에 실패한 행은 쓰지 않으므로, 씨드를 띄운 화면의 저장이 실제 데이터를 덮지 않는다. 재방문 첫 그림에 쓰는 브라우저 사본(`ypl-seen-site`, `siteDataService.js`)도 같은 이유로 보이기만 하고 저장의 근거가 되지 않는다.
+- 공지 신청서의 `form.closesAt`(한국 시각)이 지나면 방문자의 신청을 DB가 거절한다: 대회 연결 신청은 `event_registrations` BEFORE INSERT 트리거, 연결하지 않은 신청서는 `submit_announcement_response` (`docs/db/application_close.sql`). 운영진의 늦은 등록은 막지 않는다.
 
 `docs/db/*.sql` 원본의 ACL 줄은 이 상태와 같게 유지한다. 새 함수나 table을 추가하면 anon에게 쓰기나 관리자 RPC 실행을 주지 않는다 (`tests/championsApplicationEventPairRpc.test.mjs` 가 검사한다). broad table write grant, broad anon mutation, ambiguous cascade cleanup을 도입하지 않는다.

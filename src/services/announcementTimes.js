@@ -27,6 +27,16 @@ export function missingAnnouncementTimes(form, now = new Date()) {
   return out;
 }
 
+/* party submission closes when the event starts (2026-11-03): the deadline is the event day with its start time, "YYYY-MM-DDTHH:MM" in
+   Korean wall time like closesAt, or null while the start time is not written. The champions series has one for each of its two days. */
+export const startAt = (day, time) => /^\d{4}-\d{2}-\d{2}/.test(String(day || "")) && /^\d{1,2}:\d{2}$/.test(String(time || ""))
+  ? `${String(day).slice(0, 10)}T${String(time).padStart(5, "0")}` : null;
+export function partyDeadlines(d = {}) {
+  return d.eventType === "champions"
+    ? [startAt(d.qualifierHeldOn ?? d.heldOn, d.qualifierStartTime), startAt(d.finalHeldOn, d.finalStartTime)]
+    : [startAt(d.heldOn, d.startTime)];
+}
+
 /* whether a notice's form takes applications right now: on, and its closing time still ahead. A form with no closing time (written
    before the field existed) is not called open, so the board never lights an amber lamp it cannot end. */
 export function applicationsOpen(form, now = new Date()) {

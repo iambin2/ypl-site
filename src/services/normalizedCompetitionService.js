@@ -23,6 +23,7 @@ import {
 import { buildSubmissionStatusRows, selectSubmissionRegistration } from "./teamBuilderCore.js";
 import { buildTeamSnapshotSubmission } from "./teamSubmission.js";
 import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
+import { partyDeadlines } from "./announcementTimes.js";
 import {
   projectNormalizedDoubleEliminationBracket,
   projectNormalizedSingleEliminationBracket,
@@ -66,6 +67,9 @@ function fail(error, fallback) {
 
 export const NORMALIZED_DATA_SCHEMA = DATA_SCHEMA;
 
+// 파티 제출은 대회 시작까지다: 대회의 submission_target_at 은 공지의 대회일과 시작 시각이다(announcementTimes.js)
+const deadlineIso = eventDraft => { const at = partyDeadlines(eventDraft)[0]; return at ? new Date(at).toISOString() : null; };
+
 export async function getLeagueIntakeEvents(event) {
   const intakeId = leagueIntakeId(event);
   if (!intakeId) return [event];
@@ -98,7 +102,7 @@ export async function saveLeagueIntake({ eventId = null, announcementId, eventDr
       record_rule_label: String(eventDraft.recordRuleLabel || "").trim(),
       title_award: normalizeEventTitleAward(eventDraft.titleAward),
       held_on: eventDraft.heldOn || null,
-      submission_target_at: eventDraft.submissionTargetAt ? new Date(eventDraft.submissionTargetAt).toISOString() : null,
+      submission_target_at: deadlineIso(eventDraft),
     },
   });
   if (error) fail(error, "루키와 마스터 통합 접수를 저장하지 못했습니다.");
@@ -1134,7 +1138,7 @@ export async function saveApplicationEvent({
     held_on: eventDraft.heldOn || null,
     date_precision: eventDraft.heldOn ? "exact" : "unknown",
     status: eventDraft.status || existingEvent?.status || "open",
-    submission_target_at: eventDraft.submissionTargetAt ? new Date(eventDraft.submissionTargetAt).toISOString() : null,
+    submission_target_at: deadlineIso(eventDraft),
     team_reveal_mode: eventDraft.teamRevealMode || existingEvent?.team_reveal_mode || "on_record_apply",
     updated_at: now,
   };

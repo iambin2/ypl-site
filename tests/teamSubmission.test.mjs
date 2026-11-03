@@ -28,7 +28,7 @@ test("submission write gate allows late submissions but blocks completed and rec
   const late = getSubmissionWriteGate(event, { now: new Date("2026-09-05T01:00:00.000Z") });
   assert.equal(late.allowed, true);
   assert.equal(late.late, true);
-  assert.match(late.warning, /지났지만/);
+  assert.match(late.warning, /마감 시각이 지났습니다/);
   assert.equal(getSubmissionWriteGate({ ...event, status: "completed" }).allowed, false);
   assert.equal(getSubmissionWriteGate({ ...event, status: "running", record_applied_at: "2026-09-05T00:00:00Z" }).allowed, false);
   assert.equal(getSubmissionWriteGate({ ...event, cup_rule_id: "unsupported-test-rule" }).allowed, false);

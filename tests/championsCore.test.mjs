@@ -71,22 +71,22 @@ test("Champions notice draft keeps battle format selectable and fixes canonical 
   assert.equal(draft.finalHeldOn, null);
 });
 
-test("Champions phase schedules use the legacy values only as Qualifier compatibility fallback", () => {
-  assert.deepEqual(championshipScheduleDraft({ heldOn: "2026-09-01", submissionTargetAt: "2026-09-01T09:00" }), {
+test("Champions party submission closes when each day starts; the legacy heldOn is the Qualifier's fallback day", () => {
+  assert.deepEqual(championshipScheduleDraft({ heldOn: "2026-09-01", qualifierStartTime: "16:00", submissionTargetAt: "2026-08-31T09:00" }), {
     qualifierHeldOn: "2026-09-01",
     finalHeldOn: null,
-    qualifierSubmissionTargetAt: "2026-09-01T09:00",
+    qualifierSubmissionTargetAt: "2026-09-01T16:00",
     finalSubmissionTargetAt: null,
   });
   const draft = normalizeChampionshipApplicationDraft({
     name: "8대 챔피언스", battleFormat: "singles", generation: 8, finalCapacity: 8, qualificationSlots: 4,
-    heldOn: "legacy", qualifierHeldOn: "qualifier", finalHeldOn: "final",
+    heldOn: "2026-09-01", qualifierHeldOn: "2026-09-05", finalHeldOn: "2026-09-12", qualifierStartTime: "16:00", finalStartTime: "18:30",
     submissionTargetAt: "legacy-submit", qualifierSubmissionTargetAt: "qualifier-submit", finalSubmissionTargetAt: "final-submit",
   });
-  assert.equal(draft.qualifierHeldOn, "qualifier");
-  assert.equal(draft.finalHeldOn, "final");
-  assert.equal(draft.qualifierSubmissionTargetAt, "qualifier-submit");
-  assert.equal(draft.finalSubmissionTargetAt, "final-submit");
+  assert.equal(draft.qualifierHeldOn, "2026-09-05");
+  assert.equal(draft.finalHeldOn, "2026-09-12");
+  assert.equal(draft.qualifierSubmissionTargetAt, "2026-09-05T16:00");
+  assert.equal(draft.finalSubmissionTargetAt, "2026-09-12T18:30");
 });
 
 test("Champions picker labels both phases without hiding an empty Final", () => {

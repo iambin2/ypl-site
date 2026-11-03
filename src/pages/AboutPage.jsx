@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "../components/index.js";
-import { SectionHead } from "../components/common/Board.jsx";
+import { Counter, SectionHead } from "../components/common/Board.jsx";
+import Seg from "../components/common/Seg.jsx";
+import { loadFacts, seenFacts } from "../components/home/homeFacts.js";
 import { formatDate } from "../services/dateFormat.js";
 import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
 
@@ -56,9 +58,23 @@ function Comps({ items }) {
 
 /* ============================== ABOUT ==============================
    (docs/redesign-next c6, the third frame) 제목과 한 문단, 그다음 구획마다 20 제목과 패널 스택. 번호는 20의 숫자로 앞에 선다. */
-export default function AboutPage({ go }) {
+export default function AboutPage({ go, data, admin }) {
+  // 리그의 숫자(C25 A): 홈의 카운터와 같은 계산이라 새로 세는 것이 없다. 이미 센 값은 첫 그림부터 쓴다.
+  const [facts, setFacts] = useState(() => admin ? null : seenFacts());
+  useEffect(() => {
+    let live = true;
+    loadFacts(data, admin).then(next => { if (live) setFacts(next); }).catch(error => console.warn("about facts read failed", error));
+    return () => { live = false; };
+  }, [data, admin]);
+  const [year, month] = String(facts?.first || "").match(/\d+/g) || [];
   return (<section className="about">
     <h1 className="t32">소개</h1>
+    <div className="stack ab-nums">
+      <Counter label="첫 대회" value={year ?? null} cells={4} unit="년"
+        after={year && <><span className="t15">년</span><Seg value={month || ""} h={40} cells={2} label={month ? `${Number(month)}월` : ""} className="ab-month" /><span className="t15">월</span></>} />
+      <Counter label="대회" value={facts?.tournaments ?? null} unit="회" onClick={() => go?.("records", { tab: "tour" })} />
+      <Counter label="트레이너" value={facts?.trainers ?? null} unit="명" onClick={() => go?.("records", { tab: "trainer" })} />
+    </div>
     <p className="read ab-lede">연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점, 줄여서 포센연에서 시작한 배틀 리그의 발자취입니다.</p>
 
     {/* 디스코드에서 넘어온 사람의 첫 질문: 나도 나갈 수 있나. */}

@@ -9,7 +9,7 @@ import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, site
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
-import { applicationsClosed } from "../services/announcementTimes.js";
+import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
 import { builderRouteSearch, listEventApplications, listEventRegistrationSubmissionStatuses, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
@@ -40,7 +40,8 @@ function eventFacts(a){
     ...(BATTLE[d.battleFormat]?[["형식",BATTLE[d.battleFormat]]]:[]),
     ...(champions?[["방식",`선발전 ${FORMAT[CHAMPIONSHIP_QUALIFIER_FORMAT]}, 본선 ${FORMAT[CHAMPIONSHIP_FINAL_FORMAT]}`]]:FORMAT[d.competitionFormat]?[["방식",FORMAT[d.competitionFormat]]]:[]),
     ["단위",d.isTeamEvent?"팀전":"개인전"],
-    ...(champions?[["선발전 제출",d.qualifierSubmissionTargetAt],["본선 제출",d.finalSubmissionTargetAt]]:[["파티 제출",d.submissionTargetAt]]).filter(([,t])=>t).map(([k,t])=>[k,`${formatDate(t,{time:true})}까지`]),
+    // 파티 제출은 대회 시작까지다(announcementTimes.js partyDeadlines)
+    ...partyDeadlines(d).map((t,i)=>[champions?(i?"본선 제출":"선발전 제출"):"파티 제출",t]).filter(([,t])=>t).map(([k,t])=>[k,`${formatDate(t,{time:true})}까지`]),
   ];
   return {next,rows};
 }

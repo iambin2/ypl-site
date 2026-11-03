@@ -1,3 +1,5 @@
+import { startAt } from "./announcementTimes.js";
+
 export const CHAMPIONS_ADVANCEMENT_TYPES = ["ranking", "qualifier", "manual"];
 
 export function championshipSettings(event = {}) {
@@ -64,8 +66,9 @@ export function normalizeChampionshipApplicationDraft(eventDraft = {}) {
     qualificationSlots: null,
     qualifierHeldOn: eventDraft.qualifierHeldOn || eventDraft.heldOn || null,
     finalHeldOn: eventDraft.finalHeldOn || null,
-    qualifierSubmissionTargetAt: eventDraft.qualifierSubmissionTargetAt || eventDraft.submissionTargetAt || null,
-    finalSubmissionTargetAt: eventDraft.finalSubmissionTargetAt || null,
+    // 파티 제출은 그날 시작까지다(announcementTimes.js partyDeadlines)
+    qualifierSubmissionTargetAt: startAt(eventDraft.qualifierHeldOn || eventDraft.heldOn, eventDraft.qualifierStartTime),
+    finalSubmissionTargetAt: startAt(eventDraft.finalHeldOn, eventDraft.finalStartTime),
   };
 }
 
@@ -73,8 +76,8 @@ export function championshipScheduleDraft(eventDraft = {}) {
   return {
     qualifierHeldOn: eventDraft.qualifierHeldOn || eventDraft.heldOn || null,
     finalHeldOn: eventDraft.finalHeldOn || null,
-    qualifierSubmissionTargetAt: eventDraft.qualifierSubmissionTargetAt || eventDraft.submissionTargetAt || null,
-    finalSubmissionTargetAt: eventDraft.finalSubmissionTargetAt || null,
+    qualifierSubmissionTargetAt: startAt(eventDraft.qualifierHeldOn || eventDraft.heldOn, eventDraft.qualifierStartTime),
+    finalSubmissionTargetAt: startAt(eventDraft.finalHeldOn, eventDraft.finalStartTime),
   };
 }
 

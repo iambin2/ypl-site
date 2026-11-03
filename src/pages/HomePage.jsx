@@ -90,10 +90,11 @@ export default function HomePage({ data, go, admin }) {
   const now = useMemo(() => {
     const upcoming = nextEvent(data.announcements);
     if (!upcoming) return null;
-    const { a, draft, champions, raw, time, dday } = upcoming;
+    const { a, draft, raw, time, dday } = upcoming;
     const date = dotDate(raw);
     return { today: dday === 0, dday, name: draft.name || a.title, date: date && { ...date, clock: time || date.clock }, eventId: a.form?.eventId || null, noticeId: a.id,
-      open: dday > 0 && applicationsOpen(a.form), due: dday > 0 ? submissionDue(draft, champions) : null };
+      // 파티 제출은 대회 시작까지다: 그 전날까지는 남은 날이 위의 카운트다운과 같아서, 그날 시작 전에만 남은 시간을 센다
+      open: dday > 0 && applicationsOpen(a.form), due: dday === 0 ? submissionDue(draft) : null };
   }, [data.announcements]);
   /* 대회 당일의 지금 경기(c9): 그날 대회의 대진표를 대진표 화면과 같은 읽기로 가져와 아직 승자가 없는 경기를 보인다 */
   const [live, setLive] = useState(null);

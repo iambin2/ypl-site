@@ -26,7 +26,7 @@ export function getSubmissionWriteGate(event, { now = new Date() } = {}) {
     code: late ? "late_allowed" : "open",
     error: "",
     late,
-    warning: late ? "권장 제출 시각이 지났지만 현재 대회가 진행 중이므로 제출할 수 있습니다." : "",
+    warning: late ? "제출 마감 시각이 지났습니다. 대회가 진행 중이라 지금은 제출할 수 있습니다." : "",
   };
 }
 

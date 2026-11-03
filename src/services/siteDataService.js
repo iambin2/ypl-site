@@ -4,13 +4,33 @@ import { STORAGE_MODE, getData, setData, supa } from "../storage.js";
 // 이 값은 현재 production Supabase의 site_data / ypl_data_v4와 호환되어야 한다.
 export const SITE_DATA_KEY = "ypl_data_v4";
 
+// 재방문은 마지막으로 읽은 site_data 로 바로 그리고 새로 읽은 값으로 바꾼다(DESIGN.md "Motion", First open).
+// 보이기만 하는 사본이다: 저장은 서버에서 읽은 revision 이 있어야 나가므로(storage.js) 이 사본 위의 편집은 쓰이지 않는다.
+const SEEN_KEY = "ypl-seen-site";
+let seen, seenText = null;
+export function seenSiteData() {
+  if (seen !== undefined) return seen;
+  seen = null;
+  if (STORAGE_MODE === "supabase") try { seenText = localStorage.getItem(SEEN_KEY); seen = JSON.parse(seenText); } catch { seen = null; }
+  return seen;
+}
+// 새 값이 사본과 같으면 사본을 그대로 돌려준다. 화면은 같은 값을 다시 그리지 않는다.
+function remember(value) {
+  const text = JSON.stringify(value);
+  if (text === seenText) return seenSiteData();
+  try { localStorage.setItem(SEEN_KEY, text); } catch { /* 다음 방문은 읽기를 기다린다 */ }
+  return value;
+}
+
 export async function loadSiteData() {
   try {
     const first = await getData(SITE_DATA_KEY);
-    if (first || STORAGE_MODE !== "supabase") return first;
+    if (STORAGE_MODE !== "supabase") return first;
+    if (first) return remember(first);
     // 폰의 불안한 네트워크에서는 한 번의 실패가 흔하다. 씨드를 보이기 전에 한 번 더 읽는다.
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return await getData(SITE_DATA_KEY);
+    const second = await getData(SITE_DATA_KEY);
+    return second && remember(second);
   } catch {
     return null;
   }

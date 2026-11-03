@@ -294,7 +294,7 @@ function OfficialSubmissionPanel({
           {eventContext && <span>{[
             regulationName || eventContext.regulation_id || "레귤레이션 확인 필요",
             cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음",
-            eventContext.submission_target_at && `권장 제출 시각 ${formatDate(eventContext.submission_target_at, { time: true })}`,
+            eventContext.submission_target_at && `제출 마감 ${formatDate(eventContext.submission_target_at, { time: true })}`,
           ].filter(Boolean).join(", ")}</span>}
         </div>
       </div>

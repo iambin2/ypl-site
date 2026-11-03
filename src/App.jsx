@@ -1,7 +1,7 @@
 import React, { lazy, useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react";
 import { flushSync } from "react-dom";
 import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js";
-import { loadSiteData, saveSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
+import { loadSiteData, saveSiteData, seenSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
 import { WRITE_CONFLICT } from "./services/revisionedRow.js";
 import HomePage, { todayEvent } from "./pages/HomePage.jsx";
 import MorePage from "./pages/MorePage.jsx";
@@ -77,13 +77,18 @@ function normalizeData(d){
 
 /* ============================== 앱 ============================== */
 export default function App() {
-  const [data,setData]=useState(null); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
+  const [data,setData]=useState(()=>normalizeData(seenSiteData())); const [view,setView]=useState(()=>readInitialAppView(window.location.search));
   const [admin,setAdmin]=useState(false); const [toast,setToast]=useState(null); const [modal,setModal]=useState(null);
   const [more,setMore]=useState(null);
   // 가는 중인 화면: 누른 즉시 바의 줄이 옮겨 가고 지금 화면은 흐려지며, 다음 화면이 늦으면 바쁨 칸이 선다.
   const [going,setGoing]=useState(null);
-  // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다.
-  useEffect(()=>{(async()=>setData(normalizeData((await loadSiteData())||(await import("./data/siteSeed.js")).SEED)))();},[]);
+  // 시드는 저장소가 비었을 때만 쓰므로 첫 번들에서 뺐다. 재방문은 지난 사본으로 이미 그렸다: 같은 값이면 그대로 두고, 읽지 못하면 사본을 둔다.
+  useEffect(()=>{(async()=>{
+    const fresh=await loadSiteData();
+    if(fresh===seenSiteData()&&fresh) return;
+    const seed=fresh?null:(await import("./data/siteSeed.js")).SEED;
+    setData(shown=>fresh?normalizeData(fresh):shown||normalizeData(seed));
+  })();},[]);
   // 첫 진입은 어느 화면이든 꺼진 판에서 켜진다(DESIGN.md "Motion"). 홈은 제 패널을 스스로 켠다.
   // 켜는 때는 화면의 코드와 내용이 실제로 놓인 순간이다(Arrived, 지연 경계 안): 데이터가 온 순간에 켜면 코드를 받는 중인 화면은 로더만 켜졌다.
   const litOnce=useRef(false);
@@ -244,7 +249,7 @@ export default function App() {
         <Arrived onArrive={firstLight}/>
         {live&&view!=="home"&&view!=="bracket"&&<LiveStrip name={live.name} onGo={()=>go("bracket")}/>}
         {view==="home"&&<HomePage data={data} go={go} admin={admin}/>}
-        {view==="about"&&<AboutPage go={go}/>}
+        {view==="about"&&<AboutPage go={go} data={data} admin={admin}/>}
         {view==="more"&&<MorePage go={go} themePref={themePref} onTheme={chooseTheme} admin={admin} onAdmin={onAdmin}/>}
         {view==="news"&&<NewsPage data={data} admin={admin} setModal={setModal} save={save} submitForm={submitForm} refresh={refresh} go={go}/>}
         {view==="board"&&<BoardPage data={data} admin={admin} save={save} flash={flash} go={go}/>}
