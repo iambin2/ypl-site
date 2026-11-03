@@ -352,5 +352,7 @@ Client/UI는 UX guard일 뿐 canonical integrity boundary가 아니다. RPC/serv
 - TRUNCATE는 anon과 authenticated 모두에게 없다.
 - `site_data` 쓰기는 읽은 `revision`이 그대로일 때만 성공한다 (`src/services/revisionedRow.js`, 트리거는 `docs/db/backend_hardening.sql`). 읽기에 실패한 행은 쓰지 않으므로, 씨드를 띄운 화면의 저장이 실제 데이터를 덮지 않는다. 재방문 첫 그림에 쓰는 브라우저 사본(`ypl-seen-site`, `siteDataService.js`)도 같은 이유로 보이기만 하고 저장의 근거가 되지 않는다.
 - 공지 신청서의 `form.closesAt`(한국 시각)이 지나면 방문자의 신청을 DB가 거절한다: 대회 연결 신청은 `event_registrations` BEFORE INSERT 트리거, 연결하지 않은 신청서는 `submit_announcement_response` (`docs/db/application_close.sql`). 운영진의 늦은 등록은 막지 않는다.
+- 파티(`team_snapshots`, `team_snapshot_members`)는 제출된 대회의 `team_revealed_at` 이 있거나 운영진일 때만 읽힌다. 화면의 공개 판정만으로는 REST 직접 조회를 막지 못한다 (`docs/db/private_answers.sql`).
+- 신청서 답 중 `public` 표시가 있는 질문의 답만 `site_data` 의 `form.responses` 와 `registration_data.answers` 에 남는다. 나머지는 운영진만 읽는 `public.form_private_answers` (subject = 응답 id 또는 registration id) 로 저장 전에 떼어 내고, 운영진 화면이 합쳐 읽는다 (`loadPrivateAnswers`). 질문의 공개 표시를 나중에 바꿔도 이미 들어온 답은 옮기지 않는다.
 
 `docs/db/*.sql` 원본의 ACL 줄은 이 상태와 같게 유지한다. 새 함수나 table을 추가하면 anon에게 쓰기나 관리자 RPC 실행을 주지 않는다 (`tests/championsApplicationEventPairRpc.test.mjs` 가 검사한다). broad table write grant, broad anon mutation, ambiguous cascade cleanup을 도입하지 않는다.

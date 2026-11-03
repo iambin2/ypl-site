@@ -1,4 +1,4 @@
-export { SITE_DATA_KEY, loadSiteData, saveSiteData } from "./siteDataService.js";
+export { SITE_DATA_KEY, loadPrivateAnswers, loadSiteData, saveSiteData } from "./siteDataService.js";
 export * from "./finalSubmissionLifecycle.js";
 export * as championsData from "./championsData.js";
 export * from "./teamBuilderCore.js";

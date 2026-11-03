@@ -45,6 +45,16 @@ export async function saveSiteData(value) {
   }
 }
 
+// 공개 표시가 없는 질문의 답은 운영진만 읽는 표에 있다(docs/db/private_answers.sql). 방문자와 표가 없을 때는 빈 결과다.
+// subject 는 신청서 응답 id 또는 대회 신청 id. 화면에서 합쳐 보이기만 하고 site_data 에 다시 쓰지 않는다.
+export async function loadPrivateAnswers(subjects) {
+  const ids = [...new Set((subjects || []).filter(Boolean).map(String))];
+  if (STORAGE_MODE !== "supabase" || !ids.length) return new Map();
+  const { data, error } = await supa.from("form_private_answers").select("subject, answers").in("subject", ids);
+  if (error) { console.warn("private answers read failed", error); return new Map(); }
+  return new Map((data || []).map(row => [row.subject, row.answers]));
+}
+
 // 대회에 연결하지 않은 신청서의 응답. 방문자는 행을 쓸 수 없으므로 DB 함수가 응답 하나만 덧붙인다.
 export async function submitAnnouncementResponse(announcementId, answers) {
   if (STORAGE_MODE === "supabase") {

@@ -81,8 +81,9 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
     .filter(statement => statement.startsWith("grant ") && /\bto\b[^;]*\banon\b/.test(statement));
   // Eligibility only reads already-public participation/results. It is also
   // called by the intake INSERT trigger; this adds no visitor mutation RPC. application_closed reads a notice's
-  // closesAt for the registration close trigger (application_close.sql), the same kind of read.
-  const anonRpcs = new Set(["submit_registration_team_snapshot", "is_ypl_admin", "resolve_ypl_season_for_date", "has_individual_master_eligibility", "application_closed"]);
+  // closesAt for the registration close trigger (application_close.sql), the same kind of read. snapshot_revealed is the
+  // party read policy's own check (private_answers.sql): a visitor's select runs it, so anon must execute it.
+  const anonRpcs = new Set(["submit_registration_team_snapshot", "is_ypl_admin", "resolve_ypl_season_for_date", "has_individual_master_eligibility", "application_closed", "snapshot_revealed"]);
   for (const statement of statements) {
     if (statement.startsWith("grant select ")) continue;
     // A visitor's own notice alert and survey answer: the rows stay closed to anon (docs/db/announcement_push.sql, backend_hardening.sql).

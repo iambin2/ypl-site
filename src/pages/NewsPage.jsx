@@ -10,7 +10,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
-import { builderRouteSearch, listEventApplications, listEventRegistrationSubmissionStatuses, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, listEventApplications, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 
@@ -326,7 +326,12 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
   </section>);
 }
 function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onResetPin }){
-  const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const resp=[...(normalized?responsesOverride:(form.responses||[]))].sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
+  const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const base=normalized?responsesOverride:(form.responses||[]);
+  // 공개 표시가 없는 질문의 답은 운영진만 읽는 표에서 따로 온다(docs/db/private_answers.sql)
+  const [hidden,setHidden]=useState(()=>new Map());
+  const ids=base.map(r=>r.id).join(",");
+  useEffect(()=>{ let on=true; loadPrivateAnswers(ids.split(",")).then(m=>{ if(on) setHidden(m); }); return ()=>{ on=false; }; },[ids]);
+  const resp=base.map(r=>hidden.has(r.id)?{...r,answers:{...r.answers,...hidden.get(r.id)}}:r).sort((a,b)=>(a.createdAt<b.createdAt?-1:1));
   const unified=normalized&&form.eventDraft?.division==="both";
   const divisionLabel=r=>r.division==="master"?"마스터":r.division==="rookie"?"루키":"확인 필요";
   const cell=(v)=>Array.isArray(v)?v.join(", "):(v==null?"":String(v));
