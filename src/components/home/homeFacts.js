@@ -11,22 +11,26 @@ export function seenChampions() {
 }
 /* 전당 읽기(조각, 전당 조회, 그림 사전)는 site_data 가 필요 없다. 첫 화면이 홈이면 앱이 시작할 때 site_data 와 나란히 출발해
    첫 화면의 가장 큰 그림(현 챔피언)이 site_data, 홈의 첫 그림, 조각 받기를 차례로 기다리지 않는다(LCP 대기 73%).
-   한 번 쓰면 비운다: 다시 찾은 홈과 데이터 갱신은 새로 읽는다. */
+   한 번 쓰면 비운다: 다시 찾은 홈과 데이터 갱신은 새로 읽는다.
+   전당 조회는 전당 화면과 같은 캐시(readCache "champions")로 1분 안에는 다시 받지 않는다. 기록 사본이 새 값으로 바뀌면
+   홈과 기록이 다시 부르는데, 우승이 1분 사이에 바뀌지는 않는다. 관리자는 쓰고 바로 보므로 늘 새로 읽는다. */
+export const CHAMPIONS_MAX_AGE_MS = 60 * 1000;
 let warm = null;
-export function warmChampions() {
+export function warmChampions(maxAgeMs = CHAMPIONS_MAX_AGE_MS) {
   return warm ||= (async () => {
-    const [hall, service, labels] = await Promise.all([
+    const [hall, service, labels, { freshRead }] = await Promise.all([
       import("../../services/hallOfFamePresentation.js"), import("../../services/championsService.js"), import("../../services/seasonLabel.js"),
+      import("../../services/readCache.js"),
     ]);
     const [normalized, lookup] = await Promise.all([
-      service.championsOperationsEnabled() ? service.fetchNormalizedChampionsHallOfFame().catch(() => []) : null,
+      service.championsOperationsEnabled() ? freshRead("champions", service.fetchNormalizedChampionsHallOfFame, maxAgeMs).catch(() => []) : null,
       hall.loadHallOfFameArtworkLookup().catch(() => new Map()),
     ]);
     return { hall, labels, normalized, lookup };
   })();
 }
-export async function loadChampions(data) {
-  const reading = warmChampions();
+export async function loadChampions(data, admin = false) {
+  const reading = warmChampions(admin ? 0 : CHAMPIONS_MAX_AGE_MS);
   warm = null;
   const { hall, labels, normalized, lookup } = await reading;
   const member = m => typeof m === "string" ? { name: m, img: "", pokemonId: "" } : { name: m?.name || "", img: m?.img || "", pokemonId: m?.pokemonId || "" };

@@ -164,7 +164,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
 
   // 판의 세 숫자: 트레이너, 대회, 챔피언. 챔피언은 홈과 같은 명예의 전당 읽기를 쓴다.
   const [champions, setChampions] = useState(seenChampions);
-  useEffect(() => { let live = true; loadChampions(data).then((rows) => { if (live) setChampions(rows); }).catch(() => {}); return () => { live = false; }; }, [data]);
+  useEffect(() => { let live = true; loadChampions(data, admin).then((rows) => { if (live) setChampions(rows); }).catch(() => {}); return () => { live = false; }; }, [data]);
   const dated = (snapshot.archives || []).map((a) => String(a.date || "").match(/\d+/g)).filter((n) => n?.length >= 2).sort((a, b) => (a[0] + a[1].padStart(2, "0")).localeCompare(b[0] + b[1].padStart(2, "0")));
   const since = dated[0] ? `${dated[0][0]}년 ${+dated[0][1]}월부터` : "";
 

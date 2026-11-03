@@ -9,6 +9,10 @@
 --   2. 대회에 연결하지 않은 신청서: public.submit_announcement_response (backend_hardening.sql). 같은 판정을 더한다.
 -- 운영진(is_ypl_admin)과 신청이 아닌 등록(advancement 등)은 막지 않는다: 늦은 참가는 운영진이 넣는다.
 --
+-- 방문자 쓰기의 개수 제한 (같은 날 더함). 신청 행과 알림 구독은 크기만 막혀 있어(event_registrations_data_size,
+-- push_subscriptions 의 check) API 를 직접 부르면 가짜 신청과 가짜 구독이 끝없이 쌓였다. 게시판(community_write)과 같은 브레이크다:
+-- 방문자 신청은 전체 분당 20건, 대회당 512건. 알림 구독은 1000개(notify-announcement 가 한 번에 읽는 한도).
+--
 -- 적용: Supabase SQL 편집기에서 한 번 실행. 여러 번 실행해도 된다. 클라이언트 변경은 필요 없다(오류 문구가 그대로 신청서에 보인다).
 
 -- closesAt 은 편집기의 datetime-local 값("2026-11-03T23:59")이라 시간대가 없다. 운영진이 한국 시각으로 쓴 값이다.
@@ -55,6 +59,16 @@ begin
        and ypl_schema_validation.application_closed(a.item -> 'form')
   ) then
     raise exception using errcode = 'P0001', message = '신청이 마감되었습니다.';
+  end if;
+  -- 동시에 들어온 신청이 서로의 개수를 못 보고 함께 지나가지 않게 차례로 센다
+  perform pg_advisory_xact_lock(hashtext('visitor_apply'));
+  if (select count(*) from ypl_schema_validation.event_registrations r
+       where r.registration_source = 'application' and r.created_at > now() - interval '1 minute') >= 20 then
+    raise exception using errcode = 'P0001', message = '신청이 많이 들어오고 있습니다. 잠시 뒤 다시 시도해 주세요.';
+  end if;
+  if (select count(*) from ypl_schema_validation.event_registrations r
+       where r.event_id = new.event_id and r.registration_source = 'application') >= 512 then
+    raise exception using errcode = 'P0001', message = '신청 인원이 가득 찼습니다. 운영진에게 문의해 주세요.';
   end if;
   return new;
 end;
@@ -123,3 +137,23 @@ end;
 $$;
 revoke all on function public.submit_announcement_response(text, jsonb) from public, anon, authenticated;
 grant execute on function public.submit_announcement_response(text, jsonb) to anon, authenticated;
+
+-- announcement_push.sql 의 같은 함수에 구독 수 한도만 더했다. 이미 있는 구독의 키 갱신은 한도와 상관없이 된다.
+create or replace function public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (select 1 from public.push_subscriptions s where s.endpoint = p_endpoint)
+     and (select count(*) from public.push_subscriptions) >= 1000 then
+    raise exception using errcode = 'P0001', message = '알림 구독자가 가득 찼습니다.';
+  end if;
+  insert into public.push_subscriptions (endpoint, p256dh, auth)
+  values (p_endpoint, p_p256dh, p_auth)
+  on conflict (endpoint) do update set p256dh = excluded.p256dh, auth = excluded.auth;
+end;
+$$;
+revoke all on function public.save_push_subscription(text, text, text) from public;
+grant execute on function public.save_push_subscription(text, text, text) to anon, authenticated;

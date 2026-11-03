@@ -78,7 +78,12 @@ export function resolveRecordsSpriteName(pokemonId, snapshotName, directory) {
   return clean(directory?.get?.(clean(pokemonId))?.canonicalName);
 }
 
+// 사전을 만들 때마다 822KB JSON 을 두 번 파싱했다(홈과 기록을 열 때마다). 파싱한 원본은 사전을 만들 때 읽기만 하므로 한 번만
+// 파싱해 함께 쓰고, 사전(Map)은 부를 때마다 새로 만들어 부른 쪽마다 따로 갖는다.
+let sourcePromise = null;
 export async function loadRecordsPokemonDirectory() {
-  const [detailData, speciesNames] = await Promise.all([loadChampionsData(), loadSpeciesNames()]);
+  const source = sourcePromise ||= Promise.all([loadChampionsData(), loadSpeciesNames()])
+    .catch(error => { sourcePromise = null; throw error; });
+  const [detailData, speciesNames] = await source;
   return buildRecordsPokemonDirectory(detailData, speciesNames);
 }

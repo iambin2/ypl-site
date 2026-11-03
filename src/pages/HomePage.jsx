@@ -68,7 +68,7 @@ export default function HomePage({ data, go, admin }) {
 
   useEffect(() => {
     let live = true;
-    loadChampions(data).then(rows => { if (live) setChampions(rows); }).catch(error => { console.warn("home champions read failed", error); if (live) setChampions([]); });
+    loadChampions(data, admin).then(rows => { if (live) setChampions(rows); }).catch(error => { console.warn("home champions read failed", error); if (live) setChampions([]); });
     loadFacts(data, admin).then(next => { if (live) setFacts(next); }).catch(error => { console.warn("home facts read failed", error); if (live) setFacts(seen => seen || {}); });
     return () => { live = false; };
   }, [data]);

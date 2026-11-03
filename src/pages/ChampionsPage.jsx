@@ -12,6 +12,8 @@ import {
   resolveHallOfFameArtwork,
 } from "../services/hallOfFamePresentation.js";
 import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
+import { freshRead, peekRead } from "../services/readCache.js";
+import { CHAMPIONS_MAX_AGE_MS } from "../components/home/homeFacts.js";
 
 /* ============================== CHAMPIONS ==============================
    (DESIGN.md "Titles and hall of fame") 전당은 한 사람을 크게, 나머지를 벽에 건다.
@@ -19,13 +21,14 @@ import { displaySeasonLabel, generationText } from "../services/seasonLabel.js";
    가운데: 전당의 숫자 셋(세대, 챔피언, 최다 우승). 아래: 이전 챔피언의 명판이 최신부터 벽에 걸린다.
    명판은 세대, 이름, 시즌, 몇 번째 우승인지, 여섯 마리. 누르면 파티 시트가 열린다. */
 export default function ChampionsPage({ data, admin, setModal, normTeam = normalizeLegacyParty, go }) {
-  const [normalizedChamps, setNormalizedChamps] = useState(null);
+  // 홈과 같은 전당 조회 캐시: 홈에서 넘어오면 기억한 값으로 바로 그린다
+  const [normalizedChamps, setNormalizedChamps] = useState(() => peekRead("champions") ?? null);
   const [artworkLookup, setArtworkLookup] = useState(null);
   const normalizedEnabled = championsOperationsEnabled();
   useEffect(() => {
     let cancelled = false;
     if (!normalizedEnabled) return undefined;
-    fetchNormalizedChampionsHallOfFame()
+    freshRead("champions", fetchNormalizedChampionsHallOfFame, admin ? 0 : CHAMPIONS_MAX_AGE_MS)
       .then(rows => { if (!cancelled) setNormalizedChamps(rows); })
       .catch(error => { console.warn("normalized Champions read failed", error); if (!cancelled) setNormalizedChamps([]); });
     return () => { cancelled = true; };
