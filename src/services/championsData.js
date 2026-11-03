@@ -60,10 +60,13 @@ function topLevelEntries(source) {
 
 // Close on the same quote that opened, so "King's Shield" is not cut at the apostrophe.
 const QUOTED = /(["'])(.+?)\1/g;
+// The source is TypeScript: "Farfetch’d" and "Flabébé" are escapes, not letters. Left as written they reached
+// sprite file names and name lookups as "u2019".
+const unescape = text => text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
 function parseQuoted(raw, key) {
   const re = new RegExp(`\\b${key}:\\s*${QUOTED.source}`);
-  return raw.match(re)?.[2] || '';
+  return unescape(raw.match(re)?.[2] || '');
 }
 
 function parseNumber(raw, key) {
@@ -93,13 +96,13 @@ function parseStats(raw) {
 function parseAbilities(raw) {
   const body = raw.match(/\babilities:\s*\{([^}]+)\}/)?.[1];
   if (!body) return [];
-  return [...body.matchAll(QUOTED)].map(m => m[2]);
+  return [...body.matchAll(QUOTED)].map(m => unescape(m[2]));
 }
 
 function parseQuotedArray(raw, key) {
   const body = raw.match(new RegExp(`\\b${key}:\\s*\\[([\\s\\S]*?)\\]`))?.[1];
   if (!body) return [];
-  return [...body.matchAll(QUOTED)].map(m => m[2]);
+  return [...body.matchAll(QUOTED)].map(m => unescape(m[2]));
 }
 
 function parsePokedex(source) {

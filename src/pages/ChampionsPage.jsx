@@ -101,7 +101,8 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
       </div>
     </section>}
 
-    {pop && <ChampionSheet name={pop.name} hint={`${genLabel(pop)}, ${title(pop)}`} party={partyOf(pop)} onClose={() => setPop(null)}>
+    {pop && <ChampionSheet name={pop.name} line={title(pop)} generation={genNo(pop)} genText={generationText(pop.gen)} reigning={pop === reigning}
+      party={partyOf(pop)} sets={pop.sets} regulationId={pop.regulationId} onClose={() => setPop(null)}>
       {go && <Button variant="main" onClick={() => { setPop(null); go("records", { trainer: pop.name }); }}>{pop.name} 기록 보기</Button>}
     </ChampionSheet>}
   </section>);

@@ -410,7 +410,7 @@ export async function removeChampionshipHallOfFameEntry(eventId) {
 // 홈이 매번 부르는 조회다. 대회, 시즌, 선수, 결과, 출전, 고정 파티를 한 번의 왕복으로 읽는다.
 const HALL_OF_FAME_SELECT = `
   id, event_id, result_id, player_id, generation_number, generation_label, image_ref, note,
-  event:events(id, season_id, name, round_number, battle_format, competition_format, event_type, championship_phase,
+  event:events(id, season_id, name, round_number, battle_format, competition_format, event_type, championship_phase, regulation_id,
     season:seasons(id, series, number, name)),
   player:players(id, display_name),
   result:results!hall_of_fame_entries_result_id_fkey(id, event_id, entry_id, placement_code,
@@ -418,7 +418,8 @@ const HALL_OF_FAME_SELECT = `
       participants:entry_participants(id, event_id, entry_id, registration_id, player_id, member_order,
         registration:event_registrations(id, event_id, player_id, final_submission_id,
           final_submission:registration_submissions!fk_event_registration_final_submission(id, registration_id, snapshot_id,
-            snapshot:team_snapshots(members:team_snapshot_members(id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot))
+            snapshot:team_snapshots(regulation_id, members:team_snapshot_members(id, snapshot_id, slot, pokemon_id, pokemon_name_snapshot,
+              ability_id, nature_id, item_id, stat_hp, stat_atk, stat_def, stat_spa, stat_spd, stat_spe, move_1_id, move_2_id, move_3_id, move_4_id))
           )
         )
       )
@@ -444,6 +445,10 @@ export async function fetchNormalizedChampionsHallOfFame() {
       pokemonDirectory,
       artworkLookup,
     ));
+    // 그날의 세부 값(특성, 도구, 성격, 능력치, 기술): 기록의 파티 시트와 같은 스냅숏 행을 파티와 같은 슬롯 순서로 싣는다.
+    // 세부 값을 받기 전의 우승은 기술 칸이 비어 있어 시트가 포켓몬 구성만 보인다.
+    const snapshots = participantRows.map((participant) => participant.registration?.final_submission?.snapshot).filter(Boolean);
+    const sets = snapshots.flatMap((snapshot) => [...(snapshot.members || [])].sort((a, b) => Number(a?.slot || 0) - Number(b?.slot || 0)));
     return {
       id: row.id,
       kind: normalized ? "normalized" : "legacy",
@@ -453,6 +458,8 @@ export async function fetchNormalizedChampionsHallOfFame() {
       slabel: normalized ? normalizedSeasonLabel(season) : (season.name || ""),
       name: row.player?.display_name || "알 수 없는 선수",
       team: party,
+      sets,
+      regulationId: snapshots[0]?.regulation_id || event.regulation_id || "",
       format: event.battle_format || null,
       eventName: event.name || "",
       legacyImageRef: row.image_ref || null,

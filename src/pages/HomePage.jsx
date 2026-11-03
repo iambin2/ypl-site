@@ -179,7 +179,8 @@ export default function HomePage({ data, go, admin }) {
       </div>
     </section>}
 
-    {pop && <ChampionSheet name={pop.name} hint={`${pop.label} 챔피언, ${pop.line}`} party={pop.party} onClose={() => setPop(null)}>
+    {pop && <ChampionSheet name={pop.name} line={pop.line} generation={pop.generation} genText={pop.label} reigning={pop === reigning}
+      party={pop.party} sets={pop.sets} regulationId={pop.regulationId} onClose={() => setPop(null)}>
       <Button type="button" data-tab="champions" onClick={() => go("champions")}>명예의 전당 보기</Button>
     </ChampionSheet>}
   </div>);

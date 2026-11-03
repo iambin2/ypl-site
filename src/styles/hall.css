@@ -47,7 +47,30 @@
 .hof-cell { --floor: var(--h-control); aspect-ratio: 1; }
 .hof-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
 .hof-sheet-act { margin-top: var(--s5); }
+/* the seal on top of the sheet: the one inverted panel, the generation lit at 84; the party joins it by the seam */
+.hof-seal { display: grid; justify-items: start; gap: var(--s3); margin-bottom: var(--seam); padding: var(--pad); }
+.hof-sheet-note { margin-top: var(--s3); }
+/* a plaque per member when the day's sets were kept: the picture on its floor and the facts split 1 to 1.618, the four moves under
+   both at the plaque's width, two by two, each one step up with its type tag under its name */
+.hof-plaques { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--seam); }
+.hof-plaque { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); gap: var(--s3); padding: var(--pad); }
+.hof-plaque-pic { aspect-ratio: 1; }
+.hof-plaque-pic .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+.hof-plaque-who { display: grid; align-content: start; gap: var(--s2); min-width: 0; }
+.hof-plaque-who > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.hof-types { display: flex; flex-wrap: wrap; gap: var(--s1); }
+.hof-spec { display: grid; gap: var(--s1); margin: var(--s1) 0 0; }
+.hof-spec > div { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr); align-items: baseline; gap: var(--s2); }
+.hof-spec dt { font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
+.hof-spec dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
+.hof-spec dd small { margin-left: var(--s2); font-size: var(--t12); font-weight: 400; color: var(--dim); }
+.hof-moves { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); margin: 0; padding: 0; list-style: none; }
+.hof-moves li { display: grid; justify-items: start; align-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--s3); background: var(--rule); --tag-bg: var(--panel-2); }
+.hof-moves li > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.hof-moves li.empty { color: var(--mute); }
+@media (min-width: 640px) { .hof-plaques { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 860px) {
+  .hof-plaques { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hof-crown { grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); column-gap: var(--s13); padding: var(--s8) var(--pad); }
   .hof-crown-six { align-self: center; }
   .hof-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); }

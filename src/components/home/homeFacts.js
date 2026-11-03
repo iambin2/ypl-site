@@ -23,6 +23,8 @@ export async function loadChampions(data) {
     line: `${labels.displaySeasonLabel(c.slabel) || "시즌 " + c.season} 우승`,
     party: (c.team || []).map(member).filter(m => m.name || m.img || m.pokemonId).slice(0, 6)
       .map(m => ({ name: m.name, img: hall.resolveHallOfFameArtwork(m, lookup) || "" })),
+    // 그날의 세부 값(챔피언 시트의 명판): 세부 값을 받은 뒤의 우승에만 있다
+    sets: c.sets || [], regulationId: c.regulationId || "",
   }));
   shownChampions = rows;
   if (rows.length) try { localStorage.setItem(CHAMPIONS_KEY, JSON.stringify(rows)); } catch { /* 다음에 다시 읽는다 */ }
