@@ -61,10 +61,11 @@ export function SiteDialogHost() {
         />
       </div>}
       <div className="modal-actions">
-        {current.kind !== "alert" && <Button type="button" onClick={cancel}>취소</Button>}
+        {current.kind !== "alert" && <Button variant="second" type="button" onClick={cancel}>취소</Button>}
         <Button
           type="button"
-          variant={current.danger ? "destructive" : "primary"}
+          variant="main"
+          icon="check"
           onClick={accept}
           autoFocus={current.kind !== "prompt"}
         >

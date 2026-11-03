@@ -29,7 +29,7 @@
 .ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--s1); font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .ch-name { min-height: var(--h-control); padding: var(--s2) var(--s3); font-size: var(--t15); }
 /* the names offered as one types need no browser arrow: the list opens under the field as it is typed */
-.ch-name::-webkit-calendar-picker-indicator { display: none; }
+.ch-name::-webkit-calendar-picker-indicator { display: none !important; } /* a phone browser shows it with its own !important */
 .ch-slot + .bk-hint, .ch-grid + .bk-hint { margin-top: var(--s3); }
 
 /* ---------- form builder ---------- */
@@ -121,6 +121,3 @@
 .fb-cells { margin-bottom: var(--s5); }
 .fb-cells .cell { --field-bg: transparent; }
 .sheet .fb-cells .cell { background: var(--panel); }
-.ann-actions { grid-template-columns: 1fr 1.618fr; margin-top: var(--s8); }
-.ann-actions:has(.ann-delete) { grid-template-columns: auto 1fr 1.618fr; align-items: center; }
-.ann-delete { padding-right: var(--s3); }

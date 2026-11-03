@@ -81,7 +81,7 @@ function PartySheet({ open, onClose, onTrainer }) {
       {detailed && display === "error" && <ErrorNote>배틀 데이터를 불러오지 못해 세부 샘플을 보여 줄 수 없습니다.</ErrorNote>}
       {detailed && !display && <Loader small />}
       {detailed && sheet.length > 0 && <TeamSheet sheet={sheet} />}
-      <div className="modal-actions"><Button variant="primary" onClick={() => onTrainer(roster.owner)}>{roster.owner} 기록 보기</Button></div>
+      <div className="modal-actions"><Button variant="main" onClick={() => onTrainer(roster.owner)}>{roster.owner} 기록 보기</Button></div>
     </Modal>
   );
 }

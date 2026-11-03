@@ -86,6 +86,26 @@ A number is written once; other chapters name the token and its job. History goe
 
 Outside the law on purpose: the 44 a finger needs; the 2px seam and the 1 and 2px lines; the icon grid of 16, 20 and 24; the Wing Y's own proportion; navy `#081C3D`; the content width and breakpoints, which sit where content breaks.
 
+## Hierarchy
+
+**Everything on a screen stands on one of six tiers, and a tier is one look.** The tiers are the board's order of importance; the golden law gives their numbers. A thing takes the look of its tier and nothing else, so the eye ranks a screen without reading it.
+
+| Tier | What stands there | Look | Tag |
+|---|---|---|---|
+| 0 Announcement | what the board announces: the countdown, a clock, a score, a counter, a lead panel's date, a seal's generation, 404 | a seven-segment display (120 or 240 hero, 84, 40, 32), never type | none: a picture with its value as text |
+| 1 Page | the page's title | 32/40, 700, lit | `h1`, one a page |
+| 2 Section | a section's or a sheet's title; the one name a panel exists for (a lead notice, the current champion, a placing's winner) | 20/28, 700, lit | `h2` for a section, `h3` for a sheet, none for a name in a panel |
+| 3 Row | a row's title, a name in a list, a button's word, a field's value, a tab | 15/20, 700 (titles, buttons) or 600 (fields, tabs) | `h4` only for a panel's own title |
+| 4 Reading | a body, an explanation | 15/24, 400 | `p` |
+| 5 Label | a label, a grey line, a unit, a hint | 12/16 (15/20 on desktop), 600 a label, 400 a grey line, dim | never a heading: a label over a control is its label |
+
+- **One tier, one look.** No fifth size, no colour, no weight outside the tier's. A tier's size is never borrowed to lift something: emphasis inside a tier is light (lit, then dim, then muted) and, for the one decided, current or chosen thing of a group, inversion.
+- **Two exceptions, both named.** A page led by a display (the home, 404) has its display as tier 0 and its `h1` as the display's caption, 20 on a phone and 32 on desktop. The decided record's one name, the reigning champion on the hall's seal and a bracket's winner in its 우승 panel, stands at 32: the record exists for it.
+- **When two things of one tier meet,** the page's order ranks them (what is happening now first, then the record, then the archive), and then their light; never a size between the tiers.
+- **Actions have three tiers** and only three: the main action (an inverted 52 panel, → when it goes on, ✓ when it commits; one a screen and one a sheet), the second action (a panel, 52, or 44 in a row of small actions), the link (an underlined word). A sheet's or dialog's confirm is its main action; a destructive confirm is the main action too, its sentence says what it destroys. Beside a back action the main action stands last and larger, 1.618 to 1.
+- **Surfaces have four tiers:** the ground, a panel, the panel's next step (`--panel-2`, and `--rule` for a step on a sheet or a panel), and the inverted panel. A surface is never more than one step above what holds it.
+- `tests/designLaw.test.mjs` holds the tags and the actions to their tiers: an `h1` is 32, an `h2` and an `h3` are 20 (the named exceptions excepted), and a button is main, second or link.
+
 ## Space
 
 | Space | For |

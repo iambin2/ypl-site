@@ -28,7 +28,7 @@
 /* ---------- damage: the chosen move lit as a board, the other moves as rows ---------- */
 .calc-directions { display: grid; gap: var(--s5); align-items: start; }
 .calc-direction { display: grid; gap: var(--s3); min-width: 0; }
-.calc-direction > h2 { margin: 0; }
+.calc-direction > p { margin: 0; }
 .calc-board { display: grid; gap: var(--s2); padding: var(--s3) var(--pad) var(--s5); }
 .calc-board-seg { display: flex; align-items: flex-end; gap: var(--s2); margin-top: var(--s1); }
 .calc-board-seg > .t20 { line-height: 1; }

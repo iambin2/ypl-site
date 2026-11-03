@@ -315,13 +315,13 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
   const required=form.eventId||fields.some(f=>f.required);
   if(done) return (<section className="nw">
     <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t20 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
+    <h1 className="t32 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
     <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">신청이 접수되었습니다.</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>
     <Dock><Button variant="main" onClick={onBack}>공지 보기</Button></Dock>
   </section>);
   return (<section className="nw">
     <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t20 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
+    <h1 className="t32 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
     {required&&<p className="t12 dim reg nw-req">* 표시는 필수입니다.</p>}
     {fields.some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
     <div className="nw-fields">

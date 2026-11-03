@@ -32,7 +32,7 @@ export function LoginModal({ onClose, onSuccess }) {
   return (<Modal title="관리자 로그인" hint="운영진 전용입니다. 관리자 계정으로 로그인해 주세요." onClose={onClose}>
     <Field label="아이디"><input autoComplete="username" autoCapitalize="none" value={id} onChange={e=>setId(e.target.value)}/></Field>
     <Field label="비밀번호" error={err}><input type="password" autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></Field>
-    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit} disabled={busy}>{busy?"확인 중…":"로그인"}</Button></div>
+    <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit} disabled={busy}>{busy?"확인 중…":"로그인"}</Button></div>
   </Modal>);
 }
 export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = normalizeLegacyParty }) {
@@ -65,7 +65,7 @@ export function ChampionEditor({ item, onClose, onSave, onDelete, normTeam = nor
       <datalist id="ch-mon-names">{monNames.map(n=><option key={n} value={n}/>)}</datalist>
       <div className="bk-hint">이름을 입력하면 맞는 포켓몬이 아래에 나오고, 고르면 그림이 바로 표시됩니다.</div>
     </div>
-    <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
+    <div className="modal-actions">{onDelete&&<Button variant="second" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 
@@ -78,7 +78,7 @@ export function TitleItemEditor({ groupKey, item, onClose, onSave, onDelete }) {
     {!partner&&<Field label="설명 (선택)"><input value={desc} onChange={e=>setDesc(e.target.value)}/></Field>}
     <Field label={partner?"파트너 포켓몬":"해당자"}><textarea value={raw} onChange={e=>setRaw(e.target.value)} placeholder="쉼표(,)로 구분"/></Field>
     {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
-    <div className="modal-actions">{onDelete&&<Button onClick={onDelete} style={{marginRight:"auto"}}>삭제</Button>}<Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
+    <div className="modal-actions">{onDelete&&<Button variant="second" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 const Q_TYPES=[
@@ -251,7 +251,7 @@ export function AnnEditor({ item, onClose, onSave, onDelete, earlier = [] }) {
       </div>}
     </div>
     <div className="field"><input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} id="pin"/><label htmlFor="pin" style={{margin:0}}>상단 고정</label></div>
-    <div className="stack ann-actions">{onDelete&&<Button variant="link" className="ann-delete" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>{ const missing=missingAnnouncementTimes(form); if(missing.length){ siteAlert(`${missing.join(", ")}을 입력해 주세요.`,"신청을 받는 공지는 신청이 언제 닫히고 대회가 몇 시에 시작하는지 알려야 합니다. 홈의 전광판이 이 시각으로 마감과 시작을 셉니다."); return; } onSave({id:announcementId,date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}}); }}>저장</Button></div>
+    <div className="modal-actions">{onDelete&&<Button variant="second" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={()=>{ const missing=missingAnnouncementTimes(form); if(missing.length){ siteAlert(`${missing.join(", ")}을 입력해 주세요.`,"신청을 받는 공지는 신청이 언제 닫히고 대회가 몇 시에 시작하는지 알려야 합니다. 홈의 전광판이 이 시각으로 마감과 시작을 셉니다."); return; } onSave({id:announcementId,date,title:title.trim()||"(제목 없음)",body,pinned,link:link.trim(),linkLabel:linkLabel.trim(),link2:link2.trim(),link2Label:link2Label.trim(),form:{...form,eventDraft:normalizedEventDraft}}); }}>저장</Button></div>
   </Modal>);
 }
 export function StandingsEditor({ title, rows, onClose, onSave }) {
@@ -270,8 +270,8 @@ export function StandingsEditor({ title, rows, onClose, onSave }) {
       <input type="number" aria-label="포인트" value={r.points} onChange={e=>upd(i,"points",e.target.value)}/>
       <button className="ed-del" onClick={()=>del(i)} title="삭제"><Icon n="x" size={16}/></button>
     </div>))}</div>
-    <Button size="sm" style={{marginTop:"var(--s3)"}} onClick={add}>트레이너 추가</Button>
-    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
+    <Button variant="second" size="sm" style={{marginTop:"var(--s3)"}} onClick={add}>트레이너 추가</Button>
+    <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>저장</Button></div>
   </Modal>);
 }
 export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
@@ -314,8 +314,8 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
   return (<Modal title={`${title} 회차 수정`} hint="개인전과 팀전, 일반과 챔피언스 시리즈를 고르고 결과를 입력해 주세요. 저장하면 날짜순으로 자동 정렬되며, 화살표 버튼으로 순서를 직접 바꿀 수도 있습니다." onClose={onClose}>
     <div className="pts-note" style={{marginBottom:"var(--s5)"}}>포인트 기준은 우승 <b>60</b>, 준우승 <b>40</b>, 4강 <b>20</b>점입니다. 팀전 여부, 팀원 수, 대회 사정에 따라 달라질 수 있으므로 누적 포인트는 랭킹 편집에서 직접 입력합니다.</div>
     <div style={{display:"flex",alignItems:"center",gap:"var(--s3)",flexWrap:"wrap",marginBottom:"var(--s5)"}}>
-      <Button size="sm" onClick={add}>회차 추가 (맨 아래)</Button>
-      <Button size="sm" onClick={sortNow}>날짜순 정렬</Button>
+      <Button variant="second" size="sm" onClick={add}>회차 추가 (맨 아래)</Button>
+      <Button variant="second" size="sm" onClick={sortNow}>날짜순 정렬</Button>
       <label className="ed-auto"><input type="checkbox" checked={autoSort} onChange={e=>setAutoSort(e.target.checked)}/> 저장 시 자동 날짜정렬</label>
     </div>
     <div className="ed-scroll">{list.map((r,i)=>(<div className="ed-round" key={i}>
@@ -337,10 +337,10 @@ export function RoundsEditor({ title, rounds, onClose, onSave, seasons }) {
         {r.sfTeams.map((t,k)=>(<div className="ed-team" key={k}><span className="ed-rk">4강 팀 {k+1} <button className="ed-x" onClick={()=>sfDel(i,k)}><Icon n="x" size={16}/></button></span>
           <input value={t.name} onChange={e=>sfUpd(i,k,"name",e.target.value)} placeholder="팀 이름 (선택)" aria-label="팀 이름 (선택)"/>
           <input value={t.mem} onChange={e=>sfUpd(i,k,"mem",e.target.value)} placeholder="팀원 (쉼표 구분)" aria-label="팀원 (쉼표 구분)"/></div>))}
-        <Button size="sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>4강 팀 추가</Button>
+        <Button variant="second" size="sm" onClick={()=>sfAdd(i)} style={{alignSelf:"flex-start"}}>4강 팀 추가</Button>
       </>}
       <div className="ed-r2"><Dropdown value={r.season||""} onChange={v=>upd(i,"season",v)} options={[{value:"",label:"(시즌 미지정)"},...((seasons||[]).map(n=>({value:n,label:n}))),...((r.season&&!(seasons||[]).includes(r.season))?[{value:r.season,label:r.season+" (기존)"}]:[])]}/><input value={r.rule} onChange={e=>upd(i,"rule",e.target.value)} placeholder="룰 (예: 모노타입 / 6세대 63 팀전)" aria-label="룰 (예: 모노타입 / 6세대 63 팀전)"/></div>
     </div>))}</div>
-    <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>저장</Button></div>
+    <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>저장</Button></div>
   </Modal>);
 }

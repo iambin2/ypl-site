@@ -1296,17 +1296,17 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
       </div>
       <div className="tb-rules" data-tb-step="rules">
         <div className="tb-rule-group">
-          <h2 className="t12 dim">레귤레이션{eventId ? " (대회 기준)" : ""}</h2>
+          <p className="t12 dim">레귤레이션{eventId ? " (대회 기준)" : ""}</p>
           <OptionRows name="tb-regulation" value={regulationId} onChange={switchRegulation} disabled={Boolean(eventId)}
             options={Object.values(REGULATIONS).map(reg => ({ value: reg.id, title: reg.name, line: `${reg.status === "current" ? "현행" : "이전"}, ${periodText(reg.period)}` }))} />
         </div>
         <div className="tb-rule-group">
-          <h2 className="t12 dim">파이컵 추가 룰{eventId ? " (대회 기준)" : ""}</h2>
+          <p className="t12 dim">파이컵 추가 룰{eventId ? " (대회 기준)" : ""}</p>
           <OptionRows name="tb-cup-rule" value={cupRuleId} onChange={switchCupRule} disabled={Boolean(eventId)}
             options={Object.values(CUP_RULES).map(rule => ({ value: rule.id, title: rule.name, line: rule.description }))} />
         </div>
         {cupRule.kind === "monotype" && <div className="tb-rule-group">
-          <h2 className="t12 dim">{cupRule.name}의 타입{eventId ? " (대회 기준)" : ""}</h2>
+          <p className="t12 dim">{cupRule.name}의 타입{eventId ? " (대회 기준)" : ""}</p>
           <div className="stack tb-type-grid" role="radiogroup" aria-label="지정 타입">
             {TYPE_OPTIONS.map(type => (
               <button type="button" key={type.id} role="radio" aria-checked={assignedTypeId === type.id} disabled={Boolean(eventId)}
@@ -1359,7 +1359,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             })}
           </div>
           <div className="tb-panel-head">
-            <div><h2>포켓몬 선택</h2></div>
+            <div><h2 className="t20">포켓몬 선택</h2></div>
             <strong className="tb-pool-count">{cupRule.kind === "monotype" && selectedType ? `${selectedType.korean} ` : ""}{eligiblePool.length}<small> / {selectablePokemonPool.length}</small></strong>
           </div>
           {(detailStatus!=="ready"||localizationStatus!=="ready")&&<div className="tb-data-line">{detailStatus==="error"?<Bang/>:<i className={"lamp"+(detailStatus==="ready"?"":" unlit")} aria-hidden="true"/>}{[detailStatus!=="ready"&&dataStatusText,localizationStatus!=="ready"&&localizationText].filter(Boolean).join(", ")}</div>}
@@ -1411,7 +1411,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             options={[["", `전체 ${eligiblePool.length}`], ...TYPE_OPTIONS.map(type => [type.id, type.korean])]} />
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
-            <Button type="button" size="sm" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
+            <Button type="button" variant="link" size="lg" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>
               {sortId === "name" ? (sortReversed ? "ㅎ부터" : "ㄱ부터") : (sortReversed ? "낮은 순" : "높은 순")}
             </Button>
           </div>
@@ -1569,8 +1569,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         </ul>
         <p className="tb-rule-confirm-copy">계속 변경할까요?</p>
         <div className="modal-actions">
-          <Button type="button" onClick={() => setPendingRuleChange(null)}>취소</Button>
-          <Button type="button" variant="primary" onClick={() => applyRuleChange(pendingRuleChange)}>규칙 변경</Button>
+          <Button variant="second" type="button" onClick={() => setPendingRuleChange(null)}>취소</Button>
+          <Button type="button" variant="main" icon="check" onClick={() => applyRuleChange(pendingRuleChange)}>규칙 변경</Button>
         </div>
       </Modal>}
 
@@ -1578,8 +1578,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         <p className="tb-rule-confirm-copy">저장되지 않은 변경사항이 있습니다. 현재 변경을 저장한 뒤 계속하면 팀 전환 중에도 변경사항이 유지됩니다.</p>
         <p className="tb-rule-confirm-copy">{currentSaved ? `“${currentSaved.name}” 팀에 현재 변경사항을 저장합니다.` : `현재 팀을 “${defaultTeamName()}” 이름의 새 저장 팀으로 보관합니다.`}</p>
         <div className="modal-actions">
-          <Button type="button" onClick={() => setPendingTeamChange(null)}>취소</Button>
-          <Button type="button" variant="primary" onClick={continuePendingTeamChange}>저장 후 계속</Button>
+          <Button variant="second" type="button" onClick={() => setPendingTeamChange(null)}>취소</Button>
+          <Button type="button" variant="main" icon="check" onClick={continuePendingTeamChange}>저장 후 계속</Button>
         </div>
       </Modal>}
 

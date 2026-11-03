@@ -81,6 +81,8 @@
   font-size: var(--t15); line-height: var(--l15); font-weight: 700;
 }
 /* a main action that cannot act yet drops to a panel with muted words (DESIGN.md "Controls"), not a faded fill */
+/* in a row of small actions the main action keeps the row's 44 and its own width */
+.btn.btn--main.btn--sm { width: auto; height: var(--h-control); }
 .btn.btn--main:disabled:not([aria-busy="true"]) { --btn-bg: var(--panel); --btn-fg: var(--mute); opacity: 1; }
 /* a link: a 12px word underlined 4px under in --dim; 15 when it stands alone */
 .btn.btn--link {
@@ -263,7 +265,10 @@
 /* ---------- the page for a missing address or a failed app: the board lights 404, then 홈으로 and two shortcuts ---------- */
 .status-label { display: flex; align-items: center; gap: var(--s2); }
 .status-board { display: flex; align-items: flex-end; height: 120px; margin-top: var(--s3); }
+/* 404 leads with its display, so its title is the display's caption: 20 on a phone, 32 on desktop, as the home's event name;
+   an error page has no display and its title is the page's (32) */
 .status-title { margin-top: var(--s5); }
+@media (min-width: 860px) { .status-title { font-size: var(--t32); line-height: var(--l32); letter-spacing: var(--ls32); } }
 .status-desc { margin-top: var(--s1); }
 .status-go { margin-top: var(--s5); display: grid; gap: var(--seam); max-width: 439px; }
 .status-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }

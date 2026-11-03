@@ -167,7 +167,7 @@ function DirectionResults({ title, results, detailData, emptyText }) {
   const shown = live.find(result => result.moveId === chosen) || live[0] || null;
   return (
     <div className="calc-direction">
-      <h2 className="t12 dim">{title}</h2>
+      <p className="t12 dim">{title}</p>
       {results.length ? (
         <>
           {shown && <ResultBoard result={shown} detailData={detailData} />}
@@ -472,7 +472,7 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
       <div className="tb-panel calc-dex-empty">
         <strong>도감에서 볼 포켓몬을 고르세요.</strong>
         <span>종족값, 레벨 50 실수치 범위, 타입 상성, 챔피언스에서 배우는 기술을 한 화면에 보여 줍니다.</span>
-        <Button type="button" variant="primary" onClick={openPicker}>포켓몬 선택</Button>
+        <Button type="button" variant="main" onClick={openPicker}>포켓몬 선택</Button>
       </div>
     );
   }
@@ -660,7 +660,7 @@ export default function CalculatorPage() {
         <div className="tb-panel calc-dex-empty">
           <strong>포켓몬 데이터를 불러오지 못했습니다.</strong>
           <span>연결 상태를 확인한 뒤 다시 시도해 주세요.</span>
-          <Button type="button" variant="primary" onClick={() => window.location.reload()}>다시 시도</Button>
+          <Button type="button" variant="main" onClick={() => window.location.reload()}>다시 시도</Button>
         </div>
       ) : loading ? <Loader /> : (
         <div className="calc-swap swap" key={tab}>

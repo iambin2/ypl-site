@@ -55,7 +55,7 @@ function BoardCompose({ onClose, onSubmit }){
       </div>
       <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
       {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다. 다른 방문자에게는 목록에도 표시되지 않습니다.</div>}
-      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={submit}>등록</Button></div>
+      <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>등록</Button></div>
     </div>
   </Modal>);
 }
@@ -108,7 +108,7 @@ function EditSheet({ heading, initial, onClose, onSave }){
       {has("link")&&<div className="field"><label htmlFor="bd-edit-link">이미지 또는 유튜브 링크 (선택)</label><input id="bd-edit-link" value={v.link} onChange={set("link")} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요." aria-label="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
         {v.link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={v.link}/></div>}</div>}
       {has("secret")&&<label className="bk-check"><input type="checkbox" checked={v.secret} onChange={set("secret")}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>}
-      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
+      <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
     </div>
   </Modal>);
 }
@@ -126,7 +126,7 @@ function CommentForm({ onSubmit }){
     </div>
     <div className="bd-cform-row">
       <label className="cell bd-cform-body"><span className="cell-label">댓글</span><input value={body} onChange={e=>setBody(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}}/></label>
-      <Button variant="primary" size="sm" onClick={submit}>등록</Button>
+      <Button variant="main" icon="check" size="sm" onClick={submit}>등록</Button>
     </div>
     <label className="cell bd-cform-link"><span className="cell-label">이미지 또는 유튜브 링크 (선택)</span><input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://"/></label>
   </div>);
@@ -256,7 +256,7 @@ function TeamPicker({ kind, onPick, onClose, go }){
             <span className="sc-pick-main"><b>{t.name}</b><small>{ruleSummary(t)}, {t.members.length}마리</small></span>
             <PartySprites members={t.members}/>
           </button></li>))}</ul>}
-      <div className="modal-actions"><Button onClick={onClose}>닫기</Button><Button variant="primary" onClick={()=>{onClose();go?.("builder");}}>팀 빌더 열기<Icon n="arrow" size={16}/></Button></div>
+      <div className="modal-actions"><Button variant="second" onClick={onClose}>닫기</Button><Button variant="main" onClick={()=>{onClose();go?.("builder");}}>팀 빌더 열기</Button></div>
     </div>
   </Modal>);
 }
@@ -309,7 +309,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder={autoTitle} maxLength={60}/></Field>
       <Field label="소개"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder={kind==="sample"?"채용 이유, 노리는 상대, 운용법을 적어 주세요.":"컨셉, 선출 방법, 주의할 상대를 적어 주세요."}/></Field>
       <p className="bk-hint">특성, 도구, 성격, 능력 포인트, 기술이 모두 함께 올라가고, 읽는 사람이 자기 팀 빌더로 가져갈 수 있습니다.</p>
-      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy||!display} onClick={submit} loading={busy}>올리기</Button></div>
+      <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy||!display} onClick={submit} loading={busy}>올리기</Button></div>
     </div>
   </Modal>);
 }

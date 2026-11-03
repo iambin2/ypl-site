@@ -20,15 +20,8 @@
 /* the main action is the one plane in its area: 1 high to phi squared wide, 52 by 136, and the 32 from its side to the word is phi times the 20 from its top to the ink */
 .btn--sm { height: 44px; min-width: 84px; padding: 0 var(--s5); }
 .btn--md, .btn--lg { height: 52px; min-width: calc(var(--s21) + var(--s13)); padding: 0 var(--s8); }
-/* what is not the main action is a line under its word, and two of them stand a step apart */
-.btn--secondary + .btn { margin-left: var(--s5); }
-.btn--secondary { --btn-bg: transparent; --btn-bg-hover: transparent; min-width: 0; padding-inline: 0; }
-.btn--secondary { text-decoration: underline; text-decoration-thickness: var(--hair); text-underline-offset: 4px; }
-@media (hover: hover) { .btn--secondary:hover:not(:disabled) { text-decoration-thickness: var(--line); } }
 .btn .ic { width: 20px; height: 20px; }
 .btn--sm .ic { width: 16px; height: 16px; }
-.btn--primary { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
-.btn--destructive { --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground); }
 @media (hover: hover) { .btn:hover:not(:disabled) { background: var(--btn-bg-hover); } }
 /* loading keeps the width: the words stay and turn clear under the busy cell (DESIGN.md "Busy": a sending main action shows it in place of its word) */
 .btn[aria-busy="true"] { color: transparent; }
@@ -229,6 +222,8 @@
   gap: var(--seam); background: var(--ground);
 }
 .modal-actions .btn { flex: 1 1 0; }
+/* the main action is the larger plane: back 1 to it 1.618, as in a dock */
+.modal-actions .btn--main { flex-grow: 1.618; }
 .sheet .chips { flex-wrap: wrap; overflow-x: visible; }
 /* in a sheet's bottom strip every action is a plane: a word action (취소, 나중에 within forms) stands as a second action panel */
 .modal-actions .btn.btn--link { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); --btn-fg: var(--lit); justify-content: center; height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 700; text-decoration: none; }

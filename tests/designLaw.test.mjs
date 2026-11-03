@@ -324,6 +324,25 @@ test("one button: every button that is a button comes from Button.jsx (Controls)
   const hits = SRC.filter(f => !f.endsWith("Button.jsx")).flatMap(f => [...read(f).matchAll(/className=["{][^>\n]*\b(ypl-btn|btn-primary|btn-ghost|btn-danger)\b/g)].map(m => `${rel(f)}: ${m[1]}`));
   assert.deepEqual(hits, []);
 });
+// ---------- the tiers (Hierarchy): a heading's tag is its tier's look, an action is one of three ----------
+const JSX = SRC.filter(f => f.endsWith(".jsx"));
+const headings = level => JSX.flatMap(f => [...read(f).matchAll(new RegExp(`<h${level} className=(\\{[^}]*\\}|"[^"]*")`, "g"))].map(m => ({ file: rel(f), cls: m[1] })));
+test("a page title is tier 1, 32; only a page led by its display captions it (Hierarchy)", () => {
+  const led = new Set(["src/pages/HomePage.jsx", "src/pages/StatusPage.jsx"]);
+  assert.deepEqual(headings(1).filter(h => !led.has(h.file) && !/\bt32\b/.test(h.cls)).map(h => `${h.file}: ${h.cls}`), []);
+});
+test("a section or sheet title is tier 2, 20; the decided record's one name stands at 32 (Hierarchy)", () => {
+  const off = [2, 3].flatMap(headings).filter(h => !/\bt20\b/.test(h.cls) && !/hof-crown-name/.test(h.cls));
+  assert.deepEqual(off.map(h => `${h.file}: ${h.cls}`), [], "a label over a control is its label, not a heading");
+});
+test("an action is main, second or link (Hierarchy)", () => {
+  // each <Button's own variant: the first one before the next <Button
+  const used = JSX.flatMap(f => [...read(f).matchAll(/<Button\b(?:(?!<Button\b)[\s\S])*?\bvariant=(?:"([^"]+)"|\{([^}]*)\})/g)]
+    .flatMap(m => m[1] ? [m[1]] : [...m[2].matchAll(/"([^"]+)"/g)].map(x => x[1])).map(v => `${rel(f)}: ${v}`));
+  assert.deepEqual(used.filter(u => !/: (main|second|link)$/.test(u)), []);
+  assert.match(src("src/components/common/Button.jsx"), /variant = "second"/, "a button with no variant is a second action");
+  assert.doesNotMatch(CSS.map(f => read(join(STYLES, f))).join("\n"), /\.btn--(primary|secondary|destructive)\b/);
+});
 test("inline space is a token (Space)", () => {
   const hits = SRC.flatMap(f => [...read(f).matchAll(/style=\{\{([^{}]*)\}\}/g)].filter(([, b]) => /\b(margin\w*|padding\w*|gap)\s*:\s*-?[1-9]/.test(b)).map(([m]) => `${rel(f)}: ${m.slice(0, 60)}`));
   assert.deepEqual(hits, []);

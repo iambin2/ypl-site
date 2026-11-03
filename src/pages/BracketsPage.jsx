@@ -710,7 +710,7 @@ function BracketWizard({ data, onClose, onCreate }){
                 onChange={e=>setAddedParticipants(prev=>prev.map((x,j)=>j===i?e.target.value:x))}
                 placeholder="추가 참가자 이름"
               />
-              <Button
+              <Button variant="second"
                 type="button"
                 size="sm"
                 onClick={()=>setAddedParticipants(prev=>prev.filter((_,j)=>j!==i))}
@@ -723,14 +723,14 @@ function BracketWizard({ data, onClose, onCreate }){
 
         <div className="row-actions" style={{justifyContent:"space-between",marginTop:"var(--s3)"}}>
           <div>
-            <Button
+            <Button variant="second"
               type="button"
               size="sm"
               onClick={()=>setSelectedRegistrationIds(eventRegs.map(r=>r.id))}
             >
               전체 선택
             </Button>
-            <Button
+            <Button variant="second"
               type="button"
               size="sm"
               onClick={()=>setSelectedRegistrationIds([])}
@@ -738,14 +738,14 @@ function BracketWizard({ data, onClose, onCreate }){
               전체 해제
             </Button>
           </div>
-          {linkedEvent?.championship_phase ? <Button
+          {linkedEvent?.championship_phase ? <Button variant="second"
             type="button"
             size="sm"
             onClick={openChampionshipManualParticipant}
             disabled={championshipManualBusy}
           >
             참가자 추가
-          </Button> : !selectedIntakeId&&<Button
+          </Button> : !selectedIntakeId&&<Button variant="second"
             type="button"
             size="sm"
             onClick={()=>setAddedParticipants(prev=>[...prev,""])}
@@ -770,8 +770,8 @@ function BracketWizard({ data, onClose, onCreate }){
             />}
           </div>
           <div className="row-actions" style={{justifyContent:"flex-end",marginTop:"var(--s2)"}}>
-            <Button type="button" size="sm" disabled={championshipManualBusy} onClick={()=>setChampionshipManualOpen(false)}>취소</Button>
-            <Button type="button" variant="primary" size="sm" disabled={!championshipManualPlayerId||championshipManualBusy} onClick={addChampionshipManualParticipant}>추가</Button>
+            <Button variant="second" type="button" size="sm" disabled={championshipManualBusy} onClick={()=>setChampionshipManualOpen(false)}>취소</Button>
+            <Button type="button" variant="main" icon="check" size="sm" disabled={!championshipManualPlayerId||championshipManualBusy} onClick={addChampionshipManualParticipant}>추가</Button>
           </div>
         </div>}
         {linkedEvent?.championship_phase==="qualifier"&&(()=>{const capacity=Number(linkedEvent?.competition_settings?.championship?.finalCapacity)||0;const actual=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;const target=capacity-directRegistrationIds.length;const eliminated=actual-target;return <div className="bk-hint" style={{marginTop:"var(--s2)"}}>본선 정원은 {capacity}명이고 본선 직행은 {directRegistrationIds.length}명입니다. 선발전에는 {actual}명이 참가해 {target}명이 통과하므로 {Math.max(0,eliminated)}명이 탈락해야 합니다.{actual<target&&<span style={{color:"var(--lit)"}}> 참가 인원이 부족해 본선 정원을 채울 수 없습니다.</span>}</div>;})()}
@@ -893,7 +893,7 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
         <div className="bk-ace-h">타이브레이커</div>
         <div className="bk-series-row bk-bout-row bk-bout-row-ace"><span className="bk-bout-label-spacer" aria-hidden="true"/>{side(aceA,setAceA,optionsA,aceW==="a",()=>setAceW(aceW==="a"?null:"a"),"타이브레이커 A팀 승리")}<span className="bk-series-vs">vs</span>{side(aceB,setAceB,optionsB,aceW==="b",()=>setAceW(aceW==="b"?null:"b"),"타이브레이커 B팀 승리")}</div>
       </div>}
-      <div className="modal-actions bk-team-match-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" onClick={confirm} disabled={!decided}>대결 확정</Button></div>
+      <div className="modal-actions bk-team-match-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={confirm} disabled={!decided}>대결 확정</Button></div>
     </div>
   </Modal>);
 }
@@ -1346,7 +1346,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
         <Button variant="second" className="bk-img" onClick={()=>downloadBracketPng(b,nameOf)}>대진표 이미지</Button>
         {/* the one main action docks above the bars on a scrolling screen (DESIGN.md "Controls") */}
         {admin&&!readOnly&&!b.applied&&championshipEvent?.championship_phase!=="qualifier"&&<Dock><Button variant="main" onClick={()=>onApply(b,res)}>기록에 반영</Button></Dock>}
-        {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={16}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<Button size="sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당에 등록하지 못했습니다. ${error?.message||"잠시 뒤 다시 시도해 주세요."}`);}finally{setHallOfFameBusy(false);}}} loading={hallOfFameBusy}>명예의 전당 재시도</Button>}{!readOnly&&admin&&<Button size="sm" onClick={undoApplied}>반영 취소</Button>}</>}
+        {b.applied&&<>{admin&&<span className="bk-applied"><Icon n="check" size={16}/> 기록 반영됨</span>}{!readOnly&&admin&&championshipEvent?.event_type==="champions"&&championshipEvent?.championship_phase==="final"&&<Button variant="link" size="sm" disabled={hallOfFameBusy} onClick={async()=>{setHallOfFameBusy(true);try{await ensureChampionshipHallOfFameEntry(b.eventId);flash("명예의 전당 등록 ✓");}catch(error){flash(`명예의 전당에 등록하지 못했습니다. ${error?.message||"잠시 뒤 다시 시도해 주세요."}`);}finally{setHallOfFameBusy(false);}}} loading={hallOfFameBusy}>명예의 전당 재시도</Button>}{!readOnly&&admin&&<Button variant="link" size="sm" onClick={undoApplied}>반영 취소</Button>}</>}
       </div>
     </section>}
     {b.eventId&&(admin||!(res&&res.done))&&<SubmissionStatusPanel
@@ -1618,8 +1618,8 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           </label>
         ))}</div>
         <div className="modal-actions">
-          <Button onClick={skipTitles} disabled={awardBusy}>나중에</Button>
-          <Button variant="primary" onClick={grantTitles} disabled={awardBusy||!awardPicks.size} loading={awardBusy}>칭호에 반영</Button>
+          <Button variant="second" onClick={skipTitles} disabled={awardBusy}>나중에</Button>
+          <Button variant="main" icon="check" onClick={grantTitles} disabled={awardBusy||!awardPicks.size} loading={awardBusy}>칭호에 반영</Button>
         </div>
       </div>
     </Modal>);
@@ -1680,9 +1680,9 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
       </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹과 시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
       {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{recordSeason}」에도 동일한 점수와 성적이 반영됩니다.</div>}
       <div className="modal-actions">
-  <Button onClick={()=>setPreview(null)} disabled={applying}>뒤로</Button>
+  <Button variant="second" onClick={()=>setPreview(null)} disabled={applying}>뒤로</Button>
   <Button
-    variant="primary"
+    variant="main" icon="check"
     onClick={commit}
     disabled={
       applying||
@@ -1993,7 +1993,7 @@ function PrivateBracketCreate({ onClose, onCreate }){
       <div className="field"><span className="field-label">대진 배치</span><Segmented value={order} onChange={setOrder} ariaLabel="대진 배치" options={[["random","무작위 추첨"],["input","적은 순서대로"]]}/></div>
       {order==="input"&&<p className="bk-hint">1번과 2번, 3번과 4번이 차례로 만나고, 부전승은 뒤쪽 경기에 들어갑니다.</p>}
       <Field label="안내 (선택)"><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="규칙, 일정, 장소 등을 적어 주세요."/></Field>
-      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>대진표 만들기</Button></div>
+      <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy} onClick={submit} loading={busy}>대진표 만들기</Button></div>
     </div>
   </Modal>);
 }
@@ -2020,7 +2020,7 @@ function PrivateBracketEdit({ b, onClose, onSave }){
       <div className="field"><span className="field-label">참가자 이름</span>
         {names.map((n,i)=><input key={b.participants[i].id} value={n} aria-label={`참가자 ${i+1}`} maxLength={20} style={{marginTop:i?8:0}} onChange={e=>{const v=e.target.value; setNames(cur=>cur.map((x,k)=>k===i?v:x));}}/>)}</div>
       <Field label="안내 (선택)"><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3}/></Field>
-      <div className="modal-actions"><Button onClick={onClose}>취소</Button><Button variant="primary" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
+      <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy} onClick={submit} loading={busy}>저장</Button></div>
     </div>
   </Modal>);
 }

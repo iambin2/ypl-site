@@ -37,7 +37,7 @@
 /* ---------- rules: the regulation and the cup rule as option rows, the type as a grid of cells ---------- */
 .tb-rules { display: grid; gap: var(--s5); }
 .tb-rule-group { display: grid; gap: var(--s3); }
-.tb-rule-group > h2 { margin: 0; }
+.tb-rule-group > p { margin: 0; }
 .tb-type-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .tb-type-opt { display: flex; align-items: center; min-height: var(--h-control); padding: 0 var(--s3); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; transition: background-color var(--move-tone); }
 .tb-type-opt.inv { color: var(--ground); }
