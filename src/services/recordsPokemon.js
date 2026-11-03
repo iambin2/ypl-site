@@ -1,4 +1,3 @@
-import { load as loadChampionsData, loadSpeciesNames } from "./championsData.js";
 import { REGULATIONS } from "../data/index.js";
 import { canonicalBaseName, localizedPokemonName, pokemonPoolForRegulation, resolveCanonicalPokemonId } from "./teamBuilderCore.js";
 
@@ -78,12 +77,15 @@ export function resolveRecordsSpriteName(pokemonId, snapshotName, directory) {
   return clean(directory?.get?.(clean(pokemonId))?.canonicalName);
 }
 
-// 사전을 만들 때마다 822KB JSON 을 두 번 파싱했다(홈과 기록을 열 때마다). 파싱한 원본은 사전을 만들 때 읽기만 하므로 한 번만
-// 파싱해 함께 쓰고, 사전(Map)은 부를 때마다 새로 만들어 부른 쪽마다 따로 갖는다.
+// 사전은 이름만 쓰므로 822KB 배틀 데이터 대신 데이터 빌드가 미리 잘라 둔 작은 파일(records-pokemon.json, 압축 28KB)을 받는다.
+// 홈의 챔피언 그림이 이 사전을 기다린다. 받은 글은 함께 쓰고, 사전(Map)은 부를 때마다 새로 만들어 부른 쪽마다 따로 갖는다.
+const DIRECTORY_URL = new URL("../data/records-pokemon.json", import.meta.url).href;
 let sourcePromise = null;
 export async function loadRecordsPokemonDirectory() {
-  const source = sourcePromise ||= Promise.all([loadChampionsData(), loadSpeciesNames()])
+  const source = sourcePromise ||= fetch(DIRECTORY_URL)
+    .then(response => { if (!response.ok) throw new Error(`${response.status} ${DIRECTORY_URL}`); return response.text(); })
     .catch(error => { sourcePromise = null; throw error; });
-  const [detailData, speciesNames] = await source;
-  return buildRecordsPokemonDirectory(detailData, speciesNames);
+  const rows = JSON.parse(await source);
+  return new Map(Object.entries(rows).map(([id, [dexNumber, canonicalName, baseSpecies, forme, displayName]]) =>
+    [id, { pokemonId: id, dexNumber, canonicalName, baseSpecies, forme, displayName }]));
 }

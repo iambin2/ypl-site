@@ -9,7 +9,7 @@
 // reviewable diff instead of a silently broken site. The weekly
 // .github/workflows/refresh-champions-data.yml runs this script and opens a
 // pull request when the data changed; run it by hand for a new regulation.
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   applyItemOverrides,
@@ -20,6 +20,7 @@ import {
   parsePokedex,
   parseSpeciesNames,
 } from "../src/services/championsData.js";
+import { buildRecordsPokemonDirectory } from "../src/services/recordsPokemon.js";
 
 const SHOWDOWN = "https://raw.githubusercontent.com/smogon/pokemon-showdown/refs/heads/master/data";
 export const SOURCES = {
@@ -32,6 +33,22 @@ export const SOURCES = {
   speciesNames: "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv",
 };
 const OUTPUT = new URL("../src/data/champions-data.json", import.meta.url);
+const DIRECTORY = new URL("../src/data/records-pokemon.json", import.meta.url);
+
+// The records, hall of fame and home only need each species' names, not the
+// 822 KB bundle, so the directory they build is cut here into its own small
+// file: { id: [dex number, name, base species, forme, display name] }.
+// tests/recordsPokemonLoading.test.mjs fails when it no longer matches the
+// bundle or the code that names forms; `npm run data:directory` rewrites it.
+export function buildDirectoryJson(data) {
+  const names = {
+    koreanById: new Map(Object.entries(data.speciesNames.koreanById)),
+    koreanByEnglish: new Map(Object.entries(data.speciesNames.koreanByEnglish)),
+  };
+  const rows = {};
+  for (const [id, r] of buildRecordsPokemonDirectory(data, names)) rows[id] = [r.dexNumber, r.canonicalName, r.baseSpecies, r.forme, r.displayName];
+  return JSON.stringify(rows);
+}
 
 export function buildChampionsData(text) {
   const { koreanById, koreanByEnglish } = parseSpeciesNames(text.speciesNames);
@@ -75,10 +92,14 @@ async function fetchText(url) {
   return response.text();
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href && process.argv.includes("--directory")) {
+  writeFileSync(DIRECTORY, buildDirectoryJson(JSON.parse(readFileSync(OUTPUT, "utf8"))));
+  console.log(`${fileURLToPath(DIRECTORY)} rewritten from the committed bundle`);
+} else if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const entries = await Promise.all(Object.entries(SOURCES).map(async ([key, url]) => [key, await fetchText(url)]));
   const data = validateChampionsData(buildChampionsData(Object.fromEntries(entries)));
   const json = JSON.stringify(data);
   writeFileSync(OUTPUT, json);
+  writeFileSync(DIRECTORY, buildDirectoryJson(data));
   console.log(`${fileURLToPath(OUTPUT)}: ${(json.length / 1024).toFixed(0)} KB, ${Object.keys(data.pokedex).length} species, ${Object.keys(data.learnsets).length} learnsets, ${Object.keys(data.moves).length} moves, ${Object.keys(data.items).length} items`);
 }

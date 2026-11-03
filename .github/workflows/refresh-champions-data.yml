@@ -33,7 +33,7 @@ jobs:
       - name: Check for changes
         id: diff
         run: |
-          if git diff --quiet -- src/data/champions-data.json; then
+          if git diff --quiet -- src/data/champions-data.json src/data/records-pokemon.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Champions data is already up to date."
           else
@@ -52,7 +52,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -C "$BRANCH"
-          git commit -m "chore(data): refresh Champions data from Showdown and PokeAPI" -- src/data/champions-data.json
+          git commit -m "chore(data): refresh Champions data from Showdown and PokeAPI" -- src/data/champions-data.json src/data/records-pokemon.json
           git push --force origin "$BRANCH"
           if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq length)" = "0" ]; then
             gh pr create --base main --head "$BRANCH" \
