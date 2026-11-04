@@ -128,3 +128,14 @@ test("two fall in doubles with one left on the bench: the second slot passes, so
   assert.equal(choose(battle, {}, "p2", "switch 3").ok, false, "one switch alone is incomplete");
   assert.equal(choose(battle, {}, "p2", explicit(request)).ok, true);
 });
+
+test("two players with one name: the side that won is the winner, after a save and a load too", () => {
+  for (const loser of ["p1", "p2"]) {
+    const battle = startBattle({ formatid: formatId("m-c", "singles"), seed: [4, 4, 4, 4], p1: { name: "같은 이름", team: TEAM }, p2: { name: "같은 이름", team: TEAM } });
+    forfeit(battle, loser);
+    const won = loser === "p1" ? "p2" : "p1";
+    assert.equal(readout(battle).winner, won);
+    assert.equal(readout(loadBattle(JSON.parse(JSON.stringify(battle.toJSON())))).winner, won);
+    assert.equal(readout(replay(readout(battle).inputLog)).winner, won);
+  }
+});

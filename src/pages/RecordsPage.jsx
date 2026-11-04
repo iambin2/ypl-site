@@ -20,7 +20,7 @@ import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
 import { generationText } from "../services/seasonLabel.js";
 import Button from "../components/common/Button.jsx";
 import Seg from "../components/common/Seg.jsx";
-import { battleHref, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
+import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
 
 /* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
@@ -41,7 +41,7 @@ function TrainerBattles({ playerIds }) {
         const won = b.winner === mine;
         const result = b.winner === "tie" ? "무승부" : won ? "승리" : "패배";
         return <Row key={b.id} title={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}`}
-          line={[formatDate(b.updated_at), `${b.turn}턴`, b.ended_by === "forfeit" ? "기권" : ""].filter(Boolean).join(", ")}
+          line={[formatDate(b.updated_at), `${b.turn}턴`, endedByLine(b)].filter(Boolean).join(", ")}
           value={<span className={"rc-place t12" + (won ? " inv" : " dim")}>{result}</span>}
           label={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}, ${result}, 리플레이 보기`}
           onClick={() => { window.location.search = battleHref(b.id); }} />;

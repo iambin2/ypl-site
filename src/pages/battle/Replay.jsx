@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Row, SectionHead, Status } from "../../components/common/Board.jsx";
-import { battleHref, isDoubles, readSeat } from "../../services/battleService.js";
+import { battleHref, endedByLine, isDoubles, readSeat } from "../../services/battleService.js";
 import { battleHistoryIds, listBattlesById, listLiveBattles } from "../../services/battleWatch.js";
 import { createBattleReader } from "../../services/battleLog.js";
 import { formatDate } from "../../services/dateFormat.js";
@@ -68,7 +68,7 @@ function result(b) {
 function BattleRows({ rows, onOpen }) {
   return <div className="stack">
     {rows.map(b => <Row key={b.id} title={`${b.p1_name} 대 ${b.p2_name || "상대 대기"}`}
-      line={[kindLine(b), b.ended_by === "forfeit" ? "기권" : b.ended_by === "timeout" ? "시간 초과" : ""].filter(Boolean).join(", ")}
+      line={[kindLine(b), endedByLine(b)].filter(Boolean).join(", ")}
       value={result(b)} onClick={() => onOpen(b.id)}
       label={`${b.p1_name} 대 ${b.p2_name || "상대 대기"}, ${b.status === "active" ? "관전" : b.status === "ended" ? "리플레이 보기" : "열기"}`} />)}
   </div>;

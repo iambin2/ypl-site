@@ -100,14 +100,17 @@ export async function listEventBattles(eventId) {
   const { data, error } = await supa.from("battles").select(LIST).eq("event_id", eventId).order("updated_at", { ascending: false });
   return error ? [] : data || [];
 }
-// 선수들의 끝난 공식 배틀(트레이너 기록)
+// 배틀이 어떻게 끝났는지(목록의 한 줄). 끝까지 싸운 배틀은 빈 문자열이다.
+export const endedByLine = b => ({ forfeit: "기권", timeout: "시간 초과", void: "무효" })[b?.ended_by] || "";
+// 선수들의 끝난 공식 배틀(트레이너 기록). 전부 읽는다.
+// ponytail: PostgREST가 한 번에 1000행까지 준다. 한 트레이너의 공식 배틀이 그만큼 쌓이면 range로 나눠 읽는다.
 export async function listPlayerBattles(playerIds = []) {
   const ids = [...new Set(playerIds.filter(Boolean))];
   if (!supa || !ids.length) return [];
   const list = ids.join(",");
   const { data, error } = await supa.from("battles").select(LIST)
     .eq("kind", "official").eq("status", "ended").neq("ended_by", "void").or(`p1_player_id.in.(${list}),p2_player_id.in.(${list})`)
-    .order("updated_at", { ascending: false }).limit(50);
+    .order("updated_at", { ascending: false });
   return error ? [] : data || [];
 }
 /* 끝난 공식 배틀의 관전 로그(포켓몬 기록의 선출과 선봉). 선출과 선봉은 무대에 나온 포켓몬이라 관전 로그로 전체 로그와 똑같이 센다.

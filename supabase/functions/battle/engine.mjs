@@ -23,6 +23,16 @@ const DEX_OF_FORMAT = Object.fromEntries(Object.entries(FORMAT_IDS).flatMap(([re
 // Deserialization finds a format through the base Dex, so it must know the modded ones too.
 for (const dex of Object.values(DEX)) Dex.formats.extend(dex.formats.all().filter(f => DEX_OF_FORMAT[f.id] && !Dex.formats.get(f.id).exists));
 
+// Showdown keeps the winner by name only, so two players with one name would both read as p1.
+// The winning side's id is kept on the battle as well; it is a plain field, so it survives toJSON and fromJSON.
+const showdownWin = Battle.prototype.win;
+Battle.prototype.win = function (side) {
+  const winner = typeof side === "string" ? this.getSide(side) : this.sides.includes(side) ? side : null;
+  const ok = showdownWin.call(this, side);
+  if (ok) this.winnerSide = winner?.id || "tie";
+  return ok;
+};
+
 export function formatId(regulation, battleFormat) {
   const id = FORMAT_IDS[regulation]?.[battleFormat];
   if (!id) throw new Error(`unknown format: ${regulation} ${battleFormat}`);
@@ -89,7 +99,7 @@ export function forfeit(battle, side) {
 export function readout(battle) {
   const log = battle.log.join("\n");
   const channels = extractChannelMessages(log, [0, 1, 2]);
-  const winner = !battle.ended ? null : battle.winner === battle.p1.name ? "p1" : battle.winner === battle.p2.name ? "p2" : "tie";
+  const winner = !battle.ended ? null : battle.winnerSide || (battle.winner === battle.p1.name ? "p1" : battle.winner === battle.p2.name ? "p2" : "tie");
   return {
     turn: battle.turn,
     ended: battle.ended,
