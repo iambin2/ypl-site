@@ -203,9 +203,10 @@
 }
 @media (hover: hover) { .modal-x:hover { color: var(--lit); } }
 /* actions are planes on the sheet's bottom edge: they meet each other and stay reachable while the body scrolls; the primary sits on the right.
-   A sticky box stops at its scroller's padding, so its bottom offset reaches back over that padding. */
+   A sticky box stops at its scroller's padding, so its bottom offset reaches back over that padding, and a hairline past the edge:
+   a phone at 2.625 scrolls by fractions and rounds the sticky box apart from the clip, which left one device row of the body under it. */
 .modal-actions {
-  position: sticky; bottom: calc((var(--s8) + env(safe-area-inset-bottom, 0px)) * -1); z-index: var(--z-raised);
+  position: sticky; bottom: calc((var(--s8) + env(safe-area-inset-bottom, 0px)) * -1 - var(--hair)); z-index: var(--z-raised);
   display: flex;
   margin: var(--s8) calc(var(--pad) * -1) calc((var(--s8) + env(safe-area-inset-bottom, 0px)) * -1);
   padding: 0 0 env(safe-area-inset-bottom, 0px);
@@ -227,7 +228,7 @@
   /* the body scrolls and clips, so the close button sits inside it, centred on the title's first line */
   .modal { padding: var(--s2) var(--pad) var(--s8); }
   .modal-x { right: 0; top: 0; }
-  .modal-actions { bottom: calc(var(--s8) * -1); margin-bottom: calc(var(--s8) * -1); padding-bottom: 0; }
+  .modal-actions { bottom: calc(var(--s8) * -1 - var(--hair)); margin-bottom: calc(var(--s8) * -1); padding-bottom: 0; }
 }
 
 /* ---------- fold (collapsible) ---------- */

@@ -878,7 +878,7 @@ export async function submitEventApplication({
 
   if (existingError) fail(existingError, "기존 신청 여부를 확인하지 못했습니다.");
 
-  const duplicate = () => Object.assign(new Error("이미 신청된 참가자입니다."), { code: "YPL_ALREADY_REGISTERED" });
+  const duplicate = () => Object.assign(new Error("이미 신청된 참가자입니다. 내용을 고치려면 공지의 신청 수정을 이용해 주세요."), { code: "YPL_ALREADY_REGISTERED" });
   if (existing) throw duplicate();
 
   const now = new Date().toISOString();
@@ -902,6 +902,38 @@ export async function submitEventApplication({
   if (error?.code === "23514") throw new Error("신청 내용이 너무 길어 저장할 수 없습니다.");
   if (error) fail(error, "참가 신청을 저장하지 못했습니다.");
   return data;
+}
+
+/* 신청 수정 (docs/db/application_edit.sql): 이름으로 신청을 찾고, 제출 비밀번호로 본인임을 보인 뒤 답을 바꾼다.
+   아직 비밀번호가 없으면 처음 불러올 때 입력한 숫자 4자리가 그 신청의 제출 비밀번호가 된다. */
+export async function openEventApplication({ eventId, registrationName, pin }) {
+  const event = await getEvent(eventId);
+  if (!event) throw new Error("연결된 대회를 찾을 수 없습니다.");
+  const intakeEvents = await getLeagueIntakeEvents(event);
+  const { data, error } = await db()
+    .from("event_registrations")
+    .select("id, registration_name, registration_source")
+    .in("event_id", intakeEvents.map(row => row.id))
+    .eq("registration_source", "application");
+  if (error) fail(error, "신청 정보를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+  const selected = selectSubmissionRegistration(data || [], registrationName);
+  if (!selected) throw new Error("이 이름으로 접수된 신청이 없습니다. 신청할 때 쓴 이름을 입력해 주세요.");
+
+  const { data: rows, error: openError } = await db().rpc("open_event_application", {
+    p_registration_id: selected.id, p_registration_name: selected.registration_name, p_pin: pin,
+  });
+  if (openError) fail(openError, "신청을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  if (row?.denied) throw new Error(SUBMISSION_DENIED[row.denied] || "신청을 불러오지 못했습니다.");
+  return { id: selected.id, registrationName: selected.registration_name, answers: row?.answers || {} };
+}
+
+export async function editEventApplication({ registrationId, registrationName, answers, pin }) {
+  const { data, error } = await db().rpc("edit_event_application", {
+    p_registration_id: registrationId, p_registration_name: registrationName, p_answers: answers || {}, p_pin: pin,
+  });
+  if (error) fail(error, "신청을 수정하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+  if (data) throw new Error(SUBMISSION_DENIED[data] || "신청을 수정하지 못했습니다.");
 }
 
 export async function findSubmissionRegistration(eventId, registrationName) {

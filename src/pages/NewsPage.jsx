@@ -11,7 +11,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
-import { builderRouteSearch, findApplicantNameRecord, listEventApplications, playerNameKey, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, editEventApplication, findApplicantNameRecord, listEventApplications, openEventApplication, playerNameKey, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 /* a tight row's time: digits and dots on one line (10.28 수 17:18), so a list of applicants keeps one height */
@@ -65,7 +65,7 @@ const NoticeRow=({a,onOpen})=>{
    연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {
   const [q,setQ]=useState(""); const [page,setPage]=useState(1);
-  const [fill,setFill]=useState(null); const [respId,setRespId]=useState(null);
+  const [fill,setFill]=useState(null); const [editing,setEditing]=useState(false); const [respId,setRespId]=useState(null);
   const [eventResponses,setEventResponses]=useState({});
   const [championshipSubmissionEvents,setChampionshipSubmissionEvents]=useState({});
   const [seen,setSeen]=useState({});
@@ -148,9 +148,12 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
 
   const fillAnn=a&&fill===a.id?a:null;
   if(fillAnn){
-    return (<FormPage ann={fillAnn} responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null} onBack={()=>setFill(null)}
-      onSubmit={async answers=>{
-        const ok=await submitForm(fillAnn.id,answers);
+    return (<FormPage ann={fillAnn} edit={editing} responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null} onBack={()=>setFill(null)}
+      onOpen={who=>openEventApplication({eventId:fillAnn.form.eventId,...who}).catch(error=>error?.message||"신청을 불러오지 못했습니다.")}
+      onSubmit={async payload=>{
+        const ok=editing
+          ? await editEventApplication(payload).then(()=>true,error=>error?.message||"신청을 수정하지 못했습니다.")
+          : await submitForm(fillAnn.id,payload);
         if(ok===true&&fillAnn.form?.eventId) await refreshEventApplications(fillAnn);
         return ok;
       }}/>);
@@ -169,7 +172,9 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
       ...(championshipSubmission?.isChampionship?[["선발전 파티 제출",championshipSubmission.qualifierEvent.id],["본선 파티 제출",championshipSubmission.finalEvent.id]]:[]),
     ];
     const open=hasForm&&!applicationsClosed(a.form);
-    const main=open?[a.form.buttonLabel||"참가 신청",()=>setFill(a.id)]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:hasForm?["신청 마감",null]:null;
+    // 신청을 받는 동안은 이미 신청한 사람이 같은 자리에서 답을 고친다. 다시 신청하면 다른 사람으로 들어간다.
+    const editable=open&&Boolean(a.form.eventId);
+    const main=open?[a.form.buttonLabel||"참가 신청",()=>{ setEditing(false); setFill(a.id); }]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:hasForm?["신청 마감",null]:null;
     const seconds=open?submits:submits.slice(1);
     const others=all.filter(x=>x.id!==a.id).slice(0,5);
     // 데스크톱은 709와 439 두 단: 왼쪽은 본문, 오른쪽은 대회의 사실과 행동, 그 아래 다른 공지. 폰은 지금 순서 그대로 한 단.
@@ -189,7 +194,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         {facts?.rows.length>0&&<div className={"stack nw-spec"+(next||applied!=null?" joined":"")}>
           {facts.rows.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
         </div>}
-        {(seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
+        {(editable||seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
+          {editable&&<Button variant="second" onClick={()=>{ setEditing(true); setFill(a.id); }}>신청 수정</Button>}
           {seconds.map(([label,id])=><Button variant="second" key={label} onClick={()=>openBuilder(id)}>{label}</Button>)}
           {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
           {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
@@ -277,26 +283,44 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
 
 
 /* ===== 참가 신청: 공지 위에 서는 한 장. 신청은 화면 아래에 붙은 한 버튼이고, 빠진 답은 그 칸 아래에서 알린다. ===== */
-function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
+/* 신청 수정(edit)은 같은 한 장이다: 먼저 이름과 제출 비밀번호로 자기 신청을 불러오고(held), 그 답이 채워진 질문을 고쳐 보낸다.
+   이름은 선수와 리그를 정하므로 고치지 않는다. */
+function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=false }){
   const form=ann.form||{}; const fields=form.fields||[];
   const [ans,setAns]=useState({}); const [registrationName,setRegistrationName]=useState(""); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
   const [errors,setErrors]=useState({}); const [failed,setFailed]=useState("");
+  const [pin,setPin]=useState(""); const [held,setHeld]=useState(null);
+  // 신청 수정은 공지 아래쪽에서 열린다: 한 장과 그 단계마다 맨 위에서 시작한다
+  useLayoutEffect(()=>{ window.scrollTo(0,0); },[held,done]);
+  const title=edit?"신청 수정":form.buttonLabel||"참가 신청";
+  const find=async()=>{
+    const next={};
+    if(!registrationName.trim()) next.name="참가자 이름을 입력해 주세요.";
+    if(!/^\d{4}$/.test(pin)) next.pin="제출 비밀번호를 숫자 4자리로 입력해 주세요.";
+    setErrors(next); setFailed("");
+    const first=Object.keys(next)[0];
+    if(first){ document.getElementById(`ff-${first}`)?.focus(); return; }
+    setBusy(true);
+    const found=await onOpen({registrationName:registrationName.trim(),pin}); setBusy(false);
+    if(typeof found==="string"){ setFailed(found); return; }
+    setAns(found.answers||{}); setHeld(found);
+  };
   // 같은 이름의 기록: 이름 칸을 떠나면 읽고, 기록이 있으면 그 기록을 보이고 본인인지 묻는다. 동명이인은 다음 글자의 이름(이제빈 B)으로
   // 신청해 남의 기록에 합쳐지지 않는다. 읽지 못하면 묻지 않고 예전처럼 신청한다(DB가 이름 하나에 선수 한 명을 지킨다).
   const [record,setRecord]=useState(null); const [who,setWho]=useState(""); const [alias,setAlias]=useState("");
   const lookups=useRef(new Map()), latest=useRef(""), recordRef=useRef(null);
   // 같음은 선수 이름의 규칙대로: 띄어쓰기만 바꿔 다시 쳐도 같은 확인이고, 블록이 꺼졌다 켜지지 않는다.
   const lookup=typed=>{ const key=playerNameKey(typed); if(!lookups.current.has(key)) lookups.current.set(key,findApplicantNameRecord(typed).catch(()=>null)); return lookups.current.get(key); };
-  const checkName=()=>{ const key=playerNameKey(registrationName); latest.current=key; if(form.eventId&&key) lookup(registrationName).then(r=>{ if(latest.current===key) setRecord(r&&{key,...r}); }); };
+  const checkName=()=>{ const key=playerNameKey(registrationName); latest.current=key; if(form.eventId&&!edit&&key) lookup(registrationName).then(r=>{ if(latest.current===key) setRecord(r&&{key,...r}); }); };
   const shown=form.eventId&&record&&record.key===playerNameKey(registrationName)?record:null;
   useLayoutEffect(()=>{ if(shown) light(recordRef.current,DUR.leave); },[shown?.key]);
   const set=(id,v)=>{ setAns(a=>({...a,[id]:v})); setErrors(e=>({...e,[id]:""})); };
   const submit=async()=>{
     const next={}; const typed=registrationName.trim();
-    if(form.eventId&&!typed) next.name="참가자 이름을 입력해 주세요.";
+    if(form.eventId&&!edit&&!typed) next.name="참가자 이름을 입력해 주세요.";
     setBusy(true); setFailed("");
     // 이름 칸에서 바로 신청하기를 누르면 확인이 아직 읽는 중이다. 같은 읽기를 기다린다.
-    const found=form.eventId&&typed?await lookup(typed):null;
+    const found=form.eventId&&!edit&&typed?await lookup(typed):null;
     if(found){ latest.current=playerNameKey(typed); setRecord({key:latest.current,...found}); if(!who) next.who="본인인지 선택해 주세요."; }
     for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty) next[f.id]=`‘${f.label||"질문"}’ 항목에 답해 주세요.`; } }
     // 막 읽은 기록의 본인 확인이 그려진 뒤에 그 칸으로 간다
@@ -307,7 +331,10 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
     if(first){ setBusy(false); requestAnimationFrame(()=>{ if(first!=="who"){ document.getElementById(first==="name"?"ff-name":`ff-${first}`)?.focus(); return; }
       const input=document.querySelector('input[name="ff-who"]'); input?.closest(".q")?.scrollIntoView({block:"center"}); input?.focus({preventScroll:true}); }); return; }
     const name=found&&who==="other"?found.alias:typed;
-    const ok=await onSubmit({registrationName:name,answers:ans}); setBusy(false);
+    // 수정은 질문마다 답을 보낸다: 비운 답도 빈 값으로 가야 예전 답이 남지 않는다
+    const ok=await onSubmit(edit
+      ? {registrationId:held.id,registrationName:held.registrationName,pin,answers:{...ans,...Object.fromEntries(fields.filter(f=>ans[f.id]==null).map(f=>[f.id,f.type==="multi"?[]:""]))}}
+      : {registrationName:name,answers:ans}); setBusy(false);
     if(typeof ok==="string"){ setFailed(ok); return; }
     if(ok===false){ setFailed("신청 저장을 확인하지 못했습니다."); return; }
     setAlias(name===typed?"":name); setDone(true);
@@ -315,17 +342,36 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
   const required=form.eventId||fields.some(f=>f.required);
   if(done) return (<section className="nw">
     <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t32 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
-    <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">신청이 접수되었습니다.</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>
+    <h1 className="t32 nw-form-title">{title}</h1>
+    <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">{edit?"신청을 수정했습니다.":"신청이 접수되었습니다."}</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>
     <Dock><Button variant="main" onClick={onBack}>공지 보기</Button></Dock>
+  </section>);
+  if(edit&&!held) return (<section className="nw">
+    <BackLink to={ann.title} onClick={onBack}/>
+    <h1 className="t32 nw-form-title">{title}</h1>
+    <p className="t12 dim reg nw-req">신청할 때 쓴 이름과 제출 비밀번호로 신청을 불러옵니다.</p>
+    <div className="nw-fields">
+      <Question id="ff-name" label="참가자 이름" required error={errors.name}>
+        <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{setRegistrationName(e.target.value);setErrors(x=>({...x,name:""}));}} placeholder="신청할 때 쓴 이름을 입력해 주세요." autoComplete="name"/>
+      </Question>
+      <Question id="ff-pin" label="제출 비밀번호" required error={errors.pin}>
+        <input id="ff-pin" className="in" aria-required="true" aria-invalid={errors.pin?true:undefined} type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={e=>{setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4));setErrors(x=>({...x,pin:""}));}} placeholder="숫자 4자리"/>
+        <p className="t12 dim reg">파티 제출에 쓰는 비밀번호입니다. 아직 정하지 않았다면 지금 입력한 숫자 4자리가 비밀번호가 됩니다.</p>
+      </Question>
+    </div>
+    <Dock toast={failed&&<Toast error action="다시 시도" onAction={find}>{failed}</Toast>}>
+      <Button variant="main" onClick={find} disabled={busy}>{busy?"불러오는 중…":"신청 불러오기"}</Button>
+      <p className="t12 dim reg dock-note">신청 마감 전까지 고칠 수 있습니다.</p>
+    </Dock>
   </section>);
   return (<section className="nw">
     <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t32 nw-form-title">{form.buttonLabel||"참가 신청"}</h1>
+    <h1 className="t32 nw-form-title">{title}</h1>
+    {held&&<p className="t12 dim reg nw-req">{held.registrationName}님의 신청입니다. 이름을 바꾸려면 운영진에게 문의해 주세요.</p>}
     {required&&<p className="t12 dim reg nw-req">* 표시는 필수입니다.</p>}
     {fields.some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
     <div className="nw-fields">
-      {form.eventId&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
+      {form.eventId&&!edit&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
         <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{ if(playerNameKey(e.target.value)!==playerNameKey(registrationName)) setWho(""); setRegistrationName(e.target.value);setErrors(x=>({...x,name:"",who:""}));}} onBlur={checkName} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
       </Question>}
       {/* 같은 이름의 기록은 기록 화면의 최근 대회 줄 그대로, 최근 세 번. 그 아래 본인 확인이 두 줄의 선택지로 선다. */}
@@ -344,7 +390,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
           ]}/>
         </Question>
       </div>}
-      {form.eventDraft?.division==="both"&&<p className="t12 dim reg">루키와 마스터를 함께 접수합니다. 개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
+      {form.eventDraft?.division==="both"&&!edit&&<p className="t12 dim reg">루키와 마스터를 함께 접수합니다. 개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
       {fields.length===0&&!form.eventId&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>{ const label=f.label||`질문 ${i+1}`, id=`ff-${f.id}`, error=errors[f.id];
         const text={id,className:"in","aria-required":f.required||undefined,"aria-invalid":error?true:undefined,value:ans[f.id]||"",onChange:e=>set(f.id,e.target.value),placeholder:"답변을 입력해 주세요."};
@@ -357,7 +403,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit }){
       })}
     </div>
     <Dock toast={failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>}>
-      <Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":"신청"}</Button>
+      <Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":edit?"수정":"신청"}</Button>
       <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p>
     </Dock>
   </section>);
@@ -412,7 +458,7 @@ function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onR
         </div>
         <div className="fr-actions">
           {subs&&(sent(r)?<span className="t12 fr-sent"><i className="lamp" aria-hidden="true"/>제출</span>:<span className="t12 dim">미제출</span>)}
-          {/* the PIN is set by a first submission: a row with nothing submitted has none to reset */}{onResetPin&&(!subs||sent(r))&&<Button variant="link" onClick={()=>onResetPin(r)}>비밀번호 초기화</Button>}
+          {/* the PIN is set by a first party submission or a first 신청 수정, so any row may hold one */}{onResetPin&&<Button variant="link" onClick={()=>onResetPin(r)}>비밀번호 초기화</Button>}
           {onDeleteResp&&<button type="button" className="fr-del" onClick={async()=>{if(await siteConfirm({title:"응답 삭제",body:"이 응답을 삭제할까요? 삭제한 응답은 되돌릴 수 없습니다.",confirmLabel:"삭제",danger:true}))onDeleteResp(r.id);}} aria-label="삭제" title="삭제"><Icon n="trash" size={16}/></button>}
         </div>
       </div>))}
