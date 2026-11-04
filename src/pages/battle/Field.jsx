@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 /* 무대에 남아 보이는 필드 (DESIGN.md "Battle", The field stays on the stage). 코트, 필드, 룸과 중력, 한쪽 편의 벽, 순풍, 설치기를 그린다.
    모양은 모두 선과 작은 도형이고 색은 타입 색이다. 칠한 면은 거의 없어서 여럿이 겹쳐도 서로를 가리지 않는다.
@@ -6,21 +6,19 @@ import React, { useEffect, useRef, useState } from "react";
    떠 있는 것(스텔스록)은 그 편의 둘레, 벽은 그 편을 덮는 반원, 순풍은 그 편 뒤에서 상대 쪽으로 분다. 모양은 battle-stage.css. */
 
 /* a layer that fades in when it comes and out when it goes, so a change of weather or terrain is a cross-fade, never a cut */
+// the leaving layer is worked out in the same render as the change and stays the same node, only taking the leaving class, so it
+// never drops out for a frame and never restarts
 const LEAVE_MS = 700;
 export function Fading({ kind, value, children }) {
-  const [gone, setGone] = useState([]);
-  const last = useRef(value);
+  const [held, setHeld] = useState({ value, gone: [] });
+  if (held.value !== value) setHeld({ value, gone: [...held.gone.filter(g => g !== value && g !== held.value), ...(held.value ? [held.value] : [])] });
   useEffect(() => {
-    const prev = last.current;
-    last.current = value;
-    if (!prev || prev === value) return;
-    setGone(list => [...list.filter(x => x !== prev), prev]);
-    setTimeout(() => setGone(list => list.filter(x => x !== prev)), LEAVE_MS);
-  }, [value]);
-  return <>
-    {gone.filter(g => g !== value).map(g => <i key={g} className={`bs-layer ${kind} ${g} leaving`} aria-hidden="true">{children?.(g)}</i>)}
-    {value && <i key={value} className={`bs-layer ${kind} ${value}`} aria-hidden="true">{children?.(value)}</i>}
-  </>;
+    if (!held.gone.length) return undefined;
+    const timer = setTimeout(() => setHeld(h => ({ ...h, gone: [] })), LEAVE_MS);
+    return () => clearTimeout(timer);
+  }, [held.gone]);
+  const shown = [...held.gone.filter(g => g !== value).map(g => [g, true]), ...(value ? [[value, false]] : [])];
+  return shown.map(([g, leaving]) => <i key={g} className={`bs-layer ${kind} ${g}${leaving ? " leaving" : ""}`} aria-hidden="true">{children?.(g)}</i>);
 }
 
 // the court in perspective, drawn once: the far line, the centre line and its circle, the two sides running to the camera
@@ -85,14 +83,14 @@ export function Wind({ on, own }) {
   return on ? <i className={`bs-tailwind ${own ? "own" : "foe"}`} aria-hidden="true"><i /></i> : null;
 }
 
-// the screens a side has up stand over it as domes, one inside the next, each an outline in its colour: they never hide the Pokémon
+// the screens a side has up stand over it as domes, one inside the next, each an outline in its colour: they never hide the Pokémon.
+// each keeps its own place in the nest (so one going never resizes the others) and fades in and out as a field layer does
 const SCREENS = ["reflect", "lightscreen", "auroraveil", "safeguard", "mist"];
 export function Screens({ cond, own }) {
-  const up = SCREENS.filter(c => cond.includes(c));
-  if (!up.length) return null;
   return <div className={`bs-screens ${own ? "own" : "foe"}`} aria-hidden="true">
-    {up.map((c, i) => <svg key={c} className={`bs-dome ${c}`} style={{ "--i": i }} viewBox="0 0 100 50" preserveAspectRatio="none">
-      <path className="fill" d="M0 50A50 50 0 0 1 100 50Z" /><path d="M0 50A50 50 0 0 1 100 50" />
-    </svg>)}
+    {SCREENS.map((c, i) => <Fading key={c} kind="bs-screen" value={cond.includes(c) ? c : ""}>{() =>
+      <svg className={`bs-dome ${c}`} style={{ "--i": i }} viewBox="0 0 100 50" preserveAspectRatio="none">
+        <path className="fill" d="M0 50A50 50 0 0 1 100 50Z" /><path d="M0 50A50 50 0 0 1 100 50" />
+      </svg>}</Fading>)}
   </div>;
 }

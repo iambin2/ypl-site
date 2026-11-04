@@ -37,7 +37,7 @@
 .bs-side.own .bs-mon img { transform: scaleX(-1); }
 @keyframes bs-idle { 50% { translate: 0 -1.5%; } }
 /* a substitute stands in the Pokémon's place: a lit square doll on the floor */
-.bs-sub { position: absolute; left: 34%; right: 34%; bottom: 6%; height: 40%; display: block; background: var(--lit); box-shadow: inset 0 -8px 0 var(--dim); }
+.bs-sub { position: absolute; left: 34%; right: 34%; bottom: 6%; height: 40%; display: block; background: var(--lit); box-shadow: inset 0 -8px 0 var(--dim); transform-origin: 50% 100%; }
 
 /* ---------- a field layer comes and goes by opacity alone (Stage.jsx keeps a leaving one until it has gone) ---------- */
 .bs-layer { inset: 0; overflow: hidden; animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both; }
@@ -141,12 +141,18 @@
 /* ---------- what a side has set up (Field.jsx): hazards on its floor, wind behind it, screens over it ---------- */
 .bs-hazards, .bs-screens { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
 .bs-screens { z-index: 4; }
-.bs-hazards > svg { position: absolute; width: auto; display: block; transform: translate(-50%, -50%); overflow: visible; animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both; }
+/* set down: a hazard is dropped onto its place (lands, as a thrown thing does), a web spreads out flat from its centre */
+.bs-hazards > svg { position: absolute; width: auto; display: block; transform: translate(-50%, -50%); overflow: visible; animation: bs-drop .52s cubic-bezier(.5, 0, .75, 0) both; }
+.bs-hazards > svg:nth-child(3n + 2) { animation-delay: .07s; }
+.bs-hazards > svg:nth-child(3n) { animation-delay: .14s; }
+@keyframes bs-drop { from { opacity: 0; transform: translate(-50%, -50%) translateY(-90%); } 30% { opacity: 1; } }
+.bs-hazards > .bs-web { animation: bs-spread .68s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes bs-spread { from { opacity: 0; transform: translate(-50%, -50%) scale(.4); } }
 /* stealth rock: faceted stones that float round the side, each on its own slow bob */
-.bs-rock { animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both, bs-bob 3.6s cubic-bezier(.45, 0, .55, 1) infinite alternate !important; }
-.bs-rock:nth-of-type(4n + 2) { animation-delay: 0s, -.9s !important; animation-duration: 1.1s, 4.2s !important; }
-.bs-rock:nth-of-type(4n + 3) { animation-delay: 0s, -1.8s !important; }
-.bs-rock:nth-of-type(4n) { animation-delay: 0s, -2.7s !important; animation-duration: 1.1s, 3.1s !important; }
+.bs-rock { animation: bs-drop .52s cubic-bezier(.5, 0, .75, 0) both, bs-bob 3.6s cubic-bezier(.45, 0, .55, 1) infinite alternate !important; }
+.bs-rock:nth-of-type(4n + 2) { animation-delay: .07s, -.9s !important; animation-duration: .52s, 4.2s !important; }
+.bs-rock:nth-of-type(4n + 3) { animation-delay: .14s, -1.8s !important; }
+.bs-rock:nth-of-type(4n) { animation-delay: .21s, -2.7s !important; animation-duration: .52s, 3.1s !important; }
 .bs-rock .r0 { fill: #AFA981; } .bs-rock .r1 { fill: #D4CEA8; } .bs-rock .r2 { fill: #8D875F; }
 @keyframes bs-bob { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -12%; rotate: 4deg; } }
 /* spikes and toxic spikes: caltrops lying on the floor in front of the side, three or two a layer */
@@ -168,7 +174,9 @@
 @keyframes bs-gust { to { transform: translateX(200px); } }
 @keyframes bs-gust-far { to { transform: translateX(150px); } }
 /* the screens: a dome over the side for each, one inside the next, an outline in its colour over a breath of it */
-.bs-dome { position: absolute; display: block; transform: translateX(-50%); overflow: visible; animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both; }
+/* each dome is a field layer (Field.jsx Fading): it fades in over 1.1 and out over .68, so a screen never cuts in or out */
+.bs-screens > .bs-layer { position: absolute; overflow: visible; }
+.bs-dome { position: absolute; display: block; transform: translateX(-50%); overflow: visible; }
 .bs-screens.foe .bs-dome { left: 55%; bottom: 47%; width: calc(50% + var(--i) * 5%); height: calc(34% + var(--i) * 4%); }
 .bs-screens.own .bs-dome { left: 45%; bottom: -2%; width: calc(90% + var(--i) * 4%); height: calc(48% + var(--i) * 3%); }
 .bs-dome path { fill: none; stroke: var(--screen); stroke-width: 1.5px; vector-effect: non-scaling-stroke; opacity: .85; }
@@ -196,11 +204,14 @@
 .bs-p.type-normal { --type: var(--lit); }
 .bs-ring { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--type); }
 .bs-ring.type-normal { --type: var(--lit); }
-.bs-glow { border-radius: 50%; background: var(--type); }
+/* a beam: one line in the type's colour with a lit core, drawn from the user's centre (stageFx turns and scales it) */
+.bs-beam { height: 6px; transform-origin: 0 50%; background: var(--type); }
+.bs-beam::after { content: ""; position: absolute; left: 0; right: 0; top: 2px; height: 2px; background: var(--lit); }
+.bs-beam.type-normal { --type: var(--lit); }
+.bs-beam.type-normal::after { background: var(--ground); }
 /* the light a Pokémon comes out of and goes back into */
 .bs-flare { border-radius: 50%; background: radial-gradient(closest-side, #FFFFFF 0 34%, rgb(255 255 255 / .55) 58%, rgb(255 255 255 / 0)); }
 :root[data-theme="light"] .bs-flare { background: radial-gradient(closest-side, #FFFFFF 0 34%, rgb(8 28 61 / .14) 62%, rgb(8 28 61 / 0)); }
-.bs-glow.type-normal { --type: var(--lit); }
 .bs-aura { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--type); }
 .bs-aura.type-normal { --type: var(--lit); }
 .bs-plus { width: 10px; height: 10px; background: #3FA129; clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
@@ -213,4 +224,5 @@
 @media (prefers-reduced-motion: reduce) {
   .bs-mon, .bs-weather::before, .bs-weather::after, .bs-terrain::before, .bs-terrain::after, .bs-gravity::before, .bs-tailwind > i, .bs-rock { animation: none !important; }
   .bs-weather::before, .bs-weather::after { transform: translate(-50%, -50%); }
+  .bs-hazards > svg, .bs-hazards > .bs-web { animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both !important; }
 }
