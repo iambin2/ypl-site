@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { battleUsage, createBattleReader, readWholeLog, josa, parseHP } from "../src/services/battleLog.js";
+import { battleUsage, createBattleReader, readWholeLog, josa, parseHP, slotPasses } from "../src/services/battleLog.js";
 import { formatId, startBattle, choose, readout } from "../supabase/functions/battle/engine.mjs";
 
 const text = JSON.parse(readFileSync(new URL("../src/data/battle-text-ko.json", import.meta.url), "utf8"));
@@ -28,7 +28,10 @@ function play(kind, seed) {
       const request = battle[side].activeRequest;
       if (!request || request.wait || battle[side].isChoiceDone()) continue;
       for (let tries = 0; tries < 30; tries++) {
-        let choice = "default";
+        // the team in order and the first ones free on a forced switch, as the engine refuses Showdown's default
+        const free = request.side.pokemon.map((m, i) => (!m.active && !m.condition.endsWith(" fnt") ? i + 1 : 0)).filter(Boolean);
+        let choice = request.teamPreview ? `team ${request.side.pokemon.slice(0, request.maxChosenTeamSize || 6).map((_, i) => i + 1).join(", ")}`
+          : request.forceSwitch?.map((_, i) => (slotPasses(request, i) ? "pass" : `switch ${free.shift()}`)).join(", ");
         if (!request.teamPreview && !request.forceSwitch) choice = request.active.map((a, i) => {
           if (request.side.pokemon[i].condition.endsWith(" fnt")) return "pass";
           const j = rand(a.moves.length);
@@ -129,4 +132,62 @@ test("a field, a redirect and a fallback all speak Korean", () => {
   assert.match(said("|-curestatus|p1a: Ninetales|tox"), /독은 말끔하게 해독됐다/);
   assert.equal(said("|-enditem|p1a: Ninetales|Lum Berry|[eat]"), "알로라 나인테일은 리샘열매를 먹었다!");
   for (const line of ["|-sidestart|p1: 가람|move: Quick Guard", "|-heal|p1a: Ninetales|170/160|[from] move: Floral Healing"]) assert.doesNotMatch(said(line), /[A-Za-z]{3}/, line);
+});
+
+test("Ally Switch moves who stands where, and a broken Illusion hands its HP to the Zoroark and gives the disguise back", () => {
+  // Zoroark leads disguised as Garchomp (the last of the party), Ally Switches with Charizard, and falls with its Illusion broken
+  const zoroark = { ...set("Zoroark-Hisui", "Life Orb", "Illusion", ["Ally Switch", "Protect"], "Hardy", {}) };
+  const team = [zoroark, TEAM[1], set("Garchomp", "Leftovers", "Rough Skin", ["Earthquake", "Protect"], "Jolly", {})];
+  const foes = [set("Incineroar", "Sitrus Berry", "Intimidate", ["Flare Blitz", "Protect"], "Adamant", { atk: 32 }), TEAM[3], TEAM[4]];
+  const battle = startBattle({ formatid: formatId("m-c", "doubles"), seed: [1, 2, 3, 4], p1: { name: "가", team }, p2: { name: "나", team: foes } });
+  choose(battle, {}, "p1", "team 1, 2, 3");
+  choose(battle, {}, "p2", "team 1, 2, 3");
+  choose(battle, {}, "p1", "move 1, move 1 mega");
+  choose(battle, {}, "p2", "move 1 2, move 1 1");
+  assert.equal(choose(battle, {}, "p1", "pass, switch 3").ok, true);
+  const out = readout(battle);
+  assert.match(out.spectatorLog, /\|swap\|p1a: Garchomp\|1/);
+  assert.match(out.spectatorLog, /\|replace\|p1b: Zoroark\|/);
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  const said = out.sideLog.p1.split("\n").flatMap(line => reader.read(line).lines);
+  const seen = reader.state.sides.p1;
+  assert.deepEqual(seen.active.map(m => m.name), battle.p1.active.map(m => m.name), "each stands where the engine has it");
+  for (const [i, mon] of battle.p1.active.entries()) assert.equal(seen.active[i].hp, mon.hp, `${mon.name}'s HP is its own, not its partner's`);
+  for (const mon of Object.values(seen.team)) assert.ok(Number.isFinite(mon.hp), `${mon.name} has a number for HP`);
+  assert.equal(seen.team.Zoroark.fainted, true);
+  assert.equal(seen.team.Garchomp.fainted, false, "the real Garchomp did not fall with its disguise");
+  assert.ok(said.some(line => /자리를 바꿨다/.test(line)), "the swap is said");
+  // the records count the Zoroark as the lead, not the Garchomp it looked like
+  const usage = battleUsage([{ log: out.log, winner: "p2" }]);
+  assert.equal(usage.get("zoroarkhisui")?.leads, 1);
+  assert.equal(usage.get("garchomp")?.leads ?? 0, 0);
+  assert.equal(usage.get("garchomp")?.picked, 1, "it came out for real afterwards");
+});
+
+test("Transform takes the target's form until it leaves, and no particle is doubled", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  for (const line of ["|player|p1|가|", "|player|p2|나|", "|switch|p1a: Ditto|Ditto, L50|130/130", "|switch|p2a: Incineroar|Incineroar, L50, M|100/100"]) reader.read(line);
+  const { lines, event } = reader.read("|-transform|p1a: Ditto|p2a: Incineroar|[from] ability: Imposter");
+  assert.deepEqual(lines, ["메타몽은 어흥염으로 변신했다!"]);
+  assert.equal(event.verb, "change");
+  assert.equal(reader.state.sides.p1.active[0].species, "Incineroar", "its picture and types are the target's");
+  reader.read("|switch|p1a: Garchomp|Garchomp, L50, F|183/183");
+  assert.equal(reader.state.sides.p1.team.Ditto.species, "Ditto", "it is itself again on the bench");
+});
+
+test("stat changes copied, swapped, inverted and stolen follow the engine", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  for (const line of ["|switch|p1a: Garchomp|Garchomp, L50, F|183/183", "|switch|p2a: Incineroar|Incineroar, L50, M|100/100", "|-boost|p1a: Garchomp|atk|2", "|-unboost|p1a: Garchomp|spa|1"]) reader.read(line);
+  const boosts = side => reader.state.sides[side].active[0].boosts;
+  assert.match(reader.read("|-copyboost|p2a: Incineroar|p1a: Garchomp|[from] move: Psych Up").lines[0], /능력 변화를 복사했다/);
+  assert.deepEqual(boosts("p2"), { atk: 2, spa: -1 });
+  reader.read("|-invertboost|p2a: Incineroar|[from] move: Topsy-Turvy");
+  assert.deepEqual(boosts("p2"), { atk: -2, spa: 1 });
+  reader.read("|-swapboost|p1a: Garchomp|p2a: Incineroar|atk, spa|[from] move: Power Swap");
+  assert.deepEqual([boosts("p1"), boosts("p2")], [{ atk: -2, spa: 1 }, { atk: 2, spa: -1 }]);
+  reader.read("|-clearpositiveboost|p2a: Incineroar|p1a: Garchomp|move: Spectral Thief");
+  assert.deepEqual(boosts("p2"), { spa: -1 });
+  reader.read("|-sidestart|p1: 가|move: Stealth Rock");
+  reader.read("|-swapsideconditions");
+  assert.deepEqual([reader.state.sides.p1.conditions, reader.state.sides.p2.conditions], [[], ["stealthrock"]]);
 });

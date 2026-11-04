@@ -97,6 +97,11 @@ export function useStageTape(log, res, perspective) {
   const [said, setSaid] = useState([]);
   const [playing, setPlaying] = useState(false);
   const [kick, setKick] = useState(0);
+  // the newest log, read when a run ends: lines that came while it played are played next, not left until the log moves again
+  const latest = useRef(log);
+  latest.current = log;
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const reset = () => { reader.current = createBattleReader({ text: res.text, moves: res.detail.moves, perspective }); done.current = 0; };
   if (!reader.current) reset();
 
@@ -130,7 +135,8 @@ export function useStageTape(log, res, perspective) {
         pending.push(...text.map(t => ({ text: t })));
         if (text.length) lastSaid = text;
         if (event?.verb === "enter" || /^\|(poke|teampreview)/.test(line)) preload(R.state);
-        if (catchUp || fx.instant()) continue;
+        // a hidden page keeps no animation clock and throttles its timers: it reads on without effects, as does a stage that is gone
+        if (catchUp || fx.instant() || document.hidden || !alive.current) continue;
         flushLines();
         if (text.length) { flushSync(() => setSaid(text)); saidAt = performance.now(); }
         const stage = stageRef.current;
@@ -197,7 +203,8 @@ export function useStageTape(log, res, perspective) {
       if (lastSaid.length) flushSync(() => setSaid(lastSaid));
       flushSync(() => setScene(sceneOf(R.state)));
       running.current = false;
-      if (String(log).split("\n").length > done.current) setKick(n => n + 1);
+      const next = latest.current;
+      if (next != null && String(next).split("\n").length !== done.current) setKick(n => n + 1);
       else setPlaying(false);
     })();
   }, [log, kick]);

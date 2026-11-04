@@ -198,13 +198,15 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
     return playerView(battle, secret, side);
   },
 
-  async choose({ id, token, choice }) {
+  // rq: requestKey of the request the choice answers (engine.mjs). A client without it is still served, unchecked.
+  async choose({ id, token, choice, rq }) {
     return withRetry(async () => {
       const { battle, secret } = await read(String(id));
       const side = await seat(secret, token);
       if (battle.status !== "active") refuse(409, "진행 중인 배틀이 아닙니다.");
       const engine = loadBattle(secret.state);
-      const result = choose(engine, secret.pending, side, String(choice ?? ""));
+      const result = choose(engine, secret.pending, side, String(choice ?? ""), rq == null ? undefined : String(rq));
+      if (result.stale) refuse(409, "선택할 차례가 바뀌었습니다. 새 선택지에서 다시 골라 주세요.");
       if (!result.ok) refuse(400, "고를 수 없는 선택입니다.", { reason: result.error });
       if (!result.committed) {
         const pending = { ...secret.pending, [side]: String(choice) };

@@ -4,6 +4,8 @@
 import { Battle, Dex, TeamValidator, extractChannelMessages } from "@pkmn/sim";
 import * as champions from "@pkmn/mods/champions";
 import * as championsregmb from "@pkmn/mods/championsregmb";
+import { requestKey } from "../../../src/services/battleLog.js";
+export { requestKey };
 
 // Pinned in package.json; the deployed function runs the bundle scripts/build-battle-engine.mjs makes of this file. A battle keeps the engine it was played on, so its log can be replayed on it.
 export const ENGINE = "@pkmn/sim@0.10.13 (smogon/pokemon-showdown@035c1a1f)";
@@ -64,7 +66,13 @@ export const loadBattle = state => Battle.fromJSON(state);
 
 // Applies the other side's waiting choice, then this one. committed means the engine ran the turn (or the team preview).
 // A choice that waits for the other side is not in the state: the caller keeps it as pending and the state as it was.
-export function choose(battle, pending, side, choice) {
+// rq, when given, is requestKey of the request the player answered: a choice made on a request that has since moved on
+// (a lost response sent again, a screen behind the battle) is refused as stale, never played on the next one.
+// Showdown's default and auto are refused: in doubles they log a move with no target, so the input log would not replay.
+// Nothing here ever chooses for a player; a player who does not choose loses by forfeit, not by an automatic choice.
+export function choose(battle, pending, side, choice, rq) {
+  if (rq != null && rq !== requestKey(battle.turn, battle[side]?.activeRequest)) return { ok: false, stale: true, error: "The request has changed" };
+  if (/(^|,)\s*(default|auto)\s*(,|$)/i.test(String(choice))) return { ok: false, error: "[Invalid choice] Choose explicitly" };
   const errors = capture(battle);
   const before = battle.inputLog.length;
   for (const [other, waiting] of Object.entries(pending || {})) if (other !== side && waiting) battle.choose(other, waiting);
