@@ -56,7 +56,10 @@ function inlineDecls(file) {
   return out;
 }
 const SRC = walk(join(ROOT, "src")).filter(f => /\.(jsx?|mjs)$/.test(f) && !rel(f).startsWith("src/data/"));
-const CSS = readdirSync(STYLES).filter(f => f.endsWith(".css"));
+// The battle stage's scene (DESIGN.md "Battle", The stage): a floor in perspective, platforms, weather and terrain tints and the shapes
+// its effects throw. Everything a player reads or presses on the match is battle.css and is held to every rule here.
+const STAGE = ["battle-stage.css"];
+const CSS = readdirSync(STYLES).filter(f => f.endsWith(".css") && !STAGE.includes(f));
 const DECLS = [...CSS.flatMap(f => cssDecls(join(STYLES, f))), ...SRC.flatMap(inlineDecls)];
 for (const d of DECLS) if (d.blk !== undefined) BLOCKS[d.blk][d.prop] = d.value;
 const keyOf = d => `${d.file} | ${d.sel} | ${d.prop}: ${d.value}`;
@@ -261,7 +264,9 @@ test("Korean copy has no middle dot separators (Voice and tone)", () => {
 // ---------- motion ----------
 // A new thing that moves is one of the verbs. These files are where the verbs that need the finger or a measurement live.
 const ANIMATES = new Set(["src/components/common/motion.js", "src/components/common/Modal.jsx", "src/components/common/Menu.jsx", "src/components/common/Dropdown.jsx",
-  "src/components/common/Toaster.jsx", "src/components/common/StandTable.jsx"]);
+  "src/components/common/Toaster.jsx", "src/components/common/StandTable.jsx",
+  // the battle stage's effects travel, burst and shake (DESIGN.md "Battle", What the stage plays): the one motion outside the verbs
+  "src/pages/battle/stageFx.js"]);
 test("pages move through the verbs of motion.js, never their own .animate() (Motion)", () => {
   assert.deepEqual(SRC.filter(f => /\.animate\(/.test(read(f)) && !ANIMATES.has(rel(f))).map(rel), []);
 });
@@ -304,7 +309,7 @@ test("icons stand on three sizes: 16, 20, 24 (Icons)", () => {
   assert.match(src("src/components/common/Icon.jsx"), /viewBox="0 0 24 24"[\s\S]*strokeWidth="1\.5" strokeLinecap="square" strokeLinejoin="miter"/, "drawn on a 24 grid");
 });
 test("icons only say what words cannot: no decorative icons on pages (Icons)", () => {
-  const files = [...readdirSync(join(ROOT, "src/pages")).map(f => `src/pages/${f}`), "src/components/layout/SiteFooter.jsx"];
+  const files = [...readdirSync(join(ROOT, "src/pages")).filter(f => /\.jsx?$/.test(f)).map(f => `src/pages/${f}`), "src/components/layout/SiteFooter.jsx"];
   const hits = files.flatMap(f => [...src(f).matchAll(/<Icon n="(crown|medal|chart|trophy|discord|msg|list)"/g)].map(m => `${f}: ${m[1]}`));
   assert.deepEqual(hits, []);
 });

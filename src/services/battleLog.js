@@ -51,9 +51,13 @@ const parseEffect = effect => {
 };
 
 export function newBattleState() {
-  return { turn: 0, gameType: "singles", ended: false, winner: null, players: { p1: "", p2: "" }, sides: { p1: newSide(), p2: newSide() }, weather: null, fields: [] };
+  return { turn: 0, gameType: "singles", ended: false, winner: null, players: { p1: "", p2: "" }, sides: { p1: newSide(), p2: newSide() }, weather: null, weatherSince: 0, fields: [], fieldSince: {} };
 }
-const newSide = () => ({ active: [null, null], team: {}, conditions: [], preview: [] });
+// since: the turn a side condition began (its turns left are counted from it); layers: Spikes and Toxic Spikes stack
+const newSide = () => ({ active: [null, null], team: {}, conditions: [], preview: [], since: {}, layers: {} });
+const newMon = (side, name, slot) => ({ ident: `${side}: ${name}`, side, name, species: name, hp: 100, maxhp: 100, status: "", fainted: false, boosts: {}, slot, gender: "", level: 100, item: "", ability: "", moves: [], volatiles: [] });
+// the moves that guard their user this turn: they show as a shield
+const GUARDS = new Set(["protect", "detect", "spikyshield", "kingsshield", "banefulbunker", "silktrap", "burningbulwark", "obstruct", "maxguard", "wideguard", "quickguard"]);
 
 /* text: battle-text-ko.json. moves: champions-data.json의 기술 표(분류, 타입, 대상). perspective: 이 화면의 주인(p1 또는 p2). */
 export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
@@ -67,7 +71,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     const side = state.sides[who.side];
     return (who.slot >= 0 ? side.active[who.slot] : null)
       || side.team[who.name]
-      || (side.team[who.name] = { ident: `${who.side}: ${who.name}`, side: who.side, name: who.name, species: who.name, hp: 100, maxhp: 100, status: "", fainted: false, boosts: {}, slot: who.slot });
+      || (side.team[who.name] = newMon(who.side, who.name, who.slot));
   };
   const pokemonWord = ident => {
     const mon = monOf(ident);
@@ -81,11 +85,20 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     const { kind, id, name } = parseEffect(effect);
     return (kind ? tables[kind]?.[id]?.name : tables.move[id]?.name || tables.ability[id]?.name || tables.item[id]?.name || text.default[id]?.weatherName) || name;
   };
-  // A message for an effect: its own entry first (a move, an ability, an item or a condition), then the shared default.
+  // A message for an effect: its own table first (a move, an ability, an item), then the same id anywhere, as Showdown's text
+  // is one table: a field's lines live under default (move: Trick Room → default.trickroom.start).
+  // "#psn" points at another entry's line of the same key, "#.start" at another key of the same entry.
+  const lookup = (kind, id, key) => (kind ? tables[kind]?.[id]?.[key] : undefined)
+    ?? text.default[id]?.[key] ?? tables.move[id]?.[key] ?? tables.ability[id]?.[key] ?? tables.item[id]?.[key];
   const template = (effect, key) => {
-    const { kind, id } = parseEffect(effect);
-    const own = kind ? tables[kind]?.[id]?.[key] : (text.default[id]?.[key] ?? tables.move[id]?.[key] ?? tables.ability[id]?.[key] ?? tables.item[id]?.[key]);
-    return own;
+    let { kind, id } = parseEffect(effect);
+    let line = lookup(kind, id, key);
+    for (let hops = 0; hops < 3 && typeof line === "string" && line.startsWith("#"); hops++) {
+      const [to, toKey] = line.slice(1).split(".");
+      id = to || id; key = toKey || key; kind = to ? "" : kind;
+      line = lookup(kind, id, key);
+    }
+    return line;
   };
   const fill = (source, values) => {
     if (!source) return null;
@@ -102,16 +115,19 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     const who = parseIdent(ident);
     const side = state.sides[who.side];
     const previous = side.active[who.slot];
-    const { species } = parseDetails(details);
-    const mon = side.team[who.name] || (side.team[who.name] = { ident: `${who.side}: ${who.name}`, side: who.side, name: who.name, boosts: {} });
-    Object.assign(mon, { species, details, slot: who.slot, fainted: false, boosts: {} }, parseHP(condition));
+    const { species, level, gender } = parseDetails(details);
+    const mon = side.team[who.name] || (side.team[who.name] = newMon(who.side, who.name, who.slot));
+    // a Pokémon sent in leaves its stat changes and volatile effects behind; its item, ability and moves stay known
+    Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, boosts: {}, volatiles: [] }, parseHP(condition));
     side.active[who.slot] = mon;
     return previous && previous !== mon && !previous.fainted ? previous : null;
   }
   const setCondition = (ident, condition) => {
     const mon = monOf(ident);
     const before = mon.maxhp ? mon.hp / mon.maxhp : 0;
-    Object.assign(mon, parseHP(condition));
+    // "0 fnt" carries no maximum: a fainted Pokémon keeps the one it had (0 / 172, never 0 / 0)
+    const next = parseHP(condition);
+    Object.assign(mon, next, next.status === "fnt" && mon.maxhp ? { maxhp: mon.maxhp } : {});
     if (mon.status === "fnt") mon.fainted = true;
     return { mon, before };
   };
@@ -123,14 +139,21 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     let event = null;
     const say = (source, values) => { const said = fill(source, values); if (said) lines.push(said); };
     const from = kw.from ? parseEffect(kw.from) : null;
+    // an ability or an item named as the cause of a line is now known: the stage pops the ability up as the game does
+    let reveal = null;
+    if (from?.kind === "ability" && (kw.of || args[0]) && parseIdent(kw.of || args[0])?.slot >= 0) {
+      const owner = kw.of || args[0];
+      monOf(owner).ability = from.name;
+      reveal = { ident: owner, ability: effectName(kw.from) };
+    } else if (from?.kind === "item" && parseIdent(args[0])?.slot >= 0) monOf(args[0]).item = from.name;
 
     switch (cmd) {
       case "player": if (args[1]) state.players[args[0]] = args[1]; break;
       case "gametype": state.gameType = args[0]; break;
       case "poke": state.sides[args[0]].preview.push(parseDetails(args[1]).species); break;
       case "turn": state.turn = Number(args[0]); event = { verb: "turn", turn: state.turn }; break;
-      case "win": state.ended = true; state.winner = state.players.p1 === args[0] ? "p1" : "p2"; event = { verb: "end" }; break;
-      case "tie": state.ended = true; state.winner = "tie"; event = { verb: "end" }; break;
+      case "win": state.ended = true; state.winner = state.players.p1 === args[0] ? "p1" : "p2"; event = { verb: "end", winner: state.winner }; break;
+      case "tie": state.ended = true; state.winner = "tie"; event = { verb: "end", winner: "tie" }; break;
 
       case "switch": case "drag": case "replace": {
         const who = parseIdent(args[0]);
@@ -140,7 +163,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const name = speciesName(parseDetails(args[1]).species);
         if (cmd === "drag") say(D("drag"), { FULLNAME: own ? name : pokemonWord(args[0]) });
         else if (cmd === "switch") say(own ? D("switchInOwn") : D("switchIn"), { TRAINER: state.players[who.side], FULLNAME: name });
-        event = { verb: "enter", ident: args[0], leaving: previous?.ident || null };
+        event = { verb: "enter", ident: args[0], leaving: previous?.ident || null, drag: cmd === "drag" };
         break;
       }
       case "detailschange": case "-formechange": {
@@ -161,12 +184,14 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "move": {
         const source = args[0];
         const move = moves[toID(args[1])] || {};
+        const user = monOf(source);
+        if (user && !user.moves.includes(args[1])) user.moves.push(args[1]);
         say(D("move"), { POKEMON: pokemonWord(source), MOVE: effectName(`move: ${args[1]}`) });
         const spread = typeof kw.spread === "string" ? kw.spread.split(",").map(slot => `${slot}:`) : null;
         const targets = (spread || (args[2] ? [args[2]] : [])).filter(t => parseIdent(t)?.slot >= 0);
         const self = !targets.length || targets.every(t => t.slice(0, 3) === source.slice(0, 3));
         const verb = self ? "self" : move.category === "Physical" ? "strike" : "chase";
-        event = { verb, ident: source, targets: self ? [] : targets, type: move.type || "", miss: Boolean(kw.miss), still: Boolean(kw.still) };
+        event = { verb, ident: source, targets: self ? [] : targets, type: move.type || "", category: move.category || "", move: toID(args[1]), spread: Boolean(spread), miss: Boolean(kw.miss), still: Boolean(kw.still) };
         break;
       }
       case "faint": {
@@ -180,27 +205,27 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const { mon } = setCondition(args[0], args[1]);
         const values = { POKEMON: pokemonWord(args[0]), SOURCE: kw.of ? pokemonWord(kw.of) : "" };
         if (cmd === "-heal") {
-          if (from) say(template(kw.from, "heal") || (from.kind === "item" ? D("healFromItem") : D("heal")), { ...values, ITEM: effectName(kw.from), EFFECT: effectName(kw.from) });
+          if (from) say(template(kw.from, "heal") || D("healFromEffect"), { ...values, ITEM: effectName(kw.from), EFFECT: effectName(kw.from) });
           else say(D("heal"), values);
         } else if (from) {
           const own = template(kw.from, "damage");
           say(own || (from.kind === "item" ? D("damageFromItem") : null), { ...values, ITEM: effectName(kw.from), MOVE: effectName(kw.from) });
         }
-        event = { verb: cmd === "-damage" && !from ? "take" : "hp", ident: args[0], hp: mon.hp, maxhp: mon.maxhp };
+        event = { verb: cmd === "-damage" && !from ? "take" : "hp", ident: args[0], hp: mon.hp, maxhp: mon.maxhp, heal: cmd === "-heal", from: from?.id || "" };
         break;
       }
       case "-status": {
         const mon = monOf(args[0]);
         mon.status = args[1];
         say(from?.kind === "item" ? template(args[1], "startFromItem") : template(args[1], "start"), { POKEMON: pokemonWord(args[0]), ITEM: from ? effectName(kw.from) : "" });
-        event = { verb: "status", ident: args[0] };
+        event = { verb: "status", ident: args[0], status: args[1] };
         break;
       }
       case "-curestatus": {
         const mon = monOf(args[0]);
         mon.status = "";
         say(template(args[1], "end"), { POKEMON: pokemonWord(args[0]) });
-        event = { verb: "status", ident: args[0] };
+        event = { verb: "cure", ident: args[0], status: args[1] };
         break;
       }
       case "-boost": case "-unboost": {
@@ -209,7 +234,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         mon.boosts[args[1]] = Math.max(-6, Math.min(6, (mon.boosts[args[1]] || 0) + (cmd === "-boost" ? amount : -amount)));
         const key = (cmd === "-boost" ? "boost" : "unboost") + (amount === 0 ? "0" : amount >= 3 ? "3" : amount === 2 ? "2" : "");
         say(D(key), { POKEMON: pokemonWord(args[0]), STAT: text.stats[args[1]] || args[1] });
-        event = { verb: "boost", ident: args[0], up: cmd === "-boost" };
+        event = { verb: "boost", ident: args[0], up: cmd === "-boost", stat: args[1], amount: cmd === "-boost" ? amount : -amount };
         break;
       }
       case "-setboost": monOf(args[0]).boosts[args[1]] = Number(args[2]); event = { verb: "boost", ident: args[0] }; break;
@@ -223,15 +248,16 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const id = toID(args[0]);
         if (id === "none") { if (state.weather) say(template(state.weather, "end"), {}); state.weather = null; }
         else if (kw.upkeep) say(template(id, "upkeep"), {});
-        else { state.weather = id; say(template(id, "start"), {}); }
-        event = { verb: "field" };
+        else { if (state.weather !== id) state.weatherSince = state.turn; state.weather = id; say(template(id, "start"), {}); }
+        event = { verb: "weather", id: state.weather, upkeep: Boolean(kw.upkeep) };
         break;
       }
       case "-fieldstart": case "-fieldend": {
         const { id } = parseEffect(args[0]);
         state.fields = cmd === "-fieldstart" ? [...new Set([...state.fields, id])] : state.fields.filter(f => f !== id);
+        if (cmd === "-fieldstart") state.fieldSince[id] = state.turn;
         say(template(args[0], cmd === "-fieldstart" ? "start" : "end") || D(cmd === "-fieldstart" ? "startFieldEffect" : "endFieldEffect"), { EFFECT: effectName(args[0]), POKEMON: kw.of ? pokemonWord(kw.of) : "" });
-        event = { verb: "field" };
+        event = { verb: "field", id, on: cmd === "-fieldstart" };
         break;
       }
       case "-sidestart": case "-sideend": {
@@ -239,16 +265,27 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const { id } = parseEffect(args[1]);
         const conditions = state.sides[side].conditions;
         state.sides[side].conditions = cmd === "-sidestart" ? [...new Set([...conditions, id])] : conditions.filter(c => c !== id);
+        if (cmd === "-sidestart") { if (!conditions.includes(id)) state.sides[side].since[id] = state.turn; state.sides[side].layers[id] = (state.sides[side].layers[id] || 0) + 1; }
+        else delete state.sides[side].layers[id];
         say(template(args[1], cmd === "-sidestart" ? "start" : "end") || D(cmd === "-sidestart" ? "startTeamEffect" : "endTeamEffect"), { TEAM: teamWord(side), EFFECT: effectName(args[1]) });
-        event = { verb: "field" };
+        event = { verb: "side", side, id, on: cmd === "-sidestart" };
         break;
       }
       case "-start": case "-end": {
+        const mon = monOf(args[0]);
+        const { id } = parseEffect(args[1]);
+        if (mon && id) mon.volatiles = cmd === "-start" ? [...new Set([...mon.volatiles, id])] : mon.volatiles.filter(v => v !== id);
+        event = { verb: "volatile", ident: args[0], id, on: cmd === "-start" };
         say(template(args[1], cmd === "-start" ? "start" : "end") || (cmd === "-end" ? D("end") : null), { POKEMON: pokemonWord(args[0]), EFFECT: effectName(args[1]), SOURCE: kw.of ? pokemonWord(kw.of) : "" });
         break;
       }
-      case "-singleturn": case "-singlemove": say(template(args[1], "start"), { POKEMON: pokemonWord(args[0]) }); break;
+      case "-singleturn": case "-singlemove": {
+        say(template(args[1], "start"), { POKEMON: pokemonWord(args[0]) });
+        if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0] };
+        break;
+      }
       case "-activate": {
+        if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0] };
         const source = template(args[1], "activate") ?? template(args[1], "block") ?? null;
         say(source, { POKEMON: pokemonWord(args[0]), TARGET: kw.of ? pokemonWord(kw.of) : "", SOURCE: kw.of ? pokemonWord(kw.of) : "", EFFECT: effectName(args[1]) });
         break;
@@ -256,22 +293,31 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "-ability": {
         say(D("abilityActivation"), { POKEMON: pokemonWord(args[0]), ABILITY: effectName(`ability: ${args[1]}`) });
         say(template(`ability: ${args[1]}`, "start"), { POKEMON: pokemonWord(args[0]) });
+        monOf(args[0]).ability = args[1];
+        event = { verb: "ability", ident: args[0], name: effectName(`ability: ${args[1]}`) };
         break;
       }
-      case "-item": say(template(`item: ${args[1]}`, "start") || D("addItem"), { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`), SOURCE: kw.of ? pokemonWord(kw.of) : "" }); break;
+      case "-item": {
+        say(template(`item: ${args[1]}`, "start") || D("addItem"), { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`), SOURCE: kw.of ? pokemonWord(kw.of) : "" });
+        monOf(args[0]).item = args[1];
+        event = { verb: "item", ident: args[0], name: effectName(`item: ${args[1]}`) };
+        break;
+      }
       case "-enditem": {
         const values = { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`) };
         say(kw.eat ? template(`item: ${args[1]}`, "eat") || D("eatItem") : template(`item: ${args[1]}`, "end") || D("removeItem"), values);
+        monOf(args[0]).item = "";
+        event = { verb: "item", ident: args[0], name: values.ITEM, gone: true };
         break;
       }
-      case "cant": say(template(args[1], "cant") || D("cant"), { POKEMON: pokemonWord(args[0]), MOVE: args[2] ? effectName(`move: ${args[2]}`) : "" }); break;
+      case "cant": say(template(args[1], "cant") || D("cant"), { POKEMON: pokemonWord(args[0]), MOVE: args[2] ? effectName(`move: ${args[2]}`) : "" }); event = { verb: "cant", ident: args[0], why: parseEffect(args[1]).id }; break;
       case "-prepare": say(template(`move: ${args[1]}`, "prepare"), { POKEMON: pokemonWord(args[0]) }); break;
-      case "-supereffective": say(D("superEffective"), { POKEMON: pokemonWord(args[0]) }); break;
-      case "-resisted": say(D("resisted"), { POKEMON: pokemonWord(args[0]) }); break;
-      case "-immune": say(D("immune"), { POKEMON: pokemonWord(args[0]) }); break;
-      case "-crit": say(D("crit"), { POKEMON: pokemonWord(args[0]) }); break;
-      case "-miss": say(D("miss"), { POKEMON: pokemonWord(args[1] || args[0]) }); break;
-      case "-fail": say(D("fail"), { POKEMON: pokemonWord(args[0]) }); break;
+      case "-supereffective": say(D("superEffective"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "super", ident: args[0] }; break;
+      case "-resisted": say(D("resisted"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "resist", ident: args[0] }; break;
+      case "-immune": say(D("immune"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "immune", ident: args[0] }; break;
+      case "-crit": say(D("crit"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "crit", ident: args[0] }; break;
+      case "-miss": say(D("miss"), { POKEMON: pokemonWord(args[1] || args[0]) }); event = { verb: "miss", ident: args[1] || args[0] }; break;
+      case "-fail": say(D("fail"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "fail", ident: args[0] }; break;
       case "-notarget": say(D("noTarget"), { POKEMON: args[0] ? pokemonWord(args[0]) : "" }); break;
       case "-ohko": say(D("ohko"), {}); break;
       case "-hitcount": say(D("hitCount") || D("hitCountSingular"), { POKEMON: pokemonWord(args[0]), NUMBER: args[1] }); break;
@@ -279,10 +325,10 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "-message": lines.push(args[0]); break;
       default: break;
     }
-    return { lines, event };
+    return { lines, event, reveal };
   }
 
-  return { state, read, speciesName, pokemonWord };
+  return { state, read, speciesName, pokemonWord, effectName };
 }
 
 /* 끝난 공식 배틀들에서 포켓몬마다 실제로 나온 판, 선봉으로 나온 판, 나와서 이긴 판을 센다(기록의 포켓몬 시트).

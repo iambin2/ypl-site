@@ -5,7 +5,7 @@ const clean = (value) => String(value || "").trim();
 // PokeAPI spells Farfetch’d/Sirfetch’d with U+2019; Showdown names use ASCII.
 const key = (value) => clean(value).toLowerCase().replace(/’/g, "'");
 
-function formDisplayName(record, korean) {
+export function formDisplayName(record, korean) {
   const id = key(record?.id);
   if (!korean) return clean(record?.name);
   // Official Korean mega naming, matching legacy snapshots such as 메가메타그로스.

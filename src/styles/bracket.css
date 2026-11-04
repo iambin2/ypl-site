@@ -73,7 +73,8 @@
   background: var(--panel);
 }
 @media (hover: hover) { label.bk-pin:hover { background: var(--panel-2); } }
-.bk-pin:has(input[type="checkbox"]:not(:checked)) .bk-participant-name { color: var(--dim); }
+/* the box stands before the name, so a sibling reads it; a :has() with :not(:checked) restyled the whole app on every node added anywhere */
+.bk-pin > input[type="checkbox"]:not(:checked) ~ .bk-participant-name { color: var(--dim); }
 .bk-pin input:not([type="checkbox"]), .bk-team-card input { min-height: var(--h-control); padding: var(--s2) var(--s3); }
 .bk-pin-no {
   width: var(--s5); height: var(--h-strip); flex: none; display: grid; place-items: center; font-size: var(--t12); font-weight: 600; line-height: 1; color: var(--mute);
@@ -118,7 +119,7 @@
 .bk-award { gap: var(--s3); cursor: pointer; }
 .bk-award > :not(input) { transition: opacity var(--move-tone); }
 .bk-award > .bk-chg-cnt { margin-left: auto; }
-.bk-award:has(> input:not(:checked)) > :not(input) { opacity: var(--opacity-disabled); }
+.bk-award > input:not(:checked) ~ :not(input) { opacity: var(--opacity-disabled); }
 @media (max-width: 639px) { .bk-award > .bk-chg-cnt { flex-basis: 100%; margin-left: 28px; } }
 .bk-pts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
 .bk-pt { display: flex; flex-direction: column; gap: var(--s2); font-size: var(--t12); font-weight: 600; color: var(--mute); }

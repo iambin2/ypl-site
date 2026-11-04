@@ -51,6 +51,10 @@ test("josa follows the last syllable", () => {
   assert.equal(josa("화염방사", "object"), "화염방사를");
   assert.deepEqual(parseHP("0 fnt"), { hp: 0, maxhp: 0, status: "fnt" });
   assert.deepEqual(parseHP("141/156 par"), { hp: 141, maxhp: 156, status: "par" });
+  const reader = createBattleReader({ text, perspective: "p1" });
+  reader.read("|switch|p1a: Garchomp|Garchomp, L50|185/185");
+  reader.read("|-damage|p1a: Garchomp|0 fnt");
+  assert.equal(reader.state.sides.p1.active[0].maxhp, 185, "a fainted Pokémon keeps its maximum HP");
 });
 
 test("a whole battle reads as Korean, with no placeholder left and the field as the engine has it", () => {
@@ -85,7 +89,7 @@ test("moves become the battle verbs: strike for physical, chase for special, sel
   assert.deepEqual(special.lines, ["상대 리자몽의 열풍!"]);
   assert.equal(reader.read("|move|p1a: Garchomp|Protect|p1a: Garchomp").event.verb, "self");
   const hit = reader.read("|-damage|p1a: Garchomp|90/185");
-  assert.deepEqual(hit.event, { verb: "take", ident: "p1a: Garchomp", hp: 90, maxhp: 185 });
+  assert.deepEqual(hit.event, { verb: "take", ident: "p1a: Garchomp", hp: 90, maxhp: 185, heal: false, from: "" });
   assert.deepEqual(reader.read("|faint|p2a: Charizard").lines, ["상대 리자몽은 쓰러졌다!"]);
   assert.deepEqual(reader.read("|-sidestart|p1: 가|move: Tailwind").lines, ["우리 편에게 순풍이 불기 시작했다!"]);
   reader.read("|switch|p1a: Charizard|Charizard, L50, M|155/155");
@@ -110,4 +114,19 @@ test("official battles count each Pokémon's games, leads and wins from the publ
   const winners = [...usage.values()].reduce((sum, u) => sum + u.wins, 0);
   assert.ok(out.winner === "tie" ? winners === 0 : winners >= 2 && winners <= 4, `the winner's Pokémon carry the win: ${winners}`);
   assert.equal(battleUsage([]).size, 0);
+});
+
+test("a field, a redirect and a fallback all speak Korean", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  reader.read("|player|p1|가람|");
+  reader.read("|switch|p1a: Ninetales|Ninetales-Alola, L50|160/160");
+  const said = line => reader.read(line).lines.join(" ");
+  // the field's lines live under default, not under the move: never "(트릭룸 started!)"
+  assert.equal(said("|-fieldstart|move: Trick Room|[of] p1a: Ninetales"), "알로라 나인테일은 시공을 뒤틀었다!");
+  assert.equal(said("|-fieldend|move: Trick Room"), "뒤틀린 시공이 원래대로 되돌아왔다!");
+  // tox.end is "#psn": it reads psn's end
+  reader.read("|-status|p1a: Ninetales|tox");
+  assert.match(said("|-curestatus|p1a: Ninetales|tox"), /독은 말끔하게 해독됐다/);
+  assert.equal(said("|-enditem|p1a: Ninetales|Lum Berry|[eat]"), "알로라 나인테일은 리샘열매를 먹었다!");
+  for (const line of ["|-sidestart|p1: 가람|move: Quick Guard", "|-heal|p1a: Ninetales|170/160|[from] move: Floral Healing"]) assert.doesNotMatch(said(line), /[A-Za-z]{3}/, line);
 });

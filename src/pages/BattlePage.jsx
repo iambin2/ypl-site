@@ -1,17 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { reduced } from "../components/common/motion.js";
 import Button from "../components/common/Button.jsx";
 import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
-import { Choice, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
+import { Chips, Choice, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
-import { DUR, chase, enter, fall, flash, gauge, pause, strike, take } from "../components/common/motion.js";
 import { pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
-import { createBattleReader, toID } from "../services/battleLog.js";
+import { createBattleReader, josa, parseHP, toID } from "../services/battleLog.js";
+import { STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
+import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { BOARD_DRAFT_KEY, battleHref, cancelBattle, chooseInBattle, createBattle, forfeitBattle, isDoubles, joinBattle, listEventBattles, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
@@ -25,7 +26,7 @@ const FORMATS = [["singles", "싱글"], ["doubles", "더블"]];
 const NAME_KEY = "ypl-battle:name";
 const POLL_MS = 1500;
 
-function useResources() {
+export function useResources() {
   const [res, setRes] = useState(null);
   useEffect(() => {
     Promise.all([import("../data/battle-text-ko.json"), championsData.load()])
@@ -152,7 +153,7 @@ function BattleRoom({ id, res, say, go, onLeave }) {
   return <Arena row={row} view={view} seat={seat} res={res} onView={setView} onShare={share} go={go} />;
 }
 
-function Waiting({ row, onShare, onCancel }) {
+export function Waiting({ row, onShare, onCancel }) {
   const official = row.kind === "official";
   return (
     <div className="bt-page">
@@ -260,171 +261,61 @@ function Join({ row, res, onJoined }) {
   );
 }
 
-/* ---------- the field and the log, played one message at a time ---------- */
-const slotKey = (side, slot) => `${side}${"ab"[slot]}`;
-const identKey = ident => String(ident).slice(0, 3);
-function fieldOf(state) {
-  const side = id => state.sides[id].active.map(mon => mon && ({ species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted, boosts: { ...mon.boosts } }));
-  return { p1: side("p1"), p2: side("p2"), turn: state.turn, weather: state.weather, fields: [...state.fields], conditions: { p1: [...state.sides.p1.conditions], p2: [...state.sides.p2.conditions] }, ended: state.ended, winner: state.winner };
-}
-const litCells = mon => (!mon || mon.fainted || !mon.maxhp ? 0 : Math.max(mon.hp > 0 ? 1 : 0, Math.ceil(mon.hp / mon.maxhp * 10)));
-
-function useBattleTape(log, res, perspective) {
-  const reader = useRef(null);
-  const done = useRef(0);
-  const running = useRef(false);
-  const fieldRef = useRef(null);
-  const [field, setField] = useState(null);
-  const [lines, setLines] = useState([]);
-  const [kick, setKick] = useState(0);
-  const lastMover = useRef(null);
-  const reset = () => { reader.current = createBattleReader({ text: res.text, moves: res.detail.moves, perspective }); done.current = 0; };
-  if (!reader.current) reset();
-
-  useEffect(() => {
-    if (running.current || log == null) return;
-    const all = String(log).split("\n");
-    if (all.length < done.current) { reset(); setLines([]); }
-    const fresh = all.slice(done.current);
-    if (!fresh.length) return;
-    running.current = true;
-    // a page opened mid-battle catches up at once; only what arrives while it is open is played
-    const instant = done.current === 0;
-    const node = key => fieldRef.current?.querySelector(`[data-mon="${key}"]`);
-    const mon = key => node(key)?.querySelector(".mon");
-    const plate = key => node(key)?.querySelector(".bt-hit");
-    (async () => {
-      await null; // out of the effect: flushSync may not run inside React's own work
-      let pending = [];
-      const flushLines = () => { if (pending.length) { const add = pending; pending = []; flushSync(() => setLines(list => [...list, ...add])); } };
-      for (const line of fresh) {
-        done.current += 1;
-        const before = instant ? null : fieldOf(reader.current.state);
-        const { lines: said, event } = reader.current.read(line);
-        if (event?.verb === "turn") pending.push({ turn: event.turn });
-        pending.push(...said.map(text => ({ text })));
-        if (instant) continue;
-        flushLines();
-        const show = () => flushSync(() => setField(fieldOf(reader.current.state)));
-        switch (event?.verb) {
-          case "strike": lastMover.current = identKey(event.ident); await strike(mon(identKey(event.ident)), mon(identKey(event.targets[0]))); break;
-          case "chase": lastMover.current = identKey(event.ident); await chase(fieldRef.current?.querySelector(".bt-layer"), mon(identKey(event.ident)), event.targets.map(t => mon(identKey(t))).filter(Boolean), `type-${toID(event.type)}`); break;
-          case "self": lastMover.current = identKey(event.ident); await flash(plate(identKey(event.ident))); break;
-          case "take": case "hp": {
-            const key = identKey(event.ident);
-            if (event.verb === "take") await take(mon(key), plate(key), mon(lastMover.current));
-            const was = before?.[key.slice(0, 2)]?.[key.charCodeAt(2) - 97];
-            show();
-            const cells = [...(node(key)?.querySelectorAll(".bt-gauge > i") || [])];
-            await gauge(cells, litCells(was), litCells(fieldOf(reader.current.state)[key.slice(0, 2)][key.charCodeAt(2) - 97]), Number(getComputedStyle(document.documentElement).getPropertyValue("--off")) || .08);
-            break;
-          }
-          case "fall": await fall(mon(identKey(event.ident))); show(); break;
-          case "enter": show(); await enter(mon(identKey(event.ident))); break;
-          case "mega": show(); await flash(plate(identKey(event.ident)), DUR.light - DUR.tone); break;
-          default: show(); if (said.length) await pause(DUR.tone);
-        }
-      }
-      flushLines();
-      flushSync(() => setField(fieldOf(reader.current.state)));
-      running.current = false;
-      // what arrived while this ran is played next
-      if (String(log).split("\n").length > done.current) setKick(k => k + 1);
-    })();
-  }, [log, kick]);
-
-  return { field, lines, fieldRef, state: reader.current.state, speciesName: reader.current.speciesName };
+/* ---------- the arena: the stage, its playback, the choices and the log (DESIGN.md "Battle", The stage) ---------- */
+const SPEED_KEY = "ypl-battle:speed";
+const SPEEDS = [[1, "보통"], [.5, "빠르게"], [0, "건너뛰기"]];
+function readSpeed() {
+  try { const v = localStorage.getItem(SPEED_KEY); return SPEEDS.some(([s]) => String(s) === v) ? Number(v) : 1; } catch { return 1; }
 }
 
-function MonCell({ mon, side, slot, own, speciesName, pick }) {
-  const key = slotKey(side, slot);
-  // the cell stays as it is when it becomes a target: a press plate lies over it, so the picture is never drawn again
-  const Box = "div";
-  const props = {};
-  const plate = label => pick && <button type="button" className="bt-pick" onClick={pick.onPick} aria-label={`${label} 대상으로 고르기`} />;
-  if (!mon) return <Box className="pn stand bt-cell" data-mon={key}><i className="floor" aria-hidden="true" /><i className="bt-hit" aria-hidden="true" />{plate("빈 자리")}</Box>;
-  const exact = own && mon.maxhp !== 100;
-  const hp = mon.fainted ? 0 : exact ? mon.hp : Math.round(mon.hp / mon.maxhp * 100);
-  const name = speciesName(mon.species);
-  const lit = litCells(mon);
-  const status = mon.status && mon.status !== "fnt" ? STATUS[mon.status] || mon.status : "";
-  const boosts = Object.entries(mon.boosts || {}).filter(([, v]) => v);
-  return (
-    <Box className="pn stand bt-cell" data-mon={key} {...props} role="group"
-      aria-label={`${own ? "" : "상대 "}${name}, HP ${hp}${exact ? ` / ${mon.maxhp}` : "%"}${status ? `, ${status}` : ""}`}>
-      <span className="bt-top">
-        <span className="bt-hp"><Seg value={String(hp)} h={32} cells={3} label="" /><span className="t12 dim">{exact ? `/ ${mon.maxhp}` : "%"}</span>
-          <span className="bt-marks">{status && <span className="pn2 bt-chip">{status}</span>}{boosts.map(([stat, v]) => <span key={stat} className="pn2 bt-chip">{`${STAT_SHORT[stat] || stat} ${v > 0 ? "+" : ""}${v}`}</span>)}</span>
-        </span>
-        <span className="bt-gauge" aria-hidden="true">{Array.from({ length: 10 }, (_, i) => <i key={i} className={i < lit ? undefined : "off"} />)}</span>
-      </span>
-      <i className="floor" aria-hidden="true"><span className={"t12" + (mon.fainted ? " mute" : "")}>{name}</span></i>
-      {!mon.fainted && <Mon src={spriteUrl(mon.species)} />}
-      <i className="bt-hit" aria-hidden="true" />
-      {plate(`${own ? "" : "상대 "}${name}`)}
-    </Box>
-  );
-}
-const STATUS = { brn: "화상", par: "마비", slp: "잠듦", frz: "얼음", psn: "독", tox: "맹독" };
-const STAT_SHORT = { atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드", accuracy: "명중", evasion: "회피" };
-
-function Field({ field, fieldRef, perspective, doubles, speciesName, text, targeting }) {
-  const foe = perspective === "p1" ? "p2" : "p1";
-  const slots = doubles ? [0, 1] : [0];
-  const say = [field?.weather && (text.default[field.weather]?.weatherName || field.weather), ...(field?.fields || []).map(f => text.moves[f]?.name || f)].filter(Boolean);
-  const sideSay = id => (field?.conditions?.[id] || []).map(c => text.moves[c]?.name || c);
-  return (
-    <div className="bt-field" ref={fieldRef}>
-      {(say.length > 0 || sideSay(foe).length > 0 || sideSay(perspective).length > 0) && <div className="pn bt-strip t12">
-        {say.map(s => <b key={s}>{s}</b>)}
-        {sideSay(foe).map(s => <span key={"f" + s} className="dim">{`상대 ${s}`}</span>)}
-        {sideSay(perspective).map(s => <span key={"o" + s} className="dim">{`우리 편 ${s}`}</span>)}
-      </div>}
-      {[foe, perspective].map(side => (
-        <div key={side} className="bt-side" style={{ "--n": slots.length }}>
-          {slots.map(slot => <MonCell key={slot} mon={field?.[side]?.[slot]} side={side} slot={slot} own={side === perspective} speciesName={speciesName}
-            pick={targeting ? targeting(side, slot) : null} />)}
-        </div>
-      ))}
-      <div className="bt-layer" aria-hidden="true" />
-    </div>
-  );
-}
-
-function Log({ lines }) {
+// the whole log; it changes only when a line is added, so the stage's every step does not draw it again
+const Log = React.memo(function Log({ lines }) {
   const ref = useRef(null);
-  useEffect(() => { ref.current?.scrollTo({ top: ref.current.scrollHeight }); }, [lines.length]);
+  // keep the newest line in view, once a frame at most and only while the log is open (a closed one costs no layout)
+  useEffect(() => {
+    const el = ref.current;
+    if (!el?.closest("details")?.open) return;
+    const id = requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    return () => cancelAnimationFrame(id);
+  }, [lines.length]);
   return (
-    <div className="stack bt-log" ref={ref} aria-live="polite">
+    <div className="stack bt-log" ref={ref} aria-live="off">
       {lines.map((line, i) => line.turn != null
         ? <div key={i} className="pn2 bt-turn t12">{`${line.turn}턴`}</div>
         : <p key={i} className="pn bt-line">{line.text}</p>)}
     </div>
   );
-}
+});
 
-/* A finished battle is its replay: the field as it stood at the end of each turn and that turn's messages, stepped by a pager. */
+/* A finished battle is its replay: the stage as it stood at the end of each turn and that turn's messages, stepped by a pager. */
 function replayTurns(log, res, perspective) {
   const reader = createBattleReader({ text: res.text, moves: res.detail.moves, perspective });
-  const turns = [{ turn: 0, lines: [], field: null }];
+  const turns = [{ turn: 0, lines: [], said: [], scene: null }];
   for (const line of String(log || "").split("\n")) {
     const { lines, event } = reader.read(line);
-    if (event?.verb === "turn") { turns[turns.length - 1].field = fieldOf(reader.state); turns.push({ turn: event.turn, lines: [{ turn: event.turn }] }); }
+    if (event?.verb === "turn") { turns[turns.length - 1].scene = sceneOf(reader.state); turns.push({ turn: event.turn, lines: [{ turn: event.turn }], said: [] }); }
     turns[turns.length - 1].lines.push(...lines.map(text => ({ text })));
+    if (lines.length) turns[turns.length - 1].said = lines;
   }
-  turns[turns.length - 1].field = fieldOf(reader.state);
+  turns[turns.length - 1].scene = sceneOf(reader.state);
   return turns;
 }
 
-function Arena({ row, view, seat, res, onView, onShare, go }) {
+/* api: where choices go. The server by default; the battle lab (BattleLabPage.jsx, dev only) passes its own engine. */
+const SERVER = { choose: chooseInBattle, forfeit: forfeitBattle };
+export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER }) {
   const perspective = seat?.side || "p1";
   const log = seat ? view?.log : row.spectator_log;
   const doubles = isDoubles(row.format_id);
-  const tape = useBattleTape(log, res, perspective);
+  const [speed, setSpeedChoice] = useState(readSpeed);
+  useEffect(() => { setStageSpeed(speed); try { localStorage.setItem(SPEED_KEY, String(speed)); } catch { /* the next visit plays at 보통 */ } }, [speed]);
+  const tape = useStageTape(log, res, perspective);
+  const replayRef = useRef(null);
   const turns = useMemo(() => row.status === "ended" && log ? replayTurns(log, res, perspective) : null, [row.status, log, perspective]);
   const [page, setPage] = useState(null);
   const replaying = turns && page != null && page < turns.length - 1;
-  const shownTurn = replaying ? turns[page].turn : tape.field?.turn ?? row.turn ?? 0;
+  const scene = replaying ? turns[page].scene : tape.scene;
+  const shownTurn = replaying ? turns[page].turn : tape.scene?.turn ?? row.turn ?? 0;
   const official = row.kind === "official";
   const bracketLine = !official || row.status !== "ended" ? null
     : row.applied_at ? "대진표에 반영했습니다."
@@ -437,49 +328,87 @@ function Arena({ row, view, seat, res, onView, onShare, go }) {
     go?.("board");
   };
   const [target, setTarget] = useState(null);
+  const [ask, setAsk] = useState("");
+  const [chosenSay, setChosenSay] = useState("");
   const [error, setError] = useState("");
   const ended = row.status === "ended";
+  // the result waits for the stage: a battle that ended while its last turn still plays does not tell its end before the stage does
+  const shownEnded = ended && (tape.scene?.ended ?? true);
   const names = { p1: row.p1_name, p2: row.p2_name };
-  const send = async choice => {
+  // a choice goes the moment it is made, as Champions sends it; false when it did not go, so the choices stay open
+  // once a choice goes, the stage comes into view (on a phone the moves sit under it), so the turn is watched, not scrolled to
+  const watch = () => {
+    const arena = document.querySelector(".bt-arena");
+    if (!arena) return;
+    const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-height")) || 0;
+    const top = arena.getBoundingClientRect().top - bar;
+    if (top < 0) window.scrollBy({ top, behavior: reduced() ? "auto" : "smooth" });
+  };
+  const send = async (choice, said = "") => {
     setError("");
-    try { onView(await chooseInBattle(row.id, choice)); }
-    catch (e) { setError(e.message); }
+    watch();
+    try { setChosenSay(said); onView(await api.choose(row.id, choice)); return true; }
+    catch (e) { setChosenSay(""); setError(e.message); return false; }
   };
   const giveUp = async () => {
     if (!(await siteConfirm({ title: "기권할까요?", body: "상대의 승리로 기록됩니다.", confirmLabel: "기권", danger: true }))) return;
-    try { onView(await forfeitBattle(row.id)); } catch (e) { setError(e.message); }
+    try { onView(await api.forfeit(row.id)); } catch (e) { setError(e.message); }
   };
   const request = !ended && seat ? view?.request : null;
   const waiting = !ended && seat && (!request || request.wait || view?.chosen);
-  const foe = perspective === "p1" ? "p2" : "p1";
-  // before the leads are sent out the field is empty: the foe's six stand in its place (the team preview)
-  const started = Boolean(tape.field && [...tape.field.p1, ...tape.field.p2].some(Boolean));
+  const choosing = Boolean(request && !waiting && !tape.playing);
+  // the message box: the game's question while we choose, what we chose while the other player chooses
+  const boxAsk = choosing ? ask : waiting && !tape.playing && chosenSay ? chosenSay : "";
+  // the choices keep their place while the turn plays: the room they took stays, so nothing under them moves up and the page never jumps
+  const consoleRef = useRef(null);
+  useLayoutEffect(() => {
+    const el = consoleRef.current;
+    if (!el) return;
+    if (choosing) { el.style.minHeight = ""; el.dataset.h = String(el.offsetHeight); }
+    else el.style.minHeight = !ended && el.dataset.h ? `${el.dataset.h}px` : "";
+  });
+  // our brought Pokémon, known before they come out (the strip shows the rest as shadows)
+  const known = useRef([]);
+  if (request?.side?.pokemon) known.current = request.side.pokemon.map(p => String(p.details).split(", ")[0]);
+  const foe = other(perspective);
+  // before the leads are sent out the stage is empty: both parties stand in its place (the team preview)
+  const started = Boolean(scene && [...scene.p1.active, ...scene.p2.active].some(Boolean));
+  const nameAt = (side, slot) => { const m = scene?.[side]?.active?.[slot]; return m ? `${side === perspective ? "" : "상대 "}${nameOf(res, m.species)}` : "빈 자리"; };
+  const typesAt = (side, slot) => { const m = scene?.[side]?.active?.[slot]; return m && !m.fainted ? typesOf(res, m.species) : null; };
+  const foes = (scene?.[foe]?.active || []).map((m, slot) => (m && !m.fainted ? { slot, name: nameOf(res, m.species), types: typesOf(res, m.species) } : null));
+  const desktop = typeof window !== "undefined" && window.matchMedia?.("(min-width: 860px)").matches;
   return (
     <div className="bt-page">
       <div className="pn bt-head">
         <span className="bt-head-say">
           <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />진행 중</>}</span>
-          <b className="t15">{`${names[perspective]} 대 ${names[perspective === "p1" ? "p2" : "p1"]}`}</b>
+          <b className="t15">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {official && <span className="t12 dim">공식 경기</span>}
         </span>
         <span className="counter-board"><Seg value={String(shownTurn)} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t15">턴</span></span>
       </div>
-      {ended && <Row className="inv" title={row.winner === "tie" ? "무승부" : `${names[row.winner]} 승리`}
+      {shownEnded && <Row className="inv" title={row.winner === "tie" ? "무승부" : `${names[row.winner]} 승리`}
         line={[row.ended_by === "forfeit" ? "기권으로 끝났습니다." : "배틀이 끝났습니다.", bracketLine].filter(Boolean).join(" ")} />}
       <div className="bt-room">
         <div className="bt-main">
-          {replaying
-            ? <Field field={turns[page].field} fieldRef={{ current: null }} perspective={perspective} doubles={doubles} speciesName={tape.speciesName} text={res.text} />
-            : started
-            ? <Field field={tape.field} fieldRef={tape.fieldRef} perspective={perspective} doubles={doubles} speciesName={tape.speciesName} text={res.text} targeting={target?.targeting} />
-            : <div className="bt-choices"><span className="t12 dim">{`${names[foe]}의 파티`}</span>
-                <Party pokemon={tape.state.sides[foe].preview.map(species => ({ ident: species, details: species, condition: "100/100" }))} name={details => tape.speciesName(details)} pick={() => null} still /></div>}
-          {request && !waiting && <Choices key={request.rqid ?? row.turn} request={request} doubles={doubles} res={res} onSend={send} setTarget={setTarget} toast={error ? <Toast error>{error}</Toast> : null} />}
+          {started || replaying
+            ? <Stage scene={scene} stageRef={replaying ? replayRef : tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names}
+                targeting={replaying ? null : target?.targeting} said={replaying ? turns[page].said : tape.said} ask={replaying ? "" : boxAsk} known={known.current} />
+            : <TeamPreview tape={tape} res={res} foe={foe} names={names} />}
+          {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
+          <div ref={consoleRef}>
+            {choosing && <Choices key={JSON.stringify(request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt}
+              onSend={send} setTarget={setTarget} setAsk={setAsk} toast={error ? <Toast error>{error}</Toast> : null} />}
+          </div>
+          <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
         </div>
-        <Log lines={replaying ? turns[page].lines : tape.lines} />
+        <details className="bt-logbox" open={desktop || undefined}>
+          <summary className="t12 dim">전체 기록</summary>
+          <Log lines={replaying ? turns[page].lines : tape.lines} />
+        </details>
       </div>
       {/* in its own box, so a turned page lights the room just before it (Pager lights its parent's previous sibling) */}
-      {turns && turns.length > 1 && <div><Pager unit="턴" page={(page ?? turns.length - 1) + 1} pages={turns.length} onGo={next => setPage(Math.max(0, Math.min(turns.length - 1, next - 1)))} /></div>}
+      {shownEnded && turns && turns.length > 1 && <div><Pager unit="턴" page={(page ?? turns.length - 1) + 1} pages={turns.length} onGo={next => setPage(Math.max(0, Math.min(turns.length - 1, next - 1)))} /></div>}
       <div className="bt-links">
         {!seat && <Button variant="link" onClick={onShare}>링크 공유</Button>}
         {seat && !ended && <Button variant="link" onClick={giveUp}>기권</Button>}
@@ -494,112 +423,200 @@ function Arena({ row, view, seat, res, onView, onShare, go }) {
   );
 }
 
-/* ---------- choices: built from the request alone, as the engine asks (Controls) ---------- */
-const NEEDS_TARGET = { normal: "any", any: "any", adjacentFoe: "foe", adjacentAlly: "ally", adjacentAllyOrSelf: "allyOrSelf" };
+/* before the battle: the foe's six with their types, as the team preview shows them */
+function TeamPreview({ tape, res, foe, names }) {
+  const preview = tape.state.sides[foe].preview;
+  return <div className="bt-choices">
+    <span className="t12 dim">{`${names[foe]}의 파티`}</span>
+    <Party preview pokemon={preview.map(species => ({ ident: species, details: species, condition: "100/100" }))} res={res} />
+  </div>;
+}
 
-function Choices({ request, doubles, res, onSend, setTarget, toast }) {
+/* ---------- choices: built from the request alone, as the engine asks ---------- */
+const NEEDS_TARGET = { normal: "any", any: "any", adjacentFoe: "foe", adjacentAlly: "ally", adjacentAllyOrSelf: "allyOrSelf" };
+const CATEGORY = { Physical: "물리", Special: "특수", Status: "변화" };
+const EFF_WORD = { 4: "효과 매우 굉장 ×4", 2: "효과 굉장 ×2", .5: "효과 별로 ×½", .25: "효과 매우 별로 ×¼", 0: "효과 없음" };
+const effClass = m => "bt-eff" + (m >= 2 ? " hard" : m === 0 ? " none" : "");
+const MEGA = "메가진화";
+
+function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarget, setAsk, toast }) {
   const side = request.side;
   const [picks, setPicks] = useState([]);
-  const [mode, setMode] = useState("move");
   const [mega, setMega] = useState(false);
   const [sending, setSending] = useState(false);
-  const [aiming, setAiming] = useState("");
-  // a new request mounts a new Choices (keyed by its rqid), so nothing chosen for the last one carries over
-  useEffect(() => () => setTarget(null), []);
+  const [aiming, setAiming] = useState(null);
+  // a new request mounts a new Choices (keyed by the request itself: the engine sets no rqid, and a switch after a faint keeps the turn), so nothing chosen for the last one carries over
+  useEffect(() => () => { setTarget(null); setAsk(""); }, []);
   const species = details => String(details).split(", ")[0];
-  const name = details => res.text.pokedex[toID(species(details))] || species(details);
-  const send = async choice => { setSending(true); await onSend(choice); setSending(false); };
+  const name = details => nameOf(res, species(details));
+  const moveName = id => res.text.moves[id]?.name || res.detail.moves[id]?.name || id;
+  const send = async (choice, said) => { setSending(true); const went = await onSend(choice, said); setSending(false); if (!went) setPicks([]); };
+  const slots = side.pokemon.slice(0, request.active?.length || request.forceSwitch?.length || 1);
+  const forced = request.forceSwitch;
+  // a slot that has nothing to choose passes: a fainted one, or one not asked to switch
+  const passes = i => forced ? !forced[i] : !slots[i] || slots[i].condition.endsWith(" fnt") || request.active?.[i]?.commanding;
+  const at = (() => { let i = picks.length; while (i < slots.length && passes(i)) i += 1; return i; })();
+  const complete = at >= slots.length;
+  // the question stands in the message box, as the game puts it there
+  const aimed = aiming != null && request.active?.[at]?.moves?.[aiming];
+  const question = request.teamPreview || complete || forced ? ""
+    : aimed ? `${name(slots[at].details)}의 ${moveName(aimed.id)}, 대상을 무대에서 골라 주세요.`
+    : `${josa(name(slots[at].details), "topic")} 무엇을 할까?`;
+  useEffect(() => { setAsk(question); }, [question]);
 
   // team preview: pick the ones to bring, in order; the first ones lead
   if (request.teamPreview) {
     const count = request.maxChosenTeamSize || side.pokemon.length;
     const toggle = i => setPicks(list => list.includes(i) ? list.filter(x => x !== i) : list.length < count ? [...list, i] : list);
     return <div className="bt-choices">
-      <span className="t12 dim">{`선출 ${picks.length} / ${count}, 고른 순서대로 나갑니다.`}</span>
-      <Party pokemon={side.pokemon} name={name} pick={i => ({ chosen: picks.includes(i), order: picks.indexOf(i) + 1, onPick: () => toggle(i) })} />
+      <span className="t12 dim">{`선출 ${picks.length} / ${count}, 고른 순서대로 나갑니다. 앞의 ${doubles ? "둘" : "하나"}이 선봉입니다.`}</span>
+      <Party pokemon={side.pokemon} res={res} pick={i => ({ chosen: picks.includes(i), order: picks.indexOf(i) + 1, onPick: () => toggle(i) })} />
       <Dock toast={toast}><Button variant="main" icon="check" loading={sending} disabled={picks.length !== count} onClick={() => send(`team ${picks.map(i => i + 1).join(", ")}`)}>선출 확정</Button></Dock>
     </div>;
   }
 
-  const slots = side.pokemon.slice(0, request.active?.length || request.forceSwitch?.length || 1);
-  const forced = request.forceSwitch;
-  // a slot that has nothing to choose passes: a fainted one, or one not asked to switch
-  const passes = i => forced ? !forced[i] : !slots[i] || slots[i].condition.endsWith(" fnt") || request.active[i]?.commanding;
-  const at = (() => { let i = picks.length; while (i < slots.length && passes(i)) i += 1; return i; })();
-  const complete = at >= slots.length;
-  const choice = slots.map((_, i) => picks[i] || "pass").join(", ");
-  const add = text => setPicks(list => { const next = [...list]; while (next.length < at) next.push("pass"); next[at] = text; return next; });
-  const reset = () => { setPicks([]); setMode("move"); setMega(false); setTarget(null); };
-  const switchedIn = new Set(picks.filter(p => p.startsWith("switch")).map(p => Number(p.split(" ")[1]) - 1));
+  const add = (text, said) => {
+    const next = [...picks];
+    while (next.length < at) next.push("pass");
+    next[at] = text;
+    next.said = [...(picks.said || []), said];
+    setPicks(next);
+    setAiming(null); setTarget(null); setMega(false);
+    // the last Pokémon's choice sends the turn at once; the ones before it wait for it
+    let i = next.length; while (i < slots.length && passes(i)) i += 1;
+    if (i >= slots.length) send(slots.map((_, k) => next[k] || "pass").join(", "), next.said.filter(Boolean).join(", "));
+  };
+  const reset = () => { setPicks([]); setMega(false); setAiming(null); setTarget(null); };
+  const switchedIn = new Set(picks.filter(p => p?.startsWith?.("switch")).map(p => Number(p.split(" ")[1]) - 1));
 
+  // sent (or on its way): what was chosen, and, if it did not go, the way back
   if (complete) return <div className="bt-choices">
-    <Button variant="link" onClick={reset}>다시 고르기</Button>
-    <Dock toast={toast}><Button variant="main" icon="check" loading={sending} onClick={() => send(choice)}>선택 확정</Button></Dock>
+    <span className="t15">{(picks.said || []).filter(Boolean).join(", ") || "선택을 마쳤습니다."}</span>
+    {!sending && <div className="bt-tools"><Button variant="link" onClick={reset}>다시 고르기</Button></div>}
+    {toast && <Dock toast={toast} />}
   </div>;
 
   const active = request.active?.[at];
   const who = name(slots[at].details);
-  const canSwitch = forced || !active?.trapped;
-  if (mode === "switch" || forced) {
-    return <div className="bt-choices">
-      <span className="t12 dim">{`${who} 대신 나갈 포켓몬`}</span>
-      <Party pokemon={side.pokemon} name={name} pick={i => {
-        const mon = side.pokemon[i];
-        const free = !mon.active && !mon.condition.endsWith(" fnt") && !switchedIn.has(i);
-        return free ? { chosen: false, onPick: () => { add(`switch ${i + 1}`); setMode("move"); } } : null;
-      }} />
-      {!forced && <Button variant="link" onClick={() => setMode("move")}>기술로 돌아가기</Button>}
-    </div>;
-  }
+  const trapped = !forced && active?.trapped;
+  // the bench: every brought Pokémon not out, one tap to send it in (Showdown keeps them under the moves)
+  const bench = <Bench pokemon={side.pokemon} res={res} label={forced ? `${who} 대신 나갈 포켓몬` : trapped ? "교체할 수 없는 상태" : "교체"}
+    pick={i => {
+      const mon = side.pokemon[i];
+      const free = !trapped && !mon.active && !mon.condition.endsWith(" fnt") && !switchedIn.has(i);
+      return free ? () => add(`switch ${i + 1}`, `${who} 대신 ${name(mon.details)}`) : null;
+    }} />;
+  if (forced) return <div className="bt-choices">{bench}{toast && <Dock toast={toast} />}</div>;
 
   const choose = (move, index) => {
+    const data = res.detail.moves[move.id] || {};
     const want = doubles ? NEEDS_TARGET[move.target] : null;
     const tail = mega ? " mega" : "";
-    if (!want) { add(`move ${index + 1}${tail}`); setMega(false); return; }
+    const label = `${who}${mega ? "(메가진화)" : ""}의 ${moveName(move.id)}`;
+    if (aiming === index) { setAiming(null); setTarget(null); return; }
+    if (!want) { add(`move ${index + 1}${tail}`, label); return; }
+    // a move that needs a target: the move lights and the stage rings who it can reach; tapping it again lets it go
     setTarget({
       targeting: (fieldSide, slot) => {
         const own = fieldSide === side.id;
         const ok = want === "any" ? !(own && slot === at) : want === "foe" ? !own : want === "ally" ? own && slot !== at : own;
         if (!ok) return null;
         const loc = own ? -(slot + 1) : slot + 1;
-        return { chosen: false, onPick: () => { add(`move ${index + 1} ${loc}${tail}`); setMega(false); setTarget(null); setAiming(""); } };
+        const types = typesAt(fieldSide, slot);
+        const mark = types && data.category !== "Status" && data.type ? effectiveness(data.type, types) : null;
+        return { mark, onPick: () => add(`move ${index + 1} ${loc}${tail}`, `${label}, ${nameAt(fieldSide, slot)}에게`) };
       },
     });
-    setAiming(res.text.moves[move.id]?.name || move.move);
+    setAiming(index);
   };
-  if (aiming) return <div className="bt-choices">
-    <span className="t15">{`${who}의 ${aiming}, 대상을 필드에서 골라 주세요.`}</span>
-    <Button variant="link" onClick={() => { setTarget(null); setAiming(""); }}>기술로 돌아가기</Button>
-  </div>;
   return <div className="bt-choices">
-    <span className="t12 dim">{`${who}의 기술`}</span>
     <div className="stack bt-moves">
       {active.moves.map((move, i) => {
         const data = res.detail.moves[move.id] || {};
-        return <button key={move.id} type="button" className="pn bt-move" disabled={move.disabled} onClick={() => choose(move, i)}
-          aria-label={`${res.text.moves[move.id]?.name || move.move}, ${res.text.types[data.type] || data.type || ""}, PP ${move.pp} / ${move.maxpp}`}>
-          <b className="t15">{res.text.moves[move.id]?.name || move.move}</b>
-          <span className="bt-move-line">{data.type && <span className={`tb-type type-${toID(data.type)}`}>{res.text.types[data.type] || data.type}</span>}<span className="t12 dim">{`PP ${move.pp} / ${move.maxpp}`}</span></span>
+        const type = data.type || "Normal";
+        // every foe now out, in the order they stand; shown only when one of them is not ×1
+        const marks = data.category && data.category !== "Status" ? foes.filter(Boolean).map(f => ({ f, m: effectiveness(type, f.types) })) : [];
+        const shown = marks.some(x => x.m !== 1) ? marks : [];
+        // three lines, every move alike: the name and how it lands; its type, category and power; its accuracy and priority, and its PP
+        const kind = CATEGORY[data.category] + (data.basePower > 0 ? ` ${data.basePower}` : "");
+        const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
+          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(", ");
+        return <button key={move.id} type="button" className={(aiming === i ? "inv" : "pn") + " bt-move"} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
+          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}, PP ${move.pp} / ${move.maxpp}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
+          <span className="bt-move-top">
+            <b className="t15 bt-move-name">{moveName(move.id)}</b>
+            {shown.length > 0 && <span className="bt-effs" aria-hidden="true">{shown.map(x => <span key={x.f.slot} className={effClass(x.m)}>{effLabel(x.m)}</span>)}</span>}
+          </span>
+          <span className="bt-move-line">
+            <span className={`tb-type type-${toID(type)}`}>{res.text.types[type] || type}</span>
+            <span className="t12 dim">{kind}</span>
+          </span>
+          <span className="bt-move-foot t12 dim">
+            <span>{foot}</span>
+            <span className="bt-move-pp">{`PP ${move.pp}/${move.maxpp}`}</span>
+          </span>
         </button>;
       })}
     </div>
-    <div className="bt-tools">
-      {canSwitch && <Button variant="second" size="sm" onClick={() => setMode("switch")}>교체</Button>}
-      {active.canMegaEvo && <Choice name="bt-mega" options={["메가진화"]} value={mega ? ["메가진화"] : []} onChange={list => setMega(list.length > 0)} multiple />}
+    {(active.canMegaEvo || picks.length > 0) && <div className="bt-tools">
+      {active.canMegaEvo && <Choice name="bt-mega" options={[MEGA]} value={mega ? [MEGA] : []} onChange={list => setMega(list.length > 0)} multiple />}
+      {picks.length > 0 && <Button variant="link" onClick={reset}>처음부터 다시 고르기</Button>}
+    </div>}
+    {bench}
+    {toast && <Dock toast={toast} />}
+  </div>;
+}
+
+/* the bench: a row of the brought Pokémon not out, each its picture, name and HP; one that cannot come in is muted */
+function Bench({ pokemon, res, pick, label }) {
+  const out = pokemon.map((mon, i) => ({ mon, i })).filter(({ mon }) => !mon.active);
+  if (!out.length) return null;
+  return <div className="bt-bench">
+    <span className="t12 dim">{label}</span>
+    <div className="stack bt-bench-row">
+      {out.map(({ mon, i }) => {
+        const go = pick(i);
+        const species = String(mon.details).split(", ")[0];
+        const { hp, maxhp, status } = parseHP(mon.condition);
+        const fainted = status === "fnt";
+        return <button key={mon.ident + i} type="button" className="pn bt-sw" disabled={!go} onClick={go || undefined}
+          aria-label={`${nameOf(res, species)}${fainted ? ", 쓰러짐" : `, HP ${hp} / ${maxhp}`} 교체`}>
+          <img src={spriteUrl(species)} alt="" draggable="false" />
+          <span className="bt-sw-say">
+            <b className="t15">{nameOf(res, species)}</b>
+            <span className="t12 dim">{fainted ? "쓰러짐" : `${hp}/${maxhp}`}{status && !fainted ? `, ${STATUS[status] || status}` : ""}</span>
+          </span>
+        </button>;
+      })}
     </div>
   </div>;
 }
 
-function Party({ pokemon, name, pick, still = false }) {
+/* the party as cells, each Pokémon on its floor with its name; HP, status and item at the top (the foe's preview shows types) */
+const STATUS_TYPE = { brn: "fire", par: "electric", psn: "poison", tox: "poison", slp: "normal", frz: "ice" };
+function Party({ pokemon, res, pick, preview = false }) {
   return <div className="stack bt-party">
     {pokemon.map((mon, i) => {
-      const p = pick(i);
-      const fainted = mon.condition.endsWith(" fnt");
+      const p = pick?.(i);
+      const species = String(mon.details).split(", ")[0];
+      const { hp, maxhp, status } = parseHP(mon.condition);
+      const fainted = status === "fnt";
       const Box = p ? "button" : "div";
-      return <Box key={mon.ident + i} className={"pn stand bt-party-cell" + (p || still ? "" : " off")} {...(p ? { type: "button", onClick: p.onPick, "aria-pressed": p.chosen } : {})}
-        aria-label={`${name(mon.details)}${fainted ? ", 쓰러짐" : ""}${p?.order ? `, ${p.order}번째` : ""}`}>
-        <i className={"floor" + (p?.chosen ? " inv" : "")}><span className={"t12" + (fainted ? " mute" : "")}>{p?.order ? `${p.order} ${name(mon.details)}` : name(mon.details)}</span></i>
-        <Mon src={spriteUrl(String(mon.details).split(", ")[0])} />
+      const item = mon.item ? res.text.items[toID(mon.item)]?.name || mon.item : "";
+      return <Box key={mon.ident + i} className={"pn stand bt-party-cell" + (p || preview ? "" : " off")}
+        {...(p ? { type: "button", onClick: p.onPick, "aria-pressed": p.chosen } : {})}
+        aria-label={`${nameOf(res, species)}${fainted ? ", 쓰러짐" : ""}${p?.order ? `, ${p.order}번째` : ""}`}>
+        <span className="bt-party-top">
+          {preview
+            ? <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span>
+            : <>
+              <span>{fainted ? "쓰러짐" : `${hp}/${maxhp}`}</span>
+              {status && !fainted && <span className={`bt-mark type-${STATUS_TYPE[status] || "normal"}`}>{STATUS[status] || status}</span>}
+              {item && <span className="dim">{item}</span>}
+            </>}
+        </span>
+        <Mon src={spriteUrl(species)} />
+        <i className={"floor" + (p?.chosen ? " inv" : "")}><span className="t12">{p?.order ? `${p.order} ${nameOf(res, species)}` : nameOf(res, species)}</span></i>
       </Box>;
     })}
   </div>;

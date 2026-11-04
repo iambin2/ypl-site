@@ -1,0 +1,216 @@
+/* =============================================================================
+   The battle stage's scene (DESIGN.md "Battle", The stage): the court, the platforms, what lies on the field, and the shapes the
+   effects throw. Everything a player reads on the match is battle.css, on the board's rules (the status bars stand outside the
+   stage, on the seam). This file keeps the board's colours (the theme tokens, the type colours) and departs only where a scene
+   must: a court in perspective, an ellipse under a Pokémon, weather and terrain as quiet tints, shapes that fly.
+   tests/designLaw.test.mjs skips it on purpose.
+   Smoothness is the rule: what moves moves by transform or opacity on a layer drawn once, and every loop moves its texture by
+   exactly one tile, so the last frame of a loop is the first frame of the next.
+   ========================================================================== */
+
+/* ---------- the arena: a wall, a floor, the court drawn on it ---------- */
+/* no container units inside: every length is a share of the stage, so a page layout never has to resolve the stage again */
+.bs-stage { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--ground); isolation: isolate; }
+@media (min-width: 860px) { .bs-stage { aspect-ratio: 16 / 9; } }
+.bs-world { position: absolute; inset: 0; will-change: transform; }
+.bs-world > i, .bs-world > svg { position: absolute; display: block; pointer-events: none; }
+.bs-sky { inset: 0 0 58% 0; background: var(--panel); }
+.bs-court { inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bs-court * { fill: none; stroke: var(--rule); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+
+/* ---------- a Pokémon on its platform; sizes follow the stage's height so a wide stage never crops a head ---------- */
+.bs-side { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.bs-side > * { pointer-events: auto; }
+.bs-side > i { pointer-events: none; }
+.bs-slot { position: absolute; transform: translateX(-50%); }
+.bs-slot[data-pos="foe"] { left: 66%; bottom: 50%; height: 42%; aspect-ratio: 1; }
+.bs-slot[data-pos="own"] { left: 30%; bottom: 5%; height: 63%; aspect-ratio: 1; }
+.bs-slot[data-pos="foe-d0"] { left: 41%; bottom: 50%; height: 33%; aspect-ratio: 1; }
+.bs-slot[data-pos="foe-d1"] { left: 69%; bottom: 49%; height: 33%; aspect-ratio: 1; }
+.bs-slot[data-pos="own-d0"] { left: 25%; bottom: 6%; height: 51%; aspect-ratio: 1; }
+.bs-slot[data-pos="own-d1"] { left: 64%; bottom: 4%; height: 51%; aspect-ratio: 1; }
+/* breathing: a slow rise of 1.5% from the feet, never in step with its neighbour */
+.bs-mon { position: absolute; inset: 0; transform-origin: 50% 92%; animation: bs-idle 3.4s cubic-bezier(.45, 0, .55, 1) infinite; }
+.bs-slot:nth-child(odd) .bs-mon { animation-delay: -1.7s; }
+.bs-side.foe .bs-mon { animation-duration: 3.8s; }
+.bs-mon img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; display: block; }
+.bs-side.own .bs-mon img { transform: scaleX(-1); }
+@keyframes bs-idle { 50% { translate: 0 -1.5%; } }
+/* a substitute stands in the Pokémon's place: a lit square doll on the floor */
+.bs-sub { position: absolute; left: 34%; right: 34%; bottom: 6%; height: 40%; display: block; background: var(--lit); box-shadow: inset 0 -8px 0 var(--dim); }
+
+/* ---------- a field layer comes and goes by opacity alone (Stage.jsx keeps a leaving one until it has gone) ---------- */
+.bs-layer { inset: 0; overflow: hidden; animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both; }
+.bs-layer.leaving { animation: bs-off .68s cubic-bezier(.5, 0, .75, 0) both; }
+@keyframes bs-on { from { opacity: 0; } }
+@keyframes bs-off { to { opacity: 0; } }
+
+/* ---------- weather: a tint and two depths of texture. Each depth is a rectangle turned to the weather's angle, just large enough
+   to cover the stage, masked by one tile and moved by exactly that tile per loop. ---------- */
+.bs-weather { z-index: 5; }
+.bs-weather::before, .bs-weather::after {
+  content: ""; position: absolute; left: 50%; top: 50%; background: var(--grain, var(--lit)); will-change: transform;
+  -webkit-mask: var(--tile) 0 0 / var(--t) var(--t) repeat; mask: var(--tile) 0 0 / var(--t) var(--t) repeat;
+}
+/* rain: streaks at 14 degrees, the near ones long and quick, the far ones short and slow */
+.bs-weather.rain { background: rgb(41 128 239 / .1); }
+.bs-weather.rain::before, .bs-weather.rain::after { width: calc(114% + 8px); height: calc(141% + var(--t)); }
+.bs-weather.rain::before { --t: 128px; opacity: .34; animation: bs-rain-near .62s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cg fill='%23000'%3E%3Crect x='9' y='6' width='1.5' height='22'/%3E%3Crect x='41' y='62' width='1.5' height='18'/%3E%3Crect x='70' y='18' width='1.5' height='24'/%3E%3Crect x='101' y='80' width='1.5' height='20'/%3E%3Crect x='24' y='96' width='1.5' height='18'/%3E%3Crect x='88' y='44' width='1.5' height='16'/%3E%3Crect x='117' y='4' width='1.5' height='20'/%3E%3Crect x='56' y='100' width='1.5' height='22'/%3E%3C/g%3E%3C/svg%3E"); }
+.bs-weather.rain::after { --t: 84px; opacity: .2; animation: bs-rain-far .92s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84'%3E%3Cg fill='%23000'%3E%3Crect x='6' y='10' width='1' height='11'/%3E%3Crect x='30' y='52' width='1' height='10'/%3E%3Crect x='51' y='4' width='1' height='12'/%3E%3Crect x='73' y='38' width='1' height='11'/%3E%3Crect x='18' y='66' width='1' height='10'/%3E%3Crect x='62' y='68' width='1' height='12'/%3E%3C/g%3E%3C/svg%3E"); }
+@keyframes bs-rain-near { from { transform: translate(-50%, -50%) rotate(14deg) translateY(-64px); } to { transform: translate(-50%, -50%) rotate(14deg) translateY(64px); } }
+@keyframes bs-rain-far { from { transform: translate(-50%, -50%) rotate(14deg) translateY(-42px); } to { transform: translate(-50%, -50%) rotate(14deg) translateY(42px); } }
+/* sand: grains and short streaks blown from the left, slightly falling */
+.bs-weather.sand { background: rgb(175 169 129 / .16); --grain: #AFA981; }
+.bs-weather.sand::before, .bs-weather.sand::after { width: calc(92% + 8px); height: calc(199% + var(--t)); }
+.bs-weather.sand::before { --t: 160px; opacity: .7; animation: bs-sand-near 1.05s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cg fill='%23000'%3E%3Crect x='12' y='10' width='1.5' height='14'/%3E%3Crect x='58' y='70' width='1.5' height='10'/%3E%3Crect x='96' y='24' width='1.5' height='16'/%3E%3Crect x='134' y='104' width='1.5' height='12'/%3E%3Crect x='30' y='124' width='1.5' height='10'/%3E%3Ccircle cx='78' cy='130' r='1.2'/%3E%3Ccircle cx='120' cy='60' r='1.2'/%3E%3Ccircle cx='40' cy='54' r='1'/%3E%3Ccircle cx='150' cy='12' r='1'/%3E%3C/g%3E%3C/svg%3E"); }
+.bs-weather.sand::after { --t: 104px; opacity: .45; animation: bs-sand-far 1.7s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104'%3E%3Cg fill='%23000'%3E%3Ccircle cx='10' cy='14' r='1'/%3E%3Ccircle cx='44' cy='60' r='1'/%3E%3Ccircle cx='80' cy='26' r='1'/%3E%3Ccircle cx='24' cy='88' r='1'/%3E%3Ccircle cx='70' cy='92' r='1'/%3E%3Crect x='94' y='56' width='1' height='8'/%3E%3C/g%3E%3C/svg%3E"); }
+@keyframes bs-sand-near { from { transform: translate(-50%, -50%) rotate(-74deg) translateY(-80px); } to { transform: translate(-50%, -50%) rotate(-74deg) translateY(80px); } }
+@keyframes bs-sand-far { from { transform: translate(-50%, -50%) rotate(-74deg) translateY(-52px); } to { transform: translate(-50%, -50%) rotate(-74deg) translateY(52px); } }
+/* snow: flakes drifting down, the near ones larger and slightly faster, the two depths leaning apart */
+.bs-weather.snow { background: rgb(63 216 255 / .07); --grain: #FFFFFF; }
+:root[data-theme="light"] .bs-weather:is(.snow, .hail) { --grain: #3FD8FF; }
+.bs-weather:is(.snow, .hail)::before, .bs-weather:is(.snow, .hail)::after { width: calc(109% + 8px); height: calc(124% + var(--t)); }
+.bs-weather.snow::before { --t: 120px; opacity: .8; animation: bs-snow-near 5.2s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='%23000'%3E%3Ccircle cx='14' cy='12' r='2.2'/%3E%3Ccircle cx='62' cy='40' r='1.8'/%3E%3Ccircle cx='100' cy='16' r='2'/%3E%3Ccircle cx='36' cy='78' r='2.2'/%3E%3Ccircle cx='86' cy='96' r='1.8'/%3E%3Ccircle cx='110' cy='62' r='1.6'/%3E%3C/g%3E%3C/svg%3E"); }
+.bs-weather.snow::after { --t: 80px; opacity: .5; animation: bs-snow-far 7.4s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23000'%3E%3Ccircle cx='8' cy='20' r='1.1'/%3E%3Ccircle cx='40' cy='6' r='1'/%3E%3Ccircle cx='66' cy='34' r='1.1'/%3E%3Ccircle cx='22' cy='58' r='1'/%3E%3Ccircle cx='56' cy='70' r='1.1'/%3E%3C/g%3E%3C/svg%3E"); }
+@keyframes bs-snow-near { from { transform: translate(-50%, -50%) rotate(8deg) translateY(-60px); } to { transform: translate(-50%, -50%) rotate(8deg) translateY(60px); } }
+@keyframes bs-snow-far { from { transform: translate(-50%, -50%) rotate(-5deg) translateY(-40px); } to { transform: translate(-50%, -50%) rotate(-5deg) translateY(40px); } }
+/* hail: pellets that fall fast and straight */
+.bs-weather.hail { background: rgb(63 216 255 / .08); --grain: #FFFFFF; }
+.bs-weather.hail::before { --t: 112px; opacity: .7; animation: bs-hail-near .9s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='112'%3E%3Cg fill='%23000'%3E%3Crect x='12' y='8' width='3' height='5'/%3E%3Crect x='58' y='54' width='3' height='5'/%3E%3Crect x='94' y='20' width='3' height='5'/%3E%3Crect x='30' y='86' width='3' height='5'/%3E%3Crect x='80' y='92' width='3' height='5'/%3E%3C/g%3E%3C/svg%3E"); }
+.bs-weather.hail::after { --t: 76px; opacity: .4; animation: bs-hail-far 1.3s linear infinite;
+  --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76'%3E%3Cg fill='%23000'%3E%3Crect x='8' y='14' width='2' height='3'/%3E%3Crect x='44' y='4' width='2' height='3'/%3E%3Crect x='26' y='48' width='2' height='3'/%3E%3Crect x='62' y='60' width='2' height='3'/%3E%3C/g%3E%3C/svg%3E"); }
+@keyframes bs-hail-near { from { transform: translate(-50%, -50%) rotate(4deg) translateY(-56px); } to { transform: translate(-50%, -50%) rotate(4deg) translateY(56px); } }
+@keyframes bs-hail-far { from { transform: translate(-50%, -50%) rotate(4deg) translateY(-38px); } to { transform: translate(-50%, -50%) rotate(4deg) translateY(38px); } }
+/* the sun only warms; the strong winds only cool */
+.bs-weather.sun { background: rgb(255 178 26 / .12); }
+.bs-weather:is(.sun, .wind)::before, .bs-weather:is(.sun, .wind)::after { content: none; }
+.bs-weather.wind { background: rgb(129 185 239 / .1); }
+
+/* ---------- terrain: the floor takes its type's colour, and the colour moves a little, the way each terrain is ---------- */
+.bs-terrain { inset: 42% 0 0 0; z-index: 1; -webkit-mask: linear-gradient(transparent, #000 24%); mask: linear-gradient(transparent, #000 24%); }
+.bs-terrain::before, .bs-terrain::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: calc(100% + var(--t)); background: var(--grain); will-change: transform;
+  -webkit-mask: var(--tile) 0 0 / var(--t) auto repeat; mask: var(--tile) 0 0 / var(--t) auto repeat; }
+/* electric: sparks crackle across the floor, two depths running opposite ways */
+.bs-terrain.electricterrain { background: rgb(250 192 0 / .12); --grain: #FAC000; }
+.bs-terrain.electricterrain::before { --t: 120px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 24l5-5 3 4 6-6'/%3E%3Cpath d='M62 70l4-6 4 5 5-7'/%3E%3Cpath d='M96 22l5-4 2 4 5-5'/%3E%3Cpath d='M30 98l4-5 3 3 5-6'/%3E%3C/g%3E%3Cg fill='%23000'%3E%3Ccircle cx='48' cy='40' r='1.2'/%3E%3Ccircle cx='108' cy='88' r='1.2'/%3E%3Ccircle cx='80' cy='112' r='1'/%3E%3C/g%3E%3C/svg%3E"); opacity: .8; animation: bs-run-120 4.2s linear infinite; }
+.bs-terrain.electricterrain::after { --t: 84px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84'%3E%3Cg fill='%23000'%3E%3Ccircle cx='12' cy='18' r='1'/%3E%3Ccircle cx='54' cy='44' r='1.2'/%3E%3Ccircle cx='30' cy='70' r='1'/%3E%3Ccircle cx='74' cy='10' r='.9'/%3E%3C/g%3E%3C/svg%3E"); opacity: .7; animation: bs-run-84 3s linear infinite reverse; }
+/* grassy: tufts stand on the floor and a few leaves drift over it */
+.bs-terrain.grassyterrain { background: rgb(63 161 41 / .14); --grain: #3FA129; }
+.bs-terrain.grassyterrain::before { --t: 56px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='40'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M8 30q1-6 -2-10M8 30q1-7 4-11M8 30v-9'/%3E%3Cpath d='M38 14q1-5 -2-8M38 14q1-6 3-9M38 14v-7'/%3E%3C/g%3E%3C/svg%3E"); opacity: .6; }
+.bs-terrain.grassyterrain::after { --t: 150px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='110'%3E%3Cg fill='%23000'%3E%3Cellipse cx='20' cy='30' rx='4' ry='1.6' transform='rotate(-30 20 30)'/%3E%3Cellipse cx='96' cy='70' rx='4.4' ry='1.7' transform='rotate(20 96 70)'/%3E%3Cellipse cx='132' cy='16' rx='3.6' ry='1.4' transform='rotate(-10 132 16)'/%3E%3C/g%3E%3C/svg%3E"); opacity: .7; animation: bs-run-150 9s linear infinite reverse; }
+/* misty: soft banks of mist drift slowly at two speeds */
+.bs-terrain.mistyterrain { inset: 34% 0 0 0; background: rgb(239 112 239 / .08); --grain: #EF70EF; }
+.bs-terrain.mistyterrain::before { --t: 260px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='120'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-opacity='.9'/%3E%3Cstop offset='1' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='60' cy='60' rx='70' ry='26' fill='url(%23g)'/%3E%3Cellipse cx='190' cy='84' rx='64' ry='22' fill='url(%23g)'/%3E%3Cellipse cx='200' cy='26' rx='50' ry='16' fill='url(%23g)'/%3E%3C/svg%3E"); opacity: .32; animation: bs-run-260 18s linear infinite; }
+.bs-terrain.mistyterrain::after { --t: 260px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='120'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-opacity='.9'/%3E%3Cstop offset='1' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='60' cy='60' rx='70' ry='26' fill='url(%23g)'/%3E%3Cellipse cx='190' cy='84' rx='64' ry='22' fill='url(%23g)'/%3E%3Cellipse cx='200' cy='26' rx='50' ry='16' fill='url(%23g)'/%3E%3C/svg%3E"); opacity: .2; animation: bs-run-260 26s linear infinite reverse; -webkit-mask-position: 90px 30px; mask-position: 90px 30px; }
+/* psychic: motes and small rings rise off the floor */
+.bs-terrain.psychicterrain { inset: 34% 0 0 0; background: rgb(239 65 121 / .09); --grain: #EF4179; }
+.bs-terrain.psychicterrain::before, .bs-terrain.psychicterrain::after { width: 100%; top: 0; bottom: auto; height: calc(100% + var(--t)); }
+.bs-terrain.psychicterrain::before { --t: 100px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cg fill='%23000'%3E%3Ccircle cx='14' cy='20' r='1.6'/%3E%3Ccircle cx='70' cy='60' r='1.3'/%3E%3Ccircle cx='44' cy='88' r='1.1'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1'%3E%3Ccircle cx='86' cy='16' r='3'/%3E%3Ccircle cx='30' cy='54' r='2.4'/%3E%3C/g%3E%3C/svg%3E"); opacity: .7; animation: bs-rise-100 5.2s linear infinite; }
+.bs-terrain.psychicterrain::after { --t: 100px; --tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cg fill='%23000'%3E%3Ccircle cx='14' cy='20' r='1.6'/%3E%3Ccircle cx='70' cy='60' r='1.3'/%3E%3Ccircle cx='44' cy='88' r='1.1'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1'%3E%3Ccircle cx='86' cy='16' r='3'/%3E%3Ccircle cx='30' cy='54' r='2.4'/%3E%3C/g%3E%3C/svg%3E"); opacity: .4; animation: bs-rise-100 8s linear infinite; -webkit-mask-position: 50px 40px; mask-position: 50px 40px; }
+@keyframes bs-run-84 { to { transform: translateX(-84px); } }
+@keyframes bs-run-120 { to { transform: translateX(-120px); } }
+@keyframes bs-run-150 { to { transform: translateX(-150px); } }
+@keyframes bs-run-260 { to { transform: translateX(-260px); } }
+@keyframes bs-rise-100 { to { transform: translateY(-100px); } }
+
+/* ---------- rooms: a box drawn round the court in the room's colour, its far wall faintly ruled (Field.jsx RoomBox) ---------- */
+/* behind the Pokémon: a room is the space they stand in, never a cage drawn over them */
+.bs-room { z-index: 2; background: rgb(var(--room) / .05); }
+.bs-room.trickroom { --room: 239 65 121; }
+.bs-room.magicroom { --room: 239 112 239; }
+.bs-room.wonderroom { --room: 41 128 239; }
+.bs-box { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bs-box path { fill: none; stroke: rgb(var(--room) / .7); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.bs-box .wall { fill: rgb(var(--room) / .06); }
+.bs-box .lines { stroke: rgb(var(--room) / .3); stroke-width: 1px; }
+/* gravity: the air over the court darkens from the top and chevrons sink slowly toward the floor */
+.bs-gravity { z-index: 6; background: linear-gradient(rgb(20 8 40 / .26), rgb(20 8 40 / 0) 64%); }
+:root[data-theme="light"] .bs-gravity { background: linear-gradient(rgb(70 40 110 / .16), rgb(70 40 110 / 0) 70%); }
+.bs-gravity::before { content: ""; position: absolute; left: 0; right: 0; top: -96px; height: calc(100% + 96px); background: var(--lit); opacity: .42; will-change: transform;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 12l10 7 10-7'/%3E%3Cpath d='M58 44l10 7 10-7'/%3E%3Cpath d='M28 76l10 7 10-7'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 96px 96px repeat, linear-gradient(#000 40%, transparent 92%); -webkit-mask-composite: source-in;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 12l10 7 10-7'/%3E%3Cpath d='M58 44l10 7 10-7'/%3E%3Cpath d='M28 76l10 7 10-7'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 96px 96px repeat, linear-gradient(#000 40%, transparent 92%); mask-composite: intersect; animation: bs-sink 3.2s linear infinite; }
+@keyframes bs-sink { to { transform: translateY(96px); } }
+
+/* ---------- what a side has set up (Field.jsx): hazards on its floor, wind behind it, screens over it ---------- */
+.bs-hazards, .bs-screens { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.bs-screens { z-index: 4; }
+.bs-hazards > svg { position: absolute; width: auto; display: block; transform: translate(-50%, -50%); overflow: visible; animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both; }
+/* stealth rock: faceted stones that float round the side, each on its own slow bob */
+.bs-rock { animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both, bs-bob 3.6s cubic-bezier(.45, 0, .55, 1) infinite alternate !important; }
+.bs-rock:nth-of-type(4n + 2) { animation-delay: 0s, -.9s !important; animation-duration: 1.1s, 4.2s !important; }
+.bs-rock:nth-of-type(4n + 3) { animation-delay: 0s, -1.8s !important; }
+.bs-rock:nth-of-type(4n) { animation-delay: 0s, -2.7s !important; animation-duration: 1.1s, 3.1s !important; }
+.bs-rock .r0 { fill: #AFA981; } .bs-rock .r1 { fill: #D4CEA8; } .bs-rock .r2 { fill: #8D875F; }
+@keyframes bs-bob { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -12%; rotate: 4deg; } }
+/* spikes and toxic spikes: caltrops lying on the floor in front of the side, three or two a layer */
+.bs-spike .s0 { fill: #915121; } .bs-spike .s1 { fill: #C08A5A; }
+.bs-spike.toxic .s0 { fill: #9141CB; } .bs-spike.toxic .s1 { fill: #C59BE8; }
+/* sticky web: a web lying flat across the side's floor */
+.bs-web { height: auto !important; }
+.bs-web.foe { left: 54%; top: 53%; width: 50%; aspect-ratio: 100 / 16; }
+.bs-web.own { left: 46%; top: 95%; width: 86%; aspect-ratio: 100 / 14; }
+.bs-web path { fill: none; stroke: var(--lit); stroke-width: 1px; opacity: .7; vector-effect: non-scaling-stroke; }
+/* tailwind: gusts blowing from behind the side toward the foe */
+.bs-tailwind { position: absolute; display: block; z-index: 2; overflow: hidden; pointer-events: none; transform: rotate(-7deg); animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.bs-tailwind.own { left: -4%; top: 46%; width: 96%; height: 50%; }
+.bs-tailwind.foe { left: 18%; top: 6%; width: 82%; height: 42%; }
+.bs-tailwind > i { position: absolute; top: 0; bottom: 0; left: -200px; right: 0; display: block; background: #81B9EF; opacity: .75; will-change: transform;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M4 28C54 20 104 20 150 28c10 2 14-8 6-11' stroke-width='2'/%3E%3Cpath d='M44 62C84 56 124 56 176 62' stroke-width='1.6'/%3E%3Cpath d='M112 88C140 84 168 84 196 88' stroke-width='1.3'/%3E%3Cpath d='M10 80C30 77 52 77 70 80' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 200px 100px repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M4 28C54 20 104 20 150 28c10 2 14-8 6-11' stroke-width='2'/%3E%3Cpath d='M44 62C84 56 124 56 176 62' stroke-width='1.6'/%3E%3Cpath d='M112 88C140 84 168 84 196 88' stroke-width='1.3'/%3E%3Cpath d='M10 80C30 77 52 77 70 80' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 200px 100px repeat; animation: bs-gust 1.3s linear infinite; }
+.bs-tailwind.foe > i { animation-direction: reverse; -webkit-mask-size: 150px 75px; mask-size: 150px 75px; left: -150px; animation-name: bs-gust-far; }
+@keyframes bs-gust { to { transform: translateX(200px); } }
+@keyframes bs-gust-far { to { transform: translateX(150px); } }
+/* the screens: a dome over the side for each, one inside the next, an outline in its colour over a breath of it */
+.bs-dome { position: absolute; display: block; transform: translateX(-50%); overflow: visible; animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both; }
+.bs-screens.foe .bs-dome { left: 55%; bottom: 47%; width: calc(50% + var(--i) * 5%); height: calc(34% + var(--i) * 4%); }
+.bs-screens.own .bs-dome { left: 45%; bottom: -2%; width: calc(90% + var(--i) * 4%); height: calc(48% + var(--i) * 3%); }
+.bs-dome path { fill: none; stroke: var(--screen); stroke-width: 1.5px; vector-effect: non-scaling-stroke; opacity: .85; }
+.bs-dome .fill { fill: var(--screen); stroke: none; opacity: .05; }
+.bs-dome.reflect { --screen: #EF4179; } .bs-dome.lightscreen { --screen: #FAC000; } .bs-dome.auroraveil { --screen: #3FD8FF; }
+.bs-dome.safeguard { --screen: #EF70EF; } .bs-dome.mist { --screen: var(--lit); }
+
+/* ---------- the shapes the effects throw (stageFx.js); the words they show are battle.css ---------- */
+/* its own layout: a shape added to it never lays out the page (a grid item cannot be a layout root; this box sits in a block) */
+.bs-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; contain: strict; }
+.bs-fx > i { position: absolute; display: block; will-change: transform, opacity; }
+.bs-p { width: 9px; height: 9px; background: var(--type); }
+.bs-p.head { width: 14px; height: 14px; box-shadow: 0 0 0 3px var(--lit); }
+.bs-p.type-fire { clip-path: polygon(50% 0, 85% 45%, 75% 100%, 25% 100%, 15% 45%); width: 12px; height: 14px; }
+.bs-p.type-electric { clip-path: polygon(40% 0, 100% 0, 60% 45%, 90% 45%, 20% 100%, 40% 55%, 10% 55%); width: 13px; height: 17px; }
+.bs-p.type-grass { clip-path: ellipse(50% 30% at 50% 50%); width: 14px; height: 14px; }
+.bs-p.type-ice, .bs-p.type-steel { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); width: 11px; height: 15px; }
+.bs-p.type-fighting { clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); width: 15px; height: 15px; }
+.bs-p.type-fairy { clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); width: 14px; height: 14px; }
+.bs-p.type-rock, .bs-p.type-ground { clip-path: polygon(20% 0, 85% 10%, 100% 60%, 70% 100%, 10% 85%, 0 35%); width: 12px; height: 11px; }
+.bs-p.type-dark, .bs-p.type-dragon { clip-path: polygon(50% 0, 70% 40%, 100% 50%, 70% 60%, 50% 100%, 30% 60%, 0 50%, 30% 40%); width: 14px; height: 14px; }
+.bs-p:is(.type-water, .type-poison, .type-ghost, .type-bug, .type-normal) { border-radius: 50%; }
+.bs-p.type-psychic { background: transparent; box-shadow: inset 0 0 0 2px var(--type); border-radius: 50%; width: 13px; height: 13px; }
+.bs-p.type-flying { width: 16px; height: 4px; }
+.bs-p.type-normal { --type: var(--lit); }
+.bs-ring { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--type); }
+.bs-ring.type-normal { --type: var(--lit); }
+.bs-glow { border-radius: 50%; background: var(--type); }
+/* the light a Pokémon comes out of and goes back into */
+.bs-flare { border-radius: 50%; background: radial-gradient(closest-side, #FFFFFF 0 34%, rgb(255 255 255 / .55) 58%, rgb(255 255 255 / 0)); }
+:root[data-theme="light"] .bs-flare { background: radial-gradient(closest-side, #FFFFFF 0 34%, rgb(8 28 61 / .14) 62%, rgb(8 28 61 / 0)); }
+.bs-glow.type-normal { --type: var(--lit); }
+.bs-aura { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--type); }
+.bs-aura.type-normal { --type: var(--lit); }
+.bs-plus { width: 10px; height: 10px; background: #3FA129; clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
+.bs-arrow { width: 12px; height: 10px; background: #FF8000; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.bs-arrow.down { background: #2980EF; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.bs-mega { border-radius: 50%; background: conic-gradient(#E62829, #FAC000, #3FA129, #3FD8FF, #5060E1, #EF70EF, #E62829);
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 59%, #000 64%, transparent 65%); mask: radial-gradient(circle, transparent 58%, #000 59%, #000 64%, transparent 65%); }
+.bs-shield { border-radius: 50%; box-shadow: inset 0 0 0 2px #3FA129; background: rgb(63 161 41 / .1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-mon, .bs-weather::before, .bs-weather::after, .bs-terrain::before, .bs-terrain::after, .bs-gravity::before, .bs-tailwind > i, .bs-rock { animation: none !important; }
+  .bs-weather::before, .bs-weather::after { transform: translate(-50%, -50%); }
+}

@@ -1,4 +1,6 @@
-export const APP_VIEWS = new Set(["home", "about", "news", "board", "records", "bracket", "builder", "titles", "champions", "calc", "more", "battle"]);
+export const APP_VIEWS = new Set(["home", "about", "news", "board", "records", "bracket", "builder", "titles", "champions", "calc", "more", "battle",
+  // the battle lab (BattleLabPage.jsx) runs the engine in the browser and exists on the dev server only
+  ...(import.meta.env?.DEV ? ["lab"] : [])]);
 
 /* 사이트는 base 경로 하나뿐이다. base 밖(개발 서버 외의 환경)은 판단하지 않는다. */
 export function isUnknownPath(pathname, base) {

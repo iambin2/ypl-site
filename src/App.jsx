@@ -52,6 +52,8 @@ const TeamBuilderPage = lazyPage(() => import("./pages/TeamBuilderPage.jsx"));
 const CalculatorPage = lazyPage(() => import("./pages/CalculatorPage.jsx"));
 const TitlesPage = lazyPage(() => import("./pages/TitlesPage.jsx"));
 const BattlePage = lazyPage(() => import("./pages/BattlePage.jsx"));
+// dev only: the production build leaves the lab and the engine it loads out
+const BattleLabPage = import.meta.env.DEV ? lazyPage(() => import("./pages/BattleLabPage.jsx")) : null;
 const AdminModalHost = lazy(() => import("./admin/AdminModalHost.jsx"));
 const PAGES = { about: AboutPage, board: BoardPage, bracket: BracketsPage, champions: ChampionsPage, news: NewsPage, records: RecordsPage, builder: TeamBuilderPage, calc: CalculatorPage, titles: TitlesPage, battle: BattlePage };
 const ready = v => !PAGES[v] || PAGES[v].ready();
@@ -271,6 +273,7 @@ export default function App() {
         {view==="builder"&&<TeamBuilderPage go={go} flash={flash} admin={admin}/>}
         {view==="calc"&&<CalculatorPage/>}
         {view==="battle"&&<BattlePage flash={flash} go={go}/>}
+        {view==="lab"&&BattleLabPage&&<BattleLabPage flash={flash} go={go}/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal} go={go}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}
         </LazyContent>}
