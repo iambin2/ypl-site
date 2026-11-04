@@ -55,11 +55,15 @@ export async function readBattleRow(id) {
   if (error) throw new Error(error.message);
   return data;
 }
-// 끝난 배틀의 전체 로그(리플레이와 통계)
+/* 끝난 배틀의 로그(리플레이). 공식 배틀의 전체 로그와 입력 기록에는 두 선수의 파티 전부가 있어, 대회가 파티를 공개하기 전에는
+   관전 로그만 온다(full: false). 친선전과 공개된 대회, 운영진은 전체를 받는다(docs/db/battle_integration.sql battle_full_log). */
 export async function readBattleLog(id) {
-  const { data, error } = await supa.from("battles").select("log, input_log").eq("id", id).maybeSingle();
-  if (error) throw new Error(error.message);
-  return data;
+  const { data, error } = await supa.rpc("battle_full_log", { p_id: id });
+  if (!error) return data;
+  // battle_integration.sql 을 실행하기 전: 지금까지처럼 표를 읽는다
+  const old = await supa.from("battles").select("log, input_log").eq("id", id).maybeSingle();
+  if (old.error) throw new Error(old.error.message);
+  return old.data && { ...old.data, full: true };
 }
 // 바뀌었는지만 묻는 가벼운 읽기(응답 약 12바이트). 화면은 이 값이 오를 때만 전체를 다시 읽는다.
 // ponytail: 묻는 방식이다. 동시에 보는 사람이 많아지면 Supabase Realtime으로 바꾼다.
@@ -98,27 +102,42 @@ export async function listPlayerBattles(playerIds = []) {
   if (!supa || !ids.length) return [];
   const list = ids.join(",");
   const { data, error } = await supa.from("battles").select(LIST)
-    .eq("kind", "official").eq("status", "ended").or(`p1_player_id.in.(${list}),p2_player_id.in.(${list})`)
+    .eq("kind", "official").eq("status", "ended").neq("ended_by", "void").or(`p1_player_id.in.(${list}),p2_player_id.in.(${list})`)
     .order("updated_at", { ascending: false }).limit(50);
   return error ? [] : data || [];
 }
-// 끝난 공식 배틀의 로그 전부(포켓몬 기록의 선출과 선봉). 공식 경기 수만큼이라 작다.
-// ponytail: 한 번에 300판까지 읽는다. 넘으면 서버에서 집계한 표로 바꾼다.
+/* 끝난 공식 배틀의 관전 로그(포켓몬 기록의 선출과 선봉). 선출과 선봉은 무대에 나온 포켓몬이라 관전 로그로 전체 로그와 똑같이 센다.
+   전체 로그는 파티 공개 전에 읽을 수 없다. 무효가 된 배틀은 세지 않는다. 공식 경기 수만큼이라 작다.
+   ponytail: 한 번에 300판까지 읽는다. 넘으면 서버에서 집계한 표로 바꾼다. */
 export async function listOfficialBattleLogs() {
   if (!supa) return [];
-  const { data, error } = await supa.from("battles").select("id, log, p1_player_id, p2_player_id, winner")
-    .eq("kind", "official").eq("status", "ended").order("updated_at", { ascending: false }).limit(300);
-  return error ? [] : data || [];
+  const { data, error } = await supa.from("battles").select("id, spectator_log, p1_player_id, p2_player_id, winner")
+    .eq("kind", "official").eq("status", "ended").neq("ended_by", "void").order("updated_at", { ascending: false }).limit(300);
+  return error ? [] : (data || []).map(({ spectator_log, ...row }) => ({ ...row, log: spectator_log }));
+}
+
+// 끝난 공식 배틀의 승자를 대진표에 다시 넣는다(실패 뒤, 또는 함수가 끝과 반영 사이에서 멈췄을 때). 배틀 자신의 사실로만 정해진다.
+export const retryBattleApply = id => callFunction("battle", { action: "apply", id });
+// 운영진: 더 이어지지 않는 공식 배틀을 닫는다. 기다리던 배틀은 지우고, 진행 중이던 배틀은 무효로 끝나 관전 로그가 리플레이로 남는다.
+export async function voidBattle(id) {
+  const { data, error } = await supa.rpc("battle_void", { p_id: id });
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 // 대진표와 홈이 쓰는 배틀 주소
 export const battleHref = id => `?view=battle&id=${encodeURIComponent(id)}`;
 export const officialBattleHref = (eventId, nodeKey) => `?view=battle&event=${encodeURIComponent(eventId)}&match=${encodeURIComponent(nodeKey)}`;
-// 한 경기의 배틀: 열린 것이 먼저, 없으면 가장 최근에 끝난 것
-export function battleForMatch(battles = [], nodeKey) {
-  const mine = battles.filter(b => b.source_node_key === nodeKey);
-  return mine.find(b => b.status !== "ended") || mine[0] || null;
+/* 한 경기의 배틀: 열린 것이 먼저, 없으면 가장 최근에 끝난 것. 단일 토너먼트는 앞 경기의 승자가 바뀌면 같은 자리(node key)에
+   다른 선수의 경기를 새로 만들므로, entries(그 경기의 두 출전 id)를 주면 두 선수가 그 경기의 선수인 배틀만 고른다. */
+export function battlesForMatch(battles = [], nodeKey, entries = null) {
+  const mine = battles.filter(b => b.source_node_key === nodeKey
+    && (!entries || [b.p1_entry_id, b.p2_entry_id].filter(Boolean).every(id => entries.includes(id))));
+  return [...mine.filter(b => b.status !== "ended"), ...mine.filter(b => b.status === "ended")];
 }
+export const battleForMatch = (battles, nodeKey, entries) => battlesForMatch(battles, nodeKey, entries)[0] || null;
+// 배틀의 승자 출전 id(무승부와 무효는 null)
+export const battleWinnerEntry = b => b?.winner === "p1" ? b.p1_entry_id : b?.winner === "p2" ? b.p2_entry_id : null;
 
 export const isDoubles = formatId => /vgc/.test(String(formatId));
 

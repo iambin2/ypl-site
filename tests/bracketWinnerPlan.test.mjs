@@ -55,3 +55,11 @@ test("it fails closed: a stranger, a decided match, a missing match, a team even
   assert.throws(() => planMatchWinner(f, "double:w:r9:m1", "entry-a", NOW), /찾을 수 없습니다/);
   assert.throws(() => planMatchWinner({ ...f, event: { ...f.event, is_team_event: true } }, "double:w:r1:m2", "entry-c", NOW), /팀전/);
 });
+
+test("a battle whose opponent is no longer in the match puts nothing in (an operator changed an earlier match)", () => {
+  // the final was a vs c when the battle began; the operator then gave semi-final 2 to d, so the final is now a vs d
+  const rows = [row("single:r1:m1", "entry-a", "entry-b", "entry-a"), row("single:r1:m2", "entry-c", "entry-d", "entry-d"), row("single:r2:m1", "entry-a", "entry-d")];
+  const f = facts("single_elimination", rows);
+  assert.throws(() => planMatchWinner(f, "single:r2:m1", "entry-a", NOW, "entry-c"), /두 선수가 배틀의 두 선수와 다릅니다/);
+  assert.equal(planMatchWinner(f, "single:r2:m1", "entry-a", NOW, "entry-d").mode, "single");
+});

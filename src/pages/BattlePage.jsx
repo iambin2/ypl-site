@@ -233,7 +233,7 @@ function useMatchPlayers(eventId, nodeKey) {
       if (!node) { if (alive) setMatch(null); return; }
       const { sp } = evalGraph(graph);
       const nameOf = entryId => facts.bracket.participants?.find(p => p.entryId === entryId)?.name || "";
-      if (alive) setMatch({ eventName: facts.event?.name || "", label: node.label || "", a: nameOf(sp(node.a)), b: nameOf(sp(node.b)), decided: Boolean(node.winner) });
+      if (alive) setMatch({ eventName: facts.event?.name || "", label: node.label || "", a: nameOf(sp(node.a)), b: nameOf(sp(node.b)), entries: [sp(node.a), sp(node.b)], decided: Boolean(node.winner) });
     }).catch(() => alive && setMatch(null));
     return () => { alive = false; };
   }, [eventId, nodeKey]);
@@ -247,8 +247,14 @@ function OfficialSeat({ eventId, nodeKey, onOpen }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(null);
-  // this device may already hold a seat in the match's open battle
-  useEffect(() => { listEventBattles(eventId).then(list => setOpen(list.find(b => b.source_node_key === nodeKey && b.status !== "ended") || null)); }, [eventId, nodeKey]);
+  /* this device may already hold a seat in the match's open battle. Only a battle of this match's two players counts: when an
+     operator changed an earlier match, the same place holds new players, and the old battle is closed as they sit down. */
+  const entries = match?.entries?.join(",");
+  useEffect(() => {
+    if (!entries) return;
+    listEventBattles(eventId).then(list => setOpen(list.find(b => b.source_node_key === nodeKey && b.status !== "ended"
+      && [b.p1_entry_id, b.p2_entry_id].filter(Boolean).every(id => match.entries.includes(id))) || null));
+  }, [eventId, nodeKey, entries]);
   useEffect(() => { if (open && readSeat(open.id)) onOpen(open.id); }, [open]);
   if (match === undefined) return <Loader />;
   if (!match) return <Empty title="경기를 찾을 수 없습니다." desc="대진표에서 다시 열어 주세요." />;

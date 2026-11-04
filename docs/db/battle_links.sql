@@ -1,5 +1,6 @@
 -- 배틀 2단계: 대기 취소, 공식 경기 배틀, 배틀 결과의 대진표 자동 반영. battles.sql 다음에 한 번 실행한다. 다시 실행해도 안전하다.
 -- 모든 함수는 service_role(배틀 함수)만 부른다. 방문자와 운영진 화면은 이 함수들을 직접 부르지 않는다.
+-- 다음 파일: battle_integration.sql 이 battle_official_seat 과 battle_apply_result 를 바꾸고, 공개 전 파티 보호와 무효를 더한다.
 --
 -- 지키는 것
 --   - 공식 경기의 자리는 그 경기 선수의 신청 이름과 제출 비밀번호(visitor_pins, 파티 제출과 같은 것)로만 앉는다.
