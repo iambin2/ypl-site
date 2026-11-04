@@ -38,8 +38,11 @@ const asSeat = (id, action, extra = {}) => {
   return callFunction("battle", { action, id, token: seat.token, ...extra });
 };
 export const viewBattle = id => asSeat(id, "view");
-export const chooseInBattle = (id, choice) => asSeat(id, "choose", { choice });
+// rq: 답하는 요청의 requestKey(battleLog.js). 서버는 이미 지난 요청에 대한 선택을 막는다.
+export const chooseInBattle = (id, choice, rq) => asSeat(id, "choose", { choice, rq });
 export const forfeitBattle = id => asSeat(id, "forfeit");
+// 다른 기기가 이 자리를 가져갔을 때: 이 기기는 관전한다
+export const forgetSeat = id => keepSeat(id, null);
 export async function cancelBattle(id) {
   await asSeat(id, "cancel");
   keepSeat(id, null);
@@ -64,6 +67,7 @@ export async function readBattleLog(id) {
 // 바뀌었는지만 묻는 가벼운 읽기. 화면은 이 값이 오를 때만 전체를 다시 읽는다.
 // ponytail: 1.5초마다 묻는 방식이다. 동시에 보는 사람이 많아지면 Supabase Realtime으로 바꾼다.
 export async function readBattleVersion(id) {
+  if (!supa) return null;
   const { data, error } = await supa.from("battles").select("version").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data?.version ?? null;

@@ -10,10 +10,10 @@ import { pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
-import { createBattleReader, josa, parseHP, toID } from "../services/battleLog.js";
+import { createBattleReader, josa, parseHP, requestKey, slotPasses, toID } from "../services/battleLog.js";
 import { STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
-import { BOARD_DRAFT_KEY, battleHref, cancelBattle, chooseInBattle, createBattle, forfeitBattle, isDoubles, joinBattle, listEventBattles, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, cancelBattle, chooseInBattle, createBattle, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import Pager from "../components/common/Pager.jsx";
@@ -50,7 +50,7 @@ export default function BattlePage({ flash: say, go }) {
   }, []);
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
-  if (id) return <BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} />;
+  if (id) return <BattleRoom key={id} id={id} res={res} say={say} go={go} onLeave={() => open(null)} />;
   if (official) return <OfficialSeat {...official} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
 }
@@ -115,19 +115,42 @@ function BattleRoom({ id, res, say, go, onLeave }) {
   const [row, setRow] = useState(undefined);
   const [view, setView] = useState(null);
   const [seat, setSeat] = useState(() => readSeat(id));
-  const version = useRef(null);
+  // undefined until read: a battle that is not there reads null, which must still count as a change (a cancelled or mistyped link)
+  const version = useRef(undefined);
+  /* a view comes from the poll and from our own choice. A poll's view that set out before a newer one, or while a choice was
+     on its way, may be older than the choice's answer: it is dropped, and the version is forgotten so the next tick reads again */
+  const order = useRef({ n: 0, busy: 0 });
   const refresh = useCallback(async () => {
     const next = await readBattleRow(id);
     setRow(next);
-    if (next && readSeat(id) && next.status !== "waiting") setView(await viewBattle(id));
+    if (!next || !readSeat(id) || next.status === "waiting") return;
+    const n = ++order.current.n;
+    try {
+      const fresh = await viewBattle(id);
+      if (n === order.current.n && !order.current.busy) setView(fresh);
+      else version.current = undefined;
+    } catch (e) {
+      if (e.status !== 403) throw e;
+      // the seat moved to another device (the same player came in again there): this one watches
+      forgetSeat(id); setSeat(null); setView(null);
+    }
   }, [id]);
+  const api = useMemo(() => {
+    const act = run => async (...args) => {
+      const o = order.current;
+      o.n += 1; o.busy += 1;
+      try { return await run(...args); } finally { o.busy -= 1; o.n += 1; }
+    };
+    return { choose: act(chooseInBattle), forfeit: act(forfeitBattle) };
+  }, []);
   useEffect(() => {
     let stopped = false, timer = null;
     const tick = async () => {
       try {
         if (document.visibilityState === "visible") {
           const v = await readBattleVersion(id);
-          if (v !== version.current) { version.current = v; await refresh(); }
+          // a read that failed is read again on the next tick, not only when the version moves once more
+          if (v !== version.current) { version.current = v; await refresh().catch(e => { version.current = undefined; throw e; }); }
         }
       } catch { /* 다음 차례에 다시 읽는다 */ }
       if (!stopped) timer = setTimeout(tick, POLL_MS);
@@ -150,7 +173,7 @@ function BattleRoom({ id, res, say, go, onLeave }) {
     if (row.kind === "official") return <OfficialSeat eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
     return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); setView(next); refresh(); }} />;
   }
-  return <Arena row={row} view={view} seat={seat} res={res} onView={setView} onShare={share} go={go} />;
+  return <Arena row={row} view={view} seat={seat} res={res} onView={setView} onShare={share} go={go} api={api} />;
 }
 
 export function Waiting({ row, onShare, onCancel }) {
@@ -347,7 +370,8 @@ export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER 
   const send = async (choice, said = "") => {
     setError("");
     watch();
-    try { setChosenSay(said); onView(await api.choose(row.id, choice)); return true; }
+    // the request it answers goes with it: the server refuses a choice whose request has moved on (a stale screen, a lost answer sent again)
+    try { setChosenSay(said); onView(await api.choose(row.id, choice, requestKey(view?.turn, request))); return true; }
     catch (e) { setChosenSay(""); setError(e.message); return false; }
   };
   const giveUp = async () => {
@@ -397,7 +421,7 @@ export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER 
             : <TeamPreview tape={tape} res={res} foe={foe} names={names} />}
           {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
           <div ref={consoleRef}>
-            {choosing && <Choices key={JSON.stringify(request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt}
+            {choosing && <Choices key={requestKey(view?.turn, request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt}
               onSend={send} setTarget={setTarget} setAsk={setAsk} toast={error ? <Toast error>{error}</Toast> : null} />}
           </div>
           <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
@@ -445,7 +469,8 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
   const [mega, setMega] = useState(false);
   const [sending, setSending] = useState(false);
   const [aiming, setAiming] = useState(null);
-  // a new request mounts a new Choices (keyed by the request itself: the engine sets no rqid, and a switch after a faint keeps the turn), so nothing chosen for the last one carries over
+  // a new request mounts a new Choices (keyed by the turn and the request: the engine sets no rqid, a switch after a faint keeps the turn,
+  // and a locked move can ask the very same thing two turns running), so nothing chosen for the last one carries over
   useEffect(() => () => { setTarget(null); setAsk(""); }, []);
   const species = details => String(details).split(", ")[0];
   const name = details => nameOf(res, species(details));
@@ -453,8 +478,8 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
   const send = async (choice, said) => { setSending(true); const went = await onSend(choice, said); setSending(false); if (!went) setPicks([]); };
   const slots = side.pokemon.slice(0, request.active?.length || request.forceSwitch?.length || 1);
   const forced = request.forceSwitch;
-  // a slot that has nothing to choose passes: a fainted one, or one not asked to switch
-  const passes = i => forced ? !forced[i] : !slots[i] || slots[i].condition.endsWith(" fnt") || request.active?.[i]?.commanding;
+  // a slot that has nothing to choose passes: a fainted one, one not asked to switch, or one asked when the bench has run out
+  const passes = i => slotPasses(request, i);
   const at = (() => { let i = picks.length; while (i < slots.length && passes(i)) i += 1; return i; })();
   const complete = at >= slots.length;
   // the question stands in the message box, as the game puts it there
@@ -499,6 +524,8 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
   const active = request.active?.[at];
   const who = name(slots[at].details);
   const trapped = !forced && active?.trapped;
+  // one Mega Evolution a battle: in doubles both may be offered it, but once the first takes it the second is not
+  const megaOpen = active?.canMegaEvo && !picks.some(p => / mega$/.test(p || ""));
   // the bench: every brought Pokémon not out, one tap to send it in (Showdown keeps them under the moves)
   const bench = <Bench pokemon={side.pokemon} res={res} label={forced ? `${who} 대신 나갈 포켓몬` : trapped ? "교체할 수 없는 상태" : "교체"}
     pick={i => {
@@ -506,7 +533,11 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
       const free = !trapped && !mon.active && !mon.condition.endsWith(" fnt") && !switchedIn.has(i);
       return free ? () => add(`switch ${i + 1}`, `${who} 대신 ${name(mon.details)}`) : null;
     }} />;
-  if (forced) return <div className="bt-choices">{bench}{toast && <Dock toast={toast} />}</div>;
+  if (forced) return <div className="bt-choices">
+    {bench}
+    {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
+    {toast && <Dock toast={toast} />}
+  </div>;
 
   const choose = (move, index) => {
     const data = res.detail.moves[move.id] || {};
@@ -542,7 +573,7 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
           data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(", ");
         return <button key={move.id} type="button" className={(aiming === i ? "inv" : "pn") + " bt-move"} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
-          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}, PP ${move.pp} / ${move.maxpp}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
+          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
           <span className="bt-move-top">
             <b className="t15 bt-move-name">{moveName(move.id)}</b>
             {shown.length > 0 && <span className="bt-effs" aria-hidden="true">{shown.map(x => <span key={x.f.slot} className={effClass(x.m)}>{effLabel(x.m)}</span>)}</span>}
@@ -553,13 +584,14 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
           </span>
           <span className="bt-move-foot t12 dim">
             <span>{foot}</span>
-            <span className="bt-move-pp">{`PP ${move.pp}/${move.maxpp}`}</span>
+            {/* a move locked in (Outrage, a charging move) is asked without its PP */}
+            <span className="bt-move-pp">{move.pp != null ? `PP ${move.pp}/${move.maxpp}` : ""}</span>
           </span>
         </button>;
       })}
     </div>
-    {(active.canMegaEvo || picks.length > 0) && <div className="bt-tools">
-      {active.canMegaEvo && <Choice name="bt-mega" options={[MEGA]} value={mega ? [MEGA] : []} onChange={list => setMega(list.length > 0)} multiple />}
+    {(megaOpen || picks.length > 0) && <div className="bt-tools">
+      {megaOpen && <Choice name="bt-mega" options={[MEGA]} value={mega ? [MEGA] : []} onChange={list => setMega(list.length > 0)} multiple />}
       {picks.length > 0 && <Button variant="link" onClick={reset}>처음부터 다시 고르기</Button>}
     </div>}
     {bench}

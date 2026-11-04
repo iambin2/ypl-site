@@ -4,6 +4,27 @@
 
 export const toID = text => String(text ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
+/* 선수가 답한 요청의 표시(턴과 요청의 FNV-1a). 쇼다운 엔진은 rqid를 주지 않으므로, 서버(engine.mjs의 choose)가 이 값으로
+   지난 요청에 대한 선택을 막는다. 같은 요청이 두 턴에 걸쳐 똑같을 수 있어(고정된 기술) 턴을 함께 넣는다.
+   키 순서에는 기대지 않는다: 엔진 상태는 jsonb로 저장되고 jsonb는 키 순서를 지키지 않는다. */
+const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(",")}]`
+  : value && typeof value === "object" ? `{${Object.keys(value).filter(k => value[k] !== undefined).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(",")}}`
+  : JSON.stringify(value ?? null);
+/* 요청에서 i번째 자리가 고를 것 없이 pass인지: 쓰러진 자리, 교체를 묻지 않은 자리, 또는 벤치가 바닥난 자리.
+   더블에서 둘이 함께 쓰러지고 하나만 남으면 쇼다운은 둘 다 묻고 "switch 3, pass"를 받는다. */
+export function slotPasses(request, i) {
+  const forced = request.forceSwitch, mons = request.side?.pokemon || [];
+  if (forced) return !forced[i] || forced.slice(0, i).filter(Boolean).length >= mons.filter(m => !m.active && !String(m.condition).endsWith(" fnt")).length;
+  return !mons[i] || String(mons[i].condition).endsWith(" fnt") || Boolean(request.active?.[i]?.commanding);
+}
+
+export function requestKey(turn, request) {
+  const text = `${turn}|${canonical(request)}`;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(36);
+}
+
 // 한국어 조사: 마지막 글자의 받침으로 고른다. 한글이 아닌 끝(숫자, 영문)은 받침 없는 쪽으로 둔다.
 const PARTICLES = { topic: ["은", "는"], subject: ["이", "가"], object: ["을", "를"], conjunctive: ["과", "와"] };
 export function josa(word, kind) {
@@ -65,21 +86,26 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
   const tables = { move: text.moves, ability: text.abilities, item: text.items };
 
   const speciesName = species => text.pokedex[toID(species)] || species;
+  // the slot is trusted only while the one standing there has the ident's name (a missed swap never moves HP onto its partner)
   const monOf = ident => {
     const who = parseIdent(ident);
     if (!who) return null;
     const side = state.sides[who.side];
-    return (who.slot >= 0 ? side.active[who.slot] : null)
+    const there = who.slot >= 0 ? side.active[who.slot] : null;
+    return (there?.name === who.name ? there : null)
       || side.team[who.name]
       || (side.team[who.name] = newMon(who.side, who.name, who.slot));
   };
-  const pokemonWord = ident => {
-    const mon = monOf(ident);
+  const monWord = mon => {
     if (!mon) return "";
-    const nickname = speciesName(mon.species);
     const template = mon.side === perspective ? text.default.default.pokemon : text.default.default.opposingPokemon;
-    return template.replace("{NICKNAME}", nickname);
+    return template.replace("{NICKNAME}", speciesName(mon.species));
   };
+  const pokemonWord = ident => monWord(monOf(ident));
+  // Transform lasts while it stays out: leaving or falling gives the Pokémon back its own form
+  const untransform = mon => { if (mon?.transformedFrom) { mon.species = mon.transformedFrom; delete mon.transformedFrom; } };
+  // what each slot's Pokémon was before it came out, so an Illusion that breaks gives the disguise back as it was
+  const entered = {};
   const teamWord = side => (side === perspective ? text.default.default.team : text.default.default.opposingTeam);
   const effectName = effect => {
     const { kind, id, name } = parseEffect(effect);
@@ -102,9 +128,11 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
   };
   const fill = (source, values) => {
     if (!source) return null;
-    const out = source.replace(/[{[]([A-Z0-9]+)((?::[a-z]+)*)[}\]]/g, (_, key, modifiers) => {
+    const out = source.replace(/[{[]([A-Z0-9]+)((?::[a-z]+)*)[}\]]/g, (whole, key, modifiers, at) => {
       let word = values[key] ?? "";
       for (const modifier of modifiers.split(":").filter(Boolean)) word = josa(word, modifier);
+      // Showdown's Korean writes both {X:directional}부터 and {X:directional}로부터: 로 is never said twice
+      if (modifiers.endsWith(":directional") && source[at + whole.length] === "로") word = word.slice(0, -1);
       return word;
     });
     return out.replace(/\*\*/g, "").trim();
@@ -116,11 +144,32 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     const side = state.sides[who.side];
     const previous = side.active[who.slot];
     const { species, level, gender } = parseDetails(details);
-    const mon = side.team[who.name] || (side.team[who.name] = newMon(who.side, who.name, who.slot));
+    const known = side.team[who.name];
+    const mon = known || (side.team[who.name] = newMon(who.side, who.name, who.slot));
+    entered[`${who.side}${who.slot}`] = { mon, before: known ? { species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted } : null };
+    untransform(previous);
     // a Pokémon sent in leaves its stat changes and volatile effects behind; its item, ability and moves stay known
     Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, boosts: {}, volatiles: [] }, parseHP(condition));
+    delete mon.transformedFrom;
     side.active[who.slot] = mon;
     return previous && previous !== mon && !previous.fainted ? previous : null;
+  }
+  // |replace|: an Illusion broke. The one really standing there takes over what the disguise showed (HP, status, changes),
+  // and the disguise goes back to what it was, or to not yet seen.
+  function unmask(ident, details) {
+    const who = parseIdent(ident);
+    const side = state.sides[who.side];
+    const shown = side.active[who.slot];
+    const { species, level, gender } = parseDetails(details);
+    const mon = side.team[who.name] || (side.team[who.name] = newMon(who.side, who.name, who.slot));
+    Object.assign(mon, { species, details, level, gender, slot: who.slot, hp: shown?.hp ?? 100, maxhp: shown?.maxhp ?? 100, status: shown?.status || "",
+      fainted: Boolean(shown?.fainted), boosts: { ...shown?.boosts }, volatiles: [...(shown?.volatiles || [])] });
+    side.active[who.slot] = mon;
+    const was = entered[`${who.side}${who.slot}`];
+    if (shown && shown !== mon && was?.mon === shown) {
+      if (was.before) Object.assign(shown, was.before, { boosts: {}, volatiles: [] });
+      else delete side.team[shown.name];
+    }
   }
   const setCondition = (ident, condition) => {
     const mon = monOf(ident);
@@ -155,7 +204,25 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "win": state.ended = true; state.winner = state.players.p1 === args[0] ? "p1" : "p2"; event = { verb: "end", winner: state.winner }; break;
       case "tie": state.ended = true; state.winner = "tie"; event = { verb: "end", winner: "tie" }; break;
 
-      case "switch": case "drag": case "replace": {
+      // the true form is drawn where the disguise stood, as a change of form is (|replace| carries no HP)
+      case "replace": unmask(args[0], args[1]); event = { verb: "change", ident: args[0] }; break;
+      // Ally Switch: |swap|p1a: X|1 puts X at position 1 and whoever stood there where X was
+      case "swap": {
+        const who = parseIdent(args[0]);
+        const side = state.sides[who.side];
+        const mon = monOf(args[0]);
+        const from = side.active.indexOf(mon), to = Number(args[1]);
+        if (from >= 0 && to >= 0 && to !== from) {
+          const partner = side.active[to];
+          [side.active[from], side.active[to]] = [partner || null, mon];
+          mon.slot = to;
+          if (partner) partner.slot = from;
+          if (partner) say(D("swap"), { POKEMON: monWord(mon), TARGET: monWord(partner) });
+        }
+        event = { verb: "swap", side: who.side };
+        break;
+      }
+      case "switch": case "drag": {
         const who = parseIdent(args[0]);
         const previous = setActive(args[0], args[1], args[2]);
         const own = who.side === perspective;
@@ -198,6 +265,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const mon = monOf(args[0]);
         mon.fainted = true; mon.hp = 0;
         say(D("faint"), { POKEMON: pokemonWord(args[0]) });
+        untransform(mon);
         event = { verb: "fall", ident: args[0] };
         break;
       }
@@ -242,6 +310,44 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const targets = cmd === "-clearallboost" ? Object.values(state.sides).flatMap(s => s.active.filter(Boolean)) : [monOf(args[0])];
         for (const mon of targets) mon.boosts = cmd === "-clearnegativeboost" ? Object.fromEntries(Object.entries(mon.boosts).filter(([, v]) => v > 0)) : {};
         say(cmd === "-clearallboost" ? D("clearAllBoost") : D("clearBoost"), { POKEMON: args[0] ? pokemonWord(args[0]) : "" });
+        break;
+      }
+      // Spectral Thief takes the target's rises (the user's own -boost lines follow); Psych Up copies; Heart, Power and Guard Swap trade; Topsy-Turvy flips
+      case "-clearpositiveboost": {
+        const mon = monOf(args[0]);
+        mon.boosts = Object.fromEntries(Object.entries(mon.boosts).filter(([, v]) => v < 0));
+        say(template(args[2], "clearBoost") || D("clearBoost"), { POKEMON: pokemonWord(args[0]), SOURCE: args[1] ? pokemonWord(args[1]) : "" });
+        event = { verb: "boost", ident: args[0] };
+        break;
+      }
+      case "-copyboost": {
+        const [mon, target] = [monOf(args[0]), monOf(args[1])];
+        mon.boosts = { ...target.boosts };
+        say(D("copyBoost"), { POKEMON: pokemonWord(args[0]), TARGET: pokemonWord(args[1]) });
+        event = { verb: "boost", ident: args[0] };
+        break;
+      }
+      case "-swapboost": {
+        const [mon, target] = [monOf(args[0]), monOf(args[1])];
+        const stats = args[2] ? args[2].split(/,\s*/) : [...new Set([...Object.keys(mon.boosts), ...Object.keys(target.boosts)])];
+        for (const stat of stats) [mon.boosts[stat], target.boosts[stat]] = [target.boosts[stat] || 0, mon.boosts[stat] || 0];
+        const key = args[2] === "atk, spa" ? "swapOffensiveBoost" : args[2] === "def, spd" ? "swapDefensiveBoost" : "swapBoost";
+        say(D(key), { POKEMON: pokemonWord(args[0]) });
+        event = { verb: "boost", ident: args[0] };
+        break;
+      }
+      case "-invertboost": {
+        const mon = monOf(args[0]);
+        mon.boosts = Object.fromEntries(Object.entries(mon.boosts).map(([k, v]) => [k, -v]));
+        say(D("invertBoost"), { POKEMON: pokemonWord(args[0]) });
+        event = { verb: "boost", ident: args[0] };
+        break;
+      }
+      // Court Change: what lay on each side now lies on the other (its -activate line speaks)
+      case "-swapsideconditions": {
+        const { p1, p2 } = state.sides;
+        for (const key of ["conditions", "since", "layers"]) [p1[key], p2[key]] = [p2[key], p1[key]];
+        event = { verb: "side" };
         break;
       }
       case "-weather": {
@@ -321,7 +427,15 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "-notarget": say(D("noTarget"), { POKEMON: args[0] ? pokemonWord(args[0]) : "" }); break;
       case "-ohko": say(D("ohko"), {}); break;
       case "-hitcount": say(D("hitCount") || D("hitCountSingular"), { POKEMON: pokemonWord(args[0]), NUMBER: args[1] }); break;
-      case "-transform": say(D("transform"), { POKEMON: pokemonWord(args[0]), SPECIES: speciesName(monOf(args[1])?.species || "") }); break;
+      // Transform and Imposter: it takes the target's form (its picture and its types) until it leaves
+      case "-transform": {
+        const [mon, target] = [monOf(args[0]), monOf(args[1])];
+        say(template("move: Transform", "transform") || D("transform"), { POKEMON: pokemonWord(args[0]), SPECIES: speciesName(target.species) });
+        mon.transformedFrom ??= mon.species;
+        mon.species = target.species;
+        event = { verb: "change", ident: args[0] };
+        break;
+      }
       case "-message": lines.push(args[0]); break;
       default: break;
     }
@@ -339,16 +453,26 @@ export function battleUsage(rows = []) {
   const bump = (id, key) => { const u = usage.get(id) || { picked: 0, leads: 0, wins: 0 }; u[key] += 1; usage.set(id, u); };
   for (const row of rows) {
     const seen = { p1: new Set(), p2: new Set() }, leads = { p1: new Set(), p2: new Set() };
+    // the last one sent into each slot, and whether that was the first time it was seen: an Illusion that breaks (|replace|)
+    // was the Zoroark all along, so the disguise it wore is not counted unless it really came out
+    const last = {};
     let started = false, skip = false;
     for (const line of String(row?.log || "").split("\n")) {
       if (skip) { skip = false; continue; }
       if (line.startsWith("|split|")) { skip = true; continue; }
       if (line.startsWith("|turn|")) started = true;
-      const match = /^\|(switch|drag|replace)\|(p[12])[ab]?: [^|]*\|([^|,]+)/.exec(line);
+      const swap = /^\|swap\|(p[12])([ab]): [^|]*\|([01])/.exec(line);
+      if (swap) { const [a, b] = [swap[1] + swap[2], swap[1] + "ab"[swap[3]]]; [last[a], last[b]] = [last[b], last[a]]; continue; }
+      const match = /^\|(switch|drag|replace)\|(p[12])([ab]?): [^|]*\|([^|,]+)/.exec(line);
       if (!match) continue;
-      const id = toID(match[3]);
-      seen[match[2]].add(id);
-      if (!started) leads[match[2]].add(id);
+      const [, cmd, side, slot] = match;
+      const id = toID(match[4]);
+      const was = last[side + slot];
+      const lead = cmd === "replace" ? Boolean(was?.lead) : !started;
+      if (cmd === "replace" && was?.fresh) { seen[side].delete(was.id); leads[side].delete(was.id); }
+      last[side + slot] = { id, fresh: !seen[side].has(id), lead };
+      seen[side].add(id);
+      if (lead) leads[side].add(id);
     }
     for (const side of ["p1", "p2"]) for (const id of seen[side]) {
       bump(id, "picked");
