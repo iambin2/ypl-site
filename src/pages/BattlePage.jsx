@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { reduced } from "../components/common/motion.js";
 import Button from "../components/common/Button.jsx";
+import Icon from "../components/common/Icon.jsx";
 import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
@@ -8,10 +9,10 @@ import { Chips, Choice, Dock, Mon, OptionRows, Question, Row, Toast } from "../c
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
 import { pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
-import { spriteUrl } from "../services/teamBuilderCore.js";
+import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, toID } from "../services/battleLog.js";
-import { STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
+import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { BOARD_DRAFT_KEY, battleHref, cancelBattle, chooseInBattle, createBattle, forfeitBattle, isDoubles, joinBattle, listEventBattles, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
@@ -55,20 +56,62 @@ export default function BattlePage({ flash: say, go }) {
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
 }
 
-/* 저장한 팀을 고르는 줄: 팀 이름과 여섯의 한국어 이름 */
+/* 저장한 팀: 팀 이름과 규정, 그리고 여섯을 그림으로(DESIGN.md "Where a Pokémon stands": 파티 목록은 이름 줄이 아니라 그림). 고른 팀은 반전한다. */
 function TeamRows({ teams, value, onChange, res }) {
-  const options = teams.map(team => ({
-    value: team.id,
-    title: team.name,
-    line: `${REGULATIONS[team.regulationId] || team.regulationId}, ${team.members.map(m => res.text.pokedex[m.pokemonId] || m.pokemonName).join(", ")}`,
-  }));
-  return <OptionRows name="battle-team" options={options} value={value} onChange={onChange} />;
+  return <div className="stack" role="radiogroup" aria-label="팀">
+    {teams.map(team => {
+      const on = team.id === value;
+      const reg = REGULATIONS[team.regulationId] || team.regulationId;
+      return <label key={team.id} className={"bt-team " + (on ? "inv" : "pn")}>
+        <input type="radio" className="sr-only" name="battle-team" checked={on} onChange={() => onChange(team.id)}
+          aria-label={`${team.name}, ${reg}, ${team.members.map(m => res.text.pokedex[m.pokemonId] || m.pokemonName).join(", ")}`} />
+        <span className="bt-team-head"><b className="t15">{team.name}</b><span className="t12 reg dim">{reg}</span>{on && <Icon n="check" size={20} />}</span>
+        <span className="bt-team-six" aria-hidden="true">{team.members.map((m, i) => <span key={i} className="stand"><i className="floor" /><Mon src={spriteUrl(m.pokemonName)} loading="lazy" onError={onSpriteError()} /></span>)}</span>
+      </label>;
+    })}
+  </div>;
 }
 
 function NoTeams() {
   return <Empty title="저장한 팀이 없습니다." desc="팀 빌더에서 팀을 저장하면 여기에서 고를 수 있습니다.">
     <Button variant="second" href="?view=builder">팀 빌더 열기</Button>
   </Empty>;
+}
+
+/* 배틀 전 화면(DESIGN.md "Battle", Opening and waiting): 경기가 치러질 모습을 먼저 보인다. 위에는 나 대 상대, 그 아래 경기장에는
+   고른 팀의 앞 포켓몬이 우리 쪽에 서고(그 아래 판에 이름과 타입) 상대 쪽은 상대가 올 때까지 비어 있다. 그 다음이 고를 것(형식, 팀)과 주 행동이다.
+   여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다. foe는 참가하는 쪽에서 본 연 사람의 이름이다. */
+function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, doubles, setup, action }) {
+  const team = teams.find(t => t.id === teamId);
+  const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
+  const stageLabel = team ? `경기장, ${leads.map(species => nameOf(res, species)).join(", ")}` : "빈 경기장";
+  return (
+    <div className="bt-page">
+      <h1 className="t32">배틀</h1>
+      <div className="bt-lobby">
+        <div className="bt-lobby-show">
+          <div className="stack bt-versus">
+            <label className="pn bt-vs" htmlFor="bt-name">
+              <span className="t12 dim">내 이름</span>
+              <input id="bt-name" value={name} maxLength={20} autoComplete="nickname" onChange={e => setName(e.target.value)} placeholder="예: 이제빈" />
+            </label>
+            <span className="pn bt-vs-mid t15" aria-hidden="true">VS</span>
+            <span className="pn bt-vs foe">
+              <span className="t12 dim">상대</span>
+              {foe ? <b>{foe}</b> : <b className="mute">링크로 참가</b>}
+            </span>
+          </div>
+          <LobbyStage leads={leads} doubles={doubles} label={stageLabel} />
+          <LobbyBars leads={leads} doubles={doubles} res={res} />
+        </div>
+        <div className="bt-lobby-set">
+          {setup}
+          <div className="q"><span className="q-label t12 dim">{teamLabel}</span>{teams.length ? <TeamRows teams={teams} value={teamId} onChange={setTeamId} res={res} /> : <NoTeams />}</div>
+          {action}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function BattleOpen({ res, onOpen, preset }) {
@@ -91,23 +134,13 @@ function BattleOpen({ res, onOpen, preset }) {
       setBusy(false);
     }
   };
-  return (
-    <div className="bt-page">
-      <h1 className="t32">배틀</h1>
-      <p className="read dim bt-intro">팀 빌더에 저장한 팀으로 친선 배틀을 엽니다. 링크를 받은 상대가 참가하면 시작합니다.</p>
-      <Question id="bt-name" label="이름">
-        <input id="bt-name" className="in" value={name} maxLength={20} autoComplete="nickname" onChange={e => setName(e.target.value)} placeholder="예: 이제빈" />
-      </Question>
-      <Question id="bt-format" label="형식" group>
-        <Choice name="bt-format" options={FORMATS.map(([, label]) => label)} value={FORMATS.find(([key]) => key === format)[1]} onChange={label => setFormat(FORMATS.find(([, l]) => l === label)[0])} />
-      </Question>
-      <div className="q"><span className="q-label t12 dim">팀</span>{teams.length ? <TeamRows teams={teams} value={teamId} onChange={setTeamId} res={res} /> : <NoTeams />}</div>
-      <p className="t12 mute bt-credit">배틀 엔진: Pokémon Showdown (MIT)</p>
-      <Dock toast={error ? <Toast error>{error}</Toast> : null}>
-        <Button variant="main" onClick={submit} loading={busy} disabled={!team || !name.trim()}>배틀 열기</Button>
-      </Dock>
-    </div>
-  );
+  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="팀" name={name} setName={setName} doubles={format === "doubles"}
+    setup={<Question id="bt-format" label="형식" group>
+      <Choice name="bt-format" options={FORMATS.map(([, label]) => label)} value={FORMATS.find(([key]) => key === format)[1]} onChange={label => setFormat(FORMATS.find(([, l]) => l === label)[0])} />
+    </Question>}
+    action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
+      <Button variant="main" onClick={submit} loading={busy} disabled={!team || !name.trim()}>배틀 열기</Button>
+    </Dock>} />;
 }
 
 /* ---------- a battle: its public row is read every 1.5 seconds, and only a change of version reads the rest ---------- */
@@ -236,6 +269,7 @@ function Join({ row, res, onJoined }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const team = teams.find(t => t.id === teamId);
+  const doubles = isDoubles(row.format_id);
   const submit = async () => {
     setBusy(true); setError("");
     try {
@@ -246,19 +280,12 @@ function Join({ row, res, onJoined }) {
       setBusy(false);
     }
   };
-  return (
-    <div className="bt-page">
-      <h1 className="t32">배틀</h1>
-      <Row title={row.p1_name} line={`${REGULATIONS[row.regulation]} ${isDoubles(row.format_id) ? "더블" : "싱글"} 친선 배틀`} lamp="참가 대기" />
-      <Question id="bt-name" label="이름">
-        <input id="bt-name" className="in" value={name} maxLength={20} autoComplete="nickname" onChange={e => setName(e.target.value)} placeholder="예: 이제빈" />
-      </Question>
-      <div className="q"><span className="q-label t12 dim">{`팀 (${REGULATIONS[row.regulation]})`}</span>{teams.length ? <TeamRows teams={teams} value={teamId} onChange={setTeamId} res={res} /> : <NoTeams />}</div>
-      <Dock toast={error ? <Toast error>{error}</Toast> : null}>
-        <Button variant="main" onClick={submit} loading={busy} disabled={!team || !name.trim()}>참가</Button>
-      </Dock>
-    </div>
-  );
+  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`팀 (${REGULATIONS[row.regulation]})`} name={name} setName={setName}
+    foe={row.p1_name} doubles={doubles}
+    setup={<Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} line="참가하면 바로 시작합니다." lamp="참가 대기" />}
+    action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
+      <Button variant="main" onClick={submit} loading={busy} disabled={!team || !name.trim()}>참가</Button>
+    </Dock>} />;
 }
 
 /* ---------- the arena: the stage, its playback, the choices and the log (DESIGN.md "Battle", The stage) ---------- */

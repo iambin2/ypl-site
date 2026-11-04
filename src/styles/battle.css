@@ -4,7 +4,42 @@
 
 .bt-page { display: grid; gap: var(--s5); }
 .bt-intro { margin-top: calc(var(--s3) - var(--s5)); }
-.bt-credit { text-align: left; }
+
+/* ---------- before the battle (Opening and waiting): the match as it will be played, then what to bring. Desktop 709 and 439 ---------- */
+.bt-lobby { display: grid; gap: var(--s5); }
+.bt-lobby-show { display: grid; gap: var(--seam); min-width: 0; }
+.bt-lobby-set { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
+.bt-lobby-set .q + .q { margin-top: 0; }
+@media (min-width: 860px) {
+  .bt-lobby { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); align-items: start; }
+  .bt-lobby-set > .dock { margin-top: var(--s3); }
+}
+/* 나 대 상대: two equal panels and the word between them, on the seam, read like a scoreboard before the match; the name is typed in place */
+.bt-versus { grid-template-columns: minmax(0, 1fr) var(--h-row) minmax(0, 1fr); }
+.bt-vs { display: grid; align-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-counter); padding: var(--s2) var(--pad); }
+.bt-vs > :is(b, input) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
+.bt-vs > input { width: 100%; padding: 0; background: none; color: var(--lit); }
+.bt-vs > input:focus-visible { outline: none; }
+.bt-vs > input::placeholder { color: var(--mute); }
+.bt-vs:has(:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+.bt-vs.foe { text-align: right; }
+.bt-vs-mid { display: grid; place-items: center; color: var(--dim); font-weight: 700; }
+/* under the stage, where a battle has our bars: each one standing there, its name and its types */
+.bt-lead { display: grid; align-content: center; justify-items: start; gap: var(--s1); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--pad); }
+.bt-lead > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a saved team: its name and rule over its six on their floors; the chosen one inverts, its six keep a panel under them */
+.bt-team { display: grid; gap: var(--s2); padding: var(--s3) var(--pad); cursor: pointer; }
+.bt-team-head { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.bt-team-head > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-team-head > .reg { flex: none; margin-left: auto; }
+.bt-team-head > svg { flex: none; }
+.bt-team-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
+.bt-team-six > span { aspect-ratio: 1; }
+.bt-team-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+.bt-team.inv .bt-team-six > span { background: var(--panel); }
+.bt-team:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+.bt-team.inv:has(:focus-visible) { outline-color: var(--ground); }
+@media (hover: hover) { .bt-team.pn:hover { background: var(--panel-2); } }
 
 /* waiting for the other player: the busy cell and the sentence */
 .bt-wait { display: flex; align-items: center; gap: var(--s5); min-height: var(--h-counter); padding: var(--pad); }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Modal from "../../components/common/Modal.jsx";
 import { spriteUrl } from "../../services/teamBuilderCore.js";
@@ -349,6 +349,37 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
       {info && scene && <MonInfo res={res} mon={scene[info.slice(0, 2)].active[info.charCodeAt(2) - 97]} own={info.startsWith(perspective)} onClose={() => setInfo(null)} />}
     </div>
   );
+}
+
+/* before a battle (DESIGN.md "Battle", Opening and waiting): the court with our leads on the near side and the far side empty until
+   the opponent comes. A change of team or format sends the leads in again, out of the same light as in a battle. */
+export function LobbyStage({ leads, doubles, label }) {
+  const ref = useRef(null);
+  const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) } };
+  // before paint, so a new lead never shows for a frame before it comes out of the light
+  useLayoutEffect(() => { leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot))); }, [leads.join("|"), doubles]);
+  return (
+    <div className="bs-stage" ref={ref} role="img" aria-label={label}>
+      <div className="bs-world">
+        <i className="bs-sky" aria-hidden="true" />
+        <Court />
+        <SideField side="p1" scene={scene} own doubles={doubles} />
+      </div>
+      <div className="bs-fx" aria-hidden="true" />
+    </div>
+  );
+}
+/* under the lobby's stage, where a battle has our status bars: each Pokémon standing there, its name and its types, in the order they stand */
+export function LobbyBars({ leads, doubles, res }) {
+  return <div className={"stack bt-bars" + (doubles ? " two" : "")}>
+    {(doubles ? [0, 1] : [0]).map(slot => {
+      const species = leads[slot];
+      return <div key={slot} className="pn bt-lead">
+        {species && <><b className="t15">{nameOf(res, species)}</b>
+          <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span></>}
+      </div>;
+    })}
+  </div>;
 }
 
 /* ---------- a Pokémon's sheet: what the games and Showdown let a player look up mid-battle ---------- */
