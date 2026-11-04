@@ -61,12 +61,29 @@ export async function readBattleLog(id) {
   if (error) throw new Error(error.message);
   return data;
 }
-// 바뀌었는지만 묻는 가벼운 읽기. 화면은 이 값이 오를 때만 전체를 다시 읽는다.
-// ponytail: 1.5초마다 묻는 방식이다. 동시에 보는 사람이 많아지면 Supabase Realtime으로 바꾼다.
+// 바뀌었는지만 묻는 가벼운 읽기(응답 약 12바이트). 화면은 이 값이 오를 때만 전체를 다시 읽는다.
+// ponytail: 묻는 방식이다. 동시에 보는 사람이 많아지면 Supabase Realtime으로 바꾼다.
 export async function readBattleVersion(id) {
   const { data, error } = await supa.from("battles").select("version").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data?.version ?? null;
+}
+
+/* 배틀 화면이 몇 ms 뒤에 다시 물을지. null이면 그만 묻는다.
+   진행 중에는 1.5초, 1분 동안 아무것도 바뀌지 않으면 3초, 5분이면 6초. 끝난 배틀은 다시 바뀌지 않는다.
+   다만 공식 경기는 끝난 뒤 서버가 대진표에 넣으며 applied_at(또는 apply_error)만 쓰고 version은 올리지 않으므로, 그 값이 올 때까지 행을 읽는다.
+   row === null은 없는 배틀(대기 취소)이다. */
+export function battlePollDelay(row, idleMs) {
+  if (row === null) return null;
+  if (row?.status === "ended") return row.kind === "official" && !row.applied_at && !row.apply_error ? 4500 : null;
+  return idleMs < 60_000 ? 1500 : idleMs < 300_000 ? 3000 : 6000;
+}
+// 선수의 화면은 엔진이 움직였을 때만 바뀐다. 엔진이 한 걸음 가면 쇼다운은 반드시 관전 로그에 줄을 더한다(덧붙이기만 한다).
+// 그래서 상태와 관전 로그가 그대로면 version이 올랐어도(상대의 대기 중 선택) 화면을 다시 받지 않는다. view.version은 그 화면이 어느 version의 것인지다.
+export function playerViewIsCurrent(view, seenRow, row) {
+  if (!view || !row) return false;
+  if (view.version != null && view.version === row.version) return true;
+  return Boolean(seenRow) && seenRow.status === row.status && seenRow.spectator_log === row.spectator_log;
 }
 
 // 한 대회의 공식 배틀(대진표, 홈의 지금 경기). 배틀 표가 아직 없는 환경에서는 빈 목록이다.

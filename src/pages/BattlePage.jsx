@@ -13,7 +13,7 @@ import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, toID } from "../services/battleLog.js";
 import { STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
-import { BOARD_DRAFT_KEY, battleHref, cancelBattle, chooseInBattle, createBattle, forfeitBattle, isDoubles, joinBattle, listEventBattles, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, cancelBattle, chooseInBattle, createBattle, forfeitBattle, isDoubles, joinBattle, listEventBattles, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import Pager from "../components/common/Pager.jsx";
@@ -24,7 +24,6 @@ import Pager from "../components/common/Pager.jsx";
 const REGULATIONS = { "m-c": "M-C", "m-b": "M-B" };
 const FORMATS = [["singles", "싱글"], ["doubles", "더블"]];
 const NAME_KEY = "ypl-battle:name";
-const POLL_MS = 1500;
 
 export function useResources() {
   const [res, setRes] = useState(null);
@@ -50,7 +49,7 @@ export default function BattlePage({ flash: say, go }) {
   }, []);
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
-  if (id) return <BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} />;
+  if (id) return <BattleRoom key={id} id={id} res={res} say={say} go={go} onLeave={() => open(null)} />;
   if (official) return <OfficialSeat {...official} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
 }
@@ -110,30 +109,50 @@ function BattleOpen({ res, onOpen, preset }) {
   );
 }
 
-/* ---------- a battle: its public row is read every 1.5 seconds, and only a change of version reads the rest ---------- */
+/* ---------- a battle: its version is asked on battlePollDelay's rhythm, and only a change of version reads the row ----------
+   A player's own view comes back with each choice; the server is asked for it again only when the engine moved since. */
 function BattleRoom({ id, res, say, go, onLeave }) {
   const [row, setRow] = useState(undefined);
   const [view, setView] = useState(null);
   const [seat, setSeat] = useState(() => readSeat(id));
   const version = useRef(null);
+  const rowRef = useRef(undefined);
+  const viewRef = useRef(null);
+  const viewRow = useRef(null); // the last row this device's view is known to be current with
+  const movedAt = useRef(Date.now());
+  const show = useCallback(next => { viewRef.current = next; movedAt.current = Date.now(); setView(next); }, []);
   const refresh = useCallback(async () => {
     const next = await readBattleRow(id);
+    rowRef.current = next;
     setRow(next);
-    if (next && readSeat(id) && next.status !== "waiting") setView(await viewBattle(id));
-  }, [id]);
+    if (next && readSeat(id) && next.status !== "waiting") {
+      if (!playerViewIsCurrent(viewRef.current, viewRow.current, next)) show(await viewBattle(id));
+      viewRow.current = next;
+    }
+    version.current = next?.version ?? null; // only once all of it was read, so a failed read is tried again
+  }, [id, show]);
   useEffect(() => {
-    let stopped = false, timer = null;
+    let stopped = false, busy = false, timer = null;
     const tick = async () => {
+      if (busy) return;
+      busy = true;
+      clearTimeout(timer);
       try {
         if (document.visibilityState === "visible") {
-          const v = await readBattleVersion(id);
-          if (v !== version.current) { version.current = v; await refresh(); }
+          // a finished official battle waits for its bracket line, which the server writes without moving the version
+          if (rowRef.current?.status === "ended") await refresh();
+          else if ((await readBattleVersion(id)) !== version.current) { await refresh(); movedAt.current = Date.now(); }
         }
       } catch { /* 다음 차례에 다시 읽는다 */ }
-      if (!stopped) timer = setTimeout(tick, POLL_MS);
+      busy = false;
+      if (stopped) return;
+      const delay = battlePollDelay(rowRef.current, Date.now() - movedAt.current);
+      if (delay != null) timer = setTimeout(tick, delay);
     };
-    tick();
-    return () => { stopped = true; clearTimeout(timer); };
+    const onVisible = () => { if (document.visibilityState === "visible") void tick(); };
+    document.addEventListener("visibilitychange", onVisible);
+    void tick();
+    return () => { stopped = true; clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, [id, refresh]);
 
   if (row === undefined) return <Loader />;
@@ -148,9 +167,9 @@ function BattleRoom({ id, res, say, go, onLeave }) {
     if (seat) return <Waiting row={row} onShare={share} onCancel={cancel} />;
     // an official match is entered from its own seat screen: the player's party PIN, never a builder team
     if (row.kind === "official") return <OfficialSeat eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
-    return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); setView(next); refresh(); }} />;
+    return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); show(next); refresh(); }} />;
   }
-  return <Arena row={row} view={view} seat={seat} res={res} onView={setView} onShare={share} go={go} />;
+  return <Arena row={row} view={view} seat={seat} res={res} onView={show} onShare={share} go={go} />;
 }
 
 export function Waiting({ row, onShare, onCancel }) {
