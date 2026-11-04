@@ -51,8 +51,9 @@ const RecordsPage = lazyPage(() => import("./pages/RecordsPage.jsx"));
 const TeamBuilderPage = lazyPage(() => import("./pages/TeamBuilderPage.jsx"));
 const CalculatorPage = lazyPage(() => import("./pages/CalculatorPage.jsx"));
 const TitlesPage = lazyPage(() => import("./pages/TitlesPage.jsx"));
+const BattlePage = lazyPage(() => import("./pages/BattlePage.jsx"));
 const AdminModalHost = lazy(() => import("./admin/AdminModalHost.jsx"));
-const PAGES = { about: AboutPage, board: BoardPage, bracket: BracketsPage, champions: ChampionsPage, news: NewsPage, records: RecordsPage, builder: TeamBuilderPage, calc: CalculatorPage, titles: TitlesPage };
+const PAGES = { about: AboutPage, board: BoardPage, bracket: BracketsPage, champions: ChampionsPage, news: NewsPage, records: RecordsPage, builder: TeamBuilderPage, calc: CalculatorPage, titles: TitlesPage, battle: BattlePage };
 const ready = v => !PAGES[v] || PAGES[v].ready();
 /* 다음 프레임이 화면에 나간 뒤에 실행한다(rAF 다음의 작업): 그 프레임에 이미 시작한 반응(누름, 알약)이 먼저 보인다. */
 const afterPaint = run => requestAnimationFrame(() => setTimeout(run, 0));
@@ -219,7 +220,7 @@ export default function App() {
   // 명예의 전당도 뺀다: 옛 파티 이미지 표(legacyPartyImages, 압축해도 248KB)를 달고 와 첫 방문 전송량의 30%를 차지했다.
   useEffect(()=>{
     if(!loaded||navigator.connection?.saveData) return undefined;
-    const queue=Object.values(PAGES).filter(p=>p!==CalculatorPage&&p!==ChampionsPage);
+    const queue=Object.values(PAGES).filter(p=>p!==CalculatorPage&&p!==ChampionsPage&&p!==BattlePage);
     let handle=null, stopped=false;
     const later=f=>window.requestIdleCallback?window.requestIdleCallback(f,{timeout:2000}):setTimeout(f,400);
     const next=()=>{ if(stopped||!queue.length) return; handle=later(()=>{ if(!stopped) queue.shift().prefetch().then(next); }); };
@@ -265,6 +266,7 @@ export default function App() {
         {view==="bracket"&&<BracketsPage data={data} admin={admin} save={save} flash={flash} refresh={refresh}/>}
         {view==="builder"&&<TeamBuilderPage go={go} flash={flash} admin={admin}/>}
         {view==="calc"&&<CalculatorPage/>}
+        {view==="battle"&&<BattlePage flash={flash}/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal} go={go}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}
         </LazyContent>}

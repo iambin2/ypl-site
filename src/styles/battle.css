@@ -1,0 +1,76 @@
+/* =============================================================================
+   Battle (DESIGN.md "Battle"): the board's live match, played on it. BattlePage.jsx, the battle verbs in motion.js.
+   ========================================================================== */
+
+.bt-page { display: grid; gap: var(--s5); }
+.bt-intro { margin-top: calc(var(--s3) - var(--s5)); }
+.bt-credit { text-align: left; }
+
+/* waiting for the other player: the busy cell and the sentence */
+.bt-wait { display: flex; align-items: center; gap: var(--s5); min-height: var(--h-counter); padding: var(--pad); }
+.bt-wait-say { display: grid; gap: var(--s1); }
+.bt-waiting { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
+
+/* the head: the lamp with 진행 중, the two names, the turn lit at 32 */
+.bt-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row2); padding: 0 var(--pad); }
+.bt-head-say { display: grid; gap: var(--s1); min-width: 0; }
+.bt-head-say > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+
+/* the field above the log on a phone; beside it on desktop, 709 and 439 */
+.bt-room { display: grid; gap: var(--s5); }
+.bt-main { display: grid; gap: var(--s5); min-width: 0; }
+@media (min-width: 860px) {
+  .bt-room { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); align-items: start; }
+}
+
+/* ---------- the field: the foe's side above, ours below, each Pokémon on its floor ---------- */
+.bt-field { position: relative; display: grid; gap: var(--seam); }
+.bt-side { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: var(--seam); }
+.bt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); min-height: var(--h-strip); padding: var(--s1) var(--pad); }
+.bt-cell { --floor: var(--s8); display: block; width: 100%; height: 216px; text-align: left; }
+.bt-cell .floor { display: flex; align-items: center; padding: 0 var(--pad); }
+.bt-cell .floor > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-cell .mon { left: 0; right: 0; margin-inline: auto; height: calc(100% - var(--floor) - var(--s21)); }
+.bt-top { position: absolute; top: var(--pad); left: var(--pad); right: var(--pad); display: grid; gap: var(--s2); }
+.bt-hp { display: flex; align-items: flex-end; gap: var(--s1); min-width: 0; }
+.bt-hp > .t12 { line-height: 1; }
+.bt-marks { display: flex; gap: var(--seam); margin-left: auto; min-width: 0; overflow: hidden; }
+.bt-chip { display: flex; align-items: center; flex: none; height: var(--h-strip); padding: 0 var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+/* HP: ten cells joined by the seam, lit while they hold HP, unlit bars when empty; damage switches them off, nothing slides */
+.bt-gauge { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: var(--seam); height: var(--s2); }
+.bt-gauge > i { background: var(--lit); }
+.bt-gauge > i.off { opacity: var(--off); }
+.inv .bt-gauge > i { background: var(--ground); }
+/* a cell inverts once when it is hit, uses a move on itself or Mega Evolves (motion.js flash) */
+.bt-hit { position: absolute; inset: 0; background: var(--lit); opacity: 0; pointer-events: none; }
+/* the chase: 8px squares in the move's type colour (the type tag's square), switching on along the line */
+.bt-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.bt-dot { position: absolute; left: 0; top: 0; width: var(--lamp); height: var(--lamp); background: var(--type); opacity: 0; }
+/* a cell that can be the target lifts one tone and takes a press plate over the whole cell */
+.bt-pick { position: absolute; inset: 0; z-index: var(--z-raised); }
+.bt-cell:has(> .bt-pick) { background: var(--panel-2); }
+@media (hover: hover) { .bt-cell:has(> .bt-pick:hover) .floor { background: var(--lit); } .bt-cell:has(> .bt-pick:hover) .floor > span { color: var(--ground); } }
+
+/* ---------- choices: the four moves two by two, 64 each; the party as six cells on their floors ---------- */
+.bt-choices { display: grid; gap: var(--s3); }
+.bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-row2); padding: 0 var(--pad); text-align: left; }
+.bt-move > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.bt-move:disabled { opacity: 1; color: var(--mute); }
+.bt-move-line { display: flex; align-items: center; gap: var(--s2); }
+@media (hover: hover) { .bt-move.pn:hover:not(:disabled) { background: var(--panel-2); } }
+.bt-tools { display: flex; align-items: center; gap: var(--s5); }
+.bt-tools > .btn { width: auto; }
+.bt-party { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bt-party-cell { --floor: var(--s8); display: block; width: 100%; height: 132px; }
+.bt-party-cell .floor { display: flex; align-items: center; padding: 0 var(--s2); }
+.bt-party-cell .mon { left: 0; right: 0; margin-inline: auto; height: calc(100% - var(--floor) - var(--s2)); }
+.bt-party-cell.off .mon { opacity: var(--opacity-disabled); }
+.bt-party-cell .floor.inv span { color: var(--ground); font-weight: 700; }
+
+/* ---------- the log: every message a row of the stack, a turn opening with its 32 strip; it holds the whole battle ---------- */
+.bt-log { max-height: 439px; overflow-y: auto; align-content: start; scrollbar-width: none; }
+.bt-log::-webkit-scrollbar { display: none; }
+.bt-line { padding: var(--s2) var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
+.bt-turn { display: flex; align-items: center; min-height: var(--h-strip); padding: 0 var(--pad); color: var(--dim); }
+.bt-links { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }

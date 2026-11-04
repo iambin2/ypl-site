@@ -152,6 +152,86 @@ export function lightAfter(el) {
     for (let n = at.nextElementSibling; n; n = n.nextElementSibling) light(n, DUR.leave);
 }
 
+/* ---------- the four battle verbs (DESIGN.md "Battle"): the battle field is the one place a lit thing travels ----------
+   Each returns a promise that settles when the verb is over, so the field can run a turn one message at a time.
+   Reduced motion: nothing travels, the verb settles at once and only the cell's inversion (flash) remains. */
+// A hidden page (another app on the phone, a background tab) stops the animation clock, and a turn must not wait on it forever:
+// past its own length a verb is over, and it is put at its end.
+function settled(anim) {
+  if (!anim?.finished) return Promise.resolve();
+  const length = anim.effect?.getComputedTiming?.().endTime || DUR.light;
+  let timer;
+  const late = new Promise(resolve => { timer = setTimeout(resolve, length + DUR.press); });
+  return Promise.race([anim.finished, late]).then(() => {}, () => {}).finally(() => {
+    clearTimeout(timer);
+    try { if (anim.playState !== "finished") anim.finish(); } catch { /* cancelled already */ }
+  });
+}
+const centreOf = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+function toward(from, to, length) {
+  const [ax, ay] = centreOf(from), [bx, by] = centreOf(to);
+  const d = Math.hypot(bx - ax, by - ay) || 1;
+  return [(bx - ax) / d * length, (by - ay) / d * length];
+}
+const OUT = DUR.press / DUR.leave; // 100 out, 160 back
+/* a cell inverts once: its lit plate (.bt-hit) comes up and goes, the tone verb's length; hold keeps it for a Mega Evolution */
+export function flash(plate, hold = 0) {
+  if (!plate?.animate) return Promise.resolve();
+  const total = DUR.tone + hold;
+  return settled(plate.animate([{ opacity: 0 }, { opacity: 1, offset: Math.min(.5, DUR.press / 2 / total) }, { opacity: 1, offset: 1 - DUR.press / 2 / total }, { opacity: 0 }], { duration: total, easing: EASE_OUT }));
+}
+/* strike: a physical move, the attacker travels 32 toward its target and back */
+export function strike(mon, target) {
+  if (!mon?.animate || !target || reduced()) return Promise.resolve();
+  const [dx, dy] = toward(mon, target, 32);
+  return settled(mon.animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px)`, offset: OUT, easing: EASE_IN }, { transform: "none" }], { duration: DUR.leave, easing: EASE_OUT }));
+}
+/* take: a Pokémon is hit, it travels 12 away from the blow and back while its cell inverts once */
+export function take(mon, plate, from) {
+  const moved = !mon?.animate || !from || reduced() ? Promise.resolve() : (() => {
+    const [dx, dy] = toward(from, mon, 12);
+    return settled(mon.animate([{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px)`, offset: OUT }, { transform: "none" }], { duration: DUR.leave, easing: EASE_OUT }));
+  })();
+  return Promise.all([moved, flash(plate)]);
+}
+/* chase: a line of 8px squares in the move's type colour switches on and off from the attacker to each target, 38 apart, each lit 100 */
+export function chase(layer, from, targets, typeClass) {
+  if (!layer || !from || !targets.length || reduced()) return Promise.resolve();
+  const box = layer.getBoundingClientRect();
+  const [ax, ay] = centreOf(from);
+  const runs = targets.map(target => {
+    const [bx, by] = centreOf(target);
+    const count = Math.max(3, Math.round(Math.hypot(bx - ax, by - ay) / 20));
+    return Array.from({ length: count + 1 }, (_, i) => {
+      const dot = document.createElement("i");
+      dot.className = "bt-dot " + typeClass;
+      dot.style.transform = `translate(${ax - box.left + (bx - ax) * i / count - 4}px, ${ay - box.top + (by - ay) * i / count - 4}px)`;
+      layer.appendChild(dot);
+      return settled(dot.animate([{ opacity: 1 }, { opacity: 1 }], { duration: DUR.press, delay: i * STAGGER.row })).then(() => dot.remove());
+    });
+  });
+  return Promise.all(runs.flat());
+}
+/* fall: a Pokémon faints, it sinks 12 as it goes dark, the reverse of light */
+export function fall(mon) {
+  if (!mon?.animate || reduced()) return Promise.resolve();
+  return settled(mon.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(12px)" }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
+}
+/* a Pokémon sent in lights as anything arrives */
+export function enter(mon) {
+  if (!mon?.animate || reduced()) return Promise.resolve();
+  return settled(mon.animate(RISE, { duration: DUR.light, easing: EASE_OUT }));
+}
+/* the HP gauge: changed cells switch as a score's bars do, 38 apart, from the right when it falls and from the left when it rises */
+export function gauge(cells, before, after, offValue) {
+  if (reduced() || before === after) return Promise.resolve();
+  const changed = cells.map((el, i) => ({ el, i })).filter(({ i }) => (i < before) !== (i < after));
+  if (after < before) changed.reverse();
+  const [from, to] = after < before ? [1, offValue] : [offValue, 1];
+  return Promise.all(changed.map(({ el }, k) => settled(el.animate([{ opacity: from }, { opacity: from }, { opacity: to }], { duration: DUR.press, delay: k * STAGGER.row, fill: "backwards" }))));
+}
+export const pause = ms => new Promise(resolve => setTimeout(resolve, reduced() ? 0 : ms));
+
 /* into a sheet: the pressed row stays where it is, and the sheet's title lights a beat after the sheet starts to rise */
 export function settleTitle(target) {
   if (!target || reduced() || typeof target.animate !== "function") return;

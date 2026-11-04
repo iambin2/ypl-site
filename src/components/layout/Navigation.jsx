@@ -3,7 +3,7 @@ import Icon from "../common/Icon.jsx";
 
 /* 폰은 화면 아래 탭 바 다섯 칸, 데스크톱은 상단 바에 같은 다섯. 더보기에는 나머지 화면. */
 export const TABS = [["home","홈","home"],["news","공지","news"],["bracket","대진표","bracket"],["records","기록","records"],["more","더보기","more"]];
-export const MORE_ITEMS = [["titles","칭호"],["champions","명예의 전당"],["board","게시판"],["builder","팀 빌더"],["calc","계산기"],["about","소개"]];
+export const MORE_ITEMS = [["titles","칭호"],["champions","명예의 전당"],["board","게시판"],["builder","팀 빌더"],["battle","배틀"],["calc","계산기"],["about","소개"]];
 /* 탭 제목에 쓰는 화면 이름. 홈은 빠져서 기본 제목을 쓴다. */
 export const NAV_ITEMS = [...TABS, ...MORE_ITEMS].filter(([k]) => k !== "home" && k !== "more");
 export const tabOf = (view, wide = false) => TABS.some(([k]) => k === view) || (wide && MORE_ITEMS.some(([k]) => k === view)) ? view : MORE_ITEMS.some(([k]) => k === view) ? "more" : null;

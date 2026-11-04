@@ -10,7 +10,8 @@
     "test": "node --test \"tests/*.test.mjs\"",
     "data:champions": "node scripts/build-champions-data.mjs",
     "data:directory": "node scripts/build-champions-data.mjs --directory",
-    "font:slices": "python scripts/build-font-slices.py"
+    "font:slices": "python scripts/build-font-slices.py",
+    "build:battle": "node scripts/build-battle-engine.mjs"
   },
   "dependencies": {
     "@smogon/calc": "^0.12.0",
@@ -19,7 +20,10 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@pkmn/mods": "0.10.13",
+    "@pkmn/sim": "0.10.13",
     "@vitejs/plugin-react": "^4.3.1",
+    "esbuild": "0.21.5",
     "vite": "^5.4.0"
   }
 }

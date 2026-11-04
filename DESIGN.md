@@ -261,7 +261,7 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 - **Phone top bar:** 56, the ground tone with a hairline under it. The Wing Y (20 tall) and the wordmark, the lamp's fixture and the theme button at the right. It stands still.
 - **Phone tab bar:** 64, the ground tone with a hairline on top: 홈, 공지, 대진표, 기록, 더보기. The chosen tab is lit and 700 with a 2px line along its top edge; the rest are muted.
 - **Admin mode:** a 40 inverted strip directly above the tab bar on every screen: a ground lamp, 관리자 모드, and 로그아웃 at the right.
-- **더보기** is a page, not a popover: grouped rows (기록: 칭호, 명예의 전당; 함께하기: 게시판, 팀 빌더, 계산기; 리그: 소개, 디스코드 참여), then the theme as a three-way choice (어둡게, 밝게, 기기 설정) and 공지 알림 as a switch. Admin login is a row here.
+- **더보기** is a page, not a popover: grouped rows (기록: 칭호, 명예의 전당; 함께하기: 게시판, 팀 빌더, 배틀, 계산기; 리그: 소개, 디스코드 참여), then the theme as a three-way choice (어둡게, 밝게, 기기 설정) and 공지 알림 as a switch. Admin login is a row here.
 - **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one (the word's own width), each word taking the bar's height and 12 on each side for the pointer and the focus ring, the words 32 apart; the line is never under 20, so a one-letter word (홈) keeps a line centred on it, the theme button at the right end. No tab bar. Where there is no 더보기 (1100 and up), 관리자 로그인 is an underlined word at the end of the footer, not an icon in the bar.
 - **Back:** a 12px dim link with a chevron, 20 under the bar, naming where it goes (← 공지).
 - **Nothing is tied to the scroll.** The bars do not move; a sideways list is the browser's own scroll. On a phone a sideways row (page tabs, chips, the line score) runs on to the screen's edge, so a word cut there says the row goes on; a row of tabs keeps its hairline to the content's edge.
@@ -277,7 +277,7 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 
 ## Motion
 
-**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The site is meant to feel finished, not still: what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
+**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The battle field adds four of its own (Battle) and is the only place they run. The site is meant to feel finished, not still: what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
 
 | Verb | When | Length | Curve |
 |---|---|---|---|
@@ -353,6 +353,36 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Footer.** On the ground under a hairline: the brand at 24, the league's line, 디스코드 참여, and the fan-site notice in 12px muted type.
 
+## Battle
+
+**The battle is the board's live match, played on it.** The engine is Pokémon Showdown's, so every ruling is Showdown's; the screen is ours and stands on the same board: panels, floors, segments, light. It is the one place where a lit thing travels, because a move is something that happens between two Pokémon. That travel is its own four verbs and nothing else moves.
+
+**The field.** One panel, the foe's side above and ours below, as the game holds it. A side is one cell in singles and two cells side by side in doubles, joined by the seam. Each cell is a Pokémon on its floor (Where a Pokémon stands), its name on the floor band, and above the picture its HP: the gauge and the number. Status and stat changes are chips (32) under the gauge: 마비, 화상, 공격 +2. Weather, terrain and side conditions are one 32 strip across the top of the field, words lit with the turns left dim (비 3턴), never a picture over the field. On desktop the field takes 709 and the log 439 beside it; on a phone the log stands under the field and the choices dock at the bottom.
+
+**HP.** The gauge is a row of ten 8px tall cells joined by the seam, each a tenth of the HP, `--lit` while it holds any HP (so a standing Pokémon always shows one) and `--off` when empty. Damage switches cells off from the right, 38 apart, as a score's bars switch: nothing slides. Healing switches them on from the left. The number is a segment display at 32 beside it: our Pokémon's HP as it is (141, with / 156 in type), the foe's as a percentage (91 with %), whole numbers only.
+
+**The head.** The amber lamp with 진행 중 while the battle runs (Lamps), the turn as two cells at 32 with 턴, and on a timed battle the choice clock as four cells at 32. At the end the winner's row inverts and the loser's mutes, as in a bracket; there is no burst.
+
+**Choices.** The four moves as panels two by two, 64 tall: the name at 15, under it the move's type tag and PP in 12 (PP 8 / 16). The chosen one inverts; a move that cannot be used is muted. 교체 opens the party as six cells on their floors; a fainted one is muted. In doubles, after a move that needs a target, the field's cells become the choices and the chosen target inverts. 메가진화 is a check. 선택 확정 ✓ is the docked main action; once sent it shows the busy cell and the line 상대의 선택을 기다리는 중…. A battle that runs out of time is lost on time, as the format rules; the board never chooses for a player.
+
+**The log.** Every message of the turn is a row of the stack beside or under the field, lit as it happens (rising 12, 38 apart); a turn opens with a 32 head strip (3턴). The messages are the game's own words (Voice and tone). The log holds the whole battle and is the replay: a finished battle opens on its last turn, with a pager (이전 턴, 3 / 21, 다음 턴) that steps the field and the log turn by turn.
+
+**The four battle verbs.** All transform and opacity on a picture already drawn, on the board's own space and time.
+
+| Verb | What | Length |
+|---|---|---|
+| strike | a physical move: the attacker travels 32 toward its target and back | 100 out (ease-out), 160 back (ease-in) |
+| take | a Pokémon is hit: it travels 12 away from the blow and back while its cell inverts once (tone) | 100 out, 160 back |
+| chase | a special or a status move aimed at another: a line of 8px squares from the attacker's picture to the target's, each switching on and off in turn, 38 apart, each lit for 100; then take | as long as the line |
+| fall | a Pokémon faints: it sinks 12 as it goes dark, the reverse of light; its name band mutes | 260, ease-in |
+
+- **The chase is in the move's type colour.** Its squares are the type tag's square (Colour and light: type colours are content), so the eye already reads them as the move's type. Nothing else on the field takes a type colour.
+- A move on itself (a boost, Protect) travels nothing: its cell inverts once (tone).
+- A spread move chases to every target at once; a multi-hit move takes once per hit, 260 apart.
+- A Pokémon sent in lights as anything arrives (light); one called back leaves (leave). A Mega Evolution is the battle's one long moment: its cell stays inverted for 420 while the picture changes under it by tone.
+- **Order:** the move's message lights in the log, then its verb runs, then the HP cells switch, then the next message. A replay runs the same way; stepping by the pager lands on the turn's end at once.
+- **Reduced motion:** no verb travels. Cells invert, gauges switch and messages light; nothing moves.
+
 ## Head and share surfaces
 
 - **Tab icon:** the Wing Y alone, 64 wide on a transparent ground, no tile. `favicon-*.svg` is navy on a light browser and white on a dark one; `favicon-32.png` and `favicon.ico` are the fallbacks. The YPL letters are not used at tab size: at 16 they are about 5px tall and cannot be read.
@@ -366,7 +396,7 @@ The Wing Y (`public/brand/ypl-wing-y.svg`) and the slanted solid wordmark (`publ
 
 ## Voice and tone
 
-Words are under the law too. Korean, plain and factual: what happens, then what to do. These rules cover the words the site itself writes, never what people write in it.
+Words are under the law too. Korean, plain and factual: what happens, then what to do. These rules cover the words the site itself writes, never what people write in it, and never the game's own battle messages: those are quoted as the game prints them (Showdown's Korean text, taken from Pokémon Champions), 반말 and exclamation marks included, and only the site's words around them follow this chapter.
 
 **Register.** Polite formal 합니다체, one voice everywhere.
 
@@ -411,7 +441,7 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 - Do not draw a reading number in segments, segments under 32, or a decimal point in segments.
 - Do not give a Pokémon a box of its own or let it float: it stands on a floor in a panel.
 - Do not blur, glow, gradient, sheen or grain anything.
-- Do not move what is lit: no sliding pages, no rolling digits, no bouncing cards. What arrives may rise 12 as it lights, and a pointer may nudge a picture or an arrow 4; nothing else travels.
+- Do not move what is lit: no sliding pages, no rolling digits, no bouncing cards. What arrives may rise 12 as it lights, a pointer may nudge a picture or an arrow 4, and on the battle field the four battle verbs move Pokémon and the chase; nothing else travels.
 - Do not animate a shadow, filter, clip, mask or background; move transform and opacity on a picture already drawn.
 - Do not use View Transitions snapshots or copy the page for a transition.
 - Do not put a small label above a title, or repeat one fact twice on a screen.
@@ -420,3 +450,5 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 ## Open
 
 Measured in the browser but not yet on a real phone at the venue: the strength of the unlit bars (8% and 6%), the 44 touch floor on the bracket's 36 rows (the whole match box is the target), and each sprite's feet on its floor.
+
+Written before it is built: the Battle chapter. Its numbers (the 32 strike, the ten-cell gauge, the chase's 38) are taken from the law but not yet seen on a phone, and whether our side stands as front or back sprites is undecided.

@@ -8,7 +8,7 @@ import { DISCORD_URL } from "../components/layout/SiteHeader.jsx";
    그 아래에 설정(테마, 공지 알림)과 관리자 로그인을 둔다. 줄은 52, 오른쪽 끝에 → 또는 바깥으로 나가는 표시. */
 const GROUPS = [
   ["기록", [["titles", "칭호"], ["champions", "명예의 전당"]]],
-  ["함께하기", [["board", "게시판"], ["builder", "팀 빌더"], ["calc", "계산기"]]],
+  ["함께하기", [["board", "게시판"], ["builder", "팀 빌더"], ["battle", "배틀"], ["calc", "계산기"]]],
   ["리그", [["about", "소개"]]],
 ];
 

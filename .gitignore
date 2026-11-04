@@ -10,3 +10,4 @@ dist
 .mcp.json
 supabase/.temp
 .playwright-mcp/
+supabase/functions/battle/engine.bundle.mjs

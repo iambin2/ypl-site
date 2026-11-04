@@ -8,7 +8,7 @@ import * as images from "../src/services/legacyPartyImages.js";
 // covers all names and complete data URLs, not only image count or dimensions.
 
 test("all nine direct views and invalid view fallback preserve routing", () => {
-  assert.deepEqual([...APP_VIEWS].sort(), ["about", "board", "bracket", "builder", "calc", "champions", "home", "more", "news", "records", "titles"]);
+  assert.deepEqual([...APP_VIEWS].sort(), ["about", "battle", "board", "bracket", "builder", "calc", "champions", "home", "more", "news", "records", "titles"]);
   for (const view of APP_VIEWS) assert.equal(readInitialAppView(`?view=${view}&eventId=event-1`), view);
   for (const search of ["", "?view=unknown", "?view=", "?view=HOME"]) assert.equal(readInitialAppView(search), "home");
   for (const route of [builderRouteSearch, bracketRouteSearch]) {
