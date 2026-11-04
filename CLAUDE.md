@@ -27,7 +27,7 @@ There is no linter and no TypeScript. `.jsx`/`.mjs` only.
 
 GitHub Pages via `.github/workflows/deploy.yml` on every push to `main`.
 
-- `vite.config.js` hardcodes `base: "/ypl-site/"` — it must match the repository name. Renaming the repo means changing this.
+- The site is served at the root of the custom domain `league.pokeyonsei.com` (Cloudflare CNAME `league` → `iambin2.github.io`, DNS only; GitHub Pages custom domain set in repo settings), so `vite.config.js` has `base: "/"`. Dropping the domain means going back to `"/ypl-site/"`.
 - A build-only Vite plugin (`productionVersionPlugin`) emits `version.json` and injects a head script that polls it and force-reloads the page when the deployed build id changes. Anything touching `index.html` head order or `base` interacts with this.
 - The same plugin copies `index.html` to `404.html`, so an unknown path boots the app and `src/main.jsx` shows `StatusPage`.
 - The `notify-announcement` Edge Function does not deploy with the site; deploy it separately (`npx supabase functions deploy notify-announcement --use-api --project-ref rqffrogcverfjqzjasax`) with the `VAPID_KEYS` secret set in Supabase. Its public half is `VAPID_PUBLIC_KEY` in `src/services/announcementPush.js`; replacing the pair orphans every subscription.

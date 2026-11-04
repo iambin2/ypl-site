@@ -3,7 +3,7 @@
 포켓몬 센터 연세점 공식 배틀 리그 기록 사이트입니다.
 React 18 + Vite로 만든 정적 SPA이며, GitHub Pages에 자동 배포됩니다.
 
-- 배포 주소: https://iambin2.github.io/ypl-site/
+- 배포 주소: https://league.pokeyonsei.com/
 - 데이터: Supabase (정규화 스키마 + 레거시 key-value 테이블)
 
 ---
@@ -62,7 +62,7 @@ node tests/championsCore.test.mjs
 
 두 가지만 주의하세요.
 
-- `vite.config.js` 의 `base: "/ypl-site/"` 는 **저장소 이름과 반드시 같아야** 합니다. 저장소 이름을 바꾸면 이 값도 함께 바꿔야 링크와 정적 자산 경로가 살아 있습니다.
+- 사이트는 커스텀 도메인 `league.pokeyonsei.com` 의 루트에서 서비스되므로 `vite.config.js` 의 `base` 는 `"/"` 입니다. 도메인을 떼면 `"/ypl-site/"` 로 되돌려야 링크와 정적 자산 경로가 살아 있습니다.
 - 빌드 시 `version.json` 이 함께 생성되고, `index.html` 에 주입된 스크립트가 이 파일을 확인해 **새 배포가 감지되면 페이지를 자동으로 새로고침**합니다. 방문자가 캐시된 옛 화면에 머무르지 않게 하는 장치이므로, `index.html` 의 head나 `base` 를 건드릴 때 같이 확인하세요.
 
 ---

@@ -29,7 +29,7 @@ Deno.serve(async req => {
   if (error) return reply(500, { error: error.message });
 
   const server = await ApplicationServer.new({
-    contactInformation: "https://iambin2.github.io/ypl-site/",
+    contactInformation: "https://league.pokeyonsei.com/",
     vapidKeys: await importVapidKeys(JSON.parse(Deno.env.get("VAPID_KEYS")!)),
   });
   const message = JSON.stringify({

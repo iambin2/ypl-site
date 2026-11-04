@@ -5,7 +5,7 @@ import config from "../vite.config.js";
 
 test("production version check preserves base, query, one-shot fetch and reload guard", async () => {
   const build = config({ command: "build" });
-  assert.equal(build.base, "/ypl-site/");
+  assert.equal(build.base, "/");
   const plugin = build.plugins.find(p => p.name === "ypl-production-version");
   plugin.configResolved({ base: build.base });
   let asset;
@@ -19,7 +19,7 @@ test("production version check preserves base, query, one-shot fetch and reload 
     const requests = [], replaced = [], timers = [];
     const location = {
       origin: "https://example.test",
-      href: `https://example.test/ypl-site/?view=bracket&eventId=event-1&keep=yes${scenario === "guard" ? "&__ypl_v=next" : ""}`,
+      href: `https://example.test/?view=bracket&eventId=event-1&keep=yes${scenario === "guard" ? "&__ypl_v=next" : ""}`,
       replace(value) { replaced.push(value); },
     };
     vm.runInNewContext(script, {
@@ -34,7 +34,7 @@ test("production version check preserves base, query, one-shot fetch and reload 
     });
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(requests.length, 1);
-    assert.equal(new URL(requests[0].url).pathname, "/ypl-site/version.json");
+    assert.equal(new URL(requests[0].url).pathname, "/version.json");
     assert.equal(requests[0].options.cache, "no-store");
     assert.equal(timers[0].delay, 3000);
     timers[0].callback();

@@ -61,9 +61,9 @@ export default defineConfig(({ command }) => {
   const isProductionBuild = command === "build";
 
   return {
-    // GitHub Pages 프로젝트 저장소 경로 — 저장소 이름과 반드시 동일해야 합니다.
-    // 저장소 이름을 바꾸면 이 값도 "/새이름/" 으로 바꾸세요.
-    base: "/ypl-site/",
+    // 커스텀 도메인 league.pokeyonsei.com 의 루트에서 서비스합니다.
+    // 도메인을 떼고 iambin2.github.io/ypl-site/ 로 돌아가면 "/ypl-site/" 로 되돌리세요.
+    base: "/",
     plugins: [react(), isProductionBuild && productionVersionPlugin()].filter(Boolean),
   };
 });
