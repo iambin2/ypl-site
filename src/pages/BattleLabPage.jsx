@@ -87,6 +87,8 @@ function Lab({ res, say, go }) {
       L.logs[key].push(...lines.slice(L.read[key]));
       L.read[key] = lines.length;
     }
+    // the clock as the server sets it (docs/db/battle_timer.sql): 90 seconds from each move of the engine
+    if (!L.out || L.out.spectatorLog !== out.spectatorLog) L.deadline = out.ended ? null : new Date(Date.now() + 90000).toISOString();
     L.out = out;
     setVersion(v => v + 1);
   };
@@ -111,6 +113,7 @@ function Lab({ res, say, go }) {
       return null;
     },
     forfeit: async () => { forfeit(L.battle, seatSide); L.forfeited = true; step(); return null; },
+    timeout: async () => { forfeit(L.battle, seatSide === "p1" ? "p2" : "p1"); L.forfeited = "timeout"; step(); return null; },
   };
   const inject = lines => {
     const list = lines.filter(Boolean);
@@ -129,7 +132,7 @@ function Lab({ res, say, go }) {
   const out = L?.out;
   const row = out && {
     id: `lab-${L.n}`, regulation: L.reg, format_id: L.formatid, status: out.ended ? "ended" : "active",
-    p1_name: NAMES.p1, p2_name: NAMES.p2, turn: out.turn, winner: out.winner, ended_by: L.forfeited ? "forfeit" : null,
+    p1_name: NAMES.p1, p2_name: NAMES.p2, turn: out.turn, winner: out.winner, ended_by: L.forfeited === "timeout" ? "timeout" : L.forfeited ? "forfeit" : null, deadline_at: L.deadline,
     spectator_log: L.logs.spectator.join("\n"), kind: kind === "친선" ? "friendly" : "official", event_id: null,
     applied_at: kind === "공식 (반영)" ? "now" : null, apply_error: kind === "공식 (오류)" ? "실험실의 예시 오류" : null,
   };

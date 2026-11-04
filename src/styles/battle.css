@@ -15,6 +15,20 @@
 .bt-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row2); padding: 0 var(--pad); }
 .bt-head-say { display: grid; gap: var(--s1); min-width: 0; }
 .bt-head-say > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+/* the clock (the seconds left for the decision the battle waits on) and the turn, both lit at 32 with their units */
+.bt-head-boards { display: flex; flex: none; align-items: center; gap: var(--s5); }
+
+/* the replay under the stage: a bar on its track to drag to any turn (the range input lies over it unseen, as the builder's points),
+   then five keys in a row of small actions; playing inverts its key */
+.bt-replay { display: grid; gap: var(--s3); }
+.bt-replay-bar > input[type="range"] { height: var(--h-control); }
+.bt-replay-keys { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bt-replay-keys > button { height: var(--h-control); padding: 0 var(--s1); font-weight: 700; white-space: nowrap; }
+.bt-replay-keys > button:disabled { opacity: 1; color: var(--mute); }
+@media (hover: hover) { .bt-replay-keys > .pn:hover:not(:disabled) { background: var(--panel-2); } }
+
+/* finding a battle again: the ones being played now and this device's, as rows */
+.bt-list { display: grid; gap: var(--s3); }
 
 /* the field above the log on a phone; beside it on desktop, 709 and 439 */
 .bt-room { display: grid; gap: var(--s5); }

@@ -87,10 +87,14 @@ const decoded = src => { const img = new Image(); img.src = src; return Promise.
 /* ---------- the tape: the log played one line at a time on the stage ---------- */
 // how long a line stays the newest before the next one comes, counted from when it lit (its effect plays inside this time)
 const MSG_MS = 680;
-export function useStageTape(log, res, perspective) {
+// epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
+export function useStageTape(log, res, perspective, epoch = 0) {
   const reader = useRef(null);
   const done = useRef(0);
   const running = useRef(false);
+  const seenEpoch = useRef(epoch);
+  const latest = useRef({ log, epoch });
+  latest.current = { log, epoch };
   const stageRef = useRef(null);
   const [scene, setScene] = useState(null);
   const [lines, setLines] = useState([]);
@@ -103,7 +107,7 @@ export function useStageTape(log, res, perspective) {
   useEffect(() => {
     if (running.current || log == null) return;
     const all = String(log).split("\n");
-    if (all.length < done.current) { reset(); setLines([]); }
+    if (epoch !== seenEpoch.current || all.length < done.current) { seenEpoch.current = epoch; reset(); setLines([]); }
     const fresh = all.slice(done.current);
     if (!fresh.length) return;
     running.current = true;
@@ -121,6 +125,7 @@ export function useStageTape(log, res, perspective) {
       const word = key => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return mon ? `${own(key) ? "" : "상대 "}${R.speciesName(mon.species)}` : ""; };
       let blow = { crit: false, strong: false };
       for (let i = 0; i < fresh.length; i++) {
+        if (latest.current.epoch !== epoch) break; // a jump came while this played: the next run starts again
         const line = fresh[i];
         done.current += 1;
         const before = {};
@@ -197,12 +202,14 @@ export function useStageTape(log, res, perspective) {
       if (lastSaid.length) flushSync(() => setSaid(lastSaid));
       flushSync(() => setScene(sceneOf(R.state)));
       running.current = false;
-      if (String(log).split("\n").length > done.current) setKick(n => n + 1);
+      // the log moved on (or jumped) while this played: read it again
+      if (latest.current.log !== log || latest.current.epoch !== epoch) setKick(n => n + 1);
       else setPlaying(false);
     })();
-  }, [log, kick]);
+  }, [log, kick, epoch]);
 
-  return { scene, lines, said, playing, stageRef, state: reader.current.state, speciesName: reader.current.speciesName };
+  // read: how many lines of the log the stage has taken in, so a replay knows when a turn has finished playing
+  return { scene, lines, said, playing, stageRef, read: done.current, state: reader.current.state, speciesName: reader.current.speciesName };
 }
 
 /* ---------- the stage ---------- */

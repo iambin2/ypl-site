@@ -10,13 +10,15 @@ import { pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
 import { spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
-import { createBattleReader, josa, parseHP, toID } from "../services/battleLog.js";
-import { STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
+import { josa, parseHP, toID } from "../services/battleLog.js";
+import { STATUS, Stage, effLabel, effectiveness, nameOf, other, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { BOARD_DRAFT_KEY, battleHref, cancelBattle, chooseInBattle, createBattle, forfeitBattle, isDoubles, joinBattle, listEventBattles, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
-import Pager from "../components/common/Pager.jsx";
+import { logUpTo, nextStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
+import { claimTimeout, readDeadline, rememberBattle } from "../services/battleWatch.js";
+import { BattleLists, ReplayBar, downloadReplay } from "./battle/Replay.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
    공식 경기는 대진표의 경기에서 열고, 그 경기의 두 선수가 제출 비밀번호로 앉아 공식 파티로 치른다. 끝나면 서버가 승자를 대진표에 넣는다.
@@ -50,7 +52,8 @@ export default function BattlePage({ flash: say, go }) {
   }, []);
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
-  if (id) return <BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} />;
+  // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
+  if (id) return <BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} />;
   if (official) return <OfficialSeat {...official} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
 }
@@ -102,6 +105,7 @@ function BattleOpen({ res, onOpen, preset }) {
         <Choice name="bt-format" options={FORMATS.map(([, label]) => label)} value={FORMATS.find(([key]) => key === format)[1]} onChange={label => setFormat(FORMATS.find(([, l]) => l === label)[0])} />
       </Question>
       <div className="q"><span className="q-label t12 dim">팀</span>{teams.length ? <TeamRows teams={teams} value={teamId} onChange={setTeamId} res={res} /> : <NoTeams />}</div>
+      <BattleLists onOpen={onOpen} />
       <p className="t12 mute bt-credit">배틀 엔진: Pokémon Showdown (MIT)</p>
       <Dock toast={error ? <Toast error>{error}</Toast> : null}>
         <Button variant="main" onClick={submit} loading={busy} disabled={!team || !name.trim()}>배틀 열기</Button>
@@ -111,13 +115,17 @@ function BattleOpen({ res, onOpen, preset }) {
 }
 
 /* ---------- a battle: its public row is read every 1.5 seconds, and only a change of version reads the rest ---------- */
-function BattleRoom({ id, res, say, go, onLeave }) {
+function BattleRoom({ id, res, say, go, onLeave, start }) {
   const [row, setRow] = useState(undefined);
   const [view, setView] = useState(null);
   const [seat, setSeat] = useState(() => readSeat(id));
   const version = useRef(null);
+  // this device finds the battle again on the battle page (이 기기의 배틀), played or watched
+  useEffect(() => { rememberBattle(id); }, [id]);
   const refresh = useCallback(async () => {
     const next = await readBattleRow(id);
+    // the clock of the decision it waits on (docs/db/battle_timer.sql); none before that SQL runs
+    if (next?.status === "active") next.deadline_at = await readDeadline(id);
     setRow(next);
     if (next && readSeat(id) && next.status !== "waiting") setView(await viewBattle(id));
   }, [id]);
@@ -150,7 +158,7 @@ function BattleRoom({ id, res, say, go, onLeave }) {
     if (row.kind === "official") return <OfficialSeat eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
     return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); setView(next); refresh(); }} />;
   }
-  return <Arena row={row} view={view} seat={seat} res={res} onView={setView} onShare={share} go={go} />;
+  return <Arena row={row} view={view} seat={seat} res={res} onView={setView} onShare={share} go={go} say={say} start={start} />;
 }
 
 export function Waiting({ row, onShare, onCancel }) {
@@ -287,35 +295,56 @@ const Log = React.memo(function Log({ lines }) {
   );
 });
 
-/* A finished battle is its replay: the stage as it stood at the end of each turn and that turn's messages, stepped by a pager. */
-function replayTurns(log, res, perspective) {
-  const reader = createBattleReader({ text: res.text, moves: res.detail.moves, perspective });
-  const turns = [{ turn: 0, lines: [], said: [], scene: null }];
-  for (const line of String(log || "").split("\n")) {
-    const { lines, event } = reader.read(line);
-    if (event?.verb === "turn") { turns[turns.length - 1].scene = sceneOf(reader.state); turns.push({ turn: event.turn, lines: [{ turn: event.turn }], said: [] }); }
-    turns[turns.length - 1].lines.push(...lines.map(text => ({ text })));
-    if (lines.length) turns[turns.length - 1].said = lines;
-  }
-  turns[turns.length - 1].scene = sceneOf(reader.state);
-  return turns;
-}
-
 /* api: where choices go. The server by default; the battle lab (BattleLabPage.jsx, dev only) passes its own engine. */
-const SERVER = { choose: chooseInBattle, forfeit: forfeitBattle };
-export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER }) {
-  const perspective = seat?.side || "p1";
+const SERVER = { choose: chooseInBattle, forfeit: forfeitBattle, timeout: claimTimeout };
+// a clock that moves once a second while it is on
+function useNow(on) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { if (!on) return undefined; const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, [on]);
+  return now;
+}
+const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
+export function Arena({ row, view, seat, res, onView, onShare, go, say, start, api = SERVER }) {
+  const ended = row.status === "ended";
+  // a player sees from their own seat; anyone else may watch from either side (시점), as a link may ask (?side=p2)
+  const [pov, setPov] = useState(() => (start?.side === "p2" ? "p2" : "p1"));
+  const perspective = seat?.side || pov;
   const log = seat ? view?.log : row.spectator_log;
   const doubles = isDoubles(row.format_id);
   const [speed, setSpeedChoice] = useState(readSpeed);
   useEffect(() => { setStageSpeed(speed); try { localStorage.setItem(SPEED_KEY, String(speed)); } catch { /* the next visit plays at 보통 */ } }, [speed]);
-  const tape = useStageTape(log, res, perspective);
-  const replayRef = useRef(null);
-  const turns = useMemo(() => row.status === "ended" && log ? replayTurns(log, res, perspective) : null, [row.status, log, perspective]);
-  const [page, setPage] = useState(null);
-  const replaying = turns && page != null && page < turns.length - 1;
-  const scene = replaying ? turns[page].scene : tape.scene;
-  const shownTurn = replaying ? turns[page].turn : tape.scene?.turn ?? row.turn ?? 0;
+  /* The replay (DESIGN.md "Battle", Replay): cue is how many lines of the finished log the stage shows, null all of them.
+     A jump starts the stage again and catches up at once (epoch); a step on, or play, adds the next turn, which the stage plays. */
+  const replay = useMemo(() => (ended && log ? replayStops(log) : null), [ended, log]);
+  const [cue, setCue] = useState(null);
+  const [epoch, setEpoch] = useState(0);
+  const [autoplay, setAutoplay] = useState(false);
+  const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch);
+  const at = cue ?? replay?.total ?? 0;
+  const jump = to => { setAutoplay(false); setCue(replay && to < replay.total ? to : null); setEpoch(e => e + 1); };
+  const stepOn = () => { const to = replay && nextStop(replay.stops, at); if (to != null) setCue(to < replay.total ? to : null); };
+  const play = () => {
+    if (autoplay) { setAutoplay(false); return; }
+    if (at >= replay.total) { setCue(replay.stops[0].at); setEpoch(e => e + 1); }
+    setAutoplay(true);
+  };
+  // playing: the next turn goes on once the stage has played this one and it has stood a beat
+  useEffect(() => {
+    if (!autoplay || !replay || tape.playing || tape.read < Math.min(at, replay.total)) return undefined;
+    if (at >= replay.total) { setAutoplay(false); return undefined; }
+    const t = setTimeout(stepOn, TURN_BEAT);
+    return () => clearTimeout(t);
+  });
+  // a link's turn (?turn=5) opens the replay there, once, when the log is read
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || log == null) return;
+    opened.current = true;
+    if (replay && start?.turn != null) jump(turnStop(replay.stops, start.turn));
+  }, [log]);
+  const turnTo = side => { setPov(side); setEpoch(e => e + 1); };
+  const scene = tape.scene;
+  const shownTurn = tape.scene?.turn ?? row.turn ?? 0;
   const official = row.kind === "official";
   const bracketLine = !official || row.status !== "ended" ? null
     : row.applied_at ? "대진표에 반영했습니다."
@@ -331,9 +360,9 @@ export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER 
   const [ask, setAsk] = useState("");
   const [chosenSay, setChosenSay] = useState("");
   const [error, setError] = useState("");
-  const ended = row.status === "ended";
-  // the result waits for the stage: a battle that ended while its last turn still plays does not tell its end before the stage does
-  const shownEnded = ended && (tape.scene?.ended ?? true);
+  // the result waits for the stage: a battle that ended while its last turn still plays does not tell its end before the stage does;
+  // a replay already knows it, so stepping through one never moves the page
+  const shownEnded = ended && (cue != null || (tape.scene?.ended ?? true));
   const names = { p1: row.p1_name, p2: row.p2_name };
   // a choice goes the moment it is made, as Champions sends it; false when it did not go, so the choices stay open
   // once a choice goes, the stage comes into view (on a phone the moves sit under it), so the turn is watched, not scrolled to
@@ -357,6 +386,25 @@ export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER 
   const request = !ended && seat ? view?.request : null;
   const waiting = !ended && seat && (!request || request.wait || view?.chosen);
   const choosing = Boolean(request && !waiting && !tape.playing);
+  /* the clock (DESIGN.md "Battle", The clock; docs/db/battle_timer.sql): the seconds left for the decision the battle waits on.
+     When they run out, the waiting player's screen asks the server, which checks by its own clock and ends the battle on time.
+     The board never chooses for anyone. With no deadline (that SQL not run yet) there is no clock. */
+  const deadline = !ended ? row.deadline_at : null;
+  const now = useNow(Boolean(deadline));
+  const left = secondsLeft(deadline, now);
+  const claimed = useRef(0);
+  useEffect(() => {
+    if (left !== 0 || !waiting || !api.timeout || Date.now() - claimed.current < 5000) return;
+    claimed.current = Date.now();
+    api.timeout(row.id).then(next => next && onView(next), () => { /* not yet by the server's clock: asked again in a moment */ });
+  }, [left, waiting, now]);
+  // a link to where the replay stands, and from the side being watched
+  const shareHere = async () => {
+    const extra = { ...(cue != null ? { turn: String(shownTurn) } : {}), ...(!seat && pov !== "p1" ? { side: pov } : {}) };
+    if (!Object.keys(extra).length) return onShare?.();
+    const how = await shareLink({ view: "battle", id: row.id, ...extra }, "YPL 배틀");
+    if (how === "copied") say?.("링크를 복사했습니다.");
+  };
   // the message box: the game's question while we choose, what we chose while the other player chooses
   const boxAsk = choosing ? ask : waiting && !tape.playing && chosenSay ? chosenSay : "";
   // the choices keep their place while the turn plays: the room they took stays, so nothing under them moves up and the page never jumps
@@ -385,35 +433,40 @@ export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER 
           <b className="t15">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {official && <span className="t12 dim">공식 경기</span>}
         </span>
-        <span className="counter-board"><Seg value={String(shownTurn)} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t15">턴</span></span>
+        <span className="bt-head-boards">
+          {left != null && <span className="counter-board"><Seg value={String(left)} h={32} cells={Math.max(2, String(left).length)} label={`남은 시간 ${left}초`} /><span className="t15">초</span></span>}
+          <span className="counter-board"><Seg value={String(shownTurn)} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t15">턴</span></span>
+        </span>
       </div>
       {shownEnded && <Row className="inv" title={row.winner === "tie" ? "무승부" : `${names[row.winner]} 승리`}
-        line={[row.ended_by === "forfeit" ? "기권으로 끝났습니다." : "배틀이 끝났습니다.", bracketLine].filter(Boolean).join(" ")} />}
+        line={[row.ended_by === "forfeit" ? "기권으로 끝났습니다." : row.ended_by === "timeout" ? "시간이 다 되어 끝났습니다." : "배틀이 끝났습니다.", bracketLine].filter(Boolean).join(" ")} />}
       <div className="bt-room">
         <div className="bt-main">
-          {started || replaying
-            ? <Stage scene={scene} stageRef={replaying ? replayRef : tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names}
-                targeting={replaying ? null : target?.targeting} said={replaying ? turns[page].said : tape.said} ask={replaying ? "" : boxAsk} known={known.current} />
-            : <TeamPreview tape={tape} res={res} foe={foe} names={names} />}
+          {started
+            ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names}
+                targeting={target?.targeting} said={tape.said} ask={boxAsk} known={known.current} />
+            : <TeamPreview tape={tape} res={res} sides={seat ? [foe] : [foe, perspective]} names={names} />}
           {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
-          <div ref={consoleRef}>
+          {/* only a player still playing has choices; anyone else gets no empty box, so the replay stands under the stage */}
+          {seat && !ended && <div ref={consoleRef}>
             {choosing && <Choices key={JSON.stringify(request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt}
               onSend={send} setTarget={setTarget} setAsk={setAsk} toast={error ? <Toast error>{error}</Toast> : null} />}
-          </div>
+          </div>}
+          {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play} />}
           <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
+          {!seat && <Chips label="시점" value={pov} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
         </div>
         <details className="bt-logbox" open={desktop || undefined}>
           <summary className="t12 dim">전체 기록</summary>
-          <Log lines={replaying ? turns[page].lines : tape.lines} />
+          <Log lines={tape.lines} />
         </details>
       </div>
-      {/* in its own box, so a turned page lights the room just before it (Pager lights its parent's previous sibling) */}
-      {shownEnded && turns && turns.length > 1 && <div><Pager unit="턴" page={(page ?? turns.length - 1) + 1} pages={turns.length} onGo={next => setPage(Math.max(0, Math.min(turns.length - 1, next - 1)))} /></div>}
       <div className="bt-links">
-        {!seat && <Button variant="link" onClick={onShare}>링크 공유</Button>}
+        {(!seat || ended) && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
         {seat && !ended && <Button variant="link" onClick={giveUp}>기권</Button>}
         {official && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
         {ended && <Button variant="link" onClick={shareToBoard}>게시판에 공유</Button>}
+        {ended && log && <Button variant="link" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
         <span className="t12 mute">배틀 엔진: Pokémon Showdown (MIT)</span>
       </div>
       {(waiting || (error && !request)) && <Dock toast={error ? <Toast error>{error}</Toast> : null}>
@@ -423,13 +476,12 @@ export function Arena({ row, view, seat, res, onView, onShare, go, api = SERVER 
   );
 }
 
-/* before the battle: the foe's six with their types, as the team preview shows them */
-function TeamPreview({ tape, res, foe, names }) {
-  const preview = tape.state.sides[foe].preview;
-  return <div className="bt-choices">
-    <span className="t12 dim">{`${names[foe]}의 파티`}</span>
-    <Party preview pokemon={preview.map(species => ({ ident: species, details: species, condition: "100/100" }))} res={res} />
-  </div>;
+/* before the battle: the foe's six with their types, as the team preview shows them; one who watches sees both sides */
+function TeamPreview({ tape, res, sides, names }) {
+  return sides.map(side => <div key={side} className="bt-choices">
+    <span className="t12 dim">{`${names[side]}의 파티`}</span>
+    <Party preview pokemon={tape.state.sides[side].preview.map(species => ({ ident: species, details: species, condition: "100/100" }))} res={res} />
+  </div>);
 }
 
 /* ---------- choices: built from the request alone, as the engine asks ---------- */
