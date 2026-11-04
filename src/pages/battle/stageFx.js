@@ -81,28 +81,32 @@ export function banner(stage, text, { tone = "" } = {}) {
 }
 // a word over a Pokémon: 급소, 효과가 굉장하다, 빗나감
 // tone: "hard" lit (급소, 효과가 굉장하다), "soft" dim (효과가 별로, 빗나감)
+// the words of one blow land together, so a second word over the same Pokémon stands one plate above the first
+const words = {};
 export function label(stage, key, text, tone = "") {
   if (!stage || instant()) return Promise.resolve();
-  const [x, y] = centre(stage, key, .55);
-  const el = spawn(stage, `bt-word ${tone}`, [x, y]);
+  const [x, y] = centre(stage, key, .25);
+  const n = words[key] = (words[key] || 0) + 1;
+  const el = spawn(stage, `bt-word ${tone}`, [x, Math.max(12, y - 32 - (n - 1) * 26)]);
   el.textContent = text;
   return vanish(el, [
     { opacity: 0, transform: "translate(-50%, -50%) translateY(12px)" },
     { opacity: 1, transform: "translate(-50%, -50%)", offset: .2, easing: OUT },
     { opacity: 1, transform: "translate(-50%, -50%)", offset: .75 },
     { opacity: 0, transform: "translate(-50%, -50%) translateY(-12px)" },
-  ], { duration: 900 });
+  ], { duration: 900 }).then(() => { words[key] -= 1; });
 }
 
 /* ---------- a move ---------- */
-// a ring that opens and goes out where a blow lands, and the type's shards thrown out of it
-export function burst(stage, key, type, power = 1) {
+// a ring that opens and goes out where a blow lands, and the type's shards thrown out of it; how hard is `power` (a critical or
+// super effective blow is larger, a resisted one smaller)
+export function burst(stage, key, type, power = 1, { shards = true } = {}) {
   if (!stage || instant()) return Promise.resolve();
   const [x, y] = centre(stage, key);
   const size = sizeOf(stage, key);
   const ring = spawn(stage, `bs-ring ${typeClass(type)}`, [x, y], { width: `${size * .5}px`, height: `${size * .5}px` });
   const runs = [vanish(ring, [{ opacity: 1, transform: "translate(-50%, -50%) scale(.2)" }, { opacity: 0, transform: `translate(-50%, -50%) scale(${2.2 * power})` }], { duration: 420, easing: OUT })];
-  const count = Math.round(8 * power);
+  const count = shards ? Math.round(8 * power) : 0;
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2 + Math.random() * .5;
     const d = size * (.45 + Math.random() * .35) * power;
@@ -115,120 +119,379 @@ export function burst(stage, key, type, power = 1) {
   return Promise.all(runs);
 }
 
-// shards in the type's colour travel from one Pokémon to another along an arc, a glowing head first and a trail behind
-function projectile(stage, from, to, type, { count = 7, arc = .18, duration = 420 } = {}) {
-  const [ax, ay] = centre(stage, from);
-  const [bx, by] = centre(stage, to);
-  // a quadratic curve whose middle rises by `arc` of the distance, sampled densely so the path never shows a corner
-  const lift = -Math.hypot(bx - ax, by - ay) * arc * 2;
-  const cx = (ax + bx) / 2, cy = (ay + by) / 2 + lift;
-  const point = t => [(1 - t) ** 2 * ax + 2 * (1 - t) * t * cx + t * t * bx, (1 - t) ** 2 * ay + 2 * (1 - t) * t * cy + t * t * by];
-  const STEPS = 16;
+/* How each type's move travels: one small table, not a case per move. Every flight is the head and a trail of the type's shards
+   along one path, sampled densely so it never shows a corner.
+   arc: the path's middle rises by this share of the distance; wave and waves: a weave across the path (its depth as a share of the
+   distance, and how many times); zig: a bolt's jagged line, every shard on the same one; spin: turns over the flight (orient:
+   each shard points the way it goes instead); grow: the shards swell as they go (an orb, a pulse); twinkle: they glint; gap: ms
+   between shards; beam: one line drawn from the user to the target at once. */
+const FLIGHT = {
+  Normal: { count: 6, ms: 360 },
+  Fire: { arc: .16, count: 9, ms: 420, wave: .03, waves: 3 },
+  Water: { arc: .05, count: 11, ms: 380, gap: 22, wave: .04, waves: 2 },
+  Electric: { zig: .16, count: 10, ms: 240, gap: 14, spin: 0 },
+  Grass: { wave: .12, waves: 1.5, count: 7, ms: 520, spin: 540 },
+  Ice: { beam: true },
+  Fighting: { count: 3, ms: 360, grow: 1.7, gap: 50 },
+  Poison: { arc: .34, count: 6, ms: 520 },
+  Ground: { arc: .3, count: 6, ms: 480 },
+  Flying: { count: 5, ms: 260, orient: true, gap: 40 },
+  Psychic: { wave: .07, waves: 1.5, count: 5, ms: 520, grow: 1.8, gap: 60, spin: 0 },
+  Bug: { wave: .1, waves: 3, count: 8, ms: 440 },
+  Rock: { arc: .26, count: 6, ms: 460 },
+  Ghost: { wave: .14, waves: 1, count: 5, ms: 620, gap: 60, spin: 0 },
+  Dragon: { wave: .1, waves: 1, count: 9, ms: 480 },
+  Dark: { wave: .06, waves: 2, count: 6, ms: 440 },
+  Steel: { beam: true },
+  Fairy: { arc: .2, count: 8, ms: 520, twinkle: true },
+};
+/* the few moves the current regulation sees most that a type alone would not draw: they keep their type's colour and shape and
+   change only how they travel. rings: a sound, rings that swell as they go; fall: dropped from above the target; beam: a line */
+const SIGNATURE = {
+  hypervoice: { rings: true }, boomburst: { rings: true }, snarl: { rings: true }, bugbuzz: { rings: true }, overdrive: { rings: true },
+  disarmingvoice: { rings: true }, alluringvoice: { rings: true }, psychicnoise: { rings: true }, sparklingaria: { rings: true }, torchsong: { rings: true },
+  dracometeor: { fall: true }, thunder: { fall: true }, makeitrain: { fall: true }, rockslide: { fall: true }, blizzard: { fall: true }, meteorbeam: { beam: true },
+  hyperbeam: { beam: true }, solarbeam: { beam: true }, flashcannon: { beam: true }, chargebeam: { beam: true }, psybeam: { beam: true }, aurorabeam: { beam: true },
+  dazzlinggleam: { beam: true }, moonblast: { grow: 2, count: 3, gap: 60, arc: .1 }, aurasphere: { grow: 2.2, count: 3, arc: 0 }, shadowball: { grow: 1.8, count: 3, gap: 70 },
+  hurricane: { wave: .16, waves: 2.5, count: 10, ms: 520 }, airslash: { orient: true, count: 4, gap: 60 }, energyball: { grow: 1.8, count: 3, gap: 60 },
+  sludgebomb: { arc: .36, grow: 1.5, count: 4 }, icywind: { wave: .08, waves: 2, count: 10 }, electroweb: { zig: .1, count: 12 },
+};
+// powders fall on the target; every other status move at another drifts over as a few soft motes and leaves a ring, no shards
+const POWDERS = new Set(["spore", "sleeppowder", "stunspore", "poisonpowder", "magicpowder", "cottonspore"]);
+const QUAKES = new Set(["earthquake", "bulldoze", "magnitude", "earthpower", "highhorsepower", "stompingtantrum", "precipiceblades", "headlongrush"]);
+
+const lerp = (a, b, t) => a + (b - a) * t;
+// a cheap fixed noise for a bolt's jags: the same line for every shard of one bolt
+const jag = j => { const v = Math.sin(j * 12.9898) * 43758.5453; return v - Math.floor(v); };
+
+// the shards fly from one point to another; the promise is the impact (the head arriving), the trail still flying after it
+function fly(stage, [ax, ay], [bx, by], type, style) {
+  const { arc = 0, wave = 0, waves = 1, zig = 0, count = 7, ms: duration = 420, gap = 34, spin = 360, orient = false, grow = 0, twinkle = false, rings = false, past = false } = style;
+  const dx = bx - ax, dy = by - ay, dist = Math.hypot(dx, dy) || 1;
+  const nx = -dy / dist, ny = dx / dist; // across the path
+  const lift = -dist * arc * 2;
+  const end = past ? 1.35 : 1; // a miss flies on past the target
+  const pace = Math.min(1.2, Math.max(.55, dist / 160)); // a short way is a short flight, never a hover
+  const STEPS = 18;
+  const point = (t, i) => {
+    const cx = (ax + bx) / 2, cy = (ay + by) / 2 + lift;
+    let x = (1 - t) ** 2 * ax + 2 * (1 - t) * t * cx + t * t * bx;
+    let y = (1 - t) ** 2 * ay + 2 * (1 - t) * t * cy + t * t * by;
+    const env = Math.sin(Math.PI * Math.min(1, t));
+    const off = (wave ? Math.sin(t * Math.PI * 2 * waves + i * .9) * wave * dist : 0) * env + (zig ? (jag(Math.round(t * STEPS)) - .5) * 2 * zig * dist * env : 0);
+    return [x + nx * off, y + ny * off];
+  };
   const runs = [];
   for (let i = 0; i < count; i++) {
     const head = i === 0;
-    const p = spawn(stage, `bs-p ${typeClass(type)}${head ? " head" : ""}`, [0, 0]);
-    const s = head ? 2.2 : 1.4 - i * .12;
+    const p = spawn(stage, rings ? `bs-ring ${typeClass(type)}` : `bs-p ${typeClass(type)}${head ? " head" : ""}`, [0, 0], rings ? { width: "28px", height: "28px" } : {});
+    const s = rings ? 1 : head ? 1.7 : 1.4 - i * .1;
     const frames = Array.from({ length: STEPS + 1 }, (_, j) => {
-      const t = j / STEPS;
-      const [x, y] = point(t);
-      return { offset: t, opacity: j === 0 ? 0 : j === STEPS && !head ? .2 : 1, transform: `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${360 * t}deg) scale(${s})` };
+      const t = (j / STEPS) * end;
+      const [x, y] = point(t, i);
+      const [x2, y2] = point(Math.min(t + .02, end), i);
+      const turn = orient ? `${Math.atan2(y2 - y, x2 - x)}rad` : `${spin * t}deg`;
+      const scale = rings ? lerp(.35, 1.6, t) : s * (grow ? lerp(.7, grow, t) : 1) * (twinkle ? (j % 3 === 1 ? 1.5 : .8) : 1);
+      const fade = past && t > 1 ? Math.max(0, 1 - (t - 1) / (end - 1)) : rings ? lerp(1, .5, t) : j === STEPS && !head ? .2 : 1;
+      return { offset: j / STEPS, opacity: j === 0 ? 0 : fade, transform: `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${turn}) scale(${scale})` };
     });
-    runs.push(vanish(p, frames, { duration, delay: i * 34, easing: "cubic-bezier(.45,0,.55,1)" }));
+    runs.push(vanish(p, frames, { duration: duration * pace * end, delay: i * gap, easing: "linear" }));
+  }
+  return runs[0];
+}
+
+// one line drawn from the user to the target at once, held a beat, then thinning out; the promise is the impact (the line reaching)
+function beam(stage, [ax, ay], [bx, by], type, { past = false } = {}) {
+  const dist = Math.hypot(bx - ax, by - ay) * (past ? 1.6 : 1);
+  const el = spawn(stage, `bs-beam ${typeClass(type)}`, [ax, ay], { width: `${dist}px` });
+  const turn = `rotate(${Math.atan2(by - ay, bx - ax)}rad)`;
+  vanish(el, [
+    { opacity: 1, transform: `translateY(-50%) ${turn} scaleX(0)`, easing: OUT },
+    { opacity: 1, transform: `translateY(-50%) ${turn} scaleX(1)`, offset: .3 },
+    { opacity: 1, transform: `translateY(-50%) ${turn} scaleX(1) scaleY(1)`, offset: .62, easing: IN },
+    { opacity: 0, transform: `translateY(-50%) ${turn} scaleX(1) scaleY(.1)` },
+  ], { duration: 460, easing: "linear" });
+  return wait(140);
+}
+
+// shards dropped from above onto a point (Rock Slide, Draco Meteor, Make It Rain, Stealth Rock); the promise is the first landing
+function fall(stage, [x, y], type, size, { count = 4, ms: duration = 380 } = {}) {
+  const runs = Array.from({ length: count }, (_, i) => {
+    const off = (i % 2 ? 1 : -1) * size * (.12 + (i * .37 % 1) * .3);
+    const p = spawn(stage, `bs-p ${typeClass(type)} head`, [0, 0]);
+    return vanish(p, [
+      { opacity: 0, transform: `translate(${x + off * 1.6}px, ${y - size * 1.4}px) translate(-50%, -50%) rotate(0deg) scale(1.6)`, easing: IN },
+      { opacity: 1, transform: `translate(${x + off * 1.2}px, ${y - size}px) translate(-50%, -50%) rotate(60deg) scale(1.6)`, offset: .25, easing: IN },
+      { opacity: 1, transform: `translate(${x + off * .4}px, ${y}px) translate(-50%, -50%) rotate(220deg) scale(1.6)` },
+    ], { duration, delay: i * 70, easing: "linear" });
+  });
+  return runs[0];
+}
+
+// a sound or a heat across the field: a flat ring opens from the user's feet over the whole court
+function sweep(stage, from, type) {
+  const [x, y] = centre(stage, from, .05);
+  const size = sizeOf(stage, from);
+  const el = spawn(stage, `bs-ring ${typeClass(type)}`, [x, y], { width: `${size}px`, height: `${size}px` });
+  vanish(el, [{ opacity: .9, transform: "translate(-50%, -50%) scale(.3, .1)" }, { opacity: 0, transform: "translate(-50%, -50%) scale(5, 1.6)" }], { duration: 560, easing: OUT });
+  return wait(200);
+}
+
+// a light gathers at the user before a special move leaves: a ring and a few motes drawn in, never a filled disc
+export function charge(stage, key, type, duration = 300) {
+  if (!stage || instant() || !monEl(stage, key)) return Promise.resolve();
+  const [x, y] = centre(stage, key);
+  const size = sizeOf(stage, key);
+  const ring = spawn(stage, `bs-ring ${typeClass(type)}`, [x, y], { width: `${size * .9}px`, height: `${size * .9}px` });
+  const runs = [vanish(ring, [{ opacity: 0, transform: "translate(-50%, -50%) scale(1.4)" }, { opacity: 1, transform: "translate(-50%, -50%) scale(.8)", offset: .5 }, { opacity: 0, transform: "translate(-50%, -50%) scale(.15)" }], { duration, easing: IN })];
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + .6;
+    const p = spawn(stage, `bs-p ${typeClass(type)}`, [x, y]);
+    runs.push(vanish(p, [
+      { opacity: 0, transform: `translate(calc(-50% + ${Math.cos(a) * size * .6}px), calc(-50% + ${Math.sin(a) * size * .6}px))` },
+      { opacity: 1, offset: .4 },
+      { opacity: 0, transform: "translate(-50%, -50%) scale(.4)" },
+    ], { duration, delay: i * 30, easing: IN }));
   }
   return Promise.all(runs);
 }
 
-// a glow gathers at the user before a special move leaves
-function charge(stage, key, type) {
-  const [x, y] = centre(stage, key);
-  const size = sizeOf(stage, key);
-  const glow = spawn(stage, `bs-glow ${typeClass(type)}`, [x, y], { width: `${size * .9}px`, height: `${size * .9}px` });
-  return vanish(glow, [{ opacity: 0, transform: "translate(-50%, -50%) scale(1.6)" }, { opacity: .9, transform: "translate(-50%, -50%) scale(.6)" }, { opacity: 0, transform: "translate(-50%, -50%) scale(.2)" }], { duration: 300, easing: IN });
-}
-
-// rings rise around a Pokémon: a move on itself, a boost
-function aura(stage, key, type, rings = 3) {
+// rings rise around a Pokémon: a move on itself
+function aura(stage, key, type, rings = 3, duration = 620) {
   const [x, y] = centre(stage, key, .02);
   const size = sizeOf(stage, key);
   return Promise.all(Array.from({ length: rings }, (_, i) => {
     const el = spawn(stage, `bs-aura ${typeClass(type)}`, [x, y], { width: `${size * .9}px`, height: `${size * .28}px` });
-    return vanish(el, [{ opacity: 0, transform: "translate(-50%, -50%) translateY(0) scale(.6)" }, { opacity: .9, offset: .3 }, { opacity: 0, transform: `translate(-50%, -50%) translateY(${-size * .8}px) scale(1.1)` }], { duration: 620, delay: i * 120, easing: OUT });
+    return vanish(el, [{ opacity: 0, transform: "translate(-50%, -50%) translateY(0) scale(.6)" }, { opacity: .9, offset: .3 }, { opacity: 0, transform: `translate(-50%, -50%) translateY(${-size * .8}px) scale(1.1)` }], { duration, delay: i * 120, easing: OUT });
   }));
 }
 
-// the user's picture travels toward its target and back (a physical move)
-function lunge(stage, from, to) {
+/* the user's picture travels toward its target and back (a physical move): wind back (out), dash (in, fast), a beat on the blow
+   (the impact frame), then home (in and out). A priority move dashes with no wind-up. `short` stops at a guard. The promise is
+   the contact; the way home goes on while the blow lands. */
+function lunge(stage, from, to, { quick = false, short = false } = {}) {
   const el = monEl(stage, from);
   if (!el || reduced()) return Promise.resolve();
   const [ax, ay] = centre(stage, from);
   const [bx, by] = centre(stage, to);
-  const dx = (bx - ax) * .62, dy = (by - ay) * .62;
-  // wind back (out), dash (in, fast), a beat on the blow, then home (in and out): each stretch has its own curve, so nothing snaps
-  return play(el, [
+  const reach = short ? .4 : .62;
+  const dx = (bx - ax) * reach, dy = (by - ay) * reach;
+  const duration = quick ? 400 : 560;
+  const strike = quick ? .3 : .48;
+  play(el, quick ? [
+    { transform: "none", easing: IN },
+    { transform: `translate(${dx}px, ${dy}px) scale(1.04)`, offset: strike, easing: "linear" },
+    { transform: `translate(${dx * .97}px, ${dy * .97}px) scale(1.02)`, offset: .42, easing: "cubic-bezier(.45,0,.55,1)" },
+    { transform: "none" },
+  ] : [
     { transform: "none", easing: OUT },
     { transform: `translate(${-dx * .08}px, ${-dy * .08}px) scale(.96)`, offset: .3, easing: IN },
-    { transform: `translate(${dx}px, ${dy}px) scale(1.04)`, offset: .48, easing: "linear" },
+    { transform: `translate(${dx}px, ${dy}px) scale(1.04)`, offset: strike, easing: "linear" },
     { transform: `translate(${dx * .97}px, ${dy * .97}px) scale(1.02)`, offset: .56, easing: "cubic-bezier(.45,0,.55,1)" },
     { transform: "none" },
-  ], { duration: 560, easing: "linear", fill: "none" });
+  ], { duration, easing: "linear", fill: "none" });
+  return wait(duration * strike);
 }
 
-const QUAKES = new Set(["earthquake", "bulldoze", "magnitude", "earthpower", "highhorsepower", "stompingtantrum", "precipiceblades"]);
-/* move: { ident, targets, type, category, verb, spread, miss, move } from the reader */
-export async function move(stageNode, event, keyOf) {
+// a target that is missed steps aside and back
+function dodge(stage, key) {
+  const el = monEl(stage, key);
+  if (!el || reduced()) return Promise.resolve();
+  const d = sizeOf(stage, key) * .18 * (ownSide(el) ? -1 : 1);
+  return play(el, [{ transform: "none", easing: OUT }, { transform: `translateX(${d}px)`, offset: .35, easing: "cubic-bezier(.45,0,.55,1)" }, { transform: `translateX(${d}px)`, offset: .55 }, { transform: "none" }], { duration: 420, easing: "linear", fill: "none", composite: "add" });
+}
+
+/* move: { ident, targets, type, category, verb, spread, miss, still, move, priority } from the reader and the move's data;
+   ahead: what the lines right after it say about the blow (Stage.jsx reads them): power by target (critical and super effective
+   larger, resisted smaller), the targets that are missed, the ones whose guard holds.
+   The promise is the impact: the blow's result plays with it, so a target never waits a beat to react. */
+export async function move(stageNode, event, keyOf, ahead = {}) {
   const stage = stageOf(stageNode) || stageNode;
-  if (!stage || instant()) return;
+  if (!stage || instant() || event.still) return;
   const from = keyOf(event.ident);
   const targets = (event.targets || []).map(keyOf).filter(k => slotEl(stage, k));
   const type = event.type || "Normal";
-  if (event.verb === "self" || !targets.length) {
-    await Promise.all([aura(stage, from, type), flashMon(stage, from, .6)]);
-    return;
-  }
-  if (reduced()) { await Promise.all(targets.map(t => burst(stage, t, type, .6))); return; }
+  const id = event.move;
+  const power = k => Math.max(.6, ahead.power?.[k] || 1);
+  const missed = k => ahead.missed?.has(k) || (event.miss && k === targets[0]);
+  const blocked = k => ahead.blocked?.has(k);
+  const land = k => {
+    if (blocked(k)) return null;
+    if (missed(k)) return dodge(stage, k);
+    return burst(stage, k, type, power(k), { shards: event.category !== "Status" });
+  };
+  if (event.verb === "self") { await Promise.all([aura(stage, from, type), flashMon(stage, from, .6)]); return; }
+  if (!targets.length) { await flashMon(stage, from, .4); return; }
+  if (reduced()) { targets.forEach(land); await wait(240); return; }
+  const sig = SIGNATURE[id] || {};
+  const at = (k, lift) => centre(stage, k, lift);
   if (event.category === "Physical" && !event.spread) {
-    const out = lunge(stage, from, targets[0]);
-    await wait(280);
-    if (!event.miss) burst(stage, targets[0], type, 1);
-    await out;
+    const t = targets[0];
+    if (sig.fall) { await fall(stage, at(t), type, sizeOf(stage, t)); land(t); return; }
+    await lunge(stage, from, t, { quick: event.priority > 0, short: blocked(t) });
+    land(t);
     return;
   }
   if (event.category === "Physical") {
-    // a spread physical move: the user rears up and every target takes it at once
-    await play(monEl(stage, from), [{ transform: "none" }, { transform: "translateY(-14%) scale(1.05)" }, { transform: "none" }], { duration: 360, easing: OUT, fill: "none" });
-    if (QUAKES.has(event.move)) shake(stage, 1.2);
-    await Promise.all(targets.map(t => burst(stage, t, type, .9)));
+    // a spread physical move: the user rears up and every target takes it at once; a quake shakes the stage, a slide drops rocks
+    play(monEl(stage, from), [{ transform: "none" }, { transform: "translateY(-14%) scale(1.05)" }, { transform: "none" }], { duration: 360, easing: OUT, fill: "none" });
+    if (sig.fall) await Promise.all(targets.map(t => fall(stage, at(t), type, sizeOf(stage, t))));
+    else await wait(200);
+    if (QUAKES.has(id)) shake(stage, 1.2);
+    targets.forEach(land);
     return;
   }
-  // special and status moves aimed at another: a charge, then the shards fly
-  await charge(stage, from, type);
   const status = event.category === "Status";
-  await Promise.all(targets.map(t => projectile(stage, from, t, type, status ? { count: 5, arc: .08, duration: 520 } : { count: 8, arc: .16, duration: 400 })));
-  if (QUAKES.has(event.move)) shake(stage, 1);
-  if (!event.miss) await Promise.all(targets.map(t => burst(stage, t, type, status ? .5 : 1)));
+  if (status && POWDERS.has(id)) {
+    await Promise.all(targets.map(t => fall(stage, at(t, .9), type, sizeOf(stage, t) * .6, { count: 6, ms: 520 })));
+    targets.forEach(land);
+    return;
+  }
+  // special and status moves aimed at another: a light gathers, and the flight leaves as it closes, never after a dead beat
+  charge(stage, from, type, status ? 220 : 300);
+  await wait(status ? 160 : 220);
+  const style = { ...FLIGHT[type] || FLIGHT.Normal, ...sig };
+  const soft = status ? { ...style, beam: false, fall: false, rings: false, grow: 0, count: 4, ms: Math.max(480, (style.ms || 420) * 1.2), gap: 70, wave: style.wave || .08 } : style;
+  const one = t => {
+    const a = at(from), b = at(t);
+    const past = missed(t);
+    if (blocked(t)) { const r = sizeOf(stage, t) * .6, d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; b[0] -= (b[0] - a[0]) / d * r; b[1] -= (b[1] - a[1]) / d * r; }
+    if (soft.fall) return fall(stage, b, type, sizeOf(stage, t));
+    if (soft.beam) return beam(stage, a, b, type, { past });
+    return fly(stage, a, b, type, { ...soft, past });
+  };
+  if (event.spread && !soft.rings && !soft.fall) { await sweep(stage, from, type); await Promise.all(targets.map(one)); }
+  else await Promise.all(targets.map(one));
+  if (QUAKES.has(id)) shake(stage, 1);
+  targets.forEach(land);
 }
 
 /* ---------- what happens to a Pokémon ---------- */
 export function flashMon(stage, key, strength = 1) {
   const img = monEl(stage, key)?.querySelector("img");
   if (!img || instant()) return Promise.resolve();
-  return play(img, [{ filter: "brightness(1)" }, { filter: `brightness(${1 + 1.2 * strength})` }, { filter: "brightness(1)" }], { duration: 240, fill: "none" });
+  // faint, as Showdown keeps it: the picture lifts toward light, it never turns white
+  return play(img, [{ filter: "brightness(1)" }, { filter: `brightness(${1 + .7 * strength})` }, { filter: "brightness(1)" }], { duration: 240, fill: "none" });
 }
-// a blow lands: the picture shakes and flashes; how hard is how much it took
-export function hit(stage, key, { share = .2, crit = false, strong = false } = {}) {
+const ownSide = el => Boolean(el?.closest(".bs-side")?.classList.contains("own"));
+/* a blow lands: the picture is knocked back away from the foe and settles, and flashes; how hard is how much it took, a critical
+   or super effective blow harder, a resisted one softer. HP lost to the field or a status (direct: false) only shudders in place.
+   composite add: it moves on top of whatever the picture is doing (an attacker still on its way home), never replacing it */
+export function hit(stage, key, { share = .2, crit = false, strong = false, weak = false, direct = true } = {}) {
   const el = monEl(stage, key);
   if (!el || instant()) return Promise.resolve();
-  const p = (4 + Math.min(1, share) * 8) * (crit ? 1.3 : 1);
-  const shook = reduced() ? Promise.resolve() : play(el, [
-    { transform: "none" }, { transform: `translateX(${-p}px)` }, { transform: `translateX(${p}px)` }, { transform: `translateX(${-p / 2}px)` }, { transform: `translateX(${p / 3}px)` }, { transform: "none" },
-  ], { duration: 360, easing: "linear", fill: "none" });
-  return Promise.all([shook, flashMon(stage, key, 1), crit ? shake(stage, 1) : null]);
+  const p = (3 + Math.min(1, share) * 9) * (crit ? 1.3 : 1) * (strong ? 1.15 : weak ? .7 : 1);
+  const sx = ownSide(el) ? -1 : 1, sy = ownSide(el) ? .35 : -.35;
+  const frames = direct
+    ? [{ transform: "none", easing: OUT }, { transform: `translate(${sx * p * 1.4}px, ${sy * p}px)`, offset: .12, easing: "cubic-bezier(.45,0,.55,1)" },
+      { transform: `translate(${-sx * p * .45}px, ${-sy * p * .3}px)`, offset: .36, easing: "cubic-bezier(.45,0,.55,1)" },
+      { transform: `translate(${sx * p * .2}px, 0)`, offset: .6, easing: "cubic-bezier(.45,0,.55,1)" }, { transform: "none" }]
+    : [{ transform: "none" }, { transform: "translateY(2px)" }, { transform: "translateY(-1px)" }, { transform: "translateY(2px)" }, { transform: "none" }];
+  const shook = reduced() ? Promise.resolve() : play(el, frames, { duration: direct ? 420 : 320, easing: "linear", fill: "none", composite: "add" });
+  return Promise.all([shook, flashMon(stage, key, direct ? (strong || crit ? 1.3 : weak ? .6 : 1) : .45), crit ? shake(stage, .8) : null]);
+}
+
+/* HP lost to the field or a status, drawn in what took it: a burn's flames, poison's bubbles, the sand's grains, rocks dropped on
+   a Pokémon coming in over Stealth Rock. Recoil and a confused self-hit have no shape of their own: the shudder says it. */
+const RESIDUAL = { brn: "Fire", psn: "Poison", tox: "Poison", sandstorm: "Rock", hail: "Ice", spikes: "Ground", leechseed: "Grass", saltcure: "Rock", curse: "Ghost", nightmare: "Ghost", partiallytrapped: "Normal", lifeorb: "Psychic", rockyhelmet: "Steel", roughskin: "Normal", ironbarbs: "Steel", blacksludge: "Poison", stickybarb: "Steel", bind: "Normal", firespin: "Fire", whirlpool: "Water", sandtomb: "Ground", infestation: "Bug", magmastorm: "Fire" };
+export function residual(stage, key, from) {
+  if (!stage || instant() || !monEl(stage, key)) return Promise.resolve();
+  if (from === "stealthrock") return reduced() ? burst(stage, key, "Rock", .5) : fall(stage, centre(stage, key), "Rock", sizeOf(stage, key), { count: 3 }).then(() => burst(stage, key, "Rock", .5, { shards: false }));
+  const type = RESIDUAL[from];
+  return type ? burst(stage, key, type, .55) : Promise.resolve();
+}
+
+// HP that flows from one Pokémon to another (a draining move, Leech Seed): green motes drift from the one losing it to the one gaining it
+export function flow(stage, from, to) {
+  if (!stage || instant() || reduced() || !slotEl(stage, from) || !slotEl(stage, to) || from === to) return Promise.resolve();
+  return fly(stage, centre(stage, from), centre(stage, to), "Grass", { wave: .1, waves: 1, count: 6, ms: 520, gap: 50, spin: 0 });
+}
+
+// why a Pokémon could not move: paralysis crackles, sleep breathes slow rings, a freeze glints, a flinch jolts it back
+export function cant(stage, key, why) {
+  if (!stage || instant() || !monEl(stage, key)) return Promise.resolve();
+  if (why === "par") return Promise.all([burst(stage, key, "Electric", .5), hit(stage, key, { share: 0, direct: false })]);
+  if (why === "slp") return reduced() ? flashMon(stage, key, .3) : aura(stage, key, "Psychic", 2, 900);
+  if (why === "frz") return Promise.all([burst(stage, key, "Ice", .6, { shards: false }), flashMon(stage, key, .6)]);
+  if (why === "flinch") return hit(stage, key, { share: 0, weak: true });
+  return flashMon(stage, key, .4);
+}
+
+// confused: the picture sways side to side before it acts (or hurts itself)
+export function sway(stage, key) {
+  const el = monEl(stage, key);
+  if (!el || instant()) return Promise.resolve();
+  if (reduced()) return flashMon(stage, key, .3);
+  return play(el, [{ transform: "none" }, { transform: "rotate(-6deg)" }, { transform: "rotate(6deg)" }, { transform: "rotate(-4deg)" }, { transform: "none" }], { duration: 640, easing: "cubic-bezier(.45,0,.55,1)", fill: "none", composite: "add" });
+}
+
+// a substitute: the doll rises out of the floor when it is made, and breaks (swells and goes out) when it falls
+export function doll(stage, key, on) {
+  const sub = monEl(stage, key)?.querySelector(".bs-sub");
+  const img = monEl(stage, key)?.querySelector("img");
+  if (instant()) return Promise.resolve();
+  if (on) return sub ? play(sub, reduced() ? [{ opacity: 0 }, { opacity: 1 }] : [{ transform: "scaleY(0)", easing: OUT }, { transform: "scaleY(1.08)", offset: .6 }, { transform: "scaleY(1)" }], { duration: 360, fill: "backwards" }) : Promise.resolve();
+  // after the doll went: the Pokémon comes back into view where it stood
+  return img ? play(img, [{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: OUT, fill: "backwards" }) : Promise.resolve();
+}
+export function breakDoll(stage, key) {
+  const sub = monEl(stage, key)?.querySelector(".bs-sub");
+  if (!sub || instant()) return Promise.resolve();
+  // the burst plays on while the Pokémon comes back, so there is no empty beat between the doll and it
+  burst(stage, key, "Normal", .6);
+  return play(sub, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: reduced() ? "none" : "scale(1.2)" }], { duration: 260, easing: IN, fill: "forwards" });
+}
+
+// Transform: the picture narrows to a line of light and opens again as the other
+export function morph(stage, key) {
+  const el = monEl(stage, key);
+  if (!el || instant()) return Promise.resolve();
+  if (reduced()) return flashMon(stage, key, 1);
+  return Promise.all([
+    play(el, [{ transform: "none", easing: IN }, { transform: "scaleX(.08)", offset: .45 }, { transform: "scaleX(.08)", offset: .55, easing: OUT }, { transform: "none" }], { duration: 620, easing: "linear", fill: "none", composite: "add" }),
+    play(el.querySelector("img"), [{ filter: "brightness(1)" }, { filter: "brightness(2.4)", offset: .5 }, { filter: "brightness(1)" }], { duration: 620, fill: "none" }),
+  ]);
+}
+
+// a move that takes a turn to charge (Solar Beam, Meteor Beam): the light gathers twice and stays gathered a beat
+export async function gather(stage, key, type) {
+  if (!stage || instant() || !monEl(stage, key)) return;
+  await Promise.all([charge(stage, key, type, 420), reduced() ? null : aura(stage, key, type, 2, 520)]);
+  await flashMon(stage, key, .5);
+}
+
+// Trick Room: the space turns a little and comes back, as the room comes up round the court
+export function twist(stage) {
+  const el = stage?.querySelector(".bs-world");
+  if (!el || instant() || reduced()) return Promise.resolve();
+  return play(el, [{ transform: "none" }, { transform: "rotate(-1.4deg) scale(1.03)", offset: .4 }, { transform: "rotate(.6deg) scale(1.01)", offset: .7 }, { transform: "none" }], { duration: 760, easing: "cubic-bezier(.45,0,.55,1)", fill: "none" });
+}
+
+// a screen broken by a blow (Brick Break, Psychic Fangs): its dome falls apart in shards of its colour before it fades
+const SCREEN_TYPE = { reflect: "Psychic", lightscreen: "Electric", auroraveil: "Ice" };
+export function shatter(stage, own, id) {
+  const dome = stage?.querySelector(`.bs-screens.${own ? "own" : "foe"} .bs-dome.${id}`);
+  if (!dome || instant() || !SCREEN_TYPE[id]) return Promise.resolve();
+  if (reduced()) return flashStage(stage, .12, 260);
+  const r = dome.getBoundingClientRect(), box = stage.getBoundingClientRect();
+  // the dome itself goes as its shards fly (it stays the same node while it leaves, so it never comes back)
+  play(dome, [{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: OUT, fill: "forwards" });
+  return Promise.all(Array.from({ length: 12 }, (_, i) => {
+    const u = (i + .5) / 12;
+    const x = r.left - box.left + u * r.width, y = r.top - box.top + (1 - Math.sin(Math.PI * u)) * r.height;
+    const p = spawn(stage, `bs-p ${typeClass(SCREEN_TYPE[id])}`, [x, y]);
+    const drift = (u - .5) * 40;
+    return vanish(p, [
+      { opacity: 1, transform: "translate(-50%, -50%) rotate(0deg) scale(1.4)", easing: OUT },
+      { opacity: 1, transform: `translate(calc(-50% + ${drift * .5}px), calc(-50% - 6px)) rotate(90deg) scale(1.3)`, offset: .25, easing: IN },
+      { opacity: 0, transform: `translate(calc(-50% + ${drift}px), calc(-50% + ${r.height * .6}px)) rotate(300deg) scale(.6)` },
+    ], { duration: 640, delay: (i % 4) * 30, easing: "linear" });
+  }));
 }
 // the HP that went or came back rises over the Pokémon
 export function number(stage, key, text, heal = false) {
   if (!stage || instant()) return Promise.resolve();
-  const [x, y] = centre(stage, key, .4);
+  const [x, y] = centre(stage, key, .25);
   const el = spawn(stage, `bt-num${heal ? " heal" : ""}`, [x, y]);
   el.textContent = text;
   return vanish(el, [
@@ -331,10 +594,15 @@ export async function enter(stage, key) {
   ]);
 }
 // called back: the Pokémon brightens and shrinks into a light that goes out
-export function leave(stage, key) {
+// dragged out (Roar, Whirlwind, Dragon Tail): it is blown off its side the way it faces away, and goes out
+export function leave(stage, key, { drag = false } = {}) {
   const el = monEl(stage, key);
   if (!el || instant()) return Promise.resolve();
   settle(el);
+  if (drag && !reduced()) {
+    const d = ownSide(el) ? -60 : 60;
+    return play(el, [{ transform: "none", opacity: 1, easing: IN }, { transform: `translateX(${d}%) rotate(${d / 6}deg)`, opacity: 0 }], { duration: 340, easing: "linear", fill: "forwards" });
+  }
   const at = centre(stage, key, .42);
   const size = sizeOf(stage, key);
   return Promise.all([

@@ -87,6 +87,28 @@ const decoded = src => { const img = new Image(); img.src = src; return Promise.
 /* ---------- the tape: the log played one line at a time on the stage ---------- */
 // how long a line stays the newest before the next one comes, counted from when it lit (its effect plays inside this time)
 const MSG_MS = 680;
+/* lines that are the result of the blow before them (critical, matchup, the damage itself, a guard or a substitute taking it):
+   Showdown runs them as one beat with the move, so they land with the impact and the line before them does not hold its reading
+   time; their words join the move's in the box (the move dim, the newest lit) */
+const RESULT = /^\|-(crit|supereffective|resisted|immune|miss|fail|activate|hitcount)\||^\|-damage\|(?!.*\|\[from\])/;
+const GUARD = /Protect|Detect|Shield|Bunker|Silk Trap|Bulwark|Max Guard|Wide Guard|Quick Guard|Mat Block|Obstruct/i;
+const part = (line, n) => line.split("|")[n] || "";
+const ofKey = line => line.match(/\|\[of\] (p\d[a-d])/)?.[1] || "";
+// what the minor lines right after a move say about its blow, so the move can draw it: how hard by target, who is missed, whose guard holds
+function aheadOf(lines) {
+  const ahead = { power: {}, missed: new Set(), blocked: new Set() };
+  for (const line of lines) {
+    if (!line.startsWith("|-")) break;
+    const cmd = part(line, 1), k = keyOf(part(line, 2));
+    const add = n => { ahead.power[k] = (ahead.power[k] || 1) + n; };
+    if (cmd === "-crit") add(.3);
+    else if (cmd === "-supereffective") add(.3);
+    else if (cmd === "-resisted") add(-.3);
+    else if (cmd === "-miss") ahead.missed.add(keyOf(part(line, 3) || part(line, 2)));
+    else if (cmd === "-activate" && GUARD.test(part(line, 3))) ahead.blocked.add(k);
+  }
+  return ahead;
+}
 // epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
 export function useStageTape(log, res, perspective, epoch = 0) {
   const reader = useRef(null);
@@ -126,10 +148,17 @@ export function useStageTape(log, res, perspective, epoch = 0) {
       const show = () => flushSync(() => setScene(sceneOf(R.state, standing)));
       const own = key => key.startsWith(perspective);
       const word = key => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return mon ? `${own(key) ? "" : "상대 "}${R.speciesName(mon.species)}` : ""; };
-      let blow = { crit: false, strong: false };
+      // the blow being played: who struck with what, and what the lines after it said about each target
+      const freshBlow = () => ({ from: "", type: "", crit: new Set(), strong: new Set(), weak: new Set(), hit: new Set(), on: false });
+      let blow = freshBlow();
+      let chained = false; // the line before this one handed its reading time on (it and this one are one beat)
+      let shown = [];
+      const busy = {}; // the HP still moving on each Pokémon: a second hit on it (a multi-hit move) waits for the first
+      let landing = []; // HP moves of this beat started together (a spread move's targets), awaited when the beat ends
       for (let i = 0; i < fresh.length; i++) {
         if (latest.current.epoch !== epoch) break; // a jump came while this played: the next run starts again
         const line = fresh[i];
+        const next = fresh[i + 1] || "";
         done.current += 1;
         const before = {};
         for (const side of ["p1", "p2"]) R.state.sides[side].active.forEach((m, s) => { if (m) before[slotKey(side, s)] = { hp: m.hp, maxhp: m.maxhp }; });
@@ -140,41 +169,79 @@ export function useStageTape(log, res, perspective, epoch = 0) {
         if (event?.verb === "enter" || /^\|(poke|teampreview)/.test(line)) preload(R.state);
         // a hidden page keeps no animation clock and throttles its timers: it reads on without effects, as does a stage that is gone
         if (catchUp || fx.instant() || document.hidden || !alive.current) continue;
+        const result = RESULT.test(line);
+        if (!result) {
+          if (landing.length) { await Promise.all(landing); landing = []; }
+          // a line caused by the move itself (Brick Break taking a screen down before it hits) is still its blow
+          if (!/^\|move\||^\|-sideend\||\|\[from\] move:/.test(line)) blow.on = false;
+        }
+        // one beat: a move and its results; the leads sent out together; the stat changes of one cause (Intimidate on both foes)
+        const chain = (blow.on || /^\|move\|/.test(line)) && (RESULT.test(next) || /^\|-sideend\|/.test(next))
+          || (R.state.turn === 0 && /^\|switch\|/.test(line) && /^\|switch\|/.test(next))
+          || (/^\|-(un)?boost\|/.test(line) && /^\|-(un)?boost\|/.test(next));
         flushLines();
-        if (text.length) { flushSync(() => setSaid(text)); saidAt = performance.now(); }
+        if (text.length) { shown = chained ? [...shown, ...text].slice(-2) : text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
+        chained = chain;
         const stage = stageRef.current;
         const k = event?.ident ? keyOf(event.ident) : "";
         if (reveal) { fx.popup(stage, keyOf(reveal.ident), `${word(keyOf(reveal.ident))}의 특성`, reveal.ability, own(keyOf(reveal.ident))); await fx.wait(420); }
+        // lines the reader keeps as words alone still show on the stage
+        const raw = part(line, 1), rk = keyOf(part(line, 2));
+        if (raw === "-activate" && /confusion/i.test(part(line, 3))) await fx.sway(stage, rk);
+        else if (raw === "-activate" && /Substitute/.test(part(line, 3))) fx.hit(stage, rk, { share: .2 });
+        else if (raw === "-prepare") { const m = res.detail.moves[toID(part(line, 3))]; await fx.gather(stage, rk, m?.type || "Normal"); }
+        else if (raw === "-transform") await fx.morph(stage, rk);
+        else if (raw === "-hitcount") { await busy[rk]; fx.label(stage, rk, `${part(line, 3)}회`, ""); } // after the last hit has landed
         switch (event?.verb) {
-          case "strike": case "chase": case "self": blow = { crit: false, strong: false }; await fx.move(stage, event, keyOf); break;
-          case "crit": blow.crit = true; fx.label(stage, k, "급소", "hard"); break;
-          case "super": blow.strong = true; fx.label(stage, k, "효과가 굉장하다", "hard"); break;
-          case "resist": fx.label(stage, k, "효과가 별로", "soft"); break;
+          case "strike": case "chase": case "self": {
+            blow = { ...freshBlow(), from: k, type: event.type, on: true };
+            const data = res.detail.moves[event.move] || {};
+            await fx.move(stage, { ...event, priority: data.priority || 0 }, keyOf, aheadOf(fresh.slice(i + 1)));
+            break;
+          }
+          case "crit": blow.crit.add(k); fx.label(stage, k, "급소", "hard"); break;
+          case "super": blow.strong.add(k); fx.label(stage, k, "효과가 굉장하다", "hard"); break;
+          case "resist": blow.weak.add(k); fx.label(stage, k, "효과가 별로", "soft"); break;
           case "immune": fx.label(stage, k, "효과 없음", "soft"); break;
           case "miss": fx.label(stage, k, "빗나감", "soft"); break;
           case "fail": fx.label(stage, k, "실패", "soft"); break;
           case "take": case "hp": {
             const was = before[k];
             if (event.hp === 0 && !event.heal) standing.add(k);
-            show();
-            if (!was || !event.maxhp) break;
-            const lost = was.hp - event.hp;
-            const exact = own(k) && event.maxhp !== 100;
-            const amount = exact ? Math.abs(lost) : Math.round(Math.abs(lost) / event.maxhp * 100);
-            if (!amount) break;
-            const text = `${lost > 0 ? "-" : "+"}${amount}${exact ? "" : "%"}`;
-            const drain = fx.drain(stage, k, was.hp / was.maxhp, event.hp / event.maxhp);
-            if (lost < 0) await Promise.all([drain, fx.heal(stage, k), fx.number(stage, k, text, true)]);
-            else await Promise.all([drain, fx.hit(stage, k, { share: lost / event.maxhp, ...blow }), fx.number(stage, k, text)]);
-            blow = { crit: false, strong: false };
+            const direct = event.verb === "take";
+            const again = direct && blow.on && blow.hit.has(k);
+            if (direct) blow.hit.add(k);
+            const strike = { share: 0, crit: blow.crit.has(k), strong: blow.strong.has(k), weak: blow.weak.has(k), direct };
+            const source = ofKey(line);
+            const run = (async () => {
+              await busy[k];
+              // a second hit of a multi-hit move lands its own small burst first
+              if (again) { fx.burst(stage, k, blow.type, .6); await fx.wait(120); }
+              show();
+              if (!was || !event.maxhp) return;
+              const lost = was.hp - event.hp;
+              const exact = own(k) && event.maxhp !== 100;
+              const amount = exact ? Math.abs(lost) : Math.round(Math.abs(lost) / event.maxhp * 100);
+              if (!amount) return;
+              const words = `${lost > 0 ? "-" : "+"}${amount}${exact ? "" : "%"}`;
+              // HP that flows: a draining move heals from its target (the gain fills once the motes arrive), Leech Seed feeds its seeder
+              if (lost < 0 && event.from === "drain" && source) await fx.flow(stage, source, k);
+              if (lost > 0 && event.from === "leechseed" && source) fx.flow(stage, k, source);
+              const drain = fx.drain(stage, k, was.hp / was.maxhp, event.hp / event.maxhp);
+              if (lost < 0) await Promise.all([drain, fx.heal(stage, k), fx.number(stage, k, words, true)]);
+              else await Promise.all([drain, fx.hit(stage, k, { ...strike, share: lost / event.maxhp }), direct ? null : fx.residual(stage, k, event.from), fx.number(stage, k, words)]);
+            })();
+            busy[k] = run;
+            if (chain) landing.push(run); else await Promise.all([...landing, run]);
+            if (!chain) landing = [];
             break;
           }
           case "fall": await fx.faint(stage, k); standing.delete(k); show(); break;
           case "enter":
-            if (event.leaving && !event.drag) await fx.leave(stage, k);
+            if (event.leaving) await fx.leave(stage, k, { drag: event.drag });
             standing.delete(k);
             show();
-            await fx.enter(stage, k);
+            if (chain) { fx.enter(stage, k); await fx.wait(200); } else await fx.enter(stage, k);
             break;
           case "change": {
             const next = R.state.sides[k.slice(0, 2)].active[k.charCodeAt(2) - 97];
@@ -188,22 +255,32 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           case "mega": show(); await fx.megaEnd(stage, k); break;
           case "status": show(); await fx.status(stage, k, event.status); break;
           case "cure": show(); await fx.flashMon(stage, k, .5); break;
-          case "boost": show(); await fx.boost(stage, k, event.amount); break;
+          case "boost": show(); if (chain) { fx.boost(stage, k, event.amount); await fx.wait(120); } else await fx.boost(stage, k, event.amount); break;
           case "weather": show(); if (!event.upkeep && event.id) await fx.wait(500); break;
-          case "field": case "side": show(); await fx.wait(450); break;
+          case "field": show(); await Promise.all([fx.wait(450), event.on && event.id === "trickroom" ? fx.twist(stage) : null]); break;
+          case "side":
+            // a screen that a blow breaks falls apart before it fades; one that runs out only fades
+            // (inside a blow the hit lands while the shards still fall)
+            if (!event.on && blow.on) { fx.shatter(stage, event.side === perspective, event.id); await fx.wait(120); show(); break; }
+            show(); await fx.wait(450); break;
           case "protect": await fx.shield(stage, k); break;
           case "ability": fx.popup(stage, k, `${word(k)}의 특성`, event.name, own(k)); await fx.wait(520); show(); break;
           case "item": fx.popup(stage, k, `${word(k)}의 도구`, event.name, own(k)); await fx.wait(400); show(); break;
-          case "volatile": show(); if (event.on && event.id === "substitute") await fx.flashMon(stage, k, .8); break;
-          case "cant": show(); await fx.flashMon(stage, k, .4); break;
+          case "volatile":
+            if (event.id === "substitute" && !event.on) { await fx.breakDoll(stage, k); show(); await fx.doll(stage, k, false); break; }
+            show();
+            if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
+            break;
+          case "cant": show(); await fx.cant(stage, k, event.why); break;
           case "turn": show(); await fx.banner(stage, `${event.turn}턴`); break;
           case "end": show(); await fx.banner(stage, event.winner === "tie" ? "무승부" : `${R.state.players[event.winner]} 승리`, { tone: "win" }); break;
           default: show();
         }
-        if (text.length) await fx.hold(saidAt, MSG_MS);
+        if (text.length && !chain) await fx.hold(saidAt, MSG_MS);
       }
+      if (landing.length) await Promise.all(landing);
       flushLines();
-      if (lastSaid.length) flushSync(() => setSaid(lastSaid));
+      if (lastSaid.length) flushSync(() => setSaid(shown.at(-1) === lastSaid.at(-1) ? shown : lastSaid));
       flushSync(() => setScene(sceneOf(R.state)));
       running.current = false;
       // the log moved on (or jumped) while this played: read it again
