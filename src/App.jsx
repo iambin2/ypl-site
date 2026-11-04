@@ -139,19 +139,23 @@ export default function App() {
   const go=useCallback((v, options={})=>{
     // 지금 탭을 다시 누르면 맨 위로 부드럽게 올라간다. 그 탭 안에서 공지, 글, 대진표를 열어 두었으면 목록으로 돌아간다.
     const here=new URLSearchParams(window.location.search);
-    const inside=["notice","post","pb"].some(key=>here.has(key))||(view==="bracket"&&here.has("eventId"))||Boolean(window.history.state?.bracketId);
-    if(v===view&&!inside&&!options.eventId&&!options.notice&&!options.trainer&&!options.tab){ setMore(null); window.scrollTo({top:0,behavior:reduced()?"auto":"smooth"}); return; }
+    const inside=["notice","post","pb","id","event","match"].some(key=>here.has(key))||(view==="bracket"&&here.has("eventId"))||Boolean(window.history.state?.bracketId);
+    if(v===view&&!inside&&!options.eventId&&!options.notice&&!options.trainer&&!options.tab&&!options.battle){ setMore(null); window.scrollTo({top:0,behavior:reduced()?"auto":"smooth"}); return; }
     if((v==="builder"||v==="bracket")&&options.eventId){
       const url=new URL(window.location.href);
-      url.search= v==="builder" ? `view=builder&eventId=${encodeURIComponent(options.eventId)}` : bracketRouteSearch(options.eventId, window.location.search).slice(1);
+      // a battle's own keys (?id=, ?event=, ?match=, ?team=) stay with the battle
+      const here=new URLSearchParams(window.location.search); ["id","event","match","team"].forEach(key=>here.delete(key));
+      url.search= v==="builder" ? `view=builder&eventId=${encodeURIComponent(options.eventId)}` : bracketRouteSearch(options.eventId, `?${here}`).slice(1);
       pushHistory({view:v,eventId:options.eventId},url);
     }else{
       // 모든 탭이 주소에 남는다 — 새로고침, 뒤로 가기, 링크 공유 모두 같은 화면으로 돌아온다.
       const url=new URL(window.location.href);
       url.searchParams.delete("eventId");
       // 한 화면 안의 항목을 바로 여는 링크: 공지(?notice=), 트레이너 기록(?trainer=), 랭킹 탭(?tab=rank).
-      ["notice","trainer","tab","format","post","pb"].forEach(key=>url.searchParams.delete(key));
+      ["notice","trainer","tab","format","post","pb","id","event","match","team"].forEach(key=>url.searchParams.delete(key));
       if(v==="news"&&options.notice) url.searchParams.set("notice",options.notice);
+      // 한 배틀을 바로 여는 링크(?id=): 홈의 지금 경기, 기록의 배틀 줄
+      if(v==="battle"&&options.battle) url.searchParams.set("id",options.battle);
       if(v==="records"&&options.trainer) url.searchParams.set("trainer",options.trainer);
       if((v==="records"||v==="board"||v==="bracket")&&options.tab) url.searchParams.set("tab",options.tab);
       // 게시판의 샘플과 파티 소개글(?post=), 사설 대진표(?pb=)를 바로 여는 링크
@@ -266,7 +270,7 @@ export default function App() {
         {view==="bracket"&&<BracketsPage data={data} admin={admin} save={save} flash={flash} refresh={refresh}/>}
         {view==="builder"&&<TeamBuilderPage go={go} flash={flash} admin={admin}/>}
         {view==="calc"&&<CalculatorPage/>}
-        {view==="battle"&&<BattlePage flash={flash}/>}
+        {view==="battle"&&<BattlePage flash={flash} go={go}/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal} go={go}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}
         </LazyContent>}

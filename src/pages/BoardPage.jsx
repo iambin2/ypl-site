@@ -10,6 +10,7 @@ import { freshRead, peekRead } from "../services/readCache.js";
 import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem, newCommunityId, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
 import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
+import { takeBoardDraft } from "../services/battleService.js";
 import Button from "../components/common/Button.jsx";
 import { BackLink, Chips, Dock, Mon, Row, SectionHead, TabsLine } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
@@ -38,8 +39,8 @@ function MediaEmbed({ url }){
   return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:"var(--s2)"}}>{m.url}<Icon n="ext" size={16}/></a>;
 }
 
-function BoardCompose({ onClose, onSubmit }){
-  const [nick,setNick]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState(""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
+function BoardCompose({ onClose, onSubmit, initial=null }){
+  const [nick,setNick]=useState(""); const [title,setTitle]=useState(initial?.title||""); const [body,setBody]=useState(initial?.body||""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
   const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요.");return;}
     onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
@@ -146,7 +147,10 @@ function FreeBoard({ admin, flash, tabs }){
   useEffect(()=>{setPage(1);},[q]);
   const [article,setArticle]=useState(()=>new URLSearchParams(window.location.search).get("post"));
   const listScroll=useRef(0);
+  // 끝난 배틀의 게시판에 공유가 넘긴 초안이 있으면 글쓰기를 그 초안으로 연다(battleService.js)
+  // (an effect, not the state initializer: StrictMode calls an initializer twice and the second would find it already taken)
   const [compose,setCompose]=useState(false);
+  useEffect(()=>{ const draft=takeBoardDraft(); if(draft) setCompose(draft); },[]);
   // 글을 여는 것은 기록 한 칸: 폰의 뒤로 가기가 목록으로 돌아온다
   useEffect(()=>{ const onPop=()=>setArticle(new URLSearchParams(window.location.search).get("post")||null); popHandlers.add(onPop); return ()=>{ popHandlers.delete(onPop); }; },[]);
   const openPost=id=>{ listScroll.current=window.scrollY; const url=new URL(window.location.href); url.searchParams.set("post",id);
@@ -206,7 +210,7 @@ function FreeBoard({ admin, flash, tabs }){
           value={cc>0?<span className="t12 dim">댓글 {cc}</span>:undefined} onClick={()=>openPost(p.id)}/>;})}
     </div>
     <div className="bd-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
-    {compose&&<BoardCompose onClose={()=>setCompose(false)} onSubmit={addPost}/>}
+    {compose&&<BoardCompose initial={typeof compose==="object"?compose:null} onClose={()=>setCompose(false)} onSubmit={addPost}/>}
   </section>);
 }
 

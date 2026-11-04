@@ -20,6 +20,43 @@ import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
 import { generationText } from "../services/seasonLabel.js";
 import Button from "../components/common/Button.jsx";
 import Seg from "../components/common/Seg.jsx";
+import { battleHref, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
+import { battleUsage, toID as battleId } from "../services/battleLog.js";
+
+/* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
+   끝난 공식 배틀의 로그는 한 번만 읽어 둔다. */
+let officialUsage = null;
+const loadOfficialUsage = () => (officialUsage ||= listOfficialBattleLogs().then(battleUsage, () => new Map()));
+
+function TrainerBattles({ playerIds }) {
+  const [rows, setRows] = useState(null);
+  const key = playerIds.join(",");
+  useEffect(() => { let on = true; listPlayerBattles(playerIds).then(list => { if (on) setRows(list); }); return () => { on = false; }; }, [key]);
+  if (!rows?.length) return null;
+  return <section className="rc-sec" aria-labelledby="rc-battle-h">
+    <SectionHead id="rc-battle-h" title={`공식 배틀 ${rows.length}판`} />
+    <div className="stack">
+      {rows.map(b => {
+        const mine = playerIds.includes(b.p1_player_id) ? "p1" : "p2";
+        const won = b.winner === mine;
+        return <Row key={b.id} title={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}`}
+          line={[formatDate(b.updated_at), `${b.turn}턴`, b.ended_by === "forfeit" ? "기권" : ""].filter(Boolean).join(", ")}
+          value={<span className={"rc-place t12" + (won ? " inv" : " dim")}>{b.winner === "tie" ? "무승부" : won ? "승리" : "패배"}</span>}
+          label={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}, ${won ? "승리" : "패배"}, 리플레이 보기`}
+          onClick={() => { window.location.search = battleHref(b.id); }} />;
+      })}
+    </div>
+  </section>;
+}
+
+// a Pokémon's official battles: counted under the form it is sent out as, so a Mega counts with its base form
+function useBattleUsage(dex) {
+  const [usage, setUsage] = useState(null);
+  useEffect(() => { let on = true; loadOfficialUsage().then(map => { if (on) setUsage(map); }); return () => { on = false; }; }, []);
+  if (!usage || !dex) return null;
+  const ids = [battleId(dex.name), dex.baseSpecies && /mega/i.test(dex.forme || "") ? battleId(dex.baseSpecies) : null].filter(Boolean);
+  return ids.map(id => usage.get(id)).find(Boolean) || null;
+}
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -327,6 +364,8 @@ function TrainerProfile({ snapshot, profile, onParty }) {
         ) : <Empty title="확인 가능한 대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
         <div className="rc-pager"><Pager page={histCur} pages={histPages} onGo={setHistPage} /></div>
       </section>
+
+      <TrainerBattles playerIds={[...new Set([profile.playerId, ...profile.history.map(event => event.playerId)].filter(Boolean))]} />
 
       {parties.length > 0 && <section className="rc-sec" aria-labelledby="rc-party-h">
         <SectionHead id="rc-party-h" title={`사용한 파티 ${parties.length}개`} />
@@ -656,6 +695,7 @@ function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
   const [more, setMore] = useState(false);
   const total = dex ? STAT_KEYS.reduce((sum, key) => sum + (dex.baseStats?.[key] || 0), 0) : 0;
   const trainers = pokemon.trainers.slice(0, 8).map((t) => ({ key: t.name, name: t.name, count: t.entries }));
+  const battle = useBattleUsage(dex);
   return (
     <Modal title={pokemon.name} hint={dex ? `${dex.name}, 전국도감 ${String(dex.num).padStart(4, "0")}` : undefined} className="rc-sheet wide" onClose={onClose}>
       <div className="rc-profile">
@@ -677,8 +717,17 @@ function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
         </div>
         <p className="t12 dim reg rc-lead-note">
           채용률 {pokemon.entryRate.toFixed(1)}%는 저장된 파티 엔트리 {snapshot.rosters.length}개를 기준으로 계산합니다.
-          실제 경기 선출 여부는 기록하지 않으므로 포켓몬 승률은 표시하지 않습니다.
+          {battle ? " 아래의 선출, 선봉, 승률은 사이트 배틀로 치른 공식 경기만 셉니다." : " 실제 경기 선출은 사이트 배틀로 치른 공식 경기만 기록되며, 아직 이 포켓몬의 기록은 없습니다."}
         </p>
+
+        {battle && <section className="rc-sec" aria-labelledby="rc-pk-bt-h">
+          <SectionHead id="rc-pk-bt-h" title="공식 배틀" />
+          <div className="stack rc-counts">
+            <Counter label="선출" value={battle.picked} unit="판" cells={battle.picked >= 100 ? 3 : 2} after={<span className="t15">판</span>} />
+            <Counter label="선봉" value={battle.leads} unit="판" cells={battle.leads >= 100 ? 3 : 2} after={<span className="t15">판</span>} />
+            <Counter label="승률" value={Math.round(battle.wins / battle.picked * 100)} unit="%" cells={battle.wins === battle.picked ? 3 : 2} after={<span className="t15">%</span>} />
+          </div>
+        </section>}
 
         {dex && <section className="rc-sec" aria-labelledby="rc-pk-st-h">
           <SectionHead id="rc-pk-st-h" title="능력치" />

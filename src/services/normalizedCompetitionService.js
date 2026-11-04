@@ -31,6 +31,7 @@ import {
   slotsFromPlan,
 } from "./bracketProjection.js";
 import { readAll } from "./pagedRead.js";
+import { guardQualifierRows, projectRuntimeFacts } from "./bracketWinnerPlan.js";
 import {
   buildAnnouncementDeletionPreflight,
   emptyAnnouncementDeletionCounts,
@@ -173,64 +174,6 @@ async function readNormalizedBracketRuntimeFacts(eventId, runtimeId = null) {
 }
 
 // The checks and projection for one runtime, over query results ({ data, error }) already narrowed to its Event.
-function projectRuntimeFacts(runtime, event, {
-  slots: slotsResult,
-  entries: entriesResult,
-  participants: participantsResult,
-  matches: matchesResult,
-  registrations: registrationsResult,
-}) {
-  const eventId = runtime.event_id;
-  if (!event) throw new Error("대진표의 대회를 찾을 수 없습니다.");
-  const failed = [slotsResult, entriesResult, participantsResult, matchesResult].find(result => result.error);
-  if (failed) fail(failed.error, "대진표 기준 데이터를 불러오지 못했습니다.");
-
-  if (!["single_elimination", "double_elimination"].includes(runtime.topology_kind) || runtime.projection_version !== 1) {
-    throw new Error("지원하지 않는 대진표 구조나 버전입니다.");
-  }
-  const registrationIds = new Set((participantsResult.data || []).map(row => row.registration_id).filter(Boolean));
-  if (registrationIds.size && registrationsResult.error) fail(registrationsResult.error, "대진표 참가자 이름을 불러오지 못했습니다.");
-  const registrations = registrationIds.size ? (registrationsResult.data || []).filter(row => registrationIds.has(row.id)) : [];
-  if ((matchesResult.data || []).some(row => row?.source !== "normalized_bracket_runtime")) {
-    throw new Error("대진표에 다른 출처의 경기가 있어 동기화를 중단했습니다.");
-  }
-  const registrationNames = new Map((registrations || []).map(row => [row.id, row.registration_name]));
-  const entryParticipants = (participantsResult.data || []).map(row => ({
-    ...row,
-    registration_name: registrationNames.get(row.registration_id) || null,
-  }));
-  const bracket = runtime.topology_kind === "double_elimination"
-    ? projectNormalizedDoubleEliminationBracket({
-      event,
-      runtimeId: runtime.id,
-      entries: entriesResult.data || [],
-      entryParticipants,
-      entrySlots: slotsResult.data || [],
-      matches: matchesResult.data || [],
-    })
-    : projectNormalizedSingleEliminationBracket({
-    event,
-    runtimeId: runtime.id,
-    entries: entriesResult.data || [],
-    entryParticipants,
-    entrySlots: slotsResult.data || [],
-    matches: matchesResult.data || [],
-  });
-  bracket.applied = event.record_applied_at
-    ? { normalized: true, recordAppliedAt: event.record_applied_at, recordMeta: { eventId } }
-    : null;
-  bracket.runtimeCreatedAt = runtime.created_at || null;
-  return {
-    bracket,
-    event,
-    runtime,
-    entries: entriesResult.data || [],
-    entryParticipants,
-    entrySlots: slotsResult.data || [],
-    matches: matchesResult.data || [],
-  };
-}
-
 export async function fetchNormalizedSingleBracketRuntime(eventId, runtimeId = null) {
   return readNormalizedBracketRuntimeFacts(eventId, runtimeId);
 }
@@ -595,23 +538,7 @@ async function syncNormalizedBracketMatchesNow(eventId, bracket, source = NORMAL
 
   let desiredRows = buildEventBracketMatchSnapshot(bracket);
   const previousRows = await readEventRuntimeMatchesNow(eventId, source);
-  if (isChampionshipQualifier(event) && source === NORMALIZED_BRACKET_RUNTIME_SOURCE) {
-    const qualifierEntries = identityState.participants.map(participant => ({ id: participant.entryId, status: "active" }));
-    const currentState = deriveQualifierSurvivorState({
-      entries: qualifierEntries,
-      matches: previousRows.filter(row => row.match_kind === "bracket"),
-      qualificationSlots: event.qualification_slots,
-    });
-    const previousByNode = new Map(previousRows.filter(row => row.match_kind === "bracket").map(row => [row.source_node_key, row]));
-    const startsNewPlayedMatch = desiredRows.some(row => row.match_kind === "bracket" && row.winner_entry_id && !previousByNode.get(row.source_node_key)?.winner_entry_id);
-    if (currentState.aliveCount <= currentState.targetCount && startsNewPlayedMatch) {
-      throw new Error("본선 진출 인원이 확정되어 선발전 경기를 더 진행할 수 없습니다.");
-    }
-    const desiredState = deriveQualifierSurvivorState({ entries: qualifierEntries, matches: desiredRows.filter(row => row.match_kind === "bracket"), qualificationSlots: event.qualification_slots });
-    if (desiredState.readyToFinalize) {
-      desiredRows = desiredRows.filter(row => row.winner_entry_id || previousByNode.has(row.source_node_key));
-    }
-  }
+  if (source === NORMALIZED_BRACKET_RUNTIME_SOURCE) desiredRows = guardQualifierRows(event, identityState.participants, desiredRows, previousRows);
   const now = new Date().toISOString();
   const desiredParents = desiredRows.filter(row => row.match_kind === "bracket");
   const desiredChildren = desiredRows.filter(row => row.match_kind !== "bracket");

@@ -6,6 +6,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getIndividualPlacementPointPolicy, getTeamPlacementPointPolicy } from "../src/services/bracketRankingAwardSnapshot.js";
+import * as bracketWinnerPlan from "../src/services/bracketWinnerPlan.js";
 
 const require = createRequire(import.meta.url);
 const { transformSync } = createRequire(require.resolve("vite"))("esbuild");
@@ -38,6 +39,8 @@ test("completed bracket opens record application with the supplied save callback
     window: { location: { search: "" } },
     require: name => name === "react" ? react
       : name.endsWith("historicalBracketReadModel.js") ? { buildBracketPageList: rows => rows }
+      // the graph helpers are pure and shared with the battle server: the real ones
+      : name.endsWith("bracketWinnerPlan.js") ? bracketWinnerPlan
       : name.endsWith("components/index.js") ? { Button: "button", ErrorNote: "div", Field: "div", FormError: "p", Icon: "span", Loader: "div" }
       // the page's one hook from the shared parts: the list's arrival light, a ref that never lights here
       : name.endsWith("common/Board.jsx") ? { useArrival: () => ({ current: null }) }

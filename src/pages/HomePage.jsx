@@ -11,6 +11,7 @@ import { dotDate, formatDate } from "../services/dateFormat.js";
 import { listNormalizedBracketRuntimes } from "../services/normalizedCompetitionService.js";
 import { freshRead } from "../services/readCache.js";
 import { liveMatches } from "../services/recordsAnalytics.js";
+import { listEventBattles } from "../services/battleService.js";
 import { submissionDue } from "../services/submissionDue.js";
 import { applicationsOpen } from "../services/announcementTimes.js";
 
@@ -117,6 +118,14 @@ export default function HomePage({ data, go, admin }) {
       .catch(error => { console.warn("home live matches read failed", error); if (on) setLive(null); });
     return () => { on = false; };
   }, [now?.today, now?.eventId]);
+  // a match of that event being played as a site battle: the home opens it to watch
+  const [liveBattle, setLiveBattle] = useState(null);
+  useEffect(() => {
+    if (!now?.today || !now.eventId) { setLiveBattle(null); return undefined; }
+    let on = true;
+    listEventBattles(now.eventId).then(rows => { if (on) setLiveBattle(rows.find(row => row.status === "active") || null); });
+    return () => { on = false; };
+  }, [now?.today, now?.eventId]);
   const primary = !now ? ["공지 보기", "news"] : now.today ? ["대진표 보기", "bracket"] : now.open ? ["이번 대회 신청", "news"] : ["대회 공지 보기", "news", { notice: now.noticeId }];
   const notices = useMemo(() => [...data.announcements].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (a.date < b.date ? 1 : -1)).slice(0, 3), [data.announcements]);
   const reigning = (facts || waited) ? champions?.[0] || null : null;
@@ -156,6 +165,9 @@ export default function HomePage({ data, go, admin }) {
         <p className="pn ho-live-row t15">{live.live[0].a}</p>
         <p className="pn ho-live-row t15">{live.live[0].b}</p>
         <p className="pn ho-live-head t12"><span className="dim">{live.stage} 진행</span><span>{live.done} / {live.total} 종료</span></p>
+        {liveBattle && <button type="button" className="pn ho-live-head t12" onClick={() => go("battle", { battle: liveBattle.id })}>
+          <span className="ho-lamp"><i className="lamp sig" aria-hidden="true" />{`${liveBattle.p1_name} 대 ${liveBattle.p2_name} 배틀 진행 중`}</span><span>관전</span>
+        </button>}
       </div>
     </section>}
 

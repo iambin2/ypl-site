@@ -1443,6 +1443,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               <span className="t12 reg dim">{draftSavedAt && draftStatus === "saved" ? `마지막 임시저장 ${new Date(draftSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}` : "변경사항은 이 브라우저에 자동 임시저장됩니다."}</span>
               <span className="tb-team-links">
                 {team.length > 0 && <Button variant="link" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지 저장</Button>}
+                {/* a saved team as it stands goes straight into a friendly battle (BattlePage reads ?team=) */}
+                {currentSaved && !dirty && <Button variant="link" href={`?view=battle&team=${encodeURIComponent(currentSaved.id)}`}>이 팀으로 배틀</Button>}
                 <Button variant="link" onClick={resetTeam}>초기화</Button>
               </span>
             </div>

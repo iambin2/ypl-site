@@ -1,4 +1,5 @@
-// Bundles the battle engine (supabase/functions/battle/engine.mjs and the pinned @pkmn/sim it imports) into one file the
+// Bundles the battle function's code (supabase/functions/battle/server.mjs: the engine, the pinned @pkmn/sim, the bracket
+// winner plan) into one file the
 // battle function imports, so the deploy uploads plain code and Supabase never fetches the 100 MB+ @pkmn/mods package.
 //
 //   npm run build:battle      (run it before every deploy of the battle function; the bundle is not committed)
@@ -8,7 +9,7 @@ import { build } from "esbuild";
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const ENTRY = fileURLToPath(new URL("../supabase/functions/battle/engine.mjs", import.meta.url));
+const ENTRY = fileURLToPath(new URL("../supabase/functions/battle/server.mjs", import.meta.url));
 const OUT = fileURLToPath(new URL("../supabase/functions/battle/engine.bundle.mjs", import.meta.url));
 const LICENSE = readFileSync(new URL("../node_modules/@pkmn/sim/LICENSE", import.meta.url), "utf8");
 

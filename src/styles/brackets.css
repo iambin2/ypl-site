@@ -96,6 +96,9 @@
 .mb.team-click { cursor: pointer; }
 /* a visitor's match sheet: the bouts of a team match stand 20 under the two sides */
 .mb-bouts { margin-top: var(--s5); }
+/* a match played as a site battle: the amber lamp in its box's corner, and in its sheet the battle and its one action */
+.mb-lamp { position: absolute; top: var(--s1); right: var(--s1); z-index: var(--z-raised); }
+.mb-battle { margin-top: var(--s5); }
 
 /* the lines: one svg over the tree (BracketsPage ElimBoard), measured from the boxes. A road not yet decided is a 1px muted line,
    a decided one a 2px lit line laid over it, square-capped so its corners close */

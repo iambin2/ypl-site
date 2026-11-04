@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createBattleReader, readWholeLog, josa, parseHP } from "../src/services/battleLog.js";
+import { battleUsage, createBattleReader, readWholeLog, josa, parseHP } from "../src/services/battleLog.js";
 import { formatId, startBattle, choose, readout } from "../supabase/functions/battle/engine.mjs";
 
 const text = JSON.parse(readFileSync(new URL("../src/data/battle-text-ko.json", import.meta.url), "utf8"));
@@ -93,4 +93,21 @@ test("moves become the battle verbs: strike for physical, chase for special, sel
   const mega = reader.read("|-mega|p1a: Charizard|Charizard|Charizardite Y");
   assert.equal(mega.lines[1], "리자몽은 메가리자몽으로 메가진화했다!", "the Pokémon is named as it was before it evolved");
   assert.equal(mega.event.verb, "mega");
+});
+
+test("official battles count each Pokémon's games, leads and wins from the public lines only", () => {
+  const battle = play("doubles", [4, 4, 4, 4]);
+  const out = readout(battle);
+  const usage = battleUsage([{ log: out.log, winner: out.winner }]);
+  // the leads are the first two each side sent out, and nothing is counted twice for the secret copy of a line
+  for (const side of ["p1", "p2"]) {
+    const firstTurn = out.log.indexOf("|turn|1");
+    const leads = [...out.log.slice(0, firstTurn).matchAll(new RegExp(`\\|switch\\|${side}[ab]: [^|]*\\|([^|,]+)`, "g"))].map(m => m[1]);
+    for (const species of new Set(leads)) assert.ok(usage.get(species.toLowerCase().replace(/[^a-z0-9]/g, ""))?.leads >= 1, `${side} lead ${species}`);
+  }
+  const total = [...usage.values()].reduce((sum, u) => sum + u.picked, 0);
+  assert.ok(total >= 4 && total <= 8, `four a side at most, at least the leads: ${total}`);
+  const winners = [...usage.values()].reduce((sum, u) => sum + u.wins, 0);
+  assert.ok(out.winner === "tie" ? winners === 0 : winners >= 2 && winners <= 4, `the winner's Pokémon carry the win: ${winners}`);
+  assert.equal(battleUsage([]).size, 0);
 });

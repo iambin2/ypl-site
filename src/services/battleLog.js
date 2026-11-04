@@ -285,6 +285,34 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
   return { state, read, speciesName, pokemonWord };
 }
 
+/* 끝난 공식 배틀들에서 포켓몬마다 실제로 나온 판, 선봉으로 나온 판, 나와서 이긴 판을 센다(기록의 포켓몬 시트).
+   rows: { log, winner } 들. 전체 로그는 비밀 줄(|split| 다음 줄)과 공개 줄이 겹쳐 있어 공개 줄만 읽는다.
+   종은 나올 때의 이름으로 센다: 메가진화는 원래 모습으로 나오므로 원래 종으로 센다. */
+export function battleUsage(rows = []) {
+  const usage = new Map();
+  const bump = (id, key) => { const u = usage.get(id) || { picked: 0, leads: 0, wins: 0 }; u[key] += 1; usage.set(id, u); };
+  for (const row of rows) {
+    const seen = { p1: new Set(), p2: new Set() }, leads = { p1: new Set(), p2: new Set() };
+    let started = false, skip = false;
+    for (const line of String(row?.log || "").split("\n")) {
+      if (skip) { skip = false; continue; }
+      if (line.startsWith("|split|")) { skip = true; continue; }
+      if (line.startsWith("|turn|")) started = true;
+      const match = /^\|(switch|drag|replace)\|(p[12])[ab]?: [^|]*\|([^|,]+)/.exec(line);
+      if (!match) continue;
+      const id = toID(match[3]);
+      seen[match[2]].add(id);
+      if (!started) leads[match[2]].add(id);
+    }
+    for (const side of ["p1", "p2"]) for (const id of seen[side]) {
+      bump(id, "picked");
+      if (leads[side].has(id)) bump(id, "leads");
+      if (row.winner === side) bump(id, "wins");
+    }
+  }
+  return usage;
+}
+
 /* 쌓인 기록 전체를 읽는다. 끝난 배틀과 리플레이가 쓴다. 턴마다 { turn, lines } 로 묶는다. */
 export function readWholeLog(log, options) {
   const reader = createBattleReader(options);

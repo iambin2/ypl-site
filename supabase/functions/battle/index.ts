@@ -1,10 +1,11 @@
 // 사이트 안 배틀. 엔진(engine.mjs)은 여기서만 돌고, 방문자는 좌석 토큰으로 자기 자리에서만 고른다.
-// 공개 행(battles)은 누구나 읽고, 엔진 상태와 토큰 해시(battle_secrets)는 이 함수만 읽는다. 쓰기는 battle_create, battle_save 뿐이다.
+// 공개 행(battles)은 누구나 읽고, 엔진 상태와 토큰 해시(battle_secrets)는 이 함수만 읽는다. 쓰기는 battles.sql 과 battle_links.sql 의 함수로만 한다.
+// 공식 경기는 그 경기 선수의 신청 이름과 제출 비밀번호로 앉고, 끝나면 승자가 운영진의 선택과 같은 계산으로 대진표에 들어간다.
 // 배포: npm run build:battle 로 엔진을 한 파일로 묶은 뒤
 //   npx supabase functions deploy battle --use-api --no-verify-jwt --project-ref rqffrogcverfjqzjasax
 // (엔진 패키지를 Supabase가 받아 묶게 두면 배포가 내부 오류로 실패했다. 요청은 토큰으로 확인하므로 JWT 검사가 필요 없다.)
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { ENGINE, formatId, validateTeam, startBattle, loadBattle, choose, forfeit, readout } from "./engine.bundle.mjs";
+import { ENGINE, formatId, validateTeam, startBattle, loadBattle, choose, forfeit, readout, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -60,6 +61,62 @@ async function save(id: string, version: number, fields: Record<string, unknown>
   return data === true;
 }
 
+async function rpc(name: string, args: Record<string, unknown>) {
+  const { data, error } = await db.rpc(name, args);
+  if (error) throw error;
+  return data;
+}
+
+// An official party as it was submitted (team_snapshot_members): Showdown ids throughout, the points in the EV fields.
+type Member = { pokemonId: string; pokemonName: string; ability: string; nature: string; item: string | null; moves: (string | null)[]; statPoints: Record<string, number> };
+const officialTeam = (members: Member[]) => members.map(m => ({
+  name: "", species: m.pokemonId || m.pokemonName, ability: m.ability || "", nature: m.nature || "serious",
+  item: m.item || "", moves: (m.moves || []).filter(Boolean), evs: m.statPoints, level: 50,
+}));
+const SEAT_REFUSAL: Record<string, [number, string]> = {
+  no_event: [404, "대회를 찾을 수 없습니다."],
+  not_running: [409, "진행 중인 개인전 대회의 경기만 배틀로 치를 수 있습니다."],
+  not_formed: [409, "아직 두 선수가 정해지지 않은 경기입니다."],
+  decided: [409, "이미 승자가 정해진 경기입니다."],
+  not_player: [403, "이 경기의 선수를 골라 주세요."],
+  wrong_pin: [403, "제출 비밀번호가 맞지 않습니다."],
+  locked: [429, "비밀번호를 여러 번 틀려 15분 동안 잠겼습니다."],
+  no_pin: [403, "공식 파티를 제출한 선수만 배틀로 치를 수 있습니다."],
+  no_team: [409, "제출한 공식 파티가 없습니다. 파티를 먼저 제출해 주세요."],
+};
+
+/* An official battle's winner goes into the bracket the way an operator's pick does: the same calculation
+   (bracketWinnerPlan.js) on the bracket as it stands, written by one locked transaction. If the bracket moved meanwhile the
+   database answers stale and this reads and plans again. What cannot be applied is kept on the battle for the operators. */
+async function applyResult(battleId: string) {
+  try {
+    for (let tries = 0; tries < 3; tries++) {
+      const { data: battle } = await db.from("battles").select("*").eq("id", battleId).maybeSingle();
+      if (!battle || battle.kind !== "official" || battle.applied_at || battle.status !== "ended") return;
+      const winnerEntryId = battle.winner === "p1" ? battle.p1_entry_id : battle.winner === "p2" ? battle.p2_entry_id : null;
+      if (!winnerEntryId) throw new Error("무승부라 승자를 넣지 않았습니다.");
+      const facts = await rpc("battle_bracket_facts", { p_event_id: battle.event_id });
+      if (facts?.status !== "ok") throw new Error("대진표를 찾을 수 없습니다.");
+      const ok = (data: unknown) => ({ data, error: null });
+      const projected = projectRuntimeFacts(facts.runtime, facts.event, {
+        slots: ok(facts.slots), entries: ok(facts.entries), participants: ok(facts.participants),
+        matches: ok(facts.matches), registrations: ok(facts.registrations),
+      });
+      const plan = planMatchWinner(projected, battle.source_node_key, winnerEntryId, new Date().toISOString());
+      const result = await rpc("battle_apply_result", {
+        p_battle_id: battleId, p_expected_stamp: facts.stamp, p_mode: plan.mode, p_runtime_id: plan.runtimeId,
+        p_updates: plan.updates || [], p_inserts: plan.inserts || [], p_delete_ids: plan.deleteIds || [],
+      });
+      if (result === "ok" || result === "already") return;
+      if (result !== "stale") throw new Error(`대진표에 넣지 못했습니다 (${result}).`);
+    }
+    throw new Error("대진표가 계속 바뀌어 넣지 못했습니다.");
+  } catch (error) {
+    console.error(error);
+    await db.rpc("battle_mark_apply_error", { p_battle_id: battleId, p_error: String((error as Error)?.message || error) });
+  }
+}
+
 // What a player sees: their request, their own log with their secrets, and whether their choice is waiting on the other side.
 function playerView(row: { status: string; winner: string | null }, secret: { state: object; pending: Record<string, string> }, side: string) {
   const out = readout(loadBattle(secret.state));
@@ -101,6 +158,7 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
     const token = newToken();
     return withRetry(async () => {
       const { battle, secret } = await read(String(id));
+      if (battle.kind === "official") refuse(409, "공식 경기는 대진표의 경기에서 참가해 주세요.");
       if (battle.status !== "waiting") refuse(409, "이미 시작된 배틀입니다.");
       if (p2 === battle.p1_name) refuse(400, "상대와 다른 이름을 입력해 주세요.");
       checkTeam(battle.format_id, team);
@@ -140,6 +198,7 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       const state = engine.toJSON();
       const ended = out.ended ? { p_status: "ended", p_winner: out.winner, p_ended_by: "battle", p_log: out.log, p_input_log: out.inputLog } : {};
       if (!(await save(battle.id, battle.version, { p_turn: out.turn, p_spectator_log: out.spectatorLog, p_state: state, p_pending: {}, ...ended }))) return undefined;
+      if (out.ended) await applyResult(battle.id);
       return playerView({ status: out.ended ? "ended" : "active", winner: out.winner }, { state, pending: {} }, side);
     });
   },
@@ -158,7 +217,66 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
         p_log: out.log, p_input_log: out.inputLog, p_state: state, p_pending: {},
       });
       if (!saved) return undefined;
+      await applyResult(battle.id);
       return playerView({ status: "ended", winner: out.winner }, { state, pending: {} }, side);
+    });
+  },
+
+  // The host takes back a battle nobody joined. Nothing was played, so nothing is kept.
+  async cancel({ id, token }) {
+    const { battle, secret } = await read(String(id));
+    const side = await seat(secret, token);
+    if (side !== "p1" || battle.status !== "waiting") refuse(409, "이미 시작된 배틀은 취소할 수 없습니다.");
+    if (!(await rpc("battle_cancel", { p_id: battle.id }))) refuse(409, "이미 시작된 배틀은 취소할 수 없습니다.");
+    return { cancelled: true };
+  },
+
+  /* An official match: a player of that match takes their side's seat with their party PIN, and plays their
+     latest official party. The first one in opens the battle, the second starts it. The same player again (another phone)
+     gets a new token for the same seat. */
+  async official({ eventId, nodeKey, side, pin }) {
+    const seatInfo = await rpc("battle_official_seat", {
+      p_event_id: String(eventId ?? ""), p_source_node_key: String(nodeKey ?? ""), p_side: String(side ?? ""), p_pin: String(pin ?? ""),
+    });
+    if (seatInfo?.status !== "ok") {
+      const [status, message] = SEAT_REFUSAL[seatInfo?.status] || [500, "잠시 뒤 다시 시도해 주세요."];
+      refuse(status, message);
+    }
+    let formatid = "";
+    try { formatid = formatId(seatInfo.regulation, seatInfo.battleFormat); } catch { refuse(409, "이 대회의 규정은 사이트 배틀이 아직 지원하지 않습니다."); }
+    const team = checkTeam(formatid, officialTeam(seatInfo.team));
+    const token = newToken();
+    const hash = await sha256(token);
+    return withRetry(async () => {
+      const { data: open } = await db.from("battles").select("*")
+        .eq("event_id", String(eventId)).eq("source_node_key", String(nodeKey)).in("status", ["waiting", "active"]).maybeSingle();
+      if (!open) {
+        const id = newId();
+        const { error } = await db.rpc("battle_create_official", {
+          p_id: id, p_regulation: seatInfo.regulation, p_format_id: formatid, p_engine: ENGINE, p_p1_name: seatInfo.registrationName,
+          p_p1_token_hash: hash, p_p1_team: team, p_event_id: String(eventId), p_source_node_key: String(nodeKey),
+          p_p1_entry_id: seatInfo.entryId, p_p1_player_id: seatInfo.playerId,
+        });
+        if (error?.code === "23505") return undefined; // the other player opened it a moment earlier: read again
+        if (error) throw error;
+        return { id, token, side: "p1" };
+      }
+      const mine = open.p1_entry_id === seatInfo.entryId ? "p1" : open.p2_entry_id === seatInfo.entryId ? "p2" : null;
+      if (mine) {
+        await rpc("battle_set_seat", { p_id: open.id, p_side: mine, p_entry_id: null, p_player_id: null, p_token_hash: hash });
+        return { id: open.id, token, side: mine };
+      }
+      if (open.status !== "waiting") refuse(409, "이미 진행 중인 배틀입니다.");
+      const { data: secret } = await db.from("battle_secrets").select("*").eq("battle_id", open.id).maybeSingle();
+      const engine = startBattle({ formatid: open.format_id, p1: { name: open.p1_name, team: secret.p1_team }, p2: { name: seatInfo.registrationName, team } });
+      const out = readout(engine);
+      const saved = await save(open.id, open.version, {
+        p_status: "active", p_p2_name: seatInfo.registrationName, p_turn: out.turn, p_spectator_log: out.spectatorLog,
+        p_p2_token_hash: hash, p_state: engine.toJSON(), p_pending: {},
+      });
+      if (!saved) return undefined;
+      await rpc("battle_set_seat", { p_id: open.id, p_side: "p2", p_entry_id: seatInfo.entryId, p_player_id: seatInfo.playerId, p_token_hash: null });
+      return { id: open.id, token, side: "p2" };
     });
   },
 };
