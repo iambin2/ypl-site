@@ -10,6 +10,9 @@ import { ENGINE, formatId, validateTeam, startBattle, loadBattle, choose, forfei
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  // every choice is a JSON POST, so the browser asks first; it may keep the answer (Chrome up to 2 hours, Safari 10 minutes)
+  // instead of paying that extra round trip (100 to 500 ms measured) before each one
+  "Access-Control-Max-Age": "86400",
 };
 const reply = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -34,13 +37,16 @@ function checkTeam(formatid: string, team: unknown) {
   return team;
 }
 
+/* The public row and its secrets in one query, so one snapshot: two separate reads could see a save between them (the
+   version after it, the state before it) and a choice would then be applied to the old state under the new version.
+   Only the columns the actions use; the logs stay in the database. */
 async function read(id: string) {
-  const [{ data: battle }, { data: secret }] = await Promise.all([
-    db.from("battles").select("*").eq("id", id).maybeSingle(),
-    db.from("battle_secrets").select("*").eq("battle_id", id).maybeSingle(),
-  ]);
-  if (!battle || !secret) refuse(404, "배틀을 찾을 수 없습니다.");
-  return { battle, secret };
+  const { data, error } = await db.from("battles")
+    .select("id, kind, status, version, format_id, p1_name, winner, battle_secrets(*)").eq("id", id).maybeSingle();
+  if (error) throw error;
+  const secret = Array.isArray(data?.battle_secrets) ? data.battle_secrets[0] : data?.battle_secrets;
+  if (!data || !secret) refuse(404, "배틀을 찾을 수 없습니다.");
+  return { battle: data, secret };
 }
 
 async function seat(secret: { p1_token_hash: string; p2_token_hash: string | null }, token: unknown) {
@@ -118,10 +124,11 @@ async function applyResult(battleId: string) {
 }
 
 // What a player sees: their request, their own log with their secrets, and whether their choice is waiting on the other side.
-function playerView(row: { status: string; winner: string | null }, secret: { state: object; pending: Record<string, string> }, side: string) {
+// version is the public row's version this view is of, so the screen does not ask again when its poll reaches that version.
+function playerView(row: { status: string; winner: string | null; version: number }, secret: { state: object; pending: Record<string, string> }, side: string) {
   const out = readout(loadBattle(secret.state));
   return {
-    side, status: row.status, turn: out.turn, winner: row.winner ?? out.winner,
+    side, version: row.version, status: row.status, turn: out.turn, winner: row.winner ?? out.winner,
     request: row.status === "active" ? out.request[side] : null,
     chosen: secret.pending?.[side] ?? null,
     log: out.sideLog[side],
@@ -170,14 +177,14 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
         p_p2_token_hash: await sha256(token), p_state: state, p_pending: {},
       });
       if (!saved) return undefined;
-      return { token, ...playerView({ status: "active", winner: null }, { state, pending: {} }, "p2") };
+      return { token, ...playerView({ status: "active", winner: null, version: battle.version + 1 }, { state, pending: {} }, "p2") };
     });
   },
 
   async view({ id, token }) {
     const { battle, secret } = await read(String(id));
     const side = await seat(secret, token);
-    if (!secret.state) return { side, status: battle.status, turn: 0, winner: null, request: null, chosen: null, log: "" };
+    if (!secret.state) return { side, version: battle.version, status: battle.status, turn: 0, winner: null, request: null, chosen: null, log: "" };
     return playerView(battle, secret, side);
   },
 
@@ -192,14 +199,14 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       if (!result.committed) {
         const pending = { ...secret.pending, [side]: String(choice) };
         if (!(await save(battle.id, battle.version, { p_pending: pending }))) return undefined;
-        return playerView(battle, { state: secret.state, pending }, side);
+        return playerView({ ...battle, version: battle.version + 1 }, { state: secret.state, pending }, side);
       }
       const out = readout(engine);
       const state = engine.toJSON();
       const ended = out.ended ? { p_status: "ended", p_winner: out.winner, p_ended_by: "battle", p_log: out.log, p_input_log: out.inputLog } : {};
       if (!(await save(battle.id, battle.version, { p_turn: out.turn, p_spectator_log: out.spectatorLog, p_state: state, p_pending: {}, ...ended }))) return undefined;
       if (out.ended) await applyResult(battle.id);
-      return playerView({ status: out.ended ? "ended" : "active", winner: out.winner }, { state, pending: {} }, side);
+      return playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side);
     });
   },
 
@@ -218,7 +225,7 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       });
       if (!saved) return undefined;
       await applyResult(battle.id);
-      return playerView({ status: "ended", winner: out.winner }, { state, pending: {} }, side);
+      return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side);
     });
   },
 
