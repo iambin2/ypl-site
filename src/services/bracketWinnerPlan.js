@@ -139,8 +139,9 @@ export function guardQualifierRows(event, participants, desiredRows, previousRow
 /* 한 경기의 승자를 정하는 계획. 개인전만 다룬다(사이트 배틀은 개인전 경기다).
    - single: 서버가 기존 싱글 승자 RPC 를 그대로 부르면 되므로 그 인자만 돌려준다.
    - double: 운영진 화면과 같은 계산(withPick → 경기 스냅숏 → 동기화 계획)으로 바꿀 행을 돌려준다.
-   경기가 아직 성립하지 않았거나, 이미 승자가 있거나, 그 출전이 이 경기에 없으면 던진다(fail closed). */
-export function planMatchWinner(facts, sourceNodeKey, winnerEntryId, nowIso) {
+   경기가 아직 성립하지 않았거나, 이미 승자가 있거나, 그 출전이 이 경기에 없으면 던진다(fail closed).
+   loserEntryId 를 주면 상대도 확인한다: 앞 경기가 바뀌어 같은 자리에 다른 상대가 서 있으면 배틀의 승자를 넣지 않는다. */
+export function planMatchWinner(facts, sourceNodeKey, winnerEntryId, nowIso, loserEntryId = null) {
   const { bracket, event, runtime, matches } = facts;
   if (event.is_team_event) throw new Error("팀전 경기는 배틀 결과로 정하지 않습니다.");
   const graph = bracket.graph;
@@ -149,7 +150,8 @@ export function planMatchWinner(facts, sourceNodeKey, winnerEntryId, nowIso) {
   if (match.winner) throw new Error("이미 승자가 정해진 경기입니다.");
   const { sp } = evalGraph(graph);
   const side = sp(match.a) === winnerEntryId ? "a" : sp(match.b) === winnerEntryId ? "b" : null;
-  if (!side || sp(match.a) === BYE || sp(match.b) === BYE) throw new Error("이 경기의 두 선수가 배틀의 두 선수와 다릅니다.");
+  const other = side === "a" ? sp(match.b) : sp(match.a);
+  if (!side || sp(match.a) === BYE || sp(match.b) === BYE || (loserEntryId && other !== loserEntryId)) throw new Error("이 경기의 두 선수가 배틀의 두 선수와 다릅니다.");
   if (runtime.topology_kind === "single_elimination") {
     return { mode: "single", runtimeId: runtime.id, eventId: event.id, sourceNodeKey, winnerEntryId };
   }

@@ -39,10 +39,11 @@ function TrainerBattles({ playerIds }) {
       {rows.map(b => {
         const mine = playerIds.includes(b.p1_player_id) ? "p1" : "p2";
         const won = b.winner === mine;
+        const result = b.winner === "tie" ? "무승부" : won ? "승리" : "패배";
         return <Row key={b.id} title={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}`}
           line={[formatDate(b.updated_at), `${b.turn}턴`, b.ended_by === "forfeit" ? "기권" : ""].filter(Boolean).join(", ")}
-          value={<span className={"rc-place t12" + (won ? " inv" : " dim")}>{b.winner === "tie" ? "무승부" : won ? "승리" : "패배"}</span>}
-          label={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}, ${won ? "승리" : "패배"}, 리플레이 보기`}
+          value={<span className={"rc-place t12" + (won ? " inv" : " dim")}>{result}</span>}
+          label={`상대 ${mine === "p1" ? b.p2_name : b.p1_name}, ${result}, 리플레이 보기`}
           onClick={() => { window.location.search = battleHref(b.id); }} />;
       })}
     </div>

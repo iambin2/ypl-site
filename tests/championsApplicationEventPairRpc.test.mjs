@@ -90,6 +90,8 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
     if (statement.startsWith("grant select ")) continue;
     // A visitor's own notice alert and survey answer: the rows stay closed to anon (docs/db/announcement_push.sql, backend_hardening.sql).
     if (/^grant execute on function public\.((save|delete)_push_subscription|submit_announcement_response|community_write)\(/.test(statement)) continue;
+    // A battle's replay log: a read that hides an official battle's parties until the event reveals them (battle_integration.sql).
+    if (/^grant execute on function public\.battle_full_log\(/.test(statement)) continue;
     const rpc = statement.match(/^grant execute on function ypl_schema_validation\.(\w+)\(/);
     if (rpc) { assert.ok(anonRpcs.has(rpc[1]), statement); continue; }
     assert.match(statement, /^grant insert \([^)]*\) on ypl_schema_validation\.event_registrations to anon$/);

@@ -83,6 +83,14 @@ const SEAT_REFUSAL: Record<string, [number, string]> = {
   locked: [429, "비밀번호를 여러 번 틀려 15분 동안 잠겼습니다."],
   no_pin: [403, "공식 파티를 제출한 선수만 배틀로 치를 수 있습니다."],
   no_team: [409, "제출한 공식 파티가 없습니다. 파티를 먼저 제출해 주세요."],
+  qualifier_done: [409, "본선 진출 인원이 확정되어 이 선발전 경기는 치르지 않습니다."],
+};
+
+const APPLY_REFUSAL: Record<string, string> = {
+  decided: "운영진이 먼저 이 경기의 승자를 정했습니다.",
+  players_changed: "대진이 바뀌어 이 경기의 두 선수가 배틀의 두 선수와 다릅니다.",
+  not_running: "진행 중인 대회가 아닙니다.",
+  no_entry: "배틀의 선수 정보가 비어 있습니다.",
 };
 
 /* An official battle's winner goes into the bracket the way an operator's pick does: the same calculation
@@ -92,7 +100,7 @@ async function applyResult(battleId: string) {
   try {
     for (let tries = 0; tries < 3; tries++) {
       const { data: battle } = await db.from("battles").select("*").eq("id", battleId).maybeSingle();
-      if (!battle || battle.kind !== "official" || battle.applied_at || battle.status !== "ended") return;
+      if (!battle || battle.kind !== "official" || battle.applied_at || battle.status !== "ended" || battle.ended_by === "void") return;
       const winnerEntryId = battle.winner === "p1" ? battle.p1_entry_id : battle.winner === "p2" ? battle.p2_entry_id : null;
       if (!winnerEntryId) throw new Error("무승부라 승자를 넣지 않았습니다.");
       const facts = await rpc("battle_bracket_facts", { p_event_id: battle.event_id });
@@ -102,13 +110,15 @@ async function applyResult(battleId: string) {
         slots: ok(facts.slots), entries: ok(facts.entries), participants: ok(facts.participants),
         matches: ok(facts.matches), registrations: ok(facts.registrations),
       });
-      const plan = planMatchWinner(projected, battle.source_node_key, winnerEntryId, new Date().toISOString());
+      const loserEntryId = battle.winner === "p1" ? battle.p2_entry_id : battle.p1_entry_id;
+      if (!loserEntryId) throw new Error("배틀의 선수 정보가 비어 있습니다.");
+      const plan = planMatchWinner(projected, battle.source_node_key, winnerEntryId, new Date().toISOString(), loserEntryId);
       const result = await rpc("battle_apply_result", {
         p_battle_id: battleId, p_expected_stamp: facts.stamp, p_mode: plan.mode, p_runtime_id: plan.runtimeId,
         p_updates: plan.updates || [], p_inserts: plan.inserts || [], p_delete_ids: plan.deleteIds || [],
       });
       if (result === "ok" || result === "already") return;
-      if (result !== "stale") throw new Error(`대진표에 넣지 못했습니다 (${result}).`);
+      if (result !== "stale") throw new Error(APPLY_REFUSAL[result] || `대진표에 넣지 못했습니다 (${result}).`);
     }
     throw new Error("대진표가 계속 바뀌어 넣지 못했습니다.");
   } catch (error) {
@@ -231,6 +241,15 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
     return { cancelled: true };
   },
 
+  /* Puts an ended official battle's winner in again: after a failure (the reason stays on the battle), or when the function
+     stopped between the end and the bracket. Anyone may ask, since the battle's own facts decide everything. */
+  async apply({ id }) {
+    await applyResult(String(id ?? ""));
+    const { data } = await db.from("battles").select("applied_at, apply_error").eq("id", String(id ?? "")).maybeSingle();
+    if (!data) refuse(404, "배틀을 찾을 수 없습니다.");
+    return data;
+  },
+
   /* An official match: a player of that match takes their side's seat with their party PIN, and plays their
      latest official party. The first one in opens the battle, the second starts it. The same player again (another phone)
      gets a new token for the same seat. */
@@ -270,12 +289,12 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       const { data: secret } = await db.from("battle_secrets").select("*").eq("battle_id", open.id).maybeSingle();
       const engine = startBattle({ formatid: open.format_id, p1: { name: open.p1_name, team: secret.p1_team }, p2: { name: seatInfo.registrationName, team } });
       const out = readout(engine);
-      const saved = await save(open.id, open.version, {
-        p_status: "active", p_p2_name: seatInfo.registrationName, p_turn: out.turn, p_spectator_log: out.spectatorLog,
-        p_p2_token_hash: hash, p_state: engine.toJSON(), p_pending: {},
+      // the start, the second entry and the engine state go in together, so a failure never leaves a battle nobody can enter
+      const saved = await rpc("battle_start_official", {
+        p_id: open.id, p_version: open.version, p_p2_name: seatInfo.registrationName, p_turn: out.turn, p_spectator_log: out.spectatorLog,
+        p_p2_token_hash: hash, p_state: engine.toJSON(), p_p2_entry_id: seatInfo.entryId, p_p2_player_id: seatInfo.playerId,
       });
-      if (!saved) return undefined;
-      await rpc("battle_set_seat", { p_id: open.id, p_side: "p2", p_entry_id: seatInfo.entryId, p_player_id: seatInfo.playerId, p_token_hash: null });
+      if (saved !== true) return undefined;
       return { id: open.id, token, side: "p2" };
     });
   },

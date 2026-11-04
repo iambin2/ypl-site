@@ -17,7 +17,7 @@ import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { drawPlan } from "../services/bracketProjection.js";
 import { BYE, cascadeClear, collectGraphMatches, evalGraph, withPick } from "../services/bracketWinnerPlan.js";
-import { battleForMatch, battleHref, listEventBattles, officialBattleHref } from "../services/battleService.js";
+import { battleForMatch, battleHref, battleWinnerEntry, listEventBattles, officialBattleHref, retryBattleApply, voidBattle } from "../services/battleService.js";
 import Seg from "../components/common/Seg.jsx";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
@@ -881,7 +881,7 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
   const pa=ev.sp(m.a), pb=ev.sp(m.b);
   const decided=!!m.winner;
   // a match being played as a site battle carries the amber lamp (DESIGN.md "Battle": the battle is the board's live match)
-  const live=battle&&battle.status!=="ended"?<i className="lamp sig mb-lamp" aria-hidden="true"/>:null;
+  const live=battle&&battle.status!=="ended"&&!m.winner?<i className="lamp sig mb-lamp" aria-hidden="true"/>:null;
   const bothReal=pa&&pb&&pa!==BYE&&pb!==BYE;
   const line=(side,pid,Tag,extra)=>{
     const isWin=decided&&m.winner===side, isBye=pid===BYE, lost=decided&&!isWin, n=seedOf?seedOf(pid):null, score=sideScore(m,side);
@@ -904,18 +904,41 @@ function MatchCard({ m, ev, nameOf, admin, onPick, compact, teamMode, onOpenTeam
   const pickProps=side=>({type:"button",disabled:!canPick,onClick:()=>canPick&&onPick(m.id,side),title:canPick?(decided?"다른 쪽을 누르면 승자 변경, 같은 쪽을 다시 누르면 취소":"눌러서 승자 선택"):""});
   return <div className={"mb"+(compact?" cmp":"")+(canPick?" can-pick":"")}>{line("a",pa,"button",pickProps("a"))}{line("b",pb,"button",pickProps("b"))}{live}</div>;
 }
-/* a match's battle in its sheet: watching it while it runs, its replay once it ended, or starting one for an open official match */
-function MatchBattle({ m, ev, battle, startable, eventId }){
+/* a match's battle in its sheet: watching it while it runs, its replay once it ended, or starting one for an open official match.
+   A battle that cannot give the match a winner (a tie, a void one, one that could not go in) leaves the match open to be played again.
+   The operator's result entry adds 다시 넣기 for a result that did not go in and 배틀 무효 for a battle nobody will finish. */
+function MatchBattle({ m, ev, battle, startable, eventId, admin=false, onChanged }){
   const pa=ev.sp(m.a), pb=ev.sp(m.b);
+  const [busy,setBusy]=useState(false);
+  const [note,setNote]=useState("");
+  const run=async fn=>{ setBusy(true); setNote(""); try{ await fn(); onChanged?.(); }catch(e){ setNote(e?.message||"잠시 뒤 다시 시도해 주세요."); }finally{ setBusy(false); } };
+  const canStart=startable&&!m.winner&&pa&&pb&&pa!==BYE&&pb!==BYE;
+  const error=note&&<p className="t12 reg bk-entry-error"><span className="bang" aria-hidden="true">!</span>{note}</p>;
   if(battle&&battle.status!=="ended") return <div className="stack mb-battle">
     <Row title="사이트 배틀" line={battle.status==="waiting"?"한 선수가 들어와 상대를 기다리는 중입니다.":"지금 배틀로 치르는 중입니다. 끝나면 승자가 대진표에 들어갑니다."} lamp="진행 중"/>
     <Button variant="second" href={battleHref(battle.id)}>{battle.status==="waiting"?"경기 들어가기":"관전"}</Button>
+    {admin&&<Button variant="link" disabled={busy} onClick={async()=>{
+      if(await siteConfirm({title:"배틀 무효",body:"이 배틀을 닫습니다. 진행 중이던 배틀은 무효로 끝나 리플레이로 남고, 대진표에는 아무것도 넣지 않습니다. 승자는 결과 입력에서 정합니다.",confirmLabel:"무효",danger:true})) await run(()=>voidBattle(battle.id));
+    }}>배틀 무효</Button>}
+    {error}
   </div>;
-  if(battle) return <div className="stack mb-battle">
-    <Row title="사이트 배틀" line={battle.applied_at?"배틀 결과가 대진표에 들어갔습니다.":battle.apply_error?`배틀 결과를 대진표에 넣지 못했습니다. ${battle.apply_error}`:"배틀이 끝났습니다."}/>
-    <Button variant="second" href={battleHref(battle.id)}>리플레이</Button>
-  </div>;
-  if(startable&&!m.winner&&pa&&pb&&pa!==BYE&&pb!==BYE) return <div className="stack mb-battle">
+  if(battle){
+    const winner=battleWinnerEntry(battle), matchWinner=m.winner?ev.sp(m[m.winner]):null;
+    const line=battle.applied_at?"배틀 결과가 대진표에 들어갔습니다."
+      :battle.ended_by==="void"?`배틀이 무효가 되었습니다. ${battle.apply_error||""}`.trim()
+      :matchWinner&&winner===matchWinner?"배틀 결과와 같은 승자가 대진표에 들어가 있습니다."
+      :battle.apply_error?`배틀 결과를 대진표에 넣지 못했습니다. ${battle.apply_error}`
+      :"배틀 결과를 대진표에 넣는 중입니다.";
+    const unsettled=!winner||Boolean(battle.apply_error)||battle.ended_by==="void";
+    return <div className="stack mb-battle">
+      <Row title="사이트 배틀" line={line}/>
+      {canStart&&unsettled&&<Button variant="main" href={officialBattleHref(eventId,m.id)}>배틀로 다시 경기</Button>}
+      <Button variant="second" href={battleHref(battle.id)}>리플레이</Button>
+      {admin&&!m.winner&&winner&&!battle.applied_at&&battle.ended_by!=="void"&&<Button variant="link" disabled={busy} onClick={()=>run(()=>retryBattleApply(battle.id))}>다시 넣기</Button>}
+      {error}
+    </div>;
+  }
+  if(canStart) return <div className="stack mb-battle">
     <Button variant="main" href={officialBattleHref(eventId,m.id)}>배틀로 경기</Button>
   </div>;
   return null;
@@ -925,6 +948,7 @@ function MatchBattle({ m, ev, battle, startable, eventId }){
 function useEventBattles(eventId, onApplied){
   const [list,setList]=useState([]);
   const appliedRef=useRef(null);
+  const retriedRef=useRef(new Set());
   useEffect(()=>{
     if(!eventId) return undefined;
     let stopped=false;
@@ -936,6 +960,14 @@ function useEventBattles(eventId, onApplied){
       if(appliedRef.current!==null&&applied!==appliedRef.current) onApplied?.();
       appliedRef.current=applied;
       setList(next);
+      /* a battle that ended with a winner but neither went in nor left a reason: the function stopped between the end and the
+         bracket. Ask it once more (once a page), after the function has had its own half minute. */
+      for(const x of next){
+        if(x.status!=="ended"||x.applied_at||x.apply_error||x.ended_by==="void"||!battleWinnerEntry(x)||retriedRef.current.has(x.id)) continue;
+        if(Date.now()-new Date(x.updated_at).getTime()<30000) continue;
+        retriedRef.current.add(x.id);
+        void retryBattleApply(x.id).catch(()=>{});
+      }
     };
     void tick();
     const iv=setInterval(tick,15000);
@@ -972,7 +1004,7 @@ const stageOf=(g,m)=>{
   if(li>=0) return `패자조 ${li+1}라운드`;
   return m===g.reset?"리셋 결승":"결승";
 };
-function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, outcomeOn=false, onOutcome, battles=[], startable=false, eventId=null }){
+function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, outcomeOn=false, onOutcome, battles=[], startable=false, eventId=null, onBattleChanged }){
   const ev=evalGraph(g);
   const rows=collectGraphMatches(g).map(m=>({m,a:ev.sp(m.a),b:ev.sp(m.b)})).filter(x=>x.a&&x.b&&x.a!==BYE&&x.b!==BYE);
   const [chosen,setChosen]=useState(null);
@@ -1016,7 +1048,7 @@ function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, ou
       <p className="pn bk-entry-head t12"><span className="dim">M{at+1}, {stageOf(g,cur.m)}</span>{cur.m.winner?<span>결과 확정</span>:<span className="bk-entry-live"><i className="lamp sig" aria-hidden="true"/>진행 중</span>}</p>
       {side("a",cur.a)}{side("b",cur.b)}
     </div>
-    {!teamMode&&<MatchBattle m={cur.m} ev={ev} battle={battleForMatch(battles,cur.m.id)} startable={startable} eventId={eventId}/>}
+    {!teamMode&&<MatchBattle m={cur.m} ev={ev} battle={battleForMatch(battles,cur.m.id,[cur.a,cur.b])} startable={startable} eventId={eventId} admin onChanged={onBattleChanged}/>}
     {outcomeOn&&!teamMode&&cur.m.winner&&<div className="stack bk-entry-actions">
       <Button variant="second" disabled={busy} onClick={()=>onOutcome(cur.m.id,{forfeit:!cur.m.forfeit})}>{cur.m.forfeit?"불참 취소":`${nameOf(cur.m.winner==="a"?cur.b:cur.a)} 불참 처리`}</Button>
     </div>}
@@ -1084,9 +1116,9 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
     return ()=>watch?.disconnect();
   },[winKey,g.rounds.length,g.kind]);
   const [seen,setSeen]=useState(null);
-  const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf} onOpen={setSeen} battle={battleForMatch(battles,m.id)}/>;
+  const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf} onOpen={setSeen} battle={battleForMatch(battles,m.id,[ev.sp(m.a),ev.sp(m.b)])}/>;
   return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}>
-  {seen&&<MatchSheet g={g} m={seen} ev={ev} nameOf={nameOf} onClose={()=>setSeen(null)} battle={battleForMatch(battles,seen.id)} startable={startable} eventId={eventId}/>}
+  {seen&&<MatchSheet g={g} m={seen} ev={ev} nameOf={nameOf} onClose={()=>setSeen(null)} battle={battleForMatch(battles,seen.id,[ev.sp(seen.a),ev.sp(seen.b)])} startable={startable} eventId={eventId}/>}
   <div className="bk-tree" ref={treeRef}>
     {wires&&<svg className="bk-wires" width={wires.w} height={wires.h} aria-hidden="true"><path className="dim" d={wires.dim}/><path className="lit" d={wires.lit}/></svg>}
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
@@ -1201,7 +1233,6 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const editAdmin=admin&&!locked&&!matchMutationBusy;
   // site battles: individual official brackets in progress can play a match as a battle; its winner goes in by itself
   const battles=useEventBattles(b.eventId&&b.projection?.source==="normalized"?b.eventId:null,()=>void refreshNormalized?.());
-  const battleStartable=Boolean(b.eventId&&b.projection?.runtimeId&&!locked&&!teamMode&&b.status!=="done");
   const [series,setSeries]=useState(null);
   const [submissionStatuses,setSubmissionStatuses]=useState([]);
   const [submissionStatusError,setSubmissionStatusError]=useState("");
@@ -1211,6 +1242,8 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const [championshipRefreshKey,setChampionshipRefreshKey]=useState(0);
   const [championshipEvent,setChampionshipEvent]=useState(null);
   const [hallOfFameBusy,setHallOfFameBusy]=useState(false);
+  // the battle server only seats players of a running, unrecorded event (battle_official_seat); the button waits for the same
+  const battleStartable=Boolean(b.eventId&&b.projection?.runtimeId&&!locked&&!teamMode&&b.status!=="done"&&championshipEvent?.status==="running"&&!championshipEvent.record_applied_at);
   useEffect(()=>{
     let cancelled=false;
     if(!b.eventId){ setChampionshipEvent(null); return undefined; }
@@ -1379,7 +1412,7 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
     {admin&&!locked&&b.format==="elim"&&b.graph&&!(res&&res.done)&&<ResultEntry g={b.graph} nameOf={nameOf} busy={matchMutationBusy} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} outcomeOn={Boolean(outcomes)} onOutcome={saveOutcome}
-      battles={battles} startable={battleStartable} eventId={b.eventId}
+      battles={battles} startable={battleStartable} eventId={b.eventId} onBattleChanged={()=>void refreshNormalized?.()}
       seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
     {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"} seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}
       battles={battles} startable={battleStartable} eventId={b.eventId}/>}
