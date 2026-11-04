@@ -1,0 +1,54 @@
+import { callFunction, supa } from "../storage.js";
+import { readSeat } from "./battleService.js";
+
+/* 배틀을 다시 찾고 지켜보는 길 (DESIGN.md "Battle", Finding a battle again; The clock).
+   계정이 없으므로 이 기기가 치르거나 본 배틀의 id를 localStorage에 남긴다(앉은 자리는 battleService의 좌석 목록에 따로 있다).
+   공개 행은 누구나 읽는다. 시간 제한은 docs/db/battle_timer.sql이 실행된 뒤에만 있고, 그 전에는 마감이 늘 없다. */
+const HISTORY_KEY = "ypl-battle:history:v1";
+const SEATS_KEY = "ypl-battle:seats:v1";
+const KEEP = 30;
+const COLUMNS = "id, status, regulation, format_id, p1_name, p2_name, turn, winner, ended_by, kind, created_at, updated_at";
+
+const readJSON = (key, empty) => { try { return JSON.parse(localStorage.getItem(key) || "null") ?? empty; } catch { return empty; } };
+
+// a battle this device opened, joined or watched, newest first
+export function rememberBattle(id) {
+  if (!id) return;
+  const list = readJSON(HISTORY_KEY, []).filter(x => x !== id);
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify([id, ...list].slice(0, KEEP))); } catch { /* 목록 없이도 링크로 열린다 */ }
+}
+// every battle this device knows: the ones it remembered, and the seats it holds from before the list was kept
+export function battleHistoryIds() {
+  const ids = [...readJSON(HISTORY_KEY, []), ...Object.keys(readJSON(SEATS_KEY, {}))];
+  return [...new Set(ids.filter(id => /^[a-z0-9]{12}$/.test(id)))].slice(0, KEEP * 2);
+}
+
+// those battles' public rows, newest first; a battle cancelled before it started is simply gone
+export async function listBattlesById(ids) {
+  if (!supa || !ids.length) return [];
+  const { data, error } = await supa.from("battles").select(COLUMNS).in("id", ids).order("updated_at", { ascending: false });
+  return error ? [] : data || [];
+}
+// battles being played now, to watch; one nobody has moved in half an hour is left out as abandoned
+export async function listLiveBattles() {
+  if (!supa) return [];
+  const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const { data, error } = await supa.from("battles").select(COLUMNS).eq("status", "active").gte("updated_at", since)
+    .order("updated_at", { ascending: false }).limit(10);
+  return error ? [] : data || [];
+}
+
+// the deadline of the decision a battle waits on; null when there is none, or when the column is not there (the SQL not run yet)
+let clockSupported = true;
+export async function readDeadline(id) {
+  if (!supa || !clockSupported) return null;
+  const { data, error } = await supa.from("battles").select("deadline_at").eq("id", id).maybeSingle();
+  if (error) { if (/42703|deadline_at/.test(`${error.code} ${error.message}`)) clockSupported = false; return null; }
+  return data?.deadline_at ?? null;
+}
+// the waiting player tells the server the other's time is up; the server checks the deadline by its own clock and ends the battle
+export function claimTimeout(id) {
+  const seat = readSeat(id);
+  if (!seat) return Promise.reject(new Error("이 기기에는 이 배틀의 자리가 없습니다."));
+  return callFunction("battle", { action: "timeout", id, token: seat.token });
+}

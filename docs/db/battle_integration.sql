@@ -50,7 +50,7 @@ grant execute on function public.battle_full_log(text) to anon, authenticated, s
 
 -- ===== 3. 무효 =====
 alter table public.battles drop constraint if exists battles_ended_by_check;
-alter table public.battles add constraint battles_ended_by_check check (ended_by in ('battle', 'forfeit', 'void'));
+alter table public.battles add constraint battles_ended_by_check check (ended_by in ('battle', 'forfeit', 'void', 'timeout'));
 
 -- 안쪽 함수: 확인 없이 닫는다. 아무에게도 주지 않고 아래 두 함수만 부른다.
 create or replace function public.battle_void_now(p_id text, p_reason text)

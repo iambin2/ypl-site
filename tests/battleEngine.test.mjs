@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { formatId, validateTeam, startBattle, loadBattle, choose, forfeit, readout, replay } from "../supabase/functions/battle/engine.mjs";
 import { requestKey, slotPasses } from "../src/services/battleLog.js";
+import { explicit, picker } from "./battlePicker.mjs";
 
 const sp = (spread) => ({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, ...spread });
 const set = (species, item, ability, moves, nature, evs) => ({ species, item, ability, moves, nature, evs: sp(evs), level: 50 });
@@ -16,34 +17,6 @@ const TEAM = [
   set("Sinistcha", "Mental Herb", "Hospitality", ["Matcha Gotcha", "Rage Powder", "Trick Room", "Strength Sap"], "Relaxed", { hp: 32, def: 32, spa: 2 }),
 ];
 const noClock = log => log.split("\n").filter(line => !line.startsWith("|t:|")).join("\n");
-
-// a team preview or a forced switch answered as the site's screen answers it (the engine refuses Showdown's default)
-function explicit(request) {
-  const mons = request.side.pokemon;
-  if (request.teamPreview) return `team ${mons.slice(0, request.maxChosenTeamSize || mons.length).map((_, i) => i + 1).join(", ")}`;
-  const free = mons.map((m, i) => (!m.active && !m.condition.endsWith(" fnt") ? i + 1 : 0)).filter(Boolean);
-  return request.forceSwitch.map((_, i) => (slotPasses(request, i) ? "pass" : `switch ${free.shift()}`)).join(", ");
-}
-
-// A player who reads only its request, as the site's screen does: a legal move with an explicit target.
-function picker(seed) {
-  let s = seed;
-  const rand = n => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) % n; };
-  return (request, gameType) => {
-    if (request.teamPreview || request.forceSwitch) return explicit(request);
-    return request.active.map((active, i) => {
-      const mon = request.side.pokemon[i];
-      if (!mon || mon.condition.endsWith(" fnt") || active.commanding) return "pass";
-      const usable = active.moves.map((m, j) => ({ m, j })).filter(x => !x.m.disabled);
-      const { m, j } = usable.length ? usable[rand(usable.length)] : { m: active.moves[0], j: 0 };
-      let target = "";
-      if (gameType === "doubles" && ["normal", "any", "adjacentFoe"].includes(m.target)) target = ` ${rand(2) + 1}`;
-      else if (gameType === "doubles" && m.target === "adjacentAlly") target = ` -${2 - i}`;
-      else if (gameType === "doubles" && m.target === "adjacentAllyOrSelf") target = ` -${i + 1}`;
-      return `move ${j + 1}${target}`;
-    }).join(", ");
-  };
-}
 
 test("legal teams pass Showdown's validator in both regulations and both formats", () => {
   for (const reg of ["m-c", "m-b"]) for (const kind of ["singles", "doubles"]) {

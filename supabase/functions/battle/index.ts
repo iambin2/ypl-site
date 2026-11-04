@@ -259,6 +259,36 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
     return data;
   },
 
+  /* ---------- the clock (docs/db/battle_timer.sql; DESIGN.md "Battle", The clock) ----------
+     The waiting player's screen asks once the deadline has passed. The battle ends on time only when, by this server's clock, the
+     deadline is gone and the other side alone still owes a choice; the late side loses as by a forfeit (>forcelose in the input
+     log, so the replay plays the same). Nothing is ever chosen for a player. Before that SQL runs there is no deadline to pass. */
+  async timeout({ id, token }) {
+    return withRetry(async () => {
+      const { battle, secret } = await read(String(id));
+      const side = await seat(secret, token);
+      if (battle.status !== "active") refuse(409, "진행 중인 배틀이 아닙니다.");
+      // read on its own, so the function still runs before battle_timer.sql adds the column (there is no deadline to pass then)
+      const { data: clock } = await db.from("battles").select("deadline_at").eq("id", battle.id).maybeSingle();
+      const deadline = Date.parse(clock?.deadline_at ?? "");
+      if (!Number.isFinite(deadline) || Date.now() < deadline + 1000) refuse(409, "아직 시간이 남았습니다.");
+      const late = side === "p1" ? "p2" : "p1";
+      const engine = loadBattle(secret.state);
+      const { request } = readout(engine);
+      const owes = (s: string) => Boolean(request[s] && !request[s].wait && !secret.pending?.[s]);
+      if (!owes(late) || owes(side)) refuse(409, "시간이 다 된 쪽이 없습니다.");
+      forfeit(engine, late);
+      const out = readout(engine);
+      const saved = await save(battle.id, battle.version, {
+        p_status: "ended", p_winner: out.winner, p_ended_by: "timeout", p_turn: out.turn, p_spectator_log: out.spectatorLog,
+        p_log: out.log, p_input_log: out.inputLog, p_state: engine.toJSON(), p_pending: {},
+      });
+      if (!saved) return undefined;
+      await applyResult(battle.id);
+      return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state: engine.toJSON(), pending: {} }, side);
+    });
+  },
+
   /* An official match: a player of that match takes their side's seat with their party PIN, and plays their
      latest official party. The first one in opens the battle, the second starts it. The same player again (another phone)
      gets a new token for the same seat. */
