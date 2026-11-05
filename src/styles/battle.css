@@ -42,8 +42,8 @@
 @media (hover: hover) { .bt-team.pn:hover { background: var(--panel-2); } }
 
 /* waiting for the other player: the busy cell and the sentence */
-.bt-wait { display: flex; align-items: center; gap: var(--s5); min-height: var(--h-counter); padding: var(--pad); }
-.bt-wait-say { display: grid; gap: var(--s1); }
+/* the opponent's place while the opener waits: the lamp beside 참가 대기 */
+.bt-vs-wait { display: flex; align-items: center; justify-content: flex-end; gap: var(--s1); }
 .bt-waiting { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 
 /* the head: the lamp with 진행 중, the two names, the turn lit at 32 */

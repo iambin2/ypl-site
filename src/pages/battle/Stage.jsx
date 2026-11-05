@@ -93,6 +93,8 @@ const MSG_MS = 680;
 const RESULT = /^\|-(crit|supereffective|resisted|immune|miss|fail|activate|hitcount)\||^\|-damage\|(?!.*\|\[from\])/;
 const GUARD = /Protect|Detect|Shield|Bunker|Silk Trap|Bulwark|Max Guard|Wide Guard|Quick Guard|Mat Block|Obstruct/i;
 const part = (line, n) => line.split("|")[n] || "";
+// another direct hit on k among the results that follow (a multi-hit move)
+const moreHits = (lines, k) => { for (const l of lines) { if (!RESULT.test(l)) return false; if (/^\|-damage\|/.test(l) && keyOf(part(l, 2)) === k) return true; } return false; };
 const ofKey = line => line.match(/\|\[of\] (p\d[a-d])/)?.[1] || "";
 // what the minor lines right after a move say about its blow, so the move can draw it: how hard by target, who is missed, whose guard holds
 function aheadOf(lines) {
@@ -149,7 +151,7 @@ export function useStageTape(log, res, perspective, epoch = 0) {
       const own = key => key.startsWith(perspective);
       const word = key => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return mon ? `${own(key) ? "" : "상대 "}${R.speciesName(mon.species)}` : ""; };
       // the blow being played: who struck with what, and what the lines after it said about each target
-      const freshBlow = () => ({ from: "", type: "", crit: new Set(), strong: new Set(), weak: new Set(), hit: new Set(), on: false });
+      const freshBlow = () => ({ from: "", type: "", crit: new Set(), strong: new Set(), weak: new Set(), hit: new Set(), hits: {}, on: false });
       let blow = freshBlow();
       let chained = false; // the line before this one handed its reading time on (it and this one are one beat)
       let shown = [];
@@ -208,16 +210,23 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           case "take": case "hp": {
             const was = before[k];
             if (event.hp === 0 && !event.heal) standing.add(k);
+            // the stage as this line leaves it: the lines after it are read on while it plays (a multi-hit move's further hits),
+            // and its bar must not show their HP before they land
+            const view = sceneOf(R.state, standing);
             const direct = event.verb === "take";
             const again = direct && blow.on && blow.hit.has(k);
+            // one hit of several: each keeps a short rhythm and its number stands apart from the one before
+            const nth = direct && blow.on ? (blow.hits[k] = (blow.hits[k] || 0) + 1) - 1 : 0;
+            const several = again || (direct && blow.on && moreHits(fresh.slice(i + 1), k));
             if (direct) blow.hit.add(k);
             const strike = { share: 0, crit: blow.crit.has(k), strong: blow.strong.has(k), weak: blow.weak.has(k), direct };
             const source = ofKey(line);
+            let rises = null; // the number rising over it, which the beat waits for but the next hit does not
             const run = (async () => {
               await busy[k];
-              // a second hit of a multi-hit move lands its own small burst first
-              if (again) { fx.burst(stage, k, blow.type, .6); await fx.wait(120); }
-              show();
+              // a further hit of a multi-hit move lands its own blow, and its HP goes with it
+              if (again) fx.burst(stage, k, blow.type, .8);
+              flushSync(() => setScene(view));
               if (!was || !event.maxhp) return;
               const lost = was.hp - event.hp;
               const exact = own(k) && event.maxhp !== 100;
@@ -227,12 +236,17 @@ export function useStageTape(log, res, perspective, epoch = 0) {
               // HP that flows: a draining move heals from its target (the gain fills once the motes arrive), Leech Seed feeds its seeder
               if (lost < 0 && event.from === "drain" && source) await fx.flow(stage, source, k);
               if (lost > 0 && event.from === "leechseed" && source) fx.flow(stage, k, source);
-              const drain = fx.drain(stage, k, was.hp / was.maxhp, event.hp / event.maxhp);
-              if (lost < 0) await Promise.all([drain, fx.heal(stage, k), fx.number(stage, k, words, true)]);
-              else await Promise.all([drain, fx.hit(stage, k, { ...strike, share: lost / event.maxhp }), direct ? null : fx.residual(stage, k, event.from), fx.number(stage, k, words)]);
+              const drain = fx.drain(stage, k, was.hp / was.maxhp, event.hp / event.maxhp, { quick: several });
+              rises = fx.number(stage, k, words, lost < 0, several ? nth : null);
+              if (lost < 0) await Promise.all([drain, fx.heal(stage, k)]);
+              else {
+                const shook = fx.hit(stage, k, { ...strike, share: several ? .1 : lost / event.maxhp });
+                await Promise.all([drain, several ? null : shook, direct ? null : fx.residual(stage, k, event.from)]);
+              }
             })();
             busy[k] = run;
-            if (chain) landing.push(run); else await Promise.all([...landing, run]);
+            const whole = run.then(() => rises);
+            if (chain) landing.push(whole); else await Promise.all([...landing, whole]);
             if (!chain) landing = [];
             break;
           }
@@ -268,6 +282,7 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           case "item": fx.popup(stage, k, `${word(k)}의 도구`, event.name, own(k)); await fx.wait(400); show(); break;
           case "volatile":
             if (event.id === "substitute" && !event.on) { await fx.breakDoll(stage, k); show(); await fx.doll(stage, k, false); break; }
+            if (event.on && event.id === "substitute") await fx.hideForDoll(stage, k);
             show();
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
@@ -441,7 +456,8 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
 
 /* before a battle (DESIGN.md "Battle", Opening and waiting): the court with our leads on the near side and the far side empty until
    the opponent comes. A change of team or format sends the leads in again, out of the same light as in a battle. */
-export function LobbyStage({ leads, doubles, label }) {
+// awaiting: the opponent has not come yet, and a light breathes on the far floor where each of theirs will be sent in
+export function LobbyStage({ leads, doubles, label, awaiting = false }) {
   const ref = useRef(null);
   const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) } };
   // before paint, so a new lead never shows for a frame before it comes out of the light
@@ -451,6 +467,9 @@ export function LobbyStage({ leads, doubles, label }) {
       <div className="bs-world">
         <i className="bs-sky" aria-hidden="true" />
         <Court />
+        {awaiting && <div className="bs-side foe" aria-hidden="true">
+          {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`foe${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
+        </div>}
         <SideField side="p1" scene={scene} own doubles={doubles} />
       </div>
       <div className="bs-fx" aria-hidden="true" />

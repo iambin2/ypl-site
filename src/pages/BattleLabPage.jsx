@@ -152,7 +152,7 @@ function Lab({ res, say, go }) {
         <Choice name="lab-screen" options={SCREENS} value={screen} onChange={setScreen} />
       </Question>
       {screen !== "배틀"
-        ? <Waiting row={waitingRow} onShare={() => say?.("실험실: 링크 공유")} onCancel={() => say?.("실험실: 대기 취소")} />
+        ? <Waiting row={{ ...waitingRow, p1_name: "실험실", created_at: new Date(Date.now() - 42000).toISOString() }} res={res} team={{ id: "lab", name: "견본 A", regulationId: "m-c", members: LAB_TEAMS["견본 A"].map(s => ({ pokemonName: s.species, pokemonId: s.species.toLowerCase().replace(/[^a-z0-9]/g, "") })) }} onShare={() => say?.("실험실: 링크 공유")} onCancel={() => say?.("실험실: 대기 취소")} />
         : row
         ? <Arena key={`${row.id}-${seat}`} row={row} view={view} seat={seatSide ? { side: seatSide } : null} res={res} onView={() => {}} onShare={() => say?.("실험실: 링크 공유")} go={go} api={api} />
         : <Empty title="배틀을 열어 주세요." desc="아래에서 형식과 두 팀을 고르고 새 배틀을 누르면 시작합니다." />}

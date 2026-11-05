@@ -5,7 +5,7 @@ import Icon from "../components/common/Icon.jsx";
 import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
-import { Chips, Choice, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
+import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
 import { pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
@@ -38,6 +38,11 @@ export function useResources() {
 }
 const rememberedName = () => { try { return localStorage.getItem(NAME_KEY) || ""; } catch { return ""; } };
 const rememberName = name => { try { localStorage.setItem(NAME_KEY, name); } catch { /* 이름은 다음에 다시 쓰면 된다 */ } };
+// the saved team a battle was opened with, so its waiting screen can stand that team on the court (this device only)
+const OPEN_TEAM_KEY = "ypl-battle:open-team:v1";
+const openTeams = () => { try { return JSON.parse(localStorage.getItem(OPEN_TEAM_KEY) || "{}"); } catch { return {}; } };
+const keepOpenTeam = (id, teamId) => { try { localStorage.setItem(OPEN_TEAM_KEY, JSON.stringify({ ...Object.fromEntries(Object.entries(openTeams()).slice(-19)), [id]: teamId })); } catch { /* 대기 화면이 팀 없이 선다 */ } };
+const openTeam = id => readSavedTeams().find(t => t.id === openTeams()[id]) || null;
 
 export default function BattlePage({ flash: say, go }) {
   const params = new URLSearchParams(window.location.search);
@@ -131,6 +136,7 @@ function BattleOpen({ res, onOpen, preset }) {
     try {
       rememberName(name.trim());
       const made = await createBattle({ regulation: team.regulationId, battleFormat: format, name: name.trim(), team: showdownTeam(team, res.detail) });
+      keepOpenTeam(made.id, team.id);
       onOpen(made.id);
     } catch (e) {
       setError(e.problems?.length ? `${e.message} ${e.problems[0]}` : e.message);
@@ -229,7 +235,7 @@ function BattleRoom({ id, res, say, go, onLeave, start }) {
       try { await cancelBattle(id); say?.("대기를 취소했습니다."); onLeave(); }
       catch (e) { say?.(e.message); refresh(); }
     };
-    if (seat) return <Waiting row={row} onShare={share} onCancel={cancel} />;
+    if (seat) return <Waiting row={row} res={res} team={openTeam(id)} onShare={share} onCancel={cancel} />;
     // an official match is entered from its own seat screen: the player's party PIN, never a builder team
     if (row.kind === "official") return <OfficialSeat eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
     return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); show(next); refresh(); }} />;
@@ -237,19 +243,40 @@ function BattleRoom({ id, res, say, go, onLeave, start }) {
   return <Arena row={row} view={view} seat={seat} res={res} onView={show} onShare={share} go={go} api={api} say={say} start={start} />;
 }
 
-export function Waiting({ row, onShare, onCancel }) {
+/* the opener waits (DESIGN.md "Battle", Opening and waiting): the screen it opened from, now set. The matchup with our name lit and
+   the opponent's place waiting, the court with our leads standing and a light breathing where each of theirs will be sent in,
+   the time waited in segments, the battle as a row, the team brought, then the link to send and 대기 취소. */
+export function Waiting({ row, res, team, onShare, onCancel }) {
   const official = row.kind === "official";
+  const doubles = isDoubles(row.format_id);
+  const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res?.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
+  const now = useNow(true);
+  const since = Date.parse(row.created_at || "") || now;
+  const waited = Math.max(0, Math.floor((now - since) / 1000));
+  const clock = `${Math.min(99, Math.floor(waited / 60))}:${String(waited % 60).padStart(2, "0")}`;
+  const rule = `${REGULATIONS[row.regulation] || ""} ${doubles ? "더블" : "싱글"}`;
   return (
     <div className="bt-page">
       <h1 className="t32">배틀</h1>
-      <div className="pn bt-wait">
-        <Busy h={32} />
-        <div className="bt-wait-say"><b className="t20">상대를 기다리는 중입니다.</b><span className="t12 dim">{official
-          ? "공식 경기입니다. 상대 선수가 대진표의 이 경기에서 들어오면 시작합니다."
-          : `${REGULATIONS[row.regulation]} ${isDoubles(row.format_id) ? "더블" : "싱글"}, 링크를 상대에게 보내 주세요.`}</span></div>
+      <div className="bt-lobby">
+        <div className="bt-lobby-show">
+          <div className="stack bt-versus">
+            <span className="pn bt-vs"><span className="t12 dim">나</span><b>{row.p1_name || "나"}</b></span>
+            <span className="pn bt-vs-mid t15" aria-hidden="true">VS</span>
+            <span className="pn bt-vs foe"><span className="t12 dim bt-vs-wait"><i className="lamp" aria-hidden="true" />참가 대기</span><b className="mute">상대</b></span>
+          </div>
+          {res && <LobbyStage leads={leads} doubles={doubles} awaiting label={`경기장, ${leads.length ? leads.map(s => nameOf(res, s)).join(", ") : "우리 쪽"}, 상대 쪽은 비어 있음`} />}
+          {res && leads.length > 0 && <LobbyBars leads={leads} doubles={doubles} res={res} />}
+        </div>
+        <div className="bt-lobby-set">
+          <Counter label="기다린 시간" value={clock} cells={3} h={52} />
+          <Row title={`상대를 기다리는 중입니다.`} line={`${rule} ${official ? "공식 경기" : "친선 배틀"}`} lamp="참가 대기" />
+          {team && res && <div className="q"><span className="q-label t12 dim">가져온 팀</span><TeamRows teams={[team]} value={team.id} onChange={() => {}} res={res} /></div>}
+          <p className="t12 dim">{official ? "상대 선수가 대진표의 이 경기에서 들어오면 바로 시작합니다." : "링크를 받은 상대가 참가하면 바로 시작합니다."}</p>
+          <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
+          <Button variant="link" onClick={onCancel}>대기 취소</Button>
+        </div>
       </div>
-      <Button variant="link" onClick={onCancel}>대기 취소</Button>
-      <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
     </div>
   );
 }
