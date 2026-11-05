@@ -387,11 +387,11 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       }
       case "-singleturn": case "-singlemove": {
         say(template(args[1], "start"), { POKEMON: pokemonWord(args[0]) });
-        if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0] };
+        if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0], id: parseEffect(args[1]).id };
         break;
       }
       case "-activate": {
-        if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0] };
+        if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0], id: parseEffect(args[1]).id };
         const source = template(args[1], "activate") ?? template(args[1], "block") ?? null;
         say(source, { POKEMON: pokemonWord(args[0]), TARGET: kw.of ? pokemonWord(kw.of) : "", SOURCE: kw.of ? pokemonWord(kw.of) : "", EFFECT: effectName(args[1]) });
         break;

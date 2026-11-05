@@ -37,6 +37,8 @@
 .bt-team-six > span { aspect-ratio: 1; }
 .bt-team-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
 .bt-team.inv .bt-team-six > span { background: var(--panel); }
+/* a random party's six are unknown until the battle opens */
+.bt-team-q { display: grid; place-items: center; background: var(--panel-2); color: var(--dim); font-weight: 700; }
 .bt-team:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-team.inv:has(:focus-visible) { outline-color: var(--ground); }
 @media (hover: hover) { .bt-team.pn:hover { background: var(--panel-2); } }
@@ -46,21 +48,29 @@
 .bt-vs-wait { display: flex; align-items: center; justify-content: flex-end; gap: var(--s1); }
 .bt-waiting { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 
-/* the head: the lamp with 진행 중, the two names, the turn lit at 32 */
+/* the match is one column the arena's width: the head, the result, the arena, the choices, the links */
+.bt-match { max-width: 980px; }
+/* the head: the lamp with 진행 중 and the two names (the turn is on the stadium's board) */
 .bt-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row2); padding: 0 var(--pad); }
 .bt-head-say { display: grid; gap: var(--s1); min-width: 0; }
 .bt-head-say > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 /* the clock (the seconds left for the decision the battle waits on) and the turn, both lit at 32 with their units */
 .bt-head-boards { display: flex; flex: none; align-items: center; gap: var(--s5); }
 
-/* the replay under the stage: a bar on its track to drag to any turn (the range input lies over it unseen, as the builder's points),
-   then five keys in a row of small actions; playing inverts its key */
-.bt-replay { display: grid; gap: var(--s3); }
-.bt-replay-bar > input[type="range"] { height: var(--h-control); }
-.bt-replay-keys { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.bt-replay-keys > button { height: var(--h-control); padding: 0 var(--s1); font-weight: 700; white-space: nowrap; }
-.bt-replay-keys > button:disabled { opacity: 1; color: var(--mute); }
-@media (hover: hover) { .bt-replay-keys > .pn:hover:not(:disabled) { background: var(--panel-2); } }
+/* the replay under the stage stands back: small square keys with their signs, a thin track to drag to any turn (the range input lies
+   over it unseen), and where it stands */
+.bt-replay { display: flex; align-items: center; gap: var(--seam); min-width: 0; }
+.bt-rkey { display: grid; place-items: center; flex: none; width: var(--h-strip); height: var(--h-strip); color: var(--dim); background: var(--panel); transition: color var(--move-tone), background-color var(--move-tone); }
+.bt-rkey svg { width: 16px; height: 16px; fill: currentColor; }
+.bt-rkey.main { color: var(--lit); background: var(--panel-2); }
+.bt-rkey.main.on { color: var(--ground); background: var(--lit); }
+.bt-rkey:disabled { color: var(--mute); cursor: default; }
+@media (hover: hover) { .bt-rkey:hover:not(:disabled) { color: var(--lit); background: var(--panel-2); } }
+.bt-rkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+.bt-replay-track { position: relative; flex: 1; min-width: 60px; height: var(--s1); margin: 0 var(--s2); background: var(--rule); }
+.bt-replay-track > i { position: absolute; inset: 0; background: var(--dim); transform-origin: 0 50%; }
+.bt-replay-track > input[type="range"] { position: absolute; left: 0; right: 0; top: 50%; width: 100%; height: var(--h-strip); margin: 0; translate: 0 -50%; opacity: 0; cursor: pointer; }
+.bt-replay-at { flex: none; min-width: 40px; text-align: right; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* finding a battle again: the ones being played now and this device's, as rows */
 .bt-list { display: grid; gap: var(--s3); }
@@ -68,9 +78,11 @@
 /* the field above the log on a phone; beside it on desktop, 709 and 439 */
 .bt-room { display: grid; gap: var(--s5); }
 .bt-main { display: grid; gap: var(--s5); min-width: 0; }
-@media (min-width: 860px) {
-  .bt-room { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); align-items: start; }
-}
+/* the playback chips and 소리 at the right end of the same row */
+.bt-play { display: flex; justify-content: space-between; gap: var(--s2); min-width: 0; }
+.bt-play > .chips:first-child { min-width: 0; }
+/* one column on every screen: on desktop the stage takes up to 980 wide and the whole log folds under it, as on a phone */
+@media (min-width: 860px) { .bt-room { grid-template-columns: minmax(0, 980px); } }
 
 /* ---------- the log: every message a row of the stack, a turn opening with its 32 strip; it holds the whole battle ---------- */
 .bt-log { max-height: 439px; overflow-y: auto; align-content: start; scrollbar-width: none; }
@@ -84,19 +96,23 @@
 .bt-links { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
 
 /* =============================================================================
-   The match (DESIGN.md "Battle", The stage). Everything a player reads or presses on the match is the board's own: square panels on
-   the seam, light for emphasis, the type tag's square for colour. Only the arena scene and the shapes of its effects are
-   battle-stage.css. Stage.jsx and stageFx.js draw these.
+   The match (DESIGN.md "Battle"): a game screen laid out as a game lays it out (the HUD over the stage, the moves as cards in their
+   type's colour), drawn in the site's own manner: solid colours, square corners, square marks, no gradient and no circle. The only
+   exception is Mega Evolution's symbol. The arena keeps the night whatever the site's theme, as a game's screen does, so the
+   tokens are set to the night inside it.
    ========================================================================== */
-.bt-arena { display: grid; gap: var(--seam); }
+.bt-arena {
+  --lit: #FFFFFF; --dim: #9FB3D8; --mute: #5C6F94; --ground: #050D1F; --panel: #0A1A3A; --panel-2: #12295A; --rule: #1B3A78; --veil: #050D1FB3;
+  display: grid; gap: var(--seam); background: var(--ground); color: var(--lit);
+}
 
 /* each trainer's strip: the name, the six as squares, the side's conditions */
-.bt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: var(--h-control); padding: 0 var(--pad); }
+.bt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: var(--h-control); padding: var(--s1) var(--pad); background: var(--panel); }
 .bt-trainer { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .bt-balls { display: flex; gap: var(--seam); }
 .bt-ball { position: relative; display: block; width: var(--h-strip); height: var(--h-strip); overflow: hidden; background: var(--panel-2); }
 .bt-ball img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-/* the ones out lift one tone, as a thing that is on does (no line, no frame); one not yet seen is its shadow; a fainted one is grey and dim */
+/* the ones out lift one tone, one not yet seen is its shadow, a fainted one is grey and dim */
 .bt-ball.on { background: var(--rule); }
 .bt-ball.hid img { filter: brightness(0); opacity: var(--opacity-disabled); }
 .bt-ball.out { background: var(--ground); }
@@ -106,51 +122,101 @@
 .bt-cond { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
 .bt-cond > span { color: var(--dim); font-weight: 400; }
 
-/* the message box: the game's words for the moment on the stage, the newest lit and the one before it dim */
-.bt-say { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-row2); padding: var(--s2) var(--pad); }
-.bt-say > p { font-size: var(--t15); line-height: var(--l15); font-weight: 600; animation: y-rise var(--move-light) backwards; }
-.bt-say > p:not(:last-child) { color: var(--dim); }
+/* ---------- the HUD over the stage ---------- */
+.bt-hud { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+.bt-hud-foe, .bt-hud-own { transition: opacity .4s ease; }
+.bs-stage.bs-intro :is(.bt-hud-foe, .bt-hud-own) { opacity: 0; }
+.bt-hud-foe { position: absolute; top: var(--s3); left: var(--pad); right: var(--pad); display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s2); }
+/* a plate is a third of the stage (the foe's leave the stadium board in the middle clear), ours a little wider; in doubles the
+   foe's two are small, as Showdown keeps them, so they read as the two over there and not as the screen's own panels */
+.bt-hud-col { display: grid; gap: var(--seam); justify-items: start; width: 34.4%; min-width: 136px; }
+.bt-hud-foe > .bt-plate { width: 34.4%; min-width: 136px; }
+.bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 26%; min-width: 112px; max-width: 200px; }
+.bt-hud-own { position: absolute; right: var(--pad); bottom: calc(var(--say-h) + var(--s2)); display: grid; gap: var(--seam); width: 38%; min-width: 150px; max-width: 280px; }
 
-/* the status bars: a row of panels on the seam above the stage (the foe) and below it (ours), one for each Pokémon out, in the order
-   they stand. A bar is always its full height, so nothing under it moves when a mark comes or goes. */
-.bt-bars { grid-template-columns: minmax(0, 1fr); }
-.bt-bars.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-/* a bar is a block of three fixed lines, each its own layout (contain: strict), so a number or a mark changing never lays out the page */
-.bt-bar { display: block; min-width: 0; height: var(--h-row2); padding: var(--s1) var(--pad); text-align: left; color: var(--lit); }
-.bt-bar > * { contain: strict; }
-.bt-bar.out { color: var(--mute); }
-.bt-bar-top { display: flex; align-items: center; gap: var(--s1); height: var(--l15); font-size: var(--t15); line-height: var(--l15); }
-.bt-bar-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.bt-bar-top > .dim { flex: none; }
-.bt-bar-num { flex: none; margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-@media (hover: hover) { .bt-bar:hover { background: var(--panel-2); } }
-/* HP: ten cells on the seam, filled by one sweep (stageFx.drain); in grass while half stands, electric to a fifth, fire under it */
-.bt-gauge { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: var(--seam); height: var(--s2); margin-top: var(--s1); }
-.bt-gauge > i { position: relative; overflow: hidden; background: var(--rule); }
-.bt-gauge > i > b { position: absolute; inset: 0; background: var(--type); transform-origin: 0 50%; transform: scaleX(var(--f)); }
-/* the marks stand on one line; the sheet the bar opens lists them all */
-.bt-marks { display: flex; gap: var(--seam); height: 20px; margin-top: var(--s1); overflow: hidden; }
-/* a mark is the type tag's shape: a status carries its type's square, a rise is lit, a fall and an effect are dim */
-.bt-mark { display: inline-flex; flex: none; align-items: center; gap: var(--s1); height: 20px; padding: 0 var(--s1); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; white-space: nowrap; }
-.bt-mark[class*="type-"]::before { content: ""; width: var(--s1); height: var(--s1); flex: none; background: var(--type); }
+/* a plate: a solid panel with the name, a status, the bar with the HP, and a line of marks when there are any */
+.bt-plate { display: grid; gap: var(--s1); width: 100%; max-width: 260px; padding: var(--s2) var(--s3); text-align: left; color: var(--lit); background: var(--panel); pointer-events: auto; cursor: pointer; }
+@media (hover: hover) { .bt-plate:hover { background: var(--panel-2); } }
+.bt-plate:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+.bt-plate.out { color: var(--mute); }
+/* while a target is picked the plates let taps through to the Pokémon under them (a plate may lie over a foe's picture), and stand back */
+.bs-stage:has(.bt-pick) .bt-plate { pointer-events: none; opacity: .6; }
+.bt-plate-top { display: flex; align-items: center; gap: var(--s1); min-width: 0; font-size: var(--t15); line-height: var(--l15); animation: y-rise var(--move-light) backwards; }
+.bt-plate-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.bt-sex { flex: none; font-style: normal; font-size: var(--t12); font-weight: 700; }
+.bt-sex.M { color: #6FB6FF; }
+.bt-sex.F { color: #FF8FB8; }
+.bt-plate-lv { flex: none; font-size: 11px; color: var(--dim); }
+.bt-plate-hp { display: flex; align-items: center; gap: var(--s1); min-width: 0; }
+.bt-plate-hp > .bt-hp { flex: 1; min-width: 0; }
+.bt-plate-num { flex: none; font-size: var(--t12); line-height: var(--l12); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* a status rides by the name, a square tag in its type's colour */
+.bt-st { flex: none; padding: 0 var(--s1); background: var(--type); color: #FFFFFF; font-size: 11px; line-height: 15px; font-weight: 700; }
+/* HP: one square bar on the night; the lost part lingers pale behind it a moment (stageFx.drain) */
+.bt-hp { position: relative; display: block; height: var(--s2); overflow: hidden; background: var(--ground); }
+.bt-hp > b { position: absolute; inset: 0; background: var(--hp); transform-origin: 0 50%; transform: scaleX(var(--f)); }
+.bt-hp-lost { position: absolute; top: 0; bottom: 0; background: #FFD9D6; pointer-events: none; }
+.bt-hp.type-grass { --hp: #2CCB6E; }
+.bt-hp.type-electric { --hp: #FAC000; }
+.bt-hp.type-fire { --hp: #E62829; }
+/* the marks: a rise lit, a fall dim, what clings to it plain */
+.bt-marks { display: flex; flex-wrap: nowrap; gap: var(--seam); overflow: hidden; }
+.bt-mark { display: inline-flex; align-items: center; height: 16px; padding: 0 var(--s1); background: var(--panel-2); font-size: 11px; line-height: 15px; font-weight: 600; white-space: nowrap; }
 .bt-mark.up { background: var(--lit); color: var(--ground); }
+.bt-plate-more { display: none; flex: none; align-items: center; height: 15px; padding: 0 var(--s1); background: var(--panel-2); color: var(--dim); font-size: 10px; line-height: 14px; font-weight: 700; }
 .bt-mark.down { color: var(--dim); }
 
-/* a target the player may pick: the whole Pokémon is the button, ringed, with its matchup */
-.bt-pick { position: absolute; inset: 0; z-index: var(--z-raised); box-shadow: inset 0 0 0 var(--line) var(--lit); }
+/* on a phone the plates are lower, so two of ours and the foe's never meet in doubles */
+@media (max-width: 600px) {
+  .bt-plate { gap: var(--seam); padding: var(--s1) var(--s2); }
+  .bt-plate-top { font-size: var(--t12); line-height: 15px; }
+  .bt-plate-num { font-size: 11px; }
+  .bt-hp { height: 5px; }
+  .bt-mark { height: 15px; font-size: 10px; line-height: 14px; }
+  .bt-st { font-size: 10px; line-height: 14px; }
+  .bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 30%; min-width: 104px; }
+  .bt-hud-foe.two .bt-plate-top { font-size: 11px; line-height: 14px; }
+  .bt-hud.two .bt-marks { display: none; }
+  .bt-hud.two .bt-plate-more { display: inline-flex; }
+  .bs-stage.hud { --say-h: 58px; }
+  .bt-say > p { font-size: var(--t15); line-height: 20px; }
+}
+
+/* the field's own effects and their turns, under the foe's first plate */
+.bt-fieldchips { display: flex; flex-wrap: wrap; gap: var(--seam); max-width: 100%; pointer-events: none; }
+.bt-fieldchips > span { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--veil); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; }
+.bt-fieldchips > span > span { color: var(--dim); font-weight: 400; }
+
+/* the message window: a solid band across the bottom of the stage */
+.bs-stage.hud { --say-h: clamp(58px, 22%, 92px); }
+.bt-say { position: absolute; left: 0; right: 0; bottom: 0; display: grid; align-content: center; gap: var(--seam); min-height: var(--say-h); padding: var(--s2) var(--pad); background: #050D1FE6; pointer-events: none; }
+.bt-say > p { font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--lit); animation: y-rise var(--move-light) backwards; }
+.bt-say > p:not(:last-child) { color: var(--dim); }
+@media (min-width: 860px) { .bt-say > p { font-size: var(--t20); line-height: var(--l20); } }
+
+/* the clock: the seconds in segment cells on a square in the message window's corner, a bar under them emptying as they run out;
+   amber under 30 (it is live), red for the last 10 */
+.bt-clock { position: absolute; right: 0; bottom: 0; display: grid; justify-items: center; align-content: center; gap: var(--s1); width: var(--say-h); height: var(--say-h); background: var(--panel); pointer-events: none; }
+.bt-clock .seg { color: var(--lit); }
+.bt-clock > i { display: block; width: 70%; height: var(--s1); background: var(--rule); }
+.bt-clock > i > b { display: block; height: 100%; background: var(--dim); transform-origin: 0 50%; transform: scaleX(var(--f)); transition: transform 1s linear; }
+.bt-clock.warm > i > b { background: var(--signal); }
+.bt-clock.hot .seg { color: #FF5A50; }
+.bt-clock.hot > i > b { background: #FF5A50; }
+.bt-hud:has(.bt-clock) .bt-say { padding-right: calc(var(--say-h) + var(--s3)); }
+
+/* a target the player may pick: the whole Pokémon is the button, framed by a square of light, with its matchup */
+.bt-pick { position: absolute; inset: 0; z-index: var(--z-raised); box-shadow: inset 0 0 0 var(--line) var(--lit); animation: bt-pick-breathe 1.4s ease-in-out infinite; }
+@keyframes bt-pick-breathe { 50% { opacity: .55; } }
 @media (hover: hover) { .bt-pick:hover { background: var(--veil); } }
 .bt-pick-mark { position: absolute; left: 50%; bottom: var(--s2); transform: translateX(-50%); display: flex; align-items: center; height: 24px; padding: 0 var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 700; background: var(--panel-2); }
 .bt-pick-mark.hard { background: var(--lit); color: var(--ground); }
 
-/* the field's own effects and their turns, top left of the stage */
-.bt-fieldchips { position: absolute; left: var(--s2); top: var(--s2); z-index: var(--z-raised); display: grid; gap: var(--seam); justify-items: start; pointer-events: none; }
-.bt-fieldchips > span { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--veil); font-size: var(--t12); line-height: var(--l12); font-weight: 700; }
-.bt-fieldchips > span > span { color: var(--dim); font-weight: 400; }
-
 /* what the stage says over itself (stageFx.js): a turn or the winner across it, a word or a number over a Pokémon, an ability's plate */
 .bt-fx-flash { width: 100%; height: 100%; background: var(--lit); }
-.bt-banner { left: 50%; top: 46%; padding: var(--s2) var(--s8); background: var(--lit); color: var(--ground); font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); white-space: nowrap; }
-.bt-banner.win { display: flex; align-items: center; gap: var(--s3); }
+/* a turn or the winner: a solid band across the stage */
+.bt-banner { left: 50%; top: 44%; min-width: 64%; padding: var(--s2) var(--s13); text-align: center; white-space: nowrap; background: var(--panel-2); color: var(--lit); font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
+.bt-banner.win { display: flex; align-items: center; justify-content: center; gap: var(--s3); min-width: 80%; background: var(--lit); color: var(--ground); }
 .bt-banner.win::before { content: ""; width: var(--s3); height: var(--s3); background: var(--signal); }
 .bt-word { padding: 0 var(--s2); background: var(--ground); color: var(--lit); font-size: var(--t15); line-height: var(--l15); font-weight: 700; white-space: nowrap; }
 .bt-word.hard { background: var(--lit); color: var(--ground); }
@@ -162,35 +228,52 @@
 .bt-popup > small { font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; }
 .bt-popup > b { font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
 
-/* ---------- choices: the board's own rows and cells ---------- */
-.bt-choices { display: grid; gap: var(--s3); }
-.bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-counter); padding: var(--s2) var(--pad); text-align: left; }
+/* ---------- choices: the moves as cards in their type's colour, the bench as panels with the Pokémon ---------- */
+.bt-choices { display: grid; gap: var(--s5); }
+.bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+/* a move card: one solid colour, the type's own darkened toward the night so white words read on every type */
+.bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-counter); padding: var(--s2) var(--pad); text-align: left; color: #FFFFFF;
+  background: color-mix(in srgb, var(--type) 62%, #050D1F); transition: background-color var(--move-tone); }
+@media (hover: hover) { .bt-move:hover:not(:disabled) { background: color-mix(in srgb, var(--type) 76%, #050D1F); } }
+.bt-move.on { background: #FFFFFF; color: #050D1F; }
+.bt-move:disabled { background: var(--panel); color: var(--mute); cursor: default; }
+.bt-move:focus-visible { outline: var(--line) solid #FFFFFF; outline-offset: calc(var(--line) * -1); }
 .bt-move-top { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
-.bt-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.bt-move-line { display: flex; align-items: center; gap: var(--s2); min-width: 0; white-space: nowrap; }
-.bt-move-foot { display: flex; align-items: center; gap: var(--s2); min-height: var(--l12); white-space: nowrap; }
-.bt-move-pp { margin-left: auto; font-variant-numeric: tabular-nums; }
-.bt-move:disabled { opacity: 1; color: var(--mute); }
-@media (hover: hover) { .bt-move.pn:hover:not(:disabled) { background: var(--panel-2); } }
-/* how a move lands on each foe now out, in the order they stand, as Champions marks it: a hit that counts is lit, a weak one dim, none muted */
+.bt-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: var(--t15); line-height: var(--l15); }
+.bt-move-line { display: flex; align-items: center; gap: var(--s2); min-width: 0; white-space: nowrap; font-size: var(--t12); line-height: var(--l12); }
+.bt-move-line > .tb-type { background: #050D1F66; color: #FFFFFF; }
+.bt-move.on .bt-move-line > .tb-type { background: color-mix(in srgb, var(--type) 62%, #050D1F); }
+.bt-move-line > .t12 { color: inherit; opacity: .8; }
+.bt-move-foot { display: flex; align-items: center; gap: var(--s2); min-height: var(--l12); white-space: nowrap; font-size: var(--t12); line-height: var(--l12); opacity: .8; }
+.bt-move-pp { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* how a move lands on each foe now out, as Champions marks it: a hit that counts lit, a weak one dark, none faint */
 .bt-effs { display: flex; gap: var(--seam); margin-left: auto; }
-.bt-eff { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--s1); background: var(--ground); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.bt-eff.hard { background: var(--lit); color: var(--ground); }
-.bt-eff.none { color: var(--mute); font-weight: 400; }
-/* the bench under the moves: the brought Pokémon not out, one tap to switch (Showdown keeps them there); a moved-on cell is muted */
+.bt-eff { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--s1); background: #050D1F; color: #DCE8FF; font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bt-eff.hard { background: #FFFFFF; color: #050D1F; }
+.bt-eff.none { color: #FFFFFF66; font-weight: 400; }
+/* the bench under the moves: the brought Pokémon not out, one tap to switch; one that cannot come in is greyed */
 .bt-bench { display: grid; gap: var(--s2); }
-.bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
 @media (min-width: 860px) { .bt-bench-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.bt-sw { display: flex; align-items: center; gap: var(--s2); min-width: 0; min-height: var(--h-row); padding: 0 var(--pad); text-align: left; }
+.bt-sw { display: flex; align-items: center; gap: var(--s2); min-width: 0; min-height: var(--h-row); padding: 0 var(--pad) 0 var(--s1); text-align: left; color: var(--lit); background: var(--panel); transition: background-color var(--move-tone); }
 .bt-sw img { width: var(--h-strip); height: var(--h-strip); flex: none; object-fit: contain; }
 .bt-sw-say { display: grid; min-width: 0; }
 .bt-sw-say > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.bt-sw:disabled { opacity: 1; color: var(--mute); }
+.bt-sw:disabled { color: var(--mute); cursor: default; }
 .bt-sw:disabled img { filter: grayscale(1); opacity: var(--opacity-disabled); }
-@media (hover: hover) { .bt-sw.pn:hover:not(:disabled) { background: var(--panel-2); } }
+@media (hover: hover) { .bt-sw:hover:not(:disabled) { background: var(--panel-2); } }
+.bt-sw:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s5); }
 .bt-tools > .btn { width: auto; }
+/* Mega Evolution: a key in the middle under the moves with the Mega symbol; the one place a gradient is allowed (the symbol's
+   own colours), lit when it is on */
+.bt-mega-row { display: flex; justify-content: center; }
+.bt-mega { display: inline-flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--s8) 0 var(--s1); font-size: var(--t15); line-height: var(--l15); color: var(--dim); font-weight: 700; background: var(--panel); transition: background-color var(--move-tone), color var(--move-tone); }
+.bt-mega-mark { display: grid; place-items: center; flex: none; width: var(--h-control); height: var(--h-control); background: #FFFFFF; }
+.bt-mega-mark > img { width: auto; height: 78%; display: block; }
+.bt-mega.on { color: var(--ground); background: var(--lit); }
+@media (hover: hover) { .bt-mega:hover:not(.on) { color: var(--lit); background: var(--panel-2); } }
+.bt-mega:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-party { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .bt-party-cell { --floor: var(--s8); display: block; width: 100%; height: 132px; text-align: left; }
 .bt-party-cell .floor { display: flex; align-items: center; gap: var(--s1); padding: 0 var(--s2); }

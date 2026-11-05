@@ -6,7 +6,11 @@ import { defensiveMatchups, statRange } from "../../services/calculatorCore.js";
 import { Generations } from "@smogon/calc";
 import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
+import * as cam from "./stageCamera.js";
+import * as snd from "./stageSound.js";
 import { Court, Fading, Hazards, RoomBox, Screens, Wind } from "./Field.jsx";
+import Stadium from "./Stadium.jsx";
+import Seg from "../../components/common/Seg.jsx";
 
 /* 배틀 무대 (DESIGN.md "Battle", The stage). 경기장 위에 두 편이 마주 서고, 각 포켓몬 머리 위에 쇼다운처럼 상태 막대가 뜬다.
    날씨, 필드, 룸, 벽, 설치기는 무대 위에 그대로 남아 보이고, 기록 한 줄마다 stageFx.js의 연출이 돈다.
@@ -157,6 +161,10 @@ export function useStageTape(log, res, perspective, epoch = 0) {
       let shown = [];
       const busy = {}; // the HP still moving on each Pokémon: a second hit on it (a multi-hit move) waits for the first
       let landing = []; // HP moves of this beat started together (a spread move's targets), awaited when the beat ends
+      // the camera (DESIGN.md "Battle", The camera): pushed in while a beat plays, back to wide once its words have stood
+      let framed = false, shotId = 0, opened = false;
+      const toWide = () => { shotId += 1; if (framed) { framed = false; return cam.wide(stageRef.current); } return null; };
+      const push = (key, scale, duration) => { const stage = stageRef.current; if (!stage) return; shotId += 1; framed = true; cam.frame(stage, fx.spot(stage, key), scale, duration); };
       for (let i = 0; i < fresh.length; i++) {
         if (latest.current.epoch !== epoch) break; // a jump came while this played: the next run starts again
         const line = fresh[i];
@@ -176,6 +184,8 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           if (landing.length) { await Promise.all(landing); landing = []; }
           // a line caused by the move itself (Brick Break taking a screen down before it hits) is still its blow
           if (!/^\|move\||^\|-sideend\||\|\[from\] move:/.test(line)) blow.on = false;
+          // a fall keeps the camera on the one falling
+          if (!blow.on && !/^\|faint\|/.test(line)) toWide();
         }
         // one beat: a move and its results; the leads sent out together; the stat changes of one cause (Intimidate on both foes)
         const chain = (blow.on || /^\|move\|/.test(line)) && (RESULT.test(next) || /^\|-sideend\|/.test(next))
@@ -198,12 +208,22 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           case "strike": case "chase": case "self": {
             blow = { ...freshBlow(), from: k, type: event.type, on: true };
             const data = res.detail.moves[event.move] || {};
+            if (event.category && event.category !== "Status") snd.launch(event.category === "Special");
+            /* the camera frames the user as it gathers and pans to its target as the move travels, holding there through the blow;
+               a spread move stays wide and leans in a little on its user */
+            const aim = (event.targets || []).map(keyOf).find(t => t !== k && stage?.querySelector(`[data-mon="${t}"] .bs-mon`));
+            push(k, event.spread ? 1.05 : 1.12, 420);
+            if (aim && !event.spread && stage) {
+              const shot = shotId, [ax, ay] = fx.spot(stage, k), [bx, by] = fx.spot(stage, aim);
+              const far = Math.min(1, Math.hypot(bx - ax, by - ay) / (stage.clientWidth * .6));
+              fx.wait(320).then(() => { if (shot === shotId) cam.pan(stage, fx.spot(stage, aim), 420 + 260 * far); });
+            }
             await fx.move(stage, { ...event, priority: data.priority || 0 }, keyOf, aheadOf(fresh.slice(i + 1)));
             break;
           }
-          case "crit": blow.crit.add(k); fx.label(stage, k, "급소", "hard"); break;
-          case "super": blow.strong.add(k); fx.label(stage, k, "효과가 굉장하다", "hard"); break;
-          case "resist": blow.weak.add(k); fx.label(stage, k, "효과가 별로", "soft"); break;
+          case "crit": blow.crit.add(k); push(k, 1.25, 200); snd.crit(); fx.label(stage, k, "급소", "hard"); break;
+          case "super": blow.strong.add(k); snd.strong(); fx.label(stage, k, "효과가 굉장하다", "hard"); break;
+          case "resist": blow.weak.add(k); snd.weak(); fx.label(stage, k, "효과가 별로", "soft"); break;
           case "immune": fx.label(stage, k, "효과 없음", "soft"); break;
           case "miss": fx.label(stage, k, "빗나감", "soft"); break;
           case "fail": fx.label(stage, k, "실패", "soft"); break;
@@ -222,8 +242,15 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             const strike = { share: 0, crit: blow.crit.has(k), strong: blow.strong.has(k), weak: blow.weak.has(k), direct };
             const source = ofKey(line);
             let rises = null; // the number rising over it, which the beat waits for but the next hit does not
+            const knockout = direct && event.hp === 0;
             const run = (async () => {
               await busy[k];
+              // weight (DESIGN.md "Battle", Weight): the stage holds still at the impact, longer for a hard blow and longest for the
+              // one that knocks out, which then plays on at half speed with the camera on its target
+              if (direct && blow.on && nth === 0) {
+                await cam.hitStop(stage, knockout ? 120 : strike.crit || strike.strong ? 90 : 60);
+                if (knockout) { push(k, strike.crit ? 1.25 : 1.18, 300); fx.slowMo(stage, 700); }
+              }
               // a further hit of a multi-hit move lands its own blow, and its HP goes with it
               if (again) fx.burst(stage, k, blow.type, .8);
               flushSync(() => setScene(view));
@@ -233,6 +260,7 @@ export function useStageTape(log, res, perspective, epoch = 0) {
               const amount = exact ? Math.abs(lost) : Math.round(Math.abs(lost) / event.maxhp * 100);
               if (!amount) return;
               const words = `${lost > 0 ? "-" : "+"}${amount}${exact ? "" : "%"}`;
+              if (lost > 0 && direct) snd.hit((.6 + Math.min(1, lost / event.maxhp) * .9) * (strike.crit ? 1.15 : 1));
               // HP that flows: a draining move heals from its target (the gain fills once the motes arrive), Leech Seed feeds its seeder
               if (lost < 0 && event.from === "drain" && source) await fx.flow(stage, source, k);
               if (lost > 0 && event.from === "leechseed" && source) fx.flow(stage, k, source);
@@ -250,23 +278,45 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             if (!chain) landing = [];
             break;
           }
-          case "fall": await fx.faint(stage, k); standing.delete(k); show(); break;
-          case "enter":
-            if (event.leaving) await fx.leave(stage, k, { drag: event.drag });
+          case "fall": {
+            // the stadium's lamps dim a step while it sinks, and come back as it goes out
+            snd.faint();
+            stage?.classList.add("bs-dim");
+            await fx.faint(stage, k);
+            stage?.classList.remove("bs-dim");
+            standing.delete(k); show(); toWide(); break;
+          }
+          case "enter": {
+            if (event.leaving) { snd.leave(); await fx.leave(stage, k, { drag: event.drag }); }
             standing.delete(k);
             show();
-            if (chain) { fx.enter(stage, k); await fx.wait(200); } else await fx.enter(stage, k);
+            // the stage mounts with the first lead, so it is read again here
+            const st = stageRef.current;
+            // the opening (DESIGN.md "Battle", The big moments): the trainers' names and VS while the lamps switch on, then the throws
+            if (!opened && R.state.turn === 0 && st) {
+              opened = true;
+              // the plates come in once the leads stand (the first turn, or the end of this run)
+              st.classList.add("bs-intro");
+              st.querySelectorAll(".bs-mon").forEach(el => { el.style.opacity = "0"; });
+              snd.launch(true);
+              await fx.opening(st, R.state.players[perspective] || "", R.state.players[other(perspective)] || "");
+            }
+            snd.enter();
+            // a Pokémon sent in mid-battle is framed on its side; the leads come out wide
+            if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
+            if (chain) { fx.enter(st, k); await fx.wait(260); } else await fx.enter(st, k);
             break;
+          }
           case "change": {
             const next = R.state.sides[k.slice(0, 2)].active[k.charCodeAt(2) - 97];
             const ready = next ? decoded(spriteUrl(next.species)) : null;
-            if (fresh[i + 1]?.startsWith("|-mega|")) await Promise.all([fx.megaStart(stage, k), ready]);
+            if (fresh[i + 1]?.startsWith("|-mega|")) { snd.megaStart(); await Promise.all([fx.megaStart(stage, k), ready]); }
             else await ready;
             show();
             if (!fresh[i + 1]?.startsWith("|-mega|")) await fx.flashMon(stage, k);
             break;
           }
-          case "mega": show(); await fx.megaEnd(stage, k); break;
+          case "mega": show(); snd.megaEnd(); await fx.megaEnd(stage, k); break;
           case "status": show(); await fx.status(stage, k, event.status); break;
           case "cure": show(); await fx.flashMon(stage, k, .5); break;
           case "boost": show(); if (chain) { fx.boost(stage, k, event.amount); await fx.wait(120); } else await fx.boost(stage, k, event.amount); break;
@@ -277,7 +327,7 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             // (inside a blow the hit lands while the shards still fall)
             if (!event.on && blow.on) { fx.shatter(stage, event.side === perspective, event.id); await fx.wait(120); show(); break; }
             show(); await fx.wait(450); break;
-          case "protect": await fx.shield(stage, k); break;
+          case "protect": await fx.shield(stage, k, event.id); break;
           case "ability": fx.popup(stage, k, `${word(k)}의 특성`, event.name, own(k)); await fx.wait(520); show(); break;
           case "item": fx.popup(stage, k, `${word(k)}의 도구`, event.name, own(k)); await fx.wait(400); show(); break;
           case "volatile":
@@ -287,13 +337,23 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
           case "cant": show(); await fx.cant(stage, k, event.why); break;
-          case "turn": show(); await fx.banner(stage, `${event.turn}턴`); break;
-          case "end": show(); await fx.banner(stage, event.winner === "tie" ? "무승부" : `${R.state.players[event.winner]} 승리`, { tone: "win" }); break;
+          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); snd.turn(); await fx.banner(stage, `${event.turn}턴`); break;
+          case "end": {
+            // the end: the camera frames the winner's last Pokémon standing, the lamps run along their banks, the winner's plate rises
+            show(); await toWide();
+            const last = event.winner && event.winner !== "tie" ? R.state.sides[event.winner].active.findIndex(m => m && !m.fainted) : -1;
+            if (last >= 0) push(slotKey(event.winner, last), 1.14, 680);
+            snd.megaEnd();
+            await Promise.all([fx.banner(stage, event.winner === "tie" ? "무승부" : `${R.state.players[event.winner]} 승리`, { tone: "win" }), fx.victory(stage)]);
+            break;
+          }
           default: show();
         }
         if (text.length && !chain) await fx.hold(saidAt, MSG_MS);
       }
       if (landing.length) await Promise.all(landing);
+      toWide();
+      stageRef.current?.classList.remove("bs-intro");
       flushLines();
       if (lastSaid.length) flushSync(() => setSaid(shown.at(-1) === lastSaid.at(-1) ? shown : lastSaid));
       flushSync(() => setScene(sceneOf(R.state)));
@@ -312,17 +372,17 @@ export function useStageTape(log, res, perspective, epoch = 0) {
 // a status carries its type's square, as a type tag does
 const STATUS_TYPE = { brn: "fire", par: "electric", psn: "poison", tox: "poison", slp: "normal", frz: "ice" };
 const hpTone = share => (share <= .2 ? "type-fire" : share <= .5 ? "type-electric" : "type-grass");
-// HP as ten cells on the seam, each filled by the share it holds; stageFx.drain sweeps it cell by cell when HP moves
+// HP as one bar that empties from the right, green while half stands, yellow to a fifth, red under it; stageFx.drain moves it
 function Gauge({ share }) {
-  return <span className={`bt-gauge ${hpTone(share)}`} aria-hidden="true">
-    {Array.from({ length: 10 }, (_, i) => <i key={i}><b style={{ "--f": Math.max(0, Math.min(1, share * 10 - i)) }} /></i>)}
-  </span>;
+  return <span className={`bt-hp ${hpTone(share)}`} aria-hidden="true"><b style={{ "--f": Math.max(0, Math.min(1, share)) }} /></span>;
 }
 
-/* a Pokémon's status bar: a board panel on the seam outside the stage, in the order its Pokémon stand (left to right).
-   Our HP is exact, the foe's in percent as Showdown shows it; then the marks: a status, a rise lit and a fall dim, what clings to it. */
-function StatBar({ slotKey: key, mon, own, res, onInfo }) {
-  if (!mon) return <div className="pn bt-bar" data-bar={key} />;
+/* a Pokémon's plate on the stage, as the games put it (DESIGN.md "Battle", The HUD): the foe's in the top corners, ours over the
+   message window at the bottom right, so none covers a Pokémon. Our HP is exact, the foe's in percent as Showdown shows it; a status
+   rides by the name; rises, falls and what clings to it stand on a line under the bar only when there are any. Tapping it opens
+   the Pokémon's sheet. */
+function Plate({ slotKey: key, mon, own, res, onInfo }) {
+  if (!mon) return null;
   const exact = own && mon.maxhp !== 100;
   const share = mon.fainted || !mon.maxhp ? 0 : mon.hp / mon.maxhp;
   const hp = mon.fainted ? 0 : exact ? mon.hp : Math.max(mon.hp > 0 ? 1 : 0, Math.round(share * 100));
@@ -331,29 +391,32 @@ function StatBar({ slotKey: key, mon, own, res, onInfo }) {
   const status = mon.status && mon.status !== "fnt" ? mon.status : "";
   const name = nameOf(res, mon.species);
   return (
-    <button type="button" className={"pn bt-bar" + (mon.fainted ? " out" : "")} data-bar={key} onClick={onInfo}
+    <button type="button" className={"bt-plate" + (own ? " own" : "") + (mon.fainted ? " out" : "")} data-bar={key} onClick={onInfo}
       aria-label={`${own ? "" : "상대 "}${name} 정보, ${mon.fainted ? "쓰러짐" : `HP ${hp}${exact ? ` / ${mon.maxhp}` : "%"}`}`}>
-      <span className="bt-bar-top swap" key={mon.name}>
-        <b className="bt-bar-name">{name}</b>
+      <span className="bt-plate-top" key={mon.name}>
+        <b className="bt-plate-name">{name}</b>
+        {mon.gender && <i className={`bt-sex ${mon.gender}`} aria-hidden="true">{mon.gender === "M" ? "♂" : "♀"}</i>}
         {/* every Pokémon here is level 50; a level is shown only when it is not */}
-        {mon.level !== 50 && <span className="t12 dim">{`Lv${mon.level}`}</span>}
-        <span className="bt-bar-num">{mon.fainted ? "쓰러짐" : exact ? `${hp}/${mon.maxhp}` : `${hp}%`}</span>
+        {mon.level !== 50 && <span className="bt-plate-lv">{`Lv${mon.level}`}</span>}
+        {status && <span className={`bt-st type-${STATUS_TYPE[status] || "normal"}`}>{STATUS[status]}</span>}
+        {/* on a phone in doubles the marks fold into their count (the sheet lists them), so two of our plates never hide a foe */}
+        {boosts.length + vols.length > 0 && <span className="bt-plate-more">{`+${boosts.length + vols.length}`}</span>}
       </span>
-      <Gauge share={share} />
-      <span className="bt-marks">
-        {status && <span className={`bt-mark type-${STATUS_TYPE[status] || "normal"}`}>{STATUS[status]}</span>}
+      <span className="bt-plate-hp">
+        <Gauge share={share} />
+        <span className="bt-plate-num">{mon.fainted ? "쓰러짐" : exact ? `${hp}/${mon.maxhp}` : `${hp}%`}</span>
+      </span>
+      {(boosts.length > 0 || vols.length > 0) && <span className="bt-marks">
         {boosts.map(([k, v]) => <span key={k} className={"bt-mark " + (v > 0 ? "up" : "down")}>{`${STAT[k] || k} ${multiplier(k, v)}`}</span>)}
         {vols.map(v => <span key={v} className="bt-mark">{effectWord(res, v)}</span>)}
-      </span>
+      </span>}
     </button>
   );
 }
-function Bars({ side, scene, own, doubles, res, onInfo }) {
-  const slots = doubles ? [0, 1] : [0];
-  return <div className={"stack bt-bars" + (doubles ? " two" : "")}>
-    {slots.map(slot => { const key = slotKey(side, slot); return <StatBar key={slot} slotKey={key} mon={scene?.[side]?.active?.[slot]} own={own} res={res} onInfo={() => onInfo?.(key)} />; })}
-  </div>;
-}
+const plates = (side, scene, own, doubles, res, onInfo) => (doubles ? [0, 1] : [0]).map(slot => {
+  const key = slotKey(side, slot);
+  return <Plate key={key} slotKey={key} mon={scene?.[side]?.active?.[slot]} own={own} res={res} onInfo={() => onInfo?.(key)} />;
+});
 
 const hard = m => m >= 2;
 function SideField({ side, scene, own, doubles, res, targeting }) {
@@ -369,7 +432,11 @@ function SideField({ side, scene, own, doubles, res, targeting }) {
         return (
           <div key={slot} className="bs-slot" data-mon={key} data-pos={`${own ? "own" : "foe"}${doubles ? `-d${slot}` : ""}`}>
             {alive && <div className="bs-mon" key={mon.name}>
-              {mon.volatiles.includes("substitute") ? <i className="bs-sub" aria-hidden="true" /> : <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" />}
+              {mon.volatiles.includes("substitute") ? <i className="bs-sub" aria-hidden="true" /> : <>
+                <i className="bs-shadow" aria-hidden="true" />
+                <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" />
+                <img className="bs-mirror" src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" />
+              </>}
             </div>}
             {pick && <button type="button" className="bt-pick" onClick={pick.onPick}
               aria-label={`${alive ? `${own ? "" : "상대 "}${nameOf(res, mon.species)}` : "빈 자리"} 대상으로 고르기${pick.mark != null ? `, ${effLabel(pick.mark)}` : ""}`}>
@@ -402,16 +469,30 @@ function Strip({ side, scene, name, res, known }) {
   );
 }
 
-// the message box: the newest line lit, the one before it dim; when the game asks (리자몽은 무엇을 할까?) the question is the newest
+// the message window over the bottom of the stage: the newest line lit, the one before it dim; when the game asks
+// (리자몽은 무엇을 할까?) the question is the newest
 export function Say({ said, ask }) {
   const shown = ask ? [...said.slice(-1), ask] : said;
-  return <div className="pn bt-say" aria-live="polite">{shown.map((line, i) => <p key={`${line}-${i}-${shown.length}`}>{line}</p>)}</div>;
+  return <div className="bt-say" aria-live="polite">{shown.map((line, i) => <p key={`${line}-${i}-${shown.length}`}>{line}</p>)}</div>;
 }
 
 const WEATHER_KIND = { raindance: "rain", primordialsea: "rain", sunnyday: "sun", desolateland: "sun", sandstorm: "sand", snowscape: "snow", snow: "snow", hail: "hail", deltastream: "wind" };
 const ROOMS = ["trickroom", "magicroom", "wonderroom"];
 
-export function Stage({ scene, stageRef, perspective, doubles, res, targeting, names, said, ask, known }) {
+/* the clock on the stage (DESIGN.md "Battle", The clock): the seconds of a decision in segment cells, as the board announces a
+   number, and a bar under them emptying as the 90 run out; amber under 30, red for the last 10. mine: the decision owed is ours */
+const CLOCK = 90;
+function Clock({ left, mine }) {
+  if (left == null) return null;
+  const share = Math.max(0, Math.min(1, left / CLOCK));
+  const tone = left <= 10 ? " hot" : left <= 30 ? " warm" : "";
+  return <div className={"bt-clock" + tone + (mine ? " mine" : "")} role="timer" aria-label={`${mine ? "내 선택" : "선택"}까지 ${left}초`}>
+    <Seg value={String(left)} h={24} cells={2} label="" />
+    <i aria-hidden="true"><b style={{ "--f": share }} /></i>
+  </div>;
+}
+
+export function Stage({ scene, stageRef, perspective, doubles, res, targeting, names, said, ask, known, clock = null, mine = false }) {
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
   const fields = scene?.fields || [];
@@ -423,12 +504,13 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
   return (
     <div className="bt-arena">
       <Strip side={foe} scene={scene} name={names[foe]} res={res} />
-      <Bars side={foe} scene={scene} own={false} doubles={doubles} res={res} onInfo={setInfo} />
-      <div className="bs-stage" ref={stageRef}>
+      <div className="bs-stage hud" ref={stageRef}>
         {/* back to front: the court, the terrain on it, what lies on each side's floor and blows behind it, the Pokémon,
             the screens over each side, the weather, and a room or gravity over everything */}
+        {/* the camera: the scene and its effects move together (stageCamera.js); the vignette and the field's tags stay put */}
+        <div className="bs-cam">
         <div className="bs-world">
-          <i className="bs-sky" aria-hidden="true" />
+          <Stadium names={names} turn={scene?.turn} live={Boolean(scene) && !scene.ended} winner={scene?.ended ? scene.winner : null} />
           <Court />
           <Fading kind="bs-terrain" value={terrain} />
           {[foe, perspective].map(side => <React.Fragment key={side}>
@@ -443,12 +525,26 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
           {ROOMS.map(r => <Fading key={r} kind="bs-room" value={fields.includes(r) ? r : ""}>{() => <RoomBox />}</Fading>)}
           <Fading kind="bs-gravity" value={fields.includes("gravity") ? "on" : ""} />
         </div>
-        {chips.length > 0 && <div className="bt-fieldchips">{chips.map(([word, left]) => <span key={word}>{word}{left && <span>{left}</span>}</span>)}</div>}
         <div className="bs-fx" aria-hidden="true" />
+        </div>
+        <i className="bs-vignette" aria-hidden="true" />
+        {/* the HUD over the stage: the foe's plates in the top corners (the field's tags under the first), ours at the bottom right
+            over the message window */}
+        <div className={"bt-hud" + (doubles ? " two" : "")}>
+          <div className={"bt-hud-foe" + (doubles ? " two" : "")}>
+            {(() => { const [first, ...rest] = plates(foe, scene, false, doubles, res, setInfo); return <>
+              <div className="bt-hud-col">{first}
+                {chips.length > 0 && <div className="bt-fieldchips">{chips.map(([word, left]) => <span key={word}>{word}{left && <span>{left}</span>}</span>)}</div>}
+              </div>
+              {rest}
+            </>; })()}
+          </div>
+          <div className="bt-hud-own">{plates(perspective, scene, true, doubles, res, setInfo)}</div>
+          <Say said={said} ask={ask} />
+          <Clock left={clock} mine={mine} />
+        </div>
       </div>
-      <Bars side={perspective} scene={scene} own doubles={doubles} res={res} onInfo={setInfo} />
       <Strip side={perspective} scene={scene} name={names[perspective]} res={res} known={known} />
-      <Say said={said} ask={ask} />
       {info && scene && <MonInfo res={res} mon={scene[info.slice(0, 2)].active[info.charCodeAt(2) - 97]} own={info.startsWith(perspective)} onClose={() => setInfo(null)} />}
     </div>
   );
@@ -461,11 +557,11 @@ export function LobbyStage({ leads, doubles, label, awaiting = false }) {
   const ref = useRef(null);
   const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) } };
   // before paint, so a new lead never shows for a frame before it comes out of the light
-  useLayoutEffect(() => { leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot))); }, [leads.join("|"), doubles]);
+  useLayoutEffect(() => { leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot), { ball: false })); }, [leads.join("|"), doubles]);
   return (
     <div className="bs-stage" ref={ref} role="img" aria-label={label}>
       <div className="bs-world">
-        <i className="bs-sky" aria-hidden="true" />
+        <Stadium names={{}} turn={0} live={false} />
         <Court />
         {awaiting && <div className="bs-side foe" aria-hidden="true">
           {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`foe${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}

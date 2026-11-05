@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/common/Button.jsx";
 import Dropdown from "../components/common/Dropdown.jsx";
 import Field from "../components/common/Field.jsx";
@@ -10,6 +10,8 @@ import { createBattleReader } from "../services/battleLog.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { formatId, startBattle, choose, forfeit, readout } from "../../supabase/functions/battle/engine.mjs";
 import { LAB_TEAMS } from "./battleLabTeams.js";
+import { Dex } from "@pkmn/sim";
+import { recipeOf } from "./battle/moveFx.js";
 
 /* 배틀 실험실 (?view=lab, 개발 서버에서만). 쇼다운 엔진을 이 브라우저에서 돌려 두 자리를 모두 직접 조작하고,
    배틀 화면(BattlePage의 Arena)을 그대로 띄운다. 서버도 DB도 쓰지 않는다.
@@ -211,7 +213,47 @@ function Bench({ res, seen, doubles, inject, turn }) {
   const move = (name, targets, extra = "") => [`|move|${ident(from)}|${name}|${targets[0] ? ident(targets[0]) : ""}${extra}`, ...targets.flatMap(k => hpLines(k, -damage))];
   const tName = t => res.text.types[t] || t;
 
+  /* every move a Pokémon can know in Champions, played one by one on the stage as a move line alone (with the chosen damage):
+     how each recipe (moveFx.js) looks. window.__labMoves and __labPlay let a recorder walk them all. */
+  const allMoves = useMemo(() => [...new Set(Object.values(res.detail.learnsets).flat())].filter(id => res.detail.moves[id])
+    .sort((a, b) => recipeOf(a).localeCompare(recipeOf(b)) || a.localeCompare(b)), [res]);
+  const [pick, setPick] = useState(0);
+  const [running, setRunning] = useState(false);
+  const playMove = id => {
+    const data = Dex.moves.get(id), name = data.name;
+    const self = ["self", "allySide", "allies", "allyTeam", "adjacentAllyOrSelf"].includes(data.target) && data.target !== "adjacentAlly";
+    const spread = ["allAdjacentFoes", "allAdjacent"].includes(data.target) && doubles;
+    const targets = self ? [from] : spread ? foes(from) : [data.target === "adjacentAlly" ? slots.find(k => k !== from && side(k) === side(from)) || to : to];
+    const hurt = data.category !== "Status" ? targets.flatMap(k => hpLines(k, -damage)) : [];
+    inject([`|move|${ident(from)}|${name}|${ident(targets[0])}${spread ? `|[spread] ${targets.join(",")}` : ""}`, ...hurt]);
+  };
+  const run = useRef(false);
+  useEffect(() => () => { run.current = false; }, []);
+  const playAll = async from0 => {
+    run.current = true; setRunning(true);
+    for (let i = from0; i < allMoves.length && run.current; i++) { setPick(i); playMove(allMoves[i]); await new Promise(r => setTimeout(r, 2600)); }
+    run.current = false; setRunning(false);
+  };
+  if (typeof window !== "undefined") {
+    window.__labMoves = allMoves; window.__labPlay = id => playMove(id); window.__labInject = inject;
+    // everyone out back to full HP, so a long run never wears the stage down to empty sides
+    window.__labRestore = () => inject(slots.flatMap(k => { const m = monAt(k); return m && !m.fainted && m.hp < m.maxhp ? [`|-heal|${ident(k)}|${m.maxhp}/${m.maxhp}`] : []; }));
+  }
+  const cur = allMoves[pick] || "";
+
   return <>
+    <SectionHead title={`기술 전체 (${allMoves.length})`} />
+    <p className="t12 dim">포켓몬 챔피언스에서 배울 수 있는 기술을 연출 유형 순으로 하나씩 무대에 올립니다. 쓰는 쪽과 받는 쪽, 피해는 아래 동작 넣기의 선택을 따릅니다.</p>
+    <Question id="lab-move" label={`기술 (${pick + 1} / ${allMoves.length}, ${recipeOf(cur)})`}>
+      <Dropdown id="lab-move" value={String(pick)} options={allMoves.map((id, i) => ({ value: String(i), label: `${recipeOf(id)}: ${res.text.moves[id]?.name || id}` }))} onChange={v => setPick(Number(v))} ariaLabel="기술" />
+    </Question>
+    <Keys keys={[
+      ["이전", () => { const i = Math.max(0, pick - 1); setPick(i); playMove(allMoves[i]); }, running],
+      ["재생", () => playMove(cur), running],
+      ["다음", () => { const i = Math.min(allMoves.length - 1, pick + 1); setPick(i); playMove(allMoves[i]); }, running],
+      [running ? "멈춤" : "여기부터 전부", () => { if (running) run.current = false; else playAll(pick); }],
+    ]} />
+
     <SectionHead title="동작 넣기" />
     <p className="t12 dim">아래 단추는 기록 줄을 화면에만 넣습니다. 엔진의 판정은 바뀌지 않아서, 다음 턴이 진행되면 HP와 상태는 엔진의 값으로 돌아옵니다.</p>
     <Question id="lab-src" label="쓰는 쪽" group><Choice name="lab-src" options={slots.map(slotLabel)} value={slotLabel(from)} onChange={l => setSrc(slots.find(k => slotLabel(k) === l))} /></Question>

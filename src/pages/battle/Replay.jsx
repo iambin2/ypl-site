@@ -11,25 +11,26 @@ import { stopIndex } from "../../services/battleReplay.js";
 
 const stopWord = s => (s.end ? "끝" : s.turn === 0 ? "선출" : `${s.turn}턴`);
 
-// the replay's keys: a bar on its track to drag to any turn, then five keys in a row of small actions; playing inverts its key
+// the replay's controls stand back under the stage: small round keys with their signs and a thin track to drag to any turn
+const KEY = { first: "M6 6h2v12H6zM18 6l-9 6 9 6z", prev: "M16 6l-9 6 9 6z", play: "M8 5l11 7-11 7z", pause: "M8 5h3v14H8zM13 5h3v14h-3z", next: "M8 6l9 6-9 6z", last: "M16 6h2v12h-2zM6 6l9 6-9 6z" };
+const Key = ({ d, label, ...rest }) => <button type="button" className="bt-rkey" aria-label={label} title={label} {...rest}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg></button>;
 export function ReplayBar({ stops, at, playing, onJump, onStep, onPlay }) {
   const i = stopIndex(stops, at);
   const last = stops.length - 1;
   const prev = at > stops[i].at ? i : Math.max(0, i - 1);
   return (
-    <div className="bt-replay">
-      <span className="tb-bar bt-replay-bar">
+    <div className="bt-replay" role="group" aria-label="리플레이">
+      <Key d={KEY.first} label="처음" onClick={() => onJump(stops[0].at)} disabled={at <= stops[0].at} />
+      <Key d={KEY.prev} label="이전 턴" onClick={() => onJump(stops[prev].at)} disabled={at <= stops[0].at} />
+      <Key d={playing ? KEY.pause : KEY.play} label={playing ? "일시정지" : "재생"} aria-pressed={playing} onClick={onPlay} className={"bt-rkey main" + (playing ? " on" : "")} />
+      <Key d={KEY.next} label="다음 턴" onClick={onStep} disabled={i >= last} />
+      <Key d={KEY.last} label="끝" onClick={() => onJump(stops[last].at)} disabled={i >= last} />
+      <span className="bt-replay-track">
         <i style={{ transform: `scaleX(${last ? i / last : 1})` }} />
         <input type="range" min="0" max={last} step="1" value={i} onChange={e => onJump(stops[Number(e.target.value)].at)}
           aria-label="리플레이 위치" aria-valuetext={stopWord(stops[i])} />
       </span>
-      <div className="stack bt-replay-keys" role="group" aria-label="리플레이">
-        <button type="button" className="pn t15" onClick={() => onJump(stops[0].at)} disabled={at <= stops[0].at}>처음</button>
-        <button type="button" className="pn t15" onClick={() => onJump(stops[prev].at)} disabled={at <= stops[0].at}>이전 턴</button>
-        <button type="button" className={(playing ? "inv" : "pn") + " t15"} aria-pressed={playing} onClick={onPlay}>{playing ? "일시정지" : "재생"}</button>
-        <button type="button" className="pn t15" onClick={onStep} disabled={i >= last}>다음 턴</button>
-        <button type="button" className="pn t15" onClick={() => onJump(stops[last].at)} disabled={i >= last}>끝</button>
-      </div>
+      <span className="bt-replay-at">{stopWord(stops[i])}</span>
     </div>
   );
 }

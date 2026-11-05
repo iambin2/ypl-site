@@ -55,10 +55,10 @@ function inlineDecls(file) {
       out.push({ file: rel(file), sel: "style", prop: kebab(k), value: unit(kebab(k), v.trim().replace(/^["']|["']$/g, "")) });
   return out;
 }
-const SRC = walk(join(ROOT, "src")).filter(f => /\.(jsx?|mjs)$/.test(f) && !rel(f).startsWith("src/data/"));
-// The battle stage's scene (DESIGN.md "Battle", The stage): a floor in perspective, platforms, weather and terrain tints and the shapes
-// its effects throw. Everything a player reads or presses on the match is battle.css and is held to every rule here.
-const STAGE = ["battle-stage.css"];
+const SRC = walk(join(ROOT, "src")).filter(f => /\.(jsx?|mjs)$/.test(f) && !rel(f).startsWith("src/data/") && !rel(f).startsWith("src/pages/battle/"));
+// The battle screen is a game (DESIGN.md "Battle"): its stage, effects and HUD keep the site's colours and taste but not the board's law.
+// Popups over it and every screen outside it are held to every rule here.
+const STAGE = ["battle-stage.css", "battle.css"];
 const CSS = readdirSync(STYLES).filter(f => f.endsWith(".css") && !STAGE.includes(f));
 const DECLS = [...CSS.flatMap(f => cssDecls(join(STYLES, f))), ...SRC.flatMap(inlineDecls)];
 for (const d of DECLS) if (d.blk !== undefined) BLOCKS[d.blk][d.prop] = d.value;

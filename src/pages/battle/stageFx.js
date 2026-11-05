@@ -6,9 +6,22 @@
    모든 연출은 끝나지 않아도 정해진 시간 뒤에는 넘어간다: 숨은 페이지는 애니메이션 시계를 멈춘다.
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
 import { reduced } from "../../components/common/motion.js";
+import { makeDraw, recipeOf, playScript } from "./moveFx.js";
+import { shape, lightning, flash as flashLight, shockwave, vfxOf } from "./vfx.js";
+import { rectIn, setCameraSpeed, slow as slowStage } from "./stageCamera.js";
+import { setSoundSpeed } from "./stageSound.js";
 
 let speed = 1;
-export const setSpeed = s => { speed = s; };
+// the playback speed runs the effects, the camera and the sound together
+export const setSpeed = s => { speed = s; setCameraSpeed(s); setSoundSpeed(s); };
+// slow motion (the blow that knocks a Pokémon out): what starts on the page meanwhile is drawn at half speed too, and waits stretch
+let slowed = 1;
+export function slowMo(stage, duration = 700) {
+  if (!stage || instant() || reduced()) return;
+  slowed = 2;
+  slowStage(stage, duration * speed);
+  setTimeout(() => { slowed = 1; }, duration * speed);
+}
 export const instant = () => speed === 0;
 const ms = n => Math.max(1, n * (speed || 0));
 const OUT = "cubic-bezier(.22,1,.36,1)";
@@ -23,7 +36,7 @@ function done(anim) {
   const late = new Promise(resolve => { timer = setTimeout(resolve, t + 120); });
   return Promise.race([anim.finished, late]).catch(() => {}).finally(() => clearTimeout(timer));
 }
-export const wait = n => (instant() ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, ms(n))));
+export const wait = n => (instant() ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, ms(n) * slowed)));
 // what is left of n after `since` (a performance.now()): a line's reading time runs while its effect plays, not after it
 export const hold = (since, n) => (instant() ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, Math.max(0, ms(n) - (performance.now() - since)))));
 // the script's own animations on an element (never the CSS idle, which a cancel would stop for good)
@@ -34,15 +47,16 @@ const stageOf = el => el?.closest(".bs-stage");
 const fxOf = stage => stage?.querySelector(".bs-fx");
 const slotEl = (stage, key) => stage?.querySelector(`[data-mon="${key}"]`);
 const monEl = (stage, key) => slotEl(stage, key)?.querySelector(".bs-mon");
-// the centre of a Pokémon's picture (or of its slot) in the stage's own pixels
+// the centre of a Pokémon's picture (or of its slot) in the stage's own pixels, inside the camera (where an effect lands on it
+// however the camera stands)
 function centre(stage, key, lift = .45) {
-  const box = stage.getBoundingClientRect();
   const el = monEl(stage, key) || slotEl(stage, key);
-  if (!el) return [box.width / 2, box.height / 2];
-  const r = el.getBoundingClientRect();
-  return [r.left - box.left + r.width / 2, r.top - box.top + r.height * (1 - lift)];
+  if (!el) return [stage.clientWidth / 2, stage.clientHeight / 2];
+  const r = rectIn(stage, el);
+  return [r.left + r.width / 2, r.top + r.height * (1 - lift)];
 }
-const sizeOf = (stage, key) => monEl(stage, key)?.getBoundingClientRect().width || 80;
+export const spot = centre;
+const sizeOf = (stage, key) => { const el = monEl(stage, key); return el ? rectIn(stage, el).width : 80; };
 // shapes are drawn for a phone's stage (430 wide) and grow with a wider one
 const unitOf = stage => Math.min(1.6, Math.max(.85, (stage?.clientWidth || 430) / 430));
 const ownSide = el => Boolean(el?.closest(".bs-side")?.classList.contains("own"));
@@ -51,6 +65,8 @@ const ownSide = el => Boolean(el?.closest(".bs-side")?.classList.contains("own")
 function spawn(stage, className, at, style = {}) {
   const fx = fxOf(stage);
   if (!fx) return null;
+  // every shape of light and matter is drawn on the stage's canvas (vfx.js); only the words over the stage (bt-) are elements
+  if (!className.startsWith("bt-")) { const el = shape(stage, className, at || [0, 0]); Object.assign(el.style, style); return el; }
   const el = document.createElement("i");
   el.className = className;
   Object.assign(el.style, at ? { left: `${at[0]}px`, top: `${at[1]}px` } : {}, style);
@@ -59,7 +75,8 @@ function spawn(stage, className, at, style = {}) {
 }
 // a shape of a size (stage pixels) at the layer's corner, placed by its frames; w 0 keeps the size its class gives it
 const bit = (stage, cls, w = 0, h = w) => spawn(stage, cls, [0, 0], w ? { width: `${w}px`, height: `${h}px` } : {});
-const play = (el, frames, options) => (el ? done(el.animate(frames, { fill: "both", ...options, duration: ms(options.duration), delay: ms(options.delay || 0) })) : Promise.resolve());
+// canvas shapes slow on the canvas's own clock; page elements stretch their length
+const play = (el, frames, options) => { if (!el) return Promise.resolve(); const k = el.nodeType ? slowed : 1; return done(el.animate(frames, { fill: "both", ...options, duration: ms(options.duration) * k, delay: ms(options.delay || 0) * k })); };
 const vanish = (el, frames, options) => play(el, frames, options).then(() => el?.remove());
 const typeClass = type => `type-${String(type || "normal").toLowerCase()}`;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -138,8 +155,7 @@ export function shake(stage, power = 1) {
 }
 export function flashStage(stage, peak = .35, duration = 360) {
   if (!stage || instant()) return Promise.resolve();
-  const el = spawn(stage, "bt-fx-flash", [0, 0]);
-  return vanish(el, [{ opacity: 0 }, { opacity: peak, offset: .2 }, { opacity: 0 }], { duration, easing: "ease-out" });
+  return flashLight(stage, "normal", peak, ms(duration));
 }
 // a word across the stage: 3턴, 승리
 export function banner(stage, text, { tone = "" } = {}) {
@@ -171,41 +187,9 @@ export function label(stage, key, text, tone = "") {
   ], { duration: 900 }).then(() => { words[key] -= 1; });
 }
 
-/* ---------- a bolt: a jagged line drawn between two points, struck again with a new jag each flicker ---------- */
-const NS = "http://www.w3.org/2000/svg";
-function jagged([ax, ay], [bx, by], depth, steps = 9) {
-  const dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d;
-  return Array.from({ length: steps + 1 }, (_, i) => {
-    const t = i / steps, o = i === 0 || i === steps ? 0 : rand(-1, 1) * depth * d;
-    return [ax + dx * t + nx * o, ay + dy * t + ny * o];
-  });
-}
-const pts = list => list.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
-function bolt(stage, a, b, type = "Electric", { flicker = 3, depth = .09, duration = 340, delay = 0, fork = true, thin = false } = {}) {
-  const fx = fxOf(stage);
-  if (!fx) return Promise.resolve();
-  const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("class", `bs-bolt${thin ? " thin" : ""} ${typeClass(type)}`);
-  fx.appendChild(svg);
-  const slot = duration / flicker;
-  const runs = times(flicker, f => {
-    const g = document.createElementNS(NS, "g");
-    const line = jagged(a, b, depth);
-    let html = `<polyline class="o" points="${pts(line)}"/>`;
-    if (fork) {
-      const at = line[2 + (f % 4)], len = Math.hypot(b[0] - a[0], b[1] - a[1]) * .3;
-      const turn = Math.atan2(b[1] - a[1], b[0] - a[0]) + (f % 2 ? .7 : -.7);
-      html += `<polyline class="o fork" points="${pts(jagged(at, [at[0] + Math.cos(turn) * len, at[1] + Math.sin(turn) * len], depth * 1.6, 4))}"/>`;
-    }
-    g.innerHTML = `${html}<polyline class="c" points="${pts(line)}"/>`;
-    g.style.opacity = "0";
-    svg.appendChild(g);
-    const last = f === flicker - 1;
-    return play(g, last
-      ? [{ opacity: 1 }, { opacity: 1, offset: .4 }, { opacity: 0 }]
-      : [{ opacity: 1 }, { opacity: 1, offset: .7 }, { opacity: 0, offset: .71 }, { opacity: 0 }], { duration: last ? slot * 1.8 : slot, delay: delay + f * slot, easing: "linear", fill: "forwards" });
-  });
-  return Promise.all(runs).then(() => svg.remove());
+/* ---------- a bolt of lightning (drawn on the canvas, vfx.js lightning) ---------- */
+function bolt(stage, a, b, type = "Electric", opts = {}) {
+  return lightning(stage, a, b, String(type).toLowerCase(), { ...opts, duration: ms(opts.duration || 340), delay: ms(opts.delay || 0) });
 }
 
 /* ---------- what a blow throws on the one it lands on, by its type ---------- */
@@ -338,7 +322,10 @@ export function burst(stage, key, type, power = 1, { shards = true, mark = null 
   const size = sizeOf(stage, key);
   const runs = [ring(stage, at, size * .5, type, { s0: .2, s1: 2.2 * Math.min(1.4, power), duration: 420, thick: power >= 1.25 })];
   if (!shards) return Promise.all(runs);
-  runs.push(pop(stage, `bs-star ${typeClass(type)}`, at, { w: size * .6 * Math.min(1.5, power), s0: .25, s1: 1.25, rot: rand(0, 36), spin: 18, duration: 280 }));
+  runs.push(pop(stage, `bs-star ${typeClass(type)}`, at, { w: size * .75 * Math.min(1.6, power), s0: .25, s1: 1.35, rot: rand(0, 36), spin: 18, duration: 320 }));
+  // the blow's shockwave runs out over the floor round it, and a hard one holds the whole stage still for a beat (hit-stop)
+  shockwave(stage, [at[0], at[1] + size * .32], size * .95 * Math.min(1.6, power), String(type).toLowerCase(), { duration: ms(480), width: 6 + 6 * power, flat: .38 });
+  if (power >= 1.25) { flashLight(stage, String(type).toLowerCase(), .16, ms(260)); vfxOf(stage)?.hold(90); }
   if (reduced()) return Promise.all(runs);
   runs.push(streaks(stage, at, size, { n: Math.round(6 + 4 * power), reach: power }));
   runs.push(...(IMPACT[type]?.(stage, at, size, Math.max(.6, power)) || []));
@@ -423,6 +410,12 @@ const SHAPE = {
   crystal: { cls: t => `bs-crystal ${t}`, w: 7, h: 18, face: 90 },
   rock: { cls: () => "bs-p type-rock head", w: 0 },
   puff: { cls: t => `bs-puff ${t}`, w: 14 },
+  wedge: { cls: t => `bs-wedge ${t}`, w: 26, h: 8, face: 0 },
+  item: { cls: () => "bs-item", w: 14 },
+  shell: { cls: t => `bs-shell ${t}`, w: 22, h: 10, face: 90 },
+  heart: { cls: () => "bs-heart", w: 16, h: 15 },
+  feather: { cls: t => `bs-feather ${t}`, w: 22, h: 9, face: 0 },
+  star: { cls: t => `bs-star ${t}`, w: 22 },
 };
 // what a flight leaves where it passes, left to fade there
 const TRAIL = {
@@ -619,14 +612,14 @@ function afterimages(stage, el, frames, duration, strike) {
   const img = el.querySelector("img");
   const fx = fxOf(stage);
   if (!img || !fx) return;
-  const box = stage.getBoundingClientRect(), r = img.getBoundingClientRect();
+  const r = rectIn(stage, img);
   const flip = ownSide(el) ? " scaleX(-1)" : "";
   [[.34, 40], [.18, 80]].forEach(([peak, lag]) => {
     const ghost = new Image();
     ghost.src = img.currentSrc || img.src;
     ghost.alt = "";
     ghost.className = "bs-after";
-    Object.assign(ghost.style, { left: `${r.left - box.left}px`, top: `${r.top - box.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+    Object.assign(ghost.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
     fx.appendChild(ghost);
     vanish(ghost, frames.map((f, i) => ({ ...f, transform: `${f.transform === "none" ? "" : f.transform}${flip}` || "none", opacity: i === 0 || i === frames.length - 1 ? 0 : (f.offset ?? 1) <= strike + .01 ? peak : peak * .4 })), { duration, delay: lag, easing: "linear" });
   });
@@ -657,16 +650,21 @@ export async function move(stageNode, event, keyOf, ahead = {}) {
   const missed = k => ahead.missed?.has(k) || (event.miss && k === targets[0]);
   const blocked = k => ahead.blocked?.has(k);
   const mark = event.category === "Physical" ? markOf(id || "") : null;
-  const land = k => {
+  // o: what a recipe changes about the landing (its own mark, a harder blow, a status that lands without shards)
+  const land = (k, o = {}) => {
     if (blocked(k)) return null;
     if (missed(k)) return dodge(stage, k);
-    return burst(stage, k, type, power(k), { shards: event.category !== "Status", mark });
+    return burst(stage, k, type, power(k) * (o.power || 1), { shards: o.shards ?? event.category !== "Status", mark: o.mark === undefined ? mark : o.mark });
   };
+  if (reduced() && targets.length) { targets.forEach(k => land(k)); await wait(240); return; }
+  // the move's own recipe (moveFx.js); false hands it back to its type's flight below
+  const recipe = recipeOf(id);
+  const at = (k, lift) => centre(stage, k, lift);
+  if (!reduced() && recipe && (await playScript(DRAW, { stage, from, targets, type, id, event, power, missed, blocked, land, at }, recipe)) !== false) return;
   if (event.verb === "self") { await Promise.all([aura(stage, from, type), flashMon(stage, from, .6)]); return; }
   if (!targets.length) { await flashMon(stage, from, .4); return; }
-  if (reduced()) { targets.forEach(land); await wait(240); return; }
+  if (reduced()) { targets.forEach(k => land(k)); await wait(240); return; }
   const sig = SIGNATURE[id] || {};
-  const at = (k, lift) => centre(stage, k, lift);
   const style = { ...FLIGHT[type] || FLIGHT.Normal, ...sig };
   if (event.category === "Physical" && !event.spread) {
     const t = targets[0];
@@ -685,7 +683,7 @@ export async function move(stageNode, event, keyOf, ahead = {}) {
     return;
   }
   const status = event.category === "Status";
-  if (status && POWDERS.has(id)) {
+  if (status && (POWDERS.has(id) || recipe === "powder")) {
     await Promise.all(targets.map(t => fall(stage, at(t, .9), type, sizeOf(stage, t) * .6, { count: 6, ms: 520, head: "p", trail: "spark" })));
     targets.forEach(land);
     return;
@@ -896,12 +894,12 @@ export function shatter(stage, own, id) {
   const dome = stage?.querySelector(`.bs-screens.${own ? "own" : "foe"} .bs-dome.${id}`);
   if (!dome || instant() || !SCREEN_TYPE[id]) return Promise.resolve();
   if (reduced()) return flashStage(stage, .12, 260);
-  const r = dome.getBoundingClientRect(), box = stage.getBoundingClientRect(), u = unitOf(stage);
+  const r = rectIn(stage, dome), u = unitOf(stage);
   // the dome itself goes as its shards fly (it stays the same node while it leaves, so it never comes back)
   play(dome, [{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: OUT, fill: "forwards" });
   return Promise.all(times(16, i => {
     const t = (i + .5) / 16;
-    const x = r.left - box.left + t * r.width, y = r.top - box.top + (1 - Math.sin(Math.PI * t)) * r.height;
+    const x = r.left + t * r.width, y = r.top + (1 - Math.sin(Math.PI * t)) * r.height;
     return toss(stage, `bs-crystal ${typeClass(SCREEN_TYPE[id])}`, [x, y], { w: rand(5, 8) * u, h: rand(12, 20) * u, dx: (t - .5) * 50, dy: -8, g: r.height * .7, spin: rand(-300, 300), face: rand(0, 180), s0: 1.2, s1: .7, duration: 680, delay: (i % 4) * 30, out: false, fadeAt: .6 });
   }));
 }
@@ -921,30 +919,36 @@ export function number(stage, key, text, heal = false, slot = null) {
     { opacity: 0, transform: "translate(-50%, -50%) translateY(-24px)" },
   ], { duration: 1000 });
 }
-// HP moves: one sweep across the ten cells, quick at first and settling, each cell filling or emptying in its turn;
-// the bar keeps its colour until the sweep crosses a fifth or a half, where the colour changes, as the games do.
-// quick: one hit of several, a short sweep so the hits keep their rhythm
+// HP moves: the bar slides from where it stood to where it stands, quick at first and settling, and a pale trail of what was lost
+// lingers behind it a moment, as the games show a blow; the colour changes where the bar crosses a half or a fifth.
+// quick: one hit of several, a short slide so the hits keep their rhythm
 const toneAt = share => (share <= .2 ? "type-fire" : share <= .5 ? "type-electric" : "type-grass");
+const EASE_HP = "cubic-bezier(.22,1,.36,1)";
 export function drain(stage, key, from, to, { quick = false } = {}) {
-  const bar = stage?.closest(".bt-arena")?.querySelector(`[data-bar="${key}"] .bt-gauge`);
+  const bar = stage?.closest(".bt-arena")?.querySelector(`[data-bar="${key}"] .bt-hp`);
   const clamp = v => Math.max(0, Math.min(1, v));
-  const a = clamp(from) * 10, b = clamp(to) * 10, span = Math.abs(a - b);
-  if (!bar || instant() || span < .01) return Promise.resolve();
-  const total = quick ? Math.min(520, Math.max(300, span * 90)) : Math.min(1100, Math.max(420, span * 120));
-  const when = x => (1 - Math.sqrt(Math.max(0, 1 - Math.abs(x - a) / span))) * total; // the sweep stands at x then (ease-out)
-  const runs = [...bar.children].map((cell, i) => {
-    const f0 = clamp(a - i), f1 = clamp(b - i);
-    if (f0 === f1 || !cell.firstElementChild) return null;
-    const start = when(a > b ? Math.min(a, i + 1) : Math.max(a, i)), end = when(a > b ? Math.max(b, i) : Math.min(b, i + 1));
-    return play(cell.firstElementChild, [{ transform: `scaleX(${f0})` }, { transform: `scaleX(${f1})` }], { duration: Math.max(1, end - start), delay: start, easing: "linear", fill: "backwards" });
-  });
+  const a = clamp(from), b = clamp(to), span = Math.abs(a - b);
+  const fill = bar?.querySelector("b");
+  if (!fill || instant() || span < .001) return Promise.resolve();
+  const total = quick ? Math.min(520, Math.max(300, span * 900)) : Math.min(1100, Math.max(420, span * 1200));
+  // when the slide passes x: the inverse of the ease-out, close enough for a colour change
+  const when = x => (1 - Math.sqrt(Math.max(0, 1 - Math.abs(x - a) / span))) * total;
+  if (b < a) {
+    const trail = document.createElement("i");
+    trail.className = "bt-hp-lost";
+    trail.style.left = `${b * 100}%`;
+    trail.style.width = `${(a - b) * 100}%`;
+    bar.appendChild(trail);
+    play(trail, [{ opacity: .9 }, { opacity: .9, offset: .45 }, { opacity: 0 }], { duration: total + 260, easing: "linear" }).then(() => trail.remove());
+  }
+  const run = play(fill, [{ transform: `scaleX(${a})` }, { transform: `scaleX(${b})` }], { duration: total, easing: EASE_HP, fill: "backwards" });
   const base = bar.className.replace(/\btype-[a-z]+/g, "").trim();
   if (toneAt(from) !== toneAt(to)) {
     bar.className = `${base} ${toneAt(from)}`;
-    for (const edge of [2, 5]) if ((a - edge) * (b - edge) < 0) setTimeout(() => { bar.className = `${base} ${toneAt((edge + (b > a ? .01 : -.01)) / 10)}`; }, ms(when(edge)));
+    for (const edge of [.2, .5]) if ((a - edge) * (b - edge) < 0) setTimeout(() => { bar.className = `${base} ${toneAt(edge + (b > a ? .001 : -.001))}`; }, ms(when(edge)));
     setTimeout(() => { bar.className = `${base} ${toneAt(to)}`; }, ms(total));
   }
-  return Promise.all(runs);
+  return run;
 }
 // healing: green crosses and glints rise round it, a ring of light climbing from its feet
 export function heal(stage, key) {
@@ -978,8 +982,8 @@ export function faint(stage, key) {
   ];
   if (!reduced()) {
     const [x] = centre(stage, key);
-    const r = slot.getBoundingClientRect(), box = stage.getBoundingClientRect();
-    const floor = r.bottom - box.top - r.height * .04;
+    const r = rectIn(stage, slot);
+    const floor = r.bottom - r.height * .04;
     runs.push(ring(stage, [x, floor], r.width * .5, "Normal", { s0: .5, s1: 1.4, flat: .26, peak: .6, duration: 620, delay: 300 }));
     runs.push(...puffs(stage, [x, floor], r.width * .8, 6, { peak: .4, rise: .18, spread: .32, delay: 320 }));
   }
@@ -993,16 +997,83 @@ function flare(stage, [x, y], size, { grow = true, duration = 560 } = {}) {
     : [{ opacity: .9, transform: "translate(-50%, -50%) scale(1)" }, { opacity: 0, transform: "translate(-50%, -50%) scale(.2)" }],
   { duration, easing: "linear" });
 }
+/* ---------- the big moments (DESIGN.md "Battle", The big moments) ---------- */
+// a Poké Ball drawn as a game draws it, red over white with its band and button
+function ballEl(stage, size) {
+  const fx = fxOf(stage);
+  if (!fx) return null;
+  const el = document.createElement("i");
+  el.className = "bs-ball";
+  Object.assign(el.style, { width: `${size}px`, height: `${size}px`, left: "0px", top: "0px" });
+  fx.appendChild(el);
+  return el;
+}
+/* thrown in: the ball arcs in from its trainer's corner (ours from the bottom left, the foe's from the top right), spinning, and
+   opens at the top of its fall over the place the Pokémon will stand; the promise is the opening */
+export async function throwBall(stage, key) {
+  if (!stage || instant() || reduced()) return;
+  const own = ownSide(slotEl(stage, key));
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const [tx, ty] = centre(stage, key, .5);
+  const size = Math.max(14, Math.min(30, w * .045));
+  const el = ballEl(stage, size);
+  if (!el) return;
+  const from = own ? [-size * 2, h * .95] : [w + size * 2, h * .08];
+  const peak = Math.min(from[1], ty) - h * (own ? .32 : .14);
+  const frames = times(19, i => {
+    const t = i / 18, x = lerp(from[0], tx, t);
+    // a parabola through the start, a peak and the landing point
+    const y = (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty;
+    return { transform: `translate(${x - size / 2}px, ${y - size / 2}px) rotate(${(own ? 1 : -1) * t * 900}deg) scale(${own ? lerp(1.25, 1, t) : lerp(.8, 1, t)})` };
+  });
+  await play(el, frames, { duration: 520, easing: "cubic-bezier(.3,.1,.5,1)" });
+  // it opens: the halves part in a flash of light, and the ball is gone
+  play(el, [{ transform: frames.at(-1).transform, opacity: 1 }, { transform: `translate(${tx - size / 2}px, ${ty - size / 2}px) scale(1.5)`, opacity: 0 }], { duration: 160, easing: OUT }).then(() => el.remove());
+  flashLight(stage, "normal", .12, ms(200));
+}
+
+/* the opening: the two trainers' names come in on plates from their own sides with VS between them, while the stadium's lamps
+   switch on bank by bank (Stadium.jsx); then the leads are thrown in */
+export async function opening(stage, ours, theirs) {
+  const fx = fxOf(stage);
+  if (!fx || instant()) return;
+  const box = document.createElement("div");
+  box.className = "bt-intro";
+  const make = (cls, text) => { const el = document.createElement("span"); el.className = cls; el.textContent = text; box.appendChild(el); return el; };
+  const a = make("bt-intro-name own", ours), vs = make("bt-intro-vs", "VS"), b = make("bt-intro-name", theirs);
+  fx.appendChild(box);
+  if (reduced()) { await wait(900); box.remove(); return; }
+  await Promise.all([
+    play(a, [{ transform: "translateX(-120%)", opacity: 0, easing: OUT }, { transform: "translateX(0)", opacity: 1, offset: .2 }, { transform: "translateX(0)", opacity: 1, offset: .82, easing: IN }, { transform: "translateX(-40%)", opacity: 0 }], { duration: 1900 }),
+    play(b, [{ transform: "translateX(120%)", opacity: 0, easing: OUT }, { transform: "translateX(0)", opacity: 1, offset: .2 }, { transform: "translateX(0)", opacity: 1, offset: .82, easing: IN }, { transform: "translateX(40%)", opacity: 0 }], { duration: 1900 }),
+    play(vs, [{ transform: "scale(2.4)", opacity: 0 }, { transform: "scale(2.4)", opacity: 0, offset: .14, easing: OUT }, { transform: "scale(1)", opacity: 1, offset: .26 }, { transform: "scale(1)", opacity: 1, offset: .82 }, { transform: "scale(.8)", opacity: 0 }], { duration: 1900 }),
+  ]);
+  box.remove();
+}
+
+// the end: the camera has framed the winner's last Pokémon standing; the lamps run once along their banks and a shower of light falls
+export function victory(stage) {
+  if (!stage || instant()) return Promise.resolve();
+  stage.classList.remove("bs-won");
+  void stage.offsetWidth;
+  stage.classList.add("bs-won");
+  if (reduced()) return wait(600);
+  const w = stage.clientWidth, h = stage.clientHeight;
+  return Promise.all(times(26, i => toss(stage, i % 3 ? "bs-star type-normal" : "bs-spark type-electric", [rand(0, w), -10], { w: rand(5, 9) * unitOf(stage), dy: h * rand(.55, .95), dx: rand(-30, 30), spin: rand(-200, 200), s0: 1, s1: .7, duration: rand(1300, 1900), delay: rand(0, 700), out: false, fadeAt: .7 })));
+}
+
 // sent in: a light blooms where it will stand, glints scatter from it, and the Pokémon grows out of it, bright at first, settling
 // to its own colours, a ring opening round it and a ring on the floor at its feet
-export async function enter(stage, key) {
+// ball: a Poké Ball is thrown in first and opens where it will stand, as the games send one in (the lobby sends without one)
+export async function enter(stage, key, { ball = true } = {}) {
   const el = monEl(stage, key);
   if (!el || instant()) return;
   settle(el);
   el.style.opacity = "0";
   // the picture is decoded before it is shown, so it never grows out of an empty frame
   const img = el.querySelector("img");
-  if (img && !img.complete) await Promise.race([img.decode?.().catch(() => {}), new Promise(resolve => setTimeout(resolve, 900))]);
+  const ready = img && !img.complete ? Promise.race([img.decode?.().catch(() => {}), new Promise(resolve => setTimeout(resolve, 900))]) : null;
+  await Promise.all([ready, ball && !reduced() ? throwBall(stage, key) : null]);
   el.style.opacity = "";
   if (reduced()) { await play(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 260 }); return; }
   const at = centre(stage, key, .42);
@@ -1046,6 +1117,9 @@ export function leave(stage, key, { drag = false } = {}) {
 export async function megaStart(stage, key) {
   const el = monEl(stage, key);
   if (!el || instant()) return;
+  // the stage dims to a third behind the one evolving until the new form stands (megaEnd lets it go)
+  stage.classList.add("bs-mega-on");
+  slotEl(stage, key)?.classList.add("bs-evolving");
   const [x, y] = centre(stage, key);
   const size = sizeOf(stage, key);
   const shell = spawn(stage, "bs-mega", [x, y], { width: `${size * 1.3}px`, height: `${size * 1.3}px` });
@@ -1065,6 +1139,8 @@ export async function megaStart(stage, key) {
 }
 export async function megaEnd(stage, key) {
   const img = monEl(stage, key)?.querySelector("img");
+  stage?.classList.remove("bs-mega-on");
+  slotEl(stage, key)?.classList.remove("bs-evolving");
   if (instant()) { settle(img); return; }
   await Promise.all([burst(stage, key, "Fairy", 1.3), play(img, [{ filter: "brightness(2.6)" }, { filter: "brightness(1)" }], { duration: 620, easing: OUT, fill: "forwards" })]);
   // the start held the picture lit (fill forwards) across the change of form; both let go here, so it never stays lit
@@ -1103,15 +1179,19 @@ export function status(stage, key, id) {
   const at = centre(stage, key), size = sizeOf(stage, key);
   return Promise.all([ring(stage, at, size * .5, STATUS_TYPE[id] || "Normal", { s0: .3, s1: 2, duration: 460 }), ailment(stage, key, id), flashMon(stage, key, .5)]);
 }
-// Protect and its kin: a dome of light closes round it, a glint crossing it
-export function shield(stage, key) {
+// Protect and its kin: a dome of light closes round it, a glint crossing it, each guard in its own colour
+const GUARD_TYPE = { protect: "Grass", detect: "Fighting", kingsshield: "Steel", spikyshield: "Grass", banefulbunker: "Poison", silktrap: "Bug", burningbulwark: "Fire", obstruct: "Dark", wideguard: "Rock", quickguard: "Fighting", maxguard: "Normal" };
+export function shield(stage, key, id = "protect") {
   if (!stage || instant()) return Promise.resolve();
   const [x, y] = centre(stage, key);
   const size = sizeOf(stage, key);
-  const el = spawn(stage, "bs-shield", [x, y], { width: `${size * 1.15}px`, height: `${size * 1.15}px` });
+  const type = GUARD_TYPE[id] || "Grass";
+  const el = spawn(stage, `bs-shield ${typeClass(type)}`, [x, y], { width: `${size * 1.15}px`, height: `${size * 1.15}px` });
   if (!reduced()) {
-    ring(stage, [x, y], size * 1.15, "Grass", { s0: 1.3, s1: 1, duration: 300, easing: OUT });
-    pop(stage, "bs-spark type-grass", [x - size * .3, y - size * .32], { w: size * .26, s0: .1, s1: 1, spin: 90, duration: 420, delay: 200 });
+    ring(stage, [x, y], size * 1.15, type, { s0: 1.3, s1: 1, duration: 300, easing: OUT });
+    pop(stage, `bs-spark ${typeClass(type)}`, [x - size * .3, y - size * .32], { w: size * .26, s0: .1, s1: 1, spin: 90, duration: 420, delay: 200 });
+    // thorns, a crown of blades, a bunker's poison: the guards that hurt show their teeth round the dome
+    if (/spiky|kings|baneful|bulwark|obstruct/.test(id)) times(8, i => { const a = around(8, i, 0); pop(stage, `bs-crystal ${typeClass(type)}`, [x + Math.cos(a) * size * .6, y + Math.sin(a) * size * .6], { w: size * .06, h: size * .18, rot: (a * 180) / Math.PI + 90, s0: .2, s1: 1, duration: 520, delay: 120 + i * 20, at: .7 }); });
   }
   return vanish(el, [
     { opacity: 0, transform: "translate(-50%, -50%) scale(.5)" },
@@ -1136,3 +1216,7 @@ export function popup(stage, key, owner, name, own) {
     { transform: `translateX(${off})`, opacity: 0 },
   ], { duration: 1500 });
 }
+
+/* the pieces every move's recipe (moveFx.js) is drawn with */
+const kit = { centre, sizeOf, unitOf, monEl, slotEl, spawn, bit, play, vanish, typeClass, rand, lerp, T, around, times, toss, pop, ring, streaks, sparks, puffs, tint, punch, shake, flashStage, bolt, IMPACT, MARK, burst, FLIGHT, fly, beam, fall, skyBolt, sweep, charge, aura, lunge, afterimages, dodge, quake, flashMon, heal, boost, hit, sway, ailment, wait, flare, leave, twist, ownSide, emit, reduced, flow, morph, OUT, IN, SWAY };
+const DRAW = makeDraw(kit);

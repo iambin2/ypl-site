@@ -11,7 +11,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
-import { builderRouteSearch, editEventApplication, findApplicantNameRecord, listEventApplications, openEventApplication, playerNameKey, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
+import { builderRouteSearch, editEventApplication, findApplicantNameRecord, listEventApplications, openEventApplication, playerNameKey, tidyApplicantName, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
 /* a tight row's time: digits and dots on one line (10.28 수 17:18), so a list of applicants keeps one height */
@@ -312,15 +312,20 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
   // 같음은 선수 이름의 규칙대로: 띄어쓰기만 바꿔 다시 쳐도 같은 확인이고, 블록이 꺼졌다 켜지지 않는다.
   const lookup=typed=>{ const key=playerNameKey(typed); if(!lookups.current.has(key)) lookups.current.set(key,findApplicantNameRecord(typed).catch(()=>null)); return lookups.current.get(key); };
   const checkName=()=>{ const key=playerNameKey(registrationName); latest.current=key; if(form.eventId&&!edit&&key) lookup(registrationName).then(r=>{ if(latest.current===key) setRecord(r&&{key,...r}); }); };
-  const shown=form.eventId&&record&&record.key===playerNameKey(registrationName)?record:null;
+  const current=form.eventId&&record&&record.key===playerNameKey(registrationName)?record:null;
+  const shown=current?.player?current:null;
+  // 같은 이름은 없고 비슷한 이름의 기록이 있으면(문장부호, 한 글자, 덧붙인 말) 그 이름인지 묻는다. 누르면 그 이름으로 바꾸고 같은 이름의 확인으로 간다.
+  const similar=current&&!current.player?current.similar||[]:[];
+  const useName=n=>{ setRegistrationName(n); setWho(""); setErrors(x=>({...x,name:"",who:""})); const key=playerNameKey(n); latest.current=key; lookup(n).then(r=>{ if(latest.current===key) setRecord(r&&{key,...r}); }); };
   useLayoutEffect(()=>{ if(shown) light(recordRef.current,DUR.leave); },[shown?.key]);
   const set=(id,v)=>{ setAns(a=>({...a,[id]:v})); setErrors(e=>({...e,[id]:""})); };
   const submit=async()=>{
-    const next={}; const typed=registrationName.trim();
+    const next={}; const typed=tidyApplicantName(registrationName);
     if(form.eventId&&!edit&&!typed) next.name="참가자 이름을 입력해 주세요.";
     setBusy(true); setFailed("");
     // 이름 칸에서 바로 신청하기를 누르면 확인이 아직 읽는 중이다. 같은 읽기를 기다린다.
-    const found=form.eventId&&!edit&&typed?await lookup(typed):null;
+    const looked=form.eventId&&!edit&&typed?await lookup(typed):null;
+    const found=looked?.player?looked:null;
     if(found){ latest.current=playerNameKey(typed); setRecord({key:latest.current,...found}); if(!who) next.who="본인인지 선택해 주세요."; }
     for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty) next[f.id]=`‘${f.label||"질문"}’ 항목에 답해 주세요.`; } }
     // 막 읽은 기록의 본인 확인이 그려진 뒤에 그 칸으로 간다
@@ -373,6 +378,12 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
     <div className="nw-fields">
       {form.eventId&&!edit&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
         <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{ if(playerNameKey(e.target.value)!==playerNameKey(registrationName)) setWho(""); setRegistrationName(e.target.value);setErrors(x=>({...x,name:"",who:""}));}} onBlur={checkName} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
+      </Question>}
+      {similar.length>0&&<Question id="ff-similar" label="비슷한 이름의 기록" group>
+        <div className="stack">
+          {similar.map(n=><Row key={n} title={n} line="이 이름으로 신청합니다." onClick={()=>useName(n)}/>)}
+        </div>
+        <p className="t12 dim reg">기존 기록과 이어지려면 같은 이름으로 신청해 주세요.</p>
       </Question>}
       {/* 같은 이름의 기록은 기록 화면의 최근 대회 줄 그대로, 최근 세 번. 그 아래 본인 확인이 두 줄의 선택지로 선다. */}
       {shown&&<div ref={recordRef}>

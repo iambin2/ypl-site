@@ -10,18 +10,61 @@
 
 /* ---------- the arena: a wall, a floor, the court drawn on it ---------- */
 /* no container units inside: every length is a share of the stage, so a page layout never has to resolve the stage again */
-.bs-stage { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: var(--ground); isolation: isolate; }
+/* the stage is always the stadium at night, whatever the site's theme: the game's world, in the site's navy */
+.bs-stage { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: #050D1F; isolation: isolate;
+  --night: #050D1F; --night-1: #0A1A3A; --night-2: #12295A; --night-line: #3C5A92; --lamp-warm: #FFF4D6; }
 @media (min-width: 860px) { .bs-stage { aspect-ratio: 16 / 9; } }
+/* a battle on a phone stands a little taller (4 to 3), so the HUD over it has room above and below the Pokémon */
+@media (max-width: 859px) { .bs-stage.hud { aspect-ratio: 4 / 3; } }
+/* the camera (stageCamera.js): the scene and the effects inside it, pushed and panned by one transform from the stage corner */
+.bs-cam { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
 .bs-world { position: absolute; inset: 0; will-change: transform; }
+/* a fall: the stadium lamps dim one step while it sinks */
+.bs-lights { transition: opacity .3s ease; }
+.bs-stage.bs-dim .bs-lights { opacity: .5; }
 .bs-world > i, .bs-world > svg { position: absolute; display: block; pointer-events: none; }
-.bs-sky { inset: 0 0 58% 0; background: var(--panel); }
-.bs-court { inset: 0; width: 100%; height: 100%; overflow: visible; }
-.bs-court * { fill: none; stroke: var(--rule); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+/* the night sky over the roof down to the wall's foot */
+.bs-sky { inset: 0 0 58% 0; background: linear-gradient(180deg, #02060F 0%, #081634 55%, #102552 100%); }
+/* the polished floor: deep at the camera, catching the lights toward the far wall */
+.bs-floor { inset: 42% 0 0 0; z-index: 0; background: radial-gradient(120% 70% at 50% 0%, #1B3A78 0%, #0D2149 38%, #071331 70%, #040B1D 100%); }
+.bs-court { inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 0; }
+.bs-court * { fill: none; stroke: #7FA6E8; stroke-opacity: .42; stroke-width: 2px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px #4F7FD8); }
+/* the stands: the crowd's heads and shoulders in the dark, a rail at their foot */
+.bs-stands { left: 0; top: 0; width: 100%; height: 42%; }
+.bs-stands .crowd { fill: #0B1C40; }
+.bs-stands .rail { fill: none; stroke: #2A4A86; stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.bs-flashes { position: absolute; inset: 0 0 58% 0; pointer-events: none; }
+.bs-flashes > i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 6px 2px #FFFFFFAA; opacity: 0; animation: bs-camera 5s linear infinite; }
+@keyframes bs-camera { 0%, 92%, 100% { opacity: 0; } 93% { opacity: 1; } 95% { opacity: .2; } }
+/* the roof's lamps, bank by bank, and the light they pour down onto the field */
+.bs-lights { position: absolute; inset: 0; pointer-events: none; }
+.bs-bank { position: absolute; top: 1.4%; height: 3.6%; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 2px; }
+.bs-bank > i { display: block; border-radius: 1px; background: #2B3A5A; animation: bs-lamp-on .18s ease-out both; animation-delay: calc(240ms + var(--bank) * 220ms); }
+@keyframes bs-lamp-on { from { background: #2B3A5A; box-shadow: none; } to { background: var(--lamp-warm); box-shadow: 0 0 6px 1px #FFF4D6CC, 0 0 18px 4px #9CC2FF55; } }
+.bs-shaft { position: absolute; top: 3%; width: 22%; height: 105%; translate: -50% 0; rotate: var(--lean); transform-origin: 50% 0;
+  background: linear-gradient(180deg, #CFE0FF22 0%, #9CC2FF0A 40%, #9CC2FF00 75%); clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+  mix-blend-mode: screen; opacity: 0; animation: bs-shaft-on .6s ease-out both; animation-delay: calc(300ms + var(--bank) * 220ms); }
+@keyframes bs-shaft-on { to { opacity: 1; } }
+/* the venue's screen: a glowing panel in the middle of the wall */
+.bs-board { position: absolute; left: 35%; right: 35%; top: 1.2%; height: 13.5%; display: grid; grid-template-columns: 1fr auto 1fr; gap: 2px; padding: 2px; background: #12295A; }
+.bs-board > span { display: flex; align-items: center; justify-content: center; min-width: 0; background: #061433; }
+.bs-board-name { padding: 0 4px; font-size: 12px; font-weight: 700; color: #CFE0FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .02em; }
+.bs-board-name.win { background: #FFFFFF; color: #050D1F; }
+.bs-board-mid { gap: 5px; padding: 0 7px; color: #FFFFFF; }
+.bs-board-lamp { width: 7px; height: 7px; background: #3A2A10; }
+.bs-board-lamp.on { background: #FFB21A; box-shadow: 0 0 8px 2px #FFB21AAA; }
+@media (min-width: 860px) { .bs-board-name { font-size: 15px; } }
+/* the edges of the picture fall into the dark, as a camera's do */
+.bs-vignette { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: radial-gradient(130% 95% at 50% 45%, transparent 55%, #02060F99 100%); }
+/* the effects' canvas fills its layer */
+.bs-vfx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* ---------- a Pokémon on its platform; sizes follow the stage's height so a wide stage never crops a head ---------- */
 .bs-side { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-.bs-side > * { pointer-events: auto; }
-.bs-side > i { pointer-events: none; }
+/* only a target being picked takes a tap: a Pokémon's picture or its place never does, so a big near Pokémon over a far one's
+   place never swallows the tap meant for the far one */
+.bs-side, .bs-side * { pointer-events: none; }
+.bs-side .bt-pick { pointer-events: auto; }
 .bs-slot { position: absolute; transform: translateX(-50%); }
 .bs-slot[data-pos="foe"] { left: 66%; bottom: 50%; height: 42%; aspect-ratio: 1; }
 .bs-slot[data-pos="own"] { left: 30%; bottom: 5%; height: 63%; aspect-ratio: 1; }
@@ -29,11 +72,22 @@
 .bs-slot[data-pos="foe-d1"] { left: 69%; bottom: 49%; height: 33%; aspect-ratio: 1; }
 .bs-slot[data-pos="own-d0"] { left: 25%; bottom: 6%; height: 51%; aspect-ratio: 1; }
 .bs-slot[data-pos="own-d1"] { left: 64%; bottom: 4%; height: 51%; aspect-ratio: 1; }
+/* in a battle the message window lies over the bottom of the stage and our plates stand at its right over it: our Pokémon stand a
+   little higher and, in doubles, a little to the left, so neither covers them (the lobby keeps the places above) */
+.bs-stage.hud .bs-slot[data-pos="own"] { left: 30%; bottom: 15%; height: 58%; }
+.bs-stage.hud .bs-slot[data-pos="own-d0"] { left: 20%; bottom: 15%; height: 46%; }
+.bs-stage.hud .bs-slot[data-pos="own-d1"] { left: 51%; bottom: 14%; height: 46%; }
 /* breathing: a slow rise of 1.5% from the feet, never in step with its neighbour */
 .bs-mon { position: absolute; inset: 0; transform-origin: 50% 92%; animation: bs-idle 3.4s cubic-bezier(.45, 0, .55, 1) infinite; }
 .bs-slot:nth-child(odd) .bs-mon { animation-delay: -1.7s; }
 .bs-side.foe .bs-mon { animation-duration: 3.8s; }
 .bs-mon img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; display: block; }
+/* the polished floor mirrors it, fading as it goes down, and the floor darkens under its feet */
+.bs-mon img.bs-mirror { position: absolute; left: 0; top: 100%; opacity: .32; transform: scaleY(-1); pointer-events: none;
+  -webkit-mask: linear-gradient(0deg, #000 0%, #0008 12%, transparent 34%); mask: linear-gradient(0deg, #000 0%, #0008 12%, transparent 34%); }
+.bs-side.own .bs-mon img.bs-mirror { transform: scale(-1, -1); }
+.bs-shadow { position: absolute; left: 12%; right: 12%; bottom: -5%; height: 12%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, #000000AA, #00000055 55%, transparent); }
 .bs-side.own .bs-mon img { transform: scaleX(-1); }
 @keyframes bs-idle { 50% { translate: 0 -1.5%; } }
 /* a substitute stands in the Pokémon's place: the games' stuffed plush doll, sitting full and round, drawn in flat cel fills */
@@ -277,7 +331,37 @@
 .bs-arrow.down { background: #2980EF; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 .bs-mega { border-radius: 50%; background: conic-gradient(#E62829, #FAC000, #3FA129, #3FD8FF, #5060E1, #EF70EF, #E62829);
   -webkit-mask: radial-gradient(circle, transparent 58%, #000 59%, #000 64%, transparent 65%); mask: radial-gradient(circle, transparent 58%, #000 59%, #000 64%, transparent 65%); }
-.bs-shield { border-radius: 50%; box-shadow: inset 0 0 0 2px #3FA129; background: rgb(63 161 41 / .1); }
+.bs-shield { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--type, #3FA129); background: rgb(63 161 41 / .1); }
+.bs-shield[class*="type-"] { background: transparent; }
+.bs-shield[class*="type-"]::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--type); opacity: .12; }
+
+/* ---------- what each move draws (moveFx.js): solid shapes in the type's colour, a mask each, drawn once and moved by transform ---------- */
+.bs-fist, .bs-foot, .bs-wedge, .bs-feather, .bs-heart, .bs-note, .bs-blade, .bs-eye, .bs-sigil, .bs-shell, .bs-link, .bs-vein, .bs-hand, .bs-net, .bs-cone {
+  background: var(--type); -webkit-mask: var(--m) 50% 50% / 100% 100% no-repeat; mask: var(--m) 50% 50% / 100% 100% no-repeat; }
+.bs-fist { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 28'%3E%3Cpath fill-rule='evenodd' d='M3 9C3 5 6 3 9 3H25C28 3 30 5 30 8V19C30 24 26 27 21 27H10C6 27 3 24 3 20ZM10.5 3H12V11H10.5ZM17 3H18.5V11H17ZM23.5 3H25V11H23.5Z'/%3E%3Cpath d='M3 15H15C17 15 18 17 17 19L14.5 22H3Z'/%3E%3C/svg%3E"); }
+.bs-foot { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 28'%3E%3Cpath d='M4 2H15L17 15H28C31 15 32 18 31 21L30 26H5C2 26 1 24 2 21Z'/%3E%3C/svg%3E"); }
+.bs-wedge { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 12'%3E%3Cpath d='M0 0L40 6L0 12L6 6Z'/%3E%3C/svg%3E"); }
+.bs-feather { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12'%3E%3Cpath d='M0 6C6 0 18 0 28 6C18 12 6 12 0 6Z'/%3E%3Cpath d='M0 6H28' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E"); }
+.bs-heart { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 21C5 15 1 11 1 7A5.5 5.5 0 0 1 12 4A5.5 5.5 0 0 1 23 7C23 11 19 15 12 21Z'/%3E%3C/svg%3E"); }
+.bs-note { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 22'%3E%3Cpath d='M8 2H18V6H11V17A4 4 0 1 1 8 13.5Z'/%3E%3C/svg%3E"); }
+.bs-blade { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 10'%3E%3Cpath d='M9 5L31 2.5L40 5L31 7.5Z'/%3E%3Cpath d='M6 0H9V10H6ZM0 4H6V6H0Z'/%3E%3C/svg%3E"); }
+.bs-eye { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'%3E%3Cpath fill-rule='evenodd' d='M0 8C6 0 22 0 28 8C22 16 6 16 0 8ZM14 3.5A4.5 4.5 0 1 0 14 12.5A4.5 4.5 0 1 0 14 3.5Z'/%3E%3Ccircle cx='14' cy='8' r='2.2'/%3E%3C/svg%3E"); }
+.bs-sigil { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23000' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='18'/%3E%3Ccircle cx='20' cy='20' r='13'/%3E%3Cpath d='M20 4L33.9 28H6.1ZM20 36L6.1 12H33.9Z'/%3E%3C/g%3E%3C/svg%3E"); }
+.bs-shell { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12'%3E%3Cpath d='M0 12C2 4 8 0 14 0C20 0 26 4 28 12L22 9L18 12L14 8L10 12L6 9Z'/%3E%3C/svg%3E"); }
+.bs-link { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 12'%3E%3Cpath fill-rule='evenodd' d='M6 0H20A6 6 0 0 1 20 12H6A6 6 0 0 1 6 0ZM7 3.5H19A2.5 2.5 0 0 1 19 8.5H7A2.5 2.5 0 0 1 7 3.5Z'/%3E%3C/svg%3E"); }
+.bs-vein { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 9C5 9 9 5 9 1H11.5C11.5 7 7 11.5 1 11.5ZM23 9C19 9 15 5 15 1H12.5C12.5 7 17 11.5 23 11.5ZM1 15C5 15 9 19 9 23H11.5C11.5 17 7 12.5 1 12.5ZM23 15C19 15 15 19 15 23H12.5C12.5 17 17 12.5 23 12.5Z'/%3E%3C/svg%3E"); }
+.bs-hand { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 24'%3E%3Cpath d='M4 22V9C4 7 7 7 7 9V3.5C7 1.5 10 1.5 10 3.5V2.5C10 0.5 13 0.5 13 2.5V3.5C13 1.5 16 1.5 16 3.5V11L18 8C19.5 6 22 7.5 21 9.5L16.5 20C15.5 22.5 13.5 24 11 24H6C5 24 4 23 4 22Z'/%3E%3C/svg%3E"); }
+.bs-net { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M20 0V40M0 20H40M6 6L34 34M34 6L6 34'/%3E%3Ccircle cx='20' cy='20' r='6'/%3E%3Ccircle cx='20' cy='20' r='12'/%3E%3Ccircle cx='20' cy='20' r='18'/%3E%3C/g%3E%3C/svg%3E"); }
+/* a column of light from above (a spotlight, the sun's heal): solid, fading by its frames, never by a gradient */
+.bs-cone { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 40' preserveAspectRatio='none'%3E%3Cpath d='M7 0H13L20 40H0Z'/%3E%3C/svg%3E"); }
+/* white, whatever drew it: a fist's knuckle glint, a note, a clap (navy on the light stage) */
+.bs-fx :is(.bs-note, .bs-hand, .bs-vein).core { --type: var(--core); }
+:root[data-theme="light"] .bs-fx :is(.bs-note, .bs-hand, .bs-vein).core { --type: var(--lit); }
+.bs-vein { --type: #E62829; }
+.bs-heart { --type: #EF70EF; }
+/* a held item knocked away or swapped: a small square with a white band */
+.bs-item { width: 14px; height: 14px; background: var(--lit); }
+.bs-item::after { content: ""; position: absolute; left: 0; right: 0; top: 45%; height: 2px; background: var(--ground); }
 
 @media (prefers-reduced-motion: reduce) {
   .bs-mon, .bs-await::before, .bs-await::after, .bs-weather::before, .bs-weather::after, .bs-terrain::before, .bs-terrain::after, .bs-gravity::before, .bs-tailwind > i, .bs-rock { animation: none !important; }
@@ -285,3 +369,22 @@
   .bs-weather::before, .bs-weather::after { transform: translate(-50%, -50%); }
   .bs-hazards > svg, .bs-hazards > .bs-web { animation: bs-on 1.1s cubic-bezier(.22, 1, .36, 1) both !important; }
 }
+
+/* ---------- the big moments (stageFx.js: throwBall, opening, megaStart, victory) ---------- */
+/* a Poké Ball as a game draws it: red over white, a dark band, a white button in a dark ring */
+/* flat fills only: the red half, the band, the white half, each one solid colour */
+.bs-fx > .bs-ball { position: absolute; border-radius: 50%; will-change: transform;
+  background: linear-gradient(180deg, #E62829 0 44%, #1A1F2E 44% 56%, #F4F6FA 56% 100%); box-shadow: inset 0 0 0 1.5px #1A1F2E; }
+.bs-fx > .bs-ball::after { content: ""; position: absolute; left: 50%; top: 50%; width: 34%; height: 34%; translate: -50% -50%; border-radius: 50%; background: #F4F6FA; box-shadow: 0 0 0 2px #1A1F2E; }
+/* the opening's plates: our name from the left, theirs from the right, VS between them */
+.bs-fx > .bt-intro { position: absolute; left: 0; right: 0; top: 34%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 0 4%; pointer-events: none; }
+.bt-intro-name { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 20px; background: #12295A; color: #FFFFFF; font-size: 20px; line-height: 26px; font-weight: 700; }
+.bt-intro-name:not(.own) { justify-self: start; }
+.bt-intro-vs { padding: 4px 10px; background: #FFFFFF; color: #050D1F; font-size: 26px; line-height: 32px; font-weight: 800; }
+@media (min-width: 860px) { .bt-intro-name { font-size: 32px; line-height: 40px; padding: 12px 32px; } .bt-intro-vs { font-size: 40px; line-height: 48px; padding: 6px 14px; } }
+/* Mega Evolution: everything but the one evolving falls to a third of its light while the ring closes */
+.bs-world > *, .bs-slot { transition: filter .35s ease; }
+.bs-stage.bs-mega-on .bs-world > :not(.bs-side), .bs-stage.bs-mega-on .bs-slot:not(.bs-evolving) { filter: brightness(.33); }
+/* the end: the lamps run once along their banks */
+.bs-stage.bs-won .bs-bank > i { animation: bs-lamp-run .5s ease-in-out both; animation-delay: calc(var(--bank) * 120ms + var(--i, 0) * 30ms); }
+@keyframes bs-lamp-run { 0%, 100% { background: var(--lamp-warm); box-shadow: 0 0 6px 1px #FFF4D6CC, 0 0 18px 4px #9CC2FF55; } 50% { background: #FFFFFF; box-shadow: 0 0 10px 3px #FFFFFF, 0 0 26px 8px #9CC2FFAA; } }

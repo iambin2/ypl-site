@@ -5,7 +5,7 @@
 //   npx supabase functions deploy battle --use-api --no-verify-jwt --project-ref rqffrogcverfjqzjasax
 // (엔진 패키지를 Supabase가 받아 묶게 두면 배포가 내부 오류로 실패했다. 요청은 토큰으로 확인하므로 JWT 검사가 필요 없다.)
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { ENGINE, formatId, validateTeam, startBattle, loadBattle, choose, forfeit, readout, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
+import { ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -31,7 +31,9 @@ const cleanName = (name: unknown) => {
   if (value.length < 1 || value.length > 20) refuse(400, "이름은 1자에서 20자로 입력해 주세요.");
   return value;
 };
+// "random": the engine draws a random party (a random battle); anything else is a party checked as it was brought
 function checkTeam(formatid: string, team: unknown) {
+  if (team === "random") return randomTeam(formatid);
   const problems = validateTeam(formatid, team);
   if (problems) refuse(422, "파티가 규정에 맞지 않습니다.", { problems });
   return team;
@@ -87,7 +89,7 @@ const SEAT_REFUSAL: Record<string, [number, string]> = {
   not_player: [403, "이 경기의 선수를 골라 주세요."],
   wrong_pin: [403, "제출 비밀번호가 맞지 않습니다."],
   locked: [429, "비밀번호를 여러 번 틀려 15분 동안 잠겼습니다."],
-  no_pin: [403, "공식 파티를 제출한 선수만 배틀로 치를 수 있습니다."],
+  no_pin: [403, "제출 비밀번호를 아직 정하지 않았습니다. 신청 수정에서 숫자 4자리를 정해 주세요."],
   no_team: [409, "제출한 공식 파티가 없습니다. 파티를 먼저 제출해 주세요."],
   qualifier_done: [409, "본선 진출 인원이 확정되어 이 선발전 경기는 치르지 않습니다."],
 };
@@ -159,12 +161,12 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
     let formatid = "";
     try { formatid = formatId(String(regulation), String(battleFormat)); } catch { refuse(400, "알 수 없는 규정입니다."); }
     const p1 = cleanName(name);
-    checkTeam(formatid, team);
+    const sets = checkTeam(formatid, team);
     const id = newId();
     const token = newToken();
     const { error } = await db.rpc("battle_create", {
       p_id: id, p_regulation: regulation, p_format_id: formatid, p_engine: ENGINE,
-      p_p1_name: p1, p_p1_token_hash: await sha256(token), p_p1_team: team,
+      p_p1_name: p1, p_p1_token_hash: await sha256(token), p_p1_team: sets,
     });
     if (error) refuse(error.code === "P0001" ? 429 : 500, error.code === "P0001" ? error.message : "배틀을 열지 못했습니다.");
     return { id, token, side: "p1" };
@@ -178,8 +180,8 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       if (battle.kind === "official") refuse(409, "공식 경기는 대진표의 경기에서 참가해 주세요.");
       if (battle.status !== "waiting") refuse(409, "이미 시작된 배틀입니다.");
       if (p2 === battle.p1_name) refuse(400, "상대와 다른 이름을 입력해 주세요.");
-      checkTeam(battle.format_id, team);
-      const engine = startBattle({ formatid: battle.format_id, p1: { name: battle.p1_name, team: secret.p1_team }, p2: { name: p2, team } });
+      const sets = checkTeam(battle.format_id, team);
+      const engine = startBattle({ formatid: battle.format_id, p1: { name: battle.p1_name, team: secret.p1_team }, p2: { name: p2, team: sets } });
       const out = readout(engine);
       const state = engine.toJSON();
       const saved = await save(battle.id, battle.version, {
@@ -300,9 +302,14 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       const [status, message] = SEAT_REFUSAL[seatInfo?.status] || [500, "잠시 뒤 다시 시도해 주세요."];
       refuse(status, message);
     }
+    // an event played in Pokémon Champions (the default) has no site battles: its results are entered by the operators
+    const { data: event } = await db.schema("ypl_schema_validation").from("events").select("competition_settings").eq("id", String(eventId)).maybeSingle();
+    const matchPlay = event?.competition_settings?.matchPlay;
+    if (matchPlay !== "site" && matchPlay !== "random") refuse(409, "이 대회는 포켓몬 챔피언스로 경기를 치릅니다. 결과는 운영진이 대진표에 넣습니다.");
     let formatid = "";
     try { formatid = formatId(seatInfo.regulation, seatInfo.battleFormat); } catch { refuse(409, "이 대회의 규정은 사이트 배틀이 아직 지원하지 않습니다."); }
-    const team = checkTeam(formatid, officialTeam(seatInfo.team));
+    // a random battle event plays a random party drawn for this seat; otherwise the latest official party
+    const team = checkTeam(formatid, matchPlay === "random" ? "random" : officialTeam(seatInfo.team));
     const token = newToken();
     const hash = await sha256(token);
     return withRetry(async () => {

@@ -114,6 +114,7 @@ export async function saveChampionshipApplicationEventPair({
   const competitionSettings = {
     ...(draft.competitionSettings || existingQualifier?.competition_settings || {}),
     recordRuleLabel,
+    matchPlay: ["site", "random"].includes(draft.matchPlay ?? draft.competitionSettings?.matchPlay ?? existingQualifier?.competition_settings?.matchPlay) ? (draft.matchPlay ?? draft.competitionSettings?.matchPlay ?? existingQualifier?.competition_settings?.matchPlay) : "champions",
     // Champions placement is recorded through Result/HOF, not the ranking ledger.
     rankingEnabled: false,
   };

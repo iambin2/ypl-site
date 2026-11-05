@@ -1149,6 +1149,41 @@ export function buildBracketSubmissionStatusModel(bracket = {}, statuses = []) {
 // 선수 이름의 같음. 띄어쓰기와 대소문자만 다른 이름은 같은 선수다(docs/db/player_name_unique.sql의 고유 색인과 같은 규칙).
 export const playerNameKey = name => String(name || "").replace(/\s+/g, "").toLowerCase();
 
+/* 신청 이름 정리 (운영위, 2026-11-05): 보이지 않는 문자와 앞뒤의 문장부호를 떼고 띄어쓰기를 한 칸으로 줄인다.
+   이름 안의 글자는 건드리지 않는다(이제빈 B 같은 동명이인 이름이 그대로 남는다). */
+const INVISIBLE = /[\u0000-\u001F\u007F\u00AD\u200B-\u200F\u2028-\u202F\u2060\uFEFF]/g;
+const EDGE_MARKS = /^[\s\p{P}\p{S}]+|[\s\p{P}\p{S}]+$/gu;
+export const tidyApplicantName = name => String(name || "").normalize("NFC").replace(INVISIBLE, "").replace(EDGE_MARKS, "").replace(/\s+/g, " ").trim();
+
+/* 비슷한 이름의 선수: 같은 이름(playerNameKey)은 아니지만 문장부호만 다르거나, 한 글자만 다르거나, 기존 이름 뒤에 무언가를 붙인
+   이름(이제빈컴공). 신청 화면이 "혹시 이 이름인가요"로 묻는 데 쓴다. 가까운 순서로 셋까지. */
+const looseKey = name => playerNameKey(name).replace(/[\p{P}\p{S}]/gu, "");
+function oneEditApart(a, b) {
+  if (Math.abs(a.length - b.length) > 1 || a === b) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i += 1; j += 1; continue; }
+    if (++edits > 1) return false;
+    if (a.length > b.length) i += 1; else if (b.length > a.length) j += 1; else { i += 1; j += 1; }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+}
+export function similarPlayerNames(players = [], name = "") {
+  const key = playerNameKey(name), loose = looseKey(name);
+  if (!loose) return [];
+  const rows = [];
+  for (const player of Array.isArray(players) ? players : []) {
+    const other = player?.display_name;
+    const otherKey = playerNameKey(other), otherLoose = looseKey(other);
+    if (!otherLoose || otherKey === key) continue;
+    const rank = otherLoose === loose ? 0
+      : loose.length >= 2 && otherLoose.length >= 2 && oneEditApart(loose, otherLoose) ? 1
+      : otherLoose.length >= 2 && loose.startsWith(otherLoose) ? 2 : -1;
+    if (rank >= 0) rows.push({ name: String(other).trim(), rank });
+  }
+  return rows.sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, "ko")).slice(0, 3).map(row => row.name);
+}
+
 // 이름이 같은 Player. DB 색인이 둘을 허락하지 않지만, 색인 전의 데이터가 둘이면 고르지 않고 멈춘다.
 export function findPlayerByName(players = [], name = "") {
   const key = playerNameKey(name);

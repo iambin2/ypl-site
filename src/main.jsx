@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import StatusPage from "./pages/StatusPage.jsx";
 import { isUnknownPath, isUnknownView } from "./services/appRouting.js";
+import { captureVisitorSession } from "./services/visitorAuth.js";
 import "./styles/tokens.css";
 import "./styles/components.css";
 import "./styles/shell.css";
@@ -55,6 +56,8 @@ class AppBoundary extends Component {
 // 스프라이트는 어디에 놓이든 잉크의 중앙으로 선다. load 는 올라오지 않아 잡는 단계에서 듣는다. 홈의 B면은 모서리에 서는 그림이다.
 document.addEventListener("load", e => { if (e.target.matches?.('img[src*="/sprites/pokemon/"]:not(.mon)')) centreInk(e.target); }, true);
 
+// a return from Google sign-in leaves its tokens after # in the address: kept on the device and cleared from the address first
+captureVisitorSession();
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     {isUnknownPath(window.location.pathname, import.meta.env.BASE_URL) || isUnknownView(window.location.search)

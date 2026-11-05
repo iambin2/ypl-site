@@ -5,6 +5,7 @@ import { Battle, Dex, TeamValidator, extractChannelMessages } from "@pkmn/sim";
 import * as champions from "@pkmn/mods/champions";
 import * as championsregmb from "@pkmn/mods/championsregmb";
 import { requestKey } from "../../../src/services/battleLog.js";
+import RANDOM_SETS from "../../../src/data/random-sets.json" with { type: "json" };
 export { requestKey };
 
 // Pinned in package.json; the deployed function runs the bundle scripts/build-battle-engine.mjs makes of this file. A battle keeps the engine it was played on, so its log can be replayed on it.
@@ -40,18 +41,62 @@ export function formatId(regulation, battleFormat) {
 }
 
 // A Mega or another battle-only form is brought as its base form and changes in battle, as in the game.
+// A party still being built may leave the ability empty: the species' first ability stands in, as the game always has one.
 function teamFor(formatid, sets) {
   const dex = DEX_OF_FORMAT[formatid];
   return sets.map(set => {
     const species = dex.species.get(set.species);
-    return { ...set, name: set.name || "", species: typeof species.battleOnly === "string" ? species.battleOnly : species.name };
+    const base = typeof species.battleOnly === "string" ? dex.species.get(species.battleOnly) : species;
+    return { ...set, name: set.name || "", species: base.name, ability: set.ability || base.abilities?.[0] || "" };
   });
 }
 
-// null when the team is legal for the format, otherwise Showdown's reasons.
+/* null when the team may battle, otherwise the reasons. A party still being built battles as it stands (the committee, 2026-11-05):
+   one to six Pokémon, Showdown's own six-Pokémon minimum lifted; what is illegal is still refused by Showdown's validator.
+   A Pokémon with no move cannot act at all, so it is refused here, in Korean. */
 export function validateTeam(formatid, sets) {
-  if (!Array.isArray(sets) || !sets.length || sets.length > 6) return ["A team is one to six Pokémon."];
-  return new TeamValidator(formatid, DEX_OF_FORMAT[formatid]).validateTeam(teamFor(formatid, sets));
+  if (!Array.isArray(sets) || !sets.length || sets.length > 6) return ["파티는 1마리에서 6마리까지입니다."];
+  const bare = sets.find(set => !(set?.moves || []).filter(Boolean).length);
+  if (bare) return [`기술이 하나도 없는 포켓몬(${bare.species})이 있습니다. 기술을 하나 이상 넣어 주세요.`];
+  const validator = new TeamValidator(formatid, DEX_OF_FORMAT[formatid]);
+  validator.ruleTable.minTeamSize = 1;
+  return validator.validateTeam(teamFor(formatid, sets));
+}
+
+/* A random party (the committee, 2026-11-05: random battles for friendlies and as a way Light events are played): six species from
+   Showdown's gen 9 random battle sets kept to the regulation (scripts/build-random-sets.mjs), one of each species, no item twice
+   (the item clause), a role of each, four of its moves, and points and a nature for how it attacks. It is checked by the
+   validator like any party, and drawn again in the rare case it is refused. */
+const KIND_OF = Object.fromEntries(Object.entries(FORMAT_IDS).flatMap(([reg, ids]) => Object.entries(ids).map(([kind, id]) => [id, [reg, kind]])));
+function shuffled(list, random) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
+}
+export function randomTeam(formatid, random = Math.random) {
+  const [reg, kind] = KIND_OF[formatid] || [];
+  const pool = RANDOM_SETS[reg]?.[kind];
+  if (!pool?.length) throw new Error(`no random sets for ${formatid}`);
+  const dex = DEX_OF_FORMAT[formatid];
+  const pick = list => list[Math.floor(random() * list.length)];
+  for (let tries = 0; tries < 30; tries++) {
+    const team = [], bases = new Set(), items = new Set();
+    for (const entry of shuffled(pool, random)) {
+      if (team.length === 6) break;
+      const base = dex.species.get(entry.species).baseSpecies;
+      if (bases.has(base)) continue;
+      const role = pick(entry.roles);
+      const item = shuffled(role.items, random).find(name => !items.has(name)) || "";
+      const moves = shuffled(role.moves, random).slice(0, 4);
+      const count = category => moves.filter(move => dex.moves.get(move).category === category).length;
+      const stat = count("Physical") >= count("Special") ? "atk" : "spa";
+      bases.add(base);
+      if (item) items.add(item);
+      team.push({ name: "", species: entry.species, ability: pick(role.abilities), item, moves, nature: stat === "atk" ? "Adamant" : "Modest", evs: { hp: 2, [stat]: 32, spe: 32 }, level: 50 });
+    }
+    if (team.length === 6 && !validateTeam(formatid, team)) return team;
+  }
+  throw new Error(`could not draw a random party for ${formatid}`);
 }
 
 function capture(battle) {

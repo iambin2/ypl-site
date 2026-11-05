@@ -398,3 +398,16 @@ test("a namesake is offered the next free letter after the name", () => {
   const full = Array.from({ length: 25 }, (_, i) => ({ display_name: `Red ${String.fromCharCode(66 + i)}` }));
   assert.equal(nextAliasName(full, "Red"), null);
 });
+
+test("an applicant's name is tidied at its edges, and close existing names are offered when none is the same", async () => {
+  const { tidyApplicantName, similarPlayerNames } = await import("../src/services/teamBuilderCore.js");
+  assert.equal(tidyApplicantName(" ​이제빈~ "), "이제빈");
+  assert.equal(tidyApplicantName("이제빈  B"), "이제빈 B");
+  assert.equal(tidyApplicantName("(이제빈)"), "이제빈");
+  const players = [{ display_name: "이제빈" }, { display_name: "정두호" }, { display_name: "Red" }];
+  assert.deepEqual(similarPlayerNames(players, "이제빈."), ["이제빈"], "punctuation only");
+  assert.deepEqual(similarPlayerNames(players, "정두흐"), ["정두호"], "one letter apart");
+  assert.deepEqual(similarPlayerNames(players, "이제빈컴공"), ["이제빈"], "something added after it");
+  assert.deepEqual(similarPlayerNames(players, "이제빈"), [], "the same name is not offered as a similar one");
+  assert.deepEqual(similarPlayerNames(players, "박민수"), []);
+});

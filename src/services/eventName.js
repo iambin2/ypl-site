@@ -75,7 +75,7 @@ export function isEventLinked(form) {
 }
 
 /* the rules an earlier notice's event used; the name, round, dates, link and answers stay this notice's own */
-const RULE_KEYS = ["eventType", "division", "isTeamEvent", "battleFormat", "competitionFormat", "regulationId", "cupRuleId", "recordRuleLabel", "titleAward", "finalCapacity"];
+const RULE_KEYS = ["eventType", "division", "isTeamEvent", "battleFormat", "competitionFormat", "regulationId", "cupRuleId", "recordRuleLabel", "titleAward", "finalCapacity", "matchPlay"];
 export function copyEventRules(from, into) {
   const source = from?.form || {};
   const rules = Object.fromEntries(RULE_KEYS.filter(key => source.eventDraft?.[key] !== undefined).map(key => [key, source.eventDraft[key]]));

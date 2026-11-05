@@ -20,7 +20,7 @@ import {
   buildTeamMemberCandidates,
   getConfirmedTeamMemberIdentities,
 } from "./bracketTeamParticipants.js";
-import { buildSubmissionStatusRows, findPlayerByName, nextAliasName, playerNameKey, selectSubmissionRegistration } from "./teamBuilderCore.js";
+import { buildSubmissionStatusRows, findPlayerByName, nextAliasName, playerNameKey, selectSubmissionRegistration, similarPlayerNames } from "./teamBuilderCore.js";
 import { buildTeamSnapshotSubmission } from "./teamSubmission.js";
 import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
 import { partyDeadlines } from "./announcementTimes.js";
@@ -109,6 +109,13 @@ export async function saveLeagueIntake({ eventId = null, announcementId, eventDr
   if (error) fail(error, "루키와 마스터 통합 접수를 저장하지 못했습니다.");
   const intake = Array.isArray(data) ? data[0] : data;
   if (!intake?.master_event_id || !intake?.rookie_event_id) throw new Error("통합 접수 저장 결과를 확인하지 못했습니다.");
+  // save_league_intake builds competition_settings afresh on every save, so how the matches are played is written on both leagues here
+  const matchPlay = matchPlayOf({ competition_settings: { matchPlay: eventDraft.matchPlay } });
+  for (const id of [intake.master_event_id, intake.rookie_event_id]) {
+    const row = await getEvent(id);
+    const { error: playError } = await db().from("events").update({ competition_settings: { ...(row?.competition_settings || {}), matchPlay } }).eq("id", id);
+    if (playError) fail(playError, "경기 진행 방식을 저장하지 못했습니다.");
+  }
   const event = await getEvent(intake.master_event_id);
   await getLeagueIntakeEvents(event);
   return event;
@@ -688,6 +695,13 @@ const EVENT_DETAIL_SELECT = `
   record_applied_at${CHAMPIONS_EVENT_SELECT_FIELDS}
 `;
 
+/* 대회의 경기 진행 방식: "champions"(포켓몬 챔피언스에서 치르고 운영진이 결과를 넣는다, 기본), "site"(제출한 파티로 사이트 배틀),
+   "random"(엔진이 뽑은 랜덤 파티로 사이트 배틀). 배틀 함수도 같은 값(competition_settings.matchPlay)을 보고 공식 배틀을 거절한다. */
+const MATCH_PLAYS = ["champions", "site", "random"];
+export const matchPlayOf = event => (MATCH_PLAYS.includes(event?.competition_settings?.matchPlay) ? event.competition_settings.matchPlay : "champions");
+// played on the site's battle (with the submitted party or a random one)
+export const sitePlayed = event => matchPlayOf(event) !== "champions";
+
 export async function getEvent(eventId) {
   if (!eventId) return null;
 
@@ -748,12 +762,13 @@ async function findExistingApplicantPlayer(registrationName) {
 const RECORD_DATE_LENGTH = { exact: 10, month: 7, year: 4 };
 
 // 신청 화면의 동명이인 확인: 같은 이름의 선수, 그 선수가 나간 대회(최근 순, 성적), 동명이인이 쓸 다음 이름. 기록이 없는 이름이면 null.
+// similar: the existing names close to this one, when none is the same (the form asks whether one of them is meant)
 export async function findApplicantNameRecord(registrationName) {
   const name = String(registrationName || "").trim();
   if (!name) return null;
   const players = await loadPlayerNames();
   const player = findPlayerByName(players, name);
-  if (!player) return null;
+  if (!player) { const similar = similarPlayerNames(players, name); return similar.length ? { similar } : null; }
 
   const { data, error } = await db()
     .from("entry_participants")
@@ -1117,6 +1132,8 @@ export async function saveApplicationEvent({
   const competitionSettings = {
     ...requestedCompetitionSettings,
     recordRuleLabel,
+    // how its matches are played (the committee, 2026-11-05): in the game by default, or on the site's battle
+    matchPlay: matchPlayOf({ competition_settings: { matchPlay: eventDraft.matchPlay ?? requestedCompetitionSettings.matchPlay } }),
     titleAward: normalizeEventTitleAward(
       eventDraft.titleAward !== undefined ? eventDraft.titleAward : requestedCompetitionSettings.titleAward
     ),

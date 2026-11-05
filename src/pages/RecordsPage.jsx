@@ -10,7 +10,7 @@ import { ALIGNMENTS, STAT_KEYS, STAT_LABELS, TYPE_KO, abilityName, dexRecord, it
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { buildHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../services/hallOfFamePresentation.js";
 import { freshRead, peekRead } from "../services/readCache.js";
-import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows, pokemonSamples, sampleUsage } from "../services/recordsPresentation.js";
+import { buildIndividualPartyPreviewRows, buildTeamPartyPreviewRows, pokemonSamples, sampleUsage, trainerLeague } from "../services/recordsPresentation.js";
 import {
   fetchNormalizedRecordsSnapshot,
   normalizedRecordsReadEnabled,
@@ -22,6 +22,7 @@ import Button from "../components/common/Button.jsx";
 import Seg from "../components/common/Seg.jsx";
 import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
+import { accountsReady, decideLinkRequest, listLinkRequests, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
 
 /* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
    끝난 공식 배틀의 로그는 한 번만 읽어 둔다. */
@@ -222,6 +223,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
 
       <div className="swap rc-body" key={tab} ref={arrived}>
         {normalizedRead.loading ? <Loader small /> : <>
+        {tab === "trainer" && admin && <LinkRequests />}
         {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} />}
         {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} onParty={setParty} />}
         {tab === "pokemon" && <PokemonView snapshot={snapshot} onParty={setParty} />}
@@ -243,7 +245,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
 
 /* 트레이너 시트의 머리 아래 한 줄: 참가 횟수와 가진 챔피언 세대 */
 function trainerHint(profile) {
-  return [`참가 ${profile.history.length}회`, ...profile.champions.map((c) => `${generationText(c.gen)} 챔피언`)].join(", ");
+  return [trainerLeague(profile) === "master" ? "마스터" : "루키", `참가 ${profile.history.length}회`, ...profile.champions.map((c) => `${generationText(c.gen)} 챔피언`)].join(", ");
 }
 
 /* 이름이나 키로 트레이너 기록을 찾는다. 다른 페이지의 링크는 이름만 알고 있다. */
@@ -366,6 +368,8 @@ function TrainerProfile({ snapshot, profile, onParty }) {
         <div className="rc-pager"><Pager page={histCur} pages={histPages} onGo={setHistPage} /></div>
       </section>
 
+      <TrainerLink profile={profile} />
+
       <TrainerBattles playerIds={[...new Set([profile.playerId, ...profile.history.map(event => event.playerId)].filter(Boolean))]} />
 
       {parties.length > 0 && <section className="rc-sec" aria-labelledby="rc-party-h">
@@ -390,6 +394,78 @@ function TrainerProfile({ snapshot, profile, onParty }) {
         )}
       </section>
     </div>
+  );
+}
+
+/* ---- 내 기록 연결 (docs/db/player_accounts.sql): 구글 계정으로 이 기록을 내 기록으로 연결해 달라고 요청한다. 운영진이 승인해야
+   이어지고, 그 SQL이 실행되기 전에는 아무것도 보이지 않는다. 신청과 제출은 지금처럼 이름과 비밀번호로 된다. ---- */
+const LINK_STATE = { pending: "운영진 확인을 기다리는 중입니다.", approved: "내 기록으로 연결되었습니다.", rejected: "연결 요청이 거절되었습니다." };
+function TrainerLink({ profile }) {
+  const [ready, setReady] = useState(false);
+  const [link, setLink] = useState(undefined);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const [signedIn, setSignedIn] = useState(visitorSignedIn);
+  useEffect(() => { let on = true; accountsReady().then((ok) => { if (on) setReady(ok); }); return () => { on = false; }; }, []);
+  useEffect(() => {
+    if (!ready || !signedIn) return undefined;
+    let on = true;
+    (async () => {
+      try {
+        // back from Google with this trainer asked for: the request goes now
+        if (takePendingLink() === profile.name) await requestPlayerLink(profile.name);
+        const mine = await myPlayerLink();
+        if (on) setLink(mine);
+      } catch (error) {
+        if (!on) return;
+        if (error.signedOut) setSignedIn(false);
+        setNote(error.message); setLink(null);
+      }
+    })();
+    return () => { on = false; };
+  }, [ready, signedIn, profile.name]);
+  if (!ready || !profile.playerId) return null;
+  const back = `${window.location.origin}${window.location.pathname}?view=records&tab=trainer&trainer=${encodeURIComponent(profile.name)}`;
+  const ask = async () => {
+    setBusy(true); setNote("");
+    try { await requestPlayerLink(profile.name); setLink(await myPlayerLink()); } catch (error) { setNote(error.message); }
+    setBusy(false);
+  };
+  const mine = link && link.player_id === profile.playerId;
+  return (
+    <section className="rc-sec" aria-labelledby="rc-link-h">
+      <SectionHead id="rc-link-h" title="내 기록 연결" />
+      <div className="stack">
+        {!signedIn
+          ? <Row title="구글 계정으로 연결" line="운영진이 확인한 뒤 이 기록이 내 계정과 이어집니다." value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, back)}>구글로 로그인</Button>} />
+          : link === undefined ? <Row title="연결 상태를 확인하는 중입니다." />
+          : mine ? <Row title={LINK_STATE[link.status] || ""} line={link.email || undefined} />
+          : <Row title="내 기록으로 연결 요청" line={link ? `지금은 ${link.requested_name} 기록에 요청되어 있습니다.` : "운영진이 확인한 뒤 연결됩니다."}
+              value={<Button variant="second" size="sm" loading={busy} onClick={ask}>요청</Button>} />}
+      </div>
+      {note && <p className="t12 dim">{note}</p>}
+      {signedIn && <div className="rc-more"><Button variant="link" onClick={() => { signOutVisitor(); setSignedIn(false); setLink(undefined); }}>구글 로그아웃</Button></div>}
+    </section>
+  );
+}
+// 운영진: 연결 요청을 승인하거나 거절한다. 요청이 없으면 아무것도 보이지 않는다.
+function LinkRequests() {
+  const [rows, setRows] = useState([]);
+  const [note, setNote] = useState("");
+  const load = () => accountsReady().then((ok) => (ok ? listLinkRequests() : [])).then(setRows, (error) => setNote(error.message));
+  useEffect(() => { load(); }, []);
+  const pending = rows.filter((row) => row.status === "pending");
+  if (!pending.length && !note) return null;
+  const decide = async (row, approve) => { try { await decideLinkRequest(row.auth_user_id, approve); load(); } catch (error) { setNote(error.message); } };
+  return (
+    <section className="rc-sec" aria-labelledby="rc-linkreq-h">
+      <SectionHead id="rc-linkreq-h" title={`기록 연결 요청 ${pending.length}`} />
+      <div className="stack">
+        {pending.map((row) => <Row key={row.auth_user_id} title={row.requested_name} line={[row.account_name, row.email, formatDate(row.requested_at)].filter(Boolean).join(", ")}
+          value={<span className="rc-link-keys"><Button variant="second" size="sm" onClick={() => decide(row, true)}>승인</Button><Button variant="link" onClick={() => decide(row, false)}>거절</Button></span>} />)}
+      </div>
+      {note && <p className="t12 dim">{note}</p>}
+    </section>
   );
 }
 

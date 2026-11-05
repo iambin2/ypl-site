@@ -14,6 +14,7 @@ import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, requestKey, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
+import { setSound, tick as clockTick } from "./battle/stageSound.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, cancelBattle, chooseInBattle, createBattle, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
@@ -59,7 +60,7 @@ export default function BattlePage({ flash: say, go }) {
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
   if (id) return <BattleRoom key={id} id={id} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} />;
-  if (official) return <OfficialSeat {...official} onOpen={open} />;
+  if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
 }
 
@@ -73,11 +74,18 @@ function TeamRows({ teams, value, onChange, res }) {
         <input type="radio" className="sr-only" name="battle-team" checked={on} onChange={() => onChange(team.id)}
           aria-label={`${team.name}, ${reg}, ${team.members.map(m => res.text.pokedex[m.pokemonId] || m.pokemonName).join(", ")}`} />
         <span className="bt-team-head"><b className="t15">{team.name}</b><span className="t12 reg dim">{reg}</span>{on && <Icon n="check" size={20} />}</span>
-        <span className="bt-team-six" aria-hidden="true">{team.members.map((m, i) => <span key={i} className="stand"><i className="floor" /><Mon src={spriteUrl(m.pokemonName)} loading="lazy" onError={onSpriteError()} /></span>)}</span>
+        <span className="bt-team-six" aria-hidden="true">{team.random
+          ? Array.from({ length: 6 }, (_, i) => <span key={i} className="bt-team-q t15">?</span>)
+          : team.members.map((m, i) => <span key={i} className="stand"><i className="floor" /><Mon src={spriteUrl(m.pokemonName)} loading="lazy" onError={onSpriteError()} /></span>)}</span>
       </label>;
     })}
   </div>;
 }
+
+/* a random party (a random battle): chosen like a team, drawn by the battle function when the battle opens */
+const RANDOM = "random:";
+const randomTeams = regs => regs.map(reg => ({ id: RANDOM + reg, name: "랜덤 파티", regulationId: reg, members: [], random: true }));
+const sendTeam = (team, res) => (team.random ? "random" : showdownTeam(team, res.detail));
 
 function NoTeams() {
   return <Empty title="저장한 팀이 없습니다." desc="팀 빌더에서 팀을 저장하면 여기에서 고를 수 있습니다.">
@@ -122,8 +130,14 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, d
   );
 }
 
+// what the battle function refused, with the Pokémon it names in Korean (기술이 하나도 없는 포켓몬(Garchomp) → 한카리아스)
+const failText = (e, res) => {
+  const problem = e.problems?.[0];
+  if (!problem) return e.message;
+  return `${e.message} ${res ? problem.replace(/포켓몬\(([^)]+)\)/, (_, species) => `포켓몬(${nameOf(res, species)})`) : problem}`;
+};
 function BattleOpen({ res, onOpen, preset }) {
-  const teams = useMemo(() => readSavedTeams().filter(team => REGULATIONS[team.regulationId]), []);
+  const teams = useMemo(() => [...readSavedTeams().filter(team => REGULATIONS[team.regulationId]), ...randomTeams(Object.keys(REGULATIONS))], []);
   const [name, setName] = useState(rememberedName);
   const [format, setFormat] = useState("doubles");
   // the team builder's 이 팀으로 배틀 opens here with its team chosen
@@ -135,11 +149,11 @@ function BattleOpen({ res, onOpen, preset }) {
     setBusy(true); setError("");
     try {
       rememberName(name.trim());
-      const made = await createBattle({ regulation: team.regulationId, battleFormat: format, name: name.trim(), team: showdownTeam(team, res.detail) });
+      const made = await createBattle({ regulation: team.regulationId, battleFormat: format, name: name.trim(), team: sendTeam(team, res) });
       keepOpenTeam(made.id, team.id);
       onOpen(made.id);
     } catch (e) {
-      setError(e.problems?.length ? `${e.message} ${e.problems[0]}` : e.message);
+      setError(failText(e, res));
       setBusy(false);
     }
   };
@@ -237,7 +251,7 @@ function BattleRoom({ id, res, say, go, onLeave, start }) {
     };
     if (seat) return <Waiting row={row} res={res} team={openTeam(id)} onShare={share} onCancel={cancel} />;
     // an official match is entered from its own seat screen: the player's party PIN, never a builder team
-    if (row.kind === "official") return <OfficialSeat eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
+    if (row.kind === "official") return <OfficialSeat res={res} eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
     return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); show(next); refresh(); }} />;
   }
   return <Arena row={row} view={view} seat={seat} res={res} onView={show} onShare={share} go={go} api={api} say={say} start={start} />;
@@ -272,7 +286,7 @@ export function Waiting({ row, res, team, onShare, onCancel }) {
           <Counter label="기다린 시간" value={clock} cells={3} h={52} />
           <Row title={`상대를 기다리는 중입니다.`} line={`${rule} ${official ? "공식 경기" : "친선 배틀"}`} lamp="참가 대기" />
           {team && res && <div className="q"><span className="q-label t12 dim">가져온 팀</span><TeamRows teams={[team]} value={team.id} onChange={() => {}} res={res} /></div>}
-          <p className="t12 dim">{official ? "상대 선수가 대진표의 이 경기에서 들어오면 바로 시작합니다." : "링크를 받은 상대가 참가하면 바로 시작합니다."}</p>
+          <p className="t12 dim">{official ? "상대 선수가 들어오면 시작합니다." : "상대가 링크로 들어오면 시작합니다."}</p>
           <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
           <Button variant="link" onClick={onCancel}>대기 취소</Button>
         </div>
@@ -299,7 +313,7 @@ function useMatchPlayers(eventId, nodeKey) {
   return match;
 }
 
-function OfficialSeat({ eventId, nodeKey, onOpen }) {
+function OfficialSeat({ eventId, nodeKey, res, onOpen }) {
   const match = useMatchPlayers(eventId, nodeKey);
   const [side, setSide] = useState("");
   const [pin, setPin] = useState("");
@@ -320,7 +334,7 @@ function OfficialSeat({ eventId, nodeKey, onOpen }) {
   const submit = async () => {
     setBusy(true); setError("");
     try { onOpen((await takeOfficialSeat({ eventId, nodeKey, side, pin })).id); }
-    catch (e) { setError(e.problems?.length ? `${e.message} ${e.problems[0]}` : e.message); setBusy(false); }
+    catch (e) { setError(failText(e, res)); setBusy(false); }
   };
   const names = [match.a, match.b];
   return (
@@ -330,7 +344,7 @@ function OfficialSeat({ eventId, nodeKey, onOpen }) {
       {match.decided
         ? <Empty title="이미 승자가 정해진 경기입니다." desc="대진표에서 결과를 확인해 주세요." />
         : <>
-          <p className="read dim bt-intro">자기 이름을 고르고 파티를 제출할 때 정한 비밀번호를 입력해 주세요. 제출한 공식 파티로 경기합니다.</p>
+          <p className="read dim bt-intro">제출 비밀번호로 자기 자리에 앉습니다.</p>
           <Question id="bt-side" label="선수" group>
             <Choice name="bt-side" options={names} value={side === "a" ? match.a : side === "b" ? match.b : ""} onChange={label => setSide(label === match.a ? "a" : "b")} />
           </Question>
@@ -347,7 +361,7 @@ function OfficialSeat({ eventId, nodeKey, onOpen }) {
 }
 
 function Join({ row, res, onJoined }) {
-  const teams = useMemo(() => readSavedTeams().filter(team => team.regulationId === row.regulation), [row.regulation]);
+  const teams = useMemo(() => [...readSavedTeams().filter(team => team.regulationId === row.regulation), ...randomTeams([row.regulation])], [row.regulation]);
   const [name, setName] = useState(rememberedName);
   const [teamId, setTeamId] = useState(teams[0]?.id || "");
   const [busy, setBusy] = useState(false);
@@ -358,9 +372,9 @@ function Join({ row, res, onJoined }) {
     setBusy(true); setError("");
     try {
       rememberName(name.trim());
-      onJoined(await joinBattle(row.id, { name: name.trim(), team: showdownTeam(team, res.detail) }));
+      onJoined(await joinBattle(row.id, { name: name.trim(), team: sendTeam(team, res) }));
     } catch (e) {
-      setError(e.problems?.length ? `${e.message} ${e.problems[0]}` : e.message);
+      setError(failText(e, res));
       setBusy(false);
     }
   };
@@ -375,6 +389,9 @@ function Join({ row, res, onJoined }) {
 /* ---------- the arena: the stage, its playback, the choices and the log (DESIGN.md "Battle", The stage) ---------- */
 const SPEED_KEY = "ypl-battle:speed";
 const SPEEDS = [[1, "보통"], [.5, "빠르게"], [0, "건너뛰기"]];
+// the stage's sound (DESIGN.md "Battle", Sound): off unless the viewer turns it on, remembered on the device
+const SOUND_KEY = "ypl-battle:sound";
+const readSound = () => { try { return localStorage.getItem(SOUND_KEY) === "on"; } catch { return false; } };
 function readSpeed() {
   try { const v = localStorage.getItem(SPEED_KEY); return SPEEDS.some(([s]) => String(s) === v) ? Number(v) : 1; } catch { return 1; }
 }
@@ -416,6 +433,10 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
   const doubles = isDoubles(row.format_id);
   const [speed, setSpeedChoice] = useState(readSpeed);
   useEffect(() => { setStageSpeed(speed); try { localStorage.setItem(SPEED_KEY, String(speed)); } catch { /* the next visit plays at 보통 */ } }, [speed]);
+  const [sound, setSoundChoice] = useState(readSound);
+  useEffect(() => { setSound(sound); try { localStorage.setItem(SOUND_KEY, sound ? "on" : "off"); } catch { /* the next visit starts quiet */ } }, [sound]);
+  // the tap itself wakes the browser's audio, so the first sound is not lost
+  const toggleSound = () => { setSound(!sound); setSoundChoice(!sound); };
   /* The replay (DESIGN.md "Battle", Replay): cue is how many lines of the finished log the stage shows, null all of them.
      A jump starts the stage again and catches up at once (epoch); a step on, or play, adds the next turn, which the stage plays. */
   const replay = useMemo(() => (ended && log ? replayStops(log) : null), [ended, log]);
@@ -502,6 +523,8 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
     claimed.current = Date.now();
     api.timeout(row.id).then(next => next && onView(next), () => { /* not yet by the server's clock: asked again in a moment */ });
   }, [left, waiting, now]);
+  // the last ten seconds of one's own decision tick, once a second
+  useEffect(() => { if (left != null && left > 0 && left <= 10 && seat && !waiting) clockTick(); }, [left]);
   // a link to where the replay stands, and from the side being watched
   const shareHere = async () => {
     const extra = { ...(cue != null ? { turn: String(shownTurn) } : {}), ...(!seat && pov !== "p1" ? { side: pov } : {}) };
@@ -528,18 +551,13 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
   const nameAt = (side, slot) => { const m = scene?.[side]?.active?.[slot]; return m ? `${side === perspective ? "" : "상대 "}${nameOf(res, m.species)}` : "빈 자리"; };
   const typesAt = (side, slot) => { const m = scene?.[side]?.active?.[slot]; return m && !m.fainted ? typesOf(res, m.species) : null; };
   const foes = (scene?.[foe]?.active || []).map((m, slot) => (m && !m.fainted ? { slot, name: nameOf(res, m.species), types: typesOf(res, m.species) } : null));
-  const desktop = typeof window !== "undefined" && window.matchMedia?.("(min-width: 860px)").matches;
   return (
-    <div className="bt-page">
+    <div className="bt-page bt-match">
       <div className="pn bt-head">
         <span className="bt-head-say">
           <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />진행 중</>}</span>
           <b className="t15">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {official && <span className="t12 dim">공식 경기</span>}
-        </span>
-        <span className="bt-head-boards">
-          {left != null && <span className="counter-board"><Seg value={String(left)} h={32} cells={Math.max(2, String(left).length)} label={`남은 시간 ${left}초`} /><span className="t15">초</span></span>}
-          <span className="counter-board"><Seg value={String(shownTurn)} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t15">턴</span></span>
         </span>
       </div>
       {shownEnded && <Row className="inv" title={row.winner === "tie" ? "무승부" : `${names[row.winner]} 승리`}
@@ -547,7 +565,7 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
       <div className="bt-room">
         <div className="bt-main">
           {started
-            ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names}
+            ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
                 targeting={target?.targeting} said={tape.said} ask={boxAsk} known={known.current} />
             : <TeamPreview tape={tape} res={res} sides={seat ? [foe] : [foe, perspective]} names={names} />}
           {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
@@ -557,10 +575,13 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
               onSend={send} setTarget={setTarget} setAsk={setAsk} toast={error ? <Toast error>{error}</Toast> : null} />}
           </div>}
           {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play} />}
-          <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
+          <div className="bt-play">
+            <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
+            <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
+          </div>
           {!seat && <Chips label="시점" value={pov} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
         </div>
-        <details className="bt-logbox" open={desktop || undefined}>
+        <details className="bt-logbox">
           <summary className="t12 dim">전체 기록</summary>
           <Log lines={tape.lines} />
         </details>
@@ -623,10 +644,11 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
 
   // team preview: pick the ones to bring, in order; the first ones lead
   if (request.teamPreview) {
-    const count = request.maxChosenTeamSize || side.pokemon.length;
+    // a party of fewer than the format brings (one still being built) brings all it has
+    const count = Math.min(request.maxChosenTeamSize || side.pokemon.length, side.pokemon.length);
     const toggle = i => setPicks(list => list.includes(i) ? list.filter(x => x !== i) : list.length < count ? [...list, i] : list);
     return <div className="bt-choices">
-      <span className="t12 dim">{`선출 ${picks.length} / ${count}, 고른 순서대로 나갑니다. 앞의 ${doubles ? "둘" : "하나"}이 선봉입니다.`}</span>
+      <span className="t12 dim">{`선출 ${picks.length} / ${count}`}</span>
       <Party pokemon={side.pokemon} res={res} pick={i => ({ chosen: picks.includes(i), order: picks.indexOf(i) + 1, onPick: () => toggle(i) })} />
       <Dock toast={toast}><Button variant="main" icon="check" loading={sending} disabled={picks.length !== count} onClick={() => send(`team ${picks.map(i => i + 1).join(", ")}`)}>선출 확정</Button></Dock>
     </div>;
@@ -704,7 +726,7 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
         const kind = CATEGORY[data.category] + (data.basePower > 0 ? ` ${data.basePower}` : "");
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
           data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(", ");
-        return <button key={move.id} type="button" className={(aiming === i ? "inv" : "pn") + " bt-move"} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
+        return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}`} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
           aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
           <span className="bt-move-top">
             <b className="t15 bt-move-name">{moveName(move.id)}</b>
@@ -722,14 +744,18 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
         </button>;
       })}
     </div>
-    {(megaOpen || picks.length > 0) && <div className="bt-tools">
-      {megaOpen && <Choice name="bt-mega" options={[MEGA]} value={mega ? [MEGA] : []} onChange={list => setMega(list.length > 0)} multiple />}
-      {picks.length > 0 && <Button variant="link" onClick={reset}>처음부터 다시 고르기</Button>}
+    {/* Mega Evolution stands in the middle under the moves with its symbol, as the games put it */}
+    {megaOpen && <div className="bt-mega-row">
+      <button type="button" className={"bt-mega" + (mega ? " on" : "")} aria-pressed={mega} onClick={() => setMega(!mega)}><MegaSymbol />{MEGA}</button>
     </div>}
+    {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
     {bench}
     {toast && <Dock toast={toast} />}
   </div>;
 }
+
+// the Mega Evolution symbol, the games' own rainbow helix (public/brand/mega-evolution.png), on a white tile
+const MegaSymbol = () => <span className="bt-mega-mark" aria-hidden="true"><img src="/brand/mega-evolution.png" alt="" draggable="false" /></span>;
 
 /* the bench: a row of the brought Pokémon not out, each its picture, name and HP; one that cannot come in is muted */
 function Bench({ pokemon, res, pick, label }) {
@@ -743,7 +769,7 @@ function Bench({ pokemon, res, pick, label }) {
         const species = String(mon.details).split(", ")[0];
         const { hp, maxhp, status } = parseHP(mon.condition);
         const fainted = status === "fnt";
-        return <button key={mon.ident + i} type="button" className="pn bt-sw" disabled={!go} onClick={go || undefined}
+        return <button key={mon.ident + i} type="button" className="bt-sw" disabled={!go} onClick={go || undefined}
           aria-label={`${nameOf(res, species)}${fainted ? ", 쓰러짐" : `, HP ${hp} / ${maxhp}`} 교체`}>
           <img src={spriteUrl(species)} alt="" draggable="false" />
           <span className="bt-sw-say">

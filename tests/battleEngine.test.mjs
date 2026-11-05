@@ -2,7 +2,7 @@
 // and a finished battle replayed from its input log to the very same log.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatId, validateTeam, startBattle, loadBattle, choose, forfeit, readout, replay } from "../supabase/functions/battle/engine.mjs";
+import { formatId, validateTeam, startBattle, loadBattle, choose, forfeit, readout, replay, randomTeam } from "../supabase/functions/battle/engine.mjs";
 import { requestKey, slotPasses } from "../src/services/battleLog.js";
 import { explicit, picker } from "./battlePicker.mjs";
 
@@ -24,7 +24,36 @@ test("legal teams pass Showdown's validator in both regulations and both formats
     assert.equal(problems, null, `${reg} ${kind}: ${problems}`);
   }
   assert.ok(validateTeam(formatId("m-c", "doubles"), [{ ...TEAM[2], moves: ["Knock Off"] }])?.length, "an illegal move is refused");
-  assert.deepEqual(validateTeam(formatId("m-c", "singles"), []), ["A team is one to six Pokémon."]);
+  assert.deepEqual(validateTeam(formatId("m-c", "singles"), []), ["파티는 1마리에서 6마리까지입니다."]);
+});
+
+test("a random party is six legal species, one of each, no item twice, in every regulation and format, and it battles", () => {
+  for (const reg of ["m-c", "m-b"]) for (const kind of ["singles", "doubles"]) {
+    const formatid = formatId(reg, kind);
+    for (let n = 0; n < 20; n++) {
+      const team = randomTeam(formatid);
+      assert.equal(team.length, 6);
+      assert.equal(validateTeam(formatid, team), null, `${formatid}: ${validateTeam(formatid, team)}`);
+      const items = team.map(set => set.item).filter(Boolean);
+      assert.equal(new Set(items).size, items.length, "no item twice");
+    }
+  }
+  const battle = startBattle({ formatid: formatId("m-c", "doubles"), seed: [5, 6, 7, 8], p1: { name: "갑", team: randomTeam(formatId("m-c", "doubles")) }, p2: { name: "을", team: randomTeam(formatId("m-c", "doubles")) } });
+  assert.ok(choose(battle, {}, "p1", "team 1, 2, 3, 4").ok);
+  assert.ok(choose(battle, {}, "p2", "team 1, 2, 3, 4").ok);
+  assert.equal(battle.turn, 1);
+});
+
+test("a party still being built battles as it stands: two Pokémon, an empty ability; a Pokémon with no move is refused", () => {
+  const two = [{ ...TEAM[0], ability: "" }, { ...TEAM[2], item: "" }];
+  for (const kind of ["singles", "doubles"]) assert.equal(validateTeam(formatId("m-c", kind), two), null, kind);
+  assert.match(validateTeam(formatId("m-c", "doubles"), [{ ...TEAM[0], moves: [] }])[0], /기술이 하나도 없는 포켓몬\(Garchomp\)/);
+  // the team preview asks for no more than the party has, and the battle runs
+  const battle = startBattle({ formatid: formatId("m-c", "doubles"), seed: [1, 2, 3, 4], p1: { name: "갑", team: two }, p2: { name: "을", team: TEAM } });
+  assert.ok(choose(battle, {}, "p1", "team 1, 2").ok);
+  assert.ok(choose(battle, {}, "p2", "team 1, 2, 3, 4").ok);
+  assert.equal(battle.turn, 1);
+  assert.equal(battle.p1.pokemon[0].ability, "sandveil", "the species' first ability stands in for an empty one");
 });
 
 test("a battle saved after every turn ends, and its input log replays to the same log", () => {

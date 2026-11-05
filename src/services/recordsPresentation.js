@@ -2,6 +2,15 @@ const asArray = (value) => (Array.isArray(value) ? value : []);
 const clean = (value) => String(value || "").trim();
 const LABELS = { win: "우승", ru: "준우승", sf: "4강", participant: "참가" };
 
+/* 트레이너의 리그 (운영위, 2026-11-05): 개인전 마스터 리그에 나간 기록이 있거나, 루키나 라이트 또는 리그가 나뉘기 전의
+   클래식 파이컵에서 개인전 우승을 했으면 마스터, 아니면 루키. 통합 접수의 리그 배정과 같은 기준이다. 챔피언스 시리즈와 팀전은
+   셈하지 않는다. 2026-11-05 운영진의 마스터 명단 27명과 운영 기록으로 대조해 모두 일치했다. */
+export function trainerLeague(profile) {
+  const rows = [...asArray(profile?.history), ...asArray(profile?.placements)].filter((row) => row && !row.team && !row.championSeries);
+  const master = rows.some((row) => row.tournamentKey === "master" || (row.placement === "win" && ["rookie", "pylite", "pycup"].includes(row.tournamentKey)));
+  return master ? "master" : "rookie";
+}
+
 export function buildTeamPartyPreviewRows(round) {
   if (!round?.team) return [];
   const rows = asArray(round.teamParticipants).map((participant) => {
