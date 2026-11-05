@@ -3,13 +3,30 @@ import Modal from "./Modal.jsx";
 import Loader from "./Loader.jsx";
 import ErrorNote from "./ErrorNote.jsx";
 
-// A failed deployment chunk can recover through a document reload, which also
-// runs the existing version check. Keep the shell and modal close action usable.
-export default class LazyContent extends Component {
-  state = { failed: false };
+/* A page opened before a deploy asks for screen files the deploy has deleted (each build renames them). That failure is not
+   the visitor's to handle: the page reloads itself once, onto the new build. A second failure within a minute is shown. */
+const CHUNK_FAILED = /dynamically imported module|Importing a module script failed/i;
+const RELOADED_KEY = "ypl:chunk-reload-at";
+function reloadOnce() {
+  try {
+    const last = Number(sessionStorage.getItem(RELOADED_KEY) || 0);
+    if (Date.now() - last < 60_000) return false;
+    sessionStorage.setItem(RELOADED_KEY, String(Date.now()));
+  } catch { return false; }
+  window.location.reload();
+  return true;
+}
 
-  static getDerivedStateFromError() {
-    return { failed: true };
+export default class LazyContent extends Component {
+  state = { failed: false, chunk: false };
+
+  // chunk: a deleted screen file, which waits on the loader while the page reloads (no error screen flashes before it)
+  static getDerivedStateFromError(error) {
+    return { failed: true, chunk: CHUNK_FAILED.test(String(error?.message || error)) };
+  }
+
+  componentDidCatch() {
+    if (this.state.chunk && !reloadOnce()) this.setState({ chunk: false });
   }
 
   fallback(failed = false) {
@@ -25,7 +42,7 @@ export default class LazyContent extends Component {
   }
 
   render() {
-    if (this.state.failed) return this.fallback(true);
+    if (this.state.failed) return this.fallback(!this.state.chunk);
     return <Suspense fallback={this.fallback()}>{this.props.children}</Suspense>;
   }
 }

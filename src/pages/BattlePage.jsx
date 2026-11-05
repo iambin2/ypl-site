@@ -4,11 +4,12 @@ import Button from "../components/common/Button.jsx";
 import Icon from "../components/common/Icon.jsx";
 import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
+import ErrorNote from "../components/common/ErrorNote.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
 import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
 import Modal from "../components/common/Modal.jsx";
-import { pushHistory } from "../components/layout/history.js";
+import { checkBuild, pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
 import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
@@ -61,9 +62,32 @@ export default function BattlePage({ flash: say, go }) {
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
-  if (id) return <BattleRoom key={id} id={id} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} />;
+  if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
+}
+
+/* a battle that fails to draw stands up again by itself: everything it shows is read again from the server, so starting the room
+   over is what a reload does, without the error screen in between. Only a failure that keeps coming back (four in 15 seconds) is
+   shown. The last error is kept on this device (sessionStorage ypl-battle:last-error) so a report can name its cause. */
+const LAST_ERROR_KEY = "ypl-battle:last-error";
+class RoomGuard extends React.Component {
+  state = { failed: false, round: 0, gaveUp: false };
+  recent = [];
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error, info) {
+    console.error("battle room", error, info?.componentStack);
+    try { sessionStorage.setItem(LAST_ERROR_KEY, JSON.stringify({ at: new Date().toISOString(), error: String(error?.stack || error).slice(0, 2000), where: String(info?.componentStack || "").slice(0, 2000) })); } catch { /* 남기지 못해도 화면은 다시 선다 */ }
+    const now = Date.now();
+    this.recent = [...this.recent.filter(t => now - t < 15000), now];
+    if (this.recent.length > 3) this.setState({ gaveUp: true });
+    else this.setState(s => ({ failed: false, round: s.round + 1 }));
+  }
+  render() {
+    if (this.state.gaveUp) return <ErrorNote action="새로고침" onRetry={() => window.location.reload()}>배틀 화면을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</ErrorNote>;
+    if (this.state.failed) return <Loader />;
+    return <React.Fragment key={this.state.round}>{this.props.children}</React.Fragment>;
+  }
 }
 
 /* 저장한 팀: 팀 이름과 규정, 그리고 여섯을 그림으로(DESIGN.md "Where a Pokémon stands": 파티 목록은 이름 줄이 아니라 그림). 고른 팀은 반전한다. */
@@ -253,10 +277,14 @@ function BattleRoom({ id, res, say, go, onLeave, start }) {
       } catch { /* 다음 차례에 다시 읽는다 */ }
       busy = false;
       if (stopped) return;
+      if (rowRef.current?.status === "waiting") void takeNewBuild();
       const delay = battlePollDelay(rowRef.current, Date.now() - movedAt.current);
       if (delay != null) timer = setTimeout(tick, delay);
     };
-    const onVisible = () => { if (document.visibilityState === "visible") void tick(); };
+    /* a battle page can stay open for an hour: when a newer build is out it takes it, at a moment that loses nothing (the tab coming
+       back into view, or while it only waits for an opponent); the room is read again from the server, as any reload does */
+    const takeNewBuild = force => checkBuild(force).then(newer => { if (newer && !stopped) window.location.reload(); });
+    const onVisible = () => { if (document.visibilityState === "visible") { void takeNewBuild(true); void tick(); } };
     document.addEventListener("visibilitychange", onVisible);
     void tick();
     return () => { stopped = true; clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };

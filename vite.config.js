@@ -22,6 +22,7 @@ function productionVersionPlugin() {
         injectTo: "head-prepend",
         children: `(() => {
   const currentVersion = ${currentVersion};
+  globalThis.__YPL_BUILD__ = currentVersion;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3000);
   const versionUrl = new URL(${versionPath}, location.origin);
