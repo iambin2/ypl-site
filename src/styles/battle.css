@@ -41,7 +41,11 @@
 .bt-team-q { display: grid; place-items: center; background: var(--panel-2); color: var(--dim); font-weight: 700; }
 .bt-team:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-team.inv:has(:focus-visible) { outline-color: var(--ground); }
-@media (hover: hover) { .bt-team.pn:hover { background: var(--panel-2); } }
+@media (hover: hover) { .bt-team.pn:not(.still):hover { background: var(--panel-2); } }
+/* the team brought, on the waiting screen: shown, not chosen */
+.bt-team.still { cursor: default; }
+/* no saved team: the line under the random parties that says where teams come from */
+.bt-noteams { margin-top: var(--s2); }
 
 /* waiting for the other player: the busy cell and the sentence */
 /* the opponent's place while the opener waits: the lamp beside 참가 대기 */
@@ -72,7 +76,10 @@
   .bt-side .bt-rkey { width: var(--h-control); height: var(--h-control); }
 }
 /* the head: the lamp and where the match stands (선출 중, 진행 중, 종료), then the two names large */
-.bt-head { display: grid; gap: var(--s1); padding: var(--s3) var(--pad); }
+.bt-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s3); row-gap: var(--s1); align-items: center; padding: var(--s3) var(--pad); }
+/* the turn at the head's right end, its cells over the word */
+.bt-head-turn { grid-column: 2; grid-row: 1 / span 2; display: grid; justify-items: center; gap: var(--s1); }
+.bt-head > :is(.status, .bt-head-names) { grid-column: 1; }
 .bt-head > .status { display: flex; align-items: center; gap: var(--s2); }
 .bt-head-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
 
@@ -86,7 +93,8 @@
 .bt-rkey:disabled { color: var(--mute); cursor: default; }
 @media (hover: hover) { .bt-rkey:hover:not(:disabled) { color: var(--lit); background: var(--panel-2); } }
 .bt-rkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-.bt-replay-track { position: relative; flex: 1; min-width: 60px; height: var(--s1); margin: 0 var(--s2); background: var(--rule); }
+/* the track gives way first on a narrow phone, so the turn at the end is never cut off */
+.bt-replay-track { position: relative; flex: 1; min-width: 0; height: var(--s1); margin: 0 var(--s2); background: var(--rule); }
 .bt-replay-track > i { position: absolute; inset: 0; background: var(--dim); transform-origin: 0 50%; }
 .bt-replay-track > input[type="range"] { position: absolute; left: 0; right: 0; top: 50%; width: 100%; height: var(--h-strip); margin: 0; translate: 0 -50%; opacity: 0; cursor: pointer; }
 .bt-replay-at { flex: none; min-width: 40px; text-align: right; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -147,16 +155,19 @@
 .bt-hud { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
 .bt-hud-foe, .bt-hud-own { transition: opacity .4s ease; }
 .bs-stage.bs-intro :is(.bt-hud-foe, .bt-hud-own) { opacity: 0; }
-.bt-hud-foe { position: absolute; top: var(--s3); left: var(--pad); right: var(--pad); display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s2); }
-/* a plate is a third of the stage (the foe's leave the stadium board in the middle clear), ours a little wider; in doubles the
-   foe's two are small, as Showdown keeps them, so they read as the two over there and not as the screen's own panels */
-.bt-hud-col { display: grid; gap: var(--seam); justify-items: start; width: 30%; min-width: 120px; max-width: 260px; }
-.bt-hud-foe > .bt-plate { width: 30%; min-width: 120px; max-width: 260px; }
-.bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 28%; min-width: 108px; max-width: 230px; }
-.bt-hud-own { position: absolute; right: var(--pad); bottom: calc(var(--say-h) + var(--s2)); display: grid; gap: var(--seam); width: 32%; min-width: 132px; max-width: 280px; }
+.bt-hud-foe { position: absolute; top: var(--s3); left: var(--pad); right: var(--pad); display: grid; justify-items: start; gap: var(--seam); }
+/* the foe's plates as one group: in doubles the two sit seam to seam, the first standing's first, never split across the stage */
+.bt-hud-plates { display: flex; align-items: flex-start; gap: var(--seam); width: 100%; }
+/* ours as one group too, at the bottom right over the message window: in doubles the two sit seam to seam in the order they stand,
+   the same size as the foe's, never stacked */
+.bt-hud-own { position: absolute; left: var(--pad); right: var(--pad); bottom: calc(var(--say-h) + var(--s2)); display: flex; justify-content: flex-end; align-items: flex-end; gap: var(--seam); }
+/* a plate is a third of the stage, ours a little wider; in doubles both sides' two are small, as Showdown keeps them */
+.bt-hud-plates > .bt-plate { width: 30%; min-width: 120px; max-width: 260px; }
+.bt-hud-own > .bt-plate { width: 32%; min-width: 132px; max-width: 280px; }
+.bt-hud.two :is(.bt-hud-plates, .bt-hud-own) > .bt-plate { width: 28%; min-width: 108px; max-width: 230px; }
 @media (min-width: 860px) {
-  .bt-hud-col, .bt-hud-foe > .bt-plate { width: 26%; }
-  .bt-hud-own { width: 27%; }
+  .bt-hud-plates > .bt-plate { width: 26%; }
+  .bt-hud-own > .bt-plate { width: 27%; }
 }
 
 /* a plate: a solid panel with the name, a status, the bar with the HP, and a line of marks when there are any */
@@ -199,11 +210,11 @@
   .bt-hp { height: 4px; }
   .bt-mark { height: 15px; font-size: 10px; line-height: 14px; }
   .bt-st { font-size: 10px; line-height: 14px; }
-  .bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 30%; min-width: 104px; }
+  .bt-hud.two :is(.bt-hud-plates, .bt-hud-own) > .bt-plate { width: 30%; min-width: 104px; }
   .bt-hud-foe { top: var(--s2); left: var(--s2); right: var(--s2); }
-  .bt-hud-own { right: var(--s2); }
+  .bt-hud-own { left: var(--s2); right: var(--s2); }
   .bt-strip { min-height: 40px; }
-  .bt-hud-foe.two .bt-plate-top { font-size: 11px; line-height: 14px; }
+  .bt-hud.two .bt-plate-top { font-size: 11px; line-height: 14px; }
   .bt-hud.two .bt-marks { display: none; }
   .bt-hud.two .bt-plate-more { display: inline-flex; }
   .bs-stage.hud { --say-h: 58px; }
@@ -303,6 +314,11 @@
 .bt-mega.on .bt-mega-tick { background: var(--ground); color: var(--lit); }
 @media (hover: hover) { .bt-mega:not(.on):hover { background: var(--panel-2); } .bt-mega:not(.on):hover .bt-mega-tick { background: var(--rule); } }
 .bt-mega:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+/* a touch lights what it presses, as a pointer's hover does: a phone has no hover, so without this a tap shows nothing until the turn moves */
+.bt-move:active:not(:disabled):not(.on) { background: color-mix(in srgb, var(--type) 76%, #050D1F); }
+:is(.bt-sw, .bt-plate, .bt-key, .bt-rkey, .bt-mega:not(.on)):active:not(:disabled) { background: var(--panel-2); }
+button.bt-card:active:not(:disabled):not(.on) { background: var(--panel-2); }
+.bt-pick:active { background: var(--veil); }
 /* a Pokémon's sheet */
 .bt-info { display: grid; gap: var(--s3); }
 .bt-info-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--s2); align-items: center; font-size: var(--t15); line-height: var(--l15); }
@@ -310,14 +326,6 @@
 .bt-info-stats > span { display: grid; padding: var(--s1) 0; background: var(--panel-2); }
 .bt-info-stats small { font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; }
 
-/* on a phone in doubles our two plates are one line each (name, bar, HP), so the pair stays low in the corner and off our Pokémon */
-@media (max-width: 600px) {
-  .bt-hud.two .bt-hud-own { width: 40%; min-width: 150px; }
-  .bt-hud.two .bt-hud-own .bt-plate { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px var(--s2); }
-  .bt-hud.two .bt-hud-own .bt-plate-top { flex: 0 1 auto; max-width: 48%; }
-  .bt-hud.two .bt-hud-own .bt-plate-hp { flex: 1; }
-  .bt-hud.two .bt-hud-own .bt-sex { display: none; }
-}
 /* the move key's second line reads from further away on a desktop */
 @media (min-width: 860px) { .bt-move-line { font-size: 13px; line-height: 18px; } }
 
@@ -406,6 +414,8 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   .bt-cmove { min-height: 28px; font-size: 12px; }
   .bt-card-stats > span { font-size: 12px; }
   .bt-card-types > .tb-type { height: 18px; padding: 0 4px; font-size: 11px; gap: 4px; }
+  /* two types beside a picture and the pick's number do not fit a phone's card on one line: the second goes under, never cut */
+  .bt-card-types { flex-wrap: wrap; }
   .bt-cards.one .bt-card-facts, .bt-cards.one .bt-card-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

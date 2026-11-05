@@ -501,7 +501,7 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
         {/* the camera: the scene and its effects move together (stageCamera.js); the vignette and the field's tags stay put */}
         <div className="bs-cam">
         <div className="bs-world">
-          <Stadium names={names} turn={scene?.turn} live={Boolean(scene) && !scene.ended} winner={scene?.ended ? scene.winner : null} />
+          <Stadium />
           <Court />
           <Fading kind="bs-terrain" value={terrain} />
           {[foe, perspective].map(side => <React.Fragment key={side}>
@@ -521,16 +521,12 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
         <i className="bs-vignette" aria-hidden="true" />
         {/* the turn, the winner, an ability's plate and the opening stand here, outside the camera, so they keep the middle */}
         <div className="bs-over" aria-hidden="true" />
-        {/* the HUD over the stage: the foe's plates in the top corners (the field's tags under the first), ours at the bottom right
-            over the message window */}
+        {/* the HUD over the stage: the foe's plates together in the top corner, side by side in the order the two stand (as Showdown
+            keeps a side's bars together), the field's tags under them; ours at the bottom right over the message window */}
         <div className={"bt-hud" + (doubles ? " two" : "")}>
           <div className={"bt-hud-foe" + (doubles ? " two" : "")}>
-            {(() => { const [first, ...rest] = plates(foe, scene, false, doubles, res, setInfo); return <>
-              <div className="bt-hud-col">{first}
-                {chips.length > 0 && <div className="bt-fieldchips">{chips.map(([word, left]) => <span key={word}>{word}{left && <span>{left}</span>}</span>)}</div>}
-              </div>
-              {rest}
-            </>; })()}
+            <div className="bt-hud-plates">{plates(foe, scene, false, doubles, res, setInfo)}</div>
+            {chips.length > 0 && <div className="bt-fieldchips">{chips.map(([word, left]) => <span key={word}>{word}{left && <span>{left}</span>}</span>)}</div>}
           </div>
           <div className="bt-hud-own">{plates(perspective, scene, true, doubles, res, setInfo)}</div>
           <Say said={said} ask={ask} />
@@ -554,7 +550,7 @@ export function LobbyStage({ leads, doubles, label, awaiting = false }) {
   return (
     <div className="bs-stage" ref={ref} role="img" aria-label={label}>
       <div className="bs-world">
-        <Stadium names={{}} turn={0} live={false} />
+        <Stadium />
         <Court />
         {awaiting && <div className="bs-side foe" aria-hidden="true">
           {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`foe${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
@@ -566,11 +562,13 @@ export function LobbyStage({ leads, doubles, label, awaiting = false }) {
   );
 }
 /* under the lobby's stage, where a battle has our status bars: each Pokémon standing there, its name and its types, in the order they stand */
-export function LobbyBars({ leads, doubles, res }) {
+// random: a random party is drawn when the battle opens, so its places say so instead of standing empty
+export function LobbyBars({ leads, doubles, res, random = false }) {
   return <div className={"stack bt-bars" + (doubles ? " two" : "")}>
     {(doubles ? [0, 1] : [0]).map(slot => {
       const species = leads[slot];
       return <div key={slot} className="pn bt-lead">
+        {random && <><b className="t15 dim">랜덤</b><span className="t12 mute">배틀이 열리면 정해집니다</span></>}
         {species && <><b className="t15">{nameOf(res, species)}</b>
           <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span></>}
       </div>;

@@ -112,7 +112,7 @@ export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, set
         <span className="bt-pv-count" aria-live="polite"><b>{picks.length}</b>{` / ${n} 선출`}</span>
       </div>
       <div className="stack bt-cards">
-        {cards.map((c, i) => <MonCard key={c.key} res={res} {...c} hp={null} share={null}
+        {cards.map(({ key, ...c }, i) => <MonCard key={key} res={res} {...c} hp={null} share={null}
           pick={{ order: picks.indexOf(i) + 1, onPick: () => toggle(i), off: picks.length >= n && !picks.includes(i), locked }} />)}
       </div>
     </section>
@@ -155,7 +155,7 @@ export function TeamInfo({ res, sides, initial }) {
   return <section className="bt-info-panel">
     <Chips label="파티 정보" value={shown.key} onChange={setSide} options={sides.map(s => [s.key, s.label])} />
     <div className="stack bt-cards one">
-      {cards.map(c => <MonCard key={c.key} res={res} {...c} compact />)}
+      {cards.map(({ key, ...c }) => <MonCard key={key} res={res} {...c} compact />)}
     </div>
   </section>;
 }

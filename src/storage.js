@@ -89,11 +89,17 @@ export function signOutAdmin() {
 // 방문자의 요청으로 Edge Function을 부르고 답을 돌려준다(배틀). 함수가 거절하면 그 이유를 담은 오류를 던진다.
 export async function callFunction(name, body) {
   if (!supa) throw new Error("이 환경에서는 쓸 수 없습니다.");
-  const response = await fetch(new URL(`functions/v1/${name}`, SUPA_URL.replace(/\/?$/, "/")), {
-    method: "POST",
-    headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetch(new URL(`functions/v1/${name}`, SUPA_URL.replace(/\/?$/, "/")), {
+      method: "POST",
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    // the browser's own words ("Failed to fetch", "Load failed") are English and say nothing a player can act on
+    throw Object.assign(new Error("연결이 끊겼습니다. 연결을 확인하고 다시 시도해 주세요."), { status: 0 });
+  }
   const json = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status, problems: json.problems });
   return json;
