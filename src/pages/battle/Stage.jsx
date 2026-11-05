@@ -7,8 +7,6 @@ import { Generations } from "@smogon/calc";
 import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
-import { Court, Fading, Hazards, RoomBox, Screens, Wind } from "./Field.jsx";
-import Stadium from "./Stadium.jsx";
 import Seg from "../../components/common/Seg.jsx";
 
 /* 배틀 무대 (DESIGN.md "Battle", The stage). 경기장 위에 두 편이 마주 서고, 각 포켓몬 머리 위에 쇼다운처럼 상태 막대가 뜬다.
@@ -210,13 +208,8 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             const data = res.detail.moves[event.move] || {};
             /* the camera frames the user as it gathers and pans to its target as the move travels, holding there through the blow;
                a spread move stays wide and leans in a little on its user */
-            const aim = (event.targets || []).map(keyOf).find(t => t !== k && stage?.querySelector(`[data-mon="${t}"] .bs-mon`));
+            // the move itself carries the camera on from the user (moveFx.js: on the user, on both, on the target)
             push(k, event.spread ? 1.05 : 1.12, 420);
-            if (aim && !event.spread && stage) {
-              const shot = shotId, [ax, ay] = fx.spot(stage, k), [bx, by] = fx.spot(stage, aim);
-              const far = Math.min(1, Math.hypot(bx - ax, by - ay) / (stage.clientWidth * .6));
-              fx.wait(320).then(() => { if (shot === shotId) cam.pan(stage, fx.spot(stage, aim), 420 + 260 * far); });
-            }
             await fx.move(stage, { ...event, priority: data.priority || 0 }, keyOf, aheadOf(fresh.slice(i + 1)));
             break;
           }
@@ -273,9 +266,8 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           case "fall": {
             // the stadium's lamps dim a step while it sinks, and come back as it goes out
            
-            stage?.classList.add("bs-dim");
+            fx.darken(stage, .7, 900);
             await fx.faint(stage, k);
-            stage?.classList.remove("bs-dim");
             standing.delete(k); show(); toWide(); break;
           }
           case "enter": {
@@ -421,12 +413,10 @@ function SideField({ side, scene, own, doubles, res, targeting }) {
         const alive = mon && (!mon.fainted || mon.standing);
         return (
           <div key={slot} className="bs-slot" data-mon={key} data-pos={`${own ? "own" : "foe"}${doubles ? `-d${slot}` : ""}`}>
-            {alive && <div className="bs-mon" key={mon.name}>
-              {mon.volatiles.includes("substitute") ? <i className="bs-sub" aria-hidden="true" /> : <>
-                <i className="bs-shadow" aria-hidden="true" />
-                <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} />
-                <img className="bs-mirror" src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} />
-              </>}
+            {/* the picture is drawn by the GPU stage (gl.js), which reads what stands here; the element keeps the place and the doll */}
+            {alive && <div className="bs-mon" key={mon.name} data-name={mon.name}>
+              {mon.volatiles.includes("substitute") ? <i className="bs-sub" aria-hidden="true" />
+                : <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} />}
             </div>}
             {pick && <button type="button" className="bt-pick" onClick={pick.onPick}
               aria-label={`${alive ? `${own ? "" : "상대 "}${nameOf(res, mon.species)}` : "빈 자리"} 대상으로 고르기${pick.mark != null ? `, ${effLabel(pick.mark)}` : ""}`}>
@@ -467,8 +457,6 @@ export function Say({ said, ask }) {
   return <div className="bt-say" aria-live="polite">{shown.map((line, i) => <p key={`${line}-${i}-${shown.length}`}>{line}</p>)}</div>;
 }
 
-const WEATHER_KIND = { raindance: "rain", primordialsea: "rain", sunnyday: "sun", desolateland: "sun", sandstorm: "sand", snowscape: "snow", snow: "snow", hail: "hail", deltastream: "wind" };
-const ROOMS = ["trickroom", "magicroom", "wonderroom"];
 
 /* the clock on the stage (DESIGN.md "Battle", The clock): the seconds of a decision in segment cells, as the board announces a
    number, and a bar under them emptying as the 90 run out; amber under 30, red for the last 10. mine: the decision owed is ours */
@@ -487,7 +475,13 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
   const fields = scene?.fields || [];
-  const terrain = fields.find(f => /terrain$/.test(f)) || "";
+  // the GPU stage reads who stands where after every change, and draws the field as the scene leaves it
+  useLayoutEffect(() => {
+    const st = stageRef.current;
+    if (!st) return;
+    fx.sync(st);
+    fx.field(st, { weather: scene?.weather || "", fields, foe: { conditions: scene?.[foe]?.conditions || [], layers: scene?.[foe]?.layers || {} }, own: { conditions: scene?.[perspective]?.conditions || [], layers: scene?.[perspective]?.layers || {} } });
+  });
   const chips = [
     scene?.weather && [res.text.default[scene.weather]?.weatherName || scene.weather, turnsLeft(scene.weather, scene.weatherSince, scene.turn)],
     ...fields.map(f => [effectWord(res, f), turnsLeft(f, scene.fieldSince[f], scene.turn)]),
@@ -496,29 +490,11 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
     <div className="bt-arena">
       <Strip side={foe} scene={scene} name={names[foe]} res={res} />
       <div className="bs-stage hud" ref={stageRef}>
-        {/* back to front: the court, the terrain on it, what lies on each side's floor and blows behind it, the Pokémon,
-            the screens over each side, the weather, and a room or gravity over everything */}
-        {/* the camera: the scene and its effects move together (stageCamera.js); the vignette and the field's tags stay put */}
-        <div className="bs-cam">
+        {/* the arena, the Pokémon, every effect, the field and the camera are one GPU picture (gl.js) under these places */}
         <div className="bs-world">
-          <Stadium />
-          <Court />
-          <Fading kind="bs-terrain" value={terrain} />
-          {[foe, perspective].map(side => <React.Fragment key={side}>
-            <Hazards cond={scene?.[side]?.conditions || []} layers={scene?.[side]?.layers || {}} own={side === perspective} />
-            <Wind on={(scene?.[side]?.conditions || []).includes("tailwind")} own={side === perspective} />
-          </React.Fragment>)}
           <SideField side={foe} scene={scene} own={false} doubles={doubles} res={res} targeting={targeting} />
           <SideField side={perspective} scene={scene} own doubles={doubles} res={res} targeting={targeting} />
-          <Screens cond={scene?.[foe]?.conditions || []} own={false} />
-          <Screens cond={scene?.[perspective]?.conditions || []} own />
-          <Fading kind="bs-weather" value={WEATHER_KIND[scene?.weather] || ""} />
-          {ROOMS.map(r => <Fading key={r} kind="bs-room" value={fields.includes(r) ? r : ""}>{() => <RoomBox />}</Fading>)}
-          <Fading kind="bs-gravity" value={fields.includes("gravity") ? "on" : ""} />
         </div>
-        <div className="bs-fx" aria-hidden="true" />
-        </div>
-        <i className="bs-vignette" aria-hidden="true" />
         {/* the turn, the winner, an ability's plate and the opening stand here, outside the camera, so they keep the middle */}
         <div className="bs-over" aria-hidden="true" />
         {/* the HUD over the stage: the foe's plates together in the top corner, side by side in the order the two stand (as Showdown
@@ -546,18 +522,15 @@ export function LobbyStage({ leads, doubles, label, awaiting = false }) {
   const ref = useRef(null);
   const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) } };
   // before paint, so a new lead never shows for a frame before it comes out of the light
-  useLayoutEffect(() => { leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot), { ball: false })); }, [leads.join("|"), doubles]);
+  useLayoutEffect(() => { fx.sync(ref.current); leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot), { ball: false })); }, [leads.join("|"), doubles]);
   return (
     <div className="bs-stage" ref={ref} role="img" aria-label={label}>
       <div className="bs-world">
-        <Stadium />
-        <Court />
         {awaiting && <div className="bs-side foe" aria-hidden="true">
           {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`foe${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
         </div>}
         <SideField side="p1" scene={scene} own doubles={doubles} />
       </div>
-      <div className="bs-fx" aria-hidden="true" />
     </div>
   );
 }

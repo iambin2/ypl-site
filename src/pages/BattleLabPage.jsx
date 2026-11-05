@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/common/Button.jsx";
 import Dropdown from "../components/common/Dropdown.jsx";
 import Field from "../components/common/Field.jsx";
@@ -12,6 +12,10 @@ import { formatId, startBattle, choose, forfeit, readout, randomTeam } from "../
 import { LAB_TEAMS } from "./battleLabTeams.js";
 import { Dex } from "@pkmn/sim";
 import { recipeOf } from "./battle/moveFx.js";
+import { spriteUrl, onSpriteError } from "../services/teamBuilderCore.js";
+import * as fx from "./battle/stageFx.js";
+import { hitStop } from "./battle/stageCamera.js";
+import { glOf } from "./battle/gl.js";
 
 /* 배틀 실험실 (?view=lab, 개발 서버에서만). 쇼다운 엔진을 이 브라우저에서 돌려 두 자리를 모두 직접 조작하고,
    배틀 화면(BattlePage의 Arena)을 그대로 띄운다. 서버도 DB도 쓰지 않는다.
@@ -19,7 +23,7 @@ import { recipeOf } from "./battle/moveFx.js";
 const NAMES = { p1: "가람", p2: "나래" };
 const SEATS = [["p1", `${NAMES.p1} 자리`], ["p2", `${NAMES.p2} 자리`], ["spectator", "관전"]];
 const FORMATS = [["doubles", "더블"], ["singles", "싱글"]];
-const SCREENS = ["배틀", "대기 (친선)", "대기 (공식)"];
+const SCREENS = ["기술", "배틀", "대기 (친선)", "대기 (공식)"];
 const KINDS = ["친선", "공식 (반영)", "공식 (넣는 중)", "공식 (오류)"];
 const CHASE = { Normal: "Hyper Voice", Fire: "Flamethrower", Water: "Hydro Pump", Electric: "Thunderbolt", Grass: "Energy Ball", Ice: "Ice Beam", Fighting: "Aura Sphere", Poison: "Sludge Bomb", Ground: "Earth Power", Flying: "Air Slash", Psychic: "Psychic", Bug: "Bug Buzz", Rock: "Power Gem", Ghost: "Shadow Ball", Dragon: "Draco Meteor", Dark: "Dark Pulse", Steel: "Flash Cannon", Fairy: "Moonblast" };
 const HITS = [["없음", 0], ["25%", .25], ["50%", .5], ["전부", 1]];
@@ -155,6 +159,7 @@ function Lab({ res, say, go }) {
       <Question id="lab-screen" label="화면" group>
         <Choice name="lab-screen" options={SCREENS} value={screen} onChange={setScreen} />
       </Question>
+      {screen === "기술" ? <MoveBench res={res} /> : <>
       {screen !== "배틀"
         ? <Waiting row={{ ...waitingRow, p1_name: "실험실", created_at: new Date(Date.now() - 42000).toISOString() }} res={res} team={{ id: "lab", name: "견본 A", regulationId: "m-c", members: LAB_TEAMS["견본 A"].map(s => ({ pokemonName: s.species, pokemonId: s.species.toLowerCase().replace(/[^a-z0-9]/g, "") })) }} onShare={() => say?.("실험실: 링크 공유")} onCancel={() => say?.("실험실: 대기 취소")} />
         : row
@@ -182,6 +187,7 @@ function Lab({ res, say, go }) {
       </Question>
 
       {L && seen && <Bench res={res} seen={seen} doubles={/vgc/.test(L.formatid)} inject={inject} turn={out?.turn || 0} />}
+      </>}
     </div>
   );
 }
@@ -317,5 +323,169 @@ function Bench({ res, seen, doubles, inject, turn }) {
       <textarea rows={4} value={free} onChange={e => setFree(e.target.value)} placeholder={`|move|${ident(from)}|Thunderbolt|${ident(to)}\n|-damage|${ident(to)}|50/100`} />
     </Field>
     <Button variant="second" onClick={() => inject(free.split("\n").map(l => l.trim()))} disabled={!free.trim()}>넣기</Button>
+  </>;
+}
+
+/* ---------- 기술 실험: the battle stage alone, with the Pokémon, the move, the outcome and the clock in the player's hands ---------- */
+// no engine and no log: a move is played straight on the stage (stageFx.move), as the tape would play it, and played again at will
+const BENCH_SLOTS = { doubles: [["p2a", "foe-d0"], ["p2b", "foe-d1"], ["p1a", "own-d0"], ["p1b", "own-d1"]], singles: [["p2a", "foe"], ["p1a", "own"]] };
+const SLOT_NAMES = { p1a: "우리 왼쪽", p1b: "우리 오른쪽", p2a: "상대 왼쪽", p2b: "상대 오른쪽" };
+const OUTCOMES = ["명중", "급소", "효과가 굉장함", "효과가 별로", "빗나감", "방어"];
+const RATES = [["보통", 1], ["1/2", .5], ["1/4", .25], ["1/10", .1]];
+const BENCH_WEATHER = [["", "없음"], ["raindance", "비"], ["sunnyday", "쾌청"], ["sandstorm", "모래바람"], ["snowscape", "설경"], ["hail", "싸라기눈"], ["deltastream", "난기류"]];
+const BENCH_FIELDS = [["electricterrain", "일렉트릭필드"], ["grassyterrain", "그래스필드"], ["mistyterrain", "미스트필드"], ["psychicterrain", "사이코필드"], ["trickroom", "트릭룸"], ["magicroom", "매직룸"], ["wonderroom", "원더룸"], ["gravity", "중력"]];
+const BENCH_SIDE = [["stealthrock", "스텔스록"], ["spikes", "압정뿌리기"], ["toxicspikes", "독압정"], ["stickyweb", "끈적끈적네트"], ["reflect", "리플렉터"], ["lightscreen", "빛의장막"], ["auroraveil", "오로라베일"], ["safeguard", "신비의부적"], ["mist", "흰안개"], ["tailwind", "순풍"]];
+const SELF_TARGETS = ["self", "allySide", "allies", "allyTeam", "adjacentAllyOrSelf"];
+const BENCH_START = { p1a: "charizard", p1b: "garchomp", p2a: "tyranitar", p2b: "gengar" };
+const FOLLOW = "카메라가 기술을 따라감";
+
+function MoveBench({ res }) {
+  const ref = useRef(null);
+  const ko = id => res.text.pokedex[id] || res.detail.pokedex[id]?.name || id;
+  const roster = useMemo(() => Object.keys(res.detail.learnsets).filter(id => res.detail.pokedex[id]).map(id => ({ value: id, label: ko(id) })).sort((a, b) => a.label.localeCompare(b.label, "ko")), [res]);
+  const moveName = id => res.text.moves[id]?.name || res.detail.moves[id]?.name || id;
+  const moves = useMemo(() => [...new Set(Object.values(res.detail.learnsets).flat())].filter(id => res.detail.moves[id]).sort((a, b) => moveName(a).localeCompare(moveName(b), "ko")), [res]);
+  const [format, setFormat] = useState("doubles");
+  const [mons, setMons] = useState(() => Object.fromEntries(Object.entries(BENCH_START).map(([k, id]) => [k, res.detail.pokedex[id] ? id : roster[0]?.value])));
+  const [query, setQuery] = useState("");
+  const [move, setMove] = useState("flamethrower");
+  const [from, setFrom] = useState("p1a");
+  const [to, setTo] = useState(["p2a"]);
+  const [outcome, setOutcome] = useState(OUTCOMES[0]);
+  const [rate, setRate] = useState(RATES[0][0]);
+  const [paused, setPaused] = useState(false);
+  const [follow, setFollow] = useState(false);
+  const [weather, setWeather] = useState("");
+  const [fields, setFields] = useState([]);
+  const [sides, setSides] = useState({ foe: [], own: [] });
+  // how many times each was set: spikes stack to 3, toxic spikes to 2, and the field lays down more of them each time
+  const [spikeLayers, setSpikeLayers] = useState("1");
+  const [toxicLayers, setToxicLayers] = useState("1");
+  const [running, setRunning] = useState(false);
+  const run = useRef(false);
+  useEffect(() => () => { run.current = false; }, []);
+
+  const slots = BENCH_SLOTS[format].map(([k]) => k);
+  const side = k => k.slice(0, 2);
+  const keyLabel = k => `${format === "singles" ? (side(k) === "p1" ? "우리" : "상대") : SLOT_NAMES[k]} ${ko(mons[k])}`;
+  const shown = useMemo(() => { const q = query.trim().toLowerCase(); return q ? moves.filter(id => moveName(id).toLowerCase().includes(q) || id.includes(q.replace(/[^a-z0-9]/g, "") || "\u0000")) : moves; }, [query, moves]);
+  const data = res.detail.moves[move] || {};
+  const target = Dex.moves.get(move).target;
+  const engine = () => glOf(ref.current);
+
+  // who stands where: a Pokémon that changes is sent in again (without a ball)
+  const placed = useRef({});
+  useLayoutEffect(() => {
+    const st = ref.current;
+    if (!st) return;
+    fx.sync(st);
+    for (const k of slots) if (placed.current[k] !== mons[k]) fx.enter(st, k, { ball: false });
+    placed.current = Object.fromEntries(slots.map(k => [k, mons[k]]));
+  }, [format, ...slots.map(k => mons[k])]);
+  useEffect(() => {
+    if (!slots.includes(from)) setFrom(slots.find(k => side(k) === "p1"));
+    setTo(list => { const kept = list.filter(k => slots.includes(k)); return kept.length ? kept : [slots.find(k => side(k) === "p2")]; });
+  }, [format]);
+  useEffect(() => {
+    const st = ref.current;
+    if (!st) return;
+    const layers = { spikes: Number(spikeLayers), toxicspikes: Number(toxicLayers) };
+    fx.field(st, { weather, fields, foe: { conditions: sides.foe, layers }, own: { conditions: sides.own, layers } });
+  }, [weather, fields.join(), sides.foe.join(), sides.own.join(), format, spikeLayers, toxicLayers]);
+  useEffect(() => { const e = engine(); if (!e) return; e.scale = RATES.find(([l]) => l === rate)[1]; e.paused = paused; e.camFixed = !follow; if (!follow) e.wide(.3); });
+
+  // the move played as the tape plays it: the camera on the user, the move, and each target's reaction at its impact
+  const play = async (id = move) => {
+    const st = ref.current, e = engine();
+    if (!st || !e) return;
+    const m = res.detail.moves[id], tgt = Dex.moves.get(id).target;
+    const foes = slots.filter(k => side(k) !== side(from));
+    const targets = SELF_TARGETS.includes(tgt) ? [from]
+      : format === "doubles" && tgt === "allAdjacentFoes" ? foes
+      : format === "doubles" && tgt === "allAdjacent" ? slots.filter(k => k !== from)
+      : to.filter(k => slots.includes(k));
+    const ahead = { power: {}, missed: new Set(), blocked: new Set() };
+    for (const k of targets) {
+      if (outcome === "급소" || outcome === "효과가 굉장함") ahead.power[k] = 1.3;
+      if (outcome === "효과가 별로") ahead.power[k] = .7;
+      if (outcome === "빗나감") ahead.missed.add(k);
+      if (outcome === "방어" && k !== from) { ahead.blocked.add(k); fx.shield(st, k); }
+    }
+    if (follow) e.shot(...fx.spot(st, from), 1.12, { smooth: .21 });
+    await fx.move(st, { ident: from, targets, type: m.type, category: m.category, move: id, priority: m.priority || 0, verb: SELF_TARGETS.includes(tgt) ? "self" : "strike", spread: targets.length > 1 }, k => k, ahead);
+    if (m.category !== "Status" && outcome !== "빗나감" && outcome !== "방어") {
+      await hitStop(st, outcome === "급소" || outcome === "효과가 굉장함" ? 90 : 60);
+      await Promise.all(targets.filter(k => k !== from).map(k => fx.hit(st, k, { share: .3, crit: outcome === "급소", strong: outcome === "효과가 굉장함", weak: outcome === "효과가 별로" })));
+    }
+    await e.after(450);
+    if (follow) e.wide(.34);
+  };
+  const step = n => { const i = Math.max(0, Math.min(moves.length - 1, moves.indexOf(move) + n)); setMove(moves[i]); play(moves[i]); };
+  const playAll = async () => {
+    run.current = true; setRunning(true);
+    for (let i = Math.max(0, moves.indexOf(move)); i < moves.length && run.current; i++) { setMove(moves[i]); await play(moves[i]); await engine()?.after(500); }
+    run.current = false; setRunning(false);
+  };
+  const frame = n => { const e = engine(); if (!e) return; e.paused = true; setPaused(true); e.stepMs = n * 1000 / 60; };
+  const each = fn => () => to.filter(k => slots.includes(k)).forEach(k => fn(ref.current, k));
+  const toggle = (list, id) => (list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
+
+  return <>
+    <div className="bt-arena">
+      <div className="bs-stage" ref={ref}>
+        <div className="bs-world">
+          {["foe", "own"].map(s => <div key={s} className={`bs-side ${s}`}>
+            {BENCH_SLOTS[format].filter(([, pos]) => pos.startsWith(s)).map(([k, pos]) => <div key={k} className="bs-slot" data-mon={k} data-pos={pos}>
+              <div className="bs-mon" key={mons[k]} data-name={mons[k]}><img src={spriteUrl(res.detail.pokedex[mons[k]]?.name || mons[k])} alt="" draggable="false" decoding="async" onError={onSpriteError()} /></div>
+            </div>)}
+          </div>)}
+        </div>
+        <div className="bs-over" aria-hidden="true" />
+      </div>
+    </div>
+
+    <SectionHead title="재생" />
+    <Keys keys={[["이전 기술", () => step(-1), running], [`재생: ${moveName(move)}`, () => play(), running], ["다음 기술", () => step(1), running], [running ? "연속 재생 멈춤" : "여기부터 연속 재생", () => { if (running) run.current = false; else playAll(); }]]} />
+    <Keys keys={[[paused ? "계속" : "일시 정지", () => setPaused(p => !p)], ["한 프레임 앞으로", () => frame(1)], ["다섯 프레임 앞으로", () => frame(5)]]} />
+    <Question id="bench-rate" label="재생 속도" group><Choice name="bench-rate" options={RATES.map(([l]) => l)} value={rate} onChange={setRate} /></Question>
+    <Choice name="bench-follow" options={[FOLLOW]} value={follow ? [FOLLOW] : []} onChange={list => setFollow(list.length > 0)} multiple />
+
+    <SectionHead title={`기술 (${shown.length} / ${moves.length})`} />
+    <Field label="기술 찾기" hint="한글 이름이나 영문 이름의 일부"><input id="bench-query" className="in" value={query} onChange={e => setQuery(e.target.value)} placeholder="화염, 10만, surf" /></Field>
+    <Question id="bench-move" label={`기술 (${res.text.types[data.type] || data.type || ""}, ${data.category === "Physical" ? "물리" : data.category === "Special" ? "특수" : "변화"}, 연출 각본 ${recipeOf(move) || "없음"}, 대상 ${target})`}>
+      <Dropdown id="bench-move" value={shown.includes(move) ? move : ""} placeholder="기술 고르기" options={shown.map(id => ({ value: id, label: `${moveName(id)} (${recipeOf(id) || "기본"})` }))} onChange={id => { setMove(id); play(id); }} ariaLabel="기술" />
+    </Question>
+    <Question id="bench-from" label="쓰는 쪽" group><Choice name="bench-from" options={slots.map(keyLabel)} value={keyLabel(from)} onChange={l => setFrom(slots.find(k => keyLabel(k) === l))} /></Question>
+    <Question id="bench-to" label="받는 쪽 (범위 기술과 자신에게 쓰는 기술은 기술이 정합니다)" group><Choice name="bench-to" options={slots.map(keyLabel)} value={to.filter(k => slots.includes(k)).map(keyLabel)} onChange={list => setTo(slots.filter(k => list.includes(keyLabel(k))))} multiple /></Question>
+    <Question id="bench-outcome" label="결과" group><Choice name="bench-outcome" options={OUTCOMES} value={outcome} onChange={setOutcome} /></Question>
+
+    <SectionHead title="포켓몬" />
+    <Question id="bench-format" label="형식" group><Choice name="bench-format" options={["더블", "싱글"]} value={format === "doubles" ? "더블" : "싱글"} onChange={l => setFormat(l === "더블" ? "doubles" : "singles")} /></Question>
+    {slots.map(k => <Question key={k} id={`bench-mon-${k}`} label={format === "singles" ? (side(k) === "p1" ? "우리" : "상대") : SLOT_NAMES[k]}>
+      <Dropdown id={`bench-mon-${k}`} value={mons[k]} options={roster} onChange={id => setMons(m => ({ ...m, [k]: id }))} ariaLabel={SLOT_NAMES[k]} />
+    </Question>)}
+
+    <SectionHead title="받는 쪽에게 바로" />
+    <Keys keys={[
+      ["맞음", each((st, k) => fx.hit(st, k, { share: .3 }))], ["급소", each((st, k) => fx.hit(st, k, { share: .4, crit: true }))],
+      ["회복", each(fx.heal)], ["혼란", each(fx.sway)], ["방어", each((st, k) => fx.shield(st, k))],
+      ["능력 +2", each((st, k) => fx.boost(st, k, 2))], ["능력 -2", each((st, k) => fx.boost(st, k, -2))],
+      ...STATUSES.map(s => [STATUS_NAMES[s], each((st, k) => fx.status(st, k, s))]),
+      ["쓰러짐과 다시 등장", each(async (st, k) => { await fx.faint(st, k); await fx.wait(300); await fx.enter(st, k); })],
+      ["돌아가고 다시 등장", each(async (st, k) => { await fx.leave(st, k); await fx.enter(st, k); })],
+      ["메가진화 빛", each(async (st, k) => { await fx.megaStart(st, k); await fx.megaEnd(st, k); })],
+      ["변신", each(fx.morph)],
+    ]} />
+    <Keys keys={[["승리", () => fx.victory(ref.current)], ["턴 표시", () => fx.banner(ref.current, "3턴")], ["무대 흔들기", () => fx.shake(ref.current, 2)], ["트릭룸 비틀기", () => fx.twist(ref.current)]]} />
+
+    <SectionHead title="날씨와 필드" />
+    <Question id="bench-weather" label="날씨" group><Choice name="bench-weather" options={BENCH_WEATHER.map(([, l]) => l)} value={BENCH_WEATHER.find(([id]) => id === weather)[1]} onChange={l => setWeather(BENCH_WEATHER.find(([, x]) => x === l)[0])} /></Question>
+    <Question id="bench-field" label="필드와 룸" group><Toggles options={BENCH_FIELDS} on={fields} onToggle={id => setFields(f => toggle(f, id))} /></Question>
+    {["foe", "own"].map(s => <Question key={s} id={`bench-side-${s}`} label={s === "foe" ? "상대 쪽" : "우리 쪽"} group>
+      <Toggles options={BENCH_SIDE} on={sides[s]} onToggle={id => setSides(v => ({ ...v, [s]: toggle(v[s], id) }))} />
+    </Question>)}
+    <Question id="bench-spikes" label="압정뿌리기를 쓴 횟수" group><Choice name="bench-spikes" options={["1", "2", "3"]} value={spikeLayers} onChange={setSpikeLayers} /></Question>
+    <Question id="bench-toxic" label="독압정을 쓴 횟수" group><Choice name="bench-toxic" options={["1", "2"]} value={toxicLayers} onChange={setToxicLayers} /></Question>
+    <p className="t12 dim">다크와 라이트는 위쪽 막대의 테마 단추로 바꿉니다. 무대가 바로 다시 그려집니다.</p>
   </>;
 }
