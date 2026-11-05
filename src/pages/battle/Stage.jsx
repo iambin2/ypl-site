@@ -1,13 +1,12 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Modal from "../../components/common/Modal.jsx";
-import { spriteUrl } from "../../services/teamBuilderCore.js";
+import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { defensiveMatchups, statRange } from "../../services/calculatorCore.js";
 import { Generations } from "@smogon/calc";
 import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
-import * as snd from "./stageSound.js";
 import { Court, Fading, Hazards, RoomBox, Screens, Wind } from "./Field.jsx";
 import Stadium from "./Stadium.jsx";
 import Seg from "../../components/common/Seg.jsx";
@@ -26,13 +25,14 @@ const slotKey = (side, slot) => `${side}${"ab"[slot]}`;
 const monSnap = (mon, standing = false) => mon && {
   name: mon.name, species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted, standing,
   boosts: { ...mon.boosts }, volatiles: [...(mon.volatiles || [])], gender: mon.gender, level: mon.level,
-  item: mon.item, ability: mon.ability, moves: [...(mon.moves || [])],
+  item: mon.item, ability: mon.ability, moves: [...(mon.moves || [])], ppUsed: { ...(mon.ppUsed || {}) },
 };
 function roster(side) {
   // the team in its preview order; those not yet seen stand as they were shown
   const seen = Object.values(side.team);
   const list = side.preview.length ? side.preview.map(species => seen.find(m => m.name === species || toID(m.species).startsWith(toID(species))) || { species, hp: 1, maxhp: 1 }) : seen;
-  return list.map(m => ({ species: m.species, fainted: Boolean(m.fainted), status: m.status && m.status !== "fnt" ? m.status : "", out: side.active.includes(m), seen: Boolean(m.name) }));
+  return list.map(m => ({ species: m.species, name: m.name || "", fainted: Boolean(m.fainted), status: m.status && m.status !== "fnt" ? m.status : "", out: side.active.includes(m), seen: Boolean(m.name),
+    hp: m.hp, maxhp: m.maxhp, item: m.item || "", ability: m.ability || "", moves: [...(m.moves || [])], ppUsed: { ...(m.ppUsed || {}) } }));
 }
 export function sceneOf(state, standing = null) {
   const side = id => {
@@ -203,12 +203,11 @@ export function useStageTape(log, res, perspective, epoch = 0) {
         else if (raw === "-activate" && /Substitute/.test(part(line, 3))) fx.hit(stage, rk, { share: .2 });
         else if (raw === "-prepare") { const m = res.detail.moves[toID(part(line, 3))]; await fx.gather(stage, rk, m?.type || "Normal"); }
         else if (raw === "-transform") await fx.morph(stage, rk);
-        else if (raw === "-hitcount") { await busy[rk]; fx.label(stage, rk, `${part(line, 3)}회`, ""); } // after the last hit has landed
+        else if (raw === "-hitcount") await busy[rk]; // the count is said in the message window once the last hit has landed
         switch (event?.verb) {
           case "strike": case "chase": case "self": {
             blow = { ...freshBlow(), from: k, type: event.type, on: true };
             const data = res.detail.moves[event.move] || {};
-            if (event.category && event.category !== "Status") snd.launch(event.category === "Special");
             /* the camera frames the user as it gathers and pans to its target as the move travels, holding there through the blow;
                a spread move stays wide and leans in a little on its user */
             const aim = (event.targets || []).map(keyOf).find(t => t !== k && stage?.querySelector(`[data-mon="${t}"] .bs-mon`));
@@ -221,12 +220,11 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             await fx.move(stage, { ...event, priority: data.priority || 0 }, keyOf, aheadOf(fresh.slice(i + 1)));
             break;
           }
-          case "crit": blow.crit.add(k); push(k, 1.25, 200); snd.crit(); fx.label(stage, k, "급소", "hard"); break;
-          case "super": blow.strong.add(k); snd.strong(); fx.label(stage, k, "효과가 굉장하다", "hard"); break;
-          case "resist": blow.weak.add(k); snd.weak(); fx.label(stage, k, "효과가 별로", "soft"); break;
-          case "immune": fx.label(stage, k, "효과 없음", "soft"); break;
-          case "miss": fx.label(stage, k, "빗나감", "soft"); break;
-          case "fail": fx.label(stage, k, "실패", "soft"); break;
+          /* as in 포켓몬 챔피언스, nothing is written over a Pokémon: the message window says the critical hit, the matchup, a miss;
+             the stage shows them by the camera, the weight of the blow and the sound */
+          case "crit": blow.crit.add(k); push(k, 1.25, 200); break;
+          case "super": blow.strong.add(k); break;
+          case "resist": blow.weak.add(k); break;
           case "take": case "hp": {
             const was = before[k];
             if (event.hp === 0 && !event.heal) standing.add(k);
@@ -241,7 +239,6 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             if (direct) blow.hit.add(k);
             const strike = { share: 0, crit: blow.crit.has(k), strong: blow.strong.has(k), weak: blow.weak.has(k), direct };
             const source = ofKey(line);
-            let rises = null; // the number rising over it, which the beat waits for but the next hit does not
             const knockout = direct && event.hp === 0;
             const run = (async () => {
               await busy[k];
@@ -256,16 +253,11 @@ export function useStageTape(log, res, perspective, epoch = 0) {
               flushSync(() => setScene(view));
               if (!was || !event.maxhp) return;
               const lost = was.hp - event.hp;
-              const exact = own(k) && event.maxhp !== 100;
-              const amount = exact ? Math.abs(lost) : Math.round(Math.abs(lost) / event.maxhp * 100);
-              if (!amount) return;
-              const words = `${lost > 0 ? "-" : "+"}${amount}${exact ? "" : "%"}`;
-              if (lost > 0 && direct) snd.hit((.6 + Math.min(1, lost / event.maxhp) * .9) * (strike.crit ? 1.15 : 1));
+              if (!lost) return;
               // HP that flows: a draining move heals from its target (the gain fills once the motes arrive), Leech Seed feeds its seeder
               if (lost < 0 && event.from === "drain" && source) await fx.flow(stage, source, k);
               if (lost > 0 && event.from === "leechseed" && source) fx.flow(stage, k, source);
               const drain = fx.drain(stage, k, was.hp / was.maxhp, event.hp / event.maxhp, { quick: several });
-              rises = fx.number(stage, k, words, lost < 0, several ? nth : null);
               if (lost < 0) await Promise.all([drain, fx.heal(stage, k)]);
               else {
                 const shook = fx.hit(stage, k, { ...strike, share: several ? .1 : lost / event.maxhp });
@@ -273,21 +265,21 @@ export function useStageTape(log, res, perspective, epoch = 0) {
               }
             })();
             busy[k] = run;
-            const whole = run.then(() => rises);
+            const whole = run;
             if (chain) landing.push(whole); else await Promise.all([...landing, whole]);
             if (!chain) landing = [];
             break;
           }
           case "fall": {
             // the stadium's lamps dim a step while it sinks, and come back as it goes out
-            snd.faint();
+           
             stage?.classList.add("bs-dim");
             await fx.faint(stage, k);
             stage?.classList.remove("bs-dim");
             standing.delete(k); show(); toWide(); break;
           }
           case "enter": {
-            if (event.leaving) { snd.leave(); await fx.leave(stage, k, { drag: event.drag }); }
+            if (event.leaving) { await fx.leave(stage, k, { drag: event.drag }); }
             standing.delete(k);
             show();
             // the stage mounts with the first lead, so it is read again here
@@ -298,10 +290,9 @@ export function useStageTape(log, res, perspective, epoch = 0) {
               // the plates come in once the leads stand (the first turn, or the end of this run)
               st.classList.add("bs-intro");
               st.querySelectorAll(".bs-mon").forEach(el => { el.style.opacity = "0"; });
-              snd.launch(true);
               await fx.opening(st, R.state.players[perspective] || "", R.state.players[other(perspective)] || "");
             }
-            snd.enter();
+           
             // a Pokémon sent in mid-battle is framed on its side; the leads come out wide
             if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
             if (chain) { fx.enter(st, k); await fx.wait(260); } else await fx.enter(st, k);
@@ -310,13 +301,13 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           case "change": {
             const next = R.state.sides[k.slice(0, 2)].active[k.charCodeAt(2) - 97];
             const ready = next ? decoded(spriteUrl(next.species)) : null;
-            if (fresh[i + 1]?.startsWith("|-mega|")) { snd.megaStart(); await Promise.all([fx.megaStart(stage, k), ready]); }
+            if (fresh[i + 1]?.startsWith("|-mega|")) { await Promise.all([fx.megaStart(stage, k), ready]); }
             else await ready;
             show();
             if (!fresh[i + 1]?.startsWith("|-mega|")) await fx.flashMon(stage, k);
             break;
           }
-          case "mega": show(); snd.megaEnd(); await fx.megaEnd(stage, k); break;
+          case "mega": show(); await fx.megaEnd(stage, k); break;
           case "status": show(); await fx.status(stage, k, event.status); break;
           case "cure": show(); await fx.flashMon(stage, k, .5); break;
           case "boost": show(); if (chain) { fx.boost(stage, k, event.amount); await fx.wait(120); } else await fx.boost(stage, k, event.amount); break;
@@ -337,13 +328,12 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
           case "cant": show(); await fx.cant(stage, k, event.why); break;
-          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); snd.turn(); await fx.banner(stage, `${event.turn}턴`); break;
+          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); await fx.banner(stage, `${event.turn}턴`); break;
           case "end": {
             // the end: the camera frames the winner's last Pokémon standing, the lamps run along their banks, the winner's plate rises
             show(); await toWide();
             const last = event.winner && event.winner !== "tie" ? R.state.sides[event.winner].active.findIndex(m => m && !m.fainted) : -1;
             if (last >= 0) push(slotKey(event.winner, last), 1.14, 680);
-            snd.megaEnd();
             await Promise.all([fx.banner(stage, event.winner === "tie" ? "무승부" : `${R.state.players[event.winner]} 승리`, { tone: "win" }), fx.victory(stage)]);
             break;
           }
@@ -434,8 +424,8 @@ function SideField({ side, scene, own, doubles, res, targeting }) {
             {alive && <div className="bs-mon" key={mon.name}>
               {mon.volatiles.includes("substitute") ? <i className="bs-sub" aria-hidden="true" /> : <>
                 <i className="bs-shadow" aria-hidden="true" />
-                <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" />
-                <img className="bs-mirror" src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" />
+                <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} />
+                <img className="bs-mirror" src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} />
               </>}
             </div>}
             {pick && <button type="button" className="bt-pick" onClick={pick.onPick}
@@ -459,7 +449,7 @@ function Strip({ side, scene, name, res, known, onParty }) {
       <span className="bt-balls" aria-label={`${name}의 파티`}>
         {(s?.roster || []).map((m, i) => <i key={i} className={"bt-ball" + (m.fainted ? " out" : !m.seen && !knows(m.species) ? " hid" : "") + (m.status ? ` st type-${STATUS_TYPE[m.status] || "normal"}` : "") + (m.out ? " on" : "")}
           title={`${nameOf(res, m.species)}${m.fainted ? ", 쓰러짐" : m.out ? ", 나와 있음" : !m.seen ? ", 아직 나오지 않음" : m.status ? `, ${STATUS[m.status]}` : ""}`}>
-          <img src={spriteUrl(m.species)} alt="" draggable="false" decoding="async" /></i>)}
+          <img src={spriteUrl(m.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} /></i>)}
       </span>
       {(s?.conditions || []).length > 0 && <span className="bt-conds">
         {s.conditions.map(c => <span key={c} className="bt-cond">{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
@@ -529,6 +519,8 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
         <div className="bs-fx" aria-hidden="true" />
         </div>
         <i className="bs-vignette" aria-hidden="true" />
+        {/* the turn, the winner, an ability's plate and the opening stand here, outside the camera, so they keep the middle */}
+        <div className="bs-over" aria-hidden="true" />
         {/* the HUD over the stage: the foe's plates in the top corners (the field's tags under the first), ours at the bottom right
             over the message window */}
         <div className={"bt-hud" + (doubles ? " two" : "")}>

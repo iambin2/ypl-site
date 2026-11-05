@@ -9,11 +9,10 @@ import { reduced } from "../../components/common/motion.js";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { shape, lightning, flash as flashLight, shockwave, vfxOf } from "./vfx.js";
 import { rectIn, setCameraSpeed, slow as slowStage } from "./stageCamera.js";
-import { setSoundSpeed } from "./stageSound.js";
 
 let speed = 1;
-// the playback speed runs the effects, the camera and the sound together
-export const setSpeed = s => { speed = s; setCameraSpeed(s); setSoundSpeed(s); };
+// the playback speed runs the effects and the camera together
+export const setSpeed = s => { speed = s; setCameraSpeed(s); };
 // slow motion (the blow that knocks a Pokémon out): what starts on the page meanwhile is drawn at half speed too, and waits stretch
 let slowed = 1;
 export function slowMo(stage, duration = 700) {
@@ -45,6 +44,9 @@ const settle = el => el?.getAnimations?.().forEach(a => { if (!(typeof CSSAnimat
 /* ---------- where things stand on the stage ---------- */
 const stageOf = el => el?.closest(".bs-stage");
 const fxOf = stage => stage?.querySelector(".bs-fx");
+// what stands over the whole picture (a turn, the winner, an ability's plate, the opening names) is outside the camera, so a push
+// or a pan never moves it off the middle or off its edge
+const overOf = stage => stage?.querySelector(".bs-over") || fxOf(stage);
 const slotEl = (stage, key) => stage?.querySelector(`[data-mon="${key}"]`);
 const monEl = (stage, key) => slotEl(stage, key)?.querySelector(".bs-mon");
 // the centre of a Pokémon's picture (or of its slot) in the stage's own pixels, inside the camera (where an effect lands on it
@@ -63,7 +65,7 @@ const ownSide = el => Boolean(el?.closest(".bs-side")?.classList.contains("own")
 
 // a shape on the effect layer; at a point, or where its own class places it (a banner, a plate) when there is none
 function spawn(stage, className, at, style = {}) {
-  const fx = fxOf(stage);
+  const fx = /^bt-(banner|popup)/.test(className) ? overOf(stage) : fxOf(stage);
   if (!fx) return null;
   // every shape of light and matter is drawn on the stage's canvas (vfx.js); only the words over the stage (bt-) are elements
   if (!className.startsWith("bt-")) { const el = shape(stage, className, at || [0, 0]); Object.assign(el.style, style); return el; }
@@ -169,24 +171,6 @@ export function banner(stage, text, { tone = "" } = {}) {
     { opacity: 0, transform: "translate(-50%, -50%)" },
   ], { duration: tone === "win" ? 1600 : 760, easing: "linear" });
 }
-// a word over a Pokémon: 급소, 효과가 굉장하다, 빗나감
-// tone: "hard" lit (급소, 효과가 굉장하다), "soft" dim (효과가 별로, 빗나감)
-// the words of one blow land together, so a second word over the same Pokémon stands one plate above the first
-const words = {};
-export function label(stage, key, text, tone = "") {
-  if (!stage || instant()) return Promise.resolve();
-  const [x, y] = centre(stage, key, .25);
-  const n = words[key] = (words[key] || 0) + 1;
-  const el = spawn(stage, `bt-word ${tone}`, [x, Math.max(12, y - 32 - (n - 1) * 26)]);
-  el.textContent = text;
-  return vanish(el, [
-    { opacity: 0, transform: "translate(-50%, -50%) translateY(12px)" },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: .2, easing: OUT },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: .75 },
-    { opacity: 0, transform: "translate(-50%, -50%) translateY(-12px)" },
-  ], { duration: 900 }).then(() => { words[key] -= 1; });
-}
-
 /* ---------- a bolt of lightning (drawn on the canvas, vfx.js lightning) ---------- */
 function bolt(stage, a, b, type = "Electric", opts = {}) {
   return lightning(stage, a, b, String(type).toLowerCase(), { ...opts, duration: ms(opts.duration || 340), delay: ms(opts.delay || 0) });
@@ -903,22 +887,6 @@ export function shatter(stage, own, id) {
     return toss(stage, `bs-crystal ${typeClass(SCREEN_TYPE[id])}`, [x, y], { w: rand(5, 8) * u, h: rand(12, 20) * u, dx: (t - .5) * 50, dy: -8, g: r.height * .7, spin: rand(-300, 300), face: rand(0, 180), s0: 1.2, s1: .7, duration: 680, delay: (i % 4) * 30, out: false, fadeAt: .6 });
   }));
 }
-// the HP that went or came back rises over the Pokémon; the hits of one multi-hit move (slot 0, 1, 2…) stack at its side, one
-// plate above the other, so they never cover each other or the count over its head
-export function number(stage, key, text, heal = false, slot = null) {
-  if (!stage || instant()) return Promise.resolve();
-  const [x, y] = centre(stage, key, .25);
-  const size = sizeOf(stage, key);
-  const at = slot == null ? [x, y] : [x + size * .46, y + size * .2 - Math.min(slot, 5) * 26];
-  const el = spawn(stage, `bt-num${heal ? " heal" : ""}`, at);
-  el.textContent = text;
-  return vanish(el, [
-    { opacity: 0, transform: "translate(-50%, -50%) translateY(12px)" },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: .2, easing: OUT },
-    { opacity: 1, transform: "translate(-50%, -50%) translateY(-12px)", offset: .75 },
-    { opacity: 0, transform: "translate(-50%, -50%) translateY(-24px)" },
-  ], { duration: 1000 });
-}
 // HP moves: the bar slides from where it stood to where it stands, quick at first and settling, and a pale trail of what was lost
 // lingers behind it a moment, as the games show a blow; the colour changes where the bar crosses a half or a fifth.
 // quick: one hit of several, a short slide so the hits keep their rhythm
@@ -1035,7 +1003,7 @@ export async function throwBall(stage, key) {
 /* the opening: the two trainers' names come in on plates from their own sides with VS between them, while the stadium's lamps
    switch on bank by bank (Stadium.jsx); then the leads are thrown in */
 export async function opening(stage, ours, theirs) {
-  const fx = fxOf(stage);
+  const fx = overOf(stage);
   if (!fx || instant()) return;
   const box = document.createElement("div");
   box.className = "bt-intro";

@@ -76,7 +76,7 @@ export function newBattleState() {
 }
 // since: the turn a side condition began (its turns left are counted from it); layers: Spikes and Toxic Spikes stack
 const newSide = () => ({ active: [null, null], team: {}, conditions: [], preview: [], since: {}, layers: {} });
-const newMon = (side, name, slot) => ({ ident: `${side}: ${name}`, side, name, species: name, hp: 100, maxhp: 100, status: "", fainted: false, boosts: {}, slot, gender: "", level: 100, item: "", ability: "", moves: [], volatiles: [] });
+const newMon = (side, name, slot) => ({ ident: `${side}: ${name}`, side, name, species: name, hp: 100, maxhp: 100, status: "", fainted: false, boosts: {}, slot, gender: "", level: 100, item: "", ability: "", moves: [], ppUsed: {}, volatiles: [] });
 // the moves that guard their user this turn: they show as a shield
 const GUARDS = new Set(["protect", "detect", "spikyshield", "kingsshield", "banefulbunker", "silktrap", "burningbulwark", "obstruct", "maxguard", "wideguard", "quickguard"]);
 
@@ -253,6 +253,9 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const move = moves[toID(args[1])] || {};
         const user = monOf(source);
         if (user && !user.moves.includes(args[1])) user.moves.push(args[1]);
+        // PP spent, as Showdown counts it for a tooltip: a move called by another ([from]: Sleep Talk, a locked-in Outrage) spends none.
+        // ponytail: Pressure's extra PP is not counted; count each Pressure target here if it ever matters
+        if (user && !kw.from) user.ppUsed = { ...user.ppUsed, [toID(args[1])]: (user.ppUsed?.[toID(args[1])] || 0) + 1 };
         say(D("move"), { POKEMON: pokemonWord(source), MOVE: effectName(`move: ${args[1]}`) });
         const spread = typeof kw.spread === "string" ? kw.spread.split(",").map(slot => `${slot}:`) : null;
         const targets = (spread || (args[2] ? [args[2]] : [])).filter(t => parseIdent(t)?.slot >= 0);

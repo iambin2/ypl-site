@@ -282,6 +282,12 @@ export function speciesIdentity(detailData, pokemon) {
   return dex?.num != null ? `dex-${dex.num}` : `species-${speciesFallbackKey(pokemon)}`;
 }
 
+// forms with a picture of their own under public/sprites/pokemon (base-forme.webp) that the battle shows: a form change in battle
+// (Aegislash, Mimikyu, Morpeko, Palafin, Castform) or a form a party brings (Maushold, Polteageist, Sinistcha, Floette)
+const BATTLE_FORM_SLUGS = new Set(["castformsunny", "castformrainy", "castformsnowy", "aegislashblade", "mimikyubusted", "morpekohangry", "palafinhero",
+  "sinistchamasterpiece", "floetteeternal", "polteageistantique", "mausholdfour", "vivillonfancy", "vivillonpokeball"]);
+// species whose other forms differ only in colour, all drawn with the base picture
+const COSMETIC_BASES = new Set(["vivillon", "alcremie"]);
 export function spriteSlug(name = "") {
   if (SPRITE_SLUG_OVERRIDES[name]) return SPRITE_SLUG_OVERRIDES[name];
   if (/-Mega(?:-[A-Z])?$/i.test(name)) {
@@ -290,6 +296,10 @@ export function spriteSlug(name = "") {
   }
   const canonicalFormSlug = SPRITE_SLUG_BY_DATA_ID[toID(name)];
   if (canonicalFormSlug) return canonicalFormSlug;
+  // a form a battle changes into or a party brings, drawn under its own file (base-forme); a cosmetic one draws as its base
+  const [head, ...rest] = name.split("-");
+  if (rest.length && BATTLE_FORM_SLUGS.has(toID(name))) return `${toID(head)}-${toID(rest.join(""))}`;
+  if (rest.length && COSMETIC_BASES.has(toID(head))) return toID(head);
   return name.toLowerCase().replace(/\[.*?\]/g, "").replace(/[.'’]/g, "").replace(/[^a-z0-9]+/g, "").trim();
 }
 

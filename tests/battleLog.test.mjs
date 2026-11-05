@@ -191,3 +191,13 @@ test("stat changes copied, swapped, inverted and stolen follow the engine", () =
   reader.read("|-swapsideconditions");
   assert.deepEqual([reader.state.sides.p1.conditions, reader.state.sides.p2.conditions], [[], ["stealthrock"]]);
 });
+
+test("the reader counts the PP each Pokémon spent: a move it chose spends one, a move another called or locked in spends none", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  ["|switch|p1a: Garchomp|Garchomp, L50, M|100/100", "|switch|p2a: Rotom|Rotom-Wash, L50|100/100",
+    "|move|p1a: Garchomp|Earthquake|p2a: Rotom", "|move|p1a: Garchomp|Earthquake|p2a: Rotom",
+    "|move|p1a: Garchomp|Outrage|p2a: Rotom", "|move|p1a: Garchomp|Outrage|p2a: Rotom|[from]lockedmove"].forEach(line => reader.read(line));
+  const mon = reader.state.sides.p1.active[0];
+  assert.deepEqual(mon.ppUsed, { earthquake: 2, outrage: 1 });
+  assert.deepEqual(mon.moves, ["Earthquake", "Outrage"]);
+});

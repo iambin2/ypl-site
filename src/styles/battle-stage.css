@@ -256,7 +256,9 @@
    --core is the white heart of a light (a bolt's, a beam's, a star's); --smoke is what puffs of smoke and dust are made of */
 .bs-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; contain: strict; --core: #FFFFFF; --smoke: var(--lit); }
 :root[data-theme="light"] .bs-fx { --smoke: var(--dim); }
-.bs-fx > i, .bs-fx > img { position: absolute; display: block; will-change: transform, opacity; }
+.bs-fx > i, .bs-fx > img, .bs-over > i { position: absolute; display: block; will-change: transform, opacity; }
+/* over the camera: the turn, the winner, an ability's plate and the opening, above the HUD */
+.bs-over { position: absolute; inset: 0; z-index: 8; overflow: hidden; pointer-events: none; }
 .bs-fx > svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
 .bs-fx .type-normal { --type: var(--lit); }
 .bs-p { width: 9px; height: 9px; background: var(--type); }
@@ -379,7 +381,7 @@
   background: linear-gradient(180deg, #E62829 0 44%, #1A1F2E 44% 56%, #F4F6FA 56% 100%); box-shadow: inset 0 0 0 1.5px #1A1F2E; }
 .bs-fx > .bs-ball::after { content: ""; position: absolute; left: 50%; top: 50%; width: 34%; height: 34%; translate: -50% -50%; border-radius: 50%; background: #F4F6FA; box-shadow: 0 0 0 2px #1A1F2E; }
 /* the opening's plates: our name from the left, theirs from the right, VS between them */
-.bs-fx > .bt-intro { position: absolute; left: 0; right: 0; top: 34%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 0 4%; pointer-events: none; }
+.bs-over > .bt-intro { position: absolute; left: 0; right: 0; top: 34%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 0 4%; pointer-events: none; }
 .bt-intro-name { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 20px; background: #12295A; color: #FFFFFF; font-size: 20px; line-height: 26px; font-weight: 700; }
 .bt-intro-name:not(.own) { justify-self: start; }
 .bt-intro-vs { padding: 4px 10px; background: #FFFFFF; color: #050D1F; font-size: 26px; line-height: 32px; font-weight: 800; }
