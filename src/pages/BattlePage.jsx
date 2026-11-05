@@ -7,6 +7,7 @@ import Empty from "../components/common/Empty.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
 import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
+import Modal from "../components/common/Modal.jsx";
 import { pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
 import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
@@ -551,6 +552,19 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
   const nameAt = (side, slot) => { const m = scene?.[side]?.active?.[slot]; return m ? `${side === perspective ? "" : "상대 "}${nameOf(res, m.species)}` : "빈 자리"; };
   const typesAt = (side, slot) => { const m = scene?.[side]?.active?.[slot]; return m && !m.fainted ? typesOf(res, m.species) : null; };
   const foes = (scene?.[foe]?.active || []).map((m, slot) => (m && !m.fainted ? { slot, name: nameOf(res, m.species), types: typesOf(res, m.species) } : null));
+  // a player's own party as the engine brought it (moves, item, ability, stats): kept from the last request, so it stays open while the other player chooses
+  const party = useRef(null);
+  if (request?.side?.pokemon) party.current = request.side.pokemon;
+  const [partyOpen, setPartyOpen] = useState(false);
+  const openParty = seat && party.current ? () => setPartyOpen(true) : null;
+  // on a wide screen the match takes the whole window: the page frame lets go of its 1200 for this view only
+  useEffect(() => {
+    const page = document.getElementById("ypl-main");
+    page?.classList.add("page--battle");
+    return () => page?.classList.remove("page--battle");
+  }, []);
+  /* one column on a phone: the head, the stage, the choices, the log. On a wide screen the stage stands on the left as tall as the
+     window allows, and the head, the choices and the log stand in a column beside it, so the stage and the moves are seen together */
   return (
     <div className="bt-page bt-match">
       <div className="pn bt-head">
@@ -560,45 +574,86 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
           {official && <span className="t12 dim">공식 경기</span>}
         </span>
       </div>
-      {shownEnded && <Row className="inv" title={row.winner === "tie" ? "무승부" : `${names[row.winner]} 승리`}
+      {shownEnded && <Row className="inv bt-result" title={row.winner === "tie" ? "무승부" : `${names[row.winner]} 승리`}
         line={[row.ended_by === "forfeit" ? "기권으로 끝났습니다." : row.ended_by === "timeout" ? "시간이 다 되어 끝났습니다." : "배틀이 끝났습니다.", bracketLine].filter(Boolean).join(" ")} />}
-      <div className="bt-room">
-        <div className="bt-main">
-          {started
-            ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
-                targeting={target?.targeting} said={tape.said} ask={boxAsk} known={known.current} />
-            : <TeamPreview tape={tape} res={res} sides={seat ? [foe] : [foe, perspective]} names={names} />}
-          {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
-          {/* only a player still playing has choices; anyone else gets no empty box, so the replay stands under the stage */}
-          {seat && !ended && <div ref={consoleRef}>
-            {choosing && <Choices key={requestKey(view?.turn, request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt}
-              onSend={send} setTarget={setTarget} setAsk={setAsk} toast={error ? <Toast error>{error}</Toast> : null} />}
-          </div>}
-          {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play} />}
-          <div className="bt-play">
-            <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
-            <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
-          </div>
-          {!seat && <Chips label="시점" value={pov} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
+      <div className="bt-main">
+        {started
+          ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
+              targeting={target?.targeting} said={tape.said} ask={boxAsk} known={known.current} onParty={openParty} />
+          : <TeamPreview tape={tape} res={res} sides={seat ? [foe] : [foe, perspective]} names={names} />}
+        {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play} />}
+      </div>
+      <div className="bt-side">
+        {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
+        {/* only a player still playing has choices; anyone else gets no empty box, so the replay stands under the stage */}
+        {seat && !ended && <div ref={consoleRef}>
+          {choosing && <Choices key={requestKey(view?.turn, request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt}
+            onSend={send} setTarget={setTarget} setAsk={setAsk} onParty={openParty} toast={error ? <Toast error>{error}</Toast> : null} />}
+        </div>}
+        <div className="bt-play">
+          <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
+          <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
         </div>
-        <details className="bt-logbox">
+        {!seat && <Chips label="시점" value={pov} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
+        <details className="bt-logbox" open={wideScreen()}>
           <summary className="t12 dim">전체 기록</summary>
           <Log lines={tape.lines} />
         </details>
+        <div className="bt-links">
+          {(!seat || ended) && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
+          {seat && !ended && <Button variant="link" onClick={giveUp}>기권</Button>}
+          {official && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
+          {ended && <Button variant="link" onClick={shareToBoard}>게시판에 공유</Button>}
+          {ended && log && <Button variant="link" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
+          <span className="t12 mute">배틀 엔진: Pokémon Showdown (MIT)</span>
+        </div>
       </div>
-      <div className="bt-links">
-        {(!seat || ended) && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
-        {seat && !ended && <Button variant="link" onClick={giveUp}>기권</Button>}
-        {official && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
-        {ended && <Button variant="link" onClick={shareToBoard}>게시판에 공유</Button>}
-        {ended && log && <Button variant="link" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
-        <span className="t12 mute">배틀 엔진: Pokémon Showdown (MIT)</span>
-      </div>
+      {partyOpen && party.current && <PartySheet pokemon={party.current} res={res} onClose={() => setPartyOpen(false)} />}
       {(waiting || (error && !request)) && <Dock toast={error ? <Toast error>{error}</Toast> : null}>
         {waiting && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">{request?.teamPreview && view?.chosen ? "상대의 선출을 기다리는 중…" : "상대의 선택을 기다리는 중…"}</span></div>}
       </Dock>}
     </div>
   );
+}
+
+// the log stands open beside the stage on a wide screen and folds under it on a phone
+const wideScreen = () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(min-width: 1200px)").matches);
+
+/* 내 파티: each of our Pokémon as the engine brought it, the set a player looks up before and during the battle (a random party's
+   sets are first seen here). Its picture, name, types and HP, then its ability, item, the stats it battles with, and its four moves. */
+const STAT_ROW = [["atk", "공격"], ["def", "방어"], ["spa", "특공"], ["spd", "특방"], ["spe", "스피드"]];
+function PartySheet({ pokemon, res, onClose }) {
+  const nameOfId = (table, id) => (id ? res.text[table]?.[toID(id)]?.name || res.detail[table]?.[toID(id)]?.name || id : "");
+  return <Modal title="내 파티" onClose={onClose}>
+    <div className="stack bt-sets">
+      {pokemon.map((mon, i) => {
+        const species = String(mon.details).split(", ")[0];
+        const { hp, maxhp, status } = parseHP(mon.condition);
+        const fainted = status === "fnt";
+        return <section key={mon.ident + i} className="pn bt-set">
+          <div className="bt-set-head">
+            <img src={spriteUrl(species)} alt="" draggable="false" onError={onSpriteError()} />
+            <span className="bt-set-name">
+              <b className="t15">{nameOf(res, species)}</b>
+              <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span>
+            </span>
+            <span className="t12 bt-set-hp">{fainted ? "쓰러짐" : `${hp}/${maxhp}`}</span>
+          </div>
+          <div className="bt-info">
+            <div className="bt-info-row"><span className="t12 dim">특성</span><span>{nameOfId("abilities", mon.ability || mon.baseAbility) || "없음"}</span></div>
+            <div className="bt-info-row"><span className="t12 dim">도구</span><span>{nameOfId("items", mon.item) || "없음"}</span></div>
+            {mon.stats && <div className="bt-info-row"><span className="t12 dim">능력치</span><span className="bt-info-stats five">{STAT_ROW.map(([k, label]) => <span key={k}><small>{label}</small>{mon.stats[k]}</span>)}</span></div>}
+          </div>
+          <div className="stack bt-set-moves">
+            {(mon.moves || []).map(id => {
+              const type = res.detail.moves[toID(id)]?.type || "Normal";
+              return <span key={id} className={`tb-type type-${toID(type)}`}>{nameOfId("moves", id)}</span>;
+            })}
+          </div>
+        </section>;
+      })}
+    </div>
+  </Modal>;
 }
 
 /* before the battle: the foe's six with their types, as the team preview shows them; one who watches sees both sides */
@@ -616,7 +671,7 @@ const EFF_WORD = { 4: "효과 매우 굉장 ×4", 2: "효과 굉장 ×2", .5: "�
 const effClass = m => "bt-eff" + (m >= 2 ? " hard" : m === 0 ? " none" : "");
 const MEGA = "메가진화";
 
-function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarget, setAsk, toast }) {
+function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarget, setAsk, onParty, toast }) {
   const side = request.side;
   const [picks, setPicks] = useState([]);
   const [mega, setMega] = useState(false);
@@ -648,7 +703,10 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
     const count = Math.min(request.maxChosenTeamSize || side.pokemon.length, side.pokemon.length);
     const toggle = i => setPicks(list => list.includes(i) ? list.filter(x => x !== i) : list.length < count ? [...list, i] : list);
     return <div className="bt-choices">
-      <span className="t12 dim">{`선출 ${picks.length} / ${count}`}</span>
+      <div className="bt-choices-head">
+        <span className="t12 dim">{`선출 ${picks.length} / ${count}`}</span>
+        {onParty && <button type="button" className="bt-key" onClick={onParty}>내 파티</button>}
+      </div>
       <Party pokemon={side.pokemon} res={res} pick={i => ({ chosen: picks.includes(i), order: picks.indexOf(i) + 1, onPick: () => toggle(i) })} />
       <Dock toast={toast}><Button variant="main" icon="check" loading={sending} disabled={picks.length !== count} onClick={() => send(`team ${picks.map(i => i + 1).join(", ")}`)}>선출 확정</Button></Dock>
     </div>;
@@ -722,24 +780,21 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
         // every foe now out, in the order they stand; shown only when one of them is not ×1
         const marks = data.category && data.category !== "Status" ? foes.filter(Boolean).map(f => ({ f, m: effectiveness(type, f.types) })) : [];
         const shown = marks.some(x => x.m !== 1) ? marks : [];
-        // three lines, every move alike: the name and how it lands; its type, category and power; its accuracy and priority, and its PP
+        // two lines, every move alike, as a game's move key: the name and how it lands; its type, category and power, its accuracy and priority, and its PP
         const kind = CATEGORY[data.category] + (data.basePower > 0 ? ` ${data.basePower}` : "");
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
-          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(", ");
+          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(" ");
         return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}`} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
           aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
           <span className="bt-move-top">
-            <b className="t15 bt-move-name">{moveName(move.id)}</b>
+            <b className="bt-move-name">{moveName(move.id)}</b>
             {shown.length > 0 && <span className="bt-effs" aria-hidden="true">{shown.map(x => <span key={x.f.slot} className={effClass(x.m)}>{effLabel(x.m)}</span>)}</span>}
           </span>
-          <span className="bt-move-line">
-            <span className={`tb-type type-${toID(type)}`}>{res.text.types[type] || type}</span>
-            <span className="t12 dim">{kind}</span>
-          </span>
-          <span className="bt-move-foot t12 dim">
-            <span>{foot}</span>
+          <span className="bt-move-line" aria-hidden="true">
+            <span className="bt-move-type">{res.text.types[type] || type}</span>
+            <span className="bt-move-kind">{kind}{foot && <span>{foot}</span>}</span>
             {/* a move locked in (Outrage, a charging move) is asked without its PP */}
-            <span className="bt-move-pp">{move.pp != null ? `PP ${move.pp}/${move.maxpp}` : ""}</span>
+            <span className="bt-move-pp">{move.pp != null ? `${move.pp}/${move.maxpp}` : ""}</span>
           </span>
         </button>;
       })}
@@ -798,7 +853,7 @@ function Party({ pokemon, res, pick, preview = false }) {
         aria-label={`${nameOf(res, species)}${fainted ? ", 쓰러짐" : ""}${p?.order ? `, ${p.order}번째` : ""}`}>
         <span className="bt-party-top">
           {preview
-            ? <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span>
+            ? <span className="bt-party-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span>
             : <>
               <span>{fainted ? "쓰러짐" : `${hp}/${maxhp}`}</span>
               {status && !fainted && <span className={`bt-mark type-${STATUS_TYPE[status] || "normal"}`}>{STATUS[status] || status}</span>}

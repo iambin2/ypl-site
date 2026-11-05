@@ -53,7 +53,9 @@
 .bs-board-mid { gap: 5px; padding: 0 7px; color: #FFFFFF; }
 .bs-board-lamp { width: 7px; height: 7px; background: #3A2A10; }
 .bs-board-lamp.on { background: #FFB21A; box-shadow: 0 0 8px 2px #FFB21AAA; }
-@media (min-width: 860px) { .bs-board-name { font-size: 15px; } }
+@media (min-width: 860px) { .bs-board-name { font-size: 15px; padding: 0 10px; } }
+/* on a phone the board shows the turn alone: two names would be cut to a syllable at that size (the strips carry them) */
+@media (max-width: 859px) { .bs-board { left: 40%; right: 40%; grid-template-columns: 1fr; } .bs-board > .bs-board-name { display: none; } }
 /* the edges of the picture fall into the dark, as a camera's do */
 .bs-vignette { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: radial-gradient(130% 95% at 50% 45%, transparent 55%, #02060F99 100%); }
 /* the effects' canvas fills its layer */
@@ -388,3 +390,6 @@
 /* the end: the lamps run once along their banks */
 .bs-stage.bs-won .bs-bank > i { animation: bs-lamp-run .5s ease-in-out both; animation-delay: calc(var(--bank) * 120ms + var(--i, 0) * 30ms); }
 @keyframes bs-lamp-run { 0%, 100% { background: var(--lamp-warm); box-shadow: 0 0 6px 1px #FFF4D6CC, 0 0 18px 4px #9CC2FF55; } 50% { background: #FFFFFF; box-shadow: 0 0 10px 3px #FFFFFF, 0 0 26px 8px #9CC2FFAA; } }
+/* on a phone our lead stands a little further left, so our plate over the message window never covers it */
+@media (max-width: 859px) { .bs-stage.hud .bs-slot[data-pos="own"] { left: 22%; } }
+@media (max-width: 859px) { .bs-stage.hud .bs-slot[data-pos="own-d1"] { left: 45%; } }

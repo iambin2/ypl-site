@@ -64,35 +64,41 @@ export function validateTeam(formatid, sets) {
 }
 
 /* A random party (the committee, 2026-11-05: random battles for friendlies and as a way Light events are played): six species from
-   Showdown's gen 9 random battle sets kept to the regulation (scripts/build-random-sets.mjs), one of each species, no item twice
-   (the item clause), a role of each, four of its moves, and points and a nature for how it attacks. It is checked by the
-   validator like any party, and drawn again in the rare case it is refused. */
+   the sets scripts/build-random-sets.mjs makes with Showdown's own random battle generator, kept to the regulation. One of each species,
+   one set of each drawn by how often it comes, at most one Mega Stone, and no item twice (the item clause): a set's first item that is
+   still free, from back-ups chosen for that set, so no Pokémon goes without. It is checked by the validator like any party, and drawn
+   again in the rare case it is refused. */
 const KIND_OF = Object.fromEntries(Object.entries(FORMAT_IDS).flatMap(([reg, ids]) => Object.entries(ids).map(([kind, id]) => [id, [reg, kind]])));
 function shuffled(list, random) {
   const out = [...list];
   for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
   return out;
 }
+function weighted(list, random) {
+  let roll = random() * list.reduce((sum, entry) => sum + entry.weight, 0);
+  return list.find(entry => (roll -= entry.weight) < 0) || list[list.length - 1];
+}
 export function randomTeam(formatid, random = Math.random) {
   const [reg, kind] = KIND_OF[formatid] || [];
   const pool = RANDOM_SETS[reg]?.[kind];
   if (!pool?.length) throw new Error(`no random sets for ${formatid}`);
   const dex = DEX_OF_FORMAT[formatid];
-  const pick = list => list[Math.floor(random() * list.length)];
   for (let tries = 0; tries < 30; tries++) {
     const team = [], bases = new Set(), items = new Set();
+    let mega = false;
     for (const entry of shuffled(pool, random)) {
       if (team.length === 6) break;
       const base = dex.species.get(entry.species).baseSpecies;
       if (bases.has(base)) continue;
-      const role = pick(entry.roles);
-      const item = shuffled(role.items, random).find(name => !items.has(name)) || "";
-      const moves = shuffled(role.moves, random).slice(0, 4);
-      const count = category => moves.filter(move => dex.moves.get(move).category === category).length;
-      const stat = count("Physical") >= count("Special") ? "atk" : "spa";
+      const sets = mega ? entry.sets.filter(set => !set.mega) : entry.sets;
+      if (!sets.length) continue;
+      const set = weighted(sets, random);
+      const item = set.items.find(name => !items.has(name));
+      if (!item) continue;
       bases.add(base);
-      if (item) items.add(item);
-      team.push({ name: "", species: entry.species, ability: pick(role.abilities), item, moves, nature: stat === "atk" ? "Adamant" : "Modest", evs: { hp: 2, [stat]: 32, spe: 32 }, level: 50 });
+      items.add(item);
+      if (set.mega) mega = true;
+      team.push({ name: "", species: entry.species, ability: set.ability, item, moves: [...set.moves], nature: set.nature, evs: { ...set.evs }, ...(set.ivs ? { ivs: { ...set.ivs } } : {}), level: 50 });
     }
     if (team.length === 6 && !validateTeam(formatid, team)) return team;
   }

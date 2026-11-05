@@ -8,7 +8,7 @@ import { Choice, Question, SectionHead } from "../components/common/Board.jsx";
 import { Arena, Waiting, useResources } from "./BattlePage.jsx";
 import { createBattleReader } from "../services/battleLog.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
-import { formatId, startBattle, choose, forfeit, readout } from "../../supabase/functions/battle/engine.mjs";
+import { formatId, startBattle, choose, forfeit, readout, randomTeam } from "../../supabase/functions/battle/engine.mjs";
 import { LAB_TEAMS } from "./battleLabTeams.js";
 import { Dex } from "@pkmn/sim";
 import { recipeOf } from "./battle/moveFx.js";
@@ -54,6 +54,7 @@ function Toggles({ options, on, onToggle }) {
 function Lab({ res, say, go }) {
   const teams = useMemo(() => [
     ...Object.entries(LAB_TEAMS).map(([label, sets]) => ({ label, sets, reg: "m-c" })),
+    { label: "랜덤 파티", random: true, reg: "m-c" },
     ...readSavedTeams().filter(t => t.regulationId === "m-c" || t.regulationId === "m-b").map(t => ({ label: `저장: ${t.name}`, sets: showdownTeam(t, res.detail), reg: t.regulationId })),
   ], [res]);
   const teamOptions = teams.map((t, i) => ({ value: String(i), label: t.label }));
@@ -94,13 +95,14 @@ function Lab({ res, say, go }) {
     L.out = out;
     setVersion(v => v + 1);
   };
+  const teamOf = (pick, formatid) => (teams[pick].random ? randomTeam(formatid) : teams[pick].sets);
   const start = () => {
     setError("");
     try {
       const reg = teams[picks.p1].reg;
       const formatid = formatId(reg, format);
       const seed = Array.from({ length: 4 }, () => Math.floor(Math.random() * 0x10000));
-      const battle = startBattle({ formatid, seed, p1: { name: NAMES.p1, team: teams[picks.p1].sets }, p2: { name: NAMES.p2, team: teams[picks.p2].sets } });
+      const battle = startBattle({ formatid, seed, p1: { name: NAMES.p1, team: teamOf(picks.p1, formatid) }, p2: { name: NAMES.p2, team: teamOf(picks.p2, formatid) } });
       lab.current = { n: (lab.current?.n || 0) + 1, battle, reg, formatid, forfeited: false, logs: { p1: [], p2: [], spectator: [] }, read: { p1: 0, p2: 0, spectator: 0 } };
       step();
     } catch (e) { setError(e.message); }

@@ -27,15 +27,18 @@ test("legal teams pass Showdown's validator in both regulations and both formats
   assert.deepEqual(validateTeam(formatId("m-c", "singles"), []), ["파티는 1마리에서 6마리까지입니다."]);
 });
 
-test("a random party is six legal species, one of each, no item twice, in every regulation and format, and it battles", () => {
+test("a random party is six legal species, one of each, every one holding an item, no item twice, in every regulation and format, and it battles", () => {
   for (const reg of ["m-c", "m-b"]) for (const kind of ["singles", "doubles"]) {
     const formatid = formatId(reg, kind);
     for (let n = 0; n < 20; n++) {
       const team = randomTeam(formatid);
       assert.equal(team.length, 6);
       assert.equal(validateTeam(formatid, team), null, `${formatid}: ${validateTeam(formatid, team)}`);
-      const items = team.map(set => set.item).filter(Boolean);
+      const items = team.map(set => set.item);
+      assert.ok(items.every(Boolean), "every Pokémon holds an item");
       assert.equal(new Set(items).size, items.length, "no item twice");
+      assert.ok(team.every(set => set.moves.length === 4 || set.species === "Ditto"), "four moves each (Ditto has only Transform)");
+      assert.ok(team.filter(set => /ite( [XYZ])?$/.test(set.item) && !["Eviolite"].includes(set.item)).length <= 1, "one Mega Stone at most");
     }
   }
   const battle = startBattle({ formatid: formatId("m-c", "doubles"), seed: [5, 6, 7, 8], p1: { name: "갑", team: randomTeam(formatId("m-c", "doubles")) }, p2: { name: "을", team: randomTeam(formatId("m-c", "doubles")) } });

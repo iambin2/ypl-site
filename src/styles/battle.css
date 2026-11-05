@@ -48,8 +48,26 @@
 .bt-vs-wait { display: flex; align-items: center; justify-content: flex-end; gap: var(--s1); }
 .bt-waiting { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 
-/* the match is one column the arena's width: the head, the result, the arena, the choices, the links */
-.bt-match { max-width: 980px; }
+/* the match: one column on a phone (the head, the result, the stage, the choices, the log). On a wide screen the page frame lets go of
+   its 1200 (Arena adds page--battle) and the stage stands on the left as tall as the window allows, 16 to 9, with the head, the result,
+   the choices and the log in a column beside it, so whoever plays or watches has the stage in front of them and the moves beside it */
+.bt-main, .bt-side { display: grid; gap: var(--s5); min-width: 0; align-content: start; }
+@media (min-width: 1200px) {
+  .page.page--battle { --content: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); }
+  .bt-match {
+    /* the stage's width: all the window leaves beside the column, but never taller than the window under the bar (two strips and the margins) */
+    grid-template-columns: minmax(0, min(100% - 400px - var(--s8), (100svh - var(--nav-height) - 150px) * 16 / 9)) 400px;
+    grid-template-areas: "main head" "main result" "main side";
+    grid-template-rows: auto auto 1fr;
+    justify-content: center; align-items: start; column-gap: var(--s8); row-gap: 0;
+  }
+  .bt-match > .bt-head { grid-area: head; }
+  .bt-match > .bt-result { grid-area: result; margin-top: var(--s5); }
+  .bt-match > .bt-main { grid-area: main; }
+  .bt-match > .bt-side { grid-area: side; margin-top: var(--s5); }
+  .bt-side .bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bt-side .bt-log { height: 320px; }
+}
 /* the head: the lamp with 진행 중 and the two names (the turn is on the stadium's board) */
 .bt-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row2); padding: 0 var(--pad); }
 .bt-head-say { display: grid; gap: var(--s1); min-width: 0; }
@@ -75,19 +93,15 @@
 /* finding a battle again: the ones being played now and this device's, as rows */
 .bt-list { display: grid; gap: var(--s3); }
 
-/* the field above the log on a phone; beside it on desktop, 709 and 439 */
-.bt-room { display: grid; gap: var(--s5); }
-.bt-main { display: grid; gap: var(--s5); min-width: 0; }
 /* the playback chips and 소리 at the right end of the same row */
 .bt-play { display: flex; justify-content: space-between; gap: var(--s2); min-width: 0; }
 .bt-play > .chips:first-child { min-width: 0; }
-/* one column on every screen: on desktop the stage takes up to 980 wide and the whole log folds under it, as on a phone */
-@media (min-width: 860px) { .bt-room { grid-template-columns: minmax(0, 980px); } }
 
 /* ---------- the log: every message a row of the stack, a turn opening with its 32 strip; it holds the whole battle ---------- */
 .bt-log { max-height: 439px; overflow-y: auto; align-content: start; scrollbar-width: none; }
 /* on desktop the log stands open at its full height as its own layout, so a line added to it never lays out the page */
 @media (min-width: 860px) { .bt-log { height: 439px; contain: strict; } }
+@media (min-width: 860px) and (max-width: 1199px) { .bt-match { max-width: 980px; } }
 .bt-log::-webkit-scrollbar { display: none; }
 .bt-line { padding: var(--s2) var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
 .bt-turn { display: flex; align-items: center; min-height: var(--h-strip); padding: 0 var(--pad); color: var(--dim); }
@@ -122,6 +136,13 @@
 .bt-cond { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
 .bt-cond > span { color: var(--dim); font-weight: 400; }
 
+/* a small square key on the strip or over the party: 내 파티 */
+.bt-key { flex: none; display: inline-flex; align-items: center; height: 28px; padding: 0 var(--s3); margin-left: auto; background: var(--panel-2); color: var(--lit); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; transition: background-color var(--move-tone); }
+.bt-conds + .bt-key { margin-left: 0; }
+@media (hover: hover) { .bt-key:hover { background: var(--rule); } }
+.bt-key:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+.bt-choices-head { display: flex; align-items: center; gap: var(--s3); min-height: 28px; }
+
 /* ---------- the HUD over the stage ---------- */
 .bt-hud { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
 .bt-hud-foe, .bt-hud-own { transition: opacity .4s ease; }
@@ -129,13 +150,17 @@
 .bt-hud-foe { position: absolute; top: var(--s3); left: var(--pad); right: var(--pad); display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s2); }
 /* a plate is a third of the stage (the foe's leave the stadium board in the middle clear), ours a little wider; in doubles the
    foe's two are small, as Showdown keeps them, so they read as the two over there and not as the screen's own panels */
-.bt-hud-col { display: grid; gap: var(--seam); justify-items: start; width: 34.4%; min-width: 136px; }
-.bt-hud-foe > .bt-plate { width: 34.4%; min-width: 136px; }
-.bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 26%; min-width: 112px; max-width: 200px; }
-.bt-hud-own { position: absolute; right: var(--pad); bottom: calc(var(--say-h) + var(--s2)); display: grid; gap: var(--seam); width: 38%; min-width: 150px; max-width: 280px; }
+.bt-hud-col { display: grid; gap: var(--seam); justify-items: start; width: 30%; min-width: 120px; max-width: 260px; }
+.bt-hud-foe > .bt-plate { width: 30%; min-width: 120px; max-width: 260px; }
+.bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 28%; min-width: 108px; max-width: 230px; }
+.bt-hud-own { position: absolute; right: var(--pad); bottom: calc(var(--say-h) + var(--s2)); display: grid; gap: var(--seam); width: 32%; min-width: 132px; max-width: 280px; }
+@media (min-width: 860px) {
+  .bt-hud-col, .bt-hud-foe > .bt-plate { width: 26%; }
+  .bt-hud-own { width: 27%; }
+}
 
 /* a plate: a solid panel with the name, a status, the bar with the HP, and a line of marks when there are any */
-.bt-plate { display: grid; gap: var(--s1); width: 100%; max-width: 260px; padding: var(--s2) var(--s3); text-align: left; color: var(--lit); background: var(--panel); pointer-events: auto; cursor: pointer; }
+.bt-plate { display: grid; gap: var(--s1); width: 100%; padding: var(--s2) var(--s3); text-align: left; color: var(--lit); background: var(--panel); pointer-events: auto; cursor: pointer; }
 @media (hover: hover) { .bt-plate:hover { background: var(--panel-2); } }
 .bt-plate:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-plate.out { color: var(--mute); }
@@ -153,7 +178,7 @@
 /* a status rides by the name, a square tag in its type's colour */
 .bt-st { flex: none; padding: 0 var(--s1); background: var(--type); color: #FFFFFF; font-size: 11px; line-height: 15px; font-weight: 700; }
 /* HP: one square bar on the night; the lost part lingers pale behind it a moment (stageFx.drain) */
-.bt-hp { position: relative; display: block; height: var(--s2); overflow: hidden; background: var(--ground); }
+.bt-hp { position: relative; display: block; height: 6px; overflow: hidden; background: var(--ground); }
 .bt-hp > b { position: absolute; inset: 0; background: var(--hp); transform-origin: 0 50%; transform: scaleX(var(--f)); }
 .bt-hp-lost { position: absolute; top: 0; bottom: 0; background: #FFD9D6; pointer-events: none; }
 .bt-hp.type-grass { --hp: #2CCB6E; }
@@ -168,13 +193,16 @@
 
 /* on a phone the plates are lower, so two of ours and the foe's never meet in doubles */
 @media (max-width: 600px) {
-  .bt-plate { gap: var(--seam); padding: var(--s1) var(--s2); }
+  .bt-plate { gap: 3px; padding: 5px var(--s2) 6px; }
   .bt-plate-top { font-size: var(--t12); line-height: 15px; }
-  .bt-plate-num { font-size: 11px; }
-  .bt-hp { height: 5px; }
+  .bt-plate-num { font-size: 11px; line-height: 13px; }
+  .bt-hp { height: 4px; }
   .bt-mark { height: 15px; font-size: 10px; line-height: 14px; }
   .bt-st { font-size: 10px; line-height: 14px; }
   .bt-hud-foe.two > .bt-hud-col, .bt-hud-foe.two > .bt-plate { width: 30%; min-width: 104px; }
+  .bt-hud-foe { top: var(--s2); left: var(--s2); right: var(--s2); }
+  .bt-hud-own { right: var(--s2); }
+  .bt-strip { min-height: 40px; }
   .bt-hud-foe.two .bt-plate-top { font-size: 11px; line-height: 14px; }
   .bt-hud.two .bt-marks { display: none; }
   .bt-hud.two .bt-plate-more { display: inline-flex; }
@@ -223,16 +251,17 @@
 .bt-word.soft { background: var(--panel-2); color: var(--dim); }
 .bt-num { padding: 0 var(--s1); background: var(--ground); color: var(--lit); font-size: var(--t20); line-height: var(--l20); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .bt-num.heal { background: var(--lit); color: var(--ground); }
-.bt-popup { right: 0; top: 24%; display: grid; gap: var(--seam); min-width: 40%; padding: var(--s2) var(--s3); background: var(--panel-2); text-align: right; }
-.bt-popup.own { right: auto; left: 0; top: 58%; text-align: left; }
-.bt-popup > small { font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; }
-.bt-popup > b { font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.bs-fx > .bt-popup { right: 0; top: 24%; display: grid; gap: var(--s1); min-width: 40%; max-width: 64%; padding: var(--s2) var(--s5) var(--s2) var(--s3); background: var(--panel-2); text-align: right; }
+.bs-fx > .bt-popup.own { right: auto; left: 0; top: 52%; padding: var(--s2) var(--s3) var(--s2) var(--s5); text-align: left; }
+.bt-popup > small { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bt-popup > b { display: block; font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+@media (min-width: 860px) { .bt-popup > b { font-size: var(--t20); line-height: var(--l20); } }
 
 /* ---------- choices: the moves as cards in their type's colour, the bench as panels with the Pokémon ---------- */
 .bt-choices { display: grid; gap: var(--s5); }
 .bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
 /* a move card: one solid colour, the type's own darkened toward the night so white words read on every type */
-.bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-counter); padding: var(--s2) var(--pad); text-align: left; color: #FFFFFF;
+.bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-row2); padding: var(--s2) var(--s3); text-align: left; color: #FFFFFF;
   background: color-mix(in srgb, var(--type) 62%, #050D1F); transition: background-color var(--move-tone); }
 @media (hover: hover) { .bt-move:hover:not(:disabled) { background: color-mix(in srgb, var(--type) 76%, #050D1F); } }
 .bt-move.on { background: #FFFFFF; color: #050D1F; }
@@ -240,12 +269,13 @@
 .bt-move:focus-visible { outline: var(--line) solid #FFFFFF; outline-offset: calc(var(--line) * -1); }
 .bt-move-top { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
 .bt-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: var(--t15); line-height: var(--l15); }
-.bt-move-line { display: flex; align-items: center; gap: var(--s2); min-width: 0; white-space: nowrap; font-size: var(--t12); line-height: var(--l12); }
-.bt-move-line > .tb-type { background: #050D1F66; color: #FFFFFF; }
-.bt-move.on .bt-move-line > .tb-type { background: color-mix(in srgb, var(--type) 62%, #050D1F); }
-.bt-move-line > .t12 { color: inherit; opacity: .8; }
-.bt-move-foot { display: flex; align-items: center; gap: var(--s2); min-height: var(--l12); white-space: nowrap; font-size: var(--t12); line-height: var(--l12); opacity: .8; }
-.bt-move-pp { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* the second line: the type in its own square, the category and power (and accuracy or priority when they matter), the PP at the end */
+.bt-move-line { display: flex; align-items: center; gap: var(--s2); min-width: 0; white-space: nowrap; font-size: 12px; line-height: 16px; }
+.bt-move-type { flex: none; padding: 0 var(--s1); background: #050D1F66; font-weight: 700; }
+.bt-move.on .bt-move-type { background: color-mix(in srgb, var(--type) 62%, #050D1F); color: #FFFFFF; }
+/* the accuracy or priority shows only when it fits whole: what does not fit wraps onto a hidden second line, never cut mid-word */
+.bt-move-kind { display: flex; flex-wrap: wrap; column-gap: var(--s1); height: 1lh; min-width: 0; overflow: hidden; opacity: .85; }
+.bt-move-pp { flex: none; margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; opacity: .85; }
 /* how a move lands on each foe now out, as Champions marks it: a hit that counts lit, a weak one dark, none faint */
 .bt-effs { display: flex; gap: var(--seam); margin-left: auto; }
 .bt-eff { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--s1); background: #050D1F; color: #DCE8FF; font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -283,6 +313,21 @@
 .bt-party-cell .floor.inv span { color: var(--ground); font-weight: 700; }
 .bt-party-top { position: absolute; top: var(--s1); left: var(--s2); right: var(--s2); display: flex; flex-wrap: wrap; gap: var(--seam) var(--s1); align-items: center; font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
 .bt-party-top > .dim { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.bt-party-types { display: flex; flex-wrap: nowrap; gap: var(--seam); min-width: 0; max-width: 100%; overflow: hidden; }
+.bt-party-types > .tb-type { flex: 0 1 auto; min-width: 0; gap: var(--s1); height: 20px; padding: 0 5px; font-size: 11px; line-height: 14px; }
+.bt-party-types > .tb-type::before { width: 6px; height: 6px; }
+
+/* 내 파티: each Pokémon a panel, its picture and name over its ability, item, stats and four moves */
+.bt-sets { gap: var(--seam); }
+.bt-set { display: grid; gap: var(--s3); padding: var(--s3); }
+.bt-set-head { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.bt-set-head > img { flex: none; width: var(--h-row); height: var(--h-row); object-fit: contain; }
+.bt-set-name { display: grid; gap: var(--s1); min-width: 0; }
+.bt-set-name > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.bt-set-hp { flex: none; margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bt-set-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+.bt-set-moves > .tb-type { --tag-bg: var(--ground); min-width: 0; overflow: hidden; text-overflow: ellipsis; height: 32px; }
+.bt-info-stats.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 /* a Pokémon's sheet */
 .bt-info { display: grid; gap: var(--s3); }
@@ -290,3 +335,14 @@
 .bt-info-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 .bt-info-stats > span { display: grid; padding: var(--s1) 0; background: var(--panel-2); }
 .bt-info-stats small { font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; }
+
+/* on a phone in doubles our two plates are one line each (name, bar, HP), so the pair stays low in the corner and off our Pokémon */
+@media (max-width: 600px) {
+  .bt-hud.two .bt-hud-own { width: 40%; min-width: 150px; }
+  .bt-hud.two .bt-hud-own .bt-plate { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px var(--s2); }
+  .bt-hud.two .bt-hud-own .bt-plate-top { flex: 0 1 auto; max-width: 48%; }
+  .bt-hud.two .bt-hud-own .bt-plate-hp { flex: 1; }
+  .bt-hud.two .bt-hud-own .bt-sex { display: none; }
+}
+/* the move key's second line reads from further away on a desktop */
+@media (min-width: 860px) { .bt-move-line { font-size: 13px; line-height: 18px; } }

@@ -449,8 +449,8 @@ function SideField({ side, scene, own, doubles, res, targeting }) {
   );
 }
 
-// own: our side, whose brought Pokémon (known) we know before they come out
-function Strip({ side, scene, name, res, known }) {
+// own: our side, whose brought Pokémon (known) we know before they come out; a player can open their own party's sets from it (onParty)
+function Strip({ side, scene, name, res, known, onParty }) {
   const s = scene?.[side];
   const knows = species => known?.some(k => toID(k).startsWith(toID(species)) || toID(species).startsWith(toID(k)));
   return (
@@ -465,6 +465,7 @@ function Strip({ side, scene, name, res, known }) {
         {s.conditions.map(c => <span key={c} className="bt-cond">{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
           {turnsLeft(c, s.since[c], scene.turn) && <span>{turnsLeft(c, s.since[c], scene.turn)}</span>}</span>)}
       </span>}
+      {onParty && <button type="button" className="bt-key" onClick={onParty}>내 파티</button>}
     </div>
   );
 }
@@ -492,7 +493,7 @@ function Clock({ left, mine }) {
   </div>;
 }
 
-export function Stage({ scene, stageRef, perspective, doubles, res, targeting, names, said, ask, known, clock = null, mine = false }) {
+export function Stage({ scene, stageRef, perspective, doubles, res, targeting, names, said, ask, known, onParty, clock = null, mine = false }) {
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
   const fields = scene?.fields || [];
@@ -544,7 +545,7 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
           <Clock left={clock} mine={mine} />
         </div>
       </div>
-      <Strip side={perspective} scene={scene} name={names[perspective]} res={res} known={known} />
+      <Strip side={perspective} scene={scene} name={names[perspective]} res={res} known={known} onParty={onParty} />
       {info && scene && <MonInfo res={res} mon={scene[info.slice(0, 2)].active[info.charCodeAt(2) - 97]} own={info.startsWith(perspective)} onClose={() => setInfo(null)} />}
     </div>
   );
