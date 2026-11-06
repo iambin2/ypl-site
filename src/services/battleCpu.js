@@ -611,28 +611,44 @@ function choose(list, size) {
   return list.flatMap((x, i) => choose(list.slice(i + 1), size - 1).map(rest => [x, ...rest]));
 }
 const LEAD_SUPPORT = { fakeout: 0.3, tailwind: 0.25, trickroom: 0.25, followme: 0.2, ragepowder: 0.2, spore: 0.15, icywind: 0.1, electroweb: 0.1, partingshot: 0.1 };
+/* A Mega Evolution happens on the first turn its holder is out, so the matchups judge a holder as its Mega form (2026-11-06: they read
+   Charizard holding Charizardite X as plain Charizard, and the picks undervalued every Mega). Theirs always count as Megas, since any
+   of them may be the one; of ours only one can evolve, so each pick is judged with each of its holders as that one, and with none. */
+function megaCopy(state, sides) {
+  const copy = calcOn(revive(strip(state)));
+  for (const s of sides) for (const p of copy[s].pokemon) {
+    const mega = copy.actions.canMegaEvo(p);
+    if (mega) p.formeChange(mega, p.getItem(), true);
+  }
+  return copy;
+}
 function teamPreview(state, side, req, random) {
   const foe = other(side);
   const mine = state[side].pokemon, theirs = state[foe].pokemon;
   const size = Math.min(req.maxChosenTeamSize || mine.length, mine.length);
-  const m = mine.map(a => theirs.map(b => race(state, a, b)));
+  const table = copy => copy[side].pokemon.map(a => copy[foe].pokemon.map(b => race(copy, a, b)));
+  const plain = table(megaCopy(state, [foe])), evolved = table(megaCopy(state, [foe, side]));
+  const holders = new Set(mine.map((p, i) => (state.actions.canMegaEvo(p) ? i : -1)).filter(i => i >= 0));
   // their Pokémon that beat more of ours count for more
-  const weight = theirs.map((_, j) => 1 + Math.max(0, -m.reduce((sum, row) => sum + row[j], 0) / mine.length));
+  const weight = theirs.map((_, j) => 1 + Math.max(0, -plain.reduce((sum, row) => sum + row[j], 0) / mine.length));
   const doubles = isDoubles(state);
+  const worth = rows => theirs.reduce((value, _, j) => {
+    const answers = rows.map(row => row[j]).sort((a, b) => b - a);
+    return value + weight[j] * (answers[0] + 0.35 * (answers[1] ?? 0));
+  }, 0);
   const scored = choose(mine.map((_, i) => i), size).map(pick => {
-    let value = 0;
-    theirs.forEach((_, j) => {
-      const answers = pick.map(i => m[i][j]).sort((a, b) => b - a);
-      value += weight[j] * (answers[0] + 0.35 * (answers[1] ?? 0));
+    const ways = [-1, ...pick.filter(i => holders.has(i))].map(mega => {
+      const rows = Object.fromEntries(pick.map(i => [i, (i === mega ? evolved : plain)[i]]));
+      return { pick, rows, value: worth(Object.values(rows)) };
     });
-    return { pick, value };
+    return ways.reduce((a, b) => (b.value > a.value ? b : a));
   }).sort((a, b) => b.value - a.value);
   const top = scored.slice(0, 3);
-  const pick = top[pickIndex(softmax(top.map(s => s.value), 0.4), random)].pick;
+  const { pick, rows } = top[pickIndex(softmax(top.map(s => s.value), 0.4), random)];
   const support = i => doubles ? mine[i].moveSlots.reduce((sum, s) => sum + (LEAD_SUPPORT[s.id] || 0), 0) + (mine[i].ability === "intimidate" ? 0.2 : 0) : 0;
   const leadCount = doubles ? 2 : 1;
   const leads = choose(pick, leadCount).map(lead => ({
-    lead, value: theirs.reduce((sum, _, j) => sum + Math.max(...lead.map(i => m[i][j])), 0) / theirs.length + lead.reduce((sum, i) => sum + support(i), 0),
+    lead, value: theirs.reduce((sum, _, j) => sum + Math.max(...lead.map(i => rows[i][j])), 0) / theirs.length + lead.reduce((sum, i) => sum + support(i), 0),
   })).sort((a, b) => b.value - a.value).slice(0, 2);
   const lead = leads[pickIndex(softmax(leads.map(l => l.value), 0.25), random)].lead;
   const order = [...lead, ...pick.filter(i => !lead.includes(i))];

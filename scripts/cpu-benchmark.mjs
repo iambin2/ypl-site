@@ -2,8 +2,9 @@
 // version of itself (A), mirrored: each pair of games plays the same two parties and seed with B on either side, so a win means play,
 // not the party. Games run in parallel, one process a core, and the result comes with its margin of error.
 //
-//   node scripts/cpu-benchmark.mjs [--base main] [--games 200] [--kind singles] [--ms 1400] [--parties random] [--a '{}'] [--b '{}']
-//     --base     the version A plays: any git ref (main, HEAD~1, a commit), or "quick" for the quick player
+//   node scripts/cpu-benchmark.mjs [--base HEAD] [--games 200] [--kind singles] [--ms 1400] [--parties random] [--a '{}'] [--b '{}']
+//     --base     the version A plays: any git ref (default HEAD, the last commit, so an uncommitted change meets what it changes;
+//                origin/main for what is live, as a local main may lag), or "quick" for the quick player
 //     --parties  random (sample sets), spiced (a third of the attackers holding a Choice item, as people build), or players
 //                (the parties players brought against the computer, read from cpu_battles with SUPABASE_URL and
 //                SUPABASE_SERVICE_ROLE_KEY; they stay in memory, as the table is private)
@@ -75,7 +76,7 @@ if ("worker" in args || process.argv.includes("--worker")) {
 } else {
 
 /* ---------- the runner ---------- */
-const games = Number(args.games || 200), kind = args.kind || "singles", base = args.base || "main", parties = args.parties || "random";
+const games = Number(args.games || 200), kind = args.kind || "singles", base = args.base || "HEAD", parties = args.parties || "random";
 const ms = Number(args.ms || (kind === "doubles" ? 2200 : 1400));
 let baseFile = null;
 if (base !== "quick") {
