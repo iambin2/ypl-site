@@ -275,7 +275,8 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         mon.species = parseDetails(args[1]).species;
         // a new form brings its own typing
         delete mon.types; delete mon.addedType;
-        event = { verb: "change", ident: args[0] };
+        // Zero to Hero turns Palafin as it goes back to its ball: the Hero form is first seen when it comes out again, as in the games
+        event = toID(mon.species) === "palafinhero" ? null : { verb: "change", ident: args[0] };
         break;
       }
       case "-mega": {

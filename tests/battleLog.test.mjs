@@ -102,6 +102,22 @@ test("moves become the battle verbs: strike for physical, chase for special, sel
   assert.equal(mega.event.verb, "mega");
 });
 
+test("Zero to Hero turns Palafin unseen on its way back to the ball, and it comes out as Hero", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  reader.read("|player|p1|가||");
+  reader.read("|player|p2|나||");
+  reader.read("|switch|p1a: Palafin|Palafin, L50, M|175/175");
+  const turned = reader.read("|detailschange|p1a: Palafin|Palafin-Hero, L50, M");
+  assert.equal(turned.event, null, "no change of form is drawn before the recall");
+  const out = reader.read("|switch|p1a: Pikachu|Pikachu, L50, M|110/110");
+  assert.equal(out.event.leaving, "p1: Palafin", "the recall still knows who goes back");
+  const back = reader.read("|switch|p1a: Palafin|Palafin-Hero, L50, M|128/175");
+  assert.equal(reader.state.sides.p1.active[0].species, "Palafin-Hero");
+  assert.equal(back.event.verb, "enter");
+  // any other change of form is still drawn where it happens
+  assert.equal(reader.read("|detailschange|p1a: Palafin|Palafin, L50, M").event.verb, "change");
+});
+
 test("official battles count each Pokémon's games, leads and wins from the public lines only", () => {
   const battle = play("doubles", [4, 4, 4, 4]);
   const out = readout(battle);

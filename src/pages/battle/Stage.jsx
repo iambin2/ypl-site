@@ -69,13 +69,18 @@ export const typesOf = (res, species) => res.detail.pokedex[toID(species)]?.type
 
 /* every picture either side may send in is fetched as soon as the team preview names it, so no Pokémon arrives as an empty frame */
 const fetched = new Set();
+// PokeOS keeps one cry a species; a form that cries differently in the games has its own file, named by its id (scripts/build-cries.py)
+const FORM_CRIES = new Set(["palafinhero"]);
+const cryKey = (res, species) => { const id = toID(species); return FORM_CRIES.has(id) ? id : res.detail.pokedex[id]?.num; };
+// Zero to Hero: Palafin comes back as its Hero form, so that picture and cry are fetched with it
+const withComeback = species => (toID(species) === "palafin" ? [species, "Palafin-Hero"] : [species]);
 function preload(state, res) {
   for (const side of ["p1", "p2"]) {
     const s = state.sides[side];
-    for (const species of [...s.preview, ...Object.values(s.team).map(m => m.species)]) {
+    for (const species of [...s.preview, ...Object.values(s.team).map(m => m.species)].flatMap(withComeback)) {
       if (!species || fetched.has(species)) continue;
       fetched.add(species);
-      loadCry(res.detail.pokedex[toID(species)]?.num);
+      loadCry(cryKey(res, species));
       const img = new Image();
       img.decoding = "async";
       img.src = spriteUrl(species);
@@ -158,7 +163,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
       const show = () => flushSync(() => setScene(sceneOf(R.state, standing)));
       const own = key => key.startsWith(perspective);
       // the cry of the one standing in a slot (DESIGN.md "Battle", Cries): its own as it comes out, lower as it falls
-      const cryOf = (key, rate = 1) => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return cry(res.detail.pokedex[toID(mon?.species)]?.num, rate); };
+      const cryOf = (key, rate = 1) => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return cry(cryKey(res, mon?.species), rate); };
       const word = key => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return mon ? `${own(key) ? "" : "상대 "}${R.speciesName(mon.species)}` : ""; };
       // the blow being played: who struck with what, and what the lines after it said about each target
       const freshBlow = () => ({ from: "", type: "", crit: new Set(), strong: new Set(), weak: new Set(), hit: new Set(), hits: {}, on: false });
