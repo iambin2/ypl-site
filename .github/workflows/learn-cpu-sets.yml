@@ -5,11 +5,12 @@ name: Teach the computer
 # (parties that look alike count as one) the script writes nothing. Nothing is merged without review; merging deploys the site, and the battle function needs
 # npm run build:battle and its own deploy to pick the sets up for random parties.
 #
-# Run by hand for now. Once weeks of battles are in, turn on the weekly run by adding under on:
-#   schedule:
-#     - cron: "0 1 * * 1" # Monday 10:00 KST, an hour after the Champions data refresh
-# Needs the repository secrets VITE_SUPABASE_URL (already there) and SUPABASE_SERVICE_ROLE_KEY.
+# Runs every Monday, an hour after the Champions data refresh, so the computer keeps learning whoever runs the site
+# (docs/BATTLE_COMPUTER.md, chapter 6). Needs the repository secrets VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY; without
+# the second it ends without doing anything.
 on:
+  schedule:
+    - cron: "0 1 * * 1" # Monday 10:00 KST
   workflow_dispatch:
 
 permissions:
@@ -32,7 +33,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run data:cpu-learn
+      - name: Blend the players' parties in
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::notice::SUPABASE_SERVICE_ROLE_KEY is not set; nothing to learn from (docs/BATTLE_COMPUTER.md, chapter 8)."
+            exit 0
+          fi
+          npm run data:cpu-learn
         env:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

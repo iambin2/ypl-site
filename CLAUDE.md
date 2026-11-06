@@ -45,6 +45,7 @@ React 18 + Vite SPA, no router library and no state library.
 - **`src/storage.js`** is a three-tier data adapter — `window.storage` (Claude artifact) → Supabase → `localStorage` — exposed as `STORAGE_MODE`. It serves the key/value `site_data` table only, not the normalized schema.
 - **`src/styles/`** is plain CSS, 20 files imported in order by `src/main.jsx`: `tokens.css` is the foundation (the scoreboard tokens, both themes via `<html data-theme>`, base elements, panels, lamps, motion), `board.css` the shared parts, then one file per screen. Theme is a required product feature; never hardcode a color that exists as a token.
 - **Shell** (`src/components/layout/`): top bar, phone tab bar, `history.js` (history index for back direction and scroll restore). The bars stand still; nothing is tied to the scroll. `src/components/common/Modal.jsx` is the one sheet/dialog; pages portal into `.ypl`.
+- **Battle computer** (`src/services/battleCpu.js`, run in `src/pages/battle/cpu.worker.js`): read `docs/BATTLE_COMPUTER.md` before changing it. It is binding: every change to how the computer chooses is measured with `npm run bench:cpu -- --games 300` against the last commit, kept only by that chapter's rules, and logged in its experiment table, failures included. The weekly `learn-cpu-sets.yml` blends players' parties into `src/data/random-sets.json` through a pull request.
 
 ### Data source boundary (read `docs/ARCHITECTURE.md` before touching data code)
 
