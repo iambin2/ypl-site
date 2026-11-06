@@ -75,10 +75,10 @@
 .champion-more { position: absolute; left: var(--pad); bottom: 0; height: var(--floor); display: flex; align-items: center; gap: var(--s1); }
 .champion .mon { right: var(--pad); height: calc(100% - var(--floor)); }
 
-/* ---------- the main action: an inverted 52 panel, its mark (→, ✓, +) before the word, the two together on the left ---------- */
+/* ---------- the main action: an inverted 52 panel, its mark (→, ✓, +) before the word, the two together in the centre ---------- */
 .btn.btn--main {
   --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground);
-  justify-content: flex-start; gap: var(--s3); width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5);
+  justify-content: center; gap: var(--s3); width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5);
   font-size: var(--t15); line-height: var(--l15); font-weight: 700;
 }
 /* a main action that cannot act yet drops to a panel with muted words (DESIGN.md "Controls"), not a faded fill */
