@@ -25,7 +25,7 @@ const KIND_OF = Object.fromEntries(["m-c", "m-b"].flatMap(reg => ["singles", "do
 const shape = set => `${toID(set.ability)}|${set.moves.map(toID).sort().join(",")}|${set.nature}`;
 const keyOf = (ability, moves, item) => `${toID(ability)}|${moves.map(toID).sort().join(",")}|${toID(item)}`;
 
-function playerParty(inputLog) {
+export function playerParty(inputLog) {
   const line = String(inputLog).split("\n").find(l => l.startsWith(">player p1 "));
   if (!line) return null;
   const team = Teams.unpack(JSON.parse(line.slice(">player p1 ".length)).team);
@@ -124,7 +124,7 @@ export function learn(sets, records, { validate = (formatid, set) => !validateTe
   return { sets: out, used, players: playerCount, skipped, learned: true };
 }
 
-async function fetchRecords() {
+export async function fetchRecords() {
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are needed (or --from <file>)");
   const all = [];

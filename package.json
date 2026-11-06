@@ -12,7 +12,8 @@
     "data:directory": "node scripts/build-champions-data.mjs --directory",
     "font:slices": "python scripts/build-font-slices.py",
     "build:battle": "node scripts/build-battle-engine.mjs",
-    "data:cpu-learn": "node scripts/learn-cpu-sets.mjs"
+    "data:cpu-learn": "node scripts/learn-cpu-sets.mjs",
+    "bench:cpu": "node scripts/cpu-benchmark.mjs"
   },
   "dependencies": {
     "@smogon/calc": "^0.12.0",

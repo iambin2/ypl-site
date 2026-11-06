@@ -11,3 +11,4 @@ dist
 supabase/.temp
 .playwright-mcp/
 supabase/functions/battle/engine.bundle.mjs
+src/services/.cpu-base-*.js
