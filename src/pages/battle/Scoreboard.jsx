@@ -54,11 +54,11 @@ export function mountBoard(host, props) {
 }
 
 /* the board inside the stage (its .bs-over), centred over the arena, for the opening of a replay and for the end */
-/* off: the arena switches off to the ground behind it (the end: at 1440 the Pokémon's heads stood out over the board through the veil) */
-export async function playBoard(over, props, steps = [], { off = false } = {}) {
+/* both on the veil, the arena in view under it (2026-11-07: the end switched the arena off to the ground and back, "경기장 위에 떴으면") */
+export async function playBoard(over, props, steps = []) {
   if (!over) return;
   const host = document.createElement("div");
-  host.className = "bt-board-host" + (off ? " off" : "");
+  host.className = "bt-board-host";
   over.appendChild(host);
   const b = mountBoard(host, props);
   const veil = to => (reduced() ? Promise.resolve() : host.animate([{ opacity: 1 - to }, { opacity: to }], { duration: to ? DUR.tone : DUR.leave, delay: to ? 0 : DUR.tone, easing: to ? "linear" : EASE_IN, fill: "both" }).finished.catch(() => {}));

@@ -587,8 +587,6 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   --lit: var(--site-lit); --dim: var(--site-dim); --mute: var(--site-mute); --signal: var(--site-signal); --off: var(--site-off);
   position: absolute; inset: 0; display: grid; place-items: center; background: var(--site-veil); color: var(--lit);
 }
-/* the end: the arena switches off to the site's ground behind the board, so no Pokémon stands half out over it */
-.bt-board-host.off { background: var(--site-ground); }
 
 /* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two
    over ours, each place a key the moves' height with the picture, the name, the HP and how the move lands there; a place the move

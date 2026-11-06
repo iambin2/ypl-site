@@ -753,7 +753,7 @@ export async function final(stage, { players, sides, turn, winner, perspective, 
     : { ...r, label: said(r, sideAt(i) === winner ? "승리" : "패배"), won: sideAt(i) === winner, lost: sideAt(i) !== winner });
   sfx(winner === "tie" || !winner ? "draw" : !seated || winner === perspective ? "win" : "lose", { at: 580 });
   await playBoard(over, { say: `종료, ${turn}턴`, rows: rows.map(r => ({ ...r, score: null })) },
-    [[ms(160), { rows }], [ms(420), { rows: decided, done: true }], [ms(1600), {}]], { off: true });
+    [[ms(160), { rows }], [ms(420), { rows: decided, done: true }], [ms(1600), {}]]);
 }
 /* sent in: the ball opens in a burst of light, a column of it rises, the Pokémon grows out of it white and settles into its colours */
 // cry: called as it appears; the entrance lasts until the cry has been heard
