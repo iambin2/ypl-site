@@ -88,7 +88,7 @@ const parseEffect = effect => {
 };
 
 export function newBattleState() {
-  return { turn: 0, gameType: "singles", ended: false, winner: null, players: { p1: "", p2: "" }, sides: { p1: newSide(), p2: newSide() }, weather: null, weatherSince: 0, fields: [], fieldSince: {} };
+  return { turn: 0, gameType: "singles", ended: false, winner: null, players: { p1: "", p2: "" }, sides: { p1: newSide(), p2: newSide() }, weather: null, weatherSince: 0, fields: [], fieldSince: {}, upkept: true };
 }
 // since: the turn a side condition began (its turns left are counted from it); layers: Spikes and Toxic Spikes stack
 const newSide = () => ({ active: [null, null], team: {}, conditions: [], preview: [], since: {}, layers: {} });
@@ -102,6 +102,8 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
   const tables = { move: text.moves, ability: text.abilities, item: text.items };
 
   const speciesName = species => text.pokedex[toID(species)] || species;
+  // the turn an effect's count starts from: one begun after the turn's end first counts down at the next turn's end
+  const began = () => state.turn + (state.upkept ? 1 : 0);
   // the slot is trusted only while the one standing there has the ident's name (a missed swap never moves HP onto its partner)
   const monOf = ident => {
     const who = parseIdent(ident);
@@ -233,8 +235,9 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "gametype": state.gameType = args[0]; break;
       case "poke": state.sides[args[0]].preview.push(parseDetails(args[1]).species); break;
       // Roost's grounding lasts the turn it was used: it goes with the turn's upkeep (a switch asked for after it comes before the next turn)
-      case "upkeep": for (const side of ["p1", "p2"]) for (const m of state.sides[side].active) if (m) delete m.roost; break;
-      case "turn": state.turn = Number(args[0]); for (const side of ["p1", "p2"]) for (const m of state.sides[side].active) if (m) delete m.roost; event = { verb: "turn", turn: state.turn }; break;
+      // upkept: the turn's end has passed, so what begins now (a lead's or a replacement's ability) first counts down at the next turn's end
+      case "upkeep": state.upkept = true; for (const side of ["p1", "p2"]) for (const m of state.sides[side].active) if (m) delete m.roost; break;
+      case "turn": state.turn = Number(args[0]); state.upkept = false; for (const side of ["p1", "p2"]) for (const m of state.sides[side].active) if (m) delete m.roost; event = { verb: "turn", turn: state.turn }; break;
       case "win": state.ended = true; state.winner = state.players.p1 === args[0] ? "p1" : "p2"; event = { verb: "end", winner: state.winner }; break;
       case "tie": state.ended = true; state.winner = "tie"; event = { verb: "end", winner: "tie" }; break;
 
@@ -394,14 +397,16 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const id = toID(args[0]);
         if (id === "none") { if (state.weather) say(template(state.weather, "end"), {}); state.weather = null; }
         else if (kw.upkeep) say(template(id, "upkeep"), {});
-        else { if (state.weather !== id) state.weatherSince = state.turn; state.weather = id; say(template(id, "start"), {}); }
+        else { if (state.weather !== id) state.weatherSince = began(); state.weather = id; say(template(id, "start"), {}); }
         event = { verb: "weather", id: state.weather, upkeep: Boolean(kw.upkeep) };
         break;
       }
       case "-fieldstart": case "-fieldend": {
         const { id } = parseEffect(args[0]);
-        state.fields = cmd === "-fieldstart" ? [...new Set([...state.fields, id])] : state.fields.filter(f => f !== id);
-        if (cmd === "-fieldstart") state.fieldSince[id] = state.turn;
+        // one terrain at a time: the engine sets a new one over the old without ending it, so the old one goes here (as Showdown's client does)
+        const kept = cmd === "-fieldstart" && /terrain$/.test(id) ? state.fields.filter(f => !/terrain$/.test(f)) : state.fields;
+        state.fields = cmd === "-fieldstart" ? [...new Set([...kept, id])] : state.fields.filter(f => f !== id);
+        if (cmd === "-fieldstart") state.fieldSince[id] = began();
         say(template(args[0], cmd === "-fieldstart" ? "start" : "end") || D(cmd === "-fieldstart" ? "startFieldEffect" : "endFieldEffect"), { EFFECT: effectName(args[0]), POKEMON: kw.of ? pokemonWord(kw.of) : "" });
         event = { verb: "field", id, on: cmd === "-fieldstart" };
         break;
@@ -411,7 +416,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const { id } = parseEffect(args[1]);
         const conditions = state.sides[side].conditions;
         state.sides[side].conditions = cmd === "-sidestart" ? [...new Set([...conditions, id])] : conditions.filter(c => c !== id);
-        if (cmd === "-sidestart") { if (!conditions.includes(id)) state.sides[side].since[id] = state.turn; state.sides[side].layers[id] = (state.sides[side].layers[id] || 0) + 1; }
+        if (cmd === "-sidestart") { if (!conditions.includes(id)) state.sides[side].since[id] = began(); state.sides[side].layers[id] = (state.sides[side].layers[id] || 0) + 1; }
         else delete state.sides[side].layers[id];
         say(template(args[1], cmd === "-sidestart" ? "start" : "end") || D(cmd === "-sidestart" ? "startTeamEffect" : "endTeamEffect"), { TEAM: teamWord(side), EFFECT: effectName(args[1]) });
         event = { verb: "side", side, id, on: cmd === "-sidestart" };

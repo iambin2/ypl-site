@@ -482,7 +482,7 @@ function MoveBench({ res }) {
 
     <SectionHead title="날씨와 필드" />
     <Question id="bench-weather" label="날씨" group><Choice name="bench-weather" options={BENCH_WEATHER.map(([, l]) => l)} value={BENCH_WEATHER.find(([id]) => id === weather)[1]} onChange={l => setWeather(BENCH_WEATHER.find(([, x]) => x === l)[0])} /></Question>
-    <Question id="bench-field" label="필드와 룸" group><Toggles options={BENCH_FIELDS} on={fields} onToggle={id => setFields(f => toggle(f, id))} /></Question>
+    <Question id="bench-field" label="필드와 룸" group><Toggles options={BENCH_FIELDS} on={fields} onToggle={id => setFields(f => toggle(/terrain$/.test(id) ? f.filter(x => x === id || !/terrain$/.test(x)) : f, id))} /></Question>
     {["foe", "own"].map(s => <Question key={s} id={`bench-side-${s}`} label={s === "foe" ? "상대 쪽" : "우리 쪽"} group>
       <Toggles options={BENCH_SIDE} on={sides[s]} onToggle={id => setSides(v => ({ ...v, [s]: toggle(v[s], id) }))} />
     </Question>)}

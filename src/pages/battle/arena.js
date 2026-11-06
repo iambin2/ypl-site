@@ -348,9 +348,11 @@ function rebuild(e, all = false) {
     const start = e.fieldCount;
     // on paper a light that only adds is invisible: every field piece also covers what is under it there, and stands a little stronger
     const onPaper = spec => (e.light ? { occ: Math.max(spec.occ || 0, .7), alpha: typeof spec.alpha === "number" ? Math.min(1, spec.alpha * 1.35) : spec.alpha } : {});
-    const E = spec => e.emit({ ...spec, ...onPaper(spec), field: true, group: g });
+    // a field that stays always lies behind the Pokémon: whatever stands in front of them is a move's, never the field's (2026-11-06, the user)
+    const E = spec => e.emit({ ...spec, ...onPaper(spec), layer: 0, field: true, group: g });
     e.extra = [];
     it.strips = [...(BUILD[args[0]]?.(e, E, ...args.slice(1)) || []), ...e.extra];
+    for (const s of it.strips) s.layer = 0;
     it.data = e.fieldData.slice(start * 24, e.fieldCount * 24);
     e.fieldCount = start;
     items.set(key, it);

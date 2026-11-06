@@ -54,7 +54,7 @@ const STRETCH = { raindance: 5, sunnyday: 5, sandstorm: 5, snowscape: 5, snow: 5
 function turnsLeft(id, since, turn) {
   const base = LASTS[id] || STRETCH[id];
   if (!base || since == null) return "";
-  const left = Math.max(1, base - (turn - since));
+  const left = Math.max(1, Math.min(base, base - (turn - since)));
   return STRETCH[id] ? `${left}~${left + 3}턴` : `${left}턴`;
 }
 const multiplier = (stat, n) => {

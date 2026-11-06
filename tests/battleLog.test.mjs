@@ -251,3 +251,33 @@ test("a move asked alone stands with the Pokémon's other three off, so the keys
   assert.equal(fourMoves(full, known).length, 4);
   assert.deepEqual(fourMoves({ moves: [{ id: "tackle" }] }, []).map(r => r.move.id), ["tackle"]);
 });
+
+test("terrains replace each other, hazards stack and swap, and every count matches the engine's", () => {
+  const mon = (species, ability, moveset, spe) => ({ species, item: "", ability, moves: moveset, nature: "Hardy", evs: sp({ spe }), level: 50 });
+  const rest = [mon("Garchomp", "Rough Skin", ["Earthquake"], 0), mon("Kingambit", "Defiant", ["Iron Head"], 0)];
+  const battle = startBattle({ formatid: formatId("m-c", "singles"), seed: [1, 2, 3, 4],
+    p1: { name: "가", team: [mon("Pikachu", "Static", ["Electric Terrain", "Spikes", "Reflect", "Tailwind"], 32), ...rest] },
+    // Psychic Surge sets its terrain before the first turn: its five turns start counting at the first turn's end
+    p2: { name: "나", team: [mon("Alakazam", "Psychic Surge", ["Psychic Terrain", "Stealth Rock", "Court Change", "Defog"], 0), ...rest] } });
+  const BASE = { psychicterrain: 5, electricterrain: 5, reflect: 5, tailwind: 4 };
+  const check = when => {
+    const { state } = readWholeLog(readout(battle).sideLog.p1, { text, moves, perspective: "p1" });
+    const terrain = battle.field.terrain;
+    assert.deepEqual(state.fields.filter(f => /terrain$/.test(f)), terrain ? [terrain] : [], `${when}: one terrain, the engine's`);
+    if (terrain) assert.equal(BASE[terrain] - (state.turn - state.fieldSince[terrain]), battle.field.terrainState.duration, `${when}: terrain turns left`);
+    for (const [i, id] of ["p1", "p2"].entries()) {
+      const engine = battle.sides[i].sideConditions, seen = state.sides[id];
+      assert.deepEqual([...seen.conditions].sort(), Object.keys(engine).sort(), `${when}: ${id} conditions`);
+      for (const [c, cs] of Object.entries(engine)) {
+        if (cs.layers) assert.equal(seen.layers[c], cs.layers, `${when}: ${id} ${c} layers`);
+        if (BASE[c]) assert.equal(BASE[c] - (state.turn - seen.since[c]), cs.duration, `${when}: ${id} ${c} turns left`);
+      }
+    }
+  };
+  choose(battle, {}, "p1", "team 1, 2, 3"); choose(battle, {}, "p2", "team 1, 2, 3");
+  check("lead");
+  for (const [a, b, when] of [[1, 1, "electric then psychic"], [2, 2, "spikes and rock"], [2, 3, "court change"], [3, 4, "reflect then defog"], [4, 1, "tailwind"], [2, 2, "more"]]) {
+    choose(battle, {}, "p1", `move ${a}`); choose(battle, {}, "p2", `move ${b}`);
+    check(when);
+  }
+});

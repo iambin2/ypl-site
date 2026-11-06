@@ -575,7 +575,8 @@ void main(){
   vec4 r = vec4(uRim.rgb, 1.) * rim * uRim.a;
   vec4 col = (c + r * (1. - c.a)) * uAlpha;
   if (uReflect > 0.) col *= uReflect * smoothstep(.35, 1., vUv.y);
-  o0 = col; o1 = vec4(r.rgb * uAlpha * .8 + c.rgb * min(uFlash, 1.) * .12 * uAlpha, 0.);
+  // the Pokémon covers the glow of what lies behind it, so no field's light blooms through its body
+  o0 = col; o1 = vec4(r.rgb * uAlpha * .8 + c.rgb * min(uFlash, 1.) * .12 * uAlpha, col.a);
 }`;
 const FULL_VS = `#version 300 es
 layout(location=0) in vec2 aQ; out vec2 vUv; void main(){ vUv = aQ * .5 + .5; gl_Position = vec4(aQ, 0., 1.); }`;
