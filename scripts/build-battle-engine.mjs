@@ -8,25 +8,19 @@
 import { build } from "esbuild";
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { OLD_LEARNSETS, emptyFor } from "./oldLearnsets.mjs";
 
 const ENTRY = fileURLToPath(new URL("../supabase/functions/battle/server.mjs", import.meta.url));
 const OUT = fileURLToPath(new URL("../supabase/functions/battle/engine.bundle.mjs", import.meta.url));
 const LICENSE = readFileSync(new URL("../node_modules/@pkmn/sim/LICENSE", import.meta.url), "utf8");
 
-// Supabase refuses an upload this large (413 at 6.7 MB). Half of it is every older generation's learnsets and their event
-// legality, which only the team validator reads, and Champions brings its own full learnsets (@pkmn/mods/champions).
-// Left empty here, the validator passed and refused exactly as the full engine on 8000 checks (2000 teams, four formats),
-// half of them carrying a move the species or a pre-evolution learns only in those base learnsets (2026-11-04).
+// Supabase refuses an upload this large (413 at 6.7 MB): the older generations' learnsets are left out (scripts/oldLearnsets.mjs).
 // ponytail: a Champions species whose learnset ever inherits from an older generation would lose those moves here;
 // the check at the bottom of this file and that comparison are what catch it.
-const OLD_LEARNSETS = /@pkmn[\\/]sim[\\/]build[\\/]esm[\\/]data[\\/](mods[\\/]gen(2|6|8|8bdsp|8legends)[\\/])?(learnsets|legality)\.mjs$/;
 const leaveOutOldLearnsets = {
   name: "leave-out-old-learnsets",
   setup(b) {
-    b.onLoad({ filter: OLD_LEARNSETS }, args => ({
-      contents: /legality\.mjs$/.test(args.path) ? "export const Legality = {};" : "export const Learnsets = {};",
-      loader: "js",
-    }));
+    b.onLoad({ filter: OLD_LEARNSETS }, args => ({ contents: emptyFor(args.path), loader: "js" }));
   },
 };
 

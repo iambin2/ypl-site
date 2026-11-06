@@ -40,9 +40,10 @@ export function downloadReplay({ row, log, res, perspective, names }) {
   const reader = createBattleReader({ text: res.text, moves: res.detail.moves, perspective });
   const out = [
     `${names.p1} 대 ${names.p2}`,
-    `${row.kind === "official" ? "공식" : "친선"} 배틀, ${isDoubles(row.format_id) ? "더블" : "싱글"}, ${formatDate(row.created_at)}`,
+    `${row.kind === "official" ? "공식" : row.kind === "cpu" ? "컴퓨터와의" : "친선"} 배틀, ${isDoubles(row.format_id) ? "더블" : "싱글"}, ${formatDate(row.created_at)}`,
     row.winner === "tie" ? "무승부" : row.winner ? `${names[row.winner]} 승리` : "",
-    new URL(battleHref(row.id), window.location.href).href,
+    // a battle with the computer has no page of its own to link to
+    row.kind === "cpu" ? "" : new URL(battleHref(row.id), window.location.href).href,
   ];
   for (const line of String(log).split("\n")) {
     const { lines, event } = reader.read(line);

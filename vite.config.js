@@ -1,6 +1,15 @@
 import { copyFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { transform } from "esbuild";
+import { OLD_LEARNSETS, emptyFor } from "./scripts/oldLearnsets.mjs";
+
+// the computer battle's worker carries the battle engine; it leaves out what the battle function's bundle leaves out
+const leaveOutOldLearnsets = () => ({ name: "leave-out-old-learnsets", load: id => (OLD_LEARNSETS.test(id) ? emptyFor(id) : null) });
+// The engine names what it saves by class (@pkmn/sim state.mjs: [Pokemon:p1a]), so its names must survive minifying, as in the
+// battle function's bundle (keepNames in scripts/build-battle-engine.mjs). Only the worker's chunk keeps them: the minifier that
+// runs after this still shortens the names in the code, but each class keeps its own name, set by esbuild's __name.
+const keepNames = () => ({ name: "keep-names", renderChunk: async code => ({ code: (await transform(code, { keepNames: true, format: "esm", loader: "js" })).code, map: null }) });
 
 function productionVersionPlugin() {
   const githubSha = String(process.env.GITHUB_SHA || "").trim();
@@ -66,5 +75,6 @@ export default defineConfig(({ command }) => {
     // 도메인을 떼고 iambin2.github.io/ypl-site/ 로 돌아가면 "/ypl-site/" 로 되돌리세요.
     base: "/",
     plugins: [react(), isProductionBuild && productionVersionPlugin()].filter(Boolean),
+    worker: { format: "es", plugins: () => [leaveOutOldLearnsets(), keepNames()] },
   };
 });

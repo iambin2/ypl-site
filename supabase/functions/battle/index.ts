@@ -44,7 +44,7 @@ function checkTeam(formatid: string, team: unknown) {
    Only the columns the actions use; the logs stay in the database. */
 async function read(id: string) {
   const { data, error } = await db.from("battles")
-    .select("id, kind, status, version, format_id, p1_name, winner, battle_secrets(*)").eq("id", id).maybeSingle();
+    .select("id, kind, status, version, format_id, p1_name, winner, room, battle_secrets(*)").eq("id", id).maybeSingle();
   if (error) throw error;
   const secret = Array.isArray(data?.battle_secrets) ? data.battle_secrets[0] : data?.battle_secrets;
   if (!data || !secret) refuse(404, "배틀을 찾을 수 없습니다.");
@@ -156,29 +156,58 @@ async function withRetry<T>(fn: () => Promise<T | undefined>) {
   return refuse(409, "다른 선택과 겹쳤습니다. 다시 시도해 주세요.");
 }
 
+/* A friendly room (docs/db/battle_rooms.sql): an open one stands on the battle page's list of open rooms, a code one is entered with
+   four digits its opener passes on. A code is unique among the rooms still waiting. */
+const newCode = () => String(crypto.getRandomValues(new Uint16Array(1))[0] % 10000).padStart(4, "0");
+async function waitingRoom(code: string) {
+  const { data, error } = await db.from("battle_secrets").select("battle_id, battles!inner(status)")
+    .eq("room_code", code).eq("battles.status", "waiting").limit(1);
+  if (error) throw error;
+  return data?.[0]?.battle_id as string | undefined;
+}
+
 const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown>> = {
-  async create({ regulation, battleFormat, name, team }) {
+  async create({ regulation, battleFormat, name, team, room }) {
     let formatid = "";
     try { formatid = formatId(String(regulation), String(battleFormat)); } catch { refuse(400, "알 수 없는 규정입니다."); }
     const p1 = cleanName(name);
     const sets = checkTeam(formatid, team);
     const id = newId();
     const token = newToken();
-    const { error } = await db.rpc("battle_create", {
+    const base = {
       p_id: id, p_regulation: regulation, p_format_id: formatid, p_engine: ENGINE,
       p_p1_name: p1, p_p1_token_hash: await sha256(token), p_p1_team: sets,
-    });
+    };
+    let code: string | null = null;
+    if (room === "code") {
+      for (let tries = 0; tries < 20 && !code; tries++) { const next = newCode(); if (!(await waitingRoom(next))) code = next; }
+      if (!code) refuse(429, "열린 방이 너무 많습니다. 잠시 뒤 다시 시도해 주세요.");
+    }
+    const { error } = room === "open" || room === "code"
+      ? await db.rpc("battle_create_room", { ...base, p_room: room, p_room_code: code })
+      : await db.rpc("battle_create", base);
     if (error) refuse(error.code === "P0001" ? 429 : 500, error.code === "P0001" ? error.message : "배틀을 열지 못했습니다.");
-    return { id, token, side: "p1" };
+    return { id, token, side: "p1", ...(code ? { code } : {}) };
   },
 
-  async join({ id, name, team }) {
+  // a code room's id, for the code its opener passed on
+  async room({ code }) {
+    const value = String(code ?? "");
+    if (!/^[0-9]{4}$/.test(value)) refuse(400, "방 코드는 숫자 4자리입니다.");
+    const id = await waitingRoom(value);
+    if (!id) refuse(404, "그 코드의 방이 없습니다. 코드를 확인해 주세요.");
+    return { id };
+  },
+
+  async join({ id, name, team, code }) {
     const p2 = cleanName(name);
     const token = newToken();
     return withRetry(async () => {
       const { battle, secret } = await read(String(id));
       if (battle.kind === "official") refuse(409, "공식 경기는 대진표의 경기에서 참가해 주세요.");
       if (battle.status !== "waiting") refuse(409, "이미 시작된 배틀입니다.");
+      // ponytail: four digits with no limit on tries; a friendly room has nothing to take, add a per-battle try count if that changes
+      if (battle.room === "code" && String(code ?? "") !== secret.room_code) refuse(403, "방 코드가 맞지 않습니다.");
       if (p2 === battle.p1_name) refuse(400, "상대와 다른 이름을 입력해 주세요.");
       const sets = checkTeam(battle.format_id, team);
       const engine = startBattle({ formatid: battle.format_id, p1: { name: battle.p1_name, team: secret.p1_team }, p2: { name: p2, team: sets } });

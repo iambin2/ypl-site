@@ -6,7 +6,7 @@ import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
 import ErrorNote from "../components/common/ErrorNote.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
-import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, Toast } from "../components/common/Board.jsx";
+import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
 import Modal from "../components/common/Modal.jsx";
 import { checkBuild, pushHistory } from "../components/layout/history.js";
@@ -16,7 +16,7 @@ import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, requestKey, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
-import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, cancelBattle, chooseInBattle, createBattle, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, cancelBattle, chooseInBattle, createBattle, findRoom, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import { logUpTo, nextStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
@@ -52,17 +52,21 @@ export default function BattlePage({ flash: say, go }) {
   const params = new URLSearchParams(window.location.search);
   const [id, setId] = useState(() => params.get("id"));
   const official = params.get("event") && params.get("match") ? { eventId: params.get("event"), nodeKey: params.get("match") } : null;
+  const [cpu, setCpu] = useState(() => params.get("cpu") === "1");
   const res = useResources();
-  const open = useCallback(next => {
+  // next: a battle's id, CPU_ROOM for the battle with the computer, null for the battle page; code: a code room's four digits
+  const open = useCallback((next, code) => {
     const url = new URL(window.location.href);
-    url.search = next ? `view=battle&id=${encodeURIComponent(next)}` : "view=battle";
+    url.search = next === CPU_ROOM ? "view=battle&cpu=1" : next ? `view=battle&id=${encodeURIComponent(next)}${code ? `&code=${code}` : ""}` : "view=battle";
     pushHistory({ view: "battle" }, url);
-    setId(next);
+    setCpu(next === CPU_ROOM);
+    setId(next === CPU_ROOM ? null : next);
   }, []);
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
-  if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
+  if (cpu) return <RoomGuard key="cpu"><CpuRoom res={res} say={say} go={go} onLeave={() => open(null)} /></RoomGuard>;
+  if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} code={params.get("code")} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
 }
@@ -126,7 +130,7 @@ const focusName = () => document.getElementById("bt-name")?.focus();
 /* 배틀 전 화면(DESIGN.md "Battle", Opening and waiting): 경기가 치러질 모습을 먼저 보인다. 위에는 나 대 상대, 그 아래 경기장에는
    고른 팀의 앞 포켓몬이 우리 쪽에 서고(그 아래 판에 이름과 타입) 상대 쪽은 상대가 올 때까지 비어 있다. 그 다음이 고를 것(형식, 팀)과 주 행동이다.
    여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다. foe는 참가하는 쪽에서 본 연 사람의 이름이다. */
-function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, doubles, setup, action, after, onEnter }) {
+function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", doubles, setup, action, after, onEnter }) {
   const team = teams.find(t => t.id === teamId);
   const saved = teams.some(t => !t.random);
   const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
@@ -145,7 +149,7 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, d
             <span className="pn bt-vs-mid t15" aria-hidden="true">VS</span>
             <span className="pn bt-vs foe">
               <span className="t12 dim">상대</span>
-              {foe ? <b>{foe}</b> : <b className="mute">링크로 참가</b>}
+              {foe ? <b>{foe}</b> : <b className="mute">{foeHint}</b>}
             </span>
           </div>
           <LobbyStage leads={leads} doubles={doubles} label={stageLabel} />
@@ -168,10 +172,101 @@ const failText = (e, res) => {
   if (!problem) return e.message;
   return `${e.message} ${res ? problem.replace(/포켓몬\(([^)]+)\)/, (_, species) => `포켓몬(${nameOf(res, species)})`) : problem}`;
 };
+/* ---------- the battle with the computer (src/services/battleCpu.js): the engine and the computer run in a worker on this device ----------
+   Nothing goes to the server. The battle is kept here as its input log (the seed and every choice), so it comes back as it was
+   after a reload: the worker plays the log again. A new battle with the computer replaces the one kept. */
+const CPU_ROOM = "cpu";
+const CPU_KEY = "ypl-battle:cpu:v1";
+function readCpuBattle() { try { return JSON.parse(localStorage.getItem(CPU_KEY) || "null"); } catch { return null; } }
+function keepCpuBattle(next) { try { localStorage.setItem(CPU_KEY, JSON.stringify(next)); } catch { /* 이 화면을 닫으면 이어서 할 수 없다 */ } }
+
+function CpuRoom({ res, say, go, onLeave }) {
+  const [state, setState] = useState(null);
+  const [error, setError] = useState(null);
+  const worker = useRef(null);
+  const calls = useRef(new Map());
+  useEffect(() => {
+    const kept = readCpuBattle();
+    if (!kept?.start && !kept?.inputLog) { setError({ none: true }); return undefined; }
+    const w = new Worker(new URL("./battle/cpu.worker.js", import.meta.url), { type: "module" });
+    worker.current = w;
+    let n = 0;
+    const take = data => {
+      const now = readCpuBattle() || {};
+      keepCpuBattle({ teamId: now.teamId, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog });
+      setState({ row: data.row, view: data.view });
+    };
+    w.onmessage = ({ data }) => {
+      if (data.push) { take(data); return; }
+      const call = calls.current.get(data.id);
+      calls.current.delete(data.id);
+      if (!call) return;
+      if (data.ok) { take(data); call.resolve(data.view); }
+      else call.reject(Object.assign(new Error(data.error), { problems: data.problems }));
+    };
+    w.onerror = () => setError({ message: "컴퓨터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요." });
+    const ask = (type, args = {}) => new Promise((resolve, reject) => { const id = ++n; calls.current.set(id, { resolve, reject }); w.postMessage({ id, type, ...args }); });
+    worker.current.ask = ask;
+    (kept.inputLog ? ask("resume", { inputLog: kept.inputLog, regulation: kept.regulation, createdAt: kept.createdAt, endedBy: kept.endedBy }) : ask("start", kept.start))
+      .catch(e => setError({ message: failText(e, res) }));
+    return () => { w.terminate(); worker.current = null; };
+  }, []);
+  const api = useMemo(() => ({
+    choose: (_, choice) => worker.current.ask("choose", { choice }),
+    forfeit: () => worker.current.ask("forfeit"),
+  }), []);
+  if (error?.none) return <Empty title="진행 중인 컴퓨터와의 배틀이 없습니다." desc="배틀 화면에서 상대를 컴퓨터로 골라 시작해 주세요." />;
+  if (error) return <ErrorNote action="돌아가기" onRetry={onLeave}>{error.message}</ErrorNote>;
+  if (!state) return <Loader />;
+  return <Arena row={state.row} view={state.view} seat={{ side: "p1" }} res={res} onView={view => setState(s => ({ ...s, view }))} go={go} say={say} api={api} onLeave={onLeave} />;
+}
+
+/* ---------- rooms: a code room is entered with its four digits; the open rooms stand as rows, newest first ---------- */
+function RoomFinder({ onOpen }) {
+  const [rooms, setRooms] = useState([]);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let on = true;
+    const load = () => listOpenRooms().then(list => on && setRooms(list));
+    load();
+    // a room fills or opens while the page stands: the list is read again now and then, while it is in view
+    const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 15000);
+    return () => { on = false; clearInterval(t); };
+  }, []);
+  const enter = async () => {
+    if (busy) return;
+    if (code.length !== 4) { setError("방 코드 4자리를 입력해 주세요."); document.getElementById("bt-room-code")?.focus(); return; }
+    setBusy(true); setError("");
+    try { onOpen((await findRoom(code)).id, code); }
+    catch (e) { setError(e.message); setBusy(false); }
+  };
+  return <section className="bt-list" aria-labelledby="bt-rooms-h">
+    <SectionHead id="bt-rooms-h" title="방 참가" />
+    {/* the page's one main action is the lobby's own: this is a second-rank key under its field, never a second dock */}
+    <Question id="bt-room-code" label="방 코드" error={error}>
+      <input id="bt-room-code" className="in" inputMode="numeric" autoComplete="off" maxLength={4} enterKeyHint="go" value={code} placeholder="숫자 4자리"
+        aria-describedby={error ? "bt-room-code-error" : undefined} aria-invalid={error ? true : undefined}
+        onChange={e => { setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); if (error) setError(""); }}
+        onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) enter(); }} />
+    </Question>
+    <Button onClick={enter} loading={busy}>코드로 참가</Button>
+    {rooms.length > 0 && <div className="stack">
+      {rooms.map(r => <Row key={r.id} title={`${r.p1_name}의 방`} line={`${REGULATIONS[r.regulation] || ""} ${isDoubles(r.format_id) ? "더블" : "싱글"}, 공개 방`}
+        lamp="참가 대기" onClick={() => onOpen(r.id)} label={`${r.p1_name}의 방에 참가`} />)}
+    </div>}
+  </section>;
+}
+
+/* 상대: 컴퓨터(이 기기에서 바로), 공개 방(열린 방 목록에 선다), 코드 방(숫자 4자리를 알려 준 사람만). 두 방 모두 링크로도 들어온다. */
+const OPPONENTS = [["cpu", "컴퓨터", "컴퓨터"], ["open", "공개 방", "누구나 참가"], ["code", "코드 방", "코드로 참가"]];
 function BattleOpen({ res, onOpen, preset }) {
   const teams = useMemo(() => [...readSavedTeams().filter(team => REGULATIONS[team.regulationId]), ...randomTeams(Object.keys(REGULATIONS))], []);
   const [name, setName] = useState(rememberedName);
-  const [format, setFormat] = useState("doubles");
+  const [format, setFormat] = useState("singles");
+  const [foe, setFoe] = useState("cpu");
+  const saved = readCpuBattle();
   // the team builder's 이 팀으로 배틀 opens here with its team chosen
   const [teamId, setTeamId] = useState((teams.some(t => t.id === preset) ? preset : teams[0]?.id) || "");
   const [busy, setBusy] = useState(false);
@@ -180,10 +275,17 @@ function BattleOpen({ res, onOpen, preset }) {
   const submit = async () => {
     if (busy || !team) return;
     if (!name.trim()) { setError(NAME_MISSING); focusName(); return; }
+    if (foe === "cpu") {
+      if (saved?.status === "active" && !(await siteConfirm({ title: "새 배틀을 시작할까요?", body: "진행 중인 컴퓨터와의 배틀은 남지 않습니다.", confirmLabel: "새로 시작" }))) return;
+      rememberName(name.trim());
+      keepCpuBattle({ start: { regulation: team.regulationId, battleFormat: format, name: name.trim(), team: sendTeam(team, res) }, teamId: team.id });
+      onOpen(CPU_ROOM);
+      return;
+    }
     setBusy(true); setError("");
     try {
       rememberName(name.trim());
-      const made = await createBattle({ regulation: team.regulationId, battleFormat: format, name: name.trim(), team: sendTeam(team, res) });
+      const made = await createBattle({ regulation: team.regulationId, battleFormat: format, name: name.trim(), team: sendTeam(team, res), room: foe });
       keepOpenTeam(made.id, team.id);
       onOpen(made.id);
     } catch (e) {
@@ -192,19 +294,27 @@ function BattleOpen({ res, onOpen, preset }) {
     }
   };
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
+  const foeRow = OPPONENTS.find(([key]) => key === foe);
   return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
-    setup={<Question id="bt-format" label="형식" group>
-      <Choice name="bt-format" options={FORMATS.map(([, label]) => label)} value={FORMATS.find(([key]) => key === format)[1]} onChange={label => setFormat(FORMATS.find(([, l]) => l === label)[0])} />
-    </Question>}
+    foeHint={foeRow[2]}
+    setup={<>
+      {saved?.status === "active" && <Row title="컴퓨터와의 배틀" line="진행 중인 배틀을 이어서 합니다." lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
+      <Question id="bt-foe" label="상대" group>
+        <Choice name="bt-foe" options={OPPONENTS.map(([, label]) => label)} value={foeRow[1]} onChange={label => setFoe(OPPONENTS.find(([, l]) => l === label)[0])} />
+      </Question>
+      <Question id="bt-format" label="형식" group>
+        <Choice name="bt-format" options={FORMATS.map(([, label]) => label)} value={FORMATS.find(([key]) => key === format)[1]} onChange={label => setFormat(FORMATS.find(([, l]) => l === label)[0])} />
+      </Question>
+    </>}
     action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
-      <Button variant="main" onClick={submit} loading={busy} disabled={!team}>배틀 열기</Button>
+      <Button variant="main" onClick={submit} loading={busy} disabled={!team}>{foe === "cpu" ? "배틀 시작" : "방 만들기"}</Button>
     </Dock>}
-    after={<BattleLists onOpen={onOpen} />} />;
+    after={<><RoomFinder onOpen={onOpen} /><BattleLists onOpen={onOpen} /></>} />;
 }
 
 /* ---------- a battle: its version is asked on battlePollDelay's rhythm, and only a change of version reads the row ----------
    A player's own view comes back with each choice; the server is asked for it again only when the engine moved since. */
-function BattleRoom({ id, res, say, go, onLeave, start }) {
+function BattleRoom({ id, res, say, go, onLeave, start, code }) {
   const [row, setRow] = useState(undefined);
   const [view, setView] = useState(null);
   const [seat, setSeat] = useState(() => readSeat(id));
@@ -292,17 +402,18 @@ function BattleRoom({ id, res, say, go, onLeave, start }) {
 
   if (row === undefined) return <Loader />;
   if (row === null) return <Empty title="배틀을 찾을 수 없습니다." desc="링크가 맞는지 확인해 주세요." />;
-  const share = async () => { const how = await shareLink({ view: "battle", id }, "YPL 배틀"); if (how === "copied") say?.("링크를 복사했습니다."); };
+  // a code room's link carries its code, so the one who opens it comes straight in
+  const share = async () => { const how = await shareLink({ view: "battle", id, ...(seat?.code ? { code: seat.code } : {}) }, "YPL 배틀"); if (how === "copied") say?.("링크를 복사했습니다."); };
   if (row.status === "waiting") {
     const cancel = async () => {
       if (!(await siteConfirm({ title: "대기를 취소할까요?", body: "아직 아무도 참가하지 않아 남는 기록이 없습니다.", confirmLabel: "대기 취소" }))) return;
       try { await cancelBattle(id); say?.("대기를 취소했습니다."); onLeave(); }
       catch (e) { say?.(e.message); refresh(); }
     };
-    if (seat) return <Waiting row={row} res={res} team={openTeam(id)} onShare={share} onCancel={cancel} />;
+    if (seat) return <Waiting row={row} res={res} team={openTeam(id)} code={seat.code} onShare={share} onCancel={cancel} />;
     // an official match is entered from its own seat screen: the player's party PIN, never a builder team
     if (row.kind === "official") return <OfficialSeat res={res} eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
-    return <Join row={row} res={res} onJoined={next => { setSeat(readSeat(id)); show(next); refresh(); }} onRefresh={() => refresh().catch(() => {})} />;
+    return <Join row={row} res={res} code={code} onJoined={next => { setSeat(readSeat(id)); show(next); refresh(); }} onRefresh={() => refresh().catch(() => {})} />;
   }
   return <Arena row={row} view={view} seat={seat} res={res} onView={show} onShare={share} go={go} api={api} say={say} start={start} />;
 }
@@ -310,7 +421,7 @@ function BattleRoom({ id, res, say, go, onLeave, start }) {
 /* the opener waits (DESIGN.md "Battle", Opening and waiting): the screen it opened from, now set. The matchup with our name lit and
    the opponent's place waiting, the court with our leads standing and a light breathing where each of theirs will be sent in,
    the time waited in segments, the battle as a row, the team brought, then the link to send and 대기 취소. */
-export function Waiting({ row, res, team, onShare, onCancel }) {
+export function Waiting({ row, res, team, code, onShare, onCancel }) {
   const official = row.kind === "official";
   const doubles = isDoubles(row.format_id);
   const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res?.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
@@ -333,10 +444,12 @@ export function Waiting({ row, res, team, onShare, onCancel }) {
           {res && (leads.length > 0 || team?.random) && <LobbyBars leads={leads} doubles={doubles} res={res} random={Boolean(team?.random)} />}
         </div>
         <div className="bt-lobby-set">
+          {/* a code room's four digits stand first: they are what the opener reads out to the one coming in */}
+          {code && <Counter label="방 코드" value={code} cells={4} h={52} />}
           <Counter label="기다린 시간" value={clock} cells={3} h={52} />
-          <Row title={`상대를 기다리는 중입니다.`} line={`${rule} ${official ? "공식 경기" : "친선 배틀"}`} lamp="참가 대기" />
+          <Row title={`상대를 기다리는 중입니다.`} line={`${rule} ${official ? "공식 경기" : row.room === "open" ? "공개 방" : row.room === "code" ? "코드 방" : "친선 배틀"}`} lamp="참가 대기" />
           {team && res && <div className="q"><span className="q-label t12 dim">가져온 팀</span><TeamRows teams={[team]} value={null} onChange={null} res={res} /></div>}
-          <p className="t12 dim">{official ? "상대 선수가 들어오면 시작합니다." : "상대가 링크로 들어오면 시작합니다."}</p>
+          <p className="t12 dim">{official ? "상대 선수가 들어오면 시작합니다." : row.room === "open" ? "상대가 열린 방 목록이나 링크로 들어오면 시작합니다." : code ? "상대가 방 코드나 링크로 들어오면 시작합니다." : "상대가 링크로 들어오면 시작합니다."}</p>
           <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
           <Button variant="link" onClick={onCancel}>대기 취소</Button>
         </div>
@@ -415,9 +528,12 @@ function OfficialSeat({ eventId, nodeKey, res, onOpen }) {
   );
 }
 
-function Join({ row, res, onJoined, onRefresh }) {
+function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
   const teams = useMemo(() => [...readSavedTeams().filter(team => team.regulationId === row.regulation), ...randomTeams([row.regulation])], [row.regulation]);
   const [name, setName] = useState(rememberedName);
+  // a code room asks for its four digits, unless the link brought them
+  const [code, setCode] = useState(() => (/^[0-9]{4}$/.test(linkCode || "") ? linkCode : ""));
+  const askCode = row.room === "code" && !/^[0-9]{4}$/.test(linkCode || "");
   const [teamId, setTeamId] = useState(teams[0]?.id || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -426,10 +542,11 @@ function Join({ row, res, onJoined, onRefresh }) {
   const submit = async () => {
     if (busy || !team) return;
     if (!name.trim()) { setError(NAME_MISSING); focusName(); return; }
+    if (askCode && code.length !== 4) { setError("방 코드 4자리를 입력해 주세요."); document.getElementById("bt-code")?.focus(); return; }
     setBusy(true); setError("");
     try {
       rememberName(name.trim());
-      onJoined(await joinBattle(row.id, { name: name.trim(), team: sendTeam(team, res) }));
+      onJoined(await joinBattle(row.id, { name: name.trim(), team: sendTeam(team, res), ...(row.room === "code" ? { code } : {}) }));
     } catch (e) {
       setError(failText(e, res));
       setBusy(false);
@@ -440,7 +557,14 @@ function Join({ row, res, onJoined, onRefresh }) {
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
   return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`팀 (${REGULATIONS[row.regulation]})`} name={name} setName={typeName}
     foe={row.p1_name} doubles={doubles} onEnter={submit}
-    setup={<Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} line="참가하면 바로 시작합니다." lamp="참가 대기" />}
+    setup={<>
+      <Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} line="참가하면 바로 시작합니다." lamp="참가 대기" />
+      {askCode && <Question id="bt-code" label="방 코드">
+        <input id="bt-code" className="in" inputMode="numeric" autoComplete="off" maxLength={4} enterKeyHint="go" value={code} placeholder="숫자 4자리"
+          onChange={e => { setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); if (error) setError(""); }}
+          onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) submit(); }} />
+      </Question>}
+    </>}
     action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
       <Button variant="main" onClick={submit} loading={busy} disabled={!team}>참가</Button>
     </Dock>} />;
@@ -481,7 +605,9 @@ function useNow(on) {
   return now;
 }
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
-export function Arena({ row, view, seat, res, onView, onShare, go, say, start, api = SERVER }) {
+export function Arena({ row, view, seat, res, onView, onShare, go, say, start, onLeave, api = SERVER }) {
+  // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
+  const local = row.kind === "cpu";
   const ended = row.status === "ended";
   // a player sees from their own seat; anyone else may watch from either side (시점), as a link may ask (?side=p2)
   const [pov, setPov] = useState(() => (start?.side === "p2" ? "p2" : "p1"));
@@ -604,7 +730,7 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
     return () => { document.removeEventListener("visibilitychange", mark); document.title = base; };
   }, [choosing]);
   // closing the tab mid-battle runs the clock out: the browser asks first (a reload keeps the seat, so it only costs a question)
-  const playing = Boolean(seat) && !ended;
+  const playing = Boolean(seat) && !ended && !local; // a battle with the computer comes back after a reload as it was
   useEffect(() => {
     if (!playing) return undefined;
     const ask = e => { e.preventDefault(); e.returnValue = ""; };
@@ -704,10 +830,11 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, a
           <Log lines={tape.lines} />
         </details>
         <div className="bt-links">
-          {(!seat || ended) && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
+          {(!seat || ended) && !local && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
           {seat && !ended && <Button variant="link" onClick={giveUp}>기권</Button>}
           {official && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
-          {ended && <Button variant="link" onClick={shareToBoard}>게시판에 공유</Button>}
+          {ended && !local && <Button variant="link" onClick={shareToBoard}>게시판에 공유</Button>}
+          {ended && local && onLeave && <Button variant="link" onClick={onLeave}>새 배틀</Button>}
           {ended && log && <Button variant="link" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
           <span className="t12 mute">배틀 엔진: Pokémon Showdown (MIT)</span>
         </div>

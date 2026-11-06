@@ -16,13 +16,17 @@ function keepSeat(id, seat) {
   } catch { /* 저장하지 못하면 이 화면에서만 선수다 */ }
 }
 
-export async function createBattle({ regulation, battleFormat, name, team }) {
-  const made = await callFunction("battle", { action: "create", regulation, battleFormat, name, team });
-  keepSeat(made.id, { token: made.token, side: made.side });
+/* room: "open" (on the list of open rooms) or "code" (entered with the four digits the opener passes on; docs/db/battle_rooms.sql).
+   The code is kept with the seat, so the waiting screen can show it again after a reload. */
+export async function createBattle({ regulation, battleFormat, name, team, room }) {
+  const made = await callFunction("battle", { action: "create", regulation, battleFormat, name, team, room });
+  keepSeat(made.id, { token: made.token, side: made.side, ...(made.code ? { code: made.code } : {}) });
   return made;
 }
-export async function joinBattle(id, { name, team }) {
-  const view = await callFunction("battle", { action: "join", id, name, team });
+// a code room's id, for its four digits
+export const findRoom = code => callFunction("battle", { action: "room", code });
+export async function joinBattle(id, { name, team, code }) {
+  const view = await callFunction("battle", { action: "join", id, name, team, code });
   keepSeat(id, { token: view.token, side: view.side });
   return view;
 }
@@ -52,11 +56,27 @@ const PUBLIC = "id, regulation, format_id, engine, status, p1_name, p2_name, tur
 const LIST = "id, status, p1_name, p2_name, turn, winner, ended_by, kind, event_id, source_node_key, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, applied_at, apply_error, updated_at";
 
 // 공개 행. 진행 중에는 관전 로그만, 끝나면 전체 로그와 입력 기록까지 있다.
+// 방의 종류(room)는 docs/db/battle_rooms.sql 을 실행한 뒤에만 있다. 그 전에는 없이 읽는다(모든 방이 링크 방).
+let roomsSupported = true;
+const missingRoom = error => /42703|room/.test(`${error?.code} ${error?.message}`);
 export async function readBattleRow(id) {
   if (!supa) return null;
-  const { data, error } = await supa.from("battles").select(PUBLIC).eq("id", id).maybeSingle();
+  let { data, error } = await supa.from("battles").select(roomsSupported ? `${PUBLIC}, room` : PUBLIC).eq("id", id).maybeSingle();
+  if (error && roomsSupported && missingRoom(error)) {
+    roomsSupported = false;
+    ({ data, error } = await supa.from("battles").select(PUBLIC).eq("id", id).maybeSingle());
+  }
   if (error) throw new Error(error.message);
   return data;
+}
+/* 열린 방: 아직 아무도 들어오지 않은 공개 방, 최근 것부터. 30분 넘게 아무도 오지 않은 방은 떠난 것으로 보고 싣지 않는다. */
+export async function listOpenRooms() {
+  if (!supa || !roomsSupported) return [];
+  const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const { data, error } = await supa.from("battles").select("id, regulation, format_id, p1_name, created_at")
+    .eq("status", "waiting").eq("room", "open").gte("created_at", since).order("created_at", { ascending: false }).limit(20);
+  if (error && missingRoom(error)) roomsSupported = false;
+  return error ? [] : data || [];
 }
 /* 끝난 배틀의 로그(리플레이). 공식 배틀의 전체 로그와 입력 기록에는 두 선수의 파티 전부가 있어, 대회가 파티를 공개하기 전에는
    관전 로그만 온다(full: false). 친선전과 공개된 대회, 운영진은 전체를 받는다(docs/db/battle_integration.sql battle_full_log). */
