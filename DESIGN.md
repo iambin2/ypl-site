@@ -263,7 +263,7 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 - **Phone tab bar:** 64, the ground tone with a hairline on top: 홈, 공지, 대진표, 기록, 더보기. The chosen tab is lit and 700 with a 2px line along its top edge; the rest are muted.
 - **Admin mode:** a 40 inverted strip directly above the tab bar on every screen: a ground lamp, 관리자 모드, and 로그아웃 at the right.
 - **더보기** is a page, not a popover: grouped rows (기록: 칭호, 명예의 전당; 함께하기: 게시판, 팀 빌더, 배틀, 계산기; 리그: 소개, 디스코드 참여), then the theme as a three-way choice (어둡게, 밝게, 기기 설정) and 공지 알림 as a switch. Admin login is a row here.
-- **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one (the word's own width), each word taking the bar's height and 12 on each side for the pointer and the focus ring, the words 32 apart; the line is never under 20, so a one-letter word (홈) keeps a line centred on it, the account word and the theme button at the right end. No tab bar. Where there is no 더보기 (1100 and up), 관리자 로그인 is an underlined word at the end of the footer, not an icon in the bar.
+- **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one (the word's own width), each word taking the bar's height and 12 on each side for the pointer and the focus ring, the words 32 apart; the line is never under 20, so a one-letter word (홈) keeps a line centred on it, the account word and the theme button at the right end. No tab bar. 관리자 로그인 stands in the footer's first line at every width (and as a row on 더보기), not as an icon in the bar.
 - **Back:** a 12px dim link with a chevron, 20 under the bar, naming where it goes (← 공지).
 - **Nothing is tied to the scroll.** The bars do not move; a sideways list is the browser's own scroll. On a phone a sideways row (page tabs, chips, the line score) runs on to the screen's edge, so a word cut there says the row goes on; a row of tabs keeps its hairline to the content's edge.
 
@@ -352,7 +352,7 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 
 **Errors and empty.** An error is the `!` square and a sentence, then one way out (다시 시도). A connection drop keeps the board switched off with a toast. An empty search shows a dark 0 display and two sentences. 404 lights 404 on the board with 홈으로 and two shortcuts.
 
-**Footer.** On the ground under a hairline: the brand at 24, the league's line, 디스코드 참여, and the fan-site notice in 12px muted type.
+**Footer.** On the ground under a hairline: the brand at 24 and the league's line, with 관리자 로그인 and 디스코드 참여 at the right end of the same line as 15 underlined words, 32 apart (2026-11-06: operators could not find the login as small type at the bottom); then one 12 line, the copyright with 개인정보처리방침 20 after it, and the fan-site notice in 12px muted type under it. Signed in, 관리자 로그인 leaves the footer (the admin strip has 로그아웃).
 
 ## Battle
 

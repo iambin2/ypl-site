@@ -8,7 +8,7 @@ import HomePage, { todayEvent } from "./pages/HomePage.jsx";
 import MorePage from "./pages/MorePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
 import { DISCORD_URL } from "./components/layout/SiteHeader.jsx";
-import TabBar, { MORE_ITEMS, useWideNav } from "./components/layout/Navigation.jsx";
+import TabBar, { MORE_ITEMS } from "./components/layout/Navigation.jsx";
 import Menu from "./components/common/Menu.jsx";
 import Toaster from "./components/common/Toaster.jsx";
 import { DUR, light, reduced, themeTurn, transition } from "./components/common/motion.js";
@@ -245,7 +245,6 @@ export default function App() {
   const onAdmin=()=>{ setMore(null); admin?logout():setModal({type:"login"}); };
   // 무거운 조각은 시트가 다 올라온 뒤에 받는다: 여는 순간에 평가하면 시트가 굳는다.
   const toggleMore=el=>{ if(!more) setTimeout(()=>{ CalculatorPage.prefetch(); ChampionsPage.prefetch(); },DUR.lift); setMore(m=>m?null:el); };
-  const wideNav=useWideNav();
   // 오늘 열리는 대회: 바의 램프, 대진표 탭의 램프, 홈과 대진표 밖의 화면을 여는 진행 띠
   const live=useMemo(()=>data?todayEvent(data.announcements):null,[data]);
   const moreItems=[
@@ -283,7 +282,7 @@ export default function App() {
       </main>
       {going&&<div className="y-going" role="status" aria-label="불러오는 중"><Busy/></div>}
       </div>
-      {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={wideNav&&!admin?onAdmin:null}/>}
+      {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={!admin?onAdmin:null}/>}
 
       <TabBar view={going||view} onNavigate={go} live={live}/>
       {admin&&<AdminModeBar onLogout={logout}/>}

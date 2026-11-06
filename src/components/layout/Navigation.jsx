@@ -8,7 +8,7 @@ export const MORE_ITEMS = [["titles","칭호"],["champions","명예의 전당"],
 export const NAV_ITEMS = [...TABS, ...MORE_ITEMS].filter(([k]) => k !== "home" && k !== "more");
 export const tabOf = (view, wide = false) => TABS.some(([k]) => k === view) || (wide && MORE_ITEMS.some(([k]) => k === view)) ? view : MORE_ITEMS.some(([k]) => k === view) ? "more" : null;
 
-/* 넓은 데스크톱(1100px 이상)은 더보기 없이 모든 화면을 상단 바에 바로 놓는다. 관리자 로그인은 상단 바의 테마 버튼 옆. */
+/* 넓은 데스크톱(1100px 이상)은 더보기 없이 모든 화면을 상단 바에 바로 놓는다. 관리자 로그인은 바닥글의 첫 줄(모든 폭)과 더보기에 선다. */
 const WIDE = "(min-width: 1100px)";
 const wideNow = () => typeof window !== "undefined" && Boolean(window.matchMedia?.(WIDE).matches);
 const onWide = fn => { const m = typeof window !== "undefined" && window.matchMedia?.(WIDE); m?.addEventListener("change", fn); return () => m?.removeEventListener("change", fn); };

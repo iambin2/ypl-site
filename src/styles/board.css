@@ -284,12 +284,12 @@
    A Pokémon in a door steps up 4 off its floor; an arrow leans 4 toward where it goes; a word brightens. Nothing grows. ---------- */
 .mon { transition: transform var(--move-tone), opacity var(--move-tone); }
 :is(.btn, .champion-more, .ab-go, .back, .sh-link, .site-foot-dc) .ic { transition: transform var(--move-tone); }
-.sh-link, .btn--link, .site-foot-dc, .site-foot-admin { transition: color var(--move-tone); }
+.sh-link, .btn--link, .site-foot-dc, .site-foot-login, .site-foot-admin { transition: color var(--move-tone); }
 @media (hover: hover) {
   :is(button, a):hover:not(:disabled) .mon { transform: translateY(calc(var(--s1) * -1)); }
   :is(.btn--main, .champion, .ab-go, .site-foot-dc):hover:not(:disabled) .ic { transform: translateX(var(--s1)); }
   .back:hover .ic { transform: translateX(calc(var(--s1) * -1)); }
-  .site-foot-admin:hover, .site-foot-dc:hover { color: var(--lit); }
+  .site-foot-admin:hover, .site-foot-dc:hover, .site-foot-login:hover { color: var(--lit); }
   .row:not(.inv):hover .row-main > b { color: var(--lit); }
 }
 /* below the first screen a panel waits dark until it scrolls into view (motion.js light) */
