@@ -184,6 +184,15 @@ export function isMegaPokemon(detailData, pokemon) {
   return isMegaRecord(dexRecord(detailData, pokemon));
 }
 
+/* the abilities a member may carry. A Mega is brought as its base form and changes in battle, so as on Showdown its ability is one
+   of the base form's (the Mega's own takes over when it evolves). Picking the Mega's ability let the base form start with it:
+   메가리자몽Y brought Drought's sun in on turn 0. */
+export function abilitiesFor(detailData, pokemon) {
+  const record = dexRecord(detailData, pokemon);
+  const base = isMegaRecord(record) ? detailData?.pokedex?.[toID(record.baseSpecies)] : null;
+  return (base || record)?.abilities || [];
+}
+
 export function requiredItemForPokemon(detailData, pokemon) {
   const record = dexRecord(detailData, pokemon);
   return isMegaRecord(record) ? toID(record.requiredItem) : "";
@@ -336,14 +345,13 @@ export function makeMember(pokemon, { detailData } = {}) {
 }
 
 export function replaceMemberPokemon(member, pokemon, { detailData } = {}) {
-  const details = dexRecord(detailData, pokemon);
   return {
     ...member,
     pokemon,
     pokemonId: resolveCanonicalPokemonId(detailData, pokemon) || "",
     resolutionState: "resolved",
     originalPokemonName: pokemon?.name || "",
-    ability: details?.abilities?.[0] || "",
+    ability: abilitiesFor(detailData, pokemon)[0] || "",
     item: requiredItemForPokemon(detailData, pokemon) || member?.item || "",
   };
 }
@@ -540,8 +548,7 @@ export function toTeamSnapshotV1({
 
 function abilityFromId(detailData, pokemon, id) {
   if (!id) return "";
-  const details = dexRecord(detailData, pokemon);
-  return details?.abilities?.find(value => toID(value) === id) || id;
+  return abilitiesFor(detailData, pokemon).find(value => toID(value) === id) || id;
 }
 
 export function fromTeamSnapshotV1({ snapshot, members = [], regulation, detailData = null } = {}) {
@@ -945,7 +952,8 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
 
     if (detailData) {
       const details = dexRecord(detailData, member.pokemon);
-      if (details?.abilities?.length && member.ability && !details.abilities.includes(member.ability)) {
+      const abilities = abilitiesFor(detailData, member.pokemon);
+      if (abilities.length && member.ability && !abilities.includes(member.ability)) {
         errors.push(`${display(member.pokemon)}이(가) 사용할 수 없는 특성입니다.`);
       }
       const learnset = new Set(learnsetFor(detailData, member.pokemon));

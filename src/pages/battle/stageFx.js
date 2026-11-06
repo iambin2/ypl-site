@@ -590,8 +590,12 @@ const shadowTex = e => {
 export function throwBall(stage, key) {
   const e = E(stage);
   if (!e || instant() || reduced()) return Promise.resolve();
-  const own = ownKey(stage, key), { W, H } = e, [tx, ty] = centre(stage, key, .5), [, fy] = centre(stage, key, 0), size = Math.max(16, Math.min(40, W * .052)), dur = 560;
-  const from = own ? [-size * 2, H * .95] : [W + size * 2, H * .05], peak = Math.min(from[1], ty) - H * (own ? .32 : .12), t0 = e.T;
+  /* the camera stays wide (gl.js CAMERA_MOVES), so the ball is sized by the Pokémon it carries, not the stage (it was 40 at most,
+     16 to 20 on a phone), and its arc stays inside the stage (the foe's peaked above the top edge) */
+  const own = ownKey(stage, key), { W, H } = e, [tx, ty] = centre(stage, key, .5), [, fy] = centre(stage, key, 0), dur = 720;
+  const size = clamp(sizeOf(stage, key) * .28, 26, 64);
+  const from = own ? [-size * 2, H * .92] : [W + size * 2, H * .34];
+  const peak = Math.max(size, Math.min(from[1], ty) - H * (own ? .34 : .2)), t0 = e.T;
   const frames = ballTex(e), turns = own ? 2.2 : 1.6;
   const pathAt = t => [lerp(from[0], tx, t), (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty];
   // the floor under it runs from the near edge (or the far side's floor) to the feet of the place it lands on
@@ -613,21 +617,26 @@ export function throwBall(stage, key) {
   return e.after(dur);
 }
 // the Pokémon standing on the canvas go out at once (before the opening's throws, so no lead stands before its ball comes)
-export function hideAll(stage) {
+// dark: the lamps stay off until the opening switches them on (the gate lifts onto a dark stage)
+export function hideAll(stage, { dark = false } = {}) {
   const e = glOf(stage);
   if (!e) return;
   e.sync();
   for (const a of e.actors.values()) { e.cancel(a); a.base.alpha = 0; }
+  if (dark && !instant()) e.gradeBase.dim = .18;
 }
 // the opening: the trainers' names and VS on plates, while the arena's lamps switch on. plates false: the gate said the names, the
 // lamps alone switch on, a beat longer since the gate is parting over them
 export async function opening(stage, ours, theirs, { plates = true } = {}) {
   const over = overOf(stage), e = E(stage);
+  // the stage hideAll left dark comes back to its own lamps, whatever plays next
+  const darkened = e?.gradeBase.dim !== 1;
+  if (e) e.gradeBase.dim = 1;
   if (!over || instant()) return;
   if (!plates) {
-    if (e) { e.anim(e.grade, { dim: [.18, .18, 1], bloom: [1, 1.6, 1] }, { dur: 1500, at: [0, .4, 1], ease: "inout" }); e.shot(e.W / 2, e.H * .44, 1.08, { smooth: .1 }); e.at(60, () => e.shot(e.W / 2, e.H / 2, 1, { smooth: .9 })); }
-    // the throws follow on the lamps' rise (each side's lead then has its own close shot)
-    await wait(reduced() ? 300 : 700);
+    // the gate has lifted onto the dark stage: the lamps switch on in view, and the throws come on their rise
+    if (e && darkened) e.anim(e.grade, { dim: [.18, 1], bloom: [1.6, 1] }, { dur: 900, ease: "inout" });
+    await wait(reduced() ? 200 : 450);
     return;
   }
   const box = document.createElement("div");

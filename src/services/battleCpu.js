@@ -23,6 +23,8 @@ import { revives, slotPasses } from "./battleLog.js";
 const TUNE = { race: 0.35, human: 0.5 };
 // one greedy turn after the pair: three measured no stronger (41 of 60 either way) and cost twice the time
 const ROLLOUT_TURNS = 1;
+// what a hard switch has to win by over staying in, in the evaluation's Pokémon (one healthy Pokémon is about 2)
+const SWITCH_COST = 0.12;
 const NOW = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 const other = side => (side === "p1" ? "p2" : "p1");
 const isDoubles = battle => battle.gameType === "doubles";
@@ -192,14 +194,43 @@ function sideScore(state, side) {
   }
   for (const [id, cond] of Object.entries(s.sideConditions)) {
     if (HAZARD[id]) score -= HAZARD[id] * (cond.layers || 1) * bench;
-    if (SCREEN[id]) score += SCREEN[id] * Math.min(1, (cond.duration || 3) / 3);
+    if (SCREEN[id]) score += screenWorth(state, side, id) * Math.min(1, (cond.duration || 3) / 3);
   }
   return score;
+}
+/* a screen is worth what it blocks, for the Pokémon left to stand behind it (2026-11-06: every screen counted 0.2 whoever attacked,
+   so Grimmsnarl put Reflect up against a special attacker, Light Screen against a physical one, and a screen with no one left behind
+   it instead of attacking). Reflect counts the other side's physical attacks, Light Screen its special ones, by the moves they carry */
+const WALLS = { reflect: "Physical", lightscreen: "Special", auroraveil: "both" };
+function physicalShare(state, side) {
+  let physical = 0, all = 0;
+  for (const p of state[side].pokemon) {
+    if (p.fainted || p.hp <= 0) continue;
+    for (const slot of p.moveSlots) {
+      const move = state.dex.moves.get(slot.id);
+      if (move.category === "Status") continue;
+      all++;
+      if (move.category === "Physical") physical++;
+    }
+  }
+  return all ? physical / all : 0.5;
+}
+function screenWorth(state, side, id) {
+  const wall = WALLS[id];
+  if (!wall) return SCREEN[id] || 0;
+  const share = physicalShare(state, other(side));
+  const blocks = wall === "both" ? 1 : wall === "Physical" ? share : 1 - share;
+  // five turns shield the whole team: one Pokémon left gains a quarter of it, two most of it
+  const left = state[side].pokemon.filter(p => !p.fainted && p.hp > 0).length;
+  return SCREEN[id] * blocks * Math.min(1, 0.25 + 0.375 * (left - 1));
 }
 function evaluate(state, side) {
   if (state.ended) {
     const winner = state.winnerSide || (state.winner === state[side].name ? side : state.winner === state[other(side)].name ? other(side) : "tie");
-    return winner === side ? 100 : winner === "tie" ? 0 : -100;
+    /* a win keeps more, a loss leaves the winner less: in a game lost every way the moves that hurt most still come first (the only
+       way back is a miss or a critical hit), instead of a screen or a pivot that only delays it */
+    if (winner === "tie") return 0;
+    return winner === side ? 100 + sideScore(state, side) : -100 - sideScore(state, other(side));
   }
   const foe = other(side);
   let value = sideScore(state, side) - sideScore(state, foe);
@@ -282,7 +313,11 @@ function prior(state, side, i, option, doubles) {
     return t && !t.status && !t.fainted ? 0.3 : 0;
   }
   if (move.sideCondition && HAZARD[move.id]) return state[foe].sideConditions[move.id] ? 0 : 0.3;
-  if (move.sideCondition) return state[side].sideConditions[toID(move.sideCondition)] ? 0 : 0.35;
+  if (move.sideCondition) {
+    const id = toID(move.sideCondition);
+    if (state[side].sideConditions[id]) return 0;
+    return WALLS[id] ? 0.35 * screenWorth(state, side, id) / SCREEN[id] : 0.35;
+  }
   if (move.pseudoWeather) return state.field.pseudoWeather[toID(move.pseudoWeather)] ? 0 : 0.35;
   if (move.weather || move.terrain) return 0.2;
   if (["followme", "ragepowder", "helpinghand", "allyswitch", "spore"].includes(move.id)) return doubles ? 0.3 : 0;
@@ -530,7 +565,10 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
     const live = all.filter(o => !idle(state, side, o.choice, seedOf(random)));
     const own = live.length ? live : all;
     if (own.length <= 1) return own[0]?.choice || "move 1";
-    const valued = search(battle, side, own);
+    /* a switch has to be clearly better than staying, as a ranker sees it: the search looks one turn on, so it never sees that the
+       Pokémon it brings in will want out again, and two that each lose to the foe were switched back and forth, each taking the hit
+       coming in (2026-11-06, Grimmsnarl and Delphox against Golisopod) */
+    const valued = search(battle, side, own).map(v => ({ ...v, value: v.value - SWITCH_COST * (v.choice.match(/switch/g) || []).length }));
     const best = Math.max(...valued.map(v => v.value));
     // choices within a hair of the best are played at random, so the computer is not read by habit
     const near = valued.filter(v => v.value >= best - 0.03);

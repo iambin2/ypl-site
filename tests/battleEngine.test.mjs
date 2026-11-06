@@ -171,3 +171,15 @@ test("two players with one name: the side that won is the winner, after a save a
     assert.equal(readout(replay(readout(battle).inputLog)).winner, won);
   }
 });
+
+test("a Mega brought with the Mega's own ability starts as its base form with a base ability, and gets the Mega's on evolving", () => {
+  const formatid = formatId("m-c", "singles");
+  const zard = set("Charizard-Mega-Y", "Charizardite Y", "Drought", ["Heat Wave", "Protect"], "Timid", { spa: 32, spe: 32 });
+  const foe = set("Garchomp", "Choice Scarf", "Rough Skin", ["Earthquake"], "Jolly", { atk: 32, spe: 32 });
+  const battle = startBattle({ formatid, seed: [1, 2, 3, 4], p1: { name: "a", team: [zard] }, p2: { name: "b", team: [foe] } });
+  battle.makeChoices("team 1", "team 1");
+  assert.equal(battle.p1.active[0].ability, "blaze");
+  assert.ok(!battle.log.some(line => line.startsWith("|-weather|SunnyDay")), "no sun before it evolves");
+  battle.makeChoices("move 2 mega", "move 1");
+  assert.equal(battle.p1.active[0].ability, "drought");
+});

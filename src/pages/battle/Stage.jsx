@@ -291,8 +291,17 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
               // the plates come in once the leads stand (the first turn, or the end of this run)
               st.classList.add("bs-intro");
               // nobody stands before their ball is thrown: the canvas draws the Pokémon, so it is the canvas that hides them
-              fx.hideAll(st);
-              if (gated) openGate();
+              fx.hideAll(st, { dark: gated });
+              /* on a phone 선출 확정 stands at the foot of the long team preview, and the stage that replaces it was left above the
+                 screen, the throws with it: behind the gate the page comes back up to the stage, so the jump is never seen */
+              if (gated) {
+                const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-height")) || 0;
+                const top = (st.closest(".bt-arena") || st).getBoundingClientRect().top - bar;
+                if (top < 0) window.scrollBy({ top, behavior: "instant" });
+              }
+              /* the gate lifts onto the dark, empty stage before anything plays (2026-11-06: openGate was not waited for, so the
+                 lamps, our throw and our lead's light all played under the still opaque gate and were never seen) */
+              if (gated) await openGate();
               await fx.opening(st, ours, theirs, { plates: !gated });
             }
            

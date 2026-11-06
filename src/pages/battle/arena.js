@@ -15,76 +15,36 @@ export const floorAt = (W, H, u, t) => P3(W, H, u, 0, depth(t));
 export const flatAt = (H, y) => clamp(.18 + (y / H - .42) * .55, .16, .5);
 
 /* ---------------------------------------------------------------- the arena ---------------------------------------------------------------- */
-// the site's own tones (tokens.css): navy, its panels and rule in dark; white, paper and navy lines in light
+/* the site's own tones (tokens.css), one to a theme: the arena is a single solid ground with the court's lines on it, nothing else
+   (2026-11-06, the user: the club's wing on the floor and the near-alike bands of sky, wall, floor and court read as smudges) */
 const PALETTE = {
-  dark: {
-    // flat, as light is: the site's navy behind, its panel tone as the wall band, an even floor a step lighter than the ground
-    sky: ["#081C3D", "#081C3D"], haze: "rgba(0,0,0,0)",
-    roof: "#081C3D", wall: "#0E2449", wallTop: "rgba(168,184,211,.30)",
-    floor: ["#0C2248", "#0C2248", "#0C2248"], court: "rgba(255,255,255,.035)", line: "rgba(214,226,245,.55)", glow: "rgba(120,160,235,.5)",
-    sheen: "rgba(0,0,0,0)", emblem: .08,
-  },
-  light: {
-    // light is flat: solid paper behind, a white band, an even floor; no haze, no sheen (a gradient on paper reads as a stain)
-    sky: ["#E8ECF2", "#E8ECF2"], haze: "rgba(0,0,0,0)",
-    roof: "#E8ECF2", wall: "#FFFFFF", wallTop: "rgba(8,28,61,.22)",
-    floor: ["#F3F5F8", "#F3F5F8", "#F3F5F8"], court: "rgba(8,28,61,.025)", line: "rgba(8,28,61,.42)", glow: "rgba(0,0,0,0)",
-    sheen: "rgba(0,0,0,0)", emblem: .07,
-  },
+  dark: { ground: "#081C3D", line: "rgba(214,226,245,.55)" },
+  light: { ground: "#F3F5F8", line: "rgba(8,28,61,.42)" },
 };
-let wing = null;
-const wingWaiting = new Set();
-function wingImage(e) {
-  if (!wing) { wing = new Image(); wing.onload = () => { wingWaiting.forEach(x => x.paint?.()); wingWaiting.clear(); }; wing.src = `${import.meta.env?.BASE_URL ?? "/"}brand/ypl-wing-y.svg`; }
-  if (wing.complete && wing.naturalWidth) return wing;
-  wingWaiting.add(e);
-  return null;
-}
 
 function paint(e) {
   const { W, H } = e, P = e.light ? PALETTE.light : PALETTE.dark;
-  // drawn finer than the screen: the camera pushes in up to 1.25 and the stage renders at 1.5 at least, so the lines stay crisp there
-  const s = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.6), Math.sqrt(6e6 / (W * H * 1.44)));
-  const MX = W * .1, MY = H * .1;
+  /* painted past the stage on every side by more than the camera ever shows (its pan stops a tenth past the edge, and a shake goes
+     a little further: at a tenth the edge of the picture showed as a dark strip). Drawn finer than the screen, so the lines stay
+     crisp when the camera pushes in */
+  const MX = W * .2, MY = H * .2;
+  const s = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.6), Math.sqrt(6e6 / (W * H * 1.96)));
   const c = document.createElement("canvas");
   c.width = Math.round((W + MX * 2) * s); c.height = Math.round((H + MY * 2) * s);
   const g = c.getContext("2d");
   g.setTransform(s, 0, 0, s, MX * s, MY * s);
   const L = -MX, R = W + MX, T = -MY, B = H + MY;
-  const lin = (y0, y1, stops) => { const gr = g.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, col]) => gr.addColorStop(o, col)); return gr; };
-  const horizon = H * .42, wallTop = H * .372;
-
-  // behind the field: no stands, no seats, nothing repeated; one smooth fall of the theme's tone down to the wall, and a light
-  // laid soft across the middle of it, as a hall's far wall catches the field's lamps
-  g.fillStyle = lin(T, wallTop, [[0, P.roof], [.55, P.sky[0]], [1, P.sky[1]]]); g.fillRect(L, T, R - L, wallTop - T);
-  const glowY = wallTop * .62, haze = g.createRadialGradient(W / 2, glowY, 0, W / 2, glowY, W * .62);
-  haze.addColorStop(0, P.haze); haze.addColorStop(1, "rgba(0,0,0,0)");
-  g.save(); g.translate(W / 2, glowY); g.scale(1, .32); g.translate(-W / 2, -glowY); g.fillStyle = haze; g.fillRect(L, glowY - W, R - L, W * 2); g.restore();
-  // the wall round the field: one plain band, a single fine line on its top edge
-  g.fillStyle = P.wall; g.fillRect(L, wallTop, R - L, horizon - wallTop);
-  g.fillStyle = P.wallTop; g.fillRect(L, wallTop, R - L, 1);
-
-  // the floor: one even sweep from the wall to the camera, a soft sheen across it
-  g.fillStyle = lin(horizon, B, [[0, P.floor[0]], [.5, P.floor[1]], [1, P.floor[2]]]); g.fillRect(L, horizon, R - L, B - horizon);
-  g.fillStyle = lin(horizon, H, [[0, "rgba(0,0,0,0)"], [.3, P.sheen], [.55, "rgba(0,0,0,0)"]]); g.fillRect(L, horizon, R - L, H - horizon);
-  // the court: a faint field inside its lines, the lines themselves, the centre circle and the club's wing in it
+  g.fillStyle = P.ground; g.fillRect(L, T, R - L, B - T);
+  // the court: its side lines, far line and middle line, and one centre circle
   const fp = (u, t) => floorAt(W, H, u, t);
   const path = (fn, n = 48) => Array.from({ length: n + 1 }, (_, i) => fn(i / n));
-  g.beginPath(); [fp(-1, 0), fp(1, 0), fp(1, 1.1), fp(-1, 1.1)].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fillStyle = P.court; g.fill();
-  g.lineCap = "round"; g.lineJoin = "round"; g.shadowColor = P.glow; g.shadowBlur = e.light ? 0 : 4;
-  const line = (pts, w, style = P.line) => { g.strokeStyle = style; g.lineWidth = w; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); };
+  g.lineCap = "round"; g.lineJoin = "round";
+  const line = (pts, w) => { g.strokeStyle = P.line; g.lineWidth = w; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); };
   const lw = Math.max(1.5, W / 520);
   line(path(t => fp(-1, t * 1.1)), lw); line(path(t => fp(1, t * 1.1)), lw); line([fp(-1, 0), fp(1, 0)], lw);
   line(path(u => fp(-1 + u * 2, .5)), lw * .9);
   const circle = R0 => path(a => { const th = a * Math.PI * 2; return P3(W, H, Math.cos(th) * R0, 0, 4.1 + Math.sin(th) * R0); }, 96);
-  // one centre circle, as a court has (a second ring inside it read as a target, the user, 2026-11-06)
   line(circle(.34), lw * .9);
-  g.shadowBlur = 0;
-  const wingImg = wingImage(e);
-  if (wingImg) {
-    const [cx, cy] = fp(0, .5), w = W * .16, h = w * (wingImg.naturalHeight / wingImg.naturalWidth || 1);
-    g.save(); g.globalAlpha = P.emblem; g.translate(cx, cy); g.scale(1, flatAt(H, cy) * 1.5); g.drawImage(wingImg, -w / 2, -h / 2, w, h); g.restore();
-  }
 
   const gl = e.gl;
   if (e.arena?.tex) gl.deleteTexture(e.arena.tex);

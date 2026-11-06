@@ -47,7 +47,11 @@ function teamFor(formatid, sets) {
   return sets.map(set => {
     const species = dex.species.get(set.species);
     const base = typeof species.battleOnly === "string" ? dex.species.get(species.battleOnly) : species;
-    return { ...set, name: set.name || "", species: base.name, ability: set.ability || base.abilities?.[0] || "" };
+    /* the base form keeps only an ability of its own: a Mega's (saved by the team builder before 2026-11-06) let it start with it,
+       so 메가리자몽Y brought Drought's sun in on turn 0 as if it had already evolved, and the validator let it through */
+    const own = Object.values(base.abilities || {});
+    const ability = base !== species && set.ability && !own.some(a => dex.toID(a) === dex.toID(set.ability)) ? "" : set.ability;
+    return { ...set, name: set.name || "", species: base.name, ability: ability || own[0] || "" };
   });
 }
 

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parsePokedex } from "../src/services/championsData.js";
 import {
+  abilitiesFor,
   dexRecord,
   fromTeamSnapshotV1,
   localizedPokemonName,
@@ -60,7 +61,7 @@ const pokemon = name => pool.find(entry => entry.name === name);
 
 function megaMember(name) {
   const member = makeMember(pokemon(name), { detailData });
-  member.ability = dexRecord(detailData, member.pokemon).abilities[0];
+  member.ability = abilitiesFor(detailData, member.pokemon)[0];
   return member;
 }
 
@@ -138,7 +139,7 @@ test("switching between base and Mega forms preserves existing item semantics", 
   base.item = "leftovers";
   const mega = replaceMemberPokemon(base, pokemon("Gyarados-Mega"), { detailData });
   assert.equal(mega.item, "gyaradosite");
-  assert.equal(mega.ability, "Mold Breaker");
+  assert.equal(mega.ability, "Intimidate"); // a Mega carries its base form's ability until it evolves
   const restoredBase = replaceMemberPokemon(mega, pokemon("Gyarados"), { detailData });
   assert.equal(restoredBase.item, "gyaradosite");
   assert.equal(restoredBase.ability, "Intimidate");
@@ -211,4 +212,11 @@ test("Mega names support Korean and Showdown-style English search and exact form
   }
   assert.notEqual(spriteUrl("Charizard-Mega-X"), spriteUrl("Charizard-Mega-Y"));
   assert.notEqual(spriteUrl("Charizard-Mega-Y"), spriteUrl("Charizard"));
+});
+
+test("a Mega's ability is chosen from its base form's, as on Showdown, and a saved Mega ability is no longer legal", () => {
+  const pick = name => ({ name });
+  assert.deepEqual(abilitiesFor(detailData, pick("Charizard-Mega-Y")), ["Blaze"]);
+  assert.deepEqual(abilitiesFor(detailData, pick("Gyarados")), ["Intimidate"]);
+  assert.equal(replaceMemberPokemon(makeMember(pick("Charizard"), { detailData }), pick("Charizard-Mega-Y"), { detailData }).ability, "Blaze");
 });

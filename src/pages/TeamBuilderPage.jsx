@@ -51,6 +51,7 @@ import {
   pokemonPoolForRegulation,
   replaceMemberPokemon,
   requiredItemForPokemon,
+  abilitiesFor,
   formatSavedDate,
   serializeMembers,
   speciesIdentity,
@@ -492,6 +493,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
   const selectedType = TYPE_OPTIONS.find(type => type.id === assignedTypeId) || null;
   const selectedMember = team.find(member => member.uid === selectedUid) || null;
   const selectedDetails = dexRecord(detailData, selectedMember?.pokemon);
+  const selectedAbilities = abilitiesFor(detailData, selectedMember?.pokemon);
   const legalItems = useMemo(() => detailData ? championsData.legalItems(detailData, regulationId) : [], [detailData, regulationId]);
   const selectablePokemonPool = useMemo(
     () => pokemonPoolForRegulation(regulation, detailData, legalItems),
@@ -587,11 +589,12 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         const restored = memberFromSaved(savedMember, regulation, { detailData });
         if (restored.resolutionState === "resolved") return { ...restored, uid: member.uid };
       }
-      const details = dexRecord(detailData, member.pokemon);
+      const abilities = abilitiesFor(detailData, member.pokemon);
       const requiredItem = requiredItemForPokemon(detailData, member.pokemon);
-      const ability = member.ability && details?.abilities?.includes(member.ability)
+      // a saved Mega that carries the Mega's own ability goes back to its base form's first
+      const ability = member.ability && abilities.includes(member.ability)
         ? member.ability
-        : details?.abilities?.[0] || member.ability;
+        : abilities[0] || member.ability;
       const item = requiredItem || member.item;
       return ability !== member.ability || item !== member.item ? { ...member, ability, item } : member;
     }));
@@ -606,8 +609,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
       setDetailStatus("ready");
       setTeam(current => current.map(member => {
         if (member.ability) return member;
-        const details = dexRecord(data, member.pokemon);
-        return details?.abilities?.length ? { ...member, ability: details.abilities[0] } : member;
+        const abilities = abilitiesFor(data, member.pokemon);
+        return abilities.length ? { ...member, ability: abilities[0] } : member;
       }));
     }).catch(error => {
       console.error("Champions detail data unavailable:", error);
@@ -866,8 +869,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
     }
     if (team.length >= (regulation.maxTeamSize || 6)) return;
     const member = makeMember(pokemon, { detailData });
-    const details = dexRecord(detailData, pokemon);
-    if (details?.abilities?.length) member.ability = details.abilities[0];
+    const abilities = abilitiesFor(detailData, pokemon);
+    if (abilities.length) member.ability = abilities[0];
     setTeam(current => [...current, member]);
     setSelectedUid(member.uid);
     markDirty();
@@ -1532,10 +1535,10 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
 
                 <div className="cells tb-spec">
                   <Cell label="특성">
-                    <Dropdown className="tb-dd" value={selectedMember.ability || ""} disabled={!selectedDetails?.abilities?.length}
+                    <Dropdown className="tb-dd" value={selectedMember.ability || ""} disabled={!selectedAbilities.length}
                       onChange={value => updateMember(selectedMember.uid, { ability: value })} ariaLabel="특성"
                       placeholder={detailStatus === "error" ? "데이터 연결 안 됨" : "데이터 불러오는 중"}
-                      options={(selectedDetails?.abilities || []).map(ability => ({ value: ability, label: bilingualName(abilityName(ability), ability) }))} />
+                      options={selectedAbilities.map(ability => ({ value: ability, label: bilingualName(abilityName(ability), ability) }))} />
                   </Cell>
                   <Cell label="도구">
                     {selectedRequiredItem ? (
