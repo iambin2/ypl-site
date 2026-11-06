@@ -5,21 +5,28 @@
 import { onEngine, rand, lerp, clamp } from "./gl.js";
 
 /* ---------- the court's perspective: one camera for the floor, the walls and a room ---------- */
-const VP = .282; // where the court's lines meet (a share of the stage's height)
+/* 2026-11-07: a low camera, the court lying flat as before (the user: the laid-down, flat view is steadier), now with the court run
+   out under the near pair so all four stand on it: the far line just behind the far side's feet, the centre line between the sides,
+   the side lines framing everyone. The truly consistent camera (the near slots are 1.54 times the far ones) looks down far more and
+   was tried the same day; the flat one was kept.
+   Units: Y is the camera's height (1), Z the distance from it in the same unit, X across with the side lines at ±1 (ACROSS of the
+   camera's height each side). The horizontal scale follows the stage's height, so the court keeps its shape on a phone and a desktop. */
+const VP = .16, F = 1.41, ACROSS = 1.6;
 // a point in the court's space: X across (the side lines at ±1), Y up from the floor, Z away from the camera; on the stage in pixels
-export const P3 = (W, H, X, Y, Z) => [W * (.5 + 1.623 * X / Z), H * (VP + (1 - Y) / Z)];
-const depth = t => lerp(7.25, .95, t);
-// a point on the floor: across (-1 the left side line, 1 the right) and depth (0 the far line, 1 under the camera)
+export const P3 = (W, H, X, Y, Z) => [W * .5 + F * H * ACROSS * X / Z, H * (VP + F * (1 - Y) / Z)];
+const Z_FAR = 5.2, Z_MID = 2.9;
+const depth = t => lerp(Z_FAR, 1.44, t);
+// a point on the floor: across (-1 the left side line, 1 the right) and depth (0 the far line, 1 the stage's bottom edge)
 export const floorAt = (W, H, u, t) => P3(W, H, u, 0, depth(t));
-// how much a flat thing on the floor is squashed at a height y of the stage (far things flatter)
-export const flatAt = (H, y) => clamp(.18 + (y / H - .42) * .55, .16, .5);
+// how much a flat round thing on the floor is squashed at a height y of the stage, as this camera sees it (far things flatter)
+export const flatAt = (H, y) => clamp((y / H - VP) / (F * ACROSS), .16, .7);
 
 /* ---------------------------------------------------------------- the arena ---------------------------------------------------------------- */
-/* the site's own tones (tokens.css), one to a theme: the arena is a single solid ground with the court's lines on it, nothing else
-   (2026-11-06, the user: the club's wing on the floor and the near-alike bands of sky, wall, floor and court read as smudges) */
+/* the site's own tones (tokens.css), one to a theme. Every mark is solid paint: one filled outline per line in the tone it is, never
+   a translucent stroke laid piece by piece (2026-11-07: the pieces' round ends overlapped at every joint and showed as dots) */
 const PALETTE = {
-  dark: { ground: "#081C3D", line: "rgba(214,226,245,.55)", soft: "rgba(214,226,245,.26)" },
-  light: { ground: "#F3F5F8", line: "rgba(8,28,61,.42)", soft: "rgba(8,28,61,.2)" },
+  dark: { ground: "#081C3D", court: "#12294F", line: "#8196B9" },
+  light: { ground: "#DDE2EA", court: "#FFFFFF", line: "#8196B9" },
 };
 
 function paint(e) {
@@ -35,37 +42,47 @@ function paint(e) {
   g.setTransform(s, 0, 0, s, MX * s, MY * s);
   const L = -MX, R = W + MX, T = -MY, B = H + MY;
   g.fillStyle = P.ground; g.fillRect(L, T, R - L, B - T);
-  /* the court (remade 2026-11-06, the user: keep the plain board and its lines, only less bare, and never stands or crowds): still one
-     solid ground with nothing but lines on it, now drawn as a Pokémon battle court is marked. A double side line, a double far line,
-     the centre line through a Poké Ball (its circle, the band, the button), the far side's box where its Pokémon stand, quarter ticks,
-     and the far edge of the floor as one line across the whole width. Every line thins with distance, as a painted line on a floor
-     does, and the secondary marks are a step dimmer than the court's own */
-  g.lineCap = "round"; g.lineJoin = "round";
-  const lw = Math.max(1.5, W / 520), ZF = 7.25, ZN = .8;
-  // a line on the floor through court points [X, Z], each piece as wide as its distance allows
-  const floorLine = (pts, w, color = P.line) => {
-    g.strokeStyle = color;
-    for (let i = 1; i < pts.length; i++) {
-      const [x0, z0] = pts[i - 1], [x1, z1] = pts[i], z = (z0 + z1) / 2, [ax, ay] = P3(W, H, x0, 0, z0), [bx, by] = P3(W, H, x1, 0, z1);
-      g.lineWidth = w * clamp(Math.pow(2.6 / z, .55), .55, 1.5); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+  const at = (X, Z) => P3(W, H, X, 0, Z);
+  // the court's own floor, a little wider than its lines, running past the stage's bottom edge
+  {
+    const ZA = Z_FAR + .2, XA = 1.1, ZN = 1.2;
+    g.fillStyle = P.court; g.beginPath();
+    [at(-XA, ZA), at(XA, ZA), at(XA, ZN), at(-XA, ZN)].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath(); g.fill();
+  }
+  /* a painted line through floor points [X, Z]: the outline of paint HW of the camera's height wide, as the camera sees it, so a line
+     running away is wide and one lying across is narrow, never under 1.2 px. Straight lines get square ends half their width long */
+  const HW = .006, MIN = .6;
+  const paintLine = (pts, closed = false) => {
+    const sp = pts.map(([X, Z]) => at(X, Z)), n = sp.length, left = [], right = [];
+    for (let i = 0; i < n; i++) {
+      const a = closed ? sp[(i - 1 + n) % n] : sp[Math.max(0, i - 1)], b = closed ? sp[(i + 1) % n] : sp[Math.min(n - 1, i + 1)];
+      let tx = b[0] - a[0], ty = b[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+      const nx = -ty, ny = tx;
+      // the paint's width on the floor, measured across the line as it lies on the screen
+      const [X, Z] = pts[i], ia = closed ? pts[(i - 1 + n) % n] : pts[Math.max(0, i - 1)], ib = closed ? pts[(i + 1) % n] : pts[Math.min(n - 1, i + 1)];
+      let wx = ib[0] * ACROSS - ia[0] * ACROSS, wz = ib[1] - ia[1]; const wl = Math.hypot(wx, wz) || 1;
+      const o = at(X + (-wz / wl) * HW / ACROSS, Z + (wx / wl) * HW);
+      const hw = Math.max(MIN, Math.abs((o[0] - sp[i][0]) * nx + (o[1] - sp[i][1]) * ny));
+      let [x, y] = sp[i];
+      if (!closed && (i === 0 || i === n - 1)) { const k = i === 0 ? -1 : 1; x += tx * hw * k; y += ty * hw * k; }
+      left.push([x + nx * hw, y + ny * hw]); right.push([x - nx * hw, y - ny * hw]);
     }
+    g.beginPath();
+    if (closed) { left.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); right.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill("evenodd"); }
+    else { [...left, ...right.reverse()].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); }
   };
-  const run = (x0, z0, x1, z1, n = 32) => Array.from({ length: n + 1 }, (_, i) => [lerp(x0, x1, i / n), lerp(z0, z1, i / n)]);
-  const ring = (R0, cz = 4.1, a0 = 0, a1 = Math.PI * 2, n = 96) => Array.from({ length: n + 1 }, (_, i) => { const th = lerp(a0, a1, i / n); return [Math.cos(th) * R0, cz + Math.sin(th) * R0]; });
-  const soft = P.soft;
-  // the floor's far edge, across the whole picture
-  floorLine(run(-9, 10.5, 9, 10.5, 8), lw * .8, soft);
-  // the side lines and their outer partners, the far line and its partner joining them
-  for (const sx of [-1, 1]) { floorLine(run(sx, ZF, sx, ZN), lw); floorLine(run(sx * 1.1, ZF + .55, sx * 1.1, ZN), lw * .75, soft); }
-  floorLine(run(-1, ZF, 1, ZF, 8), lw); floorLine(run(-1.1, ZF + .55, 1.1, ZF + .55, 8), lw * .75, soft);
-  // the centre line through the Poké Ball: its circle, the band broken at the button, the button's two rings
-  const C0 = 4.1, RB = .34, RBTN = .12;
-  floorLine(run(-1, C0, -RBTN, C0, 16), lw * .9); floorLine(run(RBTN, C0, 1, C0, 16), lw * .9);
-  floorLine(ring(RB), lw * .9); floorLine(ring(RBTN), lw * .8); floorLine(ring(RBTN * .5, C0, 0, Math.PI * 2, 48), lw * .6, soft);
-  // the far side's box where its Pokémon stand, on the far line (the near one would run out of the picture as a band)
-  floorLine([[-.62, ZF], [-.62, 5.55], [.62, 5.55], [.62, ZF]].flatMap((p, i, a) => (i ? run(...a[i - 1], ...p, 12).slice(1) : [p])), lw * .7, soft);
-  // quarter ticks on the side lines, turned in
-  for (const z of [5.55, 2.65]) for (const sx of [-1, 1]) floorLine(run(sx, z, sx * .9, z, 2), lw * .8);
+  const run = (x0, z0, x1, z1, k = 24) => Array.from({ length: k + 1 }, (_, i) => [lerp(x0, x1, i / k), lerp(z0, z1, i / k)]);
+  // a circle on the floor of radius r (in the camera's height), round as it lies, around the court's centre
+  const ring = r => Array.from({ length: 128 }, (_, i) => { const th = i / 128 * Math.PI * 2; return [Math.cos(th) * r / ACROSS, Z_MID + Math.sin(th) * r]; });
+  /* the court as a Pokémon battle court is marked, and nothing more: the side lines and the far line, the centre line through a
+     Poké Ball (its circle, the band broken at the button, the button's ring) */
+  g.fillStyle = P.line;
+  for (const sx of [-1, 1]) paintLine(run(sx, Z_FAR, sx, 1.2));
+  paintLine(run(-1, Z_FAR, 1, Z_FAR, 2));
+  const RB = .26, RBTN = .08;
+  paintLine(run(-1, Z_MID, -RBTN / ACROSS, Z_MID, 8)); paintLine(run(RBTN / ACROSS, Z_MID, 1, Z_MID, 8));
+  paintLine(ring(RB), true); paintLine(ring(RBTN), true);
 
   const gl = e.gl;
   if (e.arena?.tex) gl.deleteTexture(e.arena.tex);
@@ -142,7 +159,7 @@ const BUILD = {
     // on paper white snow is lost: it falls in the navy of the light theme
     const { W, H } = e, U = unit(e), ramp = e.light ? "rain.l" : "snow";
     wash(e, e.light ? "#7FA8D6" : "#6E8FB8", e.light ? .42 : .32, e.light ? 0 : .15);
-    const y0 = H * .42;
+    const y0 = P3(W, H, 0, 0, Z_FAR + .2)[1];
     e.extra.push(e.strip({ dur: Infinity, quad: () => [[-W * .2, y0], [W * 1.2, y0], [W * 1.2, H * 1.2], [-W * .2, H * 1.2]], color: e.light ? "#D8ECFA" : "#EAF4FF", emis: e.light ? 0 : .3, occ: 1, alpha: e.light ? .4 : .16, layer: 0, dims: true, under: true }));
     if (hail) {
       E({ n: 170, at: () => [rand(-.1, 1.3) * W, -H * .1], vel: () => [-160, rand(760, 900)], tex: "crystal", lit: true, ramp: "ice.c", size: [6 * U, 6 * U], aspect: .8, face: true, rot: Math.PI / 2, life: H * 1.25 / 830 * 1000, loop: true, over: 1800, alpha: .95, emis: .5, occ: .8, layer: 1 });
@@ -163,7 +180,7 @@ const BUILD = {
     const { W, H } = e, U = unit(e);
     floorTint(e, E, "electric.h", 1.6);
     e.extra.push(...[.2, .45, .7, .95].map((t0, i) => e.strip({ dur: Infinity, mode: 1, color: i % 2 ? "#E8FF6A" : "#FFE24A", emis: e.light ? .4 : .9, occ: e.light ? .7 : 0, alpha: .32, layer: 0, points: () => {
-      const n = 36, t = (t0 + e.T * .00008) % 1, d = lerp(7.25, .95, t);
+      const n = 36, t = (t0 + e.T * .00008) % 1, d = depth(t);
       return Array.from({ length: n + 1 }, (_, j) => { const u = -1.8 + j / n * 3.6, [x, y] = P3(W, H, u, 0, d + Math.sin(u * 4 + e.T * .002 + i) * .06 * d); return [x, y, (2 + t * 6) * U, Math.sin(Math.PI * j / n) * Math.sin(Math.PI * t)]; });
     } })));
     E({ n: 18, at: () => { const [x, y] = floorAt(W, H, rand(-1.4, 1.4), rand(.04, 1.02)); return [x, y - rand(4, 18) * U]; }, tex: "bolt", ramp: e.light ? "electric.d" : "electric.h", each: () => ({ size: [rand(8, 15) * U, "same"], rot: rand(-1.2, 1.2) }), life: [500, 1300], loop: true, over: 2200, alpha: .8, emis: e.light ? .5 : 1, occ: e.light ? .5 : 0, layer: 0 });
@@ -200,7 +217,7 @@ const BUILD = {
     E({ n: 20, at: () => floorAt(W, H, rand(-1.2, 1.2), rand(.05, 1)), tex: "glow", ramp: "psychic.h", size: [4 * U, 2 * U], vel: () => [rand(-6, 6), rand(-18, -8)], bob: [5, 10], period: [3, 5], life: [2600, 4200], loop: true, over: 4200, alpha: .55, layer: 0 });
     // the waves: lines lying on the floor across the court, each bending in a slow wave that runs along it
     return [.16, .34, .55, .78, 1].map((t, i) => e.strip({ dur: Infinity, mode: 1, color: i % 2 ? "#C77DFF" : "#FF7AC8", emis: e.light ? .4 : 1, occ: e.light ? .8 : 0, alpha: .45, layer: 0, points: () => {
-      const n = 40, d = lerp(7.25, .95, t);
+      const n = 40, d = depth(t);
       return Array.from({ length: n + 1 }, (_, j) => { const u = -1.8 + j / n * 3.6, zz = d + Math.sin(u * 3.2 + e.T * .0012 + i) * .12 * d / 4, [x, y] = P3(W, H, u, 0, zz); return [x, y, (1.4 + t * 2.2) * U, .35 + .65 * Math.sin(Math.PI * j / n)]; });
     } }));
   },
@@ -208,7 +225,7 @@ const BUILD = {
   room(e, E, id) {
     const { W, H } = e, U = unit(e);
     const look = (e.light ? { trickroom: ["#D6338A", "#1393C4"], magicroom: ["#7F4FD9", "#C2389E"], wonderroom: ["#1F6FD1", "#14A383"] } : { trickroom: ["#FF6FB0", "#6FE3FF"], magicroom: ["#C79BFF", "#FF9BE6"], wonderroom: ["#6FB8FF", "#9BFFE0"] })[id] || ["#FFFFFF", "#FFFFFF"];
-    const X = 1.32, Y = 2.05, ZF = 8.4, ZN = .9;
+    const X = 1.32, Y = 2.05, ZF = Z_FAR + .5, ZN = 1.3;
     const p = (x, y, z) => P3(W, H, x, y, z);
     const strips = [];
     // a line of the box: drawn on from its far end as the room goes up, a slow light running along it
@@ -228,7 +245,7 @@ const BUILD = {
     // the side walls and the ceiling: lines running from the far wall to the camera, as the court's side lines do
     for (const sx of [-1, 1]) {
       for (let i = 1; i < 4; i++) { const y = i * Y / 4; edge(p(sx * X, y, ZF), p(sx * X, y, ZN), look[i % 2], 1.6 * U, .5, { delay: 200 + i * 50 }); }
-      for (const z of [6.2, 4.6, 3.4, 2.5]) edge(p(sx * X, 0, z), p(sx * X, Y, z), look[1], 1.6 * U, .45, { delay: 300 });
+      for (const z of [4.6, 3.6, 2.8, 2.2]) edge(p(sx * X, 0, z), p(sx * X, Y, z), look[1], 1.6 * U, .45, { delay: 300 });
     }
     for (const x of [-X / 2, 0, X / 2]) edge(p(x, Y, ZF), p(x, Y, ZN), look[0], 1.6 * U, .4, { delay: 300 });
     // the box's own edges, brighter: the far frame, and the four running to the camera
@@ -242,7 +259,7 @@ const BUILD = {
     const tile = (corners, k) => { const g = .82; const c = corners.map(q => q); const m = [(c[0][0] + c[2][0]) / 2, (c[0][1] + c[2][1]) / 2], inset = c.map(([x, y]) => [lerp(m[0], x, g + .12), lerp(m[1], y, g + .12)]); strips.push(e.strip({ dur: Infinity, quad: (kk, age) => (age < 150 + k * 4 ? null : inset), color: tones[Math.floor(r() * tones.length)], emis: e.light ? .3 : .55, occ: e.light ? .4 : .1, alpha: (e.light ? .2 : .2) + r() * .2, layer: 0 })); };
     let k = 0;
     const cols = n => Array.from({ length: n + 1 }, (_, i) => -X + i * 2 * X / n);
-    const zs = [ZF, 6.2, 4.6, 3.4, 2.5, 1.8, 1.3, ZN];
+    const zs = [ZF, 4.6, 3.7, 3.0, 2.4, 2.0, 1.6, ZN];
     // the far wall: 8 across, 6 up
     { const xs = cols(8); for (let j = 0; j < 6; j++) for (let i = 0; i < 8; i++) tile([p(xs[i], j * Y / 6, ZF), p(xs[i + 1], j * Y / 6, ZF), p(xs[i + 1], (j + 1) * Y / 6, ZF), p(xs[i], (j + 1) * Y / 6, ZF)], k++); }
     // the side walls: 4 up, running to the camera
@@ -319,7 +336,7 @@ BUILD.toxicspikes = (e, E, own, layers, both) => BUILD.spikes(e, E, own, layers,
 // a terrain's colour laid over the floor: one even, flat tint of the whole floor (never soft blobs, which read as stains)
 const TINT = { "electric.h": "#D8F03A", "grass.d": "#22B47A", "grass.h": "#3A9A32", "fairy.h": "#FF8AE8", "psychic.h": "#FF4F93" };
 function floorTint(e, E, ramp, k = 1) {
-  const { W, H } = e, y0 = H * .42, L = -W * .2, R = W * 1.2, B = H * 1.2;
+  const { W, H } = e, y0 = P3(W, H, 0, 0, Z_FAR + .2)[1], L = -W * .2, R = W * 1.2, B = H * 1.2;
   e.extra.push(e.strip({ dur: Infinity, quad: () => [[L, y0], [R, y0], [R, B], [L, B]], color: TINT[ramp] || "#FFFFFF", emis: e.light ? .2 : .5, occ: e.light ? .5 : .15, alpha: Math.min(.32, (e.light ? .07 : .06) * k), layer: 0 }));
 }
 
