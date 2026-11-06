@@ -281,18 +281,16 @@ export function makeDraw(k) {
   // two hands clap at the target (Fake Out, Encore, Helping Hand)
   D.clap = async c => {
     const t = aim(c) || c.from, e = c.e;
-    if (c.event.category === "Physical") await lunge(c.stage, c.from, t, c.type, { quick: true, short: true });
     const [x, y] = B(c, t, .55), s = Math.max(S(c, t), 60);
+    // two palms close in from either side of its face and clap together; the user does not run in (a lunge read as a tackle)
+    for (const sg of [-1, 1]) e.emit({ at: [x + sg * s * .55, y], vel: [-sg * s * 4.2, 0], drag: 8, tex: "hand", lit: true, ramp: "gold.c", size: [s * .5, s * .5], aspect: .9, rot: sg * .3, life: 520, emis: .5, occ: .8 });
+    await after(c, 200);
     if (c.event.category === "Physical") {
-      // Fake Out as Scarlet and Violet draw it: a startle of yellow jags bursting out of the point it claps at, a hot heart, no white
+      // Fake Out as Scarlet and Violet draw it: at the clap, a startle of yellow jags bursting out of the point between the palms
       for (let i = 0; i < 9; i++) { const a0 = around(9, i, .2), r0 = s * .12, r1 = s * rand(.55, .8); boltStrip(e, [x + Math.cos(a0) * r0, y + Math.sin(a0) * r0], [x + Math.cos(a0) * r1, y + Math.sin(a0) * r1], { color: "#FFE14A", width: 5, dur: 300, flicker: 2, depth: .28, forks: 0, steps: 4, delay: i * 6 }); }
       e.emit({ at: [x, y], tex: "spark", ramp: "gold", size: [s * .2, s * .9], rot: rand(0, 3), life: 240, grow: true });
       sparks(e, [x, y], 12, "electric", { ramp: "gold", speed: [s * 3, s * 5], len: [8, 14] });
-    } else {
-      for (const sg of [-1, 1]) e.emit({ at: [x + sg * s * .55, y], vel: [-sg * s * 4.2, 0], drag: 8, tex: "hand", lit: true, ramp: "gold.c", size: [s * .5, s * .5], aspect: .9, rot: sg * .3, life: 520, emis: .5, occ: .8 });
-      await after(c, 200);
-      sparks(e, [x, y], 12, "normal", { ramp: "gold", speed: [s * 3, s * 5], len: [8, 14] });
-    }
+    } else sparks(e, [x, y], 12, "normal", { ramp: "gold", speed: [s * 3, s * 5], len: [8, 14] });
     shock(e, [x, y], s * 1.4);
     e.shake(.25);
     if (c.targets.length) landAll(c, { shards: c.event.category !== "Status" });
