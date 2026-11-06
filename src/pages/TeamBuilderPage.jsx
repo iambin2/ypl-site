@@ -348,17 +348,18 @@ function OfficialSubmissionPanel({
   const notes = eligibility?.warnings || [];
   const latestSubmission = registration?.latestSubmission || null;
   const formatSubmissionTime = value => value ? formatDate(value, { time: true }) : "";
+  /* 2026-11-06 redesign: the event's name at 20 with one grey line (the rule and the deadline), the steps, then each step as a block 20
+     apart: what the team step found, the name with its label and its key joined on the seam, what the check found, the PIN, and the
+     main action. The name field and its key share the steps' thirds, so 신청자 확인 stands under the last step's edge, not in the air. */
   return (
     <div className="tb-validation official-submission">
-      <div className="tb-validation-head">
-        <div>
-          <strong>{eventContext?.name || "공식 파티 제출"}</strong>
-          {eventContext && <span>{[
-            regulationName || eventContext.regulation_id || "레귤레이션 확인 필요",
-            cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음",
-            eventContext.submission_target_at && `제출 마감 ${formatDate(eventContext.submission_target_at, { time: true })}`,
-          ].filter(Boolean).join(", ")}</span>}
-        </div>
+      <div className="tb-sub-head">
+        <b className="t20">{eventContext?.name || "공식 파티 제출"}</b>
+        {eventContext && <p className="t12 reg dim">{[
+          regulationName || eventContext.regulation_id || "레귤레이션 확인 필요",
+          cupRuleSummary || eventContext.cup_rule_id || "추가 룰 없음",
+          eventContext.submission_target_at && `제출 마감 ${formatDate(eventContext.submission_target_at, { time: true })}`,
+        ].filter(Boolean).join(", ")}</p>}
       </div>
       <Steps labels={["팀 고르기", "확인", "제출"]} at={at} />
 
@@ -368,41 +369,44 @@ function OfficialSubmissionPanel({
       </div> : null}
       {justSubmitted ? <Button type="button" variant="second" onClick={onAgain}>다시 제출</Button> : <>
         <p className={"tb-step-line t12" + (teamValid ? "" : " off")}>{teamValid ? <><Icon n="check" size={16} />지금 팀이 규정을 통과했습니다.</> : "팀을 구성해 규정을 통과하면 제출할 수 있습니다."}</p>
-        <div className="tb-official-lookup">
-          <input
-            className="tb-input"
-            value={registrationName}
-            onChange={event => onRegistrationNameChange(event.target.value)}
-            placeholder="신청자 본인의 이름을 입력해 주세요."
-            aria-label="신청자 이름"
-            autoComplete="name"
-            disabled={lookupBusy}
-          />
-          <Button type="button" variant="second" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()} loading={lookupBusy}>신청자 확인</Button>
+        <div className="q tb-sub-field">
+          <label className="q-label t12 dim" htmlFor="tb-sub-name">신청자 이름</label>
+          <div className="tb-official-lookup">
+            <input
+              id="tb-sub-name"
+              className="in"
+              value={registrationName}
+              onChange={event => onRegistrationNameChange(event.target.value)}
+              onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing && registrationName.trim() && !lookupBusy) onLookup(); }}
+              placeholder="신청할 때 쓴 이름"
+              autoComplete="name"
+              disabled={lookupBusy}
+            />
+            <Button type="button" variant="second" onClick={onLookup} disabled={lookupBusy || !registrationName.trim()} loading={lookupBusy}>신청자 확인</Button>
+          </div>
+          {registration && <p className="tb-step-line t12"><Icon n="check" size={16} />{registration.registration.registration_name}님의 신청을 확인했습니다.</p>}
         </div>
-        {registration && <p className="tb-step-line t12"><Icon n="check" size={16} />{registration.registration.registration_name}님의 신청을 확인했습니다.</p>}
         {(errors.length > 0 || notes.length > 0) && <ul>
           {errors.slice(0, 8).map((message, index) => <li className="error" key={`e-${index}`}><Bang />{message}</li>)}
           {notes.slice(0, 4).map((message, index) => <li key={`w-${index}`}>{message}</li>)}
         </ul>}
-        {ready && pinNeeded && <div className="tb-official-pin">
+        {ready && pinNeeded && <div className="q tb-sub-field">
+          <label className="q-label t12 dim" htmlFor="tb-sub-pin">제출 비밀번호</label>
           <input
-            className="tb-input"
+            id="tb-sub-pin"
+            className="in tb-sub-pin"
             type="password"
             value={submissionPin}
             onChange={event => onSubmissionPinChange(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
-            placeholder="제출 비밀번호 (숫자 4자리)"
-            aria-label="제출 비밀번호"
+            placeholder="숫자 4자리"
             inputMode="numeric"
             autoComplete="off"
           />
-          <span className="t12 reg dim">{latestSubmission ? "처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요." : "다시 제출할 때 필요합니다. 다른 사람이 내 이름으로 제출하지 못하게 막아 줍니다."}</span>
+          <p className="t12 reg dim">{latestSubmission ? "처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요." : "다시 제출할 때 필요합니다. 다른 사람이 내 이름으로 제출하지 못하게 막아 줍니다."}</p>
         </div>}
-        {ready && <div className="tb-official-submit">
-          <Button type="button" variant="main" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
-            {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출" : "파티 제출"}
-          </Button>
-        </div>}
+        {ready && <Button type="button" variant="main" icon="check" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
+          {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출" : "파티 제출"}
+        </Button>}
       </>}
 
       {revisions.length > 0 && <div className="tb-revisions">

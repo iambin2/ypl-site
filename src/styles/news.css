@@ -34,12 +34,24 @@
 .nw-admin { margin-top: var(--s5); }
 .nw-more .btn .ic { width: 16px; height: 16px; }
 
-/* the form: its title at 20, the fields 20 apart */
+/* the form (신청, 신청 수정), laid out as the notice it belongs to (2026-11-06). The head: the back link, the title at 32 and one grey
+   line 4 under it. The event's facts (일시, 신청 마감, 리그) stand as spec rows with the league's rule as a grey line under them; then the
+   form in sections, each a title at 20 with its fields 20 apart; the sections 52 apart; then 신청 현황; the action docks.
+   A phone reads it in that order; desktop puts the facts, the action and 신청 현황 in the 439 beside the form, held in view. */
+.nw-form { display: flex; flex-direction: column; }
+.nw-form-aside { display: contents; }
+.nw-form-head { order: 0; } .nw-form-facts { order: 1; } .nw-form-main { order: 2; } .nw-form-resp { order: 3; } .nw-form-act { order: 4; }
 .nw-form-title { margin-top: var(--s3); }
-.nw-req { margin-top: var(--s1); }
-.nw-fields { margin-top: var(--s5); }
-.nw-fields > * + * { margin-top: var(--s5); }
-.nw-done { display: flex; align-items: flex-start; gap: var(--s3); margin-top: var(--s5); padding: var(--s5); }
+.nw-form-line, .nw-req { margin-top: var(--s1); }
+.nw-form-facts { display: grid; gap: var(--s3); margin-top: var(--s8); }
+.nw-form-main { margin-top: var(--s8); }
+.nw-form-sec + .nw-form-sec { margin-top: var(--s13); }
+.nw-form-sec > .sh + * { margin-top: 0; }
+.nw-form-sec > * + * { margin-top: var(--s5); }
+.nw-form-sec .q + .q { margin-top: var(--s5); }
+.nw-form-resp { margin-top: var(--s13); }
+.nw-form-resp .pr-wrap.compact { margin: 0; }
+.nw-done { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--s5); }
 .nw-done .box.on { background: var(--ground); color: var(--lit); }
 .nw-done p { margin-top: var(--s1); }
 
@@ -57,4 +69,12 @@
   .nw-aside .dock { margin-top: 0; }
   .nw-others { display: block; }
   .nw-aside > .nw-others:not(:only-child) { margin-top: var(--s8); }
+  /* the form: the 709 holds the head and the sections, the 439 beside them from the first line holds the facts, the action, 신청 현황 */
+  .nw-form { display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); grid-template-areas: "head aside" "main aside"; grid-template-rows: auto 1fr; column-gap: var(--s13); align-items: start; }
+  .nw-form-head { grid-area: head; }
+  .nw-form-main { grid-area: main; }
+  .nw-form-aside { grid-area: aside; display: grid; gap: var(--s8); position: sticky; top: calc(var(--nav-height) + var(--s8)); }
+  .nw-form-aside > * { margin-top: 0; }
+  .nw-form-aside > .nw-form-facts { order: 1; } .nw-form-aside > .nw-form-act { order: 2; } .nw-form-aside > .nw-form-resp { order: 3; }
+  .nw-form-aside .dock { margin-top: 0; }
 }

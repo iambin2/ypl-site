@@ -14,17 +14,25 @@
 .tb-validation-icon { flex: none; display: grid; place-items: center; height: var(--l15); color: var(--lit); }
 /* the reasons: an error starts with the ! square, the rest are dim sentences */
 .tb-validation ul { margin: var(--s3) 0 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
-.tb-validation li { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
-.tb-validation li.error { color: var(--lit); }
-.tb-validation li .bang { margin-top: calc((var(--l12) - var(--s5)) / 2); }
+/* only the reasons' list: the steps are an ol of their own and keep their centred 44 cells */
+.tb-validation ul > li { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--t12); line-height: var(--l12); color: var(--dim); }
+.tb-validation ul > li.error { color: var(--lit); }
+.tb-validation ul > li .bang { margin-top: calc((var(--l12) - var(--s5)) / 2); }
 .tb-more { margin: var(--s2) 0 0; font-size: var(--t12); color: var(--mute); }
-/* the name and its check, joined by the seam like the board's search and 글쓰기 */
-.tb-official-lookup { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); margin: var(--s5) 0 0; max-width: var(--sheet-w); }
-.tb-official-lookup .btn--second { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); width: auto; }
-.tb-official-pin { display: grid; gap: var(--s2); margin: var(--s5) 0 0; max-width: var(--sheet-w); }
-/* the three steps under the title, what each step found as a line with a check or the ! square, and the inverted 제출했습니다 */
-.official-submission { display: grid; gap: var(--s5); }
+/* the name and its check, joined by the seam: the field takes the first two of the steps' thirds and 신청자 확인 the last, so the key
+   stands under the last step's edge (2026-11-06; a key ending in the middle of the panel read as floating) */
+.tb-official-lookup { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
+.tb-official-lookup .in { grid-column: span 2; }
+.tb-official-lookup .btn--second { --btn-bg: var(--panel-2); --btn-bg-hover: var(--rule); width: auto; height: var(--h-row); padding-inline: var(--s3); }
+.tb-sub-field .in { background: var(--panel-2); }
+.tb-sub-field .tb-step-line { margin-top: var(--s1); }
+@media (min-width: 860px) { .q .tb-sub-pin { width: calc((100% - var(--seam) * 2) / 3 * 2 + var(--seam)); } }
+/* the panel: the event's name at 20 and its grey line 4 under it, then the steps and each step's block 20 apart; the panel's padding is
+   never smaller than that gap. The main action stands last, as wide as the steps. */
+.official-submission { display: grid; gap: var(--s5); padding: var(--s5); }
 .official-submission > * { margin-top: 0; }
+.tb-sub-head { display: grid; gap: var(--s1); min-width: 0; }
+.tb-sub-head > b { overflow-wrap: anywhere; }
 /* inside the panel the steps and the second action stand one tone up, like a field inside a panel */
 .official-submission .step.pn, .official-submission > .btn--second { background: var(--panel-2); }
 .tb-step-line { display: flex; align-items: flex-start; gap: var(--s2); color: var(--lit); }
@@ -32,7 +40,6 @@
 .tb-step-line.off { color: var(--dim); }
 .tb-submitted { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--pad); }
 .tb-submitted > span { display: grid; gap: var(--s1); }
-.tb-official-submit { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: var(--s5) 0 0; }
 
 /* ---------- layout ---------- */
 /* the rule card and the two panels are one tool: they keep the panels' own gap, not a section's */

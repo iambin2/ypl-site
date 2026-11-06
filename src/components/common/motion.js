@@ -50,13 +50,15 @@ export function light(root, total = DUR.light) {
   if (!root || reduced() || typeof root.animate !== "function") return;
   const seen = el => el.getBoundingClientRect().top < innerHeight;
   const last = total - DUR.tone;
+  // a page returned to mid-scroll: what stands above the view is not seen and stays lit, so the stagger starts at the first line in view
+  const above = el => el.getBoundingClientRect().bottom <= 0;
   /* [data-rise]: a grey line under a stack (a tie, a note) lights with the stack instead of standing lit before it.
      .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board.
      .champion, .podium-col, .lead, .ho-col: panels that hold a display but rise as a whole, like a counter; a line score's column rises as
      one, its three cells together */
   const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, .champion, .podium-col, .lead, .ho-col, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
     .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .ho-col, .hof-crown, .sheet, .stack.chips, .chips"));
-  panels.filter(seen).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
+  panels.filter(el => seen(el) && !above(el)).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
   revealLater(panels.filter(el => !seen(el)));
   const on = (els, start, step) => els.filter(seen).forEach((el, i) => el.animate([{ opacity: 0 }, { opacity: 1 }],
     { duration: DUR.tone, delay: Math.min(start + i * step, last), easing: EASE_OUT, fill: "backwards" }));
@@ -111,13 +113,14 @@ export function springTo(from, to, v0, response = 0.42, zeta = 0.86) {
 }
 
 /* ---------- page change (DESIGN.md "Motion"): the old content goes at once; the new page's panels light top to bottom, 38 apart, and
-   its displays after them, done by 260. Back does not replay: the page stands where it was left. The bars never move. ---------- */
+   its displays after them, done by 260. Going back lights the page it returns to the same way, where it was left (2026-11-06: a back
+   that only swapped the page read as a cut, so in and out are one motion). The bars never move. ---------- */
 const main = () => document.getElementById("ypl-main");
-/* mutate() must render the next page synchronously (flushSync). scrollY is where the new page starts. */
-export function transition(mutate, { dir = "forward", scrollY: nextY = 0 } = {}) {
+/* mutate() must render the next page synchronously (flushSync). scrollY is where the new page starts. dir is kept for callers. */
+export function transition(mutate, { scrollY: nextY = 0 } = {}) {
   mutate();
   window.scrollTo(0, nextY);
-  if (dir !== "back") light(main(), DUR.leave);
+  light(main(), DUR.leave);
 }
 
 /* ---------- theme change: the page turns in one frame and a wash of the old ground leaves it (leave, 260, fast at first), so the change reads

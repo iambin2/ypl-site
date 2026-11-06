@@ -2512,7 +2512,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   return (<section className="bk">
     {!open&&!wizard&&<header className="bk-head">
       <h1 className="t32">대진표</h1>
-      {admin&&<Button variant="link" disabled={!!deletingId} onClick={()=>setWizard(true)}>새 대진표</Button>}
+      {admin&&<Button variant="link" disabled={!!deletingId} onClick={()=>transition(()=>flushSync(()=>setWizard(true)))}>새 대진표</Button>}
     </header>}
     {!open&&!wizard&&normalizedLoadError&&<ErrorNote>대진표를 불러오지 못했습니다. {normalizedLoadError}</ErrorNote>}
     {!open&&!wizard&&tabsEl()}
@@ -2520,7 +2520,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       {!normalizedInitialReady
         ? <Loader/>
         : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다." desc="참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.">
-            {admin&&<Button variant="second" onClick={()=>setWizard(true)}>첫 대진표 만들기</Button>}
+            {admin&&<Button variant="second" onClick={()=>transition(()=>flushSync(()=>setWizard(true)))}>첫 대진표 만들기</Button>}
           </Empty>}
       {list.length>0&&<div className="stack bk-rows">{list.map((b,i)=><BracketRow key={b.id} b={b} lead={i===0} vt={"b-"+b.id} live={statusTag(b)==="진행 중"}
         line={lineOf(b)} end={admin&&statusTag(b)!=="진행 중"?statusTag(b):null} onOpen={()=>openBracket(b)}/>)}</div>}
@@ -2547,7 +2547,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       {/* a delete that cannot be undone stands last, after everything the bracket shows */}
       {!open.readOnly&&admin&&<div className="stack bk-actions bk-delete"><Button variant="second" disabled={!!open.applied||deletingId===open.id} title={open.applied?"기록 반영 취소 후 삭제할 수 있습니다.":""} onClick={()=>del(open)}>{deletingId===open.id?"삭제 중…":"삭제"}</Button></div>}
     </div>; })()}
-    {wizard&&<BracketWizard data={data} onClose={()=>setWizard(false)} onCreate={create}/>}
+    {wizard&&<BracketWizard data={data} onClose={()=>transition(()=>flushSync(()=>setWizard(false)),{dir:"back"})} onCreate={create}/>}
      {apply&&<BracketApply b={apply.b} res={apply.res} data={data} save={save} flash={flash} refresh={refresh} onNormalizedApplied={loadNormalized} onClose={()=>{setApply(null);void loadNormalized();}}/>}
   </section>);
 }

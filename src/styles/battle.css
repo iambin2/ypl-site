@@ -73,7 +73,7 @@
 /* the team brought, on the waiting screen: shown, not chosen */
 .bt-team.still { cursor: default; }
 /* no saved team: the line under the random parties that says where teams come from */
-.bt-noteams { margin-top: var(--s2); }
+.bt-noteams { margin: 0; }
 
 /* waiting for the other player: the busy cell and the sentence */
 /* the opponent's place while the opener waits: the lamp beside 참가 대기 */
@@ -155,6 +155,15 @@
 
 /* finding a battle again: the ones being played now and this device's, as rows */
 .bt-list { display: grid; gap: var(--s3); }
+/* picking battles to delete: a check leads each row (one step up on the row's panel, as a check on a panel is), a battle still open
+   stands muted with no check; 전체 선택 and the delete key join on the seam, 1 to 1.618 */
+.bt-pickrow .row-lead { display: flex; padding: 0 var(--s3) 0 var(--pad); }
+.bt-pickrow .box:not(.on) { background: var(--rule); }
+.bt-pickrow.off { cursor: default; color: var(--mute); }
+.bt-pickrow.off .box { visibility: hidden; }
+.bt-pickkeys { display: flex; gap: var(--seam); }
+.bt-pickkeys > .btn { flex: 1 1 0; }
+.bt-pickkeys > .btn:last-child { flex-grow: 1.618; }
 
 /* the playback chips and 소리 at the right end of the same row */
 .bt-play { display: flex; justify-content: space-between; gap: var(--s2); min-width: 0; }

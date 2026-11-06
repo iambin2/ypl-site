@@ -150,9 +150,11 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp} onResetPin={respAnn.form?.eventId?resetPin:null}/>}
   </>;
 
+  // 신청 한 장은 공지에서 들어가고 공지로 나온다: 두 방향 모두 화면 전환으로 켜진다(motion.js transition)
+  const openForm=(id,edit)=>transition(()=>flushSync(()=>{ setEditing(edit); setFill(id); }));
   const fillAnn=a&&fill===a.id?a:null;
   if(fillAnn){
-    return (<FormPage ann={fillAnn} edit={editing} responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null} onBack={()=>setFill(null)}
+    return (<FormPage ann={fillAnn} edit={editing} responsesOverride={fillAnn.form?.eventId?(eventResponses[fillAnn.id]||[]):null} onBack={()=>transition(()=>flushSync(()=>setFill(null)),{dir:"back"})}
       onOpen={who=>openEventApplication({eventId:fillAnn.form.eventId,...who}).catch(error=>error?.message||"신청을 불러오지 못했습니다.")}
       onSubmit={async payload=>{
         const ok=editing
@@ -178,7 +180,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     const open=hasForm&&!applicationsClosed(a.form);
     // 신청을 받는 동안은 이미 신청한 사람이 같은 자리에서 답을 고친다. 다시 신청하면 다른 사람으로 들어간다.
     const editable=open&&Boolean(a.form.eventId);
-    const main=open?[a.form.buttonLabel||"참가 신청",()=>{ setEditing(false); setFill(a.id); }]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:hasForm?["신청 마감",null]:null;
+    const main=open?[a.form.buttonLabel||"참가 신청",()=>openForm(a.id,false)]:submits[0]?[submits[0][0],()=>openBuilder(submits[0][1])]:hasForm?["신청 마감",null]:null;
     const seconds=open?submits:submits.slice(1);
     const others=all.filter(x=>x.id!==a.id).slice(0,5);
     // 데스크톱은 709와 439 두 단: 왼쪽은 본문, 오른쪽은 대회의 사실과 행동, 그 아래 다른 공지. 폰은 지금 순서 그대로 한 단.
@@ -199,7 +201,7 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
           {facts.rows.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
         </div>}
         {(editable||seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
-          {editable&&<Button variant="second" onClick={()=>{ setEditing(true); setFill(a.id); }}>신청 수정</Button>}
+          {editable&&<Button variant="second" onClick={()=>openForm(a.id,true)}>신청 수정</Button>}
           {seconds.map(([label,id])=><Button variant="second" key={label} onClick={()=>openBuilder(id)}>{label}</Button>)}
           {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
           {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
@@ -377,17 +379,41 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
     setAlias(name===typed?"":name); setDone(true);
   };
   const required=form.eventId||fields.some(f=>f.required);
-  if(done) return (<section className="nw">
-    <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t32 nw-form-title">{title}</h1>
-    <div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">{edit?"신청을 수정했습니다.":"신청이 접수되었습니다."}</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>
-    <Dock><Button variant="main" onClick={onBack}>공지 보기</Button></Dock>
+  /* 한 장의 틀(DESIGN.md "Notices", 2026-11-06): 공지와 같은 두 단. 머리(돌아가기, 제목 32, 회색 줄 하나), 옆 단에 대회의 사실(일시, 신청 마감,
+     리그)과 주 행동과 신청 현황, 본 단에 섹션(20)마다 칸. 폰은 머리, 사실, 섹션, 현황 순서이고 주 행동은 아래에 붙는다.
+     컴포넌트가 아니라 함수로 부른다: 그릴 때마다 새 컴포넌트가 되면 입력 칸이 다시 만들어져 포커스를 잃는다. */
+  const facts=(eventFacts(ann)?.rows||[]).filter(([k])=>/일시$|신청 마감/.test(k));
+  const both=form.eventDraft?.division==="both";
+  const sheet=({line,act,toast,children})=>(<section className="nw nw-form">
+    <header className="nw-form-head">
+      <BackLink to={ann.title} onClick={onBack}/>
+      <h1 className="t32 nw-form-title">{title}</h1>
+      {line&&<p className="t12 dim reg nw-form-line">{line}</p>}
+    </header>
+    <aside className="nw-form-aside">
+      {(facts.length>0||both)&&<div className="nw-form-facts">
+        <div className="stack">
+          {facts.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
+          {both&&<div className="pn spec-row"><span className="t12 dim">리그</span><span className="t15">루키와 마스터 함께 접수</span></div>}
+        </div>
+        {both&&<p className="t12 dim reg" data-rise>개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
+      </div>}
+      {!done&&fields.some(f=>f.public)&&<div className="nw-form-resp"><PublicResponses ann={ann} compact responsesOverride={responsesOverride}/></div>}
+      <div className="nw-form-act"><Dock toast={toast}>{act}</Dock></div>
+    </aside>
+    <div className="nw-form-main">{children}</div>
   </section>);
-  if(edit&&!held) return (<section className="nw">
-    <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t32 nw-form-title">{title}</h1>
-    <p className="t12 dim reg nw-req">신청할 때 쓴 이름과 제출 비밀번호로 신청을 불러옵니다.</p>
-    <div className="nw-fields">
+  if(done) return sheet({
+    act:<Button variant="main" onClick={onBack}>공지 보기</Button>,
+    children:<div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">{edit?"신청을 수정했습니다.":"신청이 접수되었습니다."}</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>,
+  });
+  if(edit&&!held) return sheet({
+    line:"신청할 때 쓴 이름과 제출 비밀번호로 신청을 불러옵니다.",
+    toast:failed&&<Toast error action="다시 시도" onAction={find}>{failed}</Toast>,
+    act:<><Button variant="main" onClick={find} disabled={busy}>{busy?"불러오는 중…":"신청 불러오기"}</Button>
+      <p className="t12 dim reg dock-note">신청 마감 전까지 고칠 수 있습니다.</p></>,
+    children:<section className="nw-form-sec" aria-labelledby="ff-who-h">
+      <SectionHead id="ff-who-h" title="본인 확인"/>
       <Question id="ff-name" label="참가자 이름" required error={errors.name}>
         <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{setRegistrationName(e.target.value);setErrors(x=>({...x,name:""}));}} placeholder="신청할 때 쓴 이름을 입력해 주세요." autoComplete="name"/>
       </Question>
@@ -395,19 +421,18 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
         <input id="ff-pin" className="in" aria-required="true" aria-invalid={errors.pin?true:undefined} type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={e=>{setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4));setErrors(x=>({...x,pin:""}));}} placeholder="숫자 4자리"/>
         <p className="t12 dim reg">파티 제출에 쓰는 비밀번호입니다. 아직 정하지 않았다면 지금 입력한 숫자 4자리가 비밀번호가 됩니다.</p>
       </Question>
-    </div>
-    <Dock toast={failed&&<Toast error action="다시 시도" onAction={find}>{failed}</Toast>}>
-      <Button variant="main" onClick={find} disabled={busy}>{busy?"불러오는 중…":"신청 불러오기"}</Button>
-      <p className="t12 dim reg dock-note">신청 마감 전까지 고칠 수 있습니다.</p>
-    </Dock>
-  </section>);
-  return (<section className="nw">
-    <BackLink to={ann.title} onClick={onBack}/>
-    <h1 className="t32 nw-form-title">{title}</h1>
-    {held&&<p className="t12 dim reg nw-req">{held.registrationName}님의 신청입니다. 이름을 바꾸려면 운영진에게 문의해 주세요.</p>}
-    {required&&<p className="t12 dim reg nw-req">* 표시는 필수입니다.</p>}
-    {fields.some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
-    <div className="nw-fields">
+    </section>,
+  });
+  // 참가자는 대회 신청에서만 따로 선다(계정, 이름, 같은 이름의 기록). 운영진의 질문은 신청 내용 한 섹션이다.
+  const person=form.eventId&&!edit;
+  return sheet({
+    line:[held?`${held.registrationName}님의 신청입니다. 이름을 바꾸려면 운영진에게 문의해 주세요.`:"",required?"* 표시는 필수입니다.":""].filter(Boolean).join(" "),
+    toast:failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>,
+    act:<><Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":edit?"수정":"신청"}</Button>
+      <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p></>,
+    children:<>
+    {person&&<section className="nw-form-sec" aria-labelledby="ff-who-h">
+      <SectionHead id="ff-who-h" title="참가자"/>
       {/* 구글 계정 칸: 로그인 전, 계정의 이름으로 신청, 로그인했지만 이름이 아직 계정의 것이 아닌 때. 줄 하나에 설명 한 줄. */}
       {accountForm&&acct.ready&&<Question id="ff-account" label={owned?"참가자":"구글 계정"} group>
         <div className="stack">{!acct.signedIn
@@ -444,8 +469,10 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
           ]}/>
         </Question>
       </div>}
-      {form.eventDraft?.division==="both"&&!edit&&<p className="t12 dim reg">루키와 마스터를 함께 접수합니다. 개인 마스터 참가 또는 개인 루키나 라이트 우승 이력이 있으면 마스터로 배정됩니다.</p>}
-      {fields.length===0&&!form.eventId&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
+    </section>}
+    {(fields.length>0||!form.eventId)&&<section className="nw-form-sec" aria-labelledby="ff-ans-h">
+      <SectionHead id="ff-ans-h" title="신청 내용"/>
+      {fields.length===0&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>{ const label=f.label||`질문 ${i+1}`, id=`ff-${f.id}`, error=errors[f.id];
         const text={id,className:"in","aria-required":f.required||undefined,"aria-invalid":error?true:undefined,value:ans[f.id]||"",onChange:e=>set(f.id,e.target.value),placeholder:"답변을 입력해 주세요."};
         return (<Question key={f.id} id={id} label={label} required={f.required} error={error} group={f.type==="single"||f.type==="multi"}>
@@ -455,12 +482,9 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
           {f.type==="dropdown"&&<Dropdown id={id} value={ans[f.id]||""} onChange={v=>set(f.id,v)} options={(f.options||[]).map(o=>({value:o,label:o}))} placeholder="선택해 주세요."/>}
         </Question>);
       })}
-    </div>
-    <Dock toast={failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>}>
-      <Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":edit?"수정":"신청"}</Button>
-      <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p>
-    </Dock>
-  </section>);
+    </section>}
+    </>,
+  });
 }
 function FormResponsesModal({ ann, onClose, onDeleteResp, responsesOverride, onResetPin }){
   const form=ann.form||{}; const fields=form.fields||[]; const normalized=Array.isArray(responsesOverride); const base=normalized?responsesOverride:(form.responses||[]);

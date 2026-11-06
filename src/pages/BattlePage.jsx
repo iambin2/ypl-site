@@ -140,9 +140,32 @@ function rematchTeam(teamId, regulation, res) {
 // the line under the names while the gate is closed
 const gateLine = (regulation, doubles, kind) => [REGULATIONS[regulation] || "", doubles ? "더블" : "싱글", kind].filter(Boolean).join(" ");
 
-// the random parties are always there, so a visitor with no saved team still sees a choice; this says where their own teams come from
+/* 랜덤 파티 (2026-11-06): one panel of its own, apart from the saved teams, however many rules there are. The rule is a choice joined
+   under it on the seam (M-C, M-B, ...); pressing the panel or a rule picks the random party of that rule. With one rule (a room's) the
+   choice is not shown. The rule last picked is kept while the panel is not chosen, so picking it again brings the same rule back. */
+function RandomPick({ regs, value, onChange }) {
+  const chosen = String(value).startsWith(RANDOM) ? value.slice(RANDOM.length) : "";
+  const [reg, setReg] = useState(chosen || regs[0]);
+  useEffect(() => { if (chosen) setReg(chosen); }, [chosen]);
+  const on = Boolean(chosen);
+  const pick = r => { setReg(r); onChange(RANDOM + r); };
+  return <div className="stack">
+    <label className={"opt-row " + (on ? "inv" : "pn")}>
+      <input type="radio" className="sr-only" name="battle-team" checked={on} onChange={() => pick(reg)} />
+      <span className="opt-copy"><b className="t15">무작위 여섯 마리</b><span className="t12 reg opt-line">배틀이 열리면 {REGULATIONS[reg] || reg} 규정 안에서 정해집니다.</span></span>
+      {on && <Icon n="check" size={20} />}
+    </label>
+    {regs.length > 1 && <div className="choice stack" role="radiogroup" aria-label="랜덤 파티 규정">
+      {regs.map(r => <label key={r} className={"choice-opt " + (r === reg ? "inv" : "pn")}>
+        <input type="radio" className="sr-only" name="battle-random-reg" checked={r === reg} onChange={() => pick(r)} />{REGULATIONS[r] || r}
+      </label>)}
+    </div>}
+  </div>;
+}
+
+// the random party is always there, so a visitor with no saved team still sees a choice; this says where their own teams come from
 function NoTeams() {
-  return <p className="t12 dim bt-noteams">저장한 팀이 없어 랜덤 파티만 고를 수 있습니다. <Button variant="link" href="?view=builder">팀 빌더 열기</Button></p>;
+  return <p className="t12 dim bt-noteams">팀 빌더에서 저장한 팀이 여기에 나옵니다. <Button variant="link" href="?view=builder">팀 빌더 열기</Button></p>;
 }
 // the name is asked on the press, not by a key that will not press: an empty name focuses the field and says why
 const NAME_MISSING = "이름을 입력해 주세요.";
@@ -163,7 +186,8 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, f
       <div className="bt-lobby">
         <div className="bt-lobby-set">
           {setup}
-          <div className="q"><span className="q-label t12 dim">{teamLabel}</span><TeamRows teams={teams} value={teamId} onChange={setTeamId} res={res} />{!saved && <NoTeams />}</div>
+          <div className="q"><span className="q-label t12 dim">랜덤 파티</span><RandomPick regs={teams.filter(t => t.random).map(t => t.regulationId)} value={teamId} onChange={setTeamId} /></div>
+          <div className="q"><span className="q-label t12 dim">{teamLabel}</span>{saved ? <TeamRows teams={teams.filter(t => !t.random)} value={teamId} onChange={setTeamId} res={res} /> : <NoTeams />}</div>
         </div>
         <div className="bt-lobby-show">
           <div className="stack bt-versus">
@@ -347,7 +371,7 @@ function BattleOpen({ res, onOpen, preset }) {
   };
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
   const foeRow = OPPONENTS.find(([key]) => key === foe);
-  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
+  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="저장한 팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
     foeHint={foeRow[2]}
     before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line="진행 중인 배틀을 이어서 합니다." lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
     setup={<>
@@ -651,7 +675,7 @@ function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
     }
   };
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
-  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`팀 (${REGULATIONS[row.regulation]})`} name={name} setName={typeName}
+  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`저장한 팀 (${REGULATIONS[row.regulation]})`} name={name} setName={typeName}
     foe={row.p1_name} doubles={doubles} onEnter={submit}
     setup={<>
       <Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} line="참가하면 바로 시작합니다." lamp="참가 대기" />
