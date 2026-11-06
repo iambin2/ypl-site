@@ -147,7 +147,8 @@ export default function HomePage({ data, go, admin }) {
           ? <><Seg value={now.date?.clock || "  :  "} h={84} cells={4} label={now.date?.clock ? `${now.date.clock} 시작` : "시작 시각 미정"} /><span className="ho-unit">시작</span></>
           : <><Seg value={now ? String(now.dday).padStart(2, "0") : ""} h={120} cells={now?.dday >= 100 ? 3 : 2} label={now ? `${now.dday}일 남음` : "다음 대회 없음"} className="ho-days" /><span className={"ho-unit" + (now ? "" : " dim")} data-light>일</span></>}
       </div>
-      <h1 className="ho-title" id="ho-title" data-light>{now ? now.name : <>다음 대회 일정은{" "}<br />공지에 올라옵니다.</>}</h1>
+      {/* with an event ahead the board says it alone: the countdown under its label; the name stays for screen readers (2026-11-06) */}
+      <h1 className={"ho-title" + (now ? " sr-only" : "")} id="ho-title" data-light>{now ? now.name : <>다음 대회 일정은{" "}<br />공지에 올라옵니다.</>}</h1>
       {now?.due && <div className="stack ho-due">
         <Counter label={now.due.unit === "시간" ? "파티 제출 마감까지" : "파티 제출까지"} lamp={now.due.unit === "시간" ? "sig" : true} value={String(now.due.value).padStart(2, "0")} cells={now.due.value >= 100 ? 3 : 2} unit={now.due.unit}
           after={<span className="t15">{now.due.unit}</span>} onClick={() => go("news", { notice: now.noticeId })} />
