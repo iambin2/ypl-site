@@ -36,7 +36,11 @@ export function Wordmark() {
   );
 }
 
-/* 구글 계정(docs/db/player_accounts.sql): 바의 오른쪽, 램프 앞에 한 단어. 로그인 전은 밝은 "로그인"(누르면 바로 구글로 가고
+/* Google의 G (public/brand/google-g.svg): 구글 로그인임을 알리는 Google 자신의 네 색 표시. 다시 칠하거나 흐리게 하지 않는다
+   (Google 브랜드 규칙, DESIGN.md "The account word"). 구글 로그인 버튼마다 글자 앞에 20으로 선다. */
+export const GoogleMark = () => <img className="g-mark" src="/brand/google-g.svg" alt="" width={20} height={20} />;
+
+/* 구글 계정(docs/db/player_accounts.sql): 바의 오른쪽, 램프 앞에 G와 한 단어. 로그인 전은 밝은 "구글 로그인"(누르면 바로 구글로 가고
    지금 화면으로 돌아온다), 로그인 뒤는 어두운 "로그아웃"(어느 계정인지 묻고 나온다). Supabase가 없는 개발 서버에는 서지 않는다. */
 function AccountButton() {
   const [signed, setSigned] = useState(visitorSignedIn);
@@ -51,8 +55,8 @@ function AccountButton() {
     if (await siteConfirm({ title: "구글 로그아웃", body: `${email ? `${email} 계정에서` : "구글 계정에서"} 로그아웃합니다.`, confirmLabel: "로그아웃" })) signOutVisitor();
   };
   return signed
-    ? <button type="button" className="acct dim" onClick={signOut}>로그아웃</button>
-    : <button type="button" className="acct" onClick={() => signInWithGoogle()} aria-label="구글 계정으로 로그인">로그인</button>;
+    ? <button type="button" className="acct dim" onClick={signOut} aria-label="구글 계정에서 로그아웃"><GoogleMark />로그아웃</button>
+    : <button type="button" className="acct" onClick={() => signInWithGoogle()} aria-label="구글 계정으로 로그인"><GoogleMark />구글 로그인</button>;
 }
 
 /* 바는 바탕 톤에 아래 머리카락 선 하나, 움직이지 않는다. 폰은 Wing Y와 워드마크, 오른쪽 끝에 테마 버튼.

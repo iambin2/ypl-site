@@ -11,6 +11,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
+import { GoogleMark } from "../components/layout/SiteHeader.jsx";
 import { VISITOR_EVENT, accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingForm, visitorSignedIn } from "../services/visitorAuth.js";
 import { builderRouteSearch, editEventApplication, findApplicantNameRecord, listEventApplications, openEventApplication, playerNameKey, tidyApplicantName, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
@@ -411,7 +412,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
       {accountForm&&acct.ready&&<Question id="ff-account" label={owned?"참가자":"구글 계정"} group>
         <div className="stack">{!acct.signedIn
           ? <Row title="구글 계정으로 신청" line="이름 대신 계정으로 구분합니다."
-              value={<Button variant="second" size="sm" onClick={()=>signInWithGoogle("",undefined,ann.id)}>구글로 로그인</Button>}/>
+              value={<Button variant="second" size="sm" onClick={()=>signInWithGoogle("",undefined,ann.id)}><GoogleMark/>구글 로그인</Button>}/>
           : <Row title={owned?owned.requested_name:acct.row?.email||"구글 계정으로 로그인했습니다."} line={owned?owned.email||undefined:acct.row?.status==="pending"?"본인 확인 중":undefined}
               value={<Button variant="link" onClick={signOut}>로그아웃</Button>}/>}</div>
         {acct.signedIn&&<p className="t12 dim reg">{owned?"구글 계정으로 신청합니다. 이 트레이너 이름은 이 계정으로만 신청할 수 있습니다."

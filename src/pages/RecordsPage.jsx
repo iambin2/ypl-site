@@ -22,6 +22,7 @@ import Button from "../components/common/Button.jsx";
 import Seg from "../components/common/Seg.jsx";
 import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
+import { GoogleMark } from "../components/layout/SiteHeader.jsx";
 import { VISITOR_EVENT, accountsReady, decideLinkRequest, listLinkRequests, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
 
 /* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
@@ -446,7 +447,7 @@ function TrainerLink({ profile }) {
       <SectionHead id="rc-link-h" title="내 기록 연결" />
       <div className="stack">
         {!signedIn
-          ? <Row title="구글 계정으로 연결" line="운영진이 확인한 뒤 이 기록이 내 계정과 이어집니다." value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, back)}>구글로 로그인</Button>} />
+          ? <Row title="구글 계정으로 연결" line="운영진이 확인한 뒤 이 기록이 내 계정과 이어집니다." value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, back)}><GoogleMark />구글 로그인</Button>} />
           : link === undefined ? <Row title="연결 상태를 확인하는 중입니다." />
           : mine ? <Row title={LINK_STATE[link.status] || ""} line={link.email || undefined} />
           : <Row title="내 기록으로 연결 요청" line={link ? `지금은 ${link.requested_name} 기록에 요청되어 있습니다.` : "운영진이 확인한 뒤 연결됩니다."}
