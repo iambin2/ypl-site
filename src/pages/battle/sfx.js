@@ -126,8 +126,8 @@ function notes(ctx, t, fs, { gap = .07, type = "triangle", peak = .14, d = .3, l
   fs.forEach((f, i) => tone(ctx, t, { type, f, peak, a, d, lp, pan, wet, at: at + i * gap }));
 }
 const thud = (ctx, t, p = 1, pan = 0, at = 0) => {
-  tone(ctx, t, { f: 150 * clamp(p, .7, 1.3), to: 42, peak: .62 * p, a: .002, d: .16 + .06 * p, pan, wet: .12, at });
-  hiss(ctx, t, { kind: "lowpass", f: 1600 * clamp(p, .7, 1.4), to: 220, peak: .36 * p, a: .001, d: .09 + .03 * p, pan, wet: .1, at });
+  tone(ctx, t, { f: 150 * clamp(p, .7, 1.3), to: 40, peak: .62 * p, a: .002, d: .24 + .1 * p, pan, wet: .15, at });
+  hiss(ctx, t, { kind: "lowpass", f: 1800 * clamp(p, .7, 1.4), to: 160, peak: .42 * p, a: .001, d: .35 + .25 * p, pan, wet: .2, at });
 };
 // the pitch each type sings at: its charge, its flight, its sparkle
 const PITCH = { normal: 523, fire: 392, water: 587, electric: 880, grass: 659, ice: 1175, fighting: 330, poison: 294, ground: 220, flying: 784, psychic: 698, bug: 988, rock: 262, ghost: 466, dragon: 196, dark: 247, steel: 1047, fairy: 1319 };
@@ -179,6 +179,7 @@ const LIB = {
   ballOpen: (c, t, o) => {
     hiss(c, t, { f: 2000, to: 9500, q: 2.2, peak: .55, a: .1, hold: .26, d: .14, g: .12, pan: o.pan, wet: .35 });
     hiss(c, t, { kind: "highpass", f: 4000, to: 8000, peak: .26, a: .1, hold: .24, d: .16, g: .12, pan: o.pan, wet: .45 });
+    hiss(c, t, { kind: "lowpass", f: 700, peak: .28, a: .02, d: .4, pan: o.pan, wet: .2 });
   },
   // measured (a withdraw): high noise sliding down for most of a second, then a short sweep back up as the light flies home
   recall: (c, t, o) => {
@@ -186,6 +187,7 @@ const LIB = {
     hiss(c, t, { f: 10500, to: 5500, q: 4.5, peak: .6, a: .06, hold: 1, d: .2, g: 1.15, pan: o.pan, wet: .35 });
     hiss(c, t, { kind: "highpass", f: 9000, to: 6000, peak: .08, a: .06, hold: .9, d: .3, g: 1.15, pan: o.pan, wet: .4 });
     hiss(c, t, { f: 5500, to: 10500, q: 4, peak: .42, a: .16, d: .1, pan: o.pan, wet: .4, at: 1.1 * k });
+    hiss(c, t, { kind: "lowpass", f: 600, peak: .18, a: .1, hold: .6, d: .4, pan: o.pan, wet: .2 });
   },
   drag: (c, t, o) => { hiss(c, t, { f: 600, to: 2400, q: 1.1, peak: .4, a: .08, d: .3, pan: o.pan, wet: .3 }); hiss(c, t, { kind: "lowpass", f: 500, peak: .2, a: .05, d: .4, pan: o.pan }); },
   // measured (three faints, all alike): a band of bright noise falls from the top to about 3.5 kHz in 0.6 s and sweeps back up by 1.1 s
@@ -194,6 +196,7 @@ const LIB = {
     hiss(c, t, { f: 10500, to: 3500, q: 4, peak: .6, a: .05, hold: .45, d: .15, g: .6 * k, pan: o.pan, wet: .4 });
     hiss(c, t, { f: 3500, to: 10500, q: 4, peak: .5, a: .42 * k, d: .12, g: .45 * k, pan: o.pan, wet: .4, at: .55 * k });
     hiss(c, t, { kind: "highpass", f: 7000, to: 3000, peak: .1, a: .05, hold: .4, d: .3, g: .6 * k, pan: o.pan, wet: .4 });
+    hiss(c, t, { kind: "lowpass", f: 600, peak: .2, a: .08, hold: .4, d: .5, pan: o.pan, wet: .2 });
   },
   megaStart: (c, t, o) => {
     hiss(c, t, { f: 240, to: 3600, q: 1.4, peak: .3, a: .62, d: .2, pan: o.pan, wet: .4 });
@@ -228,20 +231,21 @@ const LIB = {
   miss: (c, t, o) => { hiss(c, t, { f: 2600, to: 700, q: 1.6, peak: .3, a: .01, d: .22, pan: o.pan }); },
   fail: (c, t, o) => { tone(c, t, { type: "square", f: 300, to: 240, peak: .1, d: .1, lp: 900, pan: o.pan }); tone(c, t, { type: "square", f: 220, to: 170, peak: .1, d: .14, lp: 900, pan: o.pan, at: .12 }); },
   // what the move sends: a thing in flight, a stream, a beam, a bolt, a slash, a falling stone, a swarm of motes
-  shot: (c, t, o) => { const s = clamp(o.sec || .36, .12, 1.2), f = pitchOf(o.type); hiss(c, t, { f: 700, to: 2400, q: 1.1, peak: .22, a: s * .7, d: s * .3, pan: o.pan }); tone(c, t, { type: "triangle", f: f * 1.5, to: f, peak: .07, a: .01, d: s, vib: [14, .02], pan: o.pan, wet: .3 }); },
+  shot: (c, t, o) => { const s = clamp(o.sec || .36, .12, 1.2), f = pitchOf(o.type); hiss(c, t, { f: 700, to: 2400, q: 1.1, peak: .22, a: s * .7, d: s * .3, pan: o.pan }); hiss(c, t, { kind: "lowpass", f: 1000, peak: .2, a: s * .7, d: s * .4, pan: o.pan }); tone(c, t, { type: "triangle", f: f * 1.5, to: f, peak: .07, a: .01, d: s, vib: [14, .02], pan: o.pan, wet: .3 }); },
   stream: (c, t, o) => {
     const s = clamp(o.sec || .6, .2, 2), ty = o.type;
     // measured (Aqua Jet): water rushes as bright grainy noise round 5 to 6 kHz for as long as it runs; fire and the rest keep that brightness
-    if (ty === "fire") { hiss(c, t, { f: 3200, q: .45, peak: .4, a: .06, hold: s, d: .3, am: [11, .35], pan: o.pan, wet: .3 }); hiss(c, t, { kind: "lowpass", f: 900, peak: .2, a: .06, hold: s, d: .3, pan: o.pan }); clicks(c, t, { n: Math.round(s * 30), over: s, f: 4200, peak: .14, pan: o.pan }); }
-    else if (ty === "water") { hiss(c, t, { f: 6500, q: .7, peak: .42, a: .12, hold: s, d: .35, am: [5.3, .25], pan: o.pan, wet: .35 }); hiss(c, t, { kind: "lowpass", f: 1200, peak: .12, a: .08, hold: s, d: .3, pan: o.pan }); clicks(c, t, { n: Math.round(s * 40), over: s, f: 7000, q: .9, peak: .16, pan: o.pan, d: [.015, .05] }); }
+    if (ty === "fire") { hiss(c, t, { kind: "lowpass", f: 1400, peak: .5, a: .08, hold: s, d: .4, am: [9, .3], pan: o.pan, wet: .3 }); hiss(c, t, { f: 2800, q: .5, peak: .12, a: .08, hold: s, d: .35, pan: o.pan, wet: .3 }); hiss(c, t, { kind: "lowpass", f: 260, peak: .65, a: .1, hold: s, d: .5, pan: o.pan }); clicks(c, t, { n: Math.round(s * 30), over: s, f: 3500, peak: .14, pan: o.pan }); }
+    else if (ty === "water") { hiss(c, t, { f: 6500, q: .7, peak: .42, a: .12, hold: s, d: .35, am: [5.3, .25], pan: o.pan, wet: .35 }); hiss(c, t, { kind: "lowpass", f: 700, peak: .5, a: .08, hold: s, d: .45, pan: o.pan }); clicks(c, t, { n: Math.round(s * 40), over: s, f: 7000, q: .9, peak: .16, pan: o.pan, d: [.015, .05] }); }
     else if (ty === "ice") { hiss(c, t, { kind: "highpass", f: 4000, peak: .26, a: .04, hold: s, d: .25, pan: o.pan, wet: .4 }); blips(c, t, { n: Math.round(s * 16), over: s, lo: 2600, hi: 5200, up: 0, peak: .06, d: .2, type: "triangle", pan: o.pan, wet: .4 }); }
-    else { const f = pitchOf(ty); hiss(c, t, { f: Math.max(3000, f * 5), q: .6, peak: .34, a: .05, hold: s, d: .25, am: [18, .35], pan: o.pan, wet: .3 }); tone(c, t, { type: "sawtooth", f: f / 2, peak: .05, a: .05, hold: s, d: .2, lp: f * 3, pan: o.pan }); }
+    else { const f = pitchOf(ty); hiss(c, t, { f: Math.max(3000, f * 5), q: .6, peak: .3, a: .05, hold: s, d: .25, am: [18, .35], pan: o.pan, wet: .3 }); hiss(c, t, { kind: "lowpass", f: 800, peak: .26, a: .06, hold: s, d: .35, pan: o.pan }); tone(c, t, { type: "sawtooth", f: f / 2, peak: .05, a: .05, hold: s, d: .2, lp: f * 3, pan: o.pan }); }
   },
   beam: (c, t, o) => {
     const s = clamp(o.sec || .7, .2, 2), f = pitchOf(o.type);
-    tone(c, t, { type: "sawtooth", f: f / 2, peak: .12, a: .04, hold: s * .7, d: s * .3, lp: [f * 4, f * 1.5], vib: [32, .02], pan: o.pan, wet: .35 });
-    tone(c, t, { f: f, to: f * .9, peak: .1, a: .04, hold: s * .7, d: s * .3, vib: [6, .01], pan: o.pan, wet: .4 });
-    hiss(c, t, { f: f * 3, q: 1.6, peak: .22, a: .03, hold: s * .7, d: s * .3, pan: o.pan, wet: .3 });
+    hiss(c, t, { kind: "lowpass", f: 4000, peak: .42, a: .05, hold: s * .8, d: s * .4, am: [24, .2], pan: o.pan, wet: .35 });
+    hiss(c, t, { kind: "lowpass", f: 280, peak: .34, a: .06, hold: s * .8, d: s * .4, pan: o.pan, wet: .2 });
+    hiss(c, t, { f: f * 3, q: 1.2, peak: .2, a: .03, hold: s * .7, d: s * .3, pan: o.pan, wet: .3 });
+    tone(c, t, { type: "sawtooth", f: f / 2, peak: .06, a: .04, hold: s * .7, d: s * .3, lp: [f * 4, f * 1.5], vib: [32, .02], pan: o.pan, wet: .35 });
   },
   zap: (c, t, o) => {
     const s = clamp(o.sec || .38, .1, 1);
@@ -266,7 +270,7 @@ const LIB = {
     clicks(c, t, { n: 90, over: 2.5, f: 5000, q: 1, peak: .26, pan: o.pan, at: .05, d: [.01, .04] });
   },
   sound: (c, t, o) => { const f = pitchOf(o.type); [0, .12, .24].forEach((at, i) => { tone(c, t, { type: "sawtooth", f: f * (1 - i * .05), to: f * .7, peak: .1, a: .01, d: .22, lp: f * 5, pan: o.pan, wet: .5, at }); hiss(c, t, { f: 1400, to: 500, q: 1, peak: .16, a: .01, d: .2, pan: o.pan, at }); }); },
-  boom: (c, t, o) => { tone(c, t, { f: 80, to: 30, peak: .85 * (o.p || 1), a: .003, d: .8, pan: o.pan, wet: .5 }); hiss(c, t, { kind: "lowpass", f: 5000, to: 260, peak: .7 * (o.p || 1), a: .002, d: 1, pan: o.pan, wet: .5 }); clicks(c, t, { n: 12, over: .5, f: 1500, peak: .2, pan: o.pan, at: .05 }); },
+  boom: (c, t, o) => { const p = o.p || 1; tone(c, t, { f: 80, to: 28, peak: .85 * p, a: .003, d: 1.4, pan: o.pan, wet: .5 }); hiss(c, t, { kind: "lowpass", f: 4000, to: 200, peak: .5 * p, a: .002, hold: .8, d: 2.4, pan: o.pan, wet: .5 }); hiss(c, t, { kind: "lowpass", f: 300, peak: .75 * p, a: .05, hold: 1.6, d: 2, am: [6, .4], pan: o.pan, wet: .4 }); clicks(c, t, { n: 30, over: 2, f: 1800, q: .8, peak: .2, pan: o.pan, at: .1, d: [.02, .06] }); },
 
   /* ---------- what comes of it ---------- */
   // the type's matter at the moment of the blow, and a blade's or a fang's mark; a status move lands as the type's glint
@@ -274,18 +278,22 @@ const LIB = {
     const ty = TYPE_HIT[o.type] ? o.type : "normal", p = clamp(o.p || 1, .4, 1.8);
     if (o.soft) { const f = pitchOf(ty); tone(c, t, { type: "triangle", f: f * 2, peak: .1, a: .003, d: .3, pan: o.pan, wet: .5 }); tone(c, t, { f: f * 3, peak: .06, a: .003, d: .3, pan: o.pan, wet: .5, at: .05 }); return; }
     TYPE_HIT[ty](c, t, p, o.pan || 0);
+    // the blow's air: full range, falling to a dull tail over most of a second
+    hiss(c, t, { kind: "lowpass", f: 7000, to: 600, peak: .3 * p, a: .004, d: .8 + .5 * p, pan: o.pan || 0, wet: .35 });
     MARK_SOUND[o.mark]?.(c, t, o.pan || 0);
   },
   // the damage itself, as the games voice it: a plain blow, a heavier double crunch when it is super effective, a muffled one
   // when it is not very effective, a sharp crack over it on a critical hit; HP lost to the field or a status is a dull knock
-  damage: (c, t, o) => { const p = clamp(.7 + (o.share || .2), .7, 1.4); hiss(c, t, { f: 1300, q: .7, peak: .4 * p, a: .001, d: .1, pan: o.pan }); tone(c, t, { f: 190, to: 62, peak: .4 * p, a: .001, d: .14, pan: o.pan }); },
+  damage: (c, t, o) => { const p = clamp(.7 + (o.share || .2), .7, 1.4); hiss(c, t, { f: 1600, q: .6, peak: .45 * p, a: .001, d: .14, pan: o.pan }); tone(c, t, { f: 190, to: 60, peak: .22 * p, a: .001, d: .16, pan: o.pan }); hiss(c, t, { f: 2200, to: 1200, q: .45, peak: .3 * p, a: .002, d: .6, pan: o.pan, wet: .3 }); },
   super: (c, t, o) => {
-    hiss(c, t, { kind: "lowpass", f: 4200, to: 700, peak: .62, a: .001, d: .22, pan: o.pan, wet: .25 });
-    tone(c, t, { f: 130, to: 34, peak: .8, a: .001, d: .36, pan: o.pan, wet: .2 });
-    hiss(c, t, { f: 1800, q: .8, peak: .5, a: .001, d: .12, pan: o.pan, at: .06 }); tone(c, t, { f: 170, to: 50, peak: .5, a: .001, d: .2, pan: o.pan, at: .06 });
+    hiss(c, t, { f: 2000, to: 1200, q: .4, peak: .8, a: .001, hold: .55, d: .9, pan: o.pan, wet: .35 });
+    hiss(c, t, { kind: "highpass", f: 4000, peak: .2, a: .001, hold: .5, d: .8, pan: o.pan, wet: .35 });
+    tone(c, t, { f: 120, to: 34, peak: .3, a: .001, d: .45, pan: o.pan, wet: .2 });
+    hiss(c, t, { f: 1800, q: .8, peak: .3, a: .001, d: .14, pan: o.pan, at: .06 });
+    clicks(c, t, { n: 12, over: 1.1, f: 2600, q: .8, peak: .2, pan: o.pan, at: .15, d: [.02, .06] });
   },
-  resist: (c, t, o) => { hiss(c, t, { kind: "lowpass", f: 650, to: 300, peak: .34, a: .002, d: .12, pan: o.pan }); tone(c, t, { f: 140, to: 85, peak: .28, a: .002, d: .12, pan: o.pan }); },
-  crit: (c, t, o) => { hiss(c, t, { kind: "highpass", f: 2600, peak: .6, a: .001, d: .07, pan: o.pan }); tone(c, t, { type: "triangle", f: 1700, to: 900, peak: .18, a: .001, d: .14, pan: o.pan, wet: .3 }); tone(c, t, { f: 2400, peak: .08, a: .001, d: .4, fm: [1.5, 1.5], pan: o.pan, wet: .45, at: .03 }); },
+  resist: (c, t, o) => { hiss(c, t, { kind: "lowpass", f: 900, to: 250, peak: .34, a: .002, d: .35, pan: o.pan, wet: .2 }); tone(c, t, { f: 140, to: 70, peak: .28, a: .002, d: .2, pan: o.pan }); },
+  crit: (c, t, o) => { hiss(c, t, { kind: "highpass", f: 2600, peak: .6, a: .001, d: .07, pan: o.pan }); tone(c, t, { type: "triangle", f: 1700, to: 900, peak: .18, a: .001, d: .14, pan: o.pan, wet: .3 }); tone(c, t, { f: 2400, peak: .08, a: .001, d: .4, fm: [1.5, 1.5], pan: o.pan, wet: .45, at: .03 }); hiss(c, t, { kind: "lowpass", f: 8000, to: 600, peak: .3, a: .001, d: .6, pan: o.pan, wet: .3 }); },
   knock: (c, t, o) => { hiss(c, t, { kind: "lowpass", f: 900, to: 260, peak: .3, a: .002, d: .1, pan: o.pan }); tone(c, t, { f: 160, to: 80, peak: .26, a: .002, d: .12, pan: o.pan }); },
   flinch: (c, t, o) => { hiss(c, t, { f: 1500, q: 1, peak: .22, a: .002, d: .06, pan: o.pan }); tone(c, t, { type: "square", f: 330, to: 220, peak: .07, d: .08, lp: 1200, pan: o.pan }); },
 
@@ -300,7 +308,7 @@ const LIB = {
   st_frz: (c, t, o) => { hiss(c, t, { kind: "highpass", f: 5500, peak: .22, a: .15, d: .4, pan: o.pan, wet: .4 }); clicks(c, t, { n: 14, over: .5, f: 6000, kind: "highpass", peak: .2, pan: o.pan }); blips(c, t, { n: 6, over: .5, lo: 2600, hi: 4800, up: 0, peak: .1, d: .4, type: "triangle", pan: o.pan, wet: .5, at: .25 }); },
   confused: (c, t, o) => [0, .22, .44, .66].forEach((at, i) => tone(c, t, { f: i % 2 ? 1700 : 2100, to: i % 2 ? 2300 : 2700, peak: .07, a: .01, d: .14, pan: o.pan, wet: .4, at })),
   cure: (c, t, o) => notes(c, t, [1047, 1568], { gap: .08, peak: .1, d: .35, pan: o.pan, wet: .5 }),
-  heal: (c, t, o) => { notes(c, t, [523, 659, 784, 1047, 1319, 1568], { gap: .06, peak: .08, d: .5, pan: o.pan, wet: .6 }); hiss(c, t, { kind: "highpass", f: 2000, to: 6000, peak: .1, a: .4, d: .4, pan: o.pan, wet: .5 }); },
+  heal: (c, t, o) => { notes(c, t, [1047, 1319, 1568, 2093, 2637, 3136], { gap: .08, peak: .07, d: 1, pan: o.pan, wet: .6 }); hiss(c, t, { kind: "highpass", f: 3500, to: 8000, peak: .2, a: .5, hold: .5, d: .8, pan: o.pan, wet: .5 }); blips(c, t, { n: 18, over: 1.5, lo: 3500, hi: 8000, up: 0, peak: .05, d: .3, type: "triangle", pan: o.pan, wet: .6, at: .2 }); },
   protect: (c, t, o) => { hiss(c, t, { kind: "highpass", f: 2000, to: 6500, peak: .22, a: .02, d: .3, pan: o.pan, wet: .4 }); tone(c, t, { type: "triangle", f: 1397, peak: .1, a: .01, d: .8, fm: [2, .4], pan: o.pan, wet: .55 }); tone(c, t, { type: "triangle", f: 1405, peak: .08, a: .01, d: .8, pan: o.pan, wet: .55 }); tone(c, t, { f: 2794, peak: .05, a: .01, d: .6, pan: o.pan, wet: .55, at: .2 }); if (o.spiky) clicks(c, t, { n: 8, over: .2, f: 4200, q: 3, peak: .16, pan: o.pan, at: .1 }); },
   ability: (c, t, o) => { hiss(c, t, { f: 900, to: 3000, q: 1.2, peak: .16, a: .06, d: .1, pan: o.pan }); notes(c, t, [1175, 1568], { gap: .07, type: "square", lp: 3000, peak: .07, d: .2, pan: o.pan, wet: .3, at: .08 }); },
   item: (c, t, o) => { hiss(c, t, { f: 900, to: 3000, q: 1.2, peak: .16, a: .06, d: .1, pan: o.pan }); notes(c, t, [988, 1319, 1661], { gap: .05, type: "triangle", peak: .08, d: .25, pan: o.pan, wet: .4, at: .08 }); },
@@ -317,7 +325,7 @@ const LIB = {
   snow: (c, t) => { hiss(c, t, { f: 800, to: 1800, q: 2.4, peak: .26, a: .3, hold: .5, d: .6, am: [2.4, .5], wet: .5 }); blips(c, t, { n: 9, over: 1, lo: 2200, hi: 4400, up: 0, peak: .06, d: .45, type: "triangle", wet: .6 }); },
   terrain: (c, t, o) => { const f = pitchOf(o.type); hiss(c, t, { f: 300, to: 3000, q: 1, peak: .2, a: .5, d: .5, wet: .4 }); notes(c, t, [f, f * 1.25, f * 1.5, f * 2], { gap: .09, peak: .07, d: .6, wet: .6, at: .2 }); if (o.type === "electric") clicks(c, t, { n: 14, over: .8, f: 5000, kind: "highpass", peak: .14 }); },
   room: (c, t) => { tone(c, t, { f: 440, to: 220, peak: .1, a: .2, d: .7, wet: .6 }); tone(c, t, { f: 446, to: 660, peak: .1, a: .2, d: .7, wet: .6 }); hiss(c, t, { f: 3000, to: 400, q: 2, peak: .16, a: .3, d: .6, wet: .5 }); },
-  screen: (c, t, o) => { tone(c, t, { type: "triangle", f: o.f || 1175, peak: .09, a: .02, d: .9, fm: [1.5, .3], pan: o.pan, wet: .6 }); hiss(c, t, { kind: "highpass", f: 3000, to: 7000, peak: .12, a: .2, d: .5, pan: o.pan, wet: .5 }); },
+  screen: (c, t, o) => { const f = o.f || 1175; [1, 2.01, 3.02].forEach((m, i) => tone(c, t, { type: "triangle", f: f * m, peak: .1 / (i + 1), a: .05, hold: .8, d: 2.6, fm: [1.5, .2], vib: [5, .004], pan: o.pan, wet: .6 })); tone(c, t, { f: f / 4, peak: .06, a: .2, hold: .8, d: 1.8, pan: o.pan, wet: .4 }); hiss(c, t, { kind: "highpass", f: 3000, to: 7000, peak: .24, a: .3, hold: 1, d: 1.5, pan: o.pan, wet: .5 }); hiss(c, t, { f: 2000, to: 9000, q: 3, peak: .2, a: .25, d: .25, pan: o.pan, wet: .5, at: .9 }); },
   rocks: (c, t, o) => clicks(c, t, { n: 10, over: .4, f: 1300, q: 2.2, peak: .34, pan: o.pan, d: [.02, .05] }),
   spikes: (c, t, o) => blips(c, t, { n: 6, over: .4, lo: 2400, hi: 3600, up: 0, peak: .1, d: .18, type: "triangle", pan: o.pan, wet: .3 }),
   web: (c, t, o) => tone(c, t, { type: "triangle", f: 330, to: 160, peak: .12, a: .01, d: .4, vib: [24, .06], pan: o.pan, wet: .3 }),

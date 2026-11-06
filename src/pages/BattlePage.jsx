@@ -16,6 +16,8 @@ import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
+import { sfx } from "./battle/sfx.js";
+import { setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { closeGate, openGate } from "./battle/Gate.js";
 import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
@@ -772,6 +774,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const doubles = isDoubles(row.format_id);
   const [speed, setSpeedChoice] = useState(readSpeed);
   useEffect(() => { setStageSpeed(speed); try { localStorage.setItem(SPEED_KEY, String(speed)); } catch { /* the next visit plays at 보통 */ } }, [speed]);
+  // the battle's sound (DESIGN.md "Battle", Sound): cries and effects on unless the viewer turns them off, remembered on the device
+  const [sound, setSound] = useState(soundOn);
+  const toggleSound = () => { setSoundOn(!sound); setSound(!sound); };
   /* The replay (DESIGN.md "Battle", Replay): cue is how many lines of the finished log the stage shows, null all of them.
      A jump starts the stage again and catches up at once (epoch); a step on, or play, adds the next turn, which the stage plays. */
   const replay = useMemo(() => (ended && log ? replayStops(log) : null), [ended, log]);
@@ -858,6 +863,8 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const now = useNow(Boolean(deadline));
   const left = secondsLeft(deadline, now);
   const claimed = useRef(0);
+  // the clock's last ten seconds tick for the one who has to choose, sharper in the last three
+  useEffect(() => { if (choosing && left > 0 && left <= 10) sfx("tick", { n: left }); }, [left, choosing]);
   useEffect(() => {
     if (left !== 0 || !waiting || !api.timeout || Date.now() - claimed.current < 5000) return;
     claimed.current = Date.now();
@@ -979,7 +986,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
      On a wide screen the stage stands on the left as large as the window allows, and everything else stands in a column beside it
      that scrolls on its own, so the stage never leaves the screen */
   return (
-    <div className="bt-page bt-match">
+    <div className="bt-page bt-match" onPointerDown={e => { if (e.target.closest?.("button, summary, [role=button]")) sfx("select"); }}>
       <div className="bt-main">
         {started
           ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
@@ -1040,6 +1047,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {started && <TeamInfo key={seat ? "seat" : "watch"} res={res} sides={infoSides} />}
         <div className="bt-play">
           <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
+          <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
         </div>
         {!seat && <Chips label="시점" value={pov} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
         {/* the whole log behind a key the size of a row, not a grey word */}

@@ -7,6 +7,7 @@ import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
 import { cry, loadCry } from "./cries.js";
+import { sfx, conditionSound } from "./sfx.js";
 import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
@@ -337,11 +338,15 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
           }
           case "mega": show(); await Promise.all([fx.megaEnd(stage, k), fx.instant() ? null : cryOf(k)]); break;
           case "status": show(); await fx.status(stage, k, event.status); break;
-          case "cure": show(); await fx.flashMon(stage, k, .5); break;
+          case "cure": show(); sfx("cure", { pan: own(k) ? -.4 : .4 }); await fx.flashMon(stage, k, .5); break;
+          // it does not affect it, or the move fails: the games' dull double knock
+          case "immune": case "fail": show(); sfx("fail", { pan: k && !own(k) ? .4 : -.4 }); break;
           case "boost": show(); if (chain) { fx.boost(stage, k, event.amount); await fx.wait(120); } else await fx.boost(stage, k, event.amount); break;
           case "weather": show(); if (!event.upkeep && event.id) await Promise.all([fx.wait(500), fx.weatherIn(stage, event.id)]); break;
-          case "field": show(); await Promise.all([fx.wait(450), event.on && event.id === "trickroom" ? fx.twist(stage) : null]); break;
+          case "field": show(); conditionSound(event.id, event.on); await Promise.all([fx.wait(450), event.on && event.id === "trickroom" ? fx.twist(stage) : null]); break;
           case "side":
+            if (!event.id) sfx("swoosh");
+            else if (event.on || !blow.on) conditionSound(event.id, event.on, event.side === perspective ? -.4 : .4);
             // a screen that a blow breaks falls apart before it fades; one that runs out only fades
             // (inside a blow the hit lands while the shards still fall)
             if (!event.on && blow.on) { fx.shatter(stage, event.side === perspective, event.id); await fx.wait(120); show(); break; }
@@ -356,7 +361,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
           case "cant": show(); await fx.cant(stage, k, event.why); break;
-          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); await fx.banner(stage, `${event.turn}턴`); break;
+          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); await fx.banner(stage, `${event.turn}턴`); break;
           case "end": {
             /* the end (DESIGN.md "Battle", The big moments): the camera holds on the wide shot (2026-11-06: its push onto the winner
                moved the whole screen for no reason) and the match board lights over the arena: the Pokémon each side knocked out switch
