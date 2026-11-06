@@ -276,13 +276,13 @@ function TrainerView({ snapshot, onOpen }) {
         <div className="rc-th t12 mute" aria-hidden="true"><span>#</span><span>트레이너</span><span>우승</span><span>준우승</span><span>4강</span></div>
         <div className="stack rc-table">
           {rows.map((trainer, i) => {
-            // 리그는 이름 뒤 한 단어로: 마스터는 밝게, 루키는 어둡게 (trainerLeague, 트레이너 시트의 머리와 같은 기준)
+            // 리그는 이름 뒤 타입과 같은 태그로: 마스터는 사각이 켜지고, 루키는 꺼진다 (trainerLeague, 트레이너 시트의 머리와 같은 기준)
             const master = trainerLeague(profileOf(snapshot, trainer.key || trainer.name)) === "master";
             const league = master ? "마스터" : "루키";
             return (
               <Row key={trainer.key || trainer.name} className={"rc-tr" + (i === 0 && !query.trim() ? " inv" : "")}
                 lead={<span className="num t12">{snapshot.trainers.indexOf(trainer) + 1}</span>}
-                title={<>{trainer.name}<span className={"unit rc-league" + (master ? " lit" : "")}>{league}</span></>}
+                title={<>{trainer.name}<span className={"tb-type rc-league" + (master ? " master" : "")}>{league}</span></>}
                 value={<span className="rc-three">{[trainer.wins, trainer.runnerUps, trainer.top4].map((v, k) => <span key={k} className={"num" + (v ? "" : " mute")}>{v}</span>)}</span>}
                 onClick={(e) => onOpen(trainer.key || trainer.name, e.currentTarget.querySelector(".row-main b"))}
                 label={`${trainer.name}, ${league}, 우승 ${trainer.wins} 준우승 ${trainer.runnerUps} 4강 ${trainer.top4}`} />

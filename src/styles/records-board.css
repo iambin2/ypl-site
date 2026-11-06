@@ -22,9 +22,12 @@
 .rc-tr .row-lead { width: 40px; padding-left: var(--pad); }
 .rc-tr .row-lead > span { color: var(--mute); }
 .rc-tr.inv .row-lead > span { color: var(--ground); }
-.rc-league { margin-left: var(--s2); }
-.rc-league.lit { color: var(--lit); }
-.rc-tr.inv .rc-league { color: var(--ground); }
+/* the league after the name is the type's tag (team-builder.css .tb-type): 마스터 with its square lit, 루키 with it muted */
+.rc-league { margin-left: var(--s2); vertical-align: middle; }
+.rc-league.master { --type: var(--lit); }
+.rc-league:not(.master) { color: var(--dim); }
+.rc-tr.inv .rc-league { --tag-bg: var(--ground); }
+@media (hover: hover) { .rc-tr:not(.inv):hover .rc-league { --tag-bg: var(--ground); } }
 .rc-three { display: grid; grid-template-columns: repeat(3, 52px); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
 .rc-tr.inv .rc-three { font-size: var(--t20); line-height: var(--l20); }
 

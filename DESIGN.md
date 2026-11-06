@@ -140,7 +140,7 @@ Two layers in `tokens.css`: primitives and semantic tokens. Components read sema
 | `--off` | the opacity of an unlit segment bar | .08 | .06 |
 
 - **One hue, navy.** In light the words are navy, not black: the whole site is one colour on one ground. Pokémon type colours are content and stay as drawn.
-- **A type is one tag everywhere**, a Pokémon's or a move's alike, on the page and in the saved image: a square tag 24 tall on `--panel-2` (the ground where it stands on a surface already one tone up), an 8 square in the type's colour, then the name at 12/600. Square and on whole pixels, never slanted, so every tag draws alike.
+- **A type is one tag everywhere**, a Pokémon's or a move's alike, on the page and in the saved image: a square tag 24 tall on `--panel-2` (the ground where it stands on a surface already one tone up), an 8 square in the type's colour, then the name at 12/600. Square and on whole pixels, never slanted, so every tag draws alike. A trainer's league is the same tag after the name in the records' trainer list (added 2026-11-06): 마스터 with its square lit, 루키 with its square muted and its word dim; on the inverted row the tag steps down to the ground.
 - **Solid only.** No gradient, sheen, glow, soft light, blur or grain. Colour never comes from opacity, with three exceptions: an unlit segment bar, a disabled control, and the veil behind a sheet.
 - **Amber is a lamp, never a word.** It marks what is happening now: today's event, a live match, a private bracket in progress. The words beside it are lit.
 - **Status has no hue.** Done, waiting, error and success read through words, the lamp, inversion and the `!` square, never through a colour.
