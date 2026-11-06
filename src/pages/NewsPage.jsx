@@ -11,7 +11,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
-import { accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingForm, visitorSignedIn } from "../services/visitorAuth.js";
+import { VISITOR_EVENT, accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingForm, visitorSignedIn } from "../services/visitorAuth.js";
 import { builderRouteSearch, editEventApplication, findApplicantNameRecord, listEventApplications, openEventApplication, playerNameKey, tidyApplicantName, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
@@ -311,6 +311,8 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
     });
     return ()=>{ on=false; };
   },[accountForm]);
+  // signing out from the top bar turns the form back to a named application
+  useEffect(()=>{ const sync=()=>{ if(!visitorSignedIn()) setAcct(a=>({...a,signedIn:false,row:null})); }; window.addEventListener(VISITOR_EVENT,sync); return ()=>window.removeEventListener(VISITOR_EVENT,sync); },[]);
   const owned=acct.row?.status==="approved"?acct.row:null;
   const signOut=()=>{ signOutVisitor(); setAcct({ready:true,signedIn:false,row:null}); };
   // 신청 수정은 공지 아래쪽에서 열린다: 한 장과 그 단계마다 맨 위에서 시작한다

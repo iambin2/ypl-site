@@ -14,6 +14,10 @@ const PENDING = "ypl-visitor-link";
 const PENDING_FORM = "ypl-visitor-form";
 
 const enabled = () => Boolean(URL_BASE.length > 1 && KEY);
+export const accountsEnabled = enabled;
+// sign-in and sign-out are announced on window so the top bar, the form and the trainer sheet agree without a store
+export const VISITOR_EVENT = "ypl-visitor";
+const announce = () => { if (typeof window !== "undefined") window.dispatchEvent(new Event(VISITOR_EVENT)); };
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; } };
 const write = (key, value) => { try { value == null ? localStorage.removeItem(key) : localStorage.setItem(key, JSON.stringify(value)); } catch { /* the next sign-in asks again */ } };
 
@@ -37,10 +41,15 @@ export function signInWithGoogle(linkName = "", back = window.location.href.spli
 export function signOutVisitor() {
   const s = read(STORE);
   write(STORE, null);
+  announce();
   if (s && enabled()) fetch(`${URL_BASE}auth/v1/logout`, { method: "POST", headers: { apikey: KEY, Authorization: `Bearer ${s.access}` } }).catch(() => {});
 }
 
 export const visitorSignedIn = () => Boolean(read(STORE));
+// the signed-in account's email, read from the token's own claims (for the sign-out question); "" when unknown
+export function visitorEmail() {
+  try { return JSON.parse(atob(read(STORE).access.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).email || ""; } catch { return ""; }
+}
 export const takePendingLink = () => { const p = read(PENDING); write(PENDING, null); return p?.name || ""; };
 export const takePendingForm = () => { const id = read(PENDING_FORM); write(PENDING_FORM, null); return id || ""; };
 
@@ -51,7 +60,7 @@ async function token() {
   const response = await fetch(`${URL_BASE}auth/v1/token?grant_type=refresh_token`, {
     method: "POST", headers: { apikey: KEY, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: s.refresh }),
   }).catch(() => null);
-  if (!response?.ok) { if (response) write(STORE, null); return null; }
+  if (!response?.ok) { if (response) { write(STORE, null); announce(); } return null; }
   const next = await response.json();
   write(STORE, { access: next.access_token, refresh: next.refresh_token, until: Date.now() + (next.expires_in || 3600) * 1000 - 60000 });
   return next.access_token;

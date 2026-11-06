@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Icon from "../common/Icon.jsx";
+import { siteConfirm } from "../common/SiteDialog.jsx";
+import { VISITOR_EVENT, accountsEnabled, signInWithGoogle, signOutVisitor, visitorEmail, visitorSignedIn } from "../../services/visitorAuth.js";
 import { useSlideLine } from "../common/Board.jsx";
 import { TABS, WIDE_TABS, current, tabOf, useWideNav } from "./Navigation.jsx";
 
@@ -34,6 +36,25 @@ export function Wordmark() {
   );
 }
 
+/* 구글 계정(docs/db/player_accounts.sql): 바의 오른쪽, 램프 앞에 한 단어. 로그인 전은 밝은 "로그인"(누르면 바로 구글로 가고
+   지금 화면으로 돌아온다), 로그인 뒤는 어두운 "로그아웃"(어느 계정인지 묻고 나온다). Supabase가 없는 개발 서버에는 서지 않는다. */
+function AccountButton() {
+  const [signed, setSigned] = useState(visitorSignedIn);
+  useEffect(() => {
+    const sync = () => setSigned(visitorSignedIn());
+    window.addEventListener(VISITOR_EVENT, sync);
+    return () => window.removeEventListener(VISITOR_EVENT, sync);
+  }, []);
+  if (!accountsEnabled()) return null;
+  const signOut = async () => {
+    const email = visitorEmail();
+    if (await siteConfirm({ title: "구글 로그아웃", body: `${email ? `${email} 계정에서` : "구글 계정에서"} 로그아웃합니다.`, confirmLabel: "로그아웃" })) signOutVisitor();
+  };
+  return signed
+    ? <button type="button" className="acct dim" onClick={signOut}>로그아웃</button>
+    : <button type="button" className="acct" onClick={() => signInWithGoogle()} aria-label="구글 계정으로 로그인">로그인</button>;
+}
+
 /* 바는 바탕 톤에 아래 머리카락 선 하나, 움직이지 않는다. 폰은 Wing Y와 워드마크, 오른쪽 끝에 테마 버튼.
    데스크톱(860 이상)은 1200 안에 브랜드, 화면 이름(지금 화면은 아래 2px 선), 테마 버튼. 넓은 데스크톱은 더보기가 없어
    관리자 로그인이 바닥글에 선다(SiteFooter). 테마 버튼은 바꿀 쪽을 보인다: 다크에서는 해, 라이트에서는 달. */
@@ -54,6 +75,7 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{key === "bracket" && live && <i className="lamp sig" aria-hidden="true" />}{label}</button>
         ))}
       </nav>
+      <AccountButton />
       {/* the lamp's fixture: its housing is dark until something is live; on event day it lights with its word and opens the bracket */}
       {live
         ? <button type="button" className="onair t12" onClick={() => onNavigate("bracket")} aria-label={`${live.name} 진행 중, 대진표 보기`}><i className="lamp sig" aria-hidden="true" />진행 중</button>

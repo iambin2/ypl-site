@@ -258,11 +258,12 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 
 ## Bars and navigation
 
-- **Phone top bar:** 56, the ground tone with a hairline under it. The Wing Y (20 tall) and the wordmark, the lamp's fixture and the theme button at the right. It stands still.
+- **Phone top bar:** 56, the ground tone with a hairline under it. The Wing Y (20 tall) and the wordmark, then at the right the Google account word, the lamp's fixture and the theme button. It stands still.
+- **The account word** (added 2026-11-06, docs/db/player_accounts.sql): one word at 15/600 before the lamp, on every width. Signed out it is 로그인, lit, and goes straight to Google and back to the same screen; signed in it is 로그아웃, dim, and asks once which account it leaves. It is a word, not an icon or an avatar, and it shows only where Supabase is configured.
 - **Phone tab bar:** 64, the ground tone with a hairline on top: 홈, 공지, 대진표, 기록, 더보기. The chosen tab is lit and 700 with a 2px line along its top edge; the rest are muted.
 - **Admin mode:** a 40 inverted strip directly above the tab bar on every screen: a ground lamp, 관리자 모드, and 로그아웃 at the right.
 - **더보기** is a page, not a popover: grouped rows (기록: 칭호, 명예의 전당; 함께하기: 게시판, 팀 빌더, 배틀, 계산기; 리그: 소개, 디스코드 참여), then the theme as a three-way choice (어둡게, 밝게, 기기 설정) and 공지 알림 as a switch. Admin login is a row here.
-- **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one (the word's own width), each word taking the bar's height and 12 on each side for the pointer and the focus ring, the words 32 apart; the line is never under 20, so a one-letter word (홈) keeps a line centred on it, the theme button at the right end. No tab bar. Where there is no 더보기 (1100 and up), 관리자 로그인 is an underlined word at the end of the footer, not an icon in the bar.
+- **Desktop (860 and up):** a 64 top bar on the 1200 content: the brand, every page as a 15 word with a 2px line under the current one (the word's own width), each word taking the bar's height and 12 on each side for the pointer and the focus ring, the words 32 apart; the line is never under 20, so a one-letter word (홈) keeps a line centred on it, the account word and the theme button at the right end. No tab bar. Where there is no 더보기 (1100 and up), 관리자 로그인 is an underlined word at the end of the footer, not an icon in the bar.
 - **Back:** a 12px dim link with a chevron, 20 under the bar, naming where it goes (← 공지).
 - **Nothing is tied to the scroll.** The bars do not move; a sideways list is the browser's own scroll. On a phone a sideways row (page tabs, chips, the line score) runs on to the screen's edge, so a word cut there says the row goes on; a row of tabs keeps its hairline to the content's edge.
 

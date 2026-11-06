@@ -22,7 +22,7 @@ import Button from "../components/common/Button.jsx";
 import Seg from "../components/common/Seg.jsx";
 import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
-import { accountsReady, decideLinkRequest, listLinkRequests, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
+import { VISITOR_EVENT, accountsReady, decideLinkRequest, listLinkRequests, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
 
 /* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
    끝난 공식 배틀의 로그는 한 번만 읽어 둔다. */
@@ -413,6 +413,8 @@ function TrainerLink({ profile }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [signedIn, setSignedIn] = useState(visitorSignedIn);
+  // signing out from the top bar empties this section too
+  useEffect(() => { const sync = () => { setSignedIn(visitorSignedIn()); setLink(undefined); }; window.addEventListener(VISITOR_EVENT, sync); return () => window.removeEventListener(VISITOR_EVENT, sync); }, []);
   useEffect(() => { let on = true; accountsReady().then((ok) => { if (on) setReady(ok); }); return () => { on = false; }; }, []);
   useEffect(() => {
     if (!ready || !signedIn) return undefined;
