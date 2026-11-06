@@ -1,0 +1,223 @@
+0	45	extremespeed	generic lunge+white star; afterimage ok, no speed lines
+1	40	acidarmor	diagonal streak + white-out; no liquid/metal sheen
+2	20	acidspray	drop nearly invisible, no acid bubbles
+3	45	acrobatics	generic lunge, small wing slashes
+4	25	acupressure	flat white ring = raw graphic
+5	45	aerialace	generic lunge, white slash lost in flash
+6	40	fakeout	tiny hands, white-out
+7	45	agility	ghosting ok, no speed lines
+8	60	airslash	crescent blade reads, white impact
+9	55	alluringvoice	sound arcs read, plain
+10	10	allyswitch	nothing visible
+11	35	calmmind	pink magic circle, raw sigil
+12	55	ancientpower	pink-lit rocks rise and fly
+13	55	aquajet	water cloak + lunge
+14	20	aquaring	rim glow only
+15	40	aquastep	tiny sparkles, generic kick
+16	55	aquatail	water cloak, bubbles, tail arc
+17	60	armorcannon	fire jets + explosion
+18	40	assurance	generic lunge, dark puff
+19	45	attract	tiny hearts in a line; original: big hearts ring the target
+20	55	energyball	charge ring is a flat circle; sphere and green impact ok
+21	50	aurawheel	spin + sparkles, cluttered
+22	45	auroraveil	cyan vertical bars, raw; original aurora curtain in many colours
+23	20	avalanche	nearly invisible ice; original huge snow boulders
+24	40	axekick	generic lunge, flat orange floor ring
+25	15	protect	nothing on the move itself (shield only from protocol)
+26	50	barbbarrage	violet needles + violet burst
+27	35	beakblast	flat white charge ring; no heated beak
+28	40	beatup	generic lunge x3
+29	78	flamethrower	billowing column, embers, engulf; charge ring flat
+30	35	bellydrum	flat orange ring pulses, raw
+31	40	bind	flat white ellipse hoops stacked, raw; original a type-coloured coil
+33	45	bitterblade	generic lunge, flame puff
+34	45	bittermalice	charge ring + plain ring outlines flying (dark pulse)
+35	55	fireblast	大 not legible: white blob, grey flash
+36	45	blazekick	generic lunge, flame puff
+37	40	heatwave	confetti of orange dots, no heat haze
+38	30	block	two thin white lines crossing, raw
+39	45	bodypress	generic lunge + flat floor ring
+40	35	bonerush	tiny bone, generic
+41	60	boomburst	big sound arcs sweep the field
+42	45	bounce	vanish up, drop, flat floor ring
+43	45	bravebird	thin glint cloak + lunge; original a blazing aura charge
+44	40	breakingswipe	spin lunge, thin arcs
+45	40	brickbreak	chop lost in white flash
+46	40	bulkup	white-out then aura
+47	55	bulldoze	cracks + dust, flat white ring
+48	40	bulletpunch	white-out + flat ring
+49	50	bulletseed	seeds hardly read, leaf burst ok
+50	65	dazzlinggleam	starburst + pink glints, stage flash
+51	40	ceaselessedge	generic slash
+52	30	charge	big flat yellow ring
+53	50	icebeam	thin plain beam, flat charge ring
+54	25	chillyreception	tiny dot up, grey stage wash; no clouds or sky answer
+55	40	circlethrow	generic lunge, dust puff
+56	35	clearsmog	small brown puff
+57	45	closecombat	white flashes, no barrage of blows
+58	25	confuseray	tiny dots
+59	55	corrosivegas	violet billows over foes
+60	30	cottonspore	specks high above, barely visible
+61	35	covet	generic lunge, white dot
+62	40	crabhammer	generic, pincers lost
+63	40	crosschop	cross lost in flash
+64	40	crushclaw	claw lost in flash
+65	35	curse	darken + tiny violet flame
+66	45	darkestlariat	spin lunge, thin white arcs
+67	20	tailwind	faint streaks barely visible
+68	35	destinybond	small violet flame drops, no spirit link read
+69	45	dig	sinks in dust, rises, generic blow
+70	45	discharge	flat ring + soft yellow sphere white-out; bolts thin
+72	45	doubleshock	spark cloak + generic lunge
+73	55	dracometeor	dark sky ok, comets small
+150	40	makeitrain	coins tiny gold dots; original a torrent of coins
+151	45	megahorn	green motes cloak, generic horn
+152	35	metalburst	flat white ring outlines at the target
+153	45	meteormash	glint cloak, flat white ring at impact
+154	72	moonblast	moon rises in a dark sky, pink sphere fired
+155	40	moonlight	thin vertical bar + flat green floor ring
+156	40	mountaingale	thin ice stream; original giant ice chunks hurled
+157	62	surf	a wall of water crosses the court; blobby, flat charge ring
+158	35	mudslap	tiny mud ball, dust puff
+159	40	nightdaze	plain ring outlines
+160	45	nuzzle	spark cloak + generic lunge
+161	45	outrage	cloak + fire puffs, generic
+162	35	paraboliccharge	flat ring + yellow sphere white-out
+164	50	petalblizzard	petals and leaves fly, thin
+165	40	pinmissile	thin needles, white-out
+166	40	playrough	small dust cloud with specks; original a big pink brawl cloud
+167	40	pluck	generic peck
+168	30	poltergeist	barely visible
+169	40	populationbomb	white flashes only
+170	40	powertrip	white-out flex then generic blow
+171	55	pyroball	fireball + explosion
+172	35	quickguard	orange hex grid wall, raw
+174	15	rest	nothing visible
+74	40	dragondance	small blue flames; original a rising blue-violet dragon blaze
+75	40	dragondarts	thin needle streaks
+76	40	dragontail	thin arc, generic
+77	40	drainingkiss	small heart + sparkles
+78	40	drainpunch	generic punch, no green drain read
+79	40	drillpeck	generic, small rings
+80	40	drillrun	spin + dust
+81	40	drumbeating	flat green charge ring + white vines
+82	40	dualwingbeat	thin white arcs, generic
+83	40	dynamicpunch	flat charge ring + white star
+84	50	earthpower	cracks glow, flames under target
+85	55	earthquake	cracks + dust, flat white wave ring
+86	35	thunderwave	flat yellow charge ring, thin bolts
+87	50	psychic	magenta wash ok, flat disc rings, raw
+88	45	electricterrain	glints + flat yellow floor ellipse
+89	60	solarbeam	broad white-green beam, leaves; flat charge ring
+90	45	electroweb	yellow web graphic
+91	30	endure	white-out
+92	55	eruption	fire column rises, fireballs fall
+93	50	expandingforce	same as psychic
+94	35	explosion	flat ring, white-out of the whole stage
+95	25	fairylock	scattered blue specks
+96	20	faketears	tiny drops
+97	25	featherdance	feathers at the frame edge, not on the target
+32	50	bite	white jaws snap shut, read clearly
+71	40	doublehit	thin tail arcs, white-out
+98	40	fellstinger	small sting, glints
+99	72	fierydance	flamethrower column with a spin
+100	45	firelash	thin white whip line, flame puff
+101	45	firepunch	no fiery fist read, flame puff after
+102	55	hurricane	white tornado reads, flat texture
+103	40	fissure	dust over a dark crack
+104	50	flashcannon	white beam, flat charge ring
+105	30	fling	tiny white dot
+106	40	uturn	generic lunge, motes back
+107	40	flowertrick	tiny bouquet, leaf burst
+108	50	focusblast	flat charge ring, small orange orb
+109	40	followme	spotlight beam + flat white floor ring
+110	40	foulplay	shadow sink, generic blow
+111	45	freezedry	ice shards close round, flat charge ring
+112	40	gigadrain	flat green ring round the target, leaves; no drain stream
+113	40	gigatonhammer	no hammer, white rings
+114	35	glare	flat eye icon on the user
+115	45	grassknot	vines at the feet
+116	40	grassyglide	generic, grass specks
+117	40	gravapple	small apple drops
+118	35	trickroom	flat charge ring, faint glints (room comes from the field)
+119	35	gunkshot	small violet blob
+120	40	gyroball	spin lunge, flat white ring
+121	40	hammerarm	white-out + flat orange floor ring
+122	40	hardpress	flat white ring
+123	30	haze	faint dark tint (captured mid-entry)
+124	45	headsmash	glint cloak, generic
+125	30	healbell	huge flat gold rings, small notes
+126	45	healingwish	falling star reads, flat floor ring
+127	55	heatcrash	fire cloak + embers, flat ring
+128	40	hex	small violet flames
+129	40	highhorsepower	dust + flat floor ring
+130	40	highjumpkick	white-out + flat floor ring
+131	40	hornleech	green glints, no drain stream
+132	50	hydropump	jet reads as a flat white ribbon, flat charge ring
+133	60	hyperbeam	dark stage, orange-white beam
+134	35	hypnosis	pink ring outlines
+135	40	iceshard	thin streak of tiny shards
+136	35	iciclecrash	tiny icicles; original huge icicles drop
+137	40	iciclespear	thin shard stream
+138	50	infernalparade	fireball trail + burst
+139	50	inferno	fire swirls round the target, flat charge ring
+140	40	ironhead	flat white ring
+141	50	jetpunch	water cloak, splash, flat ring
+142	45	knockoff	dark burst + item flies
+143	40	kowtowcleave	generic
+144	45	lashout	rage flare + dark burst
+145	45	leechlife	jaws + green glints
+146	20	leechseed	specks; seeds hardly visible
+147	40	recover	white-out + flat green floor ring
+148	40	lowkick	white star burst only
+149	40	machpunch	white star burst only
+163	40	payback	flat violet charge ring, dark puff
+173	45	ragefist	rage flare + fire puffs, generic punch
+175	45	rockblast	small rocks + dust
+176	40	rockslide	few small boulders; original a slide of big rocks
+177	40	rocktomb	small boulders, stones ring
+178	50	rockwrecker	a big lit boulder flies, dust
+179	40	roost	feathers fall, white-out + flat floor ring
+180	35	saltcure	tiny salt crystal, dust
+181	40	sandtomb	thin sand ribbon, flat charge ring
+182	35	scaleshot	thin streak of specks
+183	35	seedbomb	seeds barely visible
+184	45	shadowpunch	shadow sink, violet burst
+185	45	shadowsneak	shadow under the target, violet burst
+186	20	shedtail	a faint puff
+187	50	sheercold	ice shards round the target, flat charge ring
+188	35	shellsidearm	tiny shell, white-out
+189	35	shellsmash	white-out, specks
+190	35	shiftgear	two flat white gear icons
+191	45	skyattack	flat charge ring, glint cloak
+192	35	smackdown	small rock, dust
+193	40	smartstrike	flat white ring
+194	40	snipeshot	thin streak, white-out
+195	45	solarblade	flat charge ring, green slash
+196	50	stealthrock	cream chips spray over the foe's side, small
+197	45	spiritshackle	violet arrow, flat sigil under the target
+198	40	steelroller	spin, flat white ring
+199	40	steelwing	thin arcs, flat ring
+200	45	stoneaxe	dust, few stones
+201	30	stoneedge	flat charge ring; the stone pillars never show, only dust
+202	45	suckerpunch	shadow sink, violet burst
+203	50	supercellslam	rise and drop with sparks, flat floor ring
+204	45	swordsdance	wireframe blades circle, crossed swords
+205	40	tailslap	thin tail arcs
+206	30	taunt	small anger mark + tint
+207	65	thunder	dark sky, cloud, bolt from above, flash; flat floor ring
+208	62	thunderbolt	jagged bolts read; flat charge ring
+209	50	trailblaze	leaves trail the dash
+210	40	transform	white silhouette squeeze
+211	35	triattack	plain white beam; original a triangle of fire, ice and lightning
+212	45	triplearrows	kick then arrows
+213	40	tripleaxel	white flashes, no ice
+214	45	twinbeam	twin pink beams, flat ring outlines
+215	40	upperhand	white star burst only
+216	35	vacuumwave	flat orange ring outlines fly
+217	55	voltswitch	jagged bolts, stage flash; flat charge ring
+218	45	watershuriken	blue specks, splash
+219	55	willowisp	fire orbs circle and float across
+220	30	yawn	a white dot drifts
+221	50	zapcannon	big yellow sphere fired; flat charge ring
+222	45	zenheadbutt	flat pink charge ring, flat ring at the target

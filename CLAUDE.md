@@ -83,3 +83,14 @@ The visual system is **YPL Scoreboard**, live in production since 2026-11-03: a 
 - Korean copy follows the Voice and tone chapter of `DESIGN.md`: 합니다체, noun labels, no exclamation marks, no em dashes, **no middle-dot (·) separators**.
 - `tests/designLaw.test.mjs` enforces the measurable rules on all CSS and inline styles. When it fails, fix the value; add to its `EXCEPT` only with a real reason from DESIGN.md, never to silence it.
 - Phone-first: the venue phone is the primary screen.
+
+## Commit messages
+
+Every commit message carries four sections, each a line-start heading with at least one line under it, written in Korean like the rest of the record:
+
+- `문제 인식:` what was wrong or missing, as seen before the change.
+- `사고 과정:` how it was diagnosed and why this way over the others (measurements, what was tried and dropped).
+- `기획 방향성:` where the change points the product, the rule it sets for later work.
+- `프롬프트 (사용자 지시):` the user's own words that asked for it, quoted, across the turns that led to the commit.
+
+Results, what is left, and notes may follow as more sections. `.githooks/commit-msg` runs `scripts/check-commit-msg.mjs` and refuses a message without them (`npm install` sets `core.hooksPath`; run `git config core.hooksPath .githooks` in a checkout made before that). `tests/commitMessage.test.mjs` holds every non-merge commit since `9f28607` to the same law, workflow bot commits excepted. Never pass `--no-verify` to get around it; amend the message instead.

@@ -1,0 +1,2073 @@
+[
+ {
+  "r": "hit body fast",
+  "n": 4,
+  "rep": "extremespeed",
+  "ks": [
+   "accelerock",
+   "extremespeed",
+   "feint",
+   "quickattack"
+  ]
+ },
+ {
+  "r": "harden",
+  "n": 7,
+  "rep": "acidarmor",
+  "ks": [
+   "acidarmor",
+   "cosmicpower",
+   "cottonguard",
+   "irondefense",
+   "minimize",
+   "shelter",
+   "stockpile"
+  ]
+ },
+ {
+  "r": "splash",
+  "n": 7,
+  "rep": "acidspray",
+  "ks": [
+   "acidspray",
+   "appleacid",
+   "gastroacid",
+   "soak",
+   "spicyextract",
+   "toxic",
+   "venoshock"
+  ]
+ },
+ {
+  "r": "hit wing fast",
+  "n": 1,
+  "rep": "acrobatics",
+  "ks": [
+   "acrobatics"
+  ]
+ },
+ {
+  "r": "focus",
+  "n": 2,
+  "rep": "acupressure",
+  "ks": [
+   "acupressure",
+   "focusenergy"
+  ]
+ },
+ {
+  "r": "hit slash fast",
+  "n": 2,
+  "rep": "aerialace",
+  "ks": [
+   "aerialace",
+   "nightslash"
+  ]
+ },
+ {
+  "r": "clap",
+  "n": 5,
+  "rep": "fakeout",
+  "ks": [
+   "afteryou",
+   "encore",
+   "fakeout",
+   "helpinghand",
+   "instruct"
+  ]
+ },
+ {
+  "r": "speed",
+  "n": 3,
+  "rep": "agility",
+  "ks": [
+   "agility",
+   "doubleteam",
+   "rockpolish"
+  ]
+ },
+ {
+  "r": "cut",
+  "n": 4,
+  "rep": "airslash",
+  "ks": [
+   "aircutter",
+   "airslash",
+   "aquacutter",
+   "psychocut"
+  ]
+ },
+ {
+  "r": "rings",
+  "n": 16,
+  "rep": "alluringvoice",
+  "ks": [
+   "alluringvoice",
+   "bugbuzz",
+   "clangingscales",
+   "hypervoice",
+   "metalsound",
+   "nobleroar",
+   "overdrive",
+   "partingshot",
+   "psychicnoise",
+   "roar",
+   "round",
+   "screech",
+   "snarl",
+   "snore",
+   "sparklingaria",
+   "uproar"
+  ]
+ },
+ {
+  "r": "swap",
+  "n": 13,
+  "rep": "allyswitch",
+  "ks": [
+   "allyswitch",
+   "courtchange",
+   "guardsplit",
+   "guardswap",
+   "powersplit",
+   "powerswap",
+   "powertrick",
+   "reflecttype",
+   "roleplay",
+   "skillswap",
+   "speedswap",
+   "switcheroo",
+   "trick"
+  ]
+ },
+ {
+  "r": "sigil",
+  "n": 5,
+  "rep": "calmmind",
+  "ks": [
+   "amnesia",
+   "calmmind",
+   "imprison",
+   "nastyplot",
+   "psychup"
+  ]
+ },
+ {
+  "r": "shards",
+  "n": 2,
+  "rep": "ancientpower",
+  "ks": [
+   "ancientpower",
+   "powergem"
+  ]
+ },
+ {
+  "r": "hit body fast wrap",
+  "n": 2,
+  "rep": "aquajet",
+  "ks": [
+   "aquajet",
+   "firstimpression"
+  ]
+ },
+ {
+  "r": "aura",
+  "n": 8,
+  "rep": "aquaring",
+  "ks": [
+   "aquaring",
+   "aromaticmist",
+   "batonpass",
+   "copycat",
+   "dragoncheer",
+   "ingrain",
+   "magnetrise",
+   "recycle"
+  ]
+ },
+ {
+  "r": "hit kick dance",
+  "n": 1,
+  "rep": "aquastep",
+  "ks": [
+   "aquastep"
+  ]
+ },
+ {
+  "r": "hit tail wrap",
+  "n": 1,
+  "rep": "aquatail",
+  "ks": [
+   "aquatail"
+  ]
+ },
+ {
+  "r": "shoot fireball 3 big",
+  "n": 1,
+  "rep": "armorcannon",
+  "ks": [
+   "armorcannon"
+  ]
+ },
+ {
+  "r": "hit body",
+  "n": 4,
+  "rep": "assurance",
+  "ks": [
+   "assurance",
+   "endeavor",
+   "facade",
+   "lunge"
+  ]
+ },
+ {
+  "r": "charm",
+  "n": 6,
+  "rep": "attract",
+  "ks": [
+   "attract",
+   "babydolleyes",
+   "charm",
+   "decorate",
+   "sweetkiss",
+   "tickle"
+  ]
+ },
+ {
+  "r": "orb",
+  "n": 10,
+  "rep": "energyball",
+  "ks": [
+   "aurasphere",
+   "electroball",
+   "energyball",
+   "pollenpuff",
+   "shadowball",
+   "sludgebomb",
+   "spitup",
+   "storedpower",
+   "syrupbomb",
+   "weatherball"
+  ]
+ },
+ {
+  "r": "hit body spin wrap",
+  "n": 1,
+  "rep": "aurawheel",
+  "ks": [
+   "aurawheel"
+  ]
+ },
+ {
+  "r": "screen",
+  "n": 4,
+  "rep": "auroraveil",
+  "ks": [
+   "auroraveil",
+   "lightscreen",
+   "reflect",
+   "safeguard"
+  ]
+ },
+ {
+  "r": "rain ice 4",
+  "n": 1,
+  "rep": "avalanche",
+  "ks": [
+   "avalanche"
+  ]
+ },
+ {
+  "r": "hit kick jump",
+  "n": 1,
+  "rep": "axekick",
+  "ks": [
+   "axekick"
+  ]
+ },
+ {
+  "r": "protect",
+  "n": 5,
+  "rep": "protect",
+  "ks": [
+   "banefulbunker",
+   "detect",
+   "kingsshield",
+   "protect",
+   "spikyshield"
+  ]
+ },
+ {
+  "r": "shoot needle 6",
+  "n": 1,
+  "rep": "barbbarrage",
+  "ks": [
+   "barbbarrage"
+  ]
+ },
+ {
+  "r": "hit beak gather",
+  "n": 1,
+  "rep": "beakblast",
+  "ks": [
+   "beakblast"
+  ]
+ },
+ {
+  "r": "hit body multi:3",
+  "n": 2,
+  "rep": "beatup",
+  "ks": [
+   "beatup",
+   "flail"
+  ]
+ },
+ {
+  "r": "stream",
+  "n": 8,
+  "rep": "flamethrower",
+  "ks": [
+   "belch",
+   "chillingwater",
+   "flamethrower",
+   "frostbreath",
+   "matchagotcha",
+   "mysticalfire",
+   "scald",
+   "torchsong"
+  ]
+ },
+ {
+  "r": "drum",
+  "n": 1,
+  "rep": "bellydrum",
+  "ks": [
+   "bellydrum"
+  ]
+ },
+ {
+  "r": "squeeze",
+  "n": 3,
+  "rep": "bind",
+  "ks": [
+   "bind",
+   "octolock",
+   "wrap"
+  ]
+ },
+ {
+  "r": "hit fang",
+  "n": 10,
+  "rep": "bite",
+  "ks": [
+   "bite",
+   "bugbite",
+   "crunch",
+   "firefang",
+   "icefang",
+   "jawlock",
+   "poisonfang",
+   "psychicfangs",
+   "superfang",
+   "thunderfang"
+  ]
+ },
+ {
+  "r": "hit slash drain",
+  "n": 1,
+  "rep": "bitterblade",
+  "ks": [
+   "bitterblade"
+  ]
+ },
+ {
+  "r": "pulse",
+  "n": 8,
+  "rep": "bittermalice",
+  "ks": [
+   "bittermalice",
+   "darkpulse",
+   "dragonpulse",
+   "healpulse",
+   "psyshock",
+   "simplebeam",
+   "terrainpulse",
+   "waterpulse"
+  ]
+ },
+ {
+  "r": "blast",
+  "n": 4,
+  "rep": "fireblast",
+  "ks": [
+   "blastburn",
+   "burnup",
+   "fireblast",
+   "overheat"
+  ]
+ },
+ {
+  "r": "hit kick",
+  "n": 3,
+  "rep": "blazekick",
+  "ks": [
+   "blazekick",
+   "megakick",
+   "tropkick"
+  ]
+ },
+ {
+  "r": "wind",
+  "n": 5,
+  "rep": "heatwave",
+  "ks": [
+   "blizzard",
+   "heatwave",
+   "icywind",
+   "scorchingsands",
+   "strugglebug"
+  ]
+ },
+ {
+  "r": "chain",
+  "n": 3,
+  "rep": "block",
+  "ks": [
+   "block",
+   "disable",
+   "quash"
+  ]
+ },
+ {
+  "r": "hit body jump",
+  "n": 5,
+  "rep": "bodypress",
+  "ks": [
+   "bodypress",
+   "bodyslam",
+   "heavyslam",
+   "pounce",
+   "woodhammer"
+  ]
+ },
+ {
+  "r": "hit bone multi:3",
+  "n": 1,
+  "rep": "bonerush",
+  "ks": [
+   "bonerush"
+  ]
+ },
+ {
+  "r": "rings big",
+  "n": 1,
+  "rep": "boomburst",
+  "ks": [
+   "boomburst"
+  ]
+ },
+ {
+  "r": "hit body above",
+  "n": 3,
+  "rep": "bounce",
+  "ks": [
+   "bounce",
+   "fly",
+   "flyingpress"
+  ]
+ },
+ {
+  "r": "hit body wrap",
+  "n": 22,
+  "rep": "bravebird",
+  "ks": [
+   "bravebird",
+   "comeuppance",
+   "counter",
+   "doubleedge",
+   "dragonrush",
+   "finalgambit",
+   "flamecharge",
+   "flareblitz",
+   "gigaimpact",
+   "glaiverush",
+   "headlongrush",
+   "lastresort",
+   "lastrespects",
+   "liquidation",
+   "psyshieldbash",
+   "reversal",
+   "spiritbreak",
+   "temperflare",
+   "volttackle",
+   "waterfall",
+   "wavecrash",
+   "wildcharge"
+  ]
+ },
+ {
+  "r": "hit tail spin",
+  "n": 2,
+  "rep": "breakingswipe",
+  "ks": [
+   "breakingswipe",
+   "brutalswing"
+  ]
+ },
+ {
+  "r": "hit chop",
+  "n": 2,
+  "rep": "brickbreak",
+  "ks": [
+   "brickbreak",
+   "throatchop"
+  ]
+ },
+ {
+  "r": "flex",
+  "n": 7,
+  "rep": "bulkup",
+  "ks": [
+   "bulkup",
+   "clangoroussoul",
+   "coaching",
+   "coil",
+   "growth",
+   "howl",
+   "noretreat"
+  ]
+ },
+ {
+  "r": "quake stomp",
+  "n": 1,
+  "rep": "bulldoze",
+  "ks": [
+   "bulldoze"
+  ]
+ },
+ {
+  "r": "hit fist fast multi:2",
+  "n": 1,
+  "rep": "bulletpunch",
+  "ks": [
+   "bulletpunch"
+  ]
+ },
+ {
+  "r": "shoot seed 5",
+  "n": 1,
+  "rep": "bulletseed",
+  "ks": [
+   "bulletseed"
+  ]
+ },
+ {
+  "r": "flash",
+  "n": 2,
+  "rep": "dazzlinggleam",
+  "ks": [
+   "burningjealousy",
+   "dazzlinggleam"
+  ]
+ },
+ {
+  "r": "hit slash",
+  "n": 6,
+  "rep": "ceaselessedge",
+  "ks": [
+   "ceaselessedge",
+   "leafblade",
+   "meteorassault",
+   "razorshell",
+   "sacredsword",
+   "slash"
+  ]
+ },
+ {
+  "r": "charge",
+  "n": 2,
+  "rep": "charge",
+  "ks": [
+   "charge",
+   "magneticflux"
+  ]
+ },
+ {
+  "r": "beam",
+  "n": 4,
+  "rep": "icebeam",
+  "ks": [
+   "chargebeam",
+   "ficklebeam",
+   "icebeam",
+   "mirrorcoat"
+  ]
+ },
+ {
+  "r": "weather",
+  "n": 5,
+  "rep": "chillyreception",
+  "ks": [
+   "chillyreception",
+   "raindance",
+   "sandstorm",
+   "snowscape",
+   "sunnyday"
+  ]
+ },
+ {
+  "r": "hit throw",
+  "n": 3,
+  "rep": "circlethrow",
+  "ks": [
+   "circlethrow",
+   "seismictoss",
+   "stormthrow"
+  ]
+ },
+ {
+  "r": "shoot mud",
+  "n": 2,
+  "rep": "clearsmog",
+  "ks": [
+   "clearsmog",
+   "mudshot"
+  ]
+ },
+ {
+  "r": "hit fist multi:5",
+  "n": 1,
+  "rep": "closecombat",
+  "ks": [
+   "closecombat"
+  ]
+ },
+ {
+  "r": "confuse",
+  "n": 5,
+  "rep": "confuseray",
+  "ks": [
+   "confuseray",
+   "flatter",
+   "swagger",
+   "teeterdance",
+   "topsyturvy"
+  ]
+ },
+ {
+  "r": "cloud",
+  "n": 2,
+  "rep": "corrosivegas",
+  "ks": [
+   "corrosivegas",
+   "sweetscent"
+  ]
+ },
+ {
+  "r": "powder",
+  "n": 5,
+  "rep": "cottonspore",
+  "ks": [
+   "cottonspore",
+   "magicpowder",
+   "poisonpowder",
+   "sleeppowder",
+   "stunspore"
+  ]
+ },
+ {
+  "r": "hit body item",
+  "n": 2,
+  "rep": "covet",
+  "ks": [
+   "covet",
+   "thief"
+  ]
+ },
+ {
+  "r": "hit pincer",
+  "n": 2,
+  "rep": "crabhammer",
+  "ks": [
+   "crabhammer",
+   "guillotine"
+  ]
+ },
+ {
+  "r": "hit cross",
+  "n": 3,
+  "rep": "crosschop",
+  "ks": [
+   "crosschop",
+   "crosspoison",
+   "xscissor"
+  ]
+ },
+ {
+  "r": "hit claw",
+  "n": 4,
+  "rep": "crushclaw",
+  "ks": [
+   "crushclaw",
+   "direclaw",
+   "dragonclaw",
+   "shadowclaw"
+  ]
+ },
+ {
+  "r": "curse",
+  "n": 5,
+  "rep": "curse",
+  "ks": [
+   "curse",
+   "forestscurse",
+   "memento",
+   "spite",
+   "trickortreat"
+  ]
+ },
+ {
+  "r": "hit arms spin",
+  "n": 1,
+  "rep": "darkestlariat",
+  "ks": [
+   "darkestlariat"
+  ]
+ },
+ {
+  "r": "gust",
+  "n": 4,
+  "rep": "tailwind",
+  "ks": [
+   "defog",
+   "tailwind",
+   "tidyup",
+   "whirlwind"
+  ]
+ },
+ {
+  "r": "link",
+  "n": 1,
+  "rep": "destinybond",
+  "ks": [
+   "destinybond"
+  ]
+ },
+ {
+  "r": "hit body burrow",
+  "n": 2,
+  "rep": "dig",
+  "ks": [
+   "dig",
+   "dive"
+  ]
+ },
+ {
+  "r": "burst",
+  "n": 3,
+  "rep": "discharge",
+  "ks": [
+   "discharge",
+   "lavaplume",
+   "selfdestruct"
+  ]
+ },
+ {
+  "r": "hit tail multi:2",
+  "n": 1,
+  "rep": "doublehit",
+  "ks": [
+   "doublehit"
+  ]
+ },
+ {
+  "r": "hit body wrap zap",
+  "n": 2,
+  "rep": "doubleshock",
+  "ks": [
+   "doubleshock",
+   "zingzap"
+  ]
+ },
+ {
+  "r": "rain comet 4",
+  "n": 1,
+  "rep": "dracometeor",
+  "ks": [
+   "dracometeor"
+  ]
+ },
+ {
+  "r": "dance",
+  "n": 3,
+  "rep": "dragondance",
+  "ks": [
+   "dragondance",
+   "entrainment",
+   "quiverdance"
+  ]
+ },
+ {
+  "r": "shoot dart 2",
+  "n": 1,
+  "rep": "dragondarts",
+  "ks": [
+   "dragondarts"
+  ]
+ },
+ {
+  "r": "hit tail",
+  "n": 2,
+  "rep": "dragontail",
+  "ks": [
+   "dragontail",
+   "irontail"
+  ]
+ },
+ {
+  "r": "drain kiss",
+  "n": 1,
+  "rep": "drainingkiss",
+  "ks": [
+   "drainingkiss"
+  ]
+ },
+ {
+  "r": "hit fist drain",
+  "n": 1,
+  "rep": "drainpunch",
+  "ks": [
+   "drainpunch"
+  ]
+ },
+ {
+  "r": "hit drill",
+  "n": 2,
+  "rep": "drillpeck",
+  "ks": [
+   "drillpeck",
+   "horndrill"
+  ]
+ },
+ {
+  "r": "hit drill spin",
+  "n": 1,
+  "rep": "drillrun",
+  "ks": [
+   "drillrun"
+  ]
+ },
+ {
+  "r": "spikes root",
+  "n": 2,
+  "rep": "drumbeating",
+  "ks": [
+   "drumbeating",
+   "frenzyplant"
+  ]
+ },
+ {
+  "r": "hit wing multi:2",
+  "n": 1,
+  "rep": "dualwingbeat",
+  "ks": [
+   "dualwingbeat"
+  ]
+ },
+ {
+  "r": "hit fist gather",
+  "n": 2,
+  "rep": "dynamicpunch",
+  "ks": [
+   "dynamicpunch",
+   "focuspunch"
+  ]
+ },
+ {
+  "r": "erupt",
+  "n": 2,
+  "rep": "earthpower",
+  "ks": [
+   "earthpower",
+   "risingvoltage"
+  ]
+ },
+ {
+  "r": "quake",
+  "n": 1,
+  "rep": "earthquake",
+  "ks": [
+   "earthquake"
+  ]
+ },
+ {
+  "r": "zap",
+  "n": 3,
+  "rep": "thunderwave",
+  "ks": [
+   "eerieimpulse",
+   "electrify",
+   "thunderwave"
+  ]
+ },
+ {
+  "r": "mind",
+  "n": 5,
+  "rep": "psychic",
+  "ks": [
+   "eeriespell",
+   "extrasensory",
+   "futuresight",
+   "nightshade",
+   "psychic"
+  ]
+ },
+ {
+  "r": "terrain",
+  "n": 4,
+  "rep": "electricterrain",
+  "ks": [
+   "electricterrain",
+   "grassyterrain",
+   "mistyterrain",
+   "psychicterrain"
+  ]
+ },
+ {
+  "r": "beam wide gather",
+  "n": 3,
+  "rep": "solarbeam",
+  "ks": [
+   "electroshot",
+   "meteorbeam",
+   "solarbeam"
+  ]
+ },
+ {
+  "r": "web",
+  "n": 3,
+  "rep": "electroweb",
+  "ks": [
+   "electroweb",
+   "stringshot",
+   "toxicthread"
+  ]
+ },
+ {
+  "r": "endure",
+  "n": 1,
+  "rep": "endure",
+  "ks": [
+   "endure"
+  ]
+ },
+ {
+  "r": "volcano",
+  "n": 2,
+  "rep": "eruption",
+  "ks": [
+   "eruption",
+   "waterspout"
+  ]
+ },
+ {
+  "r": "mind big",
+  "n": 1,
+  "rep": "expandingforce",
+  "ks": [
+   "expandingforce"
+  ]
+ },
+ {
+  "r": "burst big",
+  "n": 2,
+  "rep": "explosion",
+  "ks": [
+   "explosion",
+   "mistyexplosion"
+  ]
+ },
+ {
+  "r": "lock",
+  "n": 1,
+  "rep": "fairylock",
+  "ks": [
+   "fairylock"
+  ]
+ },
+ {
+  "r": "tears",
+  "n": 2,
+  "rep": "faketears",
+  "ks": [
+   "faketears",
+   "tearfullook"
+  ]
+ },
+ {
+  "r": "feathers",
+  "n": 1,
+  "rep": "featherdance",
+  "ks": [
+   "featherdance"
+  ]
+ },
+ {
+  "r": "hit sting",
+  "n": 2,
+  "rep": "fellstinger",
+  "ks": [
+   "fellstinger",
+   "poisonjab"
+  ]
+ },
+ {
+  "r": "stream dance",
+  "n": 1,
+  "rep": "fierydance",
+  "ks": [
+   "fierydance"
+  ]
+ },
+ {
+  "r": "hit whip",
+  "n": 2,
+  "rep": "firelash",
+  "ks": [
+   "firelash",
+   "powerwhip"
+  ]
+ },
+ {
+  "r": "hit fist",
+  "n": 3,
+  "rep": "firepunch",
+  "ks": [
+   "firepunch",
+   "icepunch",
+   "thunderpunch"
+  ]
+ },
+ {
+  "r": "vortex",
+  "n": 5,
+  "rep": "hurricane",
+  "ks": [
+   "firespin",
+   "hurricane",
+   "infestation",
+   "leafstorm",
+   "whirlpool"
+  ]
+ },
+ {
+  "r": "crack",
+  "n": 1,
+  "rep": "fissure",
+  "ks": [
+   "fissure"
+  ]
+ },
+ {
+  "r": "beam gather",
+  "n": 1,
+  "rep": "flashcannon",
+  "ks": [
+   "flashcannon"
+  ]
+ },
+ {
+  "r": "shoot item",
+  "n": 1,
+  "rep": "fling",
+  "ks": [
+   "fling"
+  ]
+ },
+ {
+  "r": "hit body back",
+  "n": 2,
+  "rep": "uturn",
+  "ks": [
+   "flipturn",
+   "uturn"
+  ]
+ },
+ {
+  "r": "shoot bouquet",
+  "n": 1,
+  "rep": "flowertrick",
+  "ks": [
+   "flowertrick"
+  ]
+ },
+ {
+  "r": "orb big gather",
+  "n": 1,
+  "rep": "focusblast",
+  "ks": [
+   "focusblast"
+  ]
+ },
+ {
+  "r": "spotlight",
+  "n": 2,
+  "rep": "followme",
+  "ks": [
+   "followme",
+   "ragepowder"
+  ]
+ },
+ {
+  "r": "hit body shadow",
+  "n": 3,
+  "rep": "foulplay",
+  "ks": [
+   "foulplay",
+   "phantomforce",
+   "skittersmack"
+  ]
+ },
+ {
+  "r": "frost",
+  "n": 1,
+  "rep": "freezedry",
+  "ks": [
+   "freezedry"
+  ]
+ },
+ {
+  "r": "drain",
+  "n": 3,
+  "rep": "gigadrain",
+  "ks": [
+   "gigadrain",
+   "painsplit",
+   "strengthsap"
+  ]
+ },
+ {
+  "r": "hit hammer jump",
+  "n": 1,
+  "rep": "gigatonhammer",
+  "ks": [
+   "gigatonhammer"
+  ]
+ },
+ {
+  "r": "glare",
+  "n": 4,
+  "rep": "glare",
+  "ks": [
+   "glare",
+   "lockon",
+   "meanlook",
+   "scaryface"
+  ]
+ },
+ {
+  "r": "trap",
+  "n": 2,
+  "rep": "grassknot",
+  "ks": [
+   "grassknot",
+   "snaptrap"
+  ]
+ },
+ {
+  "r": "hit body glide",
+  "n": 1,
+  "rep": "grassyglide",
+  "ks": [
+   "grassyglide"
+  ]
+ },
+ {
+  "r": "rain apple 1",
+  "n": 1,
+  "rep": "gravapple",
+  "ks": [
+   "gravapple"
+  ]
+ },
+ {
+  "r": "room",
+  "n": 4,
+  "rep": "trickroom",
+  "ks": [
+   "gravity",
+   "magicroom",
+   "trickroom",
+   "wonderroom"
+  ]
+ },
+ {
+  "r": "shoot garbage big",
+  "n": 1,
+  "rep": "gunkshot",
+  "ks": [
+   "gunkshot"
+  ]
+ },
+ {
+  "r": "hit body spin",
+  "n": 4,
+  "rep": "gyroball",
+  "ks": [
+   "gyroball",
+   "icespinner",
+   "mortalspin",
+   "rapidspin"
+  ]
+ },
+ {
+  "r": "hit hammer",
+  "n": 2,
+  "rep": "hammerarm",
+  "ks": [
+   "hammerarm",
+   "icehammer"
+  ]
+ },
+ {
+  "r": "hit palm press",
+  "n": 1,
+  "rep": "hardpress",
+  "ks": [
+   "hardpress"
+  ]
+ },
+ {
+  "r": "clear",
+  "n": 1,
+  "rep": "haze",
+  "ks": [
+   "haze"
+  ]
+ },
+ {
+  "r": "hit head wrap",
+  "n": 1,
+  "rep": "headsmash",
+  "ks": [
+   "headsmash"
+  ]
+ },
+ {
+  "r": "notes",
+  "n": 3,
+  "rep": "healbell",
+  "ks": [
+   "healbell",
+   "perishsong",
+   "sing"
+  ]
+ },
+ {
+  "r": "wish",
+  "n": 3,
+  "rep": "healingwish",
+  "ks": [
+   "healingwish",
+   "revivalblessing",
+   "wish"
+  ]
+ },
+ {
+  "r": "hit body jump wrap",
+  "n": 1,
+  "rep": "heatcrash",
+  "ks": [
+   "heatcrash"
+  ]
+ },
+ {
+  "r": "hex",
+  "n": 1,
+  "rep": "hex",
+  "ks": [
+   "hex"
+  ]
+ },
+ {
+  "r": "hit body stomp",
+  "n": 2,
+  "rep": "highhorsepower",
+  "ks": [
+   "highhorsepower",
+   "stompingtantrum"
+  ]
+ },
+ {
+  "r": "hit knee jump",
+  "n": 1,
+  "rep": "highjumpkick",
+  "ks": [
+   "highjumpkick"
+  ]
+ },
+ {
+  "r": "hit horn drain",
+  "n": 1,
+  "rep": "hornleech",
+  "ks": [
+   "hornleech"
+  ]
+ },
+ {
+  "r": "stream big",
+  "n": 2,
+  "rep": "hydropump",
+  "ks": [
+   "hydrocannon",
+   "hydropump"
+  ]
+ },
+ {
+  "r": "beam wide",
+  "n": 4,
+  "rep": "hyperbeam",
+  "ks": [
+   "hyperbeam",
+   "lightofruin",
+   "luminacrash",
+   "steelbeam"
+  ]
+ },
+ {
+  "r": "hypnosis",
+  "n": 1,
+  "rep": "hypnosis",
+  "ks": [
+   "hypnosis"
+  ]
+ },
+ {
+  "r": "shoot shard 3 fast",
+  "n": 1,
+  "rep": "iceshard",
+  "ks": [
+   "iceshard"
+  ]
+ },
+ {
+  "r": "rain icicle 3",
+  "n": 1,
+  "rep": "iciclecrash",
+  "ks": [
+   "iciclecrash"
+  ]
+ },
+ {
+  "r": "shoot icicle 4",
+  "n": 1,
+  "rep": "iciclespear",
+  "ks": [
+   "iciclespear"
+  ]
+ },
+ {
+  "r": "shoot fireball 5",
+  "n": 1,
+  "rep": "infernalparade",
+  "ks": [
+   "infernalparade"
+  ]
+ },
+ {
+  "r": "vortex big",
+  "n": 1,
+  "rep": "inferno",
+  "ks": [
+   "inferno"
+  ]
+ },
+ {
+  "r": "hit head",
+  "n": 1,
+  "rep": "ironhead",
+  "ks": [
+   "ironhead"
+  ]
+ },
+ {
+  "r": "hit fist fast wrap",
+  "n": 1,
+  "rep": "jetpunch",
+  "ks": [
+   "jetpunch"
+  ]
+ },
+ {
+  "r": "hit palm item",
+  "n": 1,
+  "rep": "knockoff",
+  "ks": [
+   "knockoff"
+  ]
+ },
+ {
+  "r": "hit slash bow",
+  "n": 1,
+  "rep": "kowtowcleave",
+  "ks": [
+   "kowtowcleave"
+  ]
+ },
+ {
+  "r": "hit body rage",
+  "n": 2,
+  "rep": "lashout",
+  "ks": [
+   "lashout",
+   "thrash"
+  ]
+ },
+ {
+  "r": "hit fang drain",
+  "n": 1,
+  "rep": "leechlife",
+  "ks": [
+   "leechlife"
+  ]
+ },
+ {
+  "r": "seed",
+  "n": 2,
+  "rep": "leechseed",
+  "ks": [
+   "leechseed",
+   "worryseed"
+  ]
+ },
+ {
+  "r": "heal",
+  "n": 7,
+  "rep": "recover",
+  "ks": [
+   "lifedew",
+   "milkdrink",
+   "recover",
+   "slackoff",
+   "stuffcheeks",
+   "swallow",
+   "teatime"
+  ]
+ },
+ {
+  "r": "hit kick low",
+  "n": 2,
+  "rep": "lowkick",
+  "ks": [
+   "lowkick",
+   "lowsweep"
+  ]
+ },
+ {
+  "r": "hit fist fast",
+  "n": 1,
+  "rep": "machpunch",
+  "ks": [
+   "machpunch"
+  ]
+ },
+ {
+  "r": "rain coin 7",
+  "n": 1,
+  "rep": "makeitrain",
+  "ks": [
+   "makeitrain"
+  ]
+ },
+ {
+  "r": "hit horn wrap",
+  "n": 2,
+  "rep": "megahorn",
+  "ks": [
+   "megahorn",
+   "ragingbull"
+  ]
+ },
+ {
+  "r": "shoot orb 3",
+  "n": 1,
+  "rep": "metalburst",
+  "ks": [
+   "metalburst"
+  ]
+ },
+ {
+  "r": "hit fist wrap fast",
+  "n": 1,
+  "rep": "meteormash",
+  "ks": [
+   "meteormash"
+  ]
+ },
+ {
+  "r": "moon",
+  "n": 1,
+  "rep": "moonblast",
+  "ks": [
+   "moonblast"
+  ]
+ },
+ {
+  "r": "sunheal",
+  "n": 3,
+  "rep": "moonlight",
+  "ks": [
+   "moonlight",
+   "morningsun",
+   "synthesis"
+  ]
+ },
+ {
+  "r": "shoot ice 2 big",
+  "n": 1,
+  "rep": "mountaingale",
+  "ks": [
+   "mountaingale"
+  ]
+ },
+ {
+  "r": "wave",
+  "n": 3,
+  "rep": "surf",
+  "ks": [
+   "muddywater",
+   "sludgewave",
+   "surf"
+  ]
+ },
+ {
+  "r": "shoot mud 2 fast",
+  "n": 1,
+  "rep": "mudslap",
+  "ks": [
+   "mudslap"
+  ]
+ },
+ {
+  "r": "pulse big",
+  "n": 1,
+  "rep": "nightdaze",
+  "ks": [
+   "nightdaze"
+  ]
+ },
+ {
+  "r": "hit body zap",
+  "n": 1,
+  "rep": "nuzzle",
+  "ks": [
+   "nuzzle"
+  ]
+ },
+ {
+  "r": "hit body rage wrap",
+  "n": 2,
+  "rep": "outrage",
+  "ks": [
+   "outrage",
+   "ragingfury"
+  ]
+ },
+ {
+  "r": "burst drain",
+  "n": 1,
+  "rep": "paraboliccharge",
+  "ks": [
+   "paraboliccharge"
+  ]
+ },
+ {
+  "r": "hit body gather",
+  "n": 1,
+  "rep": "payback",
+  "ks": [
+   "payback"
+  ]
+ },
+ {
+  "r": "wind petal",
+  "n": 2,
+  "rep": "petalblizzard",
+  "ks": [
+   "petalblizzard",
+   "petaldance"
+  ]
+ },
+ {
+  "r": "shoot needle 5",
+  "n": 1,
+  "rep": "pinmissile",
+  "ks": [
+   "pinmissile"
+  ]
+ },
+ {
+  "r": "hit brawl",
+  "n": 1,
+  "rep": "playrough",
+  "ks": [
+   "playrough"
+  ]
+ },
+ {
+  "r": "hit beak",
+  "n": 1,
+  "rep": "pluck",
+  "ks": [
+   "pluck"
+  ]
+ },
+ {
+  "r": "possess",
+  "n": 1,
+  "rep": "poltergeist",
+  "ks": [
+   "poltergeist"
+  ]
+ },
+ {
+  "r": "hit body multi:6",
+  "n": 1,
+  "rep": "populationbomb",
+  "ks": [
+   "populationbomb"
+  ]
+ },
+ {
+  "r": "hit body flex",
+  "n": 2,
+  "rep": "powertrip",
+  "ks": [
+   "powertrip",
+   "superpower"
+  ]
+ },
+ {
+  "r": "shoot fireball",
+  "n": 1,
+  "rep": "pyroball",
+  "ks": [
+   "pyroball"
+  ]
+ },
+ {
+  "r": "guard",
+  "n": 2,
+  "rep": "quickguard",
+  "ks": [
+   "quickguard",
+   "wideguard"
+  ]
+ },
+ {
+  "r": "hit fist rage",
+  "n": 1,
+  "rep": "ragefist",
+  "ks": [
+   "ragefist"
+  ]
+ },
+ {
+  "r": "rest",
+  "n": 2,
+  "rep": "rest",
+  "ks": [
+   "rest",
+   "sleeptalk"
+  ]
+ },
+ {
+  "r": "shoot rock 4",
+  "n": 1,
+  "rep": "rockblast",
+  "ks": [
+   "rockblast"
+  ]
+ },
+ {
+  "r": "rain boulder 4",
+  "n": 1,
+  "rep": "rockslide",
+  "ks": [
+   "rockslide"
+  ]
+ },
+ {
+  "r": "rain boulder 3 ring",
+  "n": 1,
+  "rep": "rocktomb",
+  "ks": [
+   "rocktomb"
+  ]
+ },
+ {
+  "r": "shoot boulder big",
+  "n": 1,
+  "rep": "rockwrecker",
+  "ks": [
+   "rockwrecker"
+  ]
+ },
+ {
+  "r": "roost",
+  "n": 1,
+  "rep": "roost",
+  "ks": [
+   "roost"
+  ]
+ },
+ {
+  "r": "shoot salt",
+  "n": 1,
+  "rep": "saltcure",
+  "ks": [
+   "saltcure"
+  ]
+ },
+ {
+  "r": "vortex sand",
+  "n": 1,
+  "rep": "sandtomb",
+  "ks": [
+   "sandtomb"
+  ]
+ },
+ {
+  "r": "shoot scale 4",
+  "n": 1,
+  "rep": "scaleshot",
+  "ks": [
+   "scaleshot"
+  ]
+ },
+ {
+  "r": "rain seed 4",
+  "n": 1,
+  "rep": "seedbomb",
+  "ks": [
+   "seedbomb"
+  ]
+ },
+ {
+  "r": "hit fist shadow",
+  "n": 1,
+  "rep": "shadowpunch",
+  "ks": [
+   "shadowpunch"
+  ]
+ },
+ {
+  "r": "hit body shadow fast",
+  "n": 1,
+  "rep": "shadowsneak",
+  "ks": [
+   "shadowsneak"
+  ]
+ },
+ {
+  "r": "sub",
+  "n": 2,
+  "rep": "shedtail",
+  "ks": [
+   "shedtail",
+   "substitute"
+  ]
+ },
+ {
+  "r": "frost big",
+  "n": 1,
+  "rep": "sheercold",
+  "ks": [
+   "sheercold"
+  ]
+ },
+ {
+  "r": "shoot shell",
+  "n": 1,
+  "rep": "shellsidearm",
+  "ks": [
+   "shellsidearm"
+  ]
+ },
+ {
+  "r": "shell",
+  "n": 1,
+  "rep": "shellsmash",
+  "ks": [
+   "shellsmash"
+  ]
+ },
+ {
+  "r": "gears",
+  "n": 1,
+  "rep": "shiftgear",
+  "ks": [
+   "shiftgear"
+  ]
+ },
+ {
+  "r": "hit body wrap gather",
+  "n": 1,
+  "rep": "skyattack",
+  "ks": [
+   "skyattack"
+  ]
+ },
+ {
+  "r": "shoot rock",
+  "n": 1,
+  "rep": "smackdown",
+  "ks": [
+   "smackdown"
+  ]
+ },
+ {
+  "r": "hit horn",
+  "n": 1,
+  "rep": "smartstrike",
+  "ks": [
+   "smartstrike"
+  ]
+ },
+ {
+  "r": "shoot water fast",
+  "n": 1,
+  "rep": "snipeshot",
+  "ks": [
+   "snipeshot"
+  ]
+ },
+ {
+  "r": "hit slash gather",
+  "n": 1,
+  "rep": "solarblade",
+  "ks": [
+   "solarblade"
+  ]
+ },
+ {
+  "r": "hazard",
+  "n": 4,
+  "rep": "stealthrock",
+  "ks": [
+   "spikes",
+   "stealthrock",
+   "stickyweb",
+   "toxicspikes"
+  ]
+ },
+ {
+  "r": "shoot arrow pin",
+  "n": 1,
+  "rep": "spiritshackle",
+  "ks": [
+   "spiritshackle"
+  ]
+ },
+ {
+  "r": "hit body roll",
+  "n": 1,
+  "rep": "steelroller",
+  "ks": [
+   "steelroller"
+  ]
+ },
+ {
+  "r": "hit wing",
+  "n": 1,
+  "rep": "steelwing",
+  "ks": [
+   "steelwing"
+  ]
+ },
+ {
+  "r": "hit axe",
+  "n": 1,
+  "rep": "stoneaxe",
+  "ks": [
+   "stoneaxe"
+  ]
+ },
+ {
+  "r": "spikes stone",
+  "n": 1,
+  "rep": "stoneedge",
+  "ks": [
+   "stoneedge"
+  ]
+ },
+ {
+  "r": "hit fist shadow fast",
+  "n": 1,
+  "rep": "suckerpunch",
+  "ks": [
+   "suckerpunch"
+  ]
+ },
+ {
+  "r": "hit body above wrap",
+  "n": 1,
+  "rep": "supercellslam",
+  "ks": [
+   "supercellslam"
+  ]
+ },
+ {
+  "r": "blades",
+  "n": 1,
+  "rep": "swordsdance",
+  "ks": [
+   "swordsdance"
+  ]
+ },
+ {
+  "r": "hit tail multi:3",
+  "n": 1,
+  "rep": "tailslap",
+  "ks": [
+   "tailslap"
+  ]
+ },
+ {
+  "r": "anger",
+  "n": 2,
+  "rep": "taunt",
+  "ks": [
+   "taunt",
+   "torment"
+  ]
+ },
+ {
+  "r": "sky",
+  "n": 1,
+  "rep": "thunder",
+  "ks": [
+   "thunder"
+  ]
+ },
+ {
+  "r": "bolt",
+  "n": 1,
+  "rep": "thunderbolt",
+  "ks": [
+   "thunderbolt"
+  ]
+ },
+ {
+  "r": "hit body leaves",
+  "n": 1,
+  "rep": "trailblaze",
+  "ks": [
+   "trailblaze"
+  ]
+ },
+ {
+  "r": "morph",
+  "n": 1,
+  "rep": "transform",
+  "ks": [
+   "transform"
+  ]
+ },
+ {
+  "r": "beam tri",
+  "n": 1,
+  "rep": "triattack",
+  "ks": [
+   "triattack"
+  ]
+ },
+ {
+  "r": "hit kick then shoot arrow 3",
+  "n": 1,
+  "rep": "triplearrows",
+  "ks": [
+   "triplearrows"
+  ]
+ },
+ {
+  "r": "hit kick spin multi:3",
+  "n": 1,
+  "rep": "tripleaxel",
+  "ks": [
+   "tripleaxel"
+  ]
+ },
+ {
+  "r": "beam twin",
+  "n": 1,
+  "rep": "twinbeam",
+  "ks": [
+   "twinbeam"
+  ]
+ },
+ {
+  "r": "hit palm fast",
+  "n": 1,
+  "rep": "upperhand",
+  "ks": [
+   "upperhand"
+  ]
+ },
+ {
+  "r": "pulse fast",
+  "n": 1,
+  "rep": "vacuumwave",
+  "ks": [
+   "vacuumwave"
+  ]
+ },
+ {
+  "r": "bolt back",
+  "n": 1,
+  "rep": "voltswitch",
+  "ks": [
+   "voltswitch"
+  ]
+ },
+ {
+  "r": "shoot star 3 fast",
+  "n": 1,
+  "rep": "watershuriken",
+  "ks": [
+   "watershuriken"
+  ]
+ },
+ {
+  "r": "wisp",
+  "n": 1,
+  "rep": "willowisp",
+  "ks": [
+   "willowisp"
+  ]
+ },
+ {
+  "r": "yawn",
+  "n": 1,
+  "rep": "yawn",
+  "ks": [
+   "yawn"
+  ]
+ },
+ {
+  "r": "orb big",
+  "n": 1,
+  "rep": "zapcannon",
+  "ks": [
+   "zapcannon"
+  ]
+ },
+ {
+  "r": "hit head gather",
+  "n": 1,
+  "rep": "zenheadbutt",
+  "ks": [
+   "zenheadbutt"
+  ]
+ }
+]

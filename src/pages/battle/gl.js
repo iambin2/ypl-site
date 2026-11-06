@@ -158,6 +158,22 @@ cell("hexgrid", g => {
   }
   g.globalCompositeOperation = "destination-in"; disc(g, S, S, S, [[0, 1], [.7, 1], [1, 0]]); g.globalCompositeOperation = "source-over";
 });
+cell("hexball", (g, b) => {
+  // 2026-11-07, from Scarlet and Violet's Protect: a ball of hexagonal panes, each a pale pane in a bright frame, the panes squeezed
+  // toward the ball's edge the way a sphere turns away, its rim a little deeper and a gloss up on the left
+  const R = S * .95, r = .25, w = Math.sqrt(3) * r, E = 1.45;
+  const warp = (x, y) => { const d = Math.hypot(x, y), k = d ? Math.sin(Math.min(d, E) / E * Math.PI / 2) / d : 1; return [S + x * k * R, S + y * k * R]; };
+  for (let row = -9; row <= 9; row++) for (let col = -6; col <= 6; col++) {
+    const cx = col * w + (row & 1 ? w / 2 : 0), cy = row * r * 1.5, d = Math.hypot(cx, cy);
+    if (d > E + r) continue;
+    const pts = Array.from({ length: 6 }, (_, i) => { const a = Math.PI / 3 * i + Math.PI / 6; return warp(cx + Math.cos(a) * r * .9, cy + Math.sin(a) * r * .9); });
+    g.beginPath(); pts.forEach(([x, y], i) => g[i ? "lineTo" : "moveTo"](x, y)); g.closePath();
+    g.fillStyle = `rgba(255,255,255,${.05 + .13 * Math.min(1, d / E) ** 2})`; g.fill();
+    g.strokeStyle = "#fff"; g.lineWidth = 2 * (1 - .5 * Math.min(1, d / E)); g.stroke();
+  }
+  g.globalCompositeOperation = "destination-in"; disc(g, S, S, R, [[0, 1], [.94, 1], [1, 0]]); g.globalCompositeOperation = "source-over";
+  b.fillStyle = "#fff"; b.beginPath(); b.ellipse(S - 24, S - 26, 16, 8, -.75, 0, Math.PI * 2); b.fill();
+});
 cell("crack", g => {
   g.strokeStyle = "#fff"; g.lineCap = "round"; g.lineJoin = "round"; let seed = 7; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const branch = (x, y, a, len, w) => { if (len < 6 || w < .6) return; let px = x, py = y; g.lineWidth = w; g.beginPath(); g.moveTo(px, py); const n = 4; for (let i = 0; i < n; i++) { a += (r() - .5) * .9; px += Math.cos(a) * len / n; py += Math.sin(a) * len / n; g.lineTo(px, py); } g.stroke(); branch(px, py, a + (r() - .5) * 1.2, len * .62, w * .7); if (r() > .4) branch(px, py, a + (r() > .5 ? .9 : -.9), len * .5, w * .6); };
@@ -362,6 +378,9 @@ for (const t of TYPES) {
   ramp(`${t}.m`, [[0, TYPE_COLOR[t], 0], [.08, TYPE_COLOR[t], 1], [.7, TYPE_COLOR[t], .9], [1, DEEP[t], 0]]);
   ramp(`${t}.h`, [[0, TYPE_COLOR[t], 0], [.15, TYPE_COLOR[t], 1], [.85, TYPE_COLOR[t], 1], [1, TYPE_COLOR[t], 0]]);
 }
+// a blow of no type is lit warm, the games' pale gold (its type colour is almost white, and stacked light of it read as a white-out)
+ramp("normal.m", [[0, "#F5C85A", 0], [.08, "#F5C85A", 1], [.7, "#F0BC48", .9], [1, "#C88A10", 0]]);
+ramp("normal.h", [[0, "#FFD978", 0], [.15, "#FFD978", 1], [.85, "#FFD06A", 1], [1, "#FFD06A", 0]]);
 ramp("fire", [[0, "#FFF0B0", 0], [.04, "#FFE070", 1], [.14, "#FFA030", 1], [.36, "#FF6A1A", .95], [.6, "#D8300E", .7], [.85, "#5A1E14", .35], [1, "#2A1410", 0]]);
 ramp("blue", [[0, "#FFFFFF", 0], [.05, "#E6F4FF", 1], [.25, "#7FD0FF", 1], [.6, "#2F6BFF", .7], [1, "#1A2A8A", 0]]);
 ramp("smoke", [[0, "#9AA3B4", 0], [.15, "#7C8597", .6], [.6, "#4E5566", .4], [1, "#2E3340", 0]]);
@@ -399,6 +418,9 @@ ramp("stone.l", [[0, "#C8B58C", 0], [.08, "#C8B58C", 1], [.85, "#A8946A", 1], [1
 ramp("stone", [[0, "#9A8866", 0], [.08, "#9A8866", 1], [.85, "#7A6A4A", 1], [1, "#6A5A3A", 0]]);
 ramp("iron", [[0, "#6A7488", 0], [.08, "#6A7488", 1], [.9, "#4E586C", 1], [1, "#4E586C", 0]]);
 ramp("snow", [[0, "#FFFFFF", 0], [.1, "#FFFFFF", 1], [.9, "#EAF6FF", 1], [1, "#EAF6FF", 0]]);
+// Protect's panes: a pale sky blue that holds, and the deep blue violet its ball sinks into at the rim
+ramp("guard", [[0, "#B4DCFF", 0], [.12, "#B4DCFF", 1], [.8, "#A6D2FF", 1], [1, "#A6D2FF", 0]]);
+ramp("guard.rim", [[0, "#5A5CE8", 0], [.12, "#5A5CE8", .9], [.8, "#3F3FC0", .8], [1, "#3F3FC0", 0]]);
 ramp("sand", [[0, "#E8C890", 0], [.1, "#D8B070", .9], [.9, "#B88A4A", .8], [1, "#B88A4A", 0]]);
 ramp("sunray", [[0, "#FFF2C0", 0], [.5, "#FFE08A", .55], [1, "#FFF2C0", 0]]);
 ramp("toxic", [[0, "#E8B0FF", 0], [.1, "#C070F0", 1], [.6, "#8A2EC8", .8], [1, "#4A1070", 0]]);
@@ -421,6 +443,7 @@ ramp("gold.c", [[0, "#FFE9A0", 0], [.06, "#FFD45A", 1], [.9, "#F0B830", 1], [1, 
 // a shadow ball: nearly black, deep violet, its rim lit violet by the shader
 ramp("shadowball", [[0, "#3A1A5A", 0], [.08, "#2A1240", 1], [.85, "#22103A", 1], [1, "#22103A", 0]]);
 ramp("magenta", [[0, "#FFFFFF", 0], [.06, "#FFE0F6", 1], [.25, "#FF5ADC", 1], [.7, "#B020C0", .6], [1, "#5A0A70", 0]]);
+ramp("magenta.h", [[0, "#E23CCF", 0], [.12, "#E23CCF", 1], [.85, "#B43AE0", 1], [1, "#8A5CFF", 0]]);
 ramp("moon", [[0, "#EAF4FF", 0], [.1, "#E2EEFF", 1], [.9, "#D2E2FF", 1], [1, "#D2E2FF", 0]]);
 ramp("leaf.c", [[0, "#7ED957", 0], [.06, "#6CCB45", 1], [.88, "#4FAE34", 1], [1, "#3C8A28", 0]]);
 ramp("toxic.c", [[0, "#C98AF0", 0], [.06, "#B46BE6", 1], [.88, "#9248CC", 1], [1, "#6E2AA8", 0]]);
@@ -536,7 +559,8 @@ void main(){
   else { prof = smoothstep(1., .9, abs(v)); core = 0.; }
   float al = clamp(prof + core, 0., 1.) * vC.a;
   // a white heart only on the dark stage: on paper it would vanish, so the line keeps its colour through
-  vec3 col = mix(vC.rgb, vec3(1.), clamp(core, 0., 1.) * (1. - uLight));
+  // (2026-11-07 round 3: the heart is whitened to sixty percent, so a blade or a beam keeps its type's colour through its middle)
+  vec3 col = mix(vC.rgb, vec3(1.), clamp(core, 0., 1.) * .6 * (1. - uLight));
   float emis = vM.y, occ = mix(vM.z, max(vM.z, .5), uLight);
   col = mix(col, col * .8, uLight * (1. - vM.z));
   o0 = vec4(col * al * max(emis, occ), al * occ);
@@ -642,7 +666,9 @@ const F = { loop: 1, front: 2, matter: 4, face: 8, distort: 16, wrap: 32, grow: 
 const ACTOR_KEYS = ["x", "y", "rot", "sx", "sy", "alpha", "flash", "gray", "bright", "tintR", "tintG", "tintB", "tintA", "rimR", "rimG", "rimB", "rimA", "clip", "ghost", "dissolve"];
 const ACTOR_BASE = { x: 0, y: 0, rot: 0, sx: 1, sy: 1, alpha: 1, flash: 0, gray: 0, bright: 1, tintR: 1, tintG: 1, tintB: 1, tintA: 0, rimR: 1, rimG: 1, rimB: 1, rimA: 0, clip: 0, ghost: 0, dissolve: 0 };
 const MULT = new Set(["alpha", "bright"]);
-const ASSIGN = new Set(["clip", "fR", "fG", "fB"]);
+// a colour is set, not added (2026-11-07 round 3): added to the base (1, 1, 1) every rim and tint came out above one, white, which is
+// why "tint makes the body white" and the rims read as white outlines; the amount of each stays in tintA and rimA
+const ASSIGN = new Set(["clip", "fR", "fG", "fB", "tintR", "tintG", "tintB", "rimR", "rimG", "rimB"]);
 const GRADE_BASE = { flashA: 0, fR: 1, fG: 1, fB: 1, mR: 1, mG: 1, mB: 1, aR: 0, aG: 0, aB: 0, sat: 1, ca: 0, vig: .55, dim: 1, bloom: 1, dist: 1 };
 
 class Engine {
@@ -1095,7 +1121,8 @@ class Engine {
       this.spriteUniforms({ alpha: s.alpha * (1 - s.dissolve), flash: s.flash * .5, gray: s.gray, bright: s.bright * this.grade.dim, tint, texel, floor: p.fy - 1, reflect: lerp(.3, .16, this.lightK) * Math.max(0, 1 + s.y / (p.h * .5)) });
     } else {
       if (s.ghost > 0 && a.hist.length > 4) {
-        for (const [i, k] of [[3, .34], [7, .2], [11, .1]]) {
+        // (round 3: two copies, fainter; three heavy copies read as a smudge behind every dash)
+        for (const [i, k] of [[4, .2], [9, .08]]) {
           const h = a.hist[Math.min(i, a.hist.length - 1)];
           gl.uniformMatrix3fv(sp.u.uModel, false, model({ ...s, x: h[0], y: h[1], sx: h[2], sy: h[3], rot: h[4] }, false));
           // the copies a dash leaves are coloured by the move's type and stay dim (pale white copies read as a raw blur, 2026-11-07)

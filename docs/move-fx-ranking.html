@@ -1,0 +1,513 @@
+<title>기술 연출 순위표</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;600;700&family=Noto+Sans+KR:wght@400;600;700&display=swap">
+<style>
+/* layout: a scoreboard of 223 rows, the board's summary on top, rows ranked by the first score */
+:root {
+  --bg: #F4F6FA; --panel: #FFFFFF; --ink: #0B1B3A; --dim: #5A6A86; --line: #D6DDE8; --lamp: #E8A317; --top: #E9EEF8; --up: #1C7A4A;
+  --font: "Albert Sans", "Noto Sans KR", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #081C3D; --panel: #0E2650; --ink: #EAF0FA; --dim: #93A4C2; --line: #1F3A68; --lamp: #FFC24A; --top: #13305F; --up: #6FD69E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #081C3D; --panel: #0E2650; --ink: #EAF0FA; --dim: #93A4C2; --line: #1F3A68; --lamp: #FFC24A; --top: #13305F; --up: #6FD69E; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+h1 { font-size: 30px; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.lede { color: var(--dim); margin: 0; max-width: 68ch; }
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 2px; background: var(--line); border: 2px solid var(--line); }
+.cell { background: var(--panel); padding: 14px 16px; display: grid; gap: 4px; }
+.cell .k { font-size: 12px; color: var(--dim); letter-spacing: .04em; }
+.cell .v { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cell .v small { font-size: 15px; color: var(--dim); font-weight: 600; }
+.method { display: grid; gap: 8px; max-width: 80ch; color: var(--dim); }
+.method b { color: var(--ink); }
+.tablewrap { overflow-x: auto; border: 2px solid var(--line); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { position: sticky; top: 0; background: var(--panel); font-size: 12px; color: var(--dim); letter-spacing: .04em; font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.top td { background: var(--top); }
+tr.top td:first-child { box-shadow: inset 3px 0 0 var(--lamp); }
+td .sub { display: block; color: var(--dim); font-size: 12px; }
+td.b { color: var(--dim); }
+td.a { font-weight: 700; }
+td.a.reach { color: var(--up); }
+td.d { color: var(--up); }
+td.note span { display: block; }
+td.note .after { color: var(--dim); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--dim); }
+.legend i { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; background: var(--top); box-shadow: inset 3px 0 0 var(--lamp); }
+.legend em { font-style: normal; color: var(--up); font-weight: 700; }
+</style>
+<div class="wrap">
+  <h1>기술 연출 순위표</h1>
+  <p class="lede">배틀 무대의 기술 연출 각본 223개(기술 510개)를 실험실에서 한 장씩 촬영해 포켓몬 챔피언스와 스칼렛 바이올렛의 원본 연출에 비춰 100점 만점으로 매겼습니다. 순위는 수정 전 점수 순이고, 상위 10%는 위 22개입니다.</p>
+  <div class="board">
+    <div class="cell"><span class="k">상위 10% 기준선</span><span class="v">55<small> 점</small></span></div>
+    <div class="cell"><span class="k">하위 90% 평균</span><span class="v">40<small> → 53</small></span></div>
+    <div class="cell"><span class="k">기준선 도달</span><span class="v">82<small> / 201</small></span></div>
+    <div class="cell"><span class="k">기술 가중 평균</span><span class="v">42<small> → 55</small></span></div>
+  </div>
+  <div class="method">
+    <span><b>채점 방법</b> 각본마다 대표 기술 하나를 실험실(싱글, 리자몽 대 마기라스)에서 재생해 8프레임을 찍고, 원본과 같은 모양인지, 타입의 재질이 보이는지, 평평한 원이나 흰 화면 같은 날것의 그래픽이 있는지로 점수를 매겼습니다.</span>
+    <span><b>점수의 한계</b> 원본 영상과 프레임을 나란히 대 본 것이 아니라 원본 연출에 대한 기억과 대조한 눈 채점입니다. 같은 각본을 쓰는 기술은 같은 점수입니다.</span>
+  </div>
+  <div class="method">
+    <span><b>무엇을 고쳤나</b> 하위 90%에 공통으로 보인 날것의 그래픽을 공용 부품에서 걷어냈습니다. 기를 모을 때 몸을 감싸던 평평한 원, 착지와 발구르기의 납작한 바닥 원, 타격 순간 대상을 하얗게 덮던 흰 별, 몸 전체를 하얗게 띄우던 테두리 빛의 번짐을 없애고, 그 자리에 타입의 빛이 모여드는 구슬, 갈라지는 바닥과 낮게 퍼지는 흙먼지, 타입 색의 충격 별을 넣었습니다.</span>
+    <span>그 위에 각본별로 원본에 맞췄습니다. 몸통박치기 계열은 타입의 불꽃이나 물줄기가 몸을 감싸고, 베기와 할퀴기는 굵은 타입 색 칼날에 흰 날을 세웠고, 빔은 타입 색 후광과 흰 심을 가진 굵은 빛줄기, 물줄기는 파란 물기둥, 칼춤은 강철 칼이 돌다 머리 위에서 교차, 트라이어택은 불꽃과 얼음과 번개의 삼각형, 악의파동은 보라 테두리의 어둠의 물결, 방어 기술과 상태 기술(최면술, 이상한빛, 도발, 씨뿌리기, 날씨, 필드)은 각자의 재질로 다시 그렸습니다.</span>
+  </div>
+  <div class="legend"><span><i></i>상위 10% (수정하지 않음)</span><span><em>초록 점수</em> 상위 10% 기준선에 도달</span></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th class="num">순위</th><th>대표 기술과 같은 각본</th><th class="num">기술 수</th><th class="num">전</th><th class="num">후</th><th class="num">변화</th><th>연출 각본</th></tr></thead>
+      <tbody>
+<tr class="top"><td class="num">1</td><td><b>화염방사</b><span class="sub">트림, 찬물끼얹기, 화염방사, 얼음숨결, 휘적휘적포, 매지컬플레임 외 2</span></td><td class="num">8</td>
+<td class="num b">78</td><td class="num a reach">78</td><td class="num d">0</td><td>stream</td></tr>
+<tr class="top"><td class="num">2</td><td><b>불꽃춤</b><span class="sub">불꽃춤</span></td><td class="num">1</td>
+<td class="num b">72</td><td class="num a reach">74</td><td class="num d">+2</td><td>stream dance</td></tr>
+<tr class="top"><td class="num">3</td><td><b>문포스</b><span class="sub">문포스</span></td><td class="num">1</td>
+<td class="num b">72</td><td class="num a reach">74</td><td class="num d">+2</td><td>moon</td></tr>
+<tr class="top"><td class="num">4</td><td><b>매지컬샤인</b><span class="sub">질투의불꽃, 매지컬샤인</span></td><td class="num">2</td>
+<td class="num b">65</td><td class="num a reach">65</td><td class="num d">0</td><td>flash</td></tr>
+<tr class="top"><td class="num">5</td><td><b>번개</b><span class="sub">번개</span></td><td class="num">1</td>
+<td class="num b">65</td><td class="num a reach">66</td><td class="num d">+1</td><td>sky</td></tr>
+<tr class="top"><td class="num">6</td><td><b>파도타기</b><span class="sub">탁류, 오물웨이브, 파도타기</span></td><td class="num">3</td>
+<td class="num b">62</td><td class="num a reach">62</td><td class="num d">0</td><td>wave</td></tr>
+<tr class="top"><td class="num">7</td><td><b>10만볼트</b><span class="sub">10만볼트</span></td><td class="num">1</td>
+<td class="num b">62</td><td class="num a reach">62</td><td class="num d">0</td><td>bolt</td></tr>
+<tr class="top"><td class="num">8</td><td><b>에어슬래시</b><span class="sub">에어커터, 에어슬래시, 아쿠아커터, 사이코커터</span></td><td class="num">4</td>
+<td class="num b">60</td><td class="num a reach">62</td><td class="num d">+2</td><td>cut</td></tr>
+<tr class="top"><td class="num">9</td><td><b>파괴광선</b><span class="sub">파괴광선, 파멸의빛, 루미나콜리전, 철제광선</span></td><td class="num">4</td>
+<td class="num b">60</td><td class="num a reach">60</td><td class="num d">0</td><td>beam wide</td></tr>
+<tr class="top"><td class="num">10</td><td><b>솔라빔</b><span class="sub">일렉트로빔, 메테오빔, 솔라빔</span></td><td class="num">3</td>
+<td class="num b">60</td><td class="num a reach">62</td><td class="num d">+2</td><td>beam wide gather</td></tr>
+<tr class="top"><td class="num">11</td><td><b>아머캐논</b><span class="sub">아머캐논</span></td><td class="num">1</td>
+<td class="num b">60</td><td class="num a reach">60</td><td class="num d">0</td><td>shoot fireball 3 big</td></tr>
+<tr class="top"><td class="num">12</td><td><b>폭음파</b><span class="sub">폭음파</span></td><td class="num">1</td>
+<td class="num b">60</td><td class="num a reach">60</td><td class="num d">0</td><td>rings big</td></tr>
+<tr class="top"><td class="num">13</td><td><b>매혹의보이스</b><span class="sub">매혹의보이스, 벌레의야단법석, 스케일노이즈, 하이퍼보이스, 금속음, 부르짖기 외 10</span></td><td class="num">16</td>
+<td class="num b">55</td><td class="num a reach">58</td><td class="num d">+3</td><td>rings</td></tr>
+<tr class="top"><td class="num">14</td><td><b>에너지볼</b><span class="sub">파동탄, 일렉트릭볼, 에너지볼, 꽃가루경단, 섀도볼, 오물폭탄 외 4</span></td><td class="num">10</td>
+<td class="num b">55</td><td class="num a reach">60</td><td class="num d">+5</td><td>orb</td></tr>
+<tr class="top"><td class="num">15</td><td><b>폭풍</b><span class="sub">회오리불꽃, 폭풍, 엉겨붙기, 리프스톰, 바다회오리</span></td><td class="num">5</td>
+<td class="num b">55</td><td class="num a reach">58</td><td class="num d">+3</td><td>vortex</td></tr>
+<tr class="top"><td class="num">16</td><td><b>불대문자</b><span class="sub">블라스트번, 불사르기, 불대문자, 오버히트</span></td><td class="num">4</td>
+<td class="num b">55</td><td class="num a reach">60</td><td class="num d">+5</td><td>blast</td></tr>
+<tr class="top"><td class="num">17</td><td><b>원시의힘</b><span class="sub">원시의힘, 파워젬</span></td><td class="num">2</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>shards</td></tr>
+<tr class="top"><td class="num">18</td><td><b>아쿠아제트</b><span class="sub">아쿠아제트, 만나자마자</span></td><td class="num">2</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>hit body fast wrap</td></tr>
+<tr class="top"><td class="num">19</td><td><b>부식가스</b><span class="sub">부식가스, 달콤한향기</span></td><td class="num">2</td>
+<td class="num b">55</td><td class="num a reach">58</td><td class="num d">+3</td><td>cloud</td></tr>
+<tr class="top"><td class="num">20</td><td><b>분화</b><span class="sub">분화, 해수스파우팅</span></td><td class="num">2</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>volcano</td></tr>
+<tr class="top"><td class="num">21</td><td><b>아쿠아테일</b><span class="sub">아쿠아테일</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>hit tail wrap</td></tr>
+<tr class="top"><td class="num">22</td><td><b>땅고르기</b><span class="sub">땅고르기</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">58</td><td class="num d">+3</td><td>quake stomp</td></tr>
+<tr class=""><td class="num">23</td><td><b>용성군</b><span class="sub">용성군</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>rain comet 4</td></tr>
+<tr class=""><td class="num">24</td><td><b>지진</b><span class="sub">지진</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">62</td><td class="num d">+7</td><td>quake</td></tr>
+<tr class=""><td class="num">25</td><td><b>히트스탬프</b><span class="sub">히트스탬프</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>hit body jump wrap</td></tr>
+<tr class=""><td class="num">26</td><td><b>화염볼</b><span class="sub">화염볼</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>shoot fireball</td></tr>
+<tr class=""><td class="num">27</td><td><b>볼트체인지</b><span class="sub">볼트체인지</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">58</td><td class="num d">+3</td><td>bolt back</td></tr>
+<tr class=""><td class="num">28</td><td><b>도깨비불</b><span class="sub">도깨비불</span></td><td class="num">1</td>
+<td class="num b">55</td><td class="num a reach">55</td><td class="num d">0</td><td>wisp</td></tr>
+<tr class=""><td class="num">29</td><td><b>물기</b><span class="sub">물기, 벌레먹기, 깨물어부수기, 불꽃엄니, 얼음엄니, 물고버티기 외 4</span></td><td class="num">10</td>
+<td class="num b">50</td><td class="num a ">53</td><td class="num d">+3</td><td>hit fang</td></tr>
+<tr class=""><td class="num">30</td><td><b>사이코키네시스</b><span class="sub">섬뜩한주문, 신통력, 미래예지, 나이트헤드, 사이코키네시스</span></td><td class="num">5</td>
+<td class="num b">50</td><td class="num a reach">58</td><td class="num d">+8</td><td>mind</td></tr>
+<tr class=""><td class="num">31</td><td><b>냉동빔</b><span class="sub">차지빔, 변덕레이저, 냉동빔, 미러코트</span></td><td class="num">4</td>
+<td class="num b">50</td><td class="num a reach">58</td><td class="num d">+8</td><td>beam</td></tr>
+<tr class=""><td class="num">32</td><td><b>스텔스록</b><span class="sub">압정뿌리기, 스텔스록, 끈적끈적네트, 독압정</span></td><td class="num">4</td>
+<td class="num b">50</td><td class="num a ">52</td><td class="num d">+2</td><td>hazard</td></tr>
+<tr class=""><td class="num">33</td><td><b>대지의힘</b><span class="sub">대지의힘, 라이징볼트</span></td><td class="num">2</td>
+<td class="num b">50</td><td class="num a ">54</td><td class="num d">+4</td><td>erupt</td></tr>
+<tr class=""><td class="num">34</td><td><b>하이드로펌프</b><span class="sub">하이드로캐논, 하이드로펌프</span></td><td class="num">2</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>stream big</td></tr>
+<tr class=""><td class="num">35</td><td><b>꽃보라</b><span class="sub">꽃보라, 꽃잎댄스</span></td><td class="num">2</td>
+<td class="num b">50</td><td class="num a ">53</td><td class="num d">+3</td><td>wind petal</td></tr>
+<tr class=""><td class="num">36</td><td><b>오라휠</b><span class="sub">오라휠</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a ">50</td><td class="num d">0</td><td>hit body spin wrap</td></tr>
+<tr class=""><td class="num">37</td><td><b>독침천발</b><span class="sub">독침천발</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>shoot needle 6</td></tr>
+<tr class=""><td class="num">38</td><td><b>씨기관총</b><span class="sub">씨기관총</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>shoot seed 5</td></tr>
+<tr class=""><td class="num">39</td><td><b>와이드포스</b><span class="sub">와이드포스</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>mind big</td></tr>
+<tr class=""><td class="num">40</td><td><b>러스터캐논</b><span class="sub">러스터캐논</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>beam gather</td></tr>
+<tr class=""><td class="num">41</td><td><b>기합구슬</b><span class="sub">기합구슬</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>orb big gather</td></tr>
+<tr class=""><td class="num">42</td><td><b>백귀야행</b><span class="sub">백귀야행</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">56</td><td class="num d">+6</td><td>shoot fireball 5</td></tr>
+<tr class=""><td class="num">43</td><td><b>연옥</b><span class="sub">연옥</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a ">52</td><td class="num d">+2</td><td>vortex big</td></tr>
+<tr class=""><td class="num">44</td><td><b>제트펀치</b><span class="sub">제트펀치</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>hit fist fast wrap</td></tr>
+<tr class=""><td class="num">45</td><td><b>암석포</b><span class="sub">암석포</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>shoot boulder big</td></tr>
+<tr class=""><td class="num">46</td><td><b>절대영도</b><span class="sub">절대영도</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>frost big</td></tr>
+<tr class=""><td class="num">47</td><td><b>썬더다이브</b><span class="sub">썬더다이브</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>hit body above wrap</td></tr>
+<tr class=""><td class="num">48</td><td><b>개척하기</b><span class="sub">개척하기</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>hit body leaves</td></tr>
+<tr class=""><td class="num">49</td><td><b>전자포</b><span class="sub">전자포</span></td><td class="num">1</td>
+<td class="num b">50</td><td class="num a reach">55</td><td class="num d">+5</td><td>orb big</td></tr>
+<tr class=""><td class="num">50</td><td><b>브레이브버드</b><span class="sub">브레이브버드, 앙갚음, 카운터, 이판사판태클, 드래곤다이브, 목숨걸기 외 16</span></td><td class="num">22</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit body wrap</td></tr>
+<tr class=""><td class="num">51</td><td><b>천추지한</b><span class="sub">천추지한, 악의파동, 용의파동, 치유파동, 사이코쇼크, 심플빔 외 2</span></td><td class="num">8</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>pulse</td></tr>
+<tr class=""><td class="num">52</td><td><b>헤롱헤롱</b><span class="sub">헤롱헤롱, 초롱초롱눈동자, 애교부리기, 데코레이션, 천사의키스, 간지르기</span></td><td class="num">6</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>charm</td></tr>
+<tr class=""><td class="num">53</td><td><b>바디프레스</b><span class="sub">바디프레스, 누르기, 헤비봄버, 달려들기, 우드해머</span></td><td class="num">5</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit body jump</td></tr>
+<tr class=""><td class="num">54</td><td><b>신속</b><span class="sub">액셀록, 신속, 페인트, 전광석화</span></td><td class="num">4</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit body fast</td></tr>
+<tr class=""><td class="num">55</td><td><b>오로라베일</b><span class="sub">오로라베일, 빛의장막, 리플렉터, 신비의부적</span></td><td class="num">4</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>screen</td></tr>
+<tr class=""><td class="num">56</td><td><b>일렉트릭필드</b><span class="sub">일렉트릭필드, 그래스필드, 미스트필드, 사이코필드</span></td><td class="num">4</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>terrain</td></tr>
+<tr class=""><td class="num">57</td><td><b>고속이동</b><span class="sub">고속이동, 그림자분신, 록커트</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>speed</td></tr>
+<tr class=""><td class="num">58</td><td><b>블레이즈킥</b><span class="sub">블레이즈킥, 메가톤킥, 트로피컬킥</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a ">53</td><td class="num d">+8</td><td>hit kick</td></tr>
+<tr class=""><td class="num">59</td><td><b>뛰어오르기</b><span class="sub">뛰어오르기, 공중날기, 플라잉프레스</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit body above</td></tr>
+<tr class=""><td class="num">60</td><td><b>방전</b><span class="sub">방전, 분연, 자폭</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>burst</td></tr>
+<tr class=""><td class="num">61</td><td><b>일렉트릭네트</b><span class="sub">일렉트릭네트, 실뿜기, 독실</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a ">54</td><td class="num d">+9</td><td>web</td></tr>
+<tr class=""><td class="num">62</td><td><b>불꽃펀치</b><span class="sub">불꽃펀치, 냉동펀치, 번개펀치</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a ">53</td><td class="num d">+8</td><td>hit fist</td></tr>
+<tr class=""><td class="num">63</td><td><b>치유소원</b><span class="sub">치유소원, 회생의기도, 희망사항</span></td><td class="num">3</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>wish</td></tr>
+<tr class=""><td class="num">64</td><td><b>제비반환</b><span class="sub">제비반환, 깜짝베기</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit slash fast</td></tr>
+<tr class=""><td class="num">65</td><td><b>구멍파기</b><span class="sub">구멍파기, 다이빙</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit body burrow</td></tr>
+<tr class=""><td class="num">66</td><td><b>전광쌍격</b><span class="sub">전광쌍격, 찌리리따끔따끔</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a ">50</td><td class="num d">+5</td><td>hit body wrap zap</td></tr>
+<tr class=""><td class="num">67</td><td><b>불꽃채찍</b><span class="sub">불꽃채찍, 파워휩</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit whip</td></tr>
+<tr class=""><td class="num">68</td><td><b>풀묶기</b><span class="sub">풀묶기, 집게덫</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>trap</td></tr>
+<tr class=""><td class="num">69</td><td><b>분풀이</b><span class="sub">분풀이, 난동부리기</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a ">54</td><td class="num d">+9</td><td>hit body rage</td></tr>
+<tr class=""><td class="num">70</td><td><b>메가혼</b><span class="sub">메가혼, 레이징불</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a ">48</td><td class="num d">+3</td><td>hit horn wrap</td></tr>
+<tr class=""><td class="num">71</td><td><b>역린</b><span class="sub">역린, 대격분</span></td><td class="num">2</td>
+<td class="num b">45</td><td class="num a ">53</td><td class="num d">+8</td><td>hit body rage wrap</td></tr>
+<tr class=""><td class="num">72</td><td><b>애크러뱃</b><span class="sub">애크러뱃</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit wing fast</td></tr>
+<tr class=""><td class="num">73</td><td><b>원념의칼</b><span class="sub">원념의칼</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit slash drain</td></tr>
+<tr class=""><td class="num">74</td><td><b>인파이트</b><span class="sub">인파이트</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">50</td><td class="num d">+5</td><td>hit fist multi:5</td></tr>
+<tr class=""><td class="num">75</td><td><b>DD래리어트</b><span class="sub">DD래리어트</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">53</td><td class="num d">+8</td><td>hit arms spin</td></tr>
+<tr class=""><td class="num">76</td><td><b>프리즈드라이</b><span class="sub">프리즈드라이</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>frost</td></tr>
+<tr class=""><td class="num">77</td><td><b>양날박치기</b><span class="sub">양날박치기</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">53</td><td class="num d">+8</td><td>hit head wrap</td></tr>
+<tr class=""><td class="num">78</td><td><b>탁쳐서떨구기</b><span class="sub">탁쳐서떨구기</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit palm item</td></tr>
+<tr class=""><td class="num">79</td><td><b>흡혈</b><span class="sub">흡혈</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">50</td><td class="num d">+5</td><td>hit fang drain</td></tr>
+<tr class=""><td class="num">80</td><td><b>코멧펀치</b><span class="sub">코멧펀치</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit fist wrap fast</td></tr>
+<tr class=""><td class="num">81</td><td><b>볼부비부비</b><span class="sub">볼부비부비</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">50</td><td class="num d">+5</td><td>hit body zap</td></tr>
+<tr class=""><td class="num">82</td><td><b>분노의주먹</b><span class="sub">분노의주먹</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">54</td><td class="num d">+9</td><td>hit fist rage</td></tr>
+<tr class=""><td class="num">83</td><td><b>록블라스트</b><span class="sub">록블라스트</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>shoot rock 4</td></tr>
+<tr class=""><td class="num">84</td><td><b>섀도펀치</b><span class="sub">섀도펀치</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit fist shadow</td></tr>
+<tr class=""><td class="num">85</td><td><b>야습</b><span class="sub">야습</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit body shadow fast</td></tr>
+<tr class=""><td class="num">86</td><td><b>불새</b><span class="sub">불새</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">54</td><td class="num d">+9</td><td>hit body wrap gather</td></tr>
+<tr class=""><td class="num">87</td><td><b>솔라블레이드</b><span class="sub">솔라블레이드</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit slash gather</td></tr>
+<tr class=""><td class="num">88</td><td><b>그림자꿰매기</b><span class="sub">그림자꿰매기</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">54</td><td class="num d">+9</td><td>shoot arrow pin</td></tr>
+<tr class=""><td class="num">89</td><td><b>암석액스</b><span class="sub">암석액스</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit axe</td></tr>
+<tr class=""><td class="num">90</td><td><b>기습</b><span class="sub">기습</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>hit fist shadow fast</td></tr>
+<tr class=""><td class="num">91</td><td><b>칼춤</b><span class="sub">칼춤</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>blades</td></tr>
+<tr class=""><td class="num">92</td><td><b>3연화살</b><span class="sub">3연화살</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit kick then shoot arrow 3</td></tr>
+<tr class=""><td class="num">93</td><td><b>트윈빔</b><span class="sub">트윈빔</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a reach">55</td><td class="num d">+10</td><td>beam twin</td></tr>
+<tr class=""><td class="num">94</td><td><b>물수리검</b><span class="sub">물수리검</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>shoot star 3 fast</td></tr>
+<tr class=""><td class="num">95</td><td><b>사념의박치기</b><span class="sub">사념의박치기</span></td><td class="num">1</td>
+<td class="num b">45</td><td class="num a ">52</td><td class="num d">+7</td><td>hit head gather</td></tr>
+<tr class=""><td class="num">96</td><td><b>녹기</b><span class="sub">녹기, 코스믹파워, 코튼가드, 철벽, 작아지기, 농성 외 1</span></td><td class="num">7</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>harden</td></tr>
+<tr class=""><td class="num">97</td><td><b>벌크업</b><span class="sub">벌크업, 소울비트, 코칭, 똬리틀기, 성장, 멀리짖기 외 1</span></td><td class="num">7</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>flex</td></tr>
+<tr class=""><td class="num">98</td><td><b>HP회복</b><span class="sub">생명의물방울, 우유마시기, HP회복, 게으름피우기, 볼가득넣기, 꿀꺽 외 1</span></td><td class="num">7</td>
+<td class="num b">40</td><td class="num a ">54</td><td class="num d">+14</td><td>heal</td></tr>
+<tr class=""><td class="num">99</td><td><b>비검천중파</b><span class="sub">비검천중파, 리프블레이드, 스타어설트, 셸블레이드, 성스러운칼, 베어가르기</span></td><td class="num">6</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit slash</td></tr>
+<tr class=""><td class="num">100</td><td><b>속이기</b><span class="sub">당신먼저, 앙코르, 속이기, 도우미, 지휘</span></td><td class="num">5</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>clap</td></tr>
+<tr class=""><td class="num">101</td><td><b>열풍</b><span class="sub">눈보라, 열풍, 얼어붙은바람, 열사의대지, 벌레의저항</span></td><td class="num">5</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>wind</td></tr>
+<tr class=""><td class="num">102</td><td><b>승부굳히기</b><span class="sub">승부굳히기, 죽기살기, 객기, 덤벼들기</span></td><td class="num">4</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit body</td></tr>
+<tr class=""><td class="num">103</td><td><b>브레이크클로</b><span class="sub">브레이크클로, 페이탈클로, 드래곤클로, 섀도클로</span></td><td class="num">4</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit claw</td></tr>
+<tr class=""><td class="num">104</td><td><b>자이로볼</b><span class="sub">자이로볼, 아이스스피너, 킬러스핀, 고속스핀</span></td><td class="num">4</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit body spin</td></tr>
+<tr class=""><td class="num">105</td><td><b>조이기</b><span class="sub">조이기, 문어굳히기, 김밥말이</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>squeeze</td></tr>
+<tr class=""><td class="num">106</td><td><b>배대뒤치기</b><span class="sub">배대뒤치기, 지구던지기, 업어후리기</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit throw</td></tr>
+<tr class=""><td class="num">107</td><td><b>크로스촙</b><span class="sub">크로스촙, 크로스포이즌, 시저크로스</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a ">54</td><td class="num d">+14</td><td>hit cross</td></tr>
+<tr class=""><td class="num">108</td><td><b>용의춤</b><span class="sub">용의춤, 동료만들기, 나비춤</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a reach">58</td><td class="num d">+18</td><td>dance</td></tr>
+<tr class=""><td class="num">109</td><td><b>속임수</b><span class="sub">속임수, 고스트다이브, 엄습하는일격</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit body shadow</td></tr>
+<tr class=""><td class="num">110</td><td><b>기가드레인</b><span class="sub">기가드레인, 아픔나누기, 힘흡수</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>drain</td></tr>
+<tr class=""><td class="num">111</td><td><b>달빛</b><span class="sub">달빛, 아침햇살, 광합성</span></td><td class="num">3</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>sunheal</td></tr>
+<tr class=""><td class="num">112</td><td><b>집단구타</b><span class="sub">집단구타, 바둥바둥</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit body multi:3</td></tr>
+<tr class=""><td class="num">113</td><td><b>와이드브레이커</b><span class="sub">와이드브레이커, 세차게휘두르기</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit tail spin</td></tr>
+<tr class=""><td class="num">114</td><td><b>깨뜨리다</b><span class="sub">깨뜨리다, 지옥찌르기</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">54</td><td class="num d">+14</td><td>hit chop</td></tr>
+<tr class=""><td class="num">115</td><td><b>집게해머</b><span class="sub">집게해머, 가위자르기</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit pincer</td></tr>
+<tr class=""><td class="num">116</td><td><b>드래곤테일</b><span class="sub">드래곤테일, 아이언테일</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">54</td><td class="num d">+14</td><td>hit tail</td></tr>
+<tr class=""><td class="num">117</td><td><b>회전부리</b><span class="sub">회전부리, 뿔드릴</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">54</td><td class="num d">+14</td><td>hit drill</td></tr>
+<tr class=""><td class="num">118</td><td><b>드럼어택</b><span class="sub">드럼어택, 하드플랜트</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>spikes root</td></tr>
+<tr class=""><td class="num">119</td><td><b>폭발펀치</b><span class="sub">폭발펀치, 힘껏펀치</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit fist gather</td></tr>
+<tr class=""><td class="num">120</td><td><b>마지막일침</b><span class="sub">마지막일침, 독찌르기</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit sting</td></tr>
+<tr class=""><td class="num">121</td><td><b>유턴</b><span class="sub">퀵턴, 유턴</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit body back</td></tr>
+<tr class=""><td class="num">122</td><td><b>날따름</b><span class="sub">날따름, 분노가루</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>spotlight</td></tr>
+<tr class=""><td class="num">123</td><td><b>암해머</b><span class="sub">암해머, 아이스해머</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit hammer</td></tr>
+<tr class=""><td class="num">124</td><td><b>10만마력</b><span class="sub">10만마력, 분함의발구르기</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit body stomp</td></tr>
+<tr class=""><td class="num">125</td><td><b>안다리걸기</b><span class="sub">안다리걸기, 로킥</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit kick low</td></tr>
+<tr class=""><td class="num">126</td><td><b>기어오르기</b><span class="sub">기어오르기, 엄청난힘</span></td><td class="num">2</td>
+<td class="num b">40</td><td class="num a ">50</td><td class="num d">+10</td><td>hit body flex</td></tr>
+<tr class=""><td class="num">127</td><td><b>아쿠아스텝</b><span class="sub">아쿠아스텝</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit kick dance</td></tr>
+<tr class=""><td class="num">128</td><td><b>발꿈치찍기</b><span class="sub">발꿈치찍기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit kick jump</td></tr>
+<tr class=""><td class="num">129</td><td><b>불릿펀치</b><span class="sub">불릿펀치</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit fist fast multi:2</td></tr>
+<tr class=""><td class="num">130</td><td><b>더블어택</b><span class="sub">더블어택</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit tail multi:2</td></tr>
+<tr class=""><td class="num">131</td><td><b>드래곤애로</b><span class="sub">드래곤애로</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>shoot dart 2</td></tr>
+<tr class=""><td class="num">132</td><td><b>드레인키스</b><span class="sub">드레인키스</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>drain kiss</td></tr>
+<tr class=""><td class="num">133</td><td><b>드레인펀치</b><span class="sub">드레인펀치</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit fist drain</td></tr>
+<tr class=""><td class="num">134</td><td><b>드릴라이너</b><span class="sub">드릴라이너</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit drill spin</td></tr>
+<tr class=""><td class="num">135</td><td><b>더블윙</b><span class="sub">더블윙</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit wing multi:2</td></tr>
+<tr class=""><td class="num">136</td><td><b>땅가르기</b><span class="sub">땅가르기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">60</td><td class="num d">+20</td><td>crack</td></tr>
+<tr class=""><td class="num">137</td><td><b>트릭플라워</b><span class="sub">트릭플라워</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>shoot bouquet</td></tr>
+<tr class=""><td class="num">138</td><td><b>거대해머</b><span class="sub">거대해머</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit hammer jump</td></tr>
+<tr class=""><td class="num">139</td><td><b>그래스슬라이더</b><span class="sub">그래스슬라이더</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit body glide</td></tr>
+<tr class=""><td class="num">140</td><td><b>G의힘</b><span class="sub">G의힘</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>rain apple 1</td></tr>
+<tr class=""><td class="num">141</td><td><b>하드프레스</b><span class="sub">하드프레스</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">50</td><td class="num d">+10</td><td>hit palm press</td></tr>
+<tr class=""><td class="num">142</td><td><b>병상첨병</b><span class="sub">병상첨병</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hex</td></tr>
+<tr class=""><td class="num">143</td><td><b>무릎차기</b><span class="sub">무릎차기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit knee jump</td></tr>
+<tr class=""><td class="num">144</td><td><b>우드혼</b><span class="sub">우드혼</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit horn drain</td></tr>
+<tr class=""><td class="num">145</td><td><b>얼음뭉치</b><span class="sub">얼음뭉치</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">50</td><td class="num d">+10</td><td>shoot shard 3 fast</td></tr>
+<tr class=""><td class="num">146</td><td><b>고드름침</b><span class="sub">고드름침</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">50</td><td class="num d">+10</td><td>shoot icicle 4</td></tr>
+<tr class=""><td class="num">147</td><td><b>아이언헤드</b><span class="sub">아이언헤드</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>hit head</td></tr>
+<tr class=""><td class="num">148</td><td><b>도각참</b><span class="sub">도각참</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit slash bow</td></tr>
+<tr class=""><td class="num">149</td><td><b>마하펀치</b><span class="sub">마하펀치</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit fist fast</td></tr>
+<tr class=""><td class="num">150</td><td><b>골드러시</b><span class="sub">골드러시</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>rain coin 7</td></tr>
+<tr class=""><td class="num">151</td><td><b>빙산바람</b><span class="sub">빙산바람</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>shoot ice 2 big</td></tr>
+<tr class=""><td class="num">152</td><td><b>나이트버스트</b><span class="sub">나이트버스트</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">53</td><td class="num d">+13</td><td>pulse big</td></tr>
+<tr class=""><td class="num">153</td><td><b>보복</b><span class="sub">보복</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit body gather</td></tr>
+<tr class=""><td class="num">154</td><td><b>바늘미사일</b><span class="sub">바늘미사일</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>shoot needle 5</td></tr>
+<tr class=""><td class="num">155</td><td><b>치근거리기</b><span class="sub">치근거리기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit brawl</td></tr>
+<tr class=""><td class="num">156</td><td><b>쪼아대기</b><span class="sub">쪼아대기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit beak</td></tr>
+<tr class=""><td class="num">157</td><td><b>찍찍베기</b><span class="sub">찍찍베기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">50</td><td class="num d">+10</td><td>hit body multi:6</td></tr>
+<tr class=""><td class="num">158</td><td><b>스톤샤워</b><span class="sub">스톤샤워</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>rain boulder 4</td></tr>
+<tr class=""><td class="num">159</td><td><b>암석봉인</b><span class="sub">암석봉인</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>rain boulder 3 ring</td></tr>
+<tr class=""><td class="num">160</td><td><b>날개쉬기</b><span class="sub">날개쉬기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">54</td><td class="num d">+14</td><td>roost</td></tr>
+<tr class=""><td class="num">161</td><td><b>모래지옥</b><span class="sub">모래지옥</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>vortex sand</td></tr>
+<tr class=""><td class="num">162</td><td><b>스마트혼</b><span class="sub">스마트혼</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit horn</td></tr>
+<tr class=""><td class="num">163</td><td><b>노려맞히기</b><span class="sub">노려맞히기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>shoot water fast</td></tr>
+<tr class=""><td class="num">164</td><td><b>아이언롤러</b><span class="sub">아이언롤러</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit body roll</td></tr>
+<tr class=""><td class="num">165</td><td><b>강철날개</b><span class="sub">강철날개</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit wing</td></tr>
+<tr class=""><td class="num">166</td><td><b>스위프뺨치기</b><span class="sub">스위프뺨치기</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit tail multi:3</td></tr>
+<tr class=""><td class="num">167</td><td><b>변신</b><span class="sub">변신</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>morph</td></tr>
+<tr class=""><td class="num">168</td><td><b>트리플악셀</b><span class="sub">트리플악셀</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a ">52</td><td class="num d">+12</td><td>hit kick spin multi:3</td></tr>
+<tr class=""><td class="num">169</td><td><b>기선제압</b><span class="sub">기선제압</span></td><td class="num">1</td>
+<td class="num b">40</td><td class="num a reach">55</td><td class="num d">+15</td><td>hit palm fast</td></tr>
+<tr class=""><td class="num">170</td><td><b>명상</b><span class="sub">망각술, 명상, 봉인, 나쁜음모, 자기암시</span></td><td class="num">5</td>
+<td class="num b">35</td><td class="num a reach">58</td><td class="num d">+23</td><td>sigil</td></tr>
+<tr class=""><td class="num">171</td><td><b>저주</b><span class="sub">저주, 숲의저주, 추억의선물, 원한, 핼러윈</span></td><td class="num">5</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>curse</td></tr>
+<tr class=""><td class="num">172</td><td><b>뱀눈초리</b><span class="sub">뱀눈초리, 록온, 검은눈빛, 겁나는얼굴</span></td><td class="num">4</td>
+<td class="num b">35</td><td class="num a ">53</td><td class="num d">+18</td><td>glare</td></tr>
+<tr class=""><td class="num">173</td><td><b>트릭룸</b><span class="sub">중력, 매직룸, 트릭룸, 원더룸</span></td><td class="num">4</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>room</td></tr>
+<tr class=""><td class="num">174</td><td><b>전기자석파</b><span class="sub">괴전파, 송전, 전기자석파</span></td><td class="num">3</td>
+<td class="num b">35</td><td class="num a reach">55</td><td class="num d">+20</td><td>zap</td></tr>
+<tr class=""><td class="num">175</td><td><b>클리어스모그</b><span class="sub">클리어스모그, 머드샷</span></td><td class="num">2</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>shoot mud</td></tr>
+<tr class=""><td class="num">176</td><td><b>탐내다</b><span class="sub">탐내다, 도둑질</span></td><td class="num">2</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>hit body item</td></tr>
+<tr class=""><td class="num">177</td><td><b>대폭발</b><span class="sub">대폭발, 미스트버스트</span></td><td class="num">2</td>
+<td class="num b">35</td><td class="num a reach">55</td><td class="num d">+20</td><td>burst big</td></tr>
+<tr class=""><td class="num">178</td><td><b>패스트가드</b><span class="sub">패스트가드, 와이드가드</span></td><td class="num">2</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>guard</td></tr>
+<tr class=""><td class="num">179</td><td><b>부리캐논</b><span class="sub">부리캐논</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a reach">55</td><td class="num d">+20</td><td>hit beak gather</td></tr>
+<tr class=""><td class="num">180</td><td><b>배북</b><span class="sub">배북</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>drum</td></tr>
+<tr class=""><td class="num">181</td><td><b>본러시</b><span class="sub">본러시</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>hit bone multi:3</td></tr>
+<tr class=""><td class="num">182</td><td><b>길동무</b><span class="sub">길동무</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a reach">55</td><td class="num d">+20</td><td>link</td></tr>
+<tr class=""><td class="num">183</td><td><b>더스트슈트</b><span class="sub">더스트슈트</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>shoot garbage big</td></tr>
+<tr class=""><td class="num">184</td><td><b>최면술</b><span class="sub">최면술</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a reach">55</td><td class="num d">+20</td><td>hypnosis</td></tr>
+<tr class=""><td class="num">185</td><td><b>고드름떨구기</b><span class="sub">고드름떨구기</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>rain icicle 3</td></tr>
+<tr class=""><td class="num">186</td><td><b>메탈버스트</b><span class="sub">메탈버스트</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>shoot orb 3</td></tr>
+<tr class=""><td class="num">187</td><td><b>진흙뿌리기</b><span class="sub">진흙뿌리기</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>shoot mud 2 fast</td></tr>
+<tr class=""><td class="num">188</td><td><b>파라볼라차지</b><span class="sub">파라볼라차지</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>burst drain</td></tr>
+<tr class=""><td class="num">189</td><td><b>소금절이</b><span class="sub">소금절이</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>shoot salt</td></tr>
+<tr class=""><td class="num">190</td><td><b>스케일샷</b><span class="sub">스케일샷</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">54</td><td class="num d">+19</td><td>shoot scale 4</td></tr>
+<tr class=""><td class="num">191</td><td><b>씨폭탄</b><span class="sub">씨폭탄</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">50</td><td class="num d">+15</td><td>rain seed 4</td></tr>
+<tr class=""><td class="num">192</td><td><b>셸암즈</b><span class="sub">셸암즈</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a reach">57</td><td class="num d">+22</td><td>shoot shell</td></tr>
+<tr class=""><td class="num">193</td><td><b>껍질깨기</b><span class="sub">껍질깨기</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">53</td><td class="num d">+18</td><td>shell</td></tr>
+<tr class=""><td class="num">194</td><td><b>기어체인지</b><span class="sub">기어체인지</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a reach">55</td><td class="num d">+20</td><td>gears</td></tr>
+<tr class=""><td class="num">195</td><td><b>떨어뜨리기</b><span class="sub">떨어뜨리기</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>shoot rock</td></tr>
+<tr class=""><td class="num">196</td><td><b>트라이어택</b><span class="sub">트라이어택</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a reach">58</td><td class="num d">+23</td><td>beam tri</td></tr>
+<tr class=""><td class="num">197</td><td><b>진공파</b><span class="sub">진공파</span></td><td class="num">1</td>
+<td class="num b">35</td><td class="num a ">52</td><td class="num d">+17</td><td>pulse fast</td></tr>
+<tr class=""><td class="num">198</td><td><b>목화포자</b><span class="sub">목화포자, 마법가루, 독가루, 수면가루, 저리가루</span></td><td class="num">5</td>
+<td class="num b">30</td><td class="num a ">52</td><td class="num d">+22</td><td>powder</td></tr>
+<tr class=""><td class="num">199</td><td><b>블록</b><span class="sub">블록, 사슬묶기, 순서미루기</span></td><td class="num">3</td>
+<td class="num b">30</td><td class="num a ">52</td><td class="num d">+22</td><td>chain</td></tr>
+<tr class=""><td class="num">200</td><td><b>치료방울</b><span class="sub">치료방울, 멸망의노래, 노래하기</span></td><td class="num">3</td>
+<td class="num b">30</td><td class="num a ">50</td><td class="num d">+20</td><td>notes</td></tr>
+<tr class=""><td class="num">201</td><td><b>충전</b><span class="sub">충전, 자기장조작</span></td><td class="num">2</td>
+<td class="num b">30</td><td class="num a ">54</td><td class="num d">+24</td><td>charge</td></tr>
+<tr class=""><td class="num">202</td><td><b>도발</b><span class="sub">도발, 트집</span></td><td class="num">2</td>
+<td class="num b">30</td><td class="num a ">52</td><td class="num d">+22</td><td>anger</td></tr>
+<tr class=""><td class="num">203</td><td><b>버티기</b><span class="sub">버티기</span></td><td class="num">1</td>
+<td class="num b">30</td><td class="num a reach">56</td><td class="num d">+26</td><td>endure</td></tr>
+<tr class=""><td class="num">204</td><td><b>내던지기</b><span class="sub">내던지기</span></td><td class="num">1</td>
+<td class="num b">30</td><td class="num a ">50</td><td class="num d">+20</td><td>shoot item</td></tr>
+<tr class=""><td class="num">205</td><td><b>흑안개</b><span class="sub">흑안개</span></td><td class="num">1</td>
+<td class="num b">30</td><td class="num a reach">56</td><td class="num d">+26</td><td>clear</td></tr>
+<tr class=""><td class="num">206</td><td><b>폴터가이스트</b><span class="sub">폴터가이스트</span></td><td class="num">1</td>
+<td class="num b">30</td><td class="num a ">52</td><td class="num d">+22</td><td>possess</td></tr>
+<tr class=""><td class="num">207</td><td><b>스톤에지</b><span class="sub">스톤에지</span></td><td class="num">1</td>
+<td class="num b">30</td><td class="num a ">54</td><td class="num d">+24</td><td>spikes stone</td></tr>
+<tr class=""><td class="num">208</td><td><b>하품</b><span class="sub">하품</span></td><td class="num">1</td>
+<td class="num b">30</td><td class="num a ">48</td><td class="num d">+18</td><td>yawn</td></tr>
+<tr class=""><td class="num">209</td><td><b>썰렁개그</b><span class="sub">썰렁개그, 비바라기, 모래바람, 설경, 쾌청</span></td><td class="num">5</td>
+<td class="num b">25</td><td class="num a reach">55</td><td class="num d">+30</td><td>weather</td></tr>
+<tr class=""><td class="num">210</td><td><b>이상한빛</b><span class="sub">이상한빛, 부추기기, 뽐내기, 흔들흔들댄스, 뒤집어엎기</span></td><td class="num">5</td>
+<td class="num b">25</td><td class="num a ">52</td><td class="num d">+27</td><td>confuse</td></tr>
+<tr class=""><td class="num">211</td><td><b>경혈찌르기</b><span class="sub">경혈찌르기, 기충전</span></td><td class="num">2</td>
+<td class="num b">25</td><td class="num a reach">58</td><td class="num d">+33</td><td>focus</td></tr>
+<tr class=""><td class="num">212</td><td><b>페어리록</b><span class="sub">페어리록</span></td><td class="num">1</td>
+<td class="num b">25</td><td class="num a ">52</td><td class="num d">+27</td><td>lock</td></tr>
+<tr class=""><td class="num">213</td><td><b>깃털댄스</b><span class="sub">깃털댄스</span></td><td class="num">1</td>
+<td class="num b">25</td><td class="num a ">52</td><td class="num d">+27</td><td>feathers</td></tr>
+<tr class=""><td class="num">214</td><td><b>아쿠아링</b><span class="sub">아쿠아링, 아로마미스트, 배턴터치, 흉내쟁이, 드래곤옐, 뿌리박기 외 2</span></td><td class="num">8</td>
+<td class="num b">20</td><td class="num a reach">55</td><td class="num d">+35</td><td>aura</td></tr>
+<tr class=""><td class="num">215</td><td><b>애시드봄</b><span class="sub">애시드봄, 사과산, 위액, 물붓기, 하바네로엑기스, 맹독 외 1</span></td><td class="num">7</td>
+<td class="num b">20</td><td class="num a reach">58</td><td class="num d">+38</td><td>splash</td></tr>
+<tr class=""><td class="num">216</td><td><b>순풍</b><span class="sub">안개제거, 순풍, 정리정돈, 날려버리기</span></td><td class="num">4</td>
+<td class="num b">20</td><td class="num a ">54</td><td class="num d">+34</td><td>gust</td></tr>
+<tr class=""><td class="num">217</td><td><b>거짓울음</b><span class="sub">거짓울음, 눈물그렁그렁</span></td><td class="num">2</td>
+<td class="num b">20</td><td class="num a ">50</td><td class="num d">+30</td><td>tears</td></tr>
+<tr class=""><td class="num">218</td><td><b>씨뿌리기</b><span class="sub">씨뿌리기, 고민씨</span></td><td class="num">2</td>
+<td class="num b">20</td><td class="num a ">50</td><td class="num d">+30</td><td>seed</td></tr>
+<tr class=""><td class="num">219</td><td><b>꼬리자르기</b><span class="sub">꼬리자르기, 대타출동</span></td><td class="num">2</td>
+<td class="num b">20</td><td class="num a ">50</td><td class="num d">+30</td><td>sub</td></tr>
+<tr class=""><td class="num">220</td><td><b>눈사태</b><span class="sub">눈사태</span></td><td class="num">1</td>
+<td class="num b">20</td><td class="num a reach">55</td><td class="num d">+35</td><td>rain ice 4</td></tr>
+<tr class=""><td class="num">221</td><td><b>방어</b><span class="sub">토치카, 판별, 킹실드, 방어, 니들가드</span></td><td class="num">5</td>
+<td class="num b">15</td><td class="num a reach">58</td><td class="num d">+43</td><td>protect</td></tr>
+<tr class=""><td class="num">222</td><td><b>잠자기</b><span class="sub">잠자기, 잠꼬대</span></td><td class="num">2</td>
+<td class="num b">15</td><td class="num a ">54</td><td class="num d">+39</td><td>rest</td></tr>
+<tr class=""><td class="num">223</td><td><b>사이드체인지</b><span class="sub">사이드체인지, 코트체인지, 가드셰어, 가드스왑, 파워셰어, 파워스왑 외 7</span></td><td class="num">13</td>
+<td class="num b">10</td><td class="num a reach">55</td><td class="num d">+45</td><td>swap</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

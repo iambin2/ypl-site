@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"tests/*.test.mjs\"",
+    "prepare": "git config core.hooksPath .githooks || exit 0",
     "data:champions": "node scripts/build-champions-data.mjs",
     "data:directory": "node scripts/build-champions-data.mjs --directory",
     "font:slices": "python scripts/build-font-slices.py",

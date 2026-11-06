@@ -413,6 +413,8 @@ function MoveBench({ res }) {
     }
     if (follow) e.shot(...fx.spot(st, from), 1.12, { smooth: .21 });
     await fx.move(st, { ident: from, targets, type: m.type, category: m.category, move: id, priority: m.priority || 0, verb: SELF_TARGETS.includes(tgt) ? "self" : "strike", spread: targets.length > 1 }, k => k, ahead);
+    // a guard's own line follows its move in a battle (-singleturn, battleLog GUARDS): the lab plays it too
+    if (/^(protect|detect|spikyshield|kingsshield|banefulbunker|silktrap|burningbulwark|obstruct|maxguard)$/.test(id)) await fx.shield(st, from, id);
     if (m.category !== "Status" && outcome !== "빗나감" && outcome !== "방어") {
       await hitStop(st, outcome === "급소" || outcome === "효과가 굉장함" ? 90 : 60);
       await Promise.all(targets.filter(k => k !== from).map(k => fx.hit(st, k, { share: .3, crit: outcome === "급소", strong: outcome === "효과가 굉장함", weak: outcome === "효과가 별로" })));

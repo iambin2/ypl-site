@@ -1,0 +1,555 @@
+0	50	extremespeed	gold-white impact star, still bright on the target
+1	55	acidarmor	a sheen sweeps it, glints, no white-out
+2	58	acidspray	a gout of violet acid bursts over it
+3	50	acrobatics	pale wing cuts with white edge
+4	58	acupressure	orange wind spirals up with flames, no ring
+5	50	aerialace	cut reads, impact still bright
+6	45	fakeout	hands small at this scale, flash
+7	50	agility	afterimages, streaks faint
+8	62	airslash	crescent blade and blue trail
+9	58	alluringvoice	sound arcs sweep across
+10	55	allyswitch	lights trade places with glints
+11	58	calmmind	air bends at the head, motes circle in, no circle
+12	55	ancientpower	pink-lit stones rise and fly
+13	48	aquajet	water shroud reads as white puffs
+14	45	aquaring	bubble rings small
+15	45	aquastep	sparkles, generic kick
+16	48	aquatail	water shroud reads as white puffs
+17	60	armorcannon	fire jets + explosion
+18	45	assurance	generic blow, dark puff
+19	50	attract	bigger hearts fly over
+20	60	energyball	green sphere from a soft gather, no ring
+21	50	aurawheel	spark shroud, busy
+22	50	auroraveil	curtains of light, still mostly cyan
+23	55	avalanche	big ice chunks fall in steam
+24	50	axekick	gold impact, dust and cracks instead of a ring
+25	42	protect	glints gather; the guard itself comes from the protocol
+26	52	barbbarrage	violet needles, violet burst
+27	45	beakblast	soft gather, generic peck
+28	45	beatup	generic blows
+29	78	flamethrower	unchanged top
+30	50	bellydrum	beats and a blaze, no ring
+31	55	bind	a tan coil winds and tightens
+32	52	bite	jaws snap
+33	48	bitterblade	slash then flames
+34	45	bittermalice	dark pulse still ring outlines
+35	60	fireblast	fireball bursts into a five-armed blaze
+36	48	blazekick	impact then fire, kick not drawn
+37	45	heatwave	fire reads as round blobs, no heat haze
+38	50	block	violet barrier X closes
+39	50	bodypress	cracks and dust on landing
+40	48	bonerush	a lit bone spins in
+41	60	boomburst	sound arcs sweep the field
+42	50	bounce	drop, cracks and dust
+43	50	bravebird	pale shroud reads white
+44	45	breakingswipe	spin, thin cuts
+45	45	brickbreak	chop lost in impact
+46	48	bulkup	body still whitens before the flames
+47	58	bulldoze	cracks and dust skirts, no ring
+48	45	bulletpunch	still a white-out on the target
+49	48	bulletseed	seeds bigger, leaf burst
+50	65	dazzlinggleam	unchanged top
+51	45	ceaselessedge	dark cut, small
+52	50	charge	sparks gather, no ring
+53	58	icebeam	thick cyan beam with a white core
+54	55	chillyreception	snow swirls down over the court
+55	45	circlethrow	throw then dust
+56	45	clearsmog	bigger mud ball, dust
+57	48	closecombat	gold blows, no barrage
+58	48	confuseray	a lit orb weaves over and circles
+59	58	corrosivegas	violet billows
+60	50	cottonspore	glittering spores settle over it
+61	45	covet	generic, lit ball flies off
+62	48	crabhammer	pincers and splash, white-out
+63	45	crosschop	cross lost in flash
+64	48	crushclaw	claw cuts with white edge
+65	52	curse	violet fire licks up, shadow
+66	50	darkestlariat	spin, wide dark arcs
+67	52	tailwind	wind lines and leaves sweep across
+68	40	destinybond	small violet flames on the user
+69	48	dig	sinks in dust, rises
+70	55	discharge	lightning in every direction; user still whitens
+71	45	doublehit	tail arcs, white impact
+72	50	doubleshock	electric shroud
+73	55	dracometeor	dark sky, comets
+74	50	dragondance	blue flames climb, still white body
+75	45	dragondarts	needle streaks
+76	48	dragontail	wide tail arc
+77	52	drainingkiss	heart, green motes stream home
+78	52	drainpunch	punch, green motes stream home
+79	45	drillpeck	drill streaks, white impact
+80	45	drillrun	spin, gold impact
+81	55	drumbeating	thick green roots lash up out of the floor
+82	48	dualwingbeat	wide wing cuts
+83	45	dynamicpunch	soft gather, gold impact
+84	52	earthpower	ground glows and fire bursts up
+85	62	earthquake	cracks and dust over the whole court, no ring
+86	52	thunderwave	current arcs fly and close round it
+87	58	psychic	magenta wash, glow wrings it, fewer rings
+88	55	electricterrain	lightning crawls over the floor, glints
+89	62	solarbeam	thick green beam, leaves
+90	48	electroweb	yellow web
+91	40	endure	body whitens
+92	55	eruption	fire column rises, fireballs fall
+93	55	expandingforce	same as psychic
+94	45	explosion	a fireball, but it whites out the stage
+95	35	fairylock	faint sparkles
+96	40	faketears	drops from both eyes, small
+97	45	featherdance	feathers thrown over and drifting
+98	45	fellstinger	small sting, green impact
+99	74	fierydance	flamethrower column with a spin
+100	48	firelash	whip line, fire impact
+101	48	firepunch	fire on impact
+102	58	hurricane	tornado over the target, dark sky
+103	45	fissure	dust over a dark crack
+104	55	flashcannon	thick white-blue beam
+105	38	fling	a small ball
+106	45	uturn	generic blow, motes back
+107	45	flowertrick	bouquet streak, leaf burst
+108	52	focusblast	orange sphere from a soft gather
+109	40	followme	spotlight floods white
+110	48	foulplay	shadow, violet burst
+111	55	freezedry	ice closes round it, no ring
+112	55	gigadrain	green glow and motes stream home, leaves
+113	42	gigatonhammer	a white block over the target
+114	52	glare	eyes flare, a beam stabs
+115	55	grassknot	thick vines lash up round its feet
+116	45	grassyglide	grass specks, generic
+117	50	gravapple	a big apple drops
+118	45	trickroom	soft gather, glints (room comes from the field)
+119	45	gunkshot	bigger violet blob
+120	45	gyroball	spin, impact
+121	42	hammerarm	a white block, dust
+122	45	hardpress	impact
+123	50	haze	black-violet mist rolls over the court
+124	48	headsmash	glint shroud, generic
+125	52	healbell	notes and gold light pulse, no rings
+126	52	healingwish	a star falls, green light wells up
+127	55	heatcrash	fire shroud, embers, landing
+128	52	hex	violet ghost-fire wells round it
+129	50	highhorsepower	dust skirt and cracks
+130	48	highjumpkick	gold impact, dust
+131	52	hornleech	horn, green motes home
+132	52	hydropump	jet still white
+133	55	hyperbeam	thick beam, too white at its core
+134	52	hypnosis	pink waves from the eyes, air bending
+135	45	iceshard	shard streak
+136	50	iciclecrash	big icicles drop
+137	45	iciclespear	shard stream
+138	52	infernalparade	fireballs and bursts
+139	52	inferno	fire swirls
+140	45	ironhead	impact only
+141	48	jetpunch	water shroud reads white
+142	50	knockoff	dark burst, the item flies off lit
+143	45	kowtowcleave	dark cut
+144	48	lashout	rage flare, dark burst
+145	50	leechlife	jaws, green motes home
+146	40	leechseed	seeds still small at the throw
+147	45	recover	body whitens, green light
+148	45	lowkick	gold impact
+149	45	machpunch	gold impact
+150	50	makeitrain	a pour of gold coins
+151	50	megahorn	green shroud, busy
+152	45	metalburst	streak, impact
+153	48	meteormash	pale shroud reads white
+154	74	moonblast	moon rises, pink sphere fired
+155	45	moonlight	body whitens under the moonlight
+156	48	mountaingale	ice chunk, white impact
+157	62	surf	wall of water crosses the court
+158	45	mudslap	mud ball, dust
+159	45	nightdaze	ring outlines
+160	50	nuzzle	spark shroud
+161	48	outrage	shroud reads white
+162	52	paraboliccharge	lightning on every side, green drain
+163	45	payback	soft gather, dark burst
+164	52	petalblizzard	petals and leaves sweep across
+165	45	pinmissile	needle streaks
+166	45	playrough	brawl cloud reads white
+167	45	pluck	impact
+168	45	poltergeist	shadow, a violet thing strikes
+169	45	populationbomb	gold blows
+170	48	powertrip	flex flames, dark blow
+171	55	pyroball	fireball and burst
+172	48	quickguard	a wall of lit panels rises
+173	48	ragefist	rage flare, burst
+174	50	rest	sleepy sway, big Zs, green light
+175	48	rockblast	rocks, dust
+176	52	rockslide	big cream boulders fall, dust
+177	52	rocktomb	boulders fall and hem it in
+178	55	rockwrecker	a big lit boulder flies
+179	48	roost	feathers fall, body whitens
+180	45	saltcure	salt crystal, dust
+181	42	sandtomb	thin sand ribbon
+182	42	scaleshot	streak, white-out
+183	45	seedbomb	seeds fall, leaf burst
+184	50	shadowpunch	shadow, violet burst
+185	50	shadowsneak	shadow, violet burst
+186	48	shedtail	a puff of smoke and glints
+187	55	sheercold	ice closes round it
+188	42	shellsidearm	small shell, white-out
+189	50	shellsmash	shell chips burst off, fire flare
+190	50	shiftgear	two lit gears turn, sparks
+191	48	skyattack	pale shroud reads white
+192	45	smackdown	rock, dust
+193	45	smartstrike	horn streak, impact
+194	45	snipeshot	water streak, splash
+195	50	solarblade	soft gather, green slash
+196	52	stealthrock	cream chips spray over the foe's side
+197	48	spiritshackle	violet arrow, sigil under it
+198	45	steelroller	roll, impact
+199	45	steelwing	steel wing cuts
+200	50	stoneaxe	axe cut, stones and dust
+201	45	stoneedge	cream stones jut up in dust
+202	50	suckerpunch	shadow, violet burst
+203	52	supercellslam	rises in sparks, drops, dust
+204	55	swordsdance	steel blades turn and cross overhead in a flash
+205	45	tailslap	wide tail arcs, white-out
+206	40	taunt	target whitens under a red mark
+207	66	thunder	dark sky, bolt from the cloud, cracks
+208	62	thunderbolt	jagged bolts
+209	52	trailblaze	leaves trail the dash
+210	42	transform	white silhouette squeeze
+211	40	triattack	plain white beam
+212	48	triplearrows	kick then arrows
+213	45	tripleaxel	white blows, no ice
+214	52	twinbeam	twin pink beams
+215	45	upperhand	gold impact
+216	50	vacuumwave	arcs of force with bending air
+217	58	voltswitch	jagged bolts, back home
+218	45	watershuriken	streaks, splash
+219	55	willowisp	fire orbs circle and float across
+220	45	yawn	a lit bubble drifts over and pops
+221	55	zapcannon	big yellow sphere fired
+222	48	zenheadbutt	soft gather, pink impact
+91	50	endure	a red rim and a blaze of will, no white-out
+94	55	explosion	a court-filling fireball of orange lobes and smoke
+121	48	hammerarm	gold impact, dust and cracks
+113	48	gigatonhammer	gold impact, dust and cracks
+109	48	followme	a soft spotlight on it, motes fall
+166	48	playrough	a dust cloud of blows and stars
+147	52	recover	green light and motes rise, body keeps its colour
+211	58	triattack	a spinning triangle of fire, ice and lightning
+206	50	taunt	red rim, anger marks, flames
+132	55	hydropump	a blue jet with a white core, splash
+133	60	hyperbeam	orange-white beam on a dark stage
+155	50	moonlight	moonlight falls, body keeps its colour
+46	52	bulkup	flames and streaks rise, body keeps its colour
+179	52	roost	feathers fall, green light
+13	55	aquajet	water ribbons swirl round the charging body, spray
+16	55	aquatail	water ribbons swirl round it, tail arc
+141	55	jetpunch	water ribbons swirl round it, splash
+34	55	bittermalice	waves of darkness edged violet roll out, the air bending
+159	52	nightdaze	waves of darkness roll out
+37	52	heatwave	licking flames carried across on hot air
+39	52	bodypress	warm impact, cracks and dust
+18	55	assurance	dark crescent impact, typed afterimages
+21	52	aurawheel	spark shroud, crescent impact
+26	55	barbbarrage	lit violet needles, burst
+28	55	beatup	dark crescent impacts
+32	52	bite	jaws snap
+37	52	heatwave	flames on hot air
+43	52	bravebird	pale shroud, crescent impact
+44	48	breakingswipe	spin, tail cut
+45	48	brickbreak	chop, gold impact
+49	55	bulletseed	bigger seeds, leaf burst
+55	50	circlethrow	throw, dust
+56	50	clearsmog	bigger mud, burst
+62	50	crabhammer	pincers, splash
+63	48	crosschop	cross cut, gold impact
+64	50	crushclaw	claw cuts
+65	52	curse	violet fire, shadow
+74	50	dragondance	blue blaze climbs
+76	48	dragontail	tail cut
+79	48	drillpeck	drill, impact
+84	52	earthpower	ground glows, fire bursts up
+86	55	thunderwave	current arcs close round it
+108	55	focusblast	orange sphere, impact
+110	55	foulplay	shadow, dark crescent impact
+114	52	glare	eyes flare, beam stabs
+120	52	gyroball	spin, steel crescent impact
+138	52	infernalparade	fireballs, bursts
+139	52	inferno	fire swirls
+0	55	extremespeed	rescored after round 2
+3	50	acrobatics	rescored after round 2
+5	50	aerialace	rescored after round 2
+6	48	fakeout	rescored after round 2
+7	52	agility	rescored after round 2
+14	45	aquaring	rescored after round 2
+15	50	aquastep	rescored after round 2
+19	52	attract	rescored after round 2
+22	50	auroraveil	rescored after round 2
+24	55	axekick	rescored after round 2
+25	42	protect	rescored after round 2
+27	48	beakblast	rescored after round 2
+30	52	bellydrum	rescored after round 2
+33	50	bitterblade	rescored after round 2
+36	52	blazekick	rescored after round 2
+38	50	block	rescored after round 2
+39	55	bodypress	rescored after round 2
+40	50	bonerush	rescored after round 2
+42	55	bounce	rescored after round 2
+46	52	bulkup	rescored after round 2
+48	52	bulletpunch	rescored after round 2
+51	50	ceaselessedge	rescored after round 2
+52	50	charge	rescored after round 2
+57	52	closecombat	rescored after round 2
+60	50	cottonspore	rescored after round 2
+61	52	covet	rescored after round 2
+66	52	darkestlariat	rescored after round 2
+67	52	tailwind	rescored after round 2
+68	55	destinybond	rescored after round 2
+69	55	dig	rescored after round 2
+71	50	doublehit	rescored after round 2
+72	52	doubleshock	rescored after round 2
+75	50	dragondarts	rescored after round 2
+77	52	drainingkiss	rescored after round 2
+78	55	drainpunch	rescored after round 2
+80	50	drillrun	rescored after round 2
+82	52	dualwingbeat	rescored after round 2
+83	52	dynamicpunch	rescored after round 2
+90	50	electroweb	rescored after round 2
+91	48	endure	rescored after round 2
+95	52	fairylock	rescored after round 2
+96	40	faketears	rescored after round 2
+97	50	featherdance	rescored after round 2
+98	48	fellstinger	rescored after round 2
+100	48	firelash	rescored after round 2
+101	52	firepunch	rescored after round 2
+103	48	fissure	rescored after round 2
+105	48	fling	rescored after round 2
+106	55	uturn	rescored after round 2
+107	50	flowertrick	rescored after round 2
+109	45	followme	rescored after round 2
+113	48	gigatonhammer	rescored after round 2
+116	55	grassyglide	rescored after round 2
+117	52	gravapple	rescored after round 2
+119	48	gunkshot	rescored after round 2
+121	50	hammerarm	rescored after round 2
+122	50	hardpress	rescored after round 2
+123	50	haze	rescored after round 2
+124	48	headsmash	rescored after round 2
+125	52	healbell	rescored after round 2
+126	52	healingwish	rescored after round 2
+128	55	hex	rescored after round 2
+129	55	highhorsepower	rescored after round 2
+130	55	highjumpkick	rescored after round 2
+131	55	hornleech	rescored after round 2
+134	55	hypnosis	rescored after round 2
+135	50	iceshard	rescored after round 2
+136	52	iciclecrash	rescored after round 2
+137	50	iciclespear	rescored after round 2
+140	48	ironhead	rescored after round 2
+142	55	knockoff	rescored after round 2
+143	50	kowtowcleave	rescored after round 2
+144	52	lashout	rescored after round 2
+145	52	leechlife	rescored after round 2
+147	50	recover	rescored after round 2
+148	55	lowkick	rescored after round 2
+149	55	machpunch	rescored after round 2
+150	50	makeitrain	rescored after round 2
+151	50	megahorn	rescored after round 2
+152	48	metalburst	rescored after round 2
+153	48	meteormash	rescored after round 2
+155	50	moonlight	rescored after round 2
+158	50	mudslap	rescored after round 2
+159	52	nightdaze	rescored after round 2
+160	52	nuzzle	rescored after round 2
+161	48	outrage	rescored after round 2
+162	52	paraboliccharge	rescored after round 2
+163	52	payback	rescored after round 2
+164	52	petalblizzard	rescored after round 2
+165	50	pinmissile	rescored after round 2
+166	48	playrough	rescored after round 2
+167	50	pluck	rescored after round 2
+168	50	poltergeist	rescored after round 2
+169	52	populationbomb	rescored after round 2
+170	52	powertrip	rescored after round 2
+172	50	quickguard	rescored after round 2
+173	52	ragefist	rescored after round 2
+174	50	rest	rescored after round 2
+175	50	rockblast	rescored after round 2
+176	55	rockslide	rescored after round 2
+177	55	rocktomb	rescored after round 2
+179	50	roost	rescored after round 2
+180	50	saltcure	rescored after round 2
+181	50	sandtomb	rescored after round 2
+182	45	scaleshot	rescored after round 2
+183	48	seedbomb	rescored after round 2
+184	55	shadowpunch	rescored after round 2
+185	55	shadowsneak	rescored after round 2
+186	48	shedtail	rescored after round 2
+188	45	shellsidearm	rescored after round 2
+189	50	shellsmash	rescored after round 2
+190	50	shiftgear	rescored after round 2
+191	50	skyattack	rescored after round 2
+192	50	smackdown	rescored after round 2
+193	50	smartstrike	rescored after round 2
+194	48	snipeshot	rescored after round 2
+195	52	solarblade	rescored after round 2
+196	52	stealthrock	rescored after round 2
+197	52	spiritshackle	rescored after round 2
+198	52	steelroller	rescored after round 2
+199	48	steelwing	rescored after round 2
+201	48	stoneedge	rescored after round 2
+202	55	suckerpunch	rescored after round 2
+203	55	supercellslam	rescored after round 2
+205	50	tailslap	rescored after round 2
+206	50	taunt	rescored after round 2
+209	55	trailblaze	rescored after round 2
+210	50	transform	rescored after round 2
+212	52	triplearrows	rescored after round 2
+213	50	tripleaxel	rescored after round 2
+214	55	twinbeam	rescored after round 2
+215	55	upperhand	rescored after round 2
+216	52	vacuumwave	rescored after round 2
+218	50	watershuriken	rescored after round 2
+220	48	yawn	rescored after round 2
+222	52	zenheadbutt	rescored after round 2
+13	55	aquajet	rescored after round 2
+43	55	bravebird	rescored after round 2
+58	52	confuseray	rescored after round 2
+96	50	faketears	rescored after round 2
+100	52	firelash	rescored after round 2
+109	50	followme	rescored after round 2
+126	55	healingwish	rescored after round 2
+150	55	makeitrain	rescored after round 2
+156	50	mountaingale	rescored after round 2
+161	52	outrage	rescored after round 2
+147	52	recover	rescored after round 2
+200	52	stoneaxe	rescored after round 2
+118	52	trickroom	rescored after round 2
+22	50	auroraveil	rescored after round 2
+22	55	auroraveil	rescored after round 2
+146	50	leechseed	rescored after round 2
+25	58	protect	round 3: SV hex-pane ball (pale sky blue, deep rim), lab plays the guard line, no rim on body
+14	55	aquaring	round 3: three water ribbons wind round it as arcs, bubbles, aura rim softened
+182	54	scaleshot	round 3: blinks no longer stack (white body), dragon wisps are matter; Shell Side Arm a violet poison shot and spatter (SwSh)
+188	57	shellsidearm	round 3: blinks no longer stack (white body), dragon wisps are matter; Shell Side Arm a violet poison shot and spatter (SwSh)
+6	55	fakeout	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+27	55	beakblast	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+44	53	breakingswipe	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+45	54	brickbreak	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+63	54	crosschop	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+76	54	dragontail	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+79	54	drillpeck	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+91	56	endure	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+98	52	fellstinger	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+103	60	fissure	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+105	50	fling	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+113	52	gigatonhammer	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+119	52	gunkshot	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+124	53	headsmash	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+140	53	ironhead	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+152	50	metalburst	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+153	52	meteormash	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+166	55	playrough	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+183	50	seedbomb	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+186	50	shedtail	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+194	52	snipeshot	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+199	52	steelwing	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+201	54	stoneedge	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+220	48	yawn	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+3	52	acrobatics	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+5	52	aerialace	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+15	53	aquastep	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+33	52	bitterblade	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+38	52	block	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+40	50	bonerush	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+51	53	ceaselessedge	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+52	54	charge	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+55	52	circlethrow	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+56	50	clearsmog	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+60	52	cottonspore	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+62	53	crabhammer	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+64	52	crushclaw	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+71	52	doublehit	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+74	58	dragondance	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+75	52	dragondarts	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+80	53	drillrun	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+90	54	electroweb	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+96	50	faketears	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+97	52	featherdance	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+107	52	flowertrick	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+109	52	followme	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+121	53	hammerarm	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+122	50	hardpress	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+123	56	haze	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+135	50	iceshard	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+137	50	iciclespear	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+143	52	kowtowcleave	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+146	50	leechseed	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+151	48	megahorn	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+155	53	moonlight	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+156	52	mountaingale	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+158	50	mudslap	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+165	52	pinmissile	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+167	52	pluck	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+168	52	poltergeist	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+172	52	quickguard	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+174	54	rest	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+175	52	rockblast	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+179	54	roost	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+180	50	saltcure	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+181	52	sandtomb	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+189	53	shellsmash	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+190	55	shiftgear	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+191	54	skyattack	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+192	52	smackdown	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+193	52	smartstrike	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+205	52	tailslap	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+206	52	taunt	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+210	52	transform	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+213	52	tripleaxel	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+218	52	watershuriken	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+7	52	agility	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+19	52	attract	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+21	50	aurawheel	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+30	52	bellydrum	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+32	53	bite	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+36	53	blazekick	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+37	53	heatwave	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+46	52	bulkup	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+48	52	bulletpunch	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+57	50	closecombat	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+58	52	confuseray	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+61	52	covet	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+65	52	curse	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+66	53	darkestlariat	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+67	54	tailwind	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+72	50	doubleshock	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+77	52	drainingkiss	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+82	52	dualwingbeat	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+83	52	dynamicpunch	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+84	54	earthpower	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+95	52	fairylock	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+100	52	firelash	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+101	53	firepunch	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+114	53	glare	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+117	52	gravapple	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+118	52	trickroom	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+120	52	gyroball	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+125	50	healbell	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+136	52	iciclecrash	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+138	56	infernalparade	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+139	52	inferno	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+144	54	lashout	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+145	50	leechlife	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+147	54	recover	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+159	53	nightdaze	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+160	50	nuzzle	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+161	53	outrage	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+162	50	paraboliccharge	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+163	52	payback	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+164	53	petalblizzard	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+169	50	populationbomb	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+170	50	powertrip	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+173	54	ragefist	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+195	52	solarblade	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+196	52	stealthrock	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+197	54	spiritshackle	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+198	52	steelroller	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+200	52	stoneaxe	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+212	52	triplearrows	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+216	52	vacuumwave	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+222	52	zenheadbutt	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards
+182	54	scaleshot	round 3 rescore after shared fixes (colour channels set, blinks not stacked, pale types as matter, single star per blow), matched to SV storyboards

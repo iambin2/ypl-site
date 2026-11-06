@@ -1,0 +1,3 @@
+#!/bin/sh
+# The commit law: problem, thinking, direction and the user's prompt in every message (scripts/check-commit-msg.mjs)
+exec node "$(git rev-parse --show-toplevel)/scripts/check-commit-msg.mjs" "$1"

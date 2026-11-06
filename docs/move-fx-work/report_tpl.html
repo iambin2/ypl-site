@@ -1,0 +1,68 @@
+<title>기술 연출 순위표</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;600;700&family=Noto+Sans+KR:wght@400;600;700&display=swap">
+<style>
+/* layout: a scoreboard of 223 rows, the board's summary on top, rows ranked by the first score */
+:root {
+  --bg: #F4F6FA; --panel: #FFFFFF; --ink: #0B1B3A; --dim: #5A6A86; --line: #D6DDE8; --lamp: #E8A317; --top: #E9EEF8; --up: #1C7A4A;
+  --font: "Albert Sans", "Noto Sans KR", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #081C3D; --panel: #0E2650; --ink: #EAF0FA; --dim: #93A4C2; --line: #1F3A68; --lamp: #FFC24A; --top: #13305F; --up: #6FD69E; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #081C3D; --panel: #0E2650; --ink: #EAF0FA; --dim: #93A4C2; --line: #1F3A68; --lamp: #FFC24A; --top: #13305F; --up: #6FD69E; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+h1 { font-size: 30px; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.lede { color: var(--dim); margin: 0; max-width: 68ch; }
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 2px; background: var(--line); border: 2px solid var(--line); }
+.cell { background: var(--panel); padding: 14px 16px; display: grid; gap: 4px; }
+.cell .k { font-size: 12px; color: var(--dim); letter-spacing: .04em; }
+.cell .v { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cell .v small { font-size: 15px; color: var(--dim); font-weight: 600; }
+.method { display: grid; gap: 8px; max-width: 80ch; color: var(--dim); }
+.method b { color: var(--ink); }
+.tablewrap { overflow-x: auto; border: 2px solid var(--line); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { position: sticky; top: 0; background: var(--panel); font-size: 12px; color: var(--dim); letter-spacing: .04em; font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.top td { background: var(--top); }
+tr.top td:first-child { box-shadow: inset 3px 0 0 var(--lamp); }
+td .sub { display: block; color: var(--dim); font-size: 12px; }
+td.b { color: var(--dim); }
+td.a { font-weight: 700; }
+td.a.reach { color: var(--up); }
+td.d { color: var(--up); }
+td.note span { display: block; }
+td.note .after { color: var(--dim); font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--dim); }
+.legend i { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; background: var(--top); box-shadow: inset 3px 0 0 var(--lamp); }
+.legend em { font-style: normal; color: var(--up); font-weight: 700; }
+</style>
+<div class="wrap">
+  <h1>기술 연출 순위표</h1>
+  <p class="lede">배틀 무대의 기술 연출 각본 {{n}}개(기술 {{moves}}개)를 실험실에서 한 장씩 촬영해 포켓몬 챔피언스와 스칼렛 바이올렛의 원본 연출에 비춰 100점 만점으로 매겼습니다. 순위는 수정 전 점수 순이고, 상위 10%는 위 {{top}}개입니다.</p>
+  <div class="board">
+    <div class="cell"><span class="k">상위 10% 기준선</span><span class="v">{{topmin}}<small> 점</small></span></div>
+    <div class="cell"><span class="k">하위 90% 평균</span><span class="v">{{bbot}}<small> → {{abot}}</small></span></div>
+    <div class="cell"><span class="k">기준선 도달</span><span class="v">{{reached}}<small> / {{bottom}}</small></span></div>
+    <div class="cell"><span class="k">기술 가중 평균</span><span class="v">{{bavg}}<small> → {{aavg}}</small></span></div>
+  </div>
+  <div class="method">
+    <span><b>채점 방법</b> 각본마다 대표 기술 하나를 실험실(싱글, 리자몽 대 마기라스)에서 재생해 8프레임을 찍고, 원본과 같은 모양인지, 타입의 재질이 보이는지, 평평한 원이나 흰 화면 같은 날것의 그래픽이 있는지로 점수를 매겼습니다.</span>
+    <span><b>점수의 한계</b> 원본 영상과 프레임을 나란히 대 본 것이 아니라 원본 연출에 대한 기억과 대조한 눈 채점입니다. 같은 각본을 쓰는 기술은 같은 점수입니다.</span>
+  </div>
+  <div class="method">
+    <span><b>무엇을 고쳤나</b> 하위 90%에 공통으로 보인 날것의 그래픽을 공용 부품에서 걷어냈습니다. 기를 모을 때 몸을 감싸던 평평한 원, 착지와 발구르기의 납작한 바닥 원, 타격 순간 대상을 하얗게 덮던 흰 별, 몸 전체를 하얗게 띄우던 테두리 빛의 번짐을 없애고, 그 자리에 타입의 빛이 모여드는 구슬, 갈라지는 바닥과 낮게 퍼지는 흙먼지, 타입 색의 충격 별을 넣었습니다.</span>
+    <span>그 위에 각본별로 원본에 맞췄습니다. 몸통박치기 계열은 타입의 불꽃이나 물줄기가 몸을 감싸고, 베기와 할퀴기는 굵은 타입 색 칼날에 흰 날을 세웠고, 빔은 타입 색 후광과 흰 심을 가진 굵은 빛줄기, 물줄기는 파란 물기둥, 칼춤은 강철 칼이 돌다 머리 위에서 교차, 트라이어택은 불꽃과 얼음과 번개의 삼각형, 악의파동은 보라 테두리의 어둠의 물결, 방어 기술과 상태 기술(최면술, 이상한빛, 도발, 씨뿌리기, 날씨, 필드)은 각자의 재질로 다시 그렸습니다.</span>
+  </div>
+  <div class="legend"><span><i></i>상위 10% (수정하지 않음)</span><span><em>초록 점수</em> 상위 10% 기준선에 도달</span></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th class="num">순위</th><th>대표 기술과 같은 각본</th><th class="num">기술 수</th><th class="num">전</th><th class="num">후</th><th class="num">변화</th><th>연출 각본</th></tr></thead>
+      <tbody>
+{{rows}}
+      </tbody>
+    </table>
+  </div>
+</div>
