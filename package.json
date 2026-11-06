@@ -11,7 +11,8 @@
     "data:champions": "node scripts/build-champions-data.mjs",
     "data:directory": "node scripts/build-champions-data.mjs --directory",
     "font:slices": "python scripts/build-font-slices.py",
-    "build:battle": "node scripts/build-battle-engine.mjs"
+    "build:battle": "node scripts/build-battle-engine.mjs",
+    "data:cpu-learn": "node scripts/learn-cpu-sets.mjs"
   },
   "dependencies": {
     "@smogon/calc": "^0.12.0",
