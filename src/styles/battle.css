@@ -82,14 +82,14 @@
 
 /* the match (DESIGN.md "Battle", The match). Under 1200 one column: the head, the result, the stage or the team preview, the replay,
    the choices, the party, the playback keys, the log (.bt-side lets its parts stand in the page's column and orders them).
-   From 1200 the page lets go of its 1200 (Arena adds page--battle): the stage stands on the left as large as the window allows, 16 to 9,
+   From 1200 the match stays on the 1200 like every page (2026-11-07; Arena adds page--battle): the stage stands on the left, 16 to 9,
    and the side column beside it scrolls on its own and stays in view, so the stage never leaves the screen. */
 .bt-main { display: grid; gap: var(--s5); min-width: 0; align-content: start; }
 .bt-side { display: contents; }
 .bt-side > .bt-head { order: -3; }
 .bt-main, .bt-side > :is(.bt-replay, .bt-end) { order: -1; }
 @media (min-width: 1200px) {
-  .page.page--battle { --content: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); }
+  .page.page--battle { padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); }
   .bt-match {
     grid-template-columns: minmax(0, min(100% - 400px - var(--s8), (100svh - var(--nav-height) - 140px) * 16 / 9)) 400px;
     justify-content: center; align-items: start; column-gap: var(--s8);
