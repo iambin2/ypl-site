@@ -66,7 +66,7 @@ Client-side checks are UX guards only. The RPC/DB layer is the integrity boundar
 
 ## Product and design constraints
 
-When changing or adding UI, read `DESIGN.md` first and use only its tokens and the existing components. If a new value or pattern seems needed, propose updating `DESIGN.md` first; never invent one in place.
+When changing or adding UI, read `DESIGN.md` first and use only its tokens and the existing components. Its "Composing a screen" chapter (and "Judging the stage" in Battle) is the owner's eye written down: every screen is checked against it at 390 and 1440 in both themes before it is shown. If a new value or pattern seems needed, propose updating `DESIGN.md` first; never invent one in place.
 
 `PRODUCT.md` and `DESIGN.md` are binding, not background reading, and a frontend change must not alter data behavior.
 

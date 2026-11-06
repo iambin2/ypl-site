@@ -106,6 +106,46 @@ Outside the law on purpose: the 44 a finger needs; the 2px seam and the 1 and 2p
 - **Surfaces have four tiers:** the ground, a panel, the panel's next step (`--panel-2`, and `--rule` for a step on a sheet or a panel), and the inverted panel. A surface is never more than one step above what holds it.
 - `tests/designLaw.test.mjs` holds the tags and the actions to their tiers: an `h1` is 32, an `h2` and an `h3` are 20 (the named exceptions excepted), and a button is main, second or link.
 
+## Composing a screen
+
+**The numbers make a screen correct; these make it right.** Each rule below was found the same way: a built screen was called wrong in the owner's words (quoted, so the failure is recognised when it comes back), and the screen that fixed it was approved. They bind every screen, the admin and the battle's page parts included. Before a new or changed screen is shown, check it against every rule here at 390 and 1440, in both themes, and by using it (submit the form, play the battle), not only by a still. A screen that passes `tests/designLaw.test.mjs` but breaks one of these is not done.
+
+**What the eye meets first**
+
+1. **Size follows use.** What is read or pressed most stands first and largest; what is read once stands smaller and later. A container is the size of what it holds: a name does not get a panel built for a picture (the battle matchup went from 84 to 64), and the party a player needs is never cut while the opponent's stands large. Failure: "커야 할 요소는 작고, 작아야 할 요소는 크고", "많이 쓰는 건 크고 잘 보이는 곳에".
+2. **The subject is the hero.** A screen about a Pokémon stands the Pokémon large on its floor with its figures beside it (the records' Pokémon sheet); a party is six pictures; a match is two sides facing across VS. A picture shrunk beside a list of words fails: "포켓몬도 주인공처럼 보이지 않고 그냥 이미지 하나".
+3. **Show it, do not list it.** A count is a counter, a share is a bar on its track, a type or a league is its tag, a party is its pictures, a matchup is a board of cells. Lines of label and value are the last resort, never the design. Where the data has colour (types), the colour is used, because it is content. Failure: "단순 텍스트의 나열", "너무 단조롭다", "다채로움도 없고".
+4. **The fact a visitor came for is found without reading.** The deadline, the rule that decides their league, their own result stand where the eye lands: spec rows under the title, or the 439 held in view on desktop. Failure: "중요한 내용은 눈에 들어오지도 않아".
+
+**Everything hangs from something**
+
+5. **No word floats.** Every word, figure and picture belongs to a panel, a cell, a row or a band, at that container's edge or centre. A label left in open space between two blocks is moved into the cell it names (the type boards: each type a cell of the head column, each count in its own cell, so the board has no gap). Failure: "붕 떠 있다", "우연히 텍스트가 저기 있는 느낌", "어쩌다가 저기 있는 느낌".
+6. **No dead space, no crowding.** Every gap is the step of Space for the relation it shows. A band that separates nothing, two separate things touching, or one gap wider than its siblings is a bug, most often an empty element still keeping its margin (the empty console that doubled the gap above 기권). Measure it. Failure: "의미 없는 빈 공간", "너무 꽉 끼여서", "너무 붙어 있다", "다닥다닥", "공백이 다른 것들에 비해 엄청 넓어져서".
+7. **Nothing touches an edge it does not belong to.** A check, a label or a picture keeps its panel's padding on every width; a layout that is right on a phone is checked again on desktop. Failure: "체크박스가 너무 왼쪽에 딱 붙어 있어서".
+8. **Centred is measured.** A popup, a banner, a plate, a word on a key is centred by its ink (The eye), never assumed from the CSS. Failure: "승리 팝업이 중앙에 정렬되지 않아".
+9. **Lines meet across columns.** Two columns share their top line and their last; keys in a row of panels stand on one line (link requests two across, their keys aligned).
+10. **A screen uses its window, and wastes none of it.** Desktop fills its law (the 1200, the battle the whole window); a phone shows what is needed without scrolling past empty or oversized parts. Failure: "화면 낭비가 너무 심해", "창을 가득 채우지 않는".
+
+**One kind, one look, everywhere**
+
+11. **Fix the family, not the one.** When one element of a kind is wrong, every element of that kind across the site is found and fixed with it: one box with every box and popup, one type cell with every type cell, one Pokémon cell's tone with every cell, one chosen panel with every chosen panel, one way in with every way out. The owner never meets the same mistake twice. Failure: "게시판의 글 사각형만 묘하게 다른", "키키링의 배경 네모만 묘하게 색이 다르지 않아?".
+12. **Same role, same size, same lines.** A pair of keys has one type size; tags in one list break alike (every type on one line); cells of one grid are one size whatever they hold. Failure: "승인과 거절 글자 크기도 다르고", "어떤 것은 타입이 두 줄로, 어떤 것은 한 줄로", "타입별로 네모 크기가 다른".
+13. **An inverted panel inverts what is in it.** What stands on a chosen (lit) panel stands on its lit tone: a picture's cell turns transparent, a tag steps to the ground. No island of the old tone is left inside it. Failure: "흰색으로 바뀌는데 포켓몬 배경은 남색이라 부자연스러워".
+14. **Motion comes in pairs, and moments get scenes.** Whatever has an entrance has the matching exit (going back lights as going in does; a sheet closes as it opened), and no change of screen is a cut. A moment that matters (going into a battle, the leads thrown) is a scene of its own. Failure: "나갈 때는 창만 뚝하고 전환", "아무 애니메이션 없이 창만 변화", "두근두근함과 웅장함이 하나도 없어".
+
+**Nothing without a reason**
+
+15. **Every mark answers "what is this?"** A line, a square, a band or a block that a visitor cannot name a use for goes. Leftovers count: a light line on a box's top edge, a hairline showing under a sheet on a phone, an engine credit in a prominent place. Failure: "이상한 검은 줄이 있어. 무슨 용도로 만들었는지 모르겠네", "화살표 옆의 네모 세 개는 뭐야?", "뜬금 없는 자리에 뜬금 없이 존재감".
+16. **Demote, do not delete.** A useful feature that is not the point (the replay keys, the whole log, the engine credit) moves back and down and quiets; it stays. "완전히 없애지는 마. 눈에 안 띄게만."
+17. **Explain in the flow, never in a popup.** A feature is met where its need arises and says what it does in its own line: the account key leads to 내 기록 찾기 inside the records, a Google sign-in carries Google's G, the operators' login stands with the footer's other links. No explaining modal and no hidden entry. Failure: "너무 숨어 있고 안내도 없고", "눈에 너무 안 띄는데", "팝업을 띄워서 구구절절 설명하는 건 반대".
+18. **A decision about someone else asks once.** Approving, rejecting and a delete that cannot be undone each confirm once; what can be undone acts at once and offers 되돌리기 (Sheets).
+
+**Judgement, and what was approved**
+
+19. **The best form for each element, not one rule for all.** The law gives the parts; choosing among them is judgement (planes hold, lines operate). A screen called wrong is redesigned from what people do on it, not restyled: "완전히 새롭게", "BRAND NEW".
+20. **What was approved is the precedent.** Before inventing, reuse the forms that were approved after being called wrong: the one name a panel exists for at 20 with its facts as spec rows or a grey line under it; one panel for one thing; two decisions joined on the seam at 1 to 1.618, the back one first (the link requests, the confirm dialog); fields 20 apart and sections 52; on desktop a form laid out as its notice, the form in 709 and the facts with the action in the 439 held in view; a record as counters, then bars on tracks (the Pokémon sheet); a status or a league as the type's tag; a team as six pictures on floors.
+21. **Both themes are one job.** A fix made in one theme is made and checked in the other in the same change. "당연히 다크모드도 고쳐야지."
+
 ## Space
 
 | Space | For |
@@ -278,7 +318,7 @@ Drawn for this site on a 24 grid: 1.5 stroke, square caps, mitred corners, no cu
 
 ## Motion
 
-**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The battle field adds four of its own (Battle) and is the only place they run. The site is meant to feel finished, not still: what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
+**A board switches on; it does not fly.** Four verbs, all transform and opacity on a picture already drawn. The battle stage moves by its own rules (Battle) and is the only place outside them. The site is meant to feel finished, not still: what arrives rises the last 12 into its place as it lights, and everything a pointer can press answers it.
 
 | Verb | When | Length | Curve |
 |---|---|---|---|
@@ -357,6 +397,16 @@ Centring is by ink: text through the fonts' metrics (Albert Sans with its ascent
 ## Battle
 
 **The battle is a game, not a page of the board.** (Decided 2026-11-05: the battle screen must overwhelm, a fierce battle watched from the stands of a new Pokémon game, so the committee's "unfinished, copied from Showdown" never comes up again.) The engine is Pokémon Showdown's, so every ruling is Showdown's, and the Pokémon pictures stay the site's HOME renders; everything else on the battle screen is designed as a new, current Pokémon game would design it: the stadium, the camera, the moves, the HUD over the stage, the move cards and the big moments. The battle has no sound (removed 2026-11-05 at the user's word). The board's law (tokens, the golden series, panels on the seam, light as the only emphasis, no gradient, glow, blur, shadow or radius, the four type sizes, the verbs of motion) does not govern the battle screen. Two things carry over from the site, so the battle still belongs to it: its colour (the navy family of the themes, the type colours, amber for what is live) and its taste (calm typography in the site's fonts, Korean in the Voice and tone, nothing cheap or noisy for its own sake). Light, glow, bloom, additive light, particles, shadows and reflections are the stage's effects to use. Everything a player reads or presses on the battle screen (the HUD over the stage, the strips, the move cards, the bench, the keys, the plates and words over the stage) is laid out as a game lays it out but drawn in the site's own manner (decided 2026-11-05 after the first HUD): solid colours, square corners, square marks and tags, no gradient and no circle. The one exception is Mega Evolution's emblem, the games' rainbow helix (`public/brand/mega-evolution.png`, drawn as given, straight on the key with no tile behind it). What opens over the battle as a page element (a Pokémon's sheet, a confirm dialog, a toast) and every screen outside the battle stay on the board and under every rule. The battle screen's files are `battle.css`, `battle-stage.css` and `src/pages/battle/` (`tests/designLaw.test.mjs` leaves them out). Where a paragraph below still speaks of the board's restraint for the battle screen, this paragraph wins.
+
+**Judging the stage.** The stage is free of the board's numbers but not of judgement. What it was called wrong for, and what was approved instead:
+
+- **The Pokémon's shape always reads, and every effect on the field reads too.** Weather, terrain, rooms and hazards never hide a Pokémon or glow over it, yet each is plainly there, and several at once each stay identifiable. Both ends fail: "포켓몬의 형체를 알아보지 못하게", "눈이 아플 정도로 과한" and "너무 지나치게 절제되었음, 티가 잘 안 남", "눈에 너무 잘 안 보여".
+- **Like the move in the games.** A move, a field or a doll is drawn from what it is in the games, checked side by side with a reference before it is called alike (psychic terrain is ripples, not a magic circle; the substitute is the chubby plush). Failure: "하나도 안 닮았는데", "마법진 관련이 아님".
+- **Rich by shape and layers, never by brightness, and never one plain stroke.** A move gathers, travels and lands; a path curves. A lone circle or a ruler-straight beam fails: "원이나 일직선 같은 느낌", "레이저 같은 효과, 너무 정직한 일직선".
+- **Plain and calm behind it.** The arena is flat tones with no gradient, vignette, light shafts or repeated squares, and the camera holds still. Failure: "부자연스러운 그라데이션", "빛기둥 4개가 서 있는 것 같은", "카메라 움직임이 오히려 어지럽게".
+- **One style for everything drawn.** What the stage draws itself (the Poké Ball, the doll, a hazard) is lit and shaded as the Pokémon's renders are, so nothing sits on the stage like a sticker. Failure: "몬스터볼 혼자 붕 뜨는 것 같아".
+- **Nothing the official game does not show.** No number or word rises over a Pokémon, no ring under it; Showdown is the reference for what a player is told and where, 포켓몬 챔피언스 for how it feels.
+- **Never a stutter, never a jagged line.** Every loop closes on itself to the pixel and the picture is drawn at the screen's own resolution, measured, not judged in a headless still. Failure: "뚝뚝 끊어지는 느낌", "선이 자글자글해".
 
 **The stage.** (Rebuilt 2026-11-06, made plain the same day.) The arena, the Pokémon, every effect, the field and the camera are one GPU picture, a WebGL2 canvas under the stage's places (`src/pages/battle/gl.js`), on one clock. The arena (`arena.js`) is painted once per size and theme in the site's own tones and nothing on it moves: behind the field one flat tone, the site's navy in dark and paper in light, with no gradient, no vignette, no stands, no seats, nothing repeated; a plain wall band with one fine line on its top; an even floor with a faint sheen; the court in perspective (side lines, far line, centre line and circle, the club's wing faint in it). Each Pokémon is its picture on the floor with its reflection under it, breathing from its feet. The `.bs-slot` elements stay for layout and for picking a target; the canvas draws their pictures. Without WebGL2 the stage falls back to the pictures alone (`.bs-nogl`). The picture is supersampled (2026-11-06: the court's lines looked jagged at 125%): the canvas matches the screen's own pixels one to one, the scene is drawn at least twice the CSS size (up to 3 on a phone, within 4 million pixels) and the last pass filters it down with four taps across each screen pixel, instead of the browser shrinking a larger canvas without a filter.
 
@@ -477,6 +527,10 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 
 **Page titles.** `페이지명 | YPL`; the home is `YPL | Yonsei Pokémon League`.
 
+**Official names.** A thing is called by its official name: 포켓몬 챔피언스, never 포챔스 or another short form; YPL and Yonsei Pokémon League as written. A share preview and a tab title say the name and nothing else.
+
+**No filler.** A line earns its place by saying something the screen does not already show. What reads as written by a machine goes: a sentence that repeats its label or its heading, reassurance (걱정하지 마세요, 간편하게, 손쉽게), a summary of what was just seen, a list of benefits, a line that addresses the reader's feelings. When unsure, the shorter sentence that states the fact wins.
+
 **Don't.** Claims with no fact behind them, pushing, invitations to a feeling, and 당신.
 
 ## Accessibility
@@ -495,7 +549,7 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 - Do not draw a reading number in segments, segments under 32, or a decimal point in segments.
 - Do not give a Pokémon a box of its own or let it float: it stands on a floor in a panel.
 - Do not blur, glow, gradient, sheen or grain anything.
-- Do not move what is lit: no sliding pages, no rolling digits, no bouncing cards. What arrives may rise 12 as it lights, a pointer may nudge a picture or an arrow 4, and on the battle field the four battle verbs move Pokémon and the chase; nothing else travels.
+- Do not move what is lit: no sliding pages, no rolling digits, no bouncing cards. What arrives may rise 12 as it lights, a pointer may nudge a picture or an arrow 4, and the battle stage moves by its own rules (Battle); nothing else travels.
 - Do not animate a shadow, filter, clip, mask or background; move transform and opacity on a picture already drawn.
 - Do not use View Transitions snapshots or copy the page for a transition.
 - Do not put a small label above a title, or repeat one fact twice on a screen.
@@ -503,6 +557,4 @@ Words are under the law too. Korean, plain and factual: what happens, then what 
 
 ## Open
 
-Measured in the browser but not yet on a real phone at the venue: the strength of the unlit bars (8% and 6%), the 44 touch floor on the bracket's 36 rows (the whole match box is the target), and each sprite's feet on its floor.
-
-Written before it is built: the Battle chapter. Its numbers (the 32 strike, the ten-cell gauge, the chase's 38) are taken from the law but not yet seen on a phone, and whether our side stands as front or back sprites is undecided.
+Measured in the browser but not yet on a real phone at the venue: the strength of the unlit bars (8% and 6%), the 44 touch floor on the bracket's 36 rows (the whole match box is the target), and each sprite's feet on its floor. Not yet played on two real phones: an official bracket match, and the battle stage's smoothness on a phone GPU.
