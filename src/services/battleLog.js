@@ -23,6 +23,17 @@ export function slotPasses(request, i) {
   return !mons[i] || String(mons[i].condition).endsWith(" fnt") || Boolean(request.active?.[i]?.commanding);
 }
 
+// a request's moves as four keys: one asked alone (Outrage, a charge, Recharge, Struggle) stands with the Pokémon's others off
+export function fourMoves(entry, known = []) {
+  const live = (entry?.moves || []).map((move, i) => ({ move, i }));
+  if (live.length >= 4 || !known.length) return live;
+  const ids = live.map(x => x.move.id);
+  const off = id => ({ move: { id, disabled: true } });
+  // in the Pokémon's own order when every asked move is one of its four, otherwise the asked ones first
+  if (ids.every(id => known.includes(id))) return known.slice(0, 4).map(id => live.find(x => x.move.id === id) || off(id));
+  return [...live, ...known.filter(id => !ids.includes(id)).map(off)].slice(0, 4);
+}
+
 export function requestKey(turn, request) {
   const text = `${turn}|${canonical(request)}`;
   let h = 0x811c9dc5;

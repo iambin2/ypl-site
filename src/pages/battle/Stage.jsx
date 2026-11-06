@@ -12,6 +12,7 @@ export { STATUS, effLabel, effectWord, effectiveness };
 import { closeGate, openGate } from "./Gate.js";
 import Seg from "../../components/common/Seg.jsx";
 import { Mon } from "../../components/common/Board.jsx";
+import Icon from "../../components/common/Icon.jsx";
 
 /* 배틀 무대 (DESIGN.md "Battle", The stage). 경기장 위에 두 편이 마주 서고, 각 포켓몬 머리 위에 쇼다운처럼 상태 막대가 뜬다.
    날씨, 필드, 룸, 벽, 설치기는 무대 위에 그대로 남아 보이고, 기록 한 줄마다 stageFx.js의 연출이 돈다.
@@ -452,24 +453,29 @@ function SideField({ side, scene, own, doubles }) {
   );
 }
 
-// own: our side, whose brought Pokémon (known) we know before they come out; a player can open their own party's sets from it (onParty)
+/* own: our side, whose brought Pokémon (known) we know before they come out. A player opens their own party's sets from it (onParty):
+   the strip itself is the key, its name, its six and 내 파티 with a chevron on one line (2026-11-06: a separate key wrapped onto a
+   line of its own under the six on a phone), so the strip has one shape on both sides and on every screen */
 function Strip({ side, scene, name, res, known, onParty }) {
   const s = scene?.[side];
   const knows = species => known?.some(k => toID(k).startsWith(toID(species)) || toID(species).startsWith(toID(k)));
+  const Tag = onParty ? "button" : "div";
   return (
-    <div className="pn bt-strip">
+    <Tag {...(onParty ? { type: "button", onClick: onParty, "aria-label": `${name}의 파티, 내 파티 열기` } : {})} className={"pn bt-strip" + (onParty ? " key" : "")}>
+      <span className="bt-strip-row">
       <b className="t12 bt-trainer">{name}</b>
       <span className="bt-balls" aria-label={`${name}의 파티`}>
         {(s?.roster || []).map((m, i) => <i key={i} className={"bt-ball" + (m.fainted ? " out" : !m.seen && !knows(m.species) ? " hid" : "") + (m.status ? ` st type-${STATUS_TYPE[m.status] || "normal"}` : "") + (m.out ? " on" : "")}
           title={`${nameOf(res, m.species)}${m.fainted ? ", 쓰러짐" : m.out ? ", 나와 있음" : !m.seen ? ", 아직 나오지 않음" : m.status ? `, ${STATUS[m.status]}` : ""}`}>
           <img src={spriteUrl(m.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} /></i>)}
       </span>
+      {onParty && <span className="bt-strip-more" aria-hidden="true">내 파티<Icon n="chevr" size={16} /></span>}
+      </span>
       {(s?.conditions || []).length > 0 && <span className="bt-conds">
         {s.conditions.map(c => <span key={c} className="bt-cond">{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
           {turnsLeft(c, s.since[c], scene.turn) && <span>{turnsLeft(c, s.since[c], scene.turn)}</span>}</span>)}
       </span>}
-      {onParty && <button type="button" className="bt-key" onClick={onParty}>내 파티</button>}
-    </div>
+    </Tag>
   );
 }
 

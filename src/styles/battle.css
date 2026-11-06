@@ -210,10 +210,19 @@
 }
 
 /* each trainer's strip: the name, the six as squares, the side's conditions */
-.bt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: var(--h-control); padding: var(--s1) var(--pad); background: var(--panel); }
-.bt-trainer { max-width: 160px; font-size: var(--t15); line-height: var(--l15); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.bt-balls { display: flex; gap: var(--seam); }
-.bt-ball { position: relative; display: block; width: var(--h-strip); height: var(--h-strip); overflow: hidden; background: var(--panel-2); }
+/* the name, the six and (ours) 내 파티 are one line that never wraps: the name gives way first (an ellipsis), then the six shrink
+   together, square; the side's conditions sit beside them when there is room and on a line of their own when not */
+.bt-strip { --ball: var(--h-strip); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s2); width: 100%; min-height: var(--h-control); padding: var(--s1) var(--pad); text-align: left; background: var(--panel); }
+.bt-strip-row { display: flex; align-items: center; gap: var(--s2); min-width: 0; max-width: 100%; }
+.bt-strip.key > .bt-strip-row { flex: 1 0 100%; }
+.bt-trainer { flex: 0 12 auto; min-width: 2em; max-width: 160px; font-size: var(--t15); line-height: var(--l15); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.bt-balls { flex: 0 1 auto; min-width: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, var(--ball)); gap: var(--seam); }
+.bt-ball { position: relative; display: block; width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--panel-2); }
+/* ours: the strip is the key to 내 파티, the word and a chevron at its end; it lights a tone as a panel does, and never shrinks */
+.bt-strip-more { flex: none; display: inline-flex; align-items: center; gap: 2px; margin-left: auto; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; }
+.bt-strip.key:active:not(:disabled) { scale: 1; }
+@media (hover: hover) { .bt-strip.key:hover { background: var(--panel-2); } .bt-strip.key:hover .bt-strip-more { color: var(--lit); } }
+.bt-strip.key:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-ball img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 /* the ones out lift one tone, one not yet seen is its shadow, a fainted one is grey and dim */
 .bt-ball.on { background: var(--rule); }
@@ -222,14 +231,10 @@
 .bt-ball.out img { filter: grayscale(1); opacity: var(--opacity-disabled); }
 .bt-ball.st::after { content: ""; position: absolute; right: 0; top: 0; width: var(--s1); height: var(--s1); background: var(--type); }
 .bt-conds { display: flex; flex-wrap: wrap; gap: var(--seam); margin-left: auto; }
+.bt-strip.key > .bt-conds { margin-left: 0; }
 .bt-cond { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
 .bt-cond > span { color: var(--dim); font-weight: 400; }
 
-/* a small square key on the strip or over the party: 내 파티 */
-.bt-key { flex: none; display: inline-flex; align-items: center; height: 28px; padding: 0 var(--s3); margin-left: auto; background: var(--panel-2); color: var(--lit); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; transition: background-color var(--move-tone); }
-.bt-conds + .bt-key { margin-left: 0; }
-@media (hover: hover) { .bt-key:hover { background: var(--rule); } }
-.bt-key:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 
 /* ---------- the HUD over the stage ---------- */
 .bt-hud { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
@@ -345,7 +350,11 @@
   background: color-mix(in srgb, var(--type) 62%, #050D1F); transition: background-color var(--move-tone); }
 @media (hover: hover) { .bt-move:hover:not(:disabled) { background: color-mix(in srgb, var(--type) 76%, #050D1F); } }
 .bt-move.on { background: #FFFFFF; color: #050D1F; }
-.bt-move:disabled { background: var(--panel); color: var(--mute); cursor: default; }
+/* a locked key (the turn playing, the other player choosing) keeps its colour, dimmed as every disabled control is; a move that
+   cannot be used now (no PP, Disable, a Choice item's lock) keeps its place and its words, its colour gone grey, so no key ever
+   leaves the grid (feedback 2026-11-06) */
+.bt-move:disabled { cursor: default; }
+.bt-move.off { filter: grayscale(1); }
 .bt-move:focus-visible { outline: var(--line) solid #FFFFFF; outline-offset: calc(var(--line) * -1); }
 .bt-move-top { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
 .bt-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: var(--t15); line-height: var(--l15); }
@@ -390,7 +399,7 @@
 .bt-mega:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 /* a touch lights what it presses, as a pointer's hover does: a phone has no hover, so without this a tap shows nothing until the turn moves */
 .bt-move:active:not(:disabled):not(.on) { background: color-mix(in srgb, var(--type) 76%, #050D1F); }
-:is(.bt-sw, .bt-plate, .bt-key, .bt-rkey, .bt-mega:not(.on)):active:not(:disabled) { background: var(--panel-2); }
+:is(.bt-sw, .bt-plate, .bt-strip.key, .bt-rkey, .bt-mega:not(.on)):active:not(:disabled) { background: var(--panel-2); }
 button.bt-card:active:not(:disabled):not(.on) { background: var(--panel-2); }
 /* a Pokémon's sheet */
 /* a Pokémon's sheet (Stage.jsx MonInfo): blocks in the order a player asks, joined on the sheet's own spacing. The sheet is a panel,
@@ -431,7 +440,7 @@ button.bt-card:active:not(:disabled):not(.on) { background: var(--panel-2); }
 
 /* on a desktop the party squares on the strips are larger, and the marks under a plate (a stat change, what clings) read as words */
 @media (min-width: 860px) {
-  .bt-ball { width: 40px; height: 40px; }
+  .bt-strip { --ball: 40px; }
   .bt-strip { min-height: 52px; }
   .bt-mark { height: 20px; padding: 0 6px; font-size: 12px; line-height: 16px; }
 }

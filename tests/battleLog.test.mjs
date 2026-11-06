@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { battleUsage, createBattleReader, readWholeLog, josa, parseHP, slotPasses } from "../src/services/battleLog.js";
+import { battleUsage, createBattleReader, fourMoves, readWholeLog, josa, parseHP, slotPasses } from "../src/services/battleLog.js";
 import { formatId, startBattle, choose, readout } from "../supabase/functions/battle/engine.mjs";
 
 const text = JSON.parse(readFileSync(new URL("../src/data/battle-text-ko.json", import.meta.url), "utf8"));
@@ -237,4 +237,17 @@ test("Baton Pass hands its stat changes and passable effects to the one coming i
   assert.deepEqual(reader.state.sides.p1.active[0].boosts, {}, "a plain switch leaves them behind");
   for (const line of ["|turn|4", "|move|p1a: Vespiquen|Baton Pass|p1a: Vespiquen", "|drag|p1a: Kingambit|Kingambit, L50, M|100/100"]) reader.read(line);
   assert.deepEqual(reader.state.sides.p1.active[0].boosts, {}, "dragged in, nothing is passed");
+});
+
+test("a move asked alone stands with the Pokémon's other three off, so the keys stay four", () => {
+  const known = ["outrage", "earthquake", "fireblast", "roost"];
+  const ids = rows => rows.map(r => `${r.move.id}${r.move.disabled ? "-" : ""}${r.i ?? ""}`);
+  // locked into Outrage: its own place, the others off
+  assert.deepEqual(ids(fourMoves({ moves: [{ id: "outrage" }] }, known)), ["outrage0", "earthquake-", "fireblast-", "roost-"]);
+  // Recharge or Struggle is none of the four: it comes first, then three of them off
+  assert.deepEqual(ids(fourMoves({ moves: [{ id: "recharge" }] }, known)), ["recharge0", "outrage-", "earthquake-", "fireblast-"]);
+  // a full request is left as it is
+  const full = { moves: known.map(id => ({ id })) };
+  assert.equal(fourMoves(full, known).length, 4);
+  assert.deepEqual(fourMoves({ moves: [{ id: "tackle" }] }, []).map(r => r.move.id), ["tackle"]);
 });

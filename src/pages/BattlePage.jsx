@@ -13,7 +13,7 @@ import { checkBuild, pushHistory } from "../components/layout/history.js";
 import { championsData } from "../services/index.js";
 import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
-import { createBattleReader, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
+import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
@@ -894,6 +894,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     if (choosing) { el.style.minHeight = ""; el.dataset.h = String(el.offsetHeight); }
     else el.style.minHeight = !ended && el.dataset.h ? `${el.dataset.h}px` : "";
   });
+  /* the last moves the player was asked: while the turn plays and the other player chooses they stand where they were, locked, so the
+     keys never leave and come back (feedback 2026-11-06: on a phone the console emptied each turn and the room under it jumped) */
+  const lastAsked = useRef(null);
+  if (choosing && request.active && !request.forceSwitch) lastAsked.current = request;
+  // after a reload nothing was asked on this screen yet: the request standing now gives the keys (its moves off, without their PP)
+  const lockedAsk = lastAsked.current || (request?.side && !request.teamPreview ? request : null);
   // our brought Pokémon, known before they come out (the strip shows the rest as shadows)
   const known = useRef([]);
   if (request?.side?.pokemon) known.current = request.side.pokemon.map(p => String(p.details).split(", ")[0]);
@@ -1012,8 +1018,10 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
           onSend={send} toast={error ? <Toast error>{error}</Toast> : null} />}
         {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
         {seat && !ended && started && <div ref={consoleRef} className="bt-console">
-          {choosing && <Choices key={requestKey(view?.turn, request)} request={request} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
-            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} toast={error ? <Toast error>{error}</Toast> : null} />}
+          {choosing ? <Choices key={requestKey(view?.turn, request)} request={request} ghost={lastAsked.current} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
+            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} toast={error ? <Toast error>{error}</Toast> : null} />
+            : lockedAsk && <Choices key="locked" locked request={lockedAsk} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
+            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} />}
         </div>}
         {(waiting || (error && !request)) && <Dock toast={error && !choosing ? <Toast error>{error}</Toast> : null}>
           {waiting && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">{request?.teamPreview && view?.chosen ? "상대의 선출을 기다리는 중…" : "상대의 선택을 기다리는 중…"}</span></div>}
@@ -1052,7 +1060,16 @@ const CATEGORY = { Physical: "물리", Special: "특수", Status: "변화" };
 const EFF_WORD = { 4: "효과 매우 굉장 ×4", 2: "효과 굉장 ×2", .5: "효과 별로 ×½", .25: "효과 매우 별로 ×¼", 0: "효과 없음" };
 const effClass = m => "bt-eff" + (m >= 2 ? " hard" : m === 0 ? " none" : "");
 
-function Choices({ request, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast }) {
+// each Mega Stone and the species it is for, from the Mega formes (Venusaurite → venusaur)
+let stoneCache = null;
+function megaStones(detail) {
+  if (stoneCache?.detail !== detail) stoneCache = { detail, map: new Map(Object.values(detail?.pokedex || {}).filter(p => /^Mega/.test(p.forme) && p.requiredItem).map(p => [toID(p.requiredItem), toID(p.baseSpecies)])) };
+  return stoneCache.map;
+}
+
+/* locked: the keys of a request already answered, shown dimmed while the turn plays; ghost: the last move request, whose keys stand
+   locked over the bench in a forced switch, so the moves keep their place */
+function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast }) {
   const side = request.side;
   const [picks, setPicks] = useState([]);
   const [mega, setMega] = useState(false);
@@ -1087,7 +1104,7 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, monAt, field, p
     : forced ? `${name(slots[at].details)} 대신 누구를 내보낼까?`
     : aimed ? `${name(slots[at].details)}의 ${moveName(aimed.id)}, 누구에게 쓸까?`
     : `${josa(name(slots[at].details), "topic")} 무엇을 할까?`;
-  useEffect(() => { setAsk(question); }, [question]);
+  useEffect(() => { if (!locked) setAsk(question); }, [question, locked]);
 
   // the team preview is chosen on its own screen (TeamPick, battle/Sets.jsx)
   if (request.teamPreview) return null;
@@ -1106,36 +1123,62 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, monAt, field, p
   const reset = () => { setPicks([]); setMega(false); setAiming(null); };
   const switchedIn = new Set(picks.filter(p => p?.startsWith?.("switch")).map(p => Number(p.split(" ")[1]) - 1));
 
-  // sent (or on its way): what was chosen, and, if it did not go, the way back
-  if (complete) return <div className="bt-choices">
-    <span className="t15">{(picks.said || []).filter(Boolean).join(", ") || "선택을 마쳤습니다."}</span>
-    {!sending && <div className="bt-tools"><Button variant="link" onClick={reset}>다시 고르기</Button></div>}
-    {toast && <Dock toast={toast} />}
-  </div>;
-
-  const active = request.active?.[at];
-  const who = name(slots[at].details);
+  /* sent (or on its way) or locked: the same keys stay where they stood, every one off, and the message box says what was chosen
+     (feedback 2026-11-06: the keys gave way to a line of words and back each turn, so the spaces under them never held) */
+  const frozen = locked || complete;
+  const k = frozen ? (() => { let i = 0; while (i < slots.length - 1 && passes(i)) i += 1; return i; })() : at;
+  const active = request.active?.[k];
+  const who = name(slots[k].details);
   const trapped = !forced && active?.trapped;
-  // one Mega Evolution a battle: in doubles both may be offered it, but once the first takes it the second is not
-  const megaOpen = active?.canMegaEvo && !picks.some(p => / mega$/.test(p || ""));
+  /* one Mega Evolution a battle. Its key stands over the moves from the first turn until it is spent (or its holder falls), off
+     while the holder is not the one choosing, so it never comes and goes with each switch; in doubles, once the first takes it,
+     the second's key is off */
+  const stones = megaStones(res.detail);
+  const holder = side.pokemon.find(p => stones.get(toID(p.item)) && toID(species(p.details)).startsWith(stones.get(toID(p.item))) && !String(p.condition).endsWith(" fnt"));
+  const megaSpent = side.pokemon.some(p => /-Mega/.test(p.details));
+  const megaTaken = picks.some(p => / mega$/.test(p || ""));
+  const megaRow = active?.canMegaEvo || (holder && !megaSpent);
+  const megaOpen = active?.canMegaEvo && !megaTaken && !frozen;
   // the bench: every brought Pokémon not out, one tap to send it in (Showdown keeps them under the moves)
   const bench = <Bench pokemon={side.pokemon} res={res} label={reviving ? "되살릴 포켓몬" : forced ? `${who} 대신 나갈 포켓몬` : trapped ? "교체할 수 없는 상태" : "교체"}
     pick={i => {
+      if (frozen) return null;
       const mon = side.pokemon[i];
       const fainted = mon.condition.endsWith(" fnt");
       if (reviving) return !mon.active && fainted && !switchedIn.has(i) ? () => add(`switch ${i + 1}`, `${josa(name(mon.details), "object")} 되살린다`) : null;
       const free = !trapped && !mon.active && !fainted && !switchedIn.has(i);
       return free ? () => add(`switch ${i + 1}`, `${who} 대신 ${name(mon.details)}`) : null;
     }} />;
-  if (forced) return <div className="bt-choices">
-    {bench}
-    {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
-    {toast && <Dock toast={toast} />}
-  </div>;
-
+  /* the four keys, always four (a locked move, a recharge or Struggle asks one alone: the rest stand off beside it); off: all locked */
+  const moveKeys = (entry, off) => <div className="stack bt-moves">
+      {fourMoves(entry, slots[k]?.moves).map(({ move, i }) => {
+        const data = res.detail.moves[move.id] || {};
+        const type = typeOf(move);
+        // every foe now out, in the order they stand; shown only when one of them is not ×1
+        const marks = data.category && data.category !== "Status" ? foes.filter(Boolean).map(f => ({ f, m: effectiveness(type, f.types, move.id) })) : [];
+        const shown = marks.some(x => x.m !== 1) ? marks : [];
+        // two lines, every move alike, as a game's move key: the name and how it lands; its type, category and power, its accuracy and priority, and its PP
+        const kind = (CATEGORY[data.category] || "") + (data.basePower > 0 ? ` ${data.basePower}` : "");
+        const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
+          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(" ");
+        return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}${move.disabled ? " off" : ""}`} disabled={off || move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
+          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
+          <span className="bt-move-top">
+            <b className="bt-move-name">{moveName(move.id)}</b>
+            {shown.length > 0 && <span className="bt-effs" aria-hidden="true">{shown.map(x => <span key={x.f.slot} className={effClass(x.m)}>{effLabel(x.m)}</span>)}</span>}
+          </span>
+          <span className="bt-move-line" aria-hidden="true">
+            <span className="bt-move-type">{res.text.types[type] || type}</span>
+            <span className="bt-move-kind">{kind}{foot && <span>{foot}</span>}</span>
+            {/* a move locked in (Outrage, a charging move) is asked without its PP */}
+            <span className="bt-move-pp">{move.pp != null ? `${move.pp}/${move.maxpp}` : ""}</span>
+          </span>
+        </button>;
+      })}
+    </div>;
   /* the type a move goes out as for this Pokémon now (its ability, the weather, the terrain, its form: battleWords.js moveType); the key
      shows that type, its colour and its matchups */
-  const user = { species: species(slots[at].details), ability: slots[at].ability, item: slots[at].item, types: typesAt(side.id, at) || [] };
+  const user = { species: species(slots[k].details), ability: slots[k].ability, item: slots[k].item, types: typesAt(side.id, k) || [] };
   const typeOf = move => moveType(move.id, res.detail.moves[move.id]?.type || "Normal", user, field);
   /* who a move can be aimed at (doubles): the places it reaches with someone standing there; an empty place is offered only when
      there is no one at all (Showdown's rule). null when it needs no target */
@@ -1170,6 +1213,25 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, monAt, field, p
     setAiming(index);
     onAim?.();
   };
+  /* Mega Evolution: a key the moves' width above them, set before a move is chosen, as the game asks for it first. Its emblem is
+     the games' rainbow helix (public/brand/mega-evolution.png) as given; the key inverts while it is on */
+  const megaKey = off => <button type="button" className={"bt-mega" + (mega ? " on" : "")} aria-pressed={mega} disabled={off} onClick={() => setMega(!mega)}>
+      <img className="bt-mega-mark" src="/brand/mega-evolution.png" alt="" draggable="false" />
+      <span className="bt-mega-say"><b>{`${active?.canMegaEvo || !holder ? who : name(holder.details)} 메가진화`}</b><small>{
+        mega ? "켜졌습니다. 기술을 고르면 메가진화합니다."
+        : active?.canMegaEvo && megaTaken ? "이번 턴에 이미 메가진화를 골랐습니다."
+        : active?.canMegaEvo ? "켜고 기술을 고르면 메가진화합니다."
+        : "나와 있을 때 켤 수 있습니다."}</small></span>
+      <span className="bt-mega-tick" aria-hidden="true">{mega && <Icon n="check" size={20} />}</span>
+    </button>;
+  // a forced switch: the bench, under the last moves (and the Mega key) standing off where they were
+  if (forced) return <div className="bt-choices">
+    {megaRow && megaKey(true)}
+    {moveKeys(ghost?.active?.[at] || null, true)}
+    {bench}
+    {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
+    {toast && <Dock toast={toast} />}
+  </div>;
   /* the target picker (doubles): the move keys give way to the field as the stage shows it, the foe's two over ours, each place its
      picture, name, HP and how the move lands there; a place the move cannot reach is muted; 돌아가기 brings the moves back
      (feedback 2026-11-06: rings drawn round the Pokémon on the stage read as dated) */
@@ -1199,40 +1261,9 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, monAt, field, p
     </div>;
   }
   return <div className="bt-choices">
-    {/* Mega Evolution: a key the moves' width above them, set before a move is chosen, as the game asks for it first. Its emblem is
-        the games' rainbow helix (public/brand/mega-evolution.png) as given; the key inverts while it is on */}
-    {megaOpen && <button type="button" className={"bt-mega" + (mega ? " on" : "")} aria-pressed={mega} onClick={() => setMega(!mega)}>
-      <img className="bt-mega-mark" src="/brand/mega-evolution.png" alt="" draggable="false" />
-      <span className="bt-mega-say"><b>{`${who} 메가진화`}</b><small>{mega ? "켜졌습니다. 기술을 고르면 메가진화합니다." : "켜고 기술을 고르면 메가진화합니다."}</small></span>
-      <span className="bt-mega-tick" aria-hidden="true">{mega && <Icon n="check" size={20} />}</span>
-    </button>}
-    <div className="stack bt-moves">
-      {active.moves.map((move, i) => {
-        const data = res.detail.moves[move.id] || {};
-        const type = typeOf(move);
-        // every foe now out, in the order they stand; shown only when one of them is not ×1
-        const marks = data.category && data.category !== "Status" ? foes.filter(Boolean).map(f => ({ f, m: effectiveness(type, f.types, move.id) })) : [];
-        const shown = marks.some(x => x.m !== 1) ? marks : [];
-        // two lines, every move alike, as a game's move key: the name and how it lands; its type, category and power, its accuracy and priority, and its PP
-        const kind = (CATEGORY[data.category] || "") + (data.basePower > 0 ? ` ${data.basePower}` : "");
-        const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
-          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(" ");
-        return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}`} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
-          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
-          <span className="bt-move-top">
-            <b className="bt-move-name">{moveName(move.id)}</b>
-            {shown.length > 0 && <span className="bt-effs" aria-hidden="true">{shown.map(x => <span key={x.f.slot} className={effClass(x.m)}>{effLabel(x.m)}</span>)}</span>}
-          </span>
-          <span className="bt-move-line" aria-hidden="true">
-            <span className="bt-move-type">{res.text.types[type] || type}</span>
-            <span className="bt-move-kind">{kind}{foot && <span>{foot}</span>}</span>
-            {/* a move locked in (Outrage, a charging move) is asked without its PP */}
-            <span className="bt-move-pp">{move.pp != null ? `${move.pp}/${move.maxpp}` : ""}</span>
-          </span>
-        </button>;
-      })}
-    </div>
-    {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
+    {megaRow && megaKey(!megaOpen)}
+    {moveKeys(active, frozen)}
+    {picks.length > 0 && !frozen && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
     {bench}
     {toast && <Dock toast={toast} />}
   </div>;
