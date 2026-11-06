@@ -74,6 +74,9 @@
   .hof-plaques { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hof-crown { grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); column-gap: var(--s13); padding: var(--s8) var(--pad); }
   .hof-crown-six { align-self: center; }
+  /* read like the home's champion panel: the tag at the top, the generation, name and season standing on the floor */
+  .hof-crown-who { grid-template-rows: auto 1fr auto auto auto; align-content: stretch; }
+  .hof-crown .hof-gen { align-self: end; }
   .hof-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hof-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }

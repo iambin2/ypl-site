@@ -75,10 +75,14 @@
 .sc-win { display: flex; flex-direction: column; align-items: center; gap: var(--s3); height: auto; padding: var(--s5); }
 .sc-win > img { position: relative; z-index: var(--z-raised); width: 61.8%; height: auto; aspect-ratio: 1; object-fit: contain; }
 .sc-win .tb-types { position: relative; z-index: var(--z-raised); }
-.sc-spec { display: flex; flex-direction: column; gap: var(--s5); margin-top: var(--s2); padding: var(--s5); background: var(--ground); }
+/* the facts, points and moves are the lower half of the same card: one panel joined on the seam, its tables one step up */
+.sc-spec { display: flex; flex-direction: column; gap: var(--s5); margin-top: var(--seam); padding: var(--s5); background: var(--panel); }
+/* on a sheet the card stands one step up, as every panel there does (DESIGN.md "Sheets") */
+.sheet .sc-mon :is(.case-win, .sc-spec) { background: var(--panel-2); }
+.sheet .sc-mon :is(.case-label, .sc-stats, .sc-moves li) { background: var(--rule); }
 .sc-facts { display: flex; flex-direction: column; gap: var(--s2); margin: 0; }
 .sc-facts > div { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: baseline; gap: var(--s3); }
-.sc-facts dt { font-size: var(--t12); color: var(--mute); }
+.sc-facts dt { font-size: var(--t12); color: var(--dim); }
 .sc-facts dd { margin: 0; font-size: var(--t15); font-weight: 600; }
 .sc-facts dd small { margin-left: var(--s2); font-size: var(--t12); font-weight: 400; color: var(--mute); }
 .sc-stats { display: flex; flex-direction: column; padding: var(--s1) var(--s3); background: var(--panel-2); }

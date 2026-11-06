@@ -55,6 +55,8 @@
 .calc-side { display: grid; gap: var(--s5); min-width: 0; }
 .calc-side-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .calc-side-actions { flex: none; display: flex; gap: var(--s5); }
+/* no Pokémon yet: the sentence stands in its own panel, not on the open ground */
+.calc-side-empty { flex: 1; min-width: 0; margin: 0; padding: var(--s8) var(--pad); }
 .calc-mon { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s3); text-align: left; color: inherit; }
 .calc-mon img { width: var(--h-row2); height: var(--h-row2); flex: none; object-fit: contain; }
 .calc-mon-copy { min-width: 0; display: grid; gap: var(--s1); }

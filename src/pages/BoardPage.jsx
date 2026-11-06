@@ -372,8 +372,8 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
       <article className={"bd-art "+(one?"one":"many")}>
         <header className="bd-art-head">
           <BackLink to={label} onClick={closePost}/>
-          <p className="t12 dim reg bd-date-line">{[label,FORMAT_LABEL[formatOf(p)],ruleSummary(p.team),p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
           <h1 className="t32 bd-title-h" data-vt={"s-"+p.id}>{p.title}</h1>
+          <p className="t12 dim reg bd-date-line">{[label,FORMAT_LABEL[formatOf(p)],ruleSummary(p.team),p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
         </header>
         {!one&&<div className="bd-six">{(p.team?.members||[]).map((m,i)=>{ const name=(sheet[i]?.name)||m.pokemonName;
           return <button type="button" className="pn stand bd-cell" key={i} onClick={()=>toCase(i)} aria-label={`${name} 세팅 보기`}><Mon src={spriteUrl(m.pokemonName)}/><span className="floor bd-band"><b className="t15">{name}</b></span></button>; })}</div>}

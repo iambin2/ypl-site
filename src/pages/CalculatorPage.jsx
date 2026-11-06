@@ -218,7 +218,7 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
             <small className="t12 reg dim">{SIDE_NAMES[index]}, 바꾸려면 누릅니다</small>
             {record && <TypeBadges types={record.types} />}
           </span>
-        </button> : <p className="t15 reg dim calc-side-empty">{SIDE_NAMES[index]}을 고르면 특성, 도구, 기술을 여기서 정합니다.</p>}
+        </button> : <p className="pn t15 reg dim calc-side-empty">{SIDE_NAMES[index]}을 고르면 특성, 도구, 기술을 여기서 정합니다.</p>}
         {(hasSavedTeams || pokemon) && <div className="calc-side-actions">
           {hasSavedTeams && <Button variant="link" onClick={onImport}>내 팀에서</Button>}
           {pokemon && <Button variant="link" onClick={onClear}>비우기</Button>}

@@ -1,13 +1,13 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChampionPanel, Counter, Lead, Mon, Podium, Row, SectionHead } from "../components/common/Board.jsx";
+import { ChampionPanel, Counter, Mon, Podium, SectionHead } from "../components/common/Board.jsx";
+import { NoticeLead, NoticeRow } from "../components/common/NoticeRows.jsx";
 import Button from "../components/common/Button.jsx";
 import ChampionSheet from "../components/common/ChampionSheet.jsx";
 import { DUR, light } from "../components/common/motion.js";
 import Seg from "../components/common/Seg.jsx";
 import StandTable from "../components/common/StandTable.jsx";
 import { loadChampions, loadFacts, seenChampions, seenFacts } from "../components/home/homeFacts.js";
-import { isNewNotice } from "../components/common/seenNotices.js";
-import { dotDate, formatDate } from "../services/dateFormat.js";
+import { dotDate } from "../services/dateFormat.js";
 import { listNormalizedBracketRuntimes } from "../services/normalizedCompetitionService.js";
 import { freshRead } from "../services/readCache.js";
 import { liveMatches } from "../services/recordsAnalytics.js";
@@ -196,11 +196,8 @@ export default function HomePage({ data, go, admin }) {
       <SectionHead id="ho-news" title="공지" link="전체 보기" onLink={() => go("news")} />
       <div className="stack">
         {notices.map((a, i) => i === 0
-          ? <Lead key={a.id} date={dotDate(a.date)?.day} title={a.title} lamp={isNewNotice(a) && "새 글"}
-              line={[a.pinned && "고정", dotDate(a.date) && `${dotDate(a.date).weekday}요일`].filter(Boolean).join(", ")}
-              label={`${a.title}, ${formatDate(a.date)}${isNewNotice(a) ? ", 새 글" : ""}`} onClick={() => go("news", { notice: a.id })} />
-          : <Row key={a.id} lead={<span className="t15"><Day d={dotDate(a.date)} /></span>} title={a.title} lamp={isNewNotice(a) && "새 글"} label={isNewNotice(a) ? `${a.title}, ${formatDate(a.date)}, 새 글` : undefined}
-              onClick={() => go("news", { notice: a.id })} />)}
+          ? <NoticeLead key={a.id} a={a} onOpen={() => go("news", { notice: a.id })} />
+          : <NoticeRow key={a.id} a={a} onOpen={() => go("news", { notice: a.id })} />)}
       </div>
     </section>}
 

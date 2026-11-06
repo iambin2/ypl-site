@@ -48,6 +48,8 @@
 .rank-th { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr) auto; align-items: center; height: var(--h-strip); margin-top: var(--s5); padding-right: var(--pad); }
 .rank-th > span:first-child { text-align: center; }
 .rank-rows .row-lead { width: var(--s13); text-align: center; }
+.rank-rows.tie .row-lead { width: var(--s21); }
+.rank-th.tie { grid-template-columns: var(--s21) minmax(0, 1fr) auto; }
 .rank-rows .row-value { display: flex; align-items: baseline; gap: var(--s1); }
 .rank-rows .row--2 { height: var(--h-row2); }
 .rank-tie { margin-top: var(--s2); }

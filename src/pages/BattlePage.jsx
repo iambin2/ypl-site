@@ -203,10 +203,14 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, f
               {foe ? <b>{foe}</b> : <b className="mute">{foeHint}</b>}
             </span>
           </div>
-          <div className="stack bt-court">
-            <LobbyStage leads={leads} doubles={doubles} label={stageLabel} />
-            <LobbyBars leads={leads} doubles={doubles} res={res} random={Boolean(team?.random)} />
-          </div>
+          {/* a random party has no fact yet: its six places stand switched off and light when the battle opens, instead of an empty
+              court and a second line repeating the choice on the left (2026-11-06) */}
+          {team?.random
+            ? <div className="bt-court bt-six" role="img" aria-label="랜덤 파티, 배틀이 열리면 정해집니다.">{Array.from({ length: 6 }, (_, i) => <span key={i} className="pn" />)}</div>
+            : <div className="stack bt-court">
+              <LobbyStage leads={leads} doubles={doubles} label={stageLabel} />
+              <LobbyBars leads={leads} doubles={doubles} res={res} />
+            </div>}
           {action}
         </div>
       </div>

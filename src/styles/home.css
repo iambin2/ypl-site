@@ -25,7 +25,6 @@
 .ho-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .ho-sec { margin-top: var(--s13); min-width: 0; }
-.ho-news .row-lead { width: var(--s21); padding-left: var(--pad); }
 
 /* past champions as a line score: a column a generation, the number lit on the next tone, the Pokémon on its floor, the name and
    season; five share a phone's width, more keep 64 and the run scrolls to the screen's edge */
@@ -86,7 +85,6 @@
   .ho-six > .pn { height: var(--h-row2); }
   /* the six keep 8 of air over their heads, as the line score's pictures do, instead of touching the cell's top */
   .ho-six .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
-  .ho-news .row-lead { width: calc(var(--s21) + var(--s3)); }
   .ho-news .row-lamp { width: var(--s13); }
   /* the line score shares the full 1200: the Pokémon cell grows to a counter's height */
   .ho-col { grid-template-rows: var(--h-row) calc(var(--h-counter) + var(--s13)) var(--h-row); }

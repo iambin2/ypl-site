@@ -370,7 +370,8 @@ function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
       {(profile.champions.length > 0 || restTitles.length > 0) && <section className="rc-sec" aria-labelledby="rc-title-h">
         <SectionHead id="rc-title-h" title="칭호" />
         <div className="chips rc-titles">
-          {profile.champions.map((c, i) => <span key={`c${i}`} className="inv">{genLabel(c.gen)}</span>)}
+          {/* a title is one look; a reign leads the row by its place, never by inversion, which is kept for the one chosen thing */}
+          {profile.champions.map((c, i) => <span key={`c${i}`} className="pn">{genLabel(c.gen)}</span>)}
           {restTitles.map((title, i) => <span key={`t${i}`} className="pn">{title.name}</span>)}
         </div>
       </section>}

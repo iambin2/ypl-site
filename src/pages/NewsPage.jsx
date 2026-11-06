@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { BackLink, Chips, Choice, Counter, Dock, Lead, OptionRows, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
+import { BackLink, Chips, Choice, Counter, Dock, OptionRows, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
 import { DUR, light } from "../components/common/motion.js";
 import Button from "../components/common/Button.jsx";
 import { PushLink } from "../components/common/PushControl.jsx";
 import Seg from "../components/common/Seg.jsx";
 import { isNewNotice, markNoticeSeen } from "../components/common/seenNotices.js";
+import { NoticeLead, NoticeRow } from "../components/common/NoticeRows.jsx";
 import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
@@ -52,17 +53,6 @@ function eventFacts(a){
 }
 
 /* 공지 목록의 한 줄: 제목, 그 아래 회색 줄의 날짜(고정이면 고정이 켜진다), 줄 끝의 램프 칸. 새 글이면 램프가 켜진다(seenNotices.js) */
-/* 목록의 첫 공지(첫 쪽, 검색 없음)는 홈과 같은 큰 판으로 선다: 날짜가 월과 일의 디스플레이로 켜진다 */
-const NoticeLead=({a,onOpen})=>{
-  const d=dotDate(a.date), fresh=isNewNotice(a);
-  return <Lead date={d?.day} title={a.title} lamp={fresh&&"새 글"} line={[a.pinned&&"고정",d&&`${d.weekday}요일`].filter(Boolean).join(", ")}
-    label={`${a.title}, ${formatDate(a.date)}${fresh?", 새 글":""}`} onClick={onOpen}/>;
-};
-const NoticeRow=({a,onOpen})=>{
-  const d=dotDate(a.date), fresh=isNewNotice(a);
-  return <Row title={a.title} line={<>{a.pinned&&<><b className="nw-pin">고정</b>, </>}{d?<><span className="num">{d.day}</span> {d.weekday}</>:formatDate(a.date)}</>} lamp={fresh&&"새 글"} label={fresh?`${a.title}, ${formatDate(a.date)}, 새 글`:undefined} onClick={onOpen}/>;
-};
-
 /* 공지: 목록에서 제목을 누르면 본문 화면으로 넘어간다. 신청은 공지 위에 서는 한 장이고, 파티 제출은 팀 빌더로 간다.
    연 공지는 주소(?notice=)와 기록 한 칸에 남는다. */
 export default function NewsPage({ data, admin, setModal, save, submitForm, refresh, go }) {
@@ -410,7 +400,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
   if(edit&&!held) return sheet({
     line:"신청할 때 쓴 이름과 제출 비밀번호로 신청을 불러옵니다.",
     toast:failed&&<Toast error action="다시 시도" onAction={find}>{failed}</Toast>,
-    act:<><Button variant="main" onClick={find} disabled={busy}>{busy?"불러오는 중…":"신청 불러오기"}</Button>
+    act:<><Button variant="main" onClick={find} loading={busy}>신청 불러오기</Button>
       <p className="t12 dim reg dock-note">신청 마감 전까지 고칠 수 있습니다.</p></>,
     children:<section className="nw-form-sec" aria-labelledby="ff-who-h">
       <SectionHead id="ff-who-h" title="본인 확인"/>
@@ -428,7 +418,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
   return sheet({
     line:[held?`${held.registrationName}님의 신청입니다. 이름을 바꾸려면 운영진에게 문의해 주세요.`:"",required?"* 표시는 필수입니다.":""].filter(Boolean).join(" "),
     toast:failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>,
-    act:<><Button variant="main" onClick={submit} disabled={busy}>{busy?"보내는 중…":edit?"수정":"신청"}</Button>
+    act:<><Button variant="main" icon="check" onClick={submit} loading={busy}>{edit?"수정":"신청"}</Button>
       <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p></>,
     children:<>
     {person&&<section className="nw-form-sec" aria-labelledby="ff-who-h">
@@ -445,7 +435,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
           :"신청하면 입력한 이름이 이 계정의 트레이너 이름으로 등록됩니다. 기존 기록이 있는 이름은 운영진의 본인 확인 후 연결됩니다."}</p>}
       </Question>}
       {form.eventId&&!edit&&!owned&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
-        <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{ if(playerNameKey(e.target.value)!==playerNameKey(registrationName)) setWho(""); setRegistrationName(e.target.value);setErrors(x=>({...x,name:"",who:""}));}} onBlur={checkName} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
+        <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{ if(playerNameKey(e.target.value)!==playerNameKey(registrationName)) setWho(""); setRegistrationName(e.target.value);setErrors(x=>({...x,name:"",who:""}));}} onBlur={checkName} autoComplete="name"/>
       </Question>}
       {similar.length>0&&<Question id="ff-similar" label="비슷한 이름의 기록" group>
         <div className="stack">
@@ -474,7 +464,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
       <SectionHead id="ff-ans-h" title="신청 내용"/>
       {fields.length===0&&<p className="t15 reg dim">등록된 질문이 없습니다.</p>}
       {fields.map((f,i)=>{ const label=f.label||`질문 ${i+1}`, id=`ff-${f.id}`, error=errors[f.id];
-        const text={id,className:"in","aria-required":f.required||undefined,"aria-invalid":error?true:undefined,value:ans[f.id]||"",onChange:e=>set(f.id,e.target.value),placeholder:"답변을 입력해 주세요."};
+        const text={id,className:"in","aria-required":f.required||undefined,"aria-invalid":error?true:undefined,value:ans[f.id]||"",onChange:e=>set(f.id,e.target.value)};
         return (<Question key={f.id} id={id} label={label} required={f.required} error={error} group={f.type==="single"||f.type==="multi"}>
           {f.type==="short"&&<input type="text" {...text}/>}
           {f.type==="long"&&<textarea {...text}/>}

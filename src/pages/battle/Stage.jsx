@@ -570,7 +570,7 @@ export function LobbyBars({ leads, doubles, res, random = false }) {
     {(doubles ? [0, 1] : [0]).map(slot => {
       const species = leads[slot];
       return <div key={slot} className="pn bt-lead">
-        {random && <><b className="t15 dim">랜덤</b><span className="t12 mute">배틀이 열리면 정해집니다</span></>}
+        {random && <><b className="t15 dim">랜덤</b><span className="t12 mute">배틀이 열리면 정해집니다.</span></>}
         {species && <><b className="t15">{nameOf(res, species)}</b>
           <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span></>}
       </div>;

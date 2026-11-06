@@ -18,7 +18,8 @@ const recordLine = (r) => [["우승", r.win], ["준우승", r.ru], ["4강", r.to
 
 /* A ranking (DESIGN.md "Records"): the top three stand as the home's podium, and the table goes on from the fourth in rows of 52
    under a 32 head strip, the rank at 20, the points at 20 with 점. A tie reads in the podium's equal columns; only when more than
-   three share first place does a grey sentence under the stack say how many. The record line (우승 2, 4강 1) and a note stand under
+   three share first place does a grey sentence under the stack say how many. A tie in the table is named as the podium names it
+   (공동 4), and the rank column widens to 84 for the whole table so the names keep one line. The record line (우승 2, 4강 1) and a note stand under
    the name. rows are raw; they are ranked here. */
 export default function StandTable({ rows, total, onName, open = false, onMore, shown: limit = SHOWN }) {
   const ranked = rankRows(rows);
@@ -27,17 +28,20 @@ export default function StandTable({ rows, total, onName, open = false, onMore, 
   const shown = open ? rest : rest.slice(0, limit);
   const tops = ranked.filter((r) => r.rank === 1).length;
   const seen = new Map();
+  const per = new Map(); ranked.forEach((r) => per.set(r.rank, (per.get(r.rank) || 0) + 1));
+  const tied = (r) => per.get(r.rank) > 1;
+  const tie = shown.some(tied) ? " tie" : "";
   return (<>
     <Podium rows={ranked} onName={onName} />
     {rest.length > 0 && <>
-      <div className="rank-th t12 mute" aria-hidden="true"><span>순위</span><span>트레이너</span><span>점수</span></div>
-      <div className="stack rank-rows">
+      <div className={"rank-th t12 mute" + tie} aria-hidden="true"><span>순위</span><span>트레이너</span><span>점수</span></div>
+      <div className={"stack rank-rows" + tie}>
         {shown.map((r) => {
           const n = (seen.get(r.name) || 0) + 1; seen.set(r.name, n);
           const line = [recordLine(r), r.note].filter(Boolean).join(", ");
-          return <Row key={`${r.name}#${n}`} lead={<span className="num t20">{r.rank}</span>} title={r.name} line={line || undefined}
+          return <Row key={`${r.name}#${n}`} lead={<span className="num t20">{tied(r) ? `공동 ${r.rank}` : r.rank}</span>} title={r.name} line={line || undefined}
             value={<><span className="num t20">{(r.points || 0).toLocaleString("ko-KR")}</span><span className="t12 dim">점</span></>}
-            onClick={onName ? (e) => onName(r.name, e.currentTarget) : undefined} label={`${r.rank}위 ${r.name}, ${r.points || 0}점`} />;
+            onClick={onName ? (e) => onName(r.name, e.currentTarget) : undefined} label={`${tied(r) ? "공동 " : ""}${r.rank}위 ${r.name}, ${r.points || 0}점`} />;
         })}
       </div>
     </>}

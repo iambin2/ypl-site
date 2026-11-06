@@ -38,7 +38,7 @@ export default function TitlesPage({ data, admin, setModal, go }) {
   const whoList = names => names.map((name, i) => <React.Fragment key={name + i}>{i > 0 && ", "}{who(name)}</React.Fragment>);
 
   return (<section className="tt">
-    <header className="tt-head"><h1 className="t32">칭호</h1>{g && <span className="t12 dim">주인 <span className="num">{done} / {items.length}</span></span>}</header>
+    <header className="tt-head"><h1 className="t32">칭호</h1>{g && <span className="t12 dim">주인 있는 칭호 <span className="num">{done} / {items.length}</span></span>}</header>
     {groups.length > 1 && <div className="tt-tabs"><TabsLine value={g?.key} onChange={setOpenKey} label="칭호 분류" options={groups.map(x => [x.key, x.name])} /></div>}
 
     {g && <div className="swap" key={g.key}>

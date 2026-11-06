@@ -7,4 +7,10 @@
 .more-label { margin-bottom: var(--s3); }
 .more-group .row-value { display: flex; color: var(--dim); }
 .more-switch { margin-top: var(--seam); }
-@media (min-width: 860px) { .more { max-width: 439px; } }
+/* desktop uses its 1200 as any page of two kinds does: where to go in the 709, the settings and the operators' login in the 439 */
+@media (min-width: 860px) {
+  .more { display: grid; grid-template-columns: minmax(0, 709fr) minmax(0, 439fr); grid-auto-flow: row dense; column-gap: var(--s13); align-items: start; }
+  .more > h1 { grid-column: 1 / -1; }
+  .more-group { grid-column: 1; }
+  .more-group:nth-last-child(-n + 2) { grid-column: 2; }
+}

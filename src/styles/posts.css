@@ -36,6 +36,9 @@
 .bd > .back:first-child, .bd-art-head > .back:first-child { margin-top: calc(var(--s3) * -1 + (var(--l12) - var(--h-control)) / 2); }
 .bd-date-line { margin-top: var(--s3); }
 .bd-title-h { margin-top: var(--s2); }
+/* a sample or party post is not a notice: nothing small above its title but the back link; its facts are the title's grey line, 4 under it */
+.bd-art-head > .back + .bd-title-h { margin-top: var(--s3); }
+.bd-art-head > .bd-title-h + .bd-date-line { margin-top: var(--s1); }
 .bd-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s8); }
 .bd-cell { --floor: var(--h-control); display: block; width: 100%; aspect-ratio: 1; }
 .bd-cell .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s2)); margin-inline: auto; }
@@ -94,4 +97,4 @@
 .bd-del { display: inline-flex; align-items: center; height: var(--h-strip); padding: 0 var(--s3); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 /* the search and 글쓰기 share one row: the field takes the rest, the main action its word */
 .bd-tools { grid-template-columns: minmax(0, 1fr) auto; }
-.bd-tools .btn--main { width: auto; flex-direction: row-reverse; gap: var(--s3); }
+.bd-tools .btn--main { width: auto; }
