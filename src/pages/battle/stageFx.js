@@ -833,22 +833,27 @@ export async function leave(stage, key, { drag = false } = {}) {
    shockwave and a ring across the floor, and the new form stands lit, settling to its own colours as it roars (Stage.jsx plays the cry) */
 let cocoonCanvas = null, emblemImg = null;
 function paintCocoon() {
-  const N = 256, C = N / 2, c = Object.assign(document.createElement("canvas"), { width: N, height: N }), g = c.getContext("2d");
-  // the light inside: white at the heart, thinning toward the shell
-  let gr = g.createRadialGradient(C, C, 0, C, C, C * .94);
-  gr.addColorStop(0, "rgba(255,255,255,.6)"); gr.addColorStop(.55, "rgba(255,255,255,.3)"); gr.addColorStop(.86, "rgba(236,244,255,.42)"); gr.addColorStop(1, "rgba(220,236,255,0)");
-  g.fillStyle = gr; g.beginPath(); g.arc(C, C, C * .94, 0, Math.PI * 2); g.fill();
-  // the shell's rim, turning through the rainbow, thick at the edge and soft inward
-  const conic = g.createConicGradient?.(-Math.PI / 2, C, C);
-  if (conic) {
-    ["#FF4A6A", "#FFB23A", "#FFF05A", "#5AF08A", "#4AD8FF", "#6A7AFF", "#D86AFF", "#FF4A6A"].forEach((col, i, a) => conic.addColorStop(i / (a.length - 1), col));
-    for (const [w, al] of [[16, .18], [9, .4], [4, .9]]) { g.globalAlpha = al; g.strokeStyle = conic; g.lineWidth = w; g.beginPath(); g.arc(C, C, C * .9, 0, Math.PI * 2); g.stroke(); }
-    g.globalAlpha = 1;
-  }
-  // the highlight of a glossy sphere, from the upper left
-  gr = g.createRadialGradient(C * .64, C * .56, 0, C * .64, C * .56, C * .42);
-  gr.addColorStop(0, "rgba(255,255,255,.95)"); gr.addColorStop(1, "rgba(255,255,255,0)");
-  g.fillStyle = gr; g.beginPath(); g.ellipse(C * .64, C * .56, C * .42, C * .3, -.6, 0, Math.PI * 2); g.fill();
+  // 2026-11-07, from Pokémon Champions: a ball wound in bands of light, white, pale cyan, lavender and violet sweeping round it the way
+  // the cocoon hides the Pokémon; the bands are densest at the middle, the ball's edge soft, a gloss up on the left. No rainbow rim.
+  const N = 256, C = N / 2, c = Object.assign(document.createElement("canvas"), { width: N, height: N }), g = c.getContext("2d"), R = C * .94;
+  g.save(); g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.clip();
+  let gr = g.createRadialGradient(C, C, 0, C, C, R);
+  gr.addColorStop(0, "rgba(246,242,255,.95)"); gr.addColorStop(.6, "rgba(196,180,255,.85)"); gr.addColorStop(1, "rgba(120,96,230,.7)");
+  g.fillStyle = gr; g.fillRect(0, 0, N, N);
+  const BANDS = ["#FFFFFF", "#CFEFFF", "#A88CFF", "#F2ECFF", "#86D8FF", "#8A66F0", "#FFFFFF", "#BFA8FF", "#DFF6FF"];
+  BANDS.forEach((col, i) => {
+    const y = C + (i - (BANDS.length - 1) / 2) * R * .22, bend = (i % 2 ? 1 : -1) * R * .18;
+    g.globalAlpha = .55 + .3 * (1 - Math.abs(i - 4) / 4); g.strokeStyle = col; g.lineWidth = R * (.1 + .06 * ((i * 7) % 3)); g.lineCap = "round";
+    g.beginPath(); g.moveTo(C - R * 1.1, y + bend * .6); g.bezierCurveTo(C - R * .4, y - bend, C + R * .4, y + bend, C + R * 1.1, y - bend * .6); g.stroke();
+  });
+  g.globalAlpha = 1; g.restore();
+  // the edge thins out into the dark, so the ball has no drawn outline
+  gr = g.createRadialGradient(C, C, R * .82, C, C, R);
+  gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,1)");
+  g.globalCompositeOperation = "destination-out"; g.fillStyle = gr; g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.fill(); g.globalCompositeOperation = "source-over";
+  gr = g.createRadialGradient(C * .62, C * .5, 0, C * .62, C * .5, C * .34);
+  gr.addColorStop(0, "rgba(255,255,255,.8)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.ellipse(C * .62, C * .5, C * .34, C * .2, -.6, 0, Math.PI * 2); g.fill();
   return c;
 }
 const megaTex = e => {
@@ -899,7 +904,7 @@ export async function megaStart(stage, key) {
     const swell = 1 + .05 * Math.sin(Math.max(0, t - 420) / 330 * Math.PI * 2) * (t > 420 ? 1 : 0);
     const k = T > m.burst ? 1 + (T - m.burst) / 260 * .5 : easeOut(t / 420) * swell;
     const al = T > m.burst ? 1 - (T - m.burst) / 260 : Math.min(1, t / 240) * .92;
-    return { x: at[0], y: at[1], w: R * k, h: R * k * 1.06, alpha: al, flash: .2 };
+    return { x: at[0], y: at[1], w: R * k, h: R * k * 1.06, alpha: al, rot: Math.sin(t / 900) * .25 };
   } });
   e.sprites.push({ tex: tex.cocoon, at: T => {
     if (T - t0 > 5000 || T > m.burst + 420) return null;
@@ -910,8 +915,16 @@ export async function megaStart(stage, key) {
     const h = s * .62 * k;
     return { tex: tex.emblem, x: at[0], y: at[1], w: h * 185 / 225, h, alpha: al };
   } });
-  for (let i = 0; i < 2; i++) ring(e, at, R * 1.15, "normal", { ramp: "rainbow", dur: 560, delay: FLY + 420 + i * 330, s0: .7, alpha: .7 });
-  await e.anim(a, { flash: [0, .5, 2.6, 2.6], rimA: [0, 1, 1, 1], rimR: [1, 1], rimG: [.9, .9], rimB: [1, 1] }, { dur: FLY + 1100, at: [0, FLY / (FLY + 1100), .7, 1], fill: true, ease: "inout" });
+  // (2026-11-07, from Pokémon Champions: no rings; ribbons of white, cyan and violet light keep winding round the ball while it holds,
+  // and long streaks sweep past it on both sides)
+  const COLS = ["#FFFFFF", "#9FE2FF", "#B08CFF", "#E4D8FF"];
+  for (let k = 0; k < 9; k++) e.at(FLY + 200 + k * 420, () => {
+    if (e.T > m.burst) return;
+    for (let i = 0; i < 3; i++) { const tilt = rand(-.45, .45), ph = rand(0, 6.28), ry = R * rand(.12, .26), yy = rand(-.25, .25) * R; pathStrip(e, u => { const th = ph + u * Math.PI * 2.2; return [at[0] + Math.cos(th) * R * .52, at[1] + yy + Math.sin(th) * ry + Math.cos(th) * R * .52 * tilt]; }, { color: COLS[(k + i) % 4], width: rand(6, 12), dur: 520, mode: 2, head: .35, tailLag: .4, n: 40, emis: .9 }); }
+    for (const sg of [-1, 1]) e.emit({ n: 2, at: [at[0] + sg * R * .9, at[1] + rand(-.3, .3) * R], vel: [sg * R * 3, 0], tex: "streak", ramp: "white", face: true, size: [5, 3], aspect: [30, 50], life: 260, alpha: .8 });
+  });
+  // the Pokémon goes into the light (not white: its picture fades inside the ball)
+  await e.anim(a, { alpha: [1, 1, .12, .12], rimA: [0, .9, .9, .9], rimR: [.75, .75], rimG: [.62, .62], rimB: [1, 1] }, { dur: FLY + 1100, at: [0, FLY / (FLY + 1100), .75, 1], fill: true, ease: "inout" });
 }
 export async function megaEnd(stage, key) {
   const e = E(stage);
@@ -922,20 +935,20 @@ export async function megaEnd(stage, key) {
   if (e.megaDim) { e.cancel(e.grade); e.megaDim = false; }
   if (e.mega) { e.mega.burst = e.T; e.mega = null; }
   if (instant() || !a) return;
-  const at = centre(stage, key), s = sizeOf(stage, key), feet = centre(stage, key, 0);
+  const at = centre(stage, key), s = sizeOf(stage, key);
   sfx("megaEnd");
-  flashStage(stage, .7, 520);
-  // the cocoon breaks: shards of rainbow light and white, a shockwave, a ring across the floor, sparks and glints
-  e.emit({ n: 26, at, r: s * .35, tex: "crystal", lit: true, ramp: "rainbow", speed: [s * 2.5, s * 5.5], drag: 2.2, size: [[s * .06, s * .13], s * .02], aspect: .6, rot: "rand", spin: [-9, 9], life: [560, 900], emis: .9, occ: .3 });
-  e.emit({ n: 18, at, r: s * .3, tex: "crystal", lit: true, ramp: "ice.c", speed: [s * 2, s * 4.5], drag: 2.4, size: [[s * .05, s * .1], s * .02], aspect: .6, rot: "rand", spin: [-9, 9], life: [500, 800], emis: .7, occ: .5 });
-  glow(e, at, s * 3.2, "normal", { dur: 640, ramp: "white", alpha: .8 });
-  glow(e, at, s * 4, "normal", { dur: 760, ramp: "rainbow", alpha: .5 });
-  sparks(e, at, 32, "normal", { ramp: "rainbow", speed: [s * 2.5, s * 6], len: [10, 20] });
+  // (2026-11-07, from Pokémon Champions: the ball bursts in a short lavender flash, not a white page; the new form stands posed before a
+  // violet field of sparkles with two great arcs of light sweeping behind it; no ring on the floor and no white stars)
+  flashStage(stage, .3, 360, "#E6DCFF");
+  const { W, H } = e;
+  e.emit({ at, tex: "glow", ramp: "magenta.h", size: [s * 1.6, s * 3.4], life: 1100, alpha: .32, layer: 0, grow: true });
+  for (const ramp of ["white.h", "magenta.h", "guard"]) e.emit({ n: 24, at: () => [rand(0, 1) * W, rand(0, 1) * H], tex: "dot", ramp, vel: () => [rand(-12, 12), rand(-20, 4)], size: [[s * .015, s * .04], 0], life: [700, 1200], over: 400, emis: 1 });
+  for (const [col, a0, d] of [["#B08CFF", -.5, 0], ["#7FE0C8", .6, 90]]) pathStrip(e, u => { const th = a0 + Math.PI * (.2 + u * 1.1); return [at[0] + Math.cos(th) * s * 1.25, at[1] + Math.sin(th) * s * .7]; }, { color: col, width: 14, dur: 700, delay: d, mode: 2, head: .4, tailLag: .5, n: 40, emis: .8 });
+  e.emit({ n: 20, at, r: s * .35, tex: "crystal", lit: true, ramp: "ice.c", speed: [s * 2, s * 4.5], drag: 2.4, size: [[s * .05, s * .1], s * .02], aspect: .6, rot: "rand", spin: [-9, 9], life: [500, 800], emis: .5, occ: .6 });
+  sparks(e, at, 24, "psychic", { ramp: "magenta.h", speed: [s * 2.5, s * 6], len: [10, 20] });
   shock(e, at, s * 3.4, { dur: 640 });
-  ring(e, feet, s * 3.2, "normal", { flat: .26, dur: 760, ramp: "rainbow", layer: 0, s0: .3, alpha: .8 });
-  glints(e, at, s, 8, "glint", { r: .9, over: 500, size: .3 });
   e.shake(.4);
-  await Promise.all([e.anim(a, { flash: [2.6, 1, 0], rimA: [1, .6, 0], sx: [1.12, 1], sy: [1.12, 1] }, { dur: 900, at: [0, .3, 1] }), e.anim(e.grade, { dim: [.22, 1] }, { dur: 800 })]);
+  await Promise.all([e.anim(a, { alpha: [.12, 1, 1], flash: [.45, .1, 0], rimR: [.75, .75], rimG: [.62, .62], rimB: [1, 1], rimA: [1, .7, 0], sx: [1.12, 1], sy: [1.12, 1] }, { dur: 900, at: [0, .25, 1] }), e.anim(e.grade, { dim: [.22, 1] }, { dur: 900 })]);
   e.wide(.6);
 }
 // a stat change: arrows rise (warm) or fall (cold) through it in columns, a band of light passing the same way

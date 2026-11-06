@@ -6,6 +6,7 @@
   Playwright는 npx 캐시의 것을 쓴다(경로는 파일 첫머리 require). 사용: `node shoot.mjs 0 223 "" 출력폴더`
   또는 특정 기술만 `node shoot.mjs 0 0 flamethrower,surf 출력폴더`. 출력폴더는 이 폴더 기준이거나 절대 경로.
   병렬로 돌릴 땐 `WX=-3000` 처럼 창 위치를 바꾼다. 방어 계열은 실험실이 배틀처럼 기술 뒤에 방어막 줄(shield)까지 재생한다.
+- `shootfield.mjs [ids] 출력폴더`: 날씨, 필드와 룸, 한쪽 진영의 장판과 벽, 메가진화(`mega`)를 실험실에서 세워 3초간 8프레임으로 찍는다.
 - `sb.py "Protect" "Aqua Ring"`: 원작 참고 영상(AGi-M의 "Move: X | Pokemon Scarlet Violet", 없으면 다른 쇼케이스)을 찾아
   유튜브 스토리보드(320x180, 약 1초 간격, 3x3 한 장) 주소를 `sb.json`에 모은다. `--js`는 브라우저에 넣을 한 줄을 낸다.
   주소의 서명은 몇 시간 뒤 만료되므로 `sb.json`은 저장소에 넣지 않는다. 브라우저 창에서 스토리보드 이미지를 열고

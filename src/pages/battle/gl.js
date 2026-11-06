@@ -417,6 +417,7 @@ ramp("toxic.h", [[0, "#C77DFF", 0], [.08, "#C77DFF", 1], [.9, "#A64FEA", 1], [1,
 ramp("stone.l", [[0, "#C8B58C", 0], [.08, "#C8B58C", 1], [.85, "#A8946A", 1], [1, "#A8946A", 0]]);
 ramp("stone", [[0, "#9A8866", 0], [.08, "#9A8866", 1], [.85, "#7A6A4A", 1], [1, "#6A5A3A", 0]]);
 ramp("iron", [[0, "#6A7488", 0], [.08, "#6A7488", 1], [.9, "#4E586C", 1], [1, "#4E586C", 0]]);
+ramp("iron.l", [[0, "#AEB8CC", 0], [.08, "#AEB8CC", 1], [.9, "#98A4BA", 1], [1, "#98A4BA", 0]]);
 ramp("snow", [[0, "#FFFFFF", 0], [.1, "#FFFFFF", 1], [.9, "#EAF6FF", 1], [1, "#EAF6FF", 0]]);
 // Protect's panes: a pale sky blue that holds, and the deep blue violet its ball sinks into at the rim
 ramp("guard", [[0, "#B4DCFF", 0], [.12, "#B4DCFF", 1], [.8, "#A6D2FF", 1], [1, "#A6D2FF", 0]]);

@@ -286,8 +286,9 @@ const BUILD = {
     const b = SIDE_OF(e, own), w = b.r - b.l, h = b.bot - b.top, U = unit(e), n = own ? 14 : 18;
     let seed = own ? 5 : 9; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     for (let i = 0; i < n; i++) {
-      const t = (i + r()) / n, x = b.l - w * .15 + t * w * 1.3, y = b.bot - h * (.16 + .3 * r()), sz = (own ? 12 : 15) * U * (.7 + r() * .6);
-      E({ at: [x, y], tex: "chip", lit: true, ramp: "chip", size: [sz, sz], aspect: .8, rot: r() * 6, spin: (r() - .5) * .3, bob: sz * .3, period: 2.4 + r() * 1.6, hold: true, life: 1e7, loop: true, alpha: 1, occ: 1, emis: .05, layer: r() < .5 ? 0 : 1 });
+      // (2026-11-07 round 3: tan stones half again as big and a little lit; small cream chips read as pale dust at the far side)
+      const t = (i + r()) / n, x = b.l - w * .15 + t * w * 1.3, y = b.bot - h * (.16 + .3 * r()), sz = (own ? 18 : 22) * U * (.7 + r() * .6);
+      E({ at: [x, y], tex: "chip", lit: true, ramp: "stone.l", size: [sz, sz], aspect: .7, rot: (r() - .5) * .8, spin: (r() - .5) * .2, bob: sz * .25, period: 2.4 + r() * 1.6, hold: true, life: 1e7, loop: true, alpha: 1, occ: 1, emis: .22, layer: r() < .5 ? 0 : 1 });
     }
   },
   /* spikes and toxic spikes are counted by their rows (2026-11-06, the user: how many layers are down must read at a glance, as
@@ -301,12 +302,14 @@ const BUILD = {
       // each row a step deeper and a little smaller, shifted by a quarter place so the rows read apart
       const k = 1 - row * .12, x = l0 + span * (i + .5 + (row % 2) * .25) / 3, y = b.bot + h * (own ? .02 : .03) - row * h * .11, s0 = sz * k;
       E({ at: [x, y + s0 * .16], tex: "glow", ramp: "shadow", size: [s0 * .55, s0 * .55], aspect: 2.4, hold: true, life: 1e7, loop: true, alpha: .45, occ: .7, emis: 0, layer: 1 });
-      E({ at: [x, y], tex: "caltrop", lit: true, ramp: toxic ? "toxic.c" : "steel.c", size: [s0, s0], aspect: 1.15, hold: true, life: 1e7, loop: true, alpha: 1, occ: 1, emis: toxic ? .3 : .12, layer: 1 });
+      // (round 3: mid-grey iron, not near-white steel, so a caltrop reads as metal and not as a white star)
+      E({ at: [x, y], tex: "caltrop", lit: true, ramp: toxic ? "toxic.c" : "iron.l", size: [s0, s0], aspect: 1.15, hold: true, life: 1e7, loop: true, alpha: 1, occ: 1, emis: toxic ? .2 : .06, layer: 1 });
     }
   },
   stickyweb(e, E, own) {
     const b = SIDE_OF(e, own), y = b.bot - (b.bot - b.top) * .02, w = (b.r - b.l) * .7, f = flatAt(e.H, y) * 1.3;
-    E({ at: [(b.l + b.r) / 2, y], tex: "web", ramp: e.light ? "ink" : "white.h", size: [w * f, w * f], aspect: 1 / f, hold: true, life: 1e7, loop: true, alpha: e.light ? .45 : .4, occ: .5, emis: .3, layer: 0 });
+    // (round 3: the silk reads: pale gold threads, laid wider and stronger; at .4 it vanished into the floor)
+    E({ at: [(b.l + b.r) / 2, y], tex: "web", ramp: e.light ? "ink" : "lamp", size: [w * f * 1.2, w * f * 1.2], aspect: 1 / f, hold: true, life: 1e7, loop: true, alpha: e.light ? .6 : .7, occ: .6, emis: .35, layer: 0 });
   },
   // a screen: a pane standing over the side, barely there, its top edge lit in its colour; several stand at their own heights
   screen(e, E, own, id) {
