@@ -1,7 +1,7 @@
 -- 친선전의 방 (2026-11-06). battles.sql, battle_links.sql 다음에 실행한다. 다시 실행해도 안전하다.
 --
--- 친선전을 열 때 방의 종류를 고른다. 공개 방은 배틀 화면의 열린 방 목록에 서서 누구나 들어온다. 코드 방은 목록에 서지 않고,
--- 방을 연 사람이 알려 주는 숫자 4자리를 넣어야 들어온다. 링크로 들어오는 길은 둘 다 그대로다(코드 방의 링크에는 코드가 함께 간다).
+-- 친선전을 열 때 방의 종류를 고른다. 둘 다 배틀 화면의 방 목록에 선다(2026-11-07부터 비밀 방도). 공개 방은 누구나 들어오고, 코드 방은
+-- 누르면 방을 연 사람이 알려 주는 숫자 4자리를 넣어야 들어온다. 링크로 들어오는 길은 둘 다 그대로다(코드 방의 링크에는 코드가 함께 간다).
 -- 방의 종류(room)는 공개 행에, 코드(room_code)는 닫힌 행(battle_secrets)에 둔다. 코드는 배틀 함수만 읽고, 참가할 때 함수가 맞춰 본다.
 -- 이 SQL을 실행한 다음 배틀 함수를 다시 배포하고(npm run build:battle, 배포 명령은 supabase/functions/battle/index.ts), 그 다음 사이트를 배포한다.
 
@@ -17,7 +17,7 @@ begin
   end if;
 end $$;
 
--- 열린 방 목록(기다리는 공개 방, 최근 것부터)과 코드로 방 찾기
+-- 방 목록(기다리는 공개 방과 비밀 방, 최근 것부터. 비밀 방의 코드는 battle_secrets 에만 있다)
 create index if not exists battles_waiting_rooms_idx on public.battles (created_at desc) where status = 'waiting' and room is not null;
 create index if not exists battle_secrets_room_code_idx on public.battle_secrets (room_code) where room_code is not null;
 

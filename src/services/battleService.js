@@ -27,8 +27,6 @@ export async function createBattle({ regulation, battleFormat, name, team, room 
 export const recordCpuBattle = inputLog => callFunction("battle", { action: "record", inputLog });
 // a kept battle with the computer as a replay anyone may watch (리플레이 공유): played again on the server from its record, as a row
 export const readCpuReplay = id => callFunction("battle", { action: "cpureplay", id }).then(out => out.row);
-// a code room's id, for its four digits
-export const findRoom = code => callFunction("battle", { action: "room", code });
 export async function joinBattle(id, { name, team, code }) {
   const view = await callFunction("battle", { action: "join", id, name, team, code });
   keepSeat(id, { token: view.token, side: view.side });
@@ -96,8 +94,8 @@ export const canRematch = () => rematchSupported;
 export async function listOpenRooms() {
   if (!supa || !roomsSupported) return [];
   const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-  const { data, error } = await supa.from("battles").select("id, regulation, format_id, p1_name, created_at")
-    .eq("status", "waiting").eq("room", "open").gte("created_at", since).order("created_at", { ascending: false }).limit(20);
+  const { data, error } = await supa.from("battles").select("id, regulation, format_id, p1_name, room, created_at")
+    .eq("status", "waiting").in("room", ["open", "code"]).gte("created_at", since).order("created_at", { ascending: false }).limit(20);
   if (error && unreadable(error)) roomsSupported = false;
   return error ? [] : data || [];
 }

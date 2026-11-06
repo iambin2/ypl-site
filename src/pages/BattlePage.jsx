@@ -18,7 +18,7 @@ import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, 
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { setSoundOn, soundOn } from "./battle/cries.js";
-import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { closeGate, openGate } from "./battle/Gate.js";
 import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
 import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
@@ -320,12 +320,10 @@ function CpuReplay({ id, res, say, go, onLeave, start }) {
   return <Arena row={row} seat={null} res={res} go={go} say={say} start={start} onLeave={onLeave} />;
 }
 
-/* ---------- rooms: a code room is entered with its four digits; the open rooms stand as rows, newest first ---------- */
+/* ---------- rooms: open and code rooms stand as one list, newest first. An open room is joined at once; a code room's join screen
+   asks for its four digits (2026-11-07, the user: no separate code field, a code room asks when it is pressed) ---------- */
 function RoomFinder({ onOpen }) {
   const [rooms, setRooms] = useState([]);
-  const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
   useEffect(() => {
     let on = true;
     const load = () => listOpenRooms().then(list => on && setRooms(list));
@@ -334,27 +332,15 @@ function RoomFinder({ onOpen }) {
     const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 15000);
     return () => { on = false; clearInterval(t); };
   }, []);
-  const enter = async () => {
-    if (busy) return;
-    if (code.length !== 4) { setError("방 코드 4자리를 입력해 주세요."); document.getElementById("bt-room-code")?.focus(); return; }
-    setBusy(true); setError("");
-    try { onOpen((await findRoom(code)).id, code); }
-    catch (e) { setError(e.message); setBusy(false); }
-  };
+  // nothing waiting, nothing stands (as 진행 중인 배틀 and 이 기기의 배틀 do)
+  if (!rooms.length) return null;
   return <section className="bt-list bt-rooms" aria-labelledby="bt-rooms-h">
     <SectionHead id="bt-rooms-h" title="방 참가" />
-    {/* the page's one main action is the lobby's own: this is a second-rank key under its field, never a second dock */}
-    <Question id="bt-room-code" label="방 코드" error={error}>
-      <input id="bt-room-code" className="in" inputMode="numeric" autoComplete="off" maxLength={4} enterKeyHint="go" value={code} placeholder="숫자 4자리"
-        aria-describedby={error ? "bt-room-code-error" : undefined} aria-invalid={error ? true : undefined}
-        onChange={e => { setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); if (error) setError(""); }}
-        onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) enter(); }} />
-    </Question>
-    <Button onClick={enter} loading={busy}>코드로 참가</Button>
-    {rooms.length > 0 && <div className="stack">
-      {rooms.map(r => <Row key={r.id} title={`${r.p1_name}의 방`} line={`${REGULATIONS[r.regulation] || ""} ${isDoubles(r.format_id) ? "더블" : "싱글"}, 공개 방`}
-        lamp="참가 대기" onClick={() => onOpen(r.id)} label={`${r.p1_name}의 방에 참가`} />)}
-    </div>}
+    <div className="stack">
+      {rooms.map(r => { const kind = r.room === "code" ? "비밀 방" : "공개 방";
+        return <Row key={r.id} title={`${r.p1_name}의 방`} line={`${REGULATIONS[r.regulation] || ""} ${isDoubles(r.format_id) ? "더블" : "싱글"}, ${kind}`}
+          lamp="참가 대기" onClick={() => onOpen(r.id)} label={`${r.p1_name}의 ${kind}에 참가`} />; })}
+    </div>
   </section>;
 }
 
@@ -577,8 +563,8 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
   const kind = rematch ? "다시하기" : official ? "공식 경기" : row.room === "open" ? "공개 방" : row.room === "code" ? "비밀 방" : "친선 배틀";
   const how = rematch ? "상대가 다시하기를 누르면 바로 시작합니다."
     : official ? "상대 선수가 들어오면 시작합니다."
-    : row.room === "open" ? "상대가 열린 방 목록이나 링크로 들어오면 시작합니다."
-    : code ? "상대가 방 코드나 링크로 들어오면 시작합니다." : "상대가 링크로 들어오면 시작합니다.";
+    : row.room === "open" ? "상대가 방 목록이나 링크로 들어오면 시작합니다."
+    : code ? "상대가 방 목록에서 방 코드를 넣거나 링크로 들어오면 시작합니다." : "상대가 링크로 들어오면 시작합니다.";
   return (
     <div className="bt-page">
       <h1 className="t32">배틀</h1>
