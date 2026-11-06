@@ -576,7 +576,8 @@ void main(){
   vec4 col = (c + r * (1. - c.a)) * uAlpha;
   if (uReflect > 0.) col *= uReflect * smoothstep(.35, 1., vUv.y);
   // the Pokémon covers the glow of what lies behind it, so no field's light blooms through its body
-  o0 = col; o1 = vec4(r.rgb * uAlpha * .8 + c.rgb * min(uFlash, 1.) * .12 * uAlpha, col.a);
+  // the rim lights its outline; its bloom stays a halo at the edge and never washes the body white (2026-11-07)
+  o0 = col; o1 = vec4(r.rgb * uAlpha * .3 + c.rgb * min(uFlash, 1.) * .12 * uAlpha, col.a);
 }`;
 const FULL_VS = `#version 300 es
 layout(location=0) in vec2 aQ; out vec2 vUv; void main(){ vUv = aQ * .5 + .5; gl_Position = vec4(aQ, 0., 1.); }`;
@@ -1097,7 +1098,8 @@ class Engine {
         for (const [i, k] of [[3, .34], [7, .2], [11, .1]]) {
           const h = a.hist[Math.min(i, a.hist.length - 1)];
           gl.uniformMatrix3fv(sp.u.uModel, false, model({ ...s, x: h[0], y: h[1], sx: h[2], sy: h[3], rot: h[4] }, false));
-          this.spriteUniforms({ alpha: s.alpha * k * s.ghost, flash: .6, bright: 1, tint: [...hex(a.ghostColor || "#BFD8FF").slice(0, 3), .6], texel, clip });
+          // the copies a dash leaves are coloured by the move's type and stay dim (pale white copies read as a raw blur, 2026-11-07)
+          this.spriteUniforms({ alpha: s.alpha * k * s.ghost * .85, flash: .08, bright: 1, tint: [...hex(a.ghostColor || "#BFD8FF").slice(0, 3), .7], texel, clip });
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }

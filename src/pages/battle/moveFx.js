@@ -5,6 +5,7 @@
    타입이 같아도 기술의 이름이 모양을 정한다(화염방사는 입에서 뿜는 불길, 불대문자는 大 자로 터지는 불).
    동사 하나는 promise를 돌려주고, 그것이 맞는 순간이다(결과 줄이 그때 함께 뜬다). */
 import MOVE_FX from "../../data/move-fx.json";
+import { sfx, verbSound } from "./sfx.js";
 
 export const recipeOf = id => MOVE_FX[id] || "";
 export function parse(phase) {
@@ -20,7 +21,7 @@ export function parse(phase) {
 }
 
 export function makeDraw(k) {
-  const { centre, sizeOf, unitOf, actorOf, rand, lerp, clamp, times, around, typeId, colorOf, glow, ring, shock, sparks, smoke, dust, fire, splash, glints, beamStrip, boltStrip, slashStrip, pathStrip, orbs, DEBRIS, MARK, charge, aura, lunge, quake, flashMon, flashStage, darken, heal, boost, ailment, sway, morph, reduced } = k;
+  const { centre, sizeOf, unitOf, actorOf, rand, lerp, clamp, times, around, typeId, colorOf, glow, ring, shock, sparks, smoke, dust, fire, splash, glints, stamp, beamStrip, boltStrip, slashStrip, pathStrip, orbs, DEBRIS, MARK, charge, aura, lunge, quake, flashMon, flashStage, darken, heal, boost, ailment, sway, morph, reduced } = k;
   const D = {};
   /* ---------- where, how big, which way ---------- */
   const A = (c, lift = .5) => centre(c.stage, c.from, lift);
@@ -36,6 +37,8 @@ export function makeDraw(k) {
   const aim = c => c.targets.find(t => t !== c.from) || c.targets[0];
   const foes = c => c.targets.filter(t => t !== c.from);
   const dirTo = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+  // where a sound stands between the ears (sfx.js): ours on the left, theirs on the right
+  const panAt = (c, p) => (c.e.W && p ? clamp(p[0] / c.e.W * 2 - 1, -1, 1) * .55 : 0);
   // where a thing aimed at t ends: short of a guard that holds, past one it misses
   function endOf(c, t, lift = .45) {
     const a = mouth(c), b = B(c, t, lift), d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -61,6 +64,7 @@ export function makeDraw(k) {
     const g = arc ? 8 * arc * dist / (sec * sec) : 0, vx = dx / sec, vy = dy / sec - .5 * g * sec;
     const pos = t => [a[0] + vx * t, a[1] + vy * t + .5 * g * t * t];
     const R = ramp || `${T(c)}.h`;
+    sfx("shot", { type: T(c), dur, at: delay, pan: panAt(c, a) });
     if (glowK) e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex: "glow", ramp: R, size: [size * glowK, size * glowK], life: dur, delay, alpha: .55 * alpha, layer: 1 });
     e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex, ramp: R, size: [size, size], aspect, life: dur, delay, spin, face, rot, occ, emis, alpha, erode, lit });
     if (core && !occ && !lit) e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex: "dot", ramp: "white.h", size: [size * .28, size * .28], life: dur, delay, alpha: .7 });
@@ -70,6 +74,7 @@ export function makeDraw(k) {
   // a stream from a toward b: n pieces over `over`, each flying the distance in `travel`, spreading and growing as they go
   function stream(c, a, b, { n = 90, over = 600, travel = 300, spread = .12, tex = "flame", ramp = "fire", size = [8, 40], erode = .5, occ = 0, emis = 1, life = 1.25, drag = 0, spin = 0, rot = "rand", face = false, aspect = 1, delay = 0, alpha = 1, layer = 1, vj = 0, lit = false } = {}) {
     const ang = dirTo(a, b), dist = Math.hypot(b[0] - a[0], b[1] - a[1]), sp = dist / (travel / 1000);
+    sfx("stream", { type: T(c), dur: over + travel * .5, at: delay, pan: panAt(c, a) });
     c.e.emit({ n, at: a, dir: ang, arc: spread * 2, speed: [sp * .88, sp * 1.12], size, life: [travel * life * .9, travel * life * 1.1], over, tex, ramp, erode, occ, emis, drag, spin, rot, face, aspect, delay, alpha, layer, vj, lit, grow: true });
     return c.e.after(travel + delay);
   }
@@ -79,6 +84,7 @@ export function makeDraw(k) {
     for (let i = 0; i < n; i++) {
       const x = at[0] + rand(-spread, spread) * s * 2, y = at[1] + rand(-.2, .3) * s, from = [x - H * slant, y - H * 1.05], d = gap * i;
       const sec = dur / 1000, v = [(x - from[0]) / sec, (y - from[1]) / sec];
+      sfx("fall", { dur, at: d, pan: panAt(c, [x, y]) }); sfx("impact", { type, p: .6, at: d + dur, pan: panAt(c, [x, y]) });
       e.emit({ at: from, vel: v, tex, ramp, size: [s, s], aspect, life: dur, delay: d, occ, emis, spin, rot: face ? rot : "rand", face, lit });
       if (glowK) e.emit({ at: from, vel: v, tex: "glow", ramp: `${type}.h`, size: [s * glowK, s * glowK], life: dur, delay: d, alpha: .6 });
       if (trail) for (let j = 0; j < 10; j++) { const t = j / 10; e.emit({ at: [lerp(from[0], x, t), lerp(from[1], y, t)], tex: trail[0], ramp: trail[1], size: [s * .9, s * .3], life: 300, delay: d + t * dur, alpha: .7, vj: 10, rot: "rand", erode: .5, lit: trail[0] === "billow", occ: trail[0] === "billow" ? .4 : 0 }); }
@@ -99,12 +105,12 @@ export function makeDraw(k) {
     return e.after(dur + delay);
   }
   // pieces jutting out of the floor under a point, standing a moment, breaking
-  function pillars(c, t, { n = 5, tex = "shard", ramp = "stone", w = .22, h = .9, occ = 1, type = "rock" } = {}) {
+  function pillars(c, t, { n = 5, tex = "shard", ramp = "chip", w = .22, h = .9, occ = 1, type = "rock" } = {}) {
     const e = c.e, [x, y] = B(c, t, 0), s = S(c, t);
     dust(e, [x, y], s * 1.2, 6);
     for (let i = 0; i < n; i++) {
       const off = (i - (n - 1) / 2), px = x + off * s * .22, tall = s * h * (1 - Math.abs(off) * .14), lean = off * .2;
-      e.emit({ at: [px, y], vel: [0, -tall * 4.5], drag: 9, tex, ramp, size: [tall * .2, tall], aspect: w * 2.2, rot: lean, life: 680, delay: Math.abs(off) * 45, occ, emis: .05, lit: true, grow: true });
+      e.emit({ at: [px, y], vel: [0, -tall * 4.5], drag: 9, tex, ramp, size: [tall * .3, tall * 1.25], aspect: w * 2.2, rot: lean, life: 760, delay: Math.abs(off) * 45, occ, emis: .3, lit: true, grow: true });
     }
     e.at(150, () => { DEBRIS[type]?.(e, [x, y - s * .3], s, .8); e.shake(.3); });
     return e.after(170);
@@ -114,18 +120,28 @@ export function makeDraw(k) {
   const hop = (c, h = .3, dur = 560) => move(c, c.from, { y: [0, -S(c) * h, 0], sy: [1, 1.06, 1] }, { dur, eases: ["out2", "in2"] });
   // light of the type travelling with the user while it moves (a cloak of flames as it charges)
   function cloak(c, dur = 620) {
+    // 2026-11-07: a shroud of the type round the whole body (Flare Blitz in flames, Brave Bird in a pale blue blaze, Wild Charge in
+    // lightning), lobes licking up off it and streaks thrown back as it runs, as 포켓몬 챔피언스 wraps a charging body
     const e = c.e, a = actorOf(c.stage, c.from), s = S(c), t = T(c), steps = Math.round(dur / 30);
     if (!a) return;
-    const tex = t === "fire" ? "billow" : t === "water" ? "drop" : t === "electric" ? "glint" : t === "grass" ? "leaf" : t === "ice" ? "crystal" : "glow";
-    const lit = ["billow", "drop", "leaf", "crystal"].includes(tex), ramp = { fire: "fire.b", water: "water.l", grass: "leaf.c", ice: "ice.c" }[t] || `${t}.h`;
+    const look = {
+      fire: ["billow", "fire.b", true, .42], water: ["drop", "water.l", true, 0], electric: ["glint", "electric.h", false, 0], grass: ["leaf", "leaf.c", true, 0],
+      ice: ["crystal", "ice.c", true, 0], poison: ["billow", "toxic.c", true, .5], dragon: ["flame", "dragon.m", false, .55], fairy: ["flame", "fairy.m", false, .55],
+    }[t] || ["flame", `${t}.m`, false, .6];
+    // pale types (flying, steel, normal, rock) would shroud it in white: they get fewer, fainter lobes and keep the body readable
+    const pale = ["flying", "steel", "normal", "rock", "ice"].includes(t), n = pale ? 2 : 4, al = pale ? .55 : .9;
+    const [tex, ramp, lit, erode] = look;
     for (let i = 0; i < steps; i++) e.at(i * 30, () => {
       const [x, y] = A(c); const px = x + a.st.x, py = y + a.st.y;
-      e.emit({ n: 3, at: [px, py], r: [s * .42, s * .45], tex, ramp, lit, vel: () => [rand(-30, 30), -rand(60, 140)], size: [[s * .14, s * .22], s * .03], life: [260, 420], erode: tex === "billow" ? .45 : 0, rot: "rand", emis: tex === "billow" ? .9 : lit ? .4 : 1, occ: lit ? .7 : 0, face: tex === "drop" || tex === "crystal", aspect: tex === "drop" ? .72 : tex === "crystal" ? .55 : 1 });
-      if (t === "electric" && i % 3 === 0) { const a0 = rand(0, 6.28); boltStrip(e, [px, py], [px + Math.cos(a0) * s * .6, py + Math.sin(a0) * s * .6], { width: 3, dur: 140, flicker: 2, depth: .3, forks: 0, steps: 5 }); }
+      e.emit({ n, alpha: al, at: [px, py], r: [s * .4, s * .42], tex, ramp, lit, vel: () => [rand(-30, 30), -rand(80, 170)], acc: [0, -s * .6], size: [[s * .2, s * .32], s * .05], life: [260, 420], erode, rot: "rand", spin: [-1, 1], emis: lit ? .85 : 1, occ: lit ? .5 : 0, face: tex === "crystal" || tex === "drop", aspect: tex === "crystal" ? .55 : tex === "leaf" ? 1.9 : tex === "drop" ? .72 : 1 });
+      if (t === "water" && i % 2 === 0) pathStrip(e, u => { const ang = u * Math.PI * 1.6 + i * .5; return [px + Math.cos(ang) * s * .5, py + Math.sin(ang) * s * .45 - u * s * .2]; }, { color: e.light ? "#3F9CEB" : "#5DB4FF", width: 6, dur: 260, mode: 2, head: .5, tailLag: .6, occ: .6, emis: .5 });
+      e.emit({ at: [px, py], tex: "glow", ramp: `${t}.h`, size: [s * 1.3, s * 1.4], aspect: .8, life: 90, alpha: .22 });
+      if (i % 2 === 0) e.emit({ n: 2, at: [px, py], r: [s * .35, s * .4], tex: "streak", ramp: t, vel: [-(a.st.x || 1) * 3, -(a.st.y || 0) * 3], face: true, size: [3, 2], aspect: [10, 18], life: 240, alpha: .8 });
+      if (t === "electric") { const a0 = rand(0, 6.28), a1 = a0 + rand(1, 2); boltStrip(e, [px + Math.cos(a0) * s * .45, py + Math.sin(a0) * s * .5], [px + Math.cos(a1) * s * .45, py + Math.sin(a1) * s * .5], { width: 4, dur: 160, flicker: 3, depth: .3, forks: 0, steps: 6 }); }
     });
     aura(c.stage, c.from, c.type, 1, dur);
   }
-  const gatherUp = (c, hold = 420) => Promise.all([charge(c.stage, c.from, c.type, hold), flashMon(c.stage, c.from, .6)]);
+  const gatherUp = (c, hold = 420) => Promise.all([charge(c.stage, c.from, c.type, hold), flashMon(c.stage, c.from, .3)]);
   // the light at the mouth as it lets go
   const muzzle = (c, at, size, dur = 400, ramp = null) => { c.e.emit({ at, tex: "glow", ramp: ramp || `${T(c)}.h`, size: [size * .6, size * .7], life: dur, alpha: .5 }); c.e.emit({ at, tex: "dot", ramp: "white.h", size: [size * .16, size * .22], life: dur, alpha: .7 }); };
   // a continuous splash where a stream or beam is hitting
@@ -140,31 +156,48 @@ export function makeDraw(k) {
     const [bx, by] = B(c, t), s = S(c, t), a = angle ?? dirTo(A(c), [bx, by]), st = [bx - Math.cos(a) * s * from, by - Math.sin(a) * s * from], sec = dur * .4 / 1000;
     // the blow's own shape, solid and lit in its type's colour, as 포켓몬 챔피언스 throws a fist of fire or ice at the target
     const lit = tex !== "needle", solid = ramp === "white.h" ? ({ fire: "fire.c", ice: "ice.c", electric: "electric.h", water: "water.l", grass: "leaf.c", poison: "toxic.c", psychic: "magenta", ghost: "ghost.h", dragon: "dragon.h", fairy: "fairy.h", fighting: "fighting.h", steel: "steel.c", rock: "chip", ground: "earth", dark: "ghost.h", bug: "bug.h" }[T(c)] || ramp) : ramp;
-    c.e.emit({ at: st, vel: [(bx - st[0]) / sec, (by - st[1]) / sec], drag: 9, tex, ramp: solid, size: [s * h * 1.05, s * h * 1.5], aspect: w / h, rot: a + face, life: dur, emis: .75, occ: lit ? .6 : 0, lit, alpha });
-    c.e.emit({ at: [bx, by], tex: "glow", ramp: `${T(c)}.h`, size: [s * .3, s * 1.2], life: dur, delay: dur * .35, alpha: .7, grow: true });
+    c.e.emit({ at: st, vel: [(bx - st[0]) / sec, (by - st[1]) / sec], drag: 9, tex, ramp: solid, size: [s * h * 1.25, s * h * 1.8], aspect: w / h, rot: a + face, life: dur + 80, emis: .8, occ: lit ? .55 : 0, lit, alpha });
+    // the blow's own light: its type round the fist, streaks of its speed behind it
+    c.e.emit({ n: 8, at: st, r: s * h * .5, vel: [(bx - st[0]) / sec * .3, (by - st[1]) / sec * .3], tex: "streak", ramp: T(c), face: true, rot: a, size: [3, 2], aspect: [10, 18], life: 200, alpha: .8 });
+    if (T(c) === "fire") c.e.at(dur * .35, () => fire(c.e, [bx, by], s, 10, { r: .3, size: [.2, .5] }));
+    c.e.emit({ at: [bx, by], tex: "glow", ramp: `${T(c)}.h`, size: [s * .3, s * 1.3], life: dur, delay: dur * .35, alpha: .4, grow: true });
+    if (tex !== "needle") impact(c, t, .8);
+  };
+  // the instant a body meets a body: lines of force converge on the point, a star of the type bursts from it, the air rings out
+  const impact = (c, t, p = 1) => {
+    const e = c.e, at = B(c, t), s = S(c, t), ty = T(c);
+    for (let i = 0; i < 14; i++) { const ang = around(14, i, .15), r = s * rand(.9, 1.3), st = [at[0] + Math.cos(ang) * r, at[1] + Math.sin(ang) * r * .85]; e.emit({ at: st, vel: [(at[0] - st[0]) / .12, (at[1] - st[1]) / .12], tex: "streak", ramp: ty === "normal" ? "gold" : ty, face: true, size: [3.4, 2], aspect: [14, 22], life: 120, alpha: .9 }); }
+    e.at(90, () => {
+      e.emit({ at, tex: "spark", ramp: ty === "normal" ? "gold" : ty, size: [s * .4, s * 1.9 * p], rot: rand(0, Math.PI), life: 260, grow: true });
+      e.emit({ n: 3, at, r: s * .25, tex: "spark", ramp: ty === "normal" ? "gold" : `${ty}.h`, size: [s * .1, s * .6], rot: "rand", life: 200, delay: 40, grow: true });
+      for (let i = 0; i < 2; i++) e.emit({ at, tex: "arc", ramp: ty === "normal" ? "gold" : `${ty}.h`, size: [s * .4, s * (1.5 + i * .5) * p], rot: rand(0, 6), life: 300, delay: i * 50, alpha: .6, grow: true });
+      (DEBRIS[ty] || DEBRIS.normal)(e, at, s, .7 * p);
+      shock(e, at, s * 2.8 * p, { dur: 460 });
+    });
   };
   const MARKS = {
-    axe: (c, t) => { slashStrip(c.e, B(c, t), Math.PI / 2 - .2, S(c, t) * 1.6, { color: "#FFFFFF", width: 16, dur: 260, curve: .1 }); pillars(c, t, { n: 3, h: .55 }); },
-    chop: (c, t) => slashStrip(c.e, B(c, t), Math.PI / 2 + .25, S(c, t) * 1.4, { color: COL(c), width: 14, dur: 240, curve: .05 }),
+    body: (c, t) => impact(c, t, 1),
+    axe: (c, t) => { slashStrip(c.e, B(c, t), Math.PI / 2 - .2, S(c, t) * 1.8, { color: COL(c), width: 26, dur: 280, curve: .1, mode: 0 }); slashStrip(c.e, B(c, t), Math.PI / 2 - .2, S(c, t) * 1.7, { color: "#FFFFFF", width: 9, dur: 260, curve: .1 }); pillars(c, t, { n: 4, h: .7, ramp: "chip" }); },
+    chop: (c, t) => { slashStrip(c.e, B(c, t), Math.PI / 2 + .25, S(c, t) * 1.6, { color: COL(c), width: 24, dur: 260, curve: .05, mode: 0 }); slashStrip(c.e, B(c, t), Math.PI / 2 + .25, S(c, t) * 1.5, { color: "#FFFFFF", width: 8, dur: 240, curve: .05 }); },
     fist: (c, t) => thrust(c, t, "fist", { w: .42, h: .37, face: 0, from: .7 }),
-    hammer: (c, t) => { thrust(c, t, "fist", { w: .62, h: .52, from: 1, angle: Math.PI / 2, dur: 300 }); c.e.shake(.4); },
+    hammer: (c, t) => { thrust(c, t, "fist", { w: .5, h: .42, from: 1, angle: Math.PI / 2, dur: 300 }); c.e.shake(.4); },
     palm: (c, t) => thrust(c, t, "hand", { w: .4, h: .44, from: .5 }),
     kick: (c, t) => thrust(c, t, "foot", { w: .46, h: .4, from: .75 }),
     knee: (c, t) => thrust(c, t, "foot", { w: .4, h: .36, from: .6, face: -.6 }),
     horn: (c, t) => thrust(c, t, "needle", { w: .9, h: .2, from: .9, dur: 260 }),
     sting: (c, t) => thrust(c, t, "needle", { w: .7, h: .12, from: .8, dur: 220, ramp: `${T(c)}.h` }),
     beak: (c, t) => thrust(c, t, "needle", { w: .55, h: .18, from: .6, dur: 240 }),
-    drill: (c, t) => { thrust(c, t, "needle", { w: .9, h: .26, from: .9, dur: 300 }); for (let i = 0; i < 4; i++) ring(c.e, B(c, t), S(c, t) * (.5 + i * .25), T(c), { dur: 280, delay: i * 50, flat: .55 }); },
-    head: (c, t) => c.e.emit({ at: B(c, t, .6), tex: "star", ramp: `${T(c)}.h`, size: [S(c, t) * .2, S(c, t) * .9], life: 300, rot: "rand", grow: true }),
+    drill: (c, t) => { const at = B(c, t), s = S(c, t); thrust(c, t, "needle", { w: .9, h: .26, from: .9, dur: 300 }); orbit(c, at, s, { n: 8, r0: .5, r1: .2, turns: 1.4, flat: .9, dur: 300, tex: "streak", ramp: T(c), sz: 4, aspect: 6 }); sparks(c.e, at, 14, T(c), { speed: [s * 3, s * 6], len: [10, 20] }); },
+    head: (c, t) => { const at = B(c, t, .6), s = S(c, t); c.e.emit({ at, tex: "spark", ramp: T(c), size: [s * .3, s * 1.4], life: 280, rot: "rand", grow: true }); c.e.emit({ n: 5, at, r: s * .3, tex: "star", lit: true, ramp: `${T(c)}.h`, speed: [s, s * 2.2], drag: 3, size: [s * .1, s * .04], rot: "rand", spin: [-6, 6], life: 600, occ: .5, emis: .8 }); },
     slam: (c, t) => { c.e.emit({ at: B(c, t), tex: "star", ramp: "white", size: [S(c, t) * .3, S(c, t) * 1.3], life: 300, rot: "rand", grow: true }); c.e.shake(.4); },
-    tail: (c, t) => { const at = B(c, t), s = S(c, t); slashStrip(c.e, at, -.3, s * 1.6, { color: COL(c), width: 16, dur: 300, curve: .35 }); slashStrip(c.e, [at[0], at[1] + s * .1], -.2, s * 1.4, { color: "#FFFFFF", width: 6, dur: 300, curve: .35, delay: 40 }); },
-    whip: (c, t) => { const at = B(c, t), s = S(c, t), a0 = A(c); pathStrip(c.e, u => [lerp(a0[0], at[0], u), lerp(a0[1], at[1], u) - Math.sin(Math.PI * u) * s * .5 + Math.sin(u * 9) * s * .06], { color: COL(c), width: 9, dur: 360, mode: 2, head: .4, tailLag: .3 }); },
-    wing: (c, t) => { const at = B(c, t), s = S(c, t); for (const sg of [-1, 1]) slashStrip(c.e, at, sg * .5, s * 1.4, { color: "#E8F4FF", width: 12, dur: 280, curve: .3, delay: sg > 0 ? 60 : 0 }); DEBRIS.flying(c.e, at, s, .7); },
-    pincer: (c, t) => { const at = B(c, t), s = S(c, t); for (const sg of [-1, 1]) c.e.emit({ at: [at[0], at[1] + sg * s * .5], vel: [0, -sg * s * 3], drag: 9, tex: "crescent", ramp: "white.h", size: [s * .3, s * .3], aspect: 2.2, rot: sg > 0 ? Math.PI : 0, life: 360 }); },
-    arms: (c, t) => { const at = B(c, t), s = S(c, t); slashStrip(c.e, at, 0, s * 1.8, { color: COL(c), width: 20, dur: 320, curve: .45 }); slashStrip(c.e, at, Math.PI, s * 1.8, { color: COL(c), width: 20, dur: 320, curve: .45, delay: 90 }); },
-    bone: (c, t) => { const at = B(c, t), s = S(c, t); c.e.emit({ at: [at[0] - s, at[1] - s * .3], vel: [s * 5, s * 1.5], tex: "bone", ramp: "ground.h", size: [s * .22, s * .22], aspect: 1.7, spin: 22, life: 200, occ: .8, emis: .3 }); },
-    brawl: (c, t) => { const at = B(c, t), s = S(c, t); smoke(c.e, at, s * 1.2, 9, { rise: 10, alpha: .8, spread: .35, ramp: "dust" }); ["star", "heart", "fist", "star", "heart", "fist"].forEach((tex, i) => c.e.emit({ at: [at[0] + rand(-.35, .35) * s, at[1] + rand(-.3, .2) * s], tex, ramp: "fairy.h", size: [s * .1, s * .26], life: 320, delay: i * 70, rot: rand(-.3, .3), grow: true })); },
-    throw: (c, t) => { const s = S(c, t); move(c, t, { y: [0, -s * .6, 0, 0], rot: [0, -.5, .1, 0], sy: [1, 1, .9, 1] }, { dur: 720, at: [0, .4, .62, 1], eases: ["out", "in2", "out"] }); c.e.at(450, () => { ring(c.e, B(c, t, 0), s * 2, "fighting", { flat: .3, dur: 500, layer: 0 }); dust(c.e, B(c, t, 0), s, 6); c.e.shake(.5); }); },
+    tail: (c, t) => { const at = B(c, t), s = S(c, t); slashStrip(c.e, at, -.3, s * 1.8, { color: COL(c), width: 28, dur: 320, curve: .35, mode: 0 }); slashStrip(c.e, [at[0], at[1] + s * .1], -.2, s * 1.5, { color: "#FFFFFF", width: 8, dur: 300, curve: .35, delay: 40 }); sparks(c.e, at, 10, T(c), { speed: [s * 3, s * 6], len: [10, 18] }); },
+    whip: (c, t) => { const at = B(c, t), s = S(c, t), a0 = A(c), path = u => [lerp(a0[0], at[0], u), lerp(a0[1], at[1], u) - Math.sin(Math.PI * u) * s * .5 + Math.sin(u * 9) * s * .06]; pathStrip(c.e, path, { color: T(c) === "grass" ? "#3F8A2A" : COL(c), width: 16, dur: 380, mode: 4, head: .4, tailLag: .3, occ: .8, emis: .5 }); pathStrip(c.e, path, { color: T(c) === "fire" ? "#FFD24A" : "#B8F07A", width: 5, dur: 380, mode: 1, head: .4, tailLag: .3 }); if (T(c) === "fire") c.e.at(300, () => fire(c.e, at, s, 12, { r: .35, size: [.2, .5] })); },
+    wing: (c, t) => { const at = B(c, t), s = S(c, t), col = T(c) === "steel" ? "#D8E2F0" : "#BFE4FF"; for (const sg of [-1, 1]) { slashStrip(c.e, at, sg * .5, s * 1.6, { color: col, width: 24, dur: 300, curve: .3, delay: sg > 0 ? 60 : 0, mode: 0 }); slashStrip(c.e, at, sg * .5, s * 1.5, { color: "#FFFFFF", width: 7, dur: 280, curve: .3, delay: sg > 0 ? 60 : 0 }); } DEBRIS.flying(c.e, at, s, 1); },
+    pincer: (c, t) => { const at = B(c, t), s = S(c, t); for (const sg of [-1, 1]) c.e.emit({ at: [at[0], at[1] + sg * s * .55], vel: [0, -sg * s * 3.4], drag: 9, tex: "crescent", lit: true, ramp: T(c) === "water" ? "water.l" : `${T(c)}.h`, size: [s * .45, s * .45], aspect: 2.2, rot: sg > 0 ? Math.PI : 0, life: 380, occ: .6, emis: .7 }); if (T(c) === "water") c.e.at(150, () => splash(c.e, at, s, 1.2)); },
+    arms: (c, t) => { const at = B(c, t), s = S(c, t); slashStrip(c.e, at, 0, s * 2, { color: COL(c), width: 30, dur: 340, curve: .45, mode: 0 }); slashStrip(c.e, at, Math.PI, s * 2, { color: COL(c), width: 30, dur: 340, curve: .45, delay: 90, mode: 0 }); DEBRIS[T(c)]?.(c.e, at, s, .8); },
+    bone: (c, t) => { const at = B(c, t), s = S(c, t); c.e.emit({ at: [at[0] - s, at[1] - s * .3], vel: [s * 5, s * 1.5], tex: "bone", lit: true, ramp: "chip", size: [s * .42, s * .42], aspect: 1.7, spin: 22, life: 200, occ: 1, emis: .25 }); },
+    brawl: (c, t) => { const at = B(c, t), s = S(c, t); c.e.emit({ n: 12, at, r: s * .35, tex: "billow", lit: true, ramp: c.e.light ? "smoke.l" : "dust", vel: () => [rand(-30, 30), rand(-20, 10)], size: [[s * .3, s * .42], [s * .5, s * .7]], life: [700, 1000], erode: .45, rot: "rand", occ: .8, emis: .15, alpha: .85, grow: true }); ["star", "heart", "fist", "star", "heart", "fist", "star", "heart"].forEach((tex, i) => c.e.emit({ at: [at[0] + rand(-.45, .45) * s, at[1] + rand(-.4, .25) * s], tex, lit: true, ramp: tex === "heart" ? "fairy.m" : tex === "star" ? "gold.c" : "white.h", size: [s * .12, s * .3], life: 360, delay: i * 70, rot: rand(-.3, .3), occ: .5, emis: .8, grow: true })); glints(c.e, at, s, 10, "fairy.h", { r: .6, over: 500 }); },
+    throw: (c, t) => { const s = S(c, t); move(c, t, { y: [0, -s * .6, 0, 0], rot: [0, -.5, .1, 0], sy: [1, 1, .9, 1] }, { dur: 720, at: [0, .4, .62, 1], eases: ["out", "in2", "out"] }); c.e.at(450, () => { stamp(c.e, B(c, t, 0), s, 1); c.e.shake(.5); }); },
   };
   const OWN_MARK = { fang: "fang", claw: "claw", slash: "slash", cross: "cross", axe: null, wing: null };
 
@@ -177,7 +210,7 @@ export function makeDraw(k) {
     camUser(c, 1.1, .2);
     e.at(320, () => camOn(c, t, 1.12, .3));
     await after(c, 640);
-    ring(e, B(c, t, 0), S(c, t) * 2.4, T(c), { flat: .3, dur: 600, layer: 0 }); dust(e, B(c, t, 0), S(c, t) * 1.3, 8); e.shake(.6); shock(e, B(c, t, 0), s * 3, { flat: .35 });
+    stamp(e, B(c, t, 0), S(c, t), 1.3); e.shake(.6); (DEBRIS[T(c)] || DEBRIS.normal)(e, B(c, t, .2), S(c, t), .8);
   }
   // under the ground or a shadow (Dig, Dive, Phantom Force, Sucker Punch): it sinks and comes up at the target
   async function underneath(c, t, shadow) {
@@ -219,19 +252,19 @@ export function makeDraw(k) {
     landAll(c, { mark: OWN_MARK[mark] === undefined ? undefined : OWN_MARK[mark], power: a.has("wrap") || a.has("above") || mark === "hammer" ? 1.15 : 1 });
     if (!hits) return;
     const s = S(c, t);
-    if (a.has("stomp") || a.has("jump") || mark === "hammer") { ring(e, B(c, t, 0), s * 2, T(c) === "normal" ? "ground" : T(c), { flat: .3, dur: 500, layer: 0 }); dust(e, B(c, t, 0), s, 5); e.shake(a.has("stomp") ? .5 : .35); }
-    if (a.has("item")) { const [x, y] = B(c, t), sg = actorOf(c.stage, t)?.own ? -1 : 1; e.emit({ at: [x, y], vel: [sg * s * 2, -s * 2.4], acc: [0, s * 7], tex: "dot", ramp: "white.h", size: [s * .12, s * .12], life: 700, spin: 10 }); }
+    if (a.has("stomp") || a.has("jump") || mark === "hammer") { stamp(e, B(c, t, 0), s, a.has("stomp") || mark === "hammer" ? 1.2 : .9); e.shake(a.has("stomp") ? .5 : .35); }
+    if (a.has("item")) { const [x, y] = B(c, t), sg = actorOf(c.stage, t)?.own ? -1 : 1; e.emit({ at: [x, y], vel: [sg * s * 2, -s * 2.4], acc: [0, s * 7], tex: "ball", lit: true, ramp: "white.h", size: [s * .2, s * .2], life: 700, spin: 10, occ: .9, emis: .3 }); glints(e, [x, y], s, 4, "glint", { r: .3 }); }
     if (a.has("drain")) flowBack(c, t, 10);
     if (a.has("low")) { const [x, y] = B(c, t, 0); sparks(e, [x, y], 10, T(c), { dir: 0, arc: .3, speed: [s * 4, s * 6], len: [12, 20] }); }
     if (a.has("back")) { const a0 = A(c), b0 = B(c, t); orbs(e, b0, a0, c.type, { n: 10, dur: 300, over: 160, wave: .05, size: 6 }); }
   };
-  const flowBack = (c, t, n = 14) => orbs(c.e, B(c, t), A(c), "grass", { n, dur: 520, over: 300, wave: .14, size: 6 });
+  const flowBack = (c, t, n = 14) => orbs(c.e, B(c, t), A(c), "grass", { n: n + 8, dur: 560, over: 340, wave: .16, size: 10 * U(c) });
   // two hands clap at the target (Fake Out, Encore, Helping Hand)
   D.clap = async c => {
     const t = aim(c) || c.from, e = c.e;
     if (c.event.category === "Physical") await lunge(c.stage, c.from, t, c.type, { quick: true, short: true });
     const [x, y] = B(c, t, .55), s = Math.max(S(c, t), 60);
-    for (const sg of [-1, 1]) e.emit({ at: [x + sg * s * .55, y], vel: [-sg * s * 4.2, 0], drag: 8, tex: "hand", ramp: "white.h", size: [s * .34, s * .34], aspect: .9, rot: sg * .3, life: 520, emis: .9, occ: .2 });
+    for (const sg of [-1, 1]) e.emit({ at: [x + sg * s * .55, y], vel: [-sg * s * 4.2, 0], drag: 8, tex: "hand", lit: true, ramp: "white.h", size: [s * .5, s * .5], aspect: .9, rot: sg * .3, life: 520, emis: .7, occ: .5 });
     await after(c, 200);
     glow(e, [x, y], s * 1.2, "normal", { dur: 260, ramp: "white" });
     sparks(e, [x, y], 12, "normal", { ramp: "white", speed: [s * 3, s * 5], len: [8, 14] });
@@ -244,31 +277,37 @@ export function makeDraw(k) {
     const t = aim(c);
     if (!t) return false;
     await lunge(c.stage, c.from, t, c.type, { short: true });
-    const [x, y] = B(c, t), s = S(c, t), col = COL(c);
-    for (let i = 0; i < 3; i++) { const yy = y - s * .3 + i * s * .3; c.e.strip({ dur: 700, delay: i * 70, color: col, mode: 2, emis: 1, points: kk => times(25, j => { const th = j / 24 * Math.PI * 2, r = s * lerp(.75, .5, Math.min(1, kk * 2)); return [x + Math.cos(th) * r, yy + Math.sin(th) * r * .3, 7 * (Math.sin(th) > 0 ? 1 : .5), kk > .8 ? (1 - kk) * 5 : 1]; }) }); }
-    move(c, t, { sx: [1, .88, 1], sy: [1, 1.06, 1] }, { dur: 600 });
+    const [x, y] = B(c, t), s = S(c, t), col = T(c) === "normal" ? "#D9B98A" : COL(c);
+    for (const [shade, w, emis, mode, occ] of [["#3A2A1E", 18, .1, 4, .9], [col, 13, .6, 4, .85], ["#FFFFFF", 3, 1, 1, 0]]) c.e.strip({ dur: 760, color: shade, mode, emis, occ, points: kk => times(61, j => { const th = j / 60 * Math.PI * 6, r = s * lerp(.8, .52, Math.min(1, kk * 2)), yy = y - s * .4 + j / 60 * s * .8; return [x + Math.cos(th) * r, yy + Math.sin(th) * r * .28, w * (Math.sin(th) > 0 ? 1 : .55), kk > .82 ? (1 - kk) / .18 : 1]; }) });
+    move(c, t, { sx: [1, .86, .9, 1], sy: [1, 1.06, 1.04, 1] }, { dur: 700 });
+    c.e.at(300, () => { sparks(c.e, [x, y], 10, T(c), { speed: [s * 2, s * 4], len: [8, 14] }); c.e.shake(.2); });
     await after(c, 380);
     landAll(c, { shards: c.event.category !== "Status" });
   };
   // jaws shut on the target's feet (Snap Trap, Grass Knot)
   D.trap = async c => {
+    // Grass Knot: thick vines lash up out of the floor round its feet; Snap Trap: steel jaws snap shut on them
     const t = aim(c);
     if (!t) return false;
-    const [x, y] = B(c, t, .05), s = S(c, t), grass = T(c) === "grass";
-    if (grass) for (let i = 0; i < 3; i++) pathStrip(c.e, u => [x + (i - 1) * s * .25 + Math.sin(u * 7 + i) * s * .1, y - u * s * .7], { color: "#4FC836", width: 7, dur: 500, mode: 2, head: .5, tailLag: .7, delay: i * 60 });
-    else for (const sg of [-1, 1]) c.e.emit({ at: [x + sg * s * .6, y - s * .15], vel: [-sg * s * 4, 0], drag: 8, tex: "fang", ramp: "steel.h", size: [s * .3, s * .3], aspect: 2.6, rot: sg * Math.PI / 2, life: 480, occ: .8, emis: .3 });
+    const [x, y] = B(c, t, .05), s = S(c, t), grass = T(c) === "grass", e = c.e;
+    if (grass) { for (let i = 0; i < 5; i++) { const path = u => [x + (i - 2) * s * .18 + Math.sin(u * 7 + i) * s * .12, y - u * s * .8]; pathStrip(e, path, { color: "#2F7D2A", width: 12, dur: 600, mode: 4, occ: .9, emis: .35, head: .5, tailLag: .75, delay: i * 50 }); pathStrip(e, path, { color: "#7BDB4A", width: 5, dur: 600, mode: 1, head: .5, tailLag: .75, delay: i * 50 }); } e.emit({ n: 10, at: [x, y], r: s * .3, tex: "leaf", lit: true, ramp: "leaf.c", speed: [s, s * 2], drag: 2, size: [s * .1, s * .1], aspect: 1.9, rot: "rand", spin: [-6, 6], life: 700, occ: 1, emis: .2 }); }
+    else for (const sg of [-1, 1]) e.emit({ at: [x + sg * s * .6, y - s * .15], vel: [-sg * s * 4, 0], drag: 8, tex: "fang", lit: true, ramp: "steel.c", size: [s * .45, s * .45], aspect: 2.6, rot: sg * Math.PI / 2, life: 480, occ: .8, emis: .3 });
     await after(c, 240);
+    stamp(e, [x, y], s, .6);
     move(c, t, { rot: [0, -.15, 0], y: [0, s * .04, 0] }, { dur: 520 });
     landAll(c);
   };
   // the target's own item rises, glows and strikes it (Poltergeist)
   D.possess = async c => {
+    // Poltergeist: a shadow takes the target's own thing; it rises, glowing violet, and strikes it
     const t = aim(c);
     if (!t) return false;
     const [x, y] = B(c, t), s = S(c, t), e = c.e;
-    smoke(e, [x, y], s, 6, { ramp: "shadow", rise: 40 });
-    e.emit({ at: [x + s * .5, y - s * .4], vel: [0, -s * .6], tex: "dot", ramp: "ghost.h", size: [s * .14, s * .2], life: 420, emis: 1 });
-    e.emit({ at: [x + s * .5, y - s * .65], vel: [-s * 3.5, s * 1.6], tex: "dot", ramp: "ghost.h", size: [s * .2, s * .2], life: 200, delay: 420, emis: 1, spin: 14 });
+    darken(c.stage, .45, 900);
+    smoke(e, [x, y], s * 1.2, 8, { ramp: "shadow", rise: 40, alpha: .8 });
+    e.emit({ at: [x + s * .5, y - s * .4], vel: [0, -s * .6], tex: "orb", lit: true, ramp: "ghost.h", size: [s * .14, s * .24], life: 420, emis: 1, occ: .3 });
+    e.emit({ at: [x + s * .5, y - s * .4], vel: [0, -s * .6], tex: "glow", ramp: "ghost.h", size: [s * .4, s * .6], life: 420, alpha: .6 });
+    e.emit({ at: [x + s * .5, y - s * .65], vel: [-s * 3.5, s * 1.6], tex: "orb", lit: true, ramp: "ghost.h", size: [s * .24, s * .24], life: 200, delay: 420, emis: 1, spin: 14, occ: .3 });
     await after(c, 620);
     landAll(c);
   };
@@ -278,21 +317,21 @@ export function makeDraw(k) {
   /* 2026-11-06 remake: matter is lit (a stone has its faces, a drop its gloss), an energy is a lit sphere with its halo */
   const M = { lit: true, glowK: 0, core: false };
   const SHOT = {
-    seed: ["seed", "grass", .9, { ...M, ramp: "leaf.c", occ: 1, emis: .2, trail: false }], rock: ["rock", "rock", 1.3, { ...M, occ: 1, spin: 8, trail: false, ramp: "stone" }], boulder: ["rock", "rock", 2.8, { ...M, occ: 1, spin: 5, arc: .2, trail: false, ramp: "stone" }],
+    seed: ["seed", "grass", 1.4, { ...M, ramp: "leaf.c", occ: 1, emis: .2, trail: false }], rock: ["rock", "rock", 1.3, { ...M, occ: 1, spin: 8, trail: false, ramp: "stone" }], boulder: ["rock", "rock", 2.8, { ...M, occ: 1, spin: 5, arc: .2, trail: false, ramp: "stone" }],
     ice: ["crystal", "ice", 1.9, { ...M, ramp: "ice.c", occ: .85, emis: .4, spin: 6, trailRamp: "ice.h" }], shard: ["shard", "ice", 1.2, { ...M, ramp: "ice.c", occ: .85, emis: .4, face: true, rot: Math.PI / 2, aspect: .45, trailRamp: "ice.h" }], icicle: ["shard", "ice", 1.8, { ...M, ramp: "ice.c", occ: .85, emis: .4, face: true, rot: Math.PI / 2, aspect: .4, trailRamp: "ice.h" }],
-    needle: ["needle", null, 1.4, { face: true, aspect: 4 }], dart: ["needle", "dragon", 1.8, { face: true, aspect: 4 }], arrow: ["needle", null, 2, { face: true, aspect: 5 }],
-    scale: ["scale", null, 1.2, { ...M, spin: 9, ramp: "dragon.m", occ: 1, emis: .3 }], orb: ["orb", null, 1.5, { lit: true, occ: .3, glowK: 2 }], fireball: ["billow", "fire", 2.2, { lit: true, glowK: 1.6, core: false, trailTex: "billow", trailLit: true, trailRamp: "fire.b", ramp: "fire.c", erode: .15, occ: .4, emis: 1 }],
-    item: ["ball", "normal", 1, { ...M, arc: .3, spin: 10, ramp: "white.h", occ: 1, emis: .2, trail: false }], bouquet: ["flower", "grass", 1.6, { ...M, spin: 6, ramp: "fairy.m", occ: 1, emis: .3 }], garbage: ["billow", "poison", 2.2, { ...M, occ: 1, arc: .2, ramp: "toxic.c", emis: .2, trail: false }],
-    salt: ["crystal", "rock", 1.1, { ...M, ramp: "white.h", occ: 1, emis: .2, spin: 5, trail: false }], apple: ["orb", "grass", 2.4, { ...M, occ: 1, emis: .1, ramp: "fire.m", trail: false }], star: ["star", null, 1.4, { lit: true, spin: 10, occ: .4, glowK: 1.4, core: false }],
+    needle: ["needle", null, 2, { face: true, aspect: 4, lit: true, occ: .5, emis: .8, glowK: 1.4, core: false }], dart: ["needle", "dragon", 1.8, { face: true, aspect: 4 }], arrow: ["needle", null, 2, { face: true, aspect: 5 }],
+    scale: ["scale", null, 2.2, { ...M, spin: 9, ramp: "dragon.m", occ: 1, emis: .3 }], orb: ["orb", null, 1.5, { lit: true, occ: .3, glowK: 2 }], fireball: ["billow", "fire", 2.2, { lit: true, glowK: 1.6, core: false, trailTex: "billow", trailLit: true, trailRamp: "fire.b", ramp: "fire.c", erode: .15, occ: .4, emis: 1 }],
+    item: ["ball", "normal", 2, { ...M, arc: .3, spin: 10, ramp: "white.h", occ: 1, emis: .2, trail: false }], bouquet: ["flower", "grass", 1.6, { ...M, spin: 6, ramp: "fairy.m", occ: 1, emis: .3 }], garbage: ["billow", "poison", 2.2, { ...M, occ: 1, arc: .2, ramp: "toxic.c", emis: .2, trail: false }],
+    salt: ["crystal", "rock", 1.9, { ...M, ramp: "white.h", occ: 1, emis: .2, spin: 5, trail: false }], apple: ["orb", "grass", 2.4, { ...M, occ: 1, emis: .1, ramp: "fire.m", trail: false }], star: ["star", null, 1.4, { lit: true, spin: 10, occ: .4, glowK: 1.4, core: false }],
     leaf: ["leaf", "grass", 1.4, { ...M, spin: 10, aspect: 1.9, occ: 1, emis: .2, ramp: "leaf.c", trailRamp: "grass.h" }], feather: ["feather", "flying", 1.3, { ...M, spin: 4, aspect: 2.2, occ: 1, emis: .2, ramp: "white.h", trail: false }], bubble: ["bubble", "water", 1.4, { ...M, ramp: "water.l", occ: .9, emis: .4, trail: false }],
-    mud: ["billow", "ground", 1.6, { ...M, occ: 1, emis: .05, ramp: "earth", trail: false }], shell: ["shell", "water", 1.5, { ...M, spin: 9, ramp: "water.m", occ: 1, emis: .3, trail: false }], coin: ["coin", "steel", 1, { ...M, ramp: "gold.c", spin: 12, occ: 1, emis: .4, trail: false }],
-    comet: ["orb", "dragon", 2.4, { lit: true, occ: .3, glowK: 2.4, core: false, trailTex: "billow", trailLit: true, trailRamp: "dragon" }], water: ["drop", "water", 1.6, { ...M, face: true, rot: -Math.PI / 2, aspect: .72, ramp: "water.l", occ: .9, emis: .4, trailRamp: "foam" }],
+    mud: ["billow", "ground", 2.2, { ...M, occ: 1, emis: .05, ramp: "earth", trail: false }], shell: ["shell", "water", 2.6, { ...M, spin: 9, ramp: "water.m", occ: 1, emis: .3, trail: false }], coin: ["coin", "steel", 1, { ...M, ramp: "gold.c", spin: 12, occ: 1, emis: .4, trail: false }],
+    comet: ["orb", "dragon", 2.4, { lit: true, occ: .3, glowK: 2.4, core: false, trailTex: "billow", trailLit: true, trailRamp: "dragon.m" }], water: ["drop", "water", 1.6, { ...M, face: true, rot: -Math.PI / 2, aspect: .72, ramp: "water.l", occ: .9, emis: .4, trailRamp: "foam" }],
   };
   D.shoot = async (c, a) => {
     const t = aim(c);
     if (!t) return false;
-    const [tex, type, scale, o] = SHOT[a.noun] || SHOT.orb, n = Math.max(1, a.count || 1), e = c.e, ty = type || T(c);
-    const size = 13 * U(c) * scale * (a.has("big") ? 1.5 : 1), dur = a.has("fast") ? 220 : 380 + (a.has("big") ? 120 : 0);
+    const [tex, type, scale, o] = (a.noun === "star" && T(c) === "water" ? ["star", "water", 2.2, { ...M, ramp: "water.l", spin: 14, occ: .85, emis: .5, trailRamp: "water" }] : SHOT[a.noun]) || SHOT.orb, n = Math.max(1, a.count || 1), e = c.e, ty = type || T(c);
+    const size = 19 * U(c) * scale * (a.has("big") ? 1.5 : 1), dur = a.has("fast") ? 240 : 400 + (a.has("big") ? 120 : 0);
     camUser(c, 1.12, .25);
     muzzle(c, mouth(c), size * 3, 260, `${ty}.h`);
     await after(c, 160);
@@ -301,7 +340,7 @@ export function makeDraw(k) {
     for (let i = 0; i < n; i++) {
       const tt = c.targets.length > 1 ? c.targets[i % c.targets.length] : t, b = endOf(c, tt), s = S(c, tt), j = n > 1 ? [rand(-.25, .25) * s, rand(-.2, .2) * s] : [0, 0];
       const p = fly(c, mouth(c), [b[0] + j[0], b[1] + j[1]], { tex, size, dur, arc: (o.arc || 0) + (a.has("arc") ? .25 : 0), ramp: o.ramp || `${ty}.h`, trailRamp: o.trailRamp || ty, trailTex: o.trailTex, trailLit: o.trailLit, spin: o.spin || 0, face: o.face, rot: o.rot || 0, aspect: o.aspect || 1, occ: o.occ || 0, emis: o.emis ?? (o.occ ? .2 : 1), delay: i * 90, trail: o.trail !== false, erode: o.erode || 0, lit: o.lit, glowK: o.glowK ?? 2.4, core: o.core ?? true });
-      e.at(dur + i * 90, () => { if (live(c, tt)) { DEBRIS[ty]?.(e, B(c, tt), s, .5); if (n > 1) k.hit(c.stage, tt, { share: .1 }); e.shake(.1); } });
+      e.at(dur + i * 90, () => { if (live(c, tt)) { DEBRIS[ty]?.(e, B(c, tt), s, .6); e.emit({ at: B(c, tt), tex: "spark", ramp: ty === "normal" ? "gold" : ty, size: [s * .2, s * 1.1], rot: rand(0, 3), life: 200, grow: true }); if (n > 1) k.hit(c.stage, tt, { share: .1 }); e.shake(.1); } });
       first ??= p;
     }
     await after(c, dur + (n - 1) * 90);
@@ -329,10 +368,10 @@ export function makeDraw(k) {
     } else { camUser(c, 1.08, .3); await after(c, 200); camFor(c, .35); }
     const list = c.targets.length ? c.targets : [t];
     const look = {
-      boulder: { tex: "rock", ramp: "stone", size: 36 * U0, type: "rock" }, ice: { tex: "crystal", ramp: "ice.c", size: 30 * U0, type: "ice", occ: .85, emis: .4, aspect: .7 },
-      icicle: { tex: "shard", ramp: "ice.c", size: 42 * U0, type: "ice", occ: .85, emis: .4, face: true, rot: Math.PI / 2, aspect: .4, slant: .05 }, seed: { tex: "seed", ramp: "leaf.c", size: 15 * U0, type: "grass", occ: 1, emis: .2 },
-      apple: { tex: "orb", ramp: "fire.m", size: 42 * U0, type: "grass", n: 1, slant: 0, emis: .1 }, coin: { tex: "coin", ramp: "gold.c", size: 13 * U0, type: "steel", occ: 1, emis: .4, gap: 40, n: n * 3 },
-      comet: { tex: "orb", ramp: "dragon.h", size: 26 * U0, type: "dragon", occ: .3, emis: 1, trail: ["billow", "dragon"], glowK: 3, slant: .45, dur: 360, gap: 150 },
+      boulder: { tex: "rock", ramp: "chip", size: 54 * U0, type: "rock", emis: .2 }, ice: { tex: "crystal", ramp: "ice.c", size: 84 * U0, type: "ice", occ: .85, emis: .45, aspect: .7, trail: ["billow", "steam"] },
+      icicle: { tex: "shard", ramp: "ice.c", size: 78 * U0, type: "ice", occ: .85, emis: .5, face: true, rot: Math.PI / 2, aspect: .4, slant: .05 }, seed: { tex: "seed", ramp: "leaf.c", size: 26 * U0, type: "grass", occ: 1, emis: .3 },
+      apple: { tex: "orb", ramp: "fire.m", size: 70 * U0, type: "grass", n: 1, slant: 0, emis: .2 }, coin: { tex: "coin", ramp: "gold.c", size: 34 * U0, type: "steel", occ: 1, emis: .6, gap: 22, n: n * 5, spread: .8 },
+      comet: { tex: "orb", ramp: "dragon.h", size: 26 * U0, type: "dragon", occ: .3, emis: 1, trail: ["billow", "dragon.m"], glowK: 3, slant: .45, dur: 360, gap: 150 },
     }[shape] || { tex: "rock", ramp: "stone", size: 26 * U0, type: "rock" };
     await Promise.all(list.map((tt, i) => fallOn(c, B(c, tt, .2), { n: look.n || n, ...look, lit: shape !== "comet", land: shape === "comet" ? p => { DEBRIS.fire(e, p, S(c, tt), .6); DEBRIS.dragon(e, p, S(c, tt), .8); shock(e, p, S(c, tt) * 2); e.shake(.35); } : null, gap: (look.gap || 110) + i * 20 })));
     if (a.has("ring")) for (let i = 0; i < 4; i++) { const [x, y] = B(c, t, 0), s = S(c, t), ang = i / 4 * Math.PI * 2; e.emit({ at: [x + Math.cos(ang) * s * .55, y + Math.sin(ang) * s * .2], tex: "rock", ramp: "stone", lit: true, size: [s * .3, s * .3], life: 900, occ: 1, emis: .05, layer: 0 }); }
@@ -347,8 +386,8 @@ export function makeDraw(k) {
     await after(c, 200);
     const root = a.noun === "root";
     await Promise.all(c.targets.map(tt => (root
-      ? (() => { const [x, y] = B(c, tt, 0), s = S(c, tt); for (let i = 0; i < 5; i++) pathStrip(c.e, u => [x + (i - 2) * s * .22 + Math.sin(u * 6 + i) * s * .12, y - u * s * 1.1], { color: "#5E9A2A", width: 12, dur: 600, mode: 2, head: .45, tailLag: .75, delay: i * 50 }); dust(c.e, [x, y], s, 5); c.e.shake(.3); return after(c, 260); })()
-      : pillars(c, tt, { n: 5, tex: "shard", ramp: "rock.h", occ: .9 }))));
+      ? (() => { const [x, y] = B(c, tt, 0), s = S(c, tt); for (let i = 0; i < 5; i++) pathStrip(c.e, u => [x + (i - 2) * s * .22 + Math.sin(u * 6 + i) * s * .12, y - u * s * 1.1], { color: "#3F7A24", width: 16, dur: 600, mode: 4, occ: .9, emis: .35, head: .45, tailLag: .75, delay: i * 50 }); for (let i = 0; i < 5; i++) pathStrip(c.e, u => [x + (i - 2) * s * .22 + Math.sin(u * 6 + i) * s * .12, y - u * s * 1.1], { color: "#9BE35A", width: 5, dur: 600, mode: 1, head: .45, tailLag: .75, delay: i * 50 }); stamp(c.e, [x, y], s, .8); c.e.shake(.3); return after(c, 260); })()
+      : pillars(c, tt, { n: 5, tex: "shard", ramp: "chip", occ: .9 }))));
     landAll(c);
   };
   // the ground under the target glows and bursts upward (Earth Power, Rising Voltage)
@@ -373,6 +412,7 @@ export function makeDraw(k) {
   D.beam = async (c, a) => {
     const t = aim(c);
     if (!t) return false;
+    if (c.id === "triattack") return triAttack(c, t);
     const e = c.e, ty = T(c), wide = a.has("wide"), id = c.id, s0 = S(c);
     camUser(c, 1.16, .3);
     if (a.has("gather")) { await gatherUp(c, id === "solarbeam" ? 620 : 460); if (id === "solarbeam") { e.emit({ at: [A(c)[0], -10], vel: [0, e.H * 2], tex: "streak", ramp: "gold", size: [s0 * .8, s0 * .8], aspect: .25, rot: Math.PI / 2, life: 400, alpha: .6 }); } }
@@ -385,8 +425,10 @@ export function makeDraw(k) {
     for (const [i, tt] of list.entries()) {
       const a0 = mouth(c), b = endOf(c, tt), w = look[1] * U(c);
       const twin = a.has("twin") ? [-1, 1] : [0];
-      for (const off of twin) { const nx = -(b[1] - a0[1]), ny = b[0] - a0[0], L = Math.hypot(nx, ny) || 1, o = off * w * .7; beamStrip(e, [a0[0] + nx / L * o, a0[1] + ny / L * o], [b[0] + nx / L * o, b[1] + ny / L * o], { color: look[0], width: w, dur, grow: .14, delay: i * 80 }); }
-      beamStrip(e, a0, b, { color: "#FFFFFF", width: w * .35, dur, grow: .14, delay: i * 80, mode: 1 });
+      for (const off of twin) { const nx = -(b[1] - a0[1]), ny = b[0] - a0[0], L = Math.hypot(nx, ny) || 1, o = off * w * .7, p0 = [a0[0] + nx / L * o, a0[1] + ny / L * o], p1 = [b[0] + nx / L * o, b[1] + ny / L * o]; beamStrip(e, p0, p1, { color: colorOf(ty), width: w * 1.5, dur, grow: .14, delay: i * 80, mode: 1 }); beamStrip(e, p0, p1, { color: look[0], width: w, dur, grow: .14, delay: i * 80 }); }
+      beamStrip(e, a0, b, { color: "#FFFFFF", width: w * .32, dur, grow: .14, delay: i * 80, mode: 1 });
+      // light shed along its length, the air shimmering round it
+      e.emit({ n: 14, at: () => { const u = rand(.05, 1); return [lerp(a0[0], b[0], u), lerp(a0[1], b[1], u)]; }, tex: "glow", ramp: `${ty}.h`, size: [w * 2, w * 3], life: dur * .6, over: dur * .5, delay: dur * .1 + i * 80, alpha: .25 });
       muzzle(c, a0, w * 2.4, dur);
       const sec = dur / 1000, ang = dirTo(a0, b), len = Math.hypot(b[0] - a0[0], b[1] - a0[1]);
       // what rides the beam: shards of ice, motes of the sun, sparks
@@ -400,6 +442,23 @@ export function makeDraw(k) {
     landAll(c, { power: wide ? 1.2 : 1 });
     await after(c, dur * .4);
   };
+  // Tri Attack: a triangle of fire, ice and lightning spins out at it and each corner bursts in its own matter
+  async function triAttack(c, t) {
+    const e = c.e, s0 = S(c);
+    camUser(c, 1.14, .3);
+    const a0 = mouth(c), b = endOf(c, t), sT = S(c, t), r = s0 * .32, looks = [["fire.c", "fire"], ["ice.c", "ice"], ["electric.h", "electric"]], dur = 520;
+    // the triangle forms in front of it, its corners lit spheres joined by lines of light
+    for (let i = 0; i < 3; i++) { const ang = -Math.PI / 2 + i * Math.PI * 2 / 3, p = [a0[0] + Math.cos(ang) * r, a0[1] + Math.sin(ang) * r]; e.emit({ at: p, tex: "orb", lit: true, ramp: looks[i][0], size: [4, s0 * .2], life: 380, occ: .25, emis: 1, grow: true }); e.emit({ at: p, tex: "glow", ramp: `${looks[i][1]}.h`, size: [4, s0 * .5], life: 380, alpha: .5, grow: true }); }
+    await after(c, 360);
+    camFor(c, .34);
+    for (let i = 0; i < 3; i++) {
+      const path = u => { const ang = -Math.PI / 2 + i * Math.PI * 2 / 3 + u * Math.PI * 3, rr = r * (1 - u * .7); return [lerp(a0[0], b[0], u) + Math.cos(ang) * rr, lerp(a0[1], b[1], u) + Math.sin(ang) * rr]; };
+      for (let j = 0; j < 12; j++) { const u0 = j / 12, u1 = (j + 1) / 12, p0 = path(u0), p1 = path(u1), seg = dur / 12; e.emit({ at: p0, vel: [(p1[0] - p0[0]) / seg * 1000, (p1[1] - p0[1]) / seg * 1000], tex: "orb", lit: true, ramp: looks[i][0], size: [s0 * .2, s0 * .2], life: seg + 8, delay: j * seg, occ: .25, emis: 1 }); e.emit({ at: p0, tex: "glow", ramp: looks[i][1], size: [s0 * .3, 0], life: 260, delay: j * seg, alpha: .6 }); }
+    }
+    e.at(dur, () => { if (live(c, t)) { DEBRIS.fire(e, b, sT, .7); DEBRIS.ice(e, b, sT, .7); DEBRIS.electric(e, b, sT, .7); shock(e, b, sT * 2.4); e.shake(.3); } });
+    await after(c, dur);
+    landAll(c);
+  }
   // a stream from the mouth (Flamethrower, Hydro Pump, Scald, Frost Breath, Torch Song)
   D.stream = async (c, a) => {
     const t = aim(c);
@@ -426,8 +485,9 @@ export function makeDraw(k) {
       } else if (ty === "water" || id === "chillingwater" || id === "matchagotcha") {
         // a jet of water: a ribbon of white water with spray thrown off it and a splash where it lands
         // a jet of white water and light cyan: a ribbon of it, glossy drops and foam thrown off it, an explosive white splash where it lands
-        const col = id === "matchagotcha" ? "#8FD05A" : e.light ? "#5AAEF0" : "#BFE6FF", ramp = id === "matchagotcha" ? "leaf.c" : "water.l";
-        pathStrip(e, u => [lerp(a0[0], b[0], u), lerp(a0[1], b[1], u) + Math.sin(u * 8 + e.T * .02) * 2], { color: col, width: (big ? 30 : 18) * U0, dur: over + travel, mode: 3, head: travel / (over + travel), tailLag: over / (over + travel), taper: false });
+        const col = id === "matchagotcha" ? "#8FD05A" : e.light ? "#3F9CEB" : "#5DB4FF", ramp = id === "matchagotcha" ? "leaf.c" : "water.l";
+        pathStrip(e, u => [lerp(a0[0], b[0], u), lerp(a0[1], b[1], u) + Math.sin(u * 8 + e.T * .02) * 2], { color: col, width: (big ? 40 : 24) * U0, dur: over + travel, mode: 3, head: travel / (over + travel), tailLag: over / (over + travel), taper: false, occ: .7, emis: .45 });
+        pathStrip(e, u => [lerp(a0[0], b[0], u), lerp(a0[1], b[1], u) + Math.sin(u * 11 + e.T * .03) * 2], { color: "#E8F6FF", width: (big ? 12 : 7) * U0, dur: over + travel, mode: 1, head: travel / (over + travel), tailLag: over / (over + travel), taper: false });
         stream(c, a0, b, { n: 110, over, travel, spread: .08, tex: "drop", lit: true, ramp, size: [5 * U0, 11 * U0], face: true, rot: -Math.PI / 2, aspect: .72, erode: 0, emis: .45, occ: .85 });
         stream(c, a0, b, { n: 50, over, travel, spread: .16, tex: "billow", lit: true, ramp: id === "matchagotcha" ? "leaf.c" : e.light ? "water.l" : "foam", size: [6 * U0, sT * .32], life: 1.1, erode: .5, emis: .5, occ: .8, alpha: .85 });
         e.at(travel, () => { if (live(c, tt)) { splash(e, b, sT, big ? 1.8 : 1.2); e.emit({ n: 10, at: b, r: sT * .25, tex: "billow", lit: true, ramp: "foam", speed: [sT * .8, sT * 2], drag: 3, size: [sT * .2, sT * .55], life: [400, 600], over: over * .7, erode: .5, emis: .5, occ: .85, grow: true }); } });
@@ -482,7 +542,7 @@ export function makeDraw(k) {
     for (let i = 0; i < 3; i++) boltStrip(e, [x + rand(-.3, .3) * s, -e.H * .05], [x, y], { width: (16 - i * 4) * U(c), dur: 520, flicker: 9, depth: .09, forks: 4, delay: i * 50, steps: 16 });
     flashStage(c.stage, .5, 360, "#FFF6C0");
     glow(e, [x, y], s * 1.6, "electric", { dur: 480, alpha: .5 });
-    ring(e, B(c, t, 0), s * 3, "electric", { flat: .3, dur: 600, layer: 0 });
+    stamp(e, B(c, t, 0), s, 1.2); DEBRIS.electric(e, B(c, t, 0), s, 1.2);
     shock(e, [x, y], s * 3);
     e.shake(.7);
     landAll(c, { power: 1.2 });
@@ -525,9 +585,9 @@ export function makeDraw(k) {
     await charge(c.stage, c.from, c.type, 240);
     camWide(c, .5);
     const a0 = A(c), dur = 900, sp = W * 1.6;
-    const look = a.has("petal") ? ["petal", "fairy.m", [8, 12], 1, true] : ty === "ice" ? ["flake", "snow", [6, 12], .3, false] : ty === "fire" ? ["billow", "fire.b", [18, 34], .5, true] : ty === "ground" ? ["grain", "sand", [3, 5], .8, true] : ty === "bug" ? ["chip", "bug.m", [5, 8], 1, true] : ["leaf", ty === "grass" ? "leaf.c" : `${ty}.m`, [8, 12], 1, true];
+    const look = a.has("petal") ? ["petal", "fairy.m", [8, 12], 1, true] : ty === "ice" ? ["flake", "snow", [6, 12], .3, false] : ty === "fire" ? ["flame", "fire", [26, 54], 0, false] : ty === "ground" ? ["grain", "sand", [3, 5], .8, true] : ty === "bug" ? ["chip", "bug.m", [5, 8], 1, true] : ["leaf", ty === "grass" ? "leaf.c" : `${ty}.m`, [8, 12], 1, true];
     e.emit({ n: 90, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.25, .1) * H], dir, arc: .5, speed: [sp * .7, sp], tex: "streak", ramp: ty === "fire" ? "fire" : "white", face: true, size: [3, 3], aspect: [20, 40], life: [500, 800], over: dur * .8, alpha: .55 });
-    e.emit({ n: 110, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.25, .1) * H], dir, arc: .7, speed: [sp * .45, sp * .8], tex: look[0], ramp: look[1], lit: look[4], size: [look[2][0] * U(c), look[2][1] * U(c)], spin: [-8, 8], rot: "rand", aspect: look[0] === "petal" ? .7 : 1, life: [700, 1100], over: dur * .8, occ: look[3], emis: ty === "fire" ? .9 : 1 - look[3] * .7, erode: ty === "fire" ? .45 : 0 });
+    e.emit({ n: 110, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.25, .1) * H], dir, arc: .7, speed: [sp * .45, sp * .8], tex: look[0], ramp: look[1], lit: look[4], size: [look[2][0] * U(c), look[2][1] * U(c)], spin: [-8, 8], rot: "rand", aspect: look[0] === "petal" ? .7 : 1, life: [700, 1100], over: dur * .8, occ: look[3], emis: ty === "fire" ? .9 : 1 - look[3] * .7, erode: ty === "fire" ? .55 : 0, alpha: ty === "fire" ? .5 : 1, grow: ty === "fire" });
     if (ty === "fire") { e.emit({ n: 16, at: () => [rand(0, 1) * W, rand(.2, 1) * H], tex: "glow", ramp: "white.h", size: [W * .2, W * .3], life: 800, over: dur, alpha: .5, distort: true }); flashStage(c.stage, .1, 600, "#FF8A40"); }
     if (ty === "ice") flashStage(c.stage, .12, 600, "#C0F0FF");
     e.shake(.25);
@@ -543,11 +603,12 @@ export function makeDraw(k) {
     camUser(c, 1.1, .3);
     await charge(c.stage, c.from, c.type, 280);
     camFor(c, .35);
-    const look = a.has("sand") ? ["grain", "sand", .8] : ty === "fire" ? ["billow", "fire.b", .5] : ty === "grass" ? ["leaf", "leaf.c", 1] : ty === "water" ? ["drop", "water.l", .85] : ty === "bug" ? ["chip", "bug.m", 1] : ["streak", "white", 0];
+    const look = a.has("sand") ? ["billow", "dust", .8] : ty === "fire" ? ["billow", "fire.b", .5] : ty === "grass" ? ["leaf", "leaf.c", 1] : ty === "water" ? ["drop", "water.l", .85] : ty === "bug" ? ["chip", "bug.m", 1] : ["streak", "white", 0];
     for (const tt of c.targets) {
       const [x, y] = B(c, tt, .1), s = S(c, tt) * (a.has("big") ? 1.3 : 1);
       if (id === "hurricane") { e.emit({ at: [x, y - s * .5], tex: "tornado", ramp: "white.h", size: [s * 1.6, s * 1.9], aspect: .8, life: 1000, alpha: .7, grow: true }); darken(c.stage, .6, 900); }
-      orbit(c, [x, y], s, { n: 16, r0: .3, r1: .75, turns: 1.6, flat: .3, dur: 900, tex: look[0], ramp: look[1], sz: s * (look[0] === "billow" ? .3 : .16), rise: 1.3, steps: 12, occ: look[2], emis: look[0] === "billow" ? .9 : 1 - look[2] * .6, lit: look[0] !== "streak" });
+      orbit(c, [x, y], s, { n: 16, r0: .3, r1: .75, turns: 1.6, flat: .3, dur: 900, tex: look[0], ramp: look[1], sz: s * (look[0] === "billow" ? .3 : .16), rise: 1.3, steps: 12, occ: look[2], emis: a.has("sand") ? .1 : look[0] === "billow" ? .9 : 1 - look[2] * .6, lit: look[0] !== "streak" });
+      if (a.has("sand")) e.emit({ n: 60, at: [x, y], r: [s * .7, s * .25], tex: "grain", lit: true, ramp: "sand", vel: () => [rand(-1, 1) * s * 2, -rand(s * .5, s * 1.5)], size: [3, 5], life: [500, 800], over: 600, occ: .8, emis: .2 });
       if (ty === "fire") fire(e, [x, y + s * .3], s, 14, { r: [.7, .12], up: 1.2, size: [.2, .45], over: 700 });
       orbit(c, [x, y], s, { n: 10, r0: .7, r1: .4, turns: 1.2, flat: .3, dur: 900, tex: "streak", ramp: ty === "fire" ? "fire" : "white", sz: 6, rise: 1, steps: 10, delay: 100, aspect: 5 });
     }
@@ -558,6 +619,7 @@ export function makeDraw(k) {
   // waves of sound rolling out (Bug Buzz, Hyper Voice, Boomburst)
   D.rings = async (c, a) => {
     const e = c.e, big = a.has("big"), ty = T(c);
+    sfx("sound", { at: 120, pan: panAt(c, A(c)) });
     camUser(c, 1.12, .25);
     move(c, c.from, { sx: [1, 1.08, 1], sy: [1, .94, 1] }, { dur: 600 });
     await after(c, 120);
@@ -595,11 +657,13 @@ export function makeDraw(k) {
         fly(c, a0, b, { tex: "flame", ramp: "dragon", size: 30 * U(c), dur: 280, trailTex: "flame", trailRamp: "dragon", erode: .3 });
       } else if (ty === "dark" || id === "nightdaze" || id === "bittermalice") {
         // rings of darkness rolling out, the light round them dimming
-        for (let i = 0; i < 5; i++) e.emit({ at: a0, vel: [(b[0] - a0[0]) / .4, (b[1] - a0[1]) / .4], tex: "ring", ramp: "ink", size: [20, sT * 1.4], life: 400, delay: i * 70, occ: .8, emis: 0, grow: true });
-        for (let i = 0; i < 5; i++) e.emit({ at: a0, vel: [(b[0] - a0[0]) / .4, (b[1] - a0[1]) / .4], tex: "ring", ramp: "ghost", size: [16, sT * 1.2], life: 400, delay: i * 70 + 30, grow: true });
+        // Dark Pulse: waves of darkness roll out, black lobes edged violet, the air bending behind them
+        for (let i = 0; i < 6; i++) { const v = [(b[0] - a0[0]) / .42, (b[1] - a0[1]) / .42], ang = dirTo(a0, b) + Math.PI / 2; e.emit({ at: a0, vel: v, tex: "arc", ramp: "ink", size: [sT * .3, sT * 1.3], rot: ang, life: 420, delay: i * 70, occ: .9, emis: 0, alpha: .9, grow: true }); e.emit({ at: a0, vel: v, tex: "arc", ramp: "ghost.h", size: [sT * .25, sT * 1.15], rot: ang, life: 420, delay: i * 70 + 25, alpha: .7, grow: true }); e.emit({ at: a0, vel: v, tex: "wave", ramp: "white", size: [sT * .1, sT], life: 420, delay: i * 70, distort: true, grow: true }); }
+        e.emit({ n: 14, at: a0, dir: dirTo(a0, b), arc: .5, speed: [Math.hypot(b[0] - a0[0], b[1] - a0[1]) * 1.5, Math.hypot(b[0] - a0[0], b[1] - a0[1]) * 2.6], tex: "billow", lit: true, ramp: "ink", size: [sT * .12, sT * .35], life: 420, over: 300, erode: .5, rot: "rand", occ: .9, emis: 0, alpha: .8, grow: true });
         darken(c.stage, .6, 700);
       } else {
-        for (let i = 0; i < 5; i++) e.emit({ at: a0, vel: [(b[0] - a0[0]) / .38, (b[1] - a0[1]) / .38], tex: "ring", ramp: `${ty}.h`, size: [18, sT * 1.3], life: 380, delay: i * 60, grow: true });
+        for (let i = 0; i < 5; i++) { e.emit({ at: a0, vel: [(b[0] - a0[0]) / .38, (b[1] - a0[1]) / .38], tex: "arc", ramp: `${ty}.h`, size: [sT * .3, sT * 1.2], rot: dirTo(a0, b) + Math.PI / 2, life: 380, delay: i * 60, alpha: .9, grow: true }); e.emit({ at: a0, vel: [(b[0] - a0[0]) / .38, (b[1] - a0[1]) / .38], tex: "wave", ramp: "white", size: [sT * .1, sT], life: 380, delay: i * 60, distort: true, grow: true }); }
+        e.emit({ n: 20, at: a0, dir: dirTo(a0, b), arc: .3, speed: [Math.hypot(b[0] - a0[0], b[1] - a0[1]) * 2, Math.hypot(b[0] - a0[0], b[1] - a0[1]) * 3], tex: "glint", ramp: `${ty}.h`, size: [sT * .05, sT * .12], life: 350, over: 300, emis: 1 });
         fly(c, a0, b, { tex: "orb", size: 14 * U(c), dur: 380, trail: true });
       }
       e.at(380, () => { if (live(c, tt)) shock(e, b, sT * 2); });
@@ -642,18 +706,27 @@ export function makeDraw(k) {
   D.burst = async (c, a) => {
     const e = c.e, ty = T(c), at = A(c), s = S(c), id = c.id, big = a.has("big");
     camUser(c, 1.08, .3);
-    await Promise.all([charge(c.stage, c.from, c.type, big ? 520 : 320), move(c, c.from, { sx: [1, 1.12, .96], sy: [1, 1.12, .96], flash: [0, 1.5, 2] }, { dur: big ? 520 : 320 })]);
+    await Promise.all([charge(c.stage, c.from, c.type, big ? 520 : 320), move(c, c.from, { sx: [1, 1.12, .96], sy: [1, 1.12, .96], flash: [0, .2, .3] }, { dur: big ? 520 : 320 })]);
     camWide(c, .5);
-    if (ty === "electric") for (let i = 0; i < 10; i++) { const ang = around(10, i); boltStrip(e, at, [at[0] + Math.cos(ang) * e.W * .5, at[1] + Math.sin(ang) * e.H * .5], { width: 7, dur: 420, flicker: 6, delay: i * 25 }); }
+    sfx("boom", { p: big ? 1.2 : .9, pan: panAt(c, at) });
+    if (ty === "electric") {
+      // Discharge: lightning thrown out on every side, a crackling sphere of it round the user, sparks raining
+      for (let i = 0; i < 12; i++) { const ang = around(12, i); boltStrip(e, at, [at[0] + Math.cos(ang) * e.W * .5, at[1] + Math.sin(ang) * e.H * .5], { width: 8, dur: 460, flicker: 7, delay: i * 25, forks: 2 }); }
+      for (let i = 0; i < 8; i++) { const a0 = around(8, i), a1 = a0 + rand(1, 1.8); boltStrip(e, [at[0] + Math.cos(a0) * s * .7, at[1] + Math.sin(a0) * s * .7], [at[0] + Math.cos(a1) * s * .7, at[1] + Math.sin(a1) * s * .7], { width: 5, dur: 400, flicker: 6, forks: 0, steps: 7, delay: i * 30 }); }
+      DEBRIS.electric(e, at, s * 1.6, 1.4);
+    }
     else {
-      const ramp = id === "mistyexplosion" ? "fairy" : ty === "fire" || /explosion|selfdestruct/.test(id) ? "fire.b" : ty;
-      e.emit({ n: 70, at, r: s * .3, tex: "billow", lit: true, ramp, speed: [s * 2, s * 6], drag: 3, size: [[s * .3, s * .5], [s * .8, s * 1.2]], life: [600, 1000], erode: .42, rot: "rand", spin: [-1, 1], emis: .9, occ: .55, grow: true });
+      const ramp = id === "mistyexplosion" ? "fairy.m" : ty === "fire" || /explosion|selfdestruct/.test(id) ? "fire.s" : `${ty}.m`;
+      // a fireball of lit lobes, white-hot only at its heart, browning into smoke at its rim (a page of white read as a raw flash)
+      e.emit({ n: 46, at, r: s * .3, tex: "billow", lit: true, ramp, speed: [s * 2, s * 5], drag: 3, size: [[s * .26, s * .4], [s * .6, s * .9]], life: [600, 950], erode: .46, rot: "rand", spin: [-1, 1], emis: .7, occ: .65, alpha: .9, grow: true });
+      e.emit({ n: 10, at, r: s * .15, tex: "billow", lit: true, ramp: ramp === "fire.b" ? "fire.c" : ramp, speed: [s, s * 2], drag: 3, size: [[s * .2, s * .3], [s * .4, s * .55]], life: [300, 450], erode: .4, rot: "rand", emis: .9, occ: .3, grow: true });
       smoke(e, at, s * 2.4, 14, { ramp: id === "mistyexplosion" ? "mist" : undefined, rise: 60, alpha: .8, spread: .6, delay: 150, life: [1100, 1600] });
     }
-    glow(e, at, s * 6 * (big ? 1.3 : 1), ty, { dur: 600, ramp: big ? "white" : null });
-    for (let i = 0; i < 3; i++) ring(e, at, e.W * (.5 + i * .3), ty, { dur: 700, delay: i * 80, tex: i ? "ring" : "wave" });
+    glow(e, at, s * 2.4 * (big ? 1.3 : 1), ty, { dur: 500, alpha: .25 });
+    e.emit({ at, tex: "spark", ramp: big ? "fire" : ty, size: [s * .5, s * 3.4 * (big ? 1.3 : 1)], rot: rand(0, Math.PI), life: 320, alpha: .9, grow: true });
+    sparks(e, at, 30, big ? "fire" : ty, { speed: [s * 5, s * 11], len: [16, 34], size: 3.4 });
     shock(e, at, e.W * 1.4, { dur: 800 });
-    if (big) flashStage(c.stage, .55, 520);
+    if (big) flashStage(c.stage, .3, 420, "#FFD8A0");
     e.shake(big ? 1 : .6);
     e.kick(.05);
     await after(c, 160);
@@ -673,8 +746,9 @@ export function makeDraw(k) {
     if (ty === "psychic") { flashStage(c.stage, .3, 900, "#FF5ADC"); e.anim(e.grade, { ca: [0, .014, 0] }, { dur: 900 }); }
     for (const tt of c.targets) {
       const b = B(c, tt), sT = S(c, tt), rr = ty === "psychic" ? "magenta" : null;
-      for (let i = 0; i < 5; i++) ring(e, b, sT * (2.6 - i * .4), ty, { dur: 640, delay: i * 70, s0: 1, alpha: .85, ramp: rr });
-      for (let i = 0; i < 4; i++) ring(e, b, sT * (1.4 + i * .5), ty, { dur: 520, delay: 200 + i * 80, alpha: .6, ramp: rr });
+      for (let i = 0; i < 3; i++) ring(e, b, sT * (2.4 - i * .5), ty, { dur: 640, delay: i * 90, s0: 1, alpha: .4, ramp: rr });
+      e.emit({ at: b, tex: "glow", ramp: rr || `${ty}.h`, size: [sT * .6, sT * 1.9], life: 760, alpha: .4, grow: true });
+      orbit(c, b, sT, { n: 10, r0: .9, r1: .5, turns: 1.2, flat: .5, dur: 760, tex: "glint", ramp: rr || `${ty}.h`, sz: sT * .14, steps: 10, delay: 120 });
       for (let i = 0; i < 6; i++) e.emit({ at: b, tex: "wave", ramp: "white", size: [sT * .2, sT * 2.2], life: 500, delay: i * 90, distort: true, grow: true });
       e.emit({ n: 24, at: b, r: sT * .2, tex: "streak", ramp: rr || `${ty}.h`, speed: [sT * 3, sT * 6], face: true, size: [3, 2], aspect: [10, 20], life: [300, 500], over: 400, delay: 200 });
       glints(e, b, sT, 8, rr || `${ty}.h`, { r: .6, delay: 250 });
@@ -739,7 +813,7 @@ export function makeDraw(k) {
     const e = c.e;
     camFor(c, .36);
     if (a.has("kiss")) { const b = B(c, t, .6), s = S(c, t); e.emit({ at: b, tex: "heart", ramp: "fairy.h", size: [s * .1, s * .45], life: 500, grow: true }); await after(c, 300); }
-    else { const b = B(c, t); for (let i = 0; i < 3; i++) ring(e, b, S(c, t) * 1.6, "grass", { dur: 500, delay: i * 90, s0: 1 }); await after(c, 280); }
+    else { const b = B(c, t), s = S(c, t); e.emit({ at: b, tex: "glow", ramp: "grass.h", size: [s * .3, s * 1.4], life: 600, alpha: .45, grow: true }); e.emit({ n: 26, at: () => [b[0] + rand(-.5, .5) * s, b[1] + rand(-.3, .5) * s], vel: () => [rand(-10, 10), -rand(s * .5, s * 1)], tex: "glow", ramp: "grass.h", size: [s * .07, s * .03], life: [400, 600], over: 300, emis: 1 }); glints(e, b, s, 8, "grass.h", { r: .5, over: 300 }); await after(c, 300); }
     landAll(c);
     if (live(c, t)) flowBack(c, t, 16);
     await after(c, 420);
@@ -802,102 +876,148 @@ export function makeDraw(k) {
   /* ---------- verbs: on itself ---------- */
   const selfAt = c => A(c, .45);
   D.blades = async c => {
-    // Swords Dance: blades of light turn round the user and rise, crossing over it
+    // Swords Dance: solid lit blades of steel turn round the user, rise, and cross over its head in a flash
     const e = c.e, at = selfAt(c), s = S(c);
     camUser(c, 1.16, .3);
-    orbit(c, at, s, { n: 6, r0: .75, r1: .55, turns: 1.2, flat: .35, dur: 900, tex: "sword", ramp: "steel.h", sz: s * .22, rise: .3, steps: 14, aspect: 2.6, face: true });
-    e.at(900, () => { for (const sg of [-1, 1]) e.emit({ at: [at[0] + sg * s * .1, at[1] - s * .7], tex: "sword", ramp: "white.h", size: [s * .2, s * .3], aspect: 2.6, rot: -Math.PI / 2 + sg * .5, life: 500, grow: true }); sparks(e, [at[0], at[1] - s * .75], 10, "steel", { ramp: "white" }); });
-    await Promise.all([after(c, 1000), aura(c.stage, c.from, "fighting", 1, 900)]);
+    orbit(c, at, s, { n: 6, r0: .8, r1: .6, turns: 1.2, flat: .35, dur: 900, tex: "sword", ramp: "steel.c", sz: s * .34, rise: .3, steps: 14, aspect: 2.6, face: true, lit: true, occ: .7, emis: .5 });
+    orbit(c, at, s, { n: 6, r0: .8, r1: .6, turns: 1.2, flat: .35, dur: 900, tex: "glow", ramp: "steel.h", sz: s * .3, rise: .3, steps: 14 });
+    e.at(900, () => {
+      for (const sg of [-1, 1]) e.emit({ at: [at[0] + sg * s * .12, at[1] - s * .75], tex: "sword", lit: true, ramp: "steel.c", size: [s * .3, s * .5], aspect: 2.6, rot: -Math.PI / 2 + sg * .5, life: 600, occ: .7, emis: .6, grow: true });
+      e.emit({ at: [at[0], at[1] - s * .8], tex: "spark", ramp: "white", size: [s * .2, s * 1.2], life: 260, grow: true });
+      glints(e, [at[0], at[1] - s * .8], s, 8, "glint", { r: .4 });
+      sparks(e, [at[0], at[1] - s * .8], 14, "steel", { ramp: "gold" });
+    });
+    await Promise.all([after(c, 1050), aura(c.stage, c.from, "fighting", 1, 900)]);
     await boost(c.stage, c.from, 2);
   };
   D.dance = async (c, a, inner = false) => {
+    // Dragon Dance: a blue-violet blaze climbs round the user as it moves; Quiver Dance: shining scales of light lift off it
     const e = c.e, at = selfAt(c), s = S(c), ty = T(c), id = c.id;
     if (!inner) camUser(c, 1.14, .3);
-    const look = id === "dragondance" ? ["flame", "dragon"] : id === "quiverdance" ? ["spark", "bug"] : ["spark", ty];
-    move(c, c.from, { rot: [0, .12, -.12, .08, 0], y: [0, -s * .05, 0, -s * .04, 0] }, { dur: 800, ease: "sine" });
-    orbit(c, at, s, { n: 12, r0: .7, r1: .55, turns: 1.5, flat: .3, dur: 800, tex: look[0], ramp: look[1], sz: s * .16, rise: .9, steps: 12 });
-    if (id === "dragondance") aura(c.stage, c.from, "fire", 1, 800);
-    await after(c, 820);
+    move(c, c.from, { rot: [0, .12, -.12, .08, 0], y: [0, -s * .05, 0, -s * .04, 0] }, { dur: 900, ease: "sine" });
+    if (id === "dragondance" || ty === "dragon") {
+      const [x, y] = A(c, .05);
+      e.emit({ n: 40, at: [x, y], r: [s * .42, s * .08], tex: "billow", lit: true, ramp: "dragon.m", vel: () => [rand(-20, 20), -rand(s * 1.2, s * 2)], acc: [0, -s], size: [[s * .16, s * .26], s * .04], life: [450, 700], over: 700, erode: .45, rot: "rand", emis: .9, occ: .4 });
+      orbit(c, at, s, { n: 8, r0: .75, r1: .55, turns: 1.6, flat: .3, dur: 900, tex: "flame", ramp: "dragon", sz: s * .26, rise: 1, steps: 12, emis: 1 });
+      aura(c.stage, c.from, "dragon", 1, 900);
+    } else {
+      orbit(c, at, s, { n: 14, r0: .75, r1: .55, turns: 1.5, flat: .3, dur: 900, tex: "glint", ramp: `${ty}.h`, sz: s * .16, rise: .9, steps: 12 });
+      e.emit({ n: 24, at, r: s * .5, tex: "petal", lit: true, ramp: `${ty}.m`, vel: () => [rand(-30, 30), -rand(40, 100)], spin: [-4, 4], rot: "rand", size: [s * .08, s * .05], aspect: .7, life: [700, 1000], over: 600, occ: .5, emis: .6 });
+      aura(c.stage, c.from, c.type, 1, 900);
+    }
+    await after(c, 920);
     if (!inner) await boost(c.stage, c.from, 1);
   };
   D.flex = async (c, a, inner = false) => {
-    const e = c.e, at = selfAt(c), s = S(c);
+    // Bulk Up: it tenses, red-orange power swells off it in rising streaks and a heat of light
+    const e = c.e, at = selfAt(c), s = S(c), grow = c.id === "growth", ty = grow ? "grass" : "fighting";
     if (!inner) camUser(c, 1.16, .3);
-    await Promise.all([move(c, c.from, { sx: [1, 1.12, 1.12, 1], sy: [1, .92, 1.06, 1], flash: [0, .3, .5, 0] }, { dur: 620 }), aura(c.stage, c.from, c.id === "growth" ? "grass" : "fire", 1, 620)]);
-    e.emit({ n: 8, at, r: s * .5, tex: "streak", ramp: "fire", vel: () => [0, -s * 1.8], face: true, size: [3, 3], aspect: 6, life: 400, over: 300 });
+    e.emit({ n: 20, at: A(c, .1), r: [s * .45, s * .1], tex: "streak", ramp: grow ? "grass" : "fire", vel: () => [0, -rand(s * 1.6, s * 2.6)], face: true, size: [3, 2], aspect: [10, 18], life: [300, 450], over: 520, alpha: .9 });
+    if (grow) e.emit({ n: 14, at: A(c, .1), r: [s * .45, s * .1], tex: "leaf", lit: true, ramp: "leaf.c", vel: () => [rand(-30, 30), -rand(s * .8, s * 1.4)], spin: [-6, 6], rot: "rand", size: [s * .1, s * .1], aspect: 1.9, life: 800, over: 500, occ: 1, emis: .2 });
+    else fire(e, A(c, .05), s, 12, { r: [.42, .06], up: 1.4, size: [.12, .26], over: 480, embers: false });
+    await Promise.all([move(c, c.from, { sx: [1, 1.1, 1.1, 1], sy: [1, .94, 1.05, 1] }, { dur: 620 }), aura(c.stage, c.from, ty, 1, 620)]);
+    glints(e, at, s, 4, `${ty}.h`, { r: .5 });
     if (!inner) await boost(c.stage, c.from, 1);
   };
   D.gears = async c => {
+    // Shift Gear: two lit steel gears mesh and turn against each other, sparks thrown off their teeth
     const e = c.e, at = selfAt(c), s = S(c);
     camUser(c, 1.16, .3);
-    for (const [ox, sg] of [[-.25, 1], [.25, -1]]) e.emit({ at: [at[0] + ox * s, at[1] - s * .1], tex: "gear", ramp: "steel.h", size: [s * .35, s * .45], spin: sg * 6, life: 900, occ: .6, emis: .5, grow: true });
-    sparks(e, at, 10, "steel", { ramp: "gold" });
-    await after(c, 800);
+    for (const [ox, oy, sg, k2] of [[-.3, -.05, 1, .5], [.28, .15, -1, .36]]) e.emit({ at: [at[0] + ox * s, at[1] + oy * s], tex: "gear", lit: true, ramp: "steel.c", size: [s * .2, s * k2 * 1.1], spin: sg * 7, life: 1000, occ: .8, emis: .35, grow: true });
+    for (let i = 0; i < 4; i++) e.at(200 + i * 160, () => sparks(e, [at[0], at[1] + s * .05], 8, "steel", { ramp: "gold", speed: [s * 2, s * 4], len: [6, 12] }));
+    await after(c, 900);
     await boost(c.stage, c.from, 2);
   };
   D.shell = async c => {
+    // Shell Smash: it cracks its own shell, lit fragments burst off, a flash of power
     const e = c.e, at = selfAt(c), s = S(c);
     camUser(c, 1.16, .3);
-    await move(c, c.from, { sx: [1, .9, 1.1], sy: [1, 1.1, .92], flash: [0, .8, 0] }, { dur: 400 });
-    e.emit({ n: 14, at, r: s * .3, tex: "shell", ramp: "white.h", speed: [s * 1.5, s * 3], acc: [0, s * 4], rot: "rand", spin: [-8, 8], size: [s * .1, s * .1], life: 700, occ: .7 });
-    shock(e, at, s * 2.4); e.shake(.3);
+    await move(c, c.from, { sx: [1, .9, 1.1], sy: [1, 1.1, .92], flash: [0, .3, 0] }, { dur: 400 });
+    e.emit({ n: 18, at, r: s * .35, tex: "chip", lit: true, ramp: "chip", speed: [s * 1.6, s * 3.4], acc: [0, s * 5], rot: "rand", spin: [-8, 8], size: [[s * .08, s * .15], "same"], life: [600, 900], occ: 1, emis: .2 });
+    e.emit({ at, tex: "spark", ramp: "fire", size: [s * .3, s * 1.8], rot: rand(0, 3), life: 260, grow: true });
+    shock(e, at, s * 2.6); e.shake(.35);
+    aura(c.stage, c.from, "fire", 1, 600);
     await boost(c.stage, c.from, 2);
   };
   D.drum = async c => {
+    // Belly Drum: it beats its belly, each beat a puff of force off it, then red power blazes up
     const e = c.e, at = selfAt(c), s = S(c);
     camUser(c, 1.18, .3);
-    for (let i = 0; i < 4; i++) e.at(i * 160, () => { move(c, c.from, { sx: [1, 1.08, 1], sy: [1, .92, 1] }, { dur: 150 }); ring(e, at, s * 1.4, "fire", { dur: 260 }); e.shake(.12); });
+    for (let i = 0; i < 4; i++) e.at(i * 160, () => { move(c, c.from, { sx: [1, 1.08, 1], sy: [1, .92, 1] }, { dur: 150 }); e.emit({ at: [at[0], at[1] + s * .1], tex: "spark", ramp: "fire", size: [s * .2, s * .9], rot: rand(0, 3), life: 160, grow: true }); shock(e, at, s * 1.8, { dur: 260 }); e.shake(.14); });
     await after(c, 680);
+    fire(e, A(c, .05), s, 22, { r: [.45, .08], up: 1.6, size: [.16, .34], over: 600 });
     await Promise.all([aura(c.stage, c.from, "fire", 2, 700), boost(c.stage, c.from, 6)]);
   };
   D.sigil = async c => {
-    // a circle of light opens under it and turns, its mind gathering (Calm Mind, Nasty Plot, Amnesia)
-    const e = c.e, [x, y] = A(c, 0), s = S(c), ty = T(c), f = .3;
+    // Calm Mind, Nasty Plot: its mind gathers: the air about its head bends, light of its type circles in and settles into it
+    const e = c.e, s = S(c), ty = T(c), head = A(c, .82), dark = c.id === "nastyplot";
     camUser(c, 1.16, .3);
-    e.emit({ at: [x, y], tex: "sigil", ramp: `${ty}.h`, size: [s * 1.8 * f, s * 1.8 * f], aspect: 1 / f, life: 1000, layer: 0, alpha: .9, grow: true });
-    e.emit({ at: [x, y - s * .5], tex: "streak", ramp: ty, size: [s * .9, s * .9], aspect: .3, rot: Math.PI / 2, life: 800, alpha: .5 });
-    if (c.id === "nastyplot") e.emit({ at: A(c, .9), tex: "eye", ramp: "dark.h", size: [s * .1, s * .25], aspect: 1.7, life: 700, emis: .8, grow: true });
-    await Promise.all([aura(c.stage, c.from, c.type, 1, 900), after(c, 900)]);
-    await boost(c.stage, c.from, c.id === "nastyplot" ? 2 : 1);
+    if (dark) darken(c.stage, .35, 1000);
+    for (let i = 0; i < 3; i++) e.emit({ at: head, tex: "wave", ramp: "white", size: [s * 1.6, s * .2], life: 600, delay: i * 200, distort: true, grow: true });
+    orbit(c, head, s * .7, { n: 10, r0: 1.1, r1: .2, turns: 1.4, flat: .45, dur: 900, tex: "glint", ramp: `${ty}.h`, sz: s * .12, steps: 12 });
+    e.emit({ at: head, tex: "glow", ramp: `${ty}.h`, size: [s * .1, s * .9], life: 900, alpha: .5, grow: true });
+    if (dark) e.emit({ at: head, tex: "eye", ramp: "dark.h", size: [s * .1, s * .32], aspect: 1.7, life: 800, emis: .8, grow: true });
+    await Promise.all([aura(c.stage, c.from, c.type, 1, 900), after(c, 920)]);
+    glints(e, head, s, 6, `${ty}.h`, { r: .3 });
+    await boost(c.stage, c.from, dark ? 2 : 1);
   };
   D.focus = async c => {
+    // Focus Energy: a wind of power spirals up round it, orange-white, and it braces
     const e = c.e, at = selfAt(c), s = S(c);
     camUser(c, 1.18, .3);
-    orbit(c, [at[0], at[1] + s * .3], s, { n: 8, r0: .8, r1: .5, turns: 1, flat: .3, dur: 700, tex: "streak", ramp: "white", sz: 5, rise: 1, aspect: 6 });
-    await Promise.all([charge(c.stage, c.from, c.type, 600), after(c, 700)]);
+    orbit(c, [at[0], at[1] + s * .35], s, { n: 12, r0: .8, r1: .45, turns: 1.4, flat: .3, dur: 800, tex: "streak", ramp: "fire", sz: 5, rise: 1.2, aspect: 7 });
+    orbit(c, [at[0], at[1] + s * .35], s, { n: 8, r0: .7, r1: .4, turns: 1.2, flat: .3, dur: 800, tex: "flame", ramp: "fire.h", sz: s * .14, rise: 1.1, delay: 80 });
+    await Promise.all([move(c, c.from, { sy: [1, .95, 1.03, 1] }, { dur: 800 }), aura(c.stage, c.from, "fire", 1, 800), after(c, 820)]);
+    glints(e, A(c, .8), s, 4, "fire.h", { r: .3 });
   };
   D.harden = async c => {
-    // a sheen runs down it (Iron Defense, Acid Armor, Cosmic Power, Cotton Guard)
-    const e = c.e, at = selfAt(c), s = S(c), ty = T(c);
+    // a sheen runs down it: Iron Defense a mirror shine of steel, Acid Armor a gloss of liquid, Cosmic Power stars, Cotton Guard cotton
+    const e = c.e, at = selfAt(c), s = S(c), id = c.id;
     camUser(c, 1.16, .3);
-    e.emit({ at: [at[0] - s * .5, at[1] - s * .5], vel: [s * 2.2, s * 2.2], tex: "streak", ramp: "white", size: [s * .3, s * .3], aspect: 4, rot: -Math.PI / 4, life: 450 });
-    if (c.id === "cottonguard") e.emit({ n: 18, at, r: s * .5, tex: "cloud", ramp: "white.h", size: [s * .1, s * .3], life: 800, occ: .6, emis: .5, grow: true });
-    if (c.id === "minimize") await move(c, c.from, { sx: [1, .5, 1], sy: [1, .5, 1] }, { dur: 600 });
-    await Promise.all([move(c, c.from, { tintR: [1, 1], tintG: [1, 1], tintB: [1, 1], tintA: [0, .35, 0], rimR: [.8, .8], rimG: [.9, .9], rimB: [1, 1], rimA: [0, 1, 0] }, { dur: 600 }), after(c, 500)]);
-    void ty;
+    if (id === "minimize") await move(c, c.from, { sx: [1, .5, 1], sy: [1, .5, 1] }, { dur: 600 });
+    if (id === "cottonguard") e.emit({ n: 20, at, r: s * .55, tex: "billow", lit: true, ramp: "white.h", size: [s * .14, s * .32], life: 900, occ: .6, emis: .4, erode: .3, rot: "rand", grow: true });
+    else if (id === "acidarmor") { e.emit({ n: 16, at: () => [at[0] + rand(-.4, .4) * s, at[1] - s * .5], vel: [0, s * 1.2], acc: [0, s], tex: "drop", lit: true, ramp: "toxic.c", face: true, rot: -Math.PI / 2, aspect: .72, size: [s * .08, s * .1], life: 700, over: 400, occ: .9, emis: .4 }); }
+    else if (id === "cosmicpower") { orbit(c, at, s, { n: 10, r0: .9, r1: .5, turns: 1, flat: .4, dur: 800, tex: "star", ramp: "gold.c", sz: s * .1, lit: true, emis: .8, occ: .4 }); }
+    else if (id === "stockpile") { for (let i = 0; i < 3; i++) e.emit({ at, tex: "orb", lit: true, ramp: "white.h", size: [s * .1, s * .4], life: 300, delay: i * 200, emis: .8, occ: .3, grow: true }); }
+    // the shine: a band of light sweeping down over it, glints catching at its edges
+    for (let i = 0; i < 2; i++) e.emit({ at: [at[0] - s * .6, at[1] - s * .6], vel: [s * 2.4, s * 2.4], tex: "streak", ramp: "white", size: [s * .5, s * .5], aspect: 5, rot: -Math.PI / 4, life: 480, delay: i * 200, alpha: .9 });
+    glints(e, at, s, 6, "glint", { r: .45, delay: 250, over: 350 });
+    const steel = id === "irondefense" || id === "shelter";
+    await Promise.all([move(c, c.from, { tintR: [1, steel ? .82 : 1], tintG: [1, steel ? .88 : 1], tintB: [1, 1], tintA: [0, steel ? .35 : .15, 0], rimR: [.85, .85], rimG: [.92, .92], rimB: [1, 1], rimA: [0, 1, 0] }, { dur: 700 }), after(c, 600)]);
     await boost(c.stage, c.from, 2);
   };
   D.speed = async c => {
+    // Agility: it darts side to side faster than the eye, copies of it left behind, lines of speed streaming off it
     const e = c.e, a = actorOf(c.stage, c.from), s = S(c);
     camUser(c, 1.14, .3);
     if (a) { a.trail = true; a.hist = []; }
-    await move(c, c.from, { x: [0, -s * .25, s * .25, -s * .15, 0], ghost: [0, 1, 1, 1, 0] }, { dur: 640, ease: "inout" });
+    for (let i = 0; i < 6; i++) e.at(i * 100, () => { const [x, y] = A(c); e.emit({ n: 6, at: [x + (a?.st.x || 0), y], r: [s * .5, s * .45], vel: [rand(-1, 1) > 0 ? s * 6 : -s * 6, 0], tex: "streak", ramp: "white", face: true, size: [3, 2], aspect: [14, 24], life: 220, alpha: .8 }); });
+    await move(c, c.from, { x: [0, -s * .3, s * .3, -s * .2, s * .15, 0], ghost: [0, 1, 1, 1, 1, 0] }, { dur: 700, ease: "inout" });
     if (a) a.trail = false;
-    sparks(e, selfAt(c), 10, "normal", { ramp: "white", dir: Math.PI, arc: .4, len: [14, 24] });
     await boost(c.stage, c.from, 2);
   };
   D.charge = async c => { camUser(c, 1.16, .3); await Promise.all([charge(c.stage, c.from, "electric", 600), aura(c.stage, c.from, "electric", 1, 600)]); for (let i = 0; i < 4; i++) { const [x, y] = selfAt(c), s = S(c), a0 = around(4, i); boltStrip(c.e, [x, y], [x + Math.cos(a0) * s * .6, y + Math.sin(a0) * s * .6], { width: 4, dur: 240, flicker: 3, forks: 0, steps: 5, delay: i * 50 }); } await after(c, 300); };
   D.heal = async c => { camUser(c, 1.12, .3); await heal(c.stage, c.from); };
   D.roost = async c => { const e = c.e, at = selfAt(c), s = S(c); camUser(c, 1.12, .3); e.emit({ n: 10, at: [at[0], at[1] - s * .6], r: s * .5, tex: "feather", ramp: "white.h", vel: () => [rand(-20, 20), rand(30, 60)], spin: [-3, 3], size: [s * .14, s * .14], aspect: 2.2, life: 1000, occ: .6, over: 300 }); await heal(c.stage, c.from); };
   D.sunheal = async c => {
-    // light pours down on it from above (Synthesis, Morning Sun, Moonlight)
+    // Synthesis, Morning Sun, Moonlight: a shaft of light comes down on it, motes of it fall and soak in
     const e = c.e, [x, y] = A(c, 0), s = S(c), moon = c.id === "moonlight";
     camUser(c, 1.1, .3);
-    e.emit({ at: [x, y - e.H * .5], tex: "streak", ramp: moon ? "fairy.h" : "gold", size: [s * 1.2, s * 1.2], aspect: e.H / (s * 1.2), rot: Math.PI / 2, life: 1100, alpha: .45 });
-    e.emit({ n: 26, at: () => [x + rand(-.5, .5) * s, y - e.H * .6], vel: [0, e.H * 1.2], tex: "glow", ramp: moon ? "fairy.h" : "gold", size: [5, 5], life: 500, over: 700 });
+    if (moon) darken(c.stage, .35, 1100);
+    e.emit({ at: [x, y - e.H * .45], tex: "glow", ramp: moon ? "fairy.h" : "gold", size: [s * 1.6, s * 1.9], aspect: s * 1.9 / (e.H * 1.1), life: 1100, alpha: .18, grow: true });
+    e.emit({ at: [x, y - s * .3], tex: "glow", ramp: moon ? "fairy.h" : "gold", size: [s * .6, s * 1.4], life: 1000, alpha: .16, grow: true });
+    e.emit({ n: 40, at: () => [x + rand(-.55, .55) * s, y - e.H * .6], vel: () => [0, e.H * rand(.9, 1.3)], tex: "glint", ramp: moon ? "fairy.h" : "gold", size: [s * .06, s * .12], life: 600, over: 700, emis: 1 });
+    glints(e, [x, y - s * .9], s, 6, moon ? "fairy.h" : "gold", { r: .5, delay: 300 });
     await heal(c.stage, c.from);
   };
-  D.rest = async c => { camUser(c, 1.12, .3); await ailment(c.stage, c.from, "slp"); await heal(c.stage, c.from); };
+  D.rest = async c => {
+    const e = c.e, s = S(c), [x, y] = A(c, .85);
+    camUser(c, 1.12, .3);
+    move(c, c.from, { sy: [1, .94, 1], y: [0, s * .03, 0] }, { dur: 1200, ease: "sine" });
+    e.emit({ n: 4, at: [x + s * .15, y], each: i => ({ delay: i * 260, size: [s * (.12 + i * .04), s * (.2 + i * .05)] }), tex: "z", lit: true, ramp: "white.h", vel: [s * .3, -s * .45], life: 1200, emis: .8, occ: .4, rot: -.2 });
+    await after(c, 500);
+    await heal(c.stage, c.from);
+  };
   D.wish = async c => {
     // a star falls from the sky onto it (Wish, Healing Wish)
     const e = c.e, [x, y] = A(c, .6), s = S(c);
@@ -905,31 +1025,61 @@ export function makeDraw(k) {
     e.emit({ at: [x - e.W * .3, -20], vel: [e.W * .3 / .6, (y + 20) / .6], tex: "star", ramp: "gold", size: [s * .3, s * .3], spin: 6, life: 600, emis: 1 });
     for (let i = 0; i < 16; i++) { const t2 = i / 16; e.emit({ at: [lerp(x - e.W * .3, x, t2), lerp(-20, y, t2)], tex: "spark", ramp: "gold", size: [s * .2, 0], life: 400, delay: t2 * 600 }); }
     await after(c, 600);
-    glow(e, [x, y], s * 2, "electric", { dur: 600, ramp: "gold" });
+    glow(e, [x, y], s * 1.4, "electric", { dur: 600, ramp: "gold", alpha: .2 });
+    glints(e, [x, y], s, 10, "gold", { r: .6, over: 300 });
     await heal(c.stage, c.from);
   };
-  D.protect = async c => { camUser(c, 1.14, .3); await k.flashMon(c.stage, c.from, .4); };
-  D.endure = async c => { camUser(c, 1.16, .3); await Promise.all([move(c, c.from, { sy: [1, .92, 1], tintR: [1, 1], tintG: [.3, .3], tintB: [.2, .2], tintA: [0, .45, 0] }, { dur: 600 }), aura(c.stage, c.from, "fire", 1, 600)]); };
+  D.protect = async c => {
+    // it braces and a light of its guard gathers round it (the guard itself closes when the line says it holds)
+    const e = c.e, at = selfAt(c), s = S(c), t = { kingsshield: "steel", banefulbunker: "poison", spikyshield: "grass", detect: "fighting", obstruct: "dark", silktrap: "bug", burningbulwark: "fire" }[c.id] || "grass";
+    camUser(c, 1.14, .3);
+    e.emit({ n: 16, at: () => { const a0 = rand(0, 6.28); return [at[0] + Math.cos(a0) * s * .9, at[1] + Math.sin(a0) * s * .8]; }, tex: "glint", ramp: `${t}.h`, size: [s * .05, s * .14], life: 400, over: 250, emis: 1, grow: true });
+    await Promise.all([move(c, c.from, { sy: [1, .95, 1], rimR: [.6, .6], rimG: [1, 1], rimB: [.6, .6], rimA: [0, 1, 0] }, { dur: 420 }), after(c, 380)]);
+  };
+  D.endure = async c => {
+    // Endure: it clenches, a red heat of will blazes up round it
+    const e = c.e, s = S(c);
+    camUser(c, 1.16, .3);
+    fire(e, A(c, .05), s, 18, { r: [.42, .06], up: 1.4, size: [.14, .3], over: 500, embers: true });
+    await Promise.all([move(c, c.from, { sy: [1, .92, 1], rimR: [1, 1], rimG: [.4, .4], rimB: [.25, .25], rimA: [0, 1, 0] }, { dur: 600 }), after(c, 600)]);
+  };
   D.guard = async c => {
-    // a wall stands in front of the side (Wide Guard, Quick Guard)
-    const e = c.e, [x, y] = A(c, .4), s = S(c), ty = T(c);
+    // Wide Guard, Quick Guard: a wall of lit panels rises in front of the whole side, a glint running along it
+    const e = c.e, [x, y] = A(c, .4), s = S(c), ty = T(c), own = actorOf(c.stage, c.from)?.own, fx = x + (own ? s * .8 : -s * .8);
     camUser(c, 1.06, .35);
-    e.emit({ at: [x + (actorOf(c.stage, c.from)?.own ? s * .7 : -s * .7), y], tex: "hexgrid", ramp: `${ty}.h`, size: [s * 1.3, s * 1.6], aspect: 1.6, life: 900, alpha: .85, grow: true });
-    await after(c, 700);
+    for (let i = 0; i < 7; i++) { const u = i / 6 - .5; e.emit({ at: [fx + u * s * .5, y + u * s * 1.2], tex: "glow", ramp: `${ty}.h`, size: [s * .1, s * .5], aspect: .45, life: 900, delay: Math.abs(u) * 240, alpha: .55, grow: true }); e.emit({ at: [fx + u * s * .5, y + u * s * 1.2], tex: "hex", ramp: `${ty}.h`, size: [s * .1, s * .34], life: 900, delay: Math.abs(u) * 240, alpha: .8, grow: true }); }
+    glints(e, [fx, y], s, 8, "glint", { r: .7, over: 500 });
+    await after(c, 760);
   };
   D.spotlight = async c => {
-    // a light comes down on it and draws every eye (Follow Me, Rage Powder)
-    const e = c.e, [x, y] = A(c, 0), s = S(c);
+    // Follow Me, Rage Powder: a light comes down on it and draws every eye
+    const e = c.e, [x, y] = A(c, 0), s = S(c), rage = c.id === "ragepowder";
     camUser(c, 1.12, .3);
     darken(c.stage, .5, 1000);
-    e.emit({ at: [x, y - e.H * .45], tex: "streak", ramp: "white.h", size: [s * 1.4, s * 1.4], aspect: e.H / (s * 1.4), rot: Math.PI / 2, life: 1000, alpha: .4 });
-    ring(e, [x, y], s * 1.8, "normal", { flat: .3, dur: 1000, ramp: "white.h", layer: 0, s0: 1 });
-    if (c.id === "ragepowder") e.emit({ n: 30, at: [x, y - s], r: s * .6, tex: "dot", ramp: "fire.h", vel: [0, 30], size: [3, 3], life: 900, over: 500 });
+    e.emit({ at: [x, y - e.H * .45], tex: "glow", ramp: rage ? "fire.h" : "white.h", size: [s * 1.6, s * 1.8], aspect: s * 1.8 / (e.H * 1.1), life: 1000, alpha: .1, layer: 0, grow: true });
+    e.emit({ at: [x, y], tex: "glow", ramp: rage ? "fire.h" : "white.h", size: [s * .6, s * 1.6], aspect: 3, life: 1000, alpha: .14, layer: 0, grow: true });
+    e.emit({ n: 30, at: () => [x + rand(-.5, .5) * s, y - s * rand(.3, 1.4)], vel: () => [rand(-8, 8), rand(10, 30)], tex: rage ? "dot" : "glint", ramp: rage ? "fire.h" : "white.h", size: [s * .03, s * .06], life: 900, over: 500, emis: 1 });
+    move(c, c.from, { y: [0, -s * .05, 0] }, { dur: 900 });
     await after(c, 900);
   };
-  D.sub = async c => { camUser(c, 1.12, .3); smoke(c.e, A(c, .2), S(c), 6, { ramp: "steam", rise: 40 }); await after(c, 300); };
+  D.sub = async c => {
+    const e = c.e, s = S(c);
+    camUser(c, 1.12, .3);
+    smoke(e, A(c, .2), s * 1.4, 10, { ramp: e.light ? "smoke.l" : "steam", rise: 50, alpha: .85, spread: .5 });
+    glints(e, A(c, .4), s, 6, "white.h", { r: .5, delay: 200 });
+    await after(c, 400);
+  };
   D.morph = async c => { await morph(c.stage, c.from); };
-  D.aura = async c => { camUser(c, 1.14, .3); await aura(c.stage, c.from, c.type, 1, 700); };
+  D.aura = async c => {
+    // the user wraps itself in its type: Aqua Ring a veil of water rings and bubbles, Ingrain roots, Magnet Rise a hum of current
+    const e = c.e, s = S(c), at = selfAt(c), ty = T(c), id = c.id;
+    camUser(c, 1.14, .3);
+    if (id === "aquaring") { for (let i = 0; i < 3; i++) orbit(c, [at[0], at[1] + s * (.3 - i * .25)], s, { n: 10, r0: .7, r1: .65, turns: .8, flat: .3, dur: 800, tex: "bubble", ramp: "water.l", sz: s * .08, steps: 8, delay: i * 120, lit: true, occ: .9, emis: .4 }); }
+    else if (id === "ingrain") { const [x, y] = A(c, 0); for (let i = 0; i < 6; i++) pathStrip(e, u => [x + (i - 2.5) * s * .14 + Math.sin(u * 5 + i) * s * .08, y + u * s * .25], { color: "#7A5A34", width: 8, dur: 800, mode: 4, occ: .9, emis: .3, head: .5, tailLag: .9, delay: i * 40 }); }
+    else if (id === "magnetrise") { for (let i = 0; i < 5; i++) { const a0 = rand(0, 6.28); boltStrip(e, [at[0] + Math.cos(a0) * s * .5, at[1] + s * .5], [at[0] + Math.cos(a0 + 1) * s * .5, at[1] + s * .55], { width: 4, dur: 300, delay: i * 120, forks: 0, steps: 6 }); } }
+    else orbit(c, at, s, { n: 10, r0: .8, r1: .6, turns: 1, flat: .35, dur: 800, tex: "glint", ramp: `${ty}.h`, sz: s * .12, rise: .6, steps: 10 });
+    await aura(c.stage, c.from, c.type, 1, 800);
+  };
 
   /* ---------- verbs: at another ---------- */
   // will-o'-wisp: pale flames circle the user and float across to the target
@@ -949,135 +1099,183 @@ export function makeDraw(k) {
     landAll(c, { shards: false });
   };
   D.zap = async c => {
-    // a ring of electricity snaps round the target (Thunder Wave, Eerie Impulse)
+    // Thunder Wave: a crackling wave of current runs at it and closes round it in a cage of sparks
     const t = aim(c);
     if (!t) return false;
+    const e = c.e;
     camFor(c, .32);
     await charge(c.stage, c.from, "electric", 240);
-    for (const tt of c.targets) { const b = B(c, tt), sT = S(c, tt); boltStrip(c.e, mouth(c), b, { width: 4, dur: 300, flicker: 5, forks: 1 }); c.e.at(200, () => { for (let i = 0; i < 6; i++) { const a0 = around(6, i), a1 = a0 + 1; boltStrip(c.e, [b[0] + Math.cos(a0) * sT * .5, b[1] + Math.sin(a0) * sT * .5], [b[0] + Math.cos(a1) * sT * .5, b[1] + Math.sin(a1) * sT * .5], { width: 4, dur: 300, flicker: 4, forks: 0, steps: 5 }); } }); }
-    await after(c, 400);
+    for (const tt of c.targets) {
+      const b = B(c, tt), sT = S(c, tt), a0 = mouth(c);
+      for (let i = 0; i < 3; i++) e.emit({ at: a0, vel: [(b[0] - a0[0]) / .32, (b[1] - a0[1]) / .32], tex: "arc", ramp: "electric.h", size: [sT * .3, sT * 1.1], rot: dirTo(a0, b) + Math.PI / 2, life: 320, delay: i * 70, alpha: .9, grow: true });
+      boltStrip(e, a0, b, { width: 6, dur: 320, flicker: 6, forks: 2 });
+      e.at(260, () => { for (let i = 0; i < 8; i++) { const a1 = around(8, i), a2 = a1 + .9; boltStrip(e, [b[0] + Math.cos(a1) * sT * .55, b[1] + Math.sin(a1) * sT * .6], [b[0] + Math.cos(a2) * sT * .55, b[1] + Math.sin(a2) * sT * .6], { width: 5, dur: 420, flicker: 6, forks: 0, steps: 6, delay: i * 20 }); } DEBRIS.electric(e, b, sT, .9); });
+    }
+    await after(c, 460);
     landAll(c, { shards: false });
   };
   D.splash = async c => {
-    // a liquid hurled over the target (Acid Spray, Toxic, Soak, Apple Acid)
     const t = aim(c);
     if (!t) return false;
     const e = c.e, ty = T(c);
     camFor(c, .32);
+    move(c, c.from, { sy: [1, .92, 1.04, 1] }, { dur: 360 });
     for (const tt of c.targets) {
-      const b = endOf(c, tt);
+      const b = endOf(c, tt), sT = S(c, tt), a0 = mouth(c);
       const liquid = { water: "water.l", poison: "toxic.c", grass: "leaf.c", fire: "fire.c" }[ty] || `${ty}.m`;
-      fly(c, mouth(c), b, { tex: "drop", lit: true, ramp: liquid, size: 16 * U(c), dur: 360, arc: .25, face: true, rot: -Math.PI / 2, aspect: .72, trail: false, glowK: 0, core: false, occ: .9, emis: .4 });
-      e.at(360, () => { if (live(c, tt)) { const sT = S(c, tt); e.emit({ n: 20, at: b, tex: "drop", lit: true, ramp: liquid, speed: [sT, sT * 2.4], acc: [0, sT * 4], face: true, rot: -Math.PI / 2, aspect: .72, size: [sT * .08, sT * .04], life: 600, occ: .9, emis: .4 }); if (ty === "poison") DEBRIS.poison(e, b, sT, .7); if (ty === "water") splash(e, b, sT, .8); } });
+      // a gout: one big glossy blob leading, a string of smaller ones behind it
+      for (let i = 0; i < 6; i++) fly(c, a0, [b[0] + rand(-.1, .1) * sT, b[1] + rand(-.1, .1) * sT], { tex: i ? "bubble" : "drop", lit: true, ramp: liquid, size: sT * (i ? rand(.12, .2) : .32), dur: 380, delay: i * 30, arc: .25, face: !i, rot: -Math.PI / 2, aspect: i ? 1 : .72, trail: false, glowK: 0, core: false, occ: .9, emis: .45 });
+      e.at(380, () => { if (live(c, tt)) {
+        e.emit({ n: 26, at: b, tex: "drop", lit: true, ramp: liquid, speed: [sT * 1.2, sT * 2.8], dir: -Math.PI / 2, arc: 2.6, acc: [0, sT * 5], face: true, rot: -Math.PI / 2, aspect: .72, size: [[sT * .07, sT * .12], sT * .04], life: [500, 800], occ: .9, emis: .4 });
+        e.emit({ n: 10, at: b, r: sT * .3, tex: "billow", lit: true, ramp: liquid, speed: [sT * .5, sT * 1.4], drag: 3, size: [[sT * .14, sT * .22], [sT * .3, sT * .45]], life: [400, 600], erode: .5, rot: "rand", occ: .8, emis: .45, grow: true });
+        if (ty === "poison") DEBRIS.poison(e, b, sT, 1); if (ty === "water") splash(e, b, sT, 1.2);
+      } });
     }
-    await after(c, 380);
+    await after(c, 400);
     landAll(c, { shards: false });
   };
   D.powder = async c => {
-    // a cloud of powder settles on it from above (Sleep Powder, Stun Spore, Poison Powder, Cotton Spore)
+    // Sleep Powder, Spore, Stun Spore: a glittering cloud of spores puffs out and settles over it
     const t = aim(c);
     if (!t) return false;
-    const e = c.e, ty = T(c), id = c.id;
-    const ramp = id === "stunspore" ? "electric.h" : id === "poisonpowder" ? "poison.h" : id === "cottonspore" ? "white.h" : id === "magicpowder" ? "psychic.h" : "grass.h";
+    const e = c.e, id = c.id;
+    const ramp = id === "stunspore" ? "electric.h" : id === "poisonpowder" ? "poison.h" : id === "cottonspore" ? "white.h" : id === "magicpowder" ? "psychic.h" : id === "spore" ? "fire.h" : "grass.h";
     camFor(c, .36);
     move(c, c.from, { y: [0, -S(c) * .06, 0] }, { dur: 400 });
-    for (const tt of c.targets) { const [x, y] = B(c, tt, .9), sT = S(c, tt); e.emit({ n: 70, at: () => [x + rand(-.6, .6) * sT, y - sT * rand(.3, .9)], vel: () => [rand(-12, 12), rand(30, 70)], bob: [4, 8], period: [1, 2], tex: "glow", ramp, size: [[3, 6], 2], life: [900, 1300], over: 500 }); }
-    await after(c, 900);
-    void ty;
+    for (const tt of c.targets) {
+      const [x, y] = B(c, tt, .5), sT = S(c, tt);
+      orbs(e, mouth(c), [x, y - sT * .5], "grass", { n: 10, dur: 500, over: 200, wave: .12, size: sT * .06, ramp, trail: false });
+      e.emit({ n: 60, at: () => [x + rand(-.6, .6) * sT, y - sT * rand(.4, 1.1)], vel: () => [rand(-12, 12), rand(30, 70)], bob: [4, 8], period: [1, 2], tex: "glow", ramp, size: [[sT * .04, sT * .08], sT * .02], life: [900, 1300], delay: 450, over: 500 });
+      e.emit({ n: 26, at: () => [x + rand(-.6, .6) * sT, y - sT * rand(.4, 1.1)], vel: () => [rand(-12, 12), rand(30, 70)], tex: "glint", ramp, size: [sT * .03, sT * .08], life: [700, 1000], delay: 450, over: 500, emis: 1, grow: true });
+      e.emit({ n: 6, at: [x, y - sT * .2], r: sT * .4, tex: "cloud", ramp: id === "poisonpowder" ? "toxic" : "mist", size: [sT * .4, sT * .9], life: 1100, delay: 450, alpha: .35, occ: .3, emis: .5, grow: true });
+    }
+    await after(c, 1100);
     landAll(c, { shards: false });
   };
   D.yawn = async c => {
     const t = aim(c);
     if (!t) return false;
     camFor(c, .36);
-    for (const tt of c.targets) fly(c, mouth(c), B(c, tt, .7), { tex: "bubble", ramp: "white.h", size: 22 * U(c), dur: 800, arc: .15, glowK: 1.2, trail: false, emis: .8, occ: .2 });
-    await after(c, 820);
+    for (const tt of c.targets) { const sT = S(c, tt); fly(c, mouth(c), B(c, tt, .7), { tex: "bubble", lit: true, ramp: "white.h", size: sT * .4, dur: 900, arc: .15, glowK: 1.3, trail: false, core: false, emis: .6, occ: .5 }); c.e.at(900, () => { c.e.emit({ n: 8, at: B(c, tt, .7), tex: "bubble", lit: true, ramp: "white.h", speed: [sT, sT * 2], drag: 3, size: [sT * .06, sT * .02], life: 500, occ: .5, emis: .6 }); }); }
+    await after(c, 920);
     landAll(c, { shards: false });
   };
   D.hypnosis = async c => {
+    // Hypnosis: waves of pink light ripple from its eyes, the air bending, and close on the target's head
     const t = aim(c);
     if (!t) return false;
+    const e = c.e;
     camFor(c, .36);
-    const a0 = A(c, .7);
-    for (const tt of c.targets) { const b = B(c, tt, .7), d = Math.hypot(b[0] - a0[0], b[1] - a0[1]); for (let i = 0; i < 6; i++) c.e.emit({ at: a0, vel: [(b[0] - a0[0]) / .7, (b[1] - a0[1]) / .7], tex: "ring", ramp: "psychic.h", size: [10, d * .25], life: 700, delay: i * 90, grow: true }); }
-    await after(c, 900);
+    const a0 = A(c, .78);
+    for (const tt of c.targets) {
+      const b = B(c, tt, .75), sT = S(c, tt), ang = dirTo(a0, b);
+      for (let i = 0; i < 7; i++) {
+        e.emit({ at: a0, vel: [(b[0] - a0[0]) / .7, (b[1] - a0[1]) / .7], tex: "arc", ramp: "psychic.h", size: [sT * .2, sT * .9], rot: ang + Math.PI / 2, life: 700, delay: i * 100, alpha: .8, grow: true });
+        e.emit({ at: a0, vel: [(b[0] - a0[0]) / .7, (b[1] - a0[1]) / .7], tex: "wave", ramp: "white", size: [sT * .1, sT * .8], life: 700, delay: i * 100, distort: true, grow: true });
+      }
+      e.at(760, () => { orbit(c, b, sT * .6, { n: 8, r0: .9, r1: .5, turns: 1.2, flat: .4, dur: 600, tex: "glint", ramp: "psychic.h", sz: sT * .1 }); });
+    }
+    await after(c, 1000);
     landAll(c, { shards: false });
   };
   D.notes = async c => {
-    // notes drift from the user (Sing, Perish Song, Heal Bell)
+    // Sing, Perish Song, Heal Bell: big lit notes drift out and swim to their listeners, a soft light pulsing with the song
     const e = c.e, a0 = mouth(c), s = S(c), id = c.id;
     camWide(c, .5);
     const list = c.targets.length && !/healbell|perishsong/.test(id) ? c.targets : [];
     const ramp = id === "perishsong" ? "ghost.h" : id === "healbell" ? "gold" : "fairy.h";
-    if (list.length) for (const tt of list) orbs(e, a0, B(c, tt, .7), "fairy", { n: 6, dur: 900, over: 500, wave: .18, size: s * .14, tex: "note", ramp });
-    else e.emit({ n: 18, at: a0, r: s * .3, tex: "note", ramp, speed: [60, 140], bob: [6, 12], period: [1, 2], size: [s * .1, s * .14], life: [900, 1300], over: 600, emis: .9 });
-    if (id === "healbell") for (let i = 0; i < 3; i++) ring(e, a0, e.W * .8, "electric", { ramp: "gold", dur: 800, delay: i * 200 });
+    if (id === "perishsong") darken(c.stage, .45, 1100);
+    if (list.length) for (const tt of list) orbs(e, a0, B(c, tt, .7), "fairy", { n: 7, dur: 900, over: 500, wave: .2, size: s * .2, tex: "note", ramp });
+    else e.emit({ n: 22, at: a0, r: s * .3, tex: "note", ramp, speed: [60, 160], bob: [6, 12], period: [1, 2], size: [s * .14, s * .2], life: [1000, 1400], over: 600, emis: .9 });
+    for (let i = 0; i < 3; i++) e.emit({ at: a0, tex: "glow", ramp, size: [s * .3, s * 1.6], life: 500, delay: i * 260, alpha: .25, grow: true });
+    glints(e, a0, s, 8, ramp, { r: .8, over: 700 });
     await after(c, 1000);
     landAll(c, { shards: false });
   };
   D.charm = async c => {
+    // Charm, Attract: big lit hearts float over and circle the target, bursting pink
     const t = aim(c);
     if (!t) return false;
+    const e = c.e;
     camFor(c, .36);
-    for (const tt of c.targets) orbs(c.e, mouth(c), B(c, tt, .6), "fairy", { n: 6, dur: 700, over: 400, wave: .15, size: S(c, tt) * .16, tex: "heart", ramp: "fairy.h" });
+    move(c, c.from, { rot: [0, -.08, .08, 0] }, { dur: 500 });
+    for (const tt of c.targets) orbs(e, mouth(c), B(c, tt, .6), "fairy", { n: 7, dur: 700, over: 400, wave: .18, size: S(c, tt) * .24, tex: "heart", ramp: "fairy.h" });
     await after(c, 760);
-    for (const tt of c.targets) c.e.emit({ n: 6, at: B(c, tt, .8), r: S(c, tt) * .3, tex: "heart", ramp: "fairy.h", vel: [0, -40], size: [S(c, tt) * .08, S(c, tt) * .12], life: 700 });
+    for (const tt of c.targets) { const b = B(c, tt, .55), sT = S(c, tt); orbit(c, b, sT, { n: 6, r0: .7, r1: .55, turns: .7, flat: .4, dur: 700, tex: "heart", ramp: "fairy.m", sz: sT * .2, lit: true, occ: .4, emis: .8, rise: .3 }); glints(e, b, sT, 8, "fairy.h", { r: .6 }); }
+    await after(c, 400);
     landAll(c, { shards: false });
   };
   D.tears = async c => {
     const t = aim(c);
     if (!t) return false;
-    const [x, y] = A(c, .7), s = S(c);
+    const e = c.e, [x, y] = A(c, .72), s = S(c);
     camUser(c, 1.16, .3);
-    c.e.emit({ n: 10, at: [x, y], r: s * .15, vel: () => [rand(-40, 40), -rand(40, 80)], acc: [0, 400], tex: "drop", ramp: "spray", face: true, rot: -Math.PI / 2, aspect: .72, size: [s * .06, s * .05], life: 700, over: 400 });
-    await after(c, 600);
+    move(c, c.from, { y: [0, s * .03, 0, s * .03, 0], rot: [0, .04, -.04, .04, 0] }, { dur: 800 });
+    for (const sg of [-1, 1]) e.emit({ n: 10, at: [x + sg * s * .14, y], vel: () => [sg * rand(60, 130), -rand(80, 150)], acc: [0, 500], tex: "drop", lit: true, ramp: "water.l", face: true, rot: -Math.PI / 2, aspect: .72, size: [s * .16, s * .12], life: 800, over: 700, occ: .9, emis: .5 });
+    for (const sg of [-1, 1]) pathStrip(e, u => [x + sg * s * (.14 + u * .05), y + u * s * .5], { color: "#7CC8FF", width: 6, dur: 900, mode: 2, head: .5, tailLag: .8 });
+    glints(e, [x, y], s, 6, "water.h", { r: .3, over: 600 });
+    await after(c, 800);
+    for (const tt of c.targets) if (live(c, tt)) move(c, tt, { tintR: [1, .7], tintG: [1, .8], tintB: [1, 1], tintA: [0, .3, 0] }, { dur: 500 });
     landAll(c, { shards: false });
   };
   D.confuse = async c => {
-    // a weaving light floats to it and turns round its head (Confuse Ray, Swagger, Teeter Dance)
+    // Confuse Ray, Swagger: a weaving lit orb floats to it and circles its head trailing light; it reels
     const t = aim(c);
     if (!t) return false;
+    const e = c.e, swag = c.id === "swagger" || c.id === "flatter";
     camFor(c, .36);
-    for (const tt of c.targets) orbs(c.e, mouth(c), B(c, tt, .8), c.type, { n: 3, dur: 700, over: 200, wave: .25, size: S(c, tt) * .2, tex: "glow", ramp: "ghost.h" });
-    await after(c, 720);
+    for (const tt of c.targets) {
+      const sT = S(c, tt), h = B(c, tt, .85);
+      fly(c, mouth(c), h, { tex: "orb", lit: true, ramp: swag ? "fire.h" : "ghost.h", size: sT * .22, dur: 700, arc: .1, glowK: 2.4, core: false, trailN: 24, emis: 1, occ: .2 });
+      e.at(700, () => orbit(c, h, sT * .5, { n: 3, r0: .8, r1: .8, turns: 1.5, flat: .4, dur: 700, tex: "orb", ramp: swag ? "fire.h" : "ghost.h", sz: sT * .12, lit: true, emis: 1, occ: .2 }));
+      e.at(700, () => orbit(c, h, sT * .5, { n: 6, r0: .8, r1: .8, turns: 1.5, flat: .4, dur: 700, tex: "glint", ramp: "white.h", sz: sT * .08, delay: 60 }));
+    }
+    await after(c, 760);
     for (const tt of c.targets) if (live(c, tt)) sway(c.stage, tt);
+    await after(c, 300);
     landAll(c, { shards: false });
   };
   D.anger = async c => {
+    // Taunt, Torment: the target flushes red, a big anger mark throbs over it, sparks of rage
     const t = aim(c);
     if (!t) return false;
+    const e = c.e;
     camFor(c, .36);
-    for (const tt of c.targets) { const [x, y] = B(c, tt, .85), sT = S(c, tt); c.e.emit({ at: [x + sT * .2, y], tex: "cross", ramp: "fire.h", size: [sT * .1, sT * .34], life: 600, grow: true }); move(c, tt, { tintR: [1, 1], tintG: [.3, .3], tintB: [.2, .2], tintA: [0, .5, 0], x: [0, 3, -3, 3, 0] }, { dur: 600, ease: "linear" }); }
-    await after(c, 600);
+    move(c, c.from, { rot: [0, .1, -.1, 0] }, { dur: 400 });
+    for (const tt of c.targets) { const [x, y] = B(c, tt, .85), sT = S(c, tt); for (let i = 0; i < 3; i++) e.emit({ at: [x + sT * .22, y], tex: "cross", lit: true, ramp: "fire.c", size: [sT * .12, sT * .38], life: 300, delay: 200 + i * 200, emis: .9, occ: .3, grow: true }); sparks(e, [x + sT * .22, y], 10, "fire", { delay: 220, speed: [sT, sT * 2], len: [5, 9] }); fire(e, B(c, tt, .1), sT, 10, { r: [.4, .06], up: 1.2, size: [.12, .24], over: 500, embers: false }); move(c, tt, { rimR: [1, 1], rimG: [.3, .3], rimB: [.2, .2], rimA: [0, 1, 0], x: [0, 3, -3, 3, 0] }, { dur: 700, ease: "linear" }); }
+    await after(c, 800);
     landAll(c, { shards: false });
   };
   D.chain = async c => {
-    // chains close round it (Block, Disable, Quash)
+    // Block, Disable: a barrier of dark bars crosses in front of it, lit at the edges, and snaps shut
     const t = aim(c);
     if (!t) return false;
+    const e = c.e;
     camOn(c, t, 1.14, .3);
-    for (const tt of c.targets) { const [x, y] = B(c, tt), sT = S(c, tt); for (const sg of [-1, 1]) pathStrip(c.e, u => [x + (u - .5) * sT * 1.6, y + sg * (u - .5) * sT * 1.2], { color: "#C8D6E8", width: 6, dur: 600, mode: 2, head: .4, tailLag: .8 }); }
-    await after(c, 500);
+    for (const tt of c.targets) { const [x, y] = B(c, tt), sT = S(c, tt); for (const sg of [-1, 1]) { pathStrip(e, u => [x + (u - .5) * sT * 1.6, y + sg * (u - .5) * sT * 1.2], { color: "#3A2A5A", width: 18, dur: 800, mode: 4, occ: .9, emis: .3, head: .3, tailLag: .9 }); pathStrip(e, u => [x + (u - .5) * sT * 1.6, y + sg * (u - .5) * sT * 1.2], { color: "#E05AFF", width: 5, dur: 800, mode: 1, head: .3, tailLag: .9 }); } e.at(240, () => { e.emit({ at: [x, y], tex: "spark", ramp: "ghost", size: [sT * .2, sT * 1.1], life: 220, grow: true }); glints(e, [x, y], sT, 6, "ghost.h", { r: .5 }); e.shake(.2); }); }
+    await after(c, 600);
     landAll(c, { shards: false });
   };
   D.glare = async c => {
-    // eyes open in the dark over the user (Mean Look, Scary Face, Glare)
-    const e = c.e, [x, y] = A(c, .8), s = S(c);
+    // Glare, Scary Face, Mean Look: the stage dims, its eyes flare and a beam of their light stabs at the target, which flinches
+    const e = c.e, [x, y] = A(c, .8), s = S(c), col = c.id === "glare" ? "electric" : c.id === "meanlook" ? "dark" : "psychic";
     camUser(c, 1.18, .3);
-    darken(c.stage, .45, 800);
-    e.emit({ at: [x, y], tex: "eye", ramp: c.id === "glare" ? "electric.h" : "psychic.h", size: [s * .1, s * .3], aspect: 1.75, life: 700, grow: true });
-    await after(c, 500);
-    for (const tt of c.targets) move(c, tt, { x: [0, 3, -3, 0], flash: [0, .3, 0] }, { dur: 300 });
+    darken(c.stage, .5, 900);
+    for (const sg of [-1, 1]) { e.emit({ at: [x + sg * s * .08, y], tex: "glint", ramp: `${col}.h`, size: [s * .1, s * .5], life: 600, delay: 150, grow: true }); e.emit({ at: [x + sg * s * .08, y], tex: "glow", ramp: `${col}.h`, size: [s * .1, s * .3], life: 700, alpha: .7 }); }
+    await after(c, 420);
+    for (const tt of c.targets) { const b = B(c, tt, .7); beamStrip(e, [x, y], b, { color: colorOf(col), width: 8, dur: 360 }); move(c, tt, { x: [0, 4, -4, 3, 0], flash: [0, .2, 0], sy: [1, .95, 1] }, { dur: 400 }); }
+    await after(c, 300);
     landAll(c, { shards: false });
   };
   D.seed = async c => {
-    // seeds are shot onto it and sprout (Leech Seed, Worry Seed)
+    // Leech Seed: seeds are lobbed onto it, burst open and their vines wrap it
     const t = aim(c);
     if (!t) return false;
+    const e = c.e;
     camFor(c, .34);
-    for (const tt of c.targets) for (let i = 0; i < 3; i++) fly(c, mouth(c), [B(c, tt, .3)[0] + (i - 1) * 10, B(c, tt, .3)[1]], { tex: "seed", lit: true, ramp: "leaf.c", size: 12 * U(c), dur: 420, arc: .3, delay: i * 70, trail: false, glowK: 0, core: false, occ: 1, emis: .2 });
-    await after(c, 560);
-    for (const tt of c.targets) if (live(c, tt)) { const [x, y] = B(c, tt, .3), sT = S(c, tt); for (let i = 0; i < 3; i++) pathStrip(c.e, u => [x + (i - 1) * sT * .2 + Math.sin(u * 8 + i) * sT * .15, y - u * sT * .6], { color: "#4FC836", width: 5, dur: 600, mode: 2, head: .6, tailLag: .9 }); }
+    for (const tt of c.targets) for (let i = 0; i < 3; i++) fly(c, mouth(c), [B(c, tt, .3)[0] + (i - 1) * S(c, tt) * .2, B(c, tt, .3)[1]], { tex: "seed", lit: true, ramp: "leaf.c", size: S(c, tt) * .3, dur: 460, arc: .35, delay: i * 80, trail: false, glowK: 0, core: false, occ: 1, emis: .3 });
+    await after(c, 620);
+    for (const tt of c.targets) if (live(c, tt)) { const [x, y] = B(c, tt, .2), sT = S(c, tt); for (let i = 0; i < 4; i++) { pathStrip(e, u => [x + (i - 1.5) * sT * .2 + Math.sin(u * 8 + i) * sT * .18, y - u * sT * .8], { color: "#2F7D2A", width: 9, dur: 800, mode: 4, occ: .9, emis: .35, head: .6, tailLag: .9, delay: i * 40 }); pathStrip(e, u => [x + (i - 1.5) * sT * .2 + Math.sin(u * 8 + i) * sT * .18, y - u * sT * .8], { color: "#7BDB4A", width: 4, dur: 800, mode: 1, head: .6, tailLag: .9, delay: i * 40 }); } e.emit({ n: 8, at: [x, y - sT * .4], r: sT * .4, tex: "leaf", lit: true, ramp: "leaf.c", size: [sT * .1, sT * .1], aspect: 1.9, rot: "rand", life: 800, delay: 300, occ: 1, emis: .2, grow: true }); }
     landAll(c, { shards: false });
   };
   D.cloud = async c => {
@@ -1088,48 +1286,58 @@ export function makeDraw(k) {
     landAll(c, { shards: false });
   };
   D.curse = async c => {
-    // purple flames and a shadow over it (Curse, Memento, Spite)
+    // Curse, Memento, Spite: a cold violet fire licks up round it under a shadow
     const t = aim(c) || c.from, e = c.e, [x, y] = B(c, t), s = S(c, t);
     camOn(c, t, 1.12, .3);
-    darken(c.stage, .4, 900);
-    e.emit({ n: 14, at: [x, y + s * .2], r: [s * .4, s * .1], tex: "flame", ramp: "ghost", vel: () => [0, -rand(60, 120)], size: [s * .2, s * .05], life: 800, over: 500, erode: .5 });
-    smoke(e, [x, y], s, 6, { ramp: "shadow", alpha: .7 });
-    await after(c, 700);
+    darken(c.stage, .45, 1000);
+    e.emit({ n: 26, at: [x, y + s * .3], r: [s * .45, s * .1], tex: "flame", ramp: "ghost", vel: () => [rand(-10, 10), -rand(80, 160)], acc: [0, -s * .6], size: [[s * .18, s * .3], s * .05], life: [600, 900], over: 600, erode: .5, emis: 1 });
+    smoke(e, [x, y], s * 1.2, 8, { ramp: "shadow", alpha: .75 });
+    glints(e, [x, y], s, 6, "ghost.h", { r: .5, delay: 300 });
+    move(c, t, { tintR: [.6, .6], tintG: [.4, .4], tintB: [.9, .9], tintA: [0, .4, 0] }, { dur: 900 });
+    await after(c, 800);
     landAll(c, { shards: false });
   };
   D.link = async c => {
-    // the user's spirit is bound to the foe (Destiny Bond)
-    const t = aim(c), e = c.e, a0 = A(c), s = S(c);
-    camWide(c, .5);
-    darken(c.stage, .5, 1000);
-    e.emit({ n: 10, at: a0, r: s * .4, tex: "flame", ramp: "ghost", vel: [0, -60], size: [s * .2, s * .05], life: 800, over: 400, erode: .5 });
-    if (t) pathStrip(e, u => [lerp(a0[0], B(c, t)[0], u), lerp(a0[1], B(c, t)[1], u) - Math.sin(Math.PI * u) * s * .5], { color: "#8F5BD6", width: 6, dur: 900, mode: 1, head: .5, tailLag: .8 });
-    await after(c, 800);
+    const t = aim(c), e = c.e, a0 = A(c), s = S(c), [fx, fy] = A(c, 0);
+    camUser(c, 1.12, .4);
+    darken(c.stage, .55, 1100);
+    smoke(e, [fx, fy - s * .2], s * 1.4, 12, { ramp: "shadow", rise: 30, alpha: .85, spread: .5 });
+    e.emit({ n: 30, at: [fx, fy], r: [s * .5, s * .1], tex: "flame", ramp: "ghost", vel: () => [rand(-10, 10), -rand(90, 170)], acc: [0, -s * .6], size: [[s * .2, s * .32], s * .05], life: [600, 900], over: 700, erode: .5, emis: 1 });
+    orbit(c, a0, s, { n: 6, r0: .9, r1: .5, turns: 1, flat: .4, dur: 900, tex: "flame", ramp: "ghost", sz: s * .22, rise: .4, steps: 10 });
+    e.emit({ at: a0, tex: "eye", ramp: "ghost.h", size: [s * .1, s * .3], aspect: 1.7, life: 800, delay: 300, emis: .9, grow: true });
+    move(c, c.from, { rimR: [.6, .6], rimG: [.3, .3], rimB: [1, 1], rimA: [0, 1, 0] }, { dur: 1000 });
+    if (t && t !== c.from) pathStrip(e, u => [lerp(a0[0], B(c, t)[0], u), lerp(a0[1], B(c, t)[1], u) - Math.sin(Math.PI * u) * s * .5], { color: "#8F5BD6", width: 6, dur: 900, mode: 1, head: .5, tailLag: .8 });
+    await after(c, 950);
   };
   D.swap = async c => {
-    // two lights trade places (Power Swap, Guard Split, Ally Switch, Court Change)
-    const t = aim(c) || c.from, e = c.e, a0 = A(c), b0 = B(c, t);
+    // Power Swap, Ally Switch, Court Change: two lights trade places in a twist of air
+    const t = aim(c) || c.from, e = c.e, a0 = A(c), b0 = t === c.from ? [e.W - a0[0], a0[1] - S(c) * .6] : B(c, t), s = S(c);
     camFor(c, .45);
-    orbs(e, a0, b0, c.type, { n: 6, dur: 600, over: 200, wave: .2, size: 9 });
-    orbs(e, b0, a0, c.type, { n: 6, dur: 600, over: 200, wave: -.2, size: 9 });
-    await after(c, 640);
+    for (const p of [a0, b0]) { e.emit({ at: p, tex: "glow", ramp: `${T(c)}.h`, size: [s * .2, s * 1.2], life: 700, alpha: .45, grow: true }); glints(e, p, s, 6, `${T(c)}.h`, { r: .5 }); }
+    orbs(e, a0, b0, c.type, { n: 8, dur: 600, over: 200, wave: .25, size: s * .1, tex: "orb" });
+    orbs(e, b0, a0, c.type, { n: 8, dur: 600, over: 200, wave: -.25, size: s * .1, tex: "orb" });
+    move(c, c.from, { rot: [0, .2, -.2, 0], flash: [0, .2, 0] }, { dur: 600 });
+    await after(c, 660);
     landAll(c, { shards: false });
   };
   D.gust = async c => {
-    // a gust blows across (Whirlwind, Tailwind, Defog, Tidy Up)
-    const e = c.e, own = actorOf(c.stage, c.from)?.own, a0 = A(c), { W, H } = e;
+    // Tailwind, Whirlwind, Defog: a strong wind sweeps across, lines of air, leaves and dust carried in it
+    const e = c.e, own = actorOf(c.stage, c.from)?.own, a0 = A(c), { W, H } = e, dir = own ? -.4 : Math.PI + .4;
     camWide(c, .5);
-    e.emit({ n: 70, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.3, .1) * H], dir: own ? -.4 : Math.PI + .4, arc: .5, speed: [W * 1.4, W * 2], tex: "streak", ramp: "white", face: true, size: [3, 3], aspect: [18, 34], life: [500, 800], over: 600, alpha: .6 });
-    e.emit({ n: 20, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.3, .1) * H], dir: own ? -.4 : Math.PI + .4, arc: .6, speed: [W * .8, W * 1.2], tex: "leaf", ramp: "flying.m", size: [8, 8], aspect: 1.8, spin: [-8, 8], life: [700, 1000], over: 600, occ: .5 });
-    await after(c, 700);
+    e.emit({ n: 110, at: () => [a0[0] + rand(-.25, .25) * W, a0[1] + rand(-.4, .1) * H], dir, arc: .4, speed: [W * 1.4, W * 2.1], tex: "streak", ramp: "white", face: true, size: [4, 3], aspect: [22, 44], life: [500, 800], over: 700, alpha: .85 });
+    e.emit({ n: 30, at: () => [a0[0] + rand(-.25, .25) * W, a0[1] + rand(-.4, .1) * H], dir, arc: .6, speed: [W * .8, W * 1.3], tex: "leaf", lit: true, ramp: "leaf.c", size: [12 * U(c), 12 * U(c)], aspect: 1.8, spin: [-9, 9], rot: "rand", life: [700, 1000], over: 700, occ: 1, emis: .25 });
+    for (let i = 0; i < 4; i++) e.emit({ at: [a0[0] + (own ? 1 : -1) * W * .2 * i, a0[1] - H * .1], vel: [Math.cos(dir) * W, Math.sin(dir) * W], tex: "wave", ramp: "white", size: [W * .1, W * .4], life: 600, delay: i * 120, distort: true, grow: true });
+    e.shake(.15);
+    await after(c, 760);
     landAll(c, { shards: false });
   };
   D.clear = async c => {
-    // a black mist covers the field and clears (Haze)
+    // Haze: a black-violet mist rolls over the whole court and lifts
     const e = c.e, { W, H } = e;
     camWide(c, .5);
-    e.emit({ n: 26, at: () => [rand(0, 1) * W, rand(.3, 1) * H], tex: "cloud", ramp: "ink", size: [W * .2, W * .5], life: [1000, 1400], over: 400, occ: .7, emis: 0, alpha: .8, grow: true });
-    await after(c, 1000);
+    e.emit({ n: 34, at: () => [rand(0, 1) * W, rand(.3, 1) * H], vel: () => [rand(-30, 30), -rand(5, 20)], tex: "billow", lit: true, ramp: "ink", size: [W * .12, W * .32], life: [1100, 1500], over: 500, occ: .7, emis: 0, erode: .45, rot: "rand", alpha: .85, grow: true });
+    glints(e, [W / 2, H * .5], W * .5, 10, "white.h", { r: .9, delay: 900, over: 400, size: .05 });
+    await after(c, 1100);
   };
   D.hazard = async c => {
     // the user throws its trap onto the foe's side (Stealth Rock, Spikes, Toxic Spikes, Sticky Web)
@@ -1157,16 +1365,31 @@ export function makeDraw(k) {
     await after(c, 760);
   };
   D.weather = async c => {
-    // the user raises the weather: light shot into the sky and the sky answering
-    const e = c.e, a0 = A(c, .8), id = c.id;
-    const ramp = { raindance: "water.h", sunnyday: "gold", sandstorm: "sand", snowscape: "snow", chillyreception: "snow" }[id] || "white.h";
+    // the user calls the weather and the sky answers: rain clouds roll in, the sun blazes out, sand whirls up, snow swirls down
+    const e = c.e, a0 = A(c, .8), id = c.id, { W, H } = e, s = S(c);
     camUser(c, 1.06, .35);
-    e.emit({ at: a0, vel: [0, -e.H * 2.4], tex: "orb", ramp, size: [18, 18], life: 420 });
-    e.emit({ at: a0, vel: [0, -e.H * 2.4], tex: "glow", ramp, size: [50, 50], life: 420, alpha: .6 });
+    const ramp = { raindance: "water.h", sunnyday: "gold", sandstorm: "sand", snowscape: "snow", chillyreception: "snow" }[id] || "white.h";
+    e.emit({ at: a0, vel: [0, -H * 2.4], tex: "orb", lit: true, ramp, size: [s * .2, s * .2], life: 420, emis: 1, occ: .2 });
+    e.emit({ at: a0, vel: [0, -H * 2.4], tex: "glow", ramp, size: [s * .6, s * .6], life: 420, alpha: .6 });
     await after(c, 400);
     camWide(c, .6);
-    flashStage(c.stage, .16, 600, id === "sunnyday" ? "#FFE08A" : id === "raindance" ? "#9CC8FF" : "#FFFFFF");
-    await after(c, 400);
+    if (id === "raindance") {
+      darken(c.stage, .35, 1000);
+      e.emit({ n: 10, at: () => [rand(0, 1) * W, rand(-.05, .12) * H], tex: "cloud", lit: true, ramp: e.light ? "smoke.l" : "smoke", size: [W * .2, W * .4], aspect: 1.8, life: 1100, occ: .8, emis: 0, alpha: .9, grow: true });
+      e.emit({ n: 90, at: () => [rand(0, 1) * W, -10], vel: [-H * .15, H * 2.6], tex: "streak", ramp: "rain", face: true, size: [2, 2], aspect: [16, 26], life: 500, over: 700, delay: 300, alpha: .8 });
+    } else if (id === "sunnyday") {
+      e.emit({ at: [W * .8, -H * .05], tex: "glow", ramp: "gold", size: [W * .2, W * .9], life: 1000, alpha: .7, grow: true });
+      for (let i = 0; i < 6; i++) e.emit({ at: [W * .8, -H * .05], tex: "streak", ramp: "sunray", size: [H * 1.4, H * 1.4], aspect: 8, rot: Math.PI * (.55 + i * .07), life: 1000, delay: i * 40, alpha: .7 });
+      glints(e, [W * .8, H * .02], s, 8, "gold", { r: 1, over: 400 });
+      flashStage(c.stage, .22, 700, "#FFE08A");
+    } else if (id === "sandstorm") {
+      e.emit({ n: 120, at: () => [-.1 * W, rand(.1, 1) * H], vel: () => [W * rand(1.2, 2), rand(-30, 30)], tex: "grain", lit: true, ramp: "sand", size: [4, 4], life: 900, over: 600, occ: .8, emis: .2 });
+      e.emit({ n: 14, at: () => [rand(0, 1) * W, rand(.2, 1) * H], vel: [W * .6, 0], tex: "billow", lit: true, ramp: "dust", size: [W * .1, W * .3], life: 1100, over: 400, erode: .5, rot: "rand", occ: .7, emis: 0, alpha: .7, grow: true });
+    } else {
+      e.emit({ n: 90, at: () => [rand(0, 1) * W, rand(-.1, .4) * H], vel: () => [rand(-40, 40), H * rand(.4, .7)], bob: [10, 20], period: [1, 2], tex: "flake", ramp: "snow", size: [6, 10], spin: [-2, 2], life: 1200, over: 600 });
+      flashStage(c.stage, .14, 600, "#C0F0FF");
+    }
+    await after(c, 700);
   };
   D.terrain = async c => {
     // each terrain comes in as 포켓몬 챔피언스 brings it (references: 2026-11-06 notes): a burst at the user's feet, then the floor
@@ -1176,16 +1399,17 @@ export function makeDraw(k) {
     if (id === "psychicterrain") {
       // a great glowing ellipse opens on the floor, violet in its middle and white-lavender at its rim, light bursting out of its centre
       e.emit({ at: [x, y], tex: "glow", ramp: "psy.wave", size: [W * .1, W * 1.1], aspect: 3.2, life: 1000, alpha: .9, layer: 0, grow: true });
-      ring(e, [x, y], W * 1.1, "psychic", { flat: .31, dur: 1000, ramp: "bar.pink", layer: 0, alpha: .9 });
+      for (let i = 0; i < 3; i++) e.emit({ at: [x, y], tex: "wave", ramp: "white", size: [W * .1, W * (.8 + i * .3)], aspect: 1 / .3, life: 900, delay: i * 150, distort: true, layer: 0, grow: true });
       e.emit({ n: 26, at: [x, y - s * .2], tex: "streak", ramp: "white", dir: -Math.PI / 2, arc: 2.2, speed: [s * 3, s * 6], face: true, size: [3, 2], aspect: [12, 24], life: [300, 500] });
       glints(e, [x, y - s * .3], s, 10, "psychic.h", { r: .7 });
     } else if (id === "electricterrain") {
       // four-rayed sparkles burst round the user, and a yellow-green shimmer sweeps out over the floor
       glints(e, A(c, .4), s, 22, "electric.h", { r: 1, size: .34, over: 400 });
-      for (let i = 0; i < 3; i++) ring(e, [x, y], W * (1.3 + i * .3), "electric", { flat: .3, dur: 900, delay: 300 + i * 120, tex: "wave", layer: 0 });
+      for (let i = 0; i < 10; i++) { const a0 = around(10, i), r = W * rand(.25, .5); boltStrip(e, [x, y], [x + Math.cos(a0) * r, y + Math.sin(a0) * r * .3], { width: 5, dur: 420, flicker: 5, forks: 1, delay: 300 + i * 40, depth: .2 }); }
+      e.emit({ n: 40, at: () => [x + rand(-.6, .6) * W, y + rand(-.15, .2) * W * .3], tex: "spark", ramp: "electric", size: [0, 14], life: [300, 500], delay: 300, over: 600, rot: "rand", grow: true });
     } else if (id === "grassyterrain") {
       e.emit({ n: 30, at: [x, y], r: [s * .6, s * .2], tex: "leaf", lit: true, ramp: "leaf.c", vel: () => [rand(-60, 60), -rand(60, 160)], acc: [0, 60], spin: [-6, 6], rot: "rand", size: [s * .07, s * .07], aspect: 1.9, life: [900, 1300], over: 500, occ: 1, emis: .2 });
-      for (let i = 0; i < 3; i++) ring(e, [x, y], W * (1.3 + i * .3), "grass", { flat: .3, dur: 1000, delay: 200 + i * 140, tex: "wave", layer: 0 });
+      e.emit({ n: 50, at: () => [x + rand(-.6, .6) * W, y + rand(-.12, .2) * W * .3], tex: "tuft", lit: true, ramp: "grass.l", size: [0, 26 * U(c)], life: 900, delay: 200, over: 600, occ: .9, emis: .3, layer: 0, grow: true });
       glints(e, A(c, .5), s, 10, "white.h", { r: 1 });
     } else {
       // misty: pink mist rolls out over the floor from the user, sparkling
@@ -1200,6 +1424,11 @@ export function makeDraw(k) {
     const e = c.e, { W, H } = e;
     camWide(c, .5);
     await charge(c.stage, c.from, c.type, 360);
+    // the space folds out from the user: panes of the room's light spread from its feet over the floor and rise into walls (Trick Room
+    // pink-violet, Gravity deep blue, Wonder Room and Magic Room their own tint), then the room itself stands (arena.js)
+    const [x, y] = A(c, 0), ramp = { trickroom: "psychic.h", gravity: "dragon.h", wonderroom: "fairy.h", magicroom: "ghost.h" }[c.id] || `${T(c)}.h`;
+    for (let i = 0; i < 18; i++) { const ang = around(18, i, .1), r = W * rand(.12, .6); e.emit({ at: [x, y], vel: [Math.cos(ang) * r * 2.2, Math.sin(ang) * r * .7], drag: 3, tex: "tile", ramp, size: [W * .02, W * .05], aspect: 3, life: 700, delay: i * 18, alpha: .35, layer: 0, grow: true }); }
+    for (let i = 0; i < 10; i++) e.emit({ at: [W * (.08 + i * .093), H * .95], vel: [0, -H * .9], drag: 2.5, tex: "tile", ramp, size: [W * .03, W * .07], aspect: .5, life: 700, delay: 200 + Math.abs(i - 4.5) * 40, alpha: .4, grow: true });
     glints(e, [W / 2, H * .4], W * .5, 20, "glint", { r: .9, over: 600, size: .06 });
     shock(e, [W / 2, H * .55], W * 1.2, { dur: 800 });
     if (c.id === "trickroom") await k.flashStage(c.stage, .1, 300, "#B08AFF");
@@ -1216,7 +1445,8 @@ export function makeDraw(k) {
       for (const dy of [-h / 2, h / 2]) e.emit({ at: [fx, y + dy], tex: "streak", ramp, size: [s * 1.2, s * 1.2], aspect: 1, life: 900, alpha: .9, grow: true });
       glints(e, [fx, y], s, 12, "glint", { r: .7, over: 500 });
     } else if (id === "auroraveil") {
-      for (let i = 0; i < 14; i++) e.emit({ at: [fx + rand(-.7, .7) * s, y - s * .1], vel: [0, -s * .2], tex: "glow", ramp: "aurora.v", size: [s * 1.8, s * 1.8], aspect: rand(.06, .14), life: [900, 1200], delay: i * 30, alpha: .7 });
+      // curtains of aurora, green through blue to violet and pink, swaying as they hang, gold dust falling through them
+      for (let i = 0; i < 16; i++) e.emit({ at: [fx + rand(-.75, .75) * s, y - s * .15], vel: [rand(-1, 1) * s * .25, -s * .15], tex: "glow", ramp: ["grass.e", "ice.h", "toxic.h", "fairy.h"][i % 4], size: [s * 1.7, s * 2], aspect: rand(.07, .16), life: [900, 1300], delay: i * 30, alpha: .6, grow: true });
       e.emit({ n: 40, at: [fx, y], r: s * .8, tex: "dot", ramp: "gold", size: [2, 3], vel: () => [rand(-10, 10), rand(-20, 10)], life: [700, 1100], over: 400 });
       glints(e, [fx, y], s, 10, "glint", { r: .8, over: 600 });
     } else {
@@ -1226,18 +1456,28 @@ export function makeDraw(k) {
     await after(c, 700);
   };
   D.hex = async c => {
-    // purple fire wells up round the target and bites (Hex)
+    // Hex: violet ghost-fire wells up round the target and bites into it
     const t = aim(c);
     if (!t) return false;
     const e = c.e, [x, y] = B(c, t, .1), s = S(c, t);
     camFor(c, .34);
-    darken(c.stage, .55, 800);
+    darken(c.stage, .55, 900);
     await after(c, 200);
-    orbit(c, [x, y], s, { n: 8, r0: .7, r1: .4, turns: .8, flat: .3, dur: 600, tex: "flame", ramp: "ghost", sz: s * .25, rise: .8, steps: 8 });
-    await after(c, 420);
+    orbit(c, [x, y], s, { n: 10, r0: .75, r1: .4, turns: .9, flat: .3, dur: 640, tex: "flame", ramp: "ghost", sz: s * .34, rise: 1, steps: 10 });
+    e.emit({ n: 24, at: [x, y + s * .2], r: [s * .5, s * .1], tex: "flame", ramp: "ghost", vel: () => [rand(-10, 10), -rand(80, 150)], size: [[s * .16, s * .26], s * .04], life: [500, 800], over: 500, erode: .5, emis: 1 });
+    await after(c, 460);
     landAll(c);
   };
-  D.lock = async c => { const e = c.e; camWide(c, .5); e.emit({ n: 12, at: () => [rand(.1, .9) * e.W, rand(.4, .95) * e.H], tex: "web", ramp: "steel.h", size: [10, 40], life: 800, over: 300, alpha: .6, grow: true }); await after(c, 700); };
+  D.lock = async c => {
+    const e = c.e, { W, H } = e;
+    camWide(c, .5);
+    flashStage(c.stage, .14, 600, "#FFC8EE");
+    const pts = times(6, i => [W * (.15 + i * .14), H * (.55 + (i % 2) * .2)]);
+    for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i], p1 = pts[i + 1]; pathStrip(e, u => [lerp(p0[0], p1[0], u), lerp(p0[1], p1[1], u) - Math.sin(Math.PI * u) * H * .04], { color: "#FF8AE8", width: 5, dur: 900, mode: 1, head: .4, tailLag: .9, delay: i * 60 }); }
+    pts.forEach((p, i) => { e.emit({ at: p, tex: "orb", lit: true, ramp: "fairy.h", size: [4, 22 * U(c)], life: 900, delay: i * 60, occ: .3, emis: 1, grow: true }); glints(e, p, 70 * U(c), 4, "fairy.h", { delay: 200 + i * 60, r: .4 }); });
+    e.emit({ n: 40, at: () => [rand(.05, .95) * W, rand(.4, .95) * H], tex: "glint", ramp: "fairy.h", size: [4, 12], life: [500, 800], over: 600, emis: 1, grow: true });
+    await after(c, 950);
+  };
   D.frost = async (c, a) => {
     // the air round the target freezes into ice (Freeze-Dry, Sheer Cold)
     const t = aim(c);
@@ -1306,11 +1546,12 @@ export function makeDraw(k) {
     landAll(c, { type: gem ? "fairy" : "rock" });
   };
   D.feathers = async c => {
+    // Feather Dance: a flurry of white feathers thrown over the target, drifting down on it
     const t = aim(c);
     if (!t) return false;
     camFor(c, .36);
-    for (const tt of c.targets) { const [x, y] = B(c, tt, .9), sT = S(c, tt); c.e.emit({ n: 20, at: () => [x + rand(-.6, .6) * sT, y - sT * .5], vel: () => [rand(-20, 20), rand(30, 70)], bob: [6, 14], period: [1, 2], tex: "feather", ramp: "white.h", size: [sT * .14, sT * .14], aspect: 2.2, rot: "rand", spin: [-3, 3], life: 1100, over: 400, occ: .6 }); }
-    await after(c, 900);
+    for (const tt of c.targets) { const [x, y] = B(c, tt, .5), sT = S(c, tt); orbs(c.e, mouth(c), [x, y - sT * .7], "flying", { n: 6, dur: 400, over: 200, wave: .1, size: sT * .12, tex: "feather", ramp: "white.h", trail: false }); c.e.emit({ n: 26, at: () => [x + rand(-.6, .6) * sT, y - sT * rand(.5, 1)], vel: () => [rand(-20, 20), rand(30, 70)], bob: [6, 14], period: [1, 2], tex: "feather", lit: true, ramp: "white.h", size: [sT * .16, sT * .16], aspect: 2.2, rot: "rand", spin: [-3, 3], life: 1100, delay: 400, over: 400, occ: .8, emis: .3 }); }
+    await after(c, 1100);
     landAll(c, { shards: false });
   };
 
@@ -1321,6 +1562,8 @@ export function makeDraw(k) {
 
 /* plays a move's script: each phase in its turn. A phase that hands back false gives the move to stageFx.move's own drawing
    (only the first phase can: a later one has already drawn). Only the last phase lands the blow, so no target is hit twice. */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const centreX = c => (c.at ? c.at(c.from, .5)[0] : 0);
 export async function playScript(D, c, script) {
   const phases = String(script || "").split(" then ").filter(Boolean);
   if (!phases.length) return false;
@@ -1328,6 +1571,7 @@ export async function playScript(D, c, script) {
     const a = parse(phases[i]);
     const draw = D[a.verb];
     if (!draw) return i > 0 ? undefined : false;
+    verbSound(a.verb, { pan: c.e?.W ? clamp(centreX(c) / c.e.W * 2 - 1, -1, 1) * .55 : 0 });
     const out = await draw(i < phases.length - 1 ? { ...c, land: () => null } : c, a);
     if (out === false) return i > 0 ? undefined : false;
   }

@@ -9,9 +9,10 @@ import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
 import { setField } from "./arena.js";
 import "./arena.js";
+import { sfx, setSfxSpeed, setMoveType } from "./sfx.js";
 
 let speed = 1;
-export const setSpeed = s => { speed = s; };
+export const setSpeed = s => { speed = s; setSfxSpeed(s); };
 export const instant = () => speed === 0;
 let slowed = 1;
 const ms = n => Math.max(1, n * (speed || 0));
@@ -22,6 +23,8 @@ const IN = "cubic-bezier(.5,0,.75,0)";
 
 /* ---------- the engine of a stage, at the playback speed ---------- */
 const E = stage => { const e = glOf(stage); if (e) e.rate = speed ? 1 / speed : 1; return e; };
+// where a sound stands between the ears: ours on the left, theirs on the right (sfx.js)
+const panOf = (e, at) => (e?.W && at ? clamp(at[0] / e.W * 2 - 1, -1, 1) * .55 : 0);
 export function slowMo(stage, duration = 700) {
   const e = E(stage);
   if (!e || instant() || reduced()) return;
@@ -96,11 +99,19 @@ function glints(e, at, s, n = 6, ramp = "glint", { r = .5, delay = 0, over = 300
   e.emit({ n, at, r: s * r, tex: "glint", ramp, size: [s * size * .4, s * size], rot: 0, life: [320, 560], delay, over, emis: 1, grow: true });
 }
 const shakeOf = (e, p) => { e.shake(p); };
+// the floor struck hard (a stomp, a landing, a bolt from the sky): it cracks, dust is thrown out low along it, chips jump, the air bends
+function stamp(e, at, s, p = 1, type = "ground") {
+  e.emit({ at, tex: "crack", ramp: e.light ? "ink" : "dust", size: [s * .5 * .3, s * 1.6 * p * .3], aspect: 1 / .3, rot: rand(0, 6), life: 1100, occ: .9, emis: e.light ? 0 : .3, alpha: .85, layer: 0, grow: true });
+  e.emit({ n: Math.round(14 * p), at, r: [s * .2, s * .06], tex: "billow", lit: true, ramp: "dust", vel: () => { const a = rand(0, Math.PI * 2), v = rand(s * 1.6, s * 3) * p; return [Math.cos(a) * v, Math.sin(a) * v * .28 - s * .2]; }, drag: 3.2, size: [[s * .14, s * .22], [s * .36, s * .52]], life: [600, 900], erode: .5, rot: "rand", occ: .7, emis: 0, alpha: .8, grow: true });
+  e.emit({ n: Math.round(10 * p), at, tex: "chip", lit: true, ramp: type === "rock" ? "stone" : "earth", speed: [s * 1.4, s * 2.8], dir: -Math.PI / 2, arc: 2.4, acc: [0, s * 7], size: [[s * .04, s * .09], "same"], rot: "rand", spin: [-8, 8], life: [500, 800], occ: 1, emis: .05 });
+  shock(e, at, s * 2.6 * p, { flat: .35, dur: 520 });
+}
 
 /* ---------- ribbons ---------- */
 // a beam: it reaches out from a to b, burns with a scrolling core, breathes in width and goes out thin
 function beamStrip(e, a, b, { color = "#FFFFFF", width = 18, dur = 700, grow = .16, mode = 0, delay = 0, tile = .6, taper = .4, wobble = .1 } = {}) {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  sfx("beam", { dur, at: delay, pan: panOf(e, a) });
   e.strip({ dur, delay, color, mode, emis: 1, uLen: 70, tile, points: (k, age) => {
     const reach = clamp(k / grow), fade = k > .75 ? 1 - (k - .75) / .25 : 1, w = width * (.55 + .45 * clamp(k / grow)) * (1 + wobble * Math.sin(age * .05)) * (.25 + .75 * fade);
     const n = Math.max(6, Math.round(len / 18));
@@ -111,6 +122,7 @@ function beamStrip(e, a, b, { color = "#FFFFFF", width = 18, dur = 700, grow = .
 function boltStrip(e, a, b, { color = TYPE_COLOR.electric, width = 7, dur = 380, flicker = 7, depth = .13, forks = 2, delay = 0, steps = 12 } = {}) {
   const jag = (p, q, d, n) => { const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L; return times(n + 1, i => { const t = i / n, o = i === 0 || i === n ? 0 : (Math.random() * 2 - 1) * d * L; return [p[0] + dx * t + nx * o, p[1] + dy * t + ny * o]; }); };
   const cache = new Map();
+  sfx("zap", { dur, at: delay, pan: panOf(e, b), big: width >= 7 && dur >= 360, type: "electric" });
   const shape = f => { if (!cache.has(f)) { const main = jag(a, b, depth, steps), out = [main]; for (let i = 0; i < forks; i++) { const at = main[2 + Math.floor(Math.random() * (steps - 4))], ang = Math.atan2(b[1] - a[1], b[0] - a[0]) + rand(-1.1, 1.1), L = Math.hypot(b[0] - a[0], b[1] - a[1]) * rand(.15, .3); out.push(jag(at, [at[0] + Math.cos(ang) * L, at[1] + Math.sin(ang) * L], depth * 1.6, 5)); } cache.set(f, out); } return cache.get(f); };
   for (let fi = 0; fi <= forks; fi++) e.strip({ dur, delay, color, mode: 1, emis: 1, points: (k, age) => {
     const f = Math.floor(age / (dur / flicker)), local = (age / (dur / flicker)) % 1, al = (local < .65 ? 1 : 1 - (local - .65) / .35) * (k > .8 ? (1 - k) / .2 : 1);
@@ -121,6 +133,7 @@ function boltStrip(e, a, b, { color = TYPE_COLOR.electric, width = 7, dur = 380,
 // a cut: a curved sweep of light, its head running ahead and its tail chasing it, thick in the middle
 function slashStrip(e, at, angle, len, { color = "#FFFFFF", width = 10, dur = 260, curve = .22, delay = 0, mode = 2 } = {}) {
   const [x, y] = at, dx = Math.cos(angle), dy = Math.sin(angle), nx = -dy, ny = dx;
+  sfx("slash", { at: delay, pan: panOf(e, at) });
   const pt = t => { const s = (t - .5) * len, bend = (1 - (2 * t - 1) ** 2) * curve * len; return [x + dx * s + nx * bend, y + dy * s + ny * bend]; };
   e.strip({ dur, delay, color, mode, emis: 1, points: k => {
     const head = clamp(k / .5), tail = clamp((k - .2) / .7);
@@ -129,8 +142,9 @@ function slashStrip(e, at, angle, len, { color = "#FFFFFF", width = 10, dur = 26
   } });
 }
 // a ribbon that follows a path over its life (a stream of water, a vine, a whip)
-function pathStrip(e, path, { color = "#FFFFFF", width = 10, dur = 500, delay = 0, mode = 3, head = .45, tailLag = .35, n = 24, taper = true } = {}) {
-  e.strip({ dur, delay, color, mode, emis: 1, uLen: 50, tile: .8, points: k => {
+function pathStrip(e, path, { color = "#FFFFFF", width = 10, dur = 500, delay = 0, mode = 3, head = .45, tailLag = .35, n = 24, taper = true, occ = 0, emis = 1 } = {}) {
+  sfx("swoosh", { dur, at: delay, pan: panOf(e, path(.5)) });
+  e.strip({ dur, delay, color, mode, emis, occ, uLen: 50, tile: .8, points: k => {
     const h = clamp(k / head), t = clamp((k - tailLag) / (1 - tailLag));
     if (h - t < .01) return null;
     return times(n + 1, i => { const u = lerp(t, h, i / n), [x, y] = path(u); return [x, y, width * (taper ? .35 + .65 * Math.sin(Math.PI * Math.min(1, (i / n) * .5 + .5)) : 1) * (k > .85 ? (1 - k) / .15 : 1), 1]; });
@@ -175,7 +189,8 @@ const DEBRIS = {
     smoke(e, at, s, 3, { ramp: "toxic", alpha: .4 });
   },
   psychic(e, at, s, p) {
-    for (let i = 0; i < 3; i++) ring(e, at, s * (1 + i * .35) * p, "psychic", { dur: 520, delay: i * 70, ramp: "magenta" });
+    ring(e, at, s * 1.2 * p, "psychic", { dur: 520, ramp: "magenta", alpha: .35 });
+    e.emit({ n: 12, at, r: s * .3, tex: "streak", ramp: "magenta", speed: [s * 2.5, s * 5], face: true, size: [3, 2], aspect: [10, 18], life: [260, 420] });
     glints(e, at, s, 8, "psychic.h", { r: .5 });
     shock(e, at, s * 1.6, { dur: 520 });
   },
@@ -192,7 +207,7 @@ const DEBRIS = {
   },
   dragon(e, at, s, p) {
     e.emit({ n: 10 * p, at, tex: "scale", lit: true, ramp: "dragon.m", speed: [s * 1.4, s * 3], drag: 2.5, rot: "rand", spin: [-6, 6], size: [[s * .1, s * .16], s * .04], life: [500, 800], occ: 1, emis: .3 });
-    e.emit({ n: 8, at, r: s * .3, tex: "billow", lit: true, ramp: "dragon", vel: () => [rand(-20, 20), -rand(50, 110)], size: [s * .12, s * .3], life: [500, 800], erode: .5, emis: .9, occ: .4, grow: true });
+    e.emit({ n: 8, at, r: s * .3, tex: "billow", lit: true, ramp: "dragon.m", vel: () => [rand(-20, 20), -rand(50, 110)], size: [s * .12, s * .3], life: [500, 800], erode: .5, emis: .9, occ: .4, grow: true });
   },
   fairy(e, at, s, p) {
     glints(e, at, s, 12 * p, "fairy.h", { r: .6, size: .3 });
@@ -201,11 +216,11 @@ const DEBRIS = {
   steel(e, at, s, p) {
     sparks(e, at, 22 * p, "steel", { ramp: "gold", speed: [s * 3, s * 7], len: [10, 22], size: 2.4, drag: 2, acc: [0, s * 4], life: [300, 520] });
     glints(e, at, s, 6, "glint", { r: .4 });
-    ring(e, at, s * 1.2, "steel", { dur: 300 });
+    e.emit({ at, tex: "spark", ramp: "steel", size: [s * .2, s * 1.1], rot: rand(0, 3), life: 200, grow: true });
   },
   fighting(e, at, s, p) {
-    e.emit({ at, tex: "splat", ramp: "white", size: [s * .3, s * 1.1 * p], life: 240, rot: rand(0, 6), grow: true, alpha: .9 });
-    sparks(e, at, 12, "fighting", { speed: [s * 3, s * 6], len: [12, 22], size: 3 });
+    e.emit({ at, tex: "splat", ramp: "fighting.h", size: [s * .3, s * 1.1 * p], life: 240, rot: rand(0, 6), grow: true, alpha: .55 });
+    sparks(e, at, 16, "fighting", { speed: [s * 3, s * 7], len: [14, 26], size: 3.4 });
     dust(e, [at[0], at[1] + s * .35], s, 3);
   },
   flying(e, at, s, p) {
@@ -217,8 +232,10 @@ const DEBRIS = {
     glints(e, at, s, 6, "bug.h", { r: .5 });
   },
   normal(e, at, s, p) {
-    e.emit({ at, tex: "splat", ramp: "white", size: [s * .3, s * .95 * p], life: 220, rot: rand(0, 6), grow: true, alpha: .85 });
-    sparks(e, at, 10, "normal", { speed: [s * 2.5, s * 5], len: [10, 18] });
+    // a blow of no type: a star of warm light with streaks thrown out of it, the games' plain hit (a white splat read as a white-out)
+    e.emit({ at, tex: "splat", ramp: "gold", size: [s * .3, s * .9 * p], life: 220, rot: rand(0, 6), grow: true, alpha: .4 });
+    sparks(e, at, 16, "normal", { ramp: "gold", speed: [s * 3, s * 6.5], len: [12, 24], size: 3.2 });
+    glints(e, at, s, 4, "glint", { r: .45 });
   },
 };
 export const debris = (stage, at, type, size, power = 1) => { const e = E(stage); if (e) (DEBRIS[typeId(type)] || DEBRIS.normal)(e, at, size, power); };
@@ -231,9 +248,9 @@ const MARK = {
     for (const sg of [-1, 1]) e.emit({ at: [at[0], at[1] + sg * s * .42], vel: [0, -sg * s * 2.3], drag: 7, tex: "fang", lit: true, ramp, size: [s * .5, s * .5], aspect: 2.4, rot: sg > 0 ? Math.PI : 0, life: 340, emis: .7, occ: .7, alpha: 1 });
     e.at(130, () => { sparks(e, at, 10, t, { speed: [s * 2, s * 4], len: [5, 10] }); glints(e, at, s, 4, `${t}.h`, { r: .4 }); });
   },
-  claw(e, at, s, t) { for (let i = -1; i <= 1; i++) slashStrip(e, [at[0] + i * s * .16, at[1] + i * s * .05], 1.05, s * 1.25, { color: colorOf(t), width: 9, dur: 280, curve: .12, delay: (i + 1) * 40 }); },
-  slash(e, at, s, t) { slashStrip(e, at, rand(.4, .8), s * 1.5, { color: "#FFFFFF", width: 13, dur: 280, curve: .26 }); slashStrip(e, at, rand(.4, .8), s * 1.5, { color: colorOf(t), width: 20, dur: 300, curve: .26, mode: 0 }); },
-  cross(e, at, s, t) { slashStrip(e, at, .8, s * 1.4, { color: colorOf(t), width: 12, dur: 280, curve: .1 }); slashStrip(e, at, -.8 + Math.PI, s * 1.4, { color: colorOf(t), width: 12, dur: 280, curve: .1, delay: 70 }); },
+  claw(e, at, s, t) { for (let i = -1; i <= 1; i++) { slashStrip(e, [at[0] + i * s * .2, at[1] + i * s * .06], 1.05, s * 1.5, { color: colorOf(t), width: 18, dur: 300, curve: .12, delay: (i + 1) * 40, mode: 0 }); slashStrip(e, [at[0] + i * s * .2, at[1] + i * s * .06], 1.05, s * 1.4, { color: "#FFFFFF", width: 5, dur: 280, curve: .12, delay: (i + 1) * 40 }); } },
+  slash(e, at, s, t) { const a = rand(.4, .8); slashStrip(e, at, a, s * 1.8, { color: colorOf(t), width: 32, dur: 320, curve: .26, mode: 0 }); slashStrip(e, at, a, s * 1.7, { color: "#FFFFFF", width: 10, dur: 300, curve: .26 }); sparks(e, at, 12, t, { dir: a, arc: .5, speed: [s * 3, s * 6], len: [12, 22] }); },
+  cross(e, at, s, t) { for (const [a, d] of [[.8, 0], [-.8 + Math.PI, 70]]) { slashStrip(e, at, a, s * 1.7, { color: colorOf(t), width: 24, dur: 300, curve: .1, delay: d, mode: 0 }); slashStrip(e, at, a, s * 1.6, { color: "#FFFFFF", width: 7, dur: 280, curve: .1, delay: d }); } },
 };
 const markOf = id => (id === "stoneedge" ? null : /(bite|fang|crunch|jaw|chomp)/.test(id) ? "fang" : /cross|xscissor/.test(id) ? "cross" : /(claw|swipe|scratch|fury)/.test(id) ? "claw" : /(slash|cut|blade|sword|leaf|cleave|edge|razor|axe|scissor|aqua cutter)/.test(id) ? "slash" : null);
 
@@ -258,6 +275,7 @@ export function weatherIn(stage, id) {
   const e = E(stage), kind = WEATHER_IN[id];
   if (!e || !kind || instant() || reduced()) return Promise.resolve();
   const { W, H } = e, U = clamp(W / 800, .55, 1.6);
+  sfx(kind);
   if (kind === "rain") {
     darken(stage, .55, 900);
     e.at(320, () => flashStage(stage, .55, 260, "#DCE8FF"));
@@ -302,12 +320,17 @@ export function burst(stage, key, type, power = 1, { shards = true, mark = null 
   const e = E(stage);
   if (!e || instant()) return Promise.resolve();
   const at = centre(stage, key), s = sizeOf(stage, key), t = typeId(type), p = clamp(power, .5, 1.8);
+  sfx("impact", { type: t, p, pan: panOf(e, at), mark, soft: !shards });
   // a sharp star of light at the point of the blow, turned at random, and only a little of the type's light round it
-  e.emit({ at, tex: "spark", ramp: "white", size: [s * .3 * p, s * 1.15 * p], rot: rand(0, Math.PI), life: 170, alpha: .9, grow: true });
-  e.emit({ at, tex: "glint", ramp: `${t}.h`, size: [s * .4 * p, s * 1.6 * p], rot: rand(-.3, .3), life: 240, alpha: .7, grow: true });
-  glow(e, at, s * .85 * p, t, { dur: 300, ramp: `${t}.h`, alpha: .25 });
-  sparks(e, at, Math.round(12 * p), t, { speed: [s * 3, s * 6.5], len: [8, 16] });
-  if (p > 1.02) shock(e, at, s * 2.4 * p, { dur: 460 });
+  // 2026-11-07: the star of the blow is in its type's colour with a small white heart (a white star over a white-flashing target read as a
+  // white-out), its streaks long and coloured, a corona of the type behind it and the air bending every time
+  e.emit({ at, tex: "spark", ramp: t === "normal" ? "gold" : t, size: [s * .3 * p, s * 1.45 * p], rot: rand(0, Math.PI), life: 230, alpha: 1, grow: true });
+  e.emit({ at, tex: "spark", ramp: "white", size: [s * .12 * p, s * .45 * p], rot: rand(0, Math.PI), life: 140, alpha: .6, grow: true });
+  e.emit({ at, tex: "glint", ramp: `${t}.h`, size: [s * .4 * p, s * 1.7 * p], rot: rand(-.3, .3), life: 260, alpha: .8, grow: true });
+  if (t !== "normal") e.emit({ at, tex: "splat", ramp: `${t}.m`, size: [s * .3, s * 1.05 * p], rot: rand(0, 6), life: 260, alpha: .4, emis: 1, grow: true });
+  glow(e, at, s * .9 * p, t, { dur: 320, ramp: `${t}.h`, alpha: .3 });
+  sparks(e, at, Math.round(16 * p), t, { speed: [s * 3.5, s * 7.5], len: [12, 26], size: 3.4 });
+  shock(e, at, s * 2 * p, { dur: 420 });
   if (shards) (DEBRIS[t] || DEBRIS.normal)(e, at, s, p);
   if (mark && MARK[mark]) MARK[mark](e, at, s, t);
   e.kick(.012 * p); e.shake(.16 * p);
@@ -326,11 +349,13 @@ export function hit(stage, key, { share = .2, crit = false, strong = false, weak
   if (!e || !a || instant()) return Promise.resolve();
   const s = sizeOf(stage, key), p = (.05 + Math.min(1, share) * .14) * s * (crit ? 1.35 : 1) * (strong ? 1.15 : weak ? .7 : 1);
   const sx = a.own ? -1 : 1, sy = a.own ? .3 : -.3;
-  const runs = [];
+  const runs = [], pan = panOf(e, centre(stage, key));
+  sfx(!direct ? "knock" : crit ? "crit" : strong ? "super" : weak ? "resist" : "damage", { share, pan });
+  if (direct && crit && strong) sfx("super", { pan });
   if (direct) {
     runs.push(e.anim(a, { x: [0, sx * p * 1.3, -sx * p * .35, sx * p * .12, 0], y: [0, sy * p, -sy * p * .2, 0, 0], rot: [0, sx * .05, -sx * .02, 0, 0] }, { dur: 460, at: [0, .1, .36, .62, 1], ease: "out2" }));
     // the blink of a blow: two short flashes, never a white-out
-    runs.push(e.anim(a, { flash: [0, .55, 0, .35, 0] }, { dur: 300, ease: "linear" }));
+    runs.push(e.anim(a, { flash: [0, .26, 0, .14, 0] }, { dur: 300, ease: "linear" }));
     if (a.src.startsWith("data:")) runs.push(e.anim(a, { sx: [1, 1.18, .94, 1], sy: [1, .8, 1.08, 1] }, { dur: 440 }));
     if (crit) { runs.push(e.anim(e.grade, { ca: [0, .012, 0] }, { dur: 360, at: [0, .15, 1] })); e.shake(.4); flashStage(stage, .1, 220); }
     else if (strong) e.shake(.25);
@@ -371,26 +396,28 @@ const AILMENT = {
   },
 };
 AILMENT.tox = AILMENT.psn;
-const ailment = (stage, key, id, n = 1) => { const e = E(stage), a = actorOf(stage, key); if (!e || !a || !AILMENT[id]) return Promise.resolve(); AILMENT[id](e, a, sizeOf(stage, key), n, key, stage); return e.after(560); };
+const ailment = (stage, key, id, n = 1) => { const e = E(stage), a = actorOf(stage, key); if (!e || !a || !AILMENT[id]) return Promise.resolve(); sfx(`st_${id === "tox" ? "psn" : id}`, { n, pan: panOf(e, centre(stage, key)) }); AILMENT[id](e, a, sizeOf(stage, key), n, key, stage); return e.after(560); };
 
 const RESIDUAL = { sandstorm: "rock", hail: "ice", spikes: "ground", leechseed: "grass", saltcure: "rock", curse: "ghost", nightmare: "ghost", partiallytrapped: "normal", lifeorb: "psychic", rockyhelmet: "steel", roughskin: "normal", ironbarbs: "steel", blacksludge: "poison", stickybarb: "steel", bind: "normal", firespin: "fire", whirlpool: "water", sandtomb: "ground", infestation: "bug", magmastorm: "fire" };
 export function residual(stage, key, from) {
   const e = E(stage);
   if (!e || instant() || !actorOf(stage, key)) return Promise.resolve();
   if (from === "brn" || from === "psn" || from === "tox") return ailment(stage, key, from, .6);
-  const at = centre(stage, key), s = sizeOf(stage, key);
+  const at = centre(stage, key), s = sizeOf(stage, key), pan = panOf(e, at);
   if (from === "stealthrock") {
+    sfx("rocks", { pan, at: 60 }); sfx("impact", { type: "rock", p: .7, pan, at: 300 });
     // the pointed stones floating round its side fly in at it
     for (let i = 0; i < 7; i++) { const a0 = -Math.PI / 2 + rand(-1.2, 1.2), d = s * 1.2, st = [at[0] + Math.cos(a0) * d, at[1] + Math.sin(a0) * d]; e.emit({ at: st, vel: [(at[0] - st[0]) / .28, (at[1] - st[1]) / .28], tex: "chip", lit: true, ramp: "chip", size: [s * .12, s * .1], rot: "rand", spin: 8, life: 280, delay: i * 60, occ: 1, emis: .05 }); }
     e.at(300, () => { DEBRIS.rock(e, at, s, .7); e.shake(.18); });
     return e.after(420);
   }
-  if (from === "sandstorm") { e.emit({ n: 30, at: [at[0] - s, at[1]], r: [s * .2, s * .5], vel: () => [rand(s * 3, s * 4.5), rand(-20, 20)], tex: "streak", ramp: "sand", face: true, size: [2, 2], aspect: [5, 12], life: 500, over: 300, occ: .5, emis: .3 }); return e.after(400); }
-  if (from === "hail") { e.emit({ n: 8, at: () => [at[0] + rand(-s * .4, s * .4), at[1] - s * 1.4], vel: [0, s * 4.5], tex: "crystal", lit: true, ramp: "ice.c", size: [s * .07, s * .06], aspect: .6, life: 300, over: 260, emis: .4, occ: .85 }); e.at(300, () => DEBRIS.ice(e, at, s, .5)); return e.after(420); }
-  if (from === "leechseed") { e.emit({ n: 8, at, r: s * .3, tex: "leaf", ramp: "grass.m", vel: () => [rand(-30, 30), rand(-30, 30)], size: [s * .12, s * .06], aspect: 1.8, rot: "rand", spin: 4, life: 600, occ: .8 }); return e.after(300); }
+  if (from === "sandstorm") { sfx("wind", { pan }); e.emit({ n: 30, at: [at[0] - s, at[1]], r: [s * .2, s * .5], vel: () => [rand(s * 3, s * 4.5), rand(-20, 20)], tex: "streak", ramp: "sand", face: true, size: [2, 2], aspect: [5, 12], life: 500, over: 300, occ: .5, emis: .3 }); return e.after(400); }
+  if (from === "hail") { sfx("impact", { type: "ice", p: .5, pan, at: 300 }); e.emit({ n: 8, at: () => [at[0] + rand(-s * .4, s * .4), at[1] - s * 1.4], vel: [0, s * 4.5], tex: "crystal", lit: true, ramp: "ice.c", size: [s * .07, s * .06], aspect: .6, life: 300, over: 260, emis: .4, occ: .85 }); e.at(300, () => DEBRIS.ice(e, at, s, .5)); return e.after(420); }
+  if (from === "leechseed") { sfx("squeeze", { pan }); e.emit({ n: 8, at, r: s * .3, tex: "leaf", ramp: "grass.m", vel: () => [rand(-30, 30), rand(-30, 30)], size: [s * .12, s * .06], aspect: 1.8, rot: "rand", spin: 4, life: 600, occ: .8 }); return e.after(300); }
   const type = RESIDUAL[from];
   if (!type) return Promise.resolve();
-  ring(e, at, s * .9, type, { dur: 380 });
+  sfx("impact", { type, p: .5, pan });
+  glints(e, at, s, 4, `${type}.h`, { r: .4 });
   (DEBRIS[type] || DEBRIS.normal)(e, at, s, .5);
   return e.after(380);
 }
@@ -407,6 +434,7 @@ export function flow(stage, from, to) {
 // motes carried along a weave from a to b, each arriving in turn
 function orbs(e, a, b, type, { n = 16, dur = 520, over = 300, wave = .1, size = 6, ramp = null, tex = "glow", trail = true } = {}) {
   const d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / d, ny = (b[0] - a[0]) / d;
+  sfx("motes", { type: typeId(type), dur: dur + over, pan: panOf(e, b) });
   for (let i = 0; i < n; i++) {
     const t0 = over * i / Math.max(1, n - 1), ph = rand(0, Math.PI * 2), amp = wave * d * rand(.5, 1);
     // a weave is a line plus a sideways swing, written as steps of a few short flights
@@ -427,7 +455,7 @@ export function cant(stage, key, why) {
   if (why === "par") return Promise.all([ailment(stage, key, "par"), flashMon(stage, key, .4)]);
   if (why === "slp") return ailment(stage, key, "slp").then(() => e.after(500));
   if (why === "frz") return Promise.all([ailment(stage, key, "frz"), flashMon(stage, key, .6)]);
-  if (why === "flinch") { sparks(e, centre(stage, key, .75), 6, "normal", { len: [8, 14] }); return hit(stage, key, { share: 0, weak: true }); }
+  if (why === "flinch") { sfx("flinch", { pan: panOf(e, centre(stage, key)) }); sparks(e, centre(stage, key, .75), 6, "normal", { len: [8, 14] }); return hit(stage, key, { share: 0, weak: true }); }
   return flashMon(stage, key, .4);
 }
 // confused: it sways, stars circling over its head
@@ -435,6 +463,7 @@ export function sway(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return Promise.resolve();
   const [x, y] = centre(stage, key, .95), s = sizeOf(stage, key);
+  sfx("confused", { pan: panOf(e, [x, y]) });
   // a circle seen from the side: three stars, each a run of short flights round it
   for (let i = 0; i < 3; i++) for (let j = 0; j < 16; j++) {
     const a0 = i / 3 * Math.PI * 2 + j / 16 * Math.PI * 3, a1 = a0 + Math.PI * 3 / 16, seg = 900 / 16, p0 = [x + Math.cos(a0) * s * .3, y + Math.sin(a0) * s * .08], p1 = [x + Math.cos(a1) * s * .3, y + Math.sin(a1) * s * .08];
@@ -448,6 +477,7 @@ export function hideForDoll(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return Promise.resolve();
   const [x, y] = centre(stage, key, .15), s = sizeOf(stage, key);
+  sfx("puff", { pan: panOf(e, [x, y]) });
   smoke(e, [x, y], s * 1.2, 8, { ramp: "steam", rise: 50, alpha: .8 });
   return e.anim(a, { alpha: [1, 0], sx: [1, .6], sy: [1, .6] }, { dur: 240, ease: "in2", fill: true });
 }
@@ -461,6 +491,7 @@ export async function doll(stage, key, on) {
   await a.ready;
   const s = sizeOf(stage, key), [x, y] = centre(stage, key, .1);
   if (on) {
+    sfx("boing", { at: 270, pan: panOf(e, [x, y]) });
     smoke(e, [x, y], s, 4, { ramp: "steam", rise: 30, delay: 200 });
     e.at(270, () => { dust(e, [x, y], s, 3); e.shake(.1); });
     await e.anim(a, { y: [-s * .6, 0, 0, 0, 0], alpha: [0, 1, 1, 1, 1], sx: [.85, 1, 1.2, .92, 1], sy: [1.1, 1, .78, 1.1, 1] }, { dur: 680, at: [0, .4, .56, .78, 1], eases: ["in2", "out", "inout", "inout"] });
@@ -472,6 +503,7 @@ export function breakDoll(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return Promise.resolve();
   const [x, y] = centre(stage, key, .3), s = sizeOf(stage, key);
+  sfx("pop", { at: 120, pan: panOf(e, [x, y]) });
   e.at(120, () => {
     smoke(e, [x, y], s, 8, { ramp: "steam", rise: 60, alpha: .8 });
     e.emit({ n: 12, at: [x, y], tex: "rock", ramp: "grass.m", speed: [s * 1.2, s * 2.4], dir: -Math.PI / 2, arc: 2.6, acc: [0, s * 3.5], size: [[s * .05, s * .09], "same"], rot: "rand", spin: [-10, 10], life: [600, 800], occ: 1, emis: .1 });
@@ -483,6 +515,7 @@ export function morph(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return Promise.resolve();
   const at = centre(stage, key), s = sizeOf(stage, key);
+  sfx("morph", { pan: panOf(e, at) });
   e.at(300, () => { sparks(e, at, 14, "normal", { len: [6, 12] }); glow(e, at, s * 1.6, "normal", { dur: 400 }); });
   return e.anim(a, { sx: [1, .06, .06, 1], flash: [0, 1.6, 1.6, 0] }, { dur: 640, at: [0, .45, .55, 1], eases: ["in", "linear", "out"] });
 }
@@ -496,7 +529,9 @@ export async function gather(stage, key, type) {
 // Trick Room: the space turns a little and comes back as the room goes up round the court
 export function twist(stage) {
   const e = E(stage);
-  if (!e || instant() || reduced()) return Promise.resolve();
+  if (!e || instant()) return Promise.resolve();
+  sfx("room");
+  if (reduced()) return Promise.resolve();
   // the roll is the camera's own target, eased by its spring: there and back without a cut
   e.cam.smooth = .18; e.cam.tr = -.05; e.at(300, () => { e.cam.tr = .025; }); e.at(560, () => { e.cam.tr = 0; e.cam.smooth = .35; });
   return Promise.all([e.after(820), e.anim(e.grade, { ca: [0, .01, 0] }, { dur: 820 }), flashStage(stage, .12, 500, "#FF8AC0")]);
@@ -509,6 +544,7 @@ export function shatter(stage, own, id) {
   const sideEl = [...stage.querySelectorAll(`.bs-side.${own ? "own" : "foe"} .bs-slot`)].map(s => s.getBoundingClientRect()), box = stage.getBoundingClientRect();
   const l = Math.min(...sideEl.map(r => r.left)) - box.left, r = Math.max(...sideEl.map(r2 => r2.right)) - box.left, top = Math.min(...sideEl.map(r2 => r2.top)) - box.top, bot = Math.max(...sideEl.map(r2 => r2.bottom)) - box.top;
   if (!isFinite(l)) return Promise.resolve();
+  sfx("glass", { pan: own ? -.4 : .4 });
   e.emit({ n: 40, at: () => [rand(l, r), rand(top, bot)], tex: "shard", lit: true, ramp: SCREEN_TYPE[id], vel: () => [rand(-120, 120), rand(-160, 0)], acc: [0, 900], rot: "rand", spin: [-10, 10], size: [[6, 12], "same"], aspect: .5, life: [600, 900], emis: .6, occ: .7 });
   flashStage(stage, .12, 260);
   e.shake(.2);
@@ -546,11 +582,12 @@ export function heal(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return Promise.resolve();
   const s = sizeOf(stage, key), [x, y] = centre(stage, key, .02);
-  ring(e, [x, y], s * 1.3, "grass", { flat: .3, dur: 800, layer: 0 });
-  e.emit({ n: 18, at: [x, y], r: [s * .4, s * .05], tex: "glow", ramp: "grass.h", vel: () => [rand(-8, 8), -rand(s * .9, s * 1.6)], size: [s * .06, s * .02], life: [700, 1000], over: 400, emis: 1 });
+  sfx("heal", { pan: panOf(e, [x, y]) });
+  e.emit({ at: [x, y - s * .45], tex: "glow", ramp: "grass.h", size: [s * .3, s * 1.5], aspect: .8, life: 900, alpha: .12, grow: true });
+  e.emit({ n: 26, at: [x, y], r: [s * .45, s * .06], tex: "glow", ramp: "grass.h", vel: () => [rand(-8, 8), -rand(s * .9, s * 1.7)], size: [s * .07, s * .02], life: [700, 1100], over: 500, emis: 1 });
+  e.emit({ n: 14, at: [x, y], r: [s * .45, s * .06], tex: "glint", ramp: "grass.h", vel: () => [rand(-6, 6), -rand(s * .5, s * 1.1)], size: [s * .04, s * .12], life: [600, 900], over: 500, emis: 1, grow: true });
   e.emit({ n: 8, at: [x, y - s * .3], r: [s * .4, s * .3], tex: "plus", ramp: "grass.h", vel: () => [0, -rand(30, 60)], size: [s * .06, s * .1], life: [700, 900], over: 400, emis: .9 });
-  e.emit({ at: [x, y - s * .4], tex: "streak", ramp: "grass", size: [s * .8, s * .8], aspect: .35, rot: Math.PI / 2, life: 700, alpha: .5 });
-  return e.anim(a, { rimR: [.5, .5], rimG: [1, 1], rimB: [.5, .5], rimA: [0, 1, 0], flash: [0, .35, 0] }, { dur: 900 });
+  return e.anim(a, { rimR: [.4, .4], rimG: [1, 1], rimB: [.45, .45], rimA: [0, .7, 0] }, { dur: 900 });
 }
 // fainting: it greys, holds a beat, sinks through the floor and goes out in a little dust; the lamps dim a step
 export function faint(stage, key) {
@@ -558,6 +595,7 @@ export function faint(stage, key) {
   if (!e || !a || instant()) return Promise.resolve();
   e.cancel(a);
   const s = sizeOf(stage, key), p = e.placed(a), [x] = centre(stage, key);
+  sfx("faint", { pan: panOf(e, [x, 0]) });
   e.at(380, () => { ring(e, [x, p?.fy || 0], s * 1.4, "normal", { flat: .26, dur: 640, alpha: .6, layer: 0 }); dust(e, [x, p?.fy || 0], s, 6); });
   return e.anim(a, { gray: [0, 1, 1, 1], bright: [1, .75, .75, .55], y: [0, s * .02, s * .02, (p?.h || s) * 1.02], clip: [1, 1, 1, 1], alpha: [1, 1, 1, .9] }, { dur: 900, at: [0, .22, .36, 1], eases: ["out", "linear", "in2"], fill: true });
 }
@@ -639,6 +677,7 @@ export function throwBall(stage, key) {
   const from = own ? [-size * 2, H * .92] : [W + size * 2, H * .34];
   const peak = Math.max(size, Math.min(from[1], ty) - H * (own ? .34 : .2)), t0 = e.T;
   const frames = ballTex(e), turns = own ? 2.2 : 1.6;
+  sfx("throw", { dur, pan: own ? -.5 : .5 });
   const pathAt = t => [lerp(from[0], tx, t), (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty];
   // the floor under it runs from the near edge (or the far side's floor) to the feet of the place it lands on
   const floorFrom = own ? H * 1.02 : Math.max(fy - H * .08, H * .3);
@@ -677,6 +716,7 @@ export async function opening(stage, ours, theirs, { plates = true, seated = fal
   const darkened = e?.gradeBase.dim !== 1;
   if (e) e.gradeBase.dim = 1;
   if (!over || instant()) return;
+  sfx("lamps");
   if (!plates) {
     // the gate has lifted onto the dark stage: the lamps switch on in view, and the throws come on their rise
     if (e && darkened) e.anim(e.grade, { dim: [.18, 1], bloom: [1.6, 1] }, { dur: 900, ease: "inout" });
@@ -700,6 +740,7 @@ export async function final(stage, { players, sides, turn, winner, perspective, 
   const said = (r, word) => (r.label ? `${r.label}, ${word}` : word);
   const decided = rows.map((r, i) => winner === "tie" || !winner ? { ...r, label: said(r, "무승부"), lost: true }
     : { ...r, label: said(r, sideAt(i) === winner ? "승리" : "패배"), won: sideAt(i) === winner, lost: sideAt(i) !== winner });
+  sfx(winner === "tie" || !winner ? "draw" : !seated || winner === perspective ? "win" : "lose", { at: 580 });
   await playBoard(over, { say: `종료, ${turn}턴`, rows: rows.map(r => ({ ...r, score: null })) },
     [[ms(160), { rows }], [ms(420), { rows: decided, done: true }], [ms(1600), {}]], { off: true });
 }
@@ -715,6 +756,7 @@ export async function enter(stage, key, { ball = true, cry = null } = {}) {
   a.base.alpha = 0;
   await Promise.all([a.ready, ball && !reduced() ? throwBall(stage, key) : null]);
   a.base.alpha = 1;
+  if (ball) sfx("ballOpen", { pan: panOf(e, centre(stage, key)) });
   const heard = cry?.();
   if (reduced()) { await Promise.all([e.anim(a, { alpha: [0, 1] }, { dur: 260 }), heard]); return; }
   const at = centre(stage, key, .45), s = sizeOf(stage, key), feet = centre(stage, key, 0);
@@ -736,6 +778,7 @@ export async function leave(stage, key, { drag = false } = {}) {
   if (!e || !a || instant()) return;
   e.cancel(a);
   const at = centre(stage, key, .45), s = sizeOf(stage, key), feet = centre(stage, key, 0);
+  sfx(drag ? "drag" : "recall", { pan: panOf(e, at) });
   if (reduced()) { await e.anim(a, { alpha: [1, 0] }, { dur: 260, fill: true }); return; }
   if (drag) {
     const d = (a.own ? -1 : 1) * s * 1.4;
@@ -813,6 +856,7 @@ export async function megaStart(stage, key) {
   if (!e || !a || instant()) return;
   const at = centre(stage, key), s = sizeOf(stage, key), { W, H } = e, own = ownKey(stage, key), tex = megaTex(e);
   a.lit = true;
+  sfx("megaStart", { pan: panOf(e, at) });
   e.anim(e.grade, { dim: [1, .22] }, { dur: 500, fill: true }).then(() => {});
   e.megaDim = true;
   e.shot(at[0], at[1], 1.25, { smooth: .5 });
@@ -868,6 +912,7 @@ export async function megaEnd(stage, key) {
   if (e.mega) { e.mega.burst = e.T; e.mega = null; }
   if (instant() || !a) return;
   const at = centre(stage, key), s = sizeOf(stage, key), feet = centre(stage, key, 0);
+  sfx("megaEnd");
   flashStage(stage, .7, 520);
   // the cocoon breaks: shards of rainbow light and white, a shockwave, a ring across the floor, sparks and glints
   e.emit({ n: 26, at, r: s * .35, tex: "crystal", lit: true, ramp: "rainbow", speed: [s * 2.5, s * 5.5], drag: 2.2, size: [[s * .06, s * .13], s * .02], aspect: .6, rot: "rand", spin: [-9, 9], life: [560, 900], emis: .9, occ: .3 });
@@ -888,9 +933,10 @@ export function boost(stage, key, amount) {
   if (!e || !a || instant() || !amount) return Promise.resolve();
   const up = amount > 0, [x, y] = centre(stage, key, .45), s = sizeOf(stage, key), n = Math.min(3, Math.abs(amount)) * 5;
   const ramp = up ? "fire.h" : "water.h";
+  sfx(up ? "statUp" : "statDown", { n: Math.abs(amount), pan: panOf(e, [x, y]) });
   e.emit({ n, at: () => [x + rand(-.42, .42) * s, y + (up ? s * .5 : -s * .5)], vel: [0, (up ? -1 : 1) * s * 1.6], tex: "chevron", ramp, size: [s * .12, s * .12], rot: up ? 0 : Math.PI, life: 620, over: 360, emis: .9, occ: .3 });
-  e.emit({ at: [x, y], tex: "glow", ramp: up ? "fire" : "water", size: [s * 1.2, s * 1.3], aspect: 1.1, life: 600, alpha: .45 });
-  return e.anim(a, { rimR: up ? [1, 1] : [.4, .4], rimG: up ? [.45, .45] : [.7, .7], rimB: up ? [.2, .2] : [1, 1], rimA: [0, .9, 0], bright: [1, up ? 1.15 : .85, 1] }, { dur: 700 });
+  e.emit({ at: [x, y], tex: "glow", ramp: up ? "fire" : "water", size: [s * 1.2, s * 1.3], aspect: 1.1, life: 600, alpha: .22 });
+  return e.anim(a, { rimR: up ? [1, 1] : [.4, .4], rimG: up ? [.45, .45] : [.7, .7], rimB: up ? [.2, .2] : [1, 1], rimA: [0, .9, 0], bright: [1, up ? 1.07 : .9, 1] }, { dur: 700 });
 }
 export function status(stage, key, id) {
   const e = E(stage);
@@ -904,9 +950,10 @@ export function shield(stage, key, id = "protect") {
   const e = E(stage);
   if (!e || instant() || !actorOf(stage, key)) return Promise.resolve();
   const at = centre(stage, key), s = sizeOf(stage, key) * 1.5, t = GUARD_TYPE[id] || "grass";
+  sfx("protect", { pan: panOf(e, at), spiky: /spiky|kings|baneful|bulwark|obstruct/.test(id) });
   e.emit({ at, tex: "hexgrid", ramp: `${t}.h`, size: [s * 1.25, s], life: 900, alpha: .8, grow: true });
   e.emit({ at, tex: "bubble", ramp: `${t}.h`, size: [s * 1.1, s], life: 900, alpha: .7, emis: 1, grow: true });
-  ring(e, at, s, t, { dur: 320, s0: 1.3 });
+  glints(e, at, s, 8, `${t}.h`, { r: .5, over: 300 });
   e.emit({ at: [at[0] - s * .25, at[1] - s * .25], tex: "spark", ramp: "white", size: [0, s * .4], life: 420, delay: 220 });
   if (/spiky|kings|baneful|bulwark|obstruct/.test(id)) for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; e.emit({ at: [at[0] + Math.cos(a) * s * .5, at[1] + Math.sin(a) * s * .5], tex: "shard", ramp: `${t}.h`, size: [s * .04, s * .16], aspect: .45, rot: a + Math.PI / 2, life: 600, delay: 100 + i * 15, emis: .9, grow: true }); }
   return e.after(900);
@@ -915,6 +962,7 @@ export function shield(stage, key, id = "protect") {
 export function popup(stage, key, owner, name, own) {
   const over = overOf(stage);
   if (!over || instant()) return Promise.resolve();
+  sfx(/도구$/.test(owner) ? "item" : "ability", { pan: own ? -.4 : .4 });
   const el = document.createElement("i");
   el.className = `bt-popup${own ? " own" : ""}`;
   const small = document.createElement("small"); small.textContent = owner;
@@ -934,13 +982,17 @@ export function charge(stage, key, type, duration = 420) {
   const e = E(stage);
   if (!e || instant()) return Promise.resolve();
   const at = centre(stage, key), s = sizeOf(stage, key), t = typeId(type), D = duration;
+  sfx("charge", { type: t, dur: D, pan: panOf(e, at) });
   for (let i = 0; i < 26; i++) {
     const ang = rand(0, Math.PI * 2), r = s * rand(.8, 1.3), st = [at[0] + Math.cos(ang) * r, at[1] + Math.sin(ang) * r], life = D * rand(.45, .7);
     e.emit({ at: st, vel: [(at[0] - st[0]) / life * 1000, (at[1] - st[1]) / life * 1000], tex: "streak", ramp: t, face: true, size: [3, 1.5], aspect: 6, life, delay: rand(0, D - life), emis: 1 });
   }
-  e.emit({ at, tex: "glow", ramp: `${t}.h`, size: [s * .1, s * .9], life: D, alpha: .9, grow: true });
-  e.emit({ at, tex: "dot", ramp: "white.h", size: [s * .05, s * .3], life: D, alpha: .9, grow: true });
-  ring(e, at, s * 1.6, t, { dur: D, s0: 1, alpha: .6 });
+  // 2026-11-07: no ring round it (a flat circle read as a sign); the light is drawn in as lit motes and swells into a sphere at its heart
+  e.emit({ n: 16, at: () => { const ang = rand(0, Math.PI * 2), r = s * rand(.7, 1.1); return [at[0] + Math.cos(ang) * r, at[1] + Math.sin(ang) * r * .8]; }, tex: "glint", ramp: `${t}.h`, size: [s * .05, s * .14], life: D * .6, over: D * .35, emis: 1, grow: true });
+  e.emit({ at, tex: "glow", ramp: `${t}.h`, size: [s * .1, s * .6], life: D + 120, alpha: .2, grow: true });
+  e.emit({ at, tex: "orb", lit: true, ramp: `${t}.h`, size: [s * .04, s * .2], life: D + 120, occ: .3, emis: .9, grow: true });
+  e.emit({ at, tex: "dot", ramp: "white.h", size: [s * .02, s * .08], life: D + 120, alpha: .8, grow: true });
+  e.at(D * .85, () => { glints(e, at, s, 5, `${t}.h`, { r: .35, over: 120, size: .3 }); e.emit({ at, tex: "spark", ramp: t, size: [s * .2, s * .9], rot: rand(0, Math.PI), life: 200, alpha: .8, grow: true }); });
   const a = actorOf(stage, key), c = colorOf(t), [r, g, b] = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16) / 255);
   if (a) e.anim(a, { rimR: [r, r], rimG: [g, g], rimB: [b, b], rimA: [0, .9, 0] }, { dur: D + 200 });
   return e.after(D);
@@ -950,12 +1002,13 @@ export function aura(stage, key, type, rounds = 1, duration = 600) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return Promise.resolve();
   const t = typeId(type), s = sizeOf(stage, key), [x, y] = centre(stage, key, .05), c = colorOf(t), [r, g, b] = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16) / 255);
+  sfx("aura", { type: t, dur: duration, pan: panOf(e, [x, y]) });
   if (t === "fire") fire(e, [x, y], s, Math.round(14 * rounds), { r: [.38, .06], up: 1.3, size: [.14, .3], over: duration * .7, embers: false });
   else {
     const tex = t === "water" ? "bubble" : t === "grass" ? "leaf" : t === "electric" ? "glint" : "flame", lit = tex === "bubble" || tex === "leaf";
     e.emit({ n: 22 * rounds, at: [x, y], r: [s * .38, s * .06], tex, lit, ramp: tex === "leaf" ? "leaf.c" : tex === "bubble" ? "water.l" : `${t}.h`, vel: () => [rand(-10, 10), -rand(s * .9, s * 1.6)], size: [[s * .1, s * .18], s * .03], life: [500, 800], over: duration * .7, erode: tex === "flame" ? .55 : 0, emis: lit ? .5 : 1, occ: lit ? .8 : 0 });
   }
-  return e.anim(a, { rimR: [r, r], rimG: [g, g], rimB: [b, b], rimA: [0, 1, .8, 0], flash: [0, .25, 0] }, { dur: duration, at: [0, .3, .7, 1] });
+  return e.anim(a, { rimR: [r, r], rimG: [g, g], rimB: [b, b], rimA: [0, 1, .8, 0], flash: [0, .12, 0] }, { dur: duration, at: [0, .3, .7, 1] });
 }
 // the user dashes to its target and back; the promise is the instant it strikes
 function lunge(stage, from, to, type, { quick = false, short = false, dur = null, arc = 0, spin = 0 } = {}) {
@@ -963,8 +1016,11 @@ function lunge(stage, from, to, type, { quick = false, short = false, dur = null
   if (!e || !a || reduced()) return wait(200);
   const [ax, ay] = centre(stage, from), [bx, by] = centre(stage, to), k = short ? .45 : .78, dx = (bx - ax) * k, dy = (by - ay) * k;
   const D = dur || (quick ? 440 : 640), strike = .42;
-  a.trail = true; a.hist = [];
+  sfx("dash", { dur: D * strike, pan: panOf(e, [ax, ay]) });
+  a.trail = true; a.hist = []; a.ghostColor = colorOf(typeId(type));
   e.anim(a, { ghost: [0, 0, 1, 1, 0] }, { dur: D, at: [0, .18, .3, .5, .7] });
+  // lines of speed streaming back off it as it dashes, in its type's light
+  for (let i = 0; i < 6; i++) e.at(D * (.18 + i * .04), () => { const [x, y] = [ax + a.st.x, ay + a.st.y], s = sizeOf(stage, from); e.emit({ n: 4, at: [x, y], r: [s * .45, s * .4], vel: [-(bx - ax) * 1.2, -(by - ay) * 1.2], tex: "streak", ramp: typeId(type), face: true, size: [3, 2], aspect: [12, 22], life: 200, alpha: .75 }); });
   const back = -.08;
   e.anim(a, { x: [0, dx * back, dx, dx * .94, 0], y: [0, dy * back - arc * .3, dy - arc, dy * .94, 0], rot: [0, -spin * .2, spin, spin, 0], sx: [1, 1.04, 1.08, 1.04, 1], sy: [1, .96, .95, 1, 1] }, { dur: D, at: [0, .2, strike, .56, 1], eases: ["out", "in2", "linear", "inout"] }).then(() => { a.trail = false; });
   // the camera rides with it
@@ -977,8 +1033,9 @@ function quake(stage, from, { big = true } = {}) {
   const e = E(stage);
   if (!e) return;
   const [x, y] = centre(stage, from, 0), s = sizeOf(stage, from), { W, H } = e;
+  sfx("quake", { pan: panOf(e, [x, y]) });
   for (let i = 0; i < 7; i++) { const at = [rand(.1, .9) * W, rand(.46, .98) * H], f = clamp(.18 + (at[1] / H - .42) * .55, .16, .5); e.emit({ at, tex: "crack", ramp: e.light ? "ink" : "dust", size: [W * .22 * f, W * .26 * f], aspect: 1 / f, life: 1600, delay: i * 60, occ: .9, emis: e.light ? 0 : .3, alpha: .9, layer: 0, grow: true }); }
-  ring(e, [x, y], W * 1.2, "ground", { flat: .3, dur: 800, tex: "wave", ramp: "dust", layer: 0, alpha: .7 });
+  stamp(e, [x, y], s, 1.6);
   shock(e, [x, y], W * .9, { flat: .35, dur: 700 });
   for (let i = 0; i < 14; i++) dust(e, [rand(.05, .95) * W, rand(.5, 1) * H], s * .9, 1, 60 + i * 30);
   e.shake(big ? .9 : .55);
@@ -995,6 +1052,7 @@ export async function move(stageNode, event, keyOf, ahead = {}) {
   const from = keyOf(event.ident);
   const targets = (event.targets || []).map(keyOf).filter(k => slotEl(stage, k));
   const type = event.type || "Normal";
+  setMoveType(typeId(type));
   const id = event.move;
   const power = k => Math.max(.6, ahead.power?.[k] || 1);
   const missed = k => ahead.missed?.has(k) || (event.miss && k === targets[0]);
@@ -1020,6 +1078,7 @@ function dodge(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a) return Promise.resolve();
   const d = sizeOf(stage, key) * .3 * (a.own ? -1 : 1);
+  sfx("miss", { pan: panOf(e, centre(stage, key)) });
   a.trail = true; a.hist = [];
   return e.anim(a, { x: [0, d, d, 0], ghost: [0, 1, 1, 0] }, { dur: 460, at: [0, .3, .55, 1], eases: ["out", "linear", "inout"] }).then(() => { a.trail = false; });
 }
@@ -1027,7 +1086,7 @@ function dodge(stage, key) {
 /* the kit every move's recipe (moveFx.js) is drawn with */
 const kit = {
   E, centre, sizeOf, unitOf, actorOf, ownKey, rand, lerp, clamp, times, around, typeId, colorOf,
-  glow, ring, shock, sparks, smoke, dust, fire, splash, glints, beamStrip, boltStrip, slashStrip, pathStrip, orbs, DEBRIS, MARK,
+  glow, ring, shock, sparks, smoke, dust, fire, splash, glints, stamp, beamStrip, boltStrip, slashStrip, pathStrip, orbs, DEBRIS, MARK,
   burst, hit, charge, aura, lunge, quake, dodge, flashMon, flashStage, darken, heal, boost, ailment, sway, morph, leave, shake: shakeOf, wait, reduced,
 };
 const DRAW = makeDraw(kit);
