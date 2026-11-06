@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { Teams, toID } from "@pkmn/sim";
 import { formatId, validateTeam } from "../supabase/functions/battle/engine.mjs";
+import { idleMoves } from "./setFit.mjs";
 
 export const RATE = 0.3, HALF = 20, MIN_SEEN = 3, MIN_PLAYERS = 30, NEW_PER_SPECIES = 2;
 
@@ -110,7 +111,8 @@ export function learn(sets, records, { validate = (formatid, set) => !validateTe
         const known = new Set(entry.sets.map(s => keyOf(s.ability, s.moves, s.items[0])));
         const fresh = Object.entries(tally.keys).filter(([key, k]) => k.players >= MIN_SEEN && !known.has(key)).sort((a, b) => b[1].votes - a[1].votes)
           .map(([key, { set }]) => ({ key, set: { name: "", species: entry.species, ability: set.ability, item: set.item, moves: set.moves, nature: set.nature, evs: set.evs, ...(set.ivs ? { ivs: set.ivs } : {}), level: 50 } }))
-          .filter(({ set }) => validate(formatid, set)).slice(0, NEW_PER_SPECIES);
+          // a set that plays as it should in this kind of battle (no Follow Me in singles, scripts/setFit.mjs)
+          .filter(({ set }) => validate(formatid, set) && !idleMoves({ kind, ...set }).length).slice(0, NEW_PER_SPECIES);
         for (const { key, set } of fresh) entry.sets.push({
           weight: alpha * share(key), baseWeight: 0, ypl: true, ability: set.ability, items: [set.item],
           moves: set.moves, nature: set.nature, evs: set.evs, ...(set.ivs ? { ivs: set.ivs } : {}),

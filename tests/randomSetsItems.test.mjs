@@ -4,6 +4,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { Dex } from "@pkmn/sim";
+import { idleMoves } from "../scripts/setFit.mjs";
 
 const sets = JSON.parse(readFileSync(new URL("../src/data/random-sets.json", import.meta.url), "utf8"));
 const detail = JSON.parse(readFileSync(new URL("../src/data/champions-data.json", import.meta.url), "utf8"));
@@ -19,6 +21,19 @@ test("no set carries a status move under a Choice item or an Assault Vest, first
       const wrong = set.moves.filter(m => detail.moves[id(m)]?.category === "Status" && !(id(item).startsWith("choice") && CHOICE_OK.has(id(m))));
       if (wrong.length) bad.push(`${reg} ${format} ${entry.species}: ${item} with ${wrong.join(", ")}`);
     }
+  }
+  assert.deepEqual(bad.slice(0, 5), []);
+});
+
+// singles sets carry nothing that needs a partner (Follow Me, Helping Hand) and no Protect without a reason in that turn: Protect on a
+// Mega Beedrill was for the Mega speed of Gen 6 (feedback 2026-11-07). A Mega set is judged by the Mega's own ability, and every item
+// a set may carry counts, back-ups included.
+test("no singles set carries a move that does nothing without an ally or a Protect with nothing to wait for", () => {
+  const bad = [];
+  for (const reg of ["m-c", "m-b"]) for (const entry of sets[reg].singles) for (const set of entry.sets) for (const item of set.items) {
+    const mega = Dex.items.get(item).megaStone?.[entry.species];
+    const idle = idleMoves({ kind: "singles", ability: mega ? Dex.species.get(mega).abilities[0] : set.ability, item, moves: set.moves });
+    if (idle.length) bad.push(`${reg} ${entry.species}: ${idle.join(", ")} with ${item}`);
   }
   assert.deepEqual(bad.slice(0, 5), []);
 });

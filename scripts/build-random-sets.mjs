@@ -15,6 +15,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { Dex, toID } from "@pkmn/sim";
 import { validateTeam, formatId } from "../supabase/functions/battle/engine.mjs";
+import { ALLY_ONLY, idleMoves } from "./setFit.mjs";
 
 const OUT = new URL("../src/data/random-sets.json", import.meta.url);
 // the newest month of each regulation's ladder (M-B was the ladder's regulation until September)
@@ -131,7 +132,8 @@ function spreadFor(dex, spreads, moves, species) {
 
 /* The sets of one statistics entry (the Pokémon, or one of its Megas). Candidates are each common item with its fitting moves,
    and variants that put the next most common move in place of a less common one; each scores by how often its parts are seen. */
-function entrySets(dex, formatid, species, stats, { stone, abilities }) {
+/* kind: singles or doubles; fitAbility: the ability the set battles with (a Mega's own), which decides what its moves are for */
+function entrySets(dex, formatid, species, stats, { stone, abilities, kind, fitAbility = abilities[0] }) {
   const moveProbs = Object.fromEntries(sorted(stats.Moves).filter(([id, p]) => id && p >= 0.01 && dex.moves.get(id).exists)
     .filter(([id]) => legal(formatid, { species: species.name, ability: abilities[0], moves: [dex.moves.get(id).name] })));
   if (!Object.keys(moveProbs).length) return [];
@@ -144,13 +146,13 @@ function entrySets(dex, formatid, species, stats, { stone, abilities }) {
   const spreads = sorted(stats.Spreads);
   const candidates = [];
   for (const [item, pItem] of items) {
-    const order = pickMoves(dex, moveProbs, item, leaning);
+    const order = pickMoves(dex, moveProbs, item, leaning, kind === "singles" ? ALLY_ONLY : undefined);
     if (!order.length) continue;
     // the moves nearly every one brings stay in every set; the other slots take each combination of the next most common
     const core = order.filter(id => moveProbs[id] >= 0.6).slice(0, 4);
     const flex = order.filter(id => !core.includes(id));
     const free = Math.min(4 - core.length, flex.length);
-    const variants = combinations(flex.slice(0, free + 3), free).map(pick => [...core, ...pick]);
+    const variants = combinations(flex.slice(0, free + 3), free).map(pick => playable(kind, fitAbility, item, [...core, ...pick], order));
     for (const moves of variants) {
       const pMoves = moves.reduce((p, id) => p * Math.max(0.02, moveProbs[id]), 1);
       candidates.push({ item, moves: [...moves].sort(), score: pItem * pMoves });
@@ -160,6 +162,14 @@ function entrySets(dex, formatid, species, stats, { stone, abilities }) {
   const seen = new Set();
   return candidates.filter(c => { const key = c.item + c.moves.join(); return !seen.has(key) && seen.add(key); })
     .map(c => ({ ...c, ability: abilities[0], ...spreadFor(dex, spreads, c.moves, species) }));
+}
+
+// a set's moves with the ones that do nothing in this kind of battle (scripts/setFit.mjs) swapped for the next most common in order
+function playable(kind, ability, item, moves, order) {
+  const idle = new Set(idleMoves({ kind, ability, item, moves }));
+  const keep = moves.filter(id => !idle.has(id));
+  for (const id of order) if (keep.length < moves.length && !keep.includes(id) && !idleMoves({ kind, ability, item, moves: [...keep, id] }).includes(id)) keep.push(id);
+  return keep;
 }
 
 function combinations(list, size) {
@@ -181,7 +191,7 @@ function diverse(candidates, count) {
 
 /* A Pokémon no player brings at all: sets built from its own learnset, so it still plays as it should. The strongest reliable attacks
    of its types first, then coverage, as an attacker on its better attacking stat, a bulkier one, and a Focus Sash lead. */
-function learnsetSets(dex, formatid, species) {
+function learnsetSets(dex, formatid, species, kind) {
   const learnset = dex.species.getLearnsetData(species.id)?.learnset || dex.species.getLearnsetData(dex.species.get(species.baseSpecies).id)?.learnset || {};
   const ability = species.abilities[0];
   const stat = species.baseStats.atk >= species.baseStats.spa ? "Physical" : "Special";
@@ -193,7 +203,8 @@ function learnsetSets(dex, formatid, species) {
   for (const m of attacks) if (moves.length < 3 && !moves.some(x => dex.moves.get(x).type === m.type)) moves.push(m.id);
   const status = ["protect", "recover", "roost", "slackoff", "willowisp", "thunderwave", "toxic", "swordsdance", "nastyplot", "calmmind", "uturn", "voltswitch"]
     .filter(id => learnset[id] && ok(dex.moves.get(id)));
-  const four = [...moves, ...status, ...attacks.map(m => m.id)].filter((id, i, all) => all.indexOf(id) === i).slice(0, 4);
+  const order = [...moves, ...status, ...attacks.map(m => m.id)].filter((id, i, all) => all.indexOf(id) === i);
+  const four = playable(kind, ability, null, order.slice(0, 4), order);
   if (!four.length) return [];
   const fast = species.baseStats.spe >= 80;
   const atk = stat === "Physical" ? "atk" : "spa";
@@ -239,10 +250,10 @@ for (const reg of Object.keys(MONTH)) {
       let sets = [];
       if (own) {
         const weight = Math.max(usageOf(species.id), 0.0005);
-        sets.push(...entrySets(dex, formatid, species, own, { abilities }).map(s => ({ ...s, score: s.score * weight, entry: species.id, entryWeight: weight })));
+        sets.push(...entrySets(dex, formatid, species, own, { abilities, kind }).map(s => ({ ...s, score: s.score * weight, entry: species.id, entryWeight: weight })));
         // a second common ability gives sets of its own
         const second = own && sorted(own.Abilities).map(([id, p]) => [dex.abilities.get(id).name, p]).find(([name, p]) => name !== abilities[0] && p >= 0.2 && abilityOk(name));
-        if (second) sets.push(...entrySets(dex, formatid, species, own, { abilities: [second[0]] }).map(s => ({ ...s, score: s.score * weight * second[1], entry: species.id, entryWeight: weight })));
+        if (second) sets.push(...entrySets(dex, formatid, species, own, { abilities: [second[0]], kind }).map(s => ({ ...s, score: s.score * weight * second[1], entry: species.id, entryWeight: weight })));
       }
       // its Megas, each brought as this Pokémon holding the stone
       for (const megaName of (species.otherFormes || []).filter(name => /-Mega/.test(name))) {
@@ -250,9 +261,9 @@ for (const reg of Object.keys(MONTH)) {
         const stats = blend(entryFor(mega.id));
         if (!stats || !legal(formatid, { species: species.name, ability: abilities[0], item: mega.requiredItem, moves: [anyMove] })) continue;
         const weight = Math.max(usageOf(mega.id), 0.0005);
-        sets.push(...entrySets(dex, formatid, species, stats, { stone: mega.requiredItem, abilities }).map(s => ({ ...s, score: s.score * weight, mega: true, entry: mega.id, entryWeight: weight })));
+        sets.push(...entrySets(dex, formatid, species, stats, { stone: mega.requiredItem, abilities, kind, fitAbility: mega.abilities[0] }).map(s => ({ ...s, score: s.score * weight, mega: true, entry: mega.id, entryWeight: weight })));
       }
-      if (sets.length < MIN_SETS) { sets.push(...learnsetSets(dex, formatid, species).map(s => ({ ...s, score: s.score * 1e-9, entry: "learnset", entryWeight: 0 }))); if (!own) fromLearnset++; }
+      if (sets.length < MIN_SETS) { sets.push(...learnsetSets(dex, formatid, species, kind).map(s => ({ ...s, score: s.score * 1e-9, entry: "learnset", entryWeight: 0 }))); if (!own) fromLearnset++; }
       sets.sort((a, b) => b.score - a.score);
       const whole = set => ({ name: "", species: species.name, ability: set.ability, item: dex.items.get(set.item).name, moves: set.moves.map(id => dex.moves.get(id).name), nature: set.nature, evs: set.evs, level: 50 });
       sets = sets.filter(set => !validateTeam(formatid, [whole(set)]));
@@ -270,7 +281,9 @@ for (const reg of Object.keys(MONTH)) {
             .filter(item => item && item !== name && dex.items.get(item).exists && !dex.items.get(item).megaStone && legal(formatid, { species: species.name, ability: set.ability, item, moves: [dex.moves.get(set.moves[0]).name] }))
             // a back-up holds the set's moves as the first item does: no Choice item or Assault Vest under a status move (명상 under
             // a Choice Scarf came in this way, 2026-11-06)
-            .filter(item => fitsMoves(dex, item, set.moves));
+            .filter(item => fitsMoves(dex, item, set.moves))
+            // nor one that leaves a move idle (a Flame Orb is what Protect was for)
+            .filter(item => !idleMoves({ kind, ability: set.ability, item, moves: set.moves }).length);
           return {
             weight: Math.round(Math.max(0.01, set.score / total) * 100) / 100,
             ability: set.ability, items: [...new Set([name, ...backups])].slice(0, 5),

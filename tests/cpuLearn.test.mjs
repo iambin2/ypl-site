@@ -13,7 +13,7 @@ const asSet = (entry, set, name = "") => ({ name, species: entry.species, abilit
 const record = team => ({ format_id: FORMAT, input_log: `>start {"formatid":"${FORMAT}","seed":[1,2,3,4]}\n>player p1 ${JSON.stringify({ name: "선수", team: Teams.pack(team) })}\n>player p2 {"name":"컴퓨터","team":""}` });
 
 // Venusaur sets the ladder does not have
-const OWN = { name: "", species: "Venusaur", ability: "Chlorophyll", item: "Life Orb", moves: ["Giga Drain", "Sludge Bomb", "Earth Power", "Protect"], nature: "Modest", evs: { hp: 2, spa: 32, spe: 32 }, level: 50 };
+const OWN = { name: "", species: "Venusaur", ability: "Chlorophyll", item: "Life Orb", moves: ["Giga Drain", "Sludge Bomb", "Earth Power", "Sleep Powder"], nature: "Modest", evs: { hp: 2, spa: 32, spe: 32 }, level: 50 };
 const ODD = { ...OWN, item: "Leftovers", moves: ["Giga Drain", "Sludge Bomb", "Leech Seed", "Protect"], nature: "Calm", evs: { hp: 32, spd: 32, spe: 2 } };
 const others = pool.filter(e => e.species !== "Venusaur" && !e.sets[0].mega);
 // person i: OWN Venusaur and five Pokémon no other person brings, so no two people look alike
