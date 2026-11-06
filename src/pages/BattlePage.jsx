@@ -16,7 +16,7 @@ import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
-import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { closeGate, openGate } from "./battle/Gate.js";
 import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
@@ -80,6 +80,7 @@ export default function BattlePage({ flash: say, go }) {
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
   if (cpu) return <RoomGuard key={`cpu${cpuRound}`}><CpuRoom res={res} say={say} go={go} onLeave={() => open(null)} onRestart={() => setCpuRound(n => n + 1)} /></RoomGuard>;
+  if (params.get("replay")) return <RoomGuard key={params.get("replay")}><CpuReplay id={params.get("replay")} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} onOpen={open} code={params.get("code")} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
@@ -245,13 +246,14 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     let n = 0;
     const take = data => {
       const now = readCpuBattle() || {};
-      const kept = { teamId: now.teamId, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog, recorded: now.inputLog === data.inputLog && now.recorded };
+      const same = now.inputLog === data.inputLog;
+      const kept = { teamId: now.teamId, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog, recorded: same && now.recorded, replayId: same ? now.replayId : undefined };
       keepCpuBattle(kept);
       setState({ row: data.row, view: data.view });
       // an ended battle goes to the server once; a failure is tried again the next time this battle is opened
       if (kept.status === "ended" && !kept.recorded) {
-        recordCpuBattle(kept.inputLog).then(({ recorded }) => {
-          if (recorded && readCpuBattle()?.inputLog === kept.inputLog) keepCpuBattle({ ...readCpuBattle(), recorded: true });
+        recordCpuBattle(kept.inputLog).then(({ recorded, id }) => {
+          if (recorded && readCpuBattle()?.inputLog === kept.inputLog) keepCpuBattle({ ...readCpuBattle(), recorded: true, replayId: id });
         }, () => { /* 다음에 이 배틀을 열 때 다시 보낸다 */ });
       }
     };
@@ -288,8 +290,29 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
   };
   if (error?.none) return <ErrorNote action="배틀 화면으로" onRetry={onLeave}>진행 중인 컴퓨터와의 배틀이 없습니다. 배틀 화면에서 새로 시작해 주세요.</ErrorNote>;
   if (error) return <ErrorNote action="돌아가기" onRetry={onLeave}>{error.message}</ErrorNote>;
+  /* 리플레이 공유: the battle's record on the server is its replay's address. It is sent when the battle ends; one that has not gone
+     yet (offline, or the site taking too many) is sent now. A recorded battle from before the address was kept is sent again,
+     which the server takes as the same row and answers with its id */
+  const replayId = async () => {
+    const kept = readCpuBattle() || {};
+    if (kept.replayId) return kept.replayId;
+    const { recorded, id } = await recordCpuBattle(kept.inputLog);
+    if (!recorded || !id) throw new Error("지금은 리플레이를 만들 수 없습니다. 잠시 뒤 다시 시도해 주세요.");
+    if (readCpuBattle()?.inputLog === kept.inputLog) keepCpuBattle({ ...readCpuBattle(), recorded: true, replayId: id });
+    return id;
+  };
   if (!state) return <Loader />;
-  return <Arena row={state.row} view={state.view} seat={{ side: "p1" }} res={res} onView={view => setState(s => ({ ...s, view }))} go={go} say={say} api={api} onLeave={onLeave} onRematch={rematch} />;
+  return <Arena row={state.row} view={state.view} seat={{ side: "p1" }} res={res} onView={view => setState(s => ({ ...s, view }))} go={go} say={say} api={api} onLeave={onLeave} onRematch={rematch} replayId={replayId} />;
+}
+
+/* a shared replay of a battle with the computer (?view=battle&replay=…): read from the server, watched as any finished battle is */
+function CpuReplay({ id, res, say, go, onLeave, start }) {
+  const [row, setRow] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => { readCpuReplay(id).then(setRow, e => setError(failText(e, res))); }, [id]);
+  if (error) return <ErrorNote action="배틀 화면으로" onRetry={onLeave}>{error}</ErrorNote>;
+  if (!row) return <Loader />;
+  return <Arena row={row} seat={null} res={res} go={go} say={say} start={start} onLeave={onLeave} />;
 }
 
 /* ---------- rooms: a code room is entered with its four digits; the open rooms stand as rows, newest first ---------- */
@@ -520,7 +543,7 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
       onOpen(made.id);
     } catch (e) { openGate(); say?.(failText(e, res)); }
   };
-  return <Arena row={row} view={view} seat={seat} res={res} onView={show} onShare={share} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} />;
+  return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} />;
 }
 
 /* the opener waits (DESIGN.md "Battle", Opening and waiting): the lobby's screen, now set. What the opener needs stands first and
@@ -725,9 +748,9 @@ function useNow(on) {
   return now;
 }
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
-export function Arena({ row, view, seat, res, onView, onShare, go, say, start, onLeave, onRematch, api = SERVER }) {
+export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER }) {
   // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
-  const local = row.kind === "cpu";
+  const local = row.kind === "cpu" && Boolean(seat);
   const ended = row.status === "ended";
   // a player sees from their own seat; anyone else may watch from either side (시점), as a link may ask (?side=p2)
   const [pov, setPov] = useState(() => (start?.side === "p2" ? "p2" : "p1"));
@@ -774,9 +797,14 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, o
     : row.applied_at ? "대진표에 반영했습니다."
     : row.apply_error ? `대진표에 넣지 못했습니다. 운영진이 확인합니다. (${row.apply_error})`
     : "대진표에 넣는 중입니다.";
-  const shareToBoard = () => {
+  /* where the replay lives: a battle's own page, or a battle with the computer by its record on the server (CpuRoom makes sure of it
+     first, so a battle just played on this device has an address too) */
+  const replayWhere = async () => (replayId ? { replay: await replayId() } : row.kind === "cpu" ? { replay: row.id } : { id: row.id });
+  const shareToBoard = async () => {
+    let where;
+    try { where = await replayWhere(); } catch (e) { say?.(e.message); return; }
     const url = new URL(window.location.href);
-    url.search = `view=battle&id=${encodeURIComponent(row.id)}`;
+    url.search = new URLSearchParams({ view: "battle", ...where }).toString();
     try { sessionStorage.setItem(BOARD_DRAFT_KEY, JSON.stringify({ title: `${row.p1_name} 대 ${row.p2_name} 배틀`, body: `리플레이: ${url.href}` })); } catch { /* the board opens empty */ }
     go?.("board");
   };
@@ -825,8 +853,9 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, o
   // a link to where the replay stands, and from the side being watched
   const shareHere = async () => {
     const extra = { ...(cue != null ? { turn: String(shownTurn) } : {}), ...(!seat && pov !== "p1" ? { side: pov } : {}) };
-    if (!Object.keys(extra).length) return onShare?.();
-    const how = await shareLink({ view: "battle", id: row.id, ...extra }, "YPL 배틀");
+    let where;
+    try { where = await replayWhere(); } catch (e) { say?.(e.message); return; }
+    const how = await shareLink({ view: "battle", ...where, ...extra }, "YPL 배틀");
     if (how === "copied") say?.("링크를 복사했습니다.");
   };
   /* the end, said in the message box once the stage has played it: a battle that ended by a forfeit or the clock leaves no line of
@@ -967,11 +996,11 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, o
               {onLeave && <Button onClick={onLeave}>새 배틀</Button>}
             </div>
           </Dock>}
-          {/* what else a finished battle offers, as keys under the two, not words at the page's foot */}
+          {/* sharing what was just played, as keys under the two: the replay's link, and a board post that carries it. A battle with
+              the computer has its replay too, by its record on the server (the file of the whole log is under 전체 기록) */}
           <div className="bt-end-more">
-            {!local && <Button size="sm" onClick={shareHere}>링크 공유</Button>}
-            {!local && <Button size="sm" onClick={shareToBoard}>게시판에 공유</Button>}
-            {log && <Button size="sm" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
+            <Button size="sm" onClick={shareHere}>리플레이 공유</Button>
+            <Button size="sm" onClick={shareToBoard}>게시판에 공유</Button>
           </div>
         </section>}
         {!started && seat && party.current && choosing && <PickDock res={res} pokemon={party.current} count={pickCount.current} picks={picks} setPicks={setPicks}
@@ -996,6 +1025,8 @@ export function Arena({ row, view, seat, res, onView, onShare, go, say, start, o
         <details className="bt-logbox">
           <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
           <Log lines={tape.lines} />
+          {/* the whole log as a file, where the log itself is read */}
+          {ended && log && <Button variant="link" className="bt-logsave" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
         </details>
         <div className="bt-links">
           {!seat && !ended && !local && <Button variant="link" onClick={shareHere}>링크 공유</Button>}

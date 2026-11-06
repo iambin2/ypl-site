@@ -50,17 +50,12 @@ function truth(battle, attacker, target, id) {
 }
 
 function check(battle, reader, kind, where) {
-  // ponytail: two Pokémon under one name (an Illusion copying a teammate) are one to the log reader, so a side with Illusion on it
-  // is not compared for its state; key the reader by more than the name if that ever matters
-  const illusion = side => battle[side].pokemon.some(p => p.baseAbility === "illusion");
-  for (const side of ["p1", "p2"]) if (!illusion(side)) battle[side].active.forEach((mon, slot) => {
+  for (const side of ["p1", "p2"]) battle[side].active.forEach((mon, slot) => {
     const seen = reader.state.sides[side].active[slot];
     if (!mon || mon.fainted || !seen) return;
-    // an Illusion shows the disguise to both players, as the games do: nothing to compare until it breaks
-    // ponytail: two Pokémon under one name (an Illusion copying an ally already out) are one to the log reader; key by more than
-    // the name if that ever matters. Until then such a side is not compared
-    if (mon.illusion || battle[side].active.some(o => o && o !== mon && o.illusion?.name === mon.name)) return;
-    if (toID(seen.species) !== toID(mon.species.name)) note("species differs", `${where} ${side}: screen ${seen.species}, engine ${mon.species.name}`);
+    // an Illusion shows the disguise's species and typing to both players, as the games do; its HP, status and changes are its own
+    const masked = Boolean(mon.illusion);
+    if (!masked && toID(seen.species) !== toID(mon.species.name)) note("species differs", `${where} ${side}: screen ${seen.species}, engine ${mon.species.name}`);
     if ((seen.status || "") !== (mon.status || "")) note("status differs", `${where} ${side} ${mon.species.name}: screen ${seen.status || "-"}, engine ${mon.status || "-"}`);
     const a = Object.fromEntries(Object.entries(seen.boosts || {}).filter(([, v]) => v)), b = Object.fromEntries(Object.entries(mon.boosts).filter(([, v]) => v));
     if (JSON.stringify(Object.entries(a).sort()) !== JSON.stringify(Object.entries(b).sort())) note("stat changes differ", `${where} ${side} ${mon.species.name}: screen ${JSON.stringify(a)}, engine ${JSON.stringify(b)}`);
@@ -68,7 +63,7 @@ function check(battle, reader, kind, where) {
     for (const v of seen.volatiles || []) if (!HIDDEN_VOLATILES.has(v) && !/[가-힣]/.test(effectWord(res, v))) note("effect without a Korean name", v);
     // "???" is what Burn Up and Double Shock leave in the engine's list where a type went: no type at all
     const shownTypes = currentTypes(res, seen).join("/"), realTypes = mon.getTypes().filter(t => t !== "???").join("/");
-    if (shownTypes !== realTypes) note("typing on screen differs from the engine's", `${mon.species.name}: screen ${shownTypes}, engine ${realTypes}`);
+    if (!masked && shownTypes !== realTypes) note("typing on screen differs from the engine's", `${mon.species.name}: screen ${shownTypes}, engine ${realTypes}`);
   });
   // the move keys: what the screen marks against each foe out
   const request = battle.p1.activeRequest;

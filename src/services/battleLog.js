@@ -111,6 +111,8 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
   const untransform = mon => { if (mon?.transformedFrom) { mon.species = mon.transformedFrom; delete mon.transformedFrom; } };
   // what each slot's Pokémon was before it came out, so an Illusion that breaks gives the disguise back as it was
   const entered = {};
+  const snapshot = mon => ({ species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted,
+    item: mon.item, ability: mon.ability, moves: [...mon.moves], ppUsed: { ...mon.ppUsed } });
   const teamWord = side => (side === perspective ? text.default.default.team : text.default.default.opposingTeam);
   const effectName = effect => {
     const { kind, id, name } = parseEffect(effect);
@@ -155,9 +157,13 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     const carried = via === "batonpass" ? { boosts: { ...previous.boosts }, volatiles: previous.volatiles.filter(v => PASSED.has(v)) }
       : via === "shedtail" ? { boosts: {}, volatiles: previous.volatiles.filter(v => v === "substitute") } : { boosts: {}, volatiles: [] };
     const { species, level, gender } = parseDetails(details);
-    const known = side.team[who.name];
-    const mon = known || (side.team[who.name] = newMon(who.side, who.name, who.slot));
-    entered[`${who.side}${who.slot}`] = { mon, before: known ? { species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted } : null };
+    /* an Illusion wears the name of a teammate: when that name already stands in the other slot (doubles), this is a second
+       Pokémon, kept apart under its own key so the two never share HP, status or stat changes (the slot finds it, monOf) */
+    const ally = side.active.find((m, slot) => m && slot !== who.slot && m.name === who.name);
+    const key = ally ? `${who.name}@${who.slot}` : who.name;
+    const known = side.team[key] && side.team[key] !== ally ? side.team[key] : null;
+    const mon = known || (side.team[key] = newMon(who.side, who.name, who.slot));
+    entered[`${who.side}${who.slot}`] = { mon, key, before: known ? snapshot(mon) : null };
     untransform(previous);
     // a Pokémon sent in leaves its stat changes and volatile effects behind; its item, ability and moves stay known
     Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, lastMove: "", ...carried }, parseHP(condition));
@@ -179,8 +185,11 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
     side.active[who.slot] = mon;
     const was = entered[`${who.side}${who.slot}`];
     if (shown && shown !== mon && was?.mon === shown) {
+      // what the disguise revealed (moves, an item, an ability) was the Zoroark's: it takes those, the disguise gets its own back
+      if (!mon.item) mon.item = shown.item;
+      for (const move of shown.moves) if (!was.before?.moves.includes(move) && !mon.moves.includes(move)) mon.moves.push(move);
       if (was.before) Object.assign(shown, was.before, { boosts: {}, volatiles: [] });
-      else delete side.team[shown.name];
+      else delete side.team[was.key];
     }
   }
   const setCondition = (ident, condition) => {

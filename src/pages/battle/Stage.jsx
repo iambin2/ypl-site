@@ -6,11 +6,12 @@ import { defensiveMatchups, statRange } from "../../services/calculatorCore.js";
 import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
-import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectWord, effectiveness } from "./battleWords.js";
+import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
 import { closeGate, openGate } from "./Gate.js";
 import Seg from "../../components/common/Seg.jsx";
+import { Mon } from "../../components/common/Board.jsx";
 
 /* 배틀 무대 (DESIGN.md "Battle", The stage). 경기장 위에 두 편이 마주 서고, 각 포켓몬 머리 위에 쇼다운처럼 상태 막대가 뜬다.
    날씨, 필드, 룸, 벽, 설치기는 무대 위에 그대로 남아 보이고, 기록 한 줄마다 stageFx.js의 연출이 돈다.
@@ -184,7 +185,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
         }
         // one beat: a move and its results; the leads sent out together; the stat changes of one cause (Intimidate on both foes)
         const chain = (blow.on || /^\|move\|/.test(line)) && (RESULT.test(next) || /^\|-sideend\|/.test(next))
-          || (R.state.turn === 0 && /^\|switch\|/.test(line) && /^\|switch\|/.test(next))
+          // the leads: a side's two go out together (doubles), and each side has its own throw
+          || (R.state.turn === 0 && /^\|switch\|/.test(line) && /^\|switch\|/.test(next) && part(line, 2).slice(0, 2) === part(next, 2).slice(0, 2))
           || (/^\|-(un)?boost\|/.test(line) && /^\|-(un)?boost\|/.test(next));
         flushLines();
         if (text.length) { shown = chained ? [...shown, ...text].slice(-2) : text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
@@ -294,8 +296,12 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
               await fx.opening(st, ours, theirs, { plates: !gated });
             }
            
-            // a Pokémon sent in mid-battle is framed on its side; the leads come out wide
-            if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
+            /* a Pokémon sent in mid-battle is framed on its side. The leads (DESIGN.md "Battle", The big moments) are thrown one side at
+               a time with the camera close on that side, ours from behind first, then theirs, so each meets its ball; the camera goes
+               back to the wide shot of the two facing each other with the line after them */
+            const partnered = R.state.turn === 0 && /^\|switch\|/.test(fresh[i - 1] || "") && part(fresh[i - 1], 2).slice(0, 2) === part(line, 2).slice(0, 2);
+            if (R.state.turn === 0 && !partnered) push(k, R.state.gameType === "doubles" ? 1.16 : 1.3, 360);
+            else if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
             if (chain) { fx.enter(st, k); await fx.wait(260); } else await fx.enter(st, k);
             break;
           }
@@ -554,7 +560,12 @@ export function LobbyBars({ leads, doubles, res, random = false }) {
 
 /* ---------- a Pokémon's sheet: what the games and Showdown let a player look up mid-battle ---------- */
 const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"];
-const STAT_FULL = { hp: "HP", atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드" };
+/* The sheet reads in the order a player asks (DESIGN.md "Battle", A Pokémon's sheet): how it stands (the Pokémon on its floor, its
+   types, HP large with its bar and status), what it can do (its moves as the type-coloured keys of the party cards, with the PP it
+   has left, and a muted cell for each move not yet seen), what it carries (특성, 도구), how strong it is (base stats as bars, the
+   stage's changes beside them, the Lv50 speed range), and what hits it (약점 and 무효 as type tags). Lit is what is known, dim what
+   is not. */
+const STAT_SHORT = { hp: "HP", atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드" };
 function MonInfo({ res, mon, own, onClose }) {
   if (!mon) return null;
   const dex = res.detail.pokedex[toID(mon.species)] || {};
@@ -563,21 +574,74 @@ function MonInfo({ res, mon, own, onClose }) {
   const typeTag = t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>;
   const abilityName = a => res.text.abilities[toID(a)]?.name || a;
   const [lo, hi] = dex.baseStats ? statRange(dex.baseStats.spe, "spe") : [0, 0];
+  const share = mon.maxhp ? mon.hp / mon.maxhp : 0;
+  const hp = own && mon.maxhp !== 100 ? `${mon.hp}/${mon.maxhp}` : `${Math.max(mon.hp > 0 ? 1 : 0, Math.round(share * 100))}%`;
+  const status = mon.status && mon.status !== "fnt" ? mon.status : "";
+  const moves = mon.moves.slice(0, 4);
+  const unseen = own ? 0 : 4 - moves.length;
+  const boosts = Object.entries(mon.boosts || {}).filter(([, v]) => v);
+  const effects = (mon.volatiles || []).filter(v => !HIDDEN_VOLATILES.has(v));
+  const mark = k => { const v = mon.boosts?.[k]; return v ? <span className={"bt-mark " + (v > 0 ? "up" : "down")}>{multiplier(k, v)}</span> : null; };
   return (
     <Modal title={`${own ? "" : "상대 "}${nameOf(res, mon.species)}`} onClose={onClose}>
       <div className="bt-info">
-        <div className="bt-info-row"><span className="t12 dim">HP</span><span>{own && mon.maxhp !== 100 ? `${mon.hp} / ${mon.maxhp}` : `${Math.round(mon.hp / (mon.maxhp || 1) * 100)}%`}</span></div>
-        {mon.gender && <div className="bt-info-row"><span className="t12 dim">성별</span><span>{mon.gender === "M" ? "수컷" : "암컷"}</span></div>}
-        <div className="bt-info-row"><span className="t12 dim">타입</span><span className="tb-types">{types.map(typeTag)}</span></div>
-        <div className="bt-info-row"><span className="t12 dim">특성</span><span>{mon.ability ? abilityName(mon.ability) : (dex.abilities || []).map(abilityName).join(", ") + " 중 하나"}</span></div>
-        <div className="bt-info-row"><span className="t12 dim">도구</span><span>{mon.item ? res.text.items[toID(mon.item)]?.name || mon.item : "아직 모름"}</span></div>
-        {dex.baseStats && <div className="bt-info-row"><span className="t12 dim">종족값</span><span className="bt-info-stats">{STAT_KEYS.map(k => <span key={k}><small>{STAT_FULL[k]}</small>{dex.baseStats[k]}</span>)}</span></div>}
-        {Object.values(mon.boosts || {}).some(Boolean) && <div className="bt-info-row"><span className="t12 dim">능력 변화</span><span>{Object.entries(mon.boosts).filter(([, v]) => v).map(([k, v]) => `${STAT[k] || k} ${multiplier(k, v)}`).join(", ")}</span></div>}
-        {(mon.volatiles || []).some(v => !HIDDEN_VOLATILES.has(v)) && <div className="bt-info-row"><span className="t12 dim">걸린 효과</span><span>{mon.volatiles.filter(v => !HIDDEN_VOLATILES.has(v)).map(v => effectWord(res, v)).join(", ")}</span></div>}
-        {dex.baseStats && <div className="bt-info-row"><span className="t12 dim">스피드 (Lv50)</span><span>{`${lo}~${hi}`}{mon.boosts?.spe ? ` (${multiplier("spe", mon.boosts.spe)})` : ""}</span></div>}
-        {["4", "2"].map(m => weak[m]?.length > 0 && <div key={m} className="bt-info-row"><span className="t12 dim">{`약점 ×${m}`}</span><span className="tb-types">{weak[m].map(typeTag)}</span></div>)}
-        {["0"].map(m => weak[m]?.length > 0 && <div key={m} className="bt-info-row"><span className="t12 dim">무효</span><span className="tb-types">{weak[m].map(typeTag)}</span></div>)}
-        <div className="bt-info-row"><span className="t12 dim">{own ? "기술" : "보인 기술"}</span><span>{mon.moves.length ? mon.moves.map(m => res.text.moves[toID(m)]?.name || m).join(", ") : "아직 없음"}</span></div>
+        <div className="pn stand bt-info-hero">
+          <span className="floor" />
+          <Mon src={spriteUrl(mon.species)} className="bt-info-mon" onError={onSpriteError()} />
+          <span className="bt-info-id">
+            <span className="tb-types">{types.map(typeTag)}</span>
+            <span className="t12 dim">{[`Lv${mon.level || 50}`, mon.gender === "M" ? "수컷" : mon.gender === "F" ? "암컷" : ""].filter(Boolean).join(", ")}</span>
+          </span>
+          <span className="bt-info-hp">
+            {status && <span className={`bt-st type-${STATUS_TYPE[status] || "normal"}`}>{STATUS[status]}</span>}
+            <b>{mon.fainted ? "쓰러짐" : hp}</b>
+          </span>
+          <span className="bt-info-bar"><Gauge share={share} /></span>
+        </div>
+
+        <section className="bt-info-block" aria-label={own ? "기술" : "보인 기술"}>
+          <span className="t12 dim">{own ? "기술" : `보인 기술 ${moves.length}/4`}</span>
+          <div className="bt-info-moves">
+            {moves.map(m => {
+              const data = res.detail.moves[toID(m)] || {}, max = maxPP(res, m), used = mon.ppUsed?.[toID(m)] || 0;
+              return <span key={m} className={`bt-cmove type-${toID(data.type || "Normal")}`}>
+                <b>{res.text.moves[toID(m)]?.name || m}</b>{max && <i>{`${Math.max(0, max - used)}/${max}`}</i>}
+              </span>;
+            })}
+            {Array.from({ length: unseen }, (_, i) => <span key={`u${i}`} className="bt-info-unseen">모름</span>)}
+          </div>
+        </section>
+
+        <div className="bt-info-facts">
+          <span className="pn"><small>특성</small><b className={mon.ability ? "" : "unknown"}>{mon.ability ? abilityName(mon.ability) : (dex.abilities || []).map(abilityName).join(" 또는 ")}</b></span>
+          <span className="pn"><small>도구</small><b className={mon.item ? "" : "unknown"}>{mon.item ? res.text.items[toID(mon.item)]?.name || mon.item : "모름"}</b></span>
+        </div>
+
+        {dex.baseStats && <section className="bt-info-block" aria-label="종족값">
+          <span className="t12 dim">종족값</span>
+          <div className="pn bt-info-stats">
+            {STAT_KEYS.map(k => <span key={k} className="bt-info-stat">
+              <small>{STAT_SHORT[k]}</small>
+              <span className="tb-bar"><i style={{ transform: `scaleX(${Math.min(1, dex.baseStats[k] / 200)})` }} /></span>
+              <b>{dex.baseStats[k]}</b>
+              <span className="bt-info-stat-side">{k === "spe" ? <>{mark(k)}<span className="t12 dim">{`${lo}~${hi}`}</span></> : mark(k)}</span>
+            </span>)}
+          </div>
+        </section>}
+
+        {(boosts.some(([k]) => k === "accuracy" || k === "evasion") || effects.length > 0) && <div className="bt-info-tags">
+          {boosts.filter(([k]) => k === "accuracy" || k === "evasion").map(([k, v]) => <span key={k} className={"bt-mark " + (v > 0 ? "up" : "down")}>{`${STAT[k]} ${multiplier(k, v)}`}</span>)}
+          {effects.map(v => <span key={v} className="bt-mark">{effectWord(res, v)}</span>)}
+        </div>}
+
+        {(["4", "2", "0"].some(m => weak[m]?.length)) && <section className="bt-info-block" aria-label="상성">
+          <span className="t12 dim">받는 상성</span>
+          <div className="stack bt-info-match">
+            {[["4", "약점 ×4"], ["2", "약점 ×2"], ["0", "무효"]].map(([m, label]) => weak[m]?.length > 0 && <span key={m} className="pn">
+              <small>{label}</small><span className="tb-types">{weak[m].map(typeTag)}</span>
+            </span>)}
+          </div>
+        </section>}
       </div>
     </Modal>
   );

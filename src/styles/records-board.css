@@ -10,6 +10,16 @@
 .rc-body { margin-top: var(--s3); }
 .rc-list { display: grid; min-width: 0; }
 .rc-more, .rc-pager { margin-top: var(--s5); }
+/* 내 기록 찾기 (?me=1): a head panel over the search, the account's name at 20 once it has one (inverted once it is approved), one
+   dim line of where it stands; under it 내 기록 보기 or a new name as rows. On a trainer's sheet opened from it the link leads
+   right under the numbers, its head and the main action joined on the seam */
+.rc-find { margin-bottom: var(--s3); }
+.rc-find-head, .rc-claim-head { display: grid; gap: var(--s1); padding: var(--s3) var(--pad); }
+.rc-find-head > .t12, .rc-claim-head > .t12 { color: var(--dim); }
+.rc-find-head.inv > .t12, .rc-claim-head.inv > .t12 { color: inherit; }
+.rc-find > .rc-more, .rc-claim > .rc-more { margin-top: var(--s2); }
+.rc-claim { margin-top: var(--s5); }
+.rc-newname { margin-top: var(--s3); }
 .rc-admin { margin-bottom: var(--s5); }
 .rc-note { margin-top: var(--s8); }
 

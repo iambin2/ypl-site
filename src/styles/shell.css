@@ -32,7 +32,6 @@
 .onair-off { margin-right: var(--s2); }
 /* the Google account word before the lamp: 로그인 lit, 로그아웃 dim */
 .acct { display: flex; align-items: center; gap: var(--s2); height: var(--h-control); padding: 0 var(--s2); margin-right: var(--s2); flex: none; font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--lit); }
-.acct.dim { color: var(--dim); }
 /* Google's own G before every Google sign-in word, never recoloured */
 .g-mark { display: block; width: var(--s5); height: var(--s5); flex: none; }
 .btn .g-mark { margin-right: var(--s2); }

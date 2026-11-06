@@ -25,6 +25,8 @@ export async function createBattle({ regulation, battleFormat, name, team, room 
 }
 // a finished battle with the computer, kept on the server for the computer to learn from (docs/db/cpu_battles.sql)
 export const recordCpuBattle = inputLog => callFunction("battle", { action: "record", inputLog });
+// a kept battle with the computer as a replay anyone may watch (리플레이 공유): played again on the server from its record, as a row
+export const readCpuReplay = id => callFunction("battle", { action: "cpureplay", id }).then(out => out.row);
 // a code room's id, for its four digits
 export const findRoom = code => callFunction("battle", { action: "room", code });
 export async function joinBattle(id, { name, team, code }) {

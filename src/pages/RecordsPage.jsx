@@ -19,6 +19,7 @@ import { syncTournamentRounds } from "../services/recordSync.js";
 import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
 import { generationText } from "../services/seasonLabel.js";
 import Button from "../components/common/Button.jsx";
+import { popHandlers } from "../components/layout/history.js";
 import Seg from "../components/common/Seg.jsx";
 import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
@@ -148,6 +149,21 @@ export default function RecordsPage({ data, admin, setModal, save }) {
     const name = new URLSearchParams(window.location.search).get("trainer");
     return name ? { key: name, from: null } : null;
   });
+  // 내 기록 찾기 (?me=1, the top bar's account key): the trainer list opens on finding oneself, and a sheet opened from it leads with the link
+  const [finding, setFinding] = useState(() => new URLSearchParams(window.location.search).has("me"));
+  // the address can change under a page that stays (the account key pressed on this page, back and forward): it is read again
+  useEffect(() => {
+    const sync = () => {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("view") !== "records") return;
+      const asked = p.get("tab");
+      if (RECORD_TABS.some(([key]) => key === asked)) setTabState(asked);
+      setFinding(p.has("me"));
+      setSheet(p.get("trainer") ? { key: p.get("trainer"), from: null } : null);
+    };
+    popHandlers.add(sync);
+    return () => popHandlers.delete(sync);
+  }, []);
   const openTrainer = (key, from = null) => setSheet({ key, from });
   const closeTrainer = () => {
     const url = new URL(window.location.href);
@@ -225,7 +241,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
       <div className="swap rc-body" key={tab} ref={arrived}>
         {normalizedRead.loading ? <Loader small /> : <>
         {tab === "trainer" && admin && <LinkRequests snapshot={snapshot} />}
-        {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} />}
+        {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} finding={finding} />}
         {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} onParty={setParty} />}
         {tab === "pokemon" && <PokemonView snapshot={snapshot} onParty={setParty} />}
         {tab === "rank" && <RankingHub snapshot={snapshot} data={data} admin={admin} setModal={setModal} save={save} onName={openTrainer} />}
@@ -235,7 +251,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
         const profile = profileOf(snapshot, sheet.key);
         return profile ? (
           <Modal title={profile.name} hint={trainerHint(profile)} className="rc-sheet wide" onClose={closeTrainer}>
-            <TrainerProfile snapshot={snapshot} profile={profile} onParty={setParty} />
+            <TrainerProfile snapshot={snapshot} profile={profile} onParty={setParty} finding={finding} />
           </Modal>
         ) : null;
       })()}
@@ -260,17 +276,20 @@ function profileOf(snapshot, key) {
    주소는 바뀌지 않는다. */
 const LIST_SHOWN = 20;
 
-function TrainerView({ snapshot, onOpen }) {
+function TrainerView({ snapshot, onOpen, finding = false }) {
   const [query, setQuery] = useState("");
   const [all, setAll] = useState(false);
 
   const visible = snapshot.trainers.filter((t) => t.name.includes(query.trim()));
-  if (!snapshot.trainers.length) return <Empty title="트레이너 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
+  if (!snapshot.trainers.length && !finding) return <Empty title="트레이너 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
   const rows = all || query.trim() ? visible : visible.slice(0, LIST_SHOWN);
+  const exact = snapshot.trainers.some((t) => t.name === query.trim());
 
   return (
     <div className="rc-list">
-      <ListSearch q={query} setQ={setQuery} placeholder="트레이너 검색" count={visible.length} />
+      {finding && <FindMe query={query} exact={exact} onOpen={onOpen} />}
+      <ListSearch q={query} setQ={setQuery} placeholder={finding ? "내 트레이너 이름" : "트레이너 검색"} count={visible.length} />
+      {finding && <FindMe query={query} exact={exact} onOpen={onOpen} part="name" />}
       {visible.length ? (<>
         {/* 성적 이름은 머리줄에 한 번만. 성적은 같은 폭의 세 칸에 세워 위아래 사람끼리 바로 비교된다. 첫 줄, 기록의 주인은 반전된다. */}
         <div className="rc-th t12 mute" aria-hidden="true"><span>#</span><span>트레이너</span><span>우승</span><span>준우승</span><span>4강</span></div>
@@ -289,7 +308,7 @@ function TrainerView({ snapshot, onOpen }) {
             );
           })}
         </div>
-      </>) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
+      </>) : finding ? null : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
         <div className="rc-more"><Button variant="second" onClick={() => setAll(true)}>{visible.length}명 전체 보기</Button></div>
       )}
@@ -297,7 +316,7 @@ function TrainerView({ snapshot, onOpen }) {
   );
 }
 
-function TrainerProfile({ snapshot, profile, onParty }) {
+function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
   const [season, setSeason] = useState("");
   const [histPage, setHistPage] = useState(1);
   const [allParties, setAllParties] = useState(false);
@@ -344,6 +363,8 @@ function TrainerProfile({ snapshot, profile, onParty }) {
         <Counter label="준우승" value={runnerUps} unit="회" />
         <Counter label="4강" value={top4} unit="회" />
       </div>
+      {/* found from 내 기록 찾기: right under what the record holds, the key that makes it the visitor's own */}
+      {finding && <TrainerLink profile={profile} lead />}
       {snapshot.seasons.length > 0 && <div className="rc-seasons"><Chips label="시즌" value={season} onChange={(value) => { setSeason(value); setHistPage(1); }}
         options={[["", "전체 기록"], ...snapshot.seasons.map((name) => [name, name])]} /></div>}
       {(profile.champions.length > 0 || restTitles.length > 0) && <section className="rc-sec" aria-labelledby="rc-title-h">
@@ -375,7 +396,7 @@ function TrainerProfile({ snapshot, profile, onParty }) {
         <div className="rc-pager"><Pager page={histCur} pages={histPages} onGo={setHistPage} /></div>
       </section>
 
-      <TrainerLink profile={profile} />
+      {!finding && <TrainerLink profile={profile} />}
 
       <TrainerBattles playerIds={[...new Set([profile.playerId, ...profile.history.map(event => event.playerId)].filter(Boolean))]} />
 
@@ -408,22 +429,26 @@ function TrainerProfile({ snapshot, profile, onParty }) {
    이어지고, 그 SQL이 실행되기 전에는 아무것도 보이지 않는다. 승인된 계정은 공지의 신청서에서 이름 없이 신청하고, 그 이름은 그 계정만
    쓴다. 파티 제출과 배틀은 지금처럼 이름과 비밀번호로 된다. ---- */
 const LINK_STATE = { pending: "운영진 확인을 기다리는 중입니다.", approved: "내 기록으로 연결되었습니다.", rejected: "연결 요청이 거절되었습니다." };
-function TrainerLink({ profile }) {
+// what a link gives, said once where it is asked for: the application form needs no name, and the name takes no one else's application
+const LINK_GIVES = "연결하면 대회 신청서에 이름을 쓰지 않아도 되고, 이 이름의 신청은 이 계정으로만 받습니다.";
+const findBack = (trainer = "") => `${window.location.origin}${window.location.pathname}?view=records&tab=trainer&me=1${trainer ? `&trainer=${encodeURIComponent(trainer)}` : ""}`;
+
+/* the visitor's account as it stands: whether accounts are on (player_accounts.sql run), signed in, and the account's link.
+   take: a name asked for before the trip to Google, sent now that the visitor is back */
+function useAccount(take) {
   const [ready, setReady] = useState(false);
-  const [link, setLink] = useState(undefined);
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState("");
   const [signedIn, setSignedIn] = useState(visitorSignedIn);
-  // signing out from the top bar empties this section too
+  const [link, setLink] = useState(undefined);
+  const [note, setNote] = useState("");
   useEffect(() => { const sync = () => { setSignedIn(visitorSignedIn()); setLink(undefined); }; window.addEventListener(VISITOR_EVENT, sync); return () => window.removeEventListener(VISITOR_EVENT, sync); }, []);
   useEffect(() => { let on = true; accountsReady().then((ok) => { if (on) setReady(ok); }); return () => { on = false; }; }, []);
   useEffect(() => {
-    if (!ready || !signedIn) return undefined;
+    if (!ready || !signedIn || link !== undefined) return undefined;
     let on = true;
     (async () => {
       try {
-        // back from Google with this trainer asked for: the request goes now
-        if (takePendingLink() === profile.name) await requestPlayerLink(profile.name);
+        const asked = take?.();
+        if (asked) await requestPlayerLink(asked);
         const mine = await myPlayerLink();
         if (on) setLink(mine);
       } catch (error) {
@@ -433,31 +458,97 @@ function TrainerLink({ profile }) {
       }
     })();
     return () => { on = false; };
-  }, [ready, signedIn, profile.name]);
-  if (!ready || !profile.playerId) return null;
-  const back = `${window.location.origin}${window.location.pathname}?view=records&tab=trainer&trainer=${encodeURIComponent(profile.name)}`;
-  const ask = async () => {
-    setBusy(true); setNote("");
-    try { await requestPlayerLink(profile.name); setLink(await myPlayerLink()); } catch (error) { setNote(error.message); }
-    setBusy(false);
+  }, [ready, signedIn, link]);
+  const ask = async (name) => {
+    setNote("");
+    try { await requestPlayerLink(name); setLink(await myPlayerLink()); } catch (error) { setNote(error.message); }
   };
-  const mine = link && link.player_id === profile.playerId;
+  return { ready, signedIn, link, note, ask };
+}
+
+/* the link on a trainer's sheet. lead: the sheet was opened from 내 기록 찾기, so the link stands right under the record's numbers as
+   the sheet's main action; otherwise it is a section near the sheet's foot */
+function TrainerLink({ profile, lead = false }) {
+  const [busy, setBusy] = useState(false);
+  const { ready, signedIn, link, note, ask } = useAccount(() => (takePendingLink() === profile.name ? profile.name : ""));
+  if (!ready || !profile.playerId) return null;
+  const go = async () => { setBusy(true); await ask(profile.name); setBusy(false); };
+  const mine = Boolean(link && link.player_id === profile.playerId);
+  const askedHere = Boolean(link && link.requested_name === profile.name);
+  if (lead) {
+    const known = signedIn && link && (mine || askedHere);
+    const asking = !signedIn || link === null || (link && !known);
+    return (
+      <section className="stack rc-claim" aria-label="내 기록 연결">
+        <div className={"rc-claim-head " + (known && link.status === "approved" ? "inv" : "pn")}>
+          <b className="t15">{known ? LINK_STATE[link.status] || "" : asking ? `${profile.name} 님의 기록이라면` : "연결 상태를 확인하는 중입니다."}</b>
+          <span className="t12">{known ? (link.status === "approved" ? "대회 신청서에 이 이름이 채워집니다." : link.status === "pending" ? "운영진이 확인하면 이 기록이 내 계정과 이어집니다." : "다른 이름으로 다시 요청할 수 있습니다.") : LINK_GIVES}</span>
+        </div>
+        {asking && (signedIn
+          ? <Button variant="main" icon="check" loading={busy} onClick={go}>{link ? `${link.requested_name} 대신 이 기록으로 요청` : "내 기록으로 연결"}</Button>
+          : <Button variant="main" onClick={() => signInWithGoogle(profile.name, findBack(profile.name))}><GoogleMark />구글로 내 기록 연결</Button>)}
+        {note && <p className="t12 dim">{note}</p>}
+        {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>구글 로그아웃</Button></div>}
+      </section>
+    );
+  }
   return (
     <section className="rc-sec" aria-labelledby="rc-link-h">
       <SectionHead id="rc-link-h" title="내 기록 연결" />
       <div className="stack">
         {!signedIn
-          ? <Row title="구글 계정으로 연결" line="운영진이 확인한 뒤 이 기록이 내 계정과 이어집니다." value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, back)}><GoogleMark />구글 로그인</Button>} />
+          ? <Row title="구글 계정으로 연결" line={LINK_GIVES} value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, findBack(profile.name))}><GoogleMark />구글 로그인</Button>} />
           : link === undefined ? <Row title="연결 상태를 확인하는 중입니다." />
           : mine ? <Row title={LINK_STATE[link.status] || ""} line={link.email || undefined} />
           : <Row title="내 기록으로 연결 요청" line={link ? `지금은 ${link.requested_name} 기록에 요청되어 있습니다.` : "운영진이 확인한 뒤 연결됩니다."}
-              value={<Button variant="second" size="sm" loading={busy} onClick={ask}>요청</Button>} />}
+              value={<Button variant="second" size="sm" loading={busy} onClick={go}>요청</Button>} />}
       </div>
       {note && <p className="t12 dim">{note}</p>}
-      {signedIn && <div className="rc-more"><Button variant="link" onClick={() => { signOutVisitor(); setSignedIn(false); setLink(undefined); }}>구글 로그아웃</Button></div>}
+      {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>구글 로그아웃</Button></div>}
     </section>
   );
 }
+
+/* 내 기록 찾기 (?view=records&tab=trainer&me=1): where the top bar's account key leads, instead of straight to Google. The visitor
+   looks for their own name in the list they already know, and tapping it opens their sheet with the link right under its numbers:
+   what an account is for is seen on their own record, not read in a dialog. A name the records do not have yet starts as the
+   account's own name (approved at once). Signed in, the head says where the account stands, and the sign-out is here. */
+function FindMe({ query, exact, onOpen, part = "head" }) {
+  const [busy, setBusy] = useState(false);
+  // a sheet open in the address takes its own pending name (TrainerLink); this list takes only a new name's
+  const { ready, signedIn, link, note, ask } = useAccount(() => (new URLSearchParams(window.location.search).has("trainer") ? "" : takePendingLink()));
+  if (!ready) return null;
+  const name = query.trim();
+  const holds = Boolean(signedIn && link && link.status !== "rejected");
+  const line = !signedIn ? "목록에서 내 이름을 누르면 그 기록을 구글 계정과 연결할 수 있습니다."
+    : link === undefined ? "연결 상태를 확인하는 중입니다."
+    : !link ? "목록에서 내 이름을 누르거나, 기록이 아직 없으면 새 이름으로 시작합니다."
+    : link.status === "approved" ? "내 계정과 연결된 이름입니다. 대회 신청서에 이 이름이 채워집니다."
+    : link.status === "pending" ? "운영진이 확인하면 이 기록이 내 계정과 이어집니다."
+    : "연결 요청이 거절되었습니다. 다른 이름으로 다시 요청할 수 있습니다.";
+  const start = async () => {
+    if (!signedIn) { signInWithGoogle(name, findBack()); return; }
+    setBusy(true); await ask(name); setBusy(false);
+  };
+  // part "name", under the search: a name the records do not have yet can start as the account's own (approved at once)
+  if (part === "name") return name && !exact && !holds ? <div className="stack rc-newname">
+    <Row title={`${name} 이름으로 시작`} line="기록이 아직 없는 이름입니다."
+      value={<Button variant="second" size="sm" loading={busy} onClick={start}>{signedIn ? "시작" : <><GoogleMark />구글 로그인</>}</Button>} />
+    {note && <p className="t12 dim">{note}</p>}
+  </div> : null;
+  return (
+    <div className="stack rc-find">
+      <div className={"rc-find-head " + (holds && link.status === "approved" ? "inv" : "pn")}>
+        <b className="t20">{holds ? link.requested_name : "내 기록 찾기"}</b>
+        <span className="t12">{line}</span>
+      </div>
+      {holds && link.player_id && <Row title="내 기록 보기" onClick={() => onOpen(link.requested_name)} value={<Icon n="chevr" size={20} />} />}
+      {note && <p className="t12 dim">{note}</p>}
+      {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>구글 로그아웃</Button></div>}
+    </div>
+  );
+}
+
 /* 운영진: 기록 연결 요청(docs/db/player_accounts.sql). 요청 하나가 판 하나와 그 아래 두 칸의 결정으로 선다: 판에는 요청한 이름(20)과
    그 이름에 무엇이 있는지(기록 있음은 반전), 본인 확인에 쓸 기록의 요약, 구글 계정, 요청한 날. 결정은 확인창과 같은 배치로
    거절과 승인이 1 대 1.618, 둘 다 52, 승인이 나아가는 쪽이다. 어느 쪽이든 한 번 더 묻는다. 요청이 없으면 아무것도 보이지 않는다. */

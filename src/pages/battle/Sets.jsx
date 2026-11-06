@@ -4,6 +4,7 @@ import Button from "../../components/common/Button.jsx";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { parseHP, toID } from "../../services/battleLog.js";
 import { STATUS, nameOf, typesOf } from "./Stage.jsx";
+import { maxPP } from "./battleWords.js";
 
 /* 파티를 읽는 카드 (DESIGN.md "Battle", The party). 선출 화면과 배틀 중의 파티 정보가 같은 카드를 쓴다.
    내 포켓몬은 엔진이 가져온 그대로(특성, 도구, 네 기술과 남은 PP, 능력치), 상대는 보인 만큼(특성, 도구, 쓴 기술과 쓴 횟수).
@@ -93,7 +94,8 @@ export function seenCards(res, roster) {
     key: m.species + i, species: m.species, unseen: !m.seen && !m.fainted,
     hp: `${Math.max(m.hp > 0 ? 1 : 0, Math.round((m.hp / (m.maxhp || 1)) * 100))}%`, share: m.maxhp ? m.hp / m.maxhp : 0,
     status: m.status, fainted: m.fainted, ability: m.ability, item: m.item, out: m.out,
-    moves: m.moves.map(name => ({ id: toID(name), pp: m.ppUsed[toID(name)] ? `${m.ppUsed[toID(name)]}회` : "" })),
+    // what it has left, as Showdown counts the foe's: the full PP less what it was seen to spend
+    moves: m.moves.map(name => { const max = maxPP(res, name), used = m.ppUsed[toID(name)] || 0; return { id: toID(name), pp: max ? `${Math.max(0, max - used)}/${max}` : "" }; }),
   }));
 }
 
@@ -112,7 +114,8 @@ export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, set
         <span className="bt-pv-count" aria-live="polite"><b>{picks.length}</b>{` / ${n} 선출`}</span>
       </div>
       <div className="stack bt-cards">
-        {cards.map(({ key, ...c }, i) => <MonCard key={key} res={res} {...c} hp={null} share={null}
+        {/* out={false}: the engine's preview request marks the first of the party active, but nobody is out before the choice */}
+        {cards.map(({ key, ...c }, i) => <MonCard key={key} res={res} {...c} hp={null} share={null} out={false}
           pick={{ order: picks.indexOf(i) + 1, onPick: () => toggle(i), off: picks.length >= n && !picks.includes(i), locked }} />)}
       </div>
     </section>

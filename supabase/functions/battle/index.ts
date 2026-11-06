@@ -5,7 +5,7 @@
 //   npx supabase functions deploy battle --use-api --no-verify-jwt --project-ref rqffrogcverfjqzjasax
 // (엔진 패키지를 Supabase가 받아 묶게 두면 배포가 내부 오류로 실패했다. 요청은 토큰으로 확인하므로 JWT 검사가 필요 없다.)
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
+import { ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -338,11 +338,25 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
     let facts;
     try { facts = readCpuRecord(inputLog); } catch { refuse(422, "배틀 기록을 읽지 못했습니다."); }
     const text = facts.inputLog;
+    const id = await sha256(text);
     const recorded = await rpc("cpu_battle_record", {
-      p_id: await sha256(text), p_format_id: facts.formatid, p_engine: ENGINE, p_winner: facts.winner,
+      p_id: id, p_format_id: facts.formatid, p_engine: ENGINE, p_winner: facts.winner,
       p_ended_by: facts.endedBy, p_turns: facts.turns, p_input_log: text,
     });
-    return { recorded: recorded === true };
+    // id: the kept record's, the address of its replay (cpureplay)
+    return { recorded: recorded === true, id };
+  },
+
+  /* A finished battle with the computer as a replay anyone with its link can watch (?view=battle&replay=…, 리플레이 공유): played
+     again from its kept record by this engine. The record never held the player's name, so the replay names them 선수. */
+  async cpureplay({ id }) {
+    const key = String(id ?? "");
+    if (!/^[0-9a-f]{64}$/.test(key)) refuse(404, "리플레이를 찾을 수 없습니다.");
+    const { data } = await db.from("cpu_battles").select("format_id, winner, ended_by, turns, input_log, created_at").eq("id", key).maybeSingle();
+    if (!data) refuse(404, "리플레이를 찾을 수 없습니다.");
+    const battle = replay(data.input_log);
+    return { row: { id: key, kind: "cpu", status: "ended", format_id: data.format_id, winner: data.winner, ended_by: data.ended_by, turn: data.turns,
+      p1_name: battle.p1.name, p2_name: CPU_NAME, spectator_log: readout(battle).spectatorLog, created_at: data.created_at, updated_at: data.created_at } };
   },
 
   /* ---------- the clock (docs/db/battle_timer.sql; DESIGN.md "Battle", The clock) ----------

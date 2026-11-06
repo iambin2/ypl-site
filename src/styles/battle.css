@@ -96,7 +96,8 @@
   }
   .bt-side {
     position: sticky; top: calc(var(--nav-height) + var(--s5)); display: grid; gap: var(--s3); align-content: start; min-width: 0;
-    max-height: calc(100svh - var(--nav-height) - var(--s5) * 2); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    /* up and down only: a scroll box scrolls both ways unless told, and a trackpad pushed it sideways (feedback 2026-11-06) */
+    max-height: calc(100svh - var(--nav-height) - var(--s5) * 2); overflow: hidden auto; overscroll-behavior: contain; scrollbar-width: thin;
   }
   .bt-side .bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bt-side > .bt-end { order: -2; }
@@ -167,7 +168,7 @@
 
 /* the playback chips and 소리 at the right end of the same row */
 .bt-play { display: flex; justify-content: space-between; gap: var(--s2); min-width: 0; }
-.bt-play > .chips:first-child { min-width: 0; }
+.bt-play > .chips:first-child { flex: 1; min-width: 0; }
 
 /* ---------- the log: every message a row of the stack, a turn opening with its 32 strip; it holds the whole battle ---------- */
 .bt-log { max-height: 439px; overflow-y: auto; align-content: start; scrollbar-width: none; }
@@ -188,6 +189,10 @@
 /* 기권: a full key in its own dark red, the one key on the battle screen that is not navy or white */
 .bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
 /* the end's other keys, side by side under 다시하기 and 새 배틀 */
+/* the match's choice rows (파티 정보, 연출 속도) share the column's width in equal cells: nothing in the match slides sideways */
+.bt-match .chips { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); overflow: visible; }
+.bt-match .chips > * { min-width: 0; justify-content: center; }
+.bt-logbox > .bt-logsave { margin-top: var(--s2); }
 .bt-end-more { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--seam); }
 .bt-end-more:empty { display: none; }
 .bt-links { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
@@ -388,11 +393,38 @@
 :is(.bt-sw, .bt-plate, .bt-key, .bt-rkey, .bt-mega:not(.on)):active:not(:disabled) { background: var(--panel-2); }
 button.bt-card:active:not(:disabled):not(.on) { background: var(--panel-2); }
 /* a Pokémon's sheet */
-.bt-info { display: grid; gap: var(--s3); }
-.bt-info-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--s2); align-items: center; font-size: var(--t15); line-height: var(--l15); }
-.bt-info-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
-.bt-info-stats > span { display: grid; padding: var(--s1) 0; background: var(--panel-2); }
-.bt-info-stats small { font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; }
+/* a Pokémon's sheet (Stage.jsx MonInfo): blocks in the order a player asks, joined on the sheet's own spacing. The sheet is a panel,
+   so its panels stand on --panel-2 (components.css) and a step inside them on --rule */
+.bt-info { display: grid; gap: var(--s5); }
+.bt-info-block { display: grid; gap: var(--s2); }
+/* how it stands: the Pokémon on its floor at the left, its types and level, HP large at the right and its bar along the foot */
+.bt-info-hero { display: grid; grid-template-columns: var(--s21) minmax(0, 1fr) auto; grid-template-rows: 1fr auto; column-gap: var(--s3); row-gap: var(--s2); align-items: center; min-height: calc(var(--s21) + var(--s8)); padding: var(--s3); --floor: var(--s3); }
+.bt-info-hero > .mon.bt-info-mon { left: var(--s3); width: var(--s21); height: var(--s21); bottom: calc(var(--s3) + var(--s5)); }
+.bt-info-id { grid-column: 2; display: grid; gap: var(--s1); min-width: 0; }
+.bt-info-hp { grid-column: 3; display: flex; align-items: center; gap: var(--s2); }
+.bt-info-hp > b { font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bt-info-bar { grid-column: 2 / -1; }
+.bt-info-bar > .bt-hp { height: var(--s2); background: var(--rule); }
+/* what it can do: the party card's type keys, a size up; a move not yet seen is a muted cell */
+.bt-info-moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+.bt-info-moves > .bt-cmove { min-height: var(--h-control); padding: 0 var(--s3); font-size: var(--t15); line-height: var(--l15); }
+.bt-info-moves > .bt-cmove > i { font-size: var(--t12); line-height: var(--l12); }
+.bt-info-unseen { display: flex; align-items: center; min-height: var(--h-control); padding: 0 var(--s3); background: var(--panel-2); color: var(--mute); font-size: var(--t15); line-height: var(--l15); }
+/* what it carries */
+.bt-info-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+.bt-info-facts > span, .bt-info-match > span { display: grid; gap: 2px; min-width: 0; padding: var(--s2) var(--s3); }
+.bt-info-facts small, .bt-info-match small, .bt-info-stat > small { font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; }
+.bt-info-facts b { min-width: 0; font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.bt-info-facts b.unknown { color: var(--dim); font-weight: 400; }
+/* how strong it is: a bar per stat on the calculator's track, the stage's change and the speed range at the right */
+.bt-info-stats { display: grid; gap: var(--s2); padding: var(--s3); }
+.bt-info-stat { display: grid; grid-template-columns: var(--s13) minmax(0, 1fr) var(--s8) var(--s21); column-gap: var(--s3); align-items: center; }
+.bt-info-stat > .tb-bar { background: var(--rule); }
+.bt-info-stat > b { text-align: right; font-size: var(--t15); line-height: var(--l15); font-weight: 700; font-variant-numeric: tabular-nums; }
+.bt-info-stat-side { display: flex; align-items: center; gap: var(--s2); white-space: nowrap; }
+.bt-info-tags { display: flex; flex-wrap: wrap; gap: var(--seam); }
+/* what hits it */
+.bt-info-match > span { grid-template-columns: var(--s13) minmax(0, 1fr); align-items: center; column-gap: var(--s2); }
 
 /* the move key's second line reads from further away on a desktop */
 @media (min-width: 860px) { .bt-move-line { font-size: 13px; line-height: 18px; } }
@@ -504,7 +536,9 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   .bt-card-facts > span { grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 6px; padding: 5px var(--s2); }
 }
 /* beside the stage the choices keep no reserved room once sent: the column scrolls on its own, so nothing under it jumps */
-@media (min-width: 1200px) { .bt-console { min-height: 0 !important; } }
+/* and while a turn plays the empty console takes no place in the column either: as a grid item it added a second gap between the
+   head and 기권 (feedback 2026-11-06) */
+@media (min-width: 1200px) { .bt-console { min-height: 0 !important; } .bt-console:empty { display: none; } }
 /* the side column's title in the team preview: only beside it, at the same height as the preview's titles (title, 8, panel) */
 .bt-side-title { display: none; }
 @media (min-width: 1200px) { .bt-side > .bt-side-title { display: block; order: -4; margin-bottom: calc(var(--s2) - var(--s3)); } }

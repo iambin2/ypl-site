@@ -5,6 +5,10 @@ import { toID } from "../../services/battleLog.js";
    tests (tests/battleWords.test.mjs, scripts/battle-fuzz.mjs) check them against the engine as the screen shows them. */
 const GEN = Generations.get(9);
 
+/* a move's full PP in 포켓몬 챔피언스: its base PP in fives, each five and one more worth four (5 is 8, 10 is 12, 15 is 16, 20 is 20),
+   as the engine's champions mod counts it (calculatePP). The foe's PP is read as this less what it was seen to spend.
+   ponytail: the few moves PP never raises (noPPBoosts) are not in the data; they read a little high here */
+export const maxPP = (res, id) => { const pp = res.detail.moves[toID(id)]?.pp; return pp ? (pp / 5 + 1) * 4 : null; };
 export const STATUS = { brn: "화상", par: "마비", slp: "잠듦", frz: "얼음", psn: "독", tox: "맹독" };
 export const STAT = { atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드", accuracy: "명중", evasion: "회피" };
 const VOLATILE = { confusion: "혼란", substitute: "대타출동", taunt: "도발", encore: "앙코르", leechseed: "씨뿌리기", attract: "헤롱헤롱", torment: "트집", disable: "사슬묶기", healblock: "회복봉인", yawn: "하품", perishsong: "멸망의노래", curse: "저주", focusenergy: "기충전", magnetrise: "전자부유", ingrain: "뿌리박기", aquaring: "아쿠아링", saltcure: "소금절이", partiallytrapped: "속박", smackdown: "떨어뜨리기", throatchop: "지옥찌르기", tarshot: "타르샷", charge: "충전", stockpile: "비축", laserfocus: "일점집중", typechange: "타입 변화", dynamax: "다이맥스" };

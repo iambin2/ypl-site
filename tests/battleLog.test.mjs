@@ -164,6 +164,23 @@ test("Ally Switch moves who stands where, and a broken Illusion hands its HP to 
   assert.equal(usage.get("garchomp")?.picked, 1, "it came out for real afterwards");
 });
 
+test("an Illusion wearing the name of the ally beside it is a Pokémon of its own: HP, status and changes never mix", () => {
+  // doubles: the real Garchomp leads in slot b, Zoroark comes into slot a disguised as Garchomp
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  for (const line of ["|player|p1|가|", "|player|p2|나|", "|switch|p1a: Charizard|Charizard, L50|150/150", "|switch|p1b: Garchomp|Garchomp, L50|180/180",
+    "|switch|p1a: Garchomp|Garchomp, L50|130/130", "|-status|p1a: Garchomp|brn", "|-boost|p1a: Garchomp|spa|2", "|-damage|p1b: Garchomp|90/180"]) reader.read(line);
+  const [a, b] = reader.state.sides.p1.active;
+  assert.notEqual(a, b);
+  assert.deepEqual([a.hp, a.status, a.boosts.spa], [130, "brn", 2]);
+  assert.deepEqual([b.hp, b.status, b.boosts.spa ?? 0], [90, "", 0]);
+  // the Illusion breaks: the Zoroark takes what the disguise showed, the real Garchomp is untouched, the extra entry is gone
+  reader.read("|replace|p1a: Zoroark|Zoroark-Hisui, L50");
+  const side = reader.state.sides.p1;
+  assert.deepEqual([side.active[0].name, side.active[0].hp, side.active[0].status], ["Zoroark", 130, "brn"]);
+  assert.deepEqual([side.active[1].name, side.active[1].hp], ["Garchomp", 90]);
+  assert.deepEqual(Object.keys(side.team).sort(), ["Charizard", "Garchomp", "Zoroark"]);
+});
+
 test("Transform takes the target's form until it leaves, and no particle is doubled", () => {
   const reader = createBattleReader({ text, moves, perspective: "p1" });
   for (const line of ["|player|p1|가|", "|player|p2|나|", "|switch|p1a: Ditto|Ditto, L50|130/130", "|switch|p2a: Incineroar|Incineroar, L50, M|100/100"]) reader.read(line);

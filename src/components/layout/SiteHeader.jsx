@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Icon from "../common/Icon.jsx";
-import { siteConfirm } from "../common/SiteDialog.jsx";
-import { VISITOR_EVENT, accountsEnabled, signInWithGoogle, signOutVisitor, visitorEmail, visitorSignedIn } from "../../services/visitorAuth.js";
+import { VISITOR_EVENT, accountsEnabled, accountsReady, myPlayerLink, visitorSignedIn } from "../../services/visitorAuth.js";
 import { useSlideLine } from "../common/Board.jsx";
 import { TABS, WIDE_TABS, current, tabOf, useWideNav } from "./Navigation.jsx";
 
@@ -40,23 +39,29 @@ export function Wordmark() {
    (Google 브랜드 규칙, DESIGN.md "The account word"). 구글 로그인 버튼마다 글자 앞에 20으로 선다. */
 export const GoogleMark = () => <img className="g-mark" src="/brand/google-g.svg" alt="" width={20} height={20} />;
 
-/* 구글 계정(docs/db/player_accounts.sql): 바의 오른쪽, 램프 앞에 G와 한 단어. 로그인 전은 밝은 "구글 로그인"(누르면 바로 구글로 가고
-   지금 화면으로 돌아온다), 로그인 뒤는 어두운 "로그아웃"(어느 계정인지 묻고 나온다). Supabase가 없는 개발 서버에는 서지 않는다. */
-function AccountButton() {
+/* 구글 계정(docs/db/player_accounts.sql): 바의 오른쪽, 램프 앞에 G와 한 단어. 계정이 하는 일은 내 기록을 내 이름으로 갖는 것이라,
+   버튼도 그 말을 한다(2026-11-06: "구글 로그인"은 눌러 보기 전에는 왜 있는지 알 수 없었다). 로그인 전은 "내 기록", 누르면 구글로
+   튕기지 않고 기록의 트레이너 목록에서 내 이름을 찾는 화면(?me=1)으로 간다. 로그인 뒤는 계정의 트레이너 이름, 아직 없으면 "내 기록",
+   누르면 그 이름의 기록 시트(로그아웃도 거기 있다). Supabase가 없는 개발 서버에는 서지 않는다. */
+function AccountButton({ onNavigate }) {
   const [signed, setSigned] = useState(visitorSignedIn);
+  const [link, setLink] = useState(null);
   useEffect(() => {
-    const sync = () => setSigned(visitorSignedIn());
+    let on = true;
+    const sync = () => {
+      const now = visitorSignedIn();
+      setSigned(now);
+      if (!now) { setLink(null); return; }
+      accountsReady().then(ok => (ok ? myPlayerLink() : null)).then(row => { if (on) setLink(row); }, () => {});
+    };
+    sync();
     window.addEventListener(VISITOR_EVENT, sync);
-    return () => window.removeEventListener(VISITOR_EVENT, sync);
+    return () => { on = false; window.removeEventListener(VISITOR_EVENT, sync); };
   }, []);
   if (!accountsEnabled()) return null;
-  const signOut = async () => {
-    const email = visitorEmail();
-    if (await siteConfirm({ title: "구글 로그아웃", body: `${email ? `${email} 계정에서` : "구글 계정에서"} 로그아웃합니다.`, confirmLabel: "로그아웃" })) signOutVisitor();
-  };
-  return signed
-    ? <button type="button" className="acct dim" onClick={signOut} aria-label="구글 계정에서 로그아웃"><GoogleMark />로그아웃</button>
-    : <button type="button" className="acct" onClick={() => signInWithGoogle()} aria-label="구글 계정으로 로그인"><GoogleMark />구글 로그인</button>;
+  const named = signed && link && link.status !== "rejected" ? link.requested_name : "";
+  const open = () => onNavigate("records", { tab: "trainer", me: "1", ...(named && link.player_id ? { trainer: named } : {}) });
+  return <button type="button" className="acct" onClick={open} aria-label={named ? `${named}, 내 기록` : "내 기록 찾기, 구글 계정으로 연결"}><GoogleMark />{named || "내 기록"}</button>;
 }
 
 /* 바는 바탕 톤에 아래 머리카락 선 하나, 움직이지 않는다. 폰은 Wing Y와 워드마크, 오른쪽 끝에 테마 버튼.
@@ -79,7 +84,7 @@ export default function SiteHeader({ view, onNavigate, dark, onToggleTheme, more
             onClick={e => key === "more" ? onMore(e.currentTarget) : onNavigate(key)}>{key === "bracket" && live && <i className="lamp sig" aria-hidden="true" />}{label}</button>
         ))}
       </nav>
-      <AccountButton />
+      <AccountButton onNavigate={onNavigate} />
       {/* the lamp's fixture: its housing is dark until something is live; on event day it lights with its word and opens the bracket */}
       {live
         ? <button type="button" className="onair t12" onClick={() => onNavigate("bracket")} aria-label={`${live.name} 진행 중, 대진표 보기`}><i className="lamp sig" aria-hidden="true" />진행 중</button>

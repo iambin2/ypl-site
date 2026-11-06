@@ -590,7 +590,7 @@ const shadowTex = e => {
 export function throwBall(stage, key) {
   const e = E(stage);
   if (!e || instant() || reduced()) return Promise.resolve();
-  const own = ownKey(stage, key), { W, H } = e, [tx, ty] = centre(stage, key, .5), [, fy] = centre(stage, key, 0), size = Math.max(16, Math.min(34, W * .048)), dur = 560;
+  const own = ownKey(stage, key), { W, H } = e, [tx, ty] = centre(stage, key, .5), [, fy] = centre(stage, key, 0), size = Math.max(16, Math.min(40, W * .052)), dur = 560;
   const from = own ? [-size * 2, H * .95] : [W + size * 2, H * .05], peak = Math.min(from[1], ty) - H * (own ? .32 : .12), t0 = e.T;
   const frames = ballTex(e), turns = own ? 2.2 : 1.6;
   const pathAt = t => [lerp(from[0], tx, t), (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty];
@@ -626,7 +626,8 @@ export async function opening(stage, ours, theirs, { plates = true } = {}) {
   if (!over || instant()) return;
   if (!plates) {
     if (e) { e.anim(e.grade, { dim: [.18, .18, 1], bloom: [1, 1.6, 1] }, { dur: 1500, at: [0, .4, 1], ease: "inout" }); e.shot(e.W / 2, e.H * .44, 1.08, { smooth: .1 }); e.at(60, () => e.shot(e.W / 2, e.H / 2, 1, { smooth: .9 })); }
-    await wait(reduced() ? 300 : 1300);
+    // the throws follow on the lamps' rise (each side's lead then has its own close shot)
+    await wait(reduced() ? 300 : 700);
     return;
   }
   const box = document.createElement("div");

@@ -92,7 +92,8 @@ export async function myPlayerLink() {
   const rows = await rest("player_accounts?select=requested_name,status,player_id,email");
   return rows?.[0] || null;
 }
-export const requestPlayerLink = name => rest("rpc/request_player_link", { method: "POST", body: { p_name: name } });
+// a request announces itself, so the top bar shows the name the account now asks for
+export const requestPlayerLink = name => rest("rpc/request_player_link", { method: "POST", body: { p_name: name } }).then(out => { announce(); return out; });
 // an application under the account's trainer name; leagues, duplicates and the close are the same triggers as a named one
 export const applyWithAccount = (eventId, registrationData) =>
   rest("rpc/apply_with_account", { method: "POST", body: { p_event_id: eventId, p_registration_data: registrationData || {} } });
