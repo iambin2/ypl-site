@@ -6,8 +6,8 @@ name: Teach the computer
 # npm run build:battle and its own deploy to pick the sets up for random parties.
 #
 # Runs every Monday, an hour after the Champions data refresh, so the computer keeps learning whoever runs the site
-# (docs/BATTLE_COMPUTER.md, chapter 6). Needs the repository secrets VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY; without
-# the second it ends without doing anything.
+# (docs/BATTLE_COMPUTER.md, chapter 6). Needs the repository secret SUPABASE_SERVICE_ROLE_KEY (the address comes from
+# .env.production); without it the run ends without doing anything.
 on:
   schedule:
     - cron: "0 1 * * 1" # Monday 10:00 KST
@@ -39,9 +39,9 @@ jobs:
             echo "::notice::SUPABASE_SERVICE_ROLE_KEY is not set; nothing to learn from (docs/BATTLE_COMPUTER.md, chapter 8)."
             exit 0
           fi
-          npm run data:cpu-learn
+          # the project's address, from the same file the site's build reads it from
+          SUPABASE_URL="$(grep '^VITE_SUPABASE_URL=' .env.production | cut -d= -f2-)" npm run data:cpu-learn
         env:
-          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Check for changes
