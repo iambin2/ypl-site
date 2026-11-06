@@ -149,3 +149,34 @@ test("a finished battle with the computer is kept by its replay alone: no player
   assert.throws(() => readCpuRecord(sent.replace(`"name":"${CPU_NAME}"`, '"name":"사람"')));
   assert.throws(() => readCpuRecord("hello"));
 });
+
+// one turn of a one-on-one: the computer (p2) chooses, the player (p1) uses foeMove, and the computer reads the turn
+function readOneTurn(foeName, foeItem, mineName, foeMove = "move 1") {
+  const formatid = formatId("m-c", "singles");
+  const pool = setPool(formatid);
+  const set = (name, item) => { const e = pool.find(x => x.species === name), s = e.sets.find(x => !x.mega); return { name: "", species: name, ability: s.ability, item: item || s.items[0], moves: s.moves, nature: s.nature, evs: s.evs, level: 50 }; };
+  const cpu = createCpu(formatid, { random: seeded(3), budgetMs: 30 });
+  const battle = startBattle({ formatid, seed: [1, 2, 3, 4], p1: { name: "사람", team: [set(foeName, foeItem)] }, p2: { name: CPU_NAME, team: [set(mineName)] } });
+  for (const p1 of ["team 1", foeMove]) {
+    choose(battle, null, "p2", cpu.decide(battle, "p2"));
+    choose(battle, null, "p1", p1);
+  }
+  assert.ok(!battle.ended && battle.turn === 2, "the turn was played and both still stand");
+  cpu.decide(battle, "p2");
+  return { items: new Set(cpu.guesses(foeName).map(g => g.itemId)), listed: pool.find(x => x.species === foeName).sets.flatMap(s => s.items.map(i => i.toLowerCase().replace(/\W/g, ""))) };
+}
+
+test("a Pokémon that should be slower but moves first is read as holding a Choice Scarf none of its sample sets lists", () => {
+  const { items, listed } = readOneTurn("Venusaur", "Choice Scarf", "Archaludon");
+  assert.ok(!listed.includes("choicescarf"));
+  assert.deepEqual([...items], ["choicescarf"]);
+  // the control: with its own item it moves second (Sludge Bomb, so Archaludon still stands), and the Scarf is what is ruled out
+  const own = readOneTurn("Venusaur", null, "Archaludon", "move 2").items;
+  assert.ok(own.size && !own.has("choicescarf"));
+});
+
+test("a hit harder than any roll of the sample sets is read as a Choice Band", () => {
+  const { items, listed } = readOneTurn("Machamp", "Choice Band", "Corviknight");
+  assert.ok(!listed.includes("choiceband"));
+  assert.deepEqual([...items], ["choiceband"]);
+});

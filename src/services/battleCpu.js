@@ -94,49 +94,203 @@ function pickWeighted(list, random) {
   let roll = random() * list.reduce((sum, x) => sum + x.weight, 0);
   return list.find(x => (roll -= x.weight) < 0) || list[list.length - 1];
 }
-function believe(state, foe, pool, seen, random, likeliest) {
+/* what one of their Pokémon may carry: its sample sets, and each attacking set with a Choice item or an Assault Vest it does not list,
+   at a hundredth of its weight (players bring a Scarf the ladder's top sets lack). What the battle shows narrows these (infer below). */
+const VARIANTS = [["choicescarf", "any"], ["choiceband", "Physical"], ["choicespecs", "Special"], ["assaultvest", "any"]];
+function hypothesesOf(dex, sets) {
+  const out = [...sets];
+  for (const set of sets) {
+    if (set.mega) continue;
+    const kinds = set.moveIds.map(id => dex.moves.get(id).category);
+    if (kinds.includes("Status")) continue;
+    const leaning = kinds.filter(k => k === "Physical").length >= kinds.filter(k => k === "Special").length ? "Physical" : "Special";
+    for (const [item, kind] of VARIANTS) {
+      if (set.itemId === item || set.items.some(name => toID(name) === item) || (kind !== "any" && kind !== leaning)) continue;
+      out.push({ ...set, items: [dex.items.get(item).name], itemId: item, weight: set.weight * 0.01, variant: true });
+    }
+  }
+  return out;
+}
+const fitsShown = (set, used, shown) => used.every(id => set.moveIds.includes(id))
+  && (!shown.ability || toID(shown.ability) === toID(set.ability)) && (!shown.item || toID(shown.item) === set.itemId);
+function believe(state, foe, candidatesOf, seen, random, likeliest) {
   const megaUsed = state[foe].pokemon.some(p => p.species.isMega);
   for (const p of state[foe].pokemon) {
-    const sets = pool.get(toID(p.baseSpecies.name)) || pool.get(toID(p.baseSpecies.baseSpecies));
+    const sets = candidatesOf(state, p);
     if (!sets || p.transformed) continue;
     const shown = seen[p.name] || {};
     const used = p.baseMoveSlots.filter(slot => slot.used).map(slot => slot.id);
-    const fits = sets.filter(set => used.every(id => set.moveIds.includes(id))
-      && (!shown.ability || toID(shown.ability) === toID(set.ability)) && (!shown.item || toID(shown.item) === set.itemId));
+    const fits = sets.filter(set => fitsShown(set, used, shown));
     const choices = fits.length ? fits : sets.filter(set => used.every(id => set.moveIds.includes(id))).length ? sets.filter(set => used.every(id => set.moveIds.includes(id))) : sets;
     const set = likeliest ? choices.reduce((a, b) => (b.weight > a.weight ? b : a)) : pickWeighted(choices, random);
-    // moves: the ones shown stay as they are (with their PP), the rest come from the set
-    const ids = [...used];
-    for (const id of set.moveIds) if (ids.length < 4 && !ids.includes(id)) ids.push(id);
-    const old = Object.fromEntries(p.baseMoveSlots.map(slot => [slot.id, slot]));
-    p.baseMoveSlots = ids.map(id => old[id] || slotFor(state, id));
-    p.moveSlots = p.baseMoveSlots.slice();
-    if (!shown.ability && p.ability === p.baseAbility && !p.species.isMega) {
-      const ability = toID(set.ability);
-      p.baseAbility = p.ability = ability;
-      p.abilityState = state.initEffectState({ id: ability, target: p });
-    }
-    if (!shown.item && p.item && !p.species.isMega) {
-      p.item = set.itemId;
-      p.itemState = state.initEffectState({ id: p.item, target: p });
-    }
-    p.canMegaEvo = megaUsed ? null : state.actions.canMegaEvo(p);
-    // stats from the set's nature and points; the share of HP left is what the screen shows
-    // in place: the engine finds a Pokémon's set in its side's team by identity when it saves the battle
-    Object.assign(p.set, { nature: set.nature, evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, ...set.evs }, ability: set.ability, item: set.items[0], moves: ids });
-    const stats = state.spreadModify(p.species.baseStats, p.set);
-    const share = p.maxhp ? p.hp / p.maxhp : 1;
-    p.baseMaxhp = p.maxhp = stats.hp;
-    p.hp = p.fainted ? 0 : Math.max(1, Math.round(share * stats.hp));
-    p.baseStoredStats = stats;
-    for (const key of Object.keys(p.storedStats)) p.storedStats[key] = stats[key];
-    p.speed = p.storedStats.spe;
+    applySet(state, p, set, shown, megaUsed);
   }
+}
+function applySet(state, p, set, shown, megaUsed) {
+  const used = p.baseMoveSlots.filter(slot => slot.used).map(slot => slot.id);
+  // moves: the ones shown stay as they are (with their PP), the rest come from the set
+  const ids = [...used];
+  for (const id of set.moveIds) if (ids.length < 4 && !ids.includes(id)) ids.push(id);
+  const old = Object.fromEntries(p.baseMoveSlots.map(slot => [slot.id, slot]));
+  p.baseMoveSlots = ids.map(id => old[id] || slotFor(state, id));
+  p.moveSlots = p.baseMoveSlots.slice();
+  if (!shown.ability && p.ability === p.baseAbility && !p.species.isMega) {
+    const ability = toID(set.ability);
+    p.baseAbility = p.ability = ability;
+    p.abilityState = state.initEffectState({ id: ability, target: p });
+  }
+  if (!shown.item && p.item && !p.species.isMega) {
+    p.item = set.itemId;
+    p.itemState = state.initEffectState({ id: p.item, target: p });
+  }
+  p.canMegaEvo = megaUsed ? null : state.actions.canMegaEvo(p);
+  // stats from the set's nature and points; the share of HP left is what the screen shows
+  // in place: the engine finds a Pokémon's set in its side's team by identity when it saves the battle
+  Object.assign(p.set, { nature: set.nature, evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, ...set.evs }, ability: set.ability, item: set.items[0], moves: ids });
+  const stats = state.spreadModify(p.species.baseStats, p.set);
+  const share = p.maxhp ? p.hp / p.maxhp : 1;
+  p.baseMaxhp = p.maxhp = stats.hp;
+  p.hp = p.fainted ? 0 : Math.max(1, Math.round(share * stats.hp));
+  p.baseStoredStats = stats;
+  for (const key of Object.keys(p.storedStats)) p.storedStats[key] = stats[key];
+  p.speed = p.storedStats.spe;
 }
 function slotFor(state, id) {
   const move = state.dex.moves.get(id);
   const pp = state.calculatePP ? state.calculatePP(move, 3) : Math.floor(move.pp * 8 / 5);
   return { move: move.name, id: move.id, pp, maxpp: pp, target: move.target, disabled: false, disabledSource: "", used: false };
+}
+
+/* ---------- inference: what the last turn showed about their sets, as a ranker reads it ----------
+   Two readings, each on the battle as it stood before the turn with one guess at a time put on their Pokémon:
+   - speed: their Pokémon and ours both attacked at the same priority; whoever moved first is the faster (a Pokémon that should be
+     slower but moved first holds a Choice Scarf);
+   - damage: a hit is held against the damage roll range the guess allows (a hit harder than any roll of the plain set means a Choice
+     Band or Specs, a hit softer than any roll on them an Assault Vest or a bulkier spread). Our HP is read exactly, theirs as a percent.
+   A guess the turn rules out is dropped for the rest of the battle. Anything that could change the reading before the move (a switch,
+   a Mega Evolution, a stat change, weather, a field or side condition, an item used, a critical hit, a Protect or Substitute, a Sash)
+   leaves that turn unread, and a turn that would rule out every guess is ignored, so a misreading never leaves the computer empty. */
+const UNREAD = /^\|(switch|drag|replace|-mega|-boost|-unboost|-setboost|-clearboost|-clearallboost|-clearnegativeboost|-copyboost|-swapboost|-invertboost|-status|-curestatus|-weather|-fieldstart|-fieldend|-sidestart|-sideend|-swapsideconditions|-enditem|-item|-activate|detailschange|-formechange|-transform|-start|-end|-singleturn|-ability|cant)\|/;
+// what can change who moves first: only these stop the speed reading (a Defense boost from Stamina does not)
+const SPEED_UNREAD = /^\|(switch|drag|replace|-mega|detailschange|-formechange|-transform|-weather|-fieldstart|-fieldend|-sidestart|-sideend|-enditem|-item|-clearboost|-clearallboost|-swapboost|-copyboost|-invertboost)\|/;
+const changesSpeed = (line, parts) => SPEED_UNREAD.test(line) || (/^\|-(boost|unboost|setboost)\|/.test(line) && parts[3] === "spe")
+  || (parts[1] === "-status" && parts[3] === "par") || (parts[1] === "-activate" && /Quick Claw|Quick Draw/.test(line));
+const hpOf = field => (field ? parseInt(field, 10) || 0 : null);
+const nameIn = who => who?.replace(/^p\d[a-d]?: /, "") ?? null;
+// the public lines of one turn's main part, each of our own Pokémon's damage lines with its exact HP from the secret copy
+function turnEvents(log, turn, side) {
+  const start = log.indexOf(`|turn|${turn}`);
+  if (start < 0) return [];
+  const out = [];
+  for (let i = start + 1; i < log.length; i++) {
+    const line = log[i];
+    if (line === "|upkeep" || line.startsWith("|turn|")) break;
+    if (line.startsWith("|split|")) {
+      const mine = line.slice(7) === side;
+      out.push({ parts: log[i + 2].split("|"), line: log[i + 2], exact: mine ? hpOf(log[i + 1].split("|")[3]) : null });
+      i += 2;
+    } else out.push({ parts: line.split("|"), line, exact: null });
+  }
+  return out;
+}
+function readings(log, turn, side, dex, doubles) {
+  const foe = other(side);
+  const events = turnEvents(log, turn, side);
+  const out = [];
+  let unread = false, speedUnread = false;
+  const firstMove = {}; // who → index of their own first move line, while nothing had changed who moves first
+  const hit = new Set();
+  events.forEach((e, i) => {
+    const [, tag, who] = e.parts;
+    if (changesSpeed(e.line, e.parts)) speedUnread = true;
+    if (UNREAD.test(e.line)) { unread = true; return; }
+    if (tag !== "move" || e.line.includes("[from]")) return;
+    if (!speedUnread && firstMove[who] == null) firstMove[who] = { index: i, move: e.parts[3] };
+    if (unread) return;
+    // the move's damage line: the first one on its target before the next move, with nothing in between that changes it
+    const target = e.parts[4];
+    const move = dex.moves.get(e.parts[3]);
+    if (!target || move.category === "Status" || move.multihit || (doubles && /^all/.test(move.target)) || hit.has(target)) return;
+    for (let j = i + 1; j < events.length; j++) {
+      const [, t, subject] = events[j].parts;
+      if (t === "move") break;
+      if (subject === target && (t === "-crit" || t === "-activate" || t === "-enditem" || t === "-immune" || t === "-fail")) break;
+      if (t === "-damage" && subject === target) {
+        if (!events[j].line.includes("[from]")) {
+          const mine = target.startsWith(side), theirs = who.startsWith(foe) && mine, ours = who.startsWith(side) && target.startsWith(foe);
+          if (theirs || ours) out.push({ kind: "damage", foe: nameIn(theirs ? who : target), attacker: nameIn(who), target: nameIn(target), mine, move: move.name, after: mine ? events[j].exact : hpOf(events[j].parts[3]) });
+        }
+        hit.add(target);
+        break;
+      }
+    }
+  });
+  for (const [a, x] of Object.entries(firstMove)) for (const [b, y] of Object.entries(firstMove)) {
+    if (!a.startsWith(side) || !b.startsWith(foe)) continue;
+    const mx = dex.moves.get(x.move), my = dex.moves.get(y.move);
+    if (mx.category === "Status" || my.category === "Status" || mx.priority !== my.priority) continue;
+    out.push({ kind: "speed", foe: nameIn(b), mine: nameIn(a), foeFirst: y.index < x.index });
+  }
+  return out;
+}
+// the damage a move does with its lowest and highest roll and no critical hit, or null when the engine cannot say
+function damageRange(state, source, target, moveName) {
+  const out = [];
+  for (const roll of [85, 100]) {
+    state.randomizer = damage => Math.floor(Math.floor(damage * roll) / 100);
+    const move = state.dex.getActiveMove(moveName);
+    move.willCrit = false;
+    let damage;
+    try { damage = state.actions.getDamage(source, target, move, true); } catch { return null; }
+    if (typeof damage !== "number") return null;
+    out.push(damage);
+  }
+  return out;
+}
+const publicPercent = p => (p.hp <= 0 ? 0 : Math.min(p.hp < p.maxhp ? 99 : 100, Math.ceil((100 * p.hp) / p.maxhp)));
+/* narrows hypotheses (name → guesses) by the turn before: before is that battle as it stood (strip), log the battle's log now */
+function infer(before, log, turn, side, hypotheses, seen) {
+  const foe = other(side);
+  const state = revive(before);
+  const list = readings(log, turn, side, state.dex, isDoubles(state));
+  if (!list.length) return;
+  const find = (s, name) => state[s].pokemon.find(p => p.name === name && p.isActive && !p.fainted);
+  const megaUsed = state[foe].pokemon.some(p => p.species.isMega);
+  // their other Pokémon wear their likeliest guess, so nothing hidden of theirs enters a reading
+  for (const p of state[foe].pokemon) {
+    const guesses = hypotheses.get(p.name);
+    if (guesses?.length && !p.transformed) applySet(state, p, guesses.reduce((a, b) => (b.weight > a.weight ? b : a)), seen[p.name] || {}, megaUsed);
+  }
+  for (const name of new Set(list.map(r => r.foe))) {
+    const guesses = hypotheses.get(name);
+    const p = find(foe, name);
+    if (!guesses || guesses.length < 2 || !p || p.transformed) continue;
+    const shown = seen[name] || {};
+    const theirs = list.filter(r => r.foe === name);
+    const percentBefore = publicPercent(p), oursBefore = Object.fromEntries(state[side].active.filter(Boolean).map(q => [q.name, q.hp]));
+    const kept = guesses.filter(guess => {
+      applySet(state, p, guess, shown, megaUsed);
+      return theirs.every(r => {
+        if (r.kind === "speed") {
+          const mine = find(side, r.mine);
+          if (!mine) return true;
+          const a = speedOf(p), b = speedOf(mine);
+          return r.foeFirst ? a >= b : a <= b;
+        }
+        const source = r.mine ? p : find(side, r.attacker), target = r.mine ? find(side, r.target) : p;
+        if (!source || !target || r.after == null) return true;
+        const range = damageRange(state, source, target, r.move);
+        if (!range) return true;
+        if (r.mine) {
+          const dealt = oursBefore[target.name] - r.after;
+          return r.after === 0 ? range[1] + 1 >= dealt : range[0] - 1 <= dealt && dealt <= range[1] + 1;
+        }
+        const dealt = percentBefore - r.after, low = (100 * range[0]) / p.maxhp, high = (100 * range[1]) / p.maxhp;
+        return r.after === 0 ? high + 2 >= dealt : low - 2 <= dealt && dealt <= high + 2;
+      });
+    });
+    if (kept.length) hypotheses.set(name, kept);
+  }
 }
 
 /* ---------- damage, as the engine counts it, with the average roll and no critical hit ---------- */
@@ -487,16 +641,28 @@ function teamPreview(state, side, req, random) {
 const pickIndex = (weights, random) => { let roll = random(); for (let i = 0; i < weights.length; i++) if ((roll -= weights[i]) < 0) return i; return weights.length - 1; };
 
 /* ---------- the computer ---------- */
-export function createCpu(formatid, { random = Math.random, budgetMs, rollout = true, now = NOW } = {}) {
+export function createCpu(formatid, { random = Math.random, budgetMs, rollout = true, reads = true, now = NOW } = {}) {
   const pool = poolOf(formatid);
   const doubles = /vgc/.test(formatid);
   const budget = budgetMs ?? (doubles ? 2200 : 1400);
+  /* their Pokémon's name → what it may carry, narrowed turn by turn (infer); before is the battle as it stood when we last chose a move.
+     ponytail: kept in memory only, so a battle resumed after the page reloads starts guessing afresh; replaying its log through infer
+     turn by turn would carry the readings over */
+  const hypotheses = new Map();
+  let before = null;
+  const candidatesOf = (state, p) => {
+    if (!hypotheses.has(p.name)) {
+      const sets = pool.get(toID(p.baseSpecies.name)) || pool.get(toID(p.baseSpecies.baseSpecies));
+      hypotheses.set(p.name, sets ? (reads ? hypothesesOf(state.dex, sets) : sets) : null);
+    }
+    return hypotheses.get(p.name);
+  };
 
   // one believed copy of the battle, from this side's view
   function sample(battle, side, likeliest) {
     const state = revive(strip(battle), seedOf(random));
     state[other(side)].clearChoice?.();
-    believe(state, other(side), pool, revealed(battle.log, other(side)), random, likeliest);
+    believe(state, other(side), candidatesOf, revealed(battle.log, other(side)), random, likeliest);
     return state;
   }
 
@@ -544,6 +710,10 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
   function decide(battle, side) {
     const req = battle[side].activeRequest;
     if (!req || req.wait || battle.ended) return null;
+    if (reads && before && battle.turn > before.turn) {
+      try { infer(before.text, battle.log, before.turn, side, hypotheses, revealed(battle.log, other(side))); } catch (e) { console.warn("cpu infer", e); }
+      before = null;
+    }
     if (req.teamPreview) return teamPreview(calcOn(sample(battle, side, true)), side, req, random);
     if (req.forceSwitch) {
       // a switch the battle asks for: each way of filling the places is tried against the turn that follows
@@ -559,6 +729,7 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
       });
       return valued.reduce((a, b) => (b.value > a.value ? b : a)).choice;
     }
+    if (reads) before = { text: strip(battle), turn: battle.turn };
     const state = calcOn(sample(battle, side, true));
     const all = wholeChoices(state, side, { active: req.active.map(a => ({ ...a, canMegaEvo: Boolean(a.canMegaEvo) })), mons: req.side.pokemon.map(p => ({ fainted: p.condition.endsWith(" fnt"), active: p.active })) }, doubles ? 11 : 12, doubles ? 6 : 12);
     // a move that does nothing to what stands in front is never played as a read on a switch; only when nothing else is left
@@ -575,7 +746,7 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
     return near[Math.floor(random() * near.length)].choice;
   }
 
-  return { decide };
+  return { decide, guesses: name => hypotheses.get(name) };
 }
 
 // every way to fill the places a forced switch leaves (a place that must pass passes)
