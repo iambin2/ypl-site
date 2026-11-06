@@ -999,6 +999,7 @@ class Engine {
       if (fxLive || pass) { gl.bindVertexArray(this.fxBuf.vao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, CAP); }
       gl.bindVertexArray(null);
     };
+    this.drawStrips(view, 0, true);
     particles(0);
     this.drawStrips(view, 0);
     for (const a of this.ordered()) this.drawActor(a, view, false);
@@ -1106,7 +1107,8 @@ class Engine {
     gl.bindVertexArray(this.quadVao); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); gl.bindVertexArray(null);
   }
   // layer 0: behind the Pokémon (a room's walls, a floor's lines), 1: over them (a beam, a slash)
-  drawStrips(view, layer = 1) {
+  // under: the strips drawn before the layer's particles (a weather's air), so its rain and snow fall in front of it
+  drawStrips(view, layer = 1, under = false) {
     if (!this.strips.length) return;
     const out = this.stripData; let n = 0;
     const keep = [];
@@ -1116,11 +1118,12 @@ class Engine {
       const k = s.dur === Infinity ? 0 : age / s.dur;
       if (k > 1 || s.dead) { s.end?.(); continue; }
       keep.push(s);
-      if ((s.layer ?? 1) !== layer) continue;
+      if ((s.layer ?? 1) !== layer || Boolean(s.under) !== under) continue;
       if (s.quad) {
         const q = s.quad(k, age);
         if (!q) continue;
-        const [r, g, b] = hex(s.color || "#FFFFFF"), al = s.alpha ?? 1, v = [q[0], q[1], q[3], q[2]];
+        // a weather's air (s.dims) dims with the arena's lamps, as the ground under it does
+        const d = s.dims ? this.grade.dim : 1, [r, g, b] = hex(s.color || "#FFFFFF").map(c => c * d), al = s.alpha ?? 1, v = [q[0], q[1], q[3], q[2]];
         if (n) { out.set(out.subarray((n - 1) * 12, n * 12), n * 12); n++; out.set([v[0][0], v[0][1], 0, 0, r, g, b, al, 4, s.emis ?? 1, s.occ || 0, 1], n * 12); n++; }
         for (const [x, y] of v) { out.set([x, y, 0, 0, r, g, b, al, 4, s.emis ?? 1, s.occ || 0, 1], n * 12); n++; }
         out.set(out.subarray((n - 1) * 12, n * 12), n * 12); n++;

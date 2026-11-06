@@ -88,49 +88,69 @@ const SIDE_OF = (e, own) => {
 };
 // the size a thing is drawn at on this stage (shapes are tuned on an 800-wide stage)
 const unit = e => clamp(e.W / 800, .55, 1.6);
+// a weather's air laid over the whole arena, behind the Pokémon: one even colour (emis adds it as light, for the sun)
+const wash = (e, color, alpha, emis = 0) => {
+  const { W, H } = e;
+  e.extra.push(e.strip({ dur: Infinity, quad: () => [[-W * .2, -H * .2], [W * 1.2, -H * .2], [W * 1.2, H * 1.2], [-W * .2, H * 1.2]], color, emis, occ: 1, alpha, layer: 0, dims: true, under: true }));
+};
 
 const BUILD = {
   /* ---------- weather: behind the Pokémon, and only fine and faint where it passes in front ---------- */
   /* 2026-11-06 remake, from 포켓몬 챔피언스 (each checked against its frames): rain is thin and straight, the sun is shafts of light
-     with no disc in the sky, a sandstorm is a pale haze full of fine grains, snow is a gentle fall of white */
+     with no disc in the sky, a sandstorm is a pale haze full of fine grains, snow is a gentle fall of white.
+     2026-11-06 second pass (the user: "강렬함이 너무 없어, 무슨 날씨인지도 모르겠어"): each weather now takes the whole arena into its own
+     air, as the games light a weather, so it is named at a glance: rain an overcast slate with a dense slanting fall, harsh sun a warm
+     gold glare from the upper left, a sandstorm an ochre storm blowing across, snow a pale cold air with a thick fall and a white floor.
+     The Pokémon keep their colours (the washes lie behind them; only the grade touches them, and gently) */
   rain(e, E, heavy) {
-    // thin straight lines of rain falling plumb, sparse, mostly behind the Pokémon; small crowns of splash and glints on the floor
+    // the sky closes over: an overcast slate over the arena; long lines of rain slanting down on the wind, crowns of splash on the floor
     const { W, H } = e, U = unit(e), ramp = e.light ? "rain.l" : "rain";
-    for (const [n, far] of [[heavy ? 200 : 130, true], [heavy ? 70 : 45, false]]) {
-      const v = far ? 1500 : 1900, life = H * 1.3 / v * 1000;
-      E({ n, at: () => [rand(-.05, 1.05) * W, -H * .15], vel: () => [-v * .03, v * rand(.95, 1.05)], tex: "streak", ramp, size: [(far ? 1.6 : 2) * U * (e.light ? 1.3 : 1), (far ? 1.6 : 2) * U * (e.light ? 1.3 : 1)], aspect: far ? 26 : 34, face: true, life, loop: true, over: life, alpha: far ? .8 : .55, emis: e.light ? .15 : .6, occ: e.light ? .6 : .15, layer: far ? 0 : 1 });
+    wash(e, e.light ? "#6F84A3" : "#26364F", e.light ? .26 : .5);
+    for (const [n, far] of [[heavy ? 420 : 300, true], [heavy ? 150 : 110, false]]) {
+      const v = far ? 1700 : 2200, life = H * 1.35 / v * 1000, w = (far ? 2.6 : 3.6) * U * (e.light ? 1.3 : 1);
+      E({ n, at: () => [rand(-.05, 1.25) * W, -H * .15], vel: () => [-v * .16, v * rand(.95, 1.05)], tex: "streak", ramp, size: [w, w], aspect: far ? 30 : 42, face: true, life, loop: true, over: life, alpha: far ? .95 : .8, emis: e.light ? .15 : .8, occ: e.light ? .6 : .15, layer: far ? 0 : 1 });
     }
-    E({ n: 70, at: () => floorAt(W, H, rand(-1.5, 1.5), rand(.02, 1.05)), tex: "ring", ramp: "white", size: [2 * U, 12 * U], aspect: 2.8, life: [280, 420], loop: true, over: 600, alpha: e.light ? .6 : .4, emis: e.light ? 0 : .6, occ: e.light ? .4 : 0, layer: 0, grow: true });
-    E({ n: 50, at: () => floorAt(W, H, rand(-1.4, 1.4), rand(.05, 1)), tex: "drop", lit: true, ramp: e.light ? "rain.l" : "water.l", vel: () => [rand(-25, 25), -rand(60, 110)], acc: [0, 600], face: true, rot: -Math.PI / 2, aspect: .72, size: [3 * U, 2 * U], life: [240, 360], loop: true, over: 400, alpha: .7, emis: .4, occ: .6, layer: 0 });
-    E({ n: 16, at: () => floorAt(W, H, rand(-1.3, 1.3), rand(.05, 1)), tex: "glint", ramp: "glint", size: [2, 9 * U], life: [400, 700], loop: true, over: 900, alpha: .5, layer: 0, grow: true });
+    E({ n: 120, at: () => floorAt(W, H, rand(-1.5, 1.5), rand(.02, 1.05)), tex: "ring", ramp: "white", size: [2 * U, 16 * U], aspect: 2.8, life: [280, 420], loop: true, over: 600, alpha: e.light ? .7 : .6, emis: e.light ? 0 : .7, occ: e.light ? .4 : 0, layer: 0, grow: true });
+    E({ n: 90, at: () => floorAt(W, H, rand(-1.4, 1.4), rand(.05, 1)), tex: "drop", lit: true, ramp: e.light ? "rain.l" : "water.l", vel: () => [rand(-30, 30), -rand(80, 140)], acc: [0, 700], face: true, rot: -Math.PI / 2, aspect: .72, size: [4 * U, 2.5 * U], life: [240, 360], loop: true, over: 400, alpha: .85, emis: .45, occ: .6, layer: 0 });
+    E({ n: 24, at: () => floorAt(W, H, rand(-1.3, 1.3), rand(.05, 1)), tex: "glint", ramp: "glint", size: [2, 11 * U], life: [400, 700], loop: true, over: 900, alpha: .6, layer: 0, grow: true });
+    E({ n: 7, at: () => [rand(0, 1) * W, rand(-.1, .3) * H], tex: "cloud", ramp: e.light ? "smoke.l" : "smoke", size: [W * .6, W * .6], aspect: 2.6, vel: () => [rand(-30, -14), 0], wrap: true, life: [14000, 18000], loop: true, over: 18000, alpha: .45, occ: .7, emis: 0, layer: 0 });
   },
   sun(e, E, harsh) {
-    // harsh sunlight: broad soft shafts of warm light slanting down from the upper left across the field, motes turning in them,
-    // and the whole picture warmed; no sun is drawn in the sky
-    const { W, H } = e, U = unit(e);
-    for (let i = 0; i < 7; i++) {
-      const ang = .72 + (i - 3) * .07, len = H * 1.9, x0 = -W * .1 + i * W * .07, y0 = -H * .15, wide = W * rand(.05, .11);
-      E({ at: [x0 + Math.cos(ang) * len / 2, y0 + Math.sin(ang) * len / 2], tex: "glow", ramp: "sunlit", size: [wide, wide], aspect: len / wide, rot: ang, life: 5200 + i * 900, loop: true, over: 6000, alpha: (harsh ? .3 : .24) * (i % 2 ? .7 : 1), emis: e.light ? .4 : .85, occ: e.light ? .2 : 0, layer: 0 });
+    // harsh sunlight: the air turns gold, a white glare burns at the upper left, broad shafts fan out from it across the field with
+    // motes turning in them; no sun is drawn in the sky
+    const { W, H } = e, U = unit(e), k = harsh ? 1.2 : 1;
+    wash(e, e.light ? "#FFC56A" : "#B86A1E", e.light ? .28 : .3, e.light ? .2 : .35);
+    for (let i = 0; i < 9; i++) {
+      const ang = .62 + i * .07, len = H * 2.4, x0 = -W * .04, y0 = -H * .12, wide = W * rand(.05, .1);
+      E({ at: [x0 + Math.cos(ang) * len / 2, y0 + Math.sin(ang) * len / 2], tex: "glow", ramp: e.light ? "gold" : "sunlit", size: [wide, wide], aspect: len / wide, rot: ang, life: 5200 + i * 900, loop: true, over: 6000, alpha: .3 * k * (i % 2 ? .6 : 1), emis: e.light ? .5 : 1, occ: e.light ? .2 : 0, layer: 0 });
     }
-    E({ at: [W * .05, -H * .1], tex: "glow", ramp: e.light ? "gold" : "sunray", size: [W * .9, W * .9], hold: true, life: 1e7, loop: true, alpha: harsh ? .55 : .42, emis: e.light ? .5 : .9, occ: e.light ? .25 : 0, layer: 0 });
-    E({ n: 36, at: () => [rand(0, .8) * W, rand(.05, .9) * H], tex: "glow", ramp: "gold", size: [3 * U, 1], vel: () => [rand(-6, 6), rand(-20, -8)], bob: [4, 10], period: [3, 6], life: [3000, 5000], loop: true, over: 5000, alpha: .5, layer: 0 });
+    E({ at: [W * .02, -H * .12], tex: "glow", ramp: e.light ? "gold" : "sunray", size: [W * 1.5, W * 1.5], hold: true, life: 1e7, loop: true, alpha: .75 * k, emis: e.light ? .6 : 1, occ: e.light ? .25 : 0, layer: 0 });
+    E({ at: [W * .01, -H * .1], tex: "glow", ramp: "white.h", size: [W * .4, W * .4], hold: true, life: 1e7, loop: true, alpha: .8, emis: 1, occ: e.light ? .2 : 0, layer: 0 });
+    E({ n: 60, at: () => [rand(0, .85) * W, rand(.05, .9) * H], tex: "glow", ramp: "gold", size: [4 * U, 1], vel: () => [rand(-6, 6), rand(-24, -10)], bob: [4, 10], period: [3, 6], life: [3000, 5000], loop: true, over: 5000, alpha: .7, layer: 0 });
   },
   sand(e, E) {
-    // the stadium seen through a pale haze of sand, fine bright grains drifting through it on the wind
+    // a storm of sand blows across the arena: the air goes ochre, long gusts and thick grains race across it, dust rolls through
     const { W, H } = e, U = unit(e);
-    e.extra.push(e.strip({ dur: Infinity, quad: () => [[-W * .2, -H * .2], [W * 1.2, -H * .2], [W * 1.2, H * 1.2], [-W * .2, H * 1.2]], color: e.light ? "#E2C68A" : "#D9B878", emis: 0, occ: 1, alpha: e.light ? .16 : .22, layer: 1 }));
-    for (const [n, layer, a] of [[170, 0, .85], [70, 1, .65]]) E({ n, at: () => [rand(-.1, 1.1) * W, rand(-.05, 1.05) * H], vel: () => [rand(90, 170), rand(-14, 14)], tex: "dot", ramp: e.light ? "sand" : "glint", size: [[1.6 * U, 3 * U], "same"], bob: [6, 14], period: [2, 4], life: [5000, 8000], loop: true, over: 8000, wrap: true, alpha: a, occ: e.light ? .6 : 0, emis: .7, layer });
-    E({ n: 6, at: () => [rand(0, 1) * W, rand(.15, .6) * H], tex: "cloud", ramp: "dust.c", size: [W * .5, W * .5], aspect: 2, vel: () => [rand(60, 110), 0], wrap: true, life: [9000, 12000], loop: true, over: 12000, alpha: .2, occ: .4, emis: .05, layer: 0 });
+    wash(e, e.light ? "#D49A4E" : "#9A6428", e.light ? .3 : .5);
+    for (const [n, layer, a] of [[260, 0, .95], [110, 1, .8]]) E({ n, at: () => [rand(-.1, 1.1) * W, rand(-.05, 1.05) * H], vel: () => [rand(260, 420), rand(-20, 30)], tex: "dot", ramp: "sand", size: [[2 * U, 4 * U], "same"], bob: [6, 14], period: [1.5, 3], life: [5000, 8000], loop: true, over: 8000, wrap: true, alpha: a, occ: e.light ? .7 : .3, emis: .6, layer });
+    E({ n: 90, at: () => [rand(-.1, 1.1) * W, rand(0, 1) * H], vel: () => [rand(900, 1300), rand(-40, 60)], tex: "streak", ramp: "sand", size: [2.2 * U, 2.2 * U], aspect: [24, 44], face: true, life: [600, 900], loop: true, over: 900, wrap: true, alpha: .7, occ: e.light ? .6 : .2, emis: .5, layer: 0 });
+    E({ n: 12, at: () => [rand(0, 1) * W, rand(.1, .85) * H], tex: "cloud", ramp: "dust.c", size: [W * .6, W * .6], aspect: 2.2, vel: () => [rand(160, 260), 0], wrap: true, life: [9000, 12000], loop: true, over: 12000, alpha: .42, occ: .6, emis: .05, layer: 0 });
   },
   snow(e, E, hail) {
-    // white snow falling gently and sparsely in the cool air; hail is small pellets of ice falling fast
-    const { W, H } = e, U = unit(e), ramp = e.light ? "ice.h" : "snow";
-    if (hail) E({ n: 90, at: () => [rand(-.1, 1.2) * W, -H * .1], vel: () => [-60, rand(620, 760)], tex: "crystal", lit: true, ramp: "ice.c", size: [4 * U, 4 * U], aspect: .8, face: true, rot: Math.PI / 2, life: H * 1.25 / 690 * 1000, loop: true, over: 1800, alpha: .7, emis: .4, occ: .7, layer: 1 });
-    else {
-      E({ n: 70, at: () => [rand(-.1, 1.1) * W, -H * .08], vel: () => [rand(-14, 8), rand(60, 100)], tex: "dot", ramp, size: [[2.6 * U, 4 * U], "same"], bob: [6, 14], period: [2.4, 4], life: [9000, 13000], loop: true, over: 13000, alpha: .85, emis: .5, occ: .35, layer: 1 });
-      E({ n: 120, at: () => [rand(-.1, 1.1) * W, -H * .08], vel: () => [rand(-12, 6), rand(40, 64)], tex: "dot", ramp, size: [1.8 * U, 1.8 * U], bob: [5, 10], period: [3, 5], life: [16000, 24000], loop: true, over: 24000, alpha: .65, emis: .5, occ: .3, layer: 0 });
+    // the air goes pale and cold and the floor white; snow falls thick and swaying, big soft flakes near, fine ones far;
+    // hail is pellets of ice driven down fast, bouncing off the floor
+    // on paper white snow is lost: it falls in the navy of the light theme
+    const { W, H } = e, U = unit(e), ramp = e.light ? "rain.l" : "snow";
+    wash(e, e.light ? "#7FA8D6" : "#6E8FB8", e.light ? .42 : .32, e.light ? 0 : .15);
+    const y0 = H * .42;
+    e.extra.push(e.strip({ dur: Infinity, quad: () => [[-W * .2, y0], [W * 1.2, y0], [W * 1.2, H * 1.2], [-W * .2, H * 1.2]], color: e.light ? "#D8ECFA" : "#EAF4FF", emis: e.light ? 0 : .3, occ: 1, alpha: e.light ? .4 : .16, layer: 0, dims: true, under: true }));
+    if (hail) {
+      E({ n: 170, at: () => [rand(-.1, 1.3) * W, -H * .1], vel: () => [-160, rand(760, 900)], tex: "crystal", lit: true, ramp: "ice.c", size: [6 * U, 6 * U], aspect: .8, face: true, rot: Math.PI / 2, life: H * 1.25 / 830 * 1000, loop: true, over: 1800, alpha: .95, emis: .5, occ: .8, layer: 1 });
+      E({ n: 60, at: () => floorAt(W, H, rand(-1.4, 1.4), rand(.05, 1)), tex: "crystal", lit: true, ramp: "ice.c", vel: () => [rand(-60, 60), -rand(90, 160)], acc: [0, 900], size: [3 * U, 3 * U], rot: "rand", spin: [-8, 8], life: [260, 380], loop: true, over: 400, alpha: .9, emis: .4, occ: .7, layer: 0 });
     }
-    E({ n: 6, at: () => [rand(0, 1) * W, rand(.4, .5) * H], tex: "cloud", ramp: "steam", size: [W * .5, W * .5], aspect: 3, vel: () => [rand(10, 22), 0], wrap: true, life: 20000, loop: true, over: 20000, alpha: .18, occ: .3, emis: .2, layer: 0 });
+    E({ n: hail ? 60 : 150, at: () => [rand(-.1, 1.1) * W, -H * .08], vel: () => [rand(-24, 10), rand(70, 120)], tex: "dot", ramp, size: [[3.6 * U, 6.5 * U], "same"], bob: [10, 22], period: [2.4, 4], life: [7000, 10000], loop: true, over: 10000, alpha: 1, emis: .6, occ: .45, layer: 1 });
+    E({ n: hail ? 80 : 260, at: () => [rand(-.1, 1.1) * W, -H * .08], vel: () => [rand(-16, 8), rand(44, 70)], tex: "dot", ramp, size: [[2 * U, 3 * U], "same"], bob: [6, 12], period: [3, 5], life: [15000, 22000], loop: true, over: 22000, alpha: .85, emis: .55, occ: .35, layer: 0 });
+    E({ n: 8, at: () => [rand(0, 1) * W, rand(.36, .55) * H], tex: "cloud", ramp: "steam", size: [W * .55, W * .55], aspect: 3, vel: () => [rand(14, 30), 0], wrap: true, life: 20000, loop: true, over: 20000, alpha: .36, occ: .4, emis: .3, layer: 0 });
   },
   wind(e, E) {
     const { W, H } = e;
@@ -305,8 +325,8 @@ function floorTint(e, E, ramp, k = 1) {
 
 const WEATHER = { raindance: ["rain"], primordialsea: ["rain", true], sunnyday: ["sun"], desolateland: ["sun", true], sandstorm: ["sand"], snowscape: ["snow"], snow: ["snow"], hail: ["snow", true], deltastream: ["wind"] };
 const GRADE = {
-  rain: { mR: .84, mG: .88, mB: .97 }, sun: { mR: 1.1, mG: 1.03, mB: .88, aR: .025, aG: .012 }, sand: { mR: 1.03, mG: .97, mB: .88 },
-  snow: { mR: .96, mG: .99, mB: 1.04 }, wind: { mR: .98, mG: .99, mB: 1.01 }, gravity: { mR: .94, mG: .93, mB: .98 },
+  rain: { mR: .82, mG: .87, mB: .98, sat: .88 }, sun: { mR: 1.14, mG: 1.05, mB: .84, aR: .04, aG: .02, sat: 1.08 }, sand: { mR: 1.06, mG: .96, mB: .8, aR: .02, aG: .01, sat: .92 },
+  snow: { mR: .95, mG: 1, mB: 1.08, aR: .02, aG: .03, aB: .05, sat: .88 }, wind: { mR: .98, mG: .99, mB: 1.01 }, gravity: { mR: .94, mG: .93, mB: .98 },
 };
 
 // the field as Stage.jsx sees it: { weather, fields, foe: { conditions, layers }, own: { ... } }

@@ -251,6 +251,28 @@ export function darken(stage, to = .45, dur = 700, holdMs = 0) {
   if (!e || instant()) return Promise.resolve();
   return e.anim(e.grade, { dim: [1, to, to, 1] }, { dur: dur + holdMs, at: [0, .25, holdMs ? .75 : .5, 1], ease: "inout" });
 }
+/* a weather arriving: its first gust sweeps the whole stage, in front of everything, while its air comes in behind (arena.js):
+   rain darkens the arena and a flash of lightning breaks it, harsh sun bursts gold, sand and snow blow across from the left */
+const WEATHER_IN = { raindance: "rain", primordialsea: "rain", sunnyday: "sun", desolateland: "sun", sandstorm: "sand", snowscape: "snow", snow: "snow", hail: "snow" };
+export function weatherIn(stage, id) {
+  const e = E(stage), kind = WEATHER_IN[id];
+  if (!e || !kind || instant() || reduced()) return Promise.resolve();
+  const { W, H } = e, U = clamp(W / 800, .55, 1.6);
+  if (kind === "rain") {
+    darken(stage, .55, 900);
+    e.at(320, () => flashStage(stage, .55, 260, "#DCE8FF"));
+    e.emit({ n: 160, at: () => [rand(-.05, 1.25) * W, -H * .15], vel: () => [-380, rand(2300, 2600)], tex: "streak", ramp: e.light ? "rain.l" : "rain", size: [2.6 * U, 2.6 * U], aspect: 44, face: true, life: 560, over: 700, alpha: .9 });
+  } else if (kind === "sun") {
+    flashStage(stage, .6, 760, "#FFE2A0");
+    e.emit({ at: [W * .02, -H * .1], tex: "glow", ramp: "sunray", size: [W * .4, W * 2.2], life: 900, alpha: .9 });
+  } else {
+    const sand = kind === "sand";
+    if (!sand) flashStage(stage, .3, 600, "#E8F4FF");
+    e.emit({ n: sand ? 140 : 120, at: () => [-W * rand(.05, .5), rand(-.05, 1.05) * H], vel: () => [rand(1500, 2100), rand(-60, sand ? 60 : 160)], tex: sand ? "streak" : "dot", ramp: sand ? "sand" : e.light ? "ice.h" : "snow", size: sand ? [2.6 * U, 2.6 * U] : [[3 * U, 6 * U], "same"], aspect: sand ? [20, 40] : 1, face: sand, life: 900, over: 300, alpha: .9, occ: e.light ? .6 : .2, emis: .6 });
+    e.emit({ n: 6, at: () => [-W * rand(.2, .5), rand(.1, .9) * H], vel: () => [rand(1100, 1400), 0], tex: "cloud", ramp: sand ? "dust.c" : "steam", size: [W * .5, W * .5], aspect: 2.2, life: 1100, over: 200, alpha: .55, occ: .6, emis: .1 });
+  }
+  return e.after(900);
+}
 // a word across the stage: 3턴, 승리
 export function banner(stage, text, { tone = "" } = {}) {
   const over = overOf(stage);
@@ -682,7 +704,8 @@ export async function final(stage, { players, sides, turn, winner, perspective, 
     [[ms(160), { rows }], [ms(420), { rows: decided, done: true }], [ms(1600), {}]], { off: true });
 }
 /* sent in: the ball opens in a burst of light, a column of it rises, the Pokémon grows out of it white and settles into its colours */
-export async function enter(stage, key, { ball = true } = {}) {
+// cry: called as it appears; the entrance lasts until the cry has been heard
+export async function enter(stage, key, { ball = true, cry = null } = {}) {
   const e = E(stage);
   if (!e || instant()) return;
   e.sync();
@@ -692,7 +715,8 @@ export async function enter(stage, key, { ball = true } = {}) {
   a.base.alpha = 0;
   await Promise.all([a.ready, ball && !reduced() ? throwBall(stage, key) : null]);
   a.base.alpha = 1;
-  if (reduced()) { await e.anim(a, { alpha: [0, 1] }, { dur: 260 }); return; }
+  const heard = cry?.();
+  if (reduced()) { await Promise.all([e.anim(a, { alpha: [0, 1] }, { dur: 260 }), heard]); return; }
   const at = centre(stage, key, .45), s = sizeOf(stage, key), feet = centre(stage, key, 0);
   glow(e, at, s * 1.2, "normal", { dur: 420, ramp: "white", alpha: .6 });
   glow(e, at, s * 2.2, "normal", { dur: 600, ramp: "blue", alpha: .3 });
@@ -701,7 +725,7 @@ export async function enter(stage, key, { ball = true } = {}) {
   e.emit({ at: [feet[0], feet[1] - s * .6], tex: "streak", ramp: "white", size: [s * .9, s * .9], aspect: .3, rot: Math.PI / 2, life: 520, alpha: .7 });
   ring(e, feet, s * 1.8, "normal", { flat: .26, dur: 640, ramp: "blue", layer: 0, delay: 100 });
   shock(e, at, s * 2.2, { dur: 500 });
-  await e.anim(a, { sx: [.35, 1.08, 1], sy: [.35, 1.08, 1], flash: [2, .8, 0], alpha: [0, 1, 1], rimA: [1, .6, 0] }, { dur: 540, at: [0, .55, 1], eases: ["out", "inout"] });
+  await Promise.all([e.anim(a, { sx: [.35, 1.08, 1], sy: [.35, 1.08, 1], flash: [2, .8, 0], alpha: [0, 1, 1], rimA: [1, .6, 0] }, { dur: 540, at: [0, .55, 1], eases: ["out", "inout"] }), heard]);
 }
 /* called back, as sent in played backwards (DESIGN.md "Battle", What the stage plays): red light takes it from its edge in while
    motes gather to its heart and a ring on the floor closes on its feet; it swells a breath, folds into its own middle as one red
@@ -747,25 +771,92 @@ export async function leave(stage, key, { drag = false } = {}) {
   for (let i = 0; i < 12; i++) { const u = i / 12; e.emit({ at: arc(u), tex: "glow", ramp: "recall", size: [s * .28, s * .06], life: 240, delay: u * HOME * .62, alpha: .85, emis: 1 }); }
   await e.after(HOME * .7);
 }
-// Mega Evolution: the arena goes dark round it, light spirals in from every side into a cocoon of rainbow, it whites out, the stage
-// flashes and it stands changed (megaEnd lets the light go)
+/* Mega Evolution, as the games play it (2026-11-06 remake, the user: "원작과 거의 똑같이, 고퀄리티로"). The stage goes dark round it;
+   from its trainer's corner (the Key Stone) two strands of rainbow light twist round each other as a helix and fly into the Pokémon,
+   where its Mega Stone flares in a four-rayed star. The Pokémon whites out inside a cocoon of light, a glossy sphere lit from the upper
+   left as the HOME renders are, its rim turning through the rainbow, and the Mega Evolution emblem (the user's image, drawn as given)
+   rises on it while it swells twice. megaEnd breaks the cocoon: the stadium flashes once, shards of rainbow light fly out with a
+   shockwave and a ring across the floor, and the new form stands lit, settling to its own colours as it roars (Stage.jsx plays the cry) */
+let cocoonCanvas = null, emblemImg = null;
+function paintCocoon() {
+  const N = 256, C = N / 2, c = Object.assign(document.createElement("canvas"), { width: N, height: N }), g = c.getContext("2d");
+  // the light inside: white at the heart, thinning toward the shell
+  let gr = g.createRadialGradient(C, C, 0, C, C, C * .94);
+  gr.addColorStop(0, "rgba(255,255,255,.6)"); gr.addColorStop(.55, "rgba(255,255,255,.3)"); gr.addColorStop(.86, "rgba(236,244,255,.42)"); gr.addColorStop(1, "rgba(220,236,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.arc(C, C, C * .94, 0, Math.PI * 2); g.fill();
+  // the shell's rim, turning through the rainbow, thick at the edge and soft inward
+  const conic = g.createConicGradient?.(-Math.PI / 2, C, C);
+  if (conic) {
+    ["#FF4A6A", "#FFB23A", "#FFF05A", "#5AF08A", "#4AD8FF", "#6A7AFF", "#D86AFF", "#FF4A6A"].forEach((col, i, a) => conic.addColorStop(i / (a.length - 1), col));
+    for (const [w, al] of [[16, .18], [9, .4], [4, .9]]) { g.globalAlpha = al; g.strokeStyle = conic; g.lineWidth = w; g.beginPath(); g.arc(C, C, C * .9, 0, Math.PI * 2); g.stroke(); }
+    g.globalAlpha = 1;
+  }
+  // the highlight of a glossy sphere, from the upper left
+  gr = g.createRadialGradient(C * .64, C * .56, 0, C * .64, C * .56, C * .42);
+  gr.addColorStop(0, "rgba(255,255,255,.95)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.ellipse(C * .64, C * .56, C * .42, C * .3, -.6, 0, Math.PI * 2); g.fill();
+  return c;
+}
+const megaTex = e => {
+  if (!e.megaTex) {
+    cocoonCanvas ||= paintCocoon();
+    e.megaTex = { cocoon: upload(e.gl, cocoonCanvas), emblem: null };
+    if (!emblemImg) { emblemImg = new Image(); emblemImg.src = `${import.meta.env?.BASE_URL ?? "/"}brand/mega-evolution.png`; }
+    const take = () => { if (e.megaTex && !e.megaTex.emblem && emblemImg.naturalWidth) e.megaTex.emblem = upload(e.gl, emblemImg); };
+    if (emblemImg.complete) take(); else emblemImg.addEventListener("load", take, { once: true });
+  }
+  return e.megaTex;
+};
+const easeOut = t => 1 - Math.pow(1 - clamp(t), 3);
 export async function megaStart(stage, key) {
   const e = E(stage), a = actorOf(stage, key);
   if (!e || !a || instant()) return;
-  const at = centre(stage, key), s = sizeOf(stage, key);
+  const at = centre(stage, key), s = sizeOf(stage, key), { W, H } = e, own = ownKey(stage, key), tex = megaTex(e);
   a.lit = true;
-  e.anim(e.grade, { dim: [1, .25] }, { dur: 500, fill: true }).then(() => {});
+  e.anim(e.grade, { dim: [1, .22] }, { dur: 500, fill: true }).then(() => {});
   e.megaDim = true;
-  e.shot(at[0], at[1], 1.3, { smooth: .5 });
-  // the rainbow, closing in round it
-  for (let i = 0; i < 48; i++) {
-    const ang = i / 48 * Math.PI * 2 * 3, r = s * rand(1.1, 1.6), st = [at[0] + Math.cos(ang) * r, at[1] + Math.sin(ang) * r * .8], life = rand(500, 800);
-    e.emit({ at: st, vel: [(at[0] - st[0]) / life * 1000, (at[1] - st[1]) / life * 1000], tex: "glow", ramp: "rainbow", size: [s * .12, s * .04], life, delay: i * 16, emis: 1 });
+  e.shot(at[0], at[1], 1.25, { smooth: .5 });
+  // the Key Stone's light: two strands twisting round each other from the trainer's corner into the Mega Stone
+  const from = own ? [-W * .04, H * 1.04] : [W * 1.04, -H * .04], dx = at[0] - from[0], dy = at[1] - from[1], len = Math.hypot(dx, dy), nx = -dy / len, ny = dx / len;
+  const FLY = 640, N = 70;
+  for (const phase of [0, Math.PI]) for (let i = 0; i <= N; i++) {
+    const t = i / N, amp = s * .2 * Math.sin(Math.PI * Math.min(1, t * 1.15)), w = Math.sin(t * Math.PI * 5 + phase) * amp;
+    e.emit({ at: [from[0] + dx * t + nx * w, from[1] + dy * t + ny * w], tex: "glow", ramp: "rainbow", size: [s * .2, s * .09], life: 560, delay: t * FLY, alpha: 1, emis: 1 });
+    if (i % 2 === 0) e.emit({ at: [from[0] + dx * t, from[1] + dy * t], tex: "glow", ramp: "white", size: [s * .14, s * .04], life: 360, delay: t * FLY, alpha: .8 });
   }
-  e.emit({ at, tex: "orb", ramp: "rainbow", size: [s * .4, s * 1.5], life: 1150, alpha: .8, grow: true });
-  for (let i = 0; i < 3; i++) ring(e, at, s * 1.8, "normal", { ramp: "rainbow", dur: 600, delay: 200 + i * 250, s0: 1, alpha: .8 });
-  await e.anim(a, { flash: [0, 1, .6, 2.6], rimA: [0, 1, 1, 1], rimR: [1, 1], rimG: [.85, .85], rimB: [1, 1] }, { dur: 1100, at: [0, .35, .55, 1], fill: true, ease: "inout" });
-  await flashStage(stage, .7, 420);
+  // the Mega Stone flares where the strands meet
+  const stone = [at[0], at[1] - s * .05];
+  e.emit({ at: stone, tex: "glint", ramp: "glint", size: [s * .2, s * 1.1], life: 620, delay: FLY - 40, grow: true, emis: 1 });
+  e.emit({ at: stone, tex: "glow", ramp: "rainbow", size: [s * .3, s * 1.2], life: 700, delay: FLY - 40, alpha: .7, grow: true });
+  // the light it gathers: motes of every colour spiral in while it whites out
+  for (let i = 0; i < 54; i++) {
+    const ang = i / 54 * Math.PI * 6, r = s * rand(1.1, 1.7), st = [at[0] + Math.cos(ang) * r, at[1] + Math.sin(ang) * r * .8], life = rand(420, 640);
+    e.emit({ at: st, vel: [(at[0] - st[0]) / life * 1000, (at[1] - st[1]) / life * 1000], tex: "glow", ramp: "rainbow", size: [s * .1, s * .03], life, delay: FLY + i * 12, emis: 1 });
+  }
+  // the cocoon: it grows round the Pokémon, swells twice, and holds until megaEnd breaks it (or gives up on its own)
+  const t0 = e.T + FLY + 120, m = { burst: Infinity };
+  e.mega = m;
+  const R = s * 1.5;
+  e.sprites.push({ tex: tex.cocoon, at: T => {
+    const t = T - t0;
+    if (t > 5000 || T > m.burst + 260) return null;
+    if (t < 0) return { x: at[0], y: at[1], w: 0, h: 0, alpha: 0 };
+    const swell = 1 + .05 * Math.sin(Math.max(0, t - 420) / 330 * Math.PI * 2) * (t > 420 ? 1 : 0);
+    const k = T > m.burst ? 1 + (T - m.burst) / 260 * .5 : easeOut(t / 420) * swell;
+    const al = T > m.burst ? 1 - (T - m.burst) / 260 : Math.min(1, t / 240) * .92;
+    return { x: at[0], y: at[1], w: R * k, h: R * k * 1.06, alpha: al, flash: .2 };
+  } });
+  e.sprites.push({ tex: tex.cocoon, at: T => {
+    if (T - t0 > 5000 || T > m.burst + 420) return null;
+    const t = T - t0 - 380;
+    if (t < 0 || !tex.emblem) return { x: at[0], y: at[1], w: 0, h: 0, alpha: 0 };
+    const k = T > m.burst ? 1 + (T - m.burst) / 420 * .8 : easeOut(t / 300) * (1 + .06 * Math.sin(t / 330 * Math.PI * 2));
+    const al = T > m.burst ? 1 - (T - m.burst) / 420 : Math.min(1, t / 200);
+    const h = s * .62 * k;
+    return { tex: tex.emblem, x: at[0], y: at[1], w: h * 185 / 225, h, alpha: al };
+  } });
+  for (let i = 0; i < 2; i++) ring(e, at, R * 1.15, "normal", { ramp: "rainbow", dur: 560, delay: FLY + 420 + i * 330, s0: .7, alpha: .7 });
+  await e.anim(a, { flash: [0, .5, 2.6, 2.6], rimA: [0, 1, 1, 1], rimR: [1, 1], rimG: [.9, .9], rimB: [1, 1] }, { dur: FLY + 1100, at: [0, FLY / (FLY + 1100), .7, 1], fill: true, ease: "inout" });
 }
 export async function megaEnd(stage, key) {
   const e = E(stage);
@@ -774,14 +865,21 @@ export async function megaEnd(stage, key) {
   const a = actorOf(stage, key);
   if (a) { e.cancel(a); a.lit = false; }
   if (e.megaDim) { e.cancel(e.grade); e.megaDim = false; }
+  if (e.mega) { e.mega.burst = e.T; e.mega = null; }
   if (instant() || !a) return;
-  const at = centre(stage, key), s = sizeOf(stage, key);
-  glow(e, at, s * 3, "normal", { dur: 600, ramp: "rainbow" });
-  sparks(e, at, 24, "normal", { ramp: "rainbow", speed: [s * 2, s * 5], len: [8, 16] });
-  shock(e, at, s * 3, { dur: 600 });
-  e.emit({ n: 18, at, r: s * .5, tex: "spark", ramp: "rainbow", size: [s * .22, 0], life: [500, 900], delay: 80 });
-  e.shake(.35);
-  await Promise.all([e.anim(a, { flash: [2.6, 0], rimA: [1, 0] }, { dur: 700 }), e.anim(e.grade, { dim: [.25, 1] }, { dur: 700 })]);
+  const at = centre(stage, key), s = sizeOf(stage, key), feet = centre(stage, key, 0);
+  flashStage(stage, .7, 520);
+  // the cocoon breaks: shards of rainbow light and white, a shockwave, a ring across the floor, sparks and glints
+  e.emit({ n: 26, at, r: s * .35, tex: "crystal", lit: true, ramp: "rainbow", speed: [s * 2.5, s * 5.5], drag: 2.2, size: [[s * .06, s * .13], s * .02], aspect: .6, rot: "rand", spin: [-9, 9], life: [560, 900], emis: .9, occ: .3 });
+  e.emit({ n: 18, at, r: s * .3, tex: "crystal", lit: true, ramp: "ice.c", speed: [s * 2, s * 4.5], drag: 2.4, size: [[s * .05, s * .1], s * .02], aspect: .6, rot: "rand", spin: [-9, 9], life: [500, 800], emis: .7, occ: .5 });
+  glow(e, at, s * 3.2, "normal", { dur: 640, ramp: "white", alpha: .8 });
+  glow(e, at, s * 4, "normal", { dur: 760, ramp: "rainbow", alpha: .5 });
+  sparks(e, at, 32, "normal", { ramp: "rainbow", speed: [s * 2.5, s * 6], len: [10, 20] });
+  shock(e, at, s * 3.4, { dur: 640 });
+  ring(e, feet, s * 3.2, "normal", { flat: .26, dur: 760, ramp: "rainbow", layer: 0, s0: .3, alpha: .8 });
+  glints(e, at, s, 8, "glint", { r: .9, over: 500, size: .3 });
+  e.shake(.4);
+  await Promise.all([e.anim(a, { flash: [2.6, 1, 0], rimA: [1, .6, 0], sx: [1.12, 1], sy: [1.12, 1] }, { dur: 900, at: [0, .3, 1] }), e.anim(e.grade, { dim: [.22, 1] }, { dur: 800 })]);
   e.wide(.6);
 }
 // a stat change: arrows rise (warm) or fall (cold) through it in columns, a band of light passing the same way

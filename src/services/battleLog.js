@@ -425,7 +425,10 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "-start": case "-end": {
         const mon = monOf(args[0]);
         const { id } = parseEffect(args[1]);
-        if (mon && id) mon.volatiles = cmd === "-start" ? [...new Set([...mon.volatiles, id])] : mon.volatiles.filter(v => v !== id);
+        // a counted effect (perish3 → perish2 → perish1, stockpile1 → 2, fallen1 → 2) is one effect whose count changes, never several
+        const counted = /^(perish|stockpile|fallen)\d$/.exec(id)?.[1];
+        const others = counted ? mon?.volatiles.filter(v => !new RegExp(`^${counted}\\d$`).test(v)) : mon?.volatiles;
+        if (mon && id) mon.volatiles = cmd === "-start" ? [...new Set([...others, id])] : mon.volatiles.filter(v => v !== id);
         /* a typing changed by a move or an ability (Soak, Burn Up, Protean: typechange with the new types; Trick-or-Treat and Forest's
            Curse: typeadd with the one added). types replaces the species' typing and addedType comes on top of it, until it goes out */
         // a new typing replaces an added one too (Soak after Trick-or-Treat leaves Water alone), as the engine's setType does

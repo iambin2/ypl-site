@@ -6,6 +6,7 @@ import { defensiveMatchups, statRange } from "../../services/calculatorCore.js";
 import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
+import { cry, loadCry } from "./cries.js";
 import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
@@ -67,12 +68,13 @@ export const typesOf = (res, species) => res.detail.pokedex[toID(species)]?.type
 
 /* every picture either side may send in is fetched as soon as the team preview names it, so no Pokémon arrives as an empty frame */
 const fetched = new Set();
-function preload(state) {
+function preload(state, res) {
   for (const side of ["p1", "p2"]) {
     const s = state.sides[side];
     for (const species of [...s.preview, ...Object.values(s.team).map(m => m.species)]) {
       if (!species || fetched.has(species)) continue;
       fetched.add(species);
+      loadCry(res.detail.pokedex[toID(species)]?.num);
       const img = new Image();
       img.decoding = "async";
       img.src = spriteUrl(species);
@@ -154,6 +156,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
       const standing = new Map(); // slot → "blow" (HP at 0, still standing) or "fall" (sinking)
       const show = () => flushSync(() => setScene(sceneOf(R.state, standing)));
       const own = key => key.startsWith(perspective);
+      // the cry of the one standing in a slot (DESIGN.md "Battle", Cries): its own as it comes out, lower as it falls
+      const cryOf = (key, rate = 1) => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return cry(res.detail.pokedex[toID(mon?.species)]?.num, rate); };
       const word = key => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return mon ? `${own(key) ? "" : "상대 "}${R.speciesName(mon.species)}` : ""; };
       // the blow being played: who struck with what, and what the lines after it said about each target
       const freshBlow = () => ({ from: "", type: "", crit: new Set(), strong: new Set(), weak: new Set(), hit: new Set(), hits: {}, on: false });
@@ -177,7 +181,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
         if (event?.verb === "turn") pending.push({ turn: event.turn });
         pending.push(...text.map(t => ({ text: t })));
         if (text.length) lastSaid = text;
-        if (event?.verb === "enter" || /^\|(poke|teampreview)/.test(line)) preload(R.state);
+        if (event?.verb === "enter" || /^\|(poke|teampreview)/.test(line)) preload(R.state, res);
         // a hidden page keeps no animation clock and throttles its timers: it reads on without effects, as does a stage that is gone
         if (catchUp || fx.instant() || document.hidden || !alive.current) continue;
         const result = RESULT.test(line);
@@ -274,7 +278,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             fx.darken(stage, .7, 900);
             // the bar has emptied by now (the blow's HP is awaited before this line); the plate goes out as the Pokémon sinks
             if (standing.has(k)) { standing.set(k, "fall"); show(); }
-            await fx.faint(stage, k);
+            await Promise.all([fx.faint(stage, k), fx.instant() ? null : cryOf(k, .85)]);
             standing.delete(k); show(); toWide(); break;
           }
           case "enter": {
@@ -318,7 +322,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             const partnered = R.state.turn === 0 && /^\|switch\|/.test(fresh[i - 1] || "") && part(fresh[i - 1], 2).slice(0, 2) === part(line, 2).slice(0, 2);
             if (R.state.turn === 0 && !partnered) push(k, R.state.gameType === "doubles" ? 1.16 : 1.3, 360);
             else if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
-            if (chain) { fx.enter(st, k); await fx.wait(260); } else await fx.enter(st, k);
+            const call = () => cryOf(k);
+            if (chain) { fx.enter(st, k, { cry: call }); await fx.wait(260); } else await fx.enter(st, k, { cry: call });
             break;
           }
           case "change": {
@@ -330,11 +335,11 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             if (!fresh[i + 1]?.startsWith("|-mega|")) await fx.flashMon(stage, k);
             break;
           }
-          case "mega": show(); await fx.megaEnd(stage, k); break;
+          case "mega": show(); await Promise.all([fx.megaEnd(stage, k), fx.instant() ? null : cryOf(k)]); break;
           case "status": show(); await fx.status(stage, k, event.status); break;
           case "cure": show(); await fx.flashMon(stage, k, .5); break;
           case "boost": show(); if (chain) { fx.boost(stage, k, event.amount); await fx.wait(120); } else await fx.boost(stage, k, event.amount); break;
-          case "weather": show(); if (!event.upkeep && event.id) await fx.wait(500); break;
+          case "weather": show(); if (!event.upkeep && event.id) await Promise.all([fx.wait(500), fx.weatherIn(stage, event.id)]); break;
           case "field": show(); await Promise.all([fx.wait(450), event.on && event.id === "trickroom" ? fx.twist(stage) : null]); break;
           case "side":
             // a screen that a blow breaks falls apart before it fades; one that runs out only fades

@@ -281,3 +281,10 @@ test("terrains replace each other, hazards stack and swap, and every count match
     check(when);
   }
 });
+
+test("Perish Song's count is one effect that counts down, never 3 2 1 stacked (feedback 2026-11-06)", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  for (const line of ["|player|p1|가|", "|player|p2|나|", "|gametype|singles", "|switch|p1a: Garchomp|Garchomp, L50, M|100/100", "|switch|p2a: Kingambit|Kingambit, L50, M|100/100", "|turn|1",
+    "|-start|p1a: Garchomp|perish3|[silent]", "|-start|p1a: Garchomp|Stockpile1", "|turn|2", "|-start|p1a: Garchomp|perish2", "|-start|p1a: Garchomp|Stockpile2", "|turn|3", "|-start|p1a: Garchomp|perish1"]) reader.read(line);
+  assert.deepEqual(reader.state.sides.p1.active[0].volatiles, ["stockpile2", "perish1"]);
+});
