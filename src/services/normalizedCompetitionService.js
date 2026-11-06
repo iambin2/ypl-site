@@ -796,9 +796,18 @@ export async function submitEventApplication({
   eventId,
   registrationName,
   registrationData = {},
+  account = false,
 }) {
   const typed = String(registrationName || "").trim();
   if (!eventId) throw new Error("이 신청서에 연결된 대회가 없습니다.");
+  // 구글 계정으로 하는 신청 (docs/db/player_accounts.sql): 이름과 선수는 계정이 정한다
+  if (account) {
+    const { applyWithAccount } = await import("./visitorAuth.js");
+    return applyWithAccount(eventId, registrationData).catch(error => {
+      if (error.code === "23505") throw Object.assign(new Error("이미 신청된 참가자입니다. 내용을 고치려면 공지의 신청 수정을 이용해 주세요."), { code: "YPL_ALREADY_REGISTERED" });
+      throw error;
+    });
+  }
   if (!typed) throw new Error("참가자 이름을 입력해 주세요.");
   if (typed.length > 100) throw new Error("이름은 100자 안으로 입력해 주세요.");
 

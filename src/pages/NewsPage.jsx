@@ -11,6 +11,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
+import { accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingForm, visitorSignedIn } from "../services/visitorAuth.js";
 import { builderRouteSearch, editEventApplication, findApplicantNameRecord, listEventApplications, openEventApplication, playerNameKey, tidyApplicantName, listEventRegistrationSubmissionStatuses, loadPrivateAnswers, resetSubmissionPin, resolveChampionshipSubmissionEvents } from "../services/index.js";
 
 const fmtDT=iso=>formatDate(iso,{time:true});
@@ -142,6 +143,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
   const delResp=(rid)=>{ const announcements=data.announcements.map(a=>a.id!==respId?a:{...a,form:{...(a.form||{}),responses:((a.form||{}).responses||[]).filter(r=>r.id!==rid)}}); save({...data,announcements}); };
   const a=article?data.announcements.find(x=>x.id===article):null;
   useEffect(()=>{ setFill(null); },[article]);
+  // back from Google sign-in that started on a form: the same form opens again (after the reset above)
+  useEffect(()=>{ const id=takePendingForm(); if(id&&id===article) setFill(id); },[]);
   const modals=<>
     {respAnn&&<FormResponsesModal ann={respAnn} responsesOverride={respAnn.form?.eventId?(eventResponses[respAnn.id]||[]):null} onClose={()=>setRespId(null)} onDeleteResp={respAnn.form?.eventId?null:delResp} onResetPin={respAnn.form?.eventId?resetPin:null}/>}
   </>;
@@ -290,6 +293,26 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
   const [ans,setAns]=useState({}); const [registrationName,setRegistrationName]=useState(""); const [done,setDone]=useState(false); const [busy,setBusy]=useState(false);
   const [errors,setErrors]=useState({}); const [failed,setFailed]=useState("");
   const [pin,setPin]=useState(""); const [held,setHeld]=useState(null);
+  /* 구글 계정 (docs/db/player_accounts.sql): 희망자만 쓴다. 계정에 승인된 트레이너 이름(owned)이 있으면 이름 칸 없이 그 이름으로
+     신청하고, 없으면 이름으로 신청하면서 그 이름을 계정의 이름으로 정한다(기록이 있는 이름은 운영진이 본인인지 확인한 뒤 이어진다).
+     표가 없으면(SQL 실행 전) 아무것도 보이지 않는다. */
+  const accountForm=Boolean(form.eventId)&&!edit;
+  const [acct,setAcct]=useState({ready:false,signedIn:false,row:null});
+  useEffect(()=>{
+    if(!accountForm) return undefined;
+    let on=true;
+    accountsReady().then(async ok=>{
+      if(!on||!ok) return;
+      const signed=visitorSignedIn(); let row=null;
+      if(signed){ try{ row=await myPlayerLink(); }catch(error){ if(on) setAcct({ready:true,signedIn:!error.signedOut,row:null}); return; } }
+      if(!on) return;
+      setAcct({ready:true,signedIn:signed,row});
+      if(row?.status==="pending") setRegistrationName(n=>n||row.requested_name);
+    });
+    return ()=>{ on=false; };
+  },[accountForm]);
+  const owned=acct.row?.status==="approved"?acct.row:null;
+  const signOut=()=>{ signOutVisitor(); setAcct({ready:true,signedIn:false,row:null}); };
   // 신청 수정은 공지 아래쪽에서 열린다: 한 장과 그 단계마다 맨 위에서 시작한다
   useLayoutEffect(()=>{ window.scrollTo(0,0); },[held,done]);
   const title=edit?"신청 수정":form.buttonLabel||"참가 신청";
@@ -321,10 +344,10 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
   const set=(id,v)=>{ setAns(a=>({...a,[id]:v})); setErrors(e=>({...e,[id]:""})); };
   const submit=async()=>{
     const next={}; const typed=tidyApplicantName(registrationName);
-    if(form.eventId&&!edit&&!typed) next.name="참가자 이름을 입력해 주세요.";
+    if(form.eventId&&!edit&&!owned&&!typed) next.name="참가자 이름을 입력해 주세요.";
     setBusy(true); setFailed("");
     // 이름 칸에서 바로 신청하기를 누르면 확인이 아직 읽는 중이다. 같은 읽기를 기다린다.
-    const looked=form.eventId&&!edit&&typed?await lookup(typed):null;
+    const looked=form.eventId&&!edit&&!owned&&typed?await lookup(typed):null;
     const found=looked?.player?looked:null;
     if(found){ latest.current=playerNameKey(typed); setRecord({key:latest.current,...found}); if(!who) next.who="본인인지 선택해 주세요."; }
     for(const f of fields){ if(f.required){ const v=ans[f.id]; const empty=Array.isArray(v)?v.length===0:!String(v||"").trim(); if(empty) next[f.id]=`‘${f.label||"질문"}’ 항목에 답해 주세요.`; } }
@@ -335,11 +358,17 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
     // 본인 확인의 입력은 화면에 보이지 않는 칸이라, 그 질문을 화면 가운데로 가져온 뒤 포커스만 옮긴다.
     if(first){ setBusy(false); requestAnimationFrame(()=>{ if(first!=="who"){ document.getElementById(first==="name"?"ff-name":`ff-${first}`)?.focus(); return; }
       const input=document.querySelector('input[name="ff-who"]'); input?.closest(".q")?.scrollIntoView({block:"center"}); input?.focus({preventScroll:true}); }); return; }
-    const name=found&&who==="other"?found.alias:typed;
+    let name=owned?owned.requested_name:found&&who==="other"?found.alias:typed;
+    // 로그인했고 계정의 이름이 아직 없으면 이 이름을 계정의 이름으로 정한다. 바로 승인되면(기록이 없는 이름) 계정으로 신청한다.
+    let viaAccount=Boolean(owned);
+    if(accountForm&&acct.signedIn&&!owned){
+      try{ const row=await requestPlayerLink(name); setAcct(a=>({...a,row})); viaAccount=row?.status==="approved"; if(viaAccount) name=row.requested_name; }
+      catch(error){ setBusy(false); setFailed(error?.message||"구글 계정의 이름을 정하지 못했습니다."); if(error?.signedOut) setAcct(a=>({...a,signedIn:false,row:null})); return; }
+    }
     // 수정은 질문마다 답을 보낸다: 비운 답도 빈 값으로 가야 예전 답이 남지 않는다
     const ok=await onSubmit(edit
       ? {registrationId:held.id,registrationName:held.registrationName,pin,answers:{...ans,...Object.fromEntries(fields.filter(f=>ans[f.id]==null).map(f=>[f.id,f.type==="multi"?[]:""]))}}
-      : {registrationName:name,answers:ans}); setBusy(false);
+      : {registrationName:name,answers:ans,account:viaAccount}); setBusy(false);
     if(typeof ok==="string"){ setFailed(ok); return; }
     if(ok===false){ setFailed("신청 저장을 확인하지 못했습니다."); return; }
     setAlias(name===typed?"":name); setDone(true);
@@ -376,7 +405,18 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
     {required&&<p className="t12 dim reg nw-req">* 표시는 필수입니다.</p>}
     {fields.some(f=>f.public)&&<PublicResponses ann={ann} compact responsesOverride={responsesOverride}/>}
     <div className="nw-fields">
-      {form.eventId&&!edit&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
+      {/* 구글 계정 칸: 로그인 전, 계정의 이름으로 신청, 로그인했지만 이름이 아직 계정의 것이 아닌 때. 줄 하나에 설명 한 줄. */}
+      {accountForm&&acct.ready&&<Question id="ff-account" label={owned?"참가자":"구글 계정"} group>
+        <div className="stack">{!acct.signedIn
+          ? <Row title="구글 계정으로 신청" line="이름 대신 계정으로 구분합니다."
+              value={<Button variant="second" size="sm" onClick={()=>signInWithGoogle("",undefined,ann.id)}>구글로 로그인</Button>}/>
+          : <Row title={owned?owned.requested_name:acct.row?.email||"구글 계정으로 로그인했습니다."} line={owned?owned.email||undefined:acct.row?.status==="pending"?"본인 확인 중":undefined}
+              value={<Button variant="link" onClick={signOut}>로그아웃</Button>}/>}</div>
+        {acct.signedIn&&<p className="t12 dim reg">{owned?"구글 계정으로 신청합니다. 이 트레이너 이름은 이 계정으로만 신청할 수 있습니다."
+          :acct.row?.status==="pending"?"운영진의 본인 확인이 끝나면 구글 계정으로 신청할 수 있습니다. 이번 신청은 이름으로 접수됩니다."
+          :"신청하면 입력한 이름이 이 계정의 트레이너 이름으로 등록됩니다. 기존 기록이 있는 이름은 운영진의 본인 확인 후 연결됩니다."}</p>}
+      </Question>}
+      {form.eventId&&!edit&&!owned&&<Question id="ff-name" label="참가자 이름" required error={errors.name}>
         <input id="ff-name" className="in" aria-required="true" aria-invalid={errors.name?true:undefined} type="text" value={registrationName} onChange={e=>{ if(playerNameKey(e.target.value)!==playerNameKey(registrationName)) setWho(""); setRegistrationName(e.target.value);setErrors(x=>({...x,name:"",who:""}));}} onBlur={checkName} placeholder="신청자 본인의 이름을 입력해 주세요." autoComplete="name"/>
       </Question>}
       {similar.length>0&&<Question id="ff-similar" label="비슷한 이름의 기록" group>

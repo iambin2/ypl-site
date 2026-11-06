@@ -1,6 +1,7 @@
 /* 방문자의 구글 로그인 (docs/db/player_accounts.sql). 운영진 로그인(storage.js, 메모리 안의 세션)과 섞이지 않는 따로의 세션이다.
    구글에서 돌아오면 주소의 # 뒤에 토큰이 오고(Supabase의 implicit 흐름), 그것을 이 기기에 두고 주소에서 지운다.
-   이 세션은 기록 연결의 두 요청에만 쓰고, 사이트의 다른 읽기와 쓰기는 지금처럼 익명으로 한다. */
+   이 세션은 계정의 트레이너 이름 정하기, 계정으로 하는 신청, 자기 계정 읽기에만 쓰고, 사이트의 다른 읽기와 쓰기는 지금처럼
+   익명으로 한다(구글로 들어온 authenticated 역할은 방문자 쓰기 정책을 통과하지 못한다). */
 
 import { supa } from "../storage.js";
 
@@ -9,6 +10,8 @@ const KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || "";
 const STORE = "ypl-visitor-session";
 // a link asked for before the sign-in, made once the visitor is back
 const PENDING = "ypl-visitor-link";
+// the application form the visitor left for Google, opened again once they are back
+const PENDING_FORM = "ypl-visitor-form";
 
 const enabled = () => Boolean(URL_BASE.length > 1 && KEY);
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; } };
@@ -24,9 +27,10 @@ export function captureVisitorSession() {
 }
 
 // back: where Google returns (the trainer's sheet, so the link is asked for as soon as the visitor is back)
-export function signInWithGoogle(linkName = "", back = window.location.href.split("#")[0]) {
+export function signInWithGoogle(linkName = "", back = window.location.href.split("#")[0], form = "") {
   if (!enabled()) return;
   write(PENDING, linkName ? { name: linkName } : null);
+  write(PENDING_FORM, form || null);
   window.location.assign(`${URL_BASE}auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(back)}`);
 }
 
@@ -38,6 +42,7 @@ export function signOutVisitor() {
 
 export const visitorSignedIn = () => Boolean(read(STORE));
 export const takePendingLink = () => { const p = read(PENDING); write(PENDING, null); return p?.name || ""; };
+export const takePendingForm = () => { const id = read(PENDING_FORM); write(PENDING_FORM, null); return id || ""; };
 
 async function token() {
   const s = read(STORE);
@@ -73,16 +78,19 @@ export function accountsReady() {
     .then(() => true, error => error.status === 401 || error.status === 403 || error.code === "42501");
 }
 
-// this visitor's own link: { requested_name, status, player_id } or null
+// this visitor's own account: { requested_name, status, player_id, email } or null. approved: the name is theirs alone
 export async function myPlayerLink() {
   const rows = await rest("player_accounts?select=requested_name,status,player_id,email");
   return rows?.[0] || null;
 }
 export const requestPlayerLink = name => rest("rpc/request_player_link", { method: "POST", body: { p_name: name } });
+// an application under the account's trainer name; leagues, duplicates and the close are the same triggers as a named one
+export const applyWithAccount = (eventId, registrationData) =>
+  rest("rpc/apply_with_account", { method: "POST", body: { p_event_id: eventId, p_registration_data: registrationData || {} } });
 
 /* ---------- the operators' side, on the admin session (storage.js) ---------- */
 export async function listLinkRequests() {
-  const { data, error } = await supa.from("player_accounts").select("auth_user_id,email,account_name,requested_name,status,requested_at").order("requested_at", { ascending: false });
+  const { data, error } = await supa.from("player_accounts").select("auth_user_id,email,account_name,requested_name,player_id,status,requested_at").order("requested_at", { ascending: false });
   if (error) throw new Error("연결 요청을 불러오지 못했습니다.");
   return data || [];
 }

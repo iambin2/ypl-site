@@ -27,6 +27,7 @@ export default function SiteFooter({ onNavigate, tagline, onAdmin }) {
             연세대학교 포켓몬스터 동아리 포켓몬 센터 연세점이 운영하는 팬 사이트로, Nintendo, Creatures, GAME FREAK, The Pokémon Company와 관계가 없습니다.
             Pokémon 및 포켓몬스터는 각 회사의 상표입니다.
           </span>
+          <button type="button" className="site-foot-admin" onClick={() => onNavigate("privacy")}>개인정보처리방침</button>
           {onAdmin && <button type="button" className="site-foot-admin" onClick={onAdmin}>관리자 로그인</button>}
         </div>
       </div>

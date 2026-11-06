@@ -274,13 +274,19 @@ function TrainerView({ snapshot, onOpen }) {
         {/* 성적 이름은 머리줄에 한 번만. 성적은 같은 폭의 세 칸에 세워 위아래 사람끼리 바로 비교된다. 첫 줄, 기록의 주인은 반전된다. */}
         <div className="rc-th t12 mute" aria-hidden="true"><span>#</span><span>트레이너</span><span>우승</span><span>준우승</span><span>4강</span></div>
         <div className="stack rc-table">
-          {rows.map((trainer, i) => (
-            <Row key={trainer.key || trainer.name} className={"rc-tr" + (i === 0 && !query.trim() ? " inv" : "")}
-              lead={<span className="num t12">{snapshot.trainers.indexOf(trainer) + 1}</span>} title={trainer.name}
-              value={<span className="rc-three">{[trainer.wins, trainer.runnerUps, trainer.top4].map((v, k) => <span key={k} className={"num" + (v ? "" : " mute")}>{v}</span>)}</span>}
-              onClick={(e) => onOpen(trainer.key || trainer.name, e.currentTarget.querySelector(".row-main b"))}
-              label={`${trainer.name}, 우승 ${trainer.wins} 준우승 ${trainer.runnerUps} 4강 ${trainer.top4}`} />
-          ))}
+          {rows.map((trainer, i) => {
+            // 리그는 이름 뒤 한 단어로: 마스터는 밝게, 루키는 어둡게 (trainerLeague, 트레이너 시트의 머리와 같은 기준)
+            const master = trainerLeague(profileOf(snapshot, trainer.key || trainer.name)) === "master";
+            const league = master ? "마스터" : "루키";
+            return (
+              <Row key={trainer.key || trainer.name} className={"rc-tr" + (i === 0 && !query.trim() ? " inv" : "")}
+                lead={<span className="num t12">{snapshot.trainers.indexOf(trainer) + 1}</span>}
+                title={<>{trainer.name}<span className={"unit rc-league" + (master ? " lit" : "")}>{league}</span></>}
+                value={<span className="rc-three">{[trainer.wins, trainer.runnerUps, trainer.top4].map((v, k) => <span key={k} className={"num" + (v ? "" : " mute")}>{v}</span>)}</span>}
+                onClick={(e) => onOpen(trainer.key || trainer.name, e.currentTarget.querySelector(".row-main b"))}
+                label={`${trainer.name}, ${league}, 우승 ${trainer.wins} 준우승 ${trainer.runnerUps} 4강 ${trainer.top4}`} />
+            );
+          })}
         </div>
       </>) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
@@ -398,7 +404,8 @@ function TrainerProfile({ snapshot, profile, onParty }) {
 }
 
 /* ---- 내 기록 연결 (docs/db/player_accounts.sql): 구글 계정으로 이 기록을 내 기록으로 연결해 달라고 요청한다. 운영진이 승인해야
-   이어지고, 그 SQL이 실행되기 전에는 아무것도 보이지 않는다. 신청과 제출은 지금처럼 이름과 비밀번호로 된다. ---- */
+   이어지고, 그 SQL이 실행되기 전에는 아무것도 보이지 않는다. 승인된 계정은 공지의 신청서에서 이름 없이 신청하고, 그 이름은 그 계정만
+   쓴다. 파티 제출과 배틀은 지금처럼 이름과 비밀번호로 된다. ---- */
 const LINK_STATE = { pending: "운영진 확인을 기다리는 중입니다.", approved: "내 기록으로 연결되었습니다.", rejected: "연결 요청이 거절되었습니다." };
 function TrainerLink({ profile }) {
   const [ready, setReady] = useState(false);
@@ -461,7 +468,7 @@ function LinkRequests() {
     <section className="rc-sec" aria-labelledby="rc-linkreq-h">
       <SectionHead id="rc-linkreq-h" title={`기록 연결 요청 ${pending.length}`} />
       <div className="stack">
-        {pending.map((row) => <Row key={row.auth_user_id} title={row.requested_name} line={[row.account_name, row.email, formatDate(row.requested_at)].filter(Boolean).join(", ")}
+        {pending.map((row) => <Row key={row.auth_user_id} title={row.requested_name} line={[row.player_id ? "기록 있음" : "이름으로 받은 신청 있음", row.account_name, row.email, formatDate(row.requested_at)].filter(Boolean).join(", ")}
           value={<span className="rc-link-keys"><Button variant="second" size="sm" onClick={() => decide(row, true)}>승인</Button><Button variant="link" onClick={() => decide(row, false)}>거절</Button></span>} />)}
       </div>
       {note && <p className="t12 dim">{note}</p>}

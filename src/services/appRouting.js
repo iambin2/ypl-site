@@ -1,4 +1,4 @@
-export const APP_VIEWS = new Set(["home", "about", "news", "board", "records", "bracket", "builder", "titles", "champions", "calc", "more", "battle",
+export const APP_VIEWS = new Set(["home", "about", "news", "board", "records", "bracket", "builder", "titles", "champions", "calc", "more", "battle", "privacy",
   // the battle lab (BattleLabPage.jsx) runs the engine in the browser and exists on the dev server only
   ...(import.meta.env?.DEV ? ["lab"] : [])]);
 

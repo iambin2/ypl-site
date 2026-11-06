@@ -22,6 +22,9 @@
 .rc-tr .row-lead { width: 40px; padding-left: var(--pad); }
 .rc-tr .row-lead > span { color: var(--mute); }
 .rc-tr.inv .row-lead > span { color: var(--ground); }
+.rc-league { margin-left: var(--s2); }
+.rc-league.lit { color: var(--lit); }
+.rc-tr.inv .rc-league { color: var(--ground); }
 .rc-three { display: grid; grid-template-columns: repeat(3, 52px); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
 .rc-tr.inv .rc-three { font-size: var(--t20); line-height: var(--l20); }
 
