@@ -181,7 +181,8 @@ cell("moon", (g, b) => {
   b.fillStyle = "#fff"; [[44, 50, 9], [78, 74, 12], [60, 88, 6], [86, 42, 7]].forEach(([x, y, r]) => { b.globalAlpha = .55; b.beginPath(); b.arc(x, y, r, 0, Math.PI * 2); b.fill(); });
 });
 cell("sun", g => { disc(g, S, S, S * .5, [[0, 1], [.7, 1], [1, 0]]); g.translate(S, S); for (let i = 0; i < 12; i++) { g.rotate(Math.PI / 6); g.save(); g.scale(.06, 1); disc(g, 0, -S * .6, S * .45, [[0, .9], [1, 0]]); g.restore(); } g.setTransform(1, 0, 0, 1, 0, 0); });
-cell("cloud", g => { [[.5, .55, .4], [.3, .6, .28], [.7, .6, .3], [.42, .4, .3], [.62, .42, .28], [.2, .66, .2], [.82, .66, .2]].forEach(([x, y, r]) => disc(g, x * C, y * C, r * C, [[0, .9], [.6, .7], [1, 0]])); });
+// every puff stays inside its cell: one past the edge was cut off straight, and the cut drifted across the stage with the cloud
+cell("cloud", g => { [[.5, .55, .4], [.3, .6, .26], [.7, .6, .26], [.42, .4, .3], [.6, .42, .28], [.22, .66, .18], [.78, .66, .18]].forEach(([x, y, r]) => disc(g, x * C, y * C, r * C, [[0, .9], [.6, .7], [1, 0]])); });
 cell("grain", g => disc(g, S, S, S * .5, [[0, 1], [.6, 1], [1, 0]]));
 cell("bolt", g => { g.fillStyle = "#fff"; g.beginPath(); [[70, 4], [30, 66], [58, 66], [44, 124], [100, 50], [70, 50], [92, 4]].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.fill(); });
 cell("bone", g => pathIn(g, "bone", .9));
@@ -263,6 +264,8 @@ ramp("blue", [[0, "#FFFFFF", 0], [.05, "#E6F4FF", 1], [.25, "#7FD0FF", 1], [.6, 
 ramp("smoke", [[0, "#9AA3B4", 0], [.15, "#7C8597", .6], [.6, "#4E5566", .4], [1, "#2E3340", 0]]);
 ramp("smoke.l", [[0, "#F2F4F8", 0], [.15, "#E2E6EE", .7], [.6, "#C8CFDB", .45], [1, "#AEB6C4", 0]]);
 ramp("dust", [[0, "#E6C79A", 0], [.12, "#C9A06A", .75], [.6, "#9C7646", .45], [1, "#6E5232", 0]]);
+// a sandstorm's drifting dust: it ends where it starts, so its loop has no seam
+ramp("dust.c", [[0, "#C9A06A", .6], [.5, "#A8804E", .42], [1, "#C9A06A", .6]]);
 ramp("steam", [[0, "#FFFFFF", 0], [.15, "#EAF4FF", .55], [1, "#BFD6EE", 0]]);
 ramp("spray", [[0, "#FFFFFF", 0], [.05, "#F4FBFF", 1], [.4, "#9ED4FF", .85], [1, "#2F7BE0", 0]]);
 ramp("white", [[0, "#FFFFFF", 0], [.05, "#FFFFFF", 1], [.6, "#FFFFFF", .7], [1, "#FFFFFF", 0]]);
@@ -319,19 +322,22 @@ precision highp float;
 layout(location=0) in vec2 aQ;
 layout(location=1) in vec4 iA; layout(location=2) in vec4 iB; layout(location=3) in vec4 iC;
 layout(location=4) in vec4 iD; layout(location=5) in vec4 iE; layout(location=6) in vec4 iF;
-uniform mat3 uView; uniform float uTime, uLayer, uPass; uniform float uGroups[32]; uniform vec2 uWrap;
+uniform mat3 uView; uniform float uTime, uLayer, uPass; uniform float uGroups[32]; uniform vec4 uWrap;
 out vec2 vUv; out vec2 vQ; out float vK; flat out float vRamp; out float vAlpha; flat out vec4 vM; flat out float vField;
 void main(){
   int f = int(iE.w + .5);
-  float age = uTime - iB.w, life = iC.x;
-  if ((f & 1) != 0 && age >= 0.) age = mod(age, life);
+  bool wrap = (f & 32) != 0;
+  // a looping particle's colour starts over each life; a wrapping one keeps travelling (it never jumps back to where it began)
+  float age = uTime - iB.w, life = iC.x, run = age;
+  if ((f & 1) != 0 && age >= 0.) { age = mod(age, life); if (!wrap) run = age; }
   float layer = float((f >> 1) & 1); float dist = float((f >> 4) & 1);
   if (age < 0. || age > life || abs(layer - uLayer) > .5 || abs(dist - uPass) > .5) { gl_Position = vec4(3., 3., 3., 1.); return; }
-  float t = age / 1000., k = age / life, d = iB.z;
+  float t = run / 1000., k = age / life, d = iB.z;
   vec2 vel = iA.zw, acc = iB.xy, pos;
   if (d > 0. && (f & 128) == 0) { float e = exp(-d * t); pos = iA.xy + vel * (1. - e) / d + .5 * acc * t * t; vel = vel * e + acc * t; }
   else { pos = iA.xy + vel * t + .5 * acc * t * t; vel += acc * t; }
-  if ((f & 32) != 0) pos.x = uWrap.x + mod(pos.x - uWrap.x, uWrap.y);
+  // round the stage on both axes, turning over only once the whole of it is out of sight (a cloud is most of the stage wide)
+  if (wrap) { float r = .5 * max(iC.y, iC.z) * max(iE.z, 1.); vec2 lo = uWrap.xz - r; pos = lo + mod(pos - lo, uWrap.yw + 2. * r); }
   if ((f & 128) != 0) { float ph = uTime / 1000. * 6.2832 / max(.1, iD.y) + iF.z * 6.2832; pos += vec2(cos(ph * .7) * .45, sin(ph)) * iB.z; }
   float kk = (f & 64) != 0 ? 1. - (1. - k) * (1. - k) : k;
   float size = mix(iC.y, iC.z, kk);
@@ -836,7 +842,7 @@ class Engine {
       const pp = P.particle;
       gl.useProgram(pp.p);
       gl.uniformMatrix3fv(pp.u.uView, false, view); gl.uniform1f(pp.u.uTime, this.T); gl.uniform1f(pp.u.uLayer, layer); gl.uniform1f(pp.u.uPass, pass);
-      gl.uniform1fv(pp.u.uGroups, this.groups); gl.uniform2f(pp.u.uWrap, -this.W * .1, this.W * 1.2); gl.uniform1f(pp.u.uLight, L);
+      gl.uniform1fv(pp.u.uGroups, this.groups); gl.uniform4f(pp.u.uWrap, -this.W * .1, this.W * 1.2, -this.H * .1, this.H * 1.2); gl.uniform1f(pp.u.uLight, L);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.atlas); gl.uniform1i(pp.u.uAtlas, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.ramps); gl.uniform1i(pp.u.uRamp, 1);
       if (this.fieldCount) { gl.bindVertexArray(this.fieldBuf.vao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.fieldCount); }

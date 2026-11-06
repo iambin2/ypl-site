@@ -99,7 +99,7 @@ const BUILD = {
   sand(e, E) {
     const { W, H } = e, U = unit(e);
     for (const [n, layer, a] of [[100, 0, .55], [40, 1, .3]]) E({ n, at: () => [rand(-.1, 1.1) * W, rand(-.05, 1.05) * H], vel: () => { const v = rand(900, 1400); return [v, v * .08]; }, tex: "streak", ramp: "sand", size: [1.6 * U, 1.6 * U], aspect: [5, 12], face: true, life: [1200, 1800], loop: true, over: 1800, wrap: true, alpha: a, occ: .5, emis: .2, layer });
-    E({ n: 7, at: () => [rand(0, 1) * W, rand(.15, .45) * H], tex: "cloud", ramp: "dust", size: [W * .45, W * .45], aspect: 1.8, vel: () => [rand(200, 320), 0], wrap: true, life: [5000, 8000], loop: true, over: 8000, alpha: .28, occ: .5, emis: .05, layer: 0 });
+    E({ n: 7, at: () => [rand(0, 1) * W, rand(.15, .45) * H], tex: "cloud", ramp: "dust.c", size: [W * .45, W * .45], aspect: 1.8, vel: () => [rand(200, 320), 0], wrap: true, life: [5000, 8000], loop: true, over: 8000, alpha: .28, occ: .5, emis: .05, layer: 0 });
   },
   snow(e, E, hail) {
     const { W, H } = e, U = unit(e), ramp = e.light ? "ice.h" : "snow";
