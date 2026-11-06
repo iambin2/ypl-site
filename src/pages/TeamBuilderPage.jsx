@@ -1,7 +1,7 @@
 import React, { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dropdown, Icon, Loader, Modal, Segmented, siteAlert, siteConfirm } from "../components/index.js";
-import { Bang, Cell, Chips, Dock, Mon, OptionRows, Steps, TabsLine } from "../components/common/Board.jsx";
+import { Bang, Cell, Chips, Choice, Dock, Mon, OptionRows, Steps, TabsLine } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
@@ -60,6 +60,7 @@ import {
   validateTeam,
   resolveEventRuleSelection,
 } from "../services/teamBuilderCore.js";
+import { multiplierMark, teamMatchups } from "../services/teamTypeChart.js";
 import Button from "../components/common/Button.jsx";
 
 
@@ -204,6 +205,67 @@ function TeamSlot({ index, member, active, displayName, itemLabel, onSelect, onR
     </button>
   );
 }
+
+/* 타입 상성 (DESIGN.md "Team builder"): the team against the 18 types as a board of cells, a member a column, a type a row.
+   방어 is what each type does to each member, its ability counted; 공격 is each member's best damaging move against each type.
+   A cell lights what counts (×2), dims what does not (×½, ×0), stays dark for ×1; ×4 inverts, as in the calculator's dex.
+   The one line over each board names the types to look at. A phone shows one board under a choice; desktop shows both side by side. */
+const MATCHUP_SIDES = ["방어 상성", "공격 상성"];
+const TypeMatchups = memo(function TypeMatchups({ team, detailData, displayPokemon }) {
+  const [side, setSide] = useState(MATCHUP_SIDES[0]);
+  const rows = useMemo(() => teamMatchups(team.map(member => ({
+    types: dexRecord(detailData, member.pokemon)?.types || [],
+    ability: member.ability,
+    moves: member.moves.map(id => detailData?.moves?.[id]).filter(Boolean),
+  }))), [team, detailData]);
+  const names = team.map(member => displayPokemon(member.pokemon));
+  const exposed = rows.filter(row => row.weak > row.resist);
+  const anyMove = rows.some(row => row.offence.some(Boolean));
+  const gaps = rows.filter(row => !row.hits);
+  const tags = list => <TypeBadges types={list.map(row => row.type.english)} />;
+  const board = (key, title, corner, caption, totals, cells, note) => (
+    <div className={"tb-mx-side swap" + (side === title ? " on" : "")} key={key}>
+      <div className="tb-subhead"><span className="t12 dim">{title}</span></div>
+      <div className="tb-mx-note">{note}</div>
+      <table className="tb-mx-table">
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr>
+            <th scope="col" className="t12 tb-mx-corner">{corner}</th>
+            {team.map((member, index) => <th scope="col" key={member.uid}><span className="stand tb-mx-mon"><i className="floor" aria-hidden="true" /><Mon src={spriteUrl(member.pokemon.name)} onError={onSpriteError()} /><span className="sr-only">{names[index]}</span></span></th>)}
+            {totals.map(([label]) => <th scope="col" className="t12 tb-mx-total" key={label}>{label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.type.id}>
+              <th scope="row"><span className={`tb-type type-${row.type.id}`}>{row.type.korean}</span></th>
+              {cells(row).map(([m, label], index) => <td key={team[index].uid} className={m >= 4 ? "x4" : m != null && m < 1 ? "lo" : undefined} aria-label={label ? `${names[index]} ${label}` : undefined} title={label || undefined}>{multiplierMark(m)}</td>)}
+              {totals.map(([label, count, lit]) => <td key={label} className={"tb-mx-total" + (!count(row) ? " off" : lit(row) ? "" : " lo")}>{count(row)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+  return (
+    <div className="tb-mx" data-tb-step="team" data-rise>
+      <div className="tb-subhead tb-mx-head"><h2 className="t20">타입 상성</h2><span className="t12 reg dim">특성 반영</span></div>
+      <div className="tb-mx-pick"><Choice name="tb-matchup-side" options={MATCHUP_SIDES} value={side} onChange={setSide} /></div>
+      <div className="tb-mx-sides">
+        {board("defence", MATCHUP_SIDES[0], "공격 타입", "타입별로 받는 대미지 배율과 약점, 내성인 포켓몬 수",
+          [["약점", row => row.weak, row => row.weak > row.resist], ["내성", row => row.resist, () => false]],
+          row => row.defence.map(m => [m, multiplierMark(m)]),
+          exposed.length ? <><span className="t12 dim">약점이 내성보다 많은 타입</span>{tags(exposed)}</> : <span className="t12 reg dim">약점이 내성보다 많은 타입이 없습니다.</span>)}
+        {board("offence", MATCHUP_SIDES[1], "상대 타입", "타입별로 기술이 주는 가장 큰 대미지 배율과 2배로 칠 수 있는 포켓몬 수",
+          [["2배", row => row.hits, () => true]],
+          row => row.offence.map(cell => [cell?.m, cell ? `${multiplierMark(cell.m) || "×1"}, ${moveName(detailData, cell.move.id)}` : ""]),
+          !anyMove ? <span className="t12 reg dim">공격 기술을 고르면 채워집니다.</span>
+            : gaps.length ? <><span className="t12 dim">2배로 칠 기술이 없는 타입</span>{tags(gaps)}</> : <span className="t12 reg dim">모든 타입을 2배로 칠 기술이 있습니다.</span>)}
+      </div>
+    </div>
+  );
+});
 
 function ValidationPanel({ result, regulationName, cupRuleSummary, teamLength, configuredSpecialRule }) {
   let title;
@@ -434,6 +496,9 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
   const selectedRequiredItem = requiredItemForPokemon(detailData, selectedMember?.pokemon);
 
   const displayPokemon = useCallback(pokemon => localizedPokemonName(pokemon, koreanNames), [koreanNames]);
+  /* the matchups change only with a member's species, ability or moves, not with every slider step of its points */
+  const matchupKey = team.map(member => [member.uid, member.pokemon.name, member.ability, member.moves.join("+")].join("/")).join("|");
+  const matchupTeam = useMemo(() => team, [matchupKey]);
   const markDirty = useCallback(() => {
     unrestoredDraftExistsRef.current = false;
     setDirty(true);
@@ -1556,6 +1621,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           configuredSpecialRule={cupRule.kind !== "none"}
         />
       </div>}
+
+      {team.length > 0 && detailData && <TypeMatchups team={matchupTeam} detailData={detailData} displayPokemon={displayPokemon} />}
 
       {selectedMember && picker === "item" && <PickerSheet title="도구" placeholder="도구 이름 검색 (한글, 영문)" items={itemPickItems}
         selected={selectedMember.item || ""} onPick={id => updateMember(selectedMember.uid, { item: id })} onClose={() => setPicker(null)} />}

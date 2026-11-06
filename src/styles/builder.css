@@ -142,3 +142,43 @@
 }
 /* the type chips stand 12 under the search, the list's sort under them */
 .tb-pool-panel > .chips { flex: none; margin-top: calc(var(--s3) - (var(--h-control) - var(--h-strip)) / 2); }
+
+/* ---------- 타입 상성: the team against the 18 types, a board of cells joined by the seam (TeamBuilderPage.jsx TypeMatchups).
+   The frame is one step up: the head row (the corner naming the rows, a member's picture, a count's word) and the head column (the
+   types). Inside it a cell lights what counts (×2), dims what does not (×½, ×0), stays dark for ×1; ×4 inverts. A changed cell
+   switches by tone. ---------- */
+.tb-mx { display: grid; gap: var(--s3); }
+.tb-mx-head h2 { margin: 0; }
+.tb-mx-sides { display: grid; gap: var(--s5); }
+.tb-mx-side { display: grid; gap: var(--s3); align-content: start; min-width: 0; }
+.tb-mx-note { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: 24px; }
+.tb-mx-table { width: calc(100% + var(--seam) * 2); margin: calc(var(--seam) * -1); table-layout: fixed; border-collapse: separate; border-spacing: var(--seam); }
+.tb-mx-table th { padding: 0; background: var(--panel-2); text-align: left; font-weight: 600; }
+/* a type is a cell of the frame, every one the width of the column: the tag's square and name stand in it, no tag of its own */
+.tb-mx-table thead th:first-child { width: var(--h-row2); }
+.tb-mx-table tbody th, .tb-mx-table th.tb-mx-corner { padding: 0 var(--s2); }
+.tb-mx-table tbody th > .tb-type { --tag-bg: transparent; display: flex; padding: 0; }
+@media (min-width: 860px) { .tb-mx-table thead th:first-child { width: var(--s21); } }
+.tb-mx-table td {
+  height: var(--h-strip); padding: 0; background: var(--panel); color: var(--lit); text-align: center;
+  font-size: var(--t12); line-height: var(--l12); font-weight: 700; font-variant-numeric: tabular-nums;
+  transition: background-color var(--move-tone), color var(--move-tone);
+}
+.tb-mx-table td.lo { color: var(--dim); font-weight: 600; }
+.tb-mx-table td.off { color: var(--mute); font-weight: 600; }
+.tb-mx-table td.x4 { background: var(--lit); color: var(--ground); }
+/* the corner and a count's word stand in the middle of their head cell, as a picture fills its own */
+.tb-mx-table :is(th.tb-mx-corner, th.tb-mx-total) { vertical-align: middle; color: var(--dim); }
+.tb-mx-table th.tb-mx-total { text-align: center; }
+.tb-mx-mon { display: block; height: var(--h-control); }
+.tb-mx-mon .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
+/* a phone shows one board under the choice; desktop both side by side, their titles over them */
+@media (max-width: 859px) {
+  .tb-mx-side:not(.on) { display: none; }
+  .tb-mx-side > .tb-subhead { display: none; }
+}
+@media (min-width: 860px) {
+  .tb-mx-pick { display: none; }
+  .tb-mx-sides { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s13); }
+  .tb-mx-mon { height: var(--h-row); }
+}
