@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Row, SectionHead, Status } from "../../components/common/Board.jsx";
 import { battleHref, endedByLine, isDoubles, readSeat } from "../../services/battleService.js";
-import { battleHistoryIds, listBattlesById, listLiveBattles } from "../../services/battleWatch.js";
+import { battleHistoryIds, forgetBattles, listBattlesById, listLiveBattles } from "../../services/battleWatch.js";
+import { siteConfirm } from "../../components/common/SiteDialog.jsx";
 import { createBattleReader } from "../../services/battleLog.js";
 import { formatDate } from "../../services/dateFormat.js";
 import { stopIndex } from "../../services/battleReplay.js";
@@ -25,12 +26,13 @@ export function ReplayBar({ stops, at, playing, onJump, onStep, onPlay }) {
       <Key d={playing ? KEY.pause : KEY.play} label={playing ? "일시정지" : "재생"} aria-pressed={playing} onClick={onPlay} className={"bt-rkey main" + (playing ? " on" : "")} />
       <Key d={KEY.next} label="다음 턴" onClick={onStep} disabled={i >= last} />
       <Key d={KEY.last} label="끝" onClick={() => onJump(stops[last].at)} disabled={i >= last} />
-      <span className="bt-replay-track">
-        <i style={{ transform: `scaleX(${last ? i / last : 1})` }} />
+      {/* where the replay stands, read as any player's scrubber: a rail lit as far as it has played and a square handle where it
+          stands, dragged to any turn. The head's turn counter says the number, so no word stands beside it */}
+      <span className="bt-replay-track" style={{ "--p": last ? i / last : 1 }}>
+        <span className="bt-replay-rail" aria-hidden="true"><i /><span className="bt-replay-at"><b /></span></span>
         <input type="range" min="0" max={last} step="1" value={i} onChange={e => onJump(stops[Number(e.target.value)].at)}
           aria-label="리플레이 위치" aria-valuetext={stopWord(stops[i])} />
       </span>
-      <span className="bt-replay-at">{stopWord(stops[i])}</span>
     </div>
   );
 }
@@ -75,7 +77,7 @@ function BattleRows({ rows, onOpen }) {
       label={`${b.p1_name} 대 ${b.p2_name || "상대 대기"}, ${b.status === "active" ? "관전" : b.status === "ended" ? "리플레이 보기" : "열기"}`} />)}
   </div>;
 }
-export function BattleLists({ onOpen }) {
+export function BattleLists({ onOpen, onCleared }) {
   const [live, setLive] = useState([]);
   const [mine, setMine] = useState([]);
   useEffect(() => {
@@ -84,13 +86,21 @@ export function BattleLists({ onOpen }) {
     listBattlesById(battleHistoryIds()).then(rows => on && setMine(rows));
     return () => { on = false; };
   }, []);
+  // the device's list is emptied after one question; a battle still waiting or being played stays, since its seat is still needed
+  const clear = async () => {
+    const open = mine.filter(b => b.status === "waiting" || b.status === "active").length;
+    if (!(await siteConfirm({ title: "이 기기의 배틀 기록을 지울까요?", body: open ? `끝난 배틀만 지웁니다. 진행 중이거나 대기 중인 배틀 ${open}개는 남습니다.` : "이 기기에서 치르거나 본 배틀 목록을 지웁니다. 서버의 리플레이는 남습니다.", confirmLabel: "기록 삭제", danger: true }))) return;
+    forgetBattles(mine);
+    setMine(list => list.filter(b => b.status === "waiting" || b.status === "active"));
+    onCleared?.();
+  };
   return <>
     {live.length > 0 && <section className="bt-list" aria-labelledby="bt-live-h">
       <SectionHead id="bt-live-h" title="진행 중인 배틀" />
       <BattleRows rows={live} onOpen={onOpen} />
     </section>}
     {mine.length > 0 && <section className="bt-list" aria-labelledby="bt-mine-h">
-      <SectionHead id="bt-mine-h" title="이 기기의 배틀" />
+      <SectionHead id="bt-mine-h" title="이 기기의 배틀" link="기록 삭제" onLink={clear} />
       <BattleRows rows={mine} onOpen={onOpen} />
     </section>}
   </>;

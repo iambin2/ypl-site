@@ -166,28 +166,48 @@ async function waitingRoom(code: string) {
   return data?.[0]?.battle_id as string | undefined;
 }
 
-const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown>> = {
+/* a friendly battle opened with its first player in it (create, and the first press of 다시하기) */
+async function openBattle({ regulation, formatid, name, team, room }: { regulation: string; formatid: string; name: string; team: unknown; room: unknown }) {
+  const sets = checkTeam(formatid, team);
+  const id = newId();
+  const token = newToken();
+  const base = {
+    p_id: id, p_regulation: regulation, p_format_id: formatid, p_engine: ENGINE,
+    p_p1_name: name, p_p1_token_hash: await sha256(token), p_p1_team: sets,
+  };
+  let code: string | null = null;
+  if (room === "code") {
+    for (let tries = 0; tries < 20 && !code; tries++) { const next = newCode(); if (!(await waitingRoom(next))) code = next; }
+    if (!code) refuse(429, "열린 방이 너무 많습니다. 잠시 뒤 다시 시도해 주세요.");
+  }
+  const { error } = room === "open" || room === "code"
+    ? await db.rpc("battle_create_room", { ...base, p_room: room, p_room_code: code })
+    : await db.rpc("battle_create", base);
+  if (error) refuse(error.code === "P0001" ? 429 : 500, error.code === "P0001" ? error.message : "배틀을 열지 못했습니다.");
+  return { id, token, side: "p1", ...(code ? { code } : {}) };
+}
+
+/* the second player sits down and the battle starts (join, and the second press of 다시하기); undefined when a save came between */
+async function seatSecond(battle: Record<string, any>, secret: Record<string, any>, p2: string, team: unknown, token: string) {
+  if (p2 === battle.p1_name) refuse(400, "상대와 다른 이름을 입력해 주세요.");
+  const sets = checkTeam(battle.format_id, team);
+  const engine = startBattle({ formatid: battle.format_id, p1: { name: battle.p1_name, team: secret.p1_team }, p2: { name: p2, team: sets } });
+  const out = readout(engine);
+  const state = engine.toJSON();
+  const saved = await save(battle.id, battle.version, {
+    p_status: "active", p_p2_name: p2, p_turn: out.turn, p_spectator_log: out.spectatorLog,
+    p_p2_token_hash: await sha256(token), p_state: state, p_pending: {},
+  });
+  if (!saved) return undefined;
+  return { token, ...playerView({ status: "active", winner: null, version: battle.version + 1 }, { state, pending: {} }, "p2") };
+}
+const readOr = async (id: string) => { try { return await read(id); } catch (e) { if (e instanceof Refusal && e.status === 404) return null; throw e; } };
+
+const actions: Record<string, (body: Record<string, any>, again?: boolean) => Promise<unknown>> = {
   async create({ regulation, battleFormat, name, team, room }) {
     let formatid = "";
     try { formatid = formatId(String(regulation), String(battleFormat)); } catch { refuse(400, "알 수 없는 규정입니다."); }
-    const p1 = cleanName(name);
-    const sets = checkTeam(formatid, team);
-    const id = newId();
-    const token = newToken();
-    const base = {
-      p_id: id, p_regulation: regulation, p_format_id: formatid, p_engine: ENGINE,
-      p_p1_name: p1, p_p1_token_hash: await sha256(token), p_p1_team: sets,
-    };
-    let code: string | null = null;
-    if (room === "code") {
-      for (let tries = 0; tries < 20 && !code; tries++) { const next = newCode(); if (!(await waitingRoom(next))) code = next; }
-      if (!code) refuse(429, "열린 방이 너무 많습니다. 잠시 뒤 다시 시도해 주세요.");
-    }
-    const { error } = room === "open" || room === "code"
-      ? await db.rpc("battle_create_room", { ...base, p_room: room, p_room_code: code })
-      : await db.rpc("battle_create", base);
-    if (error) refuse(error.code === "P0001" ? 429 : 500, error.code === "P0001" ? error.message : "배틀을 열지 못했습니다.");
-    return { id, token, side: "p1", ...(code ? { code } : {}) };
+    return openBattle({ regulation: String(regulation), formatid, name: cleanName(name), team, room });
   },
 
   // a code room's id, for the code its opener passed on
@@ -208,18 +228,40 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
       if (battle.status !== "waiting") refuse(409, "이미 시작된 배틀입니다.");
       // ponytail: four digits with no limit on tries; a friendly room has nothing to take, add a per-battle try count if that changes
       if (battle.room === "code" && String(code ?? "") !== secret.room_code) refuse(403, "방 코드가 맞지 않습니다.");
-      if (p2 === battle.p1_name) refuse(400, "상대와 다른 이름을 입력해 주세요.");
-      const sets = checkTeam(battle.format_id, team);
-      const engine = startBattle({ formatid: battle.format_id, p1: { name: battle.p1_name, team: secret.p1_team }, p2: { name: p2, team: sets } });
-      const out = readout(engine);
-      const state = engine.toJSON();
-      const saved = await save(battle.id, battle.version, {
-        p_status: "active", p_p2_name: p2, p_turn: out.turn, p_spectator_log: out.spectatorLog,
-        p_p2_token_hash: await sha256(token), p_state: state, p_pending: {},
-      });
-      if (!saved) return undefined;
-      return { token, ...playerView({ status: "active", winner: null, version: battle.version + 1 }, { state, pending: {} }, "p2") };
+      return seatSecond(battle, secret, p2, team, token);
     });
+  },
+
+  /* 다시하기 (docs/db/battle_rematch.sql): either player of an ended friendly battle asks. The first to ask opens the next battle
+     (a code room, so it stands on no list and no one else comes in) with the same rule and format and writes it on the ended one;
+     the other, asking next, sits down in it and it starts. Each plays under the name they played under; the party is the one they
+     send, and a random party is drawn again. A rematch that was cancelled, or has already been played, is replaced by a new one. */
+  async rematch({ id, token, team }, again = false) {
+    const { battle, secret } = await read(String(id));
+    const side = await seat(secret, token);
+    if (battle.kind !== "friendly") refuse(409, "친선 배틀만 다시 할 수 있습니다.");
+    if (battle.status !== "ended") refuse(409, "끝난 배틀만 다시 할 수 있습니다.");
+    const { data: row, error } = await db.from("battles").select("regulation, p2_name, rematch_id").eq("id", battle.id).maybeSingle();
+    if (error || !row) refuse(503, "다시하기를 아직 쓸 수 없습니다.");
+    const mine = side === "p1" ? battle.p1_name : row.p2_name;
+    const next = row.rematch_id ? await readOr(row.rematch_id) : null;
+    if (next && next.battle.status === "waiting" && next.battle.p1_name !== mine) {
+      const fresh = newToken();
+      const view = await withRetry(async () => {
+        const now = await read(row.rematch_id);
+        if (now.battle.status !== "waiting") refuse(409, "다시하기 배틀이 이미 시작되었습니다.");
+        return seatSecond(now.battle, now.secret, mine, team, fresh);
+      });
+      return { id: row.rematch_id, side: "p2", joined: true, ...view };
+    }
+    // the one this player opened is still waiting, or already being played: the screen goes to it
+    if (next && next.battle.p1_name === mine && next.battle.status !== "ended") return { id: row.rematch_id, side: "p1", mine: true };
+    const made = await openBattle({ regulation: row.regulation, formatid: battle.format_id, name: mine, team, room: "code" });
+    if (await rpc("battle_set_rematch", { p_id: battle.id, p_rematch: made.id, p_expected: row.rematch_id ?? null })) return made;
+    // the other asked in the same moment and was written first: ours goes, and theirs is taken
+    await rpc("battle_cancel", { p_id: made.id });
+    if (again) refuse(409, "다른 요청과 겹쳤습니다. 다시 시도해 주세요.");
+    return actions.rematch({ id, token, team }, true);
   },
 
   async view({ id, token }) {

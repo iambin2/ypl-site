@@ -78,6 +78,9 @@ const GENERIC = ["Sitrus Berry", "Leftovers", "Focus Sash", "Life Orb", "Lum Ber
 const NO_STATUS = new Set(["choicescarf", "choiceband", "choicespecs", "assaultvest"]);
 const CHOICE_OK = new Set(["trick", "switcheroo", "healingwish", "memento"]);
 
+// whether an item can hold these moves: a Choice item or Assault Vest takes no status move (a Choice item may carry Trick and its kin)
+const fitsMoves = (dex, item, moves) => !NO_STATUS.has(toID(item)) || moves.every(id => dex.moves.get(id).category !== "Status" || (toID(item).startsWith("choice") && CHOICE_OK.has(toID(id))));
+
 // the fewest moves a set needs: a Pokémon that learns fewer than four still gets every one it has
 function pickMoves(dex, probs, item, leaning, banned = new Set()) {
   const status = NO_STATUS.has(toID(item));
@@ -264,7 +267,10 @@ for (const reg of Object.keys(MONTH)) {
           const name = dex.items.get(set.item).name;
           // back-ups for the item clause: the Pokémon's other common items, then items any set can hold
           const backups = set.mega ? [] : [...(own ? sorted(own.Items).map(([id]) => dex.items.get(id).name) : []), ...set.moves.map(id => BOOSTER[dex.moves.get(id).type]), ...GENERIC]
-            .filter(item => item && item !== name && dex.items.get(item).exists && !dex.items.get(item).megaStone && legal(formatid, { species: species.name, ability: set.ability, item, moves: [dex.moves.get(set.moves[0]).name] }));
+            .filter(item => item && item !== name && dex.items.get(item).exists && !dex.items.get(item).megaStone && legal(formatid, { species: species.name, ability: set.ability, item, moves: [dex.moves.get(set.moves[0]).name] }))
+            // a back-up holds the set's moves as the first item does: no Choice item or Assault Vest under a status move (명상 under
+            // a Choice Scarf came in this way, 2026-11-06)
+            .filter(item => fitsMoves(dex, item, set.moves));
           return {
             weight: Math.round(Math.max(0.01, set.score / total) * 100) / 100,
             ability: set.ability, items: [...new Set([name, ...backups])].slice(0, 5),

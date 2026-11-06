@@ -3,17 +3,19 @@ import { flushSync } from "react-dom";
 import Modal from "../../components/common/Modal.jsx";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { defensiveMatchups, statRange } from "../../services/calculatorCore.js";
-import { Generations } from "@smogon/calc";
 import { createBattleReader, toID } from "../../services/battleLog.js";
 import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
+import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectWord, effectiveness } from "./battleWords.js";
+// the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
+export { STATUS, effLabel, effectWord, effectiveness };
+import { closeGate, openGate } from "./Gate.js";
 import Seg from "../../components/common/Seg.jsx";
 
 /* 배틀 무대 (DESIGN.md "Battle", The stage). 경기장 위에 두 편이 마주 서고, 각 포켓몬 머리 위에 쇼다운처럼 상태 막대가 뜬다.
    날씨, 필드, 룸, 벽, 설치기는 무대 위에 그대로 남아 보이고, 기록 한 줄마다 stageFx.js의 연출이 돈다.
    무대는 테마와 상관없이 늘 밤의 남색 경기장이다(영상의 레터박스처럼). */
 
-const GEN = Generations.get(9);
 export const other = side => (side === "p1" ? "p2" : "p1");
 export const keyOf = ident => String(ident).slice(0, 3);
 const slotKey = (side, slot) => `${side}${"ab"[slot]}`;
@@ -24,6 +26,8 @@ const monSnap = (mon, standing = false) => mon && {
   name: mon.name, species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted, standing,
   boosts: { ...mon.boosts }, volatiles: [...(mon.volatiles || [])], gender: mon.gender, level: mon.level,
   item: mon.item, ability: mon.ability, moves: [...(mon.moves || [])], ppUsed: { ...(mon.ppUsed || {}) },
+  // a typing a move or an ability changed, and Roost's grounding (battleWords.js currentTypes reads them)
+  types: mon.types ? [...mon.types] : undefined, addedType: mon.addedType, roost: mon.roost,
 };
 function roster(side) {
   // the team in its preview order; those not yet seen stand as they were shown
@@ -41,10 +45,6 @@ export function sceneOf(state, standing = null) {
 }
 
 /* ---------- words ---------- */
-export const STATUS = { brn: "화상", par: "마비", slp: "잠듦", frz: "얼음", psn: "독", tox: "맹독" };
-const STAT = { atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드", accuracy: "명중", evasion: "회피" };
-const VOLATILE = { confusion: "혼란", substitute: "대타출동", taunt: "도발", encore: "앙코르", leechseed: "씨뿌리기", attract: "헤롱헤롱", torment: "트집", disable: "사슬묶기", healblock: "회복봉인", yawn: "하품", perishsong: "멸망의노래", curse: "저주", focusenergy: "기충전", magnetrise: "전자부유", ingrain: "뿌리박기", aquaring: "아쿠아링", saltcure: "소금절이", partiallytrapped: "속박", smackdown: "떨어뜨리기", throatchop: "지옥찌르기", tarshot: "타르샷", charge: "충전", stockpile: "비축", laserfocus: "일점집중", typechange: "타입 변화", dynamax: "다이맥스" };
-const HIDDEN_VOLATILES = new Set(["typechange"]);
 // turns a field effect lasts; the ones an item stretches by three say so
 const LASTS = { trickroom: 5, gravity: 5, magicroom: 5, wonderroom: 5, tailwind: 4, safeguard: 5, mist: 5, luckychant: 5 };
 const STRETCH = { raindance: 5, sunnyday: 5, sandstorm: 5, snowscape: 5, snow: 5, hail: 5, electricterrain: 5, psychicterrain: 5, grassyterrain: 5, mistyterrain: 5, reflect: 5, lightscreen: 5, auroraveil: 5 };
@@ -60,13 +60,7 @@ const multiplier = (stat, n) => {
   return `×${Number(v.toFixed(2))}`;
 };
 export const nameOf = (res, species) => res.text.pokedex[toID(species)] || species;
-export const effectWord = (res, id) => VOLATILE[id] || res.text.moves[id]?.name || res.text.abilities[id]?.name || res.text.default[id]?.weatherName || id;
 export const typesOf = (res, species) => res.detail.pokedex[toID(species)]?.types || [];
-// a move's type against a typing, as the games mark it: ×4, ×2, ×1, ×½, ×¼, ×0
-export function effectiveness(moveType, types) {
-  return types.reduce((p, t) => p * (GEN.types.get(toID(moveType))?.effectiveness?.[t] ?? 1), 1);
-}
-export const effLabel = m => ({ 4: "×4", 2: "×2", 1: "×1", .5: "×½", .25: "×¼", 0: "×0" })[m] ?? `×${m}`;
 
 /* every picture either side may send in is fetched as soon as the team preview names it, so no Pokémon arrives as an empty frame */
 const fetched = new Set();
@@ -114,7 +108,10 @@ function aheadOf(lines) {
   return ahead;
 }
 // epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
-export function useStageTape(log, res, perspective, epoch = 0) {
+// live: a battle being played (not a replay), whose going in from the team preview passes through the gate (Gate.js)
+export function useStageTape(log, res, perspective, epoch = 0, live = false) {
+  const liveRef = useRef(live);
+  liveRef.current = live;
   const reader = useRef(null);
   const done = useRef(0);
   const running = useRef(false);
@@ -273,17 +270,28 @@ export function useStageTape(log, res, perspective, epoch = 0) {
           }
           case "enter": {
             if (event.leaving) { await fx.leave(stage, k, { drag: event.drag }); }
+            const first = !opened && R.state.turn === 0;
+            const ours = R.state.players[perspective] || "", theirs = R.state.players[other(perspective)] || "";
+            /* going in from the team preview (DESIGN.md "Battle", Going in): in a battle being played the gate closes over the preview
+               first, the stage stands up behind it in the dark, and the gate parts on it; the names were on the gate, so the stage's
+               own plates are left out and only the lamps switch on before the throws */
+            const gated = first && liveRef.current && !stageRef.current;
+            // the plates wait for the leads: on a stage already standing (a replay's start) they go out before anything is shown
+            if (first && stageRef.current) stageRef.current.classList.add("bs-intro");
+            if (gated) await closeGate({ ours, theirs, line: "배틀 시작" });
             standing.delete(k);
             show();
             // the stage mounts with the first lead, so it is read again here
             const st = stageRef.current;
             // the opening (DESIGN.md "Battle", The big moments): the trainers' names and VS while the lamps switch on, then the throws
-            if (!opened && R.state.turn === 0 && st) {
+            if (first && st) {
               opened = true;
               // the plates come in once the leads stand (the first turn, or the end of this run)
               st.classList.add("bs-intro");
-              st.querySelectorAll(".bs-mon").forEach(el => { el.style.opacity = "0"; });
-              await fx.opening(st, R.state.players[perspective] || "", R.state.players[other(perspective)] || "");
+              // nobody stands before their ball is thrown: the canvas draws the Pokémon, so it is the canvas that hides them
+              fx.hideAll(st);
+              if (gated) openGate();
+              await fx.opening(st, ours, theirs, { plates: !gated });
             }
            
             // a Pokémon sent in mid-battle is framed on its side; the leads come out wide
@@ -401,8 +409,7 @@ const plates = (side, scene, own, doubles, res, onInfo) => (doubles ? [0, 1] : [
   return <Plate key={key} slotKey={key} mon={scene?.[side]?.active?.[slot]} own={own} res={res} onInfo={() => onInfo?.(key)} />;
 });
 
-const hard = m => m >= 2;
-function SideField({ side, scene, own, doubles, res, targeting }) {
+function SideField({ side, scene, own, doubles }) {
   const s = scene?.[side];
   const slots = doubles ? [0, 1] : [0];
   return (
@@ -410,7 +417,6 @@ function SideField({ side, scene, own, doubles, res, targeting }) {
       {slots.map(slot => {
         const key = slotKey(side, slot);
         const mon = s?.active?.[slot];
-        const pick = targeting?.(side, slot);
         const alive = mon && (!mon.fainted || mon.standing);
         return (
           <div key={slot} className="bs-slot" data-mon={key} data-pos={`${own ? "own" : "foe"}${doubles ? `-d${slot}` : ""}`}>
@@ -419,10 +425,6 @@ function SideField({ side, scene, own, doubles, res, targeting }) {
               {mon.volatiles.includes("substitute") ? <i className="bs-sub" aria-hidden="true" />
                 : <img src={spriteUrl(mon.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} />}
             </div>}
-            {pick && <button type="button" className="bt-pick" onClick={pick.onPick}
-              aria-label={`${alive ? `${own ? "" : "상대 "}${nameOf(res, mon.species)}` : "빈 자리"} 대상으로 고르기${pick.mark != null ? `, ${effLabel(pick.mark)}` : ""}`}>
-              {pick.mark != null && <span className={"bt-pick-mark" + (hard(pick.mark) ? " hard" : "")}>{effLabel(pick.mark)}</span>}
-            </button>}
           </div>
         );
       })}
@@ -472,7 +474,7 @@ function Clock({ left, mine }) {
   </div>;
 }
 
-export function Stage({ scene, stageRef, perspective, doubles, res, targeting, names, said, ask, known, onParty, clock = null, mine = false }) {
+export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, known, onParty, clock = null, mine = false }) {
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
   const fields = scene?.fields || [];
@@ -493,8 +495,8 @@ export function Stage({ scene, stageRef, perspective, doubles, res, targeting, n
       <div className="bs-stage hud" ref={stageRef}>
         {/* the arena, the Pokémon, every effect, the field and the camera are one GPU picture (gl.js) under these places */}
         <div className="bs-world">
-          <SideField side={foe} scene={scene} own={false} doubles={doubles} res={res} targeting={targeting} />
-          <SideField side={perspective} scene={scene} own doubles={doubles} res={res} targeting={targeting} />
+          <SideField side={foe} scene={scene} own={false} doubles={doubles} />
+          <SideField side={perspective} scene={scene} own doubles={doubles} />
         </div>
         {/* the turn, the winner, an ability's plate and the opening stand here, outside the camera, so they keep the middle */}
         <div className="bs-over" aria-hidden="true" />
@@ -556,7 +558,7 @@ const STAT_FULL = { hp: "HP", atk: "공격", def: "방어", spa: "특공", spd: 
 function MonInfo({ res, mon, own, onClose }) {
   if (!mon) return null;
   const dex = res.detail.pokedex[toID(mon.species)] || {};
-  const types = dex.types || [];
+  const types = currentTypes(res, mon);
   const weak = defensiveMatchups(types);
   const typeTag = t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>;
   const abilityName = a => res.text.abilities[toID(a)]?.name || a;

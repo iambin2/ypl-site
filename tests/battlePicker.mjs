@@ -1,12 +1,14 @@
 // A player for the engine tests who reads only its request, as the site's screen does (the engine refuses Showdown's default).
-import { slotPasses } from "../src/services/battleLog.js";
+import { revives, slotPasses } from "../src/services/battleLog.js";
 
 // a team preview or a forced switch answered as the site's screen answers it (the engine refuses Showdown's default)
 export function explicit(request) {
   const mons = request.side.pokemon;
   if (request.teamPreview) return `team ${mons.slice(0, request.maxChosenTeamSize || mons.length).map((_, i) => i + 1).join(", ")}`;
   const free = mons.map((m, i) => (!m.active && !m.condition.endsWith(" fnt") ? i + 1 : 0)).filter(Boolean);
-  return request.forceSwitch.map((_, i) => (slotPasses(request, i) ? "pass" : `switch ${free.shift()}`)).join(", ");
+  const fainted = mons.map((m, i) => (!m.active && m.condition.endsWith(" fnt") ? i + 1 : 0)).filter(Boolean);
+  // Revival Blessing names a fainted one
+  return request.forceSwitch.map((_, i) => (slotPasses(request, i) ? "pass" : `switch ${(revives(request, i) ? fainted : free).shift()}`)).join(", ");
 }
 
 // A player who reads only its request, as the site's screen does: a legal move with an explicit target.

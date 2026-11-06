@@ -32,6 +32,14 @@ export async function joinBattle(id, { name, team, code }) {
   keepSeat(id, { token: view.token, side: view.side });
   return view;
 }
+/* 다시하기 (docs/db/battle_rematch.sql): asked from a seat in an ended friendly battle. The answer is the next battle: opened by
+   this player (waiting for the other, with its code), joined (it has started), or this player's own already (mine). The new seat is
+   kept like any other, marked so its waiting screen says what it waits for. */
+export async function rematchBattle(id, team) {
+  const next = await asSeat(id, "rematch", { team });
+  if (next.token) keepSeat(next.id, { token: next.token, side: next.side, rematch: true, ...(next.code ? { code: next.code } : {}) });
+  return next;
+}
 // 공식 경기의 자리. 먼저 온 선수가 배틀을 열고, 다음 선수가 시작한다. 같은 선수가 다른 기기에서 오면 자리를 옮긴다.
 export async function takeOfficialSeat({ eventId, nodeKey, side, pin }) {
   const seat = await callFunction("battle", { action: "official", eventId, nodeKey, side, pin });
@@ -61,17 +69,24 @@ const LIST = "id, status, p1_name, p2_name, turn, winner, ended_by, kind, event_
 // 방의 종류(room)는 docs/db/battle_rooms.sql 을 실행한 뒤에만 있다. 그 전에는 없이 읽는다(모든 방이 링크 방).
 let roomsSupported = true;
 const missingRoom = error => /42703|room/.test(`${error?.code} ${error?.message}`);
+// the next battle a rematch opened (docs/db/battle_rematch.sql) is read only once that SQL has run
+let rematchSupported = true;
 export async function readBattleRow(id) {
   if (!supa) return null;
-  let { data, error } = await supa.from("battles").select(roomsSupported ? `${PUBLIC}, room` : PUBLIC).eq("id", id).maybeSingle();
+  const columns = () => [PUBLIC, roomsSupported && "room", rematchSupported && "rematch_id"].filter(Boolean).join(", ");
+  let { data, error } = await supa.from("battles").select(columns()).eq("id", id).maybeSingle();
+  if (error && rematchSupported && /rematch_id/.test(error.message || "")) {
+    rematchSupported = false;
+    ({ data, error } = await supa.from("battles").select(columns()).eq("id", id).maybeSingle());
+  }
   if (error && roomsSupported && missingRoom(error)) {
     roomsSupported = false;
-    ({ data, error } = await supa.from("battles").select(PUBLIC).eq("id", id).maybeSingle());
+    ({ data, error } = await supa.from("battles").select(columns()).eq("id", id).maybeSingle());
   }
   if (error) throw new Error(error.message);
   return data;
 }
-/* 열린 방: 아직 아무도 들어오지 않은 공개 방, 최근 것부터. 30분 넘게 아무도 오지 않은 방은 떠난 것으로 보고 싣지 않는다. */
+export const canRematch = () => rematchSupported;
 export async function listOpenRooms() {
   if (!supa || !roomsSupported) return [];
   const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
@@ -103,9 +118,13 @@ export async function readBattleVersion(id) {
    진행 중에는 1.5초, 1분 동안 아무것도 바뀌지 않으면 3초, 5분이면 6초. 끝난 배틀은 다시 바뀌지 않는다.
    다만 공식 경기는 끝난 뒤 서버가 대진표에 넣으며 applied_at(또는 apply_error)만 쓰고 version은 올리지 않으므로, 그 값이 올 때까지 행을 읽는다.
    row === null은 없는 배틀(대기 취소)이다. */
-export function battlePollDelay(row, idleMs) {
+export function battlePollDelay(row, idleMs, seated = false) {
   if (row === null) return null;
-  if (row?.status === "ended") return row.kind === "official" && !row.applied_at && !row.apply_error ? 4500 : null;
+  if (row?.status === "ended") {
+    if (row.kind === "official") return !row.applied_at && !row.apply_error ? 4500 : null;
+    // a seat in an ended friendly battle keeps reading it a while, so the other player's 다시하기 reaches it
+    return seated && rematchSupported && !row.rematch_id && idleMs < 600_000 ? 3000 : null;
+  }
   return idleMs < 60_000 ? 1500 : idleMs < 300_000 ? 3000 : 6000;
 }
 // 선수의 화면은 엔진이 움직였을 때만 바뀐다. 엔진이 한 걸음 가면 쇼다운은 반드시 관전 로그에 줄을 더한다(덧붙이기만 한다).

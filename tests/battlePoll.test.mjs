@@ -16,6 +16,9 @@ test("an open battle is asked often, an idle one less, a finished one not at all
   assert.equal(battlePollDelay(active, 300_000), 6000);
   assert.equal(battlePollDelay(null, 0), null, "a cancelled battle");
   assert.equal(battlePollDelay({ status: "ended", kind: "friendly" }, 0), null);
+  assert.equal(battlePollDelay({ status: "ended", kind: "friendly" }, 0, true), 3000, "a seat keeps reading for the other player's 다시하기");
+  assert.equal(battlePollDelay({ status: "ended", kind: "friendly", rematch_id: "abcdefabcdef" }, 0, true), null, "the rematch is there");
+  assert.equal(battlePollDelay({ status: "ended", kind: "friendly" }, 600_000, true), null, "not for ever");
   assert.equal(battlePollDelay({ status: "ended", kind: "official", applied_at: null, apply_error: null }, 0), 4500, "waits for its bracket line");
   assert.equal(battlePollDelay({ status: "ended", kind: "official", applied_at: "2026-11-05T00:00:00Z" }, 0), null);
   assert.equal(battlePollDelay({ status: "ended", kind: "official", apply_error: "무승부" }, 0), null);

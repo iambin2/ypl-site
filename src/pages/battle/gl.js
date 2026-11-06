@@ -268,6 +268,9 @@ ramp("spray", [[0, "#FFFFFF", 0], [.05, "#F4FBFF", 1], [.4, "#9ED4FF", .85], [1,
 ramp("white", [[0, "#FFFFFF", 0], [.05, "#FFFFFF", 1], [.6, "#FFFFFF", .7], [1, "#FFFFFF", 0]]);
 ramp("white.h", [[0, "#FFFFFF", 0], [.1, "#FFFFFF", 1], [.9, "#FFFFFF", 1], [1, "#FFFFFF", 0]]);
 ramp("flash", [[0, "#FFFFFF", 0], [.02, "#FFFFFF", 1], [.12, "#FFF6D8", .3], [.3, "#FFFFFF", 0], [1, "#FFFFFF", 0]]);
+// a Pokémon called back: the red light of its ball, white at its heart
+ramp("recall", [[0, "#FFFFFF", 0], [.05, "#FFE4E4", 1], [.22, "#FF5A5A", 1], [.65, "#D81E2A", .7], [1, "#5A0A12", 0]]);
+ramp("recall.h", [[0, "#FF4A4A", 0], [.12, "#FF4A4A", 1], [.85, "#FF2A36", 1], [1, "#C41422", 0]]);
 ramp("shadow", [[0, "#1A0E2E", 0], [.1, "#120A22", .85], [.7, "#0A0614", .6], [1, "#000000", 0]]);
 ramp("scorch", [[0, "#2A1A12", 0], [.1, "#1E140E", .7], [.7, "#1E140E", .55], [1, "#1E140E", 0]]);
 ramp("rainbow", [[0, "#FF3B3B", 0], [.1, "#FF3B3B", 1], [.27, "#FFC21A", 1], [.44, "#4FD836", 1], [.61, "#3FD8FF", 1], [.78, "#7060FF", 1], [.92, "#FF70F0", .8], [1, "#FF70F0", 0]]);
@@ -435,14 +438,17 @@ void main(){ vec2 h = uTexel; vec4 s = texture(uTex, vUv + vec2(-h.x * 2., 0.));
   s += texture(uTex, vUv + vec2(h.x * 2., 0.)); s += texture(uTex, vUv + vec2(h.x, -h.y)) * 2.; s += texture(uTex, vUv + vec2(0., -h.y * 2.)); s += texture(uTex, vUv + vec2(-h.x, -h.y)) * 2.; o = s / 12.; }`;
 const COMP_FS = `#version 300 es
 precision highp float; in vec2 vUv;
-uniform sampler2D uScene, uBloom, uDist; uniform float uBloomK, uDistK, uCA, uVig, uSat, uFlashA, uHasDist; uniform vec3 uMul, uAdd, uFlash; uniform vec2 uAspect;
+uniform sampler2D uScene, uBloom, uDist; uniform float uBloomK, uDistK, uCA, uVig, uSat, uFlashA, uHasDist; uniform vec3 uMul, uAdd, uFlash; uniform vec2 uAspect, uStep;
 out vec4 o;
+// the scene is finer than the screen: four bilinear taps across a screen pixel's footprint average it down (a box filter), so a line's
+// edge is its true coverage, not a sample that steps
+vec4 scene(vec2 p){ return (texture(uScene, p + vec2(-uStep.x, -uStep.y)) + texture(uScene, p + vec2(uStep.x, -uStep.y)) + texture(uScene, p + vec2(-uStep.x, uStep.y)) + texture(uScene, p + uStep)) * .25; }
 void main(){
   vec2 uv = vUv;
   if (uHasDist > .5) { vec4 d = texture(uDist, vUv); uv += vec2(d.r - d.g, -(d.b - d.a)) * uDistK; }
   vec3 col;
-  if (uCA > 0.) { vec2 dir = (uv - .5) * uCA; col = vec3(texture(uScene, uv + dir).r, texture(uScene, uv).g, texture(uScene, uv - dir).b); }
-  else col = texture(uScene, uv).rgb;
+  if (uCA > 0.) { vec2 dir = (uv - .5) * uCA; col = vec3(scene(uv + dir).r, scene(uv).g, scene(uv - dir).b); }
+  else col = scene(uv).rgb;
   col += texture(uBloom, vUv).rgb * uBloomK;
   col = col * uMul + uAdd;
   float l = dot(col, vec3(.299, .587, .114)); col = mix(vec3(l), col, uSat);
@@ -556,13 +562,19 @@ class Engine {
     const st = this.stage, W = st.clientWidth || 1, H = st.clientHeight || 1;
     const changed = W !== this.W || H !== this.H;
     this.W = W; this.H = H;
-    // never under 1.5: a screen at 1 gets its lines drawn finer and smoothed down, as the court and the edges looked soft at 1
-    let dpr = Math.min(2, Math.max(1.5, window.devicePixelRatio || 1));
-    if (W * H * dpr * dpr > 2.6e6) dpr = Math.sqrt(2.6e6 / (W * H));
+    /* supersampled (2026-11-06: the court's lines looked jagged): the canvas matches the screen's own pixels one to one, and the scene
+       is drawn finer than that (at least twice the CSS size, up to 3 on a phone, within 4 million pixels) and filtered down to it in
+       the last pass. Before, the scene was drawn at 2 and the browser shrank the canvas to the screen (1.6 times at 125%), which
+       sampled lines without filtering them and left their edges stepped */
+    const device = Math.max(1, window.devicePixelRatio || 1);
+    let dpr = Math.min(3, Math.max(2, device * 1.5));
+    if (W * H * dpr * dpr > 4e6) dpr = Math.max(device, Math.sqrt(4e6 / (W * H)));
     this.dpr = dpr;
+    const ow = Math.max(2, Math.round(W * device)), oh = Math.max(2, Math.round(H * device));
     const pw = Math.max(2, Math.round(W * dpr)), ph = Math.max(2, Math.round(H * dpr));
-    if (pw !== this.canvas.width || ph !== this.canvas.height || first) {
-      this.canvas.width = pw; this.canvas.height = ph;
+    if (pw !== this.sw || ph !== this.sh || ow !== this.canvas.width || oh !== this.canvas.height || first) {
+      this.canvas.width = ow; this.canvas.height = oh;
+      this.sw = pw; this.sh = ph;
       const gl = this.gl;
       [this.sceneRT, this.distRT, ...(this.mips || [])].forEach(rt => { if (rt) { gl.deleteFramebuffer(rt.fb); rt.tex.forEach(t => gl.deleteTexture(t)); } });
       this.sceneRT = target(gl, pw, ph, 2);
@@ -797,7 +809,7 @@ class Engine {
 
   /* ---------- drawing ---------- */
   render() {
-    const gl = this.gl, P = this.prog, view = this.view(), W = this.canvas.width, H = this.canvas.height;
+    const gl = this.gl, P = this.prog, view = this.view(), W = this.sw, H = this.sh;
     const g = this.grade, L = this.lightK;
     if (this.dirty.length) {
       // upload what changed since the last frame, in runs
@@ -836,7 +848,7 @@ class Engine {
     for (const a of this.ordered()) this.drawActor(a, view, false);
     particles(1);
     this.drawStrips(view, 1);
-    if (this.sprites.length) this.sprites = this.sprites.filter(sp2 => { const o = sp2.at(this.T); if (!o) return false; this.drawQuad(sp2.tex, [o.x - o.w / 2, o.y - o.h / 2, o.w, o.h], view, { alpha: o.alpha ?? 1, rot: o.rot || 0, flash: o.flash || 0 }); return true; });
+    if (this.sprites.length) this.sprites = this.sprites.filter(sp2 => { const o = sp2.at(this.T); if (!o) return false; this.drawQuad(o.tex || sp2.tex, [o.x - o.w / 2, o.y - o.h / 2, o.w, o.h], view, { alpha: o.alpha ?? 1, rot: o.rot || 0, flash: o.flash || 0 }); return true; });
     void sp;
 
     // 2. distortion: shockwaves and heat bend the picture
@@ -857,8 +869,10 @@ class Engine {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.disable(gl.BLEND);
 
     // 4. the picture: the scene bent by the distortion, the bloom over it, the grade and the vignette
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     const c = P.comp; gl.useProgram(c.p);
+    // the filter's reach: a screen pixel covers this many scene pixels, sampled across that whole footprint
+    gl.uniform2f(c.u.uStep, .25 / this.canvas.width, .25 / this.canvas.height);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.sceneRT.tex[0]); gl.uniform1i(c.u.uScene, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.mips[0].tex[0]); gl.uniform1i(c.u.uBloom, 1);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.distRT.tex[0]); gl.uniform1i(c.u.uDist, 2);

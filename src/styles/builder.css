@@ -105,7 +105,7 @@
 .tb-saved-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); margin-top: var(--s2); }
 .tb-saved-six > span { aspect-ratio: 1; overflow: hidden; }
 .tb-saved-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
-.tb-saved.inv .tb-saved-six > span { background: var(--panel); }
+.tb-saved.inv .tb-saved-six > span { background: transparent; }
 .tb-saved-actions { display: flex; justify-content: flex-end; gap: var(--s5); padding: 0 var(--pad) var(--s2); }
 .tb-saved.inv .btn--link { --btn-fg: var(--ground); }
 @media (hover: hover) { .tb-saved.pn:hover { background: var(--panel-2); } }

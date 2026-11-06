@@ -201,3 +201,23 @@ test("the reader counts the PP each Pokémon spent: a move it chose spends one, 
   assert.deepEqual(mon.ppUsed, { earthquake: 2, outrage: 1 });
   assert.deepEqual(mon.moves, ["Earthquake", "Outrage"]);
 });
+
+test("Baton Pass hands its stat changes and passable effects to the one coming in; a plain switch or Roar does not (feedback 2026-11-06)", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  const lines = [
+    "|player|p1|가|", "|player|p2|나|", "|gametype|singles",
+    "|switch|p1a: Vespiquen|Vespiquen, L50, F|100/100", "|switch|p2a: Garchomp|Garchomp, L50, M|100/100", "|turn|1",
+    "|move|p1a: Vespiquen|Swords Dance|p1a: Vespiquen", "|-boost|p1a: Vespiquen|atk|2",
+    "|-start|p1a: Vespiquen|Focus Energy", "|turn|2",
+    "|move|p1a: Vespiquen|Baton Pass|p1a: Vespiquen", "|switch|p1a: Kingambit|Kingambit, L50, M|100/100",
+  ];
+  for (const line of lines) reader.read(line);
+  const passedTo = reader.state.sides.p1.active[0];
+  assert.equal(passedTo.species, "Kingambit");
+  assert.deepEqual(passedTo.boosts, { atk: 2 });
+  assert.ok(passedTo.volatiles.includes("focusenergy"));
+  for (const line of ["|turn|3", "|move|p1a: Kingambit|Iron Head|p2a: Garchomp", "|switch|p1a: Vespiquen|Vespiquen, L50, F|100/100"]) reader.read(line);
+  assert.deepEqual(reader.state.sides.p1.active[0].boosts, {}, "a plain switch leaves them behind");
+  for (const line of ["|turn|4", "|move|p1a: Vespiquen|Baton Pass|p1a: Vespiquen", "|drag|p1a: Kingambit|Kingambit, L50, M|100/100"]) reader.read(line);
+  assert.deepEqual(reader.state.sides.p1.active[0].boosts, {}, "dragged in, nothing is passed");
+});

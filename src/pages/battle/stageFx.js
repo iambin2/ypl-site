@@ -521,48 +521,114 @@ export function faint(stage, key) {
 }
 
 /* ---------------------------------------------------------------- the big moments ---------------------------------------------------------------- */
-// a Poké Ball, painted once: red over white, the band and the button
-let ballCanvas = null;
-const ballTex = e => {
-  if (!e.ballTex) {
-    if (!ballCanvas) {
-      ballCanvas = document.createElement("canvas"); ballCanvas.width = ballCanvas.height = 64;
-      const g = ballCanvas.getContext("2d");
-      g.beginPath(); g.arc(32, 32, 30, Math.PI, 0); g.fillStyle = "#E8303A"; g.fill();
-      g.beginPath(); g.arc(32, 32, 30, 0, Math.PI); g.fillStyle = "#F4F6FA"; g.fill();
-      g.fillStyle = "#1A1F2E"; g.fillRect(2, 29, 60, 6); g.beginPath(); g.arc(32, 32, 10, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.arc(32, 32, 6, 0, Math.PI * 2); g.fillStyle = "#F4F6FA"; g.fill();
-      g.beginPath(); g.ellipse(22, 18, 7, 4, -.6, 0, Math.PI * 2); g.fillStyle = "rgba(255,255,255,.55)"; g.fill();
+/* a Poké Ball, lit as the Pokémon's own renders are (2026-11-06: the flat disc with a gloss spot sat on the stage like a sticker).
+   Each frame is a sphere shaded pixel by pixel: the light from the upper left in front, a soft fall-off to its edge, a highlight,
+   a faint cool rim the stadium throws back, and the red, the white, the band and the button turned with the ball, so it tumbles as
+   it flies instead of spinning flat. FRAMES frames make one turn; they are painted once and kept for every stage. */
+const FRAMES = 24, BALL_PX = 160;
+let ballCanvases = null;
+function paintBalls() {
+  const out = [], R = BALL_PX / 2 - 3, C = BALL_PX / 2;
+  const norm = v => { const l = Math.hypot(...v); return v.map(x => x / l); };
+  const L = norm([-.55, .62, .56]), Hv = norm([L[0], L[1], L[2] + 1]), axis = norm([1, .28, .22]);
+  const RED = [222, 38, 52], WHITE = [240, 243, 248], BAND = [26, 30, 42], RING = [34, 39, 56], BUTTON = [246, 247, 250];
+  for (let f = 0; f < FRAMES; f++) {
+    const th = -f / FRAMES * Math.PI * 2, cs = Math.cos(th), sn = Math.sin(th), [ax, ay, az] = axis;
+    // the ball's own frame: a point on the screen's sphere turned back by the spin (Rodrigues)
+    const local = ([x, y, z]) => { const d = ax * x + ay * y + az * z, cx = ay * z - az * y, cy = az * x - ax * z, cz = ax * y - ay * x;
+      return [x * cs + cx * sn + ax * d * (1 - cs), y * cs + cy * sn + ay * d * (1 - cs), z * cs + cz * sn + az * d * (1 - cs)]; };
+    const c = Object.assign(document.createElement("canvas"), { width: BALL_PX, height: BALL_PX }), g = c.getContext("2d"), img = g.createImageData(BALL_PX, BALL_PX), px = img.data;
+    for (let j = 0; j < BALL_PX; j++) for (let i = 0; i < BALL_PX; i++) {
+      const nx = (i + .5 - C) / R, ny = -(j + .5 - C) / R, d2 = nx * nx + ny * ny, edge = (1 - Math.sqrt(d2)) * R + .5;
+      if (edge <= 0) continue;
+      const nz = Math.sqrt(Math.max(0, 1 - d2)), n = [nx, ny, nz], q = local(n);
+      const fromFront = Math.acos(Math.max(-1, Math.min(1, q[2])));
+      let col, shine = .55;
+      if (fromFront < .17) { col = BUTTON; }
+      else if (fromFront < .27) { col = RING; shine = .3; }
+      else if (fromFront < .31 || Math.abs(q[1]) < .07) { col = BAND; shine = .3; }
+      else col = q[1] > 0 ? RED : WHITE;
+      const diff = Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]);
+      const spec = Math.pow(Math.max(0, n[0] * Hv[0] + n[1] * Hv[1] + n[2] * Hv[2]), 60) * shine;
+      const rim = Math.pow(1 - nz, 3) * .22, k = .34 + .74 * diff, a = Math.min(1, edge) * 255, o = (j * BALL_PX + i) * 4;
+      px[o] = Math.min(255, col[0] * k + 255 * spec + 90 * rim); px[o + 1] = Math.min(255, col[1] * k + 255 * spec + 130 * rim); px[o + 2] = Math.min(255, col[2] * k + 255 * spec + 230 * rim); px[o + 3] = a;
     }
-    const gl = e.gl, t = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, t); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ballCanvas); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    e.ballTex = t;
+    g.putImageData(img, 0, 0);
+    out.push(c);
   }
+  return out;
+}
+const upload = (gl, canvas) => {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+};
+const ballTex = e => {
+  if (!e.ballTex) { ballCanvases ||= paintBalls(); e.ballTex = ballCanvases.map(c => upload(e.gl, c)); }
   return e.ballTex;
 };
-// thrown in from its trainer's corner, spinning over an arc, opening at the top of its fall where the Pokémon will stand
+// the ball's shadow on the floor: a soft dark oval, painted once
+let shadowCanvas = null;
+const shadowTex = e => {
+  if (!e.shadowTex) {
+    if (!shadowCanvas) {
+      shadowCanvas = Object.assign(document.createElement("canvas"), { width: 128, height: 128 });
+      const g = shadowCanvas.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 62);
+      gr.addColorStop(0, "rgba(2,6,16,.75)"); gr.addColorStop(.55, "rgba(2,6,16,.35)"); gr.addColorStop(1, "rgba(2,6,16,0)");
+      g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    }
+    e.shadowTex = upload(e.gl, shadowCanvas);
+  }
+  return e.shadowTex;
+};
+// thrown in from its trainer's corner over an arc, tumbling as it goes, its shadow crossing the floor under it, opening at the top
+// of its fall where the Pokémon will stand
 export function throwBall(stage, key) {
   const e = E(stage);
   if (!e || instant() || reduced()) return Promise.resolve();
-  const own = ownKey(stage, key), { W, H } = e, [tx, ty] = centre(stage, key, .5), size = Math.max(14, Math.min(30, W * .045)), dur = 560;
+  const own = ownKey(stage, key), { W, H } = e, [tx, ty] = centre(stage, key, .5), [, fy] = centre(stage, key, 0), size = Math.max(16, Math.min(34, W * .048)), dur = 560;
   const from = own ? [-size * 2, H * .95] : [W + size * 2, H * .05], peak = Math.min(from[1], ty) - H * (own ? .32 : .12), t0 = e.T;
-  e.sprites.push({ tex: ballTex(e), at: T => {
+  const frames = ballTex(e), turns = own ? 2.2 : 1.6;
+  const pathAt = t => [lerp(from[0], tx, t), (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty];
+  // the floor under it runs from the near edge (or the far side's floor) to the feet of the place it lands on
+  const floorFrom = own ? H * 1.02 : Math.max(fy - H * .08, H * .3);
+  e.sprites.push({ tex: shadowTex(e), at: T => {
     const t = (T - t0) / dur;
     if (t > 1) return null;
-    const k = 1 - (1 - t) * (1 - t) * .3 - .7 * (1 - t) ** 3 * 0, x = lerp(from[0], tx, t), y = (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty;
-    const z = own ? lerp(1.3, 1, t) : lerp(.8, 1, t);
-    return { x, y, w: size * z * k, h: size * z * k, rot: (own ? 1 : -1) * t * 16 };
+    const [x, y] = pathAt(t), gy = lerp(floorFrom, fy, t), lift = Math.max(0, gy - y) / H, k = Math.max(.25, 1 - lift * 2.2);
+    return { x, y: gy, w: size * 1.6 * (own ? lerp(1.3, 1, t) : 1), h: size * .5, alpha: .55 * k * Math.min(1, t * 4) };
+  } });
+  e.sprites.push({ tex: frames[0], at: T => {
+    const t = (T - t0) / dur;
+    if (t > 1) return null;
+    const [x, y] = pathAt(t), z = own ? lerp(1.3, 1, t) : lerp(.8, 1, t);
+    return { x, y, w: size * z, h: size * z, tex: frames[Math.floor(t * turns * FRAMES) % FRAMES] };
   } });
   // its light trails it
-  for (let i = 0; i < 14; i++) { const t = i / 14, x = lerp(from[0], tx, t), y = (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * peak + t * t * ty; e.emit({ at: [x, y], tex: "glow", ramp: "white", size: [size * .9, 0], life: 260, delay: t * dur, alpha: .4 }); }
+  for (let i = 0; i < 14; i++) { const t = i / 14, [x, y] = pathAt(t); e.emit({ at: [x, y], tex: "glow", ramp: "white", size: [size * .8, 0], life: 240, delay: t * dur, alpha: .3 }); }
   return e.after(dur);
 }
-// the opening: the trainers' names and VS on plates, while the arena's lamps switch on
-export async function opening(stage, ours, theirs) {
+// the Pokémon standing on the canvas go out at once (before the opening's throws, so no lead stands before its ball comes)
+export function hideAll(stage) {
+  const e = glOf(stage);
+  if (!e) return;
+  e.sync();
+  for (const a of e.actors.values()) { e.cancel(a); a.base.alpha = 0; }
+}
+// the opening: the trainers' names and VS on plates, while the arena's lamps switch on. plates false: the gate said the names, the
+// lamps alone switch on, a beat longer since the gate is parting over them
+export async function opening(stage, ours, theirs, { plates = true } = {}) {
   const over = overOf(stage), e = E(stage);
   if (!over || instant()) return;
+  if (!plates) {
+    if (e) { e.anim(e.grade, { dim: [.18, .18, 1], bloom: [1, 1.6, 1] }, { dur: 1500, at: [0, .4, 1], ease: "inout" }); e.shot(e.W / 2, e.H * .44, 1.08, { smooth: .1 }); e.at(60, () => e.shot(e.W / 2, e.H / 2, 1, { smooth: .9 })); }
+    await wait(reduced() ? 300 : 1300);
+    return;
+  }
   const box = document.createElement("div");
   box.className = "bt-intro";
   const make = (cls, text) => { const el = document.createElement("span"); el.className = cls; el.textContent = text; box.appendChild(el); return el; };
@@ -571,10 +637,13 @@ export async function opening(stage, ours, theirs) {
   if (e) { e.anim(e.grade, { dim: [.18, .18, 1], bloom: [1, 1.6, 1] }, { dur: 1900, at: [0, .5, 1], ease: "inout" }); e.shot(e.W / 2, e.H * .44, 1.08, { smooth: .1 }); e.at(60, () => e.shot(e.W / 2, e.H / 2, 1, { smooth: .9 })); }
   if (reduced()) { await wait(900); box.remove(); return; }
   const D = ms(1900);
+  const slide = (n, dx) => done(n.animate([{ transform: `translateX(${dx}px)`, opacity: 0 }, { transform: `translateX(${dx}px)`, opacity: 0, offset: .1, easing: OUT }, { transform: "none", opacity: 1, offset: .3 },
+    { transform: "none", opacity: 1, offset: .82, easing: IN }, { transform: `translateX(${-dx / 2}px)`, opacity: 0, offset: .92 }, { opacity: 0 }], { duration: D, fill: "both" }));
   await Promise.all([
-    done(a.animate([{ transform: "translateX(-120%)", opacity: 0, easing: OUT }, { transform: "translateX(0)", opacity: 1, offset: .2 }, { transform: "translateX(0)", opacity: 1, offset: .82, easing: IN }, { transform: "translateX(-40%)", opacity: 0 }], { duration: D, fill: "both" })),
-    done(b.animate([{ transform: "translateX(120%)", opacity: 0, easing: OUT }, { transform: "translateX(0)", opacity: 1, offset: .2 }, { transform: "translateX(0)", opacity: 1, offset: .82, easing: IN }, { transform: "translateX(40%)", opacity: 0 }], { duration: D, fill: "both" })),
-    done(vs.animate([{ transform: "scale(2.4)", opacity: 0 }, { transform: "scale(2.4)", opacity: 0, offset: .14, easing: OUT }, { transform: "scale(1)", opacity: 1, offset: .26 }, { transform: "scale(1)", opacity: 1, offset: .82 }, { transform: "scale(.8)", opacity: 0 }], { duration: D, fill: "both" })),
+    // the band opens from its middle line and closes back into it
+    done(box.animate([{ transform: "scaleY(0)" }, { transform: "none", offset: .14, easing: OUT }, { transform: "none", offset: .9, easing: IN }, { transform: "scaleY(0)" }], { duration: D, fill: "both" })),
+    slide(a, -32), slide(b, 32),
+    done(vs.animate([{ transform: "scale(1.5)", opacity: 0 }, { transform: "scale(1.5)", opacity: 0, offset: .16, easing: OUT }, { transform: "none", opacity: 1, offset: .3 }, { transform: "none", opacity: 1, offset: .82 }, { opacity: 0, offset: .92 }, { opacity: 0 }], { duration: D, fill: "both" })),
   ]);
   box.remove();
 }
@@ -610,20 +679,49 @@ export async function enter(stage, key, { ball = true } = {}) {
   shock(e, at, s * 2.2, { dur: 500 });
   await e.anim(a, { sx: [.35, 1.08, 1], sy: [.35, 1.08, 1], flash: [2, .8, 0], alpha: [0, 1, 1], rimA: [1, .6, 0] }, { dur: 540, at: [0, .55, 1], eases: ["out", "inout"] });
 }
-// called back: it whitens and shrinks into a beam of red light drawn back to the ball; dragged out: blown off its side
-export function leave(stage, key, { drag = false } = {}) {
+/* called back, as sent in played backwards (DESIGN.md "Battle", What the stage plays): red light takes it from its edge in while
+   motes gather to its heart and a ring on the floor closes on its feet; it swells a breath, folds into its own middle as one red
+   light, and that light flies home to its trainer's corner on the arc the ball came in on, a comet with a tail that thins behind it.
+   Dragged out (울부짖기), it is blown off its side on gusts. */
+export async function leave(stage, key, { drag = false } = {}) {
   const e = E(stage), a = actorOf(stage, key);
-  if (!e || !a || instant()) return Promise.resolve();
+  if (!e || !a || instant()) return;
   e.cancel(a);
-  const at = centre(stage, key, .45), s = sizeOf(stage, key);
-  if (drag && !reduced()) {
+  const at = centre(stage, key, .45), s = sizeOf(stage, key), feet = centre(stage, key, 0);
+  if (reduced()) { await e.anim(a, { alpha: [1, 0] }, { dur: 260, fill: true }); return; }
+  if (drag) {
     const d = (a.own ? -1 : 1) * s * 1.4;
     e.emit({ n: 12, at: [at[0] - Math.sign(d) * s * .5, at[1]], r: [s * .1, s * .4], vel: () => [Math.sign(d) * rand(s * 4, s * 6), 0], tex: "streak", ramp: "white", face: true, size: [2.5, 2.5], aspect: [14, 24], life: 320, over: 140 });
-    return e.anim(a, { x: [0, d], rot: [0, Math.sign(d) * .3], alpha: [1, 0] }, { dur: 360, ease: "in2", fill: true });
+    await e.anim(a, { x: [0, d], rot: [0, Math.sign(d) * .3], alpha: [1, 0] }, { dur: 360, ease: "in2", fill: true });
+    return;
   }
-  const own = a.own, { W, H } = e, corner = own ? [-W * .05, H * 1.05] : [W * 1.05, -H * .05];
-  e.at(200, () => { glow(e, at, s * 1.2, "fire", { dur: 260, alpha: .7 }); beamStrip(e, at, corner, { color: "#FF4040", width: 8, dur: 300, grow: .3 }); });
-  return e.anim(a, { sx: [1, .2], sy: [1, .2], flash: [0, 2.2], tintR: [1, 1], tintG: [.25, .25], tintB: [.25, .25], tintA: [0, .7], alpha: [1, 0] }, { dur: 340, ease: "in2", fill: true });
+  const { W, H } = e, ball = a.own ? [-W * .03, H * 1.03] : [W * 1.03, -H * .03];
+  const FOLD = 700;
+  glow(e, at, s * 1.5, "normal", { ramp: "recall.h", dur: FOLD, alpha: .22, s0: .9 });
+  // motes drawn in to its heart from round its body
+  for (let i = 0; i < 18; i++) {
+    const ang = around(18, i), r = s * rand(.55, .9), st = [at[0] + Math.cos(ang) * r, at[1] + Math.sin(ang) * r * .9], life = rand(380, 520);
+    e.emit({ at: st, vel: [(at[0] - st[0]) / life * 1000, (at[1] - st[1]) / life * 1000], tex: "spark", ramp: "recall", size: [s * .09, s * .02], life, delay: 60 + i * 14, emis: 1 });
+  }
+  // the ring at its feet closes in, the mirror of the one that opens as it comes out
+  ring(e, feet, s * .5, "normal", { flat: .26, dur: FOLD, ramp: "recall.h", layer: 0, s0: 3.4, alpha: .8 });
+  // it folds into its own middle: the scale keeps the heart where it is, so the picture closes on its centre, not its feet
+  const lift = at[1] - feet[1];
+  await e.anim(a, {
+    // the colour channels add to the actor's base (1, 1, 1): these take it to the ball's red (1, .16, .2) and a pink-red rim
+    tintG: [-.84, -.84], tintB: [-.8, -.8], tintA: [0, .82, .94, .96],
+    rimG: [-.58, -.58], rimB: [-.58, -.58], rimA: [0, .7, .8, .8],
+    flash: [0, 0, .08, .7], sx: [1, 1.04, .96, .04], sy: [1, 1.04, .96, .04], y: [0, -lift * .04, lift * .04, lift * .96], alpha: [1, 1, 1, 0],
+  }, { dur: FOLD, at: [0, .3, .5, 1], eases: ["out", "inout", "in2"], fill: true });
+  // what it became: one red light, a flash, and the light running home up the beam
+  glow(e, at, s * .7, "normal", { ramp: "recall", dur: 260, alpha: .8, s0: .5 });
+  e.emit({ at, tex: "spark", ramp: "recall", size: [s * .45, 0], life: 260, emis: 1 });
+  // home on the ball's own arc, mirrored: up and over, then down into the corner it was thrown from
+  const peak = Math.min(at[1], ball[1]) - H * (a.own ? .22 : .1), HOME = 460;
+  const arc = u => [lerp(at[0], ball[0], u), (1 - u) * (1 - u) * at[1] + 2 * (1 - u) * u * peak + u * u * ball[1]];
+  pathStrip(e, arc, { color: "#FF4A55", width: Math.max(5, s * .08), dur: HOME, head: .62, tailLag: .34, n: 28 });
+  for (let i = 0; i < 12; i++) { const u = i / 12; e.emit({ at: arc(u), tex: "glow", ramp: "recall", size: [s * .28, s * .06], life: 240, delay: u * HOME * .62, alpha: .85, emis: 1 }); }
+  await e.after(HOME * .7);
 }
 // Mega Evolution: the arena goes dark round it, light spirals in from every side into a cocoon of rainbow, it whites out, the stage
 // flashes and it stands changed (megaEnd lets the light go)

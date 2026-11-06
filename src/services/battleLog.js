@@ -12,9 +12,14 @@ const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(
   : JSON.stringify(value ?? null);
 /* 요청에서 i번째 자리가 고를 것 없이 pass인지: 쓰러진 자리, 교체를 묻지 않은 자리, 또는 벤치가 바닥난 자리.
    더블에서 둘이 함께 쓰러지고 하나만 남으면 쇼다운은 둘 다 묻고 "switch 3, pass"를 받는다. */
+/* Revival Blessing: the engine asks the place of the one who used it to name a fainted Pokémon to bring back (the request marks that
+   Pokémon reviving). Only a fainted one can be named there; with none, the place passes (feedback 2026-11-06: the bench offered
+   only standing Pokémon, the engine refused them, and the player could choose nothing) */
+export const revives = (request, i) => Boolean(request.forceSwitch?.[i] && request.side?.pokemon?.[i]?.reviving);
 export function slotPasses(request, i) {
   const forced = request.forceSwitch, mons = request.side?.pokemon || [];
-  if (forced) return !forced[i] || forced.slice(0, i).filter(Boolean).length >= mons.filter(m => !m.active && !String(m.condition).endsWith(" fnt")).length;
+  if (forced && revives(request, i)) return !mons.some(m => !m.active && String(m.condition).endsWith(" fnt"));
+  if (forced) return !forced[i] || forced.slice(0, i).filter((f, k) => f && !revives(request, k)).length >= mons.filter(m => !m.active && !String(m.condition).endsWith(" fnt")).length;
   return !mons[i] || String(mons[i].condition).endsWith(" fnt") || Boolean(request.active?.[i]?.commanding);
 }
 
@@ -139,17 +144,24 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
   };
   const D = key => text.default.default[key];
 
-  function setActive(ident, details, condition) {
+  /* passed: the one coming in takes over what the one leaving carried, as Showdown's own client does (the protocol does not say it
+     again): after Baton Pass its stat changes and the effects that go with it; after Shed Tail its substitute only */
+  const PASSED = new Set(["substitute", "confusion", "focusenergy", "leechseed", "curse", "aquaring", "ingrain", "embargo", "healblock", "magnetrise", "gastroacid", "powertrick", "laserfocus", "perish1", "perish2", "perish3"]);
+  function setActive(ident, details, condition, passing = true) {
     const who = parseIdent(ident);
     const side = state.sides[who.side];
     const previous = side.active[who.slot];
+    const via = passing && previous && !previous.fainted ? previous.lastMove : "";
+    const carried = via === "batonpass" ? { boosts: { ...previous.boosts }, volatiles: previous.volatiles.filter(v => PASSED.has(v)) }
+      : via === "shedtail" ? { boosts: {}, volatiles: previous.volatiles.filter(v => v === "substitute") } : { boosts: {}, volatiles: [] };
     const { species, level, gender } = parseDetails(details);
     const known = side.team[who.name];
     const mon = known || (side.team[who.name] = newMon(who.side, who.name, who.slot));
     entered[`${who.side}${who.slot}`] = { mon, before: known ? { species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted } : null };
     untransform(previous);
     // a Pokémon sent in leaves its stat changes and volatile effects behind; its item, ability and moves stay known
-    Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, boosts: {}, volatiles: [] }, parseHP(condition));
+    Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, lastMove: "", ...carried }, parseHP(condition));
+    delete mon.types; delete mon.addedType;
     delete mon.transformedFrom;
     side.active[who.slot] = mon;
     return previous && previous !== mon && !previous.fainted ? previous : null;
@@ -200,7 +212,9 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "player": if (args[1]) state.players[args[0]] = args[1]; break;
       case "gametype": state.gameType = args[0]; break;
       case "poke": state.sides[args[0]].preview.push(parseDetails(args[1]).species); break;
-      case "turn": state.turn = Number(args[0]); event = { verb: "turn", turn: state.turn }; break;
+      // Roost's grounding lasts the turn it was used: it goes with the turn's upkeep (a switch asked for after it comes before the next turn)
+      case "upkeep": for (const side of ["p1", "p2"]) for (const m of state.sides[side].active) if (m) delete m.roost; break;
+      case "turn": state.turn = Number(args[0]); for (const side of ["p1", "p2"]) for (const m of state.sides[side].active) if (m) delete m.roost; event = { verb: "turn", turn: state.turn }; break;
       case "win": state.ended = true; state.winner = state.players.p1 === args[0] ? "p1" : "p2"; event = { verb: "end", winner: state.winner }; break;
       case "tie": state.ended = true; state.winner = "tie"; event = { verb: "end", winner: "tie" }; break;
 
@@ -224,7 +238,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       }
       case "switch": case "drag": {
         const who = parseIdent(args[0]);
-        const previous = setActive(args[0], args[1], args[2]);
+        const previous = setActive(args[0], args[1], args[2], cmd === "switch");
         const own = who.side === perspective;
         if (previous && cmd === "switch") say(own ? D("switchOutOwn") : D("switchOut"), { TRAINER: state.players[who.side], NICKNAME: speciesName(previous.species) });
         const name = speciesName(parseDetails(args[1]).species);
@@ -236,6 +250,8 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
       case "detailschange": case "-formechange": {
         const mon = monOf(args[0]);
         mon.species = parseDetails(args[1]).species;
+        // a new form brings its own typing
+        delete mon.types; delete mon.addedType;
         event = { verb: "change", ident: args[0] };
         break;
       }
@@ -253,6 +269,7 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const move = moves[toID(args[1])] || {};
         const user = monOf(source);
         if (user && !user.moves.includes(args[1])) user.moves.push(args[1]);
+        if (user) user.lastMove = toID(args[1]);
         // PP spent, as Showdown counts it for a tooltip: a move called by another ([from]: Sleep Talk, a locked-in Outrage) spends none.
         // ponytail: Pressure's extra PP is not counted; count each Pressure target here if it ever matters
         if (user && !kw.from) user.ppUsed = { ...user.ppUsed, [toID(args[1])]: (user.ppUsed?.[toID(args[1])] || 0) + 1 };
@@ -384,12 +401,22 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         const mon = monOf(args[0]);
         const { id } = parseEffect(args[1]);
         if (mon && id) mon.volatiles = cmd === "-start" ? [...new Set([...mon.volatiles, id])] : mon.volatiles.filter(v => v !== id);
+        /* a typing changed by a move or an ability (Soak, Burn Up, Protean: typechange with the new types; Trick-or-Treat and Forest's
+           Curse: typeadd with the one added). types replaces the species' typing and addedType comes on top of it, until it goes out */
+        // a new typing replaces an added one too (Soak after Trick-or-Treat leaves Water alone), as the engine's setType does
+        if (mon && id === "typechange") { if (cmd === "-start") mon.types = String(args[2] || "").split("/").filter(t => t && t !== "???"); else delete mon.types; delete mon.addedType; }
+        if (mon && id === "typeadd") { if (cmd === "-start") mon.addedType = args[2]; else delete mon.addedType; }
         event = { verb: "volatile", ident: args[0], id, on: cmd === "-start" };
-        say(template(args[1], cmd === "-start" ? "start" : "end") || (cmd === "-end" ? D("end") : null), { POKEMON: pokemonWord(args[0]), EFFECT: effectName(args[1]), SOURCE: kw.of ? pokemonWord(kw.of) : "" });
+        // a typing put back says nothing, as the games and Showdown say nothing (it said "typechange로부터 풀려났다")
+        // Supreme Overlord's count of the fallen (fallen1 to fallen5) is a number on the plate, never a sentence
+        if (!(cmd === "-end" && (id === "typechange" || id === "typeadd")) && !/^fallen\d$/.test(id))
+          say(template(args[1], cmd === "-start" ? "start" : "end") || (cmd === "-end" ? D("end") : null), { POKEMON: pokemonWord(args[0]), EFFECT: effectName(args[1]), SOURCE: kw.of ? pokemonWord(kw.of) : "" });
         break;
       }
       case "-singleturn": case "-singlemove": {
         say(template(args[1], "start"), { POKEMON: pokemonWord(args[0]) });
+        // Roost: the Flying type is set aside until the turn ends (currentTypes leaves it out)
+        if (parseEffect(args[1]).id === "roost" && monOf(args[0])) monOf(args[0]).roost = true;
         if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0], id: parseEffect(args[1]).id };
         break;
       }
@@ -436,6 +463,10 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         say(template("move: Transform", "transform") || D("transform"), { POKEMON: pokemonWord(args[0]), SPECIES: speciesName(target.species) });
         mon.transformedFrom ??= mon.species;
         mon.species = target.species;
+        // Transform takes the target's stat changes and typing as they stand, as the engine does
+        mon.boosts = { ...target.boosts };
+        if (target.types) mon.types = [...target.types]; else delete mon.types;
+        if (target.addedType) mon.addedType = target.addedType; else delete mon.addedType;
         event = { verb: "change", ident: args[0] };
         break;
       }

@@ -1,6 +1,6 @@
 import { PRNG, toID } from "@pkmn/sim";
 import { loadBattle, setPool } from "../../supabase/functions/battle/engine.mjs";
-import { slotPasses } from "./battleLog.js";
+import { revives, slotPasses } from "./battleLog.js";
 
 /* 컴퓨터 상대 (1인 배틀). 엔진은 이 브라우저의 워커에서 돌고(src/pages/battle/cpu.worker.js), 컴퓨터는 사람처럼 자기 요청과 공개된 것만 보고 고른다.
 
@@ -330,10 +330,12 @@ function bestSwitches(state, side) {
   const taken = new Set();
   return req.forceSwitch.map((must, i) => {
     if (!must || slotPasses(req, i)) return "pass";
+    // Revival Blessing names a fainted one; the one that would fare best against the foes now out comes back
+    const reviving = revives(req, i);
     let best = -1, bestScore = -Infinity;
     s.pokemon.forEach((p, k) => {
-      if (k < s.active.length || p.fainted || taken.has(k)) return;
-      const score = foes.reduce((sum, f) => sum + race(state, p, f), 0) + p.hp / p.maxhp;
+      if (k < s.active.length || p.fainted !== reviving || taken.has(k)) return;
+      const score = foes.reduce((sum, f) => sum + race(state, p, f), 0) + (reviving ? 0 : p.hp / p.maxhp);
       if (score > bestScore) { bestScore = score; best = k; }
     });
     if (best < 0) return "pass";
@@ -541,10 +543,11 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
 // every way to fill the places a forced switch leaves (a place that must pass passes)
 function forcedOptions(state, side, req) {
   const free = req.side.pokemon.map((p, k) => (!p.active && !p.condition.endsWith(" fnt") ? k + 1 : 0)).filter(Boolean);
+  const fainted = req.side.pokemon.map((p, k) => (!p.active && p.condition.endsWith(" fnt") ? k + 1 : 0)).filter(Boolean);
   let ways = [[]];
   req.forceSwitch.forEach((must, i) => {
     if (!must || slotPasses(req, i)) { ways = ways.map(w => [...w, "pass"]); return; }
-    ways = ways.flatMap(w => free.filter(k => !w.includes(`switch ${k}`)).map(k => [...w, `switch ${k}`]));
+    ways = ways.flatMap(w => (revives(req, i) ? fainted : free).filter(k => !w.includes(`switch ${k}`)).map(k => [...w, `switch ${k}`]));
   });
   return ways.filter(w => w.length).map(w => w.join(", "));
 }

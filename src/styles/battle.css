@@ -5,20 +5,47 @@
 .bt-page { display: grid; gap: var(--s5); }
 .bt-intro { margin-top: calc(var(--s3) - var(--s5)); }
 
-/* ---------- before the battle (Opening and waiting): the match as it will be played, then what to bring. Desktop 709 and 439 ---------- */
+/* ---------- before the battle (Opening and waiting). What is chosen most stands first and largest: 상대, 형식, 팀 on the 709. Beside
+   it on the 439 the match as it will be played (나 대 상대, the court) and the action under it, one card that stays in view while the
+   page scrolls, so 배틀 시작 is never under the fold. On a phone: the matchup (the name typed in it), the choices, the court, and the
+   action docked at the bottom. ---------- */
 .bt-lobby { display: grid; gap: var(--s5); }
-.bt-lobby-show { display: grid; gap: var(--seam); min-width: 0; }
 .bt-lobby-set { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
 .bt-lobby-set .q + .q { margin-top: 0; }
+.bt-lobby-show { display: grid; gap: var(--s3); align-content: start; min-width: 0; }
+.bt-court { display: grid; gap: var(--seam); min-width: 0; }
+.bt-lobby-show > .dock { margin-top: 0; }
+.bt-lobby-show > .btn--link { justify-self: center; }
+@media (max-width: 859px) {
+  .bt-lobby-show { display: contents; }
+  .bt-lobby > .bt-lobby-show > .bt-versus { order: -1; }
+  .bt-lobby > .bt-lobby-show > :is(.bt-court, .dock, .btn--link) { order: 1; }
+}
 @media (min-width: 860px) {
-  .bt-lobby { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); align-items: start; }
-  .bt-lobby-set > .dock { margin-top: var(--s3); }
+  .bt-lobby { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); align-items: start; justify-content: space-between; }
+  .bt-lobby-show { position: sticky; top: calc(var(--nav-height) + var(--s5)); }
+}
+/* the saved teams two to a row on a wide screen, so four stand above the fold; the random parties last */
+@media (min-width: 860px) { .bt-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* a battle left half played stands over everything, the first thing to press */
+.bt-resume { margin-bottom: calc(var(--s3) - var(--s5)); }
+/* the waiting screen's counters side by side: the code to read out, then the time waited */
+.bt-wait-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--seam); }
+/* under the lobby: 방 참가 beside the device's lists on a wide screen (439 and 709), first on a phone */
+.bt-after { display: grid; gap: var(--s8); margin-top: var(--s8); }
+.bt-lists { display: grid; gap: var(--s8); align-content: start; min-width: 0; }
+@media (min-width: 860px) {
+  .bt-after { grid-template-columns: minmax(0, 709px) minmax(0, 439px); column-gap: var(--s13); justify-content: space-between; align-items: start; }
+  .bt-after > .bt-rooms { grid-column: 2; grid-row: 1; }
+  .bt-after > .bt-lists { grid-column: 1; grid-row: 1; }
 }
 /* 나 대 상대: two equal panels and the word between them, on the seam, read like a scoreboard before the match; the name is typed in place */
 .bt-versus { grid-template-columns: minmax(0, 1fr) var(--h-row) minmax(0, 1fr); }
-.bt-vs { display: grid; align-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-counter); padding: var(--s2) var(--pad); }
+/* 64 tall: a 12 label over the name at 20, no taller than what it holds (it was 84, more panel than name) */
+.bt-vs { display: grid; align-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--pad); }
 .bt-vs > :is(b, input) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
-.bt-vs > input { width: 100%; padding: 0; background: none; color: var(--lit); }
+/* the field is the name itself: no control height of its own, so the panel is only as tall as a label over a name */
+.bt-vs > input { width: 100%; height: var(--l20); min-height: 0; padding: 0; background: none; color: var(--lit); }
 .bt-vs > input:focus-visible { outline: none; }
 .bt-vs > input::placeholder { color: var(--mute); }
 .bt-vs:has(:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
@@ -36,7 +63,8 @@
 .bt-team-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
 .bt-team-six > span { aspect-ratio: 1; }
 .bt-team-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
-.bt-team.inv .bt-team-six > span { background: var(--panel); }
+/* the chosen team inverts and its six stand straight on the white: no navy cell left behind a picture */
+.bt-team.inv .bt-team-six > span { background: transparent; }
 /* a random party's six are unknown until the battle opens */
 .bt-team-q { display: grid; place-items: center; background: var(--panel-2); color: var(--dim); font-weight: 700; }
 .bt-team:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
@@ -59,8 +87,7 @@
 .bt-main { display: grid; gap: var(--s5); min-width: 0; align-content: start; }
 .bt-side { display: contents; }
 .bt-side > .bt-head { order: -3; }
-.bt-side > .bt-result { order: -2; }
-.bt-main, .bt-side > .bt-replay { order: -1; }
+.bt-main, .bt-side > :is(.bt-replay, .bt-end) { order: -1; }
 @media (min-width: 1200px) {
   .page.page--battle { --content: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); }
   .bt-match {
@@ -72,6 +99,7 @@
     max-height: calc(100svh - var(--nav-height) - var(--s5) * 2); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
   }
   .bt-side .bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bt-side > .bt-end { order: -2; }
   .bt-side .bt-log { height: 320px; }
   .bt-side .bt-rkey { width: var(--h-control); height: var(--h-control); }
 }
@@ -82,6 +110,27 @@
 .bt-head > :is(.status, .bt-head-names) { grid-column: 1; }
 .bt-head > .status { display: flex; align-items: center; gap: var(--s2); }
 .bt-head-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
+/* on a phone the head is one line, so the stage and the moves under it come up: where the match stands, the names, the turn */
+@media (max-width: 859px) {
+  .bt-head { grid-template-columns: auto minmax(0, 1fr) auto; min-height: var(--h-row); padding: var(--s1) var(--pad); }
+  .bt-head > .status { grid-column: 1; grid-row: 1; }
+  .bt-head > .status > .dim { display: none; }
+  .bt-head > .bt-head-names { grid-column: 2; grid-row: 1; font-size: var(--t15); line-height: var(--l15); }
+  .bt-head-turn { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: var(--s1); }
+}
+
+/* the end: the result at 32 (inverted for a win and for anyone watching, a panel for a loss), how it went under it, then 다시하기 and
+   새 배틀 side by side, docked on a phone */
+.bt-end { display: grid; gap: var(--s3); min-width: 0; }
+.bt-end-head { display: grid; gap: var(--s1); padding: var(--s5) var(--pad); animation: y-rise var(--move-light) backwards; }
+.bt-end-title { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
+.bt-end-line { font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
+.bt-end-head.pn .bt-end-line { color: var(--dim); }
+.bt-end-offer { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--pad); }
+.bt-end-keys { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); }
+.bt-end-keys > :only-child { grid-column: 1 / -1; }
+.bt-end-keys > .btn--second { padding-inline: var(--s5); }
+.bt-end > .dock { margin-top: 0; }
 
 /* the replay under the stage stands back: small square keys with their signs, a thin track to drag to any turn (the range input lies
    over it unseen), and where it stands */
@@ -93,11 +142,16 @@
 .bt-rkey:disabled { color: var(--mute); cursor: default; }
 @media (hover: hover) { .bt-rkey:hover:not(:disabled) { color: var(--lit); background: var(--panel-2); } }
 .bt-rkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-/* the track gives way first on a narrow phone, so the turn at the end is never cut off */
-.bt-replay-track { position: relative; flex: 1; min-width: 0; height: var(--s1); margin: 0 var(--s2); background: var(--rule); }
-.bt-replay-track > i { position: absolute; inset: 0; background: var(--dim); transform-origin: 0 50%; }
-.bt-replay-track > input[type="range"] { position: absolute; left: 0; right: 0; top: 50%; width: 100%; height: var(--h-strip); margin: 0; translate: 0 -50%; opacity: 0; cursor: pointer; }
-.bt-replay-at { flex: none; min-width: 40px; text-align: right; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* the track, as a player's scrubber (2026-11-06: a row of cells, one a stop, did not read as a position): a rail, lit as far as the
+   replay has played, and a square handle where it stands. It fills what the keys leave */
+.bt-replay-track { position: relative; flex: 1; min-width: 0; align-self: stretch; display: flex; align-items: center; margin: 0 var(--s3); }
+.bt-replay-rail { position: relative; width: 100%; height: var(--s1); background: var(--panel-2); }
+.bt-replay-rail > i { position: absolute; inset: 0; background: var(--dim); transform: scaleX(var(--p)); transform-origin: 0 50%; transition: transform var(--move-tone); }
+/* the handle moves by transform only: its holder spans the rail and slides by the share played */
+.bt-replay-at { position: absolute; inset: 0; transform: translateX(calc(var(--p) * 100%)); transition: transform var(--move-tone); }
+.bt-replay-at > b { position: absolute; top: 50%; left: 0; width: var(--s3); height: var(--s3); background: var(--lit); translate: -50% -50%; }
+.bt-replay-track > input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.bt-replay-track:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: var(--s1); }
 
 /* finding a battle again: the ones being played now and this device's, as rows */
 .bt-list { display: grid; gap: var(--s3); }
@@ -114,8 +168,19 @@
 .bt-log::-webkit-scrollbar { display: none; }
 .bt-line { padding: var(--s2) var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
 .bt-turn { display: flex; align-items: center; min-height: var(--h-strip); padding: 0 var(--pad); color: var(--dim); }
-/* the whole log folds away on a phone, under the stage; on desktop it stands open beside it */
-.bt-logbox > summary { padding: var(--s2) 0; cursor: pointer; }
+/* the whole log behind a row-sized key: the word at 15 and a chevron that turns as it opens */
+.bt-logkey { display: flex; align-items: center; justify-content: space-between; min-height: var(--h-row); padding: 0 var(--pad); list-style: none; cursor: pointer; font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.bt-logkey::-webkit-details-marker { display: none; }
+.bt-logkey > svg { transition: transform var(--move-tone); }
+.bt-logbox[open] > .bt-logkey > svg { transform: rotate(180deg); }
+.bt-logbox[open] > .bt-logkey { margin-bottom: var(--seam); }
+@media (hover: hover) { .bt-logkey:hover { background: var(--panel-2); } }
+.bt-logkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+/* 기권: a full key in its own dark red, the one key on the battle screen that is not navy or white */
+.bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
+/* the end's other keys, side by side under 다시하기 and 새 배틀 */
+.bt-end-more { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--seam); }
+.bt-end-more:empty { display: none; }
 .bt-links { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
 
 /* =============================================================================
@@ -175,9 +240,8 @@
 .bt-plate { display: grid; gap: var(--s1); width: 100%; padding: var(--s2) var(--s3); text-align: left; color: var(--lit); background: var(--panel); pointer-events: auto; cursor: pointer; }
 @media (hover: hover) { .bt-plate:hover { background: var(--panel-2); } }
 .bt-plate:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-.bt-plate.out { color: var(--mute); }
-/* while a target is picked the plates let taps through to the Pokémon under them (a plate may lie over a foe's picture), and stand back */
-.bs-stage:has(.bt-pick) .bt-plate { pointer-events: none; opacity: .6; }
+/* a fainted Pokémon's plate goes out with it, as the games take it away; the next one sent in brings its own */
+.bt-plate.out { opacity: 0; pointer-events: none; transition: opacity var(--move-tone); }
 .bt-plate-top { display: flex; align-items: center; gap: var(--s1); min-width: 0; font-size: var(--t15); line-height: var(--l15); animation: y-rise var(--move-light) backwards; }
 .bt-plate-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .bt-sex { flex: none; font-style: normal; font-size: var(--t12); font-weight: 700; }
@@ -246,11 +310,6 @@
 .bt-hud:has(.bt-clock) .bt-say { padding-right: calc(var(--say-h) + var(--s3)); }
 
 /* a target the player may pick: the whole Pokémon is the button, framed by a square of light, with its matchup */
-.bt-pick { position: absolute; inset: 0; z-index: var(--z-raised); box-shadow: inset 0 0 0 var(--line) var(--lit); animation: bt-pick-breathe 1.4s ease-in-out infinite; }
-@keyframes bt-pick-breathe { 50% { opacity: .55; } }
-@media (hover: hover) { .bt-pick:hover { background: var(--veil); } }
-.bt-pick-mark { position: absolute; left: 50%; bottom: var(--s2); transform: translateX(-50%); display: flex; align-items: center; height: 24px; padding: 0 var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 700; background: var(--panel-2); }
-.bt-pick-mark.hard { background: var(--lit); color: var(--ground); }
 
 /* what the stage says over itself (stageFx.js): a turn or the winner across it, an ability's plate; nothing is written over a Pokémon */
 .bt-fx-flash { width: 100%; height: 100%; background: var(--lit); }
@@ -319,7 +378,6 @@
 .bt-move:active:not(:disabled):not(.on) { background: color-mix(in srgb, var(--type) 76%, #050D1F); }
 :is(.bt-sw, .bt-plate, .bt-key, .bt-rkey, .bt-mega:not(.on)):active:not(:disabled) { background: var(--panel-2); }
 button.bt-card:active:not(:disabled):not(.on) { background: var(--panel-2); }
-.bt-pick:active { background: var(--veil); }
 /* a Pokémon's sheet */
 .bt-info { display: grid; gap: var(--s3); }
 .bt-info-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--s2); align-items: center; font-size: var(--t15); line-height: var(--l15); }
@@ -355,7 +413,7 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-card-pic { display: grid; place-items: center; flex: none; width: 64px; height: 64px; background: var(--panel-2); }
 .bt-card-pic > img { width: 92%; height: 92%; object-fit: contain; }
 .bt-card.out .bt-card-pic { background: var(--rule); }
-.bt-card.on .bt-card-pic { background: var(--ground); }
+.bt-card.on .bt-card-pic { background: transparent; }
 .bt-card-id { display: grid; gap: var(--s1); flex: 1; min-width: 0; }
 .bt-card-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
 .bt-card-types { display: flex; flex-wrap: nowrap; gap: var(--seam); min-width: 0; overflow: hidden; }
@@ -441,3 +499,51 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 /* the side column's title in the team preview: only beside it, at the same height as the preview's titles (title, 8, panel) */
 .bt-side-title { display: none; }
 @media (min-width: 1200px) { .bt-side > .bt-side-title { display: block; order: -4; margin-bottom: calc(var(--s2) - var(--s3)); } }
+
+/* ---------- going in (DESIGN.md "Battle", Going in; src/pages/battle/Gate.js): the stage's opening band (battle-stage.css .bt-intro)
+   at the size of the window. The page goes dark, the band lit on its two edges opens from its middle line, the names face each other
+   across VS, and one line under it says what this is ---------- */
+.bt-gate {
+  --lit: #FFFFFF; --dim: #9FB3D8; --mute: #5C6F94; --ground: #050D1F; --panel: #0A1A3A;
+  --band: 104px;
+  position: fixed; inset: 0; z-index: calc(var(--z-modal) + 1); pointer-events: all; overflow: hidden; background: var(--ground); color: var(--lit);
+}
+.bt-gate-band {
+  position: absolute; left: 0; right: 0; top: calc(50% - var(--band) / 2); height: var(--band);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 0 6%;
+  background: var(--panel); will-change: transform;
+}
+.bt-gate-band::before, .bt-gate-band::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--lit); }
+.bt-gate-band::before { top: 0; } .bt-gate-band::after { bottom: 0; }
+.bt-gate-name { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 28px; line-height: 36px; font-weight: 800; letter-spacing: -.02em; }
+.bt-gate-name.own { justify-self: end; }
+/* the opponent not yet there: their place says so, muted */
+.bt-gate-name.muted { color: var(--mute); }
+.bt-gate-vs { display: grid; place-items: center; width: 48px; height: 48px; background: var(--lit); color: var(--ground); font-size: 15px; line-height: 20px; font-weight: 800; letter-spacing: .06em; }
+.bt-gate-line { position: absolute; left: 0; right: 0; top: calc(50% + var(--band) / 2 + var(--s5)); text-align: center; color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 700; letter-spacing: .08em; }
+.bt-gate-line:empty { display: none; }
+@media (min-width: 860px) {
+  .bt-gate { --band: 176px; }
+  .bt-gate-band { gap: 40px; }
+  .bt-gate-name { font-size: 64px; line-height: 76px; }
+  .bt-gate-vs { width: 80px; height: 80px; font-size: 24px; line-height: 32px; }
+}
+
+/* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two
+   over ours, each place a key the moves' height with the picture, the name, the HP and how the move lands there; a place the move
+   cannot reach is muted. 돌아가기 under it brings the moves back */
+.bt-targets { display: grid; gap: var(--seam); }
+.bt-target-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+.bt-target { position: relative; display: flex; align-items: center; gap: var(--s3); min-width: 0; min-height: var(--h-counter); padding: 0 var(--s3) 0 var(--s2); text-align: left; color: var(--lit); background: var(--panel-2); transition: background-color var(--move-tone); }
+.bt-target.own { background: var(--panel); }
+.bt-target img { flex: none; width: var(--h-row2); height: var(--h-row2); object-fit: contain; }
+.bt-target-say { display: grid; gap: var(--s1); flex: 1; min-width: 0; }
+.bt-target-say > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.bt-target-line { display: flex; align-items: center; gap: var(--s2); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 859px) { .bt-target { gap: var(--s2); } .bt-target img { width: var(--h-row); height: var(--h-row); } }
+.bt-target:disabled { color: var(--mute); cursor: default; }
+.bt-target:disabled img { filter: grayscale(1); opacity: var(--opacity-disabled); }
+.bt-target.empty { justify-content: center; }
+@media (hover: hover) { .bt-target:not(:disabled):not(.empty):hover { background: var(--rule); } }
+.bt-target:not(:disabled):active { background: var(--rule); }
+.bt-target:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }

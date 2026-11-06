@@ -23,6 +23,17 @@ export function battleHistoryIds() {
   return [...new Set(ids.filter(id => /^[a-z0-9]{12}$/.test(id)))].slice(0, KEEP * 2);
 }
 
+/* 이 기기의 배틀 기록 삭제: the list is emptied and the seats of battles that are over are let go. A seat in a battle still waiting or
+   being played is kept, so the player can still come back to it by its link; the battles themselves stay on the server. */
+export function forgetBattles(rows) {
+  const keep = new Set(rows.filter(b => b.status === "waiting" || b.status === "active").map(b => b.id));
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([...keep]));
+    const seats = readJSON(SEATS_KEY, {});
+    localStorage.setItem(SEATS_KEY, JSON.stringify(Object.fromEntries(Object.entries(seats).filter(([id]) => keep.has(id)))));
+  } catch { /* 지우지 못하면 목록이 그대로 남는다 */ }
+}
+
 // those battles' public rows, newest first; a battle cancelled before it started is simply gone
 export async function listBattlesById(ids) {
   if (!supa || !ids.length) return [];
