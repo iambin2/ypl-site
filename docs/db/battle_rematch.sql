@@ -8,6 +8,8 @@
 -- SQL만 실행되고 함수가 그대로면 사이트의 다시하기는 오류를 보여 줄 뿐 아무것도 바꾸지 않는다.
 
 alter table public.battles add column if not exists rematch_id text;
+-- 방문자는 battles 를 열마다 허락받아 읽는다(battle_integration.sql): 새 열도 읽을 수 있게 한다
+grant select (rematch_id) on table public.battles to anon, authenticated;
 
 -- 끝난 친선 배틀에 다시하기 배틀을 적는다. p_expected는 함수가 읽은 값이어서, 두 사람이 동시에 눌러도 한 사람만 적는다.
 create or replace function public.battle_set_rematch(p_id text, p_rematch text, p_expected text)

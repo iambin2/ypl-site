@@ -45,3 +45,7 @@ revoke all on function public.battle_create_room(text, text, text, text, text, t
 grant execute on function public.battle_create_room(text, text, text, text, text, text, jsonb, text, text) to service_role;
 
 notify pgrst, 'reload schema';
+
+-- 2026-11-06 덧붙임: 방문자는 battles 를 열마다 허락받아 읽는다(battle_integration.sql). room 열도 읽을 수 있게 한다.
+-- 이것이 없으면 사이트가 배틀 행을 읽지 못해 방 화면이 멈추고 공개 방 목록이 비었다.
+grant select (room) on table public.battles to anon, authenticated;

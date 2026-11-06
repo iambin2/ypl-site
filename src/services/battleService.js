@@ -66,22 +66,26 @@ const PUBLIC = "id, regulation, format_id, engine, status, p1_name, p2_name, tur
 const LIST = "id, status, p1_name, p2_name, turn, winner, ended_by, kind, event_id, source_node_key, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, applied_at, apply_error, updated_at";
 
 // 공개 행. 진행 중에는 관전 로그만, 끝나면 전체 로그와 입력 기록까지 있다.
-// 방의 종류(room)는 docs/db/battle_rooms.sql 을 실행한 뒤에만 있다. 그 전에는 없이 읽는다(모든 방이 링크 방).
+/* Two columns come with later SQL: room (docs/db/battle_rooms.sql) and rematch_id (docs/db/battle_rematch.sql). A visitor reads the
+   battles table column by column (battle_integration.sql grants each), so a column is unreadable both before its SQL runs (42703, no
+   such column) and while it is not granted (42501). Either way the row is read without it, and what needs it stands aside, so a
+   battle room never stops on its loader (2026-11-06: room was not granted, and every room waited forever). */
 let roomsSupported = true;
-const missingRoom = error => /42703|room/.test(`${error?.code} ${error?.message}`);
-// the next battle a rematch opened (docs/db/battle_rematch.sql) is read only once that SQL has run
 let rematchSupported = true;
+const unreadable = error => ["42703", "42501"].includes(String(error?.code)) || /(room|rematch_id)/.test(error?.message || "");
+const selectRow = (id, cols) => supa.from("battles").select([PUBLIC, ...cols].join(", ")).eq("id", id).maybeSingle();
 export async function readBattleRow(id) {
   if (!supa) return null;
-  const columns = () => [PUBLIC, roomsSupported && "room", rematchSupported && "rematch_id"].filter(Boolean).join(", ");
-  let { data, error } = await supa.from("battles").select(columns()).eq("id", id).maybeSingle();
-  if (error && rematchSupported && /rematch_id/.test(error.message || "")) {
-    rematchSupported = false;
-    ({ data, error } = await supa.from("battles").select(columns()).eq("id", id).maybeSingle());
-  }
-  if (error && roomsSupported && missingRoom(error)) {
-    roomsSupported = false;
-    ({ data, error } = await supa.from("battles").select(columns()).eq("id", id).maybeSingle());
+  const extras = [roomsSupported && "room", rematchSupported && "rematch_id"].filter(Boolean);
+  let { data, error } = await selectRow(id, extras);
+  if (error && unreadable(error) && extras.length) {
+    // find which of the two is the one that cannot be read, so the other still works
+    for (const col of extras) {
+      const rest = extras.filter(c => c !== col);
+      ({ data, error } = await selectRow(id, rest));
+      if (!error) { if (col === "room") roomsSupported = false; else rematchSupported = false; break; }
+    }
+    if (error && unreadable(error)) { roomsSupported = false; rematchSupported = false; ({ data, error } = await selectRow(id, [])); }
   }
   if (error) throw new Error(error.message);
   return data;
@@ -92,7 +96,7 @@ export async function listOpenRooms() {
   const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const { data, error } = await supa.from("battles").select("id, regulation, format_id, p1_name, created_at")
     .eq("status", "waiting").eq("room", "open").gte("created_at", since).order("created_at", { ascending: false }).limit(20);
-  if (error && missingRoom(error)) roomsSupported = false;
+  if (error && unreadable(error)) roomsSupported = false;
   return error ? [] : data || [];
 }
 /* 끝난 배틀의 로그(리플레이). 공식 배틀의 전체 로그와 입력 기록에는 두 선수의 파티 전부가 있어, 대회가 파티를 공개하기 전에는
