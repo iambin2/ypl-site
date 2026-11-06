@@ -126,7 +126,8 @@
    ========================================================================== */
 .bt-arena {
   --lit: #FFFFFF; --dim: #9FB3D8; --mute: #5C6F94; --ground: #050D1F; --panel: #0A1A3A; --panel-2: #12295A; --rule: #1B3A78; --veil: #050D1FB3;
-  display: grid; gap: var(--seam); background: var(--ground); color: var(--lit);
+  /* the strips sit flush on the stage: a seam here read as a stray black line under the party (the user, 2026-11-06) */
+  display: grid; background: var(--ground); color: var(--lit);
 }
 
 /* each trainer's strip: the name, the six as squares, the side's conditions */

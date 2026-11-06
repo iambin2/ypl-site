@@ -21,14 +21,14 @@ const PALETTE = {
     // flat, as light is: the site's navy behind, its panel tone as the wall band, an even floor a step lighter than the ground
     sky: ["#081C3D", "#081C3D"], haze: "rgba(0,0,0,0)",
     roof: "#081C3D", wall: "#0E2449", wallTop: "rgba(168,184,211,.30)",
-    floor: ["#0C2248", "#0C2248", "#0C2248"], court: "rgba(255,255,255,.035)", line: "rgba(214,226,245,.55)", lineSoft: "rgba(214,226,245,.22)", glow: "rgba(120,160,235,.5)",
+    floor: ["#0C2248", "#0C2248", "#0C2248"], court: "rgba(255,255,255,.035)", line: "rgba(214,226,245,.55)", glow: "rgba(120,160,235,.5)",
     sheen: "rgba(0,0,0,0)", emblem: .08,
   },
   light: {
     // light is flat: solid paper behind, a white band, an even floor; no haze, no sheen (a gradient on paper reads as a stain)
     sky: ["#E8ECF2", "#E8ECF2"], haze: "rgba(0,0,0,0)",
     roof: "#E8ECF2", wall: "#FFFFFF", wallTop: "rgba(8,28,61,.22)",
-    floor: ["#F3F5F8", "#F3F5F8", "#F3F5F8"], court: "rgba(8,28,61,.025)", line: "rgba(8,28,61,.42)", lineSoft: "rgba(8,28,61,.16)", glow: "rgba(0,0,0,0)",
+    floor: ["#F3F5F8", "#F3F5F8", "#F3F5F8"], court: "rgba(8,28,61,.025)", line: "rgba(8,28,61,.42)", glow: "rgba(0,0,0,0)",
     sheen: "rgba(0,0,0,0)", emblem: .07,
   },
 };
@@ -43,7 +43,8 @@ function wingImage(e) {
 
 function paint(e) {
   const { W, H } = e, P = e.light ? PALETTE.light : PALETTE.dark;
-  const s = Math.min(2.2, (window.devicePixelRatio || 1) * 1.3, Math.sqrt(5e6 / (W * H * 1.44)));
+  // drawn finer than the screen: the camera pushes in up to 1.25 and the stage renders at 1.5 at least, so the lines stay crisp there
+  const s = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.6), Math.sqrt(6e6 / (W * H * 1.44)));
   const MX = W * .1, MY = H * .1;
   const c = document.createElement("canvas");
   c.width = Math.round((W + MX * 2) * s); c.height = Math.round((H + MY * 2) * s);
@@ -76,9 +77,9 @@ function paint(e) {
   line(path(t => fp(-1, t * 1.1)), lw); line(path(t => fp(1, t * 1.1)), lw); line([fp(-1, 0), fp(1, 0)], lw);
   line(path(u => fp(-1 + u * 2, .5)), lw * .9);
   const circle = R0 => path(a => { const th = a * Math.PI * 2; return P3(W, H, Math.cos(th) * R0, 0, 4.1 + Math.sin(th) * R0); }, 96);
+  // one centre circle, as a court has (a second ring inside it read as a target, the user, 2026-11-06)
   line(circle(.34), lw * .9);
   g.shadowBlur = 0;
-  line(circle(.22), lw * .6, P.lineSoft);
   const wingImg = wingImage(e);
   if (wingImg) {
     const [cx, cy] = fp(0, .5), w = W * .16, h = w * (wingImg.naturalHeight / wingImg.naturalWidth || 1);

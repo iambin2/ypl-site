@@ -973,7 +973,7 @@ function Choices({ request, doubles, res, foes, typesAt, nameAt, onSend, setTarg
         const marks = data.category && data.category !== "Status" ? foes.filter(Boolean).map(f => ({ f, m: effectiveness(type, f.types) })) : [];
         const shown = marks.some(x => x.m !== 1) ? marks : [];
         // two lines, every move alike, as a game's move key: the name and how it lands; its type, category and power, its accuracy and priority, and its PP
-        const kind = CATEGORY[data.category] + (data.basePower > 0 ? ` ${data.basePower}` : "");
+        const kind = (CATEGORY[data.category] || "") + (data.basePower > 0 ? ` ${data.basePower}` : "");
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
           data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(" ");
         return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}`} disabled={move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}

@@ -202,7 +202,8 @@ export function useStageTape(log, res, perspective, epoch = 0) {
         else if (raw === "-prepare") { const m = res.detail.moves[toID(part(line, 3))]; await fx.gather(stage, rk, m?.type || "Normal"); }
         else if (raw === "-transform") await fx.morph(stage, rk);
         else if (raw === "-hitcount") await busy[rk]; // the count is said in the message window once the last hit has landed
-        switch (event?.verb) {
+        // an effect that fails is skipped, never the battle: the lines read on and the scene still follows them
+        try { switch (event?.verb) {
           case "strike": case "chase": case "self": {
             blow = { ...freshBlow(), from: k, type: event.type, on: true };
             const data = res.detail.moves[event.move] || {};
@@ -256,7 +257,7 @@ export function useStageTape(log, res, perspective, epoch = 0) {
                 const shook = fx.hit(stage, k, { ...strike, share: several ? .1 : lost / event.maxhp });
                 await Promise.all([drain, several ? null : shook, direct ? null : fx.residual(stage, k, event.from)]);
               }
-            })();
+            })().catch(err => console.error("stage", err));
             busy[k] = run;
             const whole = run;
             if (chain) landing.push(whole); else await Promise.all([...landing, whole]);
@@ -330,7 +331,7 @@ export function useStageTape(log, res, perspective, epoch = 0) {
             break;
           }
           default: show();
-        }
+        } } catch (err) { console.error("stage", err); show(); }
         if (text.length && !chain) await fx.hold(saidAt, MSG_MS);
       }
       if (landing.length) await Promise.all(landing);

@@ -785,11 +785,12 @@ export async function move(stageNode, event, keyOf, ahead = {}) {
   };
   const recipe = recipeOf(id);
   const at = (k, lift) => centre(stage, k, lift);
-  if (recipe && (await playScript(DRAW, { stage, e, from, targets, type, id, event, power, missed, blocked, land, at }, recipe)) !== false) return;
+  const c = { stage, e, from, targets, type, id, event, power, missed, blocked, land, at };
+  if (recipe && (await playScript(DRAW, c, recipe)) !== false) return;
   if (event.verb === "self" || !targets.length) { await aura(stage, from, type); return; }
-  // no recipe: the type's own flight
+  // no recipe (Struggle, a move the regulation never brings): the type's own flight
   await charge(stage, from, type, 300);
-  await Promise.all(targets.map(t => DRAW.flight({ stage, e, from, targets, type, event, at }, t)));
+  await Promise.all(targets.map(t => DRAW.flight(c, t)));
   targets.forEach(t => land(t));
 }
 // a target that is missed steps aside and back, a faint copy where it stood

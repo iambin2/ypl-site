@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { formatId, randomTeam, startBattle, choose, replay, setPool } from "../supabase/functions/battle/engine.mjs";
-import { createCpu, quickChoice, revealed } from "../src/services/battleCpu.js";
+import { createCpu, habit, quickChoice, revealed } from "../src/services/battleCpu.js";
 
 // a seeded random, so a failure plays the same again
 const seeded = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -86,4 +86,45 @@ test("the computer never reads the other side's hidden set: what it believes cha
     seen.add(preview);
   }
   assert.ok(seen.size >= 1);
+});
+
+// the user's battle (2026-11-06): a Ghost type firing Shadow Ball into a Mega Kangaskhan turn after turn, as a read on a switch never made
+test("the computer never plays a move that does nothing to what stands in front of it, and leaves a Choice lock into one", () => {
+  const formatid = formatId("m-c", "singles");
+  const set = (species, ability, item, moves, nature, evs) => ({ name: "", species, ability, item, moves, nature, evs, level: 50 });
+  const kang = set("Kangaskhan", "Scrappy", "Kangaskhanite", ["Last Resort", "Fake Out", "Sucker Punch", "Protect"], "Careful", { hp: 32, spd: 32 });
+  const zam = set("Alakazam", "Magic Guard", "Focus Sash", ["Psychic"], "Timid", { spa: 32, spe: 32 });
+  for (const [seed, item] of [[1, "Choice Scarf"], [2, "Choice Scarf"], [3, "Life Orb"]]) {
+    const cpu = createCpu(formatid, { random: seeded(seed), budgetMs: 40 });
+    const battle = startBattle({ formatid, seed: [seed, 2, 3, 4], p1: { name: "사람", team: [zam, kang] }, p2: { name: "컴퓨터", team: [
+      set("Basculegion-F", "Adaptability", item, ["Shadow Ball", "Surf", "Ice Beam", "Flip Turn"], "Modest", { spa: 32, spe: 32 }),
+      set("Gengar", "Cursed Body", "Black Sludge", ["Shadow Ball", "Sludge Bomb"], "Timid", { spa: 32, spe: 32 }),
+      set("Alakazam", "Magic Guard", "Life Orb", ["Psychic", "Shadow Ball"], "Timid", { spa: 32, spe: 32 }),
+    ] } });
+    choose(battle, null, "p1", "team 1, 2"); choose(battle, null, "p2", "team 1, 2, 3");
+    for (let step = 0; step < 16 && !battle.ended; step++) {
+      for (const side of ["p2", "p1"]) {
+        const req = battle[side].activeRequest;
+        if (!req || req.wait || battle[side].isChoiceDone()) continue;
+        let choice;
+        if (side === "p1") choice = req.forceSwitch ? quickChoice(battle, side) : battle.p1.active[0].species.name === "Alakazam" ? (req.side.pokemon[1].condition.endsWith(" fnt") ? "move 1" : "switch 2") : battle.p1.active[0].species.isMega ? "move 1" : "move 1 mega";
+        else {
+          choice = cpu.decide(battle, side);
+          const mon = battle.p2.active[0], move = /^move (\d)/.exec(choice);
+          if (move && !req.forceSwitch && battle.p1.active[0].hasType("Normal")) {
+            const id = req.active[0].moves[Number(move[1]) - 1].id;
+            assert.notEqual(battle.dex.moves.get(id).type, "Ghost", `seed ${seed} turn ${battle.turn}: ${mon.name} chose ${id} into a Normal type`);
+          }
+        }
+        assert.ok(choose(battle, null, side, choice).ok, `${side} ${choice}`);
+      }
+    }
+  }
+});
+
+test("how often the other side switches is read from the turn's own switches, not those after a faint or a pivoting move", () => {
+  const log = ["|turn|1", "|switch|p1a: Garchomp|Garchomp, L50|100/100", "|move|p2a: Gengar|Shadow Ball|p1a: Garchomp", "|upkeep|", "|turn|2",
+    "|move|p1a: Garchomp|U-turn|p2a: Gengar", "|switch|p1a: Rotom|Rotom-Wash, L50|100/100|[from] U-turn", "|upkeep|", "|turn|3",
+    "|move|p1a: Rotom|Hydro Pump|p2a: Gengar", "|faint|p1a: Rotom", "|upkeep|", "|switch|p1a: Garchomp|Garchomp, L50|100/100", "|turn|4"];
+  assert.deepEqual(habit(log, "p1"), { switches: 1, chances: 3 });
 });

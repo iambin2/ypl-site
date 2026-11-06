@@ -556,7 +556,8 @@ class Engine {
     const st = this.stage, W = st.clientWidth || 1, H = st.clientHeight || 1;
     const changed = W !== this.W || H !== this.H;
     this.W = W; this.H = H;
-    let dpr = Math.min(2, window.devicePixelRatio || 1);
+    // never under 1.5: a screen at 1 gets its lines drawn finer and smoothed down, as the court and the edges looked soft at 1
+    let dpr = Math.min(2, Math.max(1.5, window.devicePixelRatio || 1));
     if (W * H * dpr * dpr > 2.6e6) dpr = Math.sqrt(2.6e6 / (W * H));
     this.dpr = dpr;
     const pw = Math.max(2, Math.round(W * dpr)), ph = Math.max(2, Math.round(H * dpr));

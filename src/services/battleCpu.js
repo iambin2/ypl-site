@@ -10,9 +10,12 @@ import { slotPasses } from "./battleLog.js";
 
    고르는 법 (랭커가 생각하는 순서를 그대로):
    1. 결정화: 상대 포켓몬마다 아직 드러나지 않은 세트를 래더 사용률 샘플 세트(random-sets.json)에서 드러난 것과 맞는 것으로 뽑아 채운다.
-   2. 후보: 우리 선택지와 상대 선택지를 휴리스틱(기대 피해, 기절, 우선도, 보조기의 쓸모)으로 줄인다.
+   2. 후보: 우리 선택지와 상대 선택지를 휴리스틱(기대 피해, 기절, 우선도, 보조기의 쓸모)으로 줄인다. 앞의 포켓몬에게 아무 일도
+      일으키지 못하는 기술(면역, 이미 걸린 상태이상, 체력이 가득할 때의 회복, 이미 펼쳐진 벽, 구애 고정이 묶은 그런 기술)은
+      다른 선택이 있는 한 후보에서 뺀다. 교체를 읽고 던지는 헛수는 두지 않는다.
    3. 행렬: 두 선택의 모든 짝을 진짜 엔진으로 한 턴 돌리고, 둘 다 가장 센 공격을 고르는 한 턴을 더 본 뒤 국면을 평가한다.
-   4. 상대 모형: 행렬의 내시 균형(최선의 상대)과 사람이 고르기 쉬운 수(눈에 띄는 공격)를 반씩 섞어, 그에 대한 기대값이 가장 큰 수를 둔다.
+   4. 상대 모형: 행렬의 내시 균형(최선의 상대)과 사람이 고르기 쉬운 수(눈에 띄는 공격)를 반씩 섞고, 그 안의 교체 비중을 이 상대가
+      실제로 교체해 온 만큼으로 당겨, 그에 대한 기대값이 가장 큰 수를 둔다.
    5. 시간이 남는 동안 1에서 4를 다시 뽑아 평균한다(결정화 몬테카를로). 시간은 정해져 있어 느린 휴대폰에서는 표본이 줄 뿐이다. */
 
 /* tuned by self-play against the quick player (60 mirrored games a setting, 2026-11-06): the trade term from 0.1 to 0.7 and the
@@ -60,6 +63,23 @@ export function revealed(log, foe) {
     if (m) note(of ? nameOf(of) : nameOf(subject), m[1], m[2]);
   }
   return seen;
+}
+
+/* ---------- how often the other side switches when it could have stayed: a switch after a faint or from a pivoting move is not
+   a choice, so only the turn's own switches before the upkeep count ---------- */
+export function habit(log, foe) {
+  let main = false, secret = false, switches = 0, chances = 0;
+  for (const line of log) {
+    if (secret) { secret = false; continue; }
+    if (line.startsWith("|split|")) { secret = true; continue; }
+    const [, tag, who = ""] = line.split("|");
+    if (tag === "turn") main = true;
+    else if (tag === "upkeep") main = false;
+    else if (main && who.startsWith(foe) && !line.includes("[from]")) {
+      if (tag === "switch") { switches++; chances++; } else if (tag === "move" || tag === "cant") chances++;
+    }
+  }
+  return { switches, chances };
 }
 
 /* ---------- belief: the other side's hidden sets filled in from the sample sets, kept to what has been shown ---------- */
@@ -349,6 +369,28 @@ function play(text, side, mine, theirs, seed, rollout) {
   return evaluate(state, side);
 }
 
+/* does a choice do nothing at all: one of our moves the engine answers only with an immunity or a failure (Shadow Ball into a
+   Normal type, a burn on a Pokémon already statused, Recover at full HP, a screen already up, Fake Out after the first turn,
+   a Choice item holding us to such a move). Played against the other side standing and attacking, on the believed copy. */
+const NOTHING = new Set(["-immune", "-fail", "-hint"]);
+function idle(state, side, choice, seed) {
+  if (!/move/.test(choice)) return false;
+  const s = calcOn(revive(strip(state), seed));
+  const foe = other(side);
+  if (!s.choose(side, choice)) return false;
+  if (owes(s, foe) && !s.choose(foe, greedy(s, foe))) return false;
+  let tags = null;
+  const done = () => tags?.length > 0 && tags.every(t => NOTHING.has(t)) && tags.some(t => t !== "-hint");
+  for (const line of s.log) {
+    const [, tag = "", who = ""] = line.split("|");
+    if (tag === "split") continue;
+    if (tag.startsWith("-")) { tags?.push(tag); continue; }
+    if (done()) return true;
+    tags = tag === "move" && who.startsWith(side) && !line.includes("[from]") ? [] : null;
+  }
+  return done();
+}
+
 /* ---------- the matrix game: regret matching to an equilibrium (a few hundred rounds on a small matrix) ---------- */
 function equilibrium(matrix, rounds = 300) {
   const rows = matrix.length, cols = matrix[0].length;
@@ -423,6 +465,7 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
 
   function search(battle, side, own) {
     const foe = other(side);
+    const seen = habit(battle.log, foe);
     const totals = new Float64Array(own.length), counts = new Float64Array(own.length);
     const start = now(), end = start + budget;
     let width = doubles ? 7 : 10;
@@ -447,7 +490,15 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
       const clean = matrix.map(row => { const ok = row.filter(v => v != null); const floor = ok.length ? Math.min(...ok) : -100; return row.map(v => v ?? floor); });
       const { col } = equilibrium(clean);
       const human = softmax(theirs.map(b => b.score), 0.2);
-      const model = col.map((p, j) => (1 - TUNE.human) * p + TUNE.human * human[j]);
+      let model = col.map((p, j) => (1 - TUNE.human) * p + TUNE.human * human[j]);
+      /* the switches the model expects, leaned toward how often this player has really switched (a player who stays turn after turn
+         is not played around as if a switch were coming; four turns of the model's own guess weigh against what was seen) */
+      const switching = theirs.map(b => /switch/.test(b.choice || ""));
+      const share = model.reduce((t, p, j) => t + (switching[j] ? p : 0), 0);
+      if (seen.chances && share > 0 && share < 1) {
+        const want = (share * 4 + seen.switches) / (4 + seen.chances);
+        model = model.map((p, j) => p * (switching[j] ? want / share : (1 - want) / (1 - share)));
+      }
       clean.forEach((row, i) => { if (matrix[i].some(v => v != null)) { totals[i] += row.reduce((sum, v, j) => sum + v * model[j], 0); counts[i]++; } });
     }
     return own.map((o, i) => ({ ...o, value: counts[i] ? totals[i] / counts[i] : -Infinity }));
@@ -472,7 +523,10 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
       return valued.reduce((a, b) => (b.value > a.value ? b : a)).choice;
     }
     const state = calcOn(sample(battle, side, true));
-    const own = wholeChoices(state, side, { active: req.active.map(a => ({ ...a, canMegaEvo: Boolean(a.canMegaEvo) })), mons: req.side.pokemon.map(p => ({ fainted: p.condition.endsWith(" fnt"), active: p.active })) }, doubles ? 11 : 12, doubles ? 6 : 12);
+    const all = wholeChoices(state, side, { active: req.active.map(a => ({ ...a, canMegaEvo: Boolean(a.canMegaEvo) })), mons: req.side.pokemon.map(p => ({ fainted: p.condition.endsWith(" fnt"), active: p.active })) }, doubles ? 11 : 12, doubles ? 6 : 12);
+    // a move that does nothing to what stands in front is never played as a read on a switch; only when nothing else is left
+    const live = all.filter(o => !idle(state, side, o.choice, seedOf(random)));
+    const own = live.length ? live : all;
     if (own.length <= 1) return own[0]?.choice || "move 1";
     const valued = search(battle, side, own);
     const best = Math.max(...valued.map(v => v.value));
