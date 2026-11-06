@@ -79,7 +79,9 @@
 .bd-cform .cell input:focus-visible { outline: none; }
 .bd-cform .cell:has(input:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
 .bd-cform-pin { flex: 0 0 calc(var(--s21) + var(--s13)); }
-.bd-cform .btn { flex: none; width: auto; height: auto; }
+/* 등록 stands the full height of the comment's cell beside it (board.css fixes a small main key at the control's height, which left
+   a gap under it in this row) */
+.bd-cform .btn.btn--main.btn--sm { flex: none; width: auto; height: auto; align-self: stretch; }
 
 /* a picture or a video a post links */
 .bd-yt { position: relative; aspect-ratio: 16 / 9; margin-top: var(--s5); overflow: hidden; background: #000; }
