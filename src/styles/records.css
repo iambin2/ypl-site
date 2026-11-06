@@ -12,4 +12,3 @@
 }
 
 /* 기록 연결 요청의 두 결정: 승인과 거절 */
-.rc-link-keys { display: flex; align-items: center; gap: var(--s3); }

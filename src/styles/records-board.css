@@ -88,6 +88,19 @@
 .rc-seasons { margin-top: var(--s3); }
 .rc-titles > * { cursor: default; }
 .rc-sec { margin-top: var(--s13); min-width: 0; }
+/* the operators' link requests above the trainer list: a panel of facts and, joined by the seam, 거절 and 승인 at 1 to 1.618 */
+.rc-linkreq { margin: var(--s5) 0 var(--s8); }
+.rc-reqs { display: grid; gap: var(--s5); }
+@media (min-width: 860px) { .rc-reqs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rc-req-tag { background: var(--panel-2); }
+/* side by side, a short request keeps its keys on the same line as its neighbour's */
+.rc-reqs > .stack { grid-template-rows: 1fr auto; }
+.rc-req { display: grid; align-content: start; gap: var(--s1); padding: var(--s5); }
+.rc-req-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-width: 0; margin-bottom: var(--s2); }
+.rc-req-keys { display: flex; gap: var(--seam); }
+.rc-req-keys .btn { flex: 1 1 0; }
+.rc-req-keys .btn--main { flex-grow: 1.618; }
+.rc-req-note { margin-top: var(--s3); }
 .sheet .rc-sec { margin-top: var(--s8); }
 .rc-place { display: inline-flex; align-items: center; height: var(--s5); padding: 0 var(--s2); font-weight: 700; }
 .rc-six { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--seam); }
