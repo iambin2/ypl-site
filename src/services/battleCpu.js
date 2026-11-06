@@ -299,6 +299,15 @@ function calcOn(state) {
   state.randomizer = damage => Math.floor(damage * 0.925);
   return state;
 }
+/* a simulated turn with its luck held at the middle: a chance of half or more always happens and a smaller one never (a 90% move
+   hits, a 30% burn or an ordinary critical hit does not), and every other roll lands mid-range. The search has time for only one to
+   three samples on a phone, so a random seed was one coin for the whole choice (2026-11-07 replay: Sirfetch'd played Night Slash into
+   Hydreigon over Close Combat because its sample's next Draco Meteor happened to miss) */
+function steady(state) {
+  state.randomChance = (numerator, denominator) => 2 * numerator >= denominator;
+  state.random = (m, n) => (m == null ? 0.5 : n == null ? Math.floor(m / 2) : Math.floor((m + n - 1) / 2));
+  return calcOn(state);
+}
 const MULTI = { 2: 2, 3: 3, 5: 5 };
 function hitShare(state, source, target, moveId) {
   if (!source || !target || source.fainted || target.fainted) return 0;
@@ -328,12 +337,17 @@ function race(state, a, b) {
 const STATUS_COST = { brn: 0.3, par: 0.3, slp: 0.45, frz: 0.5, psn: 0.15, tox: 0.25 };
 const HAZARD = { stealthrock: 0.12, spikes: 0.07, toxicspikes: 0.08, stickyweb: 0.12 };
 const SCREEN = { reflect: 0.2, lightscreen: 0.2, auroraveil: 0.3, tailwind: 0.35, safeguard: 0.05, mist: 0.03 };
+const ALIVE = 0.6, SPARE = 0.3;
+const spareHit = p => (p.ability === "disguise" && p.species.id === "mimikyu") || ((p.item === "focussash" || p.ability === "sturdy") && p.hp === p.maxhp);
 function sideScore(state, side) {
   const s = state[side];
   let score = 0, bench = 0;
   for (const p of s.pokemon) {
     if (p.fainted || p.hp <= 0) continue;
-    let value = 1 + p.hp / p.maxhp;
+    /* being alive is worth less than a full bar, and a hit it is sure to survive (Disguise, a Sash or Sturdy at full HP) is worth
+       some HP (2026-11-07 replay: a 1% Armarouge, slower than everything, counted as half a healthy Pokémon and Disguise as nothing,
+       so Mimikyu took a U-turn on its Disguise to keep the Armarouge one more turn) */
+    let value = ALIVE + (2 - ALIVE) * p.hp / p.maxhp + (spareHit(p) ? SPARE : 0);
     const physical = p.storedStats.atk >= p.storedStats.spa;
     value -= (STATUS_COST[p.status] || 0) * (p.status === "brn" && !physical ? 0.4 : p.status === "par" && p.storedStats.spe < 60 ? 0.5 : 1);
     if (p.isActive) {
@@ -545,6 +559,7 @@ function settle(state) {
 }
 function play(text, side, mine, theirs, seed, rollout) {
   const state = revive(text, seed);
+  steady(state);
   const foe = other(side);
   if (!state.choose(side, mine)) return null;
   if (theirs && !state.choose(foe, theirs)) return null;
