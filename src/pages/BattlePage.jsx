@@ -14,7 +14,7 @@ import { championsData } from "../services/index.js";
 import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
-import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
+import { LobbyBars, LobbyStage, STATUS, Stage, battleDiag, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { closeGate, openGate } from "./battle/Gate.js";
@@ -97,6 +97,7 @@ class RoomGuard extends React.Component {
   componentDidCatch(error, info) {
     console.error("battle room", error, info?.componentStack);
     try { sessionStorage.setItem(LAST_ERROR_KEY, JSON.stringify({ at: new Date().toISOString(), error: String(error?.stack || error).slice(0, 2000), where: String(info?.componentStack || "").slice(0, 2000) })); } catch { /* 남기지 못해도 화면은 다시 선다 */ }
+    battleDiag({ roomError: String(error?.message || error).slice(0, 300), where: String(info?.componentStack || "").slice(0, 300) });
     const now = Date.now();
     this.recent = [...this.recent.filter(t => now - t < 15000), now];
     if (this.recent.length > 3) this.setState({ gaveUp: true });

@@ -108,6 +108,16 @@ function aheadOf(lines) {
   }
   return ahead;
 }
+/* ponytail: a record of how each battle's opening went (2026-11-06: the owner sees no opening on their own Chrome and phone while
+   every clean browser plays it), the last 30 entries in localStorage ypl-battle:diag so a tab of the same browser can read them.
+   Remove once the cause is known. */
+export function battleDiag(entry) {
+  try {
+    const all = JSON.parse(localStorage.getItem("ypl-battle:diag") || "[]");
+    all.push({ at: new Date().toISOString(), build: String(window.__YPL_BUILD__ || "dev").slice(0, 7), ...entry });
+    localStorage.setItem("ypl-battle:diag", JSON.stringify(all.slice(-30)));
+  } catch { /* a record that cannot be kept changes nothing */ }
+}
 // epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
 // live: a battle being played (not a replay), whose going in from the team preview passes through the gate (Gate.js)
 export function useStageTape(log, res, perspective, epoch = 0, live = false) {
@@ -141,6 +151,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
     // a page opened mid-battle catches up at once; only what arrives while it is open is played
     const catchUp = done.current === 0;
     const R = reader.current;
+    if (fresh.some(l => l.startsWith("|start"))) battleDiag({ run: catchUp ? "catch-up" : "play", lines: fresh.length, live: liveRef.current, instant: fx.instant(), hidden: document.hidden, reduced: matchMedia("(prefers-reduced-motion: reduce)").matches, y: Math.round(scrollY), ua: navigator.userAgent.slice(-60) });
     if (!catchUp && !fx.instant()) setPlaying(true);
     (async () => {
       await null; // out of the effect: flushSync may not run inside React's own work
@@ -301,8 +312,11 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
               }
               /* the gate lifts onto the dark, empty stage before anything plays (2026-11-06: openGate was not waited for, so the
                  lamps, our throw and our lead's light all played under the still opaque gate and were never seen) */
+              const g0 = st.__gl, real0 = performance.now(), T0 = g0?.T || 0;
+              battleDiag({ opening: gated ? "gated" : "plates", gl: g0 ? "gl" : st.__gl === false ? "nogl" : "none", top: Math.round(st.getBoundingClientRect().top), vh: innerHeight });
               if (gated) await openGate();
               await fx.opening(st, ours, theirs, { plates: !gated });
+              battleDiag({ lamps: "on", realMs: Math.round(performance.now() - real0), stageMs: g0 ? Math.round(g0.T - T0) : null, gateLeft: Boolean(document.querySelector(".bt-gate")), hidden: document.hidden });
             }
            
             /* a Pokémon sent in mid-battle is framed on its side. The leads (DESIGN.md "Battle", The big moments) are thrown one side at
@@ -311,7 +325,9 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
             const partnered = R.state.turn === 0 && /^\|switch\|/.test(fresh[i - 1] || "") && part(fresh[i - 1], 2).slice(0, 2) === part(line, 2).slice(0, 2);
             if (R.state.turn === 0 && !partnered) push(k, R.state.gameType === "doubles" ? 1.16 : 1.3, 360);
             else if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
+            const real1 = performance.now(), T1 = st?.__gl?.T || 0;
             if (chain) { fx.enter(st, k); await fx.wait(260); } else await fx.enter(st, k);
+            if (R.state.turn === 0) battleDiag({ entered: k, realMs: Math.round(performance.now() - real1), stageMs: st?.__gl ? Math.round(st.__gl.T - T1) : null, threw: Boolean(st?.__gl?.ballTex), top: st ? Math.round(st.getBoundingClientRect().top) : null });
             break;
           }
           case "change": {
