@@ -19,6 +19,7 @@ import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { closeGate, openGate } from "./battle/Gate.js";
 import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
+import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import { logUpTo, nextStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
@@ -175,7 +176,7 @@ const focusName = () => document.getElementById("bt-name")?.focus();
 /* 배틀 전 화면(DESIGN.md "Battle", Opening and waiting). 가장 많이 고르는 것이 먼저, 크게: 상대, 형식, 팀. 그 옆(휴대폰에서는 아래)에
    경기가 치러질 모습(나 대 상대, 고른 팀의 앞 포켓몬이 선 경기장)과 주 행동이 한 판으로 서고, 넓은 화면에서는 스크롤해도 따라온다.
    여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다. foe는 참가하는 쪽에서 본 연 사람의 이름이다. before는 맨 위(이어서 할 배틀). */
-function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", doubles, setup, action, before, after, onEnter }) {
+function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", foeLead = null, doubles, setup, action, before, after, onEnter }) {
   const team = teams.find(t => t.id === teamId);
   const saved = teams.some(t => !t.random);
   const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
@@ -203,14 +204,12 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, f
               {foe ? <b>{foe}</b> : <b className="mute">{foeHint}</b>}
             </span>
           </div>
-          {/* a random party has no fact yet: its six places stand switched off and light when the battle opens, instead of an empty
-              court and a second line repeating the choice on the left (2026-11-06) */}
-          {team?.random
-            ? <div className="bt-court bt-six" role="img" aria-label="랜덤 파티, 배틀이 열리면 정해집니다.">{Array.from({ length: 6 }, (_, i) => <span key={i} className="pn" />)}</div>
-            : <div className="stack bt-court">
-              <LobbyStage leads={leads} doubles={doubles} label={stageLabel} />
-              <LobbyBars leads={leads} doubles={doubles} res={res} />
-            </div>}
+          {/* the court for every party (2026-11-06, the user: one look for a random party and a saved team): a random party's leads are
+              not drawn yet, so a light breathes on our floor where they will come out, and the bars under it say so */}
+          <div className="stack bt-court">
+            <LobbyStage leads={leads} doubles={doubles} random={Boolean(team?.random)} foeLead={foeLead} label={`${team?.random ? "경기장, 랜덤 파티는 배틀이 열리면 정해집니다." : stageLabel}${foeLead ? `, 상대 ${nameOf(res, foeLead)}` : ""}`} />
+            <LobbyBars leads={leads} doubles={doubles} res={res} random={Boolean(team?.random)} />
+          </div>
           {action}
         </div>
       </div>
@@ -251,7 +250,7 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     const take = data => {
       const now = readCpuBattle() || {};
       const same = now.inputLog === data.inputLog;
-      const kept = { teamId: now.teamId, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog, recorded: same && now.recorded, replayId: same ? now.replayId : undefined };
+      const kept = { teamId: now.teamId, level: now.level ?? now.start?.level, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog, recorded: same && now.recorded, replayId: same ? now.replayId : undefined };
       keepCpuBattle(kept);
       setState({ row: data.row, view: data.view });
       // an ended battle goes to the server once; a failure is tried again the next time this battle is opened
@@ -272,7 +271,7 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     w.onerror = () => setError({ message: "컴퓨터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요." });
     const ask = (type, args = {}) => new Promise((resolve, reject) => { const id = ++n; calls.current.set(id, { resolve, reject }); w.postMessage({ id, type, ...args }); });
     worker.current.ask = ask;
-    (kept.inputLog ? ask("resume", { inputLog: kept.inputLog, regulation: kept.regulation, createdAt: kept.createdAt, endedBy: kept.endedBy }) : ask("start", kept.start))
+    (kept.inputLog ? ask("resume", { inputLog: kept.inputLog, regulation: kept.regulation, createdAt: kept.createdAt, endedBy: kept.endedBy, level: kept.level }) : ask("start", kept.start))
       .catch(e => setError({ message: failText(e, res) }));
     return () => { w.terminate(); worker.current = null; };
   }, []);
@@ -288,8 +287,8 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     const kept = readCpuBattle() || {};
     const doubles = isDoubles(state.row.format_id);
     const team = rematchTeam(kept.teamId, state.row.regulation, res);
-    await closeGate({ ours: state.row.p1_name, theirs: "컴퓨터", line: gateLine(state.row.regulation, doubles, "컴퓨터와의 배틀") });
-    keepCpuBattle({ start: { regulation: state.row.regulation, battleFormat: doubles ? "doubles" : "singles", name: state.row.p1_name, team: team.send }, teamId: team.id });
+    await closeGate({ ours: state.row.p1_name, theirs: "컴퓨터", line: gateLine(state.row.regulation, doubles, `컴퓨터 ${levelOf(kept.level).label}`) });
+    keepCpuBattle({ start: { regulation: state.row.regulation, battleFormat: doubles ? "doubles" : "singles", name: state.row.p1_name, team: team.send, level: kept.level }, teamId: team.id });
     onRestart();
   };
   if (error?.none) return <ErrorNote action="배틀 화면으로" onRetry={onLeave}>진행 중인 컴퓨터와의 배틀이 없습니다. 배틀 화면에서 새로 시작해 주세요.</ErrorNote>;
@@ -357,13 +356,17 @@ function RoomFinder({ onOpen }) {
   </section>;
 }
 
-/* 상대: 컴퓨터(이 기기에서 바로), 공개 방(열린 방 목록에 선다), 코드 방(숫자 4자리를 알려 준 사람만). 두 방 모두 링크로도 들어온다. */
-const OPPONENTS = [["cpu", "컴퓨터", "컴퓨터"], ["open", "공개 방", "누구나 참가"], ["code", "코드 방", "코드로 참가"]];
+/* 상대: 컴퓨터(이 기기에서 바로, 난이도는 폴리곤, 폴리곤2, 폴리곤Z) 또는 방 만들기. 방은 하나의 선택이고, 공개 방(열린 방 목록에 선다)인지 비밀 방(숫자 4자리를 알려 준
+   사람만)인지는 그 아래에서 고른다(2026-11-06, 따로 선 공개 방과 코드 방을 하나로). 두 방 모두 링크로도 들어온다. */
+const OPPONENTS = [["cpu", "컴퓨터"], ["room", "방 만들기"]];
+const ROOMS = [["open", "공개 방", "누구나 참가"], ["code", "비밀 방", "코드로 참가"]];
 function BattleOpen({ res, onOpen, preset }) {
   const teams = useMemo(() => [...readSavedTeams().filter(team => REGULATIONS[team.regulationId]), ...randomTeams(Object.keys(REGULATIONS))], []);
   const [name, setName] = useState(rememberedName);
   const [format, setFormat] = useState("singles");
   const [foe, setFoe] = useState("cpu");
+  const [room, setRoom] = useState("open");
+  const [level, setLevel] = useState(DEFAULT_LEVEL);
   const saved = readCpuBattle();
   // the team builder's 이 팀으로 배틀 opens here with its team chosen
   const [teamId, setTeamId] = useState((teams.some(t => t.id === preset) ? preset : teams[0]?.id) || "");
@@ -374,12 +377,12 @@ function BattleOpen({ res, onOpen, preset }) {
     if (busy || !team) return;
     if (!name.trim()) { setError(NAME_MISSING); focusName(); return; }
     const me = name.trim();
-    const line = gateLine(team.regulationId, format === "doubles", foe === "cpu" ? "컴퓨터와의 배틀" : foe === "open" ? "공개 방" : "코드 방");
+    const line = gateLine(team.regulationId, format === "doubles", foe === "cpu" ? `컴퓨터 ${levelOf(level).label}` : ROOMS.find(([key]) => key === room)[1]);
     if (foe === "cpu") {
       if (saved?.status === "active" && !(await siteConfirm({ title: "새 배틀을 시작할까요?", body: "진행 중인 컴퓨터와의 배틀은 남지 않습니다.", confirmLabel: "새로 시작" }))) return;
       rememberName(me);
       await closeGate({ ours: me, theirs: "컴퓨터", line });
-      keepCpuBattle({ start: { regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res) }, teamId: team.id });
+      keepCpuBattle({ start: { regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), level }, teamId: team.id });
       onOpen(CPU_ROOM);
       return;
     }
@@ -387,7 +390,7 @@ function BattleOpen({ res, onOpen, preset }) {
     try {
       rememberName(me);
       // the room is made while the gate closes; the waiting screen opens it
-      const [made] = await Promise.all([createBattle({ regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), room: foe }), closeGate({ ours: me, theirs: { name: "참가 대기", muted: true }, line })]);
+      const [made] = await Promise.all([createBattle({ regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), room }), closeGate({ ours: me, theirs: { name: "참가 대기", muted: true }, line })]);
       keepOpenTeam(made.id, team.id);
       onOpen(made.id);
     } catch (e) {
@@ -397,14 +400,20 @@ function BattleOpen({ res, onOpen, preset }) {
     }
   };
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
-  const foeRow = OPPONENTS.find(([key]) => key === foe);
+  const roomRow = ROOMS.find(([key]) => key === room);
   return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="저장한 팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
-    foeHint={foeRow[2]}
-    before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line="진행 중인 배틀을 이어서 합니다." lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
+    foeHint={foe === "cpu" ? "컴퓨터" : roomRow[2]} foeLead={foe === "cpu" ? levelOf(level).species : null}
+    before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line={`${levelOf(saved.level ?? saved.start?.level).label}, 진행 중인 배틀을 이어서 합니다.`} lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
     setup={<>
       <Question id="bt-foe" label="상대" group>
-        <Choice name="bt-foe" options={OPPONENTS.map(([, label]) => label)} value={foeRow[1]} onChange={label => setFoe(OPPONENTS.find(([, l]) => l === label)[0])} />
+        <Choice name="bt-foe" options={OPPONENTS.map(([, label]) => label)} value={OPPONENTS.find(([key]) => key === foe)[1]} onChange={label => setFoe(OPPONENTS.find(([, l]) => l === label)[0])} />
       </Question>
+      {foe === "cpu" && <Question id="bt-level" label="난이도" group>
+        <Choice name="bt-level" options={LEVEL_IDS.map(id => LEVELS[id].label)} value={levelOf(level).label} onChange={label => setLevel(LEVEL_IDS.find(id => LEVELS[id].label === label))} />
+      </Question>}
+      {foe === "room" && <Question id="bt-room" label="공개" group>
+        <Choice name="bt-room" options={ROOMS.map(([, label]) => label)} value={roomRow[1]} onChange={label => setRoom(ROOMS.find(([, l]) => l === label)[0])} />
+      </Question>}
       <Question id="bt-format" label="형식" group>
         <Choice name="bt-format" options={FORMATS.map(([, label]) => label)} value={FORMATS.find(([key]) => key === format)[1]} onChange={label => setFormat(FORMATS.find(([, l]) => l === label)[0])} />
       </Question>
@@ -563,7 +572,7 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
   const waited = Math.max(0, Math.floor((now - since) / 1000));
   const clock = `${Math.min(99, Math.floor(waited / 60))}:${String(waited % 60).padStart(2, "0")}`;
   const rule = `${REGULATIONS[row.regulation] || ""} ${doubles ? "더블" : "싱글"}`;
-  const kind = rematch ? "다시하기" : official ? "공식 경기" : row.room === "open" ? "공개 방" : row.room === "code" ? "코드 방" : "친선 배틀";
+  const kind = rematch ? "다시하기" : official ? "공식 경기" : row.room === "open" ? "공개 방" : row.room === "code" ? "비밀 방" : "친선 배틀";
   const how = rematch ? "상대가 다시하기를 누르면 바로 시작합니다."
     : official ? "상대 선수가 들어오면 시작합니다."
     : row.room === "open" ? "상대가 열린 방 목록이나 링크로 들어오면 시작합니다."
@@ -589,7 +598,7 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
             <span className="pn bt-vs foe"><span className="t12 dim bt-vs-wait"><i className="lamp" aria-hidden="true" />참가 대기</span><b className="mute">상대</b></span>
           </div>
           <div className="stack bt-court">
-            {res && <LobbyStage leads={leads} doubles={doubles} awaiting label={`경기장, ${leads.length ? leads.map(s => nameOf(res, s)).join(", ") : "우리 쪽"}, 상대 쪽은 비어 있음`} />}
+            {res && <LobbyStage leads={leads} doubles={doubles} awaiting random={Boolean(team?.random)} label={`경기장, ${leads.length ? leads.map(s => nameOf(res, s)).join(", ") : "우리 쪽"}, 상대 쪽은 비어 있음`} />}
             {res && (leads.length > 0 || team?.random) && <LobbyBars leads={leads} doubles={doubles} res={res} random={Boolean(team?.random)} />}
           </div>
           <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
@@ -1023,7 +1032,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} />}
         </div>}
         {(waiting || (error && !request)) && <Dock toast={error && !choosing ? <Toast error>{error}</Toast> : null}>
-          {waiting && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">{request?.teamPreview && view?.chosen ? "상대의 선출을 기다리는 중…" : "상대의 선택을 기다리는 중…"}</span></div>}
+          {waiting && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">{local ? "컴퓨터가 계산하는 중…" : request?.teamPreview && view?.chosen ? "상대의 선출을 기다리는 중…" : "상대의 선택을 기다리는 중…"}</span></div>}
         </Dock>}
         {/* 기권 as a key of its own, right under the choices where the thumb is, in its own dark red so it is never taken for
             another key; it asks once before it goes (feedback 2026-11-06: the word at the page's foot was hard to find) */}

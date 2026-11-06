@@ -20,7 +20,7 @@ export function parse(phase) {
 }
 
 export function makeDraw(k) {
-  const { centre, sizeOf, unitOf, actorOf, rand, lerp, clamp, times, around, typeId, colorOf, glow, ring, shock, sparks, smoke, dust, beamStrip, boltStrip, slashStrip, pathStrip, orbs, DEBRIS, MARK, charge, aura, lunge, quake, flashMon, flashStage, darken, heal, boost, ailment, sway, morph, reduced } = k;
+  const { centre, sizeOf, unitOf, actorOf, rand, lerp, clamp, times, around, typeId, colorOf, glow, ring, shock, sparks, smoke, dust, fire, splash, glints, beamStrip, boltStrip, slashStrip, pathStrip, orbs, DEBRIS, MARK, charge, aura, lunge, quake, flashMon, flashStage, darken, heal, boost, ailment, sway, morph, reduced } = k;
   const D = {};
   /* ---------- where, how big, which way ---------- */
   const A = (c, lift = .5) => centre(c.stage, c.from, lift);
@@ -56,55 +56,55 @@ export function makeDraw(k) {
 
   /* ---------- a thing in flight ---------- */
   // carried from a to b over dur (an arc raises it by arc of the distance at its height), its light about it and its trail behind
-  function fly(c, a, b, { tex = "orb", ramp = null, size = 18, dur = 360, arc = 0, spin = 0, face = false, rot = 0, trail = true, trailRamp = null, glowK = 2.4, aspect = 1, occ = 0, emis = 1, delay = 0, alpha = 1, core = true, trailN = 18, trailTex = "glow", erode = 0 } = {}) {
+  function fly(c, a, b, { tex = "orb", ramp = null, size = 18, dur = 360, arc = 0, spin = 0, face = false, rot = 0, trail = true, trailRamp = null, glowK = 2.4, aspect = 1, occ = 0, emis = 1, delay = 0, alpha = 1, core = true, trailN = 18, trailTex = "glow", erode = 0, lit = false, trailLit = false } = {}) {
     const e = c.e, sec = Math.max(.05, dur / 1000), dx = b[0] - a[0], dy = b[1] - a[1], dist = Math.hypot(dx, dy);
     const g = arc ? 8 * arc * dist / (sec * sec) : 0, vx = dx / sec, vy = dy / sec - .5 * g * sec;
     const pos = t => [a[0] + vx * t, a[1] + vy * t + .5 * g * t * t];
     const R = ramp || `${T(c)}.h`;
-    e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex: "glow", ramp: R, size: [size * glowK, size * glowK], life: dur, delay, alpha: .55 * alpha, layer: 1 });
-    e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex, ramp: R, size: [size, size], aspect, life: dur, delay, spin, face, rot, occ, emis, alpha, erode });
-    if (core && !occ) e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex: "dot", ramp: "white.h", size: [size * .28, size * .28], life: dur, delay, alpha: .7 });
-    if (trail) for (let i = 0; i < trailN; i++) { const t = i / trailN * sec; e.emit({ at: pos(t), tex: trailTex, ramp: trailRamp || T(c), size: [size * 1.1, size * .1], life: rand(200, 320), delay: delay + t * 1000, alpha: .75, vj: 16, rot: "rand", erode: trailTex === "flame" ? .5 : 0 }); }
+    if (glowK) e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex: "glow", ramp: R, size: [size * glowK, size * glowK], life: dur, delay, alpha: .55 * alpha, layer: 1 });
+    e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex, ramp: R, size: [size, size], aspect, life: dur, delay, spin, face, rot, occ, emis, alpha, erode, lit });
+    if (core && !occ && !lit) e.emit({ at: a, vel: [vx, vy], acc: [0, g], tex: "dot", ramp: "white.h", size: [size * .28, size * .28], life: dur, delay, alpha: .7 });
+    if (trail) for (let i = 0; i < trailN; i++) { const t = i / trailN * sec; e.emit({ at: pos(t), tex: trailTex, ramp: trailRamp || T(c), size: trailLit ? [size * .8, size * .25] : [size * 1.1, size * .1], life: rand(200, 320), delay: delay + t * 1000, alpha: .75, vj: 16, rot: "rand", erode: trailTex === "flame" || trailLit ? .5 : 0, lit: trailLit, occ: trailLit ? .5 : 0, emis: trailLit ? .9 : 1 }); }
     return e.after(dur + delay);
   }
   // a stream from a toward b: n pieces over `over`, each flying the distance in `travel`, spreading and growing as they go
-  function stream(c, a, b, { n = 90, over = 600, travel = 300, spread = .12, tex = "flame", ramp = "fire", size = [8, 40], erode = .5, occ = 0, emis = 1, life = 1.25, drag = 0, spin = 0, rot = "rand", face = false, aspect = 1, delay = 0, alpha = 1, layer = 1, vj = 0 } = {}) {
+  function stream(c, a, b, { n = 90, over = 600, travel = 300, spread = .12, tex = "flame", ramp = "fire", size = [8, 40], erode = .5, occ = 0, emis = 1, life = 1.25, drag = 0, spin = 0, rot = "rand", face = false, aspect = 1, delay = 0, alpha = 1, layer = 1, vj = 0, lit = false } = {}) {
     const ang = dirTo(a, b), dist = Math.hypot(b[0] - a[0], b[1] - a[1]), sp = dist / (travel / 1000);
-    c.e.emit({ n, at: a, dir: ang, arc: spread * 2, speed: [sp * .88, sp * 1.12], size, life: [travel * life * .9, travel * life * 1.1], over, tex, ramp, erode, occ, emis, drag, spin, rot, face, aspect, delay, alpha, layer, vj, grow: true });
+    c.e.emit({ n, at: a, dir: ang, arc: spread * 2, speed: [sp * .88, sp * 1.12], size, life: [travel * life * .9, travel * life * 1.1], over, tex, ramp, erode, occ, emis, drag, spin, rot, face, aspect, delay, alpha, layer, vj, lit, grow: true });
     return c.e.after(travel + delay);
   }
   // pieces falling from above onto a point, each in its turn, landing on it with their own debris
-  function fallOn(c, at, { n = 4, tex = "rock", ramp = "rock.m", size = 30, dur = 420, gap = 110, spread = .4, slant = .25, occ = 1, emis = .1, spin = 4, land = null, type = "rock", trail = null, glowK = 0, aspect = 1, face = false, rot = 0 } = {}) {
+  function fallOn(c, at, { n = 4, tex = "rock", ramp = "stone", size = 30, dur = 420, gap = 110, spread = .4, slant = .25, occ = 1, emis = .1, spin = 4, land = null, type = "rock", trail = null, glowK = 0, aspect = 1, face = false, rot = 0, lit = true } = {}) {
     const e = c.e, H = e.H, s = size;
     for (let i = 0; i < n; i++) {
       const x = at[0] + rand(-spread, spread) * s * 2, y = at[1] + rand(-.2, .3) * s, from = [x - H * slant, y - H * 1.05], d = gap * i;
       const sec = dur / 1000, v = [(x - from[0]) / sec, (y - from[1]) / sec];
-      e.emit({ at: from, vel: v, tex, ramp, size: [s, s], aspect, life: dur, delay: d, occ, emis, spin, rot: face ? rot : "rand", face });
+      e.emit({ at: from, vel: v, tex, ramp, size: [s, s], aspect, life: dur, delay: d, occ, emis, spin, rot: face ? rot : "rand", face, lit });
       if (glowK) e.emit({ at: from, vel: v, tex: "glow", ramp: `${type}.h`, size: [s * glowK, s * glowK], life: dur, delay: d, alpha: .6 });
-      if (trail) for (let j = 0; j < 10; j++) { const t = j / 10; e.emit({ at: [lerp(from[0], x, t), lerp(from[1], y, t)], tex: trail[0], ramp: trail[1], size: [s * .9, s * .2], life: 300, delay: d + t * dur, alpha: .7, vj: 10, rot: "rand", erode: trail[0] === "flame" ? .5 : 0 }); }
+      if (trail) for (let j = 0; j < 10; j++) { const t = j / 10; e.emit({ at: [lerp(from[0], x, t), lerp(from[1], y, t)], tex: trail[0], ramp: trail[1], size: [s * .9, s * .3], life: 300, delay: d + t * dur, alpha: .7, vj: 10, rot: "rand", erode: .5, lit: trail[0] === "billow", occ: trail[0] === "billow" ? .4 : 0 }); }
       e.at(d + dur, () => { (land || (p => DEBRIS[type]?.(e, p, s * 1.6, .7)))([x, y], i); e.shake(.14); });
     }
     return e.after(dur + gap * (n - 1));
   }
   // pieces drawn round a point and turning, from r0 to r1 (shares of size), squashed by flat, rising by rise
-  function orbit(c, at, size, { n = 10, r0 = .8, r1 = .5, turns = 1, flat = .45, dur = 800, tex = "glow", ramp = null, sz = 8, rise = 0, steps = 10, delay = 0, occ = 0, emis = 1, aspect = 1, face = false } = {}) {
+  function orbit(c, at, size, { n = 10, r0 = .8, r1 = .5, turns = 1, flat = .45, dur = 800, tex = "glow", ramp = null, sz = 8, rise = 0, steps = 10, delay = 0, occ = 0, emis = 1, aspect = 1, face = false, lit = false } = {}) {
     const e = c.e, seg = dur / steps;
     for (let i = 0; i < n; i++) for (let j = 0; j < steps; j++) {
       const p0 = j / steps, p1 = (j + 1) / steps, a0 = i / n * Math.PI * 2, at0 = a0 + p0 * turns * Math.PI * 2, at1 = a0 + p1 * turns * Math.PI * 2;
       const q0 = [at[0] + Math.cos(at0) * size * lerp(r0, r1, p0), at[1] + Math.sin(at0) * size * lerp(r0, r1, p0) * flat - rise * size * p0];
       const q1 = [at[0] + Math.cos(at1) * size * lerp(r0, r1, p1), at[1] + Math.sin(at1) * size * lerp(r0, r1, p1) * flat - rise * size * p1];
       const front = Math.sin(at0) > 0;
-      e.emit({ at: q0, vel: [(q1[0] - q0[0]) / seg * 1000, (q1[1] - q0[1]) / seg * 1000], tex, ramp: ramp || `${T(c)}.h`, size: [sz, sz], aspect, life: seg + 8, delay: delay + j * seg + i * 12, alpha: front ? 1 : .5, layer: front ? 1 : 0, occ, emis, face, rot: face ? 0 : at0 });
+      e.emit({ at: q0, vel: [(q1[0] - q0[0]) / seg * 1000, (q1[1] - q0[1]) / seg * 1000], tex, ramp: ramp || `${T(c)}.h`, size: [sz, sz], aspect, life: seg + 8, delay: delay + j * seg + i * 12, alpha: front ? 1 : .5, layer: front ? 1 : 0, occ, emis, face, rot: face ? 0 : at0, lit, erode: tex === "billow" ? .4 : 0 });
     }
     return e.after(dur + delay);
   }
   // pieces jutting out of the floor under a point, standing a moment, breaking
-  function pillars(c, t, { n = 5, tex = "shard", ramp = "rock.h", w = .22, h = .9, occ = .9, type = "rock" } = {}) {
+  function pillars(c, t, { n = 5, tex = "shard", ramp = "stone", w = .22, h = .9, occ = 1, type = "rock" } = {}) {
     const e = c.e, [x, y] = B(c, t, 0), s = S(c, t);
     dust(e, [x, y], s * 1.2, 6);
     for (let i = 0; i < n; i++) {
       const off = (i - (n - 1) / 2), px = x + off * s * .22, tall = s * h * (1 - Math.abs(off) * .14), lean = off * .2;
-      e.emit({ at: [px, y], vel: [0, -tall * 4.5], drag: 9, tex, ramp, size: [tall * .2, tall], aspect: w * 2.2, rot: lean, life: 680, delay: Math.abs(off) * 45, occ, emis: .3, grow: true });
+      e.emit({ at: [px, y], vel: [0, -tall * 4.5], drag: 9, tex, ramp, size: [tall * .2, tall], aspect: w * 2.2, rot: lean, life: 680, delay: Math.abs(off) * 45, occ, emis: .05, lit: true, grow: true });
     }
     e.at(150, () => { DEBRIS[type]?.(e, [x, y - s * .3], s, .8); e.shake(.3); });
     return e.after(170);
@@ -116,10 +116,11 @@ export function makeDraw(k) {
   function cloak(c, dur = 620) {
     const e = c.e, a = actorOf(c.stage, c.from), s = S(c), t = T(c), steps = Math.round(dur / 30);
     if (!a) return;
-    const tex = t === "fire" ? "flame" : t === "water" ? "drop" : t === "electric" ? "spark" : t === "grass" ? "leaf" : t === "ice" ? "shard" : "glow";
+    const tex = t === "fire" ? "billow" : t === "water" ? "drop" : t === "electric" ? "glint" : t === "grass" ? "leaf" : t === "ice" ? "crystal" : "glow";
+    const lit = ["billow", "drop", "leaf", "crystal"].includes(tex), ramp = { fire: "fire.b", water: "water.l", grass: "leaf.c", ice: "ice.c" }[t] || `${t}.h`;
     for (let i = 0; i < steps; i++) e.at(i * 30, () => {
       const [x, y] = A(c); const px = x + a.st.x, py = y + a.st.y;
-      e.emit({ n: 3, at: [px, py], r: [s * .42, s * .45], tex, ramp: t === "fire" ? "fire" : t, vel: () => [rand(-30, 30), -rand(60, 140)], size: [[s * .14, s * .22], s * .03], life: [260, 420], erode: tex === "flame" ? .5 : 0, rot: "rand", emis: 1, face: tex === "drop" || tex === "shard", aspect: tex === "drop" ? .72 : tex === "shard" ? .45 : 1 });
+      e.emit({ n: 3, at: [px, py], r: [s * .42, s * .45], tex, ramp, lit, vel: () => [rand(-30, 30), -rand(60, 140)], size: [[s * .14, s * .22], s * .03], life: [260, 420], erode: tex === "billow" ? .45 : 0, rot: "rand", emis: tex === "billow" ? .9 : lit ? .4 : 1, occ: lit ? .7 : 0, face: tex === "drop" || tex === "crystal", aspect: tex === "drop" ? .72 : tex === "crystal" ? .55 : 1 });
       if (t === "electric" && i % 3 === 0) { const a0 = rand(0, 6.28); boltStrip(e, [px, py], [px + Math.cos(a0) * s * .6, py + Math.sin(a0) * s * .6], { width: 3, dur: 140, flicker: 2, depth: .3, forks: 0, steps: 5 }); }
     });
     aura(c.stage, c.from, c.type, 1, dur);
@@ -137,7 +138,9 @@ export function makeDraw(k) {
   /* ---------- the marks a blow of the body leaves, at the instant it lands ---------- */
   const thrust = (c, t, tex, { w = .5, h = w, from = .5, face = 0, ramp = "white.h", dur = 260, angle = null, alpha = 1 } = {}) => {
     const [bx, by] = B(c, t), s = S(c, t), a = angle ?? dirTo(A(c), [bx, by]), st = [bx - Math.cos(a) * s * from, by - Math.sin(a) * s * from], sec = dur * .4 / 1000;
-    c.e.emit({ at: st, vel: [(bx - st[0]) / sec, (by - st[1]) / sec], drag: 9, tex, ramp, size: [s * h * .8, s * h * 1.2], aspect: w / h, rot: a + face, life: dur, emis: 1, alpha });
+    // the blow's own shape, solid and lit in its type's colour, as 포켓몬 챔피언스 throws a fist of fire or ice at the target
+    const lit = tex !== "needle", solid = ramp === "white.h" ? ({ fire: "fire.c", ice: "ice.c", electric: "electric.h", water: "water.l", grass: "leaf.c", poison: "toxic.c", psychic: "magenta", ghost: "ghost.h", dragon: "dragon.h", fairy: "fairy.h", fighting: "fighting.h", steel: "steel.c", rock: "chip", ground: "earth", dark: "ghost.h", bug: "bug.h" }[T(c)] || ramp) : ramp;
+    c.e.emit({ at: st, vel: [(bx - st[0]) / sec, (by - st[1]) / sec], drag: 9, tex, ramp: solid, size: [s * h * 1.05, s * h * 1.5], aspect: w / h, rot: a + face, life: dur, emis: .75, occ: lit ? .6 : 0, lit, alpha });
     c.e.emit({ at: [bx, by], tex: "glow", ramp: `${T(c)}.h`, size: [s * .3, s * 1.2], life: dur, delay: dur * .35, alpha: .7, grow: true });
   };
   const MARKS = {
@@ -272,16 +275,18 @@ export function makeDraw(k) {
 
   /* ---------- verbs: from afar ---------- */
   // a projectile's look: its picture, its type when it is not the move's, its scale and how it flies
+  /* 2026-11-06 remake: matter is lit (a stone has its faces, a drop its gloss), an energy is a lit sphere with its halo */
+  const M = { lit: true, glowK: 0, core: false };
   const SHOT = {
-    seed: ["seed", "grass", .8, { trailTex: "glow" }], rock: ["rock", "rock", 1.2, { occ: 1, spin: 8, trail: false, ramp: "stone" }], boulder: ["rock", "rock", 2.8, { occ: 1, spin: 5, arc: .2, trail: false, ramp: "stone" }],
-    ice: ["shard", "ice", 1.9, { face: true, rot: Math.PI / 2, aspect: .45 }], shard: ["shard", "ice", 1.1, { face: true, rot: Math.PI / 2, aspect: .45 }], icicle: ["shard", "ice", 1.7, { face: true, rot: Math.PI / 2, aspect: .4 }],
+    seed: ["seed", "grass", .9, { ...M, ramp: "leaf.c", occ: 1, emis: .2, trail: false }], rock: ["rock", "rock", 1.3, { ...M, occ: 1, spin: 8, trail: false, ramp: "stone" }], boulder: ["rock", "rock", 2.8, { ...M, occ: 1, spin: 5, arc: .2, trail: false, ramp: "stone" }],
+    ice: ["crystal", "ice", 1.9, { ...M, ramp: "ice.c", occ: .85, emis: .4, spin: 6, trailRamp: "ice.h" }], shard: ["shard", "ice", 1.2, { ...M, ramp: "ice.c", occ: .85, emis: .4, face: true, rot: Math.PI / 2, aspect: .45, trailRamp: "ice.h" }], icicle: ["shard", "ice", 1.8, { ...M, ramp: "ice.c", occ: .85, emis: .4, face: true, rot: Math.PI / 2, aspect: .4, trailRamp: "ice.h" }],
     needle: ["needle", null, 1.4, { face: true, aspect: 4 }], dart: ["needle", "dragon", 1.8, { face: true, aspect: 4 }], arrow: ["needle", null, 2, { face: true, aspect: 5 }],
-    scale: ["scale", null, 1.1, { spin: 9 }], orb: ["orb", null, 1.5, {}], fireball: ["flame", "fire", 2, { trailTex: "flame", trailRamp: "fire", ramp: "fire", erode: .2 }],
-    item: ["dot", "normal", 1, { arc: .3, spin: 10 }], bouquet: ["petal", "grass", 1.5, { spin: 6, ramp: "fairy.h" }], garbage: ["smoke", "poison", 2.2, { occ: .8, arc: .2, ramp: "poison.m" }],
-    salt: ["shard", "rock", 1, { ramp: "white.h", face: true, rot: Math.PI / 2, aspect: .5 }], apple: ["orb", "grass", 2.4, { occ: .8, ramp: "fire.m" }], star: ["star", null, 1.4, { spin: 10 }],
-    leaf: ["leaf", "grass", 1.3, { spin: 10, aspect: 1.9, occ: .7 }], feather: ["feather", "flying", 1.3, { spin: 4, aspect: 2.2, occ: .7 }], bubble: ["bubble", "water", 1.3, {}],
-    mud: ["smoke", "ground", 1.5, { occ: .9, ramp: "ground.m" }], shell: ["shell", "water", 1.5, { spin: 9 }], coin: ["coin", "steel", 1, { ramp: "gold", spin: 12 }],
-    comet: ["orb", "dragon", 2.4, { trailTex: "flame", trailRamp: "dragon" }], water: ["drop", "water", 1.5, { face: true, rot: -Math.PI / 2, aspect: .72, ramp: "spray" }],
+    scale: ["scale", null, 1.2, { ...M, spin: 9, ramp: "dragon.m", occ: 1, emis: .3 }], orb: ["orb", null, 1.5, { lit: true, occ: .3, glowK: 2 }], fireball: ["billow", "fire", 2.2, { lit: true, glowK: 1.6, core: false, trailTex: "billow", trailLit: true, trailRamp: "fire.b", ramp: "fire.c", erode: .15, occ: .4, emis: 1 }],
+    item: ["ball", "normal", 1, { ...M, arc: .3, spin: 10, ramp: "white.h", occ: 1, emis: .2, trail: false }], bouquet: ["flower", "grass", 1.6, { ...M, spin: 6, ramp: "fairy.m", occ: 1, emis: .3 }], garbage: ["billow", "poison", 2.2, { ...M, occ: 1, arc: .2, ramp: "toxic.c", emis: .2, trail: false }],
+    salt: ["crystal", "rock", 1.1, { ...M, ramp: "white.h", occ: 1, emis: .2, spin: 5, trail: false }], apple: ["orb", "grass", 2.4, { ...M, occ: 1, emis: .1, ramp: "fire.m", trail: false }], star: ["star", null, 1.4, { lit: true, spin: 10, occ: .4, glowK: 1.4, core: false }],
+    leaf: ["leaf", "grass", 1.4, { ...M, spin: 10, aspect: 1.9, occ: 1, emis: .2, ramp: "leaf.c", trailRamp: "grass.h" }], feather: ["feather", "flying", 1.3, { ...M, spin: 4, aspect: 2.2, occ: 1, emis: .2, ramp: "white.h", trail: false }], bubble: ["bubble", "water", 1.4, { ...M, ramp: "water.l", occ: .9, emis: .4, trail: false }],
+    mud: ["billow", "ground", 1.6, { ...M, occ: 1, emis: .05, ramp: "earth", trail: false }], shell: ["shell", "water", 1.5, { ...M, spin: 9, ramp: "water.m", occ: 1, emis: .3, trail: false }], coin: ["coin", "steel", 1, { ...M, ramp: "gold.c", spin: 12, occ: 1, emis: .4, trail: false }],
+    comet: ["orb", "dragon", 2.4, { lit: true, occ: .3, glowK: 2.4, core: false, trailTex: "billow", trailLit: true, trailRamp: "dragon" }], water: ["drop", "water", 1.6, { ...M, face: true, rot: -Math.PI / 2, aspect: .72, ramp: "water.l", occ: .9, emis: .4, trailRamp: "foam" }],
   };
   D.shoot = async (c, a) => {
     const t = aim(c);
@@ -295,7 +300,7 @@ export function makeDraw(k) {
     let first = null;
     for (let i = 0; i < n; i++) {
       const tt = c.targets.length > 1 ? c.targets[i % c.targets.length] : t, b = endOf(c, tt), s = S(c, tt), j = n > 1 ? [rand(-.25, .25) * s, rand(-.2, .2) * s] : [0, 0];
-      const p = fly(c, mouth(c), [b[0] + j[0], b[1] + j[1]], { tex, size, dur, arc: (o.arc || 0) + (a.has("arc") ? .25 : 0), ramp: o.ramp || `${ty}.h`, trailRamp: o.trailRamp || ty, trailTex: o.trailTex, spin: o.spin || 0, face: o.face, rot: o.rot || 0, aspect: o.aspect || 1, occ: o.occ || 0, emis: o.occ ? .2 : 1, delay: i * 90, trail: o.trail !== false, erode: o.erode || 0 });
+      const p = fly(c, mouth(c), [b[0] + j[0], b[1] + j[1]], { tex, size, dur, arc: (o.arc || 0) + (a.has("arc") ? .25 : 0), ramp: o.ramp || `${ty}.h`, trailRamp: o.trailRamp || ty, trailTex: o.trailTex, trailLit: o.trailLit, spin: o.spin || 0, face: o.face, rot: o.rot || 0, aspect: o.aspect || 1, occ: o.occ || 0, emis: o.emis ?? (o.occ ? .2 : 1), delay: i * 90, trail: o.trail !== false, erode: o.erode || 0, lit: o.lit, glowK: o.glowK ?? 2.4, core: o.core ?? true });
       e.at(dur + i * 90, () => { if (live(c, tt)) { DEBRIS[ty]?.(e, B(c, tt), s, .5); if (n > 1) k.hit(c.stage, tt, { share: .1 }); e.shake(.1); } });
       first ??= p;
     }
@@ -324,13 +329,13 @@ export function makeDraw(k) {
     } else { camUser(c, 1.08, .3); await after(c, 200); camFor(c, .35); }
     const list = c.targets.length ? c.targets : [t];
     const look = {
-      boulder: { tex: "rock", ramp: "stone", size: 34 * U0, type: "rock" }, ice: { tex: "shard", ramp: "ice.h", size: 26 * U0, type: "ice", occ: .3, emis: .8, face: true, rot: Math.PI / 2, aspect: .5 },
-      icicle: { tex: "shard", ramp: "ice.h", size: 40 * U0, type: "ice", occ: .3, emis: .8, face: true, rot: Math.PI / 2, aspect: .4, slant: .05 }, seed: { tex: "seed", ramp: "grass.h", size: 14 * U0, type: "grass", occ: 0, emis: 1 },
-      apple: { tex: "orb", ramp: "fire.m", size: 40 * U0, type: "grass", n: 1, slant: 0 }, coin: { tex: "coin", ramp: "gold", size: 12 * U0, type: "steel", occ: 0, emis: 1, gap: 40, n: n * 3 },
-      comet: { tex: "orb", ramp: "dragon.h", size: 26 * U0, type: "dragon", occ: 0, emis: 1, trail: ["flame", "dragon"], glowK: 3, slant: .45, dur: 360, gap: 150 },
+      boulder: { tex: "rock", ramp: "stone", size: 36 * U0, type: "rock" }, ice: { tex: "crystal", ramp: "ice.c", size: 30 * U0, type: "ice", occ: .85, emis: .4, aspect: .7 },
+      icicle: { tex: "shard", ramp: "ice.c", size: 42 * U0, type: "ice", occ: .85, emis: .4, face: true, rot: Math.PI / 2, aspect: .4, slant: .05 }, seed: { tex: "seed", ramp: "leaf.c", size: 15 * U0, type: "grass", occ: 1, emis: .2 },
+      apple: { tex: "orb", ramp: "fire.m", size: 42 * U0, type: "grass", n: 1, slant: 0, emis: .1 }, coin: { tex: "coin", ramp: "gold.c", size: 13 * U0, type: "steel", occ: 1, emis: .4, gap: 40, n: n * 3 },
+      comet: { tex: "orb", ramp: "dragon.h", size: 26 * U0, type: "dragon", occ: .3, emis: 1, trail: ["billow", "dragon"], glowK: 3, slant: .45, dur: 360, gap: 150 },
     }[shape] || { tex: "rock", ramp: "stone", size: 26 * U0, type: "rock" };
-    await Promise.all(list.map((tt, i) => fallOn(c, B(c, tt, .2), { n: look.n || n, ...look, land: shape === "comet" ? p => { DEBRIS.fire(e, p, S(c, tt), .6); DEBRIS.dragon(e, p, S(c, tt), .8); shock(e, p, S(c, tt) * 2); e.shake(.35); } : null, gap: (look.gap || 110) + i * 20 })));
-    if (a.has("ring")) for (let i = 0; i < 4; i++) { const [x, y] = B(c, t, 0), s = S(c, t), ang = i / 4 * Math.PI * 2; e.emit({ at: [x + Math.cos(ang) * s * .55, y + Math.sin(ang) * s * .2], tex: "rock", ramp: "rock.m", size: [s * .3, s * .3], life: 900, occ: 1, emis: .1, layer: 0 }); }
+    await Promise.all(list.map((tt, i) => fallOn(c, B(c, tt, .2), { n: look.n || n, ...look, lit: shape !== "comet", land: shape === "comet" ? p => { DEBRIS.fire(e, p, S(c, tt), .6); DEBRIS.dragon(e, p, S(c, tt), .8); shock(e, p, S(c, tt) * 2); e.shake(.35); } : null, gap: (look.gap || 110) + i * 20 })));
+    if (a.has("ring")) for (let i = 0; i < 4; i++) { const [x, y] = B(c, t, 0), s = S(c, t), ang = i / 4 * Math.PI * 2; e.emit({ at: [x + Math.cos(ang) * s * .55, y + Math.sin(ang) * s * .2], tex: "rock", ramp: "stone", lit: true, size: [s * .3, s * .3], life: 900, occ: 1, emis: .05, layer: 0 }); }
     landAll(c, { type: look.type });
   };
   // pieces jut out of the floor under each target (Stone Edge, Frenzy Plant, Drum Beating)
@@ -409,27 +414,30 @@ export function makeDraw(k) {
     for (const tt of list) {
       const a0 = mouth(c), b = endOf(c, tt), sT = S(c, tt), U0 = U(c), dist = Math.hypot(b[0] - a0[0], b[1] - a0[1]);
       if (ty === "fire" || id === "torchsong" || id === "burningjealousy") {
-        // a roaring tongue of fire: tight and white-hot at the mouth, opening, licking and reddening as it goes, embers and smoke shed off it
-        stream(c, a0, b, { n: 170, over, travel, spread: .15, tex: "flame", ramp: "fire", size: [8 * U0, sT * .72], erode: .72, life: 1.12, alpha: .6, occ: .32, emis: .8 });
-        stream(c, a0, b, { n: 34, over, travel: travel * .8, spread: .03, tex: "glow", ramp: "fire", size: [5 * U0, sT * .2], life: 1.05, alpha: .3 });
-        e.emit({ n: 40, at: a0, dir: dirTo(a0, b), arc: .5, speed: [dist * 1.5, dist * 3], tex: "dot", ramp: "fire", size: [3, 1], acc: [0, 120], drag: 1.5, life: [500, 800], over });
-        e.emit({ n: 10, at: b, r: sT * .3, tex: "smoke", ramp: e.light ? "smoke.l" : "smoke", vel: () => [rand(-20, 20), -rand(30, 60)], size: [sT * .3, sT * .8], life: 1000, over, delay: travel, occ: .5, emis: 0, erode: .5 });
+        // 포켓몬 챔피언스's flamethrower: a huge billowing column, lobes of fire white-hot at its heart, orange and red outside, browning
+        // at the edges as they cool, swelling as they go and engulfing the target, embers and smoke shed off it
+        stream(c, a0, b, { n: 140, over, travel, spread: .15, tex: "billow", lit: true, ramp: "fire.s", size: [12 * U0, sT * .95], erode: .36, life: 1.2, alpha: .95, occ: .75, emis: .65 });
+        stream(c, a0, b, { n: 30, over, travel: travel * .85, spread: .035, tex: "billow", lit: true, ramp: "fire.c", size: [6 * U0, sT * .28], erode: .3, life: .95, alpha: .7, occ: .3, emis: .8 });
+        e.emit({ n: 46, at: a0, dir: dirTo(a0, b), arc: .5, speed: [dist * 1.5, dist * 3], tex: "dot", ramp: "fire.c", size: [3, 1], acc: [0, 120], drag: 1.5, life: [500, 800], over });
+        e.at(travel, () => { if (live(c, tt)) fire(e, b, sT, 12, { r: .35, size: [.25, .6], over: over * .8 }); });
+        smoke(e, [b[0], b[1] - sT * .2], sT, 6, { delay: travel + over * .4, rise: 50, alpha: .55 });
         e.emit({ n: 8, at: [lerp(a0[0], b[0], .5), lerp(a0[1], b[1], .5)], r: dist * .3, tex: "glow", ramp: "white.h", size: [sT * .6, sT * 1.2], life: 500, over, alpha: .25, distort: true });
         e.distUntil = Math.max(e.distUntil, e.T + over + travel);
       } else if (ty === "water" || id === "chillingwater" || id === "matchagotcha") {
         // a jet of water: a ribbon of white water with spray thrown off it and a splash where it lands
-        const col = id === "matchagotcha" ? "#8FD05A" : "#7FC4FF";
+        // a jet of white water and light cyan: a ribbon of it, glossy drops and foam thrown off it, an explosive white splash where it lands
+        const col = id === "matchagotcha" ? "#8FD05A" : e.light ? "#5AAEF0" : "#BFE6FF", ramp = id === "matchagotcha" ? "leaf.c" : "water.l";
         pathStrip(e, u => [lerp(a0[0], b[0], u), lerp(a0[1], b[1], u) + Math.sin(u * 8 + e.T * .02) * 2], { color: col, width: (big ? 30 : 18) * U0, dur: over + travel, mode: 3, head: travel / (over + travel), tailLag: over / (over + travel), taper: false });
-        stream(c, a0, b, { n: 120, over, travel, spread: .08, tex: "drop", ramp: id === "matchagotcha" ? "grass.h" : "spray", size: [5 * U0, 10 * U0], face: true, rot: -Math.PI / 2, aspect: .72, erode: 0, emis: .9, occ: .25 });
-        stream(c, a0, b, { n: 60, over, travel, spread: .2, tex: "glow", ramp: "spray", size: [4, 14 * U0], life: 1.2, alpha: .6 });
-        e.emit({ n: 40, at: b, tex: "drop", ramp: "spray", speed: [sT * 1.5, sT * 3], dir: -Math.PI / 2, arc: 2.4, acc: [0, sT * 5], face: true, rot: -Math.PI / 2, aspect: .72, size: [sT * .08, sT * .04], life: [400, 600], over, delay: travel });
+        stream(c, a0, b, { n: 110, over, travel, spread: .08, tex: "drop", lit: true, ramp, size: [5 * U0, 11 * U0], face: true, rot: -Math.PI / 2, aspect: .72, erode: 0, emis: .45, occ: .85 });
+        stream(c, a0, b, { n: 50, over, travel, spread: .16, tex: "billow", lit: true, ramp: id === "matchagotcha" ? "leaf.c" : e.light ? "water.l" : "foam", size: [6 * U0, sT * .32], life: 1.1, erode: .5, emis: .5, occ: .8, alpha: .85 });
+        e.at(travel, () => { if (live(c, tt)) { splash(e, b, sT, big ? 1.8 : 1.2); e.emit({ n: 10, at: b, r: sT * .25, tex: "billow", lit: true, ramp: "foam", speed: [sT * .8, sT * 2], drag: 3, size: [sT * .2, sT * .55], life: [400, 600], over: over * .7, erode: .5, emis: .5, occ: .85, grow: true }); } });
       } else if (ty === "ice") {
-        stream(c, a0, b, { n: 120, over, travel, spread: .14, tex: "smoke", ramp: "steam", size: [8 * U0, sT * .5], erode: .5, emis: .6, occ: .2, life: 1.3 });
-        stream(c, a0, b, { n: 50, over, travel, spread: .1, tex: "shard", ramp: "ice", size: [6 * U0, 3], face: true, rot: Math.PI / 2, aspect: .45 });
+        stream(c, a0, b, { n: 100, over, travel, spread: .14, tex: "billow", lit: true, ramp: "steam", size: [8 * U0, sT * .5], erode: .5, emis: .5, occ: .5, life: 1.3 });
+        stream(c, a0, b, { n: 50, over, travel, spread: .1, tex: "crystal", lit: true, ramp: "ice.c", size: [6 * U0, 4], aspect: .6, emis: .4, occ: .85, spin: [-6, 6] });
         stream(c, a0, b, { n: 30, over, travel, spread: .2, tex: "flake", ramp: "snow", size: [3, 10 * U0], spin: [-4, 4] });
       } else {
         // anything else breathed out: a stream of its type's light (Belch, Fiery Dance's kin)
-        stream(c, a0, b, { n: 120, over, travel, spread: .12, tex: "smoke", ramp: ty, size: [8 * U0, sT * .5], erode: .5, emis: .8, occ: .2, life: 1.3 });
+        stream(c, a0, b, { n: 110, over, travel, spread: .12, tex: "billow", lit: true, ramp: ty, size: [8 * U0, sT * .5], erode: .5, emis: .8, occ: .4, life: 1.3 });
         stream(c, a0, b, { n: 40, over, travel, spread: .05, tex: "glow", ramp: ty, size: [6 * U0, sT * .3] });
       }
       muzzle(c, a0, s0 * .6, over);
@@ -483,7 +491,7 @@ export function makeDraw(k) {
   // a crest of foam along its top, spray thrown off its face
   D.wave = async c => {
     const e = c.e, { W, H } = e, id = c.id, own = actorOf(c.stage, c.from)?.own;
-    const look = id === "muddywater" ? { body: "ground.m", foam: "dust", crest: "#D8B27A" } : id === "sludgewave" ? { body: "poison.m", foam: "toxic", crest: "#D9A0FF" } : { body: "water.m", foam: "spray", crest: "#BFE6FF" };
+    const look = id === "muddywater" ? { body: "earth", foam: "dust", crest: "#D8B27A" } : id === "sludgewave" ? { body: "toxic.c", foam: "toxic.c", crest: "#D9A0FF" } : { body: "water.m", foam: "foam", crest: "#EAF8FF" };
     camUser(c, 1.06, .35);
     await charge(c.stage, c.from, c.type, 260);
     camWide(c, .45);
@@ -495,10 +503,10 @@ export function makeDraw(k) {
       // a point on the wall: anywhere across the field, and up to a fifth of the stage deep behind its front
       const along = (deep = .22) => () => { const u = rand(-1, 1) * W * .75, d = -rand(0, deep) * H; return [cx + px * u + dx * d, cy + py * u + dy * d]; };
       // the body of the wave: big masses of deep water moving with it, dark under its foam
-      e.emit({ n: 14, at: along(), vel: () => [dx * sp * rand(.85, 1.05), dy * sp * rand(.85, 1.05) - H * .3], acc: [0, H * 1], tex: "smoke", ramp: look.body, size: [[H * .14, H * .2], [H * .3, H * .38]], rot: "rand", spin: [-1, 1], life: [440, 620], delay, alpha: .8, occ: .75, emis: .35, erode: .3, grow: true });
-      // foam and spray thrown up off its crest
-      e.emit({ n: 8, at: along(.05), vel: () => [dx * sp * .9 + rand(-60, 60), dy * sp * .9 - rand(H * .5, H * 1.1)], acc: [0, H * 2.4], tex: "drop", ramp: look.foam, face: true, rot: -Math.PI / 2, aspect: .72, size: [[5, 9], 3], life: [400, 600], delay, emis: .9, occ: .3 });
-      e.emit({ n: 4, at: along(.05), tex: "glow", ramp: look.foam, size: [H * .05, H * .12], vel: () => [dx * sp, dy * sp], life: 300, delay, alpha: .35 });
+      e.emit({ n: 14, at: along(), vel: () => [dx * sp * rand(.85, 1.05), dy * sp * rand(.85, 1.05) - H * .3], acc: [0, H * 1], tex: "billow", lit: true, ramp: look.body, size: [[H * .14, H * .2], [H * .3, H * .38]], rot: "rand", spin: [-1, 1], life: [440, 620], delay, alpha: .85, occ: .8, emis: .3, erode: .3, grow: true });
+      // white foam boiling along its crest, glossy spray thrown up off it
+      e.emit({ n: 6, at: along(.04), vel: () => [dx * sp, dy * sp - H * .2], acc: [0, H * .6], tex: "billow", lit: true, ramp: look.foam, size: [[H * .08, H * .12], [H * .18, H * .24]], rot: "rand", life: [360, 520], delay, alpha: .95, occ: .85, emis: .45, erode: .45, grow: true });
+      e.emit({ n: 8, at: along(.05), vel: () => [dx * sp * .9 + rand(-60, 60), dy * sp * .9 - rand(H * .5, H * 1.1)], acc: [0, H * 2.4], tex: "drop", lit: true, ramp: look.foam === "foam" ? "water.l" : look.foam, face: true, rot: -Math.PI / 2, aspect: .72, size: [[5, 9], 3], life: [400, 600], delay, emis: .4, occ: .85 });
     }
     // the crest: a line of white water riding the front
     for (const lift of [0, .05]) e.strip({ dur, color: look.crest, mode: 3, emis: .55, occ: .35, uLen: 30, tile: 1.2, points: kk => {
@@ -517,9 +525,9 @@ export function makeDraw(k) {
     await charge(c.stage, c.from, c.type, 240);
     camWide(c, .5);
     const a0 = A(c), dur = 900, sp = W * 1.6;
-    const look = a.has("petal") ? ["petal", "fairy.h", [8, 12], .6] : ty === "ice" ? ["flake", "snow", [6, 12], .3] : ty === "fire" ? ["flame", "fire", [16, 30], 0] : ty === "ground" ? ["grain", "sand", [3, 5], .5] : ["leaf", `${ty}.m`, [8, 12], .6];
+    const look = a.has("petal") ? ["petal", "fairy.m", [8, 12], 1, true] : ty === "ice" ? ["flake", "snow", [6, 12], .3, false] : ty === "fire" ? ["billow", "fire.b", [18, 34], .5, true] : ty === "ground" ? ["grain", "sand", [3, 5], .8, true] : ty === "bug" ? ["chip", "bug.m", [5, 8], 1, true] : ["leaf", ty === "grass" ? "leaf.c" : `${ty}.m`, [8, 12], 1, true];
     e.emit({ n: 90, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.25, .1) * H], dir, arc: .5, speed: [sp * .7, sp], tex: "streak", ramp: ty === "fire" ? "fire" : "white", face: true, size: [3, 3], aspect: [20, 40], life: [500, 800], over: dur * .8, alpha: .55 });
-    e.emit({ n: 110, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.25, .1) * H], dir, arc: .7, speed: [sp * .45, sp * .8], tex: look[0], ramp: look[1], size: [look[2][0] * U(c), look[2][1] * U(c)], spin: [-8, 8], rot: "rand", aspect: look[0] === "petal" ? .7 : 1, life: [700, 1100], over: dur * .8, occ: look[3], emis: 1 - look[3] * .5, erode: ty === "fire" ? .5 : 0 });
+    e.emit({ n: 110, at: () => [a0[0] + rand(-.2, .2) * W, a0[1] + rand(-.25, .1) * H], dir, arc: .7, speed: [sp * .45, sp * .8], tex: look[0], ramp: look[1], lit: look[4], size: [look[2][0] * U(c), look[2][1] * U(c)], spin: [-8, 8], rot: "rand", aspect: look[0] === "petal" ? .7 : 1, life: [700, 1100], over: dur * .8, occ: look[3], emis: ty === "fire" ? .9 : 1 - look[3] * .7, erode: ty === "fire" ? .45 : 0 });
     if (ty === "fire") { e.emit({ n: 16, at: () => [rand(0, 1) * W, rand(.2, 1) * H], tex: "glow", ramp: "white.h", size: [W * .2, W * .3], life: 800, over: dur, alpha: .5, distort: true }); flashStage(c.stage, .1, 600, "#FF8A40"); }
     if (ty === "ice") flashStage(c.stage, .12, 600, "#C0F0FF");
     e.shake(.25);
@@ -535,11 +543,12 @@ export function makeDraw(k) {
     camUser(c, 1.1, .3);
     await charge(c.stage, c.from, c.type, 280);
     camFor(c, .35);
-    const look = a.has("sand") ? ["grain", "sand", .5] : ty === "fire" ? ["flame", "fire", 0] : ty === "grass" ? ["leaf", "grass.m", .7] : ty === "water" ? ["drop", "spray", .2] : ty === "bug" ? ["dot", "bug", 0] : ["streak", "white", 0];
+    const look = a.has("sand") ? ["grain", "sand", .8] : ty === "fire" ? ["billow", "fire.b", .5] : ty === "grass" ? ["leaf", "leaf.c", 1] : ty === "water" ? ["drop", "water.l", .85] : ty === "bug" ? ["chip", "bug.m", 1] : ["streak", "white", 0];
     for (const tt of c.targets) {
       const [x, y] = B(c, tt, .1), s = S(c, tt) * (a.has("big") ? 1.3 : 1);
       if (id === "hurricane") { e.emit({ at: [x, y - s * .5], tex: "tornado", ramp: "white.h", size: [s * 1.6, s * 1.9], aspect: .8, life: 1000, alpha: .7, grow: true }); darken(c.stage, .6, 900); }
-      orbit(c, [x, y], s, { n: 16, r0: .3, r1: .75, turns: 1.6, flat: .3, dur: 900, tex: look[0], ramp: look[1], sz: s * .16, rise: 1.3, steps: 12, occ: look[2], emis: 1 - look[2] * .6 });
+      orbit(c, [x, y], s, { n: 16, r0: .3, r1: .75, turns: 1.6, flat: .3, dur: 900, tex: look[0], ramp: look[1], sz: s * (look[0] === "billow" ? .3 : .16), rise: 1.3, steps: 12, occ: look[2], emis: look[0] === "billow" ? .9 : 1 - look[2] * .6, lit: look[0] !== "streak" });
+      if (ty === "fire") fire(e, [x, y + s * .3], s, 14, { r: [.7, .12], up: 1.2, size: [.2, .45], over: 700 });
       orbit(c, [x, y], s, { n: 10, r0: .7, r1: .4, turns: 1.2, flat: .3, dur: 900, tex: "streak", ramp: ty === "fire" ? "fire" : "white", sz: 6, rise: 1, steps: 10, delay: 100, aspect: 5 });
     }
     e.shake(.2);
@@ -610,20 +619,20 @@ export function makeDraw(k) {
     for (const tt of c.targets) {
       const b = endOf(c, tt), sT = S(c, tt);
       if (id === "fireblast") {
-        await fly(c, a0, b, { tex: "flame", ramp: "fire", size: 26 * U(c), dur: 300, trailTex: "flame", trailRamp: "fire", erode: .2 });
+        await fly(c, a0, b, { tex: "billow", lit: true, ramp: "fire.c", size: 30 * U(c), dur: 300, trailTex: "billow", trailLit: true, trailRamp: "fire.b", erode: .15, occ: .4, emis: 1, core: false, glowK: 1.6 });
         if (!live(c, tt)) continue;
-        // the arms: up, left, right, and two legs down, each a line of flames thrown out from the centre
+        // the arms of 大: up, left, right, and two legs down, each a line of billowing fire thrown out from a white-hot heart
         for (const ang of [-Math.PI / 2, Math.PI, 0, Math.PI * .72, Math.PI * .28]) {
-          const reach = sT * (ang === Math.PI || ang === 0 ? 1.1 : .95);
-          for (let j = 0; j < 9; j++) { const r = reach * (j + 1) / 9; e.emit({ at: b, vel: [Math.cos(ang) * r * 4, Math.sin(ang) * r * 4], drag: 4, tex: "flame", ramp: "fire", size: [sT * .2, sT * .34], life: 620, delay: j * 14, erode: .5, rot: ang + Math.PI / 2 }); }
+          const reach = sT * (ang === Math.PI || ang === 0 ? 1.15 : 1);
+          for (let j = 0; j < 9; j++) { const r = reach * (j + 1) / 9; e.emit({ at: b, vel: [Math.cos(ang) * r * 4, Math.sin(ang) * r * 4], drag: 4, tex: "billow", lit: true, ramp: "fire.b", size: [sT * .2, sT * .4], life: 680, delay: j * 14, erode: .4, rot: "rand", spin: [-1, 1], emis: .9, occ: .55 }); }
         }
-        glow(e, b, sT * 1.8, "fire", { dur: 600 }); shock(e, b, sT * 3, { dur: 600 }); e.shake(.6); DEBRIS.fire(e, b, sT, 1.2);
+        glow(e, b, sT * 1.8, "fire", { dur: 600, ramp: "fire.c" }); shock(e, b, sT * 3, { dur: 600 }); e.shake(.6); DEBRIS.fire(e, b, sT, 1.2);
         flashStage(c.stage, .16, 360, "#FFB060");
       } else {
         // a blaze that swallows it (Overheat, Blast Burn, Burn Up)
         darken(c.stage, .5, 1000);
-        stream(c, a0, b, { n: 220, over: 700, travel: 260, spread: .2, tex: "flame", ramp: "fire", size: [16 * U(c), sT * .9], erode: .55, life: 1.4 });
-        e.at(260, () => { if (live(c, tt)) { e.emit({ n: 50, at: b, r: sT * .4, tex: "flame", ramp: "fire", vel: () => [rand(-40, 40), -rand(100, 220)], size: [sT * .3, sT * .1], life: [500, 800], over: 600, erode: .6 }); DEBRIS.fire(e, b, sT, 1.4); shock(e, b, sT * 3); e.shake(.7); } });
+        stream(c, a0, b, { n: 170, over: 700, travel: 260, spread: .2, tex: "billow", lit: true, ramp: "fire.b", size: [16 * U(c), sT * 1.05], erode: .4, life: 1.4, emis: .9, occ: .55 });
+        e.at(260, () => { if (live(c, tt)) { fire(e, b, sT, 26, { r: .45, up: 1.4, size: [.3, .7], over: 600 }); DEBRIS.fire(e, b, sT, 1.4); shock(e, b, sT * 3); e.shake(.7); } });
         await after(c, 260);
       }
     }
@@ -637,8 +646,8 @@ export function makeDraw(k) {
     camWide(c, .5);
     if (ty === "electric") for (let i = 0; i < 10; i++) { const ang = around(10, i); boltStrip(e, at, [at[0] + Math.cos(ang) * e.W * .5, at[1] + Math.sin(ang) * e.H * .5], { width: 7, dur: 420, flicker: 6, delay: i * 25 }); }
     else {
-      const ramp = id === "mistyexplosion" ? "fairy" : ty === "fire" || /explosion|selfdestruct/.test(id) ? "fire" : ty;
-      e.emit({ n: 80, at, r: s * .3, tex: id === "mistyexplosion" ? "smoke" : "flame", ramp, speed: [s * 2, s * 6], drag: 3, size: [[s * .3, s * .5], [s * .8, s * 1.2]], life: [600, 1000], erode: .55, rot: "rand", grow: true });
+      const ramp = id === "mistyexplosion" ? "fairy" : ty === "fire" || /explosion|selfdestruct/.test(id) ? "fire.b" : ty;
+      e.emit({ n: 70, at, r: s * .3, tex: "billow", lit: true, ramp, speed: [s * 2, s * 6], drag: 3, size: [[s * .3, s * .5], [s * .8, s * 1.2]], life: [600, 1000], erode: .42, rot: "rand", spin: [-1, 1], emis: .9, occ: .55, grow: true });
       smoke(e, at, s * 2.4, 14, { ramp: id === "mistyexplosion" ? "mist" : undefined, rise: 60, alpha: .8, spread: .6, delay: 150, life: [1100, 1600] });
     }
     glow(e, at, s * 6 * (big ? 1.3 : 1), ty, { dur: 600, ramp: big ? "white" : null });
@@ -659,11 +668,16 @@ export function makeDraw(k) {
     await Promise.all([charge(c.stage, c.from, c.type, 300), move(c, c.from, { rimA: [0, 1, 0] }, { dur: 400 })]);
     if (c.id === "nightshade") darken(c.stage, .5, 900);
     camFor(c, .36);
+    // 포켓몬 챔피언스's Psychic: the picture washes magenta, rings of light close and open round the target, streaks run out of it,
+    // the colours part at the edges
+    if (ty === "psychic") { flashStage(c.stage, .3, 900, "#FF5ADC"); e.anim(e.grade, { ca: [0, .014, 0] }, { dur: 900 }); }
     for (const tt of c.targets) {
-      const b = B(c, tt), sT = S(c, tt);
-      for (let i = 0; i < 4; i++) ring(e, b, sT * (2.4 - i * .4), ty, { dur: 600, delay: i * 80, s0: 1, alpha: .8 });
+      const b = B(c, tt), sT = S(c, tt), rr = ty === "psychic" ? "magenta" : null;
+      for (let i = 0; i < 5; i++) ring(e, b, sT * (2.6 - i * .4), ty, { dur: 640, delay: i * 70, s0: 1, alpha: .85, ramp: rr });
+      for (let i = 0; i < 4; i++) ring(e, b, sT * (1.4 + i * .5), ty, { dur: 520, delay: 200 + i * 80, alpha: .6, ramp: rr });
       for (let i = 0; i < 6; i++) e.emit({ at: b, tex: "wave", ramp: "white", size: [sT * .2, sT * 2.2], life: 500, delay: i * 90, distort: true, grow: true });
-      e.emit({ at: b, tex: "spiral", ramp: `${ty}.h`, size: [sT * .4, sT * 1.6], spin: 5, life: 700, alpha: .6, grow: true });
+      e.emit({ n: 24, at: b, r: sT * .2, tex: "streak", ramp: rr || `${ty}.h`, speed: [sT * 3, sT * 6], face: true, size: [3, 2], aspect: [10, 20], life: [300, 500], over: 400, delay: 200 });
+      glints(e, b, sT, 8, rr || `${ty}.h`, { r: .6, delay: 250 });
       if (live(c, tt)) move(c, tt, { y: [0, -sT * .18, -sT * .14, 0], x: [0, 4, -4, 0], rot: [0, .08, -.08, 0], tintR: [1, 1], tintG: [.4, .4], tintB: [.8, .8], tintA: [0, .35, .35, 0] }, { dur: 760, ease: "inout" });
     }
     if (big) { shock(e, [e.W / 2, e.H * .6], e.W, { flat: .35, dur: 700 }); e.shake(.4); }
@@ -676,19 +690,25 @@ export function makeDraw(k) {
     if (!t) return false;
     const e = c.e, ty = T(c), big = a.has("big"), id = c.id, s0 = S(c);
     camUser(c, 1.16, .28);
-    const at = A(c, .55), size = (big ? 34 : 24) * U(c);
+    // the games' spheres are big, about a third of the user (2026-11-06: a 24 dot read as a spark)
+    const at = A(c, .55), size = Math.max((big ? 34 : 24) * U(c), s0 * (big ? .5 : .4));
     if (a.has("gather")) await gatherUp(c, 420);
-    // it grows in front of the user, turning, the type's light wound round it
-    e.emit({ at, tex: "orb", ramp: `${ty}.h`, size: [4, size], life: 380, grow: true });
-    e.emit({ at, tex: "spiral", ramp: ty, size: [size * .5, size * 1.8], spin: 6, life: 380, alpha: .7, grow: true });
-    e.emit({ n: 16, at, r: size, tex: "glow", ramp: ty, vel: () => [rand(-30, 30), rand(-30, 30)], size: [6, 1], life: 380 });
+    /* it grows in front of the user, a lit sphere with a halo of its type (Shadow Ball: nearly black with a violet rim and purple
+       sparkles round it, as 포켓몬 챔피언스 draws it; Sludge Bomb a glossy ball of sludge; Energy Ball a green sphere) */
+    const look = id === "shadowball" ? { ramp: "shadowball", halo: "ghost.h", trailRamp: "ghost", occ: .9, emis: .5 } : id === "sludgebomb" ? { ramp: "toxic.c", halo: "poison.h", trailRamp: "toxic", occ: .9, emis: .4 }
+      : id === "aurasphere" ? { ramp: "water.h", halo: "water.h", trailRamp: "water", occ: .2, emis: 1 } : id === "focusblast" ? { ramp: "fighting.h", halo: "fighting.h", trailRamp: "fighting", occ: .2, emis: 1 } : { ramp: `${ty}.h`, halo: `${ty}.h`, trailRamp: ty, occ: .25, emis: 1 };
+    e.emit({ at, tex: "glow", ramp: look.halo, size: [4, size * 2.4], life: 360, alpha: .6, grow: true });
+    e.emit({ at, tex: "orb", lit: true, ramp: look.ramp, size: [4, size], life: 360, occ: look.occ, emis: look.emis, grow: true });
+    e.emit({ n: 16, at, r: size, tex: "glint", ramp: look.halo, vel: () => [rand(-30, 30), rand(-30, 30)], size: [size * .1, size * .3], life: 380 });
     await charge(c.stage, c.from, c.type, 340);
     camFor(c, .34);
     for (const tt of c.targets) {
       const b = endOf(c, tt);
-      const look = id === "shadowball" ? { ramp: "ghost.h", trailRamp: "shadow", trailTex: "smoke" } : id === "sludgebomb" ? { ramp: "poison.h", trailRamp: "toxic", trailTex: "bubble" } : id === "focusblast" || id === "aurasphere" ? { ramp: id === "aurasphere" ? "water.h" : "fighting.h", trailRamp: id === "aurasphere" ? "water" : "fighting" } : {};
-      fly(c, at, b, { tex: "orb", size, dur: big ? 460 : 380, ...look, trailN: 24 });
-      e.at(big ? 460 : 380, () => { if (live(c, tt)) { glow(e, b, S(c, tt) * 1.6, ty, { dur: 420 }); shock(e, b, S(c, tt) * 2.4); } });
+      // the halo first, so the sphere stands in it rather than under it
+      fly(c, at, b, { tex: "glow", ramp: look.halo, size: size * 1.7, dur: big ? 460 : 380, trail: false, core: false, glowK: 0, alpha: look.occ > .5 ? .45 : .7 });
+      fly(c, at, b, { tex: "orb", lit: true, size, dur: big ? 460 : 380, ramp: look.ramp, trailRamp: look.trailRamp, occ: look.occ, emis: look.emis, core: false, glowK: 0, trailN: look.occ > .5 ? 10 : 24 });
+      for (let i = 0; i < 10; i++) { const t = i / 10; e.emit({ at: [lerp(at[0], b[0], t), lerp(at[1], b[1], t)], r: size * .6, tex: "glint", ramp: look.halo, size: [size * .15, size * .3], life: 260, delay: t * (big ? 460 : 380) }); }
+      e.at(big ? 460 : 380, () => { if (live(c, tt)) { glow(e, b, S(c, tt) * 1.6, ty, { dur: 420 }); shock(e, b, S(c, tt) * 2.4); if (id === "shadowball") DEBRIS.ghost(e, b, S(c, tt), 1.2); } });
     }
     await after(c, big ? 460 : 380);
     landAll(c, { power: big ? 1.15 : 1 });
@@ -743,12 +763,12 @@ export function makeDraw(k) {
     const e = c.e, ty = T(c), at = A(c, .8), s = S(c), water = ty === "water";
     camUser(c, 1.08, .3);
     await charge(c.stage, c.from, c.type, 300);
-    e.emit({ n: 90, at, r: [s * .2, 4], vel: () => [rand(-40, 40), -rand(e.H * 1.8, e.H * 2.6)], tex: water ? "drop" : "flame", ramp: water ? "spray" : "fire", size: [[s * .2, s * .3], s * .5], face: water, rot: water ? -Math.PI / 2 : "rand", aspect: water ? .72 : 1, life: [500, 700], over: 500, erode: water ? 0 : .5 });
+    e.emit({ n: 80, at, r: [s * .2, 4], vel: () => [rand(-40, 40), -rand(e.H * 1.8, e.H * 2.6)], tex: water ? "drop" : "billow", lit: true, ramp: water ? "water.l" : "fire.b", size: [[s * .2, s * .3], s * .5], face: water, rot: water ? -Math.PI / 2 : "rand", aspect: water ? .72 : 1, life: [500, 700], over: 500, erode: water ? 0 : .4, emis: water ? .4 : .9, occ: water ? .85 : .55 });
     if (!water) smoke(e, at, s * 1.4, 8, { rise: 120, alpha: .7 });
     e.shake(.4);
     await after(c, 500);
     camWide(c, .5);
-    await Promise.all(c.targets.map(tt => fallOn(c, B(c, tt, .2), { n: 4, tex: water ? "drop" : "flame", ramp: water ? "spray" : "fire", size: 30 * U(c), dur: 360, gap: 90, slant: 0, occ: 0, emis: 1, type: ty, glowK: 2, face: water, rot: -Math.PI / 2, aspect: water ? .72 : 1 })));
+    await Promise.all(c.targets.map(tt => fallOn(c, B(c, tt, .2), { n: 4, tex: water ? "drop" : "billow", ramp: water ? "water.l" : "fire.c", size: 34 * U(c), dur: 360, gap: 90, slant: 0, occ: water ? .85 : .4, emis: water ? .4 : 1, type: ty, glowK: water ? 0 : 1.6, face: water, rot: -Math.PI / 2, aspect: water ? .72 : 1 })));
     landAll(c, { power: 1.15 });
   };
   // the court quakes (Earthquake, Bulldoze)
@@ -918,10 +938,12 @@ export function makeDraw(k) {
     if (!t) return false;
     const e = c.e, at = A(c), s = S(c);
     camUser(c, 1.12, .3);
-    orbit(c, at, s, { n: 4, r0: .7, r1: .7, turns: .6, flat: .5, dur: 500, tex: "flame", ramp: "blue", sz: s * .38, steps: 6 });
+    // 포켓몬 챔피언스: small red-orange balls of flame turn round the user and float across, a violet light in the user
+    aura(c.stage, c.from, "ghost", 1, 700);
+    orbit(c, at, s, { n: 4, r0: .7, r1: .7, turns: .6, flat: .5, dur: 500, tex: "billow", ramp: "fire.c", sz: s * .3, steps: 6, lit: true, occ: .3, emis: 1 });
     await after(c, 480);
     camFor(c, .36);
-    for (const tt of c.targets) orbs(e, at, B(c, tt), "ghost", { n: 4, dur: 600, over: 200, wave: .2, size: S(c, tt) * .34, tex: "flame", ramp: "blue" });
+    for (const tt of c.targets) orbs(e, at, B(c, tt), "fire", { n: 4, dur: 600, over: 200, wave: .2, size: S(c, tt) * .28, tex: "billow", ramp: "fire.c" });
     e.at(620, () => c.targets.forEach(tt => live(c, tt) && DEBRIS.fire(e, B(c, tt), S(c, tt), .6)));
     await after(c, 620);
     landAll(c, { shards: false });
@@ -944,8 +966,9 @@ export function makeDraw(k) {
     camFor(c, .32);
     for (const tt of c.targets) {
       const b = endOf(c, tt);
-      fly(c, mouth(c), b, { tex: "drop", ramp: ty === "water" ? "spray" : `${ty}.h`, size: 14 * U(c), dur: 360, arc: .25, face: true, rot: -Math.PI / 2, aspect: .72, trailTex: "dot" });
-      e.at(360, () => { if (live(c, tt)) { const sT = S(c, tt); e.emit({ n: 20, at: b, tex: "drop", ramp: ty === "water" ? "spray" : `${ty}.h`, speed: [sT, sT * 2.4], acc: [0, sT * 4], face: true, rot: -Math.PI / 2, aspect: .72, size: [sT * .08, sT * .04], life: 600 }); if (ty === "poison") DEBRIS.poison(e, b, sT, .7); } });
+      const liquid = { water: "water.l", poison: "toxic.c", grass: "leaf.c", fire: "fire.c" }[ty] || `${ty}.m`;
+      fly(c, mouth(c), b, { tex: "drop", lit: true, ramp: liquid, size: 16 * U(c), dur: 360, arc: .25, face: true, rot: -Math.PI / 2, aspect: .72, trail: false, glowK: 0, core: false, occ: .9, emis: .4 });
+      e.at(360, () => { if (live(c, tt)) { const sT = S(c, tt); e.emit({ n: 20, at: b, tex: "drop", lit: true, ramp: liquid, speed: [sT, sT * 2.4], acc: [0, sT * 4], face: true, rot: -Math.PI / 2, aspect: .72, size: [sT * .08, sT * .04], life: 600, occ: .9, emis: .4 }); if (ty === "poison") DEBRIS.poison(e, b, sT, .7); if (ty === "water") splash(e, b, sT, .8); } });
     }
     await after(c, 380);
     landAll(c, { shards: false });
@@ -1052,7 +1075,7 @@ export function makeDraw(k) {
     const t = aim(c);
     if (!t) return false;
     camFor(c, .34);
-    for (const tt of c.targets) for (let i = 0; i < 3; i++) fly(c, mouth(c), [B(c, tt, .3)[0] + (i - 1) * 10, B(c, tt, .3)[1]], { tex: "seed", ramp: "grass.h", size: 10 * U(c), dur: 420, arc: .3, delay: i * 70, trail: false });
+    for (const tt of c.targets) for (let i = 0; i < 3; i++) fly(c, mouth(c), [B(c, tt, .3)[0] + (i - 1) * 10, B(c, tt, .3)[1]], { tex: "seed", lit: true, ramp: "leaf.c", size: 12 * U(c), dur: 420, arc: .3, delay: i * 70, trail: false, glowK: 0, core: false, occ: 1, emis: .2 });
     await after(c, 560);
     for (const tt of c.targets) if (live(c, tt)) { const [x, y] = B(c, tt, .3), sT = S(c, tt); for (let i = 0; i < 3; i++) pathStrip(c.e, u => [x + (i - 1) * sT * .2 + Math.sin(u * 8 + i) * sT * .15, y - u * sT * .6], { color: "#4FC836", width: 5, dur: 600, mode: 2, head: .6, tailLag: .9 }); }
     landAll(c, { shards: false });
@@ -1114,8 +1137,23 @@ export function makeDraw(k) {
     camWide(c, .5);
     const side = [...c.stage.querySelectorAll(`.bs-side.${own ? "foe" : "own"} .bs-slot`)].map(s => s.getBoundingClientRect()), box = c.stage.getBoundingClientRect();
     const cx = side.length ? (Math.min(...side.map(r => r.left)) + Math.max(...side.map(r => r.right))) / 2 - box.left : e.W * (own ? .65 : .35), cy = side.length ? Math.max(...side.map(r => r.bottom)) - box.top : e.H * (own ? .5 : .9);
-    const look = id === "stealthrock" ? ["rock", "rock.h", 1] : id === "stickyweb" ? ["web", "white.h", 0] : id === "toxicspikes" ? ["caltrop", "poison.h", .9] : ["caltrop", "steel.h", 1];
-    for (let i = 0; i < 4; i++) fly(c, a0, [cx + (i - 1.5) * 30 * U(c), cy - (id === "stealthrock" ? 60 : 4) * U(c)], { tex: look[0], ramp: look[1], size: 14 * U(c), dur: 520, arc: .35, delay: i * 70, occ: look[2], emis: .3, spin: 6, trail: false, glowK: 1.2 });
+    const U0 = U(c), w = side.length ? Math.max(...side.map(r => r.right)) - Math.min(...side.map(r => r.left)) : e.W * .4;
+    if (id === "stealthrock") {
+      // 포켓몬 챔피언스: a spray of small pointed cream stones scattered low and wide over the foe's side, hanging there
+      for (let i = 0; i < 28; i++) { const to = [cx + rand(-.65, .65) * w, cy - rand(10, 70) * U0]; fly(c, a0, to, { tex: "chip", lit: true, ramp: "chip", size: rand(7, 13) * U0, dur: 480, arc: .3, delay: rand(0, 220), occ: 1, emis: .05, spin: rand(-8, 8), trail: false, glowK: 0, core: false }); }
+      await after(c, 760);
+      return;
+    }
+    if (id === "spikes" || id === "toxicspikes") {
+      // small four-pointed caltrops land all round the foe's feet, each throwing a yellow glint as it strikes the floor
+      const ramp = id === "toxicspikes" ? "toxic.c" : "steel.c";
+      for (let i = 0; i < 9; i++) { const to = [cx + rand(-.6, .6) * w, cy - rand(0, 14) * U0], d = rand(0, 260); fly(c, a0, to, { tex: "caltrop", lit: true, ramp, size: rand(12, 17) * U0, aspect: 1.6, dur: 480, arc: .35, delay: d, occ: 1, emis: .15, spin: 6, trail: false, glowK: 0, core: false }); e.at(480 + d, () => { glints(e, to, 40 * U0, 2, id === "toxicspikes" ? "poison.h" : "electric.h", { r: .3, over: 60 }); sparks(e, to, 5, "electric", { ramp: "gold", speed: [80, 180], len: [4, 8] }); }); }
+      await after(c, 820);
+      return;
+    }
+    // Sticky Web: a web flies over and spreads out flat on the foe's floor
+    fly(c, a0, [cx, cy - 10 * U0], { tex: "web", ramp: "white.h", size: 30 * U0, dur: 520, arc: .35, spin: 2, trail: false, glowK: 0, core: false, alpha: .9 });
+    e.at(520, () => e.emit({ at: [cx, cy], tex: "web", ramp: "white.h", size: [w * .2, w * .8], aspect: 3, life: 600, alpha: .8, layer: 0, grow: true }));
     await after(c, 760);
   };
   D.weather = async c => {
@@ -1131,31 +1169,61 @@ export function makeDraw(k) {
     await after(c, 400);
   };
   D.terrain = async c => {
-    // a light runs out across the floor from the user's feet
-    const e = c.e, [x, y] = A(c, 0), ty = T(c);
+    // each terrain comes in as 포켓몬 챔피언스 brings it (references: 2026-11-06 notes): a burst at the user's feet, then the floor
+    // takes it from the user outward
+    const e = c.e, [x, y] = A(c, 0), ty = T(c), s = S(c), id = c.id, { W } = e;
     camWide(c, .5);
-    for (let i = 0; i < 3; i++) ring(e, [x, y], e.W * (1.4 + i * .3), ty, { flat: .3, dur: 900, delay: i * 120, tex: "wave", layer: 0 });
+    if (id === "psychicterrain") {
+      // a great glowing ellipse opens on the floor, violet in its middle and white-lavender at its rim, light bursting out of its centre
+      e.emit({ at: [x, y], tex: "glow", ramp: "psy.wave", size: [W * .1, W * 1.1], aspect: 3.2, life: 1000, alpha: .9, layer: 0, grow: true });
+      ring(e, [x, y], W * 1.1, "psychic", { flat: .31, dur: 1000, ramp: "bar.pink", layer: 0, alpha: .9 });
+      e.emit({ n: 26, at: [x, y - s * .2], tex: "streak", ramp: "white", dir: -Math.PI / 2, arc: 2.2, speed: [s * 3, s * 6], face: true, size: [3, 2], aspect: [12, 24], life: [300, 500] });
+      glints(e, [x, y - s * .3], s, 10, "psychic.h", { r: .7 });
+    } else if (id === "electricterrain") {
+      // four-rayed sparkles burst round the user, and a yellow-green shimmer sweeps out over the floor
+      glints(e, A(c, .4), s, 22, "electric.h", { r: 1, size: .34, over: 400 });
+      for (let i = 0; i < 3; i++) ring(e, [x, y], W * (1.3 + i * .3), "electric", { flat: .3, dur: 900, delay: 300 + i * 120, tex: "wave", layer: 0 });
+    } else if (id === "grassyterrain") {
+      e.emit({ n: 30, at: [x, y], r: [s * .6, s * .2], tex: "leaf", lit: true, ramp: "leaf.c", vel: () => [rand(-60, 60), -rand(60, 160)], acc: [0, 60], spin: [-6, 6], rot: "rand", size: [s * .07, s * .07], aspect: 1.9, life: [900, 1300], over: 500, occ: 1, emis: .2 });
+      for (let i = 0; i < 3; i++) ring(e, [x, y], W * (1.3 + i * .3), "grass", { flat: .3, dur: 1000, delay: 200 + i * 140, tex: "wave", layer: 0 });
+      glints(e, A(c, .5), s, 10, "white.h", { r: 1 });
+    } else {
+      // misty: pink mist rolls out over the floor from the user, sparkling
+      e.emit({ n: 14, at: [x, y], r: [s * .4, s * .1], tex: "wisp", ramp: "mist", vel: () => [rand(-1, 1) * W * .5, rand(-10, 10)], drag: 1.2, size: [s * .5, s * 1.6], aspect: 2.4, rot: "rand", life: [1100, 1500], alpha: .8, layer: 0, grow: true });
+      glints(e, A(c, .4), s, 14, "fairy.h", { r: 1 });
+    }
     flashStage(c.stage, .12, 700, colorOf(ty));
-    await after(c, 700);
+    await after(c, 800);
   };
   D.room = async c => {
-    // the room goes up round the court: the space bends and turns
+    // the room goes up round the court (its walls of square tiles light one after another, arena.js) as the space turns
     const e = c.e, { W, H } = e;
     camWide(c, .5);
     await charge(c.stage, c.from, c.type, 360);
-    for (let i = 0; i < 3; i++) e.emit({ at: [W / 2, H * .55], tex: "grid", ramp: `${T(c)}.h`, size: [H * .2, H * 1.6], aspect: W / H * 1.2, life: 800, delay: i * 120, alpha: .6, grow: true });
+    glints(e, [W / 2, H * .4], W * .5, 20, "glint", { r: .9, over: 600, size: .06 });
     shock(e, [W / 2, H * .55], W * 1.2, { dur: 800 });
-    if (c.id === "trickroom") await k.flashStage(c.stage, .1, 300, "#FF8AC0");
+    if (c.id === "trickroom") await k.flashStage(c.stage, .1, 300, "#B08AFF");
     await after(c, 500);
   };
   D.screen = async c => {
-    // a wall of light panels goes up in front of the side (Reflect, Light Screen, Aurora Veil, Safeguard)
-    const e = c.e, [x, y] = A(c, .45), s = S(c), id = c.id;
-    const ramp = { reflect: "water.h", lightscreen: "electric.h", auroraveil: "aurora", safeguard: "fairy.h" }[id] || `${T(c)}.h`;
+    /* a wall goes up in front of the side as in 포켓몬 챔피언스: Reflect a gate of upright golden bars, Light Screen the same in pale pink
+       and lavender, Aurora Veil curtains of aurora with gold dust, Safeguard a soft veil */
+    const e = c.e, [x, y] = A(c, .45), s = S(c), id = c.id, own = actorOf(c.stage, c.from)?.own, fx = x + (own ? s * .55 : -s * .55);
     camUser(c, 1.06, .35);
-    e.emit({ at: [x, y], tex: "hexgrid", ramp, size: [s * .3, s * 2], aspect: 1.5, life: 800, alpha: .9, grow: true });
-    e.emit({ at: [x, y - s * .6], vel: [0, s * 2.4], tex: "streak", ramp: "white", size: [s * 2.4, s * 2.4], aspect: .06, life: 500, alpha: .7 });
-    await after(c, 600);
+    if (id === "reflect" || id === "lightscreen") {
+      const ramp = id === "reflect" ? "bar.gold" : "bar.pink", h = s * 1.5, n = 11;
+      for (let i = 0; i < n; i++) { const u = i / (n - 1) - .5; e.emit({ at: [fx + u * s * 1.1, y + Math.abs(u) * s * .1], tex: "glow", ramp, size: [h, h], aspect: .06, life: 900, delay: Math.abs(u) * 200, alpha: i % 3 ? .7 : 1, grow: true }); }
+      for (const dy of [-h / 2, h / 2]) e.emit({ at: [fx, y + dy], tex: "streak", ramp, size: [s * 1.2, s * 1.2], aspect: 1, life: 900, alpha: .9, grow: true });
+      glints(e, [fx, y], s, 12, "glint", { r: .7, over: 500 });
+    } else if (id === "auroraveil") {
+      for (let i = 0; i < 14; i++) e.emit({ at: [fx + rand(-.7, .7) * s, y - s * .1], vel: [0, -s * .2], tex: "glow", ramp: "aurora.v", size: [s * 1.8, s * 1.8], aspect: rand(.06, .14), life: [900, 1200], delay: i * 30, alpha: .7 });
+      e.emit({ n: 40, at: [fx, y], r: s * .8, tex: "dot", ramp: "gold", size: [2, 3], vel: () => [rand(-10, 10), rand(-20, 10)], life: [700, 1100], over: 400 });
+      glints(e, [fx, y], s, 10, "glint", { r: .8, over: 600 });
+    } else {
+      const ramp = id === "safeguard" ? "fairy.h" : `${T(c)}.h`;
+      e.emit({ at: [fx, y], tex: "hexgrid", ramp, size: [s * .3, s * 2], aspect: 1.5, life: 800, alpha: .9, grow: true });
+    }
+    await after(c, 700);
   };
   D.hex = async c => {
     // purple fire wells up round the target and bites (Hex)
@@ -1194,15 +1262,18 @@ export function makeDraw(k) {
     const e = c.e, [x, y] = A(c, .9), s = S(c);
     camUser(c, 1.1, .35);
     darken(c.stage, .4, 1500, 300);
-    e.emit({ at: [x, y - s * .9], vel: [0, -s * .3], tex: "moon", ramp: "fairy.h", size: [s * .3, s * .9], life: 1000, alpha: .9, grow: true });
-    e.emit({ at: [x, y - s * .9], tex: "glow", ramp: "fairy.h", size: [s * 1, s * 2.4], life: 1000, alpha: .5, grow: true });
-    e.emit({ n: 26, at: [x, y - s * .9], r: s * .6, tex: "spark", ramp: "fairy", size: [s * .14, 0], life: [400, 700], over: 600 });
+    // the full moon of the games, pale blue-white with its craters lit from the side, the night blue round it
+    flashStage(c.stage, .22, 1400, "#3A5AD8");
+    e.emit({ at: [x, y - s * .9], tex: "glow", ramp: "water.h", size: [s * 1.2, s * 3], life: 1000, alpha: .45, grow: true });
+    e.emit({ at: [x, y - s * .9], vel: [0, -s * .3], tex: "moon", lit: true, ramp: "moon", size: [s * .3, s * 1.2], life: 1000, alpha: 1, occ: 1, emis: .6, grow: true });
+    glints(e, [x, y - s * .9], s, 14, "fairy.h", { r: .9, over: 600, size: .2 });
     await after(c, 600);
     const at = A(c, .6);
-    e.emit({ at, tex: "orb", ramp: "fairy.h", size: [4, 28 * U(c)], life: 260, grow: true });
+    e.emit({ at, tex: "glow", ramp: "fairy.h", size: [4, 60 * U(c)], life: 260, alpha: .6, grow: true });
+    e.emit({ at, tex: "orb", lit: true, ramp: "fairy.h", size: [4, 28 * U(c)], life: 260, occ: .25, grow: true });
     await after(c, 260);
     camFor(c, .34);
-    for (const tt of c.targets) fly(c, at, endOf(c, tt), { tex: "orb", ramp: "fairy.h", trailRamp: "fairy", size: 28 * U(c), dur: 380, trailN: 24 });
+    for (const tt of c.targets) fly(c, at, endOf(c, tt), { tex: "orb", lit: true, occ: .25, core: false, glowK: 2.2, ramp: "fairy.h", trailRamp: "fairy", size: 28 * U(c), dur: 380, trailN: 24 });
     await after(c, 380);
     for (const tt of c.targets) if (live(c, tt)) { glow(e, B(c, tt), S(c, tt) * 1.8, "fairy", { dur: 500 }); shock(e, B(c, tt), S(c, tt) * 2.6); }
     landAll(c, { power: 1.1 });
@@ -1226,10 +1297,11 @@ export function makeDraw(k) {
     if (!t) return false;
     const e = c.e, [x, y] = A(c), s = S(c), gem = c.id === "powergem";
     camUser(c, 1.12, .3);
-    for (let i = 0; i < 5; i++) { const ang = around(5, i, .2); e.emit({ at: [x + Math.cos(ang) * s * .6, y + s * .3], vel: [0, -s * .9], drag: 2, tex: gem ? "shard" : "rock", ramp: gem ? "fairy.h" : "rock.m", size: [s * .14, s * .14], aspect: gem ? .5 : 1, life: 500, occ: gem ? .2 : 1, emis: gem ? 1 : .1 }); }
+    // Ancient Power: stones rise round the user, each lit pink from inside; Power Gem: cut gems that flash
+    for (let i = 0; i < 6; i++) { const ang = around(6, i, .2), p = [x + Math.cos(ang) * s * .65, y + s * .3]; e.emit({ at: p, vel: [0, -s * .9], drag: 2, tex: "glow", ramp: "psychic.h", size: [s * .35, s * .35], life: 500, alpha: .55 }); e.emit({ at: p, vel: [0, -s * .9], drag: 2, tex: gem ? "crystal" : "rock", lit: true, ramp: gem ? "fairy.h" : "chip", size: [s * .15, s * .15], aspect: gem ? .7 : 1, life: 500, occ: 1, emis: gem ? .6 : .15, spin: 2 }); }
     await after(c, 480);
     camFor(c, .34);
-    for (let i = 0; i < 5; i++) fly(c, [x + Math.cos(around(5, i, 0)) * s * .6, y - s * .2], endOf(c, t), { tex: gem ? "shard" : "rock", ramp: gem ? "fairy.h" : "rock.m", size: s * .14, dur: 300, delay: i * 50, occ: gem ? .2 : 1, emis: gem ? 1 : .2, spin: 8, trail: gem, glowK: gem ? 2 : 0 });
+    for (let i = 0; i < 6; i++) fly(c, [x + Math.cos(around(6, i, 0)) * s * .65, y - s * .2], endOf(c, t), { tex: gem ? "crystal" : "rock", lit: true, ramp: gem ? "fairy.h" : "chip", size: s * .15, dur: 300, delay: i * 50, occ: 1, emis: gem ? .6 : .15, spin: 8, trail: gem, trailRamp: "fairy.h", glowK: 2, core: false });
     await after(c, 500);
     landAll(c, { type: gem ? "fairy" : "rock" });
   };

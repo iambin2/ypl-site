@@ -427,6 +427,8 @@ function MoveBench({ res }) {
     run.current = false; setRunning(false);
   };
   const frame = n => { const e = engine(); if (!e) return; e.paused = true; setPaused(true); e.stepMs = n * 1000 / 60; };
+  // a recorder's handles: play a move, set the field (window.__bench.field("raindance", ["trickroom"], { foe: ["spikes"] }))
+  if (typeof window !== "undefined") window.__bench = { play: id => { setMove(id); return play(id); }, field: (w = "", f = [], s = {}) => { setWeather(w); setFields(f); setSides({ foe: s.foe || [], own: s.own || [] }); }, stage: () => ref.current, setFormat, setMons, layers: (spikes = 1, toxic = 1) => { setSpikeLayers(String(spikes)); setToxicLayers(String(toxic)); } };
   const each = fn => () => to.filter(k => slots.includes(k)).forEach(k => fn(ref.current, k));
   const toggle = (list, id) => (list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
 

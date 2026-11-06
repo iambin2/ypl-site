@@ -2,10 +2,12 @@
    배틀 중에는 서버에 아무것도 가지 않는다. 화면은 입력 기록(시드와 모든 선택)을 이 기기에 두고, 다시 열면 그대로 다시 돌려 이어 간다.
    끝난 배틀의 입력 기록은 화면이 서버에 한 번 보낸다(docs/db/cpu_battles.sql).
 
-   주고받는 말: start { formatid, name, team } · resume { inputLog } · choose { choice } · forfeit
+   주고받는 말: start { formatid, name, team, level } · resume { inputLog, level } · choose { choice } · forfeit
+   level은 난이도(src/services/cpuLevels.js)이고, 이어 가는 배틀은 시작할 때의 난이도로 둔다.
    답은 { row, view, inputLog }(화면이 배틀 서버에서 받는 것과 같은 꼴). 컴퓨터가 고른 뒤 턴이 넘어가면 같은 꼴을 { push: true }로 보낸다. */
 import { CPU_NAME, formatId, randomTeam, readout, replay, startBattle, choose, forfeit, validateTeam } from "../../../supabase/functions/battle/engine.mjs";
 import { createCpu, quickChoice } from "../../services/battleCpu.js";
+import { levelOf } from "../../services/cpuLevels.js";
 
 const CPU = "p2";
 let battle = null, cpu = null, meta = null;
@@ -49,22 +51,22 @@ function think() {
 function begin(next, info) {
   battle = next;
   meta = info;
-  cpu = createCpu(battle.format.id);
+  cpu = createCpu(battle.format.id, levelOf(info.level).options);
 }
 
 const handlers = {
-  start({ regulation, battleFormat, name, team }) {
+  start({ regulation, battleFormat, name, team, level }) {
     const formatid = formatId(regulation, battleFormat);
     const p1 = team === "random" ? randomTeam(formatid) : team;
     const problems = validateTeam(formatid, p1);
     if (problems) throw Object.assign(new Error("파티가 규정에 맞지 않습니다."), { problems });
     const seed = Array.from({ length: 4 }, () => Math.floor(Math.random() * 0x10000));
     const p2 = randomTeam(formatid, Math.random, { meta: true });
-    begin(startBattle({ formatid, seed, p1: { name, team: p1 }, p2: { name: CPU_NAME, team: p2 } }), { regulation, createdAt: new Date().toISOString() });
+    begin(startBattle({ formatid, seed, p1: { name, team: p1 }, p2: { name: CPU_NAME, team: p2 } }), { regulation, createdAt: new Date().toISOString(), level });
     return snapshot();
   },
-  resume({ inputLog, regulation, createdAt, endedBy }) {
-    begin(replay(inputLog), { regulation, createdAt, endedBy });
+  resume({ inputLog, regulation, createdAt, endedBy, level }) {
+    begin(replay(inputLog), { regulation, createdAt, endedBy, level });
     return snapshot();
   },
   choose({ choice }) {

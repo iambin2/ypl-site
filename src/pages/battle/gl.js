@@ -10,12 +10,12 @@ import { reduced } from "../../components/common/motion.js";
 
 export const TYPE_COLOR = {
   normal: "#E8ECF4", fire: "#FF6A1F", water: "#2F8CFF", electric: "#FFD21A", grass: "#56D23A", ice: "#7FEBFF", fighting: "#FF7A2A",
-  poison: "#B455F0", ground: "#D89A4A", flying: "#9CCBFF", psychic: "#FF4F93", bug: "#B5C824", rock: "#C9B98A", ghost: "#8F5BD6",
+  poison: "#B455F0", ground: "#D89A4A", flying: "#9CCBFF", psychic: "#FF4F93", bug: "#B5C824", rock: "#C9B98A", ghost: "#A35CF0",
   dragon: "#6A72FF", dark: "#8A6BB8", steel: "#B8DDEE", fairy: "#FF8AE8",
 };
 export const DEEP = {
   normal: "#8FA3C8", fire: "#C4160A", water: "#0B47B8", electric: "#E07A00", grass: "#1E7A18", ice: "#1E8FD6", fighting: "#B83A00",
-  poison: "#5E1E9C", ground: "#7A4310", flying: "#3A6FC0", psychic: "#A8104E", bug: "#5E7A0A", rock: "#6A5A2A", ghost: "#3A1A72",
+  poison: "#5E1E9C", ground: "#7A4310", flying: "#3A6FC0", psychic: "#A8104E", bug: "#5E7A0A", rock: "#6A5A2A", ghost: "#3E1478",
   dragon: "#2A2FB0", dark: "#24163E", steel: "#3E7F9C", fairy: "#C02FA8",
 };
 export const TYPES = Object.keys(TYPE_COLOR);
@@ -225,26 +225,129 @@ cell("tuft", (g, b) => {
 });
 cell("flower", (g, b) => { g.translate(S, S); for (let i = 0; i < 5; i++) { g.rotate(Math.PI * 2 / 5); g.beginPath(); g.ellipse(0, -26, 15, 26, 0, 0, Math.PI * 2); g.fill(); } g.setTransform(1, 0, 0, 1, 0, 0); b.beginPath(); b.arc(S, S, 14, 0, Math.PI * 2); b.fill(); });
 cell("arc", g => { g.strokeStyle = "#fff"; g.lineCap = "round"; for (let j = 0; j < 24; j++) { const t = j / 24, a0 = Math.PI * (1.1 + t * .8), a1 = Math.PI * (1.1 + (t + 1 / 24) * .8); g.lineWidth = 1 + Math.sin(t * Math.PI) * 14; g.beginPath(); g.arc(S, S + 30, 70, a0, a1); g.stroke(); } });
+/* 2026-11-06 remake (the games' own look, checked against 포켓몬 챔피언스): what a move throws is a lit thing, not a flat sign */
+// a billow of fire or smoke: a cauliflower of round lobes, each its own dome once lit
+const BILLOW = [[.5, .56, .3], [.3, .6, .2], [.7, .6, .2], [.4, .38, .21], [.62, .4, .19], [.5, .26, .15], [.24, .44, .14], [.77, .45, .13], [.38, .76, .17], [.63, .76, .17]];
+cell("billow", g => { g.fillStyle = "#fff"; for (const [x, y, r] of BILLOW) { g.beginPath(); g.arc(x * C, y * C, r * C, 0, Math.PI * 2); g.fill(); } });
+// a chip of stone: a small pointed shard of rock (Stealth Rock, debris)
+cell("chip", g => { g.fillStyle = "#fff"; g.beginPath(); [[64, 6], [92, 46], [104, 96], [70, 122], [30, 104], [22, 58]].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); });
+// a chunk of ice: a hexagonal crystal standing on end
+cell("crystal", g => { g.fillStyle = "#fff"; g.beginPath(); [[64, 2], [100, 30], [100, 98], [64, 126], [28, 98], [28, 30]].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); });
+// the splash of a blow: a jagged star, flat as the games draw it (Shadow Ball's black corona, a punch's white burst)
+cell("splat", g => { g.fillStyle = "#fff"; g.beginPath(); let seed = 11; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }; const n = 22; for (let i = 0; i <= n * 2; i++) { const a = i / (n * 2) * Math.PI * 2, rr = i % 2 ? 26 + r() * 10 : 44 + r() * 20; g.lineTo(S + Math.cos(a) * rr, S + Math.sin(a) * rr); } g.closePath(); g.fill(); });
+// the games' glint: four long thin rays from a bright point
+cell("glint", g => { disc(g, S, S, S * .16, [[0, 1], [.5, .6], [1, 0]]); for (const [sx, sy] of [[1, .045], [.045, 1]]) { g.save(); g.translate(S, S); g.scale(sx, sy); disc(g, 0, 0, S, [[0, 1], [.35, .6], [1, 0]]); g.restore(); } });
+// a tile of a room's wall: a square pane, its border lit, its face faint
+cell("tile", g => { g.fillStyle = "rgba(255,255,255,.34)"; g.fillRect(8, 8, 112, 112); g.strokeStyle = "#fff"; g.lineWidth = 5; g.strokeRect(8, 8, 112, 112); });
+// a wisp of mist: a soft curl lying along the floor
+cell("wisp", g => { g.strokeStyle = "#fff"; g.lineCap = "round"; for (let j = 0; j < 30; j++) { const t = j / 30, t2 = (j + 1) / 30, p = u => [10 + u * 108, S + Math.sin(u * Math.PI * 1.6) * 22 - u * 10]; const [x0, y0] = p(t), [x1, y1] = p(t2); g.globalAlpha = Math.sin(Math.PI * t) * .5; g.lineWidth = 10 + Math.sin(Math.PI * t) * 34; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); } g.globalAlpha = 1; });
+// fine blades of grass as a texture laid on the floor (grassy terrain is a wash with a fine grain, not a lawn of tufts)
+cell("blades", g => { let seed = 5; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }; g.strokeStyle = "#fff"; g.lineCap = "round"; for (let i = 0; i < 70; i++) { const x = r() * C, y = 10 + r() * (C - 14), h = 8 + r() * 14, l = (r() - .5) * 6; g.globalAlpha = .4 + r() * .6; g.lineWidth = 1.4 + r() * 1.4; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l * .3, y - h * .6, x + l, y - h); g.stroke(); } g.globalAlpha = 1; g.globalCompositeOperation = "destination-in"; disc(g, S, S, S, [[0, 1], [.6, 1], [1, 0]]); g.globalCompositeOperation = "source-over"; });
 
 export const TEX = Object.fromEntries(CELLS.map(([n], i) => [n, i]));
+const ROWS = Math.ceil(CELLS.length / GRID);
+
+/* ---------------------------------------------------------------- lit things ---------------------------------------------------------------- */
+/* A thing a move throws is lit as the Pokémon's renders are (the Poké Ball's way, DESIGN.md "One style for everything drawn"): each cell
+   of the atlas also has a surface, its normal baked once from its shape. A round thing is a dome over its shape (a drop, an orb, a
+   lobe of fire), a stone or a crystal is cut into flat faces, a sign (a fist, a fang, a star) is a soft bevelled solid. The particle
+   shader turns that normal with the particle and lights it from the upper left in front, as the ball is lit, so a tumbling rock keeps
+   its light where the light is. kind: dome (the whole shape rounds), bevel (only its edge rounds), facet (cut faces), flat (a light). */
+const SURF = {
+  orb: ["dome"], drop: ["dome"], bubble: ["dome"], seed: ["dome"], moon: ["dome", 0, "moon"], ball: ["dome"], dot: ["dome"], grain: ["dome"], billow: ["dome"], cloud: ["dome"], smoke: ["dome"],
+  rock: ["facet", 8], chip: ["facet", 6], shard: ["facet", 3], crystal: ["facet", 7], caltrop: ["facet", 4],
+  fist: ["bevel", 18], foot: ["bevel", 16], hand: ["bevel", 12], heart: ["bevel", 20], star: ["bevel", 14], note: ["bevel", 8], fang: ["bevel", 7], crescent: ["bevel", 8],
+  bone: ["bevel", 12], sword: ["bevel", 5], shell: ["bevel", 10], scale: ["dome"], coin: ["bevel", 6], leaf: ["bevel", 14], petal: ["dome"], feather: ["bevel", 10], gear: ["bevel", 6],
+  needle: ["bevel", 5], flower: ["bevel", 10], flame: ["dome"], z: ["bevel", 6], chevron: ["bevel", 8], plus: ["bevel", 8], eye: ["bevel", 6], web: ["bevel", 2], bolt: ["bevel", 6],
+};
+// how a cell's surface takes the light: [gloss, sharpness of the highlight, see-through middle, rim]
+const MATERIAL = {
+  drop: [1, 70, .55, .75], bubble: [1, 90, .88, 1], orb: [.55, 30, 0, .85], seed: [.5, 30, 0, .3], moon: [.05, 12, 0, .35], ball: [.8, 50, 0, .3],
+  rock: [.1, 10, 0, .18], chip: [.12, 12, 0, .2], shard: [.95, 55, .4, .6], crystal: [.95, 55, .45, .7], caltrop: [1, 40, 0, .35], coin: [1, 36, 0, .3], sword: [1, 48, 0, .4], gear: [1, 36, 0, .3],
+  billow: [0, 8, 0, .12], cloud: [0, 8, 0, .1], smoke: [0, 8, 0, .1], flame: [0, 8, 0, .1],
+  leaf: [.25, 18, 0, .25], petal: [.2, 16, .15, .35], feather: [.1, 12, 0, .3], bone: [.3, 20, 0, .2], shell: [.6, 30, 0, .3], scale: [.8, 36, 0, .4],
+};
+const MAT_DEFAULT = [.35, 24, 0, .3];
+function chamfer(inside, n) {
+  // distance to the outside in pixels (two passes of a 3-4 chamfer)
+  const d = new Float32Array(n * n), BIG = 1e6;
+  for (let i = 0; i < n * n; i++) d[i] = inside[i] ? BIG : 0;
+  const at = (x, y) => (x < 0 || y < 0 || x >= n || y >= n ? 0 : d[y * n + x]);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const i = y * n + x; if (!d[i]) continue; d[i] = Math.min(d[i], at(x - 1, y) + 1, at(x, y - 1) + 1, at(x - 1, y - 1) + 1.414, at(x + 1, y - 1) + 1.414); }
+  for (let y = n - 1; y >= 0; y--) for (let x = n - 1; x >= 0; x--) { const i = y * n + x; if (!d[i]) continue; d[i] = Math.min(d[i], at(x + 1, y) + 1, at(x, y + 1) + 1, at(x + 1, y + 1) + 1.414, at(x - 1, y + 1) + 1.414); }
+  return d;
+}
+function surface(name, alpha, n) {
+  const [kind, param = 0, extra] = SURF[name] || ["flat"], out = new Uint8Array(n * n * 4);
+  for (let i = 0; i < n * n; i++) { out[i * 4] = 128; out[i * 4 + 1] = 128; out[i * 4 + 2] = 255; out[i * 4 + 3] = 255; }
+  if (kind === "flat") return out;
+  const inside = new Uint8Array(n * n);
+  for (let i = 0; i < n * n; i++) inside[i] = alpha[i] > 90 ? 1 : 0;
+  const dt = chamfer(inside, n);
+  let maxd = 0; for (let i = 0; i < n * n; i++) maxd = Math.max(maxd, dt[i]);
+  if (!maxd) return out;
+  const D = kind === "bevel" ? Math.min(maxd, param) : maxd;
+  const h = new Float32Array(n * n);
+  for (let i = 0; i < n * n; i++) { const t = Math.min(dt[i] / D, 1); h[i] = dt[i] ? D * Math.sqrt(1 - (1 - t) * (1 - t)) : 0; }
+  if (extra === "moon") { let seed = 9; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }; for (let k = 0; k < 9; k++) { const cx = 30 + r() * 68, cy = 30 + r() * 68, cr = 5 + r() * 11; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const q = Math.hypot(x - cx, y - cy) / cr; if (q < 1.15) h[y * n + x] -= (q < 1 ? (1 - q * q) * cr * .35 : 0) - (q > .9 ? (1.15 - q) * cr * .5 : 0); } } }
+  // smooth the field once, so its ridges turn rather than crease
+  const s = new Float32Array(n * n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { let v = 0, w = 0; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const xx = x + i, yy = y + j; if (xx < 0 || yy < 0 || xx >= n || yy >= n) continue; v += h[yy * n + xx]; w++; } s[y * n + x] = v / w; }
+  // a cut thing: its pixels belong to the nearest of a few points scattered in it, and each such face leans away from the middle
+  let faces = null;
+  if (kind === "facet") {
+    let seed = 7 + name.length * 13; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    let cx = 0, cy = 0, cnt = 0; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (inside[y * n + x]) { cx += x; cy += y; cnt++; }
+    cx /= cnt; cy /= cnt;
+    const pts = [];
+    while (pts.length < param) { const x = r() * n, y = r() * n; if (inside[Math.floor(y) * n + Math.floor(x)]) pts.push([x, y]); }
+    pts.push([cx, cy]);
+    const rad = Math.sqrt(cnt / Math.PI);
+    faces = pts.map(([x, y], k) => { const ox = (x - cx) / rad, oy = (y - cy) / rad, v = [ox * 1.25 + (r() - .5) * .35, oy * 1.25 + (r() - .5) * .35, k === pts.length - 1 ? 1.6 : 1]; const l = Math.hypot(...v); return { x, y, nrm: v.map(c => c / l) }; });
+  }
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const i = y * n + x;
+    if (!inside[i]) continue;
+    const g = (xx, yy) => s[Math.min(n - 1, Math.max(0, yy)) * n + Math.min(n - 1, Math.max(0, xx))];
+    let nx = -(g(x + 1, y) - g(x - 1, y)) / 2, ny = -(g(x, y + 1) - g(x, y - 1)) / 2, nzz = 1;
+    let l = Math.hypot(nx, ny, nzz); nx /= l; ny /= l; nzz /= l;
+    if (faces) {
+      let best = faces[0], bd = Infinity; for (const f of faces) { const d = (f.x - x) ** 2 + (f.y - y) ** 2; if (d < bd) { bd = d; best = f; } }
+      // the silhouette still rounds a little where the faces meet the edge
+      const edge = Math.min(1, dt[i] / 6);
+      nx = lerp(nx, best.nrm[0], edge); ny = lerp(ny, best.nrm[1], edge); nzz = lerp(nzz, best.nrm[2], edge);
+      l = Math.hypot(nx, ny, nzz); nx /= l; ny /= l; nzz /= l;
+    }
+    out[i * 4] = (nx * .5 + .5) * 255; out[i * 4 + 1] = (ny * .5 + .5) * 255; out[i * 4 + 2] = Math.min(1, s[i] / Math.max(1, D)) * 255;
+  }
+  return out;
+}
+export const MATERIALS = CELLS.map(([n]) => MATERIAL[n] || MAT_DEFAULT);
+
 let atlasData = null;
 function buildAtlas() {
   if (atlasData) return atlasData;
-  const N = C * GRID, mk = () => { const c = document.createElement("canvas"); c.width = N; c.height = N; return c; };
-  const shape = mk(), high = mk(), gs = shape.getContext("2d"), gb = high.getContext("2d");
+  const N = C * GRID, NH = C * ROWS, mk = () => { const c = document.createElement("canvas"); c.width = N; c.height = NH; return c; };
+  const shape = mk(), high = mk(), gs = shape.getContext("2d", { willReadFrequently: true }), gb = high.getContext("2d");
   CELLS.forEach(([, draw], i) => {
     const x = (i % GRID) * C, y = Math.floor(i / GRID) * C;
     for (const g of [gs, gb]) { g.save(); g.beginPath(); g.rect(x, y, C, C); g.clip(); g.translate(x, y); g.fillStyle = "#fff"; g.strokeStyle = "#fff"; }
     draw(gs, gb);
     gs.restore(); gb.restore();
   });
-  const a = gs.getImageData(0, 0, N, N).data, b = gb.getImageData(0, 0, N, N).data, nz = noiseTile();
-  const out = new Uint8Array(N * N * 4);
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+  const a = gs.getImageData(0, 0, N, NH).data, b = gb.getImageData(0, 0, N, NH).data, nz = noiseTile();
+  const out = new Uint8Array(N * NH * 4), nrm = new Uint8Array(N * NH * 4);
+  for (let y = 0; y < NH; y++) for (let x = 0; x < N; x++) {
     const i = (y * N + x) * 4, cellI = Math.floor(y / C) * GRID + Math.floor(x / C);
     out[i] = a[i + 3]; out[i + 1] = nz[((y + cellI * 37) % C) * C + ((x + cellI * 53) % C)] * 255; out[i + 2] = b[i + 3]; out[i + 3] = 255;
   }
-  atlasData = { N, out, noise: nz };
+  CELLS.forEach(([name], ci) => {
+    const x0 = (ci % GRID) * C, y0 = Math.floor(ci / GRID) * C, al = new Uint8Array(C * C);
+    for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) al[y * C + x] = a[((y0 + y) * N + x0 + x) * 4 + 3];
+    const sf = surface(name, al, C);
+    for (let y = 0; y < C; y++) nrm.set(sf.subarray(y * C * 4, (y + 1) * C * 4), ((y0 + y) * N + x0) * 4);
+  });
+  atlasData = { N, NH, out, nrm, noise: nz };
   return atlasData;
 }
 
@@ -263,7 +366,7 @@ ramp("fire", [[0, "#FFF0B0", 0], [.04, "#FFE070", 1], [.14, "#FFA030", 1], [.36,
 ramp("blue", [[0, "#FFFFFF", 0], [.05, "#E6F4FF", 1], [.25, "#7FD0FF", 1], [.6, "#2F6BFF", .7], [1, "#1A2A8A", 0]]);
 ramp("smoke", [[0, "#9AA3B4", 0], [.15, "#7C8597", .6], [.6, "#4E5566", .4], [1, "#2E3340", 0]]);
 ramp("smoke.l", [[0, "#F2F4F8", 0], [.15, "#E2E6EE", .7], [.6, "#C8CFDB", .45], [1, "#AEB6C4", 0]]);
-ramp("dust", [[0, "#E6C79A", 0], [.12, "#C9A06A", .75], [.6, "#9C7646", .45], [1, "#6E5232", 0]]);
+ramp("dust", [[0, "#F2E2C2", 0], [.12, "#E4CDA4", .8], [.6, "#CBB085", .5], [1, "#A88C64", 0]]);
 // a sandstorm's drifting dust: it ends where it starts, so its loop has no seam
 ramp("dust.c", [[0, "#C9A06A", .6], [.5, "#A8804E", .42], [1, "#C9A06A", .6]]);
 ramp("steam", [[0, "#FFFFFF", 0], [.15, "#EAF4FF", .55], [1, "#BFD6EE", 0]]);
@@ -285,6 +388,7 @@ ramp("pulse", [[0, "#FFFFFF", .5], [.5, "#FFFFFF", 1], [1, "#FFFFFF", .5]]);
 ramp("rain", [[0, "#CFE6FF", 0], [.1, "#CFE6FF", .9], [.9, "#9CC8FF", .9], [1, "#9CC8FF", 0]]);
 ramp("rain.l", [[0, "#4F7FC8", 0], [.1, "#4F7FC8", .9], [.9, "#3A68B0", .9], [1, "#3A68B0", 0]]);
 ramp("grass.d", [[0, "#2F7D2A", 0], [.08, "#2F7D2A", 1], [.9, "#3B9434", 1], [1, "#3B9434", 0]]);
+ramp("grass.e", [[0, "#6CEBB0", 0], [.08, "#6CEBB0", 1], [.9, "#4FD89A", 1], [1, "#4FD89A", 0]]);
 ramp("grass.l", [[0, "#5FAE45", 0], [.08, "#5FAE45", 1], [.9, "#74C255", 1], [1, "#74C255", 0]]);
 ramp("sunlit", [[0, "#FFF4C8", 0], [.25, "#FFE9A0", .8], [.5, "#FFF4C8", 1], [.75, "#FFE9A0", .8], [1, "#FFF4C8", 0]]);
 ramp("psy.wave", [[0, "#FF7AC8", 0], [.2, "#FF7AC8", .9], [.6, "#C77DFF", .7], [1, "#8F6BFF", 0]]);
@@ -300,6 +404,30 @@ ramp("sunray", [[0, "#FFF2C0", 0], [.5, "#FFE08A", .55], [1, "#FFF2C0", 0]]);
 ramp("toxic", [[0, "#E8B0FF", 0], [.1, "#C070F0", 1], [.6, "#8A2EC8", .8], [1, "#4A1070", 0]]);
 ramp("mist", [[0, "#FFE0FA", 0], [.3, "#FFD0F6", .5], [.7, "#F0B0F0", .45], [1, "#F0B0F0", 0]]);
 ramp("ink", [[0, "#2A1A4A", 0], [.1, "#1A0E30", .9], [.7, "#120A22", .7], [1, "#000000", 0]]);
+/* lit matter (2026-11-06 remake, from 포켓몬 챔피언스): the colour a lit thing is made of, its light coming from its surface */
+// a billow of fire: white-hot as it bursts, yellow, orange, red, and a brown smoke as it cools
+ramp("fire.b", [[0, "#FFFBE0", 0], [.04, "#FFF6C0", 1], [.16, "#FFD24A", 1], [.36, "#FF8A1E", .95], [.6, "#E0400E", .8], [.82, "#6A2A16", .5], [1, "#2A1A14", 0]]);
+// a flamethrower's body: orange from the start with a yellow heart, reddening and browning at its edge (white only in its core)
+ramp("fire.s", [[0, "#FFD860", 0], [.05, "#FFC23A", 1], [.24, "#FF9426", 1], [.5, "#F2621A", .95], [.76, "#B8360E", .75], [1, "#4A1E14", 0]]);
+// the hot heart of a flame that stays bright (a stream's core)
+ramp("fire.c", [[0, "#FFFFFF", 0], [.06, "#FFFBE6", 1], [.3, "#FFE27A", 1], [.7, "#FFA531", .8], [1, "#E8541A", 0]]);
+ramp("foam", [[0, "#FFFFFF", 0], [.06, "#FFFFFF", 1], [.5, "#E6F6FF", .9], [1, "#BFE4FF", 0]]);
+ramp("water.l", [[0, "#D8F0FF", 0], [.06, "#BCE6FF", 1], [.8, "#7CC8FF", .95], [1, "#4AA6F0", 0]]);
+ramp("ice.c", [[0, "#F2FCFF", 0], [.06, "#DDF6FF", 1], [.85, "#B4E8FA", 1], [1, "#8FD6F2", 0]]);
+ramp("chip", [[0, "#EADFC6", 0], [.06, "#E2D4B4", 1], [.88, "#D6C6A0", 1], [1, "#C2B088", 0]]);
+ramp("earth", [[0, "#B88A58", 0], [.06, "#A87C4E", 1], [.88, "#946A40", 1], [1, "#7A5634", 0]]);
+ramp("steel.c", [[0, "#F0F4FA", 0], [.06, "#DCE4EE", 1], [.9, "#C4CEDC", 1], [1, "#AEB9C9", 0]]);
+ramp("gold.c", [[0, "#FFE9A0", 0], [.06, "#FFD45A", 1], [.9, "#F0B830", 1], [1, "#D89A18", 0]]);
+// a shadow ball: nearly black, deep violet, its rim lit violet by the shader
+ramp("shadowball", [[0, "#3A1A5A", 0], [.08, "#2A1240", 1], [.85, "#22103A", 1], [1, "#22103A", 0]]);
+ramp("magenta", [[0, "#FFFFFF", 0], [.06, "#FFE0F6", 1], [.25, "#FF5ADC", 1], [.7, "#B020C0", .6], [1, "#5A0A70", 0]]);
+ramp("moon", [[0, "#EAF4FF", 0], [.1, "#E2EEFF", 1], [.9, "#D2E2FF", 1], [1, "#D2E2FF", 0]]);
+ramp("leaf.c", [[0, "#7ED957", 0], [.06, "#6CCB45", 1], [.88, "#4FAE34", 1], [1, "#3C8A28", 0]]);
+ramp("toxic.c", [[0, "#C98AF0", 0], [.06, "#B46BE6", 1], [.88, "#9248CC", 1], [1, "#6E2AA8", 0]]);
+ramp("glint", [[0, "#FFFFFF", 0], [.08, "#FFFFFF", 1], [.4, "#FFF6D8", .8], [1, "#FFFFFF", 0]]);
+ramp("aurora.v", [[0, "#7FFFE0", 0], [.2, "#7FFFE0", .7], [.45, "#7FD8FF", .8], [.7, "#C8A0FF", .7], [.9, "#FFA8E8", .4], [1, "#FFA8E8", 0]]);
+ramp("bar.gold", [[0, "#FFF6D0", 0], [.15, "#FFE89A", 1], [.85, "#FFD45A", 1], [1, "#FFD45A", 0]]);
+ramp("bar.pink", [[0, "#FFF0FA", 0], [.15, "#FFD8F2", 1], [.85, "#F0B8FF", 1], [1, "#F0B8FF", 0]]);
 const RAMP_ROWS = 128;
 function buildRamps() {
   const W = 256, out = new Uint8Array(W * RAMP_ROWS * 4);
@@ -323,7 +451,7 @@ layout(location=0) in vec2 aQ;
 layout(location=1) in vec4 iA; layout(location=2) in vec4 iB; layout(location=3) in vec4 iC;
 layout(location=4) in vec4 iD; layout(location=5) in vec4 iE; layout(location=6) in vec4 iF;
 uniform mat3 uView; uniform float uTime, uLayer, uPass; uniform float uGroups[32]; uniform vec4 uWrap;
-out vec2 vUv; out vec2 vQ; out float vK; flat out float vRamp; out float vAlpha; flat out vec4 vM; flat out float vField;
+out vec2 vUv; out vec2 vQ; out float vK; flat out float vRamp; out float vAlpha; flat out vec4 vM; flat out float vField; flat out vec3 vLit;
 void main(){
   int f = int(iE.w + .5);
   bool wrap = (f & 32) != 0;
@@ -348,16 +476,18 @@ void main(){
   vec2 w = pos + vec2(c * q.x - s * q.y, s * q.x + c * q.y);
   gl_Position = vec4((uView * vec3(w, 1.)).xy, 0., 1.);
   float tex = iD.z; vec2 cell = vec2(mod(tex, 8.), floor(tex / 8.));
-  vUv = (cell + mix(vec2(.006), vec2(.994), aQ * .5 + .5)) / 8.;
+  vUv = (cell + mix(vec2(.006), vec2(.994), aQ * .5 + .5)) / vec2(8., ${ROWS}.);
   vQ = vec2(c * aQ.x - s * aQ.y, s * aQ.x + c * aQ.y); vK = k; vRamp = (iD.w + .5) / ${RAMP_ROWS}.;
   vAlpha = iF.x * uGroups[int(iF.w + .5)];
   vM = vec4(iE.x, iE.y, iF.y, float((f >> 2) & 1));
   vField = iF.w > .5 ? 1. : 0.;
+  // a lit thing: its turn (to turn its surface with it), which cell it is (its material), and whether it is lit at all
+  vLit = vec3(ang, tex, float((f >> 8) & 1));
 }`;
 const PARTICLE_FS = `#version 300 es
 precision highp float;
-in vec2 vUv; in vec2 vQ; in float vK; flat in float vRamp; in float vAlpha; flat in vec4 vM; flat in float vField;
-uniform sampler2D uAtlas, uRamp; uniform float uLight, uPass;
+in vec2 vUv; in vec2 vQ; in float vK; flat in float vRamp; in float vAlpha; flat in vec4 vM; flat in float vField; flat in vec3 vLit;
+uniform sampler2D uAtlas, uRamp, uNormal; uniform float uLight, uPass; uniform vec4 uMat[${ROWS * GRID}];
 layout(location=0) out vec4 o0; layout(location=1) out vec4 o1;
 void main(){
   vec4 a = texture(uAtlas, vUv); vec4 r = texture(uRamp, vec2(vK, vRamp));
@@ -366,6 +496,20 @@ void main(){
   float al = m * r.a * vAlpha;
   if (uPass > .5) { vec2 dir = normalize(vQ + 1e-4); o0 = vec4(max(dir.x, 0.), max(-dir.x, 0.), max(dir.y, 0.), max(-dir.y, 0.)) * al; o1 = vec4(0.); return; }
   vec3 col = r.rgb + a.b * .3;
+  if (vLit.z > .5) {
+    // lit as the ball is: the light from the upper left in front, a soft fall-off, a highlight, a cool rim; the surface turns with the piece
+    vec4 nn = texture(uNormal, vUv); vec4 mt = uMat[int(vLit.y + .5)];
+    vec2 q = nn.xy * 2. - 1.; float cs = cos(vLit.x), sn = sin(vLit.x);
+    vec3 n = normalize(vec3(cs * q.x - sn * q.y, sn * q.x + cs * q.y, sqrt(max(0., 1. - dot(q, q)))));
+    vec3 L = normalize(vec3(-.55, -.62, .56)), H = normalize(L + vec3(0., 0., 1.));
+    float diff = max(dot(n, L), 0.), spec = pow(max(dot(n, H), 0.), mt.y) * mt.x, rim = pow(1. - n.z, 2.6) * mt.w;
+    // a soft thing (smoke, a billow of fire, mist; its highlight under 10) scatters light through itself and never goes dark
+    float shade = mt.y < 9.5 ? .64 + .48 * diff : .36 + .8 * diff;
+    col = r.rgb * shade * mix(.82, 1., nn.b) + spec + rim * mix(r.rgb, vec3(.78, .88, 1.), .55);
+    // a see-through thing (a drop, a bubble, ice) is clear in its middle and solid at its edge; its highlight stays solid
+    al *= mix(1., .3 + .7 * pow(1. - n.z, 1.4), mt.z);
+    al = min(1., al + spec * m * r.a * vAlpha * mt.z);
+  }
   float emis = vM.x, occ = mix(vM.y, max(vM.y, vM.w > .5 ? .25 : .6), uLight);
   col = mix(col, col * mix(1., .78, 1. - vM.y), uLight);
   o0 = vec4(col * al * max(emis, occ), al * occ);
@@ -492,7 +636,7 @@ function target(gl, w, h, n = 1) {
 const FLOATS = 24, CAP = 32768, FIELD_CAP = 8192;
 // the camera holds the wide shot (2026-11-06: its pushes and pans read as dizzy); the lab can turn them back on to compare
 export const CAMERA_MOVES = false;
-const F = { loop: 1, front: 2, matter: 4, face: 8, distort: 16, wrap: 32, grow: 64, bob: 128 };
+const F = { loop: 1, front: 2, matter: 4, face: 8, distort: 16, wrap: 32, grow: 64, bob: 128, lit: 256 };
 const ACTOR_KEYS = ["x", "y", "rot", "sx", "sy", "alpha", "flash", "gray", "bright", "tintR", "tintG", "tintB", "tintA", "rimR", "rimG", "rimB", "rimA", "clip", "ghost", "dissolve"];
 const ACTOR_BASE = { x: 0, y: 0, rot: 0, sx: 1, sy: 1, alpha: 1, flash: 0, gray: 0, bright: 1, tintR: 1, tintG: 1, tintB: 1, tintA: 0, rimR: 1, rimG: 1, rimB: 1, rimA: 0, clip: 0, ghost: 0, dissolve: 0 };
 const MULT = new Set(["alpha", "bright"]);
@@ -538,8 +682,11 @@ class Engine {
       down: compile(gl, FULL_VS, DOWN_FS), up: compile(gl, FULL_VS, UP_FS), comp: compile(gl, FULL_VS, COMP_FS),
     };
     const atlas = buildAtlas();
-    this.atlas = texture(gl, atlas.N, atlas.N, atlas.out);
+    this.atlas = texture(gl, atlas.N, atlas.NH, atlas.out);
     gl.bindTexture(gl.TEXTURE_2D, this.atlas); gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    this.normals = texture(gl, atlas.N, atlas.NH, atlas.nrm);
+    gl.bindTexture(gl.TEXTURE_2D, this.normals); gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    this.mats = new Float32Array(ROWS * GRID * 4); MATERIALS.forEach((m, i) => this.mats.set(m, i * 4));
     const nz = new Uint8Array(C * C); atlas.noise.forEach((v, i) => { nz[i] = v * 255; });
     this.noise = texture(gl, C, C, nz, { wrap: gl.REPEAT, format: gl.RED, internal: gl.R8 });
     this.ramps = texture(gl, 256, RAMP_ROWS, buildRamps());
@@ -724,7 +871,7 @@ class Engine {
       if (s.vj) { vx += rand(-s.vj, s.vj); vy += rand(-s.vj, s.vj); }
       const size = Array.isArray(s.size) ? s.size : [s.size ?? 20, s.size ?? 20];
       const s0 = pick(size[0]), s1 = size[1] === "same" ? s0 : pick(size[1]) * (s.keep ? s0 / pick(size[0]) : 1);
-      const flags = (s.loop ? F.loop : 0) | (s.layer === 0 ? 0 : F.front) | (s.occ ? F.matter : 0) | (s.face ? F.face : 0) | (s.distort ? F.distort : 0) | (s.wrap ? F.wrap : 0) | (s.grow ? F.grow : 0) | (s.bob ? F.bob : 0);
+      const flags = (s.loop ? F.loop : 0) | (s.layer === 0 ? 0 : F.front) | (s.occ ? F.matter : 0) | (s.face ? F.face : 0) | (s.distort ? F.distort : 0) | (s.wrap ? F.wrap : 0) | (s.grow ? F.grow : 0) | (s.bob ? F.bob : 0) | (s.lit ? F.lit : 0);
       const life = pick(s.life ?? 600);
       // a looping particle is already part way through its life when it comes, so a field is full from its first frame
       const off = (s.over ? (s.even ? i / Math.max(1, n - 1) : Math.random()) * s.over : 0) + (s.stagger ? i * s.stagger : 0);
@@ -845,6 +992,8 @@ class Engine {
       gl.uniform1fv(pp.u.uGroups, this.groups); gl.uniform4f(pp.u.uWrap, -this.W * .1, this.W * 1.2, -this.H * .1, this.H * 1.2); gl.uniform1f(pp.u.uLight, L);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.atlas); gl.uniform1i(pp.u.uAtlas, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.ramps); gl.uniform1i(pp.u.uRamp, 1);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.normals); gl.uniform1i(pp.u.uNormal, 2);
+      if (pp.u.uMat) gl.uniform4fv(pp.u.uMat, this.mats);
       if (this.fieldCount) { gl.bindVertexArray(this.fieldBuf.vao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.fieldCount); }
       if (fxLive || pass) { gl.bindVertexArray(this.fxBuf.vao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, CAP); }
       gl.bindVertexArray(null);

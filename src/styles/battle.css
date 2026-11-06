@@ -14,8 +14,6 @@
 .bt-lobby-set .q + .q { margin-top: 0; }
 .bt-lobby-show { display: grid; gap: var(--s3); align-content: start; min-width: 0; }
 .bt-court { display: grid; gap: var(--seam); min-width: 0; }
-.bt-six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.bt-six > .pn { aspect-ratio: 1; }
 .bt-lobby-show > .dock { margin-top: 0; }
 .bt-lobby-show > .btn--link { justify-self: center; }
 @media (max-width: 859px) {

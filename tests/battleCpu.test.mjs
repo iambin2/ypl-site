@@ -2,15 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { CPU_NAME, formatId, randomTeam, readCpuRecord, readout, startBattle, choose, replay, setPool } from "../supabase/functions/battle/engine.mjs";
 import { createCpu, habit, quickChoice, revealed } from "../src/services/battleCpu.js";
+import { LEVELS } from "../src/services/cpuLevels.js";
 
 // a seeded random, so a failure plays the same again
 const seeded = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 
 // the computer against the quick player to the end: every choice it makes is one the engine takes, and the input log replays
-function playOut(kind, seed) {
+function playOut(kind, seed, options = {}) {
   const formatid = formatId("m-c", kind);
   const random = seeded(seed);
-  const cpu = createCpu(formatid, { random, budgetMs: 15 });
+  const cpu = createCpu(formatid, { random, ...options, budgetMs: 15 });
   const battle = startBattle({ formatid, seed: [seed, 2, 3, 4], p1: { name: "사람", team: randomTeam(formatid, random) }, p2: { name: "컴퓨터", team: randomTeam(formatid, random, { meta: true }) } });
   let decisions = 0;
   for (let step = 0; step < 300 && !battle.ended; step++) {
@@ -119,6 +120,13 @@ test("the computer never plays a move that does nothing to what stands in front 
         assert.ok(choose(battle, null, side, choice).ok, `${side} ${choice}`);
       }
     }
+  }
+});
+
+test("every 난이도 plays a whole battle with choices the engine takes, its mistakes included", () => {
+  for (const [id, level] of Object.entries(LEVELS)) {
+    const { battle, decisions } = playOut("singles", 31, level.options);
+    assert.ok(battle.ended && decisions > 3, `${id} played to the end`);
   }
 });
 

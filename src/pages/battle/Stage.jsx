@@ -550,18 +550,27 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
 /* before a battle (DESIGN.md "Battle", Opening and waiting): the court with our leads on the near side and the far side empty until
    the opponent comes. A change of team or format sends the leads in again, out of the same light as in a battle. */
 // awaiting: the opponent has not come yet, and a light breathes on the far floor where each of theirs will be sent in
-export function LobbyStage({ leads, doubles, label, awaiting = false }) {
+// random: our party is drawn when the battle opens, so the same light breathes on our near floor where our leads will come out
+// (2026-11-06: the random party showed six switched-off panels while a saved team showed the court; both are the court now)
+// foeLead: the opponent known before the battle (the computer, as its 난이도's Pokémon) stands on the far side, out of the same light
+export function LobbyStage({ leads, doubles, label, awaiting = false, random = false, foeLead = null }) {
   const ref = useRef(null);
-  const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) } };
+  const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) }, p2: { active: foeLead ? [{ name: foeLead, species: foeLead, volatiles: [] }] : [] } };
   // before paint, so a new lead never shows for a frame before it comes out of the light
   useLayoutEffect(() => { fx.sync(ref.current); leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot), { ball: false })); }, [leads.join("|"), doubles]);
+  useLayoutEffect(() => { fx.sync(ref.current); if (foeLead) fx.enter(ref.current, slotKey("p2", 0), { ball: false }); }, [foeLead, doubles]);
   return (
     <div className="bs-stage" ref={ref} role="img" aria-label={label}>
       <div className="bs-world">
+        {foeLead && !awaiting && <SideField side="p2" scene={scene} doubles={false} />}
         {awaiting && <div className="bs-side foe" aria-hidden="true">
           {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`foe${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
         </div>}
-        <SideField side="p1" scene={scene} own doubles={doubles} />
+        {random
+          ? <div className="bs-side own" aria-hidden="true">
+            {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`own${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
+          </div>
+          : <SideField side="p1" scene={scene} own doubles={doubles} />}
       </div>
     </div>
   );

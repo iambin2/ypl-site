@@ -657,7 +657,10 @@ function teamPreview(state, side, req, random) {
 const pickIndex = (weights, random) => { let roll = random(); for (let i = 0; i < weights.length; i++) if ((roll -= weights[i]) < 0) return i; return weights.length - 1; };
 
 /* ---------- the computer ---------- */
-export function createCpu(formatid, { random = Math.random, budgetMs, rollout = true, reads = true, now = NOW } = {}) {
+/* slack: how close to the best a choice must be to be played (a hair, so the computer is not read by habit); mistake: how often a
+   turn is played as any of its sensible choices. Both are the weaker 난이도's (src/services/cpuLevels.js); the defaults are the
+   computer at full strength */
+export function createCpu(formatid, { random = Math.random, budgetMs, rollout = true, reads = true, now = NOW, slack = .03, mistake = 0 } = {}) {
   const pool = poolOf(formatid);
   const doubles = /vgc/.test(formatid);
   const budget = budgetMs ?? (doubles ? 2200 : 1400);
@@ -756,9 +759,11 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
        Pokémon it brings in will want out again, and two that each lose to the foe were switched back and forth, each taking the hit
        coming in (2026-11-06, Grimmsnarl and Delphox against Golisopod) */
     const valued = search(battle, side, own).map(v => ({ ...v, value: v.value - SWITCH_COST * (v.choice.match(/switch/g) || []).length }));
+    // a weaker level sometimes plays any of its sensible choices
+    if (mistake && random() < mistake) return own[Math.floor(random() * own.length)].choice;
     const best = Math.max(...valued.map(v => v.value));
-    // choices within a hair of the best are played at random, so the computer is not read by habit
-    const near = valued.filter(v => v.value >= best - 0.03);
+    // choices within a hair of the best are played at random, so the computer is not read by habit (a weaker level's hair is wider)
+    const near = valued.filter(v => v.value >= best - slack);
     return near[Math.floor(random() * near.length)].choice;
   }
 
