@@ -188,3 +188,17 @@ test("a hit harder than any roll of the sample sets is read as a Choice Band", (
   assert.ok(!listed.includes("choiceband"));
   assert.deepEqual([...items], ["choiceband"]);
 });
+
+test("the computer left with only an ally move after its partner fell uses it into the empty place, so it never stands without a choice", () => {
+  const formatid = formatId("m-c", "doubles");
+  const mon = (species, item, ability, moves) => ({ species, item, ability, moves, nature: "Jolly", evs: {}, level: 50 });
+  const battle = startBattle({ formatid, seed: [1, 2, 3, 4],
+    p1: { name: "사람", team: [mon("Garchomp", "Choice Scarf", "Rough Skin", ["Dragon Claw"]), mon("Incineroar", "Sitrus Berry", "Intimidate", ["Protect"])] },
+    p2: { name: "컴퓨터", team: [mon("Florges", "Leftovers", "Flower Veil", ["Memento"]), mon("Simisage", "Focus Sash", "Overgrow", ["Helping Hand"])] } });
+  choose(battle, {}, "p1", "team 1, 2"); choose(battle, {}, "p2", "team 1, 2");
+  choose(battle, {}, "p2", "move 1 1, move 1 -1"); choose(battle, {}, "p1", "move 1 1, move 1");
+  assert.ok(battle.p2.active[0].fainted, "the partner fell (Memento)");
+  const picked = quickChoice(battle, "p2");
+  assert.equal(picked, "pass, move 1 -1");
+  assert.ok(choose(battle, {}, "p2", picked).ok, "the engine takes it");
+});

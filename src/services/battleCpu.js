@@ -419,6 +419,7 @@ function slotChoices(state, side, i, active, mons, doubles) {
   const mon = mons[i];
   if (!mon || mon.fainted || active.commanding) return [{ choice: "pass" }];
   const out = [];
+  let lone = null;
   const foe = other(side);
   const mega = active.canMegaEvo ? " mega" : "";
   active.moves.forEach((m, j) => {
@@ -431,12 +432,14 @@ function slotChoices(state, side, i, active, mons, doubles) {
     } else if (m.target === "adjacentAlly") {
       const ally = state[side].active[1 - i];
       if (ally && !ally.fainted) out.push({ choice: `move ${j + 1} -${2 - i}${mega}`, move: id, ally: true });
+      // the partner gone, it can still be used into its empty place (and fails), which is all there is when nothing else is left
+      else lone ??= `move ${j + 1} -${2 - i}${mega}`;
     } else if (m.target === "adjacentAllyOrSelf") {
       out.push({ choice: `move ${j + 1} -${i + 1}${mega}`, move: id, self: true });
     } else out.push({ choice: `move ${j + 1}${mega}`, move: id, spread: true });
   });
   if (!active.trapped) mons.forEach((p, k) => { if (k >= state[side].active.length && !p.fainted && !p.active) out.push({ choice: `switch ${k + 1}`, to: k }); });
-  return out.length ? out : [{ choice: "move 1" }];
+  return out.length ? out : [{ choice: lone || "move 1" }];
 }
 // the request rows of a side, from the engine (for the side whose request we may not read, the believed state's own data)
 function requestRows(state, side) {

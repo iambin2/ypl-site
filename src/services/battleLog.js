@@ -96,8 +96,9 @@ const newMon = (side, name, slot) => ({ ident: `${side}: ${name}`, side, name, s
 // the moves that guard their user this turn: they show as a shield
 const GUARDS = new Set(["protect", "detect", "spikyshield", "kingsshield", "banefulbunker", "silktrap", "burningbulwark", "obstruct", "maxguard", "wideguard", "quickguard"]);
 
-/* text: battle-text-ko.json. moves: champions-data.json의 기술 표(분류, 타입, 대상). perspective: 이 화면의 주인(p1 또는 p2). */
-export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
+/* text: battle-text-ko.json. moves: champions-data.json의 기술 표(분류, 타입, 대상). pokedex: 같은 파일의 포켓몬 표(폼이 바뀔 때의 특성).
+   perspective: 이 화면의 주인(p1 또는 p2). */
+export function createBattleReader({ text, moves = {}, pokedex = {}, perspective = "p1" }) {
   const state = newBattleState();
   const tables = { move: text.moves, ability: text.abilities, item: text.items };
 
@@ -275,6 +276,9 @@ export function createBattleReader({ text, moves = {}, perspective = "p1" }) {
         mon.species = parseDetails(args[1]).species;
         // a new form brings its own typing
         delete mon.types; delete mon.addedType;
+        /* and a lasting one (Mega, Primal, Hero, Tera) its own ability, as Showdown's client takes it: the form's first. Kept, Mega
+           Drampa still read as Cloud Nine and the keys showed Weather Ball as Normal in snow (battle-fuzz, 2026-11-07) */
+        if (cmd === "detailschange") mon.ability = pokedex[toID(mon.species)]?.abilities?.[0] || "";
         // Zero to Hero turns Palafin as it goes back to its ball: the Hero form is first seen when it comes out again, as in the games
         event = toID(mon.species) === "palafinhero" ? null : { verb: "change", ident: args[0] };
         break;

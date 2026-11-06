@@ -41,7 +41,7 @@ export function ReplayBar({ stops, at, playing, onJump, onStep, onPlay }) {
 
 // the replay as a text file: the game's own words turn by turn, then Showdown's protocol, which any Showdown reader can play
 export function downloadReplay({ row, log, res, perspective, names }) {
-  const reader = createBattleReader({ text: res.text, moves: res.detail.moves, perspective });
+  const reader = createBattleReader({ text: res.text, moves: res.detail.moves, pokedex: res.detail.pokedex, perspective });
   const out = [
     `${names.p1} 대 ${names.p2}`,
     `${row.kind === "official" ? "공식" : row.kind === "cpu" ? "컴퓨터와의" : "친선"} 배틀, ${isDoubles(row.format_id) ? "더블" : "싱글"}, ${formatDate(row.created_at)}`,

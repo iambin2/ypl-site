@@ -78,7 +78,11 @@ test("a battle saved after every turn ends, and its input log replays to the sam
         const result = choose(battle, pending, side, choice);
         if (!result.ok) continue;
         done = true;
-        if (result.committed) { state = JSON.stringify(battle.toJSON()); pending = {}; } else pending = { ...pending, [side]: choice };
+        if (result.committed) {
+          state = JSON.stringify(battle.toJSON()); pending = {};
+          // the battle function answers a committed choice with the engine's own readout, not a reload of the state it saved: the two must be one
+          assert.deepEqual(readout(battle), readout(loadBattle(JSON.parse(state))), `${kind} ${seed} turn ${battle.turn}: the readout survives a save`);
+        } else pending = { ...pending, [side]: choice };
       }
       assert.ok(done, `${kind}: no legal choice found`);
     }
@@ -113,6 +117,8 @@ test("a wrong choice is refused with the engine's reason, and forfeit is replaya
   const out = readout(battle);
   assert.equal(out.winner, "p2");
   assert.equal(readout(replay(out.inputLog)).winner, "p2");
+  // a forfeit (or a timeout) is answered with this readout too, not a reload of the saved state
+  assert.deepEqual(out, readout(loadBattle(JSON.parse(JSON.stringify(battle.toJSON())))));
 });
 
 // jsonb keeps keys in its own order: the state read back from the database is the same battle with its keys moved

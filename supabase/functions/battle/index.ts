@@ -19,7 +19,28 @@ const reply = (status: number, body: unknown) =>
 class Refusal extends Error { constructor(public status: number, message: string, public extra: object = {}) { super(message); } }
 const refuse = (status: number, message: string, extra = {}) => { throw new Refusal(status, message, extra); };
 
-const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+const URL_BASE = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const db = createClient(URL_BASE, SERVICE_KEY);
+
+/* Work that finishes after the answer has gone, so the player is not kept waiting on it. The runtime keeps the worker alive until it
+   is done (EdgeRuntime.waitUntil); where there is no such runtime (a local run) it simply runs on. */
+const later = (work: Promise<unknown>) => {
+  const settled = work.catch(error => console.error(error));
+  (globalThis as any).EdgeRuntime?.waitUntil?.(settled);
+};
+
+/* A battle moved: every screen on it (both seats and the watchers, src/services/battleSignal.js) is told at once through a Realtime
+   broadcast on battle:<id>, instead of finding out on its next poll (1.5 s apart, 0.75 s late on average). The signal carries no
+   secret and decides nothing: a screen that hears it reads the public row as it would on a poll, and the polls go on as before, so a
+   lost signal costs only the time it would have saved. moved: the engine ran (the spectator log grew), so a seat needs its own view. */
+function signal(id: string, version: number | null, moved = false) {
+  later(fetch(`${URL_BASE}/realtime/v1/api/broadcast`, {
+    method: "POST",
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ messages: [{ topic: `battle:${id}`, event: "moved", payload: { version, moved }, private: false }] }),
+  }));
+}
 
 const hex = (bytes: ArrayBuffer) => [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, "0")).join("");
 const sha256 = async (text: string) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
@@ -66,6 +87,7 @@ async function save(id: string, version: number, fields: Record<string, unknown>
   };
   const { data, error } = await db.rpc("battle_save", args);
   if (error) throw error;
+  if (data === true) signal(id, version + 1, fields.p_spectator_log != null);
   return data === true;
 }
 
@@ -125,20 +147,22 @@ async function applyResult(battleId: string) {
         p_battle_id: battleId, p_expected_stamp: facts.stamp, p_mode: plan.mode, p_runtime_id: plan.runtimeId,
         p_updates: plan.updates || [], p_inserts: plan.inserts || [], p_delete_ids: plan.deleteIds || [],
       });
-      if (result === "ok" || result === "already") return;
+      if (result === "ok" || result === "already") { signal(battleId, null); return; }
       if (result !== "stale") throw new Error(APPLY_REFUSAL[result] || `대진표에 넣지 못했습니다 (${result}).`);
     }
     throw new Error("대진표가 계속 바뀌어 넣지 못했습니다.");
   } catch (error) {
     console.error(error);
     await db.rpc("battle_mark_apply_error", { p_battle_id: battleId, p_error: String((error as Error)?.message || error) });
+    signal(battleId, null);
   }
 }
 
 // What a player sees: their request, their own log with their secrets, and whether their choice is waiting on the other side.
 // version is the public row's version this view is of, so the screen does not ask again when its poll reaches that version.
-function playerView(row: { status: string; winner: string | null; version: number }, secret: { state: object; pending: Record<string, string> }, side: string) {
-  const out = readout(loadBattle(secret.state));
+/* out: the readout of the engine in that state. A caller that has just run the engine passes its own readout instead of loading the
+   state it has just written (one engine load less on every choice; tests/battleEngine.test.mjs holds the two to be the same). */
+function playerView(row: { status: string; winner: string | null; version: number }, secret: { state: object; pending: Record<string, string> }, side: string, out = readout(loadBattle(secret.state))) {
   return {
     side, version: row.version, status: row.status, turn: out.turn, winner: row.winner ?? out.winner,
     request: row.status === "active" ? out.request[side] : null,
@@ -199,7 +223,7 @@ async function seatSecond(battle: Record<string, any>, secret: Record<string, an
     p_p2_token_hash: await sha256(token), p_state: state, p_pending: {},
   });
   if (!saved) return undefined;
-  return { token, ...playerView({ status: "active", winner: null, version: battle.version + 1 }, { state, pending: {} }, "p2") };
+  return { token, ...playerView({ status: "active", winner: null, version: battle.version + 1 }, { state, pending: {} }, "p2", out) };
 }
 const readOr = async (id: string) => { try { return await read(id); } catch (e) { if (e instanceof Refusal && e.status === 404) return null; throw e; } };
 
@@ -208,6 +232,16 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
     let formatid = "";
     try { formatid = formatId(String(regulation), String(battleFormat)); } catch { refuse(400, "알 수 없는 규정입니다."); }
     return openBattle({ regulation: String(regulation), formatid, name: cleanName(name), team, room });
+  },
+
+  /* A seat's screen asks this while its player thinks (src/pages/BattlePage.jsx). A worker of this function lives about 75 seconds
+     (measured 2026-11-07: shut down 75 s after boot whatever the traffic), and the first request on a new one took 0.6 to 1.5 s
+     against 0.2 to 0.3 s warm. This request pays that instead of a choice: it starts the worker, opens its database connection and
+     loads the battle's engine state, and answers nothing. */
+  async warm({ id }) {
+    const found = id ? await readOr(String(id)) : null;
+    if (found?.secret?.state) readout(loadBattle(found.secret.state));
+    return {};
   },
 
   // a code room's id, for the code its opener passed on
@@ -257,7 +291,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
     // the one this player opened is still waiting, or already being played: the screen goes to it
     if (next && next.battle.p1_name === mine && next.battle.status !== "ended") return { id: row.rematch_id, side: "p1", mine: true };
     const made = await openBattle({ regulation: row.regulation, formatid: battle.format_id, name: mine, team, room: "code" });
-    if (await rpc("battle_set_rematch", { p_id: battle.id, p_rematch: made.id, p_expected: row.rematch_id ?? null })) return made;
+    if (await rpc("battle_set_rematch", { p_id: battle.id, p_rematch: made.id, p_expected: row.rematch_id ?? null })) { signal(battle.id, null); return made; }
     // the other asked in the same moment and was written first: ours goes, and theirs is taken
     await rpc("battle_cancel", { p_id: made.id });
     if (again) refuse(409, "다른 요청과 겹쳤습니다. 다시 시도해 주세요.");
@@ -290,8 +324,9 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
       const state = engine.toJSON();
       const ended = out.ended ? { p_status: "ended", p_winner: out.winner, p_ended_by: "battle", p_log: out.log, p_input_log: out.inputLog } : {};
       if (!(await save(battle.id, battle.version, { p_turn: out.turn, p_spectator_log: out.spectatorLog, p_state: state, p_pending: {}, ...ended }))) return undefined;
-      if (out.ended) await applyResult(battle.id);
-      return playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side);
+      // the bracket line is written after the answer: the ended screen reads applied_at (or apply_error) when it comes, as it always has
+      if (out.ended) later(applyResult(battle.id));
+      return playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
     });
   },
 
@@ -309,8 +344,8 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
         p_log: out.log, p_input_log: out.inputLog, p_state: state, p_pending: {},
       });
       if (!saved) return undefined;
-      await applyResult(battle.id);
-      return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side);
+      later(applyResult(battle.id));
+      return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
     });
   },
 
@@ -320,6 +355,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
     const side = await seat(secret, token);
     if (side !== "p1" || battle.status !== "waiting") refuse(409, "이미 시작된 배틀은 취소할 수 없습니다.");
     if (!(await rpc("battle_cancel", { p_id: battle.id }))) refuse(409, "이미 시작된 배틀은 취소할 수 없습니다.");
+    signal(battle.id, null);
     return { cancelled: true };
   },
 
@@ -379,13 +415,14 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
       if (!owes(late) || owes(side)) refuse(409, "시간이 다 된 쪽이 없습니다.");
       forfeit(engine, late);
       const out = readout(engine);
+      const state = engine.toJSON();
       const saved = await save(battle.id, battle.version, {
         p_status: "ended", p_winner: out.winner, p_ended_by: "timeout", p_turn: out.turn, p_spectator_log: out.spectatorLog,
-        p_log: out.log, p_input_log: out.inputLog, p_state: engine.toJSON(), p_pending: {},
+        p_log: out.log, p_input_log: out.inputLog, p_state: state, p_pending: {},
       });
       if (!saved) return undefined;
-      await applyResult(battle.id);
-      return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state: engine.toJSON(), pending: {} }, side);
+      later(applyResult(battle.id));
+      return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
     });
   },
 
@@ -439,6 +476,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
         p_p2_token_hash: hash, p_state: engine.toJSON(), p_p2_entry_id: seatInfo.entryId, p_p2_player_id: seatInfo.playerId,
       });
       if (saved !== true) return undefined;
+      signal(open.id, open.version + 1, true);
       return { id: open.id, token, side: "p2" };
     });
   },

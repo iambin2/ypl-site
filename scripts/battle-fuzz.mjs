@@ -34,7 +34,8 @@ function choiceFor(request, kind) {
     if (!a.trapped && free.length && rand(8) === 0) return `switch ${free.splice(rand(free.length), 1)[0]}`;
     const usable = a.moves.map((m, j) => (m.disabled ? -1 : j)).filter(j => j >= 0);
     const j = usable.length ? usable[rand(usable.length)] : 0;
-    const t = kind === "doubles" && ["normal", "any", "adjacentFoe"].includes(a.moves[j].target) ? ` ${rand(2) + 1}` : "";
+    // an ally move goes to the partner's place, standing or empty, as the screen sends it
+    const t = kind !== "doubles" ? "" : ["normal", "any", "adjacentFoe"].includes(a.moves[j].target) ? ` ${rand(2) + 1}` : a.moves[j].target === "adjacentAlly" ? ` -${2 - i}` : "";
     return `move ${j + 1}${t}${a.canMegaEvo && rand(2) ? " mega" : ""}`;
   }).join(", ");
 }
@@ -100,7 +101,7 @@ for (let n = 0; n < N; n++) {
   let battle;
   try { battle = startBattle({ formatid, seed: [rand(65535), rand(65535), rand(65535), rand(65535)], p1: { name: "가", team: randomTeam(formatid, random) }, p2: { name: "나", team: randomTeam(formatid, random) } }); }
   catch (e) { note("could not start", e.message); continue; }
-  const reader = createBattleReader({ text, moves: detail.moves, perspective: "p1" });
+  const reader = createBattleReader({ text, moves: detail.moves, pokedex: detail.pokedex, perspective: "p1" });
   let read = 0;
   for (let step = 0; step < 3000 && !battle.ended; step++) {
     for (const side of ["p1", "p2"]) {

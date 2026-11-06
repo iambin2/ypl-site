@@ -55,6 +55,9 @@ export const viewBattle = id => asSeat(id, "view");
 // rq: 답하는 요청의 requestKey(battleLog.js). 서버는 이미 지난 요청에 대한 선택을 막는다.
 export const chooseInBattle = (id, choice, rq) => asSeat(id, "choose", { choice, rq });
 export const forfeitBattle = id => asSeat(id, "forfeit");
+/* 생각하는 동안 서버를 데운다 (battle 함수 warm). 함수의 워커는 약 75초마다 새로 뜨고, 새 워커의 첫 요청은 0.6~1.5초가 걸린다.
+   이 요청이 그 시간을 대신 치러, 고른 수는 데워진 워커에서 0.2~0.3초에 돌아온다. 실패해도 아무 일도 없다. */
+export const warmBattle = id => callFunction("battle", { action: "warm", id }).catch(() => {});
 // 다른 기기가 이 자리를 가져갔을 때: 이 기기는 관전한다
 export const forgetSeat = id => keepSeat(id, null);
 export async function cancelBattle(id) {
@@ -66,26 +69,28 @@ const PUBLIC = "id, regulation, format_id, engine, status, p1_name, p2_name, tur
 const LIST = "id, status, p1_name, p2_name, turn, winner, ended_by, kind, event_id, source_node_key, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, applied_at, apply_error, updated_at";
 
 // 공개 행. 진행 중에는 관전 로그만, 끝나면 전체 로그와 입력 기록까지 있다.
-/* Two columns come with later SQL: room (docs/db/battle_rooms.sql) and rematch_id (docs/db/battle_rematch.sql). A visitor reads the
+/* Three columns come with later SQL: room (docs/db/battle_rooms.sql), rematch_id (docs/db/battle_rematch.sql) and deadline_at
+   (docs/db/battle_timer.sql; read with the row, so a battle's update is one read instead of two in a row). A visitor reads the
    battles table column by column (battle_integration.sql grants each), so a column is unreadable both before its SQL runs (42703, no
    such column) and while it is not granted (42501). Either way the row is read without it, and what needs it stands aside, so a
    battle room never stops on its loader (2026-11-06: room was not granted, and every room waited forever). */
 let roomsSupported = true;
 let rematchSupported = true;
-const unreadable = error => ["42703", "42501"].includes(String(error?.code)) || /(room|rematch_id)/.test(error?.message || "");
+let clockSupported = true;
+const unreadable = error => ["42703", "42501"].includes(String(error?.code)) || /\b(room|rematch_id|deadline_at)\b/.test(error?.message || "");
 const selectRow = (id, cols) => supa.from("battles").select([PUBLIC, ...cols].join(", ")).eq("id", id).maybeSingle();
 export async function readBattleRow(id) {
   if (!supa) return null;
-  const extras = [roomsSupported && "room", rematchSupported && "rematch_id"].filter(Boolean);
+  const extras = [roomsSupported && "room", rematchSupported && "rematch_id", clockSupported && "deadline_at"].filter(Boolean);
   let { data, error } = await selectRow(id, extras);
   if (error && unreadable(error) && extras.length) {
-    // find which of the two is the one that cannot be read, so the other still works
+    // find which one cannot be read, so the others still work
     for (const col of extras) {
       const rest = extras.filter(c => c !== col);
       ({ data, error } = await selectRow(id, rest));
-      if (!error) { if (col === "room") roomsSupported = false; else rematchSupported = false; break; }
+      if (!error) { if (col === "room") roomsSupported = false; else if (col === "rematch_id") rematchSupported = false; else clockSupported = false; break; }
     }
-    if (error && unreadable(error)) { roomsSupported = false; rematchSupported = false; ({ data, error } = await selectRow(id, [])); }
+    if (error && unreadable(error)) { roomsSupported = false; rematchSupported = false; clockSupported = false; ({ data, error } = await selectRow(id, [])); }
   }
   if (error) throw new Error(error.message);
   return data;

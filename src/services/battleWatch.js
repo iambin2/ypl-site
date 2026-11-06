@@ -50,14 +50,7 @@ export async function listLiveBattles() {
   return error ? [] : data || [];
 }
 
-// the deadline of the decision a battle waits on; null when there is none, or when the column is not there (the SQL not run yet)
-let clockSupported = true;
-export async function readDeadline(id) {
-  if (!supa || !clockSupported) return null;
-  const { data, error } = await supa.from("battles").select("deadline_at").eq("id", id).maybeSingle();
-  if (error) { if (/42703|deadline_at/.test(`${error.code} ${error.message}`)) clockSupported = false; return null; }
-  return data?.deadline_at ?? null;
-}
+// the deadline of the decision a battle waits on is read with its row (battleService.js readBattleRow)
 // the waiting player tells the server the other's time is up; the server checks the deadline by its own clock and ends the battle
 export function claimTimeout(id) {
   const seat = readSeat(id);

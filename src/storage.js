@@ -7,8 +7,8 @@
 import { PostgrestClient } from "@supabase/postgrest-js";
 import { WRITE_CONFLICT, writeRevisioned } from "./services/revisionedRow.js";
 
-const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+export const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+export const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // 현장의 불안한 네트워크에서 조회가 멈추면 화면이 끝없이 불러오는 중에 머문다. 쓰기는 끊지 않는다: 저장됐는지 알 수 없게 된다.
 const READ_TIMEOUT_MS = 15000;
 

@@ -133,7 +133,7 @@ function Lab({ res, say, go }) {
   // the field as the screen reads it, from each player's own log (exact HP), so a key acts on what is shown
   const seen = useMemo(() => {
     if (!L) return null;
-    const readAll = side => { const reader = createBattleReader({ text: res.text, moves: res.detail.moves, perspective: side }); L.logs[side].forEach(line => reader.read(line)); return reader; };
+    const readAll = side => { const reader = createBattleReader({ text: res.text, moves: res.detail.moves, pokedex: res.detail.pokedex, perspective: side }); L.logs[side].forEach(line => reader.read(line)); return reader; };
     return { p1: readAll("p1"), p2: readAll("p2") };
   }, [L, L?.logs.p1.length, L?.logs.p2.length]);
 

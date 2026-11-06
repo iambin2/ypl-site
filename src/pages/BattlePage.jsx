@@ -18,14 +18,15 @@ import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, 
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { setSoundOn, soundOn } from "./battle/cries.js";
-import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
+import { watchBattleSignal } from "../services/battleSignal.js";
 import { closeGate, openGate } from "./battle/Gate.js";
 import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
 import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import { logUpTo, nextStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
-import { claimTimeout, readDeadline, rememberBattle } from "../services/battleWatch.js";
+import { claimTimeout, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
 
@@ -430,17 +431,24 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
   const order = useRef({ n: 0, busy: 0 });
   // this device finds the battle again on the battle page (이 기기의 배틀), played or watched
   useEffect(() => { rememberBattle(id); }, [id]);
-  const refresh = useCallback(async () => {
+  /* hint: a signal said the battle moved (battleSignal.js). When the engine ran, a seat asks its own view at once, beside the row,
+     instead of after it; not for a version its view already is (its own choice, answered with that view), nor while a choice is on
+     its way. That view is used only if it is of the row's version or later; otherwise (the battle moved again meanwhile) it is asked again. */
+  const refresh = useCallback(async (hint = null) => {
+    const early = hint?.moved && readSeat(id) && rowRef.current?.status === "active" && !order.current.busy
+      && (hint.version == null || viewRef.current?.version !== hint.version)
+      ? { n: ++order.current.n, view: viewBattle(id).catch(() => null) } : null;
     const next = await readBattleRow(id);
-    // the clock of the decision it waits on (docs/db/battle_timer.sql); none before that SQL runs
-    if (next?.status === "active") next.deadline_at = await readDeadline(id);
+    // the clock of the decision it waits on (docs/db/battle_timer.sql), read with the row; none before that SQL runs, and none unless active
+    if (next) { if (next.status === "active") next.deadline_at ??= null; else delete next.deadline_at; }
     rowRef.current = next;
     setRow(next);
     if (next && readSeat(id) && next.status !== "waiting") {
       if (!playerViewIsCurrent(viewRef.current, viewRow.current, next)) {
-        const n = ++order.current.n;
+        const n = early ? early.n : ++order.current.n;
         try {
-          const fresh = await viewBattle(id);
+          let fresh = early ? await early.view : null;
+          if (!fresh || fresh.version < next.version) fresh = await viewBattle(id);
           if (n !== order.current.n || order.current.busy) return;
           show(fresh);
         } catch (e) {
@@ -472,33 +480,47 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
     return { choose: catchUp(act(chooseInBattle)), forfeit: catchUp(act(forfeitBattle)), timeout: act(claimTimeout) };
   }, [id, show, refresh]);
   useEffect(() => {
-    let stopped = false, busy = false, timer = null;
-    const tick = async () => {
-      if (busy) return;
+    let stopped = false, busy = false, timer = null, queued = null;
+    /* hint: a signal from the server (battleSignal.js) that the battle moved. It reads at once what a poll would read once it
+       noticed; a signal that comes while a read is on its way is kept and read right after it. The polls stay as they were. */
+    const tick = async (hint = null) => {
+      if (busy) { if (hint) queued = { version: null, moved: Boolean(queued?.moved || hint.moved) }; return; }
       busy = true;
       clearTimeout(timer);
       try {
         // a player in a live battle keeps asking from a background tab too, so the tab's title can say when it is their turn
         if (document.visibilityState === "visible" || (rowRef.current?.status === "active" && readSeat(id))) {
+          if (hint) { if (hint.version == null || hint.version !== version.current) { await refresh(hint); movedAt.current = Date.now(); } }
           // a finished official battle waits for its bracket line, which the server writes without moving the version
-          if (rowRef.current?.status === "ended") await refresh();
+          else if (rowRef.current?.status === "ended") await refresh();
           else if ((await readBattleVersion(id)) !== version.current) { await refresh(); movedAt.current = Date.now(); }
         }
       } catch { /* 다음 차례에 다시 읽는다 */ }
       busy = false;
       if (stopped) return;
+      if (queued) { const again = queued; queued = null; void tick(again); return; }
       if (rowRef.current?.status === "waiting") void takeNewBuild();
       const delay = battlePollDelay(rowRef.current, Date.now() - movedAt.current, Boolean(readSeat(id)));
       if (delay != null) timer = setTimeout(tick, delay);
+      else unwatch(); // the battle will not change again: nothing more to hear
     };
+    const unwatch = watchBattleSignal(id, hint => { if (!stopped) void tick(hint); });
     /* a battle page can stay open for an hour: when a newer build is out it takes it, at a moment that loses nothing (the tab coming
        back into view, or while it only waits for an opponent); the room is read again from the server, as any reload does */
     const takeNewBuild = force => checkBuild(force).then(newer => { if (newer && !stopped) window.location.reload(); });
     const onVisible = () => { if (document.visibilityState === "visible") { void takeNewBuild(true); void tick(); } };
     document.addEventListener("visibilitychange", onVisible);
     void tick();
-    return () => { stopped = true; clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };
+    return () => { stopped = true; clearTimeout(timer); unwatch(); document.removeEventListener("visibilitychange", onVisible); };
   }, [id, refresh]);
+  /* while this seat owes a choice and its player thinks, the battle function is kept warm (warmBattle), so the choice lands on a
+     worker that is already up. Every 10 seconds from each new request, only while the page is in view. */
+  const owes = Boolean(seat && row?.status === "active" && view?.request && !view.request.wait && !view.chosen);
+  useEffect(() => {
+    if (!owes) return undefined;
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void warmBattle(id); }, 10_000);
+    return () => clearInterval(timer);
+  }, [owes, id, view]);
 
   /* the gate (Gate.js): one closed by the lobby, a join or a rematch opens once this room stands as what comes next. A joiner's seat
      stands a moment over the row still read as waiting, so it opens only once the battle has started. And when the opponent comes
@@ -1137,7 +1159,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
      the second's key is off */
   const stones = megaStones(res.detail);
   const holder = side.pokemon.find(p => stones.get(toID(p.item)) && toID(species(p.details)).startsWith(stones.get(toID(p.item))) && !String(p.condition).endsWith(" fnt"));
-  const megaSpent = side.pokemon.some(p => /-Mega/.test(p.details));
+  const megaSpent = side.pokemon.some(p => /-Mega\b/.test(p.details));
   const megaTaken = picks.some(p => / mega$/.test(p || ""));
   const megaRow = active?.canMegaEvo || (holder && !megaSpent);
   const megaOpen = active?.canMegaEvo && !megaTaken && !frozen;
@@ -1211,6 +1233,13 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
     // when only one is left (a lone foe for a move at foes, the partner for one at the ally), it goes there at once,
     // as the game does not ask a question with one answer
     if (aim.standing.length === 1) { aim.targeting(...aim.standing[0]).onPick(); return; }
+    /* and when no one stands where it reaches (Helping Hand once the partner has fallen), it goes to its one empty place, where the
+       game uses it and it fails. The picker drew that place as 빈 자리 with nothing to press, so the move could not be chosen, and a
+       player left with only it could not choose at all (battle-fuzz, 2026-11-07) */
+    if (!aim.standing.length) {
+      const place = ["p1", "p2"].flatMap(s => [0, 1].map(slot => [s, slot])).find(([s, slot]) => aim.targeting(s, slot));
+      if (place) { aim.targeting(...place).onPick(); return; }
+    }
     // otherwise the moves give way to the targets, as Showdown and Champions ask: the field as it stands, foes over us
     setAiming(index);
     onAim?.();

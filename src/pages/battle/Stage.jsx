@@ -141,7 +141,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
   // the newest log, read when a run ends: lines that came while it played are played next, not left until the log moves again
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const reset = () => { reader.current = createBattleReader({ text: res.text, moves: res.detail.moves, perspective }); done.current = 0; };
+  const reset = () => { reader.current = createBattleReader({ text: res.text, moves: res.detail.moves, pokedex: res.detail.pokedex, perspective }); done.current = 0; };
   if (!reader.current) reset();
 
   useEffect(() => {
