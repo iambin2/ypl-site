@@ -65,7 +65,9 @@ test("a battle lost on time replays to the same end, as a forfeit does", () => {
   forfeit(battle, "p2");
   const out = readout(battle);
   assert.equal(out.winner, "p1");
-  assert.equal(readout(replay(out.inputLog)).log, out.log);
+  // the |t:| lines are the wall clock: a replay that crosses a second boundary differs there alone (it failed on CI that way)
+  const noClock = log => log.split("\n").filter(line => !line.startsWith("|t:|")).join("\n");
+  assert.equal(noClock(readout(replay(out.inputLog)).log), noClock(out.log));
 });
 
 test("the clock counts whole seconds down to 0 and is off with no deadline", () => {
