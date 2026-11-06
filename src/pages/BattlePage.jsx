@@ -16,7 +16,7 @@ import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, josa, parseHP, requestKey, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
-import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, cancelBattle, chooseInBattle, createBattle, findRoom, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, cancelBattle, chooseInBattle, createBattle, findRoom, recordCpuBattle, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, takeOfficialSeat, viewBattle } from "../services/battleService.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import { logUpTo, nextStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
@@ -173,8 +173,9 @@ const failText = (e, res) => {
   return `${e.message} ${res ? problem.replace(/포켓몬\(([^)]+)\)/, (_, species) => `포켓몬(${nameOf(res, species)})`) : problem}`;
 };
 /* ---------- the battle with the computer (src/services/battleCpu.js): the engine and the computer run in a worker on this device ----------
-   Nothing goes to the server. The battle is kept here as its input log (the seed and every choice), so it comes back as it was
-   after a reload: the worker plays the log again. A new battle with the computer replaces the one kept. */
+   Nothing goes to the server while it is played. The battle is kept here as its input log (the seed and every choice), so it comes
+   back as it was after a reload: the worker plays the log again. A new battle with the computer replaces the one kept. Once it has
+   ended, its input log alone is sent to be kept for the computer to learn from (docs/db/cpu_battles.sql). */
 const CPU_ROOM = "cpu";
 const CPU_KEY = "ypl-battle:cpu:v1";
 function readCpuBattle() { try { return JSON.parse(localStorage.getItem(CPU_KEY) || "null"); } catch { return null; } }
@@ -193,8 +194,15 @@ function CpuRoom({ res, say, go, onLeave }) {
     let n = 0;
     const take = data => {
       const now = readCpuBattle() || {};
-      keepCpuBattle({ teamId: now.teamId, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog });
+      const kept = { teamId: now.teamId, regulation: data.row.regulation, createdAt: data.row.created_at, endedBy: data.row.ended_by === "forfeit" ? "forfeit" : null, status: data.row.status, inputLog: data.inputLog, recorded: now.inputLog === data.inputLog && now.recorded };
+      keepCpuBattle(kept);
       setState({ row: data.row, view: data.view });
+      // an ended battle goes to the server once; a failure is tried again the next time this battle is opened
+      if (kept.status === "ended" && !kept.recorded) {
+        recordCpuBattle(kept.inputLog).then(({ recorded }) => {
+          if (recorded && readCpuBattle()?.inputLog === kept.inputLog) keepCpuBattle({ ...readCpuBattle(), recorded: true });
+        }, () => { /* 다음에 이 배틀을 열 때 다시 보낸다 */ });
+      }
     };
     w.onmessage = ({ data }) => {
       if (data.push) { take(data); return; }

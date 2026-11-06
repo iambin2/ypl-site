@@ -1,13 +1,13 @@
 /* 컴퓨터와의 배틀 (src/services/battleCpu.js). 엔진과 컴퓨터가 이 워커에서 돌아 화면은 생각하는 동안에도 멈추지 않는다.
-   서버와 DB에는 아무것도 남지 않는다. 화면은 입력 기록(시드와 모든 선택)을 이 기기에 두고, 다시 열면 그대로 다시 돌려 이어 간다.
+   배틀 중에는 서버에 아무것도 가지 않는다. 화면은 입력 기록(시드와 모든 선택)을 이 기기에 두고, 다시 열면 그대로 다시 돌려 이어 간다.
+   끝난 배틀의 입력 기록은 화면이 서버에 한 번 보낸다(docs/db/cpu_battles.sql).
 
    주고받는 말: start { formatid, name, team } · resume { inputLog } · choose { choice } · forfeit
    답은 { row, view, inputLog }(화면이 배틀 서버에서 받는 것과 같은 꼴). 컴퓨터가 고른 뒤 턴이 넘어가면 같은 꼴을 { push: true }로 보낸다. */
-import { formatId, randomTeam, readout, replay, startBattle, choose, forfeit, validateTeam } from "../../../supabase/functions/battle/engine.mjs";
+import { CPU_NAME, formatId, randomTeam, readout, replay, startBattle, choose, forfeit, validateTeam } from "../../../supabase/functions/battle/engine.mjs";
 import { createCpu, quickChoice } from "../../services/battleCpu.js";
 
 const CPU = "p2";
-const CPU_NAME = "컴퓨터";
 let battle = null, cpu = null, meta = null;
 
 function snapshot() {

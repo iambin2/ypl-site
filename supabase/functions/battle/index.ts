@@ -5,7 +5,7 @@
 //   npx supabase functions deploy battle --use-api --no-verify-jwt --project-ref rqffrogcverfjqzjasax
 // (엔진 패키지를 Supabase가 받아 묶게 두면 배포가 내부 오류로 실패했다. 요청은 토큰으로 확인하므로 JWT 검사가 필요 없다.)
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
+import { ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -288,6 +288,19 @@ const actions: Record<string, (body: Record<string, unknown>) => Promise<unknown
     const { data } = await db.from("battles").select("applied_at, apply_error").eq("id", String(id ?? "")).maybeSingle();
     if (!data) refuse(404, "배틀을 찾을 수 없습니다.");
     return data;
+  },
+
+  /* A finished battle with the computer, kept for the computer to learn from (docs/db/cpu_battles.sql). Every fact is read off the
+     replay here; a record that does not replay is refused. recorded false: the site is taking too many just now, nothing more. */
+  async record({ inputLog }) {
+    let facts;
+    try { facts = readCpuRecord(inputLog); } catch { refuse(422, "배틀 기록을 읽지 못했습니다."); }
+    const text = facts.inputLog;
+    const recorded = await rpc("cpu_battle_record", {
+      p_id: await sha256(text), p_format_id: facts.formatid, p_engine: ENGINE, p_winner: facts.winner,
+      p_ended_by: facts.endedBy, p_turns: facts.turns, p_input_log: text,
+    });
+    return { recorded: recorded === true };
   },
 
   /* ---------- the clock (docs/db/battle_timer.sql; DESIGN.md "Battle", The clock) ----------

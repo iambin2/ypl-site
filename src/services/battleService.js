@@ -23,6 +23,8 @@ export async function createBattle({ regulation, battleFormat, name, team, room 
   keepSeat(made.id, { token: made.token, side: made.side, ...(made.code ? { code: made.code } : {}) });
   return made;
 }
+// a finished battle with the computer, kept on the server for the computer to learn from (docs/db/cpu_battles.sql)
+export const recordCpuBattle = inputLog => callFunction("battle", { action: "record", inputLog });
 // a code room's id, for its four digits
 export const findRoom = code => callFunction("battle", { action: "room", code });
 export async function joinBattle(id, { name, team, code }) {

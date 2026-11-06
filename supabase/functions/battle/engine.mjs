@@ -1,7 +1,7 @@
 // The battle engine: Pokémon Showdown's simulator as @pkmn/sim packages it (MIT), with no database and no I/O.
 // The battle function runs it bundled (npm run build:battle); tests/battleEngine.test.mjs runs this source in Node.
 // Every ruling is Showdown's. This file only picks the format, carries choices in and reads the logs out.
-import { Battle, Dex, TeamValidator, extractChannelMessages } from "@pkmn/sim";
+import { Battle, Dex, TeamValidator, Teams, extractChannelMessages } from "@pkmn/sim";
 import * as champions from "@pkmn/mods/champions";
 import * as championsregmb from "@pkmn/mods/championsregmb";
 import { requestKey } from "../../../src/services/battleLog.js";
@@ -184,4 +184,32 @@ export function replay(inputLog) {
     else if (!command.startsWith("version")) throw new Error(`replay cannot read ${line}`);
   }
   return battle;
+}
+
+/* A finished battle with the computer, as the player's device sends it (docs/db/cpu_battles.sql): only its input log, and every fact
+   kept is read off this engine replaying it. It must replay to an end, both parties must be legal, and p2 must be the computer.
+   The player's name is taken out before anything is kept (a name plays no part in a battle), so the record holds no one's name.
+   ponytail: nothing proves the computer chose p2's moves (the device could play both sides); a weekly count that reads these
+   should weigh a record lightly, and per-device limits come when someone abuses it. */
+export const CPU_NAME = "컴퓨터";
+const PLAYER_NAME = "선수";
+export function readCpuRecord(inputLog) {
+  const sent = String(inputLog ?? "");
+  if (!sent.startsWith(">start ") || sent.length > 256 * 1024) throw new Error("not a battle record");
+  const text = sent.split("\n").map(line => {
+    if (!line.startsWith(">player p1 ")) return line;
+    const player = JSON.parse(line.slice(">player p1 ".length));
+    return `>player p1 ${JSON.stringify({ ...player, name: PLAYER_NAME })}`;
+  }).join("\n");
+  const battle = replay(text);
+  if (!battle.ended) throw new Error("the battle has not ended");
+  if (battle.p2.name !== CPU_NAME) throw new Error("p2 is not the computer");
+  const formatid = battle.format.id;
+  for (const line of text.split("\n").filter(l => l.startsWith(">player "))) {
+    const { team } = JSON.parse(line.replace(/^>player p[12] /, ""));
+    const problems = validateTeam(formatid, Teams.unpack(team));
+    if (problems) throw new Error(`illegal party: ${problems[0]}`);
+  }
+  const out = readout(battle);
+  return { inputLog: text, formatid, winner: out.winner, endedBy: /^>forcelose /m.test(text) ? "forfeit" : "battle", turns: battle.turn };
 }

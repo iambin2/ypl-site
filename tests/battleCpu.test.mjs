@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatId, randomTeam, startBattle, choose, replay, setPool } from "../supabase/functions/battle/engine.mjs";
+import { CPU_NAME, formatId, randomTeam, readCpuRecord, readout, startBattle, choose, replay, setPool } from "../supabase/functions/battle/engine.mjs";
 import { createCpu, habit, quickChoice, revealed } from "../src/services/battleCpu.js";
 
 // a seeded random, so a failure plays the same again
@@ -127,4 +127,25 @@ test("how often the other side switches is read from the turn's own switches, no
     "|move|p1a: Garchomp|U-turn|p2a: Gengar", "|switch|p1a: Rotom|Rotom-Wash, L50|100/100|[from] U-turn", "|upkeep|", "|turn|3",
     "|move|p1a: Rotom|Hydro Pump|p2a: Gengar", "|faint|p1a: Rotom", "|upkeep|", "|switch|p1a: Garchomp|Garchomp, L50|100/100", "|turn|4"];
   assert.deepEqual(habit(log, "p1"), { switches: 1, chances: 3 });
+});
+
+test("a finished battle with the computer is kept by its replay alone: no player's name, and a record that is not one is refused", () => {
+  const formatid = formatId("m-c", "singles");
+  const battle = startBattle({ formatid, seed: [1, 2, 3, 4], p1: { name: "이제빈", team: randomTeam(formatid) }, p2: { name: CPU_NAME, team: randomTeam(formatid) } });
+  for (let i = 0; i < 400 && !battle.ended; i++) for (const side of ["p1", "p2"]) {
+    const choice = quickChoice(battle, side);
+    if (choice && !battle[side].isChoiceDone()) choose(battle, null, side, choice);
+  }
+  assert.ok(battle.ended, "the quick players finish");
+  const sent = readout(battle).inputLog;
+  const kept = readCpuRecord(sent);
+  assert.ok(!kept.inputLog.includes("이제빈") && kept.inputLog.includes('"name":"선수"'), "the name is taken out");
+  assert.equal(kept.winner, readout(battle).winner);
+  assert.equal(kept.turns, battle.turn);
+  assert.equal(kept.endedBy, "battle");
+  assert.equal(readCpuRecord(kept.inputLog).inputLog, kept.inputLog, "the same battle sent again is the same record");
+  // not ended, not the computer, not a battle at all
+  assert.throws(() => readCpuRecord(sent.split("\n").slice(0, 6).join("\n")));
+  assert.throws(() => readCpuRecord(sent.replace(`"name":"${CPU_NAME}"`, '"name":"사람"')));
+  assert.throws(() => readCpuRecord("hello"));
 });
