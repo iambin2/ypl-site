@@ -75,17 +75,15 @@
 .champion-more { position: absolute; left: var(--pad); bottom: 0; height: var(--floor); display: flex; align-items: center; gap: var(--s1); }
 .champion .mon { right: var(--pad); height: calc(100% - var(--floor)); }
 
-/* ---------- the main action: an inverted 52 panel, the word on the left and → on the right ---------- */
+/* ---------- the main action: an inverted 52 panel, its mark (→, ✓, +) before the word, the two together on the left ---------- */
 .btn.btn--main {
   --btn-bg: var(--lit); --btn-bg-hover: var(--lit); --btn-fg: var(--ground);
-  justify-content: space-between; width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5);
+  justify-content: flex-start; gap: var(--s3); width: 100%; min-width: 0; height: var(--h-row); padding: 0 var(--s5);
   font-size: var(--t15); line-height: var(--l15); font-weight: 700;
 }
 /* a main action that cannot act yet drops to a panel with muted words (DESIGN.md "Controls"), not a faded fill */
 /* in a row of small actions the main action keeps the row's 44 and its own width */
 .btn.btn--main.btn--sm { width: auto; height: var(--h-control); }
-/* a creating action: its + leads the word, the two standing together on the left ("+ 글쓰기", DESIGN.md "Controls") */
-.btn.btn--main.btn--lead { justify-content: flex-start; gap: var(--s3); }
 .btn.btn--main:disabled:not([aria-busy="true"]) { --btn-bg: var(--panel); --btn-fg: var(--mute); opacity: 1; }
 /* a link: a 12px word underlined 4px under in --dim; 15 when it stands alone */
 .btn.btn--link {
@@ -289,7 +287,8 @@
 .sh-link, .btn--link, .site-foot-dc, .site-foot-login, .site-foot-admin { transition: color var(--move-tone); }
 @media (hover: hover) {
   :is(button, a):hover:not(:disabled) .mon { transform: translateY(calc(var(--s1) * -1)); }
-  :is(.btn--main:not(.btn--lead), .champion, .ab-go, .site-foot-dc):hover:not(:disabled) .ic { transform: translateX(var(--s1)); }
+  /* only an arrow leans, toward where it goes (DESIGN.md "Motion", the pointer); a check or a + stays still */
+  :is(.btn--main, .champion, .ab-go, .site-foot-dc):hover:not(:disabled) :is(.ic-arrow, .ic-ext) { transform: translateX(var(--s1)); }
   .back:hover .ic { transform: translateX(calc(var(--s1) * -1)); }
   .site-foot-admin:hover, .site-foot-dc:hover, .site-foot-login:hover { color: var(--lit); }
   .row:not(.inv):hover .row-main > b { color: var(--lit); }

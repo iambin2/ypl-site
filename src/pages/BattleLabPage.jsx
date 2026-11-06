@@ -476,7 +476,7 @@ function MoveBench({ res }) {
       ["메가진화 빛", each(async (st, k) => { await fx.megaStart(st, k); await fx.megaEnd(st, k); })],
       ["변신", each(fx.morph)],
     ]} />
-    <Keys keys={[["승리", () => fx.victory(ref.current)], ["턴 표시", () => fx.banner(ref.current, "3턴")], ["무대 흔들기", () => fx.shake(ref.current, 2)], ["트릭룸 비틀기", () => fx.twist(ref.current)]]} />
+    <Keys keys={[["승리", () => fx.final(ref.current, { players: NAMES, sides: { p1: { team: { a: { fainted: true } } }, p2: { team: { a: { fainted: true }, b: { fainted: true }, c: { fainted: true } } } }, turn: 12, winner: "p1", perspective: "p1", seated: true })], ["무승부", () => fx.final(ref.current, { players: NAMES, sides: { p1: { team: { a: { fainted: true } } }, p2: { team: { a: { fainted: true }, b: { fainted: true }, c: { fainted: true } } } }, turn: 12, winner: "tie", perspective: "p1" })], ["시작판", () => fx.opening(ref.current, NAMES.p1, NAMES.p2, { seated: true })], ["턴 표시", () => fx.banner(ref.current, "3턴")], ["무대 흔들기", () => fx.shake(ref.current, 2)], ["트릭룸 비틀기", () => fx.twist(ref.current)]]} />
 
     <SectionHead title="날씨와 필드" />
     <Question id="bench-weather" label="날씨" group><Choice name="bench-weather" options={BENCH_WEATHER.map(([, l]) => l)} value={BENCH_WEATHER.find(([id]) => id === weather)[1]} onChange={l => setWeather(BENCH_WEATHER.find(([, x]) => x === l)[0])} /></Question>

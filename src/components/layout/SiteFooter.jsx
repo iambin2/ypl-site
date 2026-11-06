@@ -21,7 +21,7 @@ export default function SiteFooter({ onNavigate, tagline, onAdmin }) {
           {tagline && <p className="site-foot-tag">{tagline}</p>}
           <span className="site-foot-links">
             {onAdmin && <button type="button" className="site-foot-login" onClick={onAdmin}>관리자 로그인</button>}
-            <a className="site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer">디스코드 참여<Icon n="ext" size={16} /></a>
+            <a className="site-foot-dc" href={DISCORD_URL} target="_blank" rel="noopener noreferrer"><Icon n="ext" size={16} />디스코드 참여</a>
           </span>
         </div>
 

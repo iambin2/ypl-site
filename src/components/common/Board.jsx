@@ -129,7 +129,7 @@ export function LiveStrip({ name, onGo }) {
   return (
     <button type="button" className="pn live-strip" onClick={onGo}>
       <span className="live-strip-say t12"><i className="lamp sig" aria-hidden="true" />{name} 진행 중</span>
-      <span className="live-strip-go t12">대진표<Icon n="arrow" size={16} /></span>
+      <span className="live-strip-go t12"><Icon n="arrow" size={16} />대진표</span>
     </button>
   );
 }
@@ -159,7 +159,7 @@ export function ChampionPanel({ champion, onClick }) {
           <b className="t20">{champion.name}</b>
           <span className="t12 dim reg">{champion.generation > 0 ? champion.line : `${champion.label}, ${champion.line}`}</span>
         </span>
-        <span className="champion-more t12">파티 보기<Icon n="arrow" size={16} /></span>
+        <span className="champion-more t12"><Icon n="arrow" size={16} />파티 보기</span>
         {/* the first screen's largest picture: asked for before the rest */}
         <Mon src={champion.party[0]?.img} fetchpriority="high" />
       </>}

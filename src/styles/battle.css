@@ -336,8 +336,6 @@
 .bt-fx-flash { width: 100%; height: 100%; background: var(--lit); }
 /* a turn or the winner: a solid band across the stage */
 .bt-banner { left: 50%; top: 44%; min-width: 64%; padding: var(--s2) var(--s13); text-align: center; white-space: nowrap; background: var(--panel-2); color: var(--lit); font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
-.bt-banner.win { display: flex; align-items: center; justify-content: center; gap: var(--s3); min-width: 80%; background: var(--lit); color: var(--ground); }
-.bt-banner.win::before { content: ""; width: var(--s3); height: var(--s3); background: var(--signal); }
 .bs-over > .bt-popup { right: 0; top: 24%; display: grid; gap: var(--s1); min-width: 40%; max-width: 64%; padding: var(--s2) var(--s5) var(--s2) var(--s3); background: var(--panel-2); text-align: right; }
 .bs-over > .bt-popup.own { right: auto; left: 0; top: 52%; padding: var(--s2) var(--s3) var(--s2) var(--s5); text-align: left; }
 .bt-popup > small { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -554,33 +552,36 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-side-title { display: none; }
 @media (min-width: 1200px) { .bt-side > .bt-side-title { display: block; order: -4; margin-bottom: calc(var(--s2) - var(--s3)); } }
 
-/* ---------- going in (DESIGN.md "Battle", Going in; src/pages/battle/Gate.js): the stage's opening band (battle-stage.css .bt-intro)
-   at the size of the window. The page goes dark, the band lit on its two edges opens from its middle line, the names face each other
-   across VS, and one line under it says what this is ---------- */
-.bt-gate {
-  --lit: #FFFFFF; --dim: #9FB3D8; --mute: #5C6F94; --ground: #050D1F; --panel: #0A1A3A;
-  --band: 104px;
-  position: fixed; inset: 0; z-index: calc(var(--z-modal) + 1); pointer-events: all; overflow: hidden; background: var(--ground); color: var(--lit);
+/* ---------- the match board (src/pages/battle/Scoreboard.jsx; DESIGN.md "Battle", Going in and The big moments): one board for going
+   in, the opening and the end. A head strip (the lamp and what this is, what the cells count at the right), then the opponent's row above
+   ours, each a counter: the label over the name at 32, one segment cell at 40, the Pokémon it knocked out. The winner's row inverts;
+   the loser's mutes ---------- */
+/* its seams show its own ground, never the arena's lines through them */
+.bt-board { display: grid; gap: var(--seam); width: min(100% - var(--s5) * 2, 576px); background: var(--ground); }
+.bt-board-head { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-strip); padding: 0 var(--pad); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+.bt-board-head .lamp { transition: background-color var(--move-tone); }
+.bt-board-say { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-board-note { flex: none; color: var(--dim); }
+.bt-board-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--s5); min-height: var(--h-counter); padding: var(--s3) var(--pad); }
+.bt-board-who { display: grid; gap: var(--s1); min-width: 0; }
+.bt-board-label { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); transition: color var(--move-tone); }
+.bt-board-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); transition: color var(--move-tone); }
+.bt-board-row.inv .bt-board-label { color: var(--ground); }
+.bt-board-row:is(.lost, .muted) :is(.bt-board-name, .seg) { color: var(--mute); }
+/* going in: the page switches off to its ground and the board stands in its middle */
+.bt-gate { position: fixed; inset: 0; z-index: calc(var(--z-modal) + 1); display: grid; place-items: center; pointer-events: all; background: var(--ground); color: var(--lit); }
+@media (min-width: 860px) { .bt-gate .bt-board { width: min(100% - var(--s8) * 2, 709px); } }
+/* the opening and the end: laid on the veil over the arena, in its middle, as a dialog is laid on the veil (DESIGN.md "Sheets"). The veil
+   and the board are the site's own, in its theme, not the arena's night: in light a night board on a white veil lost its winner's
+   inverted row into the veil. The arena overrides the tokens, so the site's are handed through under their own names */
+:root {
+  --site-ground: var(--ground); --site-panel: var(--panel); --site-panel-2: var(--panel-2); --site-rule: var(--rule);
+  --site-lit: var(--lit); --site-dim: var(--dim); --site-mute: var(--mute); --site-signal: var(--signal); --site-off: var(--off); --site-veil: var(--veil);
 }
-.bt-gate-band {
-  position: absolute; left: 0; right: 0; top: calc(50% - var(--band) / 2); height: var(--band);
-  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 0 6%;
-  background: var(--panel); will-change: transform;
-}
-.bt-gate-band::before, .bt-gate-band::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--lit); }
-.bt-gate-band::before { top: 0; } .bt-gate-band::after { bottom: 0; }
-.bt-gate-name { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 28px; line-height: 36px; font-weight: 800; letter-spacing: -.02em; }
-.bt-gate-name.own { justify-self: end; }
-/* the opponent not yet there: their place says so, muted */
-.bt-gate-name.muted { color: var(--mute); }
-.bt-gate-vs { display: grid; place-items: center; width: 48px; height: 48px; background: var(--lit); color: var(--ground); font-size: 15px; line-height: 20px; font-weight: 800; letter-spacing: .06em; }
-.bt-gate-line { position: absolute; left: 0; right: 0; top: calc(50% + var(--band) / 2 + var(--s5)); text-align: center; color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 700; letter-spacing: .08em; }
-.bt-gate-line:empty { display: none; }
-@media (min-width: 860px) {
-  .bt-gate { --band: 176px; }
-  .bt-gate-band { gap: 40px; }
-  .bt-gate-name { font-size: 64px; line-height: 76px; }
-  .bt-gate-vs { width: 80px; height: 80px; font-size: 24px; line-height: 32px; }
+.bt-board-host {
+  --ground: var(--site-ground); --panel: var(--site-panel); --panel-2: var(--site-panel-2); --rule: var(--site-rule);
+  --lit: var(--site-lit); --dim: var(--site-dim); --mute: var(--site-mute); --signal: var(--site-signal); --off: var(--site-off);
+  position: absolute; inset: 0; display: grid; place-items: center; background: var(--site-veil); color: var(--lit);
 }
 
 /* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two

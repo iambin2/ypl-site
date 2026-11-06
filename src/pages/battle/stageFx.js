@@ -4,6 +4,7 @@
    말(턴, 승자, 특성, 이름)은 무대 밖의 판(.bs-over)이고 보드의 판(battle.css)이다.
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
 import { reduced } from "../../components/common/motion.js";
+import { playBoard } from "./Scoreboard.jsx";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
 import { setField } from "./arena.js";
@@ -625,9 +626,11 @@ export function hideAll(stage, { dark = false } = {}) {
   for (const a of e.actors.values()) { e.cancel(a); a.base.alpha = 0; }
   if (dark && !instant()) e.gradeBase.dim = .18;
 }
-// the opening: the trainers' names and VS on plates, while the arena's lamps switch on. plates false: the gate said the names, the
-// lamps alone switch on, a beat longer since the gate is parting over them
-export async function opening(stage, ours, theirs, { plates = true } = {}) {
+/* the opening: the arena's lamps switch on and, unless the gate has just said who plays, the match board lights over them (Scoreboard.jsx:
+   the head strip, the opponent's row above ours with their dark cells) and goes before the throws. The camera holds (2026-11-06: the
+   names no longer slide in across VS and the shot no longer pushes in; the board switches on, as it does going in and at the end).
+   plates false: the gate said the names, the lamps alone switch on, a beat longer since the gate is parting over them */
+export async function opening(stage, ours, theirs, { plates = true, seated = false } = {}) {
   const over = overOf(stage), e = E(stage);
   // the stage hideAll left dark comes back to its own lamps, whatever plays next
   const darkened = e?.gradeBase.dim !== 1;
@@ -639,33 +642,23 @@ export async function opening(stage, ours, theirs, { plates = true } = {}) {
     await wait(reduced() ? 200 : 450);
     return;
   }
-  const box = document.createElement("div");
-  box.className = "bt-intro";
-  const make = (cls, text) => { const el = document.createElement("span"); el.className = cls; el.textContent = text; box.appendChild(el); return el; };
-  const a = make("bt-intro-name own", ours), vs = make("bt-intro-vs", "VS"), b = make("bt-intro-name", theirs);
-  over.appendChild(box);
-  if (e) { e.anim(e.grade, { dim: [.18, .18, 1], bloom: [1, 1.6, 1] }, { dur: 1900, at: [0, .5, 1], ease: "inout" }); e.shot(e.W / 2, e.H * .44, 1.08, { smooth: .1 }); e.at(60, () => e.shot(e.W / 2, e.H / 2, 1, { smooth: .9 })); }
-  if (reduced()) { await wait(900); box.remove(); return; }
-  const D = ms(1900);
-  const slide = (n, dx) => done(n.animate([{ transform: `translateX(${dx}px)`, opacity: 0 }, { transform: `translateX(${dx}px)`, opacity: 0, offset: .1, easing: OUT }, { transform: "none", opacity: 1, offset: .3 },
-    { transform: "none", opacity: 1, offset: .82, easing: IN }, { transform: `translateX(${-dx / 2}px)`, opacity: 0, offset: .92 }, { opacity: 0 }], { duration: D, fill: "both" }));
-  await Promise.all([
-    // the band opens from its middle line and closes back into it
-    done(box.animate([{ transform: "scaleY(0)" }, { transform: "none", offset: .14, easing: OUT }, { transform: "none", offset: .9, easing: IN }, { transform: "scaleY(0)" }], { duration: D, fill: "both" })),
-    slide(a, -32), slide(b, 32),
-    done(vs.animate([{ transform: "scale(1.5)", opacity: 0 }, { transform: "scale(1.5)", opacity: 0, offset: .16, easing: OUT }, { transform: "none", opacity: 1, offset: .3 }, { transform: "none", opacity: 1, offset: .82 }, { opacity: 0, offset: .92 }, { opacity: 0 }], { duration: D, fill: "both" })),
-  ]);
-  box.remove();
+  if (e) e.anim(e.grade, { dim: [.18, .18, 1] }, { dur: 1600, at: [0, .5, 1], ease: "inout" });
+  await playBoard(over, { say: "배틀 시작", rows: [{ label: seated ? "상대" : "", name: theirs }, { label: seated ? "나" : "", name: ours }] }, [[ms(700), {}]]);
 }
-// the end: a shower of light and streamers falls, the lamps flare once
-export function victory(stage) {
-  const e = E(stage);
-  if (!e || instant()) return Promise.resolve();
-  const { W, H } = e;
-  e.emit({ n: 70, at: () => [rand(-.05, 1.05) * W, -H * .08], vel: () => [rand(-40, 40), rand(160, 300)], tex: "star", ramp: "gold", size: [[5, 10], "same"], rot: "rand", spin: [-4, 4], bob: [6, 14], period: [1.2, 2], life: [2600, 3600], over: 1200, emis: 1 });
-  e.emit({ n: 50, at: () => [rand(0, 1) * W, -H * .05], vel: () => [rand(-30, 30), rand(120, 220)], tex: "petal", ramp: "rainbow", size: [[6, 9], "same"], aspect: .7, rot: "rand", spin: [-6, 6], bob: [8, 16], period: [1, 1.8], life: [3000, 4000], over: 1400, occ: .6, emis: .6 });
-  e.anim(e.grade, { bloom: [1, 1.8, 1] }, { dur: 1400 });
-  return e.after(1600);
+/* the end (DESIGN.md "Battle", The big moments): the match board over the arena, the camera holding wide. The Pokémon each side knocked
+   out switch on, then the winner's row inverts with 승리 and the loser's dims (a tie dims both); it stands a moment and goes */
+export async function final(stage, { players, sides, turn, winner, perspective, seated = false }) {
+  const over = overOf(stage);
+  if (!over || instant()) return;
+  const them = perspective === "p1" ? "p2" : "p1";
+  const knocked = side => Object.values(sides[side === "p1" ? "p2" : "p1"]?.team || {}).filter(m => m.fainted).length;
+  const row = (side, label) => ({ label: seated ? label : "", name: players[side] || "", score: knocked(side) });
+  const rows = [row(them, "상대"), row(perspective, "나")];
+  const sideAt = i => (i ? perspective : them);
+  const decided = rows.map((r, i) => winner === "tie" || !winner ? { ...r, label: "무승부", lost: true }
+    : { ...r, label: sideAt(i) === winner ? "승리" : "패배", won: sideAt(i) === winner, lost: sideAt(i) !== winner });
+  await playBoard(over, { say: `종료, ${turn}턴`, rows: rows.map(r => ({ ...r, score: null })) },
+    [[ms(160), { rows }], [ms(420), { rows: decided }], [ms(1600), {}]]);
 }
 /* sent in: the ball opens in a burst of light, a column of it rises, the Pokémon grows out of it white and settles into its colours */
 export async function enter(stage, key, { ball = true } = {}) {

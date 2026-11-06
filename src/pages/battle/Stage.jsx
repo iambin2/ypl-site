@@ -112,9 +112,12 @@ function aheadOf(lines) {
 }
 // epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
 // live: a battle being played (not a replay), whose going in from the team preview passes through the gate (Gate.js)
-export function useStageTape(log, res, perspective, epoch = 0, live = false) {
+// seated: the one watching plays it, so the board names the rows 상대 and 나
+export function useStageTape(log, res, perspective, epoch = 0, live = false, seated = false) {
   const liveRef = useRef(live);
   liveRef.current = live;
+  const seatedRef = useRef(seated);
+  seatedRef.current = seated;
   const reader = useRef(null);
   const done = useRef(0);
   const running = useRef(false);
@@ -306,7 +309,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
               /* the gate lifts onto the dark, empty stage before anything plays (2026-11-06: openGate was not waited for, so the
                  lamps, our throw and our lead's light all played under the still opaque gate and were never seen) */
               if (gated) await openGate();
-              await fx.opening(st, ours, theirs, { plates: !gated });
+              await fx.opening(st, ours, theirs, { plates: !gated, seated: seatedRef.current });
             }
            
             /* a Pokémon sent in mid-battle is framed on its side. The leads (DESIGN.md "Battle", The big moments) are thrown one side at
@@ -350,11 +353,11 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
           case "cant": show(); await fx.cant(stage, k, event.why); break;
           case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); await fx.banner(stage, `${event.turn}턴`); break;
           case "end": {
-            // the end: the camera frames the winner's last Pokémon standing, the lamps run along their banks, the winner's plate rises
+            /* the end (DESIGN.md "Battle", The big moments): the camera holds on the wide shot (2026-11-06: its push onto the winner
+               moved the whole screen for no reason) and the match board lights over the arena: the Pokémon each side knocked out switch
+               on, then the winner's row inverts with 승리 and the loser's dims; that is the celebration */
             show(); await toWide();
-            const last = event.winner && event.winner !== "tie" ? R.state.sides[event.winner].active.findIndex(m => m && !m.fainted) : -1;
-            if (last >= 0) push(slotKey(event.winner, last), 1.14, 680);
-            await Promise.all([fx.banner(stage, event.winner === "tie" ? "무승부" : `${R.state.players[event.winner]} 승리`, { tone: "win" }), fx.victory(stage)]);
+            await fx.final(stage, { players: R.state.players, sides: R.state.sides, turn: R.state.turn, winner: event.winner, perspective, seated: seatedRef.current });
             break;
           }
           default: show();
@@ -469,7 +472,7 @@ function Strip({ side, scene, name, res, known, onParty }) {
           title={`${nameOf(res, m.species)}${m.fainted ? ", 쓰러짐" : m.out ? ", 나와 있음" : !m.seen ? ", 아직 나오지 않음" : m.status ? `, ${STATUS[m.status]}` : ""}`}>
           <img src={spriteUrl(m.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} /></i>)}
       </span>
-      {onParty && <span className="bt-strip-more" aria-hidden="true">내 파티<Icon n="chevr" size={16} /></span>}
+      {onParty && <span className="bt-strip-more" aria-hidden="true"><Icon n="chevr" size={16} />내 파티</span>}
       </span>
       {(s?.conditions || []).length > 0 && <span className="bt-conds">
         {s.conditions.map(c => <span key={c} className="bt-cond">{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}

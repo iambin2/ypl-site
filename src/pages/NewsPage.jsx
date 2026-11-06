@@ -193,8 +193,8 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         {(editable||seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
           {editable&&<Button variant="second" onClick={()=>openForm(a.id,true)}>신청 수정</Button>}
           {seconds.map(([label,id])=><Button variant="second" key={label} onClick={()=>openBuilder(id)}>{label}</Button>)}
-          {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer">{a.linkLabel||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
-          {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer">{a.link2Label||"링크 바로가기"}<Icon n="ext" size={16}/></Button>}
+          {a.link&&<Button variant="second" href={href(a.link)} target="_blank" rel="noopener noreferrer"><Icon n="ext" size={16}/>{a.linkLabel||"링크 바로가기"}</Button>}
+          {a.link2&&<Button variant="second" href={href(a.link2)} target="_blank" rel="noopener noreferrer"><Icon n="ext" size={16}/>{a.link2Label||"링크 바로가기"}</Button>}
         </div>}
         {admin&&<div className="stack nw-admin">
           {(hasForm||a.form?.eventId)&&<Button variant="second" onClick={()=>setRespId(a.id)}>응답 보기 {a.form.eventId?(eventResponses[a.id]||[]).length:(a.form.responses||[]).length}</Button>}

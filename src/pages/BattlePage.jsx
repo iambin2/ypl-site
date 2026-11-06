@@ -139,7 +139,7 @@ function rematchTeam(teamId, regulation, res) {
   return saved ? { id: saved.id, send: showdownTeam(saved, res.detail) } : { id: RANDOM + regulation, send: "random" };
 }
 // the line under the names while the gate is closed
-const gateLine = (regulation, doubles, kind) => [REGULATIONS[regulation] || "", doubles ? "더블" : "싱글", kind].filter(Boolean).join(" ");
+const gateLine = (regulation, doubles, kind) => [REGULATIONS[regulation] || "", doubles ? "더블" : "싱글", kind].filter(Boolean).join(", ");
 
 /* 랜덤 파티 (2026-11-06): one panel of its own, apart from the saved teams, however many rules there are. The rule is a choice joined
    under it on the seam (M-C, M-B, ...); pressing the panel or a rule picks the random party of that rule. With one rule (a room's) the
@@ -770,7 +770,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [epoch, setEpoch] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   // a battle being played goes in from its team preview through the gate; a replay does not
-  const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended);
+  const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended, Boolean(seat));
   const at = cue ?? replay?.total ?? 0;
   const jump = to => { setAutoplay(false); setCue(replay && to < replay.total ? to : null); setEpoch(e => e + 1); };
   const stepOn = () => { const to = replay && nextStop(replay.stops, at); if (to != null) setCue(to < replay.total ? to : null); };
@@ -950,17 +950,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   }, []);
   const preview = tape.state.sides;
   /* the end (DESIGN.md "Battle", After the battle): the result large, then what comes next as keys, 다시하기 first. On a wide screen
-     the column beside the stage goes back to its top, so the result is in view; on a phone it stands right under the stage. */
+     the column beside the stage goes back to its top, so the result is in view. On a phone the page does not move (2026-11-06: it
+     slid the stage up to the bar at every end, "화면이 움직일 이유가 없거든"): the result takes the moves' place right under the stage,
+     and the stage was already brought into view when the last choice went */
   useEffect(() => {
     if (!shownEnded) return;
-    const how = reduced() ? "auto" : "smooth";
-    document.querySelector(".bt-side")?.scrollTo({ top: 0, behavior: how });
-    // on a phone the page itself comes back up to the stage, whose result stands right under it, wherever the player was
-    if (window.matchMedia("(max-width: 1199px)").matches) {
-      const main = document.querySelector(".bt-main");
-      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-height")) || 0;
-      if (main) window.scrollBy({ top: main.getBoundingClientRect().top - bar - 8, behavior: how });
-    }
+    document.querySelector(".bt-side")?.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
   }, [shownEnded]);
   // the other player asked for a rematch: the next battle waits with their name on it (docs/db/battle_rematch.sql)
   const [nextRow, setNextRow] = useState(null);

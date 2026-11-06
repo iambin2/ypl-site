@@ -45,7 +45,7 @@ export default function Icon({ n, size = 16, className = "", style }) {
   if (!d) return null;
   const fill = FILLED.has(n);
   return (
-    <svg className={"ic" + (className ? " " + className : "")} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={style}
+    <svg className={"ic ic-" + n + (className ? " " + className : "")} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={style}
       fill={fill ? "currentColor" : "none"} stroke={fill ? "none" : "currentColor"} strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter">
       <path d={d} />
     </svg>

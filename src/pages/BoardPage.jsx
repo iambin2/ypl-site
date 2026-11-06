@@ -36,7 +36,7 @@ function MediaEmbed({ url }){
   const m=parseMedia(url); if(!m) return null;
   if(m.type==="youtube") return <div className="bd-yt"><iframe src={"https://www.youtube.com/embed/"+m.id} title="유튜브 영상" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen/></div>;
   if(m.type==="image") return <a className="bd-img" href={m.url} target="_blank" rel="noopener noreferrer"><img src={m.url} alt="첨부 이미지" loading="lazy" decoding="async"/></a>;
-  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:"var(--s2)"}}>{m.url}<Icon n="ext" size={16}/></a>;
+  return <a className="ann-link" href={m.url} target="_blank" rel="noopener noreferrer" style={{marginTop:"var(--s2)"}}><Icon n="ext" size={16}/>{m.url}</a>;
 }
 
 function BoardCompose({ onClose, onSubmit, initial=null }){

@@ -87,8 +87,8 @@ export default function AboutPage({ go, data, admin }) {
             <span className="ab-step-body">
               <b className="t15">{s.t}</b>
               <span className="t12 dim reg">{s.d}</span>
-              {s.href ? <a className="ab-go t12" href={s.href} target="_blank" rel="noreferrer">{s.cta}<Icon n="ext" size={16} /></a>
-                : <button type="button" className="ab-go t12" onClick={() => go?.(s.to)}>{s.cta}<Icon n="arrow" size={16} /></button>}
+              {s.href ? <a className="ab-go t12" href={s.href} target="_blank" rel="noreferrer"><Icon n="ext" size={16} />{s.cta}</a>
+                : <button type="button" className="ab-go t12" onClick={() => go?.(s.to)}><Icon n="arrow" size={16} />{s.cta}</button>}
             </span>
           </li>
         ))}
