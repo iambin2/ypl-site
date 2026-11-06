@@ -914,6 +914,11 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   if (request?.side?.pokemon) party.current = request.side.pokemon;
   const pickCount = useRef(0);
   if (request?.teamPreview) pickCount.current = Math.min(request.maxChosenTeamSize || request.side.pokemon.length, request.side.pokemon.length);
+  /* the six the team preview offered: the picks are places in it. The request after 선출 확정 holds only the ones brought, so the
+     preview read against it found no Pokémon at a place past the third (2026-11-06: picking a fourth, fifth or sixth threw, the room
+     guard drew the battle again, and a battle drawn again catches up without its opening, so the owner never saw it) */
+  const previewParty = useRef(null);
+  if (request?.teamPreview) previewParty.current = request.side.pokemon;
   // every move's full PP as the engine has told it for the Pokémon out, so a Pokémon on the bench shows what it has left too
   const maxpp = useRef({});
   for (const slot of request?.active || []) for (const m of slot.moves || []) if (m.maxpp != null) maxpp.current[m.id] = m.maxpp;
@@ -966,9 +971,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {started
           ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
               said={tape.said} ask={boxAsk} known={known.current} onParty={openParty} />
-          : seat && party.current
-          ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={party.current} count={pickCount.current}
-              locked={!choosing} picks={picks} setPicks={setPicks} />
+          : seat && previewParty.current
+          ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
+              locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} />
           : <div className="bt-preview">
               {[foe, perspective].map(side => <FoeSix key={side} res={res} species={preview[side].preview} title={`${names[side]}의 파티`} />)}
             </div>}
@@ -1004,7 +1009,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <Button size="sm" onClick={shareToBoard}>게시판에 공유</Button>
           </div>
         </section>}
-        {!started && seat && party.current && choosing && <PickDock res={res} pokemon={party.current} count={pickCount.current} picks={picks} setPicks={setPicks}
+        {!started && seat && previewParty.current && choosing && request?.teamPreview && <PickDock res={res} pokemon={previewParty.current} count={pickCount.current} picks={picks} setPicks={setPicks}
           onSend={send} toast={error ? <Toast error>{error}</Toast> : null} />}
         {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
         {seat && !ended && started && <div ref={consoleRef} className="bt-console">
