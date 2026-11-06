@@ -674,10 +674,12 @@ export async function final(stage, { players, sides, turn, winner, perspective, 
   const row = (side, label) => ({ label: seated ? label : "", name: players[side] || "", score: knocked(side) });
   const rows = [row(them, "상대"), row(perspective, "나")];
   const sideAt = i => (i ? perspective : them);
-  const decided = rows.map((r, i) => winner === "tie" || !winner ? { ...r, label: "무승부", lost: true }
-    : { ...r, label: sideAt(i) === winner ? "승리" : "패배", won: sideAt(i) === winner, lost: sideAt(i) !== winner });
+  // seated, the label keeps who the row is before the result (나, 승리), so the end still says which side is yours
+  const said = (r, word) => (r.label ? `${r.label}, ${word}` : word);
+  const decided = rows.map((r, i) => winner === "tie" || !winner ? { ...r, label: said(r, "무승부"), lost: true }
+    : { ...r, label: said(r, sideAt(i) === winner ? "승리" : "패배"), won: sideAt(i) === winner, lost: sideAt(i) !== winner });
   await playBoard(over, { say: `종료, ${turn}턴`, rows: rows.map(r => ({ ...r, score: null })) },
-    [[ms(160), { rows }], [ms(420), { rows: decided }], [ms(1600), {}]]);
+    [[ms(160), { rows }], [ms(420), { rows: decided, done: true }], [ms(1600), {}]], { off: true });
 }
 /* sent in: the ball opens in a burst of light, a column of it rises, the Pokémon grows out of it white and settles into its colours */
 export async function enter(stage, key, { ball = true } = {}) {

@@ -200,11 +200,13 @@
 /* =============================================================================
    The match (DESIGN.md "Battle"): a game screen laid out as a game lays it out (the HUD over the stage, the moves as cards in their
    type's colour), drawn in the site's own manner: solid colours, square corners, square marks, no gradient and no circle. The only
-   exception is Mega Evolution's symbol. The arena keeps the night whatever the site's theme, as a game's screen does, so the
-   tokens are set to the night inside it.
+   exception is Mega Evolution's symbol. In dark the tokens are set to the night inside the arena; in light the strips, the plates
+   and the message window take the site's own light tokens (2026-11-06: a night frame round a paper stage read as dark mode left on).
    ========================================================================== */
-.bt-arena {
+:root:not([data-theme="light"]) .bt-arena {
   --lit: #FFFFFF; --dim: #9FB3D8; --mute: #5C6F94; --ground: #050D1F; --panel: #0A1A3A; --panel-2: #12295A; --rule: #1B3A78; --veil: #050D1FB3;
+}
+.bt-arena {
   /* the strips sit flush on the stage: a seam here read as a stray black line under the party (the user, 2026-11-06) */
   display: grid; background: var(--ground); color: var(--lit);
 }
@@ -266,6 +268,8 @@
 .bt-sex { flex: none; font-style: normal; font-size: var(--t12); font-weight: 700; }
 .bt-sex.M { color: #6FB6FF; }
 .bt-sex.F { color: #FF8FB8; }
+:root[data-theme="light"] .bt-sex.M { color: #1F6FD1; }
+:root[data-theme="light"] .bt-sex.F { color: #D6338A; }
 .bt-plate-lv { flex: none; font-size: 11px; color: var(--dim); }
 .bt-plate-hp { display: flex; align-items: center; gap: var(--s1); min-width: 0; }
 .bt-plate-hp > .bt-hp { flex: 1; min-width: 0; }
@@ -313,6 +317,7 @@
 /* the message window: a solid band across the bottom of the stage */
 .bs-stage.hud { --say-h: clamp(58px, 22%, 92px); }
 .bt-say { position: absolute; left: 0; right: 0; bottom: 0; display: grid; align-content: center; gap: var(--seam); min-height: var(--say-h); padding: var(--s2) var(--pad); background: #050D1FE6; pointer-events: none; }
+:root[data-theme="light"] .bt-say { background: var(--panel); }
 .bt-say > p { font-size: var(--t15); line-height: var(--l15); font-weight: 600; color: var(--lit); animation: y-rise var(--move-light) backwards; }
 .bt-say > p:not(:last-child) { color: var(--dim); }
 @media (min-width: 860px) { .bt-say > p { font-size: var(--t20); line-height: var(--l20); } }
@@ -565,7 +570,8 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-board-label { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); transition: color var(--move-tone); }
 .bt-board-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); transition: color var(--move-tone); }
 .bt-board-row.inv .bt-board-label { color: var(--ground); }
-.bt-board-row:is(.lost, .muted) :is(.bt-board-name, .seg) { color: var(--mute); }
+/* the loser's row mutes as one: its label never lit over a muted name */
+.bt-board-row:is(.lost, .muted) :is(.bt-board-label, .bt-board-name, .seg) { color: var(--mute); }
 /* going in: the page switches off to its ground and the board stands in its middle */
 .bt-gate { position: fixed; inset: 0; z-index: calc(var(--z-modal) + 1); display: grid; place-items: center; pointer-events: all; background: var(--ground); color: var(--lit); }
 @media (min-width: 860px) { .bt-gate .bt-board { width: min(100% - var(--s8) * 2, 709px); } }
@@ -581,6 +587,8 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   --lit: var(--site-lit); --dim: var(--site-dim); --mute: var(--site-mute); --signal: var(--site-signal); --off: var(--site-off);
   position: absolute; inset: 0; display: grid; place-items: center; background: var(--site-veil); color: var(--lit);
 }
+/* the end: the arena switches off to the site's ground behind the board, so no Pokémon stands half out over it */
+.bt-board-host.off { background: var(--site-ground); }
 
 /* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two
    over ours, each place a key the moves' height with the picture, the name, the HP and how the move lands there; a place the move
