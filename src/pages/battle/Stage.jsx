@@ -22,9 +22,10 @@ export const keyOf = ident => String(ident).slice(0, 3);
 const slotKey = (side, slot) => `${side}${"ab"[slot]}`;
 
 /* ---------- what the stage shows, taken from the reader's state ---------- */
-// standing: a Pokémon whose HP reached 0 stays on the stage until its fall is played (the log marks it fainted at the blow)
-const monSnap = (mon, standing = false) => mon && {
-  name: mon.name, species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted, standing,
+// standing: a Pokémon whose HP reached 0 stays on the stage until its fall is played (the log marks it fainted at the blow);
+// falling: its fall has begun, so its plate goes out as it sinks (2026-11-06: the plate went out at the blow, before the bar emptied)
+const monSnap = (mon, standing = false, falling = false) => mon && {
+  name: mon.name, species: mon.species, hp: mon.hp, maxhp: mon.maxhp, status: mon.status, fainted: mon.fainted, standing, falling,
   boosts: { ...mon.boosts }, volatiles: [...(mon.volatiles || [])], gender: mon.gender, level: mon.level,
   item: mon.item, ability: mon.ability, moves: [...(mon.moves || [])], ppUsed: { ...(mon.ppUsed || {}) },
   // a typing a move or an ability changed, and Roost's grounding (battleWords.js currentTypes reads them)
@@ -40,7 +41,7 @@ function roster(side) {
 export function sceneOf(state, standing = null) {
   const side = id => {
     const s = state.sides[id];
-    return { active: s.active.map((m, slot) => monSnap(m, Boolean(standing?.has(slotKey(id, slot))))), conditions: [...s.conditions], since: { ...s.since }, layers: { ...s.layers }, roster: roster(s) };
+    return { active: s.active.map((m, slot) => monSnap(m, Boolean(standing?.has(slotKey(id, slot))), standing?.get(slotKey(id, slot)) === "fall")), conditions: [...s.conditions], since: { ...s.since }, layers: { ...s.layers }, roster: roster(s) };
   };
   return { turn: state.turn, weather: state.weather, weatherSince: state.weatherSince, fields: [...state.fields], fieldSince: { ...state.fieldSince }, ended: state.ended, winner: state.winner, players: { ...state.players }, p1: side("p1"), p2: side("p2") };
 }
@@ -146,7 +147,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
       await null; // out of the effect: flushSync may not run inside React's own work
       let pending = [], lastSaid = [], saidAt = 0;
       const flushLines = () => { if (pending.length) { const add = pending; pending = []; flushSync(() => setLines(list => [...list, ...add])); } };
-      const standing = new Set();
+      const standing = new Map(); // slot → "blow" (HP at 0, still standing) or "fall" (sinking)
       const show = () => flushSync(() => setScene(sceneOf(R.state, standing)));
       const own = key => key.startsWith(perspective);
       const word = key => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return mon ? `${own(key) ? "" : "상대 "}${R.speciesName(mon.species)}` : ""; };
@@ -220,7 +221,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
           case "resist": blow.weak.add(k); break;
           case "take": case "hp": {
             const was = before[k];
-            if (event.hp === 0 && !event.heal) standing.add(k);
+            if (event.hp === 0 && !event.heal) standing.set(k, "blow");
             // the stage as this line leaves it: the lines after it are read on while it plays (a multi-hit move's further hits),
             // and its bar must not show their HP before they land
             const view = sceneOf(R.state, standing);
@@ -267,6 +268,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false) {
             // the stadium's lamps dim a step while it sinks, and come back as it goes out
            
             fx.darken(stage, .7, 900);
+            // the bar has emptied by now (the blow's HP is awaited before this line); the plate goes out as the Pokémon sinks
+            if (standing.has(k)) { standing.set(k, "fall"); show(); }
             await fx.faint(stage, k);
             standing.delete(k); show(); toWide(); break;
           }
@@ -392,12 +395,14 @@ function Plate({ slotKey: key, mon, own, res, onInfo }) {
   const exact = own && mon.maxhp !== 100;
   const share = mon.fainted || !mon.maxhp ? 0 : mon.hp / mon.maxhp;
   const hp = mon.fainted ? 0 : exact ? mon.hp : Math.max(mon.hp > 0 ? 1 : 0, Math.round(share * 100));
+  // a knocked-out Pokémon keeps its plate (bar at 0) until its fall begins
+  const gone = mon.fainted && (!mon.standing || mon.falling);
   const boosts = Object.entries(mon.boosts || {}).filter(([, v]) => v);
   const vols = (mon.volatiles || []).filter(v => !HIDDEN_VOLATILES.has(v));
   const status = mon.status && mon.status !== "fnt" ? mon.status : "";
   const name = nameOf(res, mon.species);
   return (
-    <button type="button" className={"bt-plate" + (own ? " own" : "") + (mon.fainted ? " out" : "")} data-bar={key} onClick={onInfo}
+    <button type="button" className={"bt-plate" + (own ? " own" : "") + (gone ? " out" : "")} data-bar={key} onClick={onInfo}
       aria-label={`${own ? "" : "상대 "}${name} 정보, ${mon.fainted ? "쓰러짐" : `HP ${hp}${exact ? ` / ${mon.maxhp}` : "%"}`}`}>
       <span className="bt-plate-top" key={mon.name}>
         <b className="bt-plate-name">{name}</b>
@@ -410,7 +415,7 @@ function Plate({ slotKey: key, mon, own, res, onInfo }) {
       </span>
       <span className="bt-plate-hp">
         <Gauge share={share} />
-        <span className="bt-plate-num">{mon.fainted ? "쓰러짐" : exact ? `${hp}/${mon.maxhp}` : `${hp}%`}</span>
+        <span className="bt-plate-num">{gone ? "쓰러짐" : exact ? `${hp}/${mon.maxhp}` : `${hp}%`}</span>
       </span>
       {(boosts.length > 0 || vols.length > 0) && <span className="bt-marks">
         {boosts.map(([k, v]) => <span key={k} className={"bt-mark " + (v > 0 ? "up" : "down")}>{`${STAT[k] || k} ${multiplier(k, v)}`}</span>)}
