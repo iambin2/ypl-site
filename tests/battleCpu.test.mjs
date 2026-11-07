@@ -130,6 +130,45 @@ test("every 난이도 plays a whole battle with choices the engine takes, its mi
   }
 });
 
+test("a computer made afresh for every choice from the last one's memory chooses as one computer kept for the whole battle", () => {
+  const formatid = formatId("m-c", "singles");
+  // keep: one computer for the battle; carry: a new one each choice from the last one's memory, through JSON as the server stores it
+  const run = mode => {
+    const random = seeded(41);
+    let t = 0;
+    // a clock that moves only when it is read, so every run thinks for the same samples
+    const options = { random, now: () => (t += 5), budgetMs: 15 };
+    const kept = createCpu(formatid, options);
+    let memory, carried = 0;
+    const battle = startBattle({ formatid, seed: [41, 2, 3, 4], p1: { name: "사람", team: randomTeam(formatid, random) }, p2: { name: "컴퓨터", team: randomTeam(formatid, random, { meta: true }) } });
+    for (let step = 0; step < 300 && !battle.ended; step++) {
+      let moved = false;
+      for (const side of ["p2", "p1"]) {
+        const req = battle[side].activeRequest;
+        if (!req || req.wait || battle[side].isChoiceDone()) continue;
+        let choice = side === "p1" ? quickChoice(battle, side) : null;
+        if (side === "p2" && mode === "keep") choice = kept.decide(battle, side);
+        if (side === "p2" && mode !== "keep") {
+          const cpu = createCpu(formatid, { ...options, memory: mode === "carry" ? memory : undefined });
+          choice = cpu.decide(battle, side);
+          memory = JSON.parse(JSON.stringify(cpu.memory()));
+          if (memory.before) carried++;
+        }
+        assert.ok(choose(battle, null, side, choice).ok, `${mode} turn ${battle.turn}: ${side} ${choice} refused`);
+        moved = true;
+      }
+      if (!moved) break;
+    }
+    return { log: battle.inputLog.join("\n"), carried, guesses: new Map(memory?.hypotheses || []) };
+  };
+  const keep = run("keep"), carry = run("carry"), forget = run("forget");
+  assert.ok(carry.carried > 3, "the memory carried the battle as it stood");
+  assert.equal(carry.log, keep.log);
+  // what was ruled out stays out: a computer made afresh without the memory holds every guess again
+  const narrowed = [...forget.guesses].filter(([name, sets]) => sets && carry.guesses.get(name)?.length < sets.length);
+  assert.ok(narrowed.length, "some guess was ruled out and stayed out");
+});
+
 test("how often the other side switches is read from the turn's own switches, not those after a faint or a pivoting move", () => {
   const log = ["|turn|1", "|switch|p1a: Garchomp|Garchomp, L50|100/100", "|move|p2a: Gengar|Shadow Ball|p1a: Garchomp", "|upkeep|", "|turn|2",
     "|move|p1a: Garchomp|U-turn|p2a: Gengar", "|switch|p1a: Rotom|Rotom-Wash, L50|100/100|[from] U-turn", "|upkeep|", "|turn|3",

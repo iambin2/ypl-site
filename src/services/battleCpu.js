@@ -677,16 +677,17 @@ const pickIndex = (weights, random) => { let roll = random(); for (let i = 0; i 
 /* ---------- the computer ---------- */
 /* slack: how close to the best a choice must be to be played (a hair, so the computer is not read by habit); mistake: how often a
    turn is played as any of its sensible choices. Both are the weaker 난이도's (src/services/cpuLevels.js); the defaults are the
-   computer at full strength */
-export function createCpu(formatid, { random = Math.random, budgetMs, rollout = true, reads = true, now = NOW, slack = .03, mistake = 0 } = {}) {
+   computer at full strength. memory: what memory() gave back (as JSON), so a computer made afresh for each choice (the 연승 도전 on
+   the server, docs/BATTLE_STREAK.md) goes on reading the other side where the last one stopped */
+export function createCpu(formatid, { random = Math.random, budgetMs, rollout = true, reads = true, now = NOW, slack = .03, mistake = 0, memory } = {}) {
   const pool = poolOf(formatid);
   const doubles = /vgc/.test(formatid);
   const budget = budgetMs ?? (doubles ? 2200 : 1400);
   /* their Pokémon's name → what it may carry, narrowed turn by turn (infer); before is the battle as it stood when we last chose a move.
-     ponytail: kept in memory only, so a battle resumed after the page reloads starts guessing afresh; replaying its log through infer
-     turn by turn would carry the readings over */
-  const hypotheses = new Map();
-  let before = null;
+     ponytail: the browser keeps them in memory only, so a battle resumed after the page reloads starts guessing afresh; keeping
+     memory() with the battle, as the server does, would carry the readings over */
+  const hypotheses = new Map(memory?.hypotheses || []);
+  let before = memory?.before || null;
   const candidatesOf = (state, p) => {
     if (!hypotheses.has(p.name)) {
       const sets = pool.get(toID(p.baseSpecies.name)) || pool.get(toID(p.baseSpecies.baseSpecies));
@@ -785,7 +786,7 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
     return near[Math.floor(random() * near.length)].choice;
   }
 
-  return { decide, guesses: name => hypotheses.get(name) };
+  return { decide, guesses: name => hypotheses.get(name), memory: () => ({ hypotheses: [...hypotheses], before }) };
 }
 
 // every way to fill the places a forced switch leaves (a place that must pass passes)
