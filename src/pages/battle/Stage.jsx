@@ -11,7 +11,6 @@ import { sfx, conditionSound } from "./sfx.js";
 import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectType, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
-import { closeGate, openGate } from "./Gate.js";
 import Seg from "../../components/common/Seg.jsx";
 import { Mon } from "../../components/common/Board.jsx";
 import Icon from "../../components/common/Icon.jsx";
@@ -119,8 +118,8 @@ function aheadOf(lines) {
   return ahead;
 }
 // epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
-// live: a battle being played (not a replay), whose going in from the team preview passes through the gate (Gate.js)
-// seated: the one watching plays it, so the board names the rows 상대 and 나
+// live: a battle being played (not a replay); a replay at its start readies its pictures before the opening (below)
+// seated: the one watching plays it, so the end's board names the rows 상대 and 나
 export function useStageTape(log, res, perspective, epoch = 0, live = false, seated = false) {
   const liveRef = useRef(live);
   liveRef.current = live;
@@ -298,36 +297,32 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
           case "enter": {
             if (event.leaving) { await fx.leave(stage, k, { drag: event.drag }); }
             const first = !opened && R.state.turn === 0;
-            const ours = R.state.players[perspective] || "", theirs = R.state.players[other(perspective)] || "";
-            /* going in from the team preview (DESIGN.md "Battle", Going in): in a battle being played the gate closes over the preview
-               first, the stage stands up behind it in the dark, and the gate parts on it; the names were on the gate, so the stage's
-               own plates are left out and only the lamps switch on before the throws */
-            const gated = first && liveRef.current && !stageRef.current;
+            /* going in from the team preview (DESIGN.md "Battle", Going in): the stage stands in the preview's place with its lamps off,
+               no board or veil over anything (2026-11-07, the user: the 배틀 시작 popup made the start stutter) */
+            const fresh = first && !stageRef.current;
             // the plates wait for the leads: on a stage already standing (a replay's start) they go out before anything is shown
             if (first && stageRef.current) stageRef.current.classList.add("bs-intro");
-            if (gated) await closeGate({ ours, theirs, line: "배틀 시작" });
             standing.delete(k);
             show();
             // the stage mounts with the first lead, so it is read again here
             const st = stageRef.current;
-            // the opening (DESIGN.md "Battle", The big moments): the trainers' names and VS while the lamps switch on, then the throws
+            // the opening (DESIGN.md "Battle", The big moments): the lamps switch on, then the throws
             if (first && st) {
               opened = true;
               // the plates come in once the leads stand (the first turn, or the end of this run)
               st.classList.add("bs-intro");
-              // nobody stands before their ball is thrown: the canvas draws the Pokémon, so it is the canvas that hides them
-              fx.hideAll(st, { dark: gated });
+              // nobody stands before their ball is thrown (the canvas draws the Pokémon, so it is the canvas that hides them), lamps off
+              fx.hideAll(st, { dark: true });
               /* on a phone 선출 확정 stands at the foot of the long team preview, and the stage that replaces it was left above the
-                 screen, the throws with it: behind the gate the page comes back up to the stage, so the jump is never seen */
-              if (gated) {
+                 screen, the throws with it: in the same frame the stage first paints, the page comes back up to it, so it is one change */
+              if (fresh) {
                 const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-height")) || 0;
                 const top = (st.closest(".bt-arena") || st).getBoundingClientRect().top - bar;
                 if (top < 0) window.scrollBy({ top, behavior: "instant" });
+                // the pictures go onto the GPU one a frame while the lamps are off, so the lamps and the throws never stop for an upload
+                await fx.warm(st, ["p1", "p2"].flatMap(s => R.state.sides[s].preview.map(spriteUrl)));
               }
-              /* the gate lifts onto the dark, empty stage before anything plays (2026-11-06: openGate was not waited for, so the
-                 lamps, our throw and our lead's light all played under the still opaque gate and were never seen) */
-              if (gated) await openGate();
-              await fx.opening(st, ours, theirs, { plates: !gated, seated: seatedRef.current });
+              await fx.opening(st);
             }
             if (opener && text.length) { shown = text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
            
@@ -557,9 +552,13 @@ function Clock({ left, mine }) {
   </div>;
 }
 
-export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, known, onParty, clock = null, mine = false }) {
+// dark: the stage stands with its lamps off from its first frame (a replay playing from its start, whose opening switches them on)
+export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, known, onParty, clock = null, mine = false, dark = false }) {
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
+  /* before its first paint: a replay's arena drawn lit and dimmed a few frames later when its reading reached the start flashed as it
+     opened (2026-11-07, the user: the arena flashed as a battle started) */
+  useLayoutEffect(() => { if (dark) fx.hideAll(stageRef.current, { dark: true }); }, []);
   const fields = scene?.fields || [];
   // the GPU stage reads who stands where after every change, and draws the field as the scene leaves it
   useLayoutEffect(() => {

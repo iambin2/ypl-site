@@ -773,29 +773,22 @@ export function hideAll(stage, { dark = false } = {}) {
   for (const a of e.actors.values()) { e.cancel(a); a.base.alpha = 0; }
   if (dark && !instant()) e.gradeBase.dim = .18;
 }
-/* the opening: the arena's lamps switch on and, unless the gate has just said who plays, the match board lights over them (Scoreboard.jsx:
-   the head strip, the opponent's row above ours with their dark cells) and goes before the throws. The camera holds (2026-11-06: the
-   names no longer slide in across VS and the shot no longer pushes in; the board switches on, as it does going in and at the end).
-   plates false: the gate said the names, the lamps alone switch on, a beat longer since the gate is parting over them */
-export async function opening(stage, ours, theirs, { plates = true, seated = false } = {}) {
-  const over = overOf(stage), e = E(stage);
-  // the stage hideAll left dark comes back to its own lamps, whatever plays next
-  const darkened = e?.gradeBase.dim !== 1;
-  if (e) e.gradeBase.dim = 1;
-  if (!over || instant()) return;
-  // two frames first: the lead the stage has just mounted (a render and a layout read) lands before the board starts to light, not
-  // in its first frames (2026-11-07, measured: the board's one stop as a replay opened)
+/* the opening: the arena's lamps switch on over the dark stage hideAll left, and the throws come on their rise. No board or veil
+   stands over it (2026-11-07, the user: the 배틀 시작 popup made the start stutter; the strips and the team preview have said who plays) */
+export async function opening(stage) {
+  const e = E(stage);
+  if (!e) return;
+  const darkened = e.gradeBase.dim !== 1;
+  if (instant()) { e.gradeBase.dim = 1; return; }
+  // two frames first: the lead the stage has just mounted (a render and a layout read) lands before the lamps start, not in their
+  // first frames (2026-11-07, measured: one stop as a replay opened)
   for (let i = 0; i < 2; i++) await new Promise(resolve => requestAnimationFrame(resolve));
   sfx("lamps");
-  if (!plates) {
-    // the gate has lifted onto the dark stage: the lamps switch on in view, and the throws come on their rise
-    if (e && darkened) e.anim(e.grade, { dim: [.18, 1], bloom: [1.6, 1] }, { dur: 900, ease: "inout" });
-    await wait(reduced() ? 200 : 450);
-    return;
-  }
-  // a stage already lit (a replay's start) goes down with the board's veil instead of dropping to dark at once
-  if (e) e.anim(e.grade, darkened ? { dim: [.18, .18, 1] } : { dim: [1, .18, .18, 1] }, { dur: 1600, at: darkened ? [0, .5, 1] : [0, .1, .5, 1], ease: "inout" });
-  await playBoard(over, { say: "배틀 시작", rows: [{ label: seated ? "상대" : "", name: theirs }, { label: seated ? "나" : "", name: ours }] }, [[ms(700), {}]]);
+  /* the stage hideAll left dark comes back to its own lamps in the same turn as the lamps' tween starts at its dark end, so no frame
+     draws it lit in between (2026-11-07, the user: the arena flashed as a battle started; it stood lit for the two frames waited) */
+  e.gradeBase.dim = 1;
+  if (darkened) e.anim(e.grade, { dim: [.18, 1], bloom: [1.6, 1] }, { dur: 900, ease: "inout" });
+  await wait(reduced() ? 200 : 450);
 }
 /* the end (DESIGN.md "Battle", The big moments): the match board over the arena, the camera holding wide. The Pokémon each side knocked
    out switch on, then the winner's row inverts with 승리 and the loser's dims (a tie dims both); it stands a moment and goes */

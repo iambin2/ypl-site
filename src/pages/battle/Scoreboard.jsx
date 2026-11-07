@@ -4,26 +4,26 @@ import { flushSync } from "react-dom";
 import Seg from "../../components/common/Seg.jsx";
 import { DUR, EASE_IN, STAGGER, light, pause, reduced } from "../../components/common/motion.js";
 
-/* 배틀의 전광판 (DESIGN.md "Battle", Going in and The big moments; redrawn 2026-11-06 when the band with VS read as cheap and
-   machine-made). One board says every moment of a match the way a stadium board does, so going in, the opening and the end are one
-   object: a head strip (the lamp and what this is, and on the right what the cells count), then the two sides as rows, the opponent
+/* 배틀의 전광판 (DESIGN.md "Battle", The big moments; redrawn 2026-11-06 when the band with VS read as cheap and machine-made). The
+   end of a match says itself the way a stadium board does (going in and the opening had it too until 2026-11-07, when the user found the
+   배틀 시작 popup made the start stutter): a head strip (the lamp and what this is, and on the right what the cells count), then the two sides as rows, the opponent
    above and us below, as the stage stands them, each ending in one segment cell, the Pokémon it has knocked out. Before a match the
-   cells are dark (an unplayed score); when it goes live the lamp turns amber; at the end the digits switch on and the winner's row
+   cells are dark (an unplayed score); at the end the digits switch on and the winner's row
    inverts with 승리 while the loser's dims, and the lamp lights (done: a result just lit, 2026-11-06: the dark housing beside 종료
    read as a broken square). It switches on and leaves; nothing slides, scales or flies, and the camera holds.
-   A row is { label, name, score, won, lost, muted }. */
+   A row is { label, name, score, won, lost }. */
 const COUNTS = "쓰러뜨린 포켓몬";
 
-function Board({ say, live = false, done = false, rows }) {
+function Board({ say, done = false, rows }) {
   return (
     <div className="bt-board">
       <div className="pn bt-board-head">
-        <i className={"lamp " + (live ? "sig" : done ? "" : "unlit")} aria-hidden="true" />
+        <i className={"lamp" + (done ? "" : " unlit")} aria-hidden="true" />
         <span className="bt-board-say">{say}</span>
         <span className="bt-board-note">{COUNTS}</span>
       </div>
       {rows.map((r, i) => (
-        <div key={i} data-rise="" className={(r.won ? "inv" : "pn") + " bt-board-row" + (r.lost ? " lost" : "") + (r.muted ? " muted" : "")}>
+        <div key={i} data-rise="" className={(r.won ? "inv" : "pn") + " bt-board-row" + (r.lost ? " lost" : "")}>
           <span className="bt-board-who">
             <span className="bt-board-label">{r.label || " "}</span>
             <b className="bt-board-name">{r.name}</b>
@@ -36,7 +36,7 @@ function Board({ say, live = false, done = false, rows }) {
 }
 
 /* a board in host, drawn at once; set() changes it in place (a digit that changes brightens once, a row that inverts tones) */
-export function mountBoard(host, props) {
+function mountBoard(host, props) {
   const root = createRoot(host);
   let now = props;
   const draw = next => { now = { ...now, ...next }; flushSync(() => root.render(<Board {...now} />)); };
@@ -53,8 +53,7 @@ export function mountBoard(host, props) {
   };
 }
 
-/* the board inside the stage (its .bs-over), centred over the arena, for the opening of a replay and for the end */
-/* both on the veil, the arena in view under it (2026-11-07: the end switched the arena off to the ground and back, "경기장 위에 떴으면") */
+/* the board inside the stage (its .bs-over), centred over the arena at the end, on the veil with the arena in view under it (2026-11-07: the end switched the arena off to the ground and back, "경기장 위에 떴으면") */
 export async function playBoard(over, props, steps = []) {
   if (!over) return;
   const host = document.createElement("div");

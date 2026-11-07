@@ -573,8 +573,8 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-side-title { display: none; }
 @media (min-width: 1200px) { .bt-side > .bt-side-title { display: block; order: -4; margin-bottom: calc(var(--s2) - var(--s3)); } }
 
-/* ---------- the match board (src/pages/battle/Scoreboard.jsx; DESIGN.md "Battle", Going in and The big moments): one board for going
-   in, the opening and the end. A head strip (the lamp and what this is, what the cells count at the right), then the opponent's row above
+/* ---------- the match board (src/pages/battle/Scoreboard.jsx; DESIGN.md "Battle", The big moments): the board of the end.
+   A head strip (the lamp and what this is, what the cells count at the right), then the opponent's row above
    ours, each a counter: the label over the name at 32, one segment cell at 40, the Pokémon it knocked out. The winner's row inverts;
    the loser's mutes ---------- */
 /* its seams show its own ground, never the arena's lines through them */
@@ -589,11 +589,8 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-board-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); transition: color var(--move-tone); }
 .bt-board-row.inv .bt-board-label { color: var(--ground); }
 /* the loser's row mutes as one: its label never lit over a muted name */
-.bt-board-row:is(.lost, .muted) :is(.bt-board-label, .bt-board-name, .seg) { color: var(--mute); }
-/* going in: the page switches off to its ground and the board stands in its middle */
-.bt-gate { position: fixed; inset: 0; z-index: calc(var(--z-modal) + 1); display: grid; place-items: center; pointer-events: all; background: var(--ground); color: var(--lit); }
-@media (min-width: 860px) { .bt-gate .bt-board { width: min(100% - var(--s8) * 2, 709px); } }
-/* the opening and the end: laid on the veil over the arena, in its middle, as a dialog is laid on the veil (DESIGN.md "Sheets"). The veil
+.bt-board-row.lost :is(.bt-board-label, .bt-board-name, .seg) { color: var(--mute); }
+/* the end: laid on the veil over the arena, in its middle, as a dialog is laid on the veil (DESIGN.md "Sheets"). The veil
    and the board are the site's own, in its theme, not the arena's night: in light a night board on a white veil lost its winner's
    inverted row into the veil. The arena overrides the tokens, so the site's are handed through under their own names */
 :root {
