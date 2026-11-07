@@ -135,6 +135,8 @@ test("the message window says only what the games say, with every name filled (f
   // an ability is the popup alone, never a "[…의 …]" line
   const intimidate = reader.read("|-ability|p2a: Pyroar|Intimidate|boost");
   assert.deepEqual(intimidate.lines, []);
+  // nor any of Showdown's own words: its clause notices and counts are not the game's
+  assert.deepEqual(says("|-message|Sleep Clause Mod activated."), []);
   assert.equal(intimidate.event.verb, "ability");
   // the names a template asks for are there
   assert.deepEqual(says("|-start|p2a: Pyroar|Disable|Flamethrower|[from] ability: Cursed Body|[of] p1a: Slowbro"), ["상대 화염레오의 화염방사를 봉인했다!"]);

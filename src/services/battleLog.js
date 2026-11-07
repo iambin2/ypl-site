@@ -596,7 +596,8 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
         event = { verb: "change", ident: args[0] };
         break;
       }
-      case "-message": lines.push(args[0]); break;
+      // -message is Showdown speaking for itself (Sleep Clause, Endless Battle Clause, "Pokemon left" counts), in English: never the game's
+      case "-message": break;
       default: break;
     }
     return { lines, event, reveal };
