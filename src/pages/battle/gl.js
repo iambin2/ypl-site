@@ -692,7 +692,7 @@ class Engine {
     this.light = document.documentElement.dataset.theme === "light" ? 1 : 0;
     this.lightK = this.light;
     this.actors = new Map();
-    this.tweens = []; this.timers = []; this.strips = []; this.sprites = [];
+    this.tweens = []; this.timers = []; this.strips = []; this.sprites = []; this.decals = [];
     this.grade = { ...GRADE_BASE }; this.gradeBase = { ...GRADE_BASE };
     this.groups = new Float32Array(32); this.groups[0] = 1;
     this.fxData = new Float32Array(CAP * FLOATS); this.head = 0; this.dirty = []; this.liveUntil = -1; this.distUntil = -1;
@@ -930,6 +930,21 @@ class Engine {
   }
   clearField() { this.fieldCount = 0; this.fieldDirty = true; }
   strip(s) { s.born = this.T; this.strips.push(s); return s; }
+  // a painted canvas as a texture (premultiplied, mipmapped): the field's decals and a move's thrown pieces share it
+  texture(canvas) {
+    const gl = this.gl, tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return tex;
+  }
+  // a decal: { tex, rect: [x, y, w, h] or T => [x, y, w, h, rot], group, alpha }, drawn on the floor behind the Pokémon
+  decal(d) { this.decals.push(d); return d; }
+  dropDecal(d) { const i = this.decals.indexOf(d); if (i >= 0) this.decals.splice(i, 1); if (!d.shared) this.gl.deleteTexture(d.tex); }
 
   /* ---------- the Pokémon ---------- */
   // what stands in each slot is read from the stage's DOM (Stage.jsx keeps it as layout and pick targets)
@@ -1018,6 +1033,18 @@ class Engine {
     const sp = P.sprite;
     // reflections on the floor
     for (const a of this.ordered()) this.drawActor(a, view, true);
+    // the field's painted pieces (a web on the floor, caltrops, a wall round a side), crisp at any size, behind the Pokémon;
+    // a decal marked front (the foe's wall, glass between them and us) is drawn over them
+    const decals = front => { for (const d of this.decals.slice()) {
+      if (Boolean(d.front) !== front) continue;
+      // a move's own decal (a stone in flight, a wall going up) ends at its time
+      if (d.until && this.T > d.until) { this.dropDecal(d); continue; }
+      const al = (typeof d.alpha === "function" ? d.alpha(this.T) : d.alpha ?? 1) * (d.group ? this.groups[d.group] : 1);
+      if (al < .003) continue;
+      const r = typeof d.rect === "function" ? d.rect(this.T) : d.rect;
+      this.drawQuad(d.tex, r, view, { alpha: al, bright: g.dim, rot: r[4] || 0 });
+    } };
+    decals(false);
     const particles = (layer, pass = 0) => {
       const pp = P.particle;
       gl.useProgram(pp.p);
@@ -1035,6 +1062,7 @@ class Engine {
     particles(0);
     this.drawStrips(view, 0);
     for (const a of this.ordered()) this.drawActor(a, view, false);
+    decals(true);
     particles(1);
     this.drawStrips(view, 1);
     if (this.sprites.length) this.sprites = this.sprites.filter(sp2 => { const o = sp2.at(this.T); if (!o) return false; this.drawQuad(o.tex || sp2.tex, [o.x - o.w / 2, o.y - o.h / 2, o.w, o.h], view, { alpha: o.alpha ?? 1, rot: o.rot || 0, flash: o.flash || 0 }); return true; });

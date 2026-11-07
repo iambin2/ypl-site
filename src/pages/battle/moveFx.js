@@ -6,6 +6,7 @@
    동사 하나는 promise를 돌려주고, 그것이 맞는 순간이다(결과 줄이 그때 함께 뜬다). */
 import MOVE_FX from "../../data/move-fx.json";
 import { sfx, verbSound } from "./sfx.js";
+import { rockPieces, spikePieces, webThreads, wallSheet, pieceSheet } from "./arena.js";
 
 export const recipeOf = id => MOVE_FX[id] || "";
 export function parse(phase) {
@@ -1440,30 +1441,80 @@ export function makeDraw(k) {
     e.emit({ n: 10, at: () => [rand(0, 1) * W, rand(.4, .95) * H], tex: "billow", lit: true, ramp: e.light ? "smoke.l" : "smoke", size: [W * .2, W * .36], life: [900, 1200], delay: 700, occ: .5, emis: 0, erode: .55, rot: "rand", alpha: .45, grow: true });
     await after(c, 1100);
   };
+  /* hazards (2026-11-07 remake): the user throws the very pieces the field then keeps (arena.js paints both), so each lands where it
+     stays and the field takes over without a jump: stones arc over and settle into their bob, caltrops hop once as they land, the web
+     is spun thread by thread on the floor in the order a spider lays it. A thrown piece is a decal behind the Pokémon; it holds a
+     while after the move so the field's own copy has faded in under it, then goes */
+  const HANDOFF = 1200;
+  const thrown = (c, sh, path, { from, end }) => {
+    const e = c.e, t0 = e.T, [x, y, w, h] = sh.rect, cx = x + w / 2, cy = y + h / 2;
+    return e.decal({ tex: e.texture(sh.c), until: t0 + end + 500, alpha: T => (T < t0 + from ? 0 : clamp((t0 + end + 500 - T) / 500)), rect: T => {
+      const [px, py, k, r] = path(T - t0, cx, cy);
+      return [px - w * k / 2, py - h * k / 2, w * k, h * k, r];
+    } });
+  };
   D.hazard = async c => {
-    // the user throws its trap onto the foe's side (Stealth Rock, Spikes, Toxic Spikes, Sticky Web)
-    const e = c.e, own = actorOf(c.stage, c.from)?.own, id = c.id, a0 = A(c, .6);
+    const e = c.e, own = actorOf(c.stage, c.from)?.own, id = c.id, a0 = A(c, .6), U0 = U(c), far = !own, side = own ? "foe" : "own";
     camWide(c, .5);
-    const side = [...c.stage.querySelectorAll(`.bs-side.${own ? "foe" : "own"} .bs-slot`)].map(s => s.getBoundingClientRect()), box = c.stage.getBoundingClientRect();
-    const cx = side.length ? (Math.min(...side.map(r => r.left)) + Math.max(...side.map(r => r.right))) / 2 - box.left : e.W * (own ? .65 : .35), cy = side.length ? Math.max(...side.map(r => r.bottom)) - box.top : e.H * (own ? .5 : .9);
-    const U0 = U(c), w = side.length ? Math.max(...side.map(r => r.right)) - Math.min(...side.map(r => r.left)) : e.W * .4;
+    // a piece's flight: from the user to its place over dur, arcing up, turning, its size going from the user's depth to its own
+    const arcTo = ({ delay, dur, lift, spin, k0, settle = null }) => (t, cx, cy) => {
+      const u = clamp((t - delay) / dur), q = 1 - Math.pow(1 - u, 2.2), px = lerp(a0[0], cx, q), py = lerp(a0[1], cy, q) - Math.sin(Math.PI * u) * lift;
+      if (u < 1) return [px, py, lerp(k0, 1, q), (1 - q) * spin];
+      return settle ? settle(t - delay - dur, cx, cy) : [cx, cy, 1, 0];
+    };
+    const k0 = far ? 1.5 : .7, lift = e.H * .28;
     if (id === "stealthrock") {
-      // 포켓몬 챔피언스: a spray of small pointed cream stones scattered low and wide over the foe's side, hanging there
-      for (let i = 0; i < 28; i++) { const to = [cx + rand(-.65, .65) * w, cy - rand(10, 70) * U0]; fly(c, a0, to, { tex: "chip", lit: true, ramp: "chip", size: rand(10, 18) * U0, dur: 480, arc: .3, delay: rand(0, 220), occ: 1, emis: .05, spin: rand(-8, 8), trail: false, glowK: 0, core: false }); }
-      await after(c, 760);
+      // the stones arc over one after another and settle into the slow bob they keep
+      const pieces = rockPieces(e, !own);
+      pieces.forEach((p, i) => {
+        const delay = 40 + i * 45, dur = 520, sh = pieceSheet(e, p), amp = sh.rect[3] * .05, mid = [sh.rect[0] + sh.rect[2] / 2, sh.rect[1] + sh.rect[3] / 2];
+        thrown(c, sh, arcTo({ delay, dur, lift, spin: (i % 2 ? 1 : -1) * 2.4, k0, settle: (t, cx, cy) => { const T = e.T; return [cx, cy + Math.sin(T / p.period + p.phase) * amp - Math.max(0, 1 - t / 260) * amp * 2, 1, Math.sin(T / p.period * .7 + p.phase) * .045]; } }), { from: delay, end: delay + dur + HANDOFF });
+        e.at(delay + dur, () => glints(e, mid, 26 * U0, 1, "glint", { r: .2, over: 40 }));
+      });
+      sfx("shot", { type: "rock", dur: 520, at: 40, pan: panAt(c, a0) });
+      await after(c, 40 + pieces.length * 45 + 560);
       return;
     }
     if (id === "spikes" || id === "toxicspikes") {
-      // small four-pointed caltrops land all round the foe's feet, each throwing a yellow glint as it strikes the floor
-      const ramp = id === "toxicspikes" ? "toxic.c" : "steel.c";
-      for (let i = 0; i < 9; i++) { const to = [cx + rand(-.6, .6) * w, cy - rand(0, 14) * U0], d = rand(0, 260); fly(c, a0, to, { tex: "caltrop", lit: true, ramp, size: rand(12, 17) * U0, aspect: 1.6, dur: 480, arc: .35, delay: d, occ: 1, emis: .15, spin: 6, trail: false, glowK: 0, core: false }); e.at(480 + d, () => { glints(e, to, 40 * U0, 2, id === "toxicspikes" ? "poison.h" : "electric.h", { r: .3, over: 60 }); sparks(e, to, 5, "electric", { ramp: "gold", speed: [80, 180], len: [4, 8] }); }); }
-      await after(c, 820);
+      // the next row of caltrops: thrown low, each lands with one small hop and a puff of dust, the toxic ones a violet splash
+      const toxic = id === "toxicspikes", keys = [...(e.fieldWant?.keys() || [])], mine = keys.find(k => k.startsWith(`${side}:${id}:`)), other = keys.some(k => k.startsWith(`${side}:${toxic ? "spikes" : "toxicspikes"}:`));
+      const have = mine ? Number(mine.split(":")[2]) || 1 : 0, row = Math.min(have, toxic ? 1 : 2);
+      const pieces = spikePieces(e, !own, row + 1, other, toxic, row);
+      pieces.forEach((p, i) => {
+        const delay = 60 + i * 110, dur = 460, sh = pieceSheet(e, p), hop = sh.rect[3] * .35;
+        thrown(c, sh, arcTo({ delay, dur, lift: lift * .7, spin: 9, k0, settle: (t, cx, cy) => { const u = clamp(t / 240); return [cx, cy - Math.sin(Math.PI * u) * hop * (1 - u * .3), 1, (1 - u) * .5]; } }), { from: delay, end: delay + dur + HANDOFF });
+        e.at(delay + dur, () => {
+          dust(e, [p.shadow.x, p.shadow.y], p.size * 1.2, 5);
+          glints(e, p.tip, 30 * U0, 1, toxic ? "poison.h" : "glint", { r: .2, over: 40 });
+          if (toxic) e.emit({ n: 8, at: [p.shadow.x, p.shadow.y], r: p.size * .2, tex: "drop", lit: true, ramp: "toxic.c", vel: () => [rand(-60, 60), -rand(60, 140)], acc: [0, 500], face: true, size: [p.size * .14, p.size * .08], life: [300, 450], occ: .8, emis: .3, layer: 0 });
+        });
+      });
+      sfx("shot", { type: "steel", dur: 460, at: 60, pan: panAt(c, a0) });
+      await after(c, 60 + pieces.length * 110 + 500);
       return;
     }
-    // Sticky Web: a web flies over and spreads out flat on the foe's floor
-    fly(c, a0, [cx, cy - 10 * U0], { tex: "web", ramp: "white.h", size: 30 * U0, dur: 520, arc: .35, spin: 2, trail: false, glowK: 0, core: false, alpha: .9 });
-    e.at(520, () => e.emit({ at: [cx, cy], tex: "web", ramp: "white.h", size: [w * .2, w * .8], aspect: 3, life: 600, alpha: .8, layer: 0, grow: true }));
-    await after(c, 760);
+    // Sticky Web: a ball of silk arcs over and bursts on the floor, then the web is spun out from it: the spokes run out, the frame
+    // joins them, the spiral is wound from the outside in, the hub knits last
+    const web = webThreads(e, !own), [wx, wy] = web.center;
+    fly(c, a0, [wx, wy], { tex: "dot", ramp: e.light ? "ink" : "white.h", size: 9 * U0, dur: 460, arc: .4, trail: false, glowK: 1.4, core: false, alpha: .95 });
+    await after(c, 460);
+    glints(e, [wx, wy], 40 * U0, 3, "glint", { r: .3, over: 60 });
+    const t0 = e.T, order = { anchor: [0, 160], spoke: [0, 240], frame: [200, 220], spiral: [380, 620], hub: [960, 160] }, count = {}, idx = {};
+    for (const t of web.threads) count[t.kind] = (count[t.kind] || 0) + 1;
+    const color = e.light ? "#2B4268" : "#EEF4FF", END = 1150 + HANDOFF;
+    for (const t of web.threads) {
+      const [start, span] = order[t.kind], i = idx[t.kind] = (idx[t.kind] ?? -1) + 1, n = count[t.kind], radial = t.kind === "spoke" || t.kind === "anchor";
+      // the spiral goes on from its outer turn inward; the rest in the order they were drawn
+      const at = start + span * (t.kind === "spiral" ? (n - 1 - i) / n : i / n) * (radial ? .3 : 1), grow = radial ? 220 : t.kind === "spiral" ? 60 : 120;
+      e.strip({ dur: END, mode: 1, color, emis: e.light ? .2 : .5, occ: e.light ? .8 : .2, layer: 0, alpha: .9, points: () => {
+        const age = e.T - t0, u = clamp((age - at) / grow);
+        if (u <= 0) return null;
+        const fade = clamp((END - age) / 500), m = t.pts.length - 1, upto = u * m, out = [];
+        for (let j = 0; j <= Math.ceil(upto); j++) { const f = Math.min(j, upto), a = t.pts[Math.floor(f)], b = t.pts[Math.min(m, Math.floor(f) + 1)], r = f - Math.floor(f); out.push([lerp(a[0], b[0], r), lerp(a[1], b[1], r), t.w * 1.7, t.a * fade]); }
+        return out.length > 1 ? out : null;
+      } });
+    }
+    await after(c, 1150);
   };
   D.weather = async c => {
     // the user calls the weather and the sky answers: rain clouds roll in, the sun blazes out, sand whirls up, snow swirls down
@@ -1536,25 +1587,39 @@ export function makeDraw(k) {
     await after(c, 500);
   };
   D.screen = async c => {
-    /* a wall goes up in front of the side as in 포켓몬 챔피언스: Reflect a gate of upright golden bars, Light Screen the same in pale pink
-       and lavender, Aurora Veil curtains of aurora with gold dust, Safeguard a soft veil */
-    const e = c.e, [x, y] = A(c, .45), s = S(c), id = c.id, own = actorOf(c.stage, c.from)?.own, fx = x + (own ? s * .55 : -s * .55);
-    camUser(c, 1.06, .35);
-    if (id === "reflect" || id === "lightscreen") {
-      const ramp = id === "reflect" ? "bar.gold" : "bar.pink", h = s * 1.5, n = 11;
-      for (let i = 0; i < n; i++) { const u = i / (n - 1) - .5; e.emit({ at: [fx + u * s * 1.1, y + Math.abs(u) * s * .1], tex: "glow", ramp, size: [h, h], aspect: .06, life: 900, delay: Math.abs(u) * 200, alpha: i % 3 ? .7 : 1, grow: true }); }
-      for (const dy of [-h / 2, h / 2]) e.emit({ at: [fx, y + dy], tex: "streak", ramp, size: [s * 1.2, s * 1.2], aspect: 1, life: 900, alpha: .9, grow: true });
-      glints(e, [fx, y], s, 12, "glint", { r: .7, over: 500 });
-    } else if (id === "auroraveil") {
-      // curtains of aurora, green through blue to violet and pink, swaying as they hang, gold dust falling through them
-      for (let i = 0; i < 16; i++) e.emit({ at: [fx + rand(-.75, .75) * s, y - s * .15], vel: [rand(-1, 1) * s * .25, -s * .15], tex: "glow", ramp: ["grass.e", "ice.h", "toxic.h", "fairy.h"][i % 4], size: [s * 1.7, s * 2], aspect: rand(.07, .16), life: [900, 1300], delay: i * 30, alpha: .6, grow: true });
-      e.emit({ n: 40, at: [fx, y], r: s * .8, tex: "dot", ramp: "gold", size: [2, 3], vel: () => [rand(-10, 10), rand(-20, 10)], life: [700, 1100], over: 400 });
-      glints(e, [fx, y], s, 10, "glint", { r: .8, over: 600 });
-    } else {
-      const ramp = id === "safeguard" ? "fairy.h" : `${T(c)}.h`;
-      e.emit({ at: [fx, y], tex: "hexgrid", ramp, size: [s * .3, s * 2], aspect: 1.5, life: 800, alpha: .9, grow: true });
-    }
-    await after(c, 700);
+    /* a wall goes up round the user's side (2026-11-07 remake): a line of light runs along the floor's arc from the middle out to its
+       ends, the pane rises from it with its top edge lit, then its pattern lights (Reflect's hexagons, Light Screen's lattice, Aurora
+       Veil's curtains, Safeguard's dome) and the field keeps the very same wall (arena.js) */
+    const e = c.e, own = !!actorOf(c.stage, c.from)?.own, id = c.id;
+    camWide(c, .5);
+    const made = wallSheet(e, own, id);
+    if (!made) { await after(c, 400); return; }
+    const { sh, wall, color } = made, lay1 = wall.front ? 1 : 0, t0 = e.T, RISE = [260, 560], LIT = 760, END = LIT + 300 + HANDOFF, n = 40, U0 = U(c);
+    const ts = Array.from({ length: n + 1 }, (_, j) => lerp(wall.t0, wall.t1, j / n)), mid = n / 2;
+    const rise = () => { const u = clamp((e.T - t0 - RISE[0]) / RISE[1]); return 1 - Math.pow(1 - u, 3); };
+    const fade = () => clamp((END - (e.T - t0)) / 400);
+    // the foot: drawn out from the middle of the arc to both ends
+    for (const dir of [1, -1]) e.strip({ dur: END, mode: 1, color, emis: e.light ? .25 : .45, occ: e.light ? .7 : .3, alpha: .85, layer: lay1, points: () => {
+      const u = clamp((e.T - t0) / 320), m = Math.round(u * mid);
+      if (m < 1) return null;
+      return Array.from({ length: m + 1 }, (_, j) => { const [x, y] = wall.at(ts[mid + dir * j], 0); return [x, y, 2.2 * U0 * wall.k, fade() * (.45 + .55 * (1 - j / mid))]; });
+    } });
+    // the pane rising: its glass and its lit top edge, in the wall's colour, fading as the wall itself lights
+    for (let j = 0; j < n; j++) e.strip({ dur: END, color, emis: e.light ? .2 : .4, occ: e.light ? .5 : .1, alpha: .1, layer: lay1, quad: () => {
+      const u = rise();
+      if (u <= 0 || e.T - t0 > LIT + 300) return null;
+      return [wall.at(ts[j], 0), wall.at(ts[j + 1], 0), wall.up(ts[j + 1], u), wall.up(ts[j], u)];
+    } });
+    e.strip({ dur: END, mode: 1, color, emis: e.light ? .3 : .55, occ: e.light ? .7 : .3, alpha: .9, layer: lay1, points: () => {
+      const u = rise();
+      if (u <= 0) return null;
+      const fl = 1 - clamp((e.T - t0 - LIT) / 300) * .7;
+      return ts.map((t, j) => { const [x, y] = wall.up(t, u); return [x, y, 2.8 * U0 * wall.k, fl * fade() * (.55 + .45 * Math.sin(Math.PI * j / n))]; });
+    } });
+    // the wall itself lights, and stays until the field's copy is under it
+    e.decal({ tex: e.texture(sh.c), rect: sh.rect, front: wall.front, until: t0 + END, alpha: T => clamp((T - t0 - LIT) / 260) * fade() });
+    e.at(LIT, () => { for (let j = 1; j < 6; j++) glints(e, wall.up(lerp(wall.t0, wall.t1, j / 6), 1), 34 * U0, 1, "glint", { r: .2, over: 80 }); });
+    await after(c, LIT + 300);
   };
   D.hex = async c => {
     // Hex: violet ghost-fire wells up round the target and bites into it

@@ -179,6 +179,8 @@ const BUILD = {
     // lightning snapping just over it, four-rayed glints
     const { W, H } = e, U = unit(e);
     floorTint(e, E, "electric.h", 1.6);
+    // (2026-11-07) a fine diamond lattice lies painted in the floor, running away with the court, as a charged plate would
+    { const sh = floorSheet(e); paintLattice(sh.g, e); lay(e, sh); }
     e.extra.push(...[.2, .45, .7, .95].map((t0, i) => e.strip({ dur: Infinity, mode: 1, color: i % 2 ? "#E8FF6A" : "#FFE24A", emis: e.light ? .4 : .9, occ: e.light ? .7 : 0, alpha: .32, layer: 0, points: () => {
       const n = 36, t = (t0 + e.T * .00008) % 1, d = depth(t);
       return Array.from({ length: n + 1 }, (_, j) => { const u = -1.8 + j / n * 3.6, [x, y] = P3(W, H, u, 0, d + Math.sin(u * 4 + e.T * .002 + i) * .06 * d); return [x, y, (2 + t * 6) * U, Math.sin(Math.PI * j / n) * Math.sin(Math.PI * t)]; });
@@ -191,10 +193,9 @@ const BUILD = {
     // small leaves drift (2026-11-06: it is a wash, not the lawn of tufts the first round grew)
     const { W, H } = e, U = unit(e);
     floorTint(e, E, "grass.d", e.light ? 3 : 4.6);
-    for (let i = 0; i < 46; i++) {
-      const t = Math.pow((i + rand(0, 1)) / 46, .85) * 1.05, [x, y] = floorAt(W, H, rand(-1.5, 1.5), t), f = flatAt(H, y), sz = lerp(60, 220, t) * U;
-      E({ at: [x, y], tex: "blades", ramp: "grass.e", size: [sz * f, sz * f], aspect: 1 / f, hold: true, life: 1e7, loop: true, alpha: e.light ? .45 : .34, occ: e.light ? .6 : .2, emis: .4, layer: 0 });
-    }
+    // (2026-11-07) the grain is fine blades painted crisp in the floor's perspective, small far off and longer near, in three greens;
+    // the stamped patches it replaces blurred into a muddy wash
+    { const sh = floorSheet(e); paintBlades(sh.g, e); lay(e, sh); }
     E({ n: 26, at: () => [rand(0, 1) * W, rand(.35, .95) * H], tex: "glint", ramp: "white.h", size: [1, 9 * U], vel: () => [rand(-6, 6), rand(-14, -4)], life: [1400, 2600], loop: true, over: 3000, alpha: .7, layer: 0, grow: true });
     E({ n: 12, at: () => floorAt(W, H, rand(-1.2, 1.2), rand(.1, 1)), tex: "leaf", lit: true, ramp: "leaf.c", size: [6 * U, 6 * U], aspect: 1.9, vel: () => [rand(-14, 14), rand(-22, -8)], spin: [-2, 2], rot: "rand", bob: [6, 12], period: [3, 5], life: [3500, 6000], loop: true, over: 6000, alpha: .9, occ: 1, emis: .15, layer: 0 });
   },
@@ -210,16 +211,21 @@ const BUILD = {
     // roll over the floor, bending as they go; nothing stands up out of it
     const { W, H } = e, U = unit(e);
     floorTint(e, E, "psychic.h", 1.4);
-    for (let i = 0; i < 9; i++) {
-      const [x, y] = floorAt(W, H, rand(-1.1, 1.1), rand(.1, .95)), f = flatAt(H, y), sz = W * rand(.5, .9) * f;
-      E({ at: [x, y], tex: "ring", ramp: "psy.wave", size: [sz * .1, sz], aspect: 1 / f, life: rand(2800, 3800), loop: true, over: 3800, alpha: .6, emis: e.light ? .5 : 1, occ: e.light ? .35 : 0, layer: 0, grow: true });
+    // (2026-11-07) ripples run out across the floor from four points, each a true circle lying in the court's perspective
+    const rr = seeded(53), ripples = [];
+    for (let i = 0; i < 4; i++) {
+      const X0 = (rr() * 2 - 1) * 1.1 * ACROSS, Z0 = lerp(Z_FAR - .3, 1.9, rr()), per = 3400 + rr() * 900;
+      for (const off of [0, .5]) ripples.push(e.strip({ dur: Infinity, mode: 1, color: (i + off * 2) % 2 ? "#C77DFF" : "#FF7AC8", emis: e.light ? .4 : .9, occ: e.light ? .8 : 0, alpha: .5, layer: 0, points: () => {
+        const ph = ((e.T / per) + off + i * .23) % 1, r = lerp(.06, 1.1, ph), n = 56;
+        return Array.from({ length: n + 1 }, (_, j) => { const a = j / n * Math.PI * 2, [x, y] = P3(W, H, (X0 + Math.cos(a) * r) / ACROSS, 0, Math.max(1.2, Z0 + Math.sin(a) * r * .9)); return [x, y, (1.2 + ph * 1.8) * U, Math.sin(Math.PI * ph) * (1 - ph * .5)]; });
+      } }));
     }
     E({ n: 20, at: () => floorAt(W, H, rand(-1.2, 1.2), rand(.05, 1)), tex: "glow", ramp: "psychic.h", size: [4 * U, 2 * U], vel: () => [rand(-6, 6), rand(-18, -8)], bob: [5, 10], period: [3, 5], life: [2600, 4200], loop: true, over: 4200, alpha: .55, layer: 0 });
     // the waves: lines lying on the floor across the court, each bending in a slow wave that runs along it
-    return [.16, .34, .55, .78, 1].map((t, i) => e.strip({ dur: Infinity, mode: 1, color: i % 2 ? "#C77DFF" : "#FF7AC8", emis: e.light ? .4 : 1, occ: e.light ? .8 : 0, alpha: .45, layer: 0, points: () => {
+    return [...ripples, ...[.16, .34, .55, .78, 1].map((t, i) => e.strip({ dur: Infinity, mode: 1, color: i % 2 ? "#C77DFF" : "#FF7AC8", emis: e.light ? .4 : 1, occ: e.light ? .8 : 0, alpha: .45, layer: 0, points: () => {
       const n = 40, d = depth(t);
       return Array.from({ length: n + 1 }, (_, j) => { const u = -1.8 + j / n * 3.6, zz = d + Math.sin(u * 3.2 + e.T * .0012 + i) * .12 * d / 4, [x, y] = P3(W, H, u, 0, zz); return [x, y, (1.4 + t * 2.2) * U, .35 + .65 * Math.sin(Math.PI * j / n)]; });
-    } }));
+    } }))];
   },
   /* ---------- a room: a box of light standing on the court in the court's own perspective ---------- */
   room(e, E, id) {
@@ -279,16 +285,21 @@ const BUILD = {
     E({ n: 26, at: () => [rand(-.05, 1.05) * W, -H * .1], vel: () => [0, rand(220, 320)], tex: "chevron", ramp: "psychic.h", size: [8 * unit(e), 8 * unit(e)], rot: Math.PI, life: H * 1.2 / 270 * 1000, loop: true, over: 4400, alpha: .14, emis: .8, layer: 0 });
   },
   /* ---------- a side's own things ---------- */
-  /* hazards as 포켓몬 챔피언스 sets them: Stealth Rock a spray of small pointed cream stones hanging low and wide over the side, Spikes
-     small silver caltrops scattered round its feet (toxic ones violet). The games hide them once set; the stage keeps them in view,
-     small and lit, so a player sees what waits on each side */
+  /* 2026-11-07 remake (the user: the field's lasting things did not belong with the court, Sticky Web plainly a vector stamp). Each is
+     now drawn in the court's own perspective and painted crisp, as the court's lines are: the stones and caltrops are faceted solids
+     lit from the upper left like the HOME renders, each with its shadow on the floor; the web is real silk lying on the floor; a wall is
+     a curved pane standing round the side's back, told apart by its pattern (Reflect hexagons in gold, Light Screen a diamond lattice in
+     pink, Aurora Veil hanging curtains, Safeguard a dome), never by a bare line over the side. The games hide hazards once set; the stage
+     keeps them in view so a player sees what waits on each side */
   stealthrock(e, E, own) {
-    const b = SIDE_OF(e, own), w = b.r - b.l, h = b.bot - b.top, U = unit(e), n = own ? 14 : 18;
-    let seed = own ? 5 : 9; const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    for (let i = 0; i < n; i++) {
-      // (2026-11-07 round 3: tan stones half again as big and a little lit; small cream chips read as pale dust at the far side)
-      const t = (i + r()) / n, x = b.l - w * .15 + t * w * 1.3, y = b.bot - h * (.16 + .3 * r()), sz = (own ? 18 : 22) * U * (.7 + r() * .6);
-      E({ at: [x, y], tex: "chip", lit: true, ramp: "stone.l", size: [sz, sz], aspect: .7, rot: (r() - .5) * .8, spin: (r() - .5) * .2, bob: sz * .25, period: 2.4 + r() * 1.6, hold: true, life: 1e7, loop: true, alpha: 1, occ: 1, emis: .22, layer: r() < .5 ? 0 : 1 });
+    // pointed stones hanging round the side's back and flanks, each bobbing slowly over its own shadow
+    const pieces = rockPieces(e, own);
+    const sh = sheetFor(e, pieces.map(p => p.shadow).flatMap(s => [[s.x - s.rx, s.y - s.ry], [s.x + s.rx, s.y + s.ry]]), 4);
+    pieces.forEach(p => paintShadow(sh.g, p.shadow, e.light));
+    lay(e, sh);
+    for (const p of pieces) {
+      const one = pieceSheet(e, p), [x, y, w, h] = one.rect, amp = h * .05, per = p.period, ph = p.phase;
+      lay(e, one, T => { const s = Math.sin(T / per + ph); return [x, y + s * amp, w, h, Math.sin(T / per * .7 + ph) * .045]; });
     }
   },
   /* spikes and toxic spikes are counted by their rows (2026-11-06, the user: how many layers are down must read at a glance, as
@@ -296,46 +307,364 @@ const BUILD = {
      next a step behind it, so one, two or three rows are one, two or three layers. With both on a side, spikes keep the left half
      and toxic spikes the right, so neither hides in the other */
   spikes(e, E, own, layers = 1, both = false, toxic = false) {
-    const b = SIDE_OF(e, own), w = b.r - b.l, U = unit(e), h = b.bot - b.top, rows = Math.min(toxic ? 2 : 3, layers);
-    const l0 = both ? (toxic ? b.l + w * .52 : b.l - w * .08) : b.l - w * .08, span = both ? w * .56 : w * 1.16, sz = clamp(h * (own ? .24 : .3), 36 * U, 76 * U);
-    for (let row = 0; row < rows; row++) for (let i = 0; i < 3; i++) {
-      // each row a step deeper and a little smaller, shifted by a quarter place so the rows read apart
-      const k = 1 - row * .12, x = l0 + span * (i + .5 + (row % 2) * .25) / 3, y = b.bot + h * (own ? .02 : .03) - row * h * .11, s0 = sz * k;
-      E({ at: [x, y + s0 * .16], tex: "glow", ramp: "shadow", size: [s0 * .55, s0 * .55], aspect: 2.4, hold: true, life: 1e7, loop: true, alpha: .45, occ: .7, emis: 0, layer: 1 });
-      // (round 3: mid-grey iron, not near-white steel, so a caltrop reads as metal and not as a white star)
-      E({ at: [x, y], tex: "caltrop", lit: true, ramp: toxic ? "toxic.c" : "iron.l", size: [s0, s0], aspect: 1.15, hold: true, life: 1e7, loop: true, alpha: 1, occ: 1, emis: toxic ? .2 : .06, layer: 1 });
-    }
+    const pieces = spikePieces(e, own, layers, both, toxic);
+    const sh = sheetFor(e, pieces.flatMap(p => [...p.polys.flatMap(q => q.pts), [p.shadow.x - p.shadow.rx, p.shadow.y + p.shadow.ry]]), 4);
+    pieces.forEach(p => paintShadow(sh.g, p.shadow, e.light));
+    pieces.forEach(p => paintPolys(sh.g, p.polys));
+    lay(e, sh);
+    // the up-turned points catch the light now and then
+    for (const p of pieces) E({ at: p.tip, tex: "glint", ramp: toxic ? "poison.h" : "glint", size: [1, p.size * .5], life: rand(2200, 4200), loop: true, over: 4200, alpha: .85, layer: 0, grow: true });
   },
   stickyweb(e, E, own) {
-    const b = SIDE_OF(e, own), y = b.bot - (b.bot - b.top) * .02, w = (b.r - b.l) * .7, f = flatAt(e.H, y) * 1.3;
-    // (round 3: the silk reads: pale gold threads, laid wider and stronger; at .4 it vanished into the floor)
-    E({ at: [(b.l + b.r) / 2, y], tex: "web", ramp: e.light ? "ink" : "lamp", size: [w * f * 1.2, w * f * 1.2], aspect: 1 / f, hold: true, life: 1e7, loop: true, alpha: e.light ? .6 : .7, occ: .6, emis: .35, layer: 0 });
+    const web = webThreads(e, own);
+    const sh = sheetFor(e, web.threads.flatMap(t => t.pts), 4);
+    paintWeb(sh.g, web, e.light);
+    lay(e, sh);
+    // a dew drop on the silk glints now and then
+    for (const [x, y, r] of web.drops.filter((_, i) => i % 3 === 0)) E({ at: [x, y], tex: "glint", ramp: e.light ? "ice.h" : "glint", size: [1, r * 9], life: rand(2400, 5200), loop: true, over: 5200, alpha: .9, layer: 0, grow: true });
   },
-  // a screen: a pane standing over the side, barely there, its top edge lit in its colour; several stand at their own heights
   screen(e, E, own, id) {
-    const b = SIDE_OF(e, own), cx = (b.l + b.r) / 2, w = (b.r - b.l) * 1.06, h = (b.bot - b.top) * .92;
-    const look = { reflect: ["bar.gold", "#FFD45A"], lightscreen: ["bar.pink", "#FFB8F0"], auroraveil: ["aurora", "#8FFFD8"], safeguard: ["fairy.h", "#E8B8FF"], mist: ["white.h", "#FFFFFF"] }[id];
-    if (!look) return;
-    if (id === "mist" || id === "safeguard") {
-      E({ n: 5, at: () => [cx + rand(-.4, .4) * w, b.bot - rand(0, .15) * h], tex: "cloud", ramp: id === "mist" ? "steam" : "mist", size: [w * .4, w * .4], aspect: 2.4, vel: () => [rand(-6, 6), 0], bob: [3, 6], period: [5, 8], hold: true, life: 1e7, loop: true, alpha: .25, occ: .25, emis: .4, layer: 0 });
+    if (id === "mist") {
+      // a low white mist lying over the side's floor, drifting
+      const s = sideSpace(e, own), { W, H } = e, U = unit(e);
+      for (let i = 0; i < 14; i++) {
+        const t = -.6 + i / 13 * (Math.PI + 1.2), rr = rand(.5, 1.1), [x, y] = P3(W, H, (s.X * ACROSS + Math.cos(t) * (s.hw * 1.2 + .1) * rr) / ACROSS, 0, s.Z + Math.sin(t) * (s.hw * .6 + .05) * rr), f = flatAt(H, y) * 1.5, sz = Math.min(s.hw * 1.7 + .2, .9) * F * H / s.Z * rand(.7, 1);
+        E({ at: [x, y - sz * f * .15], tex: "cloud", ramp: e.light ? "smoke.l" : "steam", size: [sz * f, sz * f], aspect: 1 / f, bob: [3, 6], period: [5, 8], hold: true, life: 1e7, loop: true, alpha: e.light ? .45 : .58, occ: .55, emis: .3, layer: 0 });
+      }
+      E({ n: 10, at: () => { const [x, y] = P3(W, H, (s.X * ACROSS + rand(-1.2, 1.2) * s.hw) / ACROSS, 0, s.Z * rand(.95, 1.1)); return [x, y - rand(4, 30) * U]; }, tex: "dot", ramp: e.light ? "rain.l" : "snow", size: [2 * U, 1], vel: () => [rand(-4, 4), rand(-8, -3)], life: [2600, 4200], loop: true, over: 4200, alpha: .7, layer: 0 });
       return;
     }
-    const i = ["reflect", "lightscreen", "auroraveil"].indexOf(id), top = b.bot - h - i * h * .07, U = unit(e);
-    // the wall stays as the games raise it, only faint: Reflect and Light Screen upright bars of their light, Aurora Veil its curtains
-    const bars = id === "auroraveil" ? 16 : 13, ramp = id === "reflect" ? "bar.gold" : id === "lightscreen" ? "bar.pink" : "aurora.v";
-    for (let j = 0; j < bars; j++) { const u = (j + .5) / bars, x = cx - w / 2 + u * w, hh = (b.bot - top) * (id === "auroraveil" ? .7 + .3 * Math.sin(j * 1.7) : 1); E({ at: [x, b.bot - hh / 2], tex: "glow", ramp, size: [hh, hh], aspect: id === "auroraveil" ? .1 : .045, vel: [0, -2], bob: 2, period: 3 + j % 3, life: [3000, 5000], loop: true, over: 5000, alpha: id === "auroraveil" ? .2 : .16, emis: e.light ? .4 : .8, occ: e.light ? .3 : 0, layer: 1 }); }
-    return [e.strip({ dur: Infinity, mode: 1, color: look[1], emis: e.light ? .5 : 1, occ: e.light ? .4 : 0, alpha: .75, layer: 1, points: (k, age) => {
-      const grow = clamp(age / 500), n = 20;
-      return Array.from({ length: n + 1 }, (_, j) => { const t = j / n, x = lerp(cx - w / 2 * grow, cx + w / 2 * grow, t); return [x, top, 2.2 * U, .55 + .45 * Math.sin(Math.PI * t) * (.8 + .2 * Math.sin(t * 8 - e.T * .002))]; });
+    const wall = wallShape(e, own, id);
+    if (!wall) return;
+    const sh = sheetFor(e, wall.outline(), 6);
+    paintWall(sh.g, wall, id, e.light);
+    lay(e, sh, sh.rect, wall.front);
+    // a slow sheen runs along the pane now and then, as light along glass
+    const look = WALL_LOOK[id][e.light ? 1 : 0], per = 5200 + wall.i * 900;
+    return [e.strip({ dur: Infinity, mode: 1, color: look.line, emis: e.light ? .3 : wall.front ? .2 : .55, occ: e.light ? .6 : wall.front ? .35 : .1, alpha: e.light ? .5 : .4, layer: 0, front: wall.front, points: () => {
+      const ph = ((e.T + wall.i * 1700) % per) / per, u = ph / .55;
+      if (u > 1) return null;
+      const t = lerp(wall.t0, wall.t1, own ? u : 1 - u), env = Math.sin(Math.PI * u), n = 8;
+      return Array.from({ length: n + 1 }, (_, j) => { const [x, y] = wall.up(t, j / n); return [x, y, 14 * unit(e) * wall.k, env * (.4 + .6 * Math.sin(Math.PI * j / n))]; });
     } })];
   },
   tailwind(e, E, own) {
-    const b = SIDE_OF(e, own), dir = own ? 1 : -1, w = b.r - b.l, h = b.bot - b.top;
-    E({ n: 26, at: () => [b.l + rand(-.3, 1.1) * w, b.top + rand(.3, 1) * h], vel: () => [dir * rand(500, 700), rand(-30, 0)], tex: "streak", ramp: "flying.h", size: [2, 2], aspect: [14, 26], face: true, life: [600, 900], loop: true, over: 900, alpha: .55, layer: 0 });
-    E({ n: 6, at: () => [b.l + rand(0, 1) * w, b.top + rand(.6, 1) * h], vel: () => [dir * rand(260, 360), rand(-20, 10)], tex: "leaf", ramp: "flying.h", size: [8, 6], spin: [-6, 6], life: [900, 1400], loop: true, over: 1400, alpha: .5, occ: .4, layer: 0 });
+    // ribbons of air streaming over the side the way it faces, each a light line that runs across and is gone
+    const s = sideSpace(e, own), { W, H } = e, dir = own ? 1 : -1, U = unit(e), color = e.light ? "#3D6FB0" : "#BFE3FF";
+    return Array.from({ length: 8 }, (_, i) => {
+      const y0 = s.top * (.12 + i * .1), dz = (i % 3 - 1) * s.hw * .35, per = 1500 + i * 210, off = i * 530;
+      return e.strip({ dur: Infinity, mode: 1, color, emis: e.light ? .3 : .7, occ: e.light ? .7 : .15, alpha: e.light ? .85 : .8, layer: 0, points: () => {
+        const ph = ((e.T + off) % per) / per, n = 22;
+        return Array.from({ length: n + 1 }, (_, j) => {
+          const u = ph * 1.8 - .4 + j / n * .45, X = s.X * ACROSS + dir * (u - .5) * s.hw * 3.4, wave = Math.sin(u * 7 + i) * .05;
+          const [x, y] = P3(W, H, X / ACROSS, y0 + wave, s.Z + dz + Math.cos(u * 4 + i) * s.hw * .2);
+          return [x, y, 3 * U, Math.sin(Math.PI * j / n) * clamp(1.3 - Math.abs(u - .5) * 1.8)];
+        });
+      } });
+    });
   },
 };
 BUILD.toxicspikes = (e, E, own, layers, both) => BUILD.spikes(e, E, own, layers, both, true);
+
+/* ---------------------------------------------------------------- painting a side's things ---------------------------------------------------------------- */
+/* All of it in the court's space (arena's P3): X across in the camera's height ("true" units, side lines at ±ACROSS), Y up, Z away.
+   Painted once into a canvas finer than the screen and laid on the stage as a decal (gl.js), so a thread or an edge is as crisp as a
+   court line; only what moves (a bob, a glint, a sheen) is drawn per frame */
+const zAt = (H, y) => F / Math.max(.03, y / H - VP);
+// a side in the court's space: X its centre across (side-line units), Z the depth its feet stand at, hw its half width and top its
+// tallest Pokémon's height (both in the camera's height)
+export function sideSpace(e, own) {
+  const { W, H } = e, b = SIDE_OF(e, own), Z = zAt(H, b.bot), k = Z / (F * H);
+  return { X: ((b.l + b.r) / 2 - W / 2) * k / ACROSS, Z, hw: (b.r - b.l) / 2 * k, top: Math.max(.2, 1 - (b.top / H - VP) * Z / F), own };
+}
+// a seeded random, so a side's pieces lie the same way each time they are drawn
+const seeded = n => { let s = n; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+const rgbOf = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const nrm = a => { const l = Math.hypot(...a) || 1; return a.map(v => v / l); };
+const mean = ps => ps.reduce((s, p) => add(s, p), [0, 0, 0]).map(v => v / ps.length);
+// the light comes from the upper left, a little toward the camera, as on the HOME renders; the camera stands at height 1
+const LIGHT = nrm([-.5, .85, -.6]), CAM = [0, 1, 0];
+
+// a canvas over the part of the stage the points cover; g draws in the stage's own pixels
+function sheetFor(e, pts, pad = 2) {
+  const { W, H } = e;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  x0 = Math.max(-W * .2, x0 - pad); y0 = Math.max(-H * .2, y0 - pad); x1 = Math.min(W * 1.2, x1 + pad); y1 = Math.min(H * 1.2, y1 + pad);
+  const w = Math.max(2, x1 - x0), h = Math.max(2, y1 - y0), s = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.6), Math.sqrt(6e6 / (w * h)));
+  const c = document.createElement("canvas"); c.width = Math.ceil(w * s); c.height = Math.ceil(h * s);
+  const g = c.getContext("2d"); g.setTransform(s, 0, 0, s, -x0 * s, -y0 * s); g.lineJoin = "round"; g.lineCap = "round";
+  return { c, g, rect: [x0, y0, c.width / s, c.height / s] };
+}
+// lay a painted sheet on the stage as this field's decal: its group fades it in and out with the rest of the field
+function lay(e, sh, rect = sh.rect, front = false) { const d = e.decal({ tex: e.texture(sh.c), rect, group: e.fieldGroup, front, alpha: front ? .78 : 1 }); (e.newDecals ||= []).push(d); return d; }
+export function pieceSheet(e, p) { const sh = sheetFor(e, p.polys.flatMap(q => q.pts), 3); paintPolys(sh.g, p.polys); return sh; }
+
+// a solid's faces as the camera sees them: the ones turned away dropped, the rest far to near, each shaded flat by the light
+function solid(e, verts, faces, rgb, { amb = .4, spec = .35, shine = 28 } = {}) {
+  const { W, H } = e, c0 = mean(verts), out = [];
+  for (const f of faces) {
+    const p = f.map(i => verts[i]), ct = mean(p);
+    let n = nrm(cross(sub(p[1], p[0]), sub(p[2], p[0])));
+    if (dot(n, sub(ct, c0)) < 0) n = n.map(v => -v);
+    const view = sub(CAM, ct);
+    if (dot(n, view) <= 0) continue;
+    const d = Math.max(0, dot(n, LIGHT)), hl = Math.pow(Math.max(0, dot(n, nrm(add(LIGHT, nrm(view))))), shine) * spec, k = amb + (1 - amb) * d;
+    out.push({ pts: p.map(([x, y, z]) => P3(W, H, x / ACROSS, y, z)), fill: `rgb(${rgb.map(c => Math.round(clamp(c * k + 255 * hl, 0, 255)))})`, d: Math.hypot(...view) });
+  }
+  return out;
+}
+const farFirst = polys => polys.sort((a, b) => b.d - a.d);
+function paintPolys(g, polys) {
+  for (const { pts, fill } of polys) {
+    g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath();
+    // the same colour stroked a hair round each face, so no seam of the floor shows between two faces
+    g.fillStyle = fill; g.fill(); g.strokeStyle = fill; g.lineWidth = .6; g.stroke();
+  }
+}
+// a soft shadow lying on the floor under a thing (the light is overhead enough that it falls straight under)
+function paintShadow(g, s, light) {
+  const c = light ? "8,28,61" : "2,8,22", a = (light ? .2 : .5) * (s.a ?? 1);
+  g.save(); g.translate(s.x, s.y); g.scale(1, s.ry / s.rx);
+  const gr = g.createRadialGradient(0, 0, 0, 0, 0, s.rx);
+  gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(.55, `rgba(${c},${a * .55})`); gr.addColorStop(1, `rgba(${c},0)`);
+  g.fillStyle = gr; g.fillRect(-s.rx, -s.rx, s.rx * 2, s.rx * 2); g.restore();
+}
+const shadowAt = (e, x, z, r) => { const [sx, sy] = P3(e.W, e.H, x / ACROSS, 0, z), rx = r * F * e.H / z; return { x: sx, y: sy, rx, ry: rx * flatAt(e.H, sy) * 1.6 }; };
+
+/* Stealth Rock: nine pointed stones round the side's back and flanks (never in front of it, where the Pokémon would hide them),
+   each a faceted solid of two tips and a ring of five, tilted its own way, hanging at its own height */
+export function rockPieces(e, own) {
+  const s = sideSpace(e, own), r = seeded(own ? 5 : 9), n = 9, rx = s.hw * 1.45 + .12, rz = rx * .5, out = [];
+  const rgb = e.light ? [168, 140, 100] : [204, 176, 132];
+  for (let i = 0; i < n; i++) {
+    const t = lerp(-.32, Math.PI + .32, (i + .5) / n) + (r() - .5) * .18, L = .075 + r() * .055;
+    const x = s.X * ACROSS + Math.cos(t) * rx * (.88 + r() * .24), z = s.Z + Math.sin(t) * rz * (.88 + r() * .24), y = Math.max(L * 1.3, s.top * (.07 + r() * .18));
+    const v0 = [[0, L * (1 + r() * .5), 0], [0, -L * (.6 + r() * .4), 0]];
+    for (let m = 0; m < 5; m++) { const a = m / 5 * Math.PI * 2 + r() * .5, rad = L * (.45 + r() * .25); v0.push([Math.cos(a) * rad, (r() - .5) * L * .3, Math.sin(a) * rad]); }
+    const tz = (r() - .5) * 1.2, tx = (r() - .5) * .8, yaw = r() * 6;
+    const rot = ([a, b, c]) => {
+      [a, b] = [a * Math.cos(tz) - b * Math.sin(tz), a * Math.sin(tz) + b * Math.cos(tz)];
+      [b, c] = [b * Math.cos(tx) - c * Math.sin(tx), b * Math.sin(tx) + c * Math.cos(tx)];
+      [a, c] = [a * Math.cos(yaw) - c * Math.sin(yaw), a * Math.sin(yaw) + c * Math.cos(yaw)];
+      return [a + x, b + y, c + z];
+    };
+    const faces = [];
+    for (let m = 0; m < 5; m++) faces.push([2 + m, 2 + (m + 1) % 5, 0], [2 + (m + 1) % 5, 2 + m, 1]);
+    out.push({ polys: farFirst(solid(e, v0.map(rot), faces, rgb, { amb: .42, spec: .22, shine: 18 })), shadow: { ...shadowAt(e, x, z, L * (.7 + y * 1.2)), a: clamp(.9 - y * 1.6, .35, .8) }, z, period: (2400 + r() * 1600) / (Math.PI * 2), phase: r() * 6 });
+  }
+  return out.sort((a, b) => b.z - a.z);
+}
+
+/* a caltrop: four points along a tetrahedron's corners, three resting on the floor and one standing up, each point a four-sided
+   pyramid of polished iron (toxic ones violet) */
+export function spikePieces(e, own, layers = 1, both = false, toxic = false, onlyRow = -1) {
+  const s = sideSpace(e, own), rows = Math.min(toxic ? 2 : 3, layers), r = seeded((own ? 11 : 17) + (toxic ? 6 : 0)), cx = s.X * ACROSS;
+  const span = both ? s.hw * 1.2 : s.hw * 2.4, x0 = both ? (toxic ? cx + s.hw * .05 : cx - s.hw * 1.25) : cx - s.hw * 1.2;
+  const rgb = toxic ? (e.light ? [140, 62, 200] : [178, 104, 236]) : (e.light ? [112, 124, 146] : [156, 168, 190]), out = [];
+  for (let row = 0; row < rows; row++) for (let i = 0; i < 3; i++) {
+    const yaw = r() * 7, L = .14 * (1 - row * .07);
+    if (onlyRow >= 0 && row !== onlyRow) continue;
+    const x = x0 + span * (i + .5 + (row % 2) * .25) / 3, z = s.Z * (.93 + row * .065), c = [x, L / 3, z];
+    const dirs = [[0, 1, 0], ...[0, 1, 2].map(j => [.943 * Math.cos(yaw + j * 2.094), -1 / 3, .943 * Math.sin(yaw + j * 2.094)])];
+    let polys = [];
+    for (const d of dirs) {
+      const a = nrm(cross(d, Math.abs(d[1]) > .9 ? [1, 0, 0] : [0, 1, 0])), b = cross(d, a), base = sub(c, d.map(v => v * L * .08));
+      const verts = [0, 1, 2, 3].map(m => { const q = m / 4 * Math.PI * 2 + .785; return add(base, add(a.map(v => v * Math.cos(q) * L * .17), b.map(v => v * Math.sin(q) * L * .17))); });
+      verts.push(add(c, d.map(v => v * L)));
+      polys = polys.concat(solid(e, verts, [0, 1, 2, 3].map(m => [m, (m + 1) % 4, 4]), rgb, toxic ? { amb: .42, spec: .3, shine: 24 } : { amb: .36, spec: .55, shine: 34 }));
+    }
+    const [tx, ty] = P3(e.W, e.H, x / ACROSS, L / 3 + L, z);
+    out.push({ polys: farFirst(polys), shadow: shadowAt(e, x, z, L * 1.15), tip: [tx, ty], size: L * F * e.H / z, z, row });
+  }
+  return out.sort((a, b) => b.z - a.z);
+}
+
+/* Sticky Web: an orb web lying on the side's floor in the court's perspective: fifteen spokes, a frame between their ends, a capture
+   spiral sagging a little between spokes as silk does, a dense hub, a few anchor lines run out over the floor, dew on some crossings.
+   The threads come in the order a spider lays them (anchors, frame, spokes, spiral, hub), so the cast can spin it in that order */
+export function webThreads(e, own) {
+  const { W, H } = e, s = sideSpace(e, own), r = seeded(own ? 23 : 29);
+  const cx = s.X * ACROSS, cz = s.Z + s.hw * .1, R = clamp(s.hw * 1.3 + .1, .3, .95), Rz = Math.max(.2, Math.min(R * .95, Z_FAR + .15 - cz));
+  const fl = (a, f) => [cx + Math.cos(a) * f * R, cz + Math.sin(a) * f * Rz], proj = ([x, z]) => P3(W, H, x / ACROSS, 0, z);
+  const wAt = z => clamp(.0026 * F * H / z, .6, 1.7);
+  const N = 15, ang = [], end = [], threads = [], drops = [];
+  for (let i = 0; i < N; i++) { ang.push(i / N * Math.PI * 2 + (r() - .5) * .16); end.push(.9 + r() * .1); }
+  const bend = (A, B, sag, k = 6) => {
+    const m = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], c = [m[0] + (cx - m[0]) * sag, m[1] + (cz - m[1]) * sag];
+    return Array.from({ length: k + 1 }, (_, j) => { const t = j / k, u = 1 - t; return [u * u * A[0] + 2 * u * t * c[0] + t * t * B[0], u * u * A[1] + 2 * u * t * c[1] + t * t * B[1]]; });
+  };
+  const push = (fp, a, kind) => { const z = fp.reduce((q, p) => q + p[1], 0) / fp.length, A = fp[0], B = fp.at(-1); threads.push({ pts: fp.map(proj), w: wAt(z), a, ang: Math.atan2(B[1] - A[1], B[0] - A[0]), kind }); };
+  for (const i of [1, 5, 9, 12]) push([fl(ang[i], end[i]), fl(ang[i] + (r() - .5) * .2, 1.22)], .45, "anchor");
+  for (let i = 0; i < N; i++) push(bend(fl(ang[i], end[i]), fl(ang[(i + 1) % N], end[(i + 1) % N]), .06), .9, "frame");
+  for (let i = 0; i < N; i++) push([fl(ang[i], .03), fl(ang[i], end[i])], 1, "spoke");
+  const K = 10, f0 = .2, f1 = .86;
+  for (let k = 0; k < K; k++) for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N, A = fl(ang[i], (f0 + (f1 - f0) * (k + i / N) / K) * end[i]), B = fl(ang[j], (f0 + (f1 - f0) * (k + (i + 1) / N) / K) * end[j]);
+    push(bend(A, B, .05, 4), .85, "spiral");
+    if (r() < .3) { const [x, y] = proj(A); drops.push([x, y, wAt(A[1]) * 1.3]); }
+  }
+  for (const f of [.06, .1, .14]) for (let i = 0; i < N; i++) push([fl(ang[i], f * (.9 + r() * .2)), fl(ang[(i + 1) % N], f * (.9 + r() * .2))], .9, "hub");
+  return { threads, drops, center: proj([cx, cz]) };
+}
+const hemOf = t => .08 + .03 * Math.sin(t * 9);
+const LIGHT_ACROSS = Math.atan2(-.6, -.5);
+function paintWeb(g, web, light) {
+  // silk shines where it lies across the light and goes quiet where it runs along it
+  for (const pass of [0, 1]) for (const t of web.threads) {
+    const a = t.a * (.45 + .55 * Math.pow(Math.abs(Math.sin(t.ang - LIGHT_ACROSS)), 3));
+    g.beginPath(); t.pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    if (pass === 0) { g.strokeStyle = light ? `rgba(8,28,61,${.05 * a})` : `rgba(190,215,255,${.12 * a})`; g.lineWidth = t.w * 3.4; }
+    else { g.strokeStyle = light ? `rgba(36,58,96,${.78 * a})` : `rgba(238,244,255,${.82 * a})`; g.lineWidth = t.w; }
+    g.stroke();
+  }
+  for (const [x, y, rr] of web.drops) {
+    g.fillStyle = light ? "rgba(52,84,132,.9)" : "rgba(236,244,255,.95)"; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.arc(x - rr * .35, y - rr * .35, rr * .4, 0, Math.PI * 2); g.fill();
+  }
+}
+
+/* a wall round a side: a pane standing on an arc of the floor behind the side and round its flanks (the back half of an ellipse
+   about its feet), as high as most of its tallest Pokémon. Several stand one outside another */
+export const WALL_LOOK = {
+  reflect: [{ line: "#FFD45A" }, { line: "#A87400" }],
+  lightscreen: [{ line: "#FF9BE0" }, { line: "#C2389E" }],
+  auroraveil: [{ line: "#8FFFD8", curtain: [[125, 255, 178], [111, 227, 255], [199, 155, 255]] }, { line: "#14A383", curtain: [[20, 163, 131], [19, 147, 196], [127, 79, 217]] }],
+  safeguard: [{ line: "#E6B8FF" }, { line: "#8A4FD0" }],
+};
+export function wallShape(e, own, id) {
+  const i = ["reflect", "lightscreen", "auroraveil", "safeguard"].indexOf(id);
+  if (i < 0) return null;
+  const { W, H } = e, s = sideSpace(e, own), grow = 1 + i * .1;
+  /* the pane stands between the side and its opponent (2026-11-07, the user: the foe's wall faced the same way as ours, guarding
+     Charizard's back instead of Tyranitar's front): our side's on the far half of the ellipse, toward the centre, behind our Pokémon;
+     the foe's on the near half, toward us, so it is drawn in front of their Pokémon, glass between them and us */
+  const fz = own ? 1 : -1;
+  const rx = (s.hw * 1.12 + .1) * grow, rz = rx * .5, cx = s.X * ACROSS, cz = s.Z + fz * rz * .1, h = clamp(s.top * (id === "safeguard" ? .62 : .44 + i * .05), .2, 1.1);
+  const dome = id === "safeguard", t0 = dome ? 0 : -.2, t1 = dome ? Math.PI : Math.PI + .2;
+  const at = (t, y) => P3(W, H, (cx + Math.cos(t) * rx) / ACROSS, y, cz + fz * Math.sin(t) * rz);
+  const atD = (t, p) => P3(W, H, (cx + Math.cos(t) * rx * Math.cos(p)) / ACROSS, h * Math.sin(p), cz + fz * Math.sin(t) * rz * Math.cos(p));
+  // Aurora Veil's hem waves; the others stand level
+  const top = t => (id === "auroraveil" ? h * (.86 + .1 * Math.sin(t * 3.1 + .6)) : h);
+  // a point a share u up the wall at t: up the pane, or up the dome's meridian
+  const up = (t, u) => (dome ? atD(t, u * Math.PI / 2) : at(t, top(t) * u));
+  const outline = () => Array.from({ length: 33 }, (_, j) => { const t = lerp(t0, t1, j / 32); return [at(t, 0), up(t, 1), up(t, .5)]; }).flat().concat(dome ? [atD(0, Math.PI / 2)] : []);
+  const px = F * H / (cz + rz * .5);
+  // the arc's true length along the floor, and the angle a length along it reaches (so a pattern on the pane keeps its shape)
+  const lens = [0], NS = 160;
+  for (let j = 1; j <= NS; j++) { const a = lerp(t0, t1, (j - 1) / NS), b = lerp(t0, t1, j / NS); lens.push(lens[j - 1] + Math.hypot((Math.cos(b) - Math.cos(a)) * rx, (Math.sin(b) - Math.sin(a)) * rz)); }
+  const arcLen = lens[NS];
+  const tOf = sa => { const v = clamp(sa, -arcLen, arcLen * 2); if (v <= 0) return t0 + v / arcLen * (t1 - t0); if (v >= arcLen) return t1 + (v - arcLen) / arcLen * (t1 - t0); let j = 1; while (lens[j] < v) j++; return lerp(t0, t1, (j - 1 + (v - lens[j - 1]) / (lens[j] - lens[j - 1])) / NS); };
+  return { i, id, at, atD, up, top, t0, t1, h, dome, outline, px, k: clamp(px / 150, .6, 2.2), own, front: !own, arcLen, tOf };
+}
+// a sheet over the whole floor, from the court's far edge to past the stage's bottom
+function floorSheet(e) { const { W, H } = e, y0 = P3(W, H, 0, 0, Z_FAR + .2)[1]; return sheetFor(e, [[-W * .2, y0], [W * 1.2, H * 1.2]], 0); }
+// fine blades of grass standing in the floor: an even scatter over the picture, each blade as long as the floor is near
+function paintBlades(g, e) {
+  const { W, H } = e, y0 = P3(W, H, 0, 0, Z_FAR + .2)[1], r = seeded(61), step = 4.6;
+  const cols = e.light ? ["rgba(30,140,80,.3)", "rgba(18,108,62,.34)", "rgba(86,184,112,.26)"] : ["rgba(64,200,120,.3)", "rgba(36,156,92,.36)", "rgba(132,232,156,.22)"];
+  const paths = cols.map(() => new Path2D());
+  for (let y = y0 + 1; y < H * 1.05; y += step * .6) for (let x = -W * .1; x < W * 1.1; x += step) {
+    const px = x + (r() - .5) * step, py = y + (r() - .5) * step * .6, Z = zAt(H, py), len = .02 * F * H / Z * (.6 + r() * .7), lean = (r() - .5) * len * .7, p = paths[Math.floor(r() * 3)];
+    p.moveTo(px, py); p.quadraticCurveTo(px + lean * .2, py - len * .6, px + lean, py - len);
+  }
+  g.lineWidth = clamp(H / 900, .55, 1.1);
+  paths.forEach((p, i) => { g.strokeStyle = cols[i]; g.stroke(p); });
+}
+// a diamond lattice painted in the floor in the court's perspective (straight on the floor, so straight on the screen too)
+function paintLattice(g, e) {
+  const { W, H } = e, d = .24, Z0 = 1.2, Z1 = Z_FAR + .2;
+  g.strokeStyle = e.light ? "rgba(120,140,0,.22)" : "rgba(232,255,106,.15)"; g.lineWidth = clamp(H / 700, .6, 1.2);
+  g.beginPath();
+  for (let c0 = -4; c0 < 4 + Z1; c0 += d) for (const m of [1, -1]) {
+    const [ax, ay] = P3(W, H, (c0 - m * Z0) / ACROSS, 0, Z0), [bx, by] = P3(W, H, (c0 - m * Z1) / ACROSS, 0, Z1);
+    g.moveTo(ax, ay); g.lineTo(bx, by);
+  }
+  g.stroke();
+}
+// the wall painted on its own, for the cast to raise before the field keeps it
+export function wallSheet(e, own, id) {
+  const wall = wallShape(e, own, id);
+  if (!wall) return null;
+  const sh = sheetFor(e, wall.outline(), 6);
+  paintWall(sh.g, wall, id, e.light);
+  return { sh, wall, color: WALL_LOOK[id][e.light ? 1 : 0].line };
+}
+function paintWall(g, wall, id, light) {
+  const look = WALL_LOOK[id][light ? 1 : 0], [R, G, B] = rgbOf(look.line), c = a => `rgba(${R},${G},${B},${a})`;
+  const { at, up, t0, t1 } = wall, lw = clamp(.0032 * wall.px, .7, 2), n = 48, ts = Array.from({ length: n + 1 }, (_, j) => lerp(t0, t1, j / n));
+  const path = pts => { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); };
+  // a lit edge: a soft breadth of light round a fine line, as the edge of glass catches it
+  const edge = (pts, a, w = lw) => { path(pts); g.strokeStyle = c(a * .14); g.lineWidth = w * 4.5; g.stroke(); path(pts); g.strokeStyle = c(a); g.lineWidth = w; g.stroke(); };
+  const fill = light ? .06 : .07, graze = light ? .07 : .09;
+  if (wall.dome) {
+    // Safeguard: a dome of fine meridians and two rings, its glass faint
+    const M = 8;
+    for (let m = 0; m < M; m++) {
+      const ta = lerp(t0, t1, m / M), tb = lerp(t0, t1, (m + 1) / M);
+      const side = Array.from({ length: 13 }, (_, j) => wall.atD(ta, j / 12 * Math.PI / 2)), back = Array.from({ length: 13 }, (_, j) => wall.atD(tb, (12 - j) / 12 * Math.PI / 2));
+      path([...side, ...back]); g.closePath(); g.fillStyle = c(fill + graze * Math.pow(Math.abs(Math.cos((ta + tb) / 2)), 2)); g.fill();
+    }
+    for (let m = 0; m <= M; m++) edge(Array.from({ length: 17 }, (_, j) => wall.atD(lerp(t0, t1, m / M), j / 16 * Math.PI / 2)), m === 0 || m === M ? .8 : .45);
+    for (const p of [Math.PI / 6, Math.PI / 3]) edge(ts.map(t => wall.atD(t, p)), .45);
+    edge(ts.map(t => at(t, 0)), .75, lw * 1.2);
+    return;
+  }
+  // the pane: faint glass, a little more of it seen toward its ends, where it turns away from the camera
+  path([...ts.map(t => at(t, 0)), ...ts.slice().reverse().map(t => up(t, 1))]); g.closePath(); g.fillStyle = c(fill); g.fill();
+  for (let j = 0; j < n; j++) {
+    const a = Math.pow(Math.abs(Math.cos((ts[j] + ts[j + 1]) / 2)), 3) * graze;
+    if (a < .004) continue;
+    path([at(ts[j], 0), at(ts[j + 1], 0), up(ts[j + 1], 1), up(ts[j], 1)]); g.closePath(); g.fillStyle = c(a); g.fill();
+  }
+  g.save();
+  path([...ts.map(t => at(t, 0)), ...ts.slice().reverse().map(t => up(t, 1))]); g.closePath(); g.clip();
+  // the pattern is laid along the arc as if printed on the glass: s along the floor's arc (0..1 of it), y up in the camera's height
+  const L = wall.arcLen, toPt = (sa, y) => at(wall.tOf(sa), y), h = wall.h;
+  // where the pane turns away toward its ends the pattern crowds, so it fades there and the glass alone shows
+  const face = sa => .25 + .75 * Math.pow(Math.abs(Math.sin(wall.tOf(sa))), 1.5);
+  g.lineWidth = lw;
+  if (id === "reflect") {
+    // hexagons, the shield's own pattern
+    const rh = h / 3.4, hw = Math.sqrt(3) * rh;
+    g.strokeStyle = c(.38);
+    for (let row = -1; row * rh * 1.5 < h + rh; row++) for (let col = -1; col * hw < L + hw; col++) {
+      const x0 = col * hw + (row & 1 ? hw / 2 : 0), y0 = row * rh * 1.5;
+      const vs = Array.from({ length: 7 }, (_, k2) => { const a = Math.PI / 3 * k2 + Math.PI / 6; return [x0 + Math.cos(a) * rh * .92, y0 + Math.sin(a) * rh * .92]; });
+      g.strokeStyle = c(.4 * face(x0));
+      g.beginPath();
+      for (let k2 = 0; k2 < 6; k2++) for (let q = 0; q <= 3; q++) { const [px, py] = toPt(lerp(vs[k2][0], vs[k2 + 1][0], q / 3), lerp(vs[k2][1], vs[k2 + 1][1], q / 3)); if (!k2 && !q) g.moveTo(px, py); else g.lineTo(px, py); }
+      g.closePath(); g.stroke();
+    }
+  } else if (id === "lightscreen") {
+    // a diamond lattice
+    const d = h / 1.7;
+    g.strokeStyle = c(.38);
+    for (let c0 = -h; c0 < L + h; c0 += d) for (const m of [1, -1]) for (let j = 0; j < 8; j++) {
+      const ya = h * j / 8, yb = h * (j + 1) / 8;
+      path([toPt(c0 + m * ya, ya), toPt(c0 + m * yb, yb)]); g.strokeStyle = c(.4 * face(c0 + m * (ya + yb) / 2)); g.stroke();
+    }
+  } else if (id === "auroraveil") {
+    // curtains of aurora: a dense fall of soft rays from a bright hem, green through blue to violet along the arc, all fading by the
+    // same share of the curtain's smooth top so they merge into one folded veil (rays of their own heights read as a sound meter)
+    const C3 = look.curtain, M = 420, rr = seeded(41 + wall.i);
+    for (let j = 0; j < M; j++) {
+      const t = lerp(t0, t1, (j + rr()) / M), q0 = (t - t0) / (t1 - t0), u = (Math.sin(q0 * 9.4 + 1.3) + 1) / 2, v = (Math.sin(q0 * 4.1) + 1) / 2;
+      const col = C3[0].map((_, q) => Math.round(lerp(lerp(C3[0][q], C3[1][q], u), C3[2][q], v * .8)));
+      const fold = .55 + .45 * Math.pow((Math.sin(q0 * 31 + Math.sin(q0 * 13) * 2) + 1) / 2, 2);
+      const hem = wall.top(t) * hemOf(t), [hx, hy] = at(t, hem), [tx, ty] = up(t, 1), a = (light ? .24 : .22) * face(wall.arcLen * q0) * fold * (.8 + .2 * rr());
+      const gr = g.createLinearGradient(hx, hy, tx, ty); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(.18, `rgba(${col},${a * .55})`); gr.addColorStop(.7, `rgba(${col},${a * .12})`); gr.addColorStop(1, `rgba(${col},0)`);
+      g.strokeStyle = gr; g.lineWidth = lw * 3; g.beginPath(); g.moveTo(hx, hy); g.lineTo(tx, ty); g.stroke();
+    }
+  }
+  g.restore();
+  // the pane's frame: its foot on the floor, its two ends, its top
+  edge(ts.map(t => at(t, 0)), .7, lw * 1.2);
+  if (id !== "auroraveil") { edge(ts.map(t => up(t, 1)), .8); for (const t of [t0, t1]) edge([at(t, 0), up(t, 1)], .75); }
+  else edge(ts.map(t => at(t, wall.top(t) * hemOf(t))), .45);
+}
 // a terrain's colour laid over the floor: one even, flat tint of the whole floor (never soft blobs, which read as stains)
 const TINT = { "electric.h": "#D8F03A", "grass.d": "#22B47A", "grass.h": "#3A9A32", "fairy.h": "#FF8AE8", "psychic.h": "#FF4F93" };
 function floorTint(e, E, ramp, k = 1) {
@@ -381,18 +710,20 @@ function rebuild(e, all = false) {
   for (const [key, args] of want) {
     let it = items.get(key);
     if (it && !all && !it.leaving) continue;
-    if (it) it.strips?.forEach(s => { s.dead = true; });
+    if (it) { it.strips?.forEach(s => { s.dead = true; }); it.decals?.forEach(d => e.dropDecal(d)); }
     const g = it?.g || free(), fresh = !it;
-    it = { key, g, args, to: 1, leaving: false, data: null, strips: null };
+    it = { key, g, args, to: 1, leaving: false, data: null, strips: null, decals: null };
     if (fresh) e.groups[g] = 0;
     const start = e.fieldCount;
     // on paper a light that only adds is invisible: every field piece also covers what is under it there, and stands a little stronger
     const onPaper = spec => (e.light ? { occ: Math.max(spec.occ || 0, .7), alpha: typeof spec.alpha === "number" ? Math.min(1, spec.alpha * 1.35) : spec.alpha } : {});
     // a field that stays always lies behind the Pokémon: whatever stands in front of them is a move's, never the field's (2026-11-06, the user)
     const E = spec => e.emit({ ...spec, ...onPaper(spec), layer: 0, field: true, group: g });
-    e.extra = [];
+    e.extra = []; e.newDecals = []; e.fieldGroup = g;
     it.strips = [...(BUILD[args[0]]?.(e, E, ...args.slice(1)) || []), ...e.extra];
-    for (const s of it.strips) s.layer = 0;
+    it.decals = e.newDecals; e.newDecals = null;
+    // only the foe's wall stands in front of its Pokémon (it guards them from us); everything else stays behind
+    for (const s of it.strips) s.layer = s.front ? 1 : 0;
     it.data = e.fieldData.slice(start * 24, e.fieldCount * 24);
     e.fieldCount = start;
     items.set(key, it);
@@ -427,7 +758,7 @@ onEngine(e => {
     for (const [key, it] of e.fieldItems) {
       e.groups[it.g] += (it.to - e.groups[it.g]) * k;
       it.strips?.forEach(s => { s.alpha = (s.alpha0 ??= s.alpha ?? 1) * e.groups[it.g]; });
-      if (it.leaving && e.groups[it.g] < .01) { e.groups[it.g] = 0; it.strips?.forEach(s => { s.dead = true; }); e.fieldItems.delete(key); gone = true; }
+      if (it.leaving && e.groups[it.g] < .01) { e.groups[it.g] = 0; it.strips?.forEach(s => { s.dead = true; }); it.decals?.forEach(d => e.dropDecal(d)); e.fieldItems.delete(key); gone = true; }
     }
     if (gone) compose(e);
     if (e.gradeTo) for (const key in e.gradeTo) e.gradeBase[key] += (e.gradeTo[key] - e.gradeBase[key]) * k;
