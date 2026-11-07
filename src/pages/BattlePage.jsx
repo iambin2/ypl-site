@@ -17,7 +17,7 @@ import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
-import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
+import { prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
@@ -86,6 +86,8 @@ export default function BattlePage({ flash: say, go }) {
   }, []);
   // a gate closed over the page opens on what stands now, whatever it is
   useEffect(() => { if (res?.error) openGate(); }, [res]);
+  // the stage's first paintings are made in idle moments while the page waits for its data (stageFx prewarm), not as a battle opens
+  useEffect(() => { prewarm(); }, []);
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
@@ -860,9 +862,13 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   /* The replay (DESIGN.md "Battle", Replay): cue is how many lines of the finished log the stage shows, null all of them.
      A jump starts the stage again and catches up at once (epoch); a step on, or play, adds the next turn, which the stage plays. */
   const replay = useMemo(() => (ended && log ? replayStops(log) : null), [ended, log]);
-  const [cue, setCue] = useState(null);
+  /* a battle already over when the page opens stands where its replay begins from the very first frame: at a link's turn, or at its
+     start, playing by itself (below). Read whole first and then sent back, it showed its last line ("쓰러졌다") before the opening
+     (2026-11-07) */
+  const [opening] = useState(() => (!replay ? null : start?.turn != null ? { at: turnStop(replay.stops, start.turn) } : local ? null : { at: replay.stops[0].at, play: true }));
+  const [cue, setCue] = useState(() => opening?.at ?? null);
   const [epoch, setEpoch] = useState(0);
-  const [autoplay, setAutoplay] = useState(false);
+  const [autoplay, setAutoplay] = useState(() => Boolean(opening?.play));
   // a battle being played goes in from its team preview through the gate; a replay does not
   const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended, ownView);
   const at = cue ?? replay?.total ?? 0;
@@ -878,14 +884,17 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   useEffect(() => {
     if (!autoplay || !replay || tape.playing || tape.read < Math.min(at, replay.total)) return undefined;
     if (at >= replay.total) { setAutoplay(false); return undefined; }
-    const t = setTimeout(stepOn, at <= replay.stops[0].at ? 0 : TURN_BEAT * Math.max(1, speed));
+    // at the start the opening goes as soon as the stage has its pictures ready (Stage.jsx warming), not on a beat
+    if (at <= replay.stops[0].at) { let on = true; tape.ready().then(() => { if (on) stepOn(); }); return () => { on = false; }; }
+    const t = setTimeout(stepOn, TURN_BEAT * Math.max(1, speed));
     return () => clearTimeout(t);
   });
   /* a battle that was already over when the page opened (a shared replay, a battle looked up again) plays from its start by itself,
      as Showdown's replays do; a link's turn (?turn=5) opens it there instead. Its result waits for the replay to reach the end, as a
      battle watched live does, and then stays. A battle that ends in front of its players stands on its end, as before */
-  const opened = useRef(false);
-  const [revealed, setRevealed] = useState(true);
+  const opened = useRef(Boolean(opening));
+  const [revealed, setRevealed] = useState(() => !opening?.play);
+  // a log that came after the page opened (a seat's view read later) goes to its start the same way, once
   useEffect(() => {
     if (opened.current || log == null) return;
     opened.current = true;
@@ -1157,7 +1166,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* 기권 as a key of its own, right under the choices where the thumb is, in its own dark red so it is never taken for
             another key; it asks once before it goes (feedback 2026-11-06: the word at the page's foot was hard to find) */}
         {seat && !ended && <Button className="bt-forfeit" onClick={giveUp}>기권</Button>}
-        {started && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}
+        {/* a finished battle has its party beside the stage from the start: mounted with the first lead, it landed under the
+            opening's board as a stop of its own (2026-11-07) */}
+        {(started || (ended && scene)) && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}
         <div className="bt-play">
           <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
           <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />

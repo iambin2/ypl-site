@@ -138,6 +138,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
   const [said, setSaid] = useState([]);
   const [playing, setPlaying] = useState(false);
   const [kick, setKick] = useState(0);
+  // a replay standing at its start readies its team's pictures before its opening plays (ready below)
+  const warming = useRef(null);
   // the newest log, read when a run ends: lines that came while it played are played next, not left until the log moves again
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -147,7 +149,11 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
   useEffect(() => {
     if (running.current || log == null) return;
     const all = String(log).split("\n");
-    if (epoch !== seenEpoch.current || all.length < done.current) { seenEpoch.current = epoch; reset(); setLines([]); }
+    if (epoch !== seenEpoch.current || all.length < done.current) {
+      seenEpoch.current = epoch; reset(); setLines([]); setSaid([]);
+      // what a cut-off run left on the stage (a Mega Evolution's dark, the opening's hidden leads and plates) goes back first
+      if (stageRef.current) { fx.settle(stageRef.current); stageRef.current.classList.remove("bs-intro"); }
+    }
     const fresh = all.slice(done.current);
     if (!fresh.length) return;
     running.current = true;
@@ -385,6 +391,15 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
       if (landing.length) await Promise.all(landing);
       toWide();
       stageRef.current?.classList.remove("bs-intro");
+      /* a replay standing at its start (the team preview read, nobody out yet): its arena waits with the lamps off, as a stadium
+         before a match, and its teams' pictures go onto the GPU now, one a frame, so the opening's board switches on over a calm page
+         and no throw stops for an upload (2026-11-07, the user: "아직 시작 부분이 좀 버벅이는 것 같아"; measured at a phone's speed: the
+         arena drawn lit then dimmed, and a 136 ms stop as the first lead's picture went up mid-throw) */
+      const st0 = stageRef.current;
+      if (catchUp && !liveRef.current && st0 && R.state.turn === 0 && !["p1", "p2"].some(s => R.state.sides[s].active.some(Boolean))) {
+        fx.hideAll(st0, { dark: true });
+        warming.current = fx.warm(st0, ["p1", "p2"].flatMap(s => R.state.sides[s].preview.map(spriteUrl)));
+      }
       flushLines();
       if (lastSaid.length) flushSync(() => setSaid(shown.at(-1) === lastSaid.at(-1) ? shown : lastSaid));
       flushSync(() => setScene(sceneOf(R.state)));
@@ -396,7 +411,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
   }, [log, kick, epoch]);
 
   // read: how many lines of the log the stage has taken in, so a replay knows when a turn has finished playing
-  return { scene, lines, said, playing, stageRef, read: done.current, state: reader.current.state, speciesName: reader.current.speciesName };
+  return { scene, lines, said, playing, stageRef, read: done.current, ready: () => warming.current || Promise.resolve(), state: reader.current.state, speciesName: reader.current.speciesName };
 }
 
 /* ---------- the stage ---------- */

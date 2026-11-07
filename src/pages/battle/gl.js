@@ -340,9 +340,18 @@ function surface(name, alpha, n) {
 }
 export const MATERIALS = CELLS.map(([n]) => MATERIAL[n] || MAT_DEFAULT);
 
-let atlasData = null;
+/* the atlas is painted pixel by pixel (about 0.7 s on a desktop, far more on a phone), so it is painted in steps: prepareAtlas runs
+   them in the browser's idle time while the battle page waits for its data, and a stage that comes first finishes them at once
+   (2026-11-07: painted all at once as the stage came up, it froze the arena before a replay's opening) */
+let atlasData = null, atlasJob = null;
+const atlasSteps = () => (atlasJob ||= paintAtlas());
 function buildAtlas() {
-  if (atlasData) return atlasData;
+  if (!atlasData) for (const _ of atlasSteps()) { /* each step a cell */ }
+  return atlasData;
+}
+// one step of it; true while more are left (stageFx prewarm runs them)
+export const atlasStep = () => !atlasData && !atlasSteps().next().done;
+function* paintAtlas() {
   const N = C * GRID, NH = C * ROWS, mk = () => { const c = document.createElement("canvas"); c.width = N; c.height = NH; return c; };
   const shape = mk(), high = mk(), gs = shape.getContext("2d", { willReadFrequently: true }), gb = high.getContext("2d");
   CELLS.forEach(([, draw], i) => {
@@ -352,7 +361,7 @@ function buildAtlas() {
     gs.restore(); gb.restore();
   });
   const a = gs.getImageData(0, 0, N, NH).data, b = gb.getImageData(0, 0, N, NH).data, nz = noiseTile();
-  const out = new Uint8Array(N * NH * 4), nrm = new Uint8Array(N * NH * 4);
+  const out = new Uint8Array(N * NH * 4), nrm = new Uint8Array(N * NH * 4), jobs = [];
   for (let y = 0; y < NH; y++) for (let x = 0; x < N; x++) {
     const i = (y * N + x) * 4, cellI = Math.floor(y / C) * GRID + Math.floor(x / C);
     out[i] = a[i + 3]; out[i + 1] = nz[((y + cellI * 37) % C) * C + ((x + cellI * 53) % C)] * 255; out[i + 2] = b[i + 3]; out[i + 3] = 255;
@@ -360,11 +369,13 @@ function buildAtlas() {
   CELLS.forEach(([name], ci) => {
     const x0 = (ci % GRID) * C, y0 = Math.floor(ci / GRID) * C, al = new Uint8Array(C * C);
     for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) al[y * C + x] = a[((y0 + y) * N + x0 + x) * 4 + 3];
-    const sf = surface(name, al, C);
-    for (let y = 0; y < C; y++) nrm.set(sf.subarray(y * C * 4, (y + 1) * C * 4), ((y0 + y) * N + x0) * 4);
+    jobs.push(() => {
+      const sf = surface(name, al, C);
+      for (let y = 0; y < C; y++) nrm.set(sf.subarray(y * C * 4, (y + 1) * C * 4), ((y0 + y) * N + x0) * 4);
+    });
   });
+  for (const job of jobs) { yield; job(); }
   atlasData = { N, NH, out, nrm, noise: nz };
-  return atlasData;
 }
 
 /* ---------------------------------------------------------------- colour over a life ---------------------------------------------------------------- */
@@ -692,6 +703,7 @@ class Engine {
     this.light = document.documentElement.dataset.theme === "light" ? 1 : 0;
     this.lightK = this.light;
     this.actors = new Map();
+    this.warmed = new Map(); // src → a picture already on the GPU, waiting for the actor that shows it (warm)
     this.tweens = []; this.timers = []; this.strips = []; this.sprites = []; this.decals = [];
     this.grade = { ...GRADE_BASE }; this.gradeBase = { ...GRADE_BASE };
     this.groups = new Float32Array(32); this.groups[0] = 1;
@@ -970,35 +982,80 @@ class Engine {
     this.actors.set(key, a);
     return a;
   }
+  /* the stage read again from the top (a replay's jump, a change of side) cuts the effect being played: whatever it left lasting
+     goes back, its held tweens, the dark it laid (Mega Evolution's, the opening's) and the Pokémon it hid (2026-11-07: a jump in the
+     middle of a Mega Evolution left the stage dark for good) */
+  settle() {
+    for (const t of this.tweens) if (!t.done) { t.done = true; t.resolve(); }
+    this.tweens = [];
+    this.gradeBase.dim = 1;
+    this.megaDim = false;
+    if (this.mega) { this.mega.burst = this.T; this.mega = null; }
+    for (const a of this.actors.values()) { a.base.alpha = 1; a.lit = false; }
+    this.wide(.3);
+  }
   drop(a) { this.cancel(a); if (a.tex) this.gl.deleteTexture(a.tex); if (a.prev) this.gl.deleteTexture(a.prev); }
   load(a, src) {
     a.src = src;
+    // a picture warmed before it was needed (a replay's opening) is taken as it is: no upload in the middle of the throw
+    const warm = this.warmed.get(src);
+    if (warm?.done) {
+      this.warmed.delete(src);
+      if (a.tex) this.gl.deleteTexture(a.tex);
+      Object.assign(a, warm.done);
+      a.ready = Promise.resolve();
+      return;
+    }
     const img = new Image();
     img.decoding = "async";
     a.ready = new Promise(resolve => {
       img.onload = () => {
         if (a.src !== src) return resolve();
-        const gl = this.gl;
-        if (a.tex) gl.deleteTexture(a.tex);
-        a.tex = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, a.tex);
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-        // an SVG (the doll) is drawn to a canvas at a size of its own first: it has no pixels until it is given some
-        let pic = img;
-        if (src.startsWith("data:") || !img.naturalWidth) { pic = document.createElement("canvas"); pic.width = 480; pic.height = 500; pic.getContext("2d").drawImage(img, 0, 0, 480, 500); }
-        try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pic); } catch { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); return resolve(); }
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        a.iw = pic.width || img.naturalWidth; a.ih = pic.height || img.naturalHeight;
-        a.ink = inkBox(pic);
+        const pic = this.upload(img, src);
+        if (!pic) return resolve();
+        if (a.tex) this.gl.deleteTexture(a.tex);
+        Object.assign(a, pic);
         resolve();
       };
       img.onerror = () => resolve();
       setTimeout(resolve, 1500);
     });
     img.src = src;
+  }
+  // a decoded picture on the GPU: { tex, iw, ih, ink }, or null when it cannot go
+  upload(img, src) {
+    const gl = this.gl, tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    // an SVG (the doll) is drawn to a canvas at a size of its own first: it has no pixels until it is given some
+    let pic = img;
+    if (src.startsWith("data:") || !img.naturalWidth) { pic = document.createElement("canvas"); pic.width = 480; pic.height = 500; pic.getContext("2d").drawImage(img, 0, 0, 480, 500); }
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pic); } catch { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.deleteTexture(tex); return null; }
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return { tex, iw: pic.width || img.naturalWidth, ih: pic.height || img.naturalHeight, ink: inkBox(pic) };
+  }
+  /* pictures fetched, decoded and put on the GPU one a frame, before they are needed (a replay's team before its opening), so the
+     throws never stop for an upload; resolves when all are there or after a moment. ponytail: pictures warmed and never shown keep
+     their textures until the stage goes (at most the twelve of a team preview) */
+  warm(srcs) {
+    const todo = srcs.filter(src => src && !this.warmed.has(src));
+    for (const src of todo) this.warmed.set(src, { done: null });
+    const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    // fetched and decoded all at once, put on the GPU one a frame
+    const decoding = todo.map(src => { const img = new Image(); img.decoding = "async"; img.src = src; return [src, img.decode().then(() => img, () => null)]; });
+    const run = (async () => {
+      for (const [src, decoded] of decoding) {
+        const img = await decoded;
+        if (!img) continue;
+        await frame();
+        const entry = this.warmed.get(src);
+        if (entry && !entry.done) entry.done = this.upload(img, src);
+      }
+    })();
+    return Promise.race([run, new Promise(resolve => setTimeout(resolve, 1600))]);
   }
   // where a Pokémon is drawn in the world: its picture fitted in its slot, standing on the slot's floor
   placed(a) {

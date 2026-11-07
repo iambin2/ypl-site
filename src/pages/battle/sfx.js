@@ -42,6 +42,8 @@ function ready(always) {
   if (!bus || bus.context !== ctx) wire(ctx);
   return ctx;
 }
+// the graph built before the first sound needs it (stageFx warm): a replay's opening no longer builds it under its board
+export const warmSound = () => { ready(true); };
 // one sound rendered off the line, for the lab and the checks: its loudest sample (0 is silence) and its samples, mixed to one channel
 export async function renderSound(name, o = {}, seconds = 2.5, rate = 44100) {
   const off = new OfflineAudioContext(2, Math.round(rate * seconds), rate), kept = [bus, wetIn, noiseBuf];

@@ -6,10 +6,11 @@
 import { reduced } from "../../components/common/motion.js";
 import { playBoard } from "./Scoreboard.jsx";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
-import { glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
+import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
+import { audio } from "./cries.js";
 import { setField } from "./arena.js";
 import "./arena.js";
-import { sfx, setSfxSpeed, setMoveType } from "./sfx.js";
+import { sfx, setSfxSpeed, setMoveType, warmSound } from "./sfx.js";
 
 let speed = 1;
 export const setSpeed = s => { speed = s; setSfxSpeed(s); };
@@ -638,8 +639,10 @@ export function faint(stage, key) {
    a faint cool rim the stadium throws back, and the red, the white, the band and the button turned with the ball, so it tumbles as
    it flies instead of spinning flat. FRAMES frames make one turn; they are painted once and kept for every stage. */
 const FRAMES = 24, BALL_PX = 160;
-let ballCanvases = null;
-function paintBalls() {
+// painted a frame a step, like the atlas (gl.js prepareAtlas): ahead of time in idle moments, or all at once by the first throw
+let ballCanvases = null, ballJob = null;
+const ballSteps = () => (ballJob ||= paintBalls());
+function* paintBalls() {
   const out = [], R = BALL_PX / 2 - 3, C = BALL_PX / 2;
   const norm = v => { const l = Math.hypot(...v); return v.map(x => x / l); };
   const L = norm([-.55, .62, .56]), Hv = norm([L[0], L[1], L[2] + 1]), axis = norm([1, .28, .22]);
@@ -667,8 +670,9 @@ function paintBalls() {
     }
     g.putImageData(img, 0, 0);
     out.push(c);
+    yield;
   }
-  return out;
+  ballCanvases = out;
 }
 const upload = (gl, canvas) => {
   const t = gl.createTexture();
@@ -680,7 +684,7 @@ const upload = (gl, canvas) => {
   return t;
 };
 const ballTex = e => {
-  if (!e.ballTex) { ballCanvases ||= paintBalls(); e.ballTex = ballCanvases.map(c => upload(e.gl, c)); }
+  if (!e.ballTex) { if (!ballCanvases) for (const _ of ballSteps()) { /* each step a frame */ } e.ballTex = ballCanvases.map(c => upload(e.gl, c)); }
   return e.ballTex;
 };
 // the ball's shadow on the floor: a soft dark oval, painted once
@@ -731,6 +735,37 @@ export function throwBall(stage, key) {
 }
 // the Pokémon standing on the canvas go out at once (before the opening's throws, so no lead stands before its ball comes)
 // dark: the lamps stay off until the opening switches them on (the gate lifts onto a dark stage)
+export const settle = stage => glOf(stage)?.settle();
+/* what a stage paints the first time it is needed, painted ahead in the browser's idle time (the battle page calls it as it opens):
+   the atlas, the Poké Ball's frames and the sound's context. Each was a stop of its own as a replay opened (2026-11-07, measured:
+   0.73 s, 0.15 s and 0.09 s on a desktop) */
+// a moment to work in: an idle one while nothing waits (as many steps as it holds), a frame's 8 ms once a replay waits on it (urgent)
+const idleMoment = () => new Promise(resolve => (typeof requestIdleCallback === "function"
+  ? requestIdleCallback(d => resolve(() => d.timeRemaining() > 3), { timeout: 200 })
+  : setTimeout(() => { const t = performance.now(); resolve(() => performance.now() - t < 8); }, 16)));
+const frameMoment = () => new Promise(resolve => requestAnimationFrame(() => { const t = performance.now(); resolve(() => performance.now() - t < 8); }));
+let prewarming = null, urgent = false;
+const ballStep = () => !ballCanvases && !ballSteps().next().done;
+export function prewarm() {
+  return (prewarming ||= (async () => {
+    audio();
+    for (const step of [atlasStep, ballStep]) {
+      for (let more = true; more;) { const room = await (urgent ? frameMoment() : idleMoment()); do more = step(); while (more && room()); }
+    }
+  })());
+}
+/* a replay standing at its start readies the rest before its opening (Stage.jsx): its teams' pictures on the GPU (gl.js warm), the
+   Poké Ball's frames on the GPU and the sound's graph; resolves when all are there or after a moment */
+export async function warm(stage, srcs) {
+  const e = glOf(stage);
+  if (!e) return;
+  urgent = true;
+  const pictures = e.warm(srcs);
+  await prewarm();
+  ballTex(e);
+  warmSound();
+  await pictures;
+}
 export function hideAll(stage, { dark = false } = {}) {
   const e = glOf(stage);
   if (!e) return;
@@ -748,6 +783,9 @@ export async function opening(stage, ours, theirs, { plates = true, seated = fal
   const darkened = e?.gradeBase.dim !== 1;
   if (e) e.gradeBase.dim = 1;
   if (!over || instant()) return;
+  // two frames first: the lead the stage has just mounted (a render and a layout read) lands before the board starts to light, not
+  // in its first frames (2026-11-07, measured: the board's one stop as a replay opened)
+  for (let i = 0; i < 2; i++) await new Promise(resolve => requestAnimationFrame(resolve));
   sfx("lamps");
   if (!plates) {
     // the gate has lifted onto the dark stage: the lamps switch on in view, and the throws come on their rise
