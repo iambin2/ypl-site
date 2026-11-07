@@ -96,11 +96,12 @@ export async function readBattleRow(id) {
   return data;
 }
 export const canRematch = () => rematchSupported;
+// ponytail: the newest 200 of the last 30 minutes, filtered and paged on the device; filter and page on the server if rooms outgrow that
 export async function listOpenRooms() {
   if (!supa || !roomsSupported) return [];
   const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const { data, error } = await supa.from("battles").select("id, regulation, format_id, p1_name, room, created_at")
-    .eq("status", "waiting").in("room", ["open", "code"]).gte("created_at", since).order("created_at", { ascending: false }).limit(20);
+    .eq("status", "waiting").in("room", ["open", "code"]).gte("created_at", since).order("created_at", { ascending: false }).limit(200);
   if (error && unreadable(error)) roomsSupported = false;
   return error ? [] : data || [];
 }

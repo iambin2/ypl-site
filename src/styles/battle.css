@@ -27,6 +27,20 @@
      matchup's line met no line on the other side) */
   .bt-lobby:has(> .bt-lobby-set > .q:first-child) > .bt-lobby-main { padding-top: calc(var(--l12) + var(--s2)); }
 }
+/* the battle page's tabs: 배틀 열기 and 방 목록, under the title */
+.bt-tabs { margin-top: calc(var(--s8) - var(--s5)); }
+/* 방 목록 (The rooms): the counts, the search with 방 만들기, the filters on one line, the rooms three to a line on a wide screen */
+.bt-hall-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bt-hall-tools { grid-template-columns: minmax(0, 1fr) auto; }
+.bt-hall-tools .btn--main { width: auto; }
+.bt-hall-filters { display: flex; gap: var(--s3); min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.bt-hall-filters::-webkit-scrollbar { display: none; }
+.bt-hall-filter { flex: none; display: flex; align-items: center; gap: var(--s2); }
+.bt-hall-filters { gap: var(--s5); }
+.bt-hall-list > .row { height: var(--h-row2); }
+@media (min-width: 860px) { .bt-hall-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bt-hall-kind { display: inline-flex; align-items: center; gap: var(--s1); font-weight: 600; white-space: nowrap; }
+@media (max-width: 859px) { .bt-hall-filters { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); } }
 /* a battle left half played stands over everything, the first thing to press */
 .bt-resume { margin-bottom: calc(var(--s3) - var(--s5)); }
 /* the waiting screen's counters side by side: the code to read out, then the time waited */

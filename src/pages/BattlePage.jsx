@@ -6,7 +6,9 @@ import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
 import ErrorNote from "../components/common/ErrorNote.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
-import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, SectionHead, Toast } from "../components/common/Board.jsx";
+import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, SectionHead, TabsLine, Toast } from "../components/common/Board.jsx";
+import ListSearch from "../components/common/ListSearch.jsx";
+import Pager from "../components/common/Pager.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
 import Modal from "../components/common/Modal.jsx";
 import { checkBuild, pushHistory } from "../components/layout/history.js";
@@ -177,7 +179,7 @@ const focusName = () => document.getElementById("bt-name")?.focus();
    아래, 그 밑에 방 참가와 목록. 439에는 고르는 것(상대, 형식, 파티)이 같은 윗선에서 시작한다. 두 열은 페이지와 함께 스크롤한다.
    휴대폰은 경기장, 고르는 것, 목록 순서이고 주 행동은 아래에 붙는다. 여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다.
    foe는 참가하는 쪽에서 본 연 사람의 이름(없으면 foeHint를 흐리게), foeNote는 그 뒤의 흐린 말(컴퓨터의 난이도). */
-function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", foeNote = "", foeLead = null, doubles, setup, action, before, after, onEnter }) {
+function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", foeNote = "", foeLead = null, doubles, setup, action, tabs, before, after, onEnter }) {
   const team = teams.find(t => t.id === teamId);
   const saved = teams.some(t => !t.random);
   const random = Boolean(team?.random);
@@ -187,6 +189,7 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, f
   return (
     <div className="bt-page">
       <h1 className="t32">배틀</h1>
+      {tabs}
       {before}
       <div className="bt-lobby">
         <div className="bt-lobby-main">
@@ -312,37 +315,101 @@ function CpuReplay({ id, res, say, go, onLeave, start }) {
 
 /* ---------- rooms: open and code rooms stand as one list, newest first. An open room is joined at once; a code room's join screen
    asks for its four digits (2026-11-07, the user: no separate code field, a code room asks when it is pressed) ---------- */
-function RoomFinder({ onOpen }) {
-  const [rooms, setRooms] = useState([]);
+/* the rooms waiting for someone, read again every 15 seconds while the page is in view (a room fills or opens while it stands);
+   null until the first read */
+function useRooms() {
+  const [rooms, setRooms] = useState(null);
   useEffect(() => {
     let on = true;
     const load = () => listOpenRooms().then(list => on && setRooms(list));
     load();
-    // a room fills or opens while the page stands: the list is read again now and then, while it is in view
     const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 15000);
     return () => { on = false; clearInterval(t); };
   }, []);
-  // nothing waiting, nothing stands (as 진행 중인 배틀 and 이 기기의 배틀 do)
-  if (!rooms.length) return null;
-  return <section className="bt-list bt-rooms" aria-labelledby="bt-rooms-h">
-    <SectionHead id="bt-rooms-h" title="방 참가" />
-    <div className="stack">
-      {rooms.map(r => { const kind = r.room === "code" ? "비밀 방" : "공개 방";
-        return <Row key={r.id} title={`${r.p1_name}의 방`} line={`${REGULATIONS[r.regulation] || ""} ${isDoubles(r.format_id) ? "더블" : "싱글"}, ${kind}`}
-          lamp="참가 대기" onClick={() => onOpen(r.id)} label={`${r.p1_name}의 ${kind}에 참가`} />; })}
+  return rooms;
+}
+
+/* 방 목록 (DESIGN.md "Battle", The rooms, 2026-11-07): every room waiting for someone, on a page of its own beside 배틀 열기, built
+   for many rooms at once. The counts first (기다리는 방, 공개, 비밀), then the search by the opener's name with 방 만들기 beside it,
+   the filters (규정, 형식, 종류) on one line, and the rooms as rows, newest first, three to a line on a wide screen, 30 a page.
+   Pressing a room goes in; a secret one asks its code there. */
+const HALL_PAGE = 30;
+const ALL = "all";
+const HALL_RULES = [[ALL, "전체"], ...Object.entries(REGULATIONS)];
+const HALL_FORMATS = [[ALL, "전체"], ["singles", "싱글"], ["doubles", "더블"]];
+const HALL_KINDS = [[ALL, "전체"], ["open", "공개"], ["code", "비밀"]];
+const ago = (at, now) => { const m = Math.floor((now - Date.parse(at || "")) / 60000); return !(m >= 1) ? "방금" : `${m}분 전`; };
+function RoomHall({ rooms, onOpen, onMake }) {
+  const [q, setQ] = useState("");
+  const [rule, setRule] = useState(ALL);
+  const [format, setFormat] = useState(ALL);
+  const [kind, setKind] = useState(ALL);
+  const [page, setPage] = useState(1);
+  const now = useNow(true);
+  const all = rooms || [];
+  const word = q.trim().toLowerCase();
+  const list = all.filter(r => (rule === ALL || r.regulation === rule) && (format === ALL || (format === "doubles") === isDoubles(r.format_id))
+    && (kind === ALL || r.room === kind) && (!word || String(r.p1_name || "").toLowerCase().includes(word)));
+  const pages = Math.max(1, Math.ceil(list.length / HALL_PAGE));
+  const cur = Math.min(page, pages);
+  const shown = list.slice((cur - 1) * HALL_PAGE, cur * HALL_PAGE);
+  // a filter or a search starts the list from its first page
+  const pick = set => v => { set(v); setPage(1); };
+  const count = n => (rooms ? String(n) : null);
+  const filtered = word || rule !== ALL || format !== ALL || kind !== ALL;
+  return <>
+    <div className="stack bt-hall-counts">
+      <Counter label="기다리는 방" value={count(all.length)} cells={3} lamp={all.length > 0} />
+      <Counter label="공개 방" value={count(all.filter(r => r.room === "open").length)} cells={3} />
+      <Counter label="비밀 방" value={count(all.filter(r => r.room === "code").length)} cells={3} />
     </div>
-  </section>;
+    <div className="stack bt-hall-tools"><ListSearch q={q} setQ={pick(setQ)} placeholder="방을 연 사람" count={list.length} /><Button variant="main" icon="plus" onClick={onMake}>방 만들기</Button></div>
+    <div className="bt-hall-filters">
+      {[["규정", rule, setRule, HALL_RULES], ["형식", format, setFormat, HALL_FORMATS], ["종류", kind, setKind, HALL_KINDS]].map(([label, value, set, options]) =>
+        <span key={label} className="bt-hall-filter"><span className="t12 dim" aria-hidden="true">{label}</span><Chips value={value} onChange={pick(set)} label={label} options={options} /></span>)}
+    </div>
+    {!rooms ? <Loader />
+      : !list.length ? (filtered
+        ? <Empty title="조건에 맞는 방이 없습니다." desc="검색어나 조건을 바꿔 보세요." />
+        : <Empty title="기다리는 방이 없습니다." desc="방을 만들면 여기에 나오고, 누구나 들어올 수 있습니다." />)
+      : <div className="stack bt-hall-list">
+        {shown.map(r => { const secret = r.room === "code";
+          return <Row key={r.id} title={`${r.p1_name}의 방`} line={`${REGULATIONS[r.regulation] || ""} ${isDoubles(r.format_id) ? "더블" : "싱글"}, ${ago(r.created_at, now)}`}
+            value={<span className={"bt-hall-kind t12" + (secret ? "" : " dim")}>{secret && <Icon n="lock" size={16} />}{secret ? "비밀" : "공개"}</span>}
+            onClick={() => onOpen(r.id)} label={`${r.p1_name}의 ${secret ? "비밀 방" : "공개 방"}에 참가`} />; })}
+      </div>}
+    {/* in its own box, so a turned page lights the list just before it, as the board's pager does */}
+    <div><Pager page={cur} pages={pages} onGo={setPage} /></div>
+  </>;
 }
 
 /* 상대: 컴퓨터(이 기기에서 바로, 난이도는 폴리곤, 폴리곤2, 폴리곤Z) 또는 방 만들기. 방은 하나의 선택이고, 공개 방(열린 방 목록에 선다)인지 비밀 방(숫자 4자리를 알려 준
    사람만)인지는 그 아래에서 고른다(2026-11-06, 따로 선 공개 방과 코드 방을 하나로). 두 방 모두 링크로도 들어온다. */
 const OPPONENTS = [["cpu", "컴퓨터"], ["room", "방 만들기"]];
 const ROOMS = [["open", "공개 방", "누구나 참가"], ["code", "비밀 방", "코드로 참가"]];
+/* the battle page: 배틀 열기 (the lobby) and 방 목록 (every room waiting) as page tabs; the tab is kept in the address (&tab=rooms) */
+const BATTLE_TABS = ["open", "rooms"];
 function BattleOpen({ res, onOpen, preset }) {
+  const [tab, setTab] = useState(() => (new URLSearchParams(window.location.search).get("tab") === "rooms" ? "rooms" : "open"));
+  const rooms = useRooms();
+  // 방 만들기 on the list opens the lobby with 방 만들기 chosen as the opponent
+  const [firstFoe, setFirstFoe] = useState("cpu");
+  const changeTab = t => {
+    setTab(t);
+    const url = new URL(window.location.href);
+    if (t === "rooms") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
+    window.history.replaceState(window.history.state, "", url);
+  };
+  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"]]} /></div>;
+  return tab === "rooms"
+    ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
+    : <BattleSetup res={res} onOpen={onOpen} preset={preset} tabs={tabs} firstFoe={firstFoe} />;
+}
+function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
   const teams = useMemo(() => [...readSavedTeams().filter(team => REGULATIONS[team.regulationId]), ...randomTeams(Object.keys(REGULATIONS))], []);
   const [name, setName] = useState(rememberedName);
   const [format, setFormat] = useState("singles");
-  const [foe, setFoe] = useState("cpu");
+  const [foe, setFoe] = useState(firstFoe);
   const [room, setRoom] = useState("open");
   const [level, setLevel] = useState(DEFAULT_LEVEL);
   const saved = readCpuBattle();
@@ -399,7 +466,7 @@ function BattleOpen({ res, onOpen, preset }) {
     action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
       <Button variant="main" onClick={submit} loading={busy} disabled={!team}>{foe === "cpu" ? "배틀 시작" : "방 만들기"}</Button>
     </Dock>}
-    after={<><RoomFinder onOpen={onOpen} /><div className="bt-lists"><BattleLists onOpen={onOpen} /></div></>} />;
+    tabs={tabs} after={<div className="bt-lists"><BattleLists onOpen={onOpen} /></div>} />;
 }
 
 /* ---------- a battle: its version is asked on battlePollDelay's rhythm, and only a change of version reads the row ----------
