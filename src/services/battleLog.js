@@ -41,12 +41,13 @@ export function requestKey(turn, request) {
   return (h >>> 0).toString(36);
 }
 
-// 한국어 조사: 마지막 글자의 받침으로 고른다. 한글이 아닌 끝(숫자, 영문)은 받침 없는 쪽으로 둔다.
+// 한국어 조사: 마지막 글자의 받침으로 고른다. 숫자는 읽는 소리로(3이, 2가), 영문은 받침 없는 쪽으로 둔다.
 const PARTICLES = { topic: ["은", "는"], subject: ["이", "가"], object: ["을", "를"], conjunctive: ["과", "와"] };
+const DIGIT_FINALS = [21, 8, 0, 16, 0, 0, 1, 8, 8, 0]; // 영 일 이 삼 사 오 육 칠 팔 구
 export function josa(word, kind) {
   const last = String(word).trim().slice(-1);
   const code = last.charCodeAt(0) - 0xac00;
-  const final = code >= 0 && code <= 11171 ? code % 28 : 0;
+  const final = /\d/.test(last) ? DIGIT_FINALS[last] : code >= 0 && code <= 11171 ? code % 28 : 0;
   if (kind === "directional") return word + (final && final !== 8 ? "으로" : "로");
   const pair = PARTICLES[kind];
   return pair ? word + (final ? pair[0] : pair[1]) : word;
@@ -156,7 +157,9 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
       if (modifiers.endsWith(":directional") && source[at + whole.length] === "로") word = word.slice(0, -1);
       return word;
     });
-    return out.replace(/\*\*/g, "").trim();
+    const said = out.replace(/\*\*/g, "").trim();
+    // a line in brackets is Showdown's own note, never the game's ("(비가 계속 내리고 있다)", Roost's lost Flying type)
+    return said.startsWith("(") ? null : said;
   };
   const D = key => text.default.default[key];
 
@@ -179,6 +182,8 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
     const mon = known || (side.team[key] = newMon(who.side, who.name, who.slot));
     entered[`${who.side}${who.slot}`] = { mon, key, before: known ? snapshot(mon) : null };
     untransform(previous);
+    // a form taken on the way back (Zero to Hero) is its form once it has gone
+    if (previous?.comeback) { previous.species = previous.comeback; delete previous.comeback; }
     // a Pokémon sent in leaves its stat changes and volatile effects behind; its item, ability and moves stay known
     Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, lastMove: "", ...carried }, parseHP(condition));
     delete mon.types; delete mon.addedType;
@@ -221,15 +226,25 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
     const { cmd, args, kw } = splitLine(line);
     const lines = [];
     let event = null;
-    const say = (source, values) => { const said = fill(source, values); if (said) lines.push(said); };
+    /* [silent]: the engine marks a line the games never say (Yawn wearing off just before the sleep, Regenerator as it goes in,
+       the items Trick trades): its state is read, its words are not, as Showdown's own client does (2026-11-07) */
+    const say = (source, values) => { const said = !kw.silent && fill(source, values); if (said) lines.push(said); };
     const from = kw.from ? parseEffect(kw.from) : null;
     // an ability or an item named as the cause of a line is now known: the stage pops the ability up as the game does
     let reveal = null;
-    if (from?.kind === "ability" && (kw.of || args[0]) && parseIdent(kw.of || args[0])?.slot >= 0) {
-      const owner = kw.of || args[0];
+    // the ability is the [of] Pokémon's (Rough Skin, Flame Body, Frisk), except where the line's own Pokémon healed or changed by it
+    // (Volt Absorb names its attacker as [of]; Trace names the one it copied)
+    const owner = cmd === "-ability" || (cmd === "-heal" && from?.id !== "hospitality") ? args[0] : kw.of || args[0];
+    if (from?.kind === "ability" && owner && parseIdent(owner)?.slot >= 0) {
       monOf(owner).ability = from.name;
-      reveal = { ident: owner, ability: effectName(kw.from) };
+      if (!kw.silent) reveal = { ident: owner, ability: effectName(kw.from) };
     } else if (from?.kind === "item" && parseIdent(args[0])?.slot >= 0) monOf(args[0]).item = from.name;
+    // an ability that is the line's own effect (Flash Fire starting, Disguise taking the blow, Armor Tail stopping a move) pops up too
+    const lineEffect = parseEffect(args[1]);
+    if (!reveal && !kw.silent && lineEffect.kind === "ability" && ["-activate", "-start", "cant"].includes(cmd) && parseIdent(args[0])?.slot >= 0) {
+      monOf(args[0]).ability = lineEffect.name;
+      reveal = { ident: args[0], ability: effectName(args[1]) };
+    }
 
     switch (cmd) {
       case "player": if (args[1]) state.players[args[0]] = args[1]; break;
@@ -264,7 +279,9 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
         const who = parseIdent(args[0]);
         const previous = setActive(args[0], args[1], args[2], cmd === "switch");
         const own = who.side === perspective;
-        if (previous && cmd === "switch") say(own ? D("switchOutOwn") : D("switchOut"), { TRAINER: state.players[who.side], NICKNAME: speciesName(previous.species) });
+        // after U-turn, Volt Switch, Flip Turn or Parting Shot it goes back on its own ("…의 곁으로 돌아간다"), with no "돌아와"
+        const back = kw.from && template(kw.from, "switchOut");
+        if (previous && cmd === "switch") say(back || (own ? D("switchOutOwn") : D("switchOut")), { TRAINER: state.players[who.side], NICKNAME: speciesName(previous.species), POKEMON: monWord(previous) });
         const name = speciesName(parseDetails(args[1]).species);
         if (cmd === "drag") say(D("drag"), { FULLNAME: own ? name : pokemonWord(args[0]) });
         else if (cmd === "switch") say(own ? D("switchInOwn") : D("switchIn"), { TRAINER: state.players[who.side], FULLNAME: name });
@@ -273,14 +290,19 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
       }
       case "detailschange": case "-formechange": {
         const mon = monOf(args[0]);
+        const was = mon.species;
         mon.species = parseDetails(args[1]).species;
         // a new form brings its own typing
         delete mon.types; delete mon.addedType;
         /* and a lasting one (Mega, Primal, Hero, Tera) its own ability, as Showdown's client takes it: the form's first. Kept, Mega
            Drampa still read as Cloud Nine and the keys showed Weather Ball as Normal in snow (battle-fuzz, 2026-11-07) */
         if (cmd === "detailschange") mon.ability = pokedex[toID(mon.species)]?.abilities?.[0] || "";
-        // Zero to Hero turns Palafin as it goes back to its ball: the Hero form is first seen when it comes out again, as in the games
-        event = toID(mon.species) === "palafinhero" ? null : { verb: "change", ident: args[0] };
+        /* Zero to Hero turns Palafin as it goes back to its ball, and the engine says so just before the switch: it goes back in its
+           own form and the Hero form is first seen when it comes out again, as in the games (2026-11-07: the stage redrew it as the
+           Hero on this line, so it went back already changed) */
+        const later = toID(mon.species) === "palafinhero" && state.sides[mon.side].active.includes(mon);
+        if (later) { mon.comeback = mon.species; mon.species = was; }
+        event = later ? null : { verb: "change", ident: args[0] };
         break;
       }
       case "-mega": {
@@ -319,28 +341,30 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
       }
       case "-damage": case "-heal": case "-sethp": {
         const { mon } = setCondition(args[0], args[1]);
-        const values = { POKEMON: pokemonWord(args[0]), SOURCE: kw.of ? pokemonWord(kw.of) : "" };
-        if (cmd === "-heal") {
-          if (from) say(template(kw.from, "heal") || D("healFromEffect"), { ...values, ITEM: effectName(kw.from), EFFECT: effectName(kw.from) });
-          else say(D("heal"), values);
-        } else if (from) {
-          const own = template(kw.from, "damage");
-          say(own || (from.kind === "item" ? D("damageFromItem") : null), { ...values, ITEM: effectName(kw.from), MOVE: effectName(kw.from) });
-        }
+        const values = { POKEMON: pokemonWord(args[0]), SOURCE: kw.of ? pokemonWord(kw.of) : "", ITEM: from ? effectName(kw.from) : "",
+          EFFECT: from ? effectName(kw.from) : "", MOVE: from ? effectName(kw.from) : "", NICKNAME: kw.wisher ? speciesName(kw.wisher) : "" };
+        /* as Showdown's client words them: an effect's own line first; a heal by an ability with none of its own is the plain heal
+           (the ability pops up); Pain Split says its line once; damage with no cause says nothing */
+        const own = from && template(kw.from, cmd === "-sethp" ? "activate" : cmd === "-heal" ? "heal" : "damage");
+        if (own) say(own, values);
+        else if (cmd === "-heal") say(from && from.kind !== "ability" ? D("healFromEffect") : D("heal"), values);
+        else if (cmd === "-damage" && from?.kind === "item") say(D(kw.of ? "damageFromPokemon" : "damageFromItem"), values);
+        else if (cmd === "-damage" && (kw.partiallytrapped || from?.id === "bind" || from?.id === "wrap")) say(D("damageFromPartialTrapping"), values);
         event = { verb: cmd === "-damage" && !from ? "take" : "hp", ident: args[0], hp: mon.hp, maxhp: mon.maxhp, heal: cmd === "-heal", from: from?.id || "" };
         break;
       }
       case "-status": {
         const mon = monOf(args[0]);
         mon.status = args[1];
-        say(from?.kind === "item" ? template(args[1], "startFromItem") : template(args[1], "start"), { POKEMON: pokemonWord(args[0]), ITEM: from ? effectName(kw.from) : "" });
+        say(from?.id === "rest" ? template(args[1], "startFromRest") : from?.kind === "item" ? template(args[1], "startFromItem") : template(args[1], "start"), { POKEMON: pokemonWord(args[0]), ITEM: from ? effectName(kw.from) : "" });
         event = { verb: "status", ident: args[0], status: args[1] };
         break;
       }
       case "-curestatus": {
         const mon = monOf(args[0]);
         mon.status = "";
-        say(template(args[1], "end"), { POKEMON: pokemonWord(args[0]) });
+        const key = from?.id === "naturalcure" ? null : from?.kind === "item" ? "endFromItem" : kw.thaw ? "endFromMove" : "end";
+        if (key) say(template(args[1], key) || template(args[1], "end"), { POKEMON: pokemonWord(args[0]), ITEM: from ? effectName(kw.from) : "", MOVE: from ? effectName(kw.from) : "" });
         event = { verb: "cure", ident: args[0], status: args[1] };
         break;
       }
@@ -440,14 +464,34 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
         if (mon && id === "typechange") { if (cmd === "-start") mon.types = String(args[2] || "").split("/").filter(t => t && t !== "???"); else delete mon.types; delete mon.addedType; }
         if (mon && id === "typeadd") { if (cmd === "-start") mon.addedType = args[2]; else delete mon.addedType; }
         event = { verb: "volatile", ident: args[0], id, on: cmd === "-start" };
+        const values = { POKEMON: pokemonWord(args[0]), EFFECT: effectName(args[1]), SOURCE: kw.of ? pokemonWord(kw.of) : "", TARGET: pokemonWord(args[0]),
+          MOVE: args[2] ? effectName(`move: ${args[2]}`) : "", ITEM: from ? effectName(kw.from) : "", NUMBER: /\d$/.exec(id)?.[0] || "",
+          TYPE: String(args[2] || "").split("/").map(t => text.types[t] || t).join("/"), STAT: text.stats[id.slice(-3)] || "" };
+        // the line for each, as Showdown's client picks it (BattleTextParser '-start' and '-end')
+        let line = null;
+        if (cmd === "-start") {
+          if (id === "typechange") line = template(kw.from, "typeChange") || D("typeChange");
+          else if (id === "typeadd") line = template(kw.from, "typeAdd") || D("typeAdd");
+          else if (counted === "stockpile") line = template("move: Stockpile", "start");
+          else if (counted === "perish") line = template("move: Perish Song", "activate");
+          // Supreme Overlord's count of the fallen (fallen1 to fallen5) is a number on the plate, never a sentence
+          else if (counted === "fallen") line = null;
+          else if (/^(protosynthesis|quarkdrive)[a-z]{3}$/.test(id)) line = template(`ability: ${id.slice(0, -3)}`, "start");
+          else {
+            const key = kw.already ? "alreadyStarted" : kw.fatigue ? "startFromFatigue" : kw.damage ? "activate" : kw.block ? "block" : kw.upkeep ? "upkeep" : "start";
+            line = (key === "start" && from?.kind === "item" && template(args[1], "startFromItem")) || template(args[1], key);
+          }
+        } else if (id === "futuresight" || id === "doomdesire") line = template(args[1], "activate");
         // a typing put back says nothing, as the games and Showdown say nothing (it said "typechange로부터 풀려났다")
-        // Supreme Overlord's count of the fallen (fallen1 to fallen5) is a number on the plate, never a sentence
-        if (!(cmd === "-end" && (id === "typechange" || id === "typeadd")) && !/^fallen\d$/.test(id))
-          say(template(args[1], cmd === "-start" ? "start" : "end") || (cmd === "-end" ? D("end") : null), { POKEMON: pokemonWord(args[0]), EFFECT: effectName(args[1]), SOURCE: kw.of ? pokemonWord(kw.of) : "" });
+        else if (id !== "typechange" && id !== "typeadd" && counted !== "fallen")
+          line = (from?.kind === "item" && template(args[1], "endFromItem")) || template(args[1], "end") || D("end");
+        say(line, values);
         break;
       }
       case "-singleturn": case "-singlemove": {
-        say(template(args[1], "start"), { POKEMON: pokemonWord(args[0]) });
+        // Instruct names the one told as the line's Pokémon and the one telling as [of]
+        if (parseEffect(args[1]).id === "instruct") say(template(args[1], "activate"), { POKEMON: kw.of ? pokemonWord(kw.of) : "", TARGET: pokemonWord(args[0]) });
+        else say(template(args[1], "start"), { POKEMON: pokemonWord(args[0]), SOURCE: kw.of ? pokemonWord(kw.of) : "", TEAM: teamWord(parseIdent(args[0])?.side) });
         // Roost: the Flying type is set aside until the turn ends (currentTypes leaves it out)
         if (parseEffect(args[1]).id === "roost" && monOf(args[0])) monOf(args[0]).roost = true;
         if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0], id: parseEffect(args[1]).id };
@@ -455,38 +499,87 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
       }
       case "-activate": {
         if (GUARDS.has(parseEffect(args[1]).id)) event = { verb: "protect", ident: args[0], id: parseEffect(args[1]).id };
-        const source = template(args[1], "activate") ?? template(args[1], "block") ?? null;
-        say(source, { POKEMON: pokemonWord(args[0]), TARGET: kw.of ? pokemonWord(kw.of) : "", SOURCE: kw.of ? pokemonWord(kw.of) : "", EFFECT: effectName(args[1]) });
+        /* who is who, as Showdown's client reads it: the target is the third part when it names a Pokémon, else [of], else the line's
+           own Pokémon (After You, Feint); a third part that is not a Pokémon is the move or item it names (Poltergeist's item, Leppa
+           Berry's move, Spite's move and count) */
+        const id = parseEffect(args[1]).id;
+        let [pokemon, target] = [args[0], parseIdent(args[2]) ? args[2] : kw.of || args[0]];
+        if (!parseIdent(args[2]) && ["feint", "hyperspacefury", "hyperspacehole", "phantomforce", "shadowforce", "hyperdrill"].includes(id)) [pokemon, target] = [kw.of || args[0], args[0]];
+        const named = parseIdent(args[2]) ? "" : args[2] || "";
+        const source = template(args[1], "activate") ?? template(args[1], "block") ?? template(args[1], "start") ?? null;
+        say(source, { POKEMON: pokemonWord(pokemon), TARGET: pokemonWord(target), SOURCE: kw.of ? pokemonWord(kw.of) : "", EFFECT: effectName(args[1]),
+          ITEM: named && effectName(`item: ${named}`), MOVE: named && effectName(`move: ${named}`), NUMBER: args[3] || "", TEAM: teamWord(parseIdent(target)?.side) });
         break;
       }
+      // Perish Song: the field's line, said once for everyone who heard it
+      case "-fieldactivate": say(template(args[0], "start"), {}); break;
       case "-ability": {
-        say(D("abilityActivation"), { POKEMON: pokemonWord(args[0]), ABILITY: effectName(`ability: ${args[1]}`) });
-        say(template(`ability: ${args[1]}`, "start"), { POKEMON: pokemonWord(args[0]) });
+        /* the ability shows as the popup alone (the stage's), never as a "[…의 …]" line in the message window, as in the games. A
+           Pokémon given an ability by a move or by Trace says what it became; one with a line of its own says it */
+        const values = { POKEMON: pokemonWord(args[0]), TARGET: pokemonWord(args[0]), ABILITY: effectName(`ability: ${args[1]}`), SOURCE: kw.of ? pokemonWord(kw.of) : "" };
+        const id = toID(args[1]);
+        const foes = teamWord(parseIdent(args[0])?.side === "p1" ? "p2" : "p1");
+        if (kw.fail) say(template(kw.from, "block"), values);
+        else if (from) say(template(kw.from, "changeAbility") || D("changeAbility"), values);
+        else say(template(`ability: ${args[1]}`, id === "sturdy" || id === "anticipation" ? "activate" : "start"), { ...values, TEAM: foes });
         monOf(args[0]).ability = args[1];
-        event = { verb: "ability", ident: args[0], name: effectName(`ability: ${args[1]}`) };
+        // a silent one pops nothing up either
+        event = kw.silent ? null : { verb: "ability", ident: args[0], name: effectName(`ability: ${args[1]}`) };
         break;
       }
       case "-item": {
-        say(template(`item: ${args[1]}`, "start") || D("addItem"), { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`), SOURCE: kw.of ? pokemonWord(kw.of) : "" });
+        /* as Showdown's client words it: Frisk says what the frisker found, a taken item says it was taken, an item given by a move
+           (Trick) says it was got, and an item that shows itself (Air Balloon) says its own line or nothing */
+        const values = { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`), SOURCE: kw.of ? pokemonWord(kw.of) : "" };
+        if (from?.id === "frisk") say(template(kw.from, kw.of && kw.of !== args[0] ? "activate" : "activateNoTarget"), { ...values, POKEMON: pokemonWord(kw.of || args[0]), TARGET: pokemonWord(args[0]) });
+        else if (["thief", "covet", "bestow", "magician", "pickpocket"].includes(from?.id)) say(template(kw.from, "takeItem") || D("takeItem"), values);
+        else if (from) say(D("addItem"), values);
+        else say(template(`item: ${args[1]}`, "start"), values);
         monOf(args[0]).item = args[1];
-        event = { verb: "item", ident: args[0], name: effectName(`item: ${args[1]}`) };
+        event = kw.silent ? null : { verb: "item", ident: args[0], name: effectName(`item: ${args[1]}`) };
         break;
       }
       case "-enditem": {
-        const values = { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`) };
-        say(kw.eat ? template(`item: ${args[1]}`, "eat") || D("eatItem") : template(`item: ${args[1]}`, "end") || D("removeItem"), values);
+        /* as Showdown's client words it: eaten; taken by a move (Knock Off's own line, or Bug Bite's); a resist berry weakening the
+           blow; else the item's own line or "…을 사용했다" */
+        const values = { POKEMON: pokemonWord(args[0]), ITEM: effectName(`item: ${args[1]}`), SOURCE: kw.of ? pokemonWord(kw.of) : "" };
+        say(kw.eat ? template(kw.from, "eatItem") || D("eatItem")
+          : from?.id === "stealeat" ? template("move: Bug Bite", "removeItem")
+          : from ? template(kw.from, "removeItem") || D("removeItem")
+          : kw.weaken ? D("activateWeaken")
+          : template(`item: ${args[1]}`, "end") || D("activateItem"), values);
         monOf(args[0]).item = "";
-        event = { verb: "item", ident: args[0], name: values.ITEM, gone: true };
+        event = kw.silent ? null : { verb: "item", ident: args[0], name: values.ITEM, gone: true };
         break;
       }
-      case "cant": say(template(args[1], "cant") || D("cant"), { POKEMON: pokemonWord(args[0]), MOVE: args[2] ? effectName(`move: ${args[2]}`) : "" }); event = { verb: "cant", ident: args[0], why: parseEffect(args[1]).id }; break;
+      case "cant": {
+        // Damp, Dazzling, Queenly Majesty and Armor Tail stand on the holder's line; the one that cannot move is [of]
+        const blocked = ["damp", "dazzling", "queenlymajesty", "armortail"].includes(parseEffect(args[1]).id) && kw.of ? kw.of : args[0];
+        say(template(args[1], "cant") || D(args[2] ? "cant" : "cantNoMove"), { POKEMON: pokemonWord(blocked), MOVE: args[2] ? effectName(`move: ${args[2]}`) : "" });
+        event = { verb: "cant", ident: blocked, why: parseEffect(args[1]).id };
+        break;
+      }
       case "-prepare": say(template(`move: ${args[1]}`, "prepare"), { POKEMON: pokemonWord(args[0]) }); break;
       case "-supereffective": say(D("superEffective"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "super", ident: args[0] }; break;
       case "-resisted": say(D("resisted"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "resist", ident: args[0] }; break;
-      case "-immune": say(D("immune"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "immune", ident: args[0] }; break;
+      case "-immune": say((from && template(kw.from, "block")) || D(!args[0] ? "immuneNoPokemon" : kw.ohko ? "immuneOHKO" : "immune"), { POKEMON: args[0] ? pokemonWord(args[0]) : "" }); event = { verb: "immune", ident: args[0] }; break;
       case "-crit": say(D("crit"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "crit", ident: args[0] }; break;
       case "-miss": say(D("miss"), { POKEMON: pokemonWord(args[1] || args[0]) }); event = { verb: "miss", ident: args[1] || args[0] }; break;
-      case "-fail": say(D("fail"), { POKEMON: pokemonWord(args[0]) }); event = { verb: "fail", ident: args[0] }; break;
+      case "-fail": {
+        /* as Showdown's client words it: what blocked it (an ability, a weather) says so; a stat that would not fall says so; a status
+           or a substitute already there says so; else it failed */
+        const id = parseEffect(args[1]).id;
+        const values = { POKEMON: pokemonWord(args[0]), STAT: text.stats[args[2]] || "" };
+        const blockKey = ["desolateland", "primordialsea"].includes(from?.id) && !["sunnyday", "raindance", "sandstorm", "hail", "snowscape", "chillyreception"].includes(id) ? "blockMove"
+          : from?.id === "uproar" && kw.msg ? "blockSelf" : "block";
+        const blocked = from && template(kw.from, blockKey);
+        if (blocked) say(blocked, values);
+        else if (id === "unboost") say(template("unboost", args[2] ? "fail" : "failNoStat"), values);
+        else say(template(args[1], kw.heavy ? "failTooHeavy" : kw.weak ? "fail" : kw.forme ? "failWrongForme"
+          : ["brn", "frz", "par", "psn", "slp", "substitute", "shedtail"].includes(id) ? "alreadyStarted" : "fail") || D("fail"), values);
+        event = { verb: "fail", ident: args[0] };
+        break;
+      }
       case "-notarget": say(D("noTarget"), { POKEMON: args[0] ? pokemonWord(args[0]) : "" }); break;
       case "-ohko": say(D("ohko"), {}); break;
       case "-hitcount": say(D("hitCount") || D("hitCountSingular"), { POKEMON: pokemonWord(args[0]), NUMBER: args[1] }); break;

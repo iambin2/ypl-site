@@ -59,6 +59,19 @@ export const KO_FILL = {
   },
 };
 
+// Lines Showdown's Korean has with the particle left off the Pokémon ("{POKEMON} 방어 태세에 들어갔다!"), set right over its text.
+export const KO_FIX = {
+  moves: {
+    protect: { start: "  {POKEMON:topic} 방어 태세에 들어갔다!", block: "  {POKEMON:topic} 공격으로부터 몸을 지켰다!" },
+    maxguard: { activate: "  {POKEMON:topic} 공격으로부터 몸을 지켰다!" },
+    healblock: { start: "  {POKEMON:topic} 회복 동작을 봉인당했다!" },
+  },
+};
+export const applyFix = (data, fix = KO_FIX) => {
+  for (const [table, rows] of Object.entries(fix)) for (const [id, row] of Object.entries(rows)) Object.assign(data[table][id], row);
+  return data;
+};
+
 // The text files are object literals behind one type annotation, at a fixed commit of a trusted repository.
 function evaluate(source) {
   const module = { exports: {} };
@@ -101,7 +114,7 @@ export function buildBattleText(files, champions = { pokedex: {}, speciesNames: 
     const base = /[가-힣]/.test(own) ? own : champions.speciesNames?.koreanById?.[record.num];
     if (pokedex[id] && /[가-힣]/.test(base) && !/[가-힣]/.test(pokedex[id])) pokedex[id] = formDisplayName(record, base);
   }
-  return {
+  return applyFix({
     commit: SHOWDOWN_COMMIT,
     default: merge(en("default"), ko("default"), KO_FILL.default),
     moves: named(merge(en("moves"), ko("moves"), KO_FILL.moves), KO.moves),
@@ -110,7 +123,7 @@ export function buildBattleText(files, champions = { pokedex: {}, speciesNames: 
     pokedex,
     stats: pick("StatNames"),
     types: pick("TypeNames"),
-  };
+  });
 }
 
 export function validateBattleText(data) {

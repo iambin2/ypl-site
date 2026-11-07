@@ -109,13 +109,39 @@ test("Zero to Hero turns Palafin unseen on its way back to the ball, and it come
   reader.read("|switch|p1a: Palafin|Palafin, L50, M|175/175");
   const turned = reader.read("|detailschange|p1a: Palafin|Palafin-Hero, L50, M");
   assert.equal(turned.event, null, "no change of form is drawn before the recall");
+  // feedback 2026-11-07: the stage redraws on any line, so the state itself keeps the Zero form until it has gone
+  assert.equal(reader.state.sides.p1.active[0].species, "Palafin", "it goes back to its ball in its own form, as in the games");
   const out = reader.read("|switch|p1a: Pikachu|Pikachu, L50, M|110/110");
   assert.equal(out.event.leaving, "p1: Palafin", "the recall still knows who goes back");
+  assert.equal(reader.state.sides.p1.team.Palafin.species, "Palafin-Hero", "once gone, it is the Hero on the bench");
   const back = reader.read("|switch|p1a: Palafin|Palafin-Hero, L50, M|128/175");
   assert.equal(reader.state.sides.p1.active[0].species, "Palafin-Hero");
   assert.equal(back.event.verb, "enter");
   // any other change of form is still drawn where it happens
   assert.equal(reader.read("|detailschange|p1a: Palafin|Palafin, L50, M").event.verb, "change");
+});
+
+test("the message window says only what the games say, with every name filled (feedback 2026-11-07)", () => {
+  const reader = createBattleReader({ text, moves, perspective: "p1" });
+  for (const line of ["|player|p1|가||", "|player|p2|나||", "|switch|p1a: Slowbro|Slowbro, L50, M|200/200", "|switch|p2a: Pyroar|Pyroar, L50, M|100/100"]) reader.read(line);
+  const says = line => reader.read(line).lines;
+  // what the engine marks silent: Yawn ending just before the sleep, Regenerator, the items Trick trades
+  assert.deepEqual(says("|-end|p1a: Slowbro|move: Yawn|[silent]"), []);
+  assert.deepEqual(says("|-heal|p1a: Slowbro|200/200|[from] ability: Regenerator|[silent]"), []);
+  assert.deepEqual(says("|-enditem|p1a: Slowbro|Leftovers|[silent]|[from] move: Trick"), []);
+  // Showdown's own notes in brackets: the weather going on, Roost's lost Flying type
+  assert.deepEqual(says("|-weather|RainDance|[upkeep]"), []);
+  assert.deepEqual(says("|-singleturn|p1a: Slowbro|move: Roost"), []);
+  // an ability is the popup alone, never a "[…의 …]" line
+  const intimidate = reader.read("|-ability|p2a: Pyroar|Intimidate|boost");
+  assert.deepEqual(intimidate.lines, []);
+  assert.equal(intimidate.event.verb, "ability");
+  // the names a template asks for are there
+  assert.deepEqual(says("|-start|p2a: Pyroar|Disable|Flamethrower|[from] ability: Cursed Body|[of] p1a: Slowbro"), ["상대 화염레오의 화염방사를 봉인했다!"]);
+  assert.deepEqual(says("|-activate|p2a: Pyroar|move: After You"), ["상대 화염레오는 배려를 받아들이기로 했다!"]);
+  assert.deepEqual(says("|-start|p1a: Slowbro|perish3"), ["야도란의 멸망의 카운트가 3이 되었다!"]);
+  assert.deepEqual(says("|-start|p1a: Slowbro|perish2"), ["야도란의 멸망의 카운트가 2가 되었다!"]);
+  assert.deepEqual(says("|-singleturn|p1a: Slowbro|Protect"), ["야도란은 방어 태세에 들어갔다!"]);
 });
 
 test("official battles count each Pokémon's games, leads and wins from the public lines only", () => {

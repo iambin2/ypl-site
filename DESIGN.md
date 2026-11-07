@@ -502,7 +502,7 @@ The Wing Y (`public/brand/ypl-wing-y.svg`) and the slanted solid wordmark (`publ
 
 ## Voice and tone
 
-Words are under the law too. Korean, plain and factual: what happens, then what to do. These rules cover the words the site itself writes, never what people write in it, and never the game's own battle messages: those are quoted as the game prints them (Showdown's Korean text, taken from Pokémon Champions), 반말 and exclamation marks included, and only the site's words around them follow this chapter.
+Words are under the law too. Korean, plain and factual: what happens, then what to do. These rules cover the words the site itself writes, never what people write in it, and never the game's own battle messages: those are quoted as the game prints them (Showdown's Korean text, taken from Pokémon Champions), 반말 and exclamation marks included, and only the site's words around them follow this chapter. The message window says only what the game says (decided 2026-11-07): a line the engine marks `[silent]` (Yawn wearing off before the sleep, Regenerator, the items Trick trades), a note Showdown writes in brackets (the weather going on, Roost) and an ability's "[…의 …]" line (the ability plate shows it) are never printed, and each line is picked and filled the way Showdown's own client does, so no name is ever left blank.
 
 **Register.** Polite formal 합니다체, one voice everywhere.
 
