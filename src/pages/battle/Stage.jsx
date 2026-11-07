@@ -8,7 +8,7 @@ import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
 import { cry, loadCry } from "./cries.js";
 import { sfx, conditionSound } from "./sfx.js";
-import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectWord, effectiveness, maxPP } from "./battleWords.js";
+import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectType, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
 import { closeGate, openGate } from "./Gate.js";
@@ -499,7 +499,7 @@ function Roster({ list, slots = 0, label }) {
     {list.map((m, i) => <span key={i} className={`stand bt-rm ${m.light}`}>
       <i className="floor">{m.share != null && <Gauge share={m.share} />}</i>
       <Mon src={spriteUrl(m.species)} draggable="false" onError={onSpriteError()} />
-      {m.status && <i className={`bt-rm-st type-${STATUS_TYPE[m.status] || "normal"}`} />}
+      {m.status && <b className={`bt-st bt-rm-st type-${STATUS_TYPE[m.status] || "normal"}`}>{STATUS[m.status]}</b>}
     </span>)}
     {Array.from({ length: Math.max(0, slots - list.length) }, (_, i) => <span key={`e${i}`} className="stand bt-rm none"><i className="floor" /><b className="bt-rm-q">?</b></span>)}
   </span>;
@@ -529,7 +529,7 @@ function Strip({ side, scene, name, res, known, onParty }) {
       {onParty && <span className="bt-strip-more" aria-hidden="true"><Icon n="chevr" size={16} />내 파티</span>}
       </span>
       {(s?.conditions || []).length > 0 && <span className="bt-conds">
-        {s.conditions.map(c => <span key={c} className="bt-cond">{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
+        {s.conditions.map(c => <span key={c} className={`bt-cond type-${effectType(c)}`}>{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
           {turnsLeft(c, s.since[c], scene.turn) && <span>{turnsLeft(c, s.since[c], scene.turn)}</span>}</span>)}
       </span>}
     </Tag>

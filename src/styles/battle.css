@@ -205,7 +205,9 @@
    so the two strips and the stage read as one frame with no box round the party; light says where each Pokémon is (out lit, bench
    dim, not yet shown muted, fainted grey). The name, the party and (ours) 내 파티 are one line that never wraps: the name gives way
    first (an ellipsis), then the party shrinks together; the side's conditions take a line under it. */
-.bt-strip { --ball: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); width: 100%; min-height: var(--h-row); padding: var(--s1) var(--pad); text-align: left; background: var(--ground); }
+.bt-strip { --ball: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); width: 100%; min-height: var(--h-row); padding: var(--s1) var(--pad); text-align: left; background: var(--ground); }
+/* the side's conditions under the party keep the strip's room below them too, not a hair off its edge (2026-11-07) */
+.bt-strip:has(> .bt-conds) { padding-bottom: var(--s3); }
 :root[data-theme="light"] .bt-strip { background: var(--panel); }
 .bt-strip-row { flex: 1 0 100%; display: flex; align-items: center; gap: var(--s3); min-width: 0; max-width: 100%; }
 /* the two sides face each other as they stand on the court: ours from the left (the name, then the party), the foe's from the right
@@ -216,7 +218,8 @@
 .bt-trainer { flex: 0 12 auto; min-width: 2em; max-width: 160px; font-size: var(--t15); line-height: var(--l15); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 /* the party: each Pokémon on a 2 floor that is its HP bar (4 read too heavy, the user 2026-11-07), its feet on it by its ink */
 .bt-roster { flex: 0 1 auto; min-width: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, var(--ball)); gap: var(--s1); }
-.bt-rm { --floor: var(--line); display: block; width: 100%; aspect-ratio: 13 / 14; }
+/* a bare floor (one not shown yet, a ? place) is the same 2: board.css's empty-floor rule would make it 4 and outweighs .bt-rm */
+.bt-rm, .stand.bt-rm:has(> .floor:empty) { --floor: var(--line); display: block; width: 100%; aspect-ratio: 13 / 14; }
 .bt-rm > .floor { background: var(--rule); }
 .bt-rm > .floor > .bt-hp { height: 100%; background: none; }
 .bt-rm .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--seam)); margin-inline: auto; }
@@ -225,8 +228,9 @@
 .bt-rm.off .mon { opacity: var(--opacity-disabled); filter: grayscale(1); }
 /* a place kept for a Pokémon not known yet */
 .bt-rm-q { position: absolute; inset: 0 0 var(--floor); display: grid; place-items: center; color: var(--mute); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
-/* a status: a square in its colour at the picture's corner */
-.bt-rm-st { position: absolute; top: 0; right: 0; width: var(--lamp); height: var(--lamp); background: var(--type); }
+/* a status: the plate's own tag (독 on its purple) at the picture's top corner, so the mark reads alike on the strip and the plate
+   (a bare 8 square there read as a stray dot, the user 2026-11-07) */
+.bt-rm-st { position: absolute; top: 0; right: 0; }
 /* the foe's strip before a battle: who it is, with a dim word after it (the computer's level) or a lamp before it (참가 대기) */
 .bt-who { flex: 0 12 auto; display: flex; align-items: center; gap: var(--s2); min-width: 0; }
 .bt-who-note { flex: none; color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 600; white-space: nowrap; }
@@ -242,8 +246,11 @@
 .bt-strip.key:active:not(:disabled) { scale: 1; }
 @media (hover: hover) { .bt-strip.key:hover { background: var(--panel-2); } .bt-strip.key:hover .bt-strip-more { color: var(--lit); } }
 .bt-strip.key:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-.bt-conds { display: flex; flex-wrap: wrap; gap: var(--seam); }
-.bt-cond { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+/* each condition a tag as the site draws a type (DESIGN.md: the side's conditions as tags): an 8 square in the type of the move
+   that laid it, then its word, standing on the strip's own ground (a panel box round the word sat tight on the strip, 2026-11-07) */
+.bt-conds { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); }
+.bt-cond { display: flex; align-items: center; gap: var(--s2); white-space: nowrap; font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+.bt-cond::before { content: ""; width: var(--lamp); height: var(--lamp); flex: none; background: var(--type); }
 .bt-cond > span { color: var(--dim); font-weight: 400; }
 
 
