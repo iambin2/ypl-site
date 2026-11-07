@@ -769,9 +769,15 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
     if (reads) before = { text: strip(battle), turn: battle.turn };
     const state = calcOn(sample(battle, side, true));
     const all = wholeChoices(state, side, { active: req.active.map(a => ({ ...a, canMegaEvo: Boolean(a.canMegaEvo) })), mons: req.side.pokemon.map(p => ({ fainted: p.condition.endsWith(" fnt"), active: p.active })) }, doubles ? 11 : 12, doubles ? 6 : 12);
+    /* a trap or a lock the request only hints at (maybeTrapped under a Mega Gengar's Shadow Tag, maybeDisabled under Imprison) lists
+       choices the engine refuses; the believed copy, which carries what the screen shows, says which (bench 2026-11-07: the weaker
+       levels' mistakes and a lone switch left after every immune move skipped the search that already scored them as refused) */
+    const hinted = req.active.some(a => a.maybeTrapped || a.maybeDisabled);
+    const text = hinted && strip(state);
+    const playable = hinted ? all.filter(o => revive(text).choose(side, o.choice)) : all;
     // a move that does nothing to what stands in front is never played as a read on a switch; only when nothing else is left
-    const live = all.filter(o => !idle(state, side, o.choice, seedOf(random)));
-    const own = live.length ? live : all;
+    const live = playable.filter(o => !idle(state, side, o.choice, seedOf(random)));
+    const own = live.length ? live : playable.length ? playable : all;
     if (own.length <= 1) return own[0]?.choice || "move 1";
     /* a switch has to be clearly better than staying, as a ranker sees it: the search looks one turn on, so it never sees that the
        Pokémon it brings in will want out again, and two that each lose to the foe were switched back and forth, each taking the hit

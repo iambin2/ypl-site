@@ -202,3 +202,25 @@ test("the computer left with only an ally move after its partner fell uses it in
   assert.equal(picked, "pass, move 1 -1");
   assert.ok(choose(battle, {}, "p2", picked).ok, "the engine takes it");
 });
+
+/* bench 2026-11-07 (refused 1 at the weaker levels): Mega Gengar's Shadow Tag traps without the request saying so (maybeTrapped, not
+   trapped), so every switch it lists is one the engine refuses. Here every move is a Normal move into a Ghost, so the switch was all
+   that was left */
+test("the computer facing a Shadow Tag the request only marks maybeTrapped never chooses a switch the engine refuses", () => {
+  const formatid = formatId("m-c", "singles");
+  const mon = (species, item, ability, moves) => ({ name: "", species, item, ability, moves, nature: "Adamant", evs: { hp: 32, atk: 32 }, level: 50 });
+  for (const [id, level] of Object.entries(LEVELS)) for (const seed of [1, 2, 3]) {
+    const cpu = createCpu(formatid, { ...level.options, random: seeded(seed), budgetMs: 20 });
+    const battle = startBattle({ formatid, seed: [seed, 2, 3, 4],
+      p1: { name: "사람", team: [mon("Gengar", "Gengarite", "Cursed Body", ["Shadow Ball"])] },
+      p2: { name: "컴퓨터", team: [mon("Kangaskhan", "Leftovers", "Early Bird", ["Double-Edge", "Body Slam"]), mon("Snorlax", "Leftovers", "Thick Fat", ["Double-Edge", "Body Slam"])] } });
+    choose(battle, null, "p1", "team 1"); choose(battle, null, "p2", "team 1, 2");
+    choose(battle, null, "p1", "move 1 mega"); choose(battle, null, "p2", "move 1");
+    assert.ok(battle.p2.activeRequest.active[0].maybeTrapped, "the trap is hidden");
+    for (let turn = 0; turn < 3; turn++) {
+      const choice = cpu.decide(battle, "p2");
+      assert.ok(choose(battle, null, "p2", choice).ok, `${id} seed ${seed}: ${choice} refused`);
+      choose(battle, null, "p1", "move 1");
+    }
+  }
+});
