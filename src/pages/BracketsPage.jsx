@@ -16,7 +16,8 @@ import { applyTitleAwards, evaluateTitleAwards, revertTitleAwards } from "../ser
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { drawPlan } from "../services/bracketProjection.js";
-import { BYE, cascadeClear, collectGraphMatches, evalGraph, withPick } from "../services/bracketWinnerPlan.js";
+import { BYE, cascadeClear, clearedByPick, collectGraphMatches, evalGraph, withPick } from "../services/bracketWinnerPlan.js";
+import { matchStage } from "../services/recordsAnalytics.js";
 import { battleForMatch, battleHref, battleWinnerEntry, listEventBattles, officialBattleHref, retryBattleApply, voidBattle } from "../services/battleService.js";
 import Seg from "../components/common/Seg.jsx";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
@@ -1304,6 +1305,16 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     const entryId=side==="a"?current.sp(match.a):current.sp(match.b);
     if(!entryId||entryId===BYE)return;
     const winnerEntryId=match.winner===side?null:entryId;
+    /* 확정된 승자를 바꾸거나 취소하면 이어진 경기의 결과가 지워지고, 되돌리기가 없다: 무엇이 지워지는지 말하고 한 번 묻는다
+       (DESIGN.md "Composing a screen" 18, 2026-11-08 관리자 워크스페이스) */
+    if(match.winner){
+      const cleared=clearedByPick(b,matchId,side);
+      if(cleared.length){
+        const stages=[...new Set(cleared.map(id=>matchStage(b,id)).filter(Boolean))].join(", ");
+        const cancel=match.winner===side;
+        if(!(await siteConfirm({title:cancel?"승자 취소":"승자 바꾸기",body:`이 경기의 승자를 ${cancel?"취소하면":"바꾸면"} 이어진 경기 ${cleared.length}개의 결과가 지워집니다${stages?` (${stages})`:""}. 지운 결과는 다시 입력해야 합니다.`,confirmLabel:cancel?"승자 취소":"바꾸기",danger:true})))return;
+      }
+    }
     matchMutationBusyRef.current=true;
     setMatchMutationBusy(true);
     try{

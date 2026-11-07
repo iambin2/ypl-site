@@ -14,7 +14,7 @@ import Toaster from "./components/common/Toaster.jsx";
 import { DUR, light, reduced, themeTurn, transition } from "./components/common/motion.js";
 import { initHistory, popHandlers, popped, pushHistory } from "./components/layout/history.js";
 import AdminModeBar from "./admin/AdminModeBar.jsx";
-import { onAdminSessionLost, signOutAdmin } from "./storage.js";
+import { onAdminSessionLost, restoreAdmin, signOutAdmin } from "./storage.js";
 import LazyContent from "./components/common/LazyContent.jsx";
 import Loader, { Busy } from "./components/common/Loader.jsx";
 import { Arrived, LiveStrip } from "./components/common/Board.jsx";
@@ -53,6 +53,7 @@ const TeamBuilderPage = lazyPage(() => import("./pages/TeamBuilderPage.jsx"));
 const CalculatorPage = lazyPage(() => import("./pages/CalculatorPage.jsx"));
 const TitlesPage = lazyPage(() => import("./pages/TitlesPage.jsx"));
 const BattlePage = lazyPage(() => import("./pages/BattlePage.jsx"));
+const AdminPage = lazyPage(() => import("./admin/AdminPage.jsx"));
 // dev only: the production build leaves the lab and the engine it loads out
 const BattleLabPage = import.meta.env.DEV ? lazyPage(() => import("./pages/BattleLabPage.jsx")) : null;
 const AdminModalHost = lazy(() => import("./admin/AdminModalHost.jsx"));
@@ -121,7 +122,7 @@ export default function App() {
   },[dark]);
   /* 탭 제목 — 뒤로 가기 목록과 브라우저 탭에서 어디에 있었는지 구분되게 화면 이름을 붙인다. */
   useEffect(()=>{
-    const label=view==="more"?"더보기":view==="privacy"?"개인정보처리방침":(NAV_ITEMS.find(([key])=>key===view)||[])[1];
+    const label=view==="more"?"더보기":view==="privacy"?"개인정보처리방침":view==="admin"?"운영":(NAV_ITEMS.find(([key])=>key===view)||[])[1];
     document.title=label?`${label} | YPL`:"Yonsei Pokémon League";
     // 검색 엔진에 화면 주소만 알린다. eventId와 배포 갱신용 __ypl_v 같은 덧붙은 값은 뺀다.
     document.querySelector('link[rel="canonical"]')?.setAttribute("href",`https://league.pokeyonsei.com/${view==="home"?"":`?view=${view}`}`);
@@ -178,9 +179,13 @@ export default function App() {
   },[view]);
   const flash=useCallback((m,action)=>setToast({id:Date.now()+Math.random(),text:m,action}),[]);
   useEffect(()=>{ onAdminSessionLost(()=>{ setAdmin(false); flash("로그인이 만료되었습니다. 다시 로그인해 주세요."); }); },[flash]);
+  // 새로고침한 탭은 관리자 모드로 돌아온다(storage.js restoreAdmin). 돌아온 것은 로그인이 아니라 아래 알림을 다시 띄우지 않는다.
+  const restored=useRef(false);
+  useEffect(()=>{ restoreAdmin().then(ok=>{ if(ok){ restored.current=true; setAdmin(true); } }); },[]);
   // 대회일이 지났는데 기록 반영 전인 대회를 로그인 때 한 번 알린다. 확인하지 못하면 조용히 넘어간다.
   useEffect(()=>{
     if(!admin) return;
+    if(restored.current){ restored.current=false; return; }
     listEventsAwaitingRecord().then(rows=>{
       if(rows.length) flash(`지난 대회 ${rows.length}개가 아직 기록 반영 전입니다.`,{label:"대진표",run:()=>go("bracket")});
     }).catch(()=>{});
@@ -277,6 +282,7 @@ export default function App() {
         {view==="builder"&&<TeamBuilderPage go={go} flash={flash} admin={admin}/>}
         {view==="calc"&&<CalculatorPage/>}
         {view==="battle"&&<BattlePage flash={flash} go={go}/>}
+        {view==="admin"&&<AdminPage data={data} admin={admin} go={go} onAdmin={onAdmin} save={save} flash={flash}/>}
         {view==="lab"&&BattleLabPage&&<BattleLabPage flash={flash} go={go}/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal} go={go}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}
@@ -287,7 +293,7 @@ export default function App() {
       {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={!admin?onAdmin:null}/>}
 
       <TabBar view={going||view} onNavigate={go} live={live}/>
-      {admin&&<AdminModeBar onLogout={logout}/>}
+      {admin&&<AdminModeBar onLogout={logout} onDesk={view==="admin"?null:()=>go("admin")}/>}
       {more&&<Menu anchor={more} title="더보기" items={moreItems} onClose={()=>setMore(null)}/>}
       <Toaster feed={toast}/>
       <SiteDialogHost/>

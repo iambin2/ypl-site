@@ -56,6 +56,14 @@ export function withPick(b, matchId, side) {
   return nb;
 }
 
+/* 승자를 바꾸거나 취소하면 지워지는 뒤 경기들: 지금 결과가 있는데 바꾼 뒤에는 없는 경기(누른 경기 자신은 빼고).
+   운영 화면에서 확정된 승자를 바꾸기 전에 무엇이 지워지는지 말하고 한 번 묻는 데 쓴다(DESIGN.md "Admin", 2026-11-08). */
+export function clearedByPick(b, matchId, side) {
+  const decided = bracket => new Set([bracket.graph, bracket.knockout].filter(Boolean).flatMap(g => collectGraphMatches(g)).filter(m => m.winner).map(m => m.id));
+  const before = decided(b), after = decided(withPick(b, matchId, side));
+  return [...before].filter(id => id !== matchId && !after.has(id));
+}
+
 /* 데이터베이스에서 읽은 대진표 사실(런타임, 슬롯, 출전, 참가자, 경기, 신청)을 화면이 쓰는 대진표로 투영한다. */
 export function projectRuntimeFacts(runtime, event, {
   slots: slotsResult,

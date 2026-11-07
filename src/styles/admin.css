@@ -127,3 +127,29 @@
 .fb-cells { margin-bottom: var(--s5); }
 .fb-cells .cell { --field-bg: transparent; }
 .sheet .fb-cells .cell { background: var(--panel); }
+
+/* ---------- 운영 (DESIGN.md "Admin", 2026-11-08): counters, what waits as rows, the editors' doors; beside them each event in progress
+   with its steps, its facts and its one action, held in view on desktop. On a phone: the counters, 할 일, 대회 진행, 편집. ---------- */
+.ad-page { display: grid; gap: var(--s5); }
+.ad-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ad-cols, .ad-main, .ad-side { display: grid; gap: var(--s8); align-content: start; min-width: 0; }
+.ad-block { display: grid; gap: var(--s3); }
+.ad-side { gap: var(--s3); }
+.ad-side > .ad-event + .ad-event { margin-top: var(--s5); }
+.ad-event { display: grid; gap: var(--seam); }
+.ad-event > :is(.btn, .ad-keys) { margin-top: var(--s3); }
+/* two keys of one event joined on the seam, the rarer one first and smaller, 1 to 1.618 (Hierarchy) */
+.ad-keys { grid-auto-flow: column; grid-template-columns: 1fr 1.618fr; }
+.ad-keys:has(> :only-child) { grid-template-columns: 1fr; }
+.ad-event-head, .ad-none { display: grid; gap: var(--s1); padding: var(--s3) var(--pad); }
+.ad-page > .btn { justify-self: start; }
+@media (max-width: 859px) {
+  .ad-main { display: contents; }
+  .ad-main > .ad-block:last-child { order: 2; }
+  .ad-side { order: 1; }
+}
+@media (min-width: 860px) {
+  .ad-counts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ad-cols { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); justify-content: space-between; align-items: start; }
+  .ad-side { position: sticky; top: calc(var(--nav-height) + var(--s5)); }
+}

@@ -12,7 +12,11 @@ export const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // 현장의 불안한 네트워크에서 조회가 멈추면 화면이 끝없이 불러오는 중에 머문다. 쓰기는 끊지 않는다: 저장됐는지 알 수 없게 된다.
 const READ_TIMEOUT_MS = 15000;
 
-// 관리자 로그인 세션. 메모리에만 두므로 새로고침하면 관리자 모드와 함께 풀린다.
+/* 관리자 로그인 세션. 토큰은 메모리에 두고, 갱신 토큰만 이 탭의 sessionStorage에 남긴다(2026-11-08, 관리자 워크스페이스:
+   새로고침할 때마다 다시 로그인해야 했다). 탭을 닫으면 사라지고, 다른 탭과 기기에는 넘어가지 않는다. 운영진이 함께 쓰는 계정이라
+   localStorage에는 두지 않는다. */
+const ADMIN_KEY = "ypl-admin:v1";
+const keepRefresh = token => { try { if (token) sessionStorage.setItem(ADMIN_KEY, token); else sessionStorage.removeItem(ADMIN_KEY); } catch { /* 새로고침하면 다시 로그인한다 */ } };
 let session = null;
 let refreshTimer = 0;
 let refreshing = null;
@@ -58,6 +62,7 @@ async function requestToken(grant, body) {
     throw rejected;
   }
   session = await response.json();
+  keepRefresh(session.refresh_token);
   // 만료 1분 전에 갱신한다.
   expiresAt = Date.now() + Math.max(session.expires_in - 60, 30) * 1000;
   clearTimeout(refreshTimer);
@@ -81,7 +86,17 @@ export async function signInAdmin(login, password) {
   if (supa) await requestToken("password", { email: adminEmailOf(String(login || "").trim()), password });
 }
 
+// 새로고침한 탭: 남긴 갱신 토큰으로 다시 들어간다. 서버가 거절하면(만료, 다른 탭이 먼저 씀) 지우고 로그아웃 상태로 둔다.
+export async function restoreAdmin() {
+  let kept = null;
+  try { kept = sessionStorage.getItem(ADMIN_KEY); } catch { return false; }
+  if (!supa || !kept || session) return Boolean(session);
+  try { await requestToken("refresh_token", { refresh_token: kept }); return true; }
+  catch (error) { if (error.rejected) keepRefresh(null); return false; }
+}
+
 export function signOutAdmin() {
+  keepRefresh(null);
   session = null;
   clearTimeout(refreshTimer);
 }

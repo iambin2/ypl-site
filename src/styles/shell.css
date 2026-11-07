@@ -107,6 +107,9 @@
 }
 .admin-dock .lamp { background: var(--ground); }
 .admin-dock-out { margin-left: auto; align-self: stretch; padding: 0 var(--s3); margin-right: calc(var(--s3) * -1); font-weight: 600; }
+/* 운영 stands before 로그아웃 at the right end: the first key there takes the push, the second follows it */
+.admin-dock-desk + .admin-dock-out { margin-left: 0; }
+.admin-dock-desk { margin-right: 0; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: var(--hair); }
 
 /* ---------- footer: on the ground under a hairline ---------- */
 .site-foot { position: relative; flex: none; margin-top: auto; background: var(--ground); color: var(--dim); box-shadow: inset 0 1px 0 var(--rule); }

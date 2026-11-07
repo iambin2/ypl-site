@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildBracketMatchSyncPlan, buildEventBracketMatchSnapshot } from "../src/services/bracketMatchSnapshot.js";
-import { collectGraphMatches, evalGraph, planMatchWinner, projectRuntimeFacts, withPick } from "../src/services/bracketWinnerPlan.js";
+import { clearedByPick, collectGraphMatches, evalGraph, planMatchWinner, projectRuntimeFacts, withPick } from "../src/services/bracketWinnerPlan.js";
 
 const EVENT_ID = "event-1", RUNTIME_ID = "runtime-1";
 const ok = data => ({ data, error: null });
@@ -62,4 +62,15 @@ test("a battle whose opponent is no longer in the match puts nothing in (an oper
   const f = facts("single_elimination", rows);
   assert.throws(() => planMatchWinner(f, "single:r2:m1", "entry-a", NOW, "entry-c"), /두 선수가 배틀의 두 선수와 다릅니다/);
   assert.equal(planMatchWinner(f, "single:r2:m1", "entry-a", NOW, "entry-d").mode, "single");
+});
+
+test("changing a decided winner names the later results it clears, and a first pick clears none", () => {
+  // four players, both semis and the final decided
+  const rows = [row("single:r1:m1", "entry-a", "entry-b", "entry-a"), row("single:r1:m2", "entry-c", "entry-d", "entry-c"), row("single:r2:m1", "entry-a", "entry-c", "entry-a")];
+  const { bracket } = facts("single_elimination", rows);
+  assert.deepEqual(clearedByPick(bracket, "single:r1:m1", "b"), ["single:r2:m1"], "the semi changes: the final's result goes");
+  assert.deepEqual(clearedByPick(bracket, "single:r1:m1", "a"), ["single:r2:m1"], "cancelling it clears the final too");
+  assert.deepEqual(clearedByPick(bracket, "single:r2:m1", "b"), [], "the final itself has nothing after it");
+  const open = facts("single_elimination", [row("single:r1:m1", "entry-a", "entry-b"), row("single:r1:m2", "entry-c", "entry-d")]).bracket;
+  assert.deepEqual(clearedByPick(open, "single:r1:m1", "a"), [], "a first pick clears nothing");
 });
