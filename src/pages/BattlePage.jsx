@@ -27,9 +27,9 @@ import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.
 import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
-import { logUpTo, nextStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
+import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
 import { claimTimeout, rememberBattle } from "../services/battleWatch.js";
-import { BattleLists, ReplayBar, downloadReplay } from "./battle/Replay.jsx";
+import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
@@ -59,6 +59,9 @@ const openTeam = id => { const kept = openTeams()[id]; return readSavedTeams().f
 export default function BattlePage({ flash: say, go }) {
   const params = new URLSearchParams(window.location.search);
   const [id, setId] = useState(() => params.get("id"));
+  /* a shared replay of a battle with the computer (?replay=…) is state like the battle's id: read from the address only once, it
+     changed nothing when 새 배틀 left it, so the page never moved (2026-11-07, the user: "새 배틀 버튼을 누르면 아무 작동도 안 해") */
+  const [replay, setReplay] = useState(() => params.get("replay"));
   const official = params.get("event") && params.get("match") ? { eventId: params.get("event"), nodeKey: params.get("match") } : null;
   /* the computer's room opens only on a battle this device holds: a link to it (?cpu=1) shared, opened on another device or after the
      battle was cleared comes to the battle page instead of a page with nothing on it */
@@ -79,6 +82,7 @@ export default function BattlePage({ flash: say, go }) {
     pushHistory({ view: "battle" }, url);
     setCpu(next === CPU_ROOM);
     setId(next === CPU_ROOM ? null : next);
+    setReplay(null);
   }, []);
   // a gate closed over the page opens on what stands now, whatever it is
   useEffect(() => { if (res?.error) openGate(); }, [res]);
@@ -86,7 +90,7 @@ export default function BattlePage({ flash: say, go }) {
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
   if (cpu) return <RoomGuard key={`cpu${cpuRound}`}><CpuRoom res={res} say={say} go={go} onLeave={() => open(null)} onRestart={() => setCpuRound(n => n + 1)} /></RoomGuard>;
-  if (params.get("replay")) return <RoomGuard key={params.get("replay")}><CpuReplay id={params.get("replay")} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
+  if (replay) return <RoomGuard key={replay}><CpuReplay id={replay} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} onOpen={open} code={params.get("code")} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
   return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
@@ -788,7 +792,8 @@ function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
 
 /* ---------- the arena: the stage, its playback, the choices and the log (DESIGN.md "Battle", The stage) ---------- */
 const SPEED_KEY = "ypl-battle:speed";
-const SPEEDS = [[1, "보통"], [.5, "빠르게"], [0, "건너뛰기"]];
+// slowest first, as the replay's < and > step through them; 느리게 is the golden ratio over 보통 (DESIGN.md "The golden law": time)
+const SPEEDS = [[1.618, "느리게"], [1, "보통"], [.5, "빠르게"], [0, "건너뛰기"]];
 function readSpeed() {
   try { const v = localStorage.getItem(SPEED_KEY); return SPEEDS.some(([s]) => String(s) === v) ? Number(v) : 1; } catch { return 1; }
 }
@@ -825,9 +830,13 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
   const local = row.kind === "cpu" && Boolean(seat);
   const ended = row.status === "ended";
-  // a player sees from their own seat; anyone else may watch from either side (시점), as a link may ask (?side=p2)
-  const [pov, setPov] = useState(() => (start?.side === "p2" ? "p2" : "p1"));
-  const perspective = seat?.side || pov;
+  /* a player sees from their own seat while the battle is played; anyone else, and a player too once it is over (its replay, as
+     Showdown's replays let anyone), may watch from either side (시점), as a link may ask (?side=p2). Unchosen, a player stands on
+     their seat, a spectator on p1 */
+  const [pov, setPov] = useState(() => (start?.side === "p1" || start?.side === "p2" ? start.side : null));
+  const perspective = seat && !ended ? seat.side : pov || seat?.side || "p1";
+  // seen from one's own seat: the rows say 상대 and 나, and the party beside the stage is one's own whole set
+  const ownView = Boolean(seat && perspective === seat.side);
   const log = seat ? view?.log : row.spectator_log;
   const doubles = isDoubles(row.format_id);
   const [speed, setSpeedChoice] = useState(readSpeed);
@@ -842,7 +851,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [epoch, setEpoch] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   // a battle being played goes in from its team preview through the gate; a replay does not
-  const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended, Boolean(seat));
+  const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended, ownView);
   const at = cue ?? replay?.total ?? 0;
   const jump = to => { setAutoplay(false); setCue(replay && to < replay.total ? to : null); setEpoch(e => e + 1); };
   const stepOn = () => { const to = replay && nextStop(replay.stops, at); if (to != null) setCue(to < replay.total ? to : null); };
@@ -851,20 +860,49 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     if (at >= replay.total) { setCue(replay.stops[0].at); setEpoch(e => e + 1); }
     setAutoplay(true);
   };
-  // playing: the next turn goes on once the stage has played this one and it has stood a beat
+  /* playing: the next turn goes on once the stage has played this one and it has stood a beat (longer when slow). The team preview
+     is not held: the leads come out at once, so a replay opens on the battle starting, not on a waiting screen */
   useEffect(() => {
     if (!autoplay || !replay || tape.playing || tape.read < Math.min(at, replay.total)) return undefined;
     if (at >= replay.total) { setAutoplay(false); return undefined; }
-    const t = setTimeout(stepOn, TURN_BEAT);
+    const t = setTimeout(stepOn, at <= replay.stops[0].at ? 0 : TURN_BEAT * Math.max(1, speed));
     return () => clearTimeout(t);
   });
-  // a link's turn (?turn=5) opens the replay there, once, when the log is read
+  /* a battle that was already over when the page opened (a shared replay, a battle looked up again) plays from its start by itself,
+     as Showdown's replays do; a link's turn (?turn=5) opens it there instead. Its result waits for the replay to reach the end, as a
+     battle watched live does, and then stays. A battle that ends in front of its players stands on its end, as before */
   const opened = useRef(false);
+  const [revealed, setRevealed] = useState(true);
   useEffect(() => {
     if (opened.current || log == null) return;
     opened.current = true;
-    if (replay && start?.turn != null) jump(turnStop(replay.stops, start.turn));
+    if (!replay) return;
+    if (start?.turn != null) jump(turnStop(replay.stops, start.turn));
+    else if (!local) { jump(replay.stops[0].at); setAutoplay(true); setRevealed(false); }
   }, [log]);
+  useEffect(() => { if (!revealed && at >= (replay?.total ?? 0) && !tape.playing && (tape.scene?.ended ?? true)) setRevealed(true); });
+  // the replay's keyboard (replayKey in Replay.jsx), while a finished battle stands
+  const keyed = useRef(null);
+  keyed.current = action => {
+    const { stops } = replay;
+    if (action === "play") play();
+    else if (action === "prev") jump(prevStop(stops, at) ?? stops[0].at);
+    else if (action === "next") stepOn();
+    else if (action === "first") jump(stops[0].at);
+    else if (action === "last") jump(stops[stops.length - 1].at);
+    else if (action === "sound") toggleSound();
+    else {
+      const i = SPEEDS.findIndex(([v]) => v === speed) + (action === "slower" ? -1 : 1);
+      if (SPEEDS[i]) setSpeedChoice(SPEEDS[i][0]);
+    }
+  };
+  const keysOn = Boolean(ended && replay && replay.stops.length > 1);
+  useEffect(() => {
+    if (!keysOn) return undefined;
+    const onKey = e => { const action = replayKey(e); if (action) { e.preventDefault(); keyed.current(action); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [keysOn]);
   const turnTo = side => { setPov(side); setEpoch(e => e + 1); };
   const scene = tape.scene;
   const shownTurn = tape.scene?.turn ?? row.turn ?? 0;
@@ -930,7 +968,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   }, [left, waiting, now]);
   // a link to where the replay stands, and from the side being watched
   const shareHere = async () => {
-    const extra = { ...(cue != null ? { turn: String(shownTurn) } : {}), ...(!seat && pov !== "p1" ? { side: pov } : {}) };
+    const extra = { ...(cue != null ? { turn: String(shownTurn) } : {}), ...(!ownView && perspective !== "p1" ? { side: perspective } : {}) };
     let where;
     try { where = await replayWhere(); } catch (e) { say?.(e.message); return; }
     const how = await shareLink({ view: "battle", ...where, ...extra }, "YPL 배틀");
@@ -1013,7 +1051,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     used: Object.fromEntries((scene?.[perspective]?.roster || []).filter(m => m.name).map(m => [m.name, m.ppUsed])),
   });
   // the party beside the stage: a player reads the foe's shown set and their own whole one; a spectator reads both as shown
-  const infoSides = !scene ? [] : seat
+  const infoSides = !scene ? [] : ownView
     ? [{ key: "foe", label: `${names[foe]}의 파티`, cards: seenCards(res, scene[foe].roster) }, { key: "own", label: "내 파티", cards: ownList() }]
     : [perspective, foe].map(side => ({ key: side, label: `${names[side]}의 파티`, cards: seenCards(res, scene[side].roster) }));
   // on a wide screen the match takes the whole window: the page frame lets go of its 1200 for this view only
@@ -1048,7 +1086,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       <div className="bt-main">
         {started
           ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
-              said={tape.said} ask={boxAsk} known={known.current} onParty={openParty} />
+              said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} />
           : seat && previewParty.current
           ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
               locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} />
@@ -1067,11 +1105,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         </div>
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play} />}
         {shownEnded && <section className="bt-end" aria-label="배틀 결과">
-          {/* a player reads their own result first (승리, 패배); anyone watching reads who won */}
-          <div className={"bt-end-head " + (seat && row.winner !== seat.side ? "pn" : "inv")}>
+          {/* a player reads their own result first (승리, 패배); anyone watching reads who won. A replay playing from its start
+              keeps it until it reaches the end; the keys under it stand from the first, so the page can be left at any turn */}
+          {revealed && <div className={"bt-end-head " + (seat && row.winner !== seat.side ? "pn" : "inv")}>
             <b className="bt-end-title">{endTitle}</b>
             <span className="bt-end-line">{endLine}</span>
-          </div>
+          </div>}
           {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
           {(rematch || official || onLeave) && <Dock>
             <div className="bt-end-keys">
@@ -1102,12 +1141,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* 기권 as a key of its own, right under the choices where the thumb is, in its own dark red so it is never taken for
             another key; it asks once before it goes (feedback 2026-11-06: the word at the page's foot was hard to find) */}
         {seat && !ended && <Button className="bt-forfeit" onClick={giveUp}>기권</Button>}
-        {started && <TeamInfo key={seat ? "seat" : "watch"} res={res} sides={infoSides} />}
+        {started && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}
         <div className="bt-play">
           <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
           <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
         </div>
-        {!seat && <Chips label="시점" value={pov} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
+        {(!seat || ended) && <Chips label="시점" value={perspective} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
         {/* the whole log behind a key the size of a row, not a grey word */}
         <details className="bt-logbox">
           <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
