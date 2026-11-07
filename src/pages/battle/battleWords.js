@@ -18,6 +18,9 @@ export const HIDDEN_VOLATILES = new Set(["typechange", "typeadd"]);
 /* an effect's name as the screen says it. Some come with a count in their id (Supreme Overlord's fallen2, Perish Song's perish3,
    Stockpile's stockpile2): the count is said as a number, never the id (feedback 2026-11-06: "fallen2" stood on the plate) */
 const COUNTED = [[/^fallen(\d)$/, n => `쓰러진 동료 ${n}`], [/^perish(\d)$/, n => `멸망의노래 ${n}`], [/^stockpile(\d)$/, n => `비축 ${n}`]];
+// a side's condition is the move that laid it (독압정 poison, 스텔스록 rock, 리플렉터 psychic), so its tag takes that move's type
+export const effectType = id => toID(GEN.moves.get(id)?.type || "normal");
+
 export function effectWord(res, id) {
   for (const [re, say] of COUNTED) { const m = re.exec(id); if (m) return say(m[1]); }
   return VOLATILE[id] || res.text.moves[id]?.name || res.text.abilities[id]?.name || res.text.items?.[id]?.name || res.text.default[id]?.weatherName || id;
