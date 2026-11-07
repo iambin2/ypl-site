@@ -243,6 +243,46 @@ function keepCpuBattle(next) { cpuHeld = next; try { localStorage.setItem(CPU_KE
    team preview stands as the lamps go down, not after a blank moment; the room takes it once */
 const cpuWorker = () => new Worker(new URL("./battle/cpu.worker.js", import.meta.url), { type: "module" });
 let earlyWorker = null;
+/* the battle it was started with, asked while the court goes dark: the room takes this answer instead of asking again, and the parties'
+   pictures are taken before the team preview lights (2026-11-07, the user: the party's pictures came in a moment after the screen) */
+let earlyStart = null;
+function startEarly(w, start) {
+  return new Promise((resolve, reject) => {
+    const take = ({ data }) => {
+      if (data.id !== 0) return;
+      w.removeEventListener("message", take);
+      if (data.ok) resolve(data); else reject(Object.assign(new Error(data.error), { problems: data.problems }));
+    };
+    w.addEventListener("message", take);
+    w.postMessage({ id: 0, type: "start", ...start });
+  });
+}
+
+/* ---------- going into a battle (DESIGN.md "Battle", Going in) ----------
+   The court's Pokémon are called back and its lamps go down (goIn) while what the next screen needs is read: the battle's first screen
+   and both parties' pictures, decoded before it lights, so no picture comes in after the screen has (2026-11-07). The room then opens
+   on what was read instead of on its loader. cap: the most the pictures may hold the page, on a slow connection. */
+const primed = new Map();
+export async function preloadSprites(species, cap = 2000) {
+  const urls = [...new Set(species.filter(Boolean).map(s => spriteUrl(s)))];
+  const all = Promise.all(urls.map(url => { const img = new Image(); img.src = url; return img.decode().catch(() => {}); }));
+  await Promise.race([all, new Promise(resolve => setTimeout(resolve, cap))]);
+}
+// the species a team preview shows: our party from the request, and both sides' as the preview lines name them
+const partySpecies = (row, view) => [
+  ...(view?.request?.side?.pokemon || []).map(p => String(p.details).split(", ")[0]),
+  ...[...String(row?.spectator_log || "").matchAll(/^\|poke\|p[12]\|([^,|]+)/gm)].map(m => m[1]),
+];
+export async function enterBattle(id, dark) {
+  const ready = Promise.all([readBattleRow(id), viewBattle(id)]).then(async ([row, view]) => {
+    await preloadSprites(partySpecies(row, view));
+    return { row, view };
+  });
+  const [, got] = await Promise.all([dark, ready]);
+  primed.set(id, got);
+}
+// the court of the screen a key was pressed on, going dark
+export const goingIn = scope => goIn(document.querySelector(`${scope} .bs-stage`)).catch(() => {});
 function CpuRoom({ res, say, go, onLeave, onRestart }) {
   const [state, setState] = useState(null);
   const [error, setError] = useState(null);
@@ -252,7 +292,9 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     const kept = readCpuBattle();
     if (!kept?.start && !kept?.inputLog) { setError({ none: true }); return undefined; }
     const w = earlyWorker || cpuWorker();
+    const early = earlyWorker ? earlyStart : null;
     earlyWorker = null;
+    earlyStart = null;
     worker.current = w;
     let n = 0;
     const take = data => {
@@ -279,7 +321,8 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     w.onerror = () => setError({ message: "컴퓨터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요." });
     const ask = (type, args = {}) => new Promise((resolve, reject) => { const id = ++n; calls.current.set(id, { resolve, reject }); w.postMessage({ id, type, ...args }); });
     worker.current.ask = ask;
-    (kept.inputLog ? ask("resume", { inputLog: kept.inputLog, regulation: kept.regulation, createdAt: kept.createdAt, endedBy: kept.endedBy, level: kept.level }) : ask("start", kept.start))
+    (kept.inputLog ? ask("resume", { inputLog: kept.inputLog, regulation: kept.regulation, createdAt: kept.createdAt, endedBy: kept.endedBy, level: kept.level })
+      : early ? early.then(data => { take(data); return data.view; }) : ask("start", kept.start))
       .catch(e => setError({ message: failText(e, res) }));
     return () => { w.terminate(); worker.current = null; };
   }, []);
@@ -397,9 +440,9 @@ function RoomHall({ rooms, onOpen, onMake }) {
    사람만)인지는 그 아래에서 고른다(2026-11-06, 따로 선 공개 방과 코드 방을 하나로). 두 방 모두 링크로도 들어온다. */
 const OPPONENTS = [["cpu", "컴퓨터"], ["room", "방 만들기"]];
 const ROOMS = [["open", "공개 방", "누구나 참가"], ["code", "비밀 방", "코드로 참가"]];
-/* the battle page: 배틀 열기 (the lobby), 방 목록 (every room waiting) and 연승 도전 (docs/BATTLE_STREAK.md) as page tabs; the tab is
-   kept in the address (&tab=rooms, &tab=streak) */
-const BATTLE_TABS = ["open", "rooms", "streak"];
+/* the battle page: 배틀 열기 (the lobby), 연승 도전 (docs/BATTLE_STREAK.md) and 방 목록 (every room waiting) as page tabs; the tab is
+   kept in the address (&tab=streak, &tab=rooms) */
+const BATTLE_TABS = ["open", "streak", "rooms"];
 function BattleOpen({ res, onOpen, go, preset }) {
   const [tab, setTab] = useState(() => { const asked = new URLSearchParams(window.location.search).get("tab"); return BATTLE_TABS.includes(asked) ? asked : "open"; });
   const rooms = useRooms();
@@ -411,8 +454,8 @@ function BattleOpen({ res, onOpen, go, preset }) {
     if (t !== "open") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
     window.history.replaceState(window.history.state, "", url);
   };
-  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["streak", "연승 도전"]]} /></div>;
-  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} />;
+  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "연승 도전"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"]]} /></div>;
+  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} />;
   return tab === "rooms"
     ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
     : <BattleSetup res={res} onOpen={onOpen} preset={preset} tabs={tabs} firstFoe={firstFoe} />;
@@ -440,9 +483,12 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
       setBusy(true);
       earlyWorker?.terminate();
       earlyWorker = cpuWorker();
-      // going in (DESIGN.md "Battle", Going in): the court's Pokémon are called back and its lamps go down, then the battle's screen lights
-      await goIn(document.querySelector(".bt-lobby-main .bs-stage")).catch(() => {});
-      keepCpuBattle({ start: { regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), level }, teamId: team.id });
+      const start = { regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), level };
+      earlyStart = startEarly(earlyWorker, start);
+      // going in (DESIGN.md "Battle", Going in): the court's Pokémon are called back and its lamps go down while the battle is drawn
+      // and its pictures are taken, then the battle's screen lights
+      await Promise.all([goingIn(".bt-lobby-main"), earlyStart.then(d => preloadSprites(partySpecies(d.row, d.view)), () => {})]);
+      keepCpuBattle({ start, teamId: team.id });
       onOpen(CPU_ROOM);
       return;
     }
@@ -486,14 +532,16 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
 /* ---------- a battle: its version is asked on battlePollDelay's rhythm, and only a change of version reads the row ----------
    A player's own view comes back with each choice; the server is asked for it again only when the engine moved since. */
 function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
-  const [row, setRow] = useState(undefined);
-  const [view, setView] = useState(null);
+  // a battle gone into from a key opens on what was read as the court went dark (enterBattle), not on its loader
+  const [boot] = useState(() => { const got = primed.get(id) || null; primed.delete(id); return got; });
+  const [row, setRow] = useState(boot?.row);
+  const [view, setView] = useState(boot?.view ?? null);
   const [seat, setSeat] = useState(() => readSeat(id));
   // undefined until read: a battle that is not there reads null, which must still count as a change (a cancelled or mistyped link)
-  const version = useRef(undefined);
-  const rowRef = useRef(undefined);
-  const viewRef = useRef(null);
-  const viewRow = useRef(null); // the last row this device's view is known to be current with
+  const version = useRef(boot?.row?.version);
+  const rowRef = useRef(boot?.row);
+  const viewRef = useRef(boot?.view ?? null);
+  const viewRow = useRef(boot?.row ?? null); // the last row this device's view is known to be current with
   const movedAt = useRef(Date.now());
   const show = useCallback(next => { viewRef.current = next; movedAt.current = Date.now(); setView(next); }, []);
   /* a view comes from the poll and from our own choice. A poll's view that set out before a newer one, or while a choice was
@@ -619,8 +667,8 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
       onOpen(made.id);
     } catch (e) { say?.(failText(e, res)); }
   };
-  // a game of a 연승 도전 run ends on the run's keys: 다음 판, or 다시 도전 and 연승 순위
-  const streak = seat && row.kind === "streak" ? { onOpen, onBoard: () => onOpen(null, null, "streak") } : null;
+  // a game of a 연승 도전 run ends on the run's keys: 다음 판 or 다시 도전, and 나가기 back to the 연승 도전 tab
+  const streak = seat && row.kind === "streak" ? { onOpen, onOut: () => onOpen(null, null, "streak"), enter: enterBattle, goingIn } : null;
   return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} streak={streak} />;
 }
 
@@ -1133,7 +1181,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <span className="bt-end-line">{endLine}</span>
           </div>}
           {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
-          {streak ? <StreakEnd id={row.id} onOpen={streak.onOpen} onBoard={streak.onBoard} /> : (rematch || official || onLeave) && <Dock>
+          {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} /> : (rematch || official || onLeave) && <Dock>
             <div className="bt-end-keys">
               {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
                 : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}

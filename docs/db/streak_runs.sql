@@ -201,8 +201,10 @@ begin
 end;
 $$;
 
--- 9. 판이 끝난 뒤. 승자는 함수가 저장한 공개 행의 사실에서 읽는다. 이겼으면 다음 판(p_id 이하)을 함께 열고, 아니면 도전을 끝낸다.
---    같은 판으로 두 번 불러도(다시 보낸 요청) 한 번만 센다: 도전의 지금 판이 그 판일 때만 움직인다.
+-- 9. 판이 끝난 뒤. 승자는 함수가 저장한 공개 행의 사실에서 읽는다. 이기면 연승을 하나 올리고, 아니면 도전을 끝낸다.
+--    다음 판은 여기서 열지 않는다(2026-11-07): 다음 판의 90초는 선수가 다음 판을 누를 때 시작해야 하므로, 이긴 뒤의 도전은 다음 판이
+--    열릴 때까지 쉬고(streak_next), 그동안 나가도 지지 않는다. 예전 함수(v16)가 다음 판을 함께 보내면 그대로 연다.
+--    같은 판으로 두 번 불러도(다시 보낸 요청) 한 번만 센다: 센 판은 엔진 상태가 지워져 있다.
 create or replace function public.streak_after_battle(
   p_battle_id text, p_id text, p_regulation text, p_format_id text, p_engine text,
   p_token_hash text, p_p1_team jsonb, p_state jsonb, p_pending jsonb, p_turn integer, p_spectator_log text
@@ -221,21 +223,61 @@ begin
     raise exception using errcode = '22023', message = 'not an ended streak battle';
   end if;
   select * into v_run from public.streak_runs r where r.id = v_battle.run_id for update;
-  if v_run.status = 'ended' or v_run.battle_id is distinct from p_battle_id then
+  if v_run.status = 'ended' or v_run.battle_id is distinct from p_battle_id
+     or not exists (select 1 from public.battle_secrets s where s.battle_id = p_battle_id and s.state is not null) then
     return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'status', v_run.status, 'battle_id', v_run.battle_id, 'counted', false);
   end if;
   perform public.streak_clear_secret(p_battle_id);
   if v_battle.winner = 'p1' then
-    if p_id is null then
-      raise exception using errcode = '22023', message = 'a won game needs the next battle';
-    end if;
     update public.streak_runs r set wins = r.wins + 1, last_win_at = now() where r.id = v_run.id;
-    perform public.streak_open_battle(v_run.id, p_id, p_regulation, p_format_id, p_engine, v_run.trainer_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
-    return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins + 1, 'status', 'active', 'battle_id', p_id, 'counted', true);
+    if p_id is not null then
+      perform public.streak_open_battle(v_run.id, p_id, p_regulation, p_format_id, p_engine, v_run.trainer_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
+    end if;
+    return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins + 1, 'status', 'active', 'battle_id', coalesce(p_id, p_battle_id), 'counted', true);
   end if;
   update public.streak_runs r set status = 'ended', ended_at = now() where r.id = v_run.id;
   return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'status', 'ended', 'battle_id', p_battle_id, 'counted', true);
 end;
+$$;
+
+-- 9-1. 다음 판. 이긴 판에서 선수가 다음 판을 누르면 연다: 도전이 진행 중이고, 도전의 지금 판이 그 이긴 판이며, 이미 센 판일 때만.
+--      다음 판이 이미 열렸으면(두 번 누름, 다른 기기) 열지 않는다.
+create or replace function public.streak_next(
+  p_battle_id text, p_id text, p_regulation text, p_format_id text, p_engine text,
+  p_token_hash text, p_p1_team jsonb, p_state jsonb, p_pending jsonb, p_turn integer, p_spectator_log text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_battle public.battles%rowtype;
+  v_run public.streak_runs%rowtype;
+begin
+  select * into v_battle from public.battles b where b.id = p_battle_id;
+  if not found or v_battle.kind <> 'streak' or v_battle.status <> 'ended' or v_battle.winner is distinct from 'p1' then
+    raise exception using errcode = 'P0001', message = '이긴 판에서만 다음 판을 열 수 있습니다.';
+  end if;
+  select * into v_run from public.streak_runs r where r.id = v_battle.run_id for update;
+  if v_run.status <> 'active' or v_run.battle_id is distinct from p_battle_id
+     or exists (select 1 from public.battle_secrets s where s.battle_id = p_battle_id and s.state is not null) then
+    raise exception using errcode = 'P0001', message = '이 도전의 다음 판은 이미 열렸거나 도전이 끝났습니다.';
+  end if;
+  perform public.streak_open_battle(v_run.id, p_id, p_regulation, p_format_id, p_engine, v_run.trainer_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
+  return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'battle_id', p_id);
+end;
+$$;
+
+-- 9-2. 다음 판을 만들 때 함수가 아는 도전의 연승(난이도를 정한다)
+create or replace function public.streak_run_wins(p_battle_id text)
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select r.wins from public.streak_runs r join public.battles b on b.run_id = r.id where b.id = p_battle_id;
 $$;
 
 -- 10. 순위. 한 달(KST, 기본은 이번 달)의 계정별 최고 기록 하나씩, 연승이 많은 순, 같으면 먼저 닿은 순. 100명까지.
@@ -273,11 +315,15 @@ revoke all on function public.streak_clear_secret(text) from public, anon, authe
 revoke all on function public.streak_trainer_name(uuid) from public, anon, authenticated;
 revoke all on function public.streak_start(uuid, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_after_battle(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
+revoke all on function public.streak_next(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
+revoke all on function public.streak_run_wins(text) from public, anon, authenticated;
 revoke all on function public.streak_board(date) from public;
 grant execute on function public.battle_set_cpu_memory(text, jsonb) to service_role;
 grant execute on function public.streak_trainer_name(uuid) to service_role;
 grant execute on function public.streak_start(uuid, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
 grant execute on function public.streak_after_battle(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
+grant execute on function public.streak_next(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
+grant execute on function public.streak_run_wins(text) to service_role;
 grant execute on function public.streak_board(date) to anon, authenticated, service_role;
 
 commit;

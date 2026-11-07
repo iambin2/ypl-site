@@ -52,19 +52,20 @@ const asSeat = (id, action, extra = {}) => {
   return callFunction("battle", { action, id, token: seat.token, ...extra });
 };
 export const viewBattle = id => asSeat(id, "view");
-/* 연승 도전 (docs/BATTLE_STREAK.md): a game's answer carries the run (streak: { wins, status, next }). A won game's answer brings the
-   next game's seat, kept like any other; the ended game's seat remembers it, so its end screen offers 다음 판 again after a reload. */
-// the game of this device's run being played, so the 연승 도전 tab offers 이어서 하기
+/* 연승 도전 (docs/BATTLE_STREAK.md): a game's answer carries the run (streak: { wins, status }). A won game leaves the run resting
+   (status active) until its player opens the next game (streakNextGame); the ended game's seat keeps what happened, so its end screen
+   and the tab's 이어서 하기 offer 다음 판 again after a reload. */
+// the game of this device's run (the one being played, or the won one the run rests on), so the 연승 도전 tab offers 이어서 하기
 const STREAK_KEY = "ypl-battle:streak";
 export const currentStreakGame = () => { try { return localStorage.getItem(STREAK_KEY) || null; } catch { return null; } };
 const keepStreakGame = id => { try { if (id) localStorage.setItem(STREAK_KEY, id); else localStorage.removeItem(STREAK_KEY); } catch { /* 이어서 하기만 없다 */ } };
 function keepRun(id, view) {
   const run = view?.streak;
-  if (!run) return view;
-  if (run.next) keepStreakGame(run.next.id); else if (run.status === "ended") keepStreakGame(null);
+  if (!run || view.status !== "ended") return view;
+  const won = run.status === "active";
+  if (!won) keepStreakGame(null);
   const seat = readSeat(id);
-  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, ...(run.next ? { next: run.next.id } : {}), ended: run.status === "ended" });
-  if (run.next) keepSeat(run.next.id, { token: run.next.token, side: run.next.side, streak: true, wins: run.wins, game: run.wins + 1 });
+  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, won, ended: !won });
   return view;
 }
 // rq: 답하는 요청의 requestKey(battleLog.js). 서버는 이미 지난 요청에 대한 선택을 막는다.
@@ -73,6 +74,17 @@ export const forfeitBattle = id => asSeat(id, "forfeit").then(view => keepRun(id
 // a new run's first game (visitorAuth.js startStreakRun, made as the signed-in account): its seat is this device's
 export function keepStreakStart(made) {
   keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: 0, game: 1 });
+  keepStreakGame(made.id);
+  return made;
+}
+/* 다음 판 from a won game: asked by that game's seat (the battle function's streakNext), so it can always be asked again; a next game
+   this device already opened is gone to instead of asked for twice */
+export async function streakNextGame(id) {
+  const seat = readSeat(id);
+  if (seat?.next && readSeat(seat.next)) return { id: seat.next, side: "p1" };
+  const made = await asSeat(id, "streakNext");
+  keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: made.wins, game: made.wins + 1 });
+  if (seat) keepSeat(id, { ...readSeat(id), next: made.id });
   keepStreakGame(made.id);
   return made;
 }

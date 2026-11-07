@@ -100,10 +100,15 @@ try {
       lastStreak = out.streak;
       if (out.status === "ended") break;
     }
-    if (lastStreak?.status !== "active" || !lastStreak.next) break;
+    if (lastStreak?.status !== "active") break;
     wins = lastStreak.wins;
-    console.log(`won game ${games + 1}: run at ${wins}, next ${lastStreak.next.id}`);
-    seat = lastStreak.next;
+    // a won game opens no next game by itself: the run rests until its player presses 다음 판
+    const opened = (await pg.query("select count(*)::int as c from public.battles where kind = 'streak' and status = 'active'")).rows[0].c;
+    assert.equal(opened, 0, "no game is running while the run rests after a win");
+    const next = await call({ action: "streakNext", id: seat.id, token: seat.token });
+    await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token }), e => e.status === 409, "다음 판 opens once");
+    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}`);
+    seat = next;
   }
   console.log(`games ${games + 1}, choices ${choices}, slowest request ${Math.round(slowest)} ms, run wins ${lastStreak?.wins}`);
   const run = (await pg.query("select wins, status from public.streak_runs where auth_user_id = $1", [user])).rows[0];

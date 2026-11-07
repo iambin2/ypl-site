@@ -212,6 +212,27 @@ try {
     await assert.rejects(q("select public.streak_trainer_name($1)", [users.a]), /permission denied/);
   });
 
+  await check("a win counts without opening a game, the run rests, and 다음 판 opens the next once, only after a win", async () => {
+    await as("service_role");
+    const run = await one("select id, battle_id from public.streak_runs where auth_user_id = $1 and status = 'active'", [users.d]);
+    await end(run.battle_id, "p1");
+    const r = await after(run.battle_id, null);
+    assert.deepEqual([r.wins, r.status, r.battle_id, r.counted], [1, "active", run.battle_id, true]);
+    assert.equal((await one("select count(*)::int as c from public.battles where run_id = $1", [run.id])).c, 1, "no game opened with the win");
+    assert.equal((await after(run.battle_id, null)).counted, false, "counted once");
+    assert.equal((await one("select public.streak_run_wins($1) as w", [run.battle_id])).w, 1);
+    const next = bid();
+    const opened = (await one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [run.battle_id, ...game(next)])).r;
+    assert.deepEqual([opened.battle_id, opened.wins], [next, 1]);
+    assert.equal((await one("select status from public.battles where id = $1", [next])).status, "active");
+    await assert.rejects(one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [run.battle_id, ...game(bid())]), /이미 열렸거나/);
+    await end(next, "p2");
+    await after(next, null);
+    await assert.rejects(one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [next, ...game(bid())]), /이긴 판에서만/);
+    await as("anon");
+    await assert.rejects(q("select public.streak_next('x', null, null, null, null, null, null, null, null, null, null)"), /permission denied/);
+  });
+
   await check("streak games do not use up the friendly limits, and new runs stop at 300 a day", async () => {
     await as("service_role");
     for (let i = 0; i < 25; i++) await owned("select public.streak_open_battle((select id from public.streak_runs limit 1), $1, 'm-c', 'f', 'e', 'x', 'h', '[]', null, null, 0, '')", [bid()]);

@@ -214,19 +214,12 @@ async function nextGame(name: string, wins: number) {
     },
   };
 }
-/* After a streak game has ended and been saved: a win opens the next game in the same transaction that counts it, anything else ends
-   the run. The screen gets the run's wins and, after a win, the next game's seat.
-   ponytail: if this answer is lost after the database counted the win, the next game's token is lost with it and that game runs out
-   its clock; an action that hands the seat out again (by the ended game's token) comes if that happens */
-async function streakAfter(battle: Record<string, any>, out: { winner: string | null }, memory: StreakMemory | null) {
-  const wins = memory?.wins ?? 0;
-  const next = out.winner === "p1" ? await nextGame(battle.p1_name, wins + 1) : null;
-  const result = await rpc("streak_after_battle", { p_battle_id: battle.id, ...(next ? next.args : NO_GAME) });
-  if (next && result?.counted && result.battle_id === next.id) {
-    await keepMemory(next.id, next.memory);
-    return { wins: result.wins, status: "active", next: { id: next.id, token: next.token, side: "p1" } };
-  }
-  return { wins: result?.wins ?? wins, status: result?.status ?? "ended" };
+/* After a streak game has ended and been saved: a win counts, anything else ends the run. The next game is not opened here: its clock
+   starts when its player presses 다음 판 (streakNext), so the run rests between games and leaving after a win loses nothing.
+   The screen gets the run's wins and whether it goes on. */
+async function streakAfter(battle: Record<string, any>, memory: StreakMemory | null) {
+  const result = await rpc("streak_after_battle", { p_battle_id: battle.id, ...NO_GAME });
+  return { wins: result?.wins ?? memory?.wins ?? 0, status: result?.status ?? "ended" };
 }
 // the user a Google sign-in makes this request for (the site sends the session's token, storage.js invokeFunction)
 async function userOf(req: Request) {
@@ -247,7 +240,7 @@ async function endStreakGame(battle: Record<string, any>, secret: Record<string,
   });
   if (!saved) return undefined;
   const view = playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
-  return { ...view, streak: await streakAfter(battle, out, secret.cpu_memory as StreakMemory | null) };
+  return { ...view, streak: await streakAfter(battle, secret.cpu_memory as StreakMemory | null) };
 }
 
 /* A friendly room (docs/db/battle_rooms.sql): an open one stands on the battle page's list of open rooms, a code one is entered with
@@ -406,7 +399,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
       if (out.ended && !streak) later(applyResult(battle.id));
       const view = playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending }, side, out);
       if (!streak) return view;
-      if (out.ended) return { ...view, streak: await streakAfter(battle, out, memory) };
+      if (out.ended) return { ...view, streak: await streakAfter(battle, memory) };
       await keepMemory(battle.id, { wins: memory?.wins ?? 0, cpu: turn!.memory });
       return { ...view, streak: { wins: memory?.wins ?? 0, status: "active" } };
     });
@@ -446,6 +439,23 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
     }
     await keepMemory(game.id, game.memory);
     return { id: game.id, token: game.token, side: "p1", run: data };
+  },
+
+  /* 다음 판: the player of a won streak game opens the run's next one, at the 난이도 its wins call for. Asked by the won game's own
+     seat, so a seat lost with an answer can always ask again; the database opens it only once. */
+  async streakNext({ id, token }) {
+    const { battle, secret } = await read(String(id));
+    const side = await seat(secret, token);
+    if (battle.kind !== "streak" || side !== "p1" || battle.status !== "ended" || battle.winner !== "p1") refuse(409, "이긴 판에서만 다음 판을 열 수 있습니다.");
+    const wins = Number(await rpc("streak_run_wins", { p_battle_id: battle.id })) || 0;
+    const game = await nextGame(battle.p1_name, wins);
+    const { error } = await db.rpc("streak_next", { p_battle_id: battle.id, ...game.args });
+    if (error) {
+      if (error.code === "P0001") refuse(409, error.message);
+      throw error;
+    }
+    await keepMemory(game.id, game.memory);
+    return { id: game.id, token: game.token, side: "p1", wins };
   },
 
   // The host takes back a battle nobody joined. Nothing was played, so nothing is kept.

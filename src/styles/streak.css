@@ -1,8 +1,20 @@
-/* ---------- 연승 도전 (src/pages/battle/Streak.jsx, docs/BATTLE_STREAK.md 8장) ----------
-   The tab stands on the lobby's own parts (the arena, the dock, a counter, the podium, rows); only these are its own. */
+/* ---------- 연승 도전 (src/pages/battle/Streak.jsx, docs/BATTLE_STREAK.md 8장, DESIGN.md "Layout and pages" 연승 도전) ----------
+   The tab stands on the lobby's own parts (the arena, the dock, sections, the podium, rows); only these are its own. */
 
-/* the rule, read once, under its label */
-.streak-rule { margin: 0; }
+/* the side: two sections, 52 apart as a form's sections are */
+.streak-side { display: grid; align-content: start; gap: var(--s13); }
+
+/* the run lit: its label, the streak at 84 with 연승 on its baseline, and the rule as its grey line */
+.streak-hero { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s3); padding: var(--pad); text-align: left; }
+.streak-hero-label { display: flex; align-items: center; gap: var(--s2); }
+.streak-hero-board { display: flex; align-items: flex-end; gap: var(--s2); }
+.streak-hero-board > .t20 { line-height: 1; }
+
+/* the ladder: the three computers a run climbs, equal cells on the seam, each one podium column high with the 난이도's Pokémon on its
+   floor; the step the run stands on inverts */
+.streak-ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.streak-step { height: calc(var(--h-counter) + var(--h-row)); padding: var(--pad); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); text-align: left; }
+.streak-step .mon { right: var(--s2); height: calc(62% - var(--floor)); }
 
 /* the end of a won game: the run's wins and the next 난이도's computer on its floor, joined on the seam at 1 to 1.618, the two
    one counter high so their lines meet; after a loss the counter stands alone */
@@ -10,3 +22,8 @@
 .streak-end:not(:has(.streak-next)) { grid-template-columns: minmax(0, 1fr); }
 .streak-next { height: var(--h-counter); padding: var(--pad); padding-top: var(--s2); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); text-align: left; }
 .streak-next .mon { right: var(--pad); height: calc(100% - var(--floor)); }
+
+/* on a wide screen the arena's top edge meets the run's panel, not the section's title over it, as the lobby's meets its first choice */
+@media (min-width: 860px) {
+  .bt-lobby:has(> .streak-side) > .bt-lobby-main { padding-top: calc(var(--l20) + var(--s3)); }
+}
