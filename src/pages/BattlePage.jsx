@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { reduced } from "../components/common/motion.js";
+import { DUR, light, reduced } from "../components/common/motion.js";
 import Button from "../components/common/Button.jsx";
 import Icon from "../components/common/Icon.jsx";
 import Seg from "../components/common/Seg.jsx";
@@ -22,7 +22,6 @@ import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
 import { watchBattleSignal } from "../services/battleSignal.js";
-import { closeGate, openGate } from "./battle/Gate.js";
 import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
 import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
@@ -84,8 +83,6 @@ export default function BattlePage({ flash: say, go }) {
     setId(next === CPU_ROOM ? null : next);
     setReplay(null);
   }, []);
-  // a gate closed over the page opens on what stands now, whatever it is
-  useEffect(() => { if (res?.error) openGate(); }, [res]);
   // the stage's first paintings are made in idle moments while the page waits for its data (stageFx prewarm), not as a battle opens
   useEffect(() => { prewarm(); }, []);
   if (!res) return <Loader />;
@@ -146,8 +143,6 @@ function rematchTeam(teamId, regulation, res) {
   const saved = teamId && !String(teamId).startsWith(RANDOM) ? readSavedTeams().find(t => t.id === teamId && t.regulationId === regulation) : null;
   return saved ? { id: saved.id, send: showdownTeam(saved, res.detail) } : { id: RANDOM + regulation, send: "random" };
 }
-// the line under the names while the gate is closed
-const gateLine = (regulation, doubles, kind) => [REGULATIONS[regulation] || "", doubles ? "더블" : "싱글", kind].filter(Boolean).join(", ");
 
 /* 랜덤 파티 (2026-11-06): one panel of its own, apart from the saved teams, however many rules there are. The rule is a choice joined
    under it on the seam (M-C, M-B, ...); pressing the panel or a rule picks the random party of that rule. With one rule (a room's) the
@@ -280,15 +275,12 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
     choose: (_, choice) => worker.current.ask("choose", { choice }),
     forfeit: () => worker.current.ask("forfeit"),
   }), []);
-  // the gate the lobby closed opens once the battle stands (or could not)
-  useEffect(() => { if (state || error) openGate(); }, [Boolean(state), Boolean(error)]);
   /* 다시하기: a new battle with the computer at once, the same name, rule and format, the same saved team (a random party drawn
      again) and a new party for the computer, which is always drawn when a battle starts */
   const rematch = async () => {
     const kept = readCpuBattle() || {};
     const doubles = isDoubles(state.row.format_id);
     const team = rematchTeam(kept.teamId, state.row.regulation, res);
-    await closeGate({ ours: state.row.p1_name, theirs: "컴퓨터", line: gateLine(state.row.regulation, doubles, `컴퓨터 ${levelOf(kept.level).label}`) });
     keepCpuBattle({ start: { regulation: state.row.regulation, battleFormat: doubles ? "doubles" : "singles", name: state.row.p1_name, team: team.send, level: kept.level }, teamId: team.id });
     onRestart();
   };
@@ -428,11 +420,9 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
     if (busy || !team) return;
     if (!name.trim()) { setError(NAME_MISSING); focusName(); return; }
     const me = name.trim();
-    const line = gateLine(team.regulationId, format === "doubles", foe === "cpu" ? `컴퓨터 ${levelOf(level).label}` : ROOMS.find(([key]) => key === room)[1]);
     if (foe === "cpu") {
       if (saved?.status === "active" && !(await siteConfirm({ title: "새 배틀을 시작할까요?", body: "진행 중인 컴퓨터와의 배틀은 남지 않습니다.", confirmLabel: "새로 시작" }))) return;
       rememberName(me);
-      await closeGate({ ours: me, theirs: "컴퓨터", line });
       keepCpuBattle({ start: { regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), level }, teamId: team.id });
       onOpen(CPU_ROOM);
       return;
@@ -440,12 +430,11 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
     setBusy(true); setError("");
     try {
       rememberName(me);
-      // the room is made while the gate closes; the waiting screen opens it
-      const [made] = await Promise.all([createBattle({ regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), room }), closeGate({ ours: me, theirs: { name: "참가 대기", muted: true }, line })]);
+      // the key turns busy while the room is made; the waiting screen opens on it
+      const made = await createBattle({ regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), room });
       keepOpenTeam(made.id, team.id);
       onOpen(made.id);
     } catch (e) {
-      openGate();
       setError(failText(e, res));
       setBusy(false);
     }
@@ -584,58 +573,46 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
     return () => clearInterval(timer);
   }, [owes, id, view]);
 
-  /* the gate (Gate.js): one closed by the lobby, a join or a rematch opens once this room stands as what comes next. A joiner's seat
-     stands a moment over the row still read as waiting, so it opens only once the battle has started. And when the opponent comes
-     in while the opener waits, the gate closes over the waiting screen first and opens on the match. */
-  const entering = useRef(false);
-  const lastStatus = useRef(row?.status);
-  if (lastStatus.current === "waiting" && row?.status === "active" && seat?.side === "p1") entering.current = true;
-  lastStatus.current = row?.status;
-  const [, redraw] = useState(0);
-  const next = row === undefined ? null : row === null || row.status !== "waiting" || !seat || seat.side === "p1" ? "open" : null;
-  useEffect(() => {
-    if (entering.current === true) {
-      entering.current = "closing";
-      closeGate({ ours: row.p1_name, theirs: row.p2_name || "상대", line: "상대가 들어왔습니다." }).then(() => { entering.current = false; redraw(n => n + 1); });
-      return;
-    }
-    if (next === "open" && !entering.current) openGate();
-  });
   if (row === undefined) return <Loader />;
   if (row === null) return <Empty title="배틀을 찾을 수 없습니다." desc="링크가 맞는지 확인해 주세요." />;
   // a code room's link carries its code, so the one who opens it comes straight in
   const share = async () => { const how = await shareLink({ view: "battle", id, ...(seat?.code ? { code: seat.code } : {}) }, "YPL 배틀"); if (how === "copied") say?.("링크를 복사했습니다."); };
-  if (row.status === "waiting" || entering.current) {
+  if (row.status === "waiting") {
     const cancel = async () => {
       if (!(await siteConfirm({ title: "대기를 취소할까요?", body: "아직 아무도 참가하지 않아 남는 기록이 없습니다.", confirmLabel: "대기 취소" }))) return;
       try { await cancelBattle(id); say?.("대기를 취소했습니다."); onLeave(); }
       catch (e) { say?.(e.message); refresh(); }
     };
-    if (seat) return <Waiting row={row} res={res} team={openTeam(id)} code={seat.code} rematch={seat.rematch} onShare={share} onCancel={cancel} />;
+    /* only the opener waits (a room's opener is always p1): a joiner's seat stands a moment over the row still read as waiting, and
+       the screen it pressed 참가 on stays, its key busy, until the battle has started (DESIGN.md "Battle", Going in) */
+    if (seat?.side === "p1") return <Waiting row={row} res={res} team={openTeam(id)} code={seat.code} rematch={seat.rematch} onShare={share} onCancel={cancel} />;
     // an official match is entered from its own seat screen: the player's party PIN, never a builder team
     if (row.kind === "official") return <OfficialSeat res={res} eventId={row.event_id} nodeKey={row.source_node_key} onOpen={() => { setSeat(readSeat(id)); refresh(); }} />;
     return <Join row={row} res={res} code={code} onJoined={next => { setSeat(readSeat(id)); show(next); refresh(); }} onRefresh={() => refresh().catch(() => {})} />;
   }
-  /* 다시하기 with a person (docs/db/battle_rematch.sql): the next battle opened, joined, or already this player's; the gate closes
-     while the server answers and opens on its room */
+  /* 다시하기 with a person (docs/db/battle_rematch.sql): the next battle opened, joined, or already this player's; the key is busy
+     while the server answers, and the room opens on it */
   const rematch = !seat || row.kind !== "friendly" || !canRematch() ? null : async () => {
-    const doubles = isDoubles(row.format_id);
     const team = rematchTeam(openTeams()[id], row.regulation, res);
-    const ours = seat.side === "p1" ? row.p1_name : row.p2_name, theirs = seat.side === "p1" ? row.p2_name : row.p1_name;
     try {
-      const [made] = await Promise.all([rematchBattle(id, team.send), closeGate({ ours: ours, theirs: theirs, line: gateLine(row.regulation, doubles, "다시하기") })]);
+      const made = await rematchBattle(id, team.send);
       keepOpenTeam(made.id, team.id);
       onOpen(made.id);
-    } catch (e) { openGate(); say?.(failText(e, res)); }
+    } catch (e) { say?.(failText(e, res)); }
   };
   return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} />;
 }
+
+/* a battle screen that takes the place of the one pressed (the waiting room, the team preview) lights as a page does (DESIGN.md
+   "Battle", Going in; "Motion"), not under a gate: 2026-11-07, the user found the 배틀 시작 popup made the start stutter */
+const useLit = () => useLayoutEffect(() => { light(document.getElementById("ypl-main"), DUR.leave); }, []);
 
 /* the opener waits (DESIGN.md "Battle", Opening and waiting): the lobby's screen, now set. What the opener needs stands first and
    large: a code room's four digits to read out, the time waited, and 링크 공유. Beside it (under it on a phone) the matchup with our
    name lit and the opponent's place waiting, and the court with our leads standing and a light breathing where theirs will come in.
    rematch: the room 다시하기 opened, which the other player enters by pressing 다시하기 too, so it shows no code. */
 export function Waiting({ row, res, team, code, rematch = false, onShare, onCancel }) {
+  useLit();
   const official = row.kind === "official";
   const doubles = isDoubles(row.format_id);
   const six = team?.random ? [] : (team?.members || []).map(m => res?.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
@@ -763,13 +740,11 @@ function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
     setBusy(true); setError("");
     try {
       rememberName(name.trim());
-      const [joined] = await Promise.all([joinBattle(row.id, { name: name.trim(), team: sendTeam(team, res), ...(row.room === "code" ? { code } : {}) }),
-        closeGate({ ours: name.trim(), theirs: row.p1_name, line: gateLine(row.regulation, doubles, "친선 배틀") })]);
+      const joined = await joinBattle(row.id, { name: name.trim(), team: sendTeam(team, res), ...(row.room === "code" ? { code } : {}) });
       // kept, so 다시하기 brings the same team
       keepOpenTeam(row.id, team.id);
       onJoined(joined);
     } catch (e) {
-      openGate();
       setError(failText(e, res));
       setBusy(false);
       // someone else took the seat first, or the opener cancelled: the room reads the battle again and shows what it is now
@@ -829,6 +804,7 @@ function useNow(on) {
 }
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
 export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER }) {
+  useLit();
   // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
   const local = row.kind === "cpu" && Boolean(seat);
   const ended = row.status === "ended";
@@ -869,7 +845,6 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [cue, setCue] = useState(() => opening?.at ?? null);
   const [epoch, setEpoch] = useState(0);
   const [autoplay, setAutoplay] = useState(() => Boolean(opening?.play));
-  // a battle being played goes in from its team preview through the gate; a replay does not
   const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended, ownView);
   const at = cue ?? replay?.total ?? 0;
   const jump = to => { setAutoplay(false); setCue(replay && to < replay.total ? to : null); setEpoch(e => e + 1); };
@@ -1109,7 +1084,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* a finished battle stands on its stage from the first moment, empty until the leads come out: its replay opens on the
             board saying who plays, never on the team preview (2026-11-07, the user: "처음에 선택 창이 미묘하게 보이는 문제") */}
         {started || ended
-          ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
+          ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)} dark={Boolean(opening?.play)}
               said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} />
           : seat && previewParty.current
           ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
