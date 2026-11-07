@@ -19,7 +19,7 @@ import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slot
 import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
-import { setSoundOn, soundOn } from "./battle/cries.js";
+import { audio, setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
 import { watchBattleSignal } from "../services/battleSignal.js";
 import { closeGate, openGate } from "./battle/Gate.js";
@@ -844,6 +844,19 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   // the battle's sound (DESIGN.md "Battle", Sound): cries and effects on unless the viewer turns them off, remembered on the device
   const [sound, setSound] = useState(soundOn);
   const toggleSound = () => { setSoundOn(!sound); setSound(!sound); };
+  /* the browser keeps a page silent until its first tap or key (cries.js wakes the sound then). A replay that plays by itself has
+     had none, so it played silent (2026-11-07, the user: "리플레이에서는 소리가 안 나오네"): the replay bar's sound key shows it and
+     wakes it */
+  const [awake, setAwake] = useState(() => audio()?.state === "running");
+  useEffect(() => {
+    const c = audio();
+    if (!c) return undefined;
+    const f = () => setAwake(c.state === "running");
+    f();
+    c.addEventListener("statechange", f);
+    return () => c.removeEventListener("statechange", f);
+  }, []);
+  const soundKey = () => { if (sound && !awake) audio()?.resume().catch(() => {}); else toggleSound(); };
   /* The replay (DESIGN.md "Battle", Replay): cue is how many lines of the finished log the stage shows, null all of them.
      A jump starts the stage again and catches up at once (epoch); a step on, or play, adds the next turn, which the stage plays. */
   const replay = useMemo(() => (ended && log ? replayStops(log) : null), [ended, log]);
@@ -890,7 +903,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     else if (action === "next") stepOn();
     else if (action === "first") jump(stops[0].at);
     else if (action === "last") jump(stops[stops.length - 1].at);
-    else if (action === "sound") toggleSound();
+    else if (action === "sound") soundKey();
     else {
       const i = SPEEDS.findIndex(([v]) => v === speed) + (action === "slower" ? -1 : 1);
       if (SPEEDS[i]) setSpeedChoice(SPEEDS[i][0]);
@@ -1084,7 +1097,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   return (
     <div className="bt-page bt-match" onPointerDown={e => { if (e.target.closest?.("button, summary, [role=button]")) sfx("select"); }}>
       <div className="bt-main">
-        {started
+        {/* a finished battle stands on its stage from the first moment, empty until the leads come out: its replay opens on the
+            board saying who plays, never on the team preview (2026-11-07, the user: "처음에 선택 창이 미묘하게 보이는 문제") */}
+        {started || ended
           ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)}
               said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} />
           : seat && previewParty.current
@@ -1096,14 +1111,15 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       </div>
       <div className="bt-side">
         {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
-        {!started && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
+        {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
         <div className="pn bt-head">
           <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">공식 경기</span>}</span>
           <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {/* the turn, announced in segment cells beside the names (it stood on the stadium's wall once, splitting the foe's plates) */}
           {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t12 dim">턴</span></span>}
         </div>
-        {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play} />}
+        {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
+          sound={sound} awake={awake} onSound={soundKey} />}
         {shownEnded && <section className="bt-end" aria-label="배틀 결과">
           {/* a player reads their own result first (승리, 패배); anyone watching reads who won. A replay playing from its start
               keeps it until it reaches the end; the keys under it stand from the first, so the page can be left at any turn */}

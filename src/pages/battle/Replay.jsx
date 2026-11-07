@@ -15,10 +15,10 @@ import { stopIndex } from "../../services/battleReplay.js";
 const stopWord = s => (s.end ? "끝" : s.turn === 0 ? "선출" : `${s.turn}턴`);
 
 // the replay's controls stand back under the stage: small round keys with their signs and a thin track to drag to any turn
-const KEY = { first: "M6 6h2v12H6zM18 6l-9 6 9 6z", prev: "M16 6l-9 6 9 6z", play: "M8 5l11 7-11 7z", pause: "M8 5h3v14H8zM13 5h3v14h-3z", next: "M8 6l9 6-9 6z", last: "M16 6h2v12h-2zM6 6l9 6-9 6z" };
+const KEY = { sound: "M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7l-1.4-1.4a3 3 0 0 0 0-4.2zM18.4 6a8.5 8.5 0 0 1 0 12L17 16.6a6.5 6.5 0 0 0 0-9.2z", mute: "M4 9h4l5-4v14l-5-4H4zM15.3 9.4l1.4-1.4 2.1 2.1 2.1-2.1 1.4 1.4-2.1 2.1 2.1 2.1-1.4 1.4-2.1-2.1-2.1 2.1-1.4-1.4 2.1-2.1z", first: "M6 6h2v12H6zM18 6l-9 6 9 6z", prev: "M16 6l-9 6 9 6z", play: "M8 5l11 7-11 7z", pause: "M8 5h3v14H8zM13 5h3v14h-3z", next: "M8 6l9 6-9 6z", last: "M16 6h2v12h-2zM6 6l9 6-9 6z" };
 // each key names its keyboard key too (replayKey below), as Showdown's replays answer to theirs
 const Key = ({ d, label, keys, hint, ...rest }) => <button type="button" className="bt-rkey" aria-label={label} title={`${label} (${hint})`} aria-keyshortcuts={keys} {...rest}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg></button>;
-export function ReplayBar({ stops, at, playing, onJump, onStep, onPlay }) {
+export function ReplayBar({ stops, at, playing, onJump, onStep, onPlay, sound, awake, onSound }) {
   const i = stopIndex(stops, at);
   const last = stops.length - 1;
   const prev = at > stops[i].at ? i : Math.max(0, i - 1);
@@ -36,6 +36,9 @@ export function ReplayBar({ stops, at, playing, onJump, onStep, onPlay }) {
         <input type="range" min="0" max={last} step="1" value={i} onChange={e => onJump(stops[Number(e.target.value)].at)}
           aria-label="리플레이 위치" aria-valuetext={stopWord(stops[i])} />
       </span>
+      {/* the sound, as Showdown's replays keep it with the playback: lit while the page is still silent and waits for a press */}
+      <Key d={sound && awake ? KEY.sound : KEY.mute} label={sound && awake ? "소리 끄기" : "소리 켜기"} keys="M" hint="m"
+        onClick={onSound} className={"bt-rkey" + (sound && !awake ? " main" : "")} />
     </div>
   );
 }

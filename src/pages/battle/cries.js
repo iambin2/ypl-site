@@ -10,7 +10,8 @@ const SOUND_KEY = "ypl-battle:audio"; // not the old "ypl-battle:sound", which s
 let on = (() => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catch { return true; } })();
 export const soundOn = () => on;
 export function setSoundOn(value) { on = Boolean(value); try { localStorage.setItem(SOUND_KEY, on ? "on" : "off"); } catch { /* the next visit sounds */ } if (on) audio()?.resume?.().catch(() => {}); }
-if (AC) addEventListener("pointerdown", () => { if (audio()?.state !== "running") ctx.resume().catch(() => {}); }, { capture: true, passive: true });
+const wake = () => { if (audio()?.state !== "running") ctx.resume().catch(() => {}); };
+if (AC) { addEventListener("pointerdown", wake, { capture: true, passive: true }); addEventListener("keydown", wake, { capture: true, passive: true }); }
 
 // fetched and decoded once a number, when the team preview names the Pokémon
 export function loadCry(num) {

@@ -755,7 +755,8 @@ export async function opening(stage, ours, theirs, { plates = true, seated = fal
     await wait(reduced() ? 200 : 450);
     return;
   }
-  if (e) e.anim(e.grade, { dim: [.18, .18, 1] }, { dur: 1600, at: [0, .5, 1], ease: "inout" });
+  // a stage already lit (a replay's start) goes down with the board's veil instead of dropping to dark at once
+  if (e) e.anim(e.grade, darkened ? { dim: [.18, .18, 1] } : { dim: [1, .18, .18, 1] }, { dur: 1600, at: darkened ? [0, .5, 1] : [0, .1, .5, 1], ease: "inout" });
   await playBoard(over, { say: "배틀 시작", rows: [{ label: seated ? "상대" : "", name: theirs }, { label: seated ? "나" : "", name: ours }] }, [[ms(700), {}]]);
 }
 /* the end (DESIGN.md "Battle", The big moments): the match board over the arena, the camera holding wide. The Pokémon each side knocked

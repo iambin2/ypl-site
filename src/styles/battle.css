@@ -250,7 +250,8 @@
 /* ---------- the HUD over the stage ---------- */
 .bt-hud { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
 .bt-hud-foe, .bt-hud-own { transition: opacity .4s ease; }
-.bs-stage.bs-intro :is(.bt-hud-foe, .bt-hud-own) { opacity: 0; }
+/* the plates go out at once and come back over .4s: a fade going out let a lead's plate show through the opening (2026-11-07) */
+.bs-stage.bs-intro :is(.bt-hud-foe, .bt-hud-own) { opacity: 0; transition: none; }
 .bt-hud-foe { position: absolute; top: var(--s3); left: var(--pad); right: var(--pad); display: grid; justify-items: start; gap: var(--seam); }
 /* the foe's plates as one group: in doubles the two sit seam to seam, the first standing's first, never split across the stage */
 .bt-hud-plates { display: flex; align-items: flex-start; gap: var(--seam); width: 100%; }
@@ -597,6 +598,10 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   --lit: var(--site-lit); --dim: var(--site-dim); --mute: var(--site-mute); --signal: var(--site-signal); --off: var(--site-off);
   position: absolute; inset: 0; display: grid; place-items: center; background: var(--site-veil); color: var(--lit);
 }
+/* while the board stands on the stage the message window steps aside, so the board is in the middle of all the eye sees: with the
+   window under it, the court read as the stage and the board stood that window's height low, running into it (2026-11-07, the
+   user: "묘하게 중앙이 아닌 것처럼") */
+.bs-stage:has(> .bs-over > .bt-board-host) .bt-say { visibility: hidden; }
 
 /* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two
    over ours, each place a key the moves' height with the picture, the name, the HP and how the move lands there; a place the move

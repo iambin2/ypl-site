@@ -204,7 +204,9 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
           || (R.state.turn === 0 && /^\|switch\|/.test(line) && /^\|switch\|/.test(next) && part(line, 2).slice(0, 2) === part(next, 2).slice(0, 2))
           || (/^\|-(un)?boost\|/.test(line) && /^\|-(un)?boost\|/.test(next));
         flushLines();
-        if (text.length) { shown = chained ? [...shown, ...text].slice(-2) : text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
+        // the first lead's words wait for the opening's board (the box would say 가랏 under it before anyone is thrown)
+        const opener = event?.verb === "enter" && !opened && R.state.turn === 0;
+        if (text.length && !opener) { shown = chained ? [...shown, ...text].slice(-2) : text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
         chained = chain;
         const stage = stageRef.current;
         const k = event?.ident ? keyOf(event.ident) : "";
@@ -321,6 +323,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
               if (gated) await openGate();
               await fx.opening(st, ours, theirs, { plates: !gated, seated: seatedRef.current });
             }
+            if (opener && text.length) { shown = text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
            
             /* a Pokémon sent in mid-battle is framed on its side. The leads (DESIGN.md "Battle", The big moments) are thrown one side at
                a time with the camera close on that side, ours from behind first, then theirs, so each meets its ball; the camera goes
