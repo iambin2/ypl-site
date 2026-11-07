@@ -5,6 +5,8 @@
     <!-- 탭 아이콘: Wing Y를 칸에 크게 앉혔고, 어두운 탭에서는 SVG가 뒤집힌다. 브라우저가 아이콘을 오래 캐시하므로 그림을 바꾸면 파일 이름도 바꾼다. -->
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <!-- 검색 결과의 아이콘: Google은 48의 배수 크기를 찾고 원으로 자르므로 마크를 원 안에 크게 세웠다(docs/brand/search-icon.html) -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/search-icon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon-wing-2026-11-02.svg" />
     <!-- 홈 화면 앱: iOS는 여기서 연 앱에서만 공지 알림을 받을 수 있다 -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -19,7 +21,8 @@
     <meta name="google-site-verification" content="PtIcYR3QMpJUDvg78_GOMnCpEHtBegBKk0N40dYvhXU" />
     <!-- 검색용 대표 주소: App.jsx가 화면마다 바꾼다 -->
     <link rel="canonical" href="https://league.pokeyonsei.com/" />
-    <!-- 링크 미리보기는 이름과 그림뿐: 설명(og:description, description)을 두면 메신저가 그 글을 길게 붙인다 -->
+    <!-- 검색 결과의 설명은 이름 한 줄뿐: 긴 글을 두면 메신저 미리보기에도 그 글이 길게 붙는다 -->
+    <meta name="description" content="Yonsei Pokémon League" />
     <meta property="og:title" content="Yonsei Pokémon League" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="YPL" />
@@ -31,6 +34,8 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="네이비 판 한가운데의 YPL 로고" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- 검색 결과 맨 위의 사이트 이름과 로고: 없으면 Google이 옛 주소의 "GitHub Pages documentation"을 붙인다 -->
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"YPL","alternateName":["Yonsei Pokémon League","연세 포켓몬 리그"],"url":"https://league.pokeyonsei.com/"},{"@type":"SportsOrganization","name":"Yonsei Pokémon League","alternateName":"YPL","url":"https://league.pokeyonsei.com/","logo":"https://league.pokeyonsei.com/icon-512.png"}]}</script>
     <!-- 서체: 한글은 Freesentation, 라틴과 숫자는 Albert Sans. 첫 화면의 글자가 바로 바뀌도록 본문과 제목의 첫 조각, 라틴 파일을 미리 받는다(scripts/build-font-slices.py). -->
     <link rel="preload" href="/fonts/albert-sans-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
     <!-- font-preloads:start -->
