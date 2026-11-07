@@ -3,7 +3,7 @@
    타입의 파편, 히트 스톱, 카메라의 반동). 맞은 쪽의 결과 줄은 맞는 순간에 함께 뜬다.
    말(턴, 승자, 특성, 이름)은 무대 밖의 판(.bs-over)이고 보드의 판(battle.css)이다.
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
-import { reduced } from "../../components/common/motion.js";
+import { DUR, reduced } from "../../components/common/motion.js";
 import { playBoard } from "./Scoreboard.jsx";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
@@ -772,6 +772,15 @@ export function hideAll(stage, { dark = false } = {}) {
   e.sync();
   for (const a of e.actors.values()) { e.cancel(a); a.base.alpha = 0; }
   if (dark && !instant()) e.gradeBase.dim = .18;
+}
+/* going in from the lobby (DESIGN.md "Battle", Going in): the court's Pokémon are called back and the stadium's lamps go down as they go,
+   the mirror of the opening, which switches them on (2026-11-07, the user: 배틀 시작 on the lobby wants an entrance) */
+export async function goIn(stage) {
+  const e = E(stage);
+  if (!e || instant()) return;
+  e.sync();
+  const lamps = e.anim(e.grade, { dim: [1, 1, .18] }, { dur: reduced() ? DUR.leave : 900, at: [0, .4, 1], ease: "inout", fill: true });
+  await Promise.all([lamps, ...[...e.actors.keys()].map(key => leave(stage, key))]);
 }
 /* the opening: the arena's lamps switch on over the dark stage hideAll left, and the throws come on their rise. No board or veil
    stands over it (2026-11-07, the user: the 배틀 시작 popup made the start stutter; the strips and the team preview have said who plays) */

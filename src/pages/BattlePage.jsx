@@ -17,7 +17,7 @@ import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
 import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
-import { prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
+import { goIn, prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
@@ -81,10 +81,15 @@ export default function BattlePage({ flash: say, go }) {
     const url = new URL(window.location.href);
     url.search = next === CPU_ROOM ? "view=battle&cpu=1" : next ? `view=battle&id=${encodeURIComponent(next)}${code ? `&code=${code}` : ""}` : `view=battle${tab ? `&tab=${tab}` : ""}`;
     pushHistory({ view: "battle" }, url);
+    moved.current = true;
     setCpu(next === CPU_ROOM);
     setId(next === CPU_ROOM ? null : next);
     setReplay(null);
   }, []);
+  /* the new screen starts at its top, as a page does, before its first paint (on a phone 배틀 시작 stands low, and the room opened
+     scrolled down to the footer) */
+  const moved = useRef(false);
+  useLayoutEffect(() => { if (moved.current) { moved.current = false; window.scrollTo(0, 0); } }, [cpu, id, replay]);
   // the stage's first paintings are made in idle moments while the page waits for its data (stageFx prewarm), not as a battle opens
   useEffect(() => { prewarm(); }, []);
   if (!res) return <Loader />;
@@ -234,6 +239,10 @@ let cpuHeld = null;
 function readCpuBattle() { try { return JSON.parse(localStorage.getItem(CPU_KEY) || "null") || cpuHeld; } catch { return cpuHeld; } }
 function keepCpuBattle(next) { cpuHeld = next; try { localStorage.setItem(CPU_KEY, JSON.stringify(next)); } catch { /* 이 화면을 닫으면 이어서 할 수 없다 */ } }
 
+/* the computer's worker. The lobby's 배틀 시작 starts one before its going in plays, so the engine loads while the court goes dark and the
+   team preview stands as the lamps go down, not after a blank moment; the room takes it once */
+const cpuWorker = () => new Worker(new URL("./battle/cpu.worker.js", import.meta.url), { type: "module" });
+let earlyWorker = null;
 function CpuRoom({ res, say, go, onLeave, onRestart }) {
   const [state, setState] = useState(null);
   const [error, setError] = useState(null);
@@ -242,7 +251,8 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
   useEffect(() => {
     const kept = readCpuBattle();
     if (!kept?.start && !kept?.inputLog) { setError({ none: true }); return undefined; }
-    const w = new Worker(new URL("./battle/cpu.worker.js", import.meta.url), { type: "module" });
+    const w = earlyWorker || cpuWorker();
+    earlyWorker = null;
     worker.current = w;
     let n = 0;
     const take = data => {
@@ -427,6 +437,11 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
     if (foe === "cpu") {
       if (saved?.status === "active" && !(await siteConfirm({ title: "새 배틀을 시작할까요?", body: "진행 중인 컴퓨터와의 배틀은 남지 않습니다.", confirmLabel: "새로 시작" }))) return;
       rememberName(me);
+      setBusy(true);
+      earlyWorker?.terminate();
+      earlyWorker = cpuWorker();
+      // going in (DESIGN.md "Battle", Going in): the court's Pokémon are called back and its lamps go down, then the battle's screen lights
+      await goIn(document.querySelector(".bt-lobby-main .bs-stage")).catch(() => {});
       keepCpuBattle({ start: { regulation: team.regulationId, battleFormat: format, name: me, team: sendTeam(team, res), level }, teamId: team.id });
       onOpen(CPU_ROOM);
       return;
