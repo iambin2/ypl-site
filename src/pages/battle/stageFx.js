@@ -167,7 +167,7 @@ const DEBRIS = {
     for (let i = 0; i < 4; i++) { const a = around(4, i); boltStrip(e, at, [at[0] + Math.cos(a) * s * .6 * p, at[1] + Math.sin(a) * s * .6 * p], { width: 4, dur: 260, flicker: 4, depth: .25, forks: 0, delay: i * 30, steps: 6 }); }
     sparks(e, at, 16 * p, "electric", { ramp: "electric.h", speed: [s * 2.4, s * 5], len: [5, 10] });
     glints(e, at, s, 6, "electric.h", { r: .55 });
-    glow(e, at, s * 1.1, "electric", { dur: 220, ramp: "electric.h", alpha: .4 });
+    glow(e, at, s * 1.1, "electric", { dur: 220, ramp: "electric.h", alpha: .25 });
   },
   grass(e, at, s, p) {
     e.emit({ n: 12 * p, at, tex: "leaf", lit: true, ramp: "leaf.c", speed: [s * 1.2, s * 2.4], drag: 2.2, acc: [0, s * .9], size: [[s * .14, s * .2], "same"], aspect: 1.9, rot: "rand", spin: [-9, 9], life: [800, 1200], occ: 1, emis: .15 });
@@ -545,9 +545,9 @@ export function morph(stage, key) {
   if (!e || !a || instant()) return Promise.resolve();
   const at = centre(stage, key), s = sizeOf(stage, key);
   sfx("morph", { pan: panOf(e, at) });
-  e.at(300, () => { sparks(e, at, 14, "normal", { len: [6, 12] }); glow(e, at, s * 1.6, "normal", { dur: 400 }); });
+  e.at(300, () => { sparks(e, at, 14, "normal", { ramp: "psy.wave", len: [6, 12] }); glow(e, at, s * 1.4, "normal", { dur: 400, ramp: "psychic.h", alpha: .25 }); });
   // (round 3: a pale violet-white sheen, not a white cut-out, as it folds to a line and opens as the other)
-  return e.anim(a, { sx: [1, .06, .06, 1], flash: [0, .7, .7, 0], rimR: [.8, .8], rimG: [.6, .6], rimB: [1, 1], rimA: [0, 1, 1, 0] }, { dur: 640, at: [0, .45, .55, 1], eases: ["in", "linear", "out"] });
+  return e.anim(a, { sx: [1, .06, .06, 1], flash: [0, .45, .45, 0], rimR: [.8, .8], rimG: [.6, .6], rimB: [1, 1], rimA: [0, 1, 1, 0] }, { dur: 640, at: [0, .45, .55, 1], eases: ["in", "linear", "out"] });
 }
 // a move that takes a turn to charge: the light gathers twice and stays gathered a beat
 export async function gather(stage, key, type) {
@@ -613,7 +613,9 @@ export function heal(stage, key) {
   if (!e || !a || instant()) return Promise.resolve();
   const s = sizeOf(stage, key), [x, y] = centre(stage, key, .02);
   sfx("heal", { pan: panOf(e, [x, y]) });
-  e.emit({ at: [x, y - s * .45], tex: "glow", ramp: "grass.h", size: [s * .3, s * 1.5], aspect: .8, life: 900, alpha: .07, layer: 0, grow: true });
+  e.emit({ at: [x, y - s * .45], tex: "glow", ramp: "grass.h", size: [s * .3, s * 1.5], aspect: .8, life: 900, alpha: .12, layer: 0, grow: true });
+  // (2026-11-07 round 5, Scarlet and Violet: the healing light winds up round the body; motes only rising read as a plain fizz)
+  for (const k of [0, Math.PI]) for (let i = 0; i < 18; i++) { const u = i / 18, ang = u * Math.PI * 3 + k, front = Math.sin(ang) > 0; e.emit({ at: [x + Math.cos(ang) * s * .44, y - u * s * 1.15], tex: "glint", ramp: "grass.h", vel: [0, -s * .25], size: [s * .06, s * .16], life: 600, delay: i * 26, alpha: front ? 1 : .4, layer: front ? 1 : 0, emis: 1, grow: true }); }
   e.emit({ n: 26, at: [x, y], r: [s * .45, s * .06], tex: "glow", ramp: "grass.h", vel: () => [rand(-8, 8), -rand(s * .9, s * 1.7)], size: [s * .07, s * .02], life: [700, 1100], over: 500, emis: 1 });
   e.emit({ n: 14, at: [x, y], r: [s * .45, s * .06], tex: "streak", ramp: "grass", vel: () => [rand(-4, 4), -rand(s * .9, s * 1.5)], face: true, size: [3, 2], aspect: [8, 14], life: [500, 800], over: 500 });
   e.emit({ n: 8, at: [x, y - s * .3], r: [s * .4, s * .3], tex: "plus", ramp: "grass.h", vel: () => [0, -rand(30, 60)], size: [s * .06, s * .1], life: [700, 900], over: 400, emis: .9 });
