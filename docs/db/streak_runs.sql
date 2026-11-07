@@ -98,6 +98,7 @@ end;
 $$;
 
 -- 5. 판 하나를 연다(아래 두 함수가 쓴다). 컴퓨터가 선출까지 고른 상태로 들어오므로 처음부터 진행 중이고, 90초 시계가 바로 간다.
+--    판의 선수 이름은 20자까지라(battles), 계정 이름(40자까지)의 앞 20자로 선다.
 create or replace function public.streak_open_battle(
   p_run uuid, p_id text, p_regulation text, p_format_id text, p_engine text, p_p1_name text,
   p_token_hash text, p_p1_team jsonb, p_state jsonb, p_pending jsonb, p_turn integer, p_spectator_log text
@@ -109,7 +110,7 @@ set search_path = ''
 as $$
 begin
   insert into public.battles (id, regulation, format_id, engine, status, kind, run_id, p1_name, p2_name, turn, spectator_log)
-  values (p_id, p_regulation, p_format_id, p_engine, 'active', 'streak', p_run, btrim(p_p1_name), '컴퓨터', p_turn, p_spectator_log);
+  values (p_id, p_regulation, p_format_id, p_engine, 'active', 'streak', p_run, left(btrim(p_p1_name), 20), '컴퓨터', p_turn, p_spectator_log);
   insert into public.battle_secrets (battle_id, p1_token_hash, p1_team, state, pending)
   values (p_id, p_token_hash, p_p1_team, p_state, coalesce(p_pending, '{}'::jsonb));
   update public.streak_runs r set battle_id = p_id where r.id = p_run;
@@ -126,7 +127,18 @@ as $$
   update public.battle_secrets s set state = null, pending = '{}'::jsonb, cpu_memory = null where s.battle_id = p_id;
 $$;
 
--- 7. 시작. 승인된 계정만, 계정마다 진행 중인 도전 하나. 진행 중인 도전이 있으면 그때까지 이긴 판 수로 끝내고 그 판은 기권으로 닫는다.
+-- 7. 배틀 함수가 첫 판의 엔진을 만들기 전에 선수 이름을 안다(엔진의 선수 이름이 판의 이름과 같도록). 승인되지 않았으면 null.
+create or replace function public.streak_trainer_name(p_user uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select left(btrim(a.requested_name), 20) from public.player_accounts a where a.auth_user_id = p_user and a.status = 'approved';
+$$;
+
+-- 8. 시작. 승인된 계정만, 계정마다 진행 중인 도전 하나. 진행 중인 도전이 있으면 그때까지 이긴 판 수로 끝내고 그 판은 기권으로 닫는다.
 --    시작할 때마다 시간이 지난 판을 20개까지 닫고, 지난달보다 오래된 연승 판을 200개까지 지운다.
 create or replace function public.streak_start(
   p_user uuid, p_id text, p_regulation text, p_format_id text, p_engine text,
@@ -189,7 +201,7 @@ begin
 end;
 $$;
 
--- 8. 판이 끝난 뒤. 승자는 함수가 저장한 공개 행의 사실에서 읽는다. 이겼으면 다음 판(p_id 이하)을 함께 열고, 아니면 도전을 끝낸다.
+-- 9. 판이 끝난 뒤. 승자는 함수가 저장한 공개 행의 사실에서 읽는다. 이겼으면 다음 판(p_id 이하)을 함께 열고, 아니면 도전을 끝낸다.
 --    같은 판으로 두 번 불러도(다시 보낸 요청) 한 번만 센다: 도전의 지금 판이 그 판일 때만 움직인다.
 create or replace function public.streak_after_battle(
   p_battle_id text, p_id text, p_regulation text, p_format_id text, p_engine text,
@@ -226,7 +238,7 @@ begin
 end;
 $$;
 
--- 9. 순위. 한 달(KST, 기본은 이번 달)의 계정별 최고 기록 하나씩, 연승이 많은 순, 같으면 먼저 닿은 순. 100명까지.
+-- 10. 순위. 한 달(KST, 기본은 이번 달)의 계정별 최고 기록 하나씩, 연승이 많은 순, 같으면 먼저 닿은 순. 100명까지.
 --    live: 지금 진행 중이고 시계가 남은 도전(그 판을 관전하도록 battle_id를 함께 준다). mine: 로그인한 본인의 줄.
 --    1연승 이상이거나 지금 진행 중인 도전만 선다. 누구의 계정 id도 내보내지 않는다.
 create or replace function public.streak_board(p_month date default null)
@@ -258,10 +270,12 @@ $$;
 revoke all on function public.battle_set_cpu_memory(text, jsonb) from public, anon, authenticated;
 revoke all on function public.streak_open_battle(uuid, text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_clear_secret(text) from public, anon, authenticated;
+revoke all on function public.streak_trainer_name(uuid) from public, anon, authenticated;
 revoke all on function public.streak_start(uuid, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_after_battle(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_board(date) from public;
 grant execute on function public.battle_set_cpu_memory(text, jsonb) to service_role;
+grant execute on function public.streak_trainer_name(uuid) to service_role;
 grant execute on function public.streak_start(uuid, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
 grant execute on function public.streak_after_battle(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
 grant execute on function public.streak_board(date) to anon, authenticated, service_role;

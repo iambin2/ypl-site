@@ -2,6 +2,9 @@
    달과 순위는 DB가 정한다(docs/db/streak_runs.sql). 여기에는 몇 번째 판에 어느 난이도가 서는지와 서버가 생각할 시간만 있다. */
 import { LEVELS } from "./cpuLevels.js";
 
+// 싱글 랜덤 배틀 하나(4장의 측정이 모두 싱글). 규정이 바뀌면 여기만 바꾼다
+export const STREAK_REGULATION = "m-c";
+export const STREAK_BATTLE_FORMAT = "singles";
 // 일곱 판마다 한 단계 (본가와 같은 묶음). 마지막 단계는 끝까지 간다.
 export const STREAK_STEP = 7;
 export const STREAK_LEVELS = ["porygon", "porygon2", "porygonz"];

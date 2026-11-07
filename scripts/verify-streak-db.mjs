@@ -77,7 +77,7 @@ await pg.exec(readFileSync("docs/db/streak_runs.sql", "utf8"));
 await pg.exec(readFileSync("docs/db/streak_runs.sql", "utf8"));
 
 const users = {};
-for (const [key, name, status] of [["a", "이제빈", "approved"], ["b", "김선수", "approved"], ["c", "대기중", "pending"]]) {
+for (const [key, name, status] of [["a", "이제빈", "approved"], ["b", "김선수", "approved"], ["c", "대기중", "pending"], ["d", "아주아주긴트레이너이름입니다스물한글자가넘는", "approved"]]) {
   users[key] = randomUUID();
   await q("insert into auth.users values ($1)", [users[key]]);
   await q("insert into public.player_accounts values ($1, $2, $3)", [users[key], name, status]);
@@ -199,6 +199,17 @@ try {
     assert.equal((await one("select count(*)::int as c from public.battles where id = $1", [old.battle_id])).c, 0);
     assert.equal((await one("select battle_id from public.streak_runs where id = $1", [old.id])).battle_id, null);
     assert.equal((await one("select count(*)::int as c from public.battles where id = $1", [official])).c, 1, "official battles are never touched");
+  });
+
+  await check("the function learns the trainer's name first, and a name longer than a battle's twenty stands as its first twenty", async () => {
+    await as("service_role");
+    assert.equal((await one("select public.streak_trainer_name($1) as n", [users.c])).n, null);
+    const long = (await one("select public.streak_trainer_name($1) as n", [users.d])).n;
+    assert.equal([...long].length, 20);
+    const d = await start(users.d);
+    assert.equal((await one("select p1_name from public.battles where id = $1", [d.id])).p1_name, long);
+    await as("anon");
+    await assert.rejects(q("select public.streak_trainer_name($1)", [users.a]), /permission denied/);
   });
 
   await check("streak games do not use up the friendly limits, and new runs stop at 300 a day", async () => {

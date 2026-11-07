@@ -1,11 +1,16 @@
 // 사이트 안 배틀. 엔진(engine.mjs)은 여기서만 돌고, 방문자는 좌석 토큰으로 자기 자리에서만 고른다.
 // 공개 행(battles)은 누구나 읽고, 엔진 상태와 토큰 해시(battle_secrets)는 이 함수만 읽는다. 쓰기는 battles.sql 과 battle_links.sql 의 함수로만 한다.
 // 공식 경기는 그 경기 선수의 신청 이름과 제출 비밀번호로 앉고, 끝나면 승자가 운영진의 선택과 같은 계산으로 대진표에 들어간다.
+// 연승 도전(docs/BATTLE_STREAK.md, docs/db/streak_runs.sql)은 컴퓨터도 여기서 두고, 판이 끝나면 다음 판을 연다.
 // 배포: npm run build:battle 로 엔진을 한 파일로 묶은 뒤
 //   npx supabase functions deploy battle --use-api --no-verify-jwt --project-ref rqffrogcverfjqzjasax
-// (엔진 패키지를 Supabase가 받아 묶게 두면 배포가 내부 오류로 실패했다. 요청은 토큰으로 확인하므로 JWT 검사가 필요 없다.)
+// (엔진 패키지를 Supabase가 받아 묶게 두면 배포가 내부 오류로 실패했다. 요청은 토큰으로 확인하므로 JWT 검사가 필요 없다.
+//  연승 도전의 시작만 Google 로그인이 필요해서, 그 요청의 Authorization을 이 함수가 직접 확인한다.)
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME, planMatchWinner, projectRuntimeFacts } from "./engine.bundle.mjs";
+import {
+  ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME,
+  planMatchWinner, projectRuntimeFacts, STREAK_FORMAT, STREAK_REGULATION, computerTurns, streakGame,
+} from "./engine.bundle.mjs";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -65,7 +70,7 @@ function checkTeam(formatid: string, team: unknown) {
    Only the columns the actions use; the logs stay in the database. */
 async function read(id: string) {
   const { data, error } = await db.from("battles")
-    .select("id, kind, status, version, format_id, p1_name, winner, room, battle_secrets(*)").eq("id", id).maybeSingle();
+    .select("id, kind, status, version, format_id, regulation, p1_name, winner, room, run_id, deadline_at, battle_secrets(*)").eq("id", id).maybeSingle();
   if (error) throw error;
   const secret = Array.isArray(data?.battle_secrets) ? data.battle_secrets[0] : data?.battle_secrets;
   if (!data || !secret) refuse(404, "배틀을 찾을 수 없습니다.");
@@ -180,6 +185,71 @@ async function withRetry<T>(fn: () => Promise<T | undefined>) {
   return refuse(409, "다른 선택과 겹쳤습니다. 다시 시도해 주세요.");
 }
 
+/* ---------- 연승 도전 (docs/BATTLE_STREAK.md, docs/db/streak_runs.sql) ----------
+   A streak game is a battle row like a room's, with the computer in p2's seat: its choice is made here, inside the request of the
+   player's own choice, and waits as p2's pending choice until the player's next one plays both. Parties, seeds and every choice of the
+   computer come from this function's own randomness; nothing a visitor sends decides them. */
+const serverRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+/* what a streak game keeps for its computer (battle_secrets.cpu_memory): the run's wins before this game, which set its 난이도, and
+   the computer's readings of the player's sets, carried from one choice to the next (battleCpu.js memory) */
+type StreakMemory = { wins: number; cpu?: unknown };
+async function keepMemory(id: string, memory: StreakMemory) {
+  const { error } = await db.rpc("battle_set_cpu_memory", { p_id: id, p_memory: memory });
+  if (error) console.error(error); // the computer only loses its readings for a choice
+}
+const NO_GAME = {
+  p_id: null, p_regulation: null, p_format_id: null, p_engine: null, p_token_hash: null, p_p1_team: null,
+  p_state: null, p_pending: null, p_turn: null, p_spectator_log: null,
+};
+// a new game of a run, as streak_start and streak_after_battle take it, with the seat its player gets
+async function nextGame(name: string, wins: number) {
+  const id = newId(), token = newToken();
+  const game = streakGame(name, wins, serverRandom);
+  const out = readout(game.engine);
+  return {
+    id, token, memory: { wins, cpu: game.memory } as StreakMemory,
+    args: {
+      p_id: id, p_regulation: STREAK_REGULATION, p_format_id: STREAK_FORMAT, p_engine: ENGINE, p_token_hash: await sha256(token),
+      p_p1_team: game.p1Team, p_state: game.state, p_pending: game.pending, p_turn: out.turn, p_spectator_log: out.spectatorLog,
+    },
+  };
+}
+/* After a streak game has ended and been saved: a win opens the next game in the same transaction that counts it, anything else ends
+   the run. The screen gets the run's wins and, after a win, the next game's seat.
+   ponytail: if this answer is lost after the database counted the win, the next game's token is lost with it and that game runs out
+   its clock; an action that hands the seat out again (by the ended game's token) comes if that happens */
+async function streakAfter(battle: Record<string, any>, out: { winner: string | null }, memory: StreakMemory | null) {
+  const wins = memory?.wins ?? 0;
+  const next = out.winner === "p1" ? await nextGame(battle.p1_name, wins + 1) : null;
+  const result = await rpc("streak_after_battle", { p_battle_id: battle.id, ...(next ? next.args : NO_GAME) });
+  if (next && result?.counted && result.battle_id === next.id) {
+    await keepMemory(next.id, next.memory);
+    return { wins: result.wins, status: "active", next: { id: next.id, token: next.token, side: "p1" } };
+  }
+  return { wins: result?.wins ?? wins, status: result?.status ?? "ended" };
+}
+// the user a Google sign-in makes this request for (the site sends the session's token, storage.js invokeFunction)
+async function userOf(req: Request) {
+  const jwt = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const { data, error } = jwt ? await db.auth.getUser(jwt) : { data: null, error: true };
+  if (error || !data?.user) refuse(401, "Google 계정으로 로그인해 주세요.");
+  return data!.user.id as string;
+}
+// A streak game the player gives up or lets run out of time: lost, saved, and the run ends with the wins it had.
+async function endStreakGame(battle: Record<string, any>, secret: Record<string, any>, side: string, endedBy: "forfeit" | "timeout") {
+  const engine = loadBattle(secret.state);
+  forfeit(engine, side);
+  const out = readout(engine);
+  const state = engine.toJSON();
+  const saved = await save(battle.id, battle.version, {
+    p_status: "ended", p_winner: out.winner, p_ended_by: endedBy, p_turn: out.turn, p_spectator_log: out.spectatorLog,
+    p_log: out.log, p_input_log: out.inputLog, p_state: state, p_pending: {},
+  });
+  if (!saved) return undefined;
+  const view = playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
+  return { ...view, streak: await streakAfter(battle, out, secret.cpu_memory as StreakMemory | null) };
+}
+
 /* A friendly room (docs/db/battle_rooms.sql): an open one stands on the battle page's list of open rooms, a code one is entered with
    four digits its opener passes on. A code is unique among the rooms still waiting. */
 const newCode = () => String(crypto.getRandomValues(new Uint16Array(1))[0] % 10000).padStart(4, "0");
@@ -227,7 +297,7 @@ async function seatSecond(battle: Record<string, any>, secret: Record<string, an
 }
 const readOr = async (id: string) => { try { return await read(id); } catch (e) { if (e instanceof Refusal && e.status === 404) return null; throw e; } };
 
-const actions: Record<string, (body: Record<string, any>, again?: boolean) => Promise<unknown>> = {
+const actions: Record<string, (body: Record<string, any>, again?: boolean, req?: Request) => Promise<unknown>> = {
   async create({ regulation, battleFormat, name, team, room }) {
     let formatid = "";
     try { formatid = formatId(String(regulation), String(battleFormat)); } catch { refuse(400, "알 수 없는 규정입니다."); }
@@ -259,6 +329,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
     return withRetry(async () => {
       const { battle, secret } = await read(String(id));
       if (battle.kind === "official") refuse(409, "공식 경기는 대진표의 경기에서 참가해 주세요.");
+      if (battle.kind === "streak") refuse(409, "연승 도전에는 참가할 수 없습니다. 관전만 할 수 있습니다.");
       if (battle.status !== "waiting") refuse(409, "이미 시작된 배틀입니다.");
       // ponytail: four digits with no limit on tries; a friendly room has nothing to take, add a per-battle try count if that changes
       if (battle.room === "code" && String(code ?? "") !== secret.room_code) refuse(403, "방 코드가 맞지 않습니다.");
@@ -311,6 +382,9 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
       const { battle, secret } = await read(String(id));
       const side = await seat(secret, token);
       if (battle.status !== "active") refuse(409, "진행 중인 배틀이 아닙니다.");
+      const streak = battle.kind === "streak";
+      // the player's clock ran out (by this server's clock): the game is lost on time, as the room battles' clock rules
+      if (streak && Date.now() > Date.parse(battle.deadline_at ?? "") + 1000) return endStreakGame(battle, secret, side, "timeout");
       const engine = loadBattle(secret.state);
       const result = choose(engine, secret.pending, side, String(choice ?? ""), rq == null ? undefined : String(rq));
       if (result.stale) refuse(409, "선택할 차례가 바뀌었습니다. 새 선택지에서 다시 골라 주세요.");
@@ -320,13 +394,21 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
         if (!(await save(battle.id, battle.version, { p_pending: pending }))) return undefined;
         return playerView({ ...battle, version: battle.version + 1 }, { state: secret.state, pending }, side);
       }
+      // a streak game: the computer answers here (streakEngine.mjs), its choice waiting as p2's pending one
+      const memory = secret.cpu_memory as StreakMemory | null;
+      const turn = streak ? computerTurns(engine, memory?.wins ?? 0, memory?.cpu, serverRandom) : null;
       const out = readout(engine);
-      const state = engine.toJSON();
+      const state = turn?.state ?? engine.toJSON();
+      const pending = turn?.pending ?? {};
       const ended = out.ended ? { p_status: "ended", p_winner: out.winner, p_ended_by: "battle", p_log: out.log, p_input_log: out.inputLog } : {};
-      if (!(await save(battle.id, battle.version, { p_turn: out.turn, p_spectator_log: out.spectatorLog, p_state: state, p_pending: {}, ...ended }))) return undefined;
+      if (!(await save(battle.id, battle.version, { p_turn: out.turn, p_spectator_log: out.spectatorLog, p_state: state, p_pending: pending, ...ended }))) return undefined;
       // the bracket line is written after the answer: the ended screen reads applied_at (or apply_error) when it comes, as it always has
-      if (out.ended) later(applyResult(battle.id));
-      return playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
+      if (out.ended && !streak) later(applyResult(battle.id));
+      const view = playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending }, side, out);
+      if (!streak) return view;
+      if (out.ended) return { ...view, streak: await streakAfter(battle, out, memory) };
+      await keepMemory(battle.id, { wins: memory?.wins ?? 0, cpu: turn!.memory });
+      return { ...view, streak: { wins: memory?.wins ?? 0, status: "active" } };
     });
   },
 
@@ -335,6 +417,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
       const { battle, secret } = await read(String(id));
       const side = await seat(secret, token);
       if (battle.status !== "active") refuse(409, "진행 중인 배틀이 아닙니다.");
+      if (battle.kind === "streak") return endStreakGame(battle, secret, side, "forfeit");
       const engine = loadBattle(secret.state);
       forfeit(engine, side);
       const out = readout(engine);
@@ -347,6 +430,22 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean) => Pr
       later(applyResult(battle.id));
       return playerView({ status: "ended", winner: out.winner, version: battle.version + 1 }, { state, pending: {} }, side, out);
     });
+  },
+
+  /* 연승 도전을 시작한다: 이름이 승인된 Google 계정만. 진행 중인 도전이 있으면 그때까지의 연승으로 끝나고 새로 시작한다(streak_start).
+     첫 판은 컴퓨터가 선출을 고른 채로 열리고, 이 기기가 그 판의 p1 자리다. */
+  async streak(_body, _again, req) {
+    const user = await userOf(req!);
+    const name = await rpc("streak_trainer_name", { p_user: user });
+    if (!name) refuse(403, "이름이 승인된 Google 계정만 연승 도전을 할 수 있습니다.");
+    const game = await nextGame(name, 0);
+    const { data, error } = await db.rpc("streak_start", { p_user: user, ...game.args });
+    if (error) {
+      if (error.code === "P0001" || error.code === "42501") refuse(error.code === "P0001" ? 429 : 403, error.message);
+      throw error;
+    }
+    await keepMemory(game.id, game.memory);
+    return { id: game.id, token: game.token, side: "p1", run: data };
   },
 
   // The host takes back a battle nobody joined. Nothing was played, so nothing is kept.
@@ -490,7 +589,7 @@ Deno.serve(async req => {
   const action = actions[String(body?.action)];
   if (!action) return reply(400, { error: "알 수 없는 요청입니다." });
   try {
-    return reply(200, await action(body));
+    return reply(200, await action(body, undefined, req));
   } catch (error) {
     if (error instanceof Refusal) return reply(error.status, { error: error.message, ...error.extra });
     console.error(error);
