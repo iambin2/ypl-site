@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { currentTypes, effectWord, effectiveness, moveType, weatherSuppressed } from "../src/pages/battle/battleWords.js";
+import { currentTypes, effectWord, effectiveness, movePower, moveType, weatherSuppressed } from "../src/pages/battle/battleWords.js";
 import { createBattleReader, revives, slotPasses } from "../src/services/battleLog.js";
 
 const text = JSON.parse(readFileSync(new URL("../src/data/battle-text-ko.json", import.meta.url), "utf8"));
@@ -64,4 +64,40 @@ test("Revival Blessing asks for a fainted Pokémon, and passes when there is non
   assert.ok(revives(request, 1));
   assert.equal(slotPasses(request, 1), false, "a fainted one can come back");
   assert.equal(slotPasses({ ...request, side: { pokemon: mons.slice(0, 3) } }, 1), true, "no fainted one: the place passes");
+});
+
+test("a move key says the power it goes out with now (어시스트파워 and 웨더볼 kept their book power)", () => {
+  assert.equal(movePower("storedpower", 20, { boosts: { spa: 2, spd: 2, spe: -1 } }), 100, "20 more for each stage up, none taken for a fall");
+  assert.equal(movePower("weatherball", 50, {}, null, { weather: "RainDance" }), 100);
+  assert.equal(movePower("weatherball", 50, { item: "Utility Umbrella" }, null, { weather: "RainDance" }), 50, "no rain under an umbrella");
+  assert.equal(movePower("weatherball", 50, {}, null, { weather: "SunnyDay", suppressed: true }), 50, "Cloud Nine or Air Lock out");
+  assert.equal(movePower("terrainpulse", 50, { types: ["Grass"] }, null, { fields: ["Electric Terrain"] }), 100);
+  assert.equal(movePower("terrainpulse", 50, { types: ["Flying"] }, null, { fields: ["Electric Terrain"] }), 50, "off the ground, no terrain");
+  assert.equal(moveType("terrainpulse", "Normal", { types: ["Flying"] }, { fields: ["Electric Terrain"] }), "Normal", "nor its type");
+  assert.equal(movePower("facade", 70, { status: "brn" }), 140);
+  assert.equal(movePower("facade", 70, { status: "slp" }), 70, "sleep does not count");
+  assert.equal(movePower("acrobatics", 55, { item: "" }), 110);
+  assert.equal(movePower("acrobatics", 55, { item: "Sitrus Berry" }), 55);
+  assert.equal(movePower("eruption", 150, { hp: 75, maxhp: 150 }), 75);
+  assert.equal(movePower("reversal", 0, { hp: 3, maxhp: 150 }), 200);
+  assert.equal(movePower("lastrespects", 50, { fainted: 2 }), 150);
+  assert.equal(movePower("ragefist", 50, { hits: 9 }), 350, "up to 350");
+  assert.equal(movePower("solarbeam", 120, {}, null, { weather: "Sandstorm" }), 60);
+  assert.equal(movePower("hex", 65, {}, { status: "par" }), 130);
+  assert.equal(movePower("hex", 65, {}, null), 65, "no lone target: its book power");
+  assert.equal(movePower("venoshock", 65, {}, { status: "tox" }), 130);
+  assert.equal(movePower("brine", 65, {}, { hp: 50, maxhp: 100 }), 130);
+  assert.equal(movePower("lowkick", 0, {}, { species: "Garchomp" }), 80, "95 kg");
+  assert.equal(movePower("heavyslam", 0, { species: "Copperajah" }, { species: "Garchomp" }), 120);
+  assert.equal(movePower("risingvoltage", 70, {}, { types: ["Ground"] }, { fields: ["Electric Terrain"] }), 140);
+  assert.equal(movePower("risingvoltage", 70, {}, { types: ["Flying"] }, { fields: ["Electric Terrain"] }), 70);
+});
+
+test("Rage Fist counts the blows a Pokémon takes from moves, and a switch starts it again", () => {
+  const start = ["|player|p1|가|", "|player|p2|나|", "|switch|p1a: Annihilape|Annihilape, L50|187/187", "|switch|p2a: Milotic|Milotic, L50|100/100", "|turn|1"];
+  const { r } = read([...start, "|move|p2a: Milotic|Scald|p1a: Annihilape", "|-damage|p1a: Annihilape|130/187", "|-damage|p1a: Annihilape|119/187 brn|[from] brn"]);
+  assert.equal(r.state.sides.p1.active[0].hits, 1, "the burn is not a blow");
+  r.read("|switch|p1a: Oranguru|Oranguru, L50|197/197");
+  r.read("|switch|p1a: Annihilape|Annihilape, L50|119/187 brn");
+  assert.equal(r.state.sides.p1.active[0].hits, 0);
 });

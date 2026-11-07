@@ -27,7 +27,7 @@
      matchup's line met no line on the other side) */
   .bt-lobby:has(> .bt-lobby-set > .q:first-child) > .bt-lobby-main { padding-top: calc(var(--l12) + var(--s2)); }
 }
-/* the battle page's tabs: 배틀 열기 and 방 목록, under the title */
+/* the battle page's tabs: 배틀 열기, 연승 도전, 방 목록 and 중계, under the title */
 .bt-tabs { margin-top: calc(var(--s8) - var(--s5)); }
 /* 방 목록 (The rooms): the counts, the search with 방 만들기, the filters on one line, the rooms three to a line on a wide screen */
 .bt-hall-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -39,6 +39,28 @@
 .bt-hall-filters { gap: var(--s5); }
 .bt-hall-list > .row { height: var(--h-row2); }
 @media (min-width: 860px) { .bt-hall-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* 중계 (2026-11-07): each battle being played is the arena's frame without its stage, its head over the two strips; two to a
+   line from 860, the leading official match across the page with its party larger */
+.bt-live-list { align-items: start; }
+/* the leading official match stands its two sides side by side across the page, the first player's at the left and the other's at the
+   right facing it, joined on the seam, each party larger */
+@media (min-width: 860px) {
+  .bt-live-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bt-live-lead { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--seam); }
+  .bt-live-lead > .bt-live-head { grid-column: 1 / -1; }
+  .bt-live-lead > .bt-strip { grid-row: 2; --ball: 64px; min-height: var(--h-counter); }
+  .bt-live-lead > .bt-strip.own { grid-column: 1; }
+  .bt-live-lead > .bt-strip.foe { grid-column: 2; }
+}
+.bt-live { display: grid; width: 100%; text-align: left; }
+/* the head one step up from the strips, in both themes, so it reads as the match's own label and never as open ground */
+.bt-live-head { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-row); padding: var(--s1) var(--pad); background: var(--panel-2); }
+.bt-live-say { flex: 1 1 auto; display: flex; align-items: baseline; gap: var(--s2); min-width: 0; white-space: nowrap; overflow: hidden; }
+.bt-live-say > b { font-size: var(--t15); line-height: var(--l15); }
+.bt-live-say > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+.bt-live .bt-head-turn { flex: none; display: flex; align-items: center; gap: var(--s1); margin-left: auto; }
+@media (hover: hover) { .bt-live:hover .bt-strip { background: var(--panel-2); } }
+.bt-live:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-hall-kind { display: inline-flex; align-items: center; gap: var(--s1); font-weight: 600; white-space: nowrap; }
 @media (max-width: 859px) { .bt-hall-filters { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); } }
 /* a battle left half played stands over everything, the first thing to press */
@@ -84,7 +106,7 @@
     justify-content: center; align-items: start; column-gap: var(--s8);
   }
   .bt-side {
-    position: sticky; top: calc(var(--nav-height) + var(--s5)); display: grid; gap: var(--s3); align-content: start; min-width: 0;
+    position: sticky; top: calc(var(--nav-height) + var(--s5)); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s3); align-content: start; min-width: 0;
     /* up and down only: a scroll box scrolls both ways unless told, and a trackpad pushed it sideways (feedback 2026-11-06) */
     max-height: calc(100svh - var(--nav-height) - var(--s5) * 2); overflow: hidden auto; overscroll-behavior: contain; scrollbar-width: thin;
   }
@@ -98,7 +120,10 @@
 /* the turn at the head's right end, its cells over the word */
 .bt-head-turn { grid-column: 2; grid-row: 1 / span 2; display: grid; justify-items: center; gap: var(--s1); }
 .bt-head > :is(.status, .bt-head-names) { grid-column: 1; }
-.bt-head > .status { display: flex; align-items: center; gap: var(--s2); }
+.bt-head > .status { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+/* what the match is (an event's long name and round) gives way first with an ellipsis; the watchers' count keeps its place */
+.bt-head > .status > .dim { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bt-head > .status > .bt-head-watch { flex: none; }
 .bt-head-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
 /* on a phone the head is one line, so the stage and the moves under it come up: where the match stands, the names, the turn */
 @media (max-width: 859px) {
@@ -140,6 +165,14 @@
 /* the handle moves by transform only: its holder spans the rail and slides by the share played */
 .bt-replay-at { position: absolute; inset: 0; transform: translateX(calc(var(--p) * 100%)); transition: transform var(--move-tone); }
 .bt-replay-at > b { position: absolute; top: 50%; left: 0; width: var(--s3); height: var(--s3); background: var(--lit); translate: -50% -50%; }
+/* 중계: the last key of a battle still being played. While the stage follows the battle it stands lit with the amber lamp, on air;
+   once the watcher went back it is the main key, to come back */
+.bt-rkey.bt-rlive { display: flex; gap: var(--s1); width: auto; padding: 0 var(--s3); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; }
+.bt-rkey.bt-rlive.on-air { color: var(--lit); background: var(--panel); cursor: default; }
+.bt-others { display: grid; gap: var(--s3); }
+.bt-others .bt-strip { --ball: 32px; }
+/* in the 400 column a card is the column's width: the event's name gives way, never the column */
+.bt-others > .stack, .bt-others .bt-live { grid-template-columns: minmax(0, 1fr); }
 .bt-replay-track > input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .bt-replay-track:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: var(--s1); }
 
@@ -384,7 +417,11 @@
 .bt-move-type { flex: none; padding: 0 var(--s1); background: #050D1F66; font-weight: 700; }
 .bt-move.on .bt-move-type { background: color-mix(in srgb, var(--type) 62%, #050D1F); color: #FFFFFF; }
 /* the accuracy or priority shows only when it fits whole: what does not fit wraps onto a hidden second line, never cut mid-word */
-.bt-move-kind { display: flex; flex-wrap: wrap; column-gap: var(--s1); height: 1lh; min-width: 0; overflow: hidden; opacity: .85; }
+.bt-move-kind { display: flex; flex-wrap: wrap; column-gap: var(--s1); height: 1lh; min-width: 0; overflow: hidden; }
+.bt-move-kind > span { opacity: .85; }
+/* a power that is not the move's book power (어시스트파워 after its boosts, 웨더볼 in its weather) stands lit, the one emphasis */
+.bt-move-pow { font-weight: 700; font-variant-numeric: tabular-nums; }
+.bt-target-line .bt-move-pow { color: var(--lit); }
 .bt-move-pp { flex: none; margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; opacity: .85; }
 /* how a move lands on each foe now out, as Champions marks it: a hit that counts lit, a weak one dark, none faint */
 .bt-effs { display: flex; gap: var(--seam); margin-left: auto; }

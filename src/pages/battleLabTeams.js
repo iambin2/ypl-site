@@ -18,4 +18,13 @@ export const LAB_TEAMS = {
     set("Hatterene", "Mental Herb", "Magic Bounce", ["Psychic", "Trick Room", "Calm Mind", "Mystical Fire"], "Quiet"),
     set("Ninetales-Alola", "Light Clay", "Snow Warning", ["Blizzard", "Aurora Veil", "Freeze-Dry", "Moonblast"], "Timid"),
   ],
+  // C: moves whose power or type the key works out now (어시스트파워, 웨더볼, 분화, 애크러뱃, 병상첨병, 객기, 풀묶기, 메가진화 후 페어리스킨)
+  "견본 C": [
+    set("Gardevoir", "Gardevoirite", "Trace", ["Hyper Voice", "Stored Power", "Calm Mind", "Grass Knot"], "Timid"),
+    set("Pelipper", "Damp Rock", "Drizzle", ["Weather Ball", "Hurricane", "Tailwind", "Protect"], "Modest"),
+    set("Torkoal", "Charcoal", "Drought", ["Eruption", "Weather Ball", "Solar Beam", "Protect"], "Quiet"),
+    set("Hawlucha", "White Herb", "Unburden", ["Acrobatics", "Close Combat", "Swords Dance", "Protect"], "Jolly"),
+    set("Gengar", "Leftovers", "Cursed Body", ["Hex", "Will-O-Wisp", "Shadow Ball", "Protect"], "Timid"),
+    set("Conkeldurr", "Flame Orb", "Guts", ["Facade", "Mach Punch", "Drain Punch", "Protect"], "Adamant"),
+  ],
 };

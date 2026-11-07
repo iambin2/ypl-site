@@ -93,7 +93,7 @@ export function newBattleState() {
 }
 // since: the turn a side condition began (its turns left are counted from it); layers: Spikes and Toxic Spikes stack
 const newSide = () => ({ active: [null, null], team: {}, conditions: [], preview: [], since: {}, layers: {} });
-const newMon = (side, name, slot) => ({ ident: `${side}: ${name}`, side, name, species: name, hp: 100, maxhp: 100, status: "", fainted: false, boosts: {}, slot, gender: "", level: 100, item: "", ability: "", moves: [], ppUsed: {}, volatiles: [] });
+const newMon = (side, name, slot) => ({ ident: `${side}: ${name}`, side, name, species: name, hp: 100, maxhp: 100, status: "", fainted: false, boosts: {}, slot, gender: "", level: 100, item: "", ability: "", moves: [], ppUsed: {}, volatiles: [], hits: 0 });
 // the moves that guard their user this turn: they show as a shield
 const GUARDS = new Set(["protect", "detect", "spikyshield", "kingsshield", "banefulbunker", "silktrap", "burningbulwark", "obstruct", "maxguard", "wideguard", "quickguard"]);
 
@@ -185,7 +185,7 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
     // a form taken on the way back (Zero to Hero) is its form once it has gone
     if (previous?.comeback) { previous.species = previous.comeback; delete previous.comeback; }
     // a Pokémon sent in leaves its stat changes and volatile effects behind; its item, ability and moves stay known
-    Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, lastMove: "", ...carried }, parseHP(condition));
+    Object.assign(mon, { species, details, level, gender, slot: who.slot, fainted: false, lastMove: "", hits: 0, ...carried }, parseHP(condition));
     delete mon.types; delete mon.addedType;
     delete mon.transformedFrom;
     side.active[who.slot] = mon;
@@ -350,6 +350,8 @@ export function createBattleReader({ text, moves = {}, pokedex = {}, perspective
         else if (cmd === "-heal") say(from && from.kind !== "ability" ? D("healFromEffect") : D("heal"), values);
         else if (cmd === "-damage" && from?.kind === "item") say(D(kw.of ? "damageFromPokemon" : "damageFromItem"), values);
         else if (cmd === "-damage" && (kw.partiallytrapped || from?.id === "bind" || from?.id === "wrap")) say(D("damageFromPartialTrapping"), values);
+        // a blow from a move counts toward Rage Fist (the engine's timesAttacked: each hit; a switch starts it again, as the engine does)
+        if (cmd === "-damage" && !from) mon.hits = (mon.hits || 0) + 1;
         event = { verb: cmd === "-damage" && !from ? "take" : "hp", ident: args[0], hp: mon.hp, maxhp: mon.maxhp, heal: cmd === "-heal", from: from?.id || "" };
         break;
       }

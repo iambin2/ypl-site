@@ -112,6 +112,12 @@ function stageLabel(graph, stage) {
   const matches = graph.rounds?.[round - 1]?.length || 0;
   return matches === 1 ? "결승" : `${matches * 2}강`;
 }
+// the round a match of a bracket stands in (8강, 결승, 승자조 2라운드), by its id: 중계 names an official battle's match with it
+export function matchStage(bracket, id) {
+  const graph = bracket?.graph;
+  const row = graph && collectGraphMatches(graph).find(({ match }) => match.id === id);
+  return row ? stageLabel(graph, row.stage) : "";
+}
 export function liveMatches(bracket) {
   const graph = bracket?.graph;
   if (!graph) return { live: [], stage: "", done: 0, total: 0 };

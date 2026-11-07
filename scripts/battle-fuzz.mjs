@@ -4,11 +4,12 @@
 //   - every message line: no placeholder, no English left in it
 //   - each Pokémon out: species, status, stat changes, own HP exactly, and every effect's name said in Korean
 //   - each move key's matchup mark against each foe out, against the engine's own matchup for that move
+//   - each move key's power, against the engine's own count of it (the move's basePowerCallback, onModifyMove and onBasePower)
 // It prints what differs, grouped, with an example of each. Nothing is written anywhere.
 import { readFileSync } from "node:fs";
 import { formatId, startBattle, choose, readout, randomTeam } from "../supabase/functions/battle/engine.mjs";
 import { createBattleReader, revives, slotPasses, toID } from "../src/services/battleLog.js";
-import { HIDDEN_VOLATILES, currentTypes, effectWord, effectiveness, moveType, weatherSuppressed } from "../src/pages/battle/battleWords.js";
+import { HIDDEN_VOLATILES, SPEED_POWER, currentTypes, effectWord, effectiveness, movePower, moveType, weatherSuppressed } from "../src/pages/battle/battleWords.js";
 
 const text = JSON.parse(readFileSync(new URL("../src/data/battle-text-ko.json", import.meta.url), "utf8"));
 const detail = JSON.parse(readFileSync(new URL("../src/data/champions-data.json", import.meta.url), "utf8"));
@@ -19,6 +20,7 @@ const rand = n => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 
 const random = () => rand(1e9) / 1e9;
 
 const found = new Map(); // kind -> { count, examples }
+const moved = new Map(); // move -> keys checked where its power was not its book power
 const note = (kind, example) => { const f = found.get(kind) || { count: 0, examples: [] }; f.count += 1; if (f.examples.length < 3 && !f.examples.includes(example)) f.examples.push(example); found.set(kind, f); };
 const typesOf = species => detail.pokedex[toID(species)]?.types || [];
 const LATIN_OK = /\b(PP|HP|Lv\d*|VS)\b/g;
@@ -50,6 +52,21 @@ function truth(battle, attacker, target, id) {
   return { m: 2 ** target.runEffectiveness(move), type: move.type };
 }
 
+// the engine's power for a move from the attacker to the target now: its own rules only, no ability's or item's multiplier
+function enginePower(battle, attacker, target, id) {
+  const move = battle.dex.getActiveMove(id);
+  let factor = 1;
+  const ctx = Object.create(battle);
+  Object.assign(ctx, { chainModify: f => { factor *= Array.isArray(f) ? f[0] / f[1] : f; }, debug() {}, hint() {}, add() {}, attrLastMove() {} });
+  move.onModifyMove?.call(ctx, move, attacker, target);
+  let bp = move.basePowerCallback ? move.basePowerCallback.call(ctx, attacker, target, move) : move.basePower;
+  move.onBasePower?.call(ctx, bp, attacker, target, move);
+  bp *= factor;
+  return bp > 0 ? Math.max(1, Math.floor(bp)) : bp;
+}
+// the moves whose power turns on what the screen cannot know or the order of the turn; the screen keeps their book power
+const POWER_UNKNOWN = new Set([...SPEED_POWER, "knockoff", "payback", "boltbeak", "fishiousrend", "avalanche", "assurance", "temperflare", "stompingtantrum", "lashout", "retaliate", "ficklebeam", "collisioncourse", "electrodrift", "return", "frustration", "tripleaxel", "triplekick"]);
+
 function check(battle, reader, kind, where) {
   for (const side of ["p1", "p2"]) battle[side].active.forEach((mon, slot) => {
     const seen = reader.state.sides[side].active[slot];
@@ -72,7 +89,7 @@ function check(battle, reader, kind, where) {
   request.active.forEach((a, slot) => {
     const attacker = battle.p1.active[slot];
     if (!attacker || attacker.fainted) return;
-    const user = { species: reader.state.sides.p1.active[slot]?.species, ability: request.side.pokemon[slot].ability, item: request.side.pokemon[slot].item, types: currentTypes(res, reader.state.sides.p1.active[slot]) };
+    const user = { species: reader.state.sides.p1.active[slot]?.species, ability: request.side.pokemon[slot].ability, item: request.side.pokemon[slot].item, types: currentTypes(res, reader.state.sides.p1.active[slot]), volatiles: reader.state.sides.p1.active[slot]?.volatiles };
     // what the screen knows of the field: our own abilities from the request, the foe's once announced
     const out = [...request.side.pokemon.filter(p => p.active).map(p => ({ ability: p.ability })), ...reader.state.sides.p2.active];
     for (const m of a.moves) {
@@ -89,6 +106,18 @@ function check(battle, reader, kind, where) {
         // judged on the typing the screen shows, so a changed typing is reported once above, not again for every move
         if (currentTypes(res, seen).join("/") !== foe.getTypes().filter(t => t !== "???").join("/")) return;
         if (type !== real.type) note(`move type on its key differs: ${m.id}`, `${attacker.species.name} (${attacker.ability}, ${attacker.item}) ${m.id}: screen ${type}, engine ${real.type}; out: ${[...battle.p1.active, ...battle.p2.active].filter(Boolean).map(p => `${p.species.name}/${p.ability}`).join(" ")}; weather ${battle.field.weather}`);
+        // power: against a lone foe, the one the key is judged against
+        const foesOut = battle.p2.active.filter(f => f && !f.fainted);
+        const own = reader.state.sides.p1.active[slot];
+        if (foesOut.length === 1 && !POWER_UNKNOWN.has(m.id) && !(foe.ability === "levitate" && !seen.ability)) {
+          const fallen = request.side.pokemon.filter(p => p.condition.endsWith(" fnt")).length;
+          const hpNow = Number(request.side.pokemon[slot].condition.split("/")[0]), hpMax = Number(request.side.pokemon[slot].condition.split("/")[1]?.split(" ")[0]);
+          const shownBP = movePower(m.id, data.basePower, { ...user, hp: hpNow, maxhp: hpMax, status: own?.status, boosts: own?.boosts, volatiles: own?.volatiles, fainted: fallen, hits: own?.hits },
+            { ...seen, types: currentTypes(res, seen) }, { weather: reader.state.weather, fields: reader.state.fields, suppressed: weatherSuppressed(out) });
+          const realBP = enginePower(battle, attacker, foe, m.id);
+          if (realBP !== data.basePower) moved.set(m.id, (moved.get(m.id) || 0) + 1);
+          if (shownBP !== realBP) note(`move power on its key differs: ${m.id}`, `${attacker.species.name} (${attacker.ability}, ${attacker.item}, ${attacker.hp}/${attacker.maxhp}, ${attacker.status}) ${m.id} into ${foe.species.name} (${foe.status}, ${foe.hp}/${foe.maxhp}): screen ${shownBP}, engine ${realBP}; weather ${battle.field.weather}, terrain ${battle.field.terrain}`);
+        }
         if (shown !== real.m) note(`matchup mark differs: ${m.id}${real.type !== type ? ` (its type becomes ${real.type})` : ""}`, `${attacker.species.name} (${attacker.ability}) ${m.id} into ${foe.species.name} ${foe.getTypes().join("/")}: screen ×${shown}, engine ×${real.m}`);
       });
     }
@@ -126,5 +155,6 @@ for (let n = 0; n < N; n++) {
   played += 1; turns += battle.turn;
 }
 console.log(`${played} battles, ${turns} turns`);
+console.log(`power off its book value, checked: ${[...moved].sort((a, b) => b[1] - a[1]).map(([id, n]) => `${id} ${n}`).join(", ") || "none"}`);
 for (const [kind, f] of [...found].sort((a, b) => b[1].count - a[1].count)) console.log(`\n[${f.count}] ${kind}\n  ${f.examples.join("\n  ")}`);
 if (!found.size) console.log("nothing differs");

@@ -41,12 +41,15 @@ export async function listBattlesById(ids) {
   const { data, error } = await supa.from("battles").select(COLUMNS).in("id", ids).order("updated_at", { ascending: false });
   return error ? [] : data || [];
 }
-// battles being played now, to watch; one nobody has moved in half an hour is left out as abandoned
-export async function listLiveBattles() {
+/* 중계: every battle being played now with its public log, so each is drawn as its two strips; one nobody has moved in half an
+   hour is left out as abandoned. ponytail: the whole public log per
+   row (tens of kilobytes) every 15 seconds; a summary column written by the battle function (each side's six, fainted, out, HP) is the
+   upgrade once more than a few battles run at once */
+export async function listLiveBoards() {
   if (!supa) return [];
   const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-  const { data, error } = await supa.from("battles").select(COLUMNS).eq("status", "active").gte("updated_at", since)
-    .order("updated_at", { ascending: false }).limit(10);
+  const { data, error } = await supa.from("battles").select(`${COLUMNS}, spectator_log, event_id, source_node_key`).eq("status", "active").gte("updated_at", since)
+    .order("updated_at", { ascending: false }).limit(30);
   return error ? [] : data || [];
 }
 

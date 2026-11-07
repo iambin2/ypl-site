@@ -162,7 +162,7 @@ export default function App() {
       if(v==="records"&&options.trainer) url.searchParams.set("trainer",options.trainer);
       // 내 기록 찾기(?me=1): 바의 계정 버튼이 여는 트레이너 목록
       if(v==="records"&&options.me) url.searchParams.set("me","1");
-      if((v==="records"||v==="board"||v==="bracket")&&options.tab) url.searchParams.set("tab",options.tab);
+      if((v==="records"||v==="board"||v==="bracket"||v==="battle")&&options.tab) url.searchParams.set("tab",options.tab);
       // 게시판의 샘플과 파티 소개글(?post=), 사설 대진표(?pb=)를 바로 여는 링크
       if(v==="board"&&options.post) url.searchParams.set("post",options.post);
       if(v==="board"&&options.format==="double") url.searchParams.set("format","double");

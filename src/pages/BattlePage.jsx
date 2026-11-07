@@ -22,7 +22,7 @@ import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
 import { watchBattleSignal } from "../services/battleSignal.js";
-import { currentTypes, moveType, weatherSuppressed } from "./battle/battleWords.js";
+import { SPEED_POWER, currentTypes, movePower, moveType, weatherSuppressed } from "./battle/battleWords.js";
 import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
@@ -31,6 +31,7 @@ import { claimTimeout, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
 import { StreakEnd, StreakOpen, streakGameLine } from "./battle/Streak.jsx";
+import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
    공식 경기는 대진표의 경기에서 열고, 그 경기의 두 선수가 제출 비밀번호로 앉아 공식 파티로 치른다. 끝나면 서버가 승자를 대진표에 넣는다.
@@ -440,12 +441,13 @@ function RoomHall({ rooms, onOpen, onMake }) {
    사람만)인지는 그 아래에서 고른다(2026-11-06, 따로 선 공개 방과 코드 방을 하나로). 두 방 모두 링크로도 들어온다. */
 const OPPONENTS = [["cpu", "컴퓨터"], ["room", "방 만들기"]];
 const ROOMS = [["open", "공개 방", "누구나 참가"], ["code", "비밀 방", "코드로 참가"]];
-/* the battle page: 배틀 열기 (the lobby), 연승 도전 (docs/BATTLE_STREAK.md) and 방 목록 (every room waiting) as page tabs; the tab is
-   kept in the address (&tab=streak, &tab=rooms) */
-const BATTLE_TABS = ["open", "streak", "rooms"];
+/* the battle page: 배틀 열기 (the lobby), 연승 도전 (docs/BATTLE_STREAK.md), 방 목록 (every room waiting) and 중계 (every battle
+   being played, battle/Live.jsx) as page tabs; the tab is kept in the address (&tab=streak, &tab=rooms, &tab=live) */
+const BATTLE_TABS = ["open", "streak", "rooms", "live"];
 function BattleOpen({ res, onOpen, go, preset }) {
   const [tab, setTab] = useState(() => { const asked = new URLSearchParams(window.location.search).get("tab"); return BATTLE_TABS.includes(asked) ? asked : "open"; });
   const rooms = useRooms();
+  const live = useLiveBoards();
   // 방 만들기 on the list opens the lobby with 방 만들기 chosen as the opponent
   const [firstFoe, setFirstFoe] = useState("cpu");
   const changeTab = t => {
@@ -454,7 +456,8 @@ function BattleOpen({ res, onOpen, go, preset }) {
     if (t !== "open") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
     window.history.replaceState(window.history.state, "", url);
   };
-  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "연승 도전"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"]]} /></div>;
+  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "연승 도전"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"]]} /></div>;
+  if (tab === "live") return <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<LiveHall res={res} rows={live} onOpen={onOpen} /></div>;
   if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} />;
   return tab === "rooms"
     ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
@@ -537,6 +540,8 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
   const [row, setRow] = useState(boot?.row);
   const [view, setView] = useState(boot?.view ?? null);
   const [seat, setSeat] = useState(() => readSeat(id));
+  // how many screens without a seat are watching now (battleSignal.js presence); null until the channel says
+  const [watchers, setWatchers] = useState(null);
   // undefined until read: a battle that is not there reads null, which must still count as a change (a cancelled or mistyped link)
   const version = useRef(boot?.row?.version);
   const rowRef = useRef(boot?.row);
@@ -622,7 +627,7 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
       if (delay != null) timer = setTimeout(tick, delay);
       else unwatch(); // the battle will not change again: nothing more to hear
     };
-    const unwatch = watchBattleSignal(id, hint => { if (!stopped) void tick(hint); });
+    const unwatch = watchBattleSignal(id, hint => { if (!stopped) void tick(hint); }, { watcher: !readSeat(id), onWatchers: n => { if (!stopped) setWatchers(n); } });
     /* a battle page can stay open for an hour: when a newer build is out it takes it, at a moment that loses nothing (the tab coming
        back into view, or while it only waits for an opponent); the room is read again from the server, as any reload does */
     const takeNewBuild = force => checkBuild(force).then(newer => { if (newer && !stopped) window.location.reload(); });
@@ -669,7 +674,7 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
   };
   // a game of a 연승 도전 run ends on the run's keys: 다음 판 or 다시 도전, and 나가기 back to the 연승 도전 tab
   const streak = seat && row.kind === "streak" ? { onOpen, onOut: () => onOpen(null, null, "streak"), enter: enterBattle, goingIn } : null;
-  return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} streak={streak} />;
+  return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} streak={streak} watchers={watchers} onOpen={onOpen} />;
 }
 
 /* a battle screen that takes the place of the one pressed (the waiting room, the team preview) lights as a page does (DESIGN.md
@@ -872,7 +877,7 @@ function useNow(on) {
   return now;
 }
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
-export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER, streak = null }) {
+export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER, streak = null, watchers = null, onOpen = null }) {
   useLit();
   // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
   const local = row.kind === "cpu" && Boolean(seat);
@@ -907,6 +912,11 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   /* The replay (DESIGN.md "Battle", Replay): cue is how many lines of the finished log the stage shows, null all of them.
      A jump starts the stage again and catches up at once (epoch); a step on, or play, adds the next turn, which the stage plays. */
   const replay = useMemo(() => (ended && log ? replayStops(log) : null), [ended, log]);
+  /* 중계 (DESIGN.md "Battle", 중계): one watching a battle still being played has the replay's keys too, over what has been played so
+     far; its last place is 실시간, where the stage follows the battle as it moves. bar: the stops the keys walk, finished or live */
+  const watching = !seat && !ended && row.kind !== "cpu";
+  const liveStops = useMemo(() => (watching && log ? replayStops(log) : null), [watching, log]);
+  const bar = replay || liveStops;
   /* a battle already over when the page opens stands where its replay begins from the very first frame: at a link's turn, or at its
      start, playing by itself (below). Read whole first and then sent back, it showed its last line ("쓰러졌다") before the opening
      (2026-11-07) */
@@ -915,21 +925,23 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [epoch, setEpoch] = useState(0);
   const [autoplay, setAutoplay] = useState(() => Boolean(opening?.play));
   const tape = useStageTape(logUpTo(log, cue), res, perspective, epoch, !ended, ownView);
-  const at = cue ?? replay?.total ?? 0;
-  const jump = to => { setAutoplay(false); setCue(replay && to < replay.total ? to : null); setEpoch(e => e + 1); };
-  const stepOn = () => { const to = replay && nextStop(replay.stops, at); if (to != null) setCue(to < replay.total ? to : null); };
+  const at = cue ?? bar?.total ?? 0;
+  const jump = to => { setAutoplay(false); setCue(bar && to < bar.total ? to : null); setEpoch(e => e + 1); };
+  const stepOn = () => { const to = bar && nextStop(bar.stops, at); if (to != null) setCue(to < bar.total ? to : null); };
   const play = () => {
     if (autoplay) { setAutoplay(false); return; }
-    if (at >= replay.total) { setCue(replay.stops[0].at); setEpoch(e => e + 1); }
+    // a battle still being played has nothing to play at 실시간: the stage already follows it
+    if (at >= bar.total && !ended) return;
+    if (at >= bar.total) { setCue(bar.stops[0].at); setEpoch(e => e + 1); }
     setAutoplay(true);
   };
   /* playing: the next turn goes on once the stage has played this one and it has stood a beat (longer when slow). The team preview
      is not held: the leads come out at once, so a replay opens on the battle starting, not on a waiting screen */
   useEffect(() => {
-    if (!autoplay || !replay || tape.playing || tape.read < Math.min(at, replay.total)) return undefined;
-    if (at >= replay.total) { setAutoplay(false); return undefined; }
+    if (!autoplay || !bar || tape.playing || tape.read < Math.min(at, bar.total)) return undefined;
+    if (at >= bar.total) { setAutoplay(false); return undefined; }
     // at the start the opening goes as soon as the stage has its pictures ready (Stage.jsx warming), not on a beat
-    if (at <= replay.stops[0].at) { let on = true; tape.ready().then(() => { if (on) stepOn(); }); return () => { on = false; }; }
+    if (at <= bar.stops[0].at) { let on = true; tape.ready().then(() => { if (on) stepOn(); }); return () => { on = false; }; }
     const t = setTimeout(stepOn, TURN_BEAT * Math.max(1, speed));
     return () => clearTimeout(t);
   });
@@ -950,19 +962,19 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   // the replay's keyboard (replayKey in Replay.jsx), while a finished battle stands
   const keyed = useRef(null);
   keyed.current = action => {
-    const { stops } = replay;
+    const { stops } = bar;
     if (action === "play") play();
     else if (action === "prev") jump(prevStop(stops, at) ?? stops[0].at);
     else if (action === "next") stepOn();
     else if (action === "first") jump(stops[0].at);
-    else if (action === "last") jump(stops[stops.length - 1].at);
+    else if (action === "last") jump(ended ? stops[stops.length - 1].at : Infinity);
     else if (action === "sound") soundKey();
     else {
       const i = SPEEDS.findIndex(([v]) => v === speed) + (action === "slower" ? -1 : 1);
       if (SPEEDS[i]) setSpeedChoice(SPEEDS[i][0]);
     }
   };
-  const keysOn = Boolean(ended && replay && replay.stops.length > 1);
+  const keysOn = Boolean(bar && bar.stops.length > 1 && (ended || watching));
   useEffect(() => {
     if (!keysOn) return undefined;
     const onKey = e => { const action = replayKey(e); if (action) { e.preventDefault(); keyed.current(action); } };
@@ -970,6 +982,11 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     return () => window.removeEventListener("keydown", onKey);
   }, [keysOn]);
   const turnTo = side => { setPov(side); setEpoch(e => e + 1); };
+  // 중계: the other battles being played (read while this one is watched), and what each is, this one's head included
+  const liveRows = useLiveBoards(watching && Boolean(onOpen));
+  const others = (liveRows || []).filter(r => r.id !== row.id)
+    .sort((a, b) => (b.event_id && b.event_id === row.event_id) - (a.event_id && a.event_id === row.event_id)).slice(0, 3);
+  const labels = useLabels(useMemo(() => [row, ...others], [row.id, others.map(r => r.id).join()]));
   const scene = tape.scene;
   const shownTurn = tape.scene?.turn ?? row.turn ?? 0;
   const official = row.kind === "official";
@@ -1113,13 +1130,13 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [partyOpen, setPartyOpen] = useState(false);
   const openParty = seat && party.current ? () => setPartyOpen(true) : null;
   const ownList = () => ownCards(res, party.current || [], {
-    active: request?.active || [], maxpp: maxpp.current,
+    active: request?.active || [], maxpp: maxpp.current, field: moveField,
     used: Object.fromEntries((scene?.[perspective]?.roster || []).filter(m => m.name).map(m => [m.name, m.ppUsed])),
   });
   // the party beside the stage: a player reads the foe's shown set and their own whole one; a spectator reads both as shown
   const infoSides = !scene ? [] : ownView
-    ? [{ key: "foe", label: `${names[foe]}의 파티`, cards: seenCards(res, scene[foe].roster) }, { key: "own", label: "내 파티", cards: ownList() }]
-    : [perspective, foe].map(side => ({ key: side, label: `${names[side]}의 파티`, cards: seenCards(res, scene[side].roster) }));
+    ? [{ key: "foe", label: `${names[foe]}의 파티`, cards: seenCards(res, scene[foe].roster, moveField) }, { key: "own", label: "내 파티", cards: ownList() }]
+    : [perspective, foe].map(side => ({ key: side, label: `${names[side]}의 파티`, cards: seenCards(res, scene[side].roster, moveField) }));
   // on a wide screen the match takes the whole window: the page frame lets go of its 1200 for this view only
   useEffect(() => {
     const page = document.getElementById("ypl-main");
@@ -1166,13 +1183,16 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
         {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
         <div className="pn bt-head">
-          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">공식 경기</span>}{row.kind === "streak" && <span className="dim">{seat ? streakGameLine(seat) : "연승 도전"}</span>}</span>
+          {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching */}
+          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{seat ? streakGameLine(seat) : labels[row.id] ? `연승 도전 ${labels[row.id]}` : "연승 도전"}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
           <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {/* the turn, announced in segment cells beside the names (it stood on the stadium's wall once, splitting the foe's plates) */}
           {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t12 dim">턴</span></span>}
         </div>
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} />}
+        {watching && started && liveStops && liveStops.stops.length > 1 && <ReplayBar stops={liveStops.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
+          sound={sound} awake={awake} onSound={soundKey} live={cue == null} onLive={() => jump(Infinity)} />}
         {shownEnded && <section className="bt-end" aria-label="배틀 결과">
           {/* a player reads their own result first (승리, 패배); anyone watching reads who won. A replay playing from its start
               keeps it until it reaches the end; the keys under it stand from the first, so the page can be left at any turn */}
@@ -1218,6 +1238,11 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
           <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
         </div>
         {(!seat || ended) && <Chips label="시점" value={perspective} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
+        {/* the other battles being played, so a watcher goes from one to the next without the lobby: the same event's first */}
+        {others.length > 0 && <section className="bt-others" aria-labelledby="bt-others-h">
+          <SectionHead id="bt-others-h" title="다른 중계" link="전체 보기" onLink={() => go?.("battle", { tab: "live" })} />
+          <div className="stack">{others.map(r => <LiveCard key={r.id} res={res} row={r} label={labels[r.id]} onOpen={onOpen} />)}</div>
+        </section>}
         {/* the whole log behind a key the size of a row, not a grey word */}
         <details className="bt-logbox">
           <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
@@ -1250,11 +1275,14 @@ function megaStones(detail) {
   if (stoneCache?.detail !== detail) stoneCache = { detail, map: new Map(Object.values(detail?.pokedex || {}).filter(p => /^Mega/.test(p.forme) && p.requiredItem).map(p => [toID(p.requiredItem), toID(p.baseSpecies)])) };
   return stoneCache.map;
 }
+// the Mega forme a stone makes (Gardevoirite → Gardevoir-Mega), its ability and typing
+const megaFormOf = (detail, item) => Object.values(detail?.pokedex || {}).find(p => /^Mega/.test(p.forme) && p.requiredItem && toID(p.requiredItem) === toID(item)) || null;
 
 /* locked: the keys of a request already answered, shown dimmed while the turn plays; ghost: the last move request, whose keys stand
    locked over the bench in a forced switch, so the moves keep their place */
 function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast }) {
   const side = request.side;
+  const foeSide = side.id === "p1" ? "p2" : "p1";
   const [picks, setPicks] = useState([]);
   const [mega, setMega] = useState(false);
   const [sending, setSending] = useState(false);
@@ -1342,18 +1370,19 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
         const marks = data.category && data.category !== "Status" ? foes.filter(Boolean).map(f => ({ f, m: effectiveness(type, f.types, move.id) })) : [];
         const shown = marks.some(x => x.m !== 1) ? marks : [];
         // two lines, every move alike, as a game's move key: the name and how it lands; its type, category and power, its accuracy and priority, and its PP
-        const kind = (CATEGORY[data.category] || "") + (data.basePower > 0 ? ` ${data.basePower}` : "");
+        const power = powerOf(move), moved = power !== (data.basePower || 0);
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
-          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null].filter(Boolean).join(" ");
+          data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null, SPEED_POWER.has(move.id) && "스피드에 따라"].filter(Boolean).join(" ");
         return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}${move.disabled ? " off" : ""}`} disabled={off || move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
-          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${data.basePower > 0 ? ` 위력 ${data.basePower}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
+          aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${power > 0 ? ` 위력 ${power}${moved && data.basePower > 0 ? `, 기본 ${data.basePower}` : ""}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
           <span className="bt-move-top">
             <b className="bt-move-name">{moveName(move.id)}</b>
             {shown.length > 0 && <span className="bt-effs" aria-hidden="true">{shown.map(x => <span key={x.f.slot} className={effClass(x.m)}>{effLabel(x.m)}</span>)}</span>}
           </span>
           <span className="bt-move-line" aria-hidden="true">
             <span className="bt-move-type">{res.text.types[type] || type}</span>
-            <span className="bt-move-kind">{kind}{foot && <span>{foot}</span>}</span>
+            {/* the power it goes out with now; lit when that is not its book power (feedback 2026-11-07: 어시스트파워, 웨더볼) */}
+            <span className="bt-move-kind"><span>{CATEGORY[data.category] || ""}{power > 0 && !moved ? ` ${power}` : ""}</span>{power > 0 && moved && <b className="bt-move-pow">{power}</b>}{foot && <span>{foot}</span>}</span>
             {/* a move locked in (Outrage, a charging move) is asked without its PP */}
             <span className="bt-move-pp">{move.pp != null ? `${move.pp}/${move.maxpp}` : ""}</span>
           </span>
@@ -1362,8 +1391,19 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
     </div>;
   /* the type a move goes out as for this Pokémon now (its ability, the weather, the terrain, its form: battleWords.js moveType); the key
      shows that type, its colour and its matchups */
-  const user = { species: species(slots[k].details), ability: slots[k].ability, item: slots[k].item, types: typesAt(side.id, k) || [] };
+  /* with 메가진화 checked the keys read as the Mega Pokémon will use them, its ability and typing (feedback 2026-11-07: a Mega with
+     Pixilate kept its Normal moves Normal on the key) */
+  const seen = monAt(side.id, k), megaForm = mega && megaFormOf(res.detail, slots[k].item);
+  const user = { species: megaForm?.name || species(slots[k].details), ability: megaForm ? megaForm.abilities[0] : slots[k].ability, item: slots[k].item,
+    types: megaForm ? megaForm.types : typesAt(side.id, k) || [], ...parseHP(slots[k].condition), boosts: seen?.boosts, volatiles: seen?.volatiles, hits: seen?.hits,
+    fainted: side.pokemon.filter(p => String(p.condition).endsWith(" fnt")).length };
   const typeOf = move => moveType(move.id, res.detail.moves[move.id]?.type || "Normal", user, field);
+  /* the power a move goes out with now (battleWords.js movePower): its user's HP, boosts and item, the weather and terrain, and, when
+     one foe stands, that foe; Return and Frustration come with theirs in the request ("Return 102") */
+  const lone = foes.filter(Boolean);
+  const targetAt = (fieldSide, slot) => { const m = monAt(fieldSide, slot); return m && !m.fainted ? { ...m, types: currentTypes(res, m) } : null; };
+  const powerOf = (move, target = lone.length === 1 ? targetAt(foeSide, lone[0].slot) : null) =>
+    Number(/ (\d+)$/.exec(move.move || "")?.[1]) || movePower(move.id, res.detail.moves[move.id]?.basePower || 0, user, target, field);
   /* who a move can be aimed at (doubles): the places it reaches with someone standing there; an empty place is offered only when
      there is no one at all (Showdown's rule). null when it needs no target */
   const reach = (move, index) => {
@@ -1381,7 +1421,9 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
       const own = fieldSide === side.id;
       const types = typesAt(fieldSide, slot);
       const mark = types && data.category !== "Status" ? effectiveness(type, types, move.id) : null;
-      return { mark, onPick: () => add(`move ${index + 1} ${own ? -(slot + 1) : slot + 1}${tail}`, `${label}, ${nameAt(fieldSide, slot)}에게`) };
+      // a power that turns on who it hits (로킥, 병상첨병) is said at each place
+      const power = types ? powerOf(move, targetAt(fieldSide, slot)) : null;
+      return { mark, power: power !== powerOf(move, null) ? power : null, onPick: () => add(`move ${index + 1} ${own ? -(slot + 1) : slot + 1}${tail}`, `${label}, ${nameAt(fieldSide, slot)}에게`) };
     };
     return { standing, targeting };
   };
@@ -1428,18 +1470,17 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
      (feedback 2026-11-06: rings drawn round the Pokémon on the stage read as dated) */
   if (aiming != null && aimed) {
     const aim = reach(aimed, aiming);
-    const foeSide = side.id === "p1" ? "p2" : "p1";
     const cell = (fieldSide, slot) => {
       const own = fieldSide === side.id, m = monAt(fieldSide, slot), t = aim?.targeting(fieldSide, slot);
       if (!m || m.fainted) return <div key={slot} className={"bt-target empty" + (own ? " own" : "")}><span className="t12 mute">빈 자리</span></div>;
       const hp = own ? `${m.hp}/${m.maxhp}` : `${Math.max(m.hp > 0 ? 1 : 0, Math.round(m.hp / (m.maxhp || 1) * 100))}%`;
       const nm = `${own ? "" : "상대 "}${nameOf(res, m.species)}`;
       return <button key={slot} type="button" className={"bt-target" + (own ? " own" : "")} disabled={!t || sending} onClick={t?.onPick}
-        aria-label={`${nm}, HP ${hp}${t?.mark != null ? `, ${EFF_WORD[t.mark] || effLabel(t.mark)}` : ""}${own && slot === at ? ", 자신" : ""}`}>
+        aria-label={`${nm}, HP ${hp}${t?.power ? `, 위력 ${t.power}` : ""}${t?.mark != null ? `, ${EFF_WORD[t.mark] || effLabel(t.mark)}` : ""}${own && slot === at ? ", 자신" : ""}`}>
         <img src={spriteUrl(m.species)} alt="" draggable="false" onError={onSpriteError()} />
         {/* the row says whose side it is (theirs over ours), so the name stands alone; the matchup sits by the HP */}
         <span className="bt-target-say"><b>{nameOf(res, m.species)}</b>
-          <span className="bt-target-line">{own && slot === at ? "자신" : hp}{t?.mark != null && <span className={effClass(t.mark)} aria-hidden="true">{effLabel(t.mark)}</span>}</span></span>
+          <span className="bt-target-line">{own && slot === at ? "자신" : hp}{t?.power > 0 && <span className="bt-move-pow">{`위력 ${t.power}`}</span>}{t?.mark != null && <span className={effClass(t.mark)} aria-hidden="true">{effLabel(t.mark)}</span>}</span></span>
       </button>;
     };
     return <div className="bt-choices">

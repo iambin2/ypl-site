@@ -489,7 +489,7 @@ function SideField({ side, scene, own, doubles }) {
    the bench dim, one the battle has not shown yet muted with a bare floor, a fainted one grey on an empty floor. slots: the places
    kept for a party not known yet (the computer's, a random party), each a ? on a bare floor. */
 const SIX = 6;
-function Roster({ list, slots = 0, label }) {
+export function Roster({ list, slots = 0, label }) {
   return <span className="bt-roster" role="img" aria-label={label}>
     {list.map((m, i) => <span key={i} className={`stand bt-rm ${m.light}`}>
       <i className="floor">{m.share != null && <Gauge share={m.share} />}</i>
@@ -499,7 +499,7 @@ function Roster({ list, slots = 0, label }) {
     {Array.from({ length: Math.max(0, slots - list.length) }, (_, i) => <span key={`e${i}`} className="stand bt-rm none"><i className="floor" /><b className="bt-rm-q">?</b></span>)}
   </span>;
 }
-const rosterSaid = (res, list) => list.map(m => `${nameOf(res, m.species)}${m.light === "off" ? " 쓰러짐" : m.light === "lit" ? " 나와 있음" : m.light === "mute" ? " 아직 나오지 않음" : ""}${m.status ? ` ${STATUS[m.status]}` : ""}`).join(", ");
+export const rosterSaid = (res, list) => list.map(m => `${nameOf(res, m.species)}${m.light === "off" ? " 쓰러짐" : m.light === "lit" ? " 나와 있음" : m.light === "mute" ? " 아직 나오지 않음" : ""}${m.status ? ` ${STATUS[m.status]}` : ""}`).join(", ");
 
 /* own: our side, whose brought Pokémon (known) we know before they come out; the ones a team preview left at home are not shown, as
    the games show only the party brought. A player opens their own party's sets from it (onParty): the strip itself is the key, its

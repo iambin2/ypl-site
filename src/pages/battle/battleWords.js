@@ -63,20 +63,81 @@ const KEEP_TYPE = ["judgment", "multiattack", "naturalgift", "revelationdance", 
 const WEATHER = { sunnyday: "Fire", desolateland: "Fire", raindance: "Water", primordialsea: "Water", sandstorm: "Rock", hail: "Ice", snow: "Ice", snowscape: "Ice" };
 const TERRAIN = { electricterrain: "Electric", grassyterrain: "Grass", mistyterrain: "Fairy", psychicterrain: "Psychic" };
 const FORM_TYPE = { aurawheel: { morpekohangry: "Dark" }, ragingbull: { taurospaldeacombat: "Fighting", taurospaldeablaze: "Fire", taurospaldeaaqua: "Water" }, ivycudgel: { ogerponwellspring: "Water", ogerponhearthflame: "Fire", ogerponcornerstone: "Rock" } };
+// the weather as it reaches this Pokémon: none while suppressed, and a Utility Umbrella keeps sun and rain off its holder
+function weatherAt(user = {}, field = {}) {
+  const w = field.suppressed ? "" : toID(field.weather);
+  return toID(user.item) === "utilityumbrella" && /sunny|rain|desolate|primordial/.test(w) ? "" : w;
+}
+const terrainOf = field => (field.fields || []).map(toID).find(f => TERRAIN[f]) || "";
+// on the ground, as the engine's isGrounded asks (an ability not yet announced, such as Levitate, cannot be known and counts as none)
+export function grounded(mon = {}, field = {}) {
+  const v = mon.volatiles || [], item = toID(mon.item);
+  if ((field.fields || []).some(f => toID(f) === "gravity") || v.includes("ingrain") || v.includes("smackdown") || item === "ironball") return true;
+  if ((mon.types || []).includes("Flying") || toID(mon.ability) === "levitate" || v.includes("magnetrise") || v.includes("telekinesis")) return false;
+  return item !== "airballoon";
+}
 export function moveType(id, baseType, user = {}, field = {}) {
   id = toID(id);
   const ability = toID(user.ability), form = toID(user.species);
   let type = baseType;
-  if (id === "weatherball" && !field.suppressed) {
-    const w = toID(field.weather);
-    // a Utility Umbrella keeps sun and rain off its holder, Weather Ball included
-    if (!(toID(user.item) === "utilityumbrella" && /sunny|rain|desolate|primordial/.test(w))) type = WEATHER[w] || type;
-  }
-  else if (id === "terrainpulse") type = (field.fields || []).map(f => TERRAIN[toID(f)]).find(Boolean) || type;
+  if (id === "weatherball") type = WEATHER[weatherAt(user, field)] || type;
+  else if (id === "terrainpulse" && grounded(user, field)) type = TERRAIN[terrainOf(field)] || type;
   else if (FORM_TYPE[id]) type = FORM_TYPE[id][form] || type;
   else if (id === "revelationdance" && user.types?.[0]) type = user.types[0];
   if (ability === "normalize" && !KEEP_TYPE.includes(id) && !["hiddenpower", "struggle"].includes(id)) return "Normal";
   if (ATE[ability] && type === "Normal" && !KEEP_TYPE.includes(id)) return ATE[ability];
   if (ability === "liquidvoice" && GEN.moves.get(id)?.flags?.sound) return "Water";
   return type;
+}
+
+/* the power a move goes out with now, as the engine's own basePowerCallback and the move's onBasePower count it (feedback
+   2026-11-07: 어시스트파워 and 웨더볼 kept their book power through every boost and weather). Only the move's own rule: an
+   ability's or an item's multiplier (Technician, Life Orb) is not in it, as the key has always shown the move's power.
+   user: { hp, maxhp, status, boosts, item, ability, species, types, volatiles, fainted (its side's fallen), hits (Rage Fist) };
+   target: the one foe it would hit, as the screen reads it (its HP in percent is enough), or null when that is not one Pokémon,
+   in which case a move that turns on its target keeps its book power. Gyro Ball and Electro Ball turn on a speed the screen cannot
+   know, so they keep theirs too (SPEED_POWER). */
+export const SPEED_POWER = new Set(["gyroball", "electroball"]);
+const STATUS_OF = { hex: s => !!s, infernalparade: s => !!s, venoshock: s => s === "psn" || s === "tox", barbbarrage: s => s === "psn" || s === "tox", wakeupslap: s => s === "slp", smellingsalts: s => s === "par" };
+const ups = boosts => Object.values(boosts || {}).reduce((n, v) => n + Math.max(0, v), 0);
+const pinch = (hp, maxhp) => { const r = Math.max(Math.floor(hp * 48 / maxhp), 1); return r < 2 ? 200 : r < 5 ? 150 : r < 10 ? 100 : r < 17 ? 80 : r < 33 ? 40 : 20; };
+// weight in hectograms as the engine keeps it, with the abilities and the item that change it
+function weightOf(mon) {
+  const sp = GEN.species.get(toID(mon.species)) || GEN.species.get(toID(String(mon.species).split("-")[0]));
+  if (!sp?.weightkg) return null;
+  let hg = Math.round(sp.weightkg * 10);
+  const ability = toID(mon.ability);
+  if (ability === "heavymetal") hg *= 2; else if (ability === "lightmetal") hg = Math.max(1, Math.floor(hg / 2));
+  if (toID(mon.item) === "floatstone") hg = Math.max(1, Math.floor(hg / 2));
+  return hg;
+}
+const byWeight = hg => (hg >= 2000 ? 120 : hg >= 1000 ? 100 : hg >= 500 ? 80 : hg >= 250 ? 60 : hg >= 100 ? 40 : 20);
+const byRatio = (mine, theirs) => (mine >= theirs * 5 ? 120 : mine >= theirs * 4 ? 100 : mine >= theirs * 3 ? 80 : mine >= theirs * 2 ? 60 : 40);
+const squeeze = (top, hp, maxhp) => Math.floor(Math.floor((top * (100 * Math.floor(hp * 4096 / maxhp)) + 2048 - 1) / 4096) / 100) || 1;
+
+export function movePower(id, basePower, user = {}, target = null, field = {}) {
+  id = toID(id);
+  const t = target, w = weatherAt(user, field), terrain = terrainOf(field);
+  let bp = basePower;
+  if (id === "storedpower" || id === "powertrip") bp = basePower + 20 * ups(user.boosts);
+  else if (id === "weatherball") bp = WEATHER[w] ? basePower * 2 : basePower;
+  else if (id === "terrainpulse") bp = terrain && grounded(user, field) ? basePower * 2 : basePower;
+  else if (id === "expandingforce") bp = terrain === "psychicterrain" && grounded(user, field) ? basePower * 1.5 : basePower;
+  else if (id === "psyblade") bp = terrain === "electricterrain" ? basePower * 1.5 : basePower;
+  else if (id === "solarbeam" || id === "solarblade") bp = /rain|primordial|sand|hail|snow/.test(w) ? basePower * 0.5 : basePower;
+  else if (id === "facade") bp = user.status && user.status !== "slp" ? basePower * 2 : basePower;
+  else if (id === "acrobatics") bp = user.item === "" ? basePower * 2 : basePower;
+  else if (["eruption", "waterspout", "dragonenergy"].includes(id) && user.maxhp) bp = basePower * user.hp / user.maxhp;
+  else if ((id === "reversal" || id === "flail") && user.maxhp) bp = pinch(user.hp, user.maxhp);
+  else if (id === "lastrespects") bp = 50 + 50 * (user.fainted || 0);
+  else if (id === "ragefist") bp = Math.min(350, 50 + 50 * (user.hits || 0));
+  else if (!t) return basePower;
+  else if (STATUS_OF[id]) bp = STATUS_OF[id](t.status) || (["hex", "infernalparade", "wakeupslap"].includes(id) && toID(t.ability) === "comatose") ? basePower * 2 : basePower;
+  else if (id === "brine") bp = t.hp * 2 <= t.maxhp ? basePower * 2 : basePower;
+  else if (id === "risingvoltage") bp = terrain === "electricterrain" && grounded(t, field) ? basePower * 2 : basePower;
+  else if (id === "punishment") bp = Math.min(200, 60 + 20 * ups(t.boosts));
+  else if ((id === "wringout" || id === "crushgrip" || id === "hardpress") && t.maxhp) bp = squeeze(id === "hardpress" ? 100 : 120, t.hp, t.maxhp);
+  else if (id === "lowkick" || id === "grassknot") { const hg = weightOf(t); bp = hg == null ? basePower : byWeight(hg); }
+  else if (id === "heavyslam" || id === "heatcrash") { const a = weightOf(user), b = weightOf(t); bp = a == null || b == null ? basePower : byRatio(a, b); }
+  return bp > 0 ? Math.max(1, Math.floor(bp)) : bp;
 }

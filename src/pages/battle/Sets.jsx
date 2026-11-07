@@ -4,7 +4,7 @@ import Button from "../../components/common/Button.jsx";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { parseHP, toID } from "../../services/battleLog.js";
 import { STATUS, nameOf, typesOf } from "./Stage.jsx";
-import { maxPP } from "./battleWords.js";
+import { maxPP, moveType } from "./battleWords.js";
 
 /* 파티를 읽는 카드 (DESIGN.md "Battle", The party). 선출 화면과 배틀 중의 파티 정보가 같은 카드를 쓴다.
    내 포켓몬은 엔진이 가져온 그대로(특성, 도구, 네 기술과 남은 PP, 능력치), 상대는 보인 만큼(특성, 도구, 쓴 기술과 쓴 횟수).
@@ -45,7 +45,7 @@ export function MonCard({ res, species, hp, share, status, fainted, ability, ite
       </span>
       <span className="bt-card-moves">
         {moves.length ? moves.map(m => {
-          const type = res.detail.moves[toID(m.id)]?.type || "Normal";
+          const type = m.type || res.detail.moves[toID(m.id)]?.type || "Normal";
           return <span key={m.id} className={`bt-cmove type-${toID(type)}${m.empty ? " empty" : ""}`}>
             <b>{named(res, "moves", m.id)}</b>{m.pp && <i>{m.pp}</i>}
           </span>;
@@ -71,7 +71,11 @@ export function FoeSix({ res, species, title }) {
 }
 
 // our brought Pokémon as cards, from the request: the whole set, with PP when it is known
-export function ownCards(res, pokemon, { active = [], used = {}, maxpp = {} } = {}) {
+/* the type each move goes out as for this Pokémon (its ability, its form, the weather and terrain now: battleWords.js moveType), as
+   the move keys show it (feedback 2026-11-07: the party kept 하이퍼보이스 Normal under Pixilate) */
+const asType = (res, id, mon, field) => moveType(id, res.detail.moves[toID(id)]?.type || "Normal", { species: mon.species, ability: mon.ability, item: mon.item, types: typesOf(res, mon.species) }, field);
+
+export function ownCards(res, pokemon, { active = [], used = {}, maxpp = {}, field = {} } = {}) {
   return pokemon.map((mon, i) => {
     const species = String(mon.details).split(", ")[0];
     const { hp, maxhp, status } = parseHP(mon.condition);
@@ -81,7 +85,7 @@ export function ownCards(res, pokemon, { active = [], used = {}, maxpp = {} } = 
       const live = slot?.moves?.find(m => m.id === id);
       const max = live?.maxpp ?? maxpp[id];
       const left = live?.pp ?? (max != null ? max - (used[name]?.[id] || 0) : null);
-      return { id, pp: left != null && max != null ? `${Math.max(0, left)}/${max}` : "" };
+      return { id, pp: left != null && max != null ? `${Math.max(0, left)}/${max}` : "", type: asType(res, id, { species, ability: mon.ability || mon.baseAbility, item: mon.item }, field) };
     });
     return { key: mon.ident + i, species, hp: `${hp}/${maxhp}`, share: maxhp ? hp / maxhp : 0, status: status === "fnt" ? "" : status, fainted: status === "fnt",
       ability: mon.ability || mon.baseAbility, item: mon.item || null, moves, stats: mon.stats, out: Boolean(mon.active) };
@@ -89,13 +93,13 @@ export function ownCards(res, pokemon, { active = [], used = {}, maxpp = {} } = 
 }
 
 // a side's Pokémon as cards, from what the log has shown: HP in percent, the ability and item once seen, the moves used and how often
-export function seenCards(res, roster) {
+export function seenCards(res, roster, field = {}) {
   return roster.map((m, i) => ({
     key: m.species + i, species: m.species, unseen: !m.seen && !m.fainted,
     hp: `${Math.max(m.hp > 0 ? 1 : 0, Math.round((m.hp / (m.maxhp || 1)) * 100))}%`, share: m.maxhp ? m.hp / m.maxhp : 0,
     status: m.status, fainted: m.fainted, ability: m.ability, item: m.item, out: m.out,
     // what it has left, as Showdown counts the foe's: the full PP less what it was seen to spend
-    moves: m.moves.map(name => { const max = maxPP(res, name), used = m.ppUsed[toID(name)] || 0; return { id: toID(name), pp: max ? `${Math.max(0, max - used)}/${max}` : "" }; }),
+    moves: m.moves.map(name => { const max = maxPP(res, name), used = m.ppUsed[toID(name)] || 0; return { id: toID(name), pp: max ? `${Math.max(0, max - used)}/${max}` : "", type: asType(res, name, m, field) }; }),
   }));
 }
 
