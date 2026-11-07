@@ -1,0 +1,12 @@
+/* ---------- 연승 도전 (src/pages/battle/Streak.jsx, docs/BATTLE_STREAK.md 8장) ----------
+   The tab stands on the lobby's own parts (the arena, the dock, a counter, the podium, rows); only these are its own. */
+
+/* the rule, read once, under its label */
+.streak-rule { margin: 0; }
+
+/* the end of a won game: the run's wins and the next 난이도's computer on its floor, joined on the seam at 1 to 1.618, the two
+   one counter high so their lines meet; after a loss the counter stands alone */
+.streak-end { grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); }
+.streak-end:not(:has(.streak-next)) { grid-template-columns: minmax(0, 1fr); }
+.streak-next { height: var(--h-counter); padding: var(--pad); padding-top: var(--s2); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); text-align: left; }
+.streak-next .mon { right: var(--pad); height: calc(100% - var(--floor)); }

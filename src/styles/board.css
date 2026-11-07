@@ -33,6 +33,8 @@
 /* ---------- a ranking's top three: columns as tall as a counter and a row, the points on the columns' common baseline ---------- */
 .podium { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
 .podium-col { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); min-width: 0; height: calc(var(--h-counter) + var(--h-row)); padding: var(--pad); text-align: left; }
+/* a live run on the 연승 도전's board: the amber lamp beside its rank, as a counter's label holds its lamp */
+.podium-rank { display: flex; align-items: center; gap: var(--s2); }
 .podium-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .podium-pts { display: flex; align-items: flex-end; gap: var(--s1); margin-top: auto; }
 

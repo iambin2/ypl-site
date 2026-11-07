@@ -1,6 +1,6 @@
 /* 방문자의 구글 로그인 (docs/db/player_accounts.sql). 운영진 로그인(storage.js, 메모리 안의 세션)과 섞이지 않는 따로의 세션이다.
    구글에서 돌아오면 주소의 # 뒤에 토큰이 오고(Supabase의 implicit 흐름), 그것을 이 기기에 두고 주소에서 지운다.
-   이 세션은 계정의 트레이너 이름 정하기, 계정으로 하는 신청, 자기 계정 읽기에만 쓰고, 사이트의 다른 읽기와 쓰기는 지금처럼
+   이 세션은 계정의 트레이너 이름 정하기, 계정으로 하는 신청, 자기 계정 읽기, 연승 도전의 시작과 순위의 내 줄에만 쓰고, 사이트의 다른 읽기와 쓰기는 지금처럼
    익명으로 한다(구글로 들어온 authenticated 역할은 방문자 쓰기 정책을 통과하지 못한다). */
 
 import { supa } from "../storage.js";
@@ -107,4 +107,30 @@ export async function listLinkRequests() {
 export async function decideLinkRequest(user, approve) {
   const { error } = await supa.rpc("decide_player_link", { p_user: user, p_approve: approve });
   if (error) throw new Error(error.message || "결정을 저장하지 못했습니다.");
+}
+
+/* 연승 도전 (docs/BATTLE_STREAK.md): the start is the one battle request made as the signed-in account, since the run is the
+   account's; the battle function checks the token itself. A refusal keeps the function's own sentence. */
+export async function startStreakRun() {
+  const bearer = await token();
+  if (!bearer) throw Object.assign(new Error("로그인이 만료되었습니다. 다시 로그인해 주세요."), { signedOut: true });
+  const response = await fetch(`${URL_BASE}functions/v1/battle`, {
+    method: "POST", headers: { apikey: KEY, Authorization: `Bearer ${bearer}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "streak" }),
+  }).catch(() => null);
+  if (!response) throw Object.assign(new Error("연결이 끊겼습니다. 연결을 확인하고 다시 시도해 주세요."), { status: 0 });
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status });
+  return json;
+}
+/* a month's board (streak_board): read as the account when signed in, so the viewer's own row is marked. month: "2026-11-01", or
+   none for this month. Before docs/db/streak_runs.sql has run there is no such function, and the feature stands aside (null). */
+export async function readStreakBoard(month) {
+  const signedIn = visitorSignedIn() && Boolean(await token());
+  try {
+    return await rest("rpc/streak_board", { method: "POST", body: month ? { p_month: month } : {}, auth: signedIn });
+  } catch (error) {
+    if (error.status === 404 || error.code === "PGRST202") return null;
+    throw error;
+  }
 }

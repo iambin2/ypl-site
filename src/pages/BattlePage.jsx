@@ -30,6 +30,7 @@ import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from 
 import { claimTimeout, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
+import { StreakEnd, StreakOpen, streakGameLine } from "./battle/Streak.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
    공식 경기는 대진표의 경기에서 열고, 그 경기의 두 선수가 제출 비밀번호로 앉아 공식 파티로 치른다. 끝나면 서버가 승자를 대진표에 넣는다.
@@ -75,9 +76,10 @@ export default function BattlePage({ flash: say, go }) {
   const [cpuRound, setCpuRound] = useState(0);
   const res = useResources();
   // next: a battle's id, CPU_ROOM for the battle with the computer, null for the battle page; code: a code room's four digits
-  const open = useCallback((next, code) => {
+  // tab: the battle page's tab to come back to (연승 순위 from a game of a run opens 연승 도전)
+  const open = useCallback((next, code, tab) => {
     const url = new URL(window.location.href);
-    url.search = next === CPU_ROOM ? "view=battle&cpu=1" : next ? `view=battle&id=${encodeURIComponent(next)}${code ? `&code=${code}` : ""}` : "view=battle";
+    url.search = next === CPU_ROOM ? "view=battle&cpu=1" : next ? `view=battle&id=${encodeURIComponent(next)}${code ? `&code=${code}` : ""}` : `view=battle${tab ? `&tab=${tab}` : ""}`;
     pushHistory({ view: "battle" }, url);
     setCpu(next === CPU_ROOM);
     setId(next === CPU_ROOM ? null : next);
@@ -92,7 +94,7 @@ export default function BattlePage({ flash: say, go }) {
   if (replay) return <RoomGuard key={replay}><CpuReplay id={replay} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} onOpen={open} code={params.get("code")} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
-  return <BattleOpen res={res} onOpen={open} preset={params.get("team")} />;
+  return <BattleOpen res={res} onOpen={open} go={go} preset={params.get("team")} />;
 }
 
 /* a battle that fails to draw stands up again by itself: everything it shows is read again from the server, so starting the room
@@ -385,20 +387,22 @@ function RoomHall({ rooms, onOpen, onMake }) {
    사람만)인지는 그 아래에서 고른다(2026-11-06, 따로 선 공개 방과 코드 방을 하나로). 두 방 모두 링크로도 들어온다. */
 const OPPONENTS = [["cpu", "컴퓨터"], ["room", "방 만들기"]];
 const ROOMS = [["open", "공개 방", "누구나 참가"], ["code", "비밀 방", "코드로 참가"]];
-/* the battle page: 배틀 열기 (the lobby) and 방 목록 (every room waiting) as page tabs; the tab is kept in the address (&tab=rooms) */
-const BATTLE_TABS = ["open", "rooms"];
-function BattleOpen({ res, onOpen, preset }) {
-  const [tab, setTab] = useState(() => (new URLSearchParams(window.location.search).get("tab") === "rooms" ? "rooms" : "open"));
+/* the battle page: 배틀 열기 (the lobby), 방 목록 (every room waiting) and 연승 도전 (docs/BATTLE_STREAK.md) as page tabs; the tab is
+   kept in the address (&tab=rooms, &tab=streak) */
+const BATTLE_TABS = ["open", "rooms", "streak"];
+function BattleOpen({ res, onOpen, go, preset }) {
+  const [tab, setTab] = useState(() => { const asked = new URLSearchParams(window.location.search).get("tab"); return BATTLE_TABS.includes(asked) ? asked : "open"; });
   const rooms = useRooms();
   // 방 만들기 on the list opens the lobby with 방 만들기 chosen as the opponent
   const [firstFoe, setFirstFoe] = useState("cpu");
   const changeTab = t => {
     setTab(t);
     const url = new URL(window.location.href);
-    if (t === "rooms") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
+    if (t !== "open") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
     window.history.replaceState(window.history.state, "", url);
   };
-  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"]]} /></div>;
+  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["streak", "연승 도전"]]} /></div>;
+  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} />;
   return tab === "rooms"
     ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
     : <BattleSetup res={res} onOpen={onOpen} preset={preset} tabs={tabs} firstFoe={firstFoe} />;
@@ -600,7 +604,9 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
       onOpen(made.id);
     } catch (e) { say?.(failText(e, res)); }
   };
-  return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} />;
+  // a game of a 연승 도전 run ends on the run's keys: 다음 판, or 다시 도전 and 연승 순위
+  const streak = seat && row.kind === "streak" ? { onOpen, onBoard: () => onOpen(null, null, "streak") } : null;
+  return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} streak={streak} />;
 }
 
 /* a battle screen that takes the place of the one pressed (the waiting room, the team preview) lights as a page does (DESIGN.md
@@ -803,7 +809,7 @@ function useNow(on) {
   return now;
 }
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
-export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER }) {
+export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER, streak = null }) {
   useLit();
   // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
   const local = row.kind === "cpu" && Boolean(seat);
@@ -1097,7 +1103,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
         {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
         <div className="pn bt-head">
-          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">공식 경기</span>}</span>
+          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">공식 경기</span>}{row.kind === "streak" && <span className="dim">{seat ? streakGameLine(seat) : "연승 도전"}</span>}</span>
           <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {/* the turn, announced in segment cells beside the names (it stood on the stadium's wall once, splitting the foe's plates) */}
           {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t12 dim">턴</span></span>}
@@ -1112,7 +1118,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <span className="bt-end-line">{endLine}</span>
           </div>}
           {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
-          {(rematch || official || onLeave) && <Dock>
+          {streak ? <StreakEnd id={row.id} onOpen={streak.onOpen} onBoard={streak.onBoard} /> : (rematch || official || onLeave) && <Dock>
             <div className="bt-end-keys">
               {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
                 : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}

@@ -61,8 +61,8 @@ export function Counter({ label, value, unit = "", cells = 2, onClick, lamp, aft
 
 /* A row of a stack: 52 for one line, 64 with a grey line. lead is the cell on the left (a rank, a date), value the figure on the right,
    lamp the lamp column at the end (true lights it, false keeps the column dark; a word lights it and stands beside it, since a lamp
-   is a word's companion: 새 글). className sets the columns. */
-export function Row({ lead, title, line, value, lamp, onClick, className = "", label }) {
+   is a word's companion: 새 글); sig makes it amber, for what is live (도전 중). className sets the columns. */
+export function Row({ lead, title, line, value, lamp, sig = false, onClick, className = "", label }) {
   const { as: Box, props } = door(onClick);
   return (
     <Box className={"pn row" + (line ? " row--2" : "") + (className ? " " + className : "")} {...props} aria-label={label}>
@@ -70,16 +70,17 @@ export function Row({ lead, title, line, value, lamp, onClick, className = "", l
       <span className="row-main"><b className="t15">{title}</b>{line && <span className="t12 dim">{line}</span>}</span>
       {value != null && <span className="row-value">{value}</span>}
       {typeof lamp === "string" && <span className="row-lamp-word t12">{lamp}</span>}
-      {lamp != null && <span className="row-lamp">{lamp && <i className="lamp" aria-hidden="true" />}</span>}
+      {lamp != null && <span className="row-lamp">{lamp && <i className={"lamp" + (sig ? " sig" : "")} aria-hidden="true" />}</span>}
     </Box>
   );
 }
 
 /* The top three of a ranking (DESIGN.md "Home, phone"): three columns like the counters, the rank, the name and the points lit
    in segments with 점. A tie reads as equal columns, each rank named 공동; a sole leader's column inverts. Points past 999 stay in
-   type, since four cells do not fit a third of a phone. rows are ranked ({ rank, name, points }); onName opens the trainer.
+   type, since four cells do not fit a third of a phone. rows are ranked ({ rank, name, points, live }); onName opens the trainer.
+   unit is what the points count (연승 on the 연승 도전's board); live lights the amber lamp with 도전 중 beside the rank.
    rows null is the board switched off: three dark columns at their size while the ranking is read. */
-export function Podium({ rows, onName }) {
+export function Podium({ rows, onName, unit = "점" }) {
   if (!rows) return (
     <div className="stack podium" style={{ "--n": 3 }} aria-hidden="true">
       {[0, 1, 2].map(i => <div key={i} className="pn podium-col"><span className="podium-pts"><Seg value="" h={40} cells={2} label="" /></span></div>)}
@@ -93,13 +94,14 @@ export function Podium({ rows, onName }) {
       {top.map((r, i) => {
         const pts = r.points || 0;
         const rank = `${shared(r.rank) ? "공동 " : ""}${r.rank}위`;
-        const { as: Box, props } = door(onName ? e => onName(r.name, e.currentTarget) : null);
-        return <Box key={`${r.name}#${i}`} className={(solo && i === 0 ? "inv" : "pn") + " podium-col"} {...props} aria-label={`${rank} ${r.name}, ${pts}점`}>
-          <span className="t12 dim">{rank}</span>
+        // r.open: a column of its own door (a live run opens its game to watch)
+        const { as: Box, props } = door(r.open || (onName ? e => onName(r.name, e.currentTarget) : null));
+        return <Box key={`${r.name}#${i}`} className={(solo && i === 0 ? "inv" : "pn") + " podium-col"} {...props} aria-label={`${rank} ${r.name}, ${pts}${unit}${r.live ? ", 도전 중" : ""}`}>
+          <span className="t12 dim podium-rank">{r.live && <i className="lamp sig" aria-hidden="true" />}{rank}{r.live && " 도전 중"}</span>
           <b className="t15 podium-name">{r.name}</b>
           <span className="podium-pts">{pts < 1000
-            ? <Seg value={String(pts)} h={40} cells={Math.max(2, String(pts).length)} label={`${pts}점`} />
-            : <b className="num t20">{pts.toLocaleString("ko-KR")}</b>}<span className="t12 dim">점</span></span>
+            ? <Seg value={String(pts)} h={40} cells={Math.max(2, String(pts).length)} label={`${pts}${unit}`} />
+            : <b className="num t20">{pts.toLocaleString("ko-KR")}</b>}<span className="t12 dim">{unit}</span></span>
         </Box>;
       })}
     </div>

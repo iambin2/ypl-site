@@ -52,9 +52,30 @@ const asSeat = (id, action, extra = {}) => {
   return callFunction("battle", { action, id, token: seat.token, ...extra });
 };
 export const viewBattle = id => asSeat(id, "view");
+/* 연승 도전 (docs/BATTLE_STREAK.md): a game's answer carries the run (streak: { wins, status, next }). A won game's answer brings the
+   next game's seat, kept like any other; the ended game's seat remembers it, so its end screen offers 다음 판 again after a reload. */
+// the game of this device's run being played, so the 연승 도전 tab offers 이어서 하기
+const STREAK_KEY = "ypl-battle:streak";
+export const currentStreakGame = () => { try { return localStorage.getItem(STREAK_KEY) || null; } catch { return null; } };
+const keepStreakGame = id => { try { if (id) localStorage.setItem(STREAK_KEY, id); else localStorage.removeItem(STREAK_KEY); } catch { /* 이어서 하기만 없다 */ } };
+function keepRun(id, view) {
+  const run = view?.streak;
+  if (!run) return view;
+  if (run.next) keepStreakGame(run.next.id); else if (run.status === "ended") keepStreakGame(null);
+  const seat = readSeat(id);
+  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, ...(run.next ? { next: run.next.id } : {}), ended: run.status === "ended" });
+  if (run.next) keepSeat(run.next.id, { token: run.next.token, side: run.next.side, streak: true, wins: run.wins, game: run.wins + 1 });
+  return view;
+}
 // rq: 답하는 요청의 requestKey(battleLog.js). 서버는 이미 지난 요청에 대한 선택을 막는다.
-export const chooseInBattle = (id, choice, rq) => asSeat(id, "choose", { choice, rq });
-export const forfeitBattle = id => asSeat(id, "forfeit");
+export const chooseInBattle = (id, choice, rq) => asSeat(id, "choose", { choice, rq }).then(view => keepRun(id, view));
+export const forfeitBattle = id => asSeat(id, "forfeit").then(view => keepRun(id, view));
+// a new run's first game (visitorAuth.js startStreakRun, made as the signed-in account): its seat is this device's
+export function keepStreakStart(made) {
+  keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: 0, game: 1 });
+  keepStreakGame(made.id);
+  return made;
+}
 /* 생각하는 동안 서버를 데운다 (battle 함수 warm). 함수의 워커는 약 75초마다 새로 뜨고, 새 워커의 첫 요청은 0.6~1.5초가 걸린다.
    이 요청이 그 시간을 대신 치러, 고른 수는 데워진 워커에서 0.2~0.3초에 돌아온다. 실패해도 아무 일도 없다. */
 export const warmBattle = id => callFunction("battle", { action: "warm", id }).catch(() => {});

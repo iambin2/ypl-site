@@ -24,6 +24,7 @@ import "./styles/builder.css";
 import "./styles/calculator.css";
 import "./styles/battle.css";
 import "./styles/battle-stage.css";
+import "./styles/streak.css";
 import "./styles/admin.css";
 
 /* 저장된 테마를 React 보다 먼저 <html> 에 건다.
