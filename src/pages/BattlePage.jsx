@@ -14,7 +14,7 @@ import { championsData } from "../services/index.js";
 import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
-import { LobbyBars, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
+import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
 import { setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { setSoundOn, soundOn } from "./battle/cries.js";
@@ -114,21 +114,17 @@ class RoomGuard extends React.Component {
 }
 
 /* 저장한 팀: 팀 이름과 규정, 그리고 여섯을 그림으로(DESIGN.md "Where a Pokémon stands": 파티 목록은 이름 줄이 아니라 그림). 고른 팀은 반전한다. */
-// onChange null: the team is shown, not chosen (the waiting screen's team brought), so it is no radio a keyboard can land on
 function TeamRows({ teams, value, onChange, res }) {
-  return <div className={"stack" + (onChange ? " bt-teams" : "")} role={onChange ? "radiogroup" : undefined} aria-label="팀">
+  return <div className="stack bt-teams" role="radiogroup" aria-label="팀">
     {teams.map(team => {
       const on = team.id === value;
       const reg = REGULATIONS[team.regulationId] || team.regulationId;
-      const said = `${team.name}, ${reg}, ${team.random ? "배틀이 열리면 정해집니다" : team.members.map(m => res.text.pokedex[m.pokemonId] || m.pokemonName).join(", ")}`;
-      const Box = onChange ? "label" : "div";
-      return <Box key={team.id} className={"bt-team " + (on ? "inv" : "pn") + (onChange ? "" : " still")} aria-label={onChange ? undefined : said}>
-        {onChange && <input type="radio" className="sr-only" name="battle-team" checked={on} onChange={() => onChange(team.id)} aria-label={said} />}
-        <span className="bt-team-head"><b className="t15">{team.name}</b><span className="t12 reg dim">{reg}</span>{on && onChange && <Icon n="check" size={20} />}</span>
-        <span className="bt-team-six" aria-hidden="true">{team.random
-          ? Array.from({ length: 6 }, (_, i) => <span key={i} className="bt-team-q t15">?</span>)
-          : team.members.map((m, i) => <span key={i} className="stand"><i className="floor" /><Mon src={spriteUrl(m.pokemonName)} loading="lazy" onError={onSpriteError()} /></span>)}</span>
-      </Box>;
+      const said = `${team.name}, ${reg}, ${team.members.map(m => res.text.pokedex[m.pokemonId] || m.pokemonName).join(", ")}`;
+      return <label key={team.id} className={"bt-team " + (on ? "inv" : "pn")}>
+        <input type="radio" className="sr-only" name="battle-team" checked={on} onChange={() => onChange(team.id)} aria-label={said} />
+        <span className="bt-team-head"><b className="t15">{team.name}</b><span className="t12 reg dim">{reg}</span>{on && <Icon n="check" size={20} />}</span>
+        <span className="bt-team-six" aria-hidden="true">{team.members.map((m, i) => <span key={i} className="stand"><i className="floor" /><Mon src={spriteUrl(m.pokemonName)} loading="lazy" onError={onSpriteError()} /></span>)}</span>
+      </label>;
     })}
   </div>;
 }
@@ -176,47 +172,40 @@ function NoTeams() {
 const NAME_MISSING = "이름을 입력해 주세요.";
 const focusName = () => document.getElementById("bt-name")?.focus();
 
-/* 배틀 전 화면(DESIGN.md "Battle", Opening and waiting). 가장 많이 고르는 것이 먼저, 크게: 상대, 형식, 팀. 그 옆(휴대폰에서는 아래)에
-   경기가 치러질 모습(나 대 상대, 고른 팀의 앞 포켓몬이 선 경기장)과 주 행동이 한 판으로 서고, 넓은 화면에서는 스크롤해도 따라온다.
-   여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다. foe는 참가하는 쪽에서 본 연 사람의 이름이다. before는 맨 위(이어서 할 배틀). */
-function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", foeLead = null, doubles, setup, action, before, after, onEnter }) {
+/* 배틀 전 화면(DESIGN.md "Battle", Opening and waiting, 2026-11-07 다시 설계). 배틀이 핵심이라 경기장이 주인공이다: 709에 배틀이 설
+   모습 그대로의 경기장(상대의 줄, 고른 팀의 앞 포켓몬과 상대가 선 경기장, 내 이름을 쓰는 우리 줄과 여섯)이 서고 주 행동이 그 바로
+   아래, 그 밑에 방 참가와 목록. 439에는 고르는 것(상대, 형식, 파티)이 같은 윗선에서 시작한다. 두 열은 페이지와 함께 스크롤한다.
+   휴대폰은 경기장, 고르는 것, 목록 순서이고 주 행동은 아래에 붙는다. 여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다.
+   foe는 참가하는 쪽에서 본 연 사람의 이름(없으면 foeHint를 흐리게), foeNote는 그 뒤의 흐린 말(컴퓨터의 난이도). */
+function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", foeNote = "", foeLead = null, doubles, setup, action, before, after, onEnter }) {
   const team = teams.find(t => t.id === teamId);
   const saved = teams.some(t => !t.random);
-  const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
-  const stageLabel = team ? `경기장, ${leads.map(species => nameOf(res, species)).join(", ")}` : "빈 경기장";
+  const random = Boolean(team?.random);
+  const six = random ? [] : (team?.members || []).map(m => res.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
+  const leads = six.slice(0, doubles ? 2 : 1);
+  const stageLabel = random ? "경기장, 랜덤 파티는 배틀이 열리면 정해집니다." : team ? `경기장, ${leads.map(species => nameOf(res, species)).join(", ")}` : "빈 경기장";
   return (
     <div className="bt-page">
       <h1 className="t32">배틀</h1>
       {before}
       <div className="bt-lobby">
+        <div className="bt-lobby-main">
+          {/* the court for every party (2026-11-06, the user: one look for a random party and a saved team): a random party's leads are
+              not drawn yet, so a light breathes on our floor where they will come out */}
+          <LobbyArena res={res} foe={foe || foeHint} foeMuted={!foe} foeNote={foeNote} six={six}
+            ours={<input id="bt-name" className="bt-name" aria-label="내 이름" value={name} maxLength={20} autoComplete="nickname" enterKeyHint="go" placeholder="내 이름"
+              onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) onEnter?.(); }} />}>
+            <LobbyStage leads={leads} doubles={doubles} random={random} foeLead={foeLead} label={`${stageLabel}${foeLead ? `, 상대 ${nameOf(res, foeLead)}` : ""}`} />
+          </LobbyArena>
+          {action}
+          {after && <div className="bt-after">{after}</div>}
+        </div>
         <div className="bt-lobby-set">
           {setup}
           <div className="q"><span className="q-label t12 dim">랜덤 파티</span><RandomPick regs={teams.filter(t => t.random).map(t => t.regulationId)} value={teamId} onChange={setTeamId} /></div>
           <div className="q"><span className="q-label t12 dim">{teamLabel}</span>{saved ? <TeamRows teams={teams.filter(t => !t.random)} value={teamId} onChange={setTeamId} res={res} /> : <NoTeams />}</div>
         </div>
-        <div className="bt-lobby-show">
-          <div className="stack bt-versus">
-            <label className="pn bt-vs" htmlFor="bt-name">
-              <span className="t12 dim">내 이름</span>
-              <input id="bt-name" value={name} maxLength={20} autoComplete="nickname" enterKeyHint="go" onChange={e => setName(e.target.value)} placeholder="예: 이제빈"
-                onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) onEnter?.(); }} />
-            </label>
-            <span className="pn bt-vs-mid t15" aria-hidden="true">VS</span>
-            <span className="pn bt-vs foe">
-              <span className="t12 dim">상대</span>
-              {foe ? <b>{foe}</b> : <b className="mute">{foeHint}</b>}
-            </span>
-          </div>
-          {/* the court for every party (2026-11-06, the user: one look for a random party and a saved team): a random party's leads are
-              not drawn yet, so a light breathes on our floor where they will come out, and the bars under it say so */}
-          <div className="stack bt-court">
-            <LobbyStage leads={leads} doubles={doubles} random={Boolean(team?.random)} foeLead={foeLead} label={`${team?.random ? "경기장, 랜덤 파티는 배틀이 열리면 정해집니다." : stageLabel}${foeLead ? `, 상대 ${nameOf(res, foeLead)}` : ""}`} />
-            <LobbyBars leads={leads} doubles={doubles} res={res} random={Boolean(team?.random)} />
-          </div>
-          {action}
-        </div>
       </div>
-      {after && <div className="bt-after">{after}</div>}
     </div>
   );
 }
@@ -391,7 +380,7 @@ function BattleOpen({ res, onOpen, preset }) {
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
   const roomRow = ROOMS.find(([key]) => key === room);
   return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="저장한 팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
-    foeHint={foe === "cpu" ? "컴퓨터" : roomRow[2]} foeLead={foe === "cpu" ? levelOf(level).species : null}
+    foe={foe === "cpu" ? "컴퓨터" : null} foeNote={foe === "cpu" ? levelOf(level).label : ""} foeHint={roomRow[2]} foeLead={foe === "cpu" ? levelOf(level).species : null}
     before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line={`${levelOf(saved.level ?? saved.start?.level).label}, 진행 중인 배틀을 이어서 합니다.`} lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
     setup={<>
       <Question id="bt-foe" label="상대" group>
@@ -576,7 +565,8 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
 export function Waiting({ row, res, team, code, rematch = false, onShare, onCancel }) {
   const official = row.kind === "official";
   const doubles = isDoubles(row.format_id);
-  const leads = (team?.members || []).slice(0, doubles ? 2 : 1).map(m => res?.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
+  const six = team?.random ? [] : (team?.members || []).map(m => res?.detail.pokedex[m.pokemonId]?.name || m.pokemonName);
+  const leads = six.slice(0, doubles ? 2 : 1);
   const now = useNow(true);
   const since = Date.parse(row.created_at || "") || now;
   const waited = Math.max(0, Math.floor((now - since) / 1000));
@@ -591,6 +581,13 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
     <div className="bt-page">
       <h1 className="t32">배틀</h1>
       <div className="bt-lobby">
+        <div className="bt-lobby-main">
+          {res && <LobbyArena res={res} foe="참가 대기" foeMuted waiting six={six} ours={<b className="bt-trainer">{row.p1_name || "나"}</b>}>
+            <LobbyStage leads={leads} doubles={doubles} awaiting random={Boolean(team?.random)} label={`경기장, ${leads.length ? leads.map(s => nameOf(res, s)).join(", ") : "우리 쪽"}, 상대 쪽은 비어 있음`} />
+          </LobbyArena>}
+          <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
+          <Button variant="link" className="bt-cancel" onClick={onCancel}>대기 취소</Button>
+        </div>
         <div className="bt-lobby-set">
           <Row title={rematch ? "상대의 다시하기를 기다리는 중입니다." : "상대를 기다리는 중입니다."} line={`${rule} ${kind}`} lamp="참가 대기" />
           {/* a code room's four digits stand first and largest: they are what the opener reads out to the one coming in */}
@@ -599,20 +596,6 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
             <Counter label="기다린 시간" value={clock} cells={3} h={code && !rematch ? 84 : 52} />
           </div>
           <p className="t12 dim">{how}</p>
-          {team && res && <div className="q"><span className="q-label t12 dim">가져온 팀</span><TeamRows teams={[team]} value={null} onChange={null} res={res} /></div>}
-        </div>
-        <div className="bt-lobby-show">
-          <div className="stack bt-versus">
-            <span className="pn bt-vs"><span className="t12 dim">나</span><b>{row.p1_name || "나"}</b></span>
-            <span className="pn bt-vs-mid t15" aria-hidden="true">VS</span>
-            <span className="pn bt-vs foe"><span className="t12 dim bt-vs-wait"><i className="lamp" aria-hidden="true" />참가 대기</span><b className="mute">상대</b></span>
-          </div>
-          <div className="stack bt-court">
-            {res && <LobbyStage leads={leads} doubles={doubles} awaiting random={Boolean(team?.random)} label={`경기장, ${leads.length ? leads.map(s => nameOf(res, s)).join(", ") : "우리 쪽"}, 상대 쪽은 비어 있음`} />}
-            {res && (leads.length > 0 || team?.random) && <LobbyBars leads={leads} doubles={doubles} res={res} random={Boolean(team?.random)} />}
-          </div>
-          <Dock><Button variant="main" onClick={onShare}>링크 공유</Button></Dock>
-          <Button variant="link" onClick={onCancel}>대기 취소</Button>
         </div>
       </div>
     </div>

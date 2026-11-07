@@ -471,22 +471,43 @@ function SideField({ side, scene, own, doubles }) {
   );
 }
 
-/* own: our side, whose brought Pokémon (known) we know before they come out. A player opens their own party's sets from it (onParty):
-   the strip itself is the key, its name, its six and 내 파티 with a chevron on one line (2026-11-06: a separate key wrapped onto a
-   line of its own under the six on a phone), so the strip has one shape on both sides and on every screen */
+/* a side's party on its strip (DESIGN.md "Battle", The strips): each Pokémon stands on its own floor, and the floor is its HP, so a
+   glance reads who is left and how much. Light says where each one is, as everywhere on the board: the ones out lit, the rest of
+   the bench dim, one the battle has not shown yet muted with a bare floor, a fainted one grey on an empty floor. slots: the places
+   kept for a party not known yet (the computer's, a random party), each a ? on a bare floor. */
+const SIX = 6;
+function Roster({ list, slots = 0, label }) {
+  return <span className="bt-roster" role="img" aria-label={label}>
+    {list.map((m, i) => <span key={i} className={`stand bt-rm ${m.light}`}>
+      <i className="floor">{m.share != null && <Gauge share={m.share} />}</i>
+      <Mon src={spriteUrl(m.species)} draggable="false" onError={onSpriteError()} />
+      {m.status && <i className={`bt-rm-st type-${STATUS_TYPE[m.status] || "normal"}`} />}
+    </span>)}
+    {Array.from({ length: Math.max(0, slots - list.length) }, (_, i) => <span key={`e${i}`} className="stand bt-rm none"><i className="floor" /><b className="bt-rm-q">?</b></span>)}
+  </span>;
+}
+const rosterSaid = (res, list) => list.map(m => `${nameOf(res, m.species)}${m.light === "off" ? " 쓰러짐" : m.light === "lit" ? " 나와 있음" : m.light === "mute" ? " 아직 나오지 않음" : ""}${m.status ? ` ${STATUS[m.status]}` : ""}`).join(", ");
+
+/* own: our side, whose brought Pokémon (known) we know before they come out; the ones a team preview left at home are not shown, as
+   the games show only the party brought. A player opens their own party's sets from it (onParty): the strip itself is the key, its
+   name, its party and 내 파티 with a chevron on one line (2026-11-06: a separate key wrapped onto a line of its own under the six on a
+   phone), so the strip has one shape on both sides and on every screen */
 function Strip({ side, scene, name, res, known, onParty }) {
   const s = scene?.[side];
   const knows = species => known?.some(k => toID(k).startsWith(toID(species)) || toID(species).startsWith(toID(k)));
+  const own = Boolean(known);
+  const list = (s?.roster || []).filter(m => !own || !known.length || m.seen || knows(m.species)).map(m => ({
+    species: m.species, status: m.status,
+    light: m.fainted ? "off" : m.out ? "lit" : !m.seen && !own ? "mute" : "dim",
+    share: m.fainted ? 0 : !m.seen && !own ? null : m.maxhp ? m.hp / m.maxhp : 1,
+  }));
   const Tag = onParty ? "button" : "div";
   return (
-    <Tag {...(onParty ? { type: "button", onClick: onParty, "aria-label": `${name}의 파티, 내 파티 열기` } : {})} className={"pn bt-strip" + (onParty ? " key" : "")}>
+    <Tag {...(onParty ? { type: "button", onClick: onParty, "aria-label": `${name}의 파티, 내 파티 열기` } : {})} className={"bt-strip" + (own ? " own" : " foe") + (onParty ? " key" : "")}>
       <span className="bt-strip-row">
-      <b className="t12 bt-trainer">{name}</b>
-      <span className="bt-balls" aria-label={`${name}의 파티`}>
-        {(s?.roster || []).map((m, i) => <i key={i} className={"bt-ball" + (m.fainted ? " out" : !m.seen && !knows(m.species) ? " hid" : "") + (m.status ? ` st type-${STATUS_TYPE[m.status] || "normal"}` : "") + (m.out ? " on" : "")}
-          title={`${nameOf(res, m.species)}${m.fainted ? ", 쓰러짐" : m.out ? ", 나와 있음" : !m.seen ? ", 아직 나오지 않음" : m.status ? `, ${STATUS[m.status]}` : ""}`}>
-          <img src={spriteUrl(m.species)} alt="" draggable="false" decoding="async" onError={onSpriteError()} /></i>)}
-      </span>
+      <b className="bt-trainer">{name}</b>
+      {/* a battle without a team preview shows a foe only once it comes out: the rest of the six wait as bare floors */}
+      <Roster list={list} slots={own || s?.roster?.length >= SIX ? 0 : SIX} label={`${name}의 파티, ${rosterSaid(res, list)}`} />
       {onParty && <span className="bt-strip-more" aria-hidden="true"><Icon n="chevr" size={16} />내 파티</span>}
       </span>
       {(s?.conditions || []).length > 0 && <span className="bt-conds">
@@ -590,18 +611,27 @@ export function LobbyStage({ leads, doubles, label, awaiting = false, random = f
     </div>
   );
 }
-/* under the lobby's stage, where a battle has our status bars: each Pokémon standing there, its name and its types, in the order they stand */
-// random: a random party is drawn when the battle opens, so its places say so instead of standing empty
-export function LobbyBars({ leads, doubles, res, random = false }) {
-  return <div className={"stack bt-bars" + (doubles ? " two" : "")}>
-    {(doubles ? [0, 1] : [0]).map(slot => {
-      const species = leads[slot];
-      return <div key={slot} className="pn bt-lead">
-        {random && <><b className="t15 dim">랜덤</b><span className="t12 mute">배틀이 열리면 정해집니다.</span></>}
-        {species && <><b className="t15">{nameOf(res, species)}</b>
-          <span className="tb-types">{typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span></>}
-      </div>;
-    })}
+/* before a battle the arena stands as the battle will stand it (DESIGN.md "Battle", Opening and waiting): the foe's strip, the court,
+   our strip, one frame. The foe's party is not known yet, so its six are bare floors; ours are the team chosen, lit on bare floors
+   (the battle lights their HP), or six bare floors for a random party. foe: the opponent's name or where it will come from (muted
+   until someone is there), foeNote a dim word after it (the computer's level), waiting the amber lamp of 참가 대기. ours: our name,
+   or the field it is typed in. */
+export function LobbyArena({ res, foe, foeNote = "", foeMuted = false, waiting = false, ours, six = [], children }) {
+  const list = six.map(species => ({ species, light: "lit", share: null }));
+  return <div className="bt-arena bt-lobby-arena">
+    <div className="bt-strip foe">
+      <span className="bt-strip-row">
+        <span className="bt-who">{waiting && <i className="lamp" aria-hidden="true" />}<b className={"bt-trainer" + (foeMuted ? " mute" : "")}>{foe}</b>{foeNote && <span className="bt-who-note">{foeNote}</span>}</span>
+        <Roster list={[]} slots={SIX} label={`${foe}의 파티, 배틀이 열리면 보입니다.`} />
+      </span>
+    </div>
+    {children}
+    <div className="bt-strip own">
+      <span className="bt-strip-row">
+        {ours}
+        <Roster list={list} slots={SIX} label={list.length ? `내 파티, ${rosterSaid(res, list)}` : "내 파티, 배틀이 열리면 정해집니다."} />
+      </span>
+    </div>
   </div>;
 }
 

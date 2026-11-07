@@ -5,55 +5,36 @@
 .bt-page { display: grid; gap: var(--s5); }
 .bt-intro { margin-top: calc(var(--s3) - var(--s5)); }
 
-/* ---------- before the battle (Opening and waiting). What is chosen most stands first and largest: 상대, 형식, 팀 on the 709. Beside
-   it on the 439 the match as it will be played (나 대 상대, the court) and the action under it, one card that stays in view while the
-   page scrolls, so 배틀 시작 is never under the fold. On a phone: the matchup (the name typed in it), the choices, the court, and the
-   action docked at the bottom. ---------- */
+/* ---------- before the battle (Opening and waiting, redesigned 2026-11-07). The battle is the point, so the arena is the hero: on the
+   709 the arena as the battle will stand it (the foe's strip, the court, our strip with the name typed in it and our six), the main
+   action right under it, then 방 참가 and the lists; on the 439 what is chosen (상대, 형식, 파티), from the arena's top line. Both
+   columns scroll with the page (2026-11-07, the user: a side that scrolled apart from the other had no reason to). On a phone: the
+   arena, the choices, the lists, and the action docked. ---------- */
 .bt-lobby { display: grid; gap: var(--s5); }
-.bt-lobby-set { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
+.bt-lobby-main, .bt-lobby-set { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
 .bt-lobby-set .q + .q { margin-top: 0; }
-.bt-lobby-show { display: grid; gap: var(--s3); align-content: start; min-width: 0; }
-.bt-court { display: grid; gap: var(--seam); min-width: 0; }
-.bt-lobby-show > .dock { margin-top: 0; }
-.bt-lobby-show > .btn--link { justify-self: center; }
+.bt-lobby-main > .dock { margin-top: 0; }
+.bt-cancel { justify-self: center; }
 @media (max-width: 859px) {
-  .bt-lobby-show { display: contents; }
-  .bt-lobby > .bt-lobby-show > .bt-versus { order: -1; }
-  .bt-lobby > .bt-lobby-show > :is(.bt-court, .dock, .btn--link) { order: 1; }
+  .bt-lobby-main { display: contents; }
+  .bt-lobby-main > .dock { order: 1; }
+  .bt-lobby-main > :is(.bt-after, .bt-cancel) { order: 2; }
 }
 @media (min-width: 860px) {
   .bt-lobby { grid-template-columns: minmax(0, 709px) minmax(0, 439px); gap: var(--s13); align-items: start; justify-content: space-between; }
-  .bt-lobby-show { position: sticky; top: calc(var(--nav-height) + var(--s5)); }
+  .bt-lobby-main { gap: var(--s3); }
+  /* the arena's top edge meets the first choice's top edge across the columns, not the label over it (2026-11-07, the user: the
+     matchup's line met no line on the other side) */
+  .bt-lobby:has(> .bt-lobby-set > .q:first-child) > .bt-lobby-main { padding-top: calc(var(--l12) + var(--s2)); }
 }
-/* the saved teams two to a row on a wide screen, so four stand above the fold; the random parties last */
-@media (min-width: 860px) { .bt-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* a battle left half played stands over everything, the first thing to press */
 .bt-resume { margin-bottom: calc(var(--s3) - var(--s5)); }
 /* the waiting screen's counters side by side: the code to read out, then the time waited */
 .bt-wait-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--seam); }
-/* under the lobby: 방 참가 beside the device's lists on a wide screen (439 and 709), first on a phone */
+/* under the action: 방 참가 and the device's lists, a section's step below it */
 .bt-after { display: grid; gap: var(--s8); margin-top: var(--s8); }
+@media (min-width: 860px) { .bt-lobby-main > .bt-after { margin-top: calc(var(--s13) - var(--s3)); } }
 .bt-lists { display: grid; gap: var(--s8); align-content: start; min-width: 0; }
-@media (min-width: 860px) {
-  .bt-after { grid-template-columns: minmax(0, 709px) minmax(0, 439px); column-gap: var(--s13); justify-content: space-between; align-items: start; }
-  .bt-after > .bt-rooms { grid-column: 2; grid-row: 1; }
-  .bt-after > .bt-lists { grid-column: 1; grid-row: 1; }
-}
-/* 나 대 상대: two equal panels and the word between them, on the seam, read like a scoreboard before the match; the name is typed in place */
-.bt-versus { grid-template-columns: minmax(0, 1fr) var(--h-row) minmax(0, 1fr); }
-/* 64 tall: a 12 label over the name at 20, no taller than what it holds (it was 84, more panel than name) */
-.bt-vs { display: grid; align-content: center; gap: var(--s1); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--pad); }
-.bt-vs > :is(b, input) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
-/* the field is the name itself: no control height of its own, so the panel is only as tall as a label over a name */
-.bt-vs > input { width: 100%; height: var(--l20); min-height: 0; padding: 0; background: none; color: var(--lit); }
-.bt-vs > input:focus-visible { outline: none; }
-.bt-vs > input::placeholder { color: var(--mute); }
-.bt-vs:has(:focus-visible) { box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
-.bt-vs.foe { text-align: right; }
-.bt-vs-mid { display: grid; place-items: center; color: var(--dim); font-weight: 700; }
-/* under the stage, where a battle has our bars: each one standing there, its name and its types */
-.bt-lead { display: grid; align-content: center; justify-items: start; gap: var(--s1); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--pad); }
-.bt-lead > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* a saved team: its name and rule over its six on their floors; the chosen one inverts, its six keep a panel under them */
 .bt-team { display: grid; gap: var(--s2); padding: var(--s3) var(--pad); cursor: pointer; }
 .bt-team-head { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
@@ -65,19 +46,13 @@
 .bt-team-six .mon { left: 0; right: 0; height: calc(100% - var(--floor)); margin-inline: auto; }
 /* the chosen team inverts and its six stand straight on the white: no navy cell left behind a picture */
 .bt-team.inv .bt-team-six > span { background: transparent; }
-/* a random party's six are unknown until the battle opens */
-.bt-team-q { display: grid; place-items: center; background: var(--panel-2); color: var(--dim); font-weight: 700; }
 .bt-team:has(:focus-visible) { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-team.inv:has(:focus-visible) { outline-color: var(--ground); }
-@media (hover: hover) { .bt-team.pn:not(.still):hover { background: var(--panel-2); } }
-/* the team brought, on the waiting screen: shown, not chosen */
-.bt-team.still { cursor: default; }
+@media (hover: hover) { .bt-team.pn:hover { background: var(--panel-2); } }
 /* no saved team: the line under the random parties that says where teams come from */
 .bt-noteams { margin: 0; }
 
 /* waiting for the other player: the busy cell and the sentence */
-/* the opponent's place while the opener waits: the lamp beside 참가 대기 */
-.bt-vs-wait { display: flex; align-items: center; justify-content: flex-end; gap: var(--s1); }
 .bt-waiting { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
 
 /* the match (DESIGN.md "Battle", The match). Under 1200 one column: the head, the result, the stage or the team preview, the replay,
@@ -91,7 +66,7 @@
 @media (min-width: 1200px) {
   .page.page--battle { padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); }
   .bt-match {
-    grid-template-columns: minmax(0, min(100% - 400px - var(--s8), (100svh - var(--nav-height) - 140px) * 16 / 9)) 400px;
+    grid-template-columns: minmax(0, min(100% - 400px - var(--s8), (100svh - var(--nav-height) - 164px) * 16 / 9)) 400px;
     justify-content: center; align-items: start; column-gap: var(--s8);
   }
   .bt-side {
@@ -211,29 +186,49 @@
   display: grid; background: var(--ground); color: var(--lit);
 }
 
-/* each trainer's strip: the name, the six as squares, the side's conditions */
-/* the name, the six and (ours) 내 파티 are one line that never wraps: the name gives way first (an ellipsis), then the six shrink
-   together, square; the side's conditions sit beside them when there is room and on a line of their own when not */
-.bt-strip { --ball: var(--h-strip); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s2); width: 100%; min-height: var(--h-control); padding: var(--s1) var(--pad); text-align: left; background: var(--panel); }
-.bt-strip-row { display: flex; align-items: center; gap: var(--s2); min-width: 0; max-width: 100%; }
-.bt-strip.key > .bt-strip-row { flex: 1 0 100%; }
+/* each trainer's strip (The strips, redrawn 2026-11-07: a row of squares with a picture in each read as a plain list): the name,
+   then the party standing on their floors, each floor its HP, and the side's conditions. The strip is the arena's own night in dark,
+   so the two strips and the stage read as one frame with no box round the party; light says where each Pokémon is (out lit, bench
+   dim, not yet shown muted, fainted grey). The name, the party and (ours) 내 파티 are one line that never wraps: the name gives way
+   first (an ellipsis), then the party shrinks together; the side's conditions take a line under it. */
+.bt-strip { --ball: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); width: 100%; min-height: var(--h-row); padding: var(--s1) var(--pad); text-align: left; background: var(--ground); }
+:root[data-theme="light"] .bt-strip { background: var(--panel); }
+.bt-strip-row { flex: 1 0 100%; display: flex; align-items: center; gap: var(--s3); min-width: 0; max-width: 100%; }
+/* the two sides face each other as they stand on the court: ours from the left (the name, then the party), the foe's from the right
+   (the name at the right end, its party to the left of it), the foe's conditions under them at the right */
+.bt-strip.foe { justify-content: flex-end; }
+.bt-strip.foe > .bt-strip-row { flex-direction: row-reverse; }
+.bt-strip.foe .bt-trainer { text-align: right; }
 .bt-trainer { flex: 0 12 auto; min-width: 2em; max-width: 160px; font-size: var(--t15); line-height: var(--l15); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.bt-balls { flex: 0 1 auto; min-width: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, var(--ball)); gap: var(--seam); }
-.bt-ball { position: relative; display: block; width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--panel-2); }
+/* the party: each Pokémon on a 2 floor that is its HP bar (4 read too heavy, the user 2026-11-07), its feet on it by its ink */
+.bt-roster { flex: 0 1 auto; min-width: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, var(--ball)); gap: var(--s1); }
+.bt-rm { --floor: var(--line); display: block; width: 100%; aspect-ratio: 13 / 14; }
+.bt-rm > .floor { background: var(--rule); }
+.bt-rm > .floor > .bt-hp { height: 100%; background: none; }
+.bt-rm .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--seam)); margin-inline: auto; }
+.bt-rm.dim .mon { opacity: .618; }
+.bt-rm.mute .mon { opacity: var(--opacity-disabled); }
+.bt-rm.off .mon { opacity: var(--opacity-disabled); filter: grayscale(1); }
+/* a place kept for a Pokémon not known yet */
+.bt-rm-q { position: absolute; inset: 0 0 var(--floor); display: grid; place-items: center; color: var(--mute); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+/* a status: a square in its colour at the picture's corner */
+.bt-rm-st { position: absolute; top: 0; right: 0; width: var(--lamp); height: var(--lamp); background: var(--type); }
+/* the foe's strip before a battle: who it is, with a dim word after it (the computer's level) or a lamp before it (참가 대기) */
+.bt-who { flex: 0 12 auto; display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.bt-who-note { flex: none; color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 600; white-space: nowrap; }
+/* our name, typed in our strip before a battle: the name itself on the strip, as the foe's stands (2026-11-07, the user: a box of
+   another tone round it broke the strip), its line under it lit while it is typed in */
+.bt-name { flex: 0 1 auto; width: auto; min-width: 2em; max-width: 160px; field-sizing: content; height: var(--h-control); padding: 0; background: none; color: var(--lit);
+  font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.bt-name::placeholder { color: var(--mute); font-weight: 400; }
+.bt-name:focus-visible { outline: none; box-shadow: inset 0 calc(var(--line) * -1) 0 var(--lit); }
+@media (hover: hover) { .bt-name:hover:not(:focus-visible) { box-shadow: inset 0 calc(var(--hair) * -1) 0 var(--dim); } }
 /* ours: the strip is the key to 내 파티, the word and a chevron at its end; it lights a tone as a panel does, and never shrinks */
 .bt-strip-more { flex: none; display: inline-flex; align-items: center; gap: 2px; margin-left: auto; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; }
 .bt-strip.key:active:not(:disabled) { scale: 1; }
 @media (hover: hover) { .bt-strip.key:hover { background: var(--panel-2); } .bt-strip.key:hover .bt-strip-more { color: var(--lit); } }
 .bt-strip.key:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-.bt-ball img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-/* the ones out lift one tone, one not yet seen is its shadow, a fainted one is grey and dim */
-.bt-ball.on { background: var(--rule); }
-.bt-ball.hid img { filter: brightness(0); opacity: var(--opacity-disabled); }
-.bt-ball.out { background: var(--ground); }
-.bt-ball.out img { filter: grayscale(1); opacity: var(--opacity-disabled); }
-.bt-ball.st::after { content: ""; position: absolute; right: 0; top: 0; width: var(--s1); height: var(--s1); background: var(--type); }
-.bt-conds { display: flex; flex-wrap: wrap; gap: var(--seam); margin-left: auto; }
-.bt-strip.key > .bt-conds { margin-left: 0; }
+.bt-conds { display: flex; flex-wrap: wrap; gap: var(--seam); }
 .bt-cond { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--panel-2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
 .bt-cond > span { color: var(--dim); font-weight: 400; }
 
@@ -301,7 +296,8 @@
   .bt-hud.two :is(.bt-hud-plates, .bt-hud-own) > .bt-plate { width: 30%; min-width: 104px; }
   .bt-hud-foe { top: var(--s2); left: var(--s2); right: var(--s2); }
   .bt-hud-own { left: var(--s2); right: var(--s2); }
-  .bt-strip { min-height: 40px; }
+  .bt-strip { --ball: 32px; min-height: var(--h-control); }
+  .bt-strip-row { gap: var(--s2); }
   .bt-hud.two .bt-plate-top { font-size: 11px; line-height: 14px; }
   .bt-hud.two .bt-marks { display: none; }
   .bt-hud.two .bt-plate-more { display: inline-flex; }
@@ -441,10 +437,10 @@ button.bt-card:active:not(:disabled):not(.on) { background: var(--panel-2); }
 /* the move key's second line reads from further away on a desktop */
 @media (min-width: 860px) { .bt-move-line { font-size: 13px; line-height: 18px; } }
 
-/* on a desktop the party squares on the strips are larger, and the marks under a plate (a stat change, what clings) read as words */
+/* on a desktop the party stands larger on taller strips, and the marks under a plate (a stat change, what clings) read as words */
 @media (min-width: 860px) {
-  .bt-strip { --ball: 40px; }
-  .bt-strip { min-height: 52px; }
+  .bt-strip { --ball: 52px; min-height: var(--h-row2); }
+  .bt-rm-q { font-size: var(--t20); line-height: var(--l20); }
   .bt-mark { height: 20px; padding: 0 6px; font-size: 12px; line-height: 16px; }
 }
 
