@@ -38,8 +38,11 @@ await page.evaluate(() => {
     const g = out.getContext("2d"); g.fillStyle = "#000"; g.fillRect(0, 0, out.width, out.height);
     pick.forEach((k, i) => g.drawImage(k, (i % 4) * fw, 22 + Math.floor(i / 4) * fh));
     g.fillStyle = "#fff"; g.font = "15px sans-serif"; g.fillText(label, 6, 16);
+    // white-out: the most near-white pixels any frame has over the first frame's, in thousandths of the picture
+    const whites = k => { const d = k.getContext("2d").getImageData(0, 0, fw, fh).data; let w = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 225) w++; return w; };
+    const w0 = whites(shots[0] || out), white = Math.round(Math.max(0, ...use.map(whites)) - w0) / (fw * fh) * 1000;
     await new Promise(r => setTimeout(r, 300));
-    return out.toDataURL("image/jpeg", .82);
+    return [out.toDataURL("image/jpeg", .82), Math.round(white * 10) / 10];
   };
 });
 }
@@ -47,7 +50,9 @@ await setup();
 for (const r of list) {
   if (!only && fs.existsSync(`${outDir}/${String(r.i).padStart(3, "0")}_${r.rep}.jpg`)) continue;
   try {
-    const url = await page.evaluate(([id, label]) => window.__cap(id, label), [r.rep, `#${r.i} ${r.rep}  [${r.r}]  x${r.n || 1}`]);
+    const [url, white] = await page.evaluate(([id, label]) => window.__cap(id, label), [r.rep, `#${r.i} ${r.rep}  [${r.r}]  x${r.n || 1}`]);
+    fs.appendFileSync(`${outDir}/white.tsv`, `${r.rep}	${white}
+`);
     fs.writeFileSync(`${outDir}/${String(r.i).padStart(3, "0")}_${r.rep}.jpg`, Buffer.from(url.split(",")[1], "base64"));
     process.stdout.write(".");
   } catch (err) { console.log("\nFAIL", r.rep, err.message); }

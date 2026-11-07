@@ -3,7 +3,7 @@ from PIL import Image
 src, dst, start = sys.argv[1], sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else 0
 r = json.load(open('recipes.json')); idx = {x['rep']: i for i, x in enumerate(r)}
 os.makedirs(dst, exist_ok=True)
-fs = sorted(os.listdir(src), key=lambda f: idx.get(f.split('_')[0], 999))
+fs = sorted((f for f in os.listdir(src) if f.endswith('.jpg')), key=lambda f: idx.get(f.split('_')[0], 999))
 done = set(open(dst + '/done.txt').read().split()) if os.path.exists(dst + '/done.txt') else set()
 fs = [f for f in fs if f not in done]
 out = []

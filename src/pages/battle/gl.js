@@ -378,6 +378,10 @@ for (const t of TYPES) {
   ramp(`${t}.m`, [[0, TYPE_COLOR[t], 0], [.08, TYPE_COLOR[t], 1], [.7, TYPE_COLOR[t], .9], [1, DEEP[t], 0]]);
   ramp(`${t}.h`, [[0, TYPE_COLOR[t], 0], [.15, TYPE_COLOR[t], 1], [.85, TYPE_COLOR[t], 1], [1, TYPE_COLOR[t], 0]]);
 }
+// the pale types' light held at a deeper tone, halfway to their deep colour (2026-11-07 round 4: Flying's, Steel's and Ice's own colours
+// are almost white, and a blow's star and streaks of them over a pale body summed to a white body)
+const mid = (a, b) => "#" + [1, 3, 5].map(i => Math.round((parseInt(a.slice(i, i + 2), 16) + parseInt(b.slice(i, i + 2), 16)) / 2).toString(16).padStart(2, "0")).join("");
+for (const t of ["flying", "steel", "ice", "rock"]) { const m = mid(TYPE_COLOR[t], DEEP[t]); ramp(`${t}.d`, [[0, m, 0], [.08, m, 1], [.75, m, .9], [1, DEEP[t], 0]]); }
 // a blow of no type is lit warm, the games' pale gold (its type colour is almost white, and stacked light of it read as a white-out)
 ramp("normal.m", [[0, "#F5C85A", 0], [.08, "#F5C85A", 1], [.7, "#F0BC48", .9], [1, "#C88A10", 0]]);
 ramp("normal.h", [[0, "#FFD978", 0], [.15, "#FFD978", 1], [.85, "#FFD06A", 1], [1, "#FFD06A", 0]]);
