@@ -47,6 +47,8 @@
 
 ## 검증
 
+Champions 선발전의 사이트 배틀 입장 검사도 선택한 방식의 탈락 기준을 따른다. `docs/db/championship_single_qualifier_battle_guard.sql`을 운영에 추가 적용했다. 기존 PIN과 파티 조회 및 권한은 유지하며 본선 정원에 도달한 Single 선발전의 새 배틀 입장을 차단한다. 실제 battle seat 함수와 네 가지 선발전/본선 조합을 격리 DB에서 함께 검증했다.
+
 2026-11-08 `bracket_manual_registration_and_rookie_champion_promotion`, `choose_elimination_format_at_bracket_creation`를 운영 DB에 적용했다. 강진영의 완료된 38회 루키 신청과 우승 기록을 유지하고 같은 Player ID로 마스터 신청을 별도 추가했다. 방식 선택 migration 전후 Event 63개, Registration 322개, Submission 84개, Result 216개, Runtime 3개의 개수와 전체 행 digest가 일치했다. 운영 authenticated RPC로 실제 생성, 실패 시 방식 롤백, 동일 요청 재시도, 생성 후 방식 변경 차단을 검증하고 검증 데이터는 모두 롤백했다. 새 쓰기 함수는 SECURITY INVOKER이며 anon 실행 권한이 없다.
 
 검증은 단위 테스트 557개, 격리 PostgreSQL 통합 검사 28개, production build를 통과했다. 선발전/본선 Single과 Double의 네 조합, 관리자 수동 추가와 자격 검증, 루키 우승자 승격 시 기존 기록 보존과 열린 마스터로 파티 제출 연결을 포함한다. 390px/1440px의 두 테마에서 실제 생성 컴포넌트의 방식 선택과 수동 추가도 확인했다. 대응 프런트엔드는 main에 병합하고 GitHub Pages 배포 결과를 확인한다.

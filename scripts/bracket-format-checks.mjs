@@ -8,6 +8,8 @@ export async function verifyBracketFormats({pg,q,scalar,as,check,season}) {
   await pg.exec(readFileSync("docs/db/normalized_bracket_winner_rpc.sql","utf8"));
   await pg.exec(readFileSync("docs/db/match_outcome.sql","utf8"));
   await pg.exec(readFileSync("docs/db/bracket_format_at_creation.sql","utf8"));
+  await pg.exec(readFileSync("docs/db/battle_random_seat.sql","utf8"));
+  await pg.exec(readFileSync("docs/db/championship_single_qualifier_battle_guard.sql","utf8"));
   await as("authenticated");
   async function people(event,count) {
     const rows=[];
@@ -80,6 +82,12 @@ export async function verifyBracketFormats({pg,q,scalar,as,check,season}) {
         }else{
           await q("insert into matches(event_id,source,source_node_key,match_kind,round_number,stage_label,sequence_no,entry_a_id,entry_b_id,winner_entry_id,resolution) values($1,'normalized_bracket_runtime',$2,'bracket',$3,$4,$5,$6,$7,$6,'played') on conflict(event_id,source,source_node_key) where source_node_key is not null do update set winner_entry_id=excluded.winner_entry_id,resolution='played'",[qualifier,m.source_node_key,m.round_number,m.stage_label,m.sequence_no,m.entry_a_id,m.entry_b_id]);
         }
+      }
+      if(qt==="single_elimination"){
+        const next=await scalar("select source_node_key from matches where event_id=$1 and winner_entry_id is null limit 1",[qualifier]);
+        assert.ok(next,"an unplayed first-round match remains at the survivor target");
+        const seat=await scalar("select public.battle_official_seat($1,$2,'invalid','0000')",[qualifier,next]);
+        assert.equal(seat.status,"qualifier_done","a Single qualifier stops official battle admission at one-loss survivor target");
       }
       await q("select * from finalize_championship_qualifier($1)",[qualifier]);
       const regs=await q("select * from event_registrations where event_id=$1",[final]);
