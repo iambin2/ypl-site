@@ -15,7 +15,7 @@ import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
 import { currentStreakGame, keepStreakStart, readBattleRow, readSeat, streakNextGame } from "../../services/battleService.js";
 import { VISITOR_EVENT, myPlayerLink, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
 import { LEVELS } from "../../services/cpuLevels.js";
-import { STREAK_LEVELS, STREAK_STEP, floorGame, gameWords, streakFloor, streakFresh, streakLevel, streakMaster, streakStake } from "../../services/streak.js";
+import { STREAK_LEVELS, STREAK_STEP, floorGame, gameWords, streakFloor, streakFresh, streakLevel, streakMaster } from "../../services/streak.js";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { banner } from "./stageFx.js";
 import { LobbyArena, LobbyStage } from "./Stage.jsx";
@@ -35,16 +35,17 @@ const STEPS = STREAK_LEVELS.map((id, i) => ({
   id, floor: i + 1, master: streakLevel(i * STREAK_STEP + STREAK_STEP - 1),
   games: i < STREAK_LEVELS.length - 1 ? `${i * STREAK_STEP + 1}~${(i + 1) * STREAK_STEP}판` : `${i * STREAK_STEP + 1}판부터`,
 }));
-// the month's board, read once for what a game's stake says (null while read or when it cannot be)
+// the month's board, read once at a game's end to know whether the run is the account's best this month (null while read or when it cannot be)
 function useBoard() {
   const [board, setBoard] = useState(null);
   useEffect(() => { let on = true; readStreakBoard().then(rows => on && setBoard(rows), () => {}); return () => { on = false; }; }, []);
   return board;
 }
 
-/* the floor a run stands on: its seven games as cells on the seam, the won ones inverted, the one being played with the amber lamp
-   (a live thing), the next one lit with 다음 while the run rests, the rest off; the seventh is the floor's master. wins: the games
-   won so far; playing: whether the game after them is on now */
+/* the floor a run stands on: its seven games as cells on the seam, said by light alone (DESIGN.md "Composing a screen" 22): the won
+   ones inverted, the one being played lit with the amber lamp before its number (a live thing), the next one lit while the run rests,
+   the rest off; the seventh is 주인, the floor's master. The number, with its lamp, stands at the cell's centre. wins: the games won
+   so far; playing: whether the game after them is on now */
 export function FloorCells({ wins, playing = false }) {
   const floor = streakFloor(wins), now = floorGame(wins);
   return <div className="stack streak-floor" role="list" aria-label={`${floor}층, 일곱 판 가운데 ${now - 1}판 이김`}>
@@ -52,23 +53,22 @@ export function FloorCells({ wins, playing = false }) {
       const n = i + 1, won = n < now, here = n === now;
       return <span key={n} role="listitem" className={(won ? "inv" : "pn") + " streak-cell" + (!won && !here ? " off" : "")}
         aria-label={`${n === STREAK_STEP ? "층의 주인" : `${n}번째 판`}${won ? ", 이김" : here ? (playing ? ", 지금" : ", 다음") : ""}`}>
+        {here && playing && <i className="lamp sig" aria-hidden="true" />}
         <b className="t12">{n === STREAK_STEP ? "주인" : String(n)}</b>
-        {here && (playing ? <i className="lamp sig" aria-hidden="true" /> : <span className="t12 dim">다음</span>)}
       </span>;
     })}
   </div>;
 }
 
-/* what a game of the run has at stake, beside it while it is played: which game it is, the streak riding on it lit at 32, the floor,
-   and one grey line on what the next win changes (streak.js streakStake). A floor's master inverts. wins: the games won before it */
+/* a game of the run, beside it while it is played: which game it is, the streak riding on it lit at 32 with its unit, and the floor
+   joined under it. No sentence says what is at stake; the number and the floor do (DESIGN.md "Composing a screen" 22). A floor's
+   master inverts. wins: the games won before it */
 export function StreakStake({ wins }) {
-  const board = useBoard();
   const master = streakMaster(wins);
   return <div className="stack streak-stake">
     <div className={(master ? "inv" : "pn") + " streak-stake-head"}>
-      <span className="t12 dim">{master ? `${streakFloor(wins)}층의 주인` : gameWords(wins)}</span>
-      <span className="streak-stake-board"><Seg value={String(wins)} h={32} cells={2} label={`${wins}연승`} /><span className="t15">연승이 걸린 판</span></span>
-      <span className="t12 dim">{streakStake(wins, board)}</span>
+      <span className="t12 dim">{gameWords(wins)}</span>
+      <span className="streak-stake-board"><Seg value={String(wins)} h={32} cells={2} label={`${wins}연승`} /><span className="t15">연승</span></span>
     </div>
     <FloorCells wins={wins} playing />
   </div>;
@@ -107,7 +107,7 @@ const masterCall = (dark, scope, wins) => (!streakMaster(wins) ? dark
   : dark.then(() => banner(document.querySelector(`${scope} .bs-stage`), `${streakFloor(wins)}층의 주인`)).catch(() => {}));
 
 /* the run lit: its streak at 84 (this device's run while it goes on, else the month's best of the account; dark when there is none),
-   with the rule it keeps as its grey line, the floor the run stands on, then the floors, the one it stands on inverted */
+   the floor the run stands on, then the floors, the one it stands on inverted. No line explains the rule; the floors show it */
 function RunBoard({ run, best, approved, step }) {
   const value = run ? run.wins : approved && best != null ? best : null;
   const label = run ? "진행 중인 도전" : approved ? "이번 달 내 최고 기록" : "연승 도전";
@@ -115,7 +115,6 @@ function RunBoard({ run, best, approved, step }) {
     <div className="pn streak-hero">
       <span className="t12 dim streak-hero-label">{run && <i className="lamp sig" aria-hidden="true" />}{label}</span>
       <span className="streak-hero-board"><Seg value={value == null ? "" : String(value)} h={84} cells={2} label={value == null ? "" : `${value}연승`} /><span className="t20">연승</span></span>
-      <span className="t12 dim">한 번 지면 도전이 끝나고, 이긴 판 수가 그달의 기록입니다. 일곱 번째 판마다 층의 주인이 기다립니다.</span>
     </div>
     {run && <FloorCells wins={run.wins} playing={run.playing} />}
     <div className="stack streak-ladder" role="list" aria-label="층">
@@ -215,7 +214,8 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp }) {
 }
 
 /* the swap after a won game within a floor: one of ours for one of the party just beaten, each chosen by a tap on its six (the one
-   chosen inverted), or neither. species: that party's six, { species, name } */
+   chosen inverted), or neither; with both chosen the main key says 바꾸고 다음 판, which is all the swap says of itself. species: that
+   party's six, { species, name } */
 function SwapSix({ label, species, value, onChange }) {
   return <section className="streak-swap-side" aria-label={label}>
     <span className="t12 dim">{label}</span>
@@ -246,8 +246,7 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, set
   const resting = won && !seat?.ended;
   const level = LEVELS[streakLevel(wins)];
   const master = streakMaster(wins);
-  const mine = board?.find(r => r.mine);
-  const best = Boolean(mine && wins > 0 && mine.wins === wins);
+  const best = Boolean(board?.find(r => r.mine && wins > 0 && r.wins === wins));
   // ponytail: the species are matched by name; a party with two forms of one species cannot be drawn (one of each species)
   const swapping = resting && !streakFresh(wins) && ours.length === 6 && theirs.length === 6;
   const swap = swapping && give && take ? { give, take } : null;
@@ -263,26 +262,21 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, set
       onOpen(made.id);
     } catch (e) { await dark; standUp(); setError(e.message); setBusy(false); }
   };
-  // what the end says under the counter: a floor passed, or where the run stands on the month's board
-  const line = resting && streakFresh(wins) ? `${streakFloor(wins) - 1}층을 넘었습니다. ${streakFloor(wins)}층에서는 파티를 새로 받습니다.`
-    : !resting && mine && wins > 0 ? (best ? `이번 달 ${mine.place}위 기록입니다.` : `이번 달 내 최고 기록은 ${mine.wins}연승입니다.`) : "";
   return <>
     <div className="stack streak-end">
       <Counter label={best ? "이번 달 내 최고 기록" : "이번 도전"} value={wins} after={<span className="t15">연승</span>} />
       {resting && <div className={(master ? "inv" : "pn") + " stand streak-next"} role="img" aria-label={`다음 상대 ${level.label}${master ? ", 층의 주인" : ""}`}>
-        <span className="t12 dim">{master ? `${streakFloor(wins)}층의 주인` : "다음 상대"}</span>
+        <span className="t12 dim">{gameWords(wins)}</span>
         <b className="t15">{level.label}</b>
         <i className="floor" aria-hidden="true" />
         <Mon src={spriteUrl(level.species)} onError={onSpriteError()} />
       </div>}
     </div>
     {resting && <FloorCells wins={wins} />}
-    {line && <p className="t12 dim streak-end-line">{line}</p>}
-    {swapping && <div className="stack streak-swap">
-      <p className="t12 dim">이긴 상대의 포켓몬 하나를 내 파티의 하나와 바꿀 수 있습니다.</p>
-      <SwapSix label="내 파티에서 보낼 포켓몬" species={ours} value={give} onChange={setGive} />
-      <SwapSix label="상대 파티에서 데려올 포켓몬" species={theirs} value={take} onChange={setTake} />
-    </div>}
+    {swapping && <section className="stack streak-swap" aria-label="교환">
+      <SwapSix label="내 파티" species={ours} value={give} onChange={setGive} />
+      <SwapSix label="상대 파티" species={theirs} value={take} onChange={setTake} />
+    </section>}
     <Dock toast={error ? <Toast error>{error}</Toast> : null}>
       <div className="bt-end-keys">
         {resting ? <Button variant="main" loading={busy} onClick={() => goInto(() => streakNextGame(id, swap), wins)}>{swap ? "바꾸고 다음 판" : "다음 판"}</Button>

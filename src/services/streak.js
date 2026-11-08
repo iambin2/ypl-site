@@ -42,24 +42,6 @@ export const streakCpuOptions = wins => {
 // 이 판의 컴퓨터 파티를 뽑는 randomTeam 옵션
 export const streakFoeDraw = wins => ({ meta: true, ...(streakMaster(wins) ? { top: MASTER_TOP } : {}) });
 
-/* 이 판에 걸린 것: 다음 승리가 무엇을 바꾸는지 한 줄로. board: 이번 달 순위(streak_board의 줄들), 없으면 순위는 말하지 않는다.
-   내 줄이 진행 중이면 이 도전이 이미 내 최고 기록이라 이기면 늘 경신이다. 같은 연승이면 먼저 닿은 사람이 위다. */
-export function streakStake(wins, board = null) {
-  const next = wins + 1;
-  if (streakMaster(wins)) return `층의 주인과의 판입니다. 이기면 ${streakFloor(wins) + 1}층에 오릅니다.`;
-  const rows = Array.isArray(board) ? board : null;
-  const mine = rows?.find(r => r.mine);
-  const best = rows && (!mine || mine.live || next > mine.wins);
-  const others = (rows || []).filter(r => !r.mine);
-  const placeNow = 1 + others.filter(r => r.wins >= Math.max(1, wins)).length;
-  const placeNext = 1 + others.filter(r => r.wins >= next).length;
-  const up = rows && placeNext < placeNow ? placeNext : null;
-  if (up && best) return `이기면 ${up}위에 오르고 이번 달 내 최고 기록이 됩니다.`;
-  if (up) return `이기면 ${up}위에 오릅니다.`;
-  if (best && wins > 0) return "이기면 이번 달 내 최고 기록이 됩니다.";
-  return wins > 0 ? `지면 ${wins}연승에서 도전이 끝납니다.` : "지면 도전이 끝납니다.";
-}
-
 /* 화면이 아는 이름이 이 포켓몬인가. 선출 화면은 몇몇 폼을 숨겨 Gourgeist-*, Greninja-* 처럼 보이고(쇼다운 규칙), 화면은 그 이름으로
    고른다. 한 파티에 같은 종은 하나뿐이라 종으로 맞춰도 하나다 */
 const base = s => String(s).split("-")[0];

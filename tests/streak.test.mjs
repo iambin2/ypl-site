@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MASTER_TOP, STREAK_BUDGET_MS, STREAK_LEVELS, floorGame, streakCpuOptions, streakFloor, streakFoeDraw, streakFresh, streakLevel, streakMaster, streakStake, swapParty } from "../src/services/streak.js";
+import { MASTER_TOP, STREAK_BUDGET_MS, STREAK_LEVELS, floorGame, streakCpuOptions, streakFloor, streakFoeDraw, streakFresh, streakLevel, streakMaster, swapParty } from "../src/services/streak.js";
 import { LEVELS } from "../src/services/cpuLevels.js";
 
 test("a floor is seven games, the seventh its master, and a new floor brings a new party", () => {
@@ -29,21 +29,6 @@ test("the server's computer keeps its 난이도's play and thinks within the tim
     // only the time is the server's: how weak the level plays (its slack, mistakes, reads) is the phone's own
     assert.deepEqual({ ...options, budgetMs: undefined }, { ...LEVELS[id].options, budgetMs: undefined });
   }
-});
-
-test("the stake says what the next win changes: a place, the month's best, the master, or what a loss ends", () => {
-  const board = [
-    { place: 1, wins: 9, mine: false }, { place: 2, wins: 5, mine: false }, { place: 3, wins: 4, mine: true, live: false }, { place: 4, wins: 2, mine: false },
-  ];
-  // a tie stays under whoever reached it first: 5 wins is still 3rd behind the 5 reached earlier, 6 is 2nd
-  assert.equal(streakStake(4, board), "이기면 이번 달 내 최고 기록이 됩니다.");
-  assert.equal(streakStake(5, board), "이기면 2위에 오르고 이번 달 내 최고 기록이 됩니다.");
-  assert.equal(streakStake(2, board), "이기면 3위에 오릅니다.");
-  assert.equal(streakStake(6, board), "층의 주인과의 판입니다. 이기면 2층에 오릅니다.");
-  // the run is itself the month's best (its row is live): every win is a new best
-  assert.equal(streakStake(10, [{ place: 1, wins: 10, mine: true, live: true }]), "이기면 이번 달 내 최고 기록이 됩니다.");
-  assert.equal(streakStake(2, [{ place: 1, wins: 30, mine: false }, { place: 2, wins: 12, mine: true, live: false }]), "지면 2연승에서 도전이 끝납니다.");
-  assert.equal(streakStake(0, null), "지면 도전이 끝납니다.");
 });
 
 test("a swap takes one of the beaten party for one of ours, never two of a species or an item", () => {
