@@ -161,37 +161,10 @@ function ResultRow({ result, detailData, chosen, onChoose }) {
   return <Row className={"calc-result" + (chosen ? " inv" : "") + (quiet ? " quiet" : "")} title={name} line={meta} value={value} onClick={quiet ? undefined : onChoose} />;
 }
 
-function DirectionResults({ title, results, detailData, emptyText }) {
-  const live = results.filter(result => !result.status && !result.error && result.max > 0);
-  const [chosen, setChosen] = useState(null);
-  const shown = live.find(result => result.moveId === chosen) || live[0] || null;
-  return (
-    <div className="calc-direction">
-      <p className="t12 dim">{title}</p>
-      {results.length ? (
-        <>
-          {shown && <ResultBoard result={shown} detailData={detailData} />}
-          {results.length > 1 && <div className="stack calc-results">
-            {results.map((result, index) => <ResultRow key={`${result.moveId}-${index}`} result={result} detailData={detailData} chosen={result === shown} onChoose={() => setChosen(result.moveId)} />)}
-          </div>}
-        </>
-      ) : <p className="t15 reg dim calc-empty">{emptyText}</p>}
-    </div>
-  );
-}
-
-function SideCard({ index, side, record, pokemon, detailData, legalItems, display, onChange, onPickPokemon, onImport, onClear, hasSavedTeams }) {
-  const [picker, setPicker] = useState(null);
+/* the attacker's four moves, picked right where their damage is read */
+function MovePicks({ side, pokemon, detailData, onChange }) {
+  const [slot, setSlot] = useState(null);
   const learnset = useMemo(() => learnsetFor(detailData, pokemon), [detailData, pokemon]);
-  const lockedItem = requiredItemForPokemon(detailData, pokemon);
-  const nature = ALIGNMENTS.find(entry => entry.id === side.nature) || ALIGNMENTS[0];
-  const engine = useMemo(() => buildPokemon(detailData, record, side), [detailData, record, side]);
-  const total = spTotal(side);
-  const set = patch => onChange({ ...side, ...patch });
-  const setSp = (key, value) => set({ sp: { ...side.sp, [key]: Math.max(0, Math.min(32, Math.round(Number(value) || 0))) } });
-  const setBoost = (key, value) => set({ boosts: { ...side.boosts, [key]: value } });
-  const ability = side.ability || record?.abilities?.[0] || "";
-
   const moveItems = useMemo(() => learnset.map(id => {
     const move = detailData?.moves?.[id];
     const korean = moveName(detailData, id);
@@ -202,6 +175,56 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
       search: `${korean}${moveEnglishName(detailData, id)}`.toLowerCase().replace(/\s+/g, ""),
     };
   }).sort((a, b) => a.label.localeCompare(b.label, "ko")), [learnset, detailData]);
+  const setMoves = moves => onChange({ ...side, moves });
+  return (
+    <>
+      <div className="cells calc-moves">
+        {side.moves.map((id, index) => {
+          const move = detailData?.moves?.[id];
+          return <Cell key={index} label={`기술 ${index + 1}`}><PickField label={`기술 ${index + 1}`} value={id ? moveName(detailData, id) : ""} placeholder="기술 선택"
+            typeId={toID(move?.type)} typeLabel={move ? TYPE_KO[move.type] : ""} onOpen={() => setSlot(index)}
+            onClear={() => setMoves(side.moves.map((m, i) => i === index ? "" : m))} /></Cell>;
+        })}
+      </div>
+      {slot != null && <PickerSheet title={`기술 ${slot + 1}`} placeholder="기술 검색" items={moveItems} selected={side.moves[slot]}
+        emptyText={learnset.length ? "검색 결과가 없습니다." : "배우는 기술 정보를 찾지 못했습니다."}
+        onPick={value => setMoves(side.moves.map((m, i) => i === slot ? value : (m === value ? "" : m)))} onClose={() => setSlot(null)} />}
+    </>
+  );
+}
+
+function DirectionResults({ title, results, detailData, emptyText, children }) {
+  const live = results.filter(result => !result.status && !result.error && result.max > 0);
+  const [chosen, setChosen] = useState(null);
+  const shown = live.find(result => result.moveId === chosen) || live[0] || null;
+  return (
+    <div className="calc-direction">
+      <p className="t12 dim">{title}</p>
+      {children}
+      {results.length ? (
+        <>
+          {shown && <ResultBoard result={shown} detailData={detailData} />}
+          {results.length > 1 && <div className="stack calc-results">
+            {results.map((result, index) => <ResultRow key={`${result.moveId}-${index}`} result={result} detailData={detailData} chosen={result === shown} onChoose={() => setChosen(result.moveId)} />)}
+          </div>}
+        </>
+      ) : emptyText ? <p className="t15 reg dim calc-empty">{emptyText}</p> : null}
+    </div>
+  );
+}
+
+function SideCard({ index, side, record, pokemon, detailData, legalItems, display, onChange, onPickPokemon, onImport, onClear, hasSavedTeams }) {
+  const [picker, setPicker] = useState(null);
+  const lockedItem = requiredItemForPokemon(detailData, pokemon);
+  const nature = ALIGNMENTS.find(entry => entry.id === side.nature) || ALIGNMENTS[0];
+  const engine = useMemo(() => buildPokemon(detailData, record, side), [detailData, record, side]);
+  const total = spTotal(side);
+  const set = patch => onChange({ ...side, ...patch });
+  // one stat stops where the six would pass 66, as in the team builder
+  const setSp = (key, value) => set({ sp: { ...side.sp, [key]: Math.max(0, Math.min(32, 66 - (total - side.sp[key]), Math.round(Number(value) || 0))) } });
+  const setBoost = (key, value) => set({ boosts: { ...side.boosts, [key]: value } });
+  const ability = side.ability || record?.abilities?.[0] || "";
+
   const itemItems = useMemo(() => [
     { value: "", label: "도구 없음", search: "도구없음none" },
     ...legalItems.filter(item => !item.megaStone).map(item => ({ value: item.id, label: itemName(detailData, item.id), sub: item.name !== itemName(detailData, item.id) ? item.name : "", search: `${itemName(detailData, item.id)}${item.name}`.toLowerCase().replace(/\s+/g, "") }))
@@ -252,32 +275,21 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
         </div>
 
         <div className="tb-editor-section calc-section">
-          <div className="tb-subhead"><span className="t12 dim">능력 포인트와 랭크, 개별 최대 32, 총합 최대 66</span><b className={"t12" + (total > 66 ? " over" : "")}>{total} / 66</b></div>
+          <div className="tb-subhead"><span className="t12 dim">능력 포인트와 랭크, 글자를 누르면 0과 32</span><b className={"t12" + (total > 66 ? " over" : "")}>{total} / 66</b></div>
           <div className="tb-stats">
             {STAT_KEYS.map(key => {
               const base = record?.baseStats?.[key];
               const final = engine?.rawStats?.[key];
               return (
                 <div className="calc-stat-row" key={key}>
-                  <span className="t12 tb-stat-key" title={`${STAT_LABELS[key]}, 종족값 ${base ?? "확인 중"}`}>{STAT_LETTERS[key]}{nature.plus === key ? "↑" : nature.minus === key ? "↓" : ""}</span>
+                  <button type="button" className="t12 tb-stat-key calc-stat-key" title={`${STAT_LABELS[key]}, 종족값 ${base ?? "확인 중"}`}
+                    aria-label={`${STAT_LABELS[key]} 능력 포인트 ${side.sp[key] ? "0으로" : "32로"}`} onClick={() => setSp(key, side.sp[key] ? 0 : 32)}>{STAT_LETTERS[key]}{nature.plus === key ? "↑" : nature.minus === key ? "↓" : ""}</button>
                   <span className="tb-bar"><i style={{ transform: `scaleX(${side.sp[key] / 32})` }} /><input type="range" min="0" max="32" step="1" value={side.sp[key]} onChange={event => setSp(key, event.target.value)} aria-label={`${STAT_LABELS[key]} 능력 포인트 슬라이더`} /></span>
                   <input className="tb-stat-number" type="number" min="0" max="32" step="1" inputMode="numeric" value={side.sp[key]} onChange={event => setSp(key, event.target.value)} aria-label={`${STAT_LABELS[key]} 능력 포인트`} />
                   {BOOST_KEYS.includes(key) ? <Stepper value={side.boosts[key]} min={-6} max={6} label={`${STAT_LABELS[key]} 랭크`} onChange={value => setBoost(key, value)} /> : <span />}
                   <b className="t15 calc-final">{final ?? ""}</b>
                 </div>
               );
-            })}
-          </div>
-        </div>
-
-        <div className="tb-editor-section calc-section">
-          <div className="tb-subhead"><span className="t12 dim">기술, 챔피언스에서 배우는 기술</span></div>
-          <div className="cells calc-moves">
-            {side.moves.map((id, slot) => {
-              const move = detailData?.moves?.[id];
-              return <Cell key={slot} label={`기술 ${slot + 1}`}><PickField label={`기술 ${slot + 1}`} value={id ? moveName(detailData, id) : ""} placeholder="기술 선택"
-                typeId={toID(move?.type)} typeLabel={move ? TYPE_KO[move.type] : ""} onOpen={() => setPicker(slot)}
-                onClear={() => set({ moves: side.moves.map((m, i) => i === slot ? "" : m) })} /></Cell>;
             })}
           </div>
         </div>
@@ -293,9 +305,6 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
       </>}
 
       {picker === "item" && <PickerSheet title="도구" placeholder="도구 검색" items={itemItems} selected={side.item} onPick={value => set({ item: value })} onClose={() => setPicker(null)} />}
-      {typeof picker === "number" && <PickerSheet title={`기술 ${picker + 1}`} placeholder="기술 검색" items={moveItems} selected={side.moves[picker]}
-        emptyText={learnset.length ? "검색 결과가 없습니다." : "배우는 기술 정보를 찾지 못했습니다."}
-        onPick={value => set({ moves: side.moves.map((m, i) => i === picker ? value : (m === value ? "" : m)) })} onClose={() => setPicker(null)} />}
     </div>
   );
 }
@@ -316,7 +325,7 @@ function FieldCard({ field, onChange }) {
   );
 }
 
-function DamageView({ sides, setSide, field, setField, records, pokemons, engines, detailData, legalItems, display, openPokemonPicker, openImport, hasSavedTeams }) {
+function DamageView({ sides, setSide, swapSides, field, setField, records, pokemons, engines, detailData, legalItems, display, openPokemonPicker, openImport, hasSavedTeams }) {
   const [editing, setEditing] = useState(0);
   const results = [0, 1].map(from => {
     const to = 1 - from;
@@ -327,26 +336,36 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
   const duel = speedDuel({ a: engines[0], b: engines[1], sideA: sides[0], sideB: sides[1], field });
   const nameOf = index => pokemons[index] ? display(pokemons[index]) : SIDE_NAMES[index];
   const ready = engines[0] && engines[1];
-  const directionEmpty = from => !pokemons[from] ? `${SIDE_NAMES[from]}을 선택해 주세요.` : !pokemons[1 - from] ? `${SIDE_NAMES[1 - from]}을 선택해 주세요.` : "기술을 선택하면 대미지가 여기에 나옵니다.";
+  const clearSide = index => setSide(index, { ...emptySide(), conds: sides[index].conds });
+  const directionEmpty = from => !pokemons[from] ? `${SIDE_NAMES[from]}을 선택해 주세요.` : !pokemons[1 - from] ? `${SIDE_NAMES[1 - from]}을 선택해 주세요.` : "";
   return (
     <>
       <div className="stack calc-versus">
         {[0, 1].map(index => (
-          <button type="button" key={index} className="pn stand calc-vs" onClick={() => openPokemonPicker(index)} aria-label={`${SIDE_NAMES[index]} ${pokemons[index] ? "바꾸기" : "선택"}`}>
-            <span className="t12 dim calc-vs-label">{index ? "상대" : SIDE_NAMES[0]}</span>
-            {pokemons[index] ? <Mon src={spriteUrl(pokemons[index].name)} /> : <span className="calc-vs-empty"><Icon n="plus" size={20} /></span>}
-            <span className="floor calc-vs-band">
-              <b className="t15">{pokemons[index] ? nameOf(index) : `${SIDE_NAMES[index]} 선택`}</b>
-              {pokemons[index] && <span className="t12 reg dim">{spLine(sides[index])}</span>}
-            </span>
-          </button>
+          <div key={index} className="calc-vs-slot">
+            <button type="button" className="pn stand calc-vs" onClick={() => openPokemonPicker(index)} aria-label={`${SIDE_NAMES[index]} ${pokemons[index] ? "바꾸기" : "선택"}`}>
+              <span className="t12 dim calc-vs-label">{index ? "상대" : SIDE_NAMES[0]}</span>
+              {pokemons[index] ? <Mon src={spriteUrl(pokemons[index].name)} /> : <span className="calc-vs-empty"><Icon n="plus" size={20} /></span>}
+              <span className="floor calc-vs-band">
+                <b className="t15">{pokemons[index] ? nameOf(index) : `${SIDE_NAMES[index]} 선택`}</b>
+                {pokemons[index] && <span className="t12 reg dim">{spLine(sides[index])}</span>}
+              </span>
+            </button>
+            {pokemons[index] && <button type="button" className="tb-clear calc-vs-x" onClick={() => clearSide(index)} aria-label={`${SIDE_NAMES[index]} 비우기`}><Icon n="x" size={16} /></button>}
+          </div>
         ))}
       </div>
-      {duel && <p className="t12 reg dim calc-speed-line"><b className="t12">{duel.speedA} : {duel.speedB}</b> {duel.first === "tie" ? "스피드가 같아 먼저 움직일 쪽은 무작위입니다." : `${josa(nameOf(duel.first === "a" ? 0 : 1), "이", "가")} 먼저 움직입니다${duel.trickRoom ? " (트릭룸)" : ""}.`}</p>}
+      {(pokemons[0] || pokemons[1]) && <div className="calc-speed-row">
+        {duel && <p className="t12 reg dim calc-speed-line"><b className="t12">{duel.speedA} : {duel.speedB}</b> {duel.first === "tie" ? "스피드가 같아 먼저 움직일 쪽은 무작위입니다." : `${josa(nameOf(duel.first === "a" ? 0 : 1), "이", "가")} 먼저 움직입니다${duel.trickRoom ? " (트릭룸)" : ""}.`}</p>}
+        <Button variant="link" onClick={swapSides}>서로 바꾸기</Button>
+      </div>}
       {/* with neither Pokémon chosen the two panels above already ask for them: the directions wait until one is */}
       {(pokemons[0] || pokemons[1]) && <div className="calc-directions">
-        <DirectionResults title={`${nameOf(0)}의 공격`} results={ready ? results[0] : []} detailData={detailData} emptyText={directionEmpty(0)} />
-        <DirectionResults title={`${nameOf(1)}의 공격`} results={ready ? results[1] : []} detailData={detailData} emptyText={directionEmpty(1)} />
+        {[0, 1].map(from => (
+          <DirectionResults key={from} title={`${nameOf(from)}의 공격`} results={ready ? results[from] : []} detailData={detailData} emptyText={directionEmpty(from)}>
+            {pokemons[from] && <MovePicks side={sides[from]} pokemon={pokemons[from]} detailData={detailData} onChange={next => setSide(from, next)} />}
+          </DirectionResults>
+        ))}
       </div>}
 
       <section className="calc-sec" aria-labelledby="calc-field-h"><SectionHead id="calc-field-h" title="배틀 조건" /><FieldCard field={field} onChange={setField} /></section>
@@ -359,7 +378,7 @@ function DamageView({ sides, setSide, field, setField, records, pokemons, engine
         {[0, 1].map(index => (
           <SideCard key={index} index={index} side={sides[index]} record={records[index]} pokemon={pokemons[index]} detailData={detailData} legalItems={legalItems} display={display}
             onChange={next => setSide(index, next)} onPickPokemon={() => openPokemonPicker(index)} onImport={() => openImport(index)} hasSavedTeams={hasSavedTeams}
-            onClear={() => setSide(index, { ...emptySide(), conds: sides[index].conds })} />
+            onClear={() => clearSide(index)} />
         ))}
       </div>
     </>
@@ -599,6 +618,7 @@ export default function CalculatorPage() {
   const engines = useMemo(() => sides.map((side, index) => buildPokemon(detailData, records[index], side)), [detailData, sides, records[0], records[1]]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setSide = (index, next) => setSides(current => current.map((side, i) => i === index ? next : side));
+  const swapSides = () => setSides(([a, b]) => [b, a]);
   const choosePokemon = (index, name) => {
     const pokemon = poolByName.get(name);
     const record = dexRecord(detailData, pokemon);
@@ -664,7 +684,7 @@ export default function CalculatorPage() {
         </div>
       ) : loading ? <Loader /> : (
         <div className="calc-swap swap" key={tab}>
-          {tab === "damage" && <DamageView sides={sides} setSide={setSide} field={field} setField={setField} records={records} pokemons={pokemons} engines={engines}
+          {tab === "damage" && <DamageView sides={sides} setSide={setSide} swapSides={swapSides} field={field} setField={setField} records={records} pokemons={pokemons} engines={engines}
             detailData={detailData} legalItems={legalItems} display={display} openPokemonPicker={setPicker} openImport={setImportFor} hasSavedTeams={savedTeams.length > 0} />}
           {tab === "speed" && <SpeedView sides={sides} engines={engines} pokemons={pokemons} pool={pool} detailData={detailData} display={display} field={field} openPokemonPicker={setPicker} />}
           {tab === "dex" && <DexView pokemon={poolByName.get(dexName) || null} detailData={detailData} display={display} openPicker={() => setPicker("dex")} onUse={useInCalculator} />}

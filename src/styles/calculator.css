@@ -22,7 +22,13 @@
 /* an empty side: the + stands in the middle of the whole panel, its words on the band below */
 .calc-vs-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mute); }
 .calc-vs-band { display: grid; align-content: center; gap: var(--s1); padding: 0 var(--pad); }
+/* the x that empties a side stands in the panel's top corner, beside its label */
+.calc-vs-slot { position: relative; min-width: 0; }
+.calc-vs-x { top: 0; translate: none; z-index: var(--z-raised); }
 .calc-vs-band > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* who moves first, and the key that turns the two around at the row's end */
+.calc-speed-row { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-control); }
+.calc-speed-row > .btn { margin-left: auto; flex: none; }
 .calc-speed-line b { color: var(--lit); font-variant-numeric: tabular-nums; }
 
 /* ---------- damage: the chosen move lit as a board, the other moves as rows ---------- */
@@ -64,6 +70,9 @@
 .calc-hp b { font-variant-numeric: tabular-nums; text-align: right; }
 .calc-section { margin-top: 0; }
 .calc-stat-row { display: grid; grid-template-columns: var(--s8) minmax(0, 1fr) var(--h-control) calc(var(--s21) + var(--s5)) var(--h-control); align-items: center; gap: var(--s3); min-height: var(--h-control); }
+/* the stat's letter is a key: 0 or 32 in one press */
+.calc-stat-key { align-self: stretch; text-align: left; transition: color var(--move-tone); }
+@media (hover: hover) { .calc-stat-key:hover { color: var(--lit); } }
 .calc-final { justify-self: end; font-variant-numeric: tabular-nums; }
 
 .calc-stepper { display: grid; grid-template-columns: var(--h-strip) minmax(0, 1fr) var(--h-strip); align-items: center; height: var(--h-strip); background: var(--panel); }

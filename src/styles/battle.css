@@ -135,7 +135,7 @@
 }
 
 /* the end: the result at 32 (inverted for a win and for anyone watching, a panel for a loss), how it went under it, then 다시하기 and
-   새 배틀 side by side, docked on a phone */
+   나가기 side by side, docked on a phone */
 .bt-end { display: grid; gap: var(--s3); min-width: 0; }
 .bt-end-head { display: grid; gap: var(--s1); padding: var(--s5) var(--pad); animation: y-rise var(--move-light) backwards; }
 .bt-end-title { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
@@ -210,7 +210,7 @@
 .bt-logkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 /* 기권: a full key in its own dark red, the one key on the battle screen that is not navy or white */
 .bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
-/* the end's other keys, side by side under 다시하기 and 새 배틀 */
+/* the end's other keys, side by side under 다시하기 and 나가기 */
 /* the match's choice rows (파티 정보, 연출 속도) share the column's width in equal cells: nothing in the match slides sideways */
 .bt-match .chips { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); overflow: visible; }
 .bt-match .chips > * { min-width: 0; justify-content: center; }

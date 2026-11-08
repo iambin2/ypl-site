@@ -1224,7 +1224,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <div className="bt-end-keys">
               {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
                 : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}
-              {onLeave && <Button onClick={onLeave}>새 배틀</Button>}
+              {onLeave && <Button onClick={onLeave}>나가기</Button>}
             </div>
           </Dock>}
           {/* sharing what was just played, as keys under the two: the replay's link, and a board post that carries it. A battle with

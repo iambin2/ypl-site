@@ -27,6 +27,8 @@
 .nw-date { margin-top: var(--s3); }
 .nw-title { margin-top: var(--s2); }
 .nw-counts { margin-top: var(--s5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* one counter alone (신청 without a coming date) takes the whole width, like the spec rows under it */
+.nw-counts > :only-child { grid-column: 1 / -1; }
 .nw-spec { margin-top: var(--s5); }
 .nw-spec.joined { margin-top: var(--seam); }
 .nw-body { margin-top: var(--s8); }
