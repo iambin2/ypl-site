@@ -5,10 +5,10 @@ import { formatDate } from "../services/dateFormat.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, useArrival } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
-import { addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, sitePlayed, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addBracketManualRegistration, addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, sitePlayed, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
-import { buildBracketSubmissionStatusModel } from "../services/teamBuilderCore.js";
+import { buildBracketSubmissionStatusModel, playerNameKey } from "../services/teamBuilderCore.js";
 import { buildBracketPageList } from "../services/historicalBracketReadModel.js";
 import { beginNormalizedBracketDraw, completeNormalizedBracketDraw } from "../services/bracketDrawLifecycle.js";
 import { ChampionsBracketControls } from "../components/ChampionsBracketControls.jsx";
@@ -250,7 +250,8 @@ function BracketWizard({ data, onClose, onCreate }){
   const [step,setStep]=useState(1);
   const [name,setName]=useState("");
   const [mode,setMode]=useState("single");      // single=개인전, team=팀전
-  const [dbl,setDbl]=useState(false);
+  const [topologyKind,setTopologyKind]=useState("");
+  const dbl=topologyKind==="double_elimination";
   const [format,setFormat]=useState("elim");     // elim | group
   const [countStr,setCountStr]=useState("8");
   const count=Math.max(0,parseInt(countStr)||0);
@@ -315,13 +316,9 @@ function BracketWizard({ data, onClose, onCreate }){
     setName(event.name||"");
     setMode(event.is_team_event?"team":"single");
 
-    if(event.competition_format==="round_robin"){
-      setFormat("group");
-      setDbl(false);
-    }else{
-      setFormat("elim");
-      setDbl(event.competition_format==="double_elimination");
-    }
+    setFormat("elim");
+    setTopologyKind("");
+    setAddedParticipants([]);
 
     setEventBusy(true);
     try{
@@ -404,12 +401,13 @@ function BracketWizard({ data, onClose, onCreate }){
   };
   const go=async()=>{
     if(creating)return;
+    if(!topologyKind){setEventError("대진 방식을 선택해 주세요.");return;}
     if(linkedEvent?.championship_phase === "qualifier"){
       try{
         await setChampionshipQualifierDirectSelections(linkedEvent.id,directRegistrationIds);
       }catch(error){ setEventError(error?.message||"본선 직행자를 저장하지 못했습니다."); return; }
     }
-    const parts=(step===3&&placement?.parts)||buildParticipants();
+    let parts=(step===3&&placement?.parts)||buildParticipants();
     if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
     if(format!=="elim"){ setEventError("진행 중인 대회의 대진표는 토너먼트 방식만 지원합니다."); return; }
     if(linkedEvent?.championship_phase === "final"){
@@ -418,19 +416,29 @@ function BracketWizard({ data, onClose, onCreate }){
         if(!preflight.ok){ setEventError(preflight.error); return; }
       }catch(error){ setEventError(error?.message||"본선 대진표 생성 조건을 확인하지 못했습니다."); return; }
     }
-    const useDbl = dbl && parts.length>=3;
-    if(dbl && !useDbl) await siteAlert("싱글 엘리미네이션으로 생성합니다.","참가자가 3명 미만이면 더블 엘리미네이션이 성립하지 않습니다.");
-    let normalizedAttempt=null;
-    if(eventId&&mode==="single"){
-      const attemptKey=JSON.stringify([parts.map(p=>[p.registrationId||null,p.name]),(step===3&&placement?.plan)||null]);
-      if(!normalizedAttemptRef.current||normalizedAttemptRef.current.attemptKey!==attemptKey){
-        normalizedAttemptRef.current={attemptKey,...buildNormalizedSingleCreateAttempt(parts,{plan:(step===3&&placement?.plan)||null})};
-      }
-      normalizedAttempt=normalizedAttemptRef.current;
-    }
+    if(dbl&&parts.length<3){setEventError("더블 엘리미네이션은 참가자가 3명 이상이어야 합니다.");return;}
+    if(new Set(parts.map(p=>playerNameKey(p.name))).size!==parts.length){setEventError("같은 이름의 참가자가 중복되어 있습니다.");return;}
+    const useDbl = dbl;
     setCreating(true);
     let created=false;
     try{
+      if(eventId&&mode==="single"&&!linkedEvent?.championship_phase){
+        const resolved=[];
+        for(const participant of parts){
+          if(participant.registrationId){resolved.push(participant);continue;}
+          const registration=await addBracketManualRegistration(eventId,participant.name);
+          resolved.push({...participant,name:registration.registration_name,registrationId:registration.id,playerId:registration.player_id});
+        }
+        parts=resolved;
+      }
+      let normalizedAttempt=null;
+      if(eventId&&mode==="single"){
+        const attemptKey=JSON.stringify([parts.map(p=>[p.registrationId||null,p.name]),(step===3&&placement?.plan)||null]);
+        if(!normalizedAttemptRef.current||normalizedAttemptRef.current.attemptKey!==attemptKey){
+          normalizedAttemptRef.current={attemptKey,...buildNormalizedSingleCreateAttempt(parts,{plan:(step===3&&placement?.plan)||null})};
+        }
+        normalizedAttempt=normalizedAttemptRef.current;
+      }
       created=await onCreate({ id:uid(), name:name.trim()||"새 대회", createdAt:new Date().toISOString().slice(0,10),
         mode, double:useDbl, format, groupCfg:format==="group"?{groups:gN,adv:aN}:null,
         eventId:eventId||null,
@@ -447,9 +455,8 @@ function BracketWizard({ data, onClose, onCreate }){
         normalizedAttempt,
         plan:(step===3&&placement?.plan)||null,
         graph:null, groups:null, knockout:null, status:"active", applied:null });
-    }finally{
-      setCreating(false);
-    }
+    }catch(error){setEventError(error?.message||"대진표를 생성하지 못했습니다.");}
+    finally{setCreating(false);}
     if(created)onClose();
   };
   const submissionStatusByRegistrationId = new Map((submissionStatuses || []).map(status => [status.registrationId, status]));
@@ -523,7 +530,10 @@ function BracketWizard({ data, onClose, onCreate }){
   const confirmedCount=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;
   const placeable=Boolean(eventId)&&format==="elim";
   const startPlacement=()=>{
+    if(!topologyKind){setEventError("대진 방식을 선택해 주세요.");return;}
     const parts=buildParticipants();
+    if(dbl&&parts.length<3){setEventError("더블 엘리미네이션은 참가자가 3명 이상이어야 합니다.");return;}
+    if(new Set(parts.map(p=>playerNameKey(p.name))).size!==parts.length){setEventError("같은 이름의 참가자가 중복되어 있습니다.");return;}
     if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
     setEventError("");
     setHeld(null);
@@ -609,12 +619,6 @@ function BracketWizard({ data, onClose, onCreate }){
           <Choice name="bk-format" options={["토너먼트","조별예선 + 본선"]} value={format==="group"?"조별예선 + 본선":"토너먼트"} onChange={v=>setFormat(v==="토너먼트"?"elim":"group")}/>
         </div>
 
-        {format==="elim"&&
-          <label className="bk-check">
-            <input type="checkbox" checked={dbl} onChange={e=>setDbl(e.target.checked)}/>
-            <span>더블 엘리미네이션 <i>(패자부활전)</i></span>
-          </label>
-        }
 
         {format==="group"&&
           <div className="bk-grow2">
@@ -624,13 +628,17 @@ function BracketWizard({ data, onClose, onCreate }){
         }
       </>}
 
+      <Field label="대진 방식" hint="이 대진표의 방식을 정합니다. 생성한 뒤에는 바꿀 수 없습니다.">
+        <Dropdown value={topologyKind} onChange={setTopologyKind} placeholder="대진 방식을 선택해 주세요." ariaLabel="대진 방식" options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"}]} />
+      </Field>
       <Dock>
         <div className="stack bk-dock">
           <Button variant="second" onClick={onClose}>취소</Button>
-          <Button variant="main" onClick={()=>setStep(2)} disabled={!manualMode&&(!eventId||eventBusy)}>다음</Button>
+          <Button variant="main" onClick={()=>setStep(2)} disabled={!topologyKind||(!manualMode&&(!eventId||eventBusy))}>다음</Button>
         </div>
       </Dock>
     </>}    {step===2&&<>
+      {eventError&&<FormError>{eventError}</FormError>}
       {eventId&&mode!=="team" ? <>
         {linkedEvent?.championship_phase==="qualifier"&&<div className="field">
           <span className="field-label">본선 직행자 선택</span>
@@ -674,7 +682,7 @@ function BracketWizard({ data, onClose, onCreate }){
             );
           })}
 
-          {!linkedEvent?.championship_phase && !selectedIntakeId && addedParticipants.map((name,i)=>(
+          {!linkedEvent?.championship_phase && addedParticipants.map((name,i)=>(
             <div className="bk-pin bk-participant-confirm-row bk-participant-added" key={`added-${i}`}>
               <span className="bk-pin-no gold">+</span>
               <input
@@ -718,7 +726,7 @@ function BracketWizard({ data, onClose, onCreate }){
             disabled={championshipManualBusy}
           >
             참가자 추가
-          </Button> : !selectedIntakeId&&<Button variant="second"
+          </Button> : <Button variant="second"
             type="button"
             size="sm"
             onClick={()=>setAddedParticipants(prev=>[...prev,""])}

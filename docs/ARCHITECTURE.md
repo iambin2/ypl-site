@@ -218,12 +218,14 @@ Records용 rule display는 `competition_settings.recordRuleLabel`이다.
 | 구분 | Qualifier | Final |
 | --- | --- | --- |
 | `battle_format` | singles 또는 doubles | pair와 동일 |
-| `competition_format` | double_elimination | single_elimination |
+| `competition_format` | 생성 전 NULL, 생성 시 single/double 선택 | 생성 전 NULL, 생성 시 single/double 선택 |
 | division | `NULL` | `NULL` |
 | schedule | `qualifierHeldOn`, `qualifierSubmissionTargetAt` | `finalHeldOn`, `finalSubmissionTargetAt` |
 | Registration/Submission/Snapshot | Qualifier 전용 X | Final 전용 Y |
 
 `battle_format`은 Pokémon battle format이고 `competition_format`은 bracket topology다. 두 개념을 혼동하지 않는다.
+
+공지에서는 대진 방식을 정하지 않는다. `create_selected_bracket_runtime`이 관리자 선택을 해당 Event에 저장하고 실제 runtime을 같은 트랜잭션에서 생성한다. 실패하면 방식 변경도 취소하며, 기존 runtime의 방식을 바꾸는 요청은 거부한다. 통합 접수의 두 리그와 Champions의 두 단계는 각각 선택한다. 공지 수정은 이미 선택한 방식을 보존한다. 적용 스크립트는 `docs/db/bracket_format_at_creation.sql`이다.
 
 Qualifier X와 Final Y는 Player identity만 공유한다. Submission, Snapshot, `final_submission_id`, Registration을 copy, reuse, fallback하지 않는다. Final official roster/HOF는 Final Y만 사용한다.
 
@@ -234,7 +236,7 @@ Qualifier setup은 다음 순서다.
 1. Qualifier EventRegistration 중 direct entrant를 선택하고 normalized direct selection fact로 저장한다. 화면은 선발전 시즌 랭킹 상위 신청자 4명을 추천만 한다(`recommend_championship_direct_entrants`, `docs/db/champions_direct_recommendation.sql`). 고르는 것은 운영자다.
 2. direct entrant를 제외한 Registration 중 actual Qualifier participant를 확정한다.
 3. direct entrant와 no-show는 Qualifier Entry를 만들지 않는다.
-4. actual participant만 Entry/EntryParticipant와 Double Elimination runtime에 들어간다.
+4. actual participant만 Entry/EntryParticipant와 운영자가 선택한 Single 또는 Double Elimination runtime에 들어간다.
 
 `finalCapacity=C`, direct entrant 수 `D`, actual Qualifier participant 수 `A`일 때:
 
@@ -245,7 +247,7 @@ requiredEliminations E = A - Q
 
 `qualification_slots`는 공지 작성 시 운영자가 입력하는 값이 아니다. setup에서 derived `Q`를 Qualifier runtime의 값으로 저장한다.
 
-Qualifier는 Double Elimination의 2패 탈락 Match facts로 E명이 탈락할 때까지 진행한다.
+Qualifier는 Single이면 1패, Double이면 2패 탈락 Match facts로 E명이 탈락할 때까지 진행한다.
 
 - `eliminatedCount < E`: 정상 진행/수정.
 - `eliminatedCount = E`: 새 winner 입력과 새 downstream materialization은 금지, 이미 played된 결정 Match의 correction/cancel은 apply 전 허용.
