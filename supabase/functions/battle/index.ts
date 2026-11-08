@@ -9,7 +9,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME,
-  planMatchWinner, projectRuntimeFacts, STREAK_FORMAT, STREAK_REGULATION, computerTurns, streakGame,
+  planMatchWinner, planTeamSeries, projectRuntimeFacts, parseBoutKey, seriesFromBouts, teamBouts, STREAK_FORMAT, STREAK_REGULATION, computerTurns, streakGame,
 } from "./engine.bundle.mjs";
 
 const CORS = {
@@ -119,6 +119,10 @@ const SEAT_REFUSAL: Record<string, [number, string]> = {
   no_pin: [403, "제출 비밀번호를 아직 정하지 않았습니다. 신청 수정에서 숫자 4자리를 정해 주세요."],
   no_team: [409, "제출한 공식 파티가 없습니다. 파티를 먼저 제출해 주세요."],
   qualifier_done: [409, "본선 진출 인원이 확정되어 이 선발전 경기는 치르지 않습니다."],
+  bad_bout: [404, "팀전 경기에 없는 판입니다."],
+  bout_decided: [409, "이미 결과가 난 판입니다."],
+  ace_not_needed: [409, "에이스 결정전은 일반 판이 모두 끝나 동점일 때만 치릅니다."],
+  played_already: [409, "팀원이 모두 한 판씩 나오기 전에는 같은 선수가 다시 나오지 않습니다."],
 };
 
 const APPLY_REFUSAL: Record<string, string> = {
@@ -136,6 +140,8 @@ async function applyResult(battleId: string) {
     for (let tries = 0; tries < 3; tries++) {
       const { data: battle } = await db.from("battles").select("*").eq("id", battleId).maybeSingle();
       if (!battle || battle.kind !== "official" || battle.applied_at || battle.status !== "ended" || battle.ended_by === "void") return;
+      const bout = parseBoutKey(battle.source_node_key);
+      if (bout) { if (await applyTeamSeries(battle, bout.parent)) return; continue; }
       const winnerEntryId = battle.winner === "p1" ? battle.p1_entry_id : battle.winner === "p2" ? battle.p2_entry_id : null;
       if (!winnerEntryId) throw new Error("무승부라 승자를 넣지 않았습니다.");
       const facts = await rpc("battle_bracket_facts", { p_event_id: battle.event_id });
@@ -161,6 +167,41 @@ async function applyResult(battleId: string) {
     await db.rpc("battle_mark_apply_error", { p_battle_id: battleId, p_error: String((error as Error)?.message || error) });
     signal(battleId, null);
   }
+}
+
+/* A team bout ended (src/services/teamBouts.js). Nothing goes into the bracket until the whole series has a winner: then the series is
+   read from the bout battles, planned exactly as the operators' team entry would (planTeamSeries), and written with every bout battle
+   marked, in one locked transaction. true when done (or nothing to do yet), false when the bracket moved and it should read again. */
+async function applyTeamSeries(battle: Record<string, any>, parent: string) {
+  const facts = await rpc("battle_bracket_facts", { p_event_id: battle.event_id });
+  if (facts?.status !== "ok") throw new Error("대진표를 찾을 수 없습니다.");
+  const ok = (data: unknown) => ({ data, error: null });
+  const projected = projectRuntimeFacts(facts.runtime, facts.event, {
+    slots: ok(facts.slots), entries: ok(facts.entries), participants: ok(facts.participants),
+    matches: ok(facts.matches), registrations: ok(facts.registrations),
+  });
+  const row = (facts.matches || []).find((m: any) => m.match_kind === "bracket" && m.source_node_key === parent);
+  if (!row?.entry_a_id || !row?.entry_b_id) throw new Error(APPLY_REFUSAL.players_changed);
+  if (row.winner_entry_id) throw new Error(APPLY_REFUSAL.decided);
+  const teams = [row.entry_a_id, row.entry_b_id];
+  const members = (entry: string) => (projected.bracket.participants || []).find((p: any) => p.id === entry)?.memberIdentities || [];
+  const { data: battles } = await db.from("battles").select("id, source_node_key, status, winner, ended_by, updated_at, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, p1_name, p2_name")
+    .eq("kind", "official").eq("event_id", battle.event_id).like("source_node_key", `${parent}:%`);
+  const state = teamBouts(battles || [], parent, teams, Math.max(members(teams[0]).length, members(teams[1]).length));
+  if (!state.winner) return true; // more bouts to play
+  const names = new Map([...members(teams[0]), ...members(teams[1])].map((m: any) => [m.playerId, m.name]));
+  const { series, winnerSide } = seriesFromBouts(state, (id: string) => names.get(id));
+  const plan = planTeamSeries(projected, parent, series, winnerSide, new Date().toISOString(), teams);
+  const used = [...state.bouts, state.ace].map(x => x?.battle?.id).filter(Boolean);
+  const result = await rpc("battle_apply_team_series", {
+    p_battle_id: battle.id, p_parent_key: parent, p_winner_entry_id: plan.winnerEntryId, p_expected_stamp: facts.stamp,
+    p_parent_updates: plan.parents.updates, p_parent_inserts: plan.parents.inserts, p_parent_delete_ids: plan.parents.deleteIds,
+    p_child_updates: plan.children.updates, p_child_inserts: plan.children.inserts, p_child_delete_ids: plan.children.deleteIds,
+    p_battle_ids: used,
+  });
+  if (result === "ok" || result === "already") { used.forEach(id => signal(id, null)); return true; }
+  if (result !== "stale") throw new Error(APPLY_REFUSAL[result] || `대진표에 넣지 못했습니다 (${result}).`);
+  return false;
 }
 
 // What a player sees: their request, their own log with their secrets, and whether their choice is waiting on the other side.
@@ -538,10 +579,17 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   /* An official match: a player of that match takes their side's seat with their party PIN, and plays their
      latest official party. The first one in opens the battle, the second starts it. The same player again (another phone)
      gets a new token for the same seat. */
-  async official({ eventId, nodeKey, side, pin }) {
-    const seatInfo = await rpc("battle_official_seat", {
-      p_event_id: String(eventId ?? ""), p_source_node_key: String(nodeKey ?? ""), p_side: String(side ?? ""), p_pin: String(pin ?? ""),
-    });
+  async official({ eventId, nodeKey, side, pin, player }) {
+    // a team bout (src/services/teamBouts.js): the member names themselves, and the seat is theirs, not their team's
+    const bout = parseBoutKey(nodeKey);
+    if (bout && !/^[0-9a-f-]{36}$/i.test(String(player ?? ""))) refuse(403, SEAT_REFUSAL.not_player[1]);
+    const seatInfo = bout
+      ? await rpc("battle_team_seat", {
+        p_event_id: String(eventId ?? ""), p_bout_key: String(nodeKey ?? ""), p_side: String(side ?? ""), p_player_id: String(player ?? ""), p_pin: String(pin ?? ""),
+      })
+      : await rpc("battle_official_seat", {
+        p_event_id: String(eventId ?? ""), p_source_node_key: String(nodeKey ?? ""), p_side: String(side ?? ""), p_pin: String(pin ?? ""),
+      });
     if (seatInfo?.status !== "ok") {
       const [status, message] = SEAT_REFUSAL[seatInfo?.status] || [500, "잠시 뒤 다시 시도해 주세요."];
       refuse(status, message);
@@ -571,6 +619,8 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
         return { id, token, side: "p1" };
       }
       const mine = open.p1_entry_id === seatInfo.entryId ? "p1" : open.p2_entry_id === seatInfo.entryId ? "p2" : null;
+      // in a team bout the side is the team's: only the member who sat there may take it again
+      if (mine && bout && open[`${mine}_player_id`] !== seatInfo.playerId) refuse(409, "이 판의 자리에는 같은 팀의 다른 선수가 먼저 앉았습니다.");
       if (mine) {
         await rpc("battle_set_seat", { p_id: open.id, p_side: mine, p_entry_id: null, p_player_id: null, p_token_hash: hash });
         return { id: open.id, token, side: mine };

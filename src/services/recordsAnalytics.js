@@ -1,4 +1,5 @@
 import { displaySeasonLabel } from "./seasonLabel.js";
+import { parseBoutKey } from "./teamBouts.js";
 
 const BYE = "\u2205BYE";
 
@@ -114,9 +115,12 @@ function stageLabel(graph, stage) {
 }
 // the round a match of a bracket stands in (8강, 결승, 승자조 2라운드), by its id: 중계 names an official battle's match with it
 export function matchStage(bracket, id) {
+  // a team bout (teamBouts.js) is said as its match and the bout: "결승 2경기", "결승 에이스 결정전"
+  const bout = parseBoutKey(id);
   const graph = bracket?.graph;
-  const row = graph && collectGraphMatches(graph).find(({ match }) => match.id === id);
-  return row ? stageLabel(graph, row.stage) : "";
+  const row = graph && collectGraphMatches(graph).find(({ match }) => match.id === (bout ? bout.parent : id));
+  if (!row) return "";
+  return bout ? `${stageLabel(graph, row.stage)} ${bout.ace ? "에이스 결정전" : `${bout.bout}경기`}` : stageLabel(graph, row.stage);
 }
 export function liveMatches(bracket) {
   const graph = bracket?.graph;

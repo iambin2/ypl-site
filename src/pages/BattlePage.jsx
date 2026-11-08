@@ -21,6 +21,7 @@ import { goIn, prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
+import { parseBoutKey } from "../services/teamBouts.js";
 import { watchBattleSignal } from "../services/battleSignal.js";
 import { SPEED_POWER, currentTypes, movePower, moveType, weatherSuppressed } from "./battle/battleWords.js";
 import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels.js";
@@ -733,11 +734,17 @@ function useMatchPlayers(eventId, nodeKey) {
     let alive = true;
     import("../services/index.js").then(s => s.fetchNormalizedBracketRuntime(eventId)).then(facts => {
       const graph = facts?.bracket?.graph;
-      const node = graph && collectGraphMatches(graph).find(m => m.id === nodeKey);
+      // a team bout (teamBouts.js) belongs to its team match: the seat is a member of either team
+      const bout = parseBoutKey(nodeKey);
+      const node = graph && collectGraphMatches(graph).find(m => m.id === (bout ? bout.parent : nodeKey));
       if (!node) { if (alive) setMatch(null); return; }
       const { sp } = evalGraph(graph);
-      const nameOf = entryId => facts.bracket.participants?.find(p => p.entryId === entryId)?.name || "";
-      if (alive) setMatch({ eventName: facts.event?.name || "", label: node.label || "", a: nameOf(sp(node.a)), b: nameOf(sp(node.b)), entries: [sp(node.a), sp(node.b)], decided: Boolean(node.winner) });
+      const team = entryId => facts.bracket.participants?.find(p => p.entryId === entryId);
+      const nameOf = entryId => team(entryId)?.name || "";
+      const members = side => (team(sp(node[side]))?.memberIdentities || []).map(x => ({ side, player: x.playerId, label: x.name }));
+      const label = [node.label, bout && (bout.ace ? "에이스 결정전" : `${bout.bout}경기`)].filter(Boolean).join(" ");
+      if (alive) setMatch({ eventName: facts.event?.name || "", label, a: nameOf(sp(node.a)), b: nameOf(sp(node.b)), entries: [sp(node.a), sp(node.b)], decided: Boolean(node.winner),
+        seats: bout ? [...members("a"), ...members("b")] : null });
     }).catch(() => alive && setMatch(null));
     return () => { alive = false; };
   }, [eventId, nodeKey]);
@@ -747,6 +754,7 @@ function useMatchPlayers(eventId, nodeKey) {
 function OfficialSeat({ eventId, nodeKey, res, onOpen }) {
   const match = useMatchPlayers(eventId, nodeKey);
   const [side, setSide] = useState("");
+  const [player, setPlayer] = useState(""); // a team bout's member
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -762,11 +770,11 @@ function OfficialSeat({ eventId, nodeKey, res, onOpen }) {
   useEffect(() => { if (open && readSeat(open.id)) onOpen(open.id); }, [open]);
   if (match === undefined) return <Loader />;
   if (!match) return <Empty title="경기를 찾을 수 없습니다." desc="대진표에서 다시 열어 주세요." />;
-  const ready = Boolean(side) && pin.length === 4;
+  const ready = Boolean(side) && (!match.seats || Boolean(player)) && pin.length === 4;
   const submit = async () => {
     if (busy || !ready) return;
     setBusy(true); setError("");
-    try { onOpen((await takeOfficialSeat({ eventId, nodeKey, side, pin })).id); }
+    try { onOpen((await takeOfficialSeat({ eventId, nodeKey, side, pin, player })).id); }
     // a wrong PIN is typed again from empty, with the field ready for it
     catch (e) { setError(failText(e, res)); setBusy(false); if (e.status === 403 || e.status === 401) { setPin(""); document.getElementById("bt-pin")?.focus(); } }
   };
@@ -779,9 +787,18 @@ function OfficialSeat({ eventId, nodeKey, res, onOpen }) {
         ? <Empty title="이미 승자가 정해진 경기입니다." desc="대진표에서 결과를 확인해 주세요." />
         : <>
           <p className="read dim bt-intro">제출 비밀번호로 자기 자리에 앉습니다.</p>
-          <Question id="bt-side" label="선수" group>
-            <Choice name="bt-side" options={names} value={side === "a" ? match.a : side === "b" ? match.b : ""} onChange={label => setSide(label === match.a ? "a" : "b")} />
-          </Question>
+          {match.seats
+            /* a team bout: each team's members under the team's name, one of them chosen across both */
+            ? ["a", "b"].map(t => {
+              const seats = match.seats.filter(x => x.side === t);
+              return <Question key={t} id={`bt-side-${t}`} label={t === "a" ? match.a : match.b} group>
+                <Choice name={`bt-side-${t}`} options={seats.map(x => x.label)} value={side === t ? seats.find(x => x.player === player)?.label || "" : ""}
+                  onChange={label => { setSide(t); setPlayer(seats.find(x => x.label === label).player); }} />
+              </Question>;
+            })
+            : <Question id="bt-side" label="선수" group>
+              <Choice name="bt-side" options={names} value={side === "a" ? match.a : side === "b" ? match.b : ""} onChange={label => setSide(label === match.a ? "a" : "b")} />
+            </Question>}
           <Question id="bt-pin" label="제출 비밀번호">
             <input id="bt-pin" className="in" type="password" inputMode="numeric" autoComplete="off" maxLength={4} enterKeyHint="go" value={pin}
               onChange={e => { setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); if (error) setError(""); }}
@@ -993,6 +1010,8 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const bracketLine = !official || row.status !== "ended" ? null
     : row.applied_at ? "대진표에 반영했습니다."
     : row.apply_error ? `대진표에 넣지 못했습니다. 운영진이 확인합니다. (${row.apply_error})`
+    // a team bout waits for the rest of its series (teamBouts.js); the series goes in once every bout is decided
+    : parseBoutKey(row.source_node_key) ? (row.winner === "tie" ? "무승부입니다. 이 판은 다시 치릅니다." : "이 판의 결과를 남겼습니다. 모든 판이 끝나면 대진표에 들어갑니다.")
     : "대진표에 넣는 중입니다.";
   /* where the replay lives: a battle's own page, or a battle with the computer by its record on the server (CpuRoom makes sure of it
      first, so a battle just played on this device has an address too) */

@@ -1,5 +1,6 @@
-import { buildBracketMatchSyncPlan, buildEventBracketMatchSnapshot, NORMALIZED_BRACKET_RUNTIME_SOURCE } from "./bracketMatchSnapshot.js";
+import { buildBracketMatchSyncPlan, buildEventBracketMatchSnapshot, NORMALIZED_BRACKET_RUNTIME_SOURCE, resolveBracketMatchParentIds } from "./bracketMatchSnapshot.js";
 import { projectNormalizedDoubleEliminationBracket, projectNormalizedSingleEliminationBracket } from "./bracketProjection.js";
+import { buildTeamMatchSeries } from "./bracketTeamParticipants.js";
 import { deriveQualifierSurvivorState, isChampionshipQualifier } from "./championsCore.js";
 
 /* 대진표에 승자를 반영하는 계산. 데이터베이스도 화면도 모르는 순수 함수만 둔다.
@@ -53,6 +54,18 @@ export function withPick(b, matchId, side) {
     if (m) { const previous = m.winner; m.winner = (m.winner === side ? null : side); cascadeClear(all, m.id); if (g.gf?.id === m.id && g.reset && previous !== m.winner) { g.reset.winner = null; g.reset.series = null; } return nb; }
   }
   if (nb.groups) { for (const gr of nb.groups) { const m = gr.matches.find(x => x.id === matchId); if (m) { m.winner = (m.winner === side ? null : side); return nb; } } }
+  return nb;
+}
+
+// 팀전 시리즈 결과(매치에 series 기록 + 전체 승자 반영). 하위 경기는 연쇄로 비운다. 운영진의 팀전 입력과 배틀 서버가 같이 쓴다.
+export function withSeries(b, matchId, series, winnerSide) {
+  const nb = JSON.parse(JSON.stringify(b));
+  for (const g of [nb.graph, nb.knockout]) {
+    if (!g) continue;
+    const all = collectGraphMatches(g); const m = all.find(x => x.id === matchId);
+    if (m) { const previous = m.winner; m.series = series; m.winner = winnerSide; cascadeClear(all, m.id); if (g.gf?.id === m.id && g.reset && previous !== m.winner) { g.reset.winner = null; g.reset.series = null; } return nb; }
+  }
+  if (nb.groups) { for (const gr of nb.groups) { const m = gr.matches.find(x => x.id === matchId); if (m) { m.series = series; m.winner = winnerSide; return nb; } } }
   return nb;
 }
 
@@ -172,4 +185,30 @@ export function planMatchWinner(facts, sourceNodeKey, winnerEntryId, nowIso, los
   const decided = desiredRows.find(row => row.source_node_key === sourceNodeKey);
   if (decided?.winner_entry_id !== winnerEntryId) throw new Error("승자를 반영한 대진이 예상과 다릅니다.");
   return { mode: "double", runtimeId: runtime.id, eventId: event.id, sourceNodeKey, winnerEntryId, updates: plan.updates, inserts: plan.inserts, deleteIds: plan.deleteIds };
+}
+
+/* 사이트 배틀로 끝난 팀전 시리즈를 넣는 계획(teamBouts.js). 운영진이 팀전 결과를 저장할 때와 같은 계산이다: withSeries → 경기 스냅숏 →
+   상위 경기 계획, 그리고 이미 있는 상위 경기 행에 붙는 하위 경기(판) 계획. entries 는 배틀의 두 팀 [a, b]이고 대진의 두 팀과 같아야 한다.
+   시리즈 검사(출전 선수, 모든 판의 승자, 동점이면 에이스)는 운영진 입력과 같은 buildTeamMatchSeries 가 한다. 어긋나면 던진다(fail closed). */
+export function planTeamSeries(facts, parentKey, series, winnerSide, nowIso, entries) {
+  const { bracket, event, runtime, matches } = facts;
+  if (!event.is_team_event) throw new Error("개인전 경기는 팀전 시리즈로 정하지 않습니다.");
+  const graph = bracket.graph;
+  const match = collectGraphMatches(graph).find(m => m.id === parentKey);
+  if (!match) throw new Error("대진표에서 이 경기를 찾을 수 없습니다.");
+  if (match.winner) throw new Error("이미 승자가 정해진 경기입니다.");
+  const { sp } = evalGraph(graph);
+  if (sp(match.a) !== entries?.[0] || sp(match.b) !== entries?.[1]) throw new Error("이 경기의 두 팀이 배틀의 두 팀과 다릅니다.");
+  const team = side => (bracket.participants || []).find(p => p.id === sp(match[side]));
+  const checked = buildTeamMatchSeries(team("a"), team("b"), series);
+  if (checked.winnerSide !== winnerSide) throw new Error("판의 결과와 시리즈의 승자가 다릅니다.");
+  const previous = (matches || []).filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
+  const previousParents = previous.filter(row => row.match_kind === "bracket");
+  const desired = buildEventBracketMatchSnapshot(withSeries(bracket, parentKey, checked.series, checked.winnerSide));
+  const parents = buildBracketMatchSyncPlan(previousParents, desired.filter(row => row.match_kind === "bracket"), nowIso);
+  const children = buildBracketMatchSyncPlan(previous.filter(row => row.match_kind !== "bracket"),
+    resolveBracketMatchParentIds(desired.filter(row => row.match_kind !== "bracket"), previousParents), nowIso);
+  const winnerEntryId = winnerSide === "a" ? entries[0] : entries[1];
+  if (desired.find(row => row.source_node_key === parentKey)?.winner_entry_id !== winnerEntryId) throw new Error("승자를 반영한 대진이 예상과 다릅니다.");
+  return { runtimeId: runtime.id, eventId: event.id, parentKey, winnerEntryId, parents, children };
 }

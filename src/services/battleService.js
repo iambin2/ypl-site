@@ -41,8 +41,9 @@ export async function rematchBattle(id, team) {
   return next;
 }
 // 공식 경기의 자리. 먼저 온 선수가 배틀을 열고, 다음 선수가 시작한다. 같은 선수가 다른 기기에서 오면 자리를 옮긴다.
-export async function takeOfficialSeat({ eventId, nodeKey, side, pin }) {
-  const seat = await callFunction("battle", { action: "official", eventId, nodeKey, side, pin });
+// player: in a team bout (teamBouts.js) the member who plays it, since the side is their team's
+export async function takeOfficialSeat({ eventId, nodeKey, side, pin, player = "" }) {
+  const seat = await callFunction("battle", { action: "official", eventId, nodeKey, side, pin, ...(player ? { player } : {}) });
   keepSeat(seat.id, { token: seat.token, side: seat.side });
   return seat;
 }

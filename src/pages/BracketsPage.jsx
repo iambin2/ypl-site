@@ -16,9 +16,10 @@ import { applyTitleAwards, evaluateTitleAwards, revertTitleAwards } from "../ser
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { drawPlan } from "../services/bracketProjection.js";
-import { BYE, cascadeClear, clearedByPick, collectGraphMatches, evalGraph, withPick } from "../services/bracketWinnerPlan.js";
+import { BYE, clearedByPick, collectGraphMatches, evalGraph, withPick, withSeries } from "../services/bracketWinnerPlan.js";
 import { matchStage } from "../services/recordsAnalytics.js";
 import { battleForMatch, battleHref, battleWinnerEntry, listEventBattles, officialBattleHref, retryBattleApply, voidBattle } from "../services/battleService.js";
+import { parseBoutKey, teamBouts } from "../services/teamBouts.js";
 import Seg from "../components/common/Seg.jsx";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
 import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
@@ -56,18 +57,6 @@ function groupStandings(group){
   const w={}; group.members.forEach(m=>w[m]=0);
   group.matches.forEach(mt=>{ if(mt.winner==="a")w[mt.a.pid]++; else if(mt.winner==="b")w[mt.b.pid]++; });
   return [...group.members].sort((x,y)=>w[y]-w[x]).map(name=>({name,wins:w[name]}));
-}
-
-// 매치 승자 설정(불변 업데이트)
-// 팀전 시리즈 결과 저장(매치에 series 기록 + 전체 승자 반영)
-function withSeries(b,matchId,series,winnerSide){
-  const nb=JSON.parse(JSON.stringify(b));
-  for(const g of [nb.graph,nb.knockout]){ if(!g)continue;
-    const all=collectGraphMatches(g); const m=all.find(x=>x.id===matchId);
-    if(m){ const previous=m.winner; m.series=series; m.winner=winnerSide; cascadeClear(all,m.id); if(g.gf?.id===m.id&&g.reset&&previous!==m.winner){g.reset.winner=null;g.reset.series=null;} return nb; }
-  }
-  if(nb.groups){ for(const gr of nb.groups){ const m=gr.matches.find(x=>x.id===matchId); if(m){ m.series=series; m.winner=winnerSide; return nb; } } }
-  return nb;
 }
 
 /* ===== 마법사 ===== */
@@ -952,6 +941,41 @@ function MatchBattle({ m, ev, battle, startable, eventId, admin=false, onChanged
   </div>;
   return null;
 }
+/* a team match played as site battles (src/services/teamBouts.js): each bout is its own battle, entered by the member who plays it
+   with their own party PIN. Nothing goes into the bracket until every bout has a winner (and the 에이스 결정전 when they tie); then
+   the whole series goes in at once, as the operators' team entry would put it. boutCount: the larger team's members. */
+function TeamBouts({ m, ev, battles, boutCount, startable, eventId, admin=false, onChanged }){
+  const [busy,setBusy]=useState(false);
+  const pa=ev.sp(m.a), pb=ev.sp(m.b);
+  if(m.winner||!pa||!pb||pa===BYE||pb===BYE||!boutCount) return null;
+  const state=teamBouts(battles,m.id,[pa,pb],boutCount);
+  const rows=[...state.bouts,...(state.ace?[state.ace]:[])];
+  if(!startable&&!rows.some(x=>x.battle)) return null;
+  const done=state.winner?"모든 판이 끝났습니다. 시리즈를 대진표에 넣는 중입니다."
+    :state.aceNeeded?`일반 판이 ${state.winsA} 대 ${state.winsB} 동점입니다. 에이스 결정전으로 정합니다.`
+    :"모든 판이 끝나면 대진표에 들어갑니다.";
+  const bout=x=>{
+    const label=x.n?`${x.n}경기`:"에이스 결정전", b=x.battle, open=b&&b.status!=="ended";
+    const names=`${x.a?.name||"미정"}, ${x.b?.name||"미정"}`;
+    const line=open?(b.status==="waiting"?`${label}, 상대를 기다리는 중`:`${label}, 진행 중`)
+      :x.winner?`${label}, ${(x.winner==="a"?x.a:x.b)?.name||""} 승리`
+      :b?`${label}, ${b.ended_by==="void"?"무효":"무승부"}, 다시 치를 판`:`${label}, 결과 전`;
+    return <div className="stack" key={x.key}>
+      <Row title={names} line={line} lamp={open?"진행 중":null} sig={open}/>
+      {open?<Button variant="second" href={battleHref(b.id)}>{b.status==="waiting"?`${label} 들어가기`:`${label} 관전`}</Button>
+        :x.winner?<Button variant="link" href={battleHref(b.id)}>{label} 리플레이</Button>
+        :startable&&<Button variant="second" href={officialBattleHref(eventId,x.key)}>{label} 배틀로 경기</Button>}
+      {admin&&open&&<Button variant="link" disabled={busy} onClick={async()=>{
+        if(!await siteConfirm({title:"배틀 무효",body:`${label}의 배틀을 닫습니다. 진행 중이던 배틀은 무효로 끝나 리플레이로 남고, 이 판은 다시 치릅니다.`,confirmLabel:"무효",danger:true})) return;
+        setBusy(true); try{ await voidBattle(b.id); onChanged?.(); }finally{ setBusy(false); }
+      }}>{label} 배틀 무효</Button>}
+    </div>;
+  };
+  return <div className="stack mb-battle">
+    <Row title={`사이트 배틀, ${state.winsA} 대 ${state.winsB}`} line={done}/>
+    {rows.map(bout)}
+  </div>;
+}
 /* the official battles of an event, read with the bracket's own 15 second rhythm. A battle that put its winner in makes the
    bracket read itself again, so an operator's screen shows the result without a reload. */
 function useEventBattles(eventId, onApplied){
@@ -985,7 +1009,7 @@ function useEventBattles(eventId, onApplied){
   return list;
 }
 /* a match's sheet: the round, the two sides at full length with the winner inverted and named 승자, the score; a team match adds its bouts */
-function MatchSheet({ g, m, ev, nameOf, onClose, battle, startable, eventId }){
+function MatchSheet({ g, m, ev, nameOf, onClose, battle, startable, eventId, battles=[], boutCount=0 }){
   const s=m.series, bouts=Array.isArray(s?.games)?s.games:[];
   const side=(key,pid)=>{
     const win=m.winner===key, lost=Boolean(m.winner)&&!win, score=sideScore(m,key);
@@ -995,7 +1019,8 @@ function MatchSheet({ g, m, ev, nameOf, onClose, battle, startable, eventId }){
   const bout=(label,a,b,w)=><Row key={label} title={`${a||"미정"}, ${b||"미정"}`} line={`${label}, ${w==="a"?a:w==="b"?b:"결과 전"}${w?" 승리":""}`}/>;
   return (<Modal title={stageOf(g,m)} hint={m.winner?"결과가 확정된 경기입니다.":"아직 결과가 없는 경기입니다."} onClose={onClose}>
     <div className="stack">{side("a",ev.sp(m.a))}{side("b",ev.sp(m.b))}</div>
-    <MatchBattle m={m} ev={ev} battle={battle} startable={startable} eventId={eventId}/>
+    {boutCount?<TeamBouts m={m} ev={ev} battles={battles} boutCount={boutCount} startable={startable} eventId={eventId}/>
+      :<MatchBattle m={m} ev={ev} battle={battle} startable={startable} eventId={eventId}/>}
     {bouts.length>0&&<div className="stack mb-bouts">
       {bouts.map((w,i)=>bout(`${i+1}경기`,s.lineupA?.[i],s.lineupB?.[i],w))}
       {s.ace&&bout("타이브레이커",s.ace.a,s.ace.b,s.ace.winner)}
@@ -1013,7 +1038,7 @@ const stageOf=(g,m)=>{
   if(li>=0) return `패자조 ${li+1}라운드`;
   return m===g.reset?"리셋 결승":"결승";
 };
-function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, outcomeOn=false, onOutcome, battles=[], startable=false, eventId=null, onBattleChanged }){
+function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, outcomeOn=false, onOutcome, battles=[], startable=false, eventId=null, onBattleChanged, boutsOf=()=>0 }){
   const ev=evalGraph(g);
   const rows=collectGraphMatches(g).map(m=>({m,a:ev.sp(m.a),b:ev.sp(m.b)})).filter(x=>x.a&&x.b&&x.a!==BYE&&x.b!==BYE);
   const [chosen,setChosen]=useState(null);
@@ -1057,7 +1082,8 @@ function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, ou
       <p className="pn bk-entry-head t12"><span className="dim">M{at+1}, {stageOf(g,cur.m)}</span>{cur.m.winner?<span>결과 확정</span>:<span className="bk-entry-live"><i className="lamp sig" aria-hidden="true"/>진행 중</span>}</p>
       {side("a",cur.a)}{side("b",cur.b)}
     </div>
-    {!teamMode&&<MatchBattle m={cur.m} ev={ev} battle={battleForMatch(battles,cur.m.id,[cur.a,cur.b])} startable={startable} eventId={eventId} admin onChanged={onBattleChanged}/>}
+    {teamMode?<TeamBouts m={cur.m} ev={ev} battles={battles} boutCount={boutsOf(cur.m,ev)} startable={startable} eventId={eventId} admin onChanged={onBattleChanged}/>
+      :<MatchBattle m={cur.m} ev={ev} battle={battleForMatch(battles,cur.m.id,[cur.a,cur.b])} startable={startable} eventId={eventId} admin onChanged={onBattleChanged}/>}
     {outcomeOn&&!teamMode&&cur.m.winner&&<div className="stack bk-entry-actions">
       <Button variant="second" disabled={busy} onClick={()=>onOutcome(cur.m.id,{forfeit:!cur.m.forfeit})}>{cur.m.forfeit?"불참 취소":`${nameOf(cur.m.winner==="a"?cur.b:cur.a)} 불참 처리`}</Button>
     </div>}
@@ -1088,7 +1114,7 @@ function treeCenters(rounds){
     for(let j=0;j<rounds[r].length;j++){ centers[r][j]= r===0 ? (j*BK_PITCH0+BK_MATCH_H/2) : (centers[r-1][2*j]+centers[r-1][2*j+1])/2; } }
   return { centers, totalH: Math.max(BK_MATCH_H,(rounds[0]?.length||1)*BK_PITCH0-20) };
 }
-function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=false, seedOf, battles=[], startable=false, eventId=null }){
+function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=false, seedOf, battles=[], startable=false, eventId=null, boutsOf=()=>0 }){
   const ev=evalGraph(g);
   const finalRes=elimResult(g);
   const rlabel=roundName;
@@ -1125,9 +1151,11 @@ function ElimBoard({ g, nameOf, admin, onPick, teamMode, onOpenTeam, qualifier=f
     return ()=>watch?.disconnect();
   },[winKey,g.rounds.length,g.kind]);
   const [seen,setSeen]=useState(null);
-  const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf} onOpen={setSeen} battle={battleForMatch(battles,m.id,[ev.sp(m.a),ev.sp(m.b)])}/>;
+  // a team match is live while any of its bouts is (the lamp on its box)
+  const liveBout=m=>battles.find(x=>x.status!=="ended"&&parseBoutKey(x.source_node_key)?.parent===m.id)||null;
+  const card=m=><MatchCard m={m} ev={ev} nameOf={nameOf} admin={admin} onPick={onPick} teamMode={teamMode} onOpenTeam={onOpenTeam} seedOf={seedOf} onOpen={setSeen} battle={teamMode?liveBout(m):battleForMatch(battles,m.id,[ev.sp(m.a),ev.sp(m.b)])}/>;
   return (<div className="bk-scroll" role="region" aria-label="대진표" tabIndex={0}>
-  {seen&&<MatchSheet g={g} m={seen} ev={ev} nameOf={nameOf} onClose={()=>setSeen(null)} battle={battleForMatch(battles,seen.id,[ev.sp(seen.a),ev.sp(seen.b)])} startable={startable} eventId={eventId}/>}
+  {seen&&<MatchSheet g={g} m={seen} ev={ev} nameOf={nameOf} onClose={()=>setSeen(null)} battle={battleForMatch(battles,seen.id,[ev.sp(seen.a),ev.sp(seen.b)])} startable={startable} eventId={eventId} battles={battles} boutCount={teamMode?boutsOf(seen,ev):0}/>}
   <div className="bk-tree" ref={treeRef}>
     {wires&&<svg className="bk-wires" width={wires.w} height={wires.h} aria-hidden="true"><path className="dim" d={wires.dim}/><path className="lit" d={wires.lit}/></svg>}
     {g.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
@@ -1252,7 +1280,9 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   const [championshipEvent,setChampionshipEvent]=useState(null);
   const [hallOfFameBusy,setHallOfFameBusy]=useState(false);
   // the battle server only seats players of a running, unrecorded event (battle_official_seat); the button waits for the same
-  const battleStartable=Boolean(b.eventId&&b.projection?.runtimeId&&!locked&&!teamMode&&b.status!=="done"&&championshipEvent?.status==="running"&&!championshipEvent.record_applied_at&&sitePlayed(championshipEvent));
+  // a team match has as many bouts as the larger team has members (buildDefaultTeamMatchLineups)
+  const boutsOf=(m,ev)=>{ const size=id=>(b.participants||[]).find(x=>x.id===id)?.members?.length||0; return Math.max(size(ev.sp(m.a)),size(ev.sp(m.b))); };
+  const battleStartable=Boolean(b.eventId&&b.projection?.runtimeId&&!locked&&b.status!=="done"&&championshipEvent?.status==="running"&&!championshipEvent.record_applied_at&&sitePlayed(championshipEvent));
   useEffect(()=>{
     let cancelled=false;
     if(!b.eventId){ setChampionshipEvent(null); return undefined; }
@@ -1431,10 +1461,10 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
     {admin&&!locked&&b.format==="elim"&&b.graph&&!(res&&res.done)&&<ResultEntry g={b.graph} nameOf={nameOf} busy={matchMutationBusy} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} outcomeOn={Boolean(outcomes)} onOutcome={saveOutcome}
-      battles={battles} startable={battleStartable} eventId={b.eventId} onBattleChanged={()=>void refreshNormalized?.()}
+      battles={battles} startable={battleStartable} eventId={b.eventId} onBattleChanged={()=>void refreshNormalized?.()} boutsOf={boutsOf}
       seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
     {b.format==="elim"&&<ElimBoard g={b.graph} nameOf={nameOf} admin={editAdmin} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} qualifier={championshipEvent?.championship_phase==="qualifier"} seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}
-      battles={battles} startable={battleStartable} eventId={b.eventId}/>}
+      battles={battles} startable={battleStartable} eventId={b.eventId} boutsOf={boutsOf}/>}
     {series&&<TeamMatchModal teamA={series.A} teamB={series.B} init={series.m.series} onClose={()=>setSeries(null)} onSave={saveSeries}/>}
   </div>);
 }
