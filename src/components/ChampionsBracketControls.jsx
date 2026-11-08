@@ -26,6 +26,7 @@ export function ChampionsBracketControls({ eventId, placement = "qualifier", onC
           entries: next.entries.filter(entry => entry.event_id === eventId && entry.entry_type === "individual"),
           matches: next.matches.filter(match => match.event_id === eventId && match.source === "normalized_bracket_runtime" && match.match_kind === "bracket"),
           qualificationSlots: current.qualification_slots,
+          competitionFormat: current.competition_format,
           finalCapacity: currentFinal?.competition_settings?.championship?.finalCapacity,
           directCount,
         }));

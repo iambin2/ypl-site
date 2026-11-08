@@ -13,8 +13,6 @@ import {
 } from "./hallOfFamePresentation.js";
 import { loadRecordsPokemonDirectory } from "./recordsPokemon.js";
 import {
-  CHAMPIONSHIP_FINAL_FORMAT,
-  CHAMPIONSHIP_QUALIFIER_FORMAT,
   championshipFinalCapacity,
   championshipFinalCreatePreflight,
   isChampionshipFinal,
@@ -146,8 +144,8 @@ export async function saveChampionshipApplicationEventPair({
     readEvent(result?.final_event_id || finalEventId),
   ]);
   if (!qualifierEvent || !finalEvent
-      || qualifierEvent.competition_format !== CHAMPIONSHIP_QUALIFIER_FORMAT
-      || finalEvent.competition_format !== CHAMPIONSHIP_FINAL_FORMAT) {
+      || qualifierEvent.championship_phase !== "qualifier"
+      || finalEvent.championship_phase !== "final") {
     throw new Error("저장된 챔피언스 선발전과 본선을 다시 확인하지 못했습니다.");
   }
   return { qualifierEvent, finalEvent, created: Boolean(result?.created) };

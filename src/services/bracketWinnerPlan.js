@@ -132,13 +132,14 @@ export function guardQualifierRows(event, participants, desiredRows, previousRow
     entries: qualifierEntries,
     matches: previousRows.filter(row => row.match_kind === "bracket"),
     qualificationSlots: event.qualification_slots,
+    competitionFormat: event.competition_format,
   });
   const previousByNode = new Map(previousRows.filter(row => row.match_kind === "bracket").map(row => [row.source_node_key, row]));
   const startsNewPlayedMatch = desiredRows.some(row => row.match_kind === "bracket" && row.winner_entry_id && !previousByNode.get(row.source_node_key)?.winner_entry_id);
   if (currentState.aliveCount <= currentState.targetCount && startsNewPlayedMatch) {
     throw new Error("본선 진출 인원이 확정되어 선발전 경기를 더 진행할 수 없습니다.");
   }
-  const desiredState = deriveQualifierSurvivorState({ entries: qualifierEntries, matches: desiredRows.filter(row => row.match_kind === "bracket"), qualificationSlots: event.qualification_slots });
+  const desiredState = deriveQualifierSurvivorState({ entries: qualifierEntries, matches: desiredRows.filter(row => row.match_kind === "bracket"), qualificationSlots: event.qualification_slots, competitionFormat: event.competition_format });
   return desiredState.readyToFinalize
     ? desiredRows.filter(row => row.winner_entry_id || previousByNode.has(row.source_node_key))
     : desiredRows;

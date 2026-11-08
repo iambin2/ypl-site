@@ -20,7 +20,7 @@ import {
   buildTeamMemberCandidates,
   getConfirmedTeamMemberIdentities,
 } from "./bracketTeamParticipants.js";
-import { buildSubmissionStatusRows, findPlayerByName, nextAliasName, playerNameKey, selectSubmissionRegistration, similarPlayerNames } from "./teamBuilderCore.js";
+import { buildSubmissionStatusRows, findPlayerByName, nextAliasName, playerNameKey, selectSubmissionRegistration, selectWritableSubmissionRegistration, similarPlayerNames } from "./teamBuilderCore.js";
 import { buildTeamSnapshotSubmission } from "./teamSubmission.js";
 import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
 import { partyDeadlines } from "./announcementTimes.js";
@@ -96,7 +96,7 @@ export async function saveLeagueIntake({ eventId = null, announcementId, eventDr
     p_settings: {
       subtitle: draftSubtitle(eventDraft, { eventType: "pokecup", division: existing?.division || null }),
       battle_format: eventDraft.battleFormat || null,
-      competition_format: eventDraft.competitionFormat || null,
+      competition_format: null,
       regulation_id: eventDraft.regulationId || null,
       cup_rule_id: eventDraft.cupRuleId || null,
       cup_rule_settings: eventDraft.cupRuleSettings || {},
@@ -317,7 +317,8 @@ async function assertChampionshipFinalRuntimePreflight(eventId) {
 
 export async function createNormalizedSingleBracketRuntime({ runtimeId, eventId, participants, slots } = {}) {
   await assertChampionshipFinalRuntimePreflight(eventId);
-  const { data, error } = await db().rpc("create_normalized_single_bracket_runtime", {
+  const { data, error } = await db().rpc("create_selected_bracket_runtime", {
+    p_topology_kind: "single_elimination",
     p_runtime_id: runtimeId,
     p_event_id: eventId,
     p_participants: participants,
@@ -329,7 +330,7 @@ export async function createNormalizedSingleBracketRuntime({ runtimeId, eventId,
 
 export async function createNormalizedBracketRuntime({ runtimeId, eventId, topologyKind, participants, slots } = {}) {
   await assertChampionshipFinalRuntimePreflight(eventId);
-  const { data, error } = await db().rpc("create_normalized_bracket_runtime", {
+  const { data, error } = await db().rpc("create_selected_bracket_runtime", {
     p_runtime_id: runtimeId,
     p_event_id: eventId,
     p_topology_kind: topologyKind,
@@ -910,7 +911,7 @@ export async function findSubmissionRegistration(eventId, registrationName) {
 
   if (error) fail(error, "신청 정보를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
 
-  const selected = selectSubmissionRegistration(data || [], name);
+  const selected = selectWritableSubmissionRegistration(data || [], name, intakeEvents);
   if (!selected) return null;
   event = intakeEvents.find(row => row.id === selected.event_id);
   if (!["open", "running"].includes(event.status) || event.record_applied_at) {
@@ -1160,7 +1161,7 @@ export async function saveApplicationEvent({
     event_type: eventDraft.eventType || "pokecup",
     division: eventDraft.division || null,
     battle_format: eventDraft.battleFormat || null,
-    competition_format: eventDraft.competitionFormat || null,
+    competition_format: existingEvent?.competition_format || null,
     competition_settings: competitionSettings,
     is_team_event: Boolean(eventDraft.isTeamEvent),
     regulation_id: eventDraft.regulationId || null,
@@ -1952,6 +1953,14 @@ async function writeEventParticipantIdentities(eventId, plans, { createEntries =
   }
 
   return resolved;
+}
+
+export async function addBracketManualRegistration(eventId, name) {
+  const { data, error } = await db().rpc("add_bracket_manual_registration", { p_event_id: eventId, p_name: name });
+  if (error) fail(error, "참가자를 추가하지 못했습니다.");
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.id || row.event_id !== eventId) throw new Error("추가한 참가자의 대회 소속을 확인하지 못했습니다.");
+  return row;
 }
 
 export async function confirmEventParticipantsForBracket(eventId, participants = []) {

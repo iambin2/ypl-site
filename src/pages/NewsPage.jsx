@@ -9,7 +9,6 @@ import { isNewNotice, markNoticeSeen } from "../components/common/seenNotices.js
 import { NoticeLead, NoticeRow } from "../components/common/NoticeRows.jsx";
 import { Dropdown, Empty, Icon, ListSearch, Modal, Pager, Prose, siteAlert, siteConfirm, transition } from "../components/index.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
-import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../services/championsCore.js";
 import { dotDate, formatDate } from "../services/dateFormat.js";
 import { applicationsClosed, partyDeadlines } from "../services/announcementTimes.js";
 import { GoogleMark } from "../components/layout/SiteHeader.jsx";
@@ -29,7 +28,6 @@ function daysTo(raw, now=new Date()){
   const day=new Date(+n[0],+n[1]-1,+n[2]);
   return Number.isNaN(day.getTime())?null:Math.round((day-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/DAY_MS);
 }
-const FORMAT={double_elimination:"더블 엘리미네이션",single_elimination:"싱글 엘리미네이션",round_robin:"리그전"};
 const BATTLE={singles:"싱글 배틀",doubles:"더블 배틀"};
 
 /* 대회 공지의 판과 표(DESIGN.md "Notices"): 공지의 대회 정보(eventDraft)만 읽는다. */
@@ -44,7 +42,7 @@ function eventFacts(a){
     ...held.filter(([,raw])=>raw).map(([k,raw,time])=>[k?`${k} 일시`:"일시",formatDate(at(raw,time),{time:true})]),
     ...(a.form?.closesAt?[["신청 마감",`${formatDate(a.form.closesAt,{time:true})}까지`]]:[]),
     ...(BATTLE[d.battleFormat]?[["형식",BATTLE[d.battleFormat]]]:[]),
-    ...(champions?[["방식",`선발전 ${FORMAT[CHAMPIONSHIP_QUALIFIER_FORMAT]}, 본선 ${FORMAT[CHAMPIONSHIP_FINAL_FORMAT]}`]]:FORMAT[d.competitionFormat]?[["방식",FORMAT[d.competitionFormat]]]:[]),
+    ["대진 방식","대진표 생성 시 선택"],
     ["단위",d.isTeamEvent?"팀전":"개인전"],
     // 파티 제출은 대회 시작까지다(announcementTimes.js partyDeadlines)
     ...partyDeadlines(d).map((t,i)=>[champions?(i?"본선 제출":"선발전 제출"):"파티 제출",t]).filter(([,t])=>t).map(([k,t])=>[k,`${formatDate(t,{time:true})}까지`]),

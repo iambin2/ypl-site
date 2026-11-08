@@ -85,7 +85,7 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
   // party read policy's own check (private_answers.sql): a visitor's select runs it, so anon must execute it.
   // open_ and edit_event_application are an applicant's own answers behind the party's PIN (application_edit.sql).
   const anonRpcs = new Set(["submit_registration_team_snapshot", "is_ypl_admin", "resolve_ypl_season_for_date", "has_individual_master_eligibility", "application_closed", "snapshot_revealed",
-    "open_event_application", "edit_event_application"]);
+    "open_event_application", "edit_event_application", "is_completed_rookie_champion"]);
   for (const statement of statements) {
     if (statement.startsWith("grant select ")) continue;
     // A visitor's own notice alert and survey answer: the rows stay closed to anon (docs/db/announcement_push.sql, backend_hardening.sql).
