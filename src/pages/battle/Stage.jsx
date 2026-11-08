@@ -8,6 +8,7 @@ import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
 import { cry, loadCry } from "./cries.js";
 import { sfx, conditionSound } from "./sfx.js";
+import { DUR, fall, light } from "../../components/common/motion.js";
 import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectType, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
@@ -302,8 +303,13 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             const fresh = first && !stageRef.current;
             // the plates wait for the leads: on a stage already standing (a replay's start) they go out before anything is shown
             if (first && stageRef.current) stageRef.current.classList.add("bs-intro");
+            /* the team preview goes before the stage takes its place, sinking 12 as it goes dark, with the pick beside it (2026-11-08,
+               the user: the start was not natural; the lit cards cut to the dark court in one frame) */
+            if (fresh) await Promise.all([...document.querySelectorAll(".bt-match .bt-preview, .bt-match .bt-pickdock")].map(fall));
             standing.delete(k);
             show();
+            // the column beside it is the battle's now (its moves, its party), and lights as the stage stands
+            if (fresh) light(document.querySelector(".bt-match .bt-side"), DUR.leave);
             // the stage mounts with the first lead, so it is read again here
             const st = stageRef.current;
             // the opening (DESIGN.md "Battle", The big moments): the lamps switch on, then the throws
@@ -625,6 +631,8 @@ export function LobbyStage({ leads, doubles, label, awaiting = false, random = f
           </div>
           : <SideField side="p1" scene={scene} own doubles={doubles} />}
       </div>
+      {/* a plate said on the court as it goes dark (a 연승 도전 floor's master, Streak.jsx), outside the camera as in a battle */}
+      <div className="bs-over" aria-hidden="true" />
     </div>
   );
 }

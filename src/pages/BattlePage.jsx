@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { DUR, light, reduced } from "../components/common/motion.js";
+import { DUR, dimAway, light, lineup, reduced } from "../components/common/motion.js";
 import Button from "../components/common/Button.jsx";
 import Icon from "../components/common/Icon.jsx";
 import Seg from "../components/common/Seg.jsx";
@@ -31,7 +31,7 @@ import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from 
 import { claimTimeout, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
-import { StreakEnd, StreakOpen, streakGameLine } from "./battle/Streak.jsx";
+import { StreakEnd, StreakOpen, StreakStake, streakGameLine } from "./battle/Streak.jsx";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
@@ -91,13 +91,13 @@ export default function BattlePage({ flash: say, go }) {
   /* the new screen starts at its top, as a page does, before its first paint (on a phone 배틀 시작 stands low, and the room opened
      scrolled down to the footer) */
   const moved = useRef(false);
-  useLayoutEffect(() => { if (moved.current) { moved.current = false; window.scrollTo(0, 0); } }, [cpu, id, replay]);
+  useLayoutEffect(() => { if (moved.current) { moved.current = false; window.scrollTo(0, 0); } }, [cpu, id, replay, cpuRound]);
   // the stage's first paintings are made in idle moments while the page waits for its data (stageFx prewarm), not as a battle opens
   useEffect(() => { prewarm(); }, []);
   if (!res) return <Loader />;
   if (res.error) return <Empty title="배틀을 준비하지 못했습니다." desc="잠시 뒤 다시 시도해 주세요." />;
   // a replay's link may open it at a turn and from a side (?turn=5&side=p2)
-  if (cpu) return <RoomGuard key={`cpu${cpuRound}`}><CpuRoom res={res} say={say} go={go} onLeave={() => open(null)} onRestart={() => setCpuRound(n => n + 1)} /></RoomGuard>;
+  if (cpu) return <RoomGuard key={`cpu${cpuRound}`}><CpuRoom res={res} say={say} go={go} onLeave={() => open(null)} onRestart={() => { moved.current = true; setCpuRound(n => n + 1); }} /></RoomGuard>;
   if (replay) return <RoomGuard key={replay}><CpuReplay id={replay} res={res} say={say} go={go} onLeave={() => open(null)} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (id) return <RoomGuard key={id}><BattleRoom id={id} res={res} say={say} go={go} onLeave={() => open(null)} onOpen={open} code={params.get("code")} start={{ turn: params.get("turn"), side: params.get("side") }} /></RoomGuard>;
   if (official) return <OfficialSeat {...official} res={res} onOpen={open} />;
@@ -283,8 +283,15 @@ export async function enterBattle(id, dark) {
   const [, got] = await Promise.all([dark, ready]);
   primed.set(id, got);
 }
-// the court of the screen a key was pressed on, going dark
-export const goingIn = scope => goIn(document.querySelector(`${scope} .bs-stage`)).catch(() => {});
+/* the court of the screen a key was pressed on, going dark, and the rest of that screen dimming as a page being left does (DESIGN.md
+   "Motion", Page change), so the whole screen goes, not only its court. A refusal stands it up again (standUp) */
+let dimmed = [];
+export const goingIn = scope => {
+  const page = document.querySelector(scope)?.closest(".bt-page");
+  if (page) dimmed = dimAway([...page.querySelectorAll(".bt-lobby-set, .bt-lists, .bt-side")]);
+  return goIn(document.querySelector(`${scope} .bs-stage`)).catch(() => {});
+};
+export const standUp = () => { dimmed.forEach(a => a.cancel()); dimmed = []; };
 function CpuRoom({ res, say, go, onLeave, onRestart }) {
   const [state, setState] = useState(null);
   const [error, setError] = useState(null);
@@ -334,11 +341,19 @@ function CpuRoom({ res, say, go, onLeave, onRestart }) {
   }), []);
   /* 다시하기: a new battle with the computer at once, the same name, rule and format, the same saved team (a random party drawn
      again) and a new party for the computer, which is always drawn when a battle starts */
+  /* it goes in as the lobby's 배틀 시작 does (DESIGN.md "Battle", Going in): the finished court's Pokémon are called back and its lamps
+     go down while the next battle is drawn on a worker started on the press and its pictures are taken, so the team preview lights
+     straight after, with no blank page and no loader between (2026-11-08, the user: it cut to the team preview with no animation) */
   const rematch = async () => {
     const kept = readCpuBattle() || {};
     const doubles = isDoubles(state.row.format_id);
     const team = rematchTeam(kept.teamId, state.row.regulation, res);
-    keepCpuBattle({ start: { regulation: state.row.regulation, battleFormat: doubles ? "doubles" : "singles", name: state.row.p1_name, team: team.send, level: kept.level }, teamId: team.id });
+    const next = { regulation: state.row.regulation, battleFormat: doubles ? "doubles" : "singles", name: state.row.p1_name, team: team.send, level: kept.level };
+    earlyWorker?.terminate();
+    earlyWorker = cpuWorker();
+    earlyStart = startEarly(earlyWorker, next);
+    await Promise.all([goingIn(".bt-main"), earlyStart.then(d => preloadSprites(partySpecies(d.row, d.view)), () => {})]);
+    keepCpuBattle({ start: next, teamId: team.id });
     onRestart();
   };
   if (error?.none) return <ErrorNote action="배틀 화면으로" onRetry={onLeave}>진행 중인 컴퓨터와의 배틀이 없습니다. 배틀 화면에서 새로 시작해 주세요.</ErrorNote>;
@@ -459,7 +474,7 @@ function BattleOpen({ res, onOpen, go, preset }) {
   };
   const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "연승 도전"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"]]} /></div>;
   if (tab === "live") return <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<LiveHall res={res} rows={live} onOpen={onOpen} /></div>;
-  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} />;
+  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} standUp={standUp} />;
   return tab === "rooms"
     ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
     : <BattleSetup res={res} onOpen={onOpen} preset={preset} tabs={tabs} firstFoe={firstFoe} />;
@@ -670,11 +685,13 @@ function BattleRoom({ id, res, say, go, onLeave, onOpen, start, code }) {
     try {
       const made = await rematchBattle(id, team.send);
       keepOpenTeam(made.id, team.id);
+      // the room is made before the court goes down, so a refusal never leaves this screen dark
+      await goingIn(".bt-main");
       onOpen(made.id);
     } catch (e) { say?.(failText(e, res)); }
   };
   // a game of a 연승 도전 run ends on the run's keys: 다음 판 or 다시 도전, and 나가기 back to the 연승 도전 tab
-  const streak = seat && row.kind === "streak" ? { onOpen, onOut: () => onOpen(null, null, "streak"), enter: enterBattle, goingIn } : null;
+  const streak = seat && row.kind === "streak" ? { onOpen, onOut: () => onOpen(null, null, "streak"), enter: enterBattle, goingIn, standUp } : null;
   return <Arena row={row} view={view} seat={seat} res={res} onView={show} go={go} api={api} say={say} start={start} onRematch={rematch} onLeave={onLeave} streak={streak} watchers={watchers} onOpen={onOpen} />;
 }
 
@@ -894,8 +911,31 @@ function useNow(on) {
   return now;
 }
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
+/* a match screen lights as a page does, but the team preview is the moment a battle is met and arrives as a scene: the other side's six
+   switch on one by one, then ours (motion.js lineup), while the column beside it lights as a page (2026-11-08, the user: going into a
+   battle did not feel natural; the preview stood lit all at once after the court went dark) */
+function useMatchLit() {
+  useLayoutEffect(() => {
+    const main = document.getElementById("ypl-main");
+    const preview = main?.querySelector(".bt-match .bt-preview");
+    if (!preview?.querySelector(".bt-card")) { light(main, DUR.leave); return; }
+    light(main.querySelector(".bt-match .bt-side"), DUR.leave);
+    // the other side's six are read from the log a frame or two after the preview mounts: ours keep their turn after the six places,
+    // and the six take theirs when they are drawn
+    const cells = () => [...preview.querySelectorAll(".bt-foe-cell")];
+    lineup([preview.querySelector(".bt-pv-foe .bt-pv-title"), ...Array(6).fill(null)], [...preview.querySelectorAll(".bt-pv-head, .bt-card")]);
+    const began = performance.now();
+    let frame = 0;
+    const look = () => {
+      if (cells().length) { lineup([null, ...cells()], [], performance.now() - began); return; }
+      if (performance.now() - began < 400) frame = requestAnimationFrame(look);
+    };
+    look();
+    return () => cancelAnimationFrame(frame);
+  }, []);
+}
 export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, onRematch, replayId, api = SERVER, streak = null, watchers = null, onOpen = null }) {
-  useLit();
+  useMatchLit();
   // a battle with the computer lives on this device only: there is no link to share and no replay page to point to
   const local = row.kind === "cpu" && Boolean(seat);
   const ended = row.status === "ended";
@@ -1029,7 +1069,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [error, setError] = useState("");
   // the result waits for the stage: a battle that ended while its last turn still plays does not tell its end before the stage does;
   // a replay already knows it, so stepping through one never moves the page
-  const shownEnded = ended && (cue != null || (tape.scene?.ended ?? true));
+  // held: the page is leaving for the next battle and its replay was put at the end (settle below), so the result stays where it is
+  const [held, setHeld] = useState(false);
+  const shownEnded = ended && (held || cue != null || (tape.scene?.ended ?? true));
   const names = { p1: row.p1_name, p2: row.p2_name };
   // a choice goes the moment it is made, as Champions sends it; false when it did not go, so the choices stay open
   // once a choice goes, the stage comes into view (on a phone the moves sit under it), so the turn is watched, not scrolled to
@@ -1163,6 +1205,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     return () => page?.classList.remove("page--battle");
   }, []);
   const preview = tape.state.sides;
+  const mon = species => ({ species, name: nameOf(res, species) });
   /* the end (DESIGN.md "Battle", After the battle): the result large, then what comes next as keys, 다시하기 first. On a wide screen
      the column beside the stage goes back to its top, so the result is in view. On a phone the page does not move (2026-11-06: it
      slid the stage up to the bar at every end, "화면이 움직일 이유가 없거든"): the result takes the moves' place right under the stage,
@@ -1176,8 +1219,20 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   useEffect(() => { if (row.rematch_id) readBattleRow(row.rematch_id).then(setNextRow, () => {}); }, [row.rematch_id]);
   const ownName = seat ? names[seat.side] : "";
   const offered = Boolean(seat && nextRow?.status === "waiting" && nextRow.p1_name !== ownName);
+  /* going into the next battle from a finished one whose replay still plays (a reload opens an ended battle on its replay): the stage
+     is put at its end first and the going in starts once it stands there, so the court goes dark on the battle's end and no replay
+     keeps throwing behind it (2026-11-08) */
+  const tapeNow = useRef(tape);
+  tapeNow.current = tape;
+  const settle = async () => {
+    if (!autoplay && cue == null && !tape.playing) return;
+    setHeld(true); setAutoplay(false); setCue(null); setEpoch(e => e + 1);
+    const from = performance.now();
+    do await new Promise(resolve => requestAnimationFrame(resolve));
+    while ((tapeNow.current.playing || performance.now() - from < 50) && performance.now() - from < 800);
+  };
   const [again, setAgain] = useState(false);
-  const rematch = onRematch && (async () => { if (again) return; setAgain(true); try { await onRematch(); } finally { setAgain(false); } });
+  const rematch = onRematch && (async () => { if (again) return; setAgain(true); try { await settle(); await onRematch(); } finally { setAgain(false); } });
   const endTitle = row.ended_by === "void" ? "무효" : row.winner === "tie" || !winnerName ? "무승부" : seat ? (row.winner === seat.side ? "승리" : "패배") : `${winnerName} 승리`;
   const endLine = [row.ended_by === "void" ? "운영진이 무효로 처리했습니다." : row.ended_by === "forfeit" ? `${loserName}의 기권으로 끝났습니다.` : row.ended_by === "timeout" ? `${loserName}의 시간이 다 되어 끝났습니다.` : `${names[perspective]} 대 ${names[foe]}, ${shownTurn}턴`, bracketLine].filter(Boolean).join(" ");
   /* one column on a phone: the head, the result, the stage (or the team preview), the replay, the choices, the party, the log.
@@ -1220,7 +1275,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <span className="bt-end-line">{endLine}</span>
           </div>}
           {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
-          {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} /> : (rematch || official || onLeave) && <Dock>
+          {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || onLeave) && <Dock>
             <div className="bt-end-keys">
               {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
                 : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}
@@ -1249,6 +1304,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* 기권 as a key of its own, right under the choices where the thumb is, in its own dark red so it is never taken for
             another key; it asks once before it goes (feedback 2026-11-06: the word at the page's foot was hard to find) */}
         {seat && !ended && <Button className="bt-forfeit" onClick={giveUp}>기권</Button>}
+        {/* a game of a 연승 도전 run, for its player: what it has at stake, the streak riding on it and the floor (Streak.jsx). Under
+            the choices and 기권, so on a phone it never pushes the moves away from the stage */}
+        {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} />}
         {/* a finished battle has its party beside the stage from the start: mounted with the first lead, it landed under the
             opening's board as a stop of its own (2026-11-07) */}
         {(started || (ended && scene)) && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}

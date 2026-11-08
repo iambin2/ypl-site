@@ -10,6 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME,
   planMatchWinner, planTeamSeries, projectRuntimeFacts, parseBoutKey, seriesFromBouts, teamBouts, STREAK_FORMAT, STREAK_REGULATION, computerTurns, streakGame,
+  sideTeam, streakFresh, swapParty,
 } from "./engine.bundle.mjs";
 
 const CORS = {
@@ -243,9 +244,9 @@ const NO_GAME = {
   p_state: null, p_pending: null, p_turn: null, p_spectator_log: null,
 };
 // a new game of a run, as streak_start and streak_after_battle take it, with the seat its player gets
-async function nextGame(name: string, wins: number) {
+async function nextGame(name: string, wins: number, party: unknown[] | null = null) {
   const id = newId(), token = newToken();
-  const game = streakGame(name, wins, serverRandom);
+  const game = streakGame(name, wins, serverRandom, party);
   const out = readout(game.engine);
   return {
     id, token, memory: { wins, cpu: game.memory } as StreakMemory,
@@ -483,13 +484,24 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   },
 
   /* 다음 판: the player of a won streak game opens the run's next one, at the 난이도 its wins call for. Asked by the won game's own
-     seat, so a seat lost with an answer can always ask again; the database opens it only once. */
-  async streakNext({ id, token }) {
+     seat, so a seat lost with an answer can always ask again; the database opens it only once.
+     Within a floor the party goes on (the won game's own, as this function drew it), and swap ({ give, take }: species) trades one
+     of it for one of the party just beaten, read off the won game's input log; a new floor draws a new party (streak.js). */
+  async streakNext({ id, token, swap }) {
     const { battle, secret } = await read(String(id));
     const side = await seat(secret, token);
     if (battle.kind !== "streak" || side !== "p1" || battle.status !== "ended" || battle.winner !== "p1") refuse(409, "이긴 판에서만 다음 판을 열 수 있습니다.");
     const wins = Number(await rpc("streak_run_wins", { p_battle_id: battle.id })) || 0;
-    const game = await nextGame(battle.p1_name, wins);
+    let party = !streakFresh(wins) && Array.isArray(secret.p1_team) && secret.p1_team.length === 6 ? secret.p1_team : null;
+    if (party && swap?.give && swap?.take) {
+      const { data, error } = await db.from("battles").select("input_log").eq("id", battle.id).maybeSingle();
+      if (error) throw error;
+      const swapped = swapParty(party, sideTeam(data?.input_log, "p2"), String(swap.give), String(swap.take));
+      if (swapped === "missing") refuse(409, "바꿀 포켓몬을 찾지 못했습니다. 다시 골라 주세요.");
+      if (swapped === "clash" || validateTeam(STREAK_FORMAT, swapped)) refuse(409, "같은 포켓몬이나 같은 도구가 둘이 되어 바꿀 수 없습니다.");
+      party = swapped;
+    }
+    const game = await nextGame(battle.p1_name, wins, party);
     const { error } = await db.rpc("streak_next", { p_battle_id: battle.id, ...game.args });
     if (error) {
       if (error.code === "P0001") refuse(409, error.message);

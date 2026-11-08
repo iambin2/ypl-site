@@ -225,6 +225,20 @@ export function enter(mon) {
   if (!mon?.animate || reduced()) return Promise.resolve();
   return settled(mon.animate(RISE, { duration: DUR.light, easing: EASE_OUT }));
 }
+/* the page being left dims (DESIGN.md "Motion", Page change) while what it waits on is read; returns the animations, so a refusal can
+   cancel them and stand the page up again */
+export function dimAway(els) {
+  if (reduced()) return [];
+  return [].concat(els).filter(Boolean).map(el => el.animate([{ opacity: 1 }, { opacity: .382 }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
+}
+/* the team preview arrives as a scene of its own (DESIGN.md "Battle", Going in): the other side's six switch on one after another,
+   62 apart, as a board announces a line-up, then a beat, then ours rise into their places the same way. first, then: the elements in
+   the order they light (a place may be empty: what is drawn a moment later takes its turn with elapsed, the time since the scene began).
+   Reduced motion: they stand at once. */
+export function lineup(first, then, elapsed = 0) {
+  if (reduced()) return;
+  [...first, ...then].forEach((el, i) => el?.animate?.(RISE, { duration: DUR.light, delay: Math.max(0, i * STAGGER.display + (i >= first.length ? DUR.tone : 0) - elapsed), easing: EASE_OUT, fill: "backwards" }));
+}
 /* the HP gauge: changed cells switch as a score's bars do, 38 apart, from the right when it falls and from the left when it rises */
 export function gauge(cells, before, after, offValue) {
   if (reduced() || before === after) return Promise.resolve();

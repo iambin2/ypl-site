@@ -13,7 +13,7 @@ const file = path => new URL(path, ROOT);
 const { transform } = await import("esbuild");
 const { PGlite } = await import(process.argv[2] ? pathToFileURL(resolve(process.argv[2])).href : "@electric-sql/pglite");
 const { quickChoice, createCpu } = await import(file("src/services/battleCpu.js"));
-const { loadBattle } = await import(file("supabase/functions/battle/engine.mjs"));
+const { loadBattle, sideTeam } = await import(file("supabase/functions/battle/engine.mjs"));
 
 // ---- the database: the live shape (as scripts/verify-streak-db.mjs builds it) plus battle_save, then streak_runs.sql
 const pg = new PGlite();
@@ -84,7 +84,7 @@ try {
   await assert.rejects(call({ action: "streak" }), e => e.status === 401, "no sign-in, no run");
   let seat = await call({ action: "streak" }, user);
   console.log("started", seat.id, seat.run);
-  let games = 0, choices = 0, slowest = 0, wins = 0, lastStreak = null;
+  let games = 0, choices = 0, slowest = 0, wins = 0, lastStreak = null, swappedOnce = false;
   for (; games < 40; games++) {
     const player = createCpu("gen9championsbssregmc", { budgetMs: 200 });
     for (let step = 0; step < 200; step++) {
@@ -105,9 +105,27 @@ try {
     // a won game opens no next game by itself: the run rests until its player presses 다음 판
     const opened = (await pg.query("select count(*)::int as c from public.battles where kind = 'streak' and status = 'active'")).rows[0].c;
     assert.equal(opened, 0, "no game is running while the run rests after a win");
-    const next = await call({ action: "streakNext", id: seat.id, token: seat.token });
+    /* within a floor the party goes on, and the first win swaps one of ours for one of the party beaten (a swap that would bring a
+       second species or item is refused); a floor's master beaten, the next floor draws a new party (docs/BATTLE_STREAK.md 5장) */
+    const teamOf = async id => (await pg.query("select p1_team from public.battle_secrets where battle_id = $1", [id])).rows[0].p1_team;
+    const prev = await teamOf(seat.id);
+    let next = null, took = null;
+    if (wins % 7 !== 0 && !swappedOnce) {
+      const beaten = sideTeam((await pg.query("select input_log from public.battles where id = $1", [seat.id])).rows[0].input_log, "p2");
+      for (const foe of beaten) {
+        try { next = await call({ action: "streakNext", id: seat.id, token: seat.token, swap: { give: prev[0].species, take: foe.species } }); took = foe.species; break; }
+        catch (e) { assert.equal(e.status, 409, e.message); }
+      }
+      swappedOnce = true;
+    }
+    next ??= await call({ action: "streakNext", id: seat.id, token: seat.token });
+    const now = await teamOf(next.id);
+    const species = team => team.map(m => m.species);
+    if (wins % 7 === 0) assert.notDeepEqual(species(now), species(prev), "a new floor draws a new party");
+    else if (took) assert.deepEqual(species(now), [took, ...species(prev).slice(1)], "the swap took the beaten one for our first");
+    else assert.deepEqual(now, prev, "the party goes on within a floor");
     await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token }), e => e.status === 409, "다음 판 opens once");
-    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}`);
+    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}${took ? `, swapped ${prev[0].species} for ${took}` : ""}`);
     seat = next;
   }
   console.log(`games ${games + 1}, choices ${choices}, slowest request ${Math.round(slowest)} ms, run wins ${lastStreak?.wins}`);

@@ -27,3 +27,24 @@
 @media (min-width: 860px) {
   .bt-lobby:has(> .streak-side) > .bt-lobby-main { padding-top: calc(var(--l20) + var(--s3)); }
 }
+
+/* a floor: its seven games as equal cells on the seam (Streak.jsx FloorCells), one strip high, the number or 주인 at the left and the
+   amber lamp of the game being played, or 다음, at the right; the won ones inverted, the ones still to come off */
+.streak-floor { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.streak-cell { height: var(--h-strip); display: flex; align-items: center; justify-content: space-between; gap: var(--s1); padding: 0 var(--s2); min-width: 0; }
+.streak-cell.off { color: var(--mute); }
+.streak-cell > .dim { overflow: hidden; white-space: nowrap; }
+
+/* what a game has at stake, beside it: which game, the streak riding on it at 32 with its words on the baseline, and the grey line;
+   the floor joined under it on the seam. A floor's master inverts */
+.streak-stake-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s3) var(--pad); text-align: left; }
+.streak-stake-board { display: flex; align-items: flex-end; gap: var(--s2); }
+.streak-stake-board > .t15 { line-height: 1; }
+
+/* the end: the line under the counter, then the swap, each a section's step apart (space for a new thing) */
+.streak-end-line { margin: 0; }
+.streak-swap { gap: var(--s3); }
+.streak-swap > p { margin: 0; }
+.streak-swap-side { display: grid; gap: var(--s2); }
+.streak-swap-cell { cursor: pointer; border: 0; font: inherit; color: inherit; }
+.streak-swap-cell.inv { background: var(--lit); color: var(--ground); }

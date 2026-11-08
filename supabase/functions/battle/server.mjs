@@ -7,4 +7,4 @@ export { planMatchWinner, planTeamSeries, projectRuntimeFacts } from "../../../s
 export { parseBoutKey, seriesFromBouts, teamBouts } from "../../../src/services/teamBouts.js";
 // the 연승 도전's computer (docs/BATTLE_STREAK.md): the same computer the phones play, made afresh for each choice from its memory
 export { STREAK_FORMAT, computerTurns, streakGame } from "./streakEngine.mjs";
-export { STREAK_REGULATION } from "../../../src/services/streak.js";
+export { STREAK_REGULATION, streakFresh, swapParty } from "../../../src/services/streak.js";

@@ -48,3 +48,17 @@ test("a game played as the server plays it, through only what the database keeps
     if (wins >= 7) assert.ok(memory?.hypotheses?.length, "the readings went from request to request");
   }
 });
+
+test("a floor's master brings a party from the most used Pokémon only, and a carried party is the player's as it was", async () => {
+  const { setPool } = await import("../supabase/functions/battle/engine.mjs");
+  const { MASTER_TOP } = await import("../src/services/streak.js");
+  const top = new Set([...setPool(STREAK_FORMAT)].sort((a, b) => (b.usage || 0) - (a.usage || 0)).slice(0, MASTER_TOP).map(e => e.species));
+  for (let n = 0; n < 5; n++) {
+    let seed = 99 + n; const random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const master = streakGame("선수", 6, random);
+    assert.ok(master.engine.p2.pokemon.every(p => top.has(p.set.species)), "every one of the master's six is among the most used");
+    const carried = streakGame("선수", 1, random, master.p1Team);
+    assert.equal(carried.p1Team, master.p1Team);
+    assert.deepEqual(carried.engine.p1.pokemon.map(p => p.set.species), master.p1Team.map(m => m.species));
+  }
+});

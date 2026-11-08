@@ -1,9 +1,10 @@
-/* 연승 도전 (docs/BATTLE_STREAK.md 8장, DESIGN.md "Layout and pages" 연승 도전): the battle page's tab, and what a game of a run says
-   when it ends. The tab stands as the lobby stands (the arena with the computer the run meets next on its floor, the key under it),
-   and beside it the run itself: its streak lit at 84, the ladder of the three computers it climbs, and the month's board. Its games
-   are played as any server battle (BattleRoom), and the battle function answers as the computer; what a game's answer says of the
-   run is kept with the seat (battleService.js). Going into a game is the lobby's going in: the court goes dark while the game and its
-   pictures are read (BattlePage.jsx enterBattle). */
+/* 연승 도전 (docs/BATTLE_STREAK.md 8장, DESIGN.md "Layout and pages" 연승 도전): the battle page's tab, what a game of a run has at
+   stake while it is played, and what it says when it ends. A run climbs floors of seven games, the seventh the floor's master
+   (src/services/streak.js). The tab stands as the lobby stands (the arena with the computer the run meets next on its floor, the key
+   under it), and beside it the run itself: its streak lit at 84, the floor it stands on, the floors it climbs, and the month's board.
+   Its games are played as any server battle (BattleRoom), and the battle function answers as the computer; what a game's answer says
+   of the run is kept with the seat (battleService.js). Going into a game is the lobby's going in: the court goes dark while the game
+   and its pictures are read (BattlePage.jsx enterBattle), and a floor's master is called on the dark court before it lights. */
 import React, { useEffect, useState } from "react";
 import Button from "../../components/common/Button.jsx";
 import Seg from "../../components/common/Seg.jsx";
@@ -14,8 +15,9 @@ import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
 import { currentStreakGame, keepStreakStart, readBattleRow, readSeat, streakNextGame } from "../../services/battleService.js";
 import { VISITOR_EVENT, myPlayerLink, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
 import { LEVELS } from "../../services/cpuLevels.js";
-import { STREAK_LEVELS, STREAK_STEP, streakLevel } from "../../services/streak.js";
+import { STREAK_LEVELS, STREAK_STEP, floorGame, gameWords, streakFloor, streakFresh, streakLevel, streakMaster, streakStake } from "../../services/streak.js";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
+import { banner } from "./stageFx.js";
 import { LobbyArena, LobbyStage } from "./Stage.jsx";
 
 // the board's months are the run's months in KST, as the database counts them: "2026-11-01"
@@ -25,10 +27,52 @@ const monthOf = back => {
   if (m < 1) { m += 12; y -= 1; }
   return { key: `${y}-${String(m).padStart(2, "0")}-01`, label: `${m}월` };
 };
-// which game of the run this is, said in words while it is played (연승 도전 3번째 판); the seat keeps it from the game's opening
-export const streakGameLine = seat => (seat?.game ? `연승 도전 ${seat.game}번째 판` : "연승 도전");
-// the ladder: each 난이도 and the games it stands for (1~7판, 8~14판, 15판부터)
-const STEPS = STREAK_LEVELS.map((id, i) => ({ id, games: i < STREAK_LEVELS.length - 1 ? `${i * STREAK_STEP + 1}~${(i + 1) * STREAK_STEP}판` : `${i * STREAK_STEP + 1}판부터` }));
+// which game of the run this is, said while it is played (연승 도전 2층 4번째 판); the seat keeps it from the game's opening
+export const streakGameLine = seat => (seat?.game ? `연승 도전 ${gameWords(seat.game - 1)}` : "연승 도전");
+/* the floors a run climbs, each the games it stands for (1~7판, 8~14판, 15판부터) and its master, whose 난이도's Pokémon stands on the
+   floor under the word 주인 (streak.js: a floor's second half and its master stand one step above its first half) */
+const STEPS = STREAK_LEVELS.map((id, i) => ({
+  id, floor: i + 1, master: streakLevel(i * STREAK_STEP + STREAK_STEP - 1),
+  games: i < STREAK_LEVELS.length - 1 ? `${i * STREAK_STEP + 1}~${(i + 1) * STREAK_STEP}판` : `${i * STREAK_STEP + 1}판부터`,
+}));
+// the month's board, read once for what a game's stake says (null while read or when it cannot be)
+function useBoard() {
+  const [board, setBoard] = useState(null);
+  useEffect(() => { let on = true; readStreakBoard().then(rows => on && setBoard(rows), () => {}); return () => { on = false; }; }, []);
+  return board;
+}
+
+/* the floor a run stands on: its seven games as cells on the seam, the won ones inverted, the one being played with the amber lamp
+   (a live thing), the next one lit with 다음 while the run rests, the rest off; the seventh is the floor's master. wins: the games
+   won so far; playing: whether the game after them is on now */
+export function FloorCells({ wins, playing = false }) {
+  const floor = streakFloor(wins), now = floorGame(wins);
+  return <div className="stack streak-floor" role="list" aria-label={`${floor}층, 일곱 판 가운데 ${now - 1}판 이김`}>
+    {Array.from({ length: STREAK_STEP }, (_, i) => {
+      const n = i + 1, won = n < now, here = n === now;
+      return <span key={n} role="listitem" className={(won ? "inv" : "pn") + " streak-cell" + (!won && !here ? " off" : "")}
+        aria-label={`${n === STREAK_STEP ? "층의 주인" : `${n}번째 판`}${won ? ", 이김" : here ? (playing ? ", 지금" : ", 다음") : ""}`}>
+        <b className="t12">{n === STREAK_STEP ? "주인" : String(n)}</b>
+        {here && (playing ? <i className="lamp sig" aria-hidden="true" /> : <span className="t12 dim">다음</span>)}
+      </span>;
+    })}
+  </div>;
+}
+
+/* what a game of the run has at stake, beside it while it is played: which game it is, the streak riding on it lit at 32, the floor,
+   and one grey line on what the next win changes (streak.js streakStake). A floor's master inverts. wins: the games won before it */
+export function StreakStake({ wins }) {
+  const board = useBoard();
+  const master = streakMaster(wins);
+  return <div className="stack streak-stake">
+    <div className={(master ? "inv" : "pn") + " streak-stake-head"}>
+      <span className="t12 dim">{master ? `${streakFloor(wins)}층의 주인` : gameWords(wins)}</span>
+      <span className="streak-stake-board"><Seg value={String(wins)} h={32} cells={2} label={`${wins}연승`} /><span className="t15">연승이 걸린 판</span></span>
+      <span className="t12 dim">{streakStake(wins, board)}</span>
+    </div>
+    <FloorCells wins={wins} playing />
+  </div>;
+}
 
 // this visitor's account, kept current as they sign in and out: undefined while read, null signed out, else { requested_name, status }
 function useAccount() {
@@ -57,8 +101,13 @@ function useRun() {
   return run;
 }
 
+/* going into a floor's master: when the court has gone dark, its plate says who comes before the team preview lights (DESIGN.md
+   "Battle", 연승 도전), so the seventh game is met as a scene of its own. wins: the wins before the game gone into */
+const masterCall = (dark, scope, wins) => (!streakMaster(wins) ? dark
+  : dark.then(() => banner(document.querySelector(`${scope} .bs-stage`), `${streakFloor(wins)}층의 주인`)).catch(() => {}));
+
 /* the run lit: its streak at 84 (this device's run while it goes on, else the month's best of the account; dark when there is none),
-   with the rule it keeps as its grey line, then the ladder, the step the run stands on inverted */
+   with the rule it keeps as its grey line, the floor the run stands on, then the floors, the one it stands on inverted */
 function RunBoard({ run, best, approved, step }) {
   const value = run ? run.wins : approved && best != null ? best : null;
   const label = run ? "진행 중인 도전" : approved ? "이번 달 내 최고 기록" : "연승 도전";
@@ -66,23 +115,23 @@ function RunBoard({ run, best, approved, step }) {
     <div className="pn streak-hero">
       <span className="t12 dim streak-hero-label">{run && <i className="lamp sig" aria-hidden="true" />}{label}</span>
       <span className="streak-hero-board"><Seg value={value == null ? "" : String(value)} h={84} cells={2} label={value == null ? "" : `${value}연승`} /><span className="t20">연승</span></span>
-      <span className="t12 dim">한 번 지면 도전이 끝나고, 이긴 판 수가 그달의 기록입니다.</span>
+      <span className="t12 dim">한 번 지면 도전이 끝나고, 이긴 판 수가 그달의 기록입니다. 일곱 번째 판마다 층의 주인이 기다립니다.</span>
     </div>
-    <div className="stack streak-ladder" role="list" aria-label="난이도 계단">
-      {STEPS.map(({ id, games }, i) => {
-        const level = LEVELS[id];
-        return <div key={id} role="listitem" className={(i === step ? "inv" : "pn") + " stand streak-step"} aria-label={`${games} ${level.label}${i === step ? ", 다음 상대" : ""}`}>
-          <span className="t12 dim">{games}</span>
-          <b className="t15">{level.label}</b>
-          <i className="floor" aria-hidden="true" />
-          <Mon src={spriteUrl(level.species)} onError={onSpriteError()} />
-        </div>;
-      })}
+    {run && <FloorCells wins={run.wins} playing={run.playing} />}
+    <div className="stack streak-ladder" role="list" aria-label="층">
+      {STEPS.map(({ id, floor, master, games }, i) => <div key={id} role="listitem" className={(i === step ? "inv" : "pn") + " stand streak-step"}
+        aria-label={`${floor}층 ${games}, ${LEVELS[id].label}, 주인 ${LEVELS[master].label}${i === step ? ", 지금 층" : ""}`}>
+        <b className="t15">{`${floor}층`}</b>
+        <span className="t12 dim">{games}</span>
+        <span className="t12 dim">주인</span>
+        <i className="floor" aria-hidden="true" />
+        <Mon src={spriteUrl(LEVELS[master].species)} onError={onSpriteError()} />
+      </div>)}
     </div>
   </div>;
 }
 
-export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn }) {
+export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp }) {
   const account = useAccount();
   const run = useRun();
   const [back, setBack] = useState(0);
@@ -99,29 +148,30 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn }) {
     return () => { on = false; };
   }, [back, account?.status]);
   const approved = account?.status === "approved";
-  const step = STREAK_LEVELS.indexOf(streakLevel(run?.wins ?? 0));
-  const level = LEVELS[STREAK_LEVELS[step]];
+  const wins = run?.wins ?? 0;
+  const step = Math.min(STREAK_LEVELS.length - 1, streakFloor(wins) - 1);
+  const level = LEVELS[streakLevel(wins)];
   const rows = Array.isArray(board) ? board : null;
   const mine = back ? null : rows?.find(r => r.mine);
   // going in, as the lobby does: the court goes dark while the game is made and read, then its screen lights
-  const goInto = async make => {
+  const goInto = async (make, next) => {
     if (busy) return;
     setBusy(true); setError("");
     const dark = goingIn(".bt-lobby-main");
     try {
       const made = await make();
-      await enter(made.id, dark);
+      await enter(made.id, masterCall(dark, ".bt-lobby-main", next));
       onOpen(made.id);
     } catch (e) {
       await dark;
-      setError(e.message); setBusy(false); setRound(n => n + 1);
+      standUp(); setError(e.message); setBusy(false); setRound(n => n + 1);
     }
   };
   const start = async () => {
     if (run && !(await siteConfirm({ title: "새로 도전할까요?", body: `진행 중인 도전은 ${run.wins}연승으로 끝납니다.`, confirmLabel: "새로 도전" }))) return;
-    goInto(async () => keepStreakStart(await startStreakRun()));
+    goInto(async () => keepStreakStart(await startStreakRun()), 0);
   };
-  const resume = () => goInto(run.playing ? async () => ({ id: run.id }) : () => streakNextGame(run.id));
+  const resume = () => goInto(run.playing ? async () => ({ id: run.id }) : () => streakNextGame(run.id), run.playing ? null : run.wins);
   const keys = account === undefined ? <Button variant="main" loading>연승 도전 시작</Button>
     : account === null ? <Button variant="main" onClick={() => signInWithGoogle("", window.location.href.split("#")[0])}><GoogleMark />구글 로그인</Button>
     : !approved ? <Button variant="main" disabled={account.status === "pending"} onClick={() => go?.("records")}>{account.status === "pending" ? "이름 확인 중" : "트레이너 이름 정하기"}</Button>
@@ -138,8 +188,8 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn }) {
       {tabs}
       <div className="bt-lobby">
         <div className="bt-lobby-main">
-          <LobbyArena res={res} foe="컴퓨터" foeNote={level.label}
-            ours={<span className="bt-who"><b className={"bt-trainer" + (approved ? "" : " mute")}>{approved ? account.requested_name : "나"}</b><span className="bt-who-note">{run ? `${run.game}번째 판` : "랜덤 파티"}</span></span>}>
+          <LobbyArena res={res} foe="컴퓨터" foeNote={streakMaster(wins) ? `${level.label}, 층의 주인` : level.label}
+            ours={<span className="bt-who"><b className={"bt-trainer" + (approved ? "" : " mute")}>{approved ? account.requested_name : "나"}</b><span className="bt-who-note">{run ? gameWords(wins) : "랜덤 파티"}</span></span>}>
             <LobbyStage key={round} leads={[]} doubles={false} random foeLead={level.species} label={`경기장, 상대 ${level.label}, 랜덤 파티는 배틀이 열리면 정해집니다.`} />
           </LobbyArena>
           <Dock toast={error ? <Toast error>{error}</Toast> : note ? <Toast>{note}</Toast> : null}>
@@ -164,40 +214,79 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn }) {
   );
 }
 
-/* The end of a game of a run, for its player: the run's wins lit, and after a win the computer of the next 난이도 on its floor, so the
-   next game is a step of its own (DESIGN.md "Composing a screen" 14). The run rests after a win until 다음 판 opens the next game, so
-   나가기 loses nothing; after a loss 다시 도전 starts a new run. Both go in as the lobby does, from this stage. */
-export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn }) {
+/* the swap after a won game within a floor: one of ours for one of the party just beaten, each chosen by a tap on its six (the one
+   chosen inverted), or neither. species: that party's six, { species, name } */
+function SwapSix({ label, species, value, onChange }) {
+  return <section className="streak-swap-side" aria-label={label}>
+    <span className="t12 dim">{label}</span>
+    <div className="stack bt-foe-six">
+      {species.map(({ species: s, name }) => <button key={s} type="button" className={"bt-foe-cell streak-swap-cell" + (value === s ? " inv" : "")} aria-pressed={value === s}
+        onClick={() => onChange(value === s ? "" : s)}>
+        <img src={spriteUrl(s)} alt="" draggable="false" onError={onSpriteError()} />
+        <b>{name}</b>
+      </button>)}
+    </div>
+  </section>;
+}
+
+/* The end of a game of a run, for its player: the run's wins lit (이번 달 내 최고 기록 when it is the month's best now), and after a
+   win the floor with the games won inverted and the computer of the next game on its floor, so the next game is a step of its own
+   (DESIGN.md "Composing a screen" 14); a floor's master inverts. Within a floor the party goes on and one of the party just beaten may
+   be taken for one of ours; a floor's master beaten, the next floor brings a new party. The run rests after a win until 다음 판 opens
+   the next game, so 나가기 loses nothing; after a loss 다시 도전 starts a new run. Both go in as the lobby does, from this stage.
+   ours, theirs: the two parties' species, as the team preview showed them (none after a reload: then there is no swap) */
+export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, settle = async () => {}, ours = [], theirs = [] }) {
   const seat = readSeat(id);
+  const board = useBoard();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [give, setGive] = useState("");
+  const [take, setTake] = useState("");
   const wins = seat?.wins ?? 0;
   const resting = won && !seat?.ended;
   const level = LEVELS[streakLevel(wins)];
-  const goInto = async make => {
+  const master = streakMaster(wins);
+  const mine = board?.find(r => r.mine);
+  const best = Boolean(mine && wins > 0 && mine.wins === wins);
+  // ponytail: the species are matched by name; a party with two forms of one species cannot be drawn (one of each species)
+  const swapping = resting && !streakFresh(wins) && ours.length === 6 && theirs.length === 6;
+  const swap = swapping && give && take ? { give, take } : null;
+  const goInto = async (make, next) => {
     if (busy) return;
     setBusy(true); setError("");
+    // a replay still playing is put at its end first, so the court goes dark on the game's end (BattlePage.jsx Arena settle)
+    await settle();
     const dark = goingIn(".bt-main");
     try {
       const made = await make();
-      await enter(made.id, dark);
+      await enter(made.id, masterCall(dark, ".bt-main", next));
       onOpen(made.id);
-    } catch (e) { setError(e.message); setBusy(false); }
+    } catch (e) { await dark; standUp(); setError(e.message); setBusy(false); }
   };
+  // what the end says under the counter: a floor passed, or where the run stands on the month's board
+  const line = resting && streakFresh(wins) ? `${streakFloor(wins) - 1}층을 넘었습니다. ${streakFloor(wins)}층에서는 파티를 새로 받습니다.`
+    : !resting && mine && wins > 0 ? (best ? `이번 달 ${mine.place}위 기록입니다.` : `이번 달 내 최고 기록은 ${mine.wins}연승입니다.`) : "";
   return <>
     <div className="stack streak-end">
-      <Counter label="이번 도전" value={wins} after={<span className="t15">연승</span>} />
-      {resting && <div className="pn stand streak-next" role="img" aria-label={`다음 상대 ${level.label}`}>
-        <span className="t12 dim">다음 상대</span>
+      <Counter label={best ? "이번 달 내 최고 기록" : "이번 도전"} value={wins} after={<span className="t15">연승</span>} />
+      {resting && <div className={(master ? "inv" : "pn") + " stand streak-next"} role="img" aria-label={`다음 상대 ${level.label}${master ? ", 층의 주인" : ""}`}>
+        <span className="t12 dim">{master ? `${streakFloor(wins)}층의 주인` : "다음 상대"}</span>
         <b className="t15">{level.label}</b>
         <i className="floor" aria-hidden="true" />
         <Mon src={spriteUrl(level.species)} onError={onSpriteError()} />
       </div>}
     </div>
+    {resting && <FloorCells wins={wins} />}
+    {line && <p className="t12 dim streak-end-line">{line}</p>}
+    {swapping && <div className="stack streak-swap">
+      <p className="t12 dim">이긴 상대의 포켓몬 하나를 내 파티의 하나와 바꿀 수 있습니다.</p>
+      <SwapSix label="내 파티에서 보낼 포켓몬" species={ours} value={give} onChange={setGive} />
+      <SwapSix label="상대 파티에서 데려올 포켓몬" species={theirs} value={take} onChange={setTake} />
+    </div>}
     <Dock toast={error ? <Toast error>{error}</Toast> : null}>
       <div className="bt-end-keys">
-        {resting ? <Button variant="main" loading={busy} onClick={() => goInto(() => streakNextGame(id))}>다음 판</Button>
-          : <Button variant="main" icon="refresh" loading={busy} onClick={() => goInto(async () => keepStreakStart(await startStreakRun()))}>다시 도전</Button>}
+        {resting ? <Button variant="main" loading={busy} onClick={() => goInto(() => streakNextGame(id, swap), wins)}>{swap ? "바꾸고 다음 판" : "다음 판"}</Button>
+          : <Button variant="main" icon="refresh" loading={busy} onClick={() => goInto(async () => keepStreakStart(await startStreakRun()), 0)}>다시 도전</Button>}
         <Button onClick={onOut} disabled={busy}>나가기</Button>
       </div>
     </Dock>

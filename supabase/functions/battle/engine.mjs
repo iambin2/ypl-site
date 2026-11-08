@@ -90,8 +90,11 @@ export function setPool(formatid) {
 }
 // a weighted order without repeats (Efraimidis and Spirakis): each one's key is random^(1/weight), largest first
 const weightedOrder = (list, weight, random) => list.map(entry => [Math.pow(random(), 1 / weight(entry)), entry]).sort((a, b) => b[0] - a[0]).map(([, entry]) => entry);
-export function randomTeam(formatid, random = Math.random, { meta = false } = {}) {
-  const pool = setPool(formatid);
+/* meta: drawn by ladder usage, as the computer's party is. top: only from the most used this many, as the floor's master of a 연승 도전
+   run brings (docs/BATTLE_STREAK.md, 층의 주인) */
+export function randomTeam(formatid, random = Math.random, { meta = false, top = 0 } = {}) {
+  const all = setPool(formatid);
+  const pool = top ? [...all].sort((a, b) => (b.usage || 0) - (a.usage || 0)).slice(0, top) : all;
   if (!pool.length) throw new Error(`no random sets for ${formatid}`);
   const dex = DEX_OF_FORMAT[formatid];
   for (let tries = 0; tries < 30; tries++) {
@@ -188,6 +191,12 @@ export function replay(inputLog) {
     else if (!command.startsWith("version")) throw new Error(`replay cannot read ${line}`);
   }
   return battle;
+}
+
+// the party a side brought, read off a stored input log (the beaten party of a won 연승 도전 game, which a swap takes one from)
+export function sideTeam(inputLog, side) {
+  const line = String(inputLog ?? "").split("\n").find(l => l.startsWith(`>player ${side} `));
+  return line ? Teams.unpack(JSON.parse(line.slice(`>player ${side} `.length)).team) || [] : [];
 }
 
 /* A finished battle with the computer, as the player's device sends it (docs/db/cpu_battles.sql): only its input log, and every fact
