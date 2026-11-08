@@ -1239,6 +1239,16 @@ export function selectSubmissionRegistration(registrations = [], registrationNam
   return matches[0] || null;
 }
 
+// A promoted champion keeps the completed Rookie registration. Only the open
+// event can receive another party; never resolve this by array order or copying it.
+export function selectWritableSubmissionRegistration(registrations = [], registrationName = "", events = []) {
+  const writableIds = new Set(events.filter(event => ["open", "running"].includes(event.status) && !event.record_applied_at).map(event => event.id));
+  const selected = selectSubmissionRegistration(registrations.filter(row => writableIds.has(row.event_id)), registrationName);
+  if (selected) return selected;
+  if (selectSubmissionRegistration(registrations, registrationName)) throw new Error("현재 파티를 제출할 수 없는 대회입니다.");
+  return null;
+}
+
 export function prettifyID(id) {
   return String(id || "").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
 }

@@ -6,7 +6,6 @@ import { CUP_RULES, REGULATIONS } from "../../data/index.js";
 import { getApplicationEventTypeLabel } from "../../services/bracketTeamParticipants.js";
 import { announcementEventType, changeAnnouncementEventType, normalizedAnnouncementDivision } from "../../services/leagueIntake.js";
 import { listAvailableChampionshipEditions } from "../../services/normalizedCompetitionService.js";
-import { CHAMPIONSHIP_FINAL_FORMAT, CHAMPIONSHIP_QUALIFIER_FORMAT } from "../../services/championsCore.js";
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
 import { loadRecordsPokemonDirectory } from "../../services/recordsPokemon.js";
@@ -133,10 +132,11 @@ function FormBuilder({ form, setForm, earlier = [] }){
   const eventDraft=form?.eventDraft||{};
   const eventTypeValue=announcementEventType(eventDraft);
   const legacyLightEvent=eventTypeValue==="light";
+  const officialEarlier=earlier.filter(a=>announcementEventType(a.form?.eventDraft)!=="general");
   const eventTypeOptions=[
     ...(legacyLightEvent?[{value:"light",label:`${getApplicationEventTypeLabel("light")} (기존)`,disabled:true}]:[]),
     {value:"pokecup",label:getApplicationEventTypeLabel("pokecup")},
-    {value:"general",label:"일반 대회"},
+    ...(eventTypeValue==="general"?[{value:"general",label:"일반 대회 (기존)",disabled:true}]:[]),
     {value:"champions",label:getApplicationEventTypeLabel("champions")},
   ];
   const isChampions=eventTypeValue==="champions";
@@ -156,7 +156,6 @@ function FormBuilder({ form, setForm, earlier = [] }){
   const isTeamEvent=!isChampions&&Boolean(eventDraft.isTeamEvent);
   const divisionValue=normalizedAnnouncementDivision(form);
   const divisionOptions=isTeamEvent?[divisionValue]:isGeneral?["other"]:["both","light"];
-  const competitionOptions=[{value:"double_elimination",label:"더블 엘리미네이션"},{value:"single_elimination",label:"싱글 엘리미네이션"},...(divisionValue==="both"?[]:[{value:"round_robin",label:"리그전"}])];
   const hasLegacyDivision=!divisionOptions.includes(divisionValue);
   const divisionDropdownOptions=[
     ...(hasLegacyDivision?[{value:"__legacy__",label:divisionValue==="master"?"기존 마스터 단독 접수":divisionValue==="rookie"?"기존 루키 단독 접수":"기존 미분류",disabled:true}]:[]),
@@ -180,9 +179,9 @@ function FormBuilder({ form, setForm, earlier = [] }){
       <Field label="신청 버튼 문구" hint="버튼의 말은 짧은 명사로, 마침표 없이 적습니다. 예: 참가 신청"><input value={(form&&form.buttonLabel)||""} onChange={e=>patchForm({buttonLabel:e.target.value})} placeholder="참가 신청"/></Field>
       <Field label="신청 마감 시각" hint="이 시각이 지나면 신청 버튼이 닫히고, 홈의 신청 접수 중 램프가 꺼집니다."><input type="datetime-local" value={form?.closesAt||""} onChange={e=>patchForm({closesAt:e.target.value})}/></Field>
       <div className="fb-q">
-        <div className="fb-q-top fb-section-head"><span className="t12 dim">대회 설정</span>{earlier.length>0&&!form?.eventId&&<Button variant="link" onClick={()=>setPickEarlier(true)}>지난 대회에서 불러오기</Button>}</div>
-        {pickEarlier&&<PickerSheet title="지난 대회에서 불러오기" placeholder="공지 제목 검색" items={earlier.map(a=>({value:a.id,label:a.title||"(제목 없음)",sub:[formatDate(a.date),a.form?.eventDraft?.name].filter(Boolean).join(", "),search:String(a.title||"").toLowerCase().replace(/\s+/g,"")}))}
-          onPick={id=>{ const from=earlier.find(a=>a.id===id); if(from) setForm(copyEventRules(from,form)); }} onClose={()=>setPickEarlier(false)}/>}
+        <div className="fb-q-top fb-section-head"><span className="t12 dim">대회 설정</span>{officialEarlier.length>0&&!form?.eventId&&<Button variant="link" onClick={()=>setPickEarlier(true)}>지난 대회에서 불러오기</Button>}</div>
+        {pickEarlier&&<PickerSheet title="지난 대회에서 불러오기" placeholder="공지 제목 검색" items={officialEarlier.map(a=>({value:a.id,label:a.title||"(제목 없음)",sub:[formatDate(a.date),a.form?.eventDraft?.name].filter(Boolean).join(", "),search:String(a.title||"").toLowerCase().replace(/\s+/g,"")}))}
+          onPick={id=>{ const from=officialEarlier.find(a=>a.id===id); if(from) setForm(copyEventRules(from,form)); }} onClose={()=>setPickEarlier(false)}/>}
         <div className="fb-note" style={{marginBottom:"var(--s3)"}}>참가자 이름은 신청 화면에서 따로 입력받습니다. 아래 설정은 이 신청서와 연결된 대회의 공통 규칙입니다.</div>
         <label className="bk-check" style={{marginBottom:"var(--s3)"}}><input type="checkbox" checked={eventLinked} onChange={e=>patchForm({eventDraft:{...eventDraft,linked:e.target.checked}})} disabled={Boolean(form?.eventId)}/><span>이 신청서를 대회와 연결</span></label>
         {eventLinked&&<>
@@ -194,7 +193,7 @@ function FormBuilder({ form, setForm, earlier = [] }){
         <Cell label="배틀 형식"><Dropdown value={(form?.eventDraft?.battleFormat)||""} placeholder="선택" ariaLabel="배틀 형식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),battleFormat:value||null,competitionEditionId:null}})} options={[{value:"singles",label:"싱글"},{value:"doubles",label:"더블"}]}/></Cell>
         {!isTeamEvent&&<Cell label="경기 진행"><Dropdown value={["site","random"].includes(eventDraft.matchPlay)?eventDraft.matchPlay:"champions"} ariaLabel="경기 진행" onChange={value=>patchForm({eventDraft:{...eventDraft,matchPlay:value}})} options={[{value:"champions",label:"포켓몬 챔피언스"},{value:"site",label:"사이트 배틀"},{value:"random",label:"랜덤 배틀"}]}/></Cell>}
         {isChampions&&!form?.eventId&&<Cell label="챔피언스 회차" wide><Dropdown value={eventDraft.competitionEditionId||"__new__"} disabled={!battleFormat||editionBusy} ariaLabel="챔피언스 회차" onChange={value=>patchForm({eventDraft:{...eventDraft,competitionEditionId:value==="__new__"?null:value}})} options={[{value:"__new__",label:"새 회차 생성"},...editions.map(ed=>({value:ed.id,label:`${ed.round_number}회에 ${battleFormat==="doubles"?"더블":"싱글"} 추가`}))]}/></Cell>}
-        <Cell label="대진 방식" wide={isChampions}>{isChampions?<span>선발전 {CHAMPIONSHIP_QUALIFIER_FORMAT==="double_elimination"?"더블 엘리미네이션":""}, 본선 {CHAMPIONSHIP_FINAL_FORMAT==="single_elimination"?"싱글 엘리미네이션":""} (고정)</span>:<Dropdown value={(form?.eventDraft?.competitionFormat)||""} placeholder="선택" ariaLabel="대진 방식" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),competitionFormat:value||null}})} options={competitionOptions}/>}</Cell>
+        <Cell label="대진 방식"><span>대진표 생성 시 선택</span></Cell>
         <Cell label="레귤레이션"><Dropdown value={(form?.eventDraft?.regulationId)||Object.keys(REGULATIONS)[0]||""} ariaLabel="레귤레이션" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),regulationId:value}})} options={Object.values(REGULATIONS).map(reg=>({value:reg.id,label:reg.name}))}/></Cell>
         <Cell label="파이컵 추가 룰"><Dropdown value={(form?.eventDraft?.cupRuleId)||"none"} ariaLabel="파이컵 추가 룰" onChange={value=>patchForm({eventDraft:{...(form?.eventDraft||{}),cupRuleId:value}})} options={Object.values(CUP_RULES).map(rule=>({value:rule.id,label:rule.name}))}/></Cell>
         </div>

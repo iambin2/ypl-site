@@ -85,7 +85,7 @@ export function championshipAdvancementLabel(type) {
   return type === "ranking" ? "직행" : type === "qualifier" ? "선발전 통과" : type === "manual" ? "운영 대체" : "경로 미확인";
 }
 
-export function deriveQualifierSurvivorState({ entries = [], matches = [], qualificationSlots, finalCapacity, directCount = 0 } = {}) {
+export function deriveQualifierSurvivorState({ entries = [], matches = [], qualificationSlots, finalCapacity, directCount = 0, competitionFormat = "double_elimination" } = {}) {
   const targetCount = Number.isInteger(Number(finalCapacity)) ? Number(finalCapacity) - Number(directCount) : Number(qualificationSlots);
   const activeEntries = (entries || []).filter(entry => entry?.id && entry.status !== "withdrawn");
   const entryIds = new Set(activeEntries.map(entry => entry.id));
@@ -103,8 +103,10 @@ export function deriveQualifierSurvivorState({ entries = [], matches = [], quali
     const loserId = winnerId === a ? b : a;
     lossCountByEntryId[loserId] += 1;
   }
-  const aliveEntryIds = activeEntries.filter(entry => lossCountByEntryId[entry.id] < 2).map(entry => entry.id);
-  const eliminatedEntryIds = activeEntries.filter(entry => lossCountByEntryId[entry.id] >= 2).map(entry => entry.id);
+  const lossesToEliminate = competitionFormat === "single_elimination" ? 1 : 2;
+  if (!["single_elimination","double_elimination"].includes(competitionFormat)) invalid = true;
+  const aliveEntryIds = activeEntries.filter(entry => lossCountByEntryId[entry.id] < lossesToEliminate).map(entry => entry.id);
+  const eliminatedEntryIds = activeEntries.filter(entry => lossCountByEntryId[entry.id] >= lossesToEliminate).map(entry => entry.id);
   const aliveCount = aliveEntryIds.length;
   if (aliveCount < targetCount) invalid = true;
   const eliminatedCount = eliminatedEntryIds.length;

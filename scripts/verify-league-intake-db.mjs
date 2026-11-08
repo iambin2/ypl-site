@@ -7,6 +7,8 @@ import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import { buildEventRankingAwardSnapshot } from "../src/services/bracketRankingAwardSnapshot.js";
 import { verifyCompetitionFlows } from "./competition-flow-checks.mjs";
+import { verifyBracketRegistration } from "./bracket-registration-checks.mjs";
+import { verifyBracketFormats } from "./bracket-format-checks.mjs";
 
 const { PGlite } = await import(process.argv[2] ? pathToFileURL(resolve(process.argv[2])).href : "@electric-sql/pglite");
 const pg = new PGlite();
@@ -286,6 +288,8 @@ try {
     assert.equal(await scalar("select count(*)::int from event_registrations where event_id=$1 and final_submission_id is not null",[pair.rookie_event_id]),0);
   });
   await verifyCompetitionFlows({pg,q,scalar,as,check,season});
+  await verifyBracketRegistration({pg,q,scalar,as,check,season});
+  await verifyBracketFormats({pg,q,scalar,as,check,season});
   await check("A non-admin authenticated token cannot create or cancel a pair",async()=>{
     await pg.exec(`select set_config('request.jwt.claims','{}',false)`);
     await rejects(()=>save("non-admin"),/관리자 권한/);
