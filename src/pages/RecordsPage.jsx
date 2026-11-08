@@ -19,12 +19,13 @@ import { syncTournamentRounds } from "../services/recordSync.js";
 import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
 import { generationText } from "../services/seasonLabel.js";
 import Button from "../components/common/Button.jsx";
+import LinkRequests from "../components/LinkRequests.jsx";
 import { popHandlers } from "../components/layout/history.js";
 import Seg from "../components/common/Seg.jsx";
 import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
 import { GoogleMark } from "../components/layout/SiteHeader.jsx";
-import { VISITOR_EVENT, accountsReady, decideLinkRequest, listLinkRequests, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
+import { VISITOR_EVENT, accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
 
 /* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
    끝난 공식 배틀의 로그는 한 번만 읽어 둔다. */
@@ -240,7 +241,7 @@ export default function RecordsPage({ data, admin, setModal, save }) {
 
       <div className="swap rc-body" key={tab} ref={arrived}>
         {normalizedRead.loading ? <Loader small /> : <>
-        {tab === "trainer" && admin && <LinkRequests snapshot={snapshot} />}
+        {tab === "trainer" && admin && <LinkRequests id="rc-linkreq-h" hint={(name) => { const p = profileOf(snapshot, name); return p ? trainerHint(p) : null; }} />}
         {tab === "trainer" && <TrainerView snapshot={snapshot} onOpen={openTrainer} finding={finding} />}
         {tab === "tour" && <TournamentArchiveView snapshot={snapshot} data={data} admin={admin} setModal={setModal} onParty={setParty} />}
         {tab === "pokemon" && <PokemonView snapshot={snapshot} onParty={setParty} />}
@@ -553,54 +554,6 @@ function FindMe({ query, exact, onOpen, part = "head" }) {
 /* 운영진: 기록 연결 요청(docs/db/player_accounts.sql). 요청 하나가 판 하나와 그 아래 두 칸의 결정으로 선다: 판에는 요청한 이름(20)과
    그 이름에 무엇이 있는지(기록 있음은 반전), 본인 확인에 쓸 기록의 요약, 구글 계정, 요청한 날. 결정은 확인창과 같은 배치로
    거절과 승인이 1 대 1.618, 둘 다 52, 승인이 나아가는 쪽이다. 어느 쪽이든 한 번 더 묻는다. 요청이 없으면 아무것도 보이지 않는다. */
-function LinkRequests({ snapshot }) {
-  const [rows, setRows] = useState([]);
-  const [busy, setBusy] = useState("");
-  const [note, setNote] = useState("");
-  const load = () => accountsReady().then((ok) => (ok ? listLinkRequests() : [])).then(setRows, (error) => setNote(error.message));
-  useEffect(() => { load(); }, []);
-  const pending = rows.filter((row) => row.status === "pending");
-  if (!pending.length && !note) return null;
-  const decide = async (row, approve) => {
-    const who = row.email || row.account_name || "이 구글 계정";
-    const ok = await siteConfirm(approve
-      ? { title: "기록 연결 승인", body: `${row.requested_name} 기록을 ${who}에 연결할까요? 연결되면 이 이름의 신청은 이 계정으로만 받습니다.`, confirmLabel: "승인" }
-      : { title: "기록 연결 거절", body: `${row.requested_name} 기록 연결 요청을 거절할까요? 요청한 계정은 이름을 다시 정할 수 있습니다.`, confirmLabel: "거절" });
-    if (!ok) return;
-    setBusy(row.auth_user_id); setNote("");
-    try { await decideLinkRequest(row.auth_user_id, approve); await load(); } catch (error) { setNote(error.message); }
-    setBusy("");
-  };
-  return (
-    <section className="rc-linkreq" aria-labelledby="rc-linkreq-h">
-      <SectionHead id="rc-linkreq-h" title={`기록 연결 요청 ${pending.length}`} />
-      <div className="rc-reqs">
-        {pending.map((row) => {
-          const profile = profileOf(snapshot, row.requested_name);
-          return (
-            <div className="stack" key={row.auth_user_id}>
-              <div className="pn rc-req">
-                <div className="rc-req-head">
-                  <b className="t20">{row.requested_name}</b>
-                  <span className={"rc-place t12" + (row.player_id ? " inv" : " dim rc-req-tag")}>{row.player_id ? "기록 있음" : "이름으로 받은 신청 있음"}</span>
-                </div>
-                {profile && <p className="t12 dim">{trainerHint(profile)}</p>}
-                <p className="t12 dim">{[row.account_name && `구글 ${row.account_name}`, row.email].filter(Boolean).join(", ")}</p>
-                <p className="t12 mute">{formatDate(row.requested_at)} 요청</p>
-              </div>
-              <div className="rc-req-keys">
-                <Button variant="second" onClick={() => decide(row, false)} disabled={Boolean(busy)}>거절</Button>
-                <Button variant="main" icon="check" onClick={() => decide(row, true)} loading={busy === row.auth_user_id}>승인</Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {note && <p className="t12 dim rc-req-note">{note}</p>}
-    </section>
-  );
-}
-
 /* ---- shared pieces of the records views ---- */
 
 /* 포켓몬의 횟수: 그림이 있으면 바닥 띠 위에 선 여섯 칸, 없으면 줄 */

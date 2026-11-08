@@ -143,6 +143,8 @@
 .ad-keys:has(> :only-child) { grid-template-columns: 1fr; }
 .ad-event-head, .ad-none { display: grid; gap: var(--s1); padding: var(--s3) var(--pad); }
 .ad-page > .btn { justify-self: start; }
+/* the link requests stand in the page's own rhythm, not with the records tab's margins */
+.ad-page > .rc-linkreq { margin: 0; display: grid; gap: var(--s3); }
 @media (max-width: 859px) {
   .ad-main { display: contents; }
   .ad-main > .ad-block:last-child { order: 2; }

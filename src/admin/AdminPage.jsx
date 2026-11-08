@@ -3,6 +3,7 @@ import Button from "../components/common/Button.jsx";
 import Empty from "../components/common/Empty.jsx";
 import Loader from "../components/common/Loader.jsx";
 import { Counter, Row, SectionHead, Steps } from "../components/common/Board.jsx";
+import LinkRequests from "../components/LinkRequests.jsx";
 import { formatDate } from "../services/dateFormat.js";
 import { ADMIN_STEPS, adminTasks, readAdminOverview } from "../services/adminOverview.js";
 
@@ -13,7 +14,7 @@ import { ADMIN_STEPS, adminTasks, readAdminOverview } from "../services/adminOve
 const DOORS = [
   ["공지 쓰기", "news", "대회 공지와 신청서"],
   ["대진표", "bracket", "새 대진표, 결과 입력, 기록 반영"],
-  ["기록", "records", "트레이너, 기록 연결 요청", { tab: "trainer" }],
+  ["기록", "records", "트레이너, 대회, 랭킹", { tab: "trainer" }],
   ["칭호", "titles", "칭호와 보유자"],
   ["명예의 전당", "champions", "역대 챔피언"],
   ["게시판", "board", "글과 댓글 정리"],
@@ -49,8 +50,10 @@ function EventPanel({ e, main, go, onClose }) {
   </section>;
 }
 
-export default function AdminPage({ data, admin, go, onAdmin, save, flash }) {
+export default function AdminPage({ data, admin, go, onAdmin, save, flash, onRequests }) {
   const [overview, setOverview] = useState(null);
+  const [pending, setPending] = useState(null);
+  const counted = n => { setPending(n); onRequests?.(n); };
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!admin) return undefined;
@@ -68,11 +71,12 @@ export default function AdminPage({ data, admin, go, onAdmin, save, flash }) {
   if (!admin) return <div className="ad-page"><h1 className="t32">운영</h1><Empty title="관리자 로그인이 필요합니다." desc="운영진 계정으로 로그인하면 할 일이 여기에 모입니다." />
     <Button variant="main" onClick={onAdmin}>관리자 로그인</Button></div>;
   const tasks = adminTasks(overview);
+  // the requests block reads them itself and says how many wait after each decision; until it does, the overview's count stands
+  const requests = pending ?? overview?.requests?.length ?? null;
   const events = overview?.events || [];
   const n = v => (overview ? String(v) : null);
   const open = (t) => {
-    if (t.kind === "requests") go("records", { tab: "trainer" });
-    else go("bracket", { eventId: t.event.id });
+    go("bracket", { eventId: t.event.id });
   };
   return <div className="ad-page">
     <h1 className="t32">운영</h1>
@@ -80,8 +84,10 @@ export default function AdminPage({ data, admin, go, onAdmin, save, flash }) {
       <Counter label="할 일" value={n(tasks.length)} lamp={tasks.length > 0} />
       <Counter label="신청" value={n(events.filter(e => e.step === 1).reduce((s, e) => s + (e.applicants || 0), 0))} cells={3} />
       <Counter label="남은 경기" value={n(events.reduce((s, e) => s + e.left, 0))} />
-      <Counter label="연결 요청" value={n(overview?.requests?.length ?? 0)} />
+      <Counter label="연결 요청" value={requests == null ? null : String(requests)} lamp={requests > 0} />
     </div>
+    {/* the decision operators make most: Google accounts asking for a trainer's record, first and across the page */}
+    <LinkRequests id="ad-linkreq-h" onCount={counted} />
     {failed ? <Empty title="운영 현황을 불러오지 못했습니다." desc="잠시 뒤 다시 열어 주세요." />
       : !overview ? <Loader />
       : <div className="ad-cols">
@@ -89,7 +95,7 @@ export default function AdminPage({ data, admin, go, onAdmin, save, flash }) {
           <section className="ad-block" aria-labelledby="ad-todo-h">
             <SectionHead id="ad-todo-h" title="할 일" />
             {tasks.length ? <div className="stack">{tasks.map(t => <Row key={t.key} title={t.title} line={t.line} lamp={true} onClick={() => open(t)} label={`${t.title}, ${t.line}`} />)}</div>
-              : <div className="pn ad-none"><span className="t15">지금 할 일이 없습니다.</span><span className="t12 dim">결과 입력, 대진표, 기록 반영, 연결 요청이 생기면 여기에 섭니다.</span></div>}
+              : <div className="pn ad-none"><span className="t15">지금 할 일이 없습니다.</span><span className="t12 dim">결과 입력, 대진표, 기록 반영이 생기면 여기에 섭니다.</span></div>}
           </section>
           <section className="ad-block" aria-labelledby="ad-doors-h">
             <SectionHead id="ad-doors-h" title="편집" />

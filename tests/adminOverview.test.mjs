@@ -15,7 +15,7 @@ test("an event stands at the step its notice and bracket say", () => {
 test("the list is what waits, in the order it happens, and an open application is not a task", () => {
   const e = (id, step, more = {}) => ({ id, name: id, step, stage: "8강", done: 1, total: 4, left: 3, applicants: 9, submitted: 5, entrants: 8, battles: 0, awaiting: false, ...more });
   const tasks = adminTasks({ events: [e("A", 3), e("B", 1), e("C", 2), e("D", 4, { awaiting: true })], requests: [{ requested_name: "가" }], battles: 0 });
-  assert.deepEqual(tasks.map(t => t.kind), ["play", "draw", "record", "requests"]);
+  assert.deepEqual(tasks.map(t => t.kind), ["play", "draw", "record"], "link requests have their own block, not a row");
   assert.match(tasks[0].line, /3경기 남음/);
   assert.match(tasks[2].line, /대회일이 지났습니다/);
   assert.deepEqual(adminTasks(null), []);

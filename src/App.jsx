@@ -4,6 +4,7 @@ import { bracketRouteSearch, readInitialAppView } from "./services/appRouting.js
 import { loadSiteData, saveSiteData, seenSiteData, submitAnnouncementResponse } from "./services/siteDataService.js";
 import { WRITE_CONFLICT } from "./services/revisionedRow.js";
 import { listEventsAwaitingRecord } from "./services/normalizedCompetitionService.js";
+import { accountsReady as linkAccountsReady, listLinkRequests } from "./services/visitorAuth.js";
 import HomePage, { todayEvent } from "./pages/HomePage.jsx";
 import MorePage from "./pages/MorePage.jsx";
 import { SiteHeader, SiteFooter, NAV_ITEMS, SiteDialogHost } from "./components/index.js";
@@ -182,6 +183,16 @@ export default function App() {
   // 새로고침한 탭은 관리자 모드로 돌아온다(storage.js restoreAdmin). 돌아온 것은 로그인이 아니라 아래 알림을 다시 띄우지 않는다.
   const restored=useRef(false);
   useEffect(()=>{ restoreAdmin().then(ok=>{ if(ok){ restored.current=true; setAdmin(true); } }); },[]);
+  /* 기다리는 기록 연결 요청의 수: 관리자 띠의 운영 키가 말한다(2026-11-08, 운영진이 가장 자주 하는 결정). 로그인할 때와 탭으로
+     돌아올 때 읽고, 운영 화면에서 결정하면 그 화면이 알려 준다. */
+  const [linkPending,setLinkPending]=useState(0);
+  useEffect(()=>{
+    if(!admin){ setLinkPending(0); return undefined; }
+    const read=()=>{ if(document.visibilityState==="visible") linkAccountsReady().then(ok=>ok?listLinkRequests():[]).then(rows=>setLinkPending(rows.filter(r=>r.status==="pending").length),()=>{}); };
+    read();
+    document.addEventListener("visibilitychange",read);
+    return ()=>document.removeEventListener("visibilitychange",read);
+  },[admin]);
   // 대회일이 지났는데 기록 반영 전인 대회를 로그인 때 한 번 알린다. 확인하지 못하면 조용히 넘어간다.
   useEffect(()=>{
     if(!admin) return;
@@ -282,7 +293,7 @@ export default function App() {
         {view==="builder"&&<TeamBuilderPage go={go} flash={flash} admin={admin}/>}
         {view==="calc"&&<CalculatorPage/>}
         {view==="battle"&&<BattlePage flash={flash} go={go}/>}
-        {view==="admin"&&<AdminPage data={data} admin={admin} go={go} onAdmin={onAdmin} save={save} flash={flash}/>}
+        {view==="admin"&&<AdminPage data={data} admin={admin} go={go} onAdmin={onAdmin} save={save} flash={flash} onRequests={setLinkPending}/>}
         {view==="lab"&&BattleLabPage&&<BattleLabPage flash={flash} go={go}/>}
         {view==="titles"&&<TitlesPage data={data} admin={admin} setModal={setModal} go={go}/>}
         {view==="champions"&&<ChampionsPage data={data} admin={admin} setModal={setModal} go={go}/>}
@@ -293,7 +304,7 @@ export default function App() {
       {data&&<SiteFooter onNavigate={go} tagline={data.meta&&data.meta.tagline} onAdmin={!admin?onAdmin:null}/>}
 
       <TabBar view={going||view} onNavigate={go} live={live}/>
-      {admin&&<AdminModeBar onLogout={logout} onDesk={view==="admin"?null:()=>go("admin")}/>}
+      {admin&&<AdminModeBar onLogout={logout} requests={linkPending} onDesk={view==="admin"?null:()=>go("admin")}/>}
       {more&&<Menu anchor={more} title="더보기" items={moreItems} onClose={()=>setMore(null)}/>}
       <Toaster feed={toast}/>
       <SiteDialogHost/>
