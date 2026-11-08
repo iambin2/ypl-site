@@ -15,7 +15,6 @@
 .tt-off .row-main > b { color: var(--mute); }
 
 /* ---------- hall of fame: one reign large, the rest hung on a wall (2026-11-03) ---------- */
-.hof-desc { margin-top: var(--s2); }
 /* the crown: the reigning champion's board. The generation lights in segments, the name at 32, the six large with their names */
 .hof-crown { display: grid; gap: var(--s8); margin-top: var(--s8); padding: var(--s5) var(--pad); }
 .hof-crown-who { display: grid; justify-items: start; align-content: start; gap: var(--s2); min-width: 0; }

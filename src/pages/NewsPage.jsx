@@ -228,10 +228,10 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     <div className="nw-search"><ListSearch q={q} setQ={setQ} placeholder="공지 제목과 내용 검색" count={list.length}/></div>
     {list.length===0?(kw
       ? <>
-        <div className="pn nw-none"><Seg value={0} h={40} cells={2} label="0건"/><div><b className="t15">맞는 공지가 없습니다.</b><p className="t12 dim reg">{`‘${kw}’에 맞는 공지를 찾지 못했습니다.`}</p></div></div>
+        <div className="pn nw-none"><Seg value={0} h={40} cells={2} label="0건"/><div><b className="t15">맞는 공지가 없습니다.</b></div></div>
         {all.length>0&&<><p className="t12 dim nw-recent">최근 공지</p><div className="stack nw-list">{all.slice(0,3).map(a=><NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div></>}
       </>
-      : <Empty title="등록된 공지가 없습니다." desc="대회 일정과 운영 소식이 올라오면 이곳에 표시됩니다."/>)
+      : <Empty title="등록된 공지가 없습니다."/>)
     : <div className="stack nw-list">{shown.map((a,i)=>i===0&&cur===1&&!kw?<NoticeLead key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>:<NoticeRow key={a.id} a={a} onOpen={()=>openArticle(a.id)}/>)}</div>}
     <div className="nw-pager"><Pager page={cur} pages={pages} onGo={setPage}/></div>
     {modals}
@@ -254,7 +254,7 @@ function PublicResponses({ ann, compact, onRefresh, updatedAt, responsesOverride
     </button>
     {open&&<div className="pr-body swap">
       {resp.length===0
-        ? <div className="pr-empty">아직 신청자가 없습니다. 첫 신청자를 기다립니다.</div>
+        ? <div className="pr-empty">아직 신청자가 없습니다.</div>
         : <div className="pr-list">
             {resp.map((r,i)=>(<div className="pr-row" key={r.id}>
               <span className="pr-name">{i+1}</span>
@@ -393,13 +393,12 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
   </section>);
   if(done) return sheet({
     act:<Button variant="main" onClick={onBack}>공지 보기</Button>,
-    children:<div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">{edit?"신청을 수정했습니다.":"신청이 접수되었습니다."}</b><p className="t12 reg">{alias&&`${alias} 이름으로 접수했습니다. `}결과와 안내는 공지로 알려 드립니다.</p></div></div>,
+    children:<div className="inv nw-done"><span className="box on"><Icon n="check" size={16}/></span><div><b className="t15">{edit?"신청을 수정했습니다.":"신청이 접수되었습니다."}</b>{alias&&<p className="t12 reg">{`${alias} 이름으로 접수했습니다.`}</p>}</div></div>,
   });
   if(edit&&!held) return sheet({
-    line:"신청할 때 쓴 이름과 제출 비밀번호로 신청을 불러옵니다.",
     toast:failed&&<Toast error action="다시 시도" onAction={find}>{failed}</Toast>,
     act:<><Button variant="main" onClick={find} loading={busy}>신청 불러오기</Button>
-      <p className="t12 dim reg dock-note">신청 마감 전까지 고칠 수 있습니다.</p></>,
+</>,
     children:<section className="nw-form-sec" aria-labelledby="ff-who-h">
       <SectionHead id="ff-who-h" title="본인 확인"/>
       <Question id="ff-name" label="참가자 이름" required error={errors.name}>
@@ -407,28 +406,28 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
       </Question>
       <Question id="ff-pin" label="제출 비밀번호" required error={errors.pin}>
         <input id="ff-pin" className="in" aria-required="true" aria-invalid={errors.pin?true:undefined} type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={e=>{setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4));setErrors(x=>({...x,pin:""}));}} placeholder="숫자 4자리"/>
-        <p className="t12 dim reg">파티 제출에 쓰는 비밀번호입니다. 아직 정하지 않았다면 지금 입력한 숫자 4자리가 비밀번호가 됩니다.</p>
+        <p className="t12 dim reg">아직 정하지 않았다면 지금 입력한 숫자 4자리가 제출 비밀번호가 됩니다.</p>
       </Question>
     </section>,
   });
   // 참가자는 대회 신청에서만 따로 선다(계정, 이름, 같은 이름의 기록). 운영진의 질문은 신청 내용 한 섹션이다.
   const person=form.eventId&&!edit;
   return sheet({
-    line:[held?`${held.registrationName}님의 신청입니다. 이름을 바꾸려면 운영진에게 문의해 주세요.`:"",required?"* 표시는 필수입니다.":""].filter(Boolean).join(" "),
+    line:[held?`${held.registrationName}님의 신청입니다. 이름을 바꾸려면 운영진에게 문의해 주세요.`:""].filter(Boolean).join(" "),
     toast:failed&&<Toast error action="다시 시도" onAction={submit}>{failed}</Toast>,
     act:<><Button variant="main" icon="check" onClick={submit} loading={busy}>{edit?"수정":"신청"}</Button>
-      <p className="t12 dim reg dock-note">결과와 안내는 공지로 알려 드립니다.</p></>,
+</>,
     children:<>
     {person&&<section className="nw-form-sec" aria-labelledby="ff-who-h">
       <SectionHead id="ff-who-h" title="참가자"/>
       {/* 구글 계정 칸: 로그인 전, 계정의 이름으로 신청, 로그인했지만 이름이 아직 계정의 것이 아닌 때. 줄 하나에 설명 한 줄. */}
       {accountForm&&acct.ready&&<Question id="ff-account" label={owned?"참가자":"구글 계정"} group>
         <div className="stack">{!acct.signedIn
-          ? <Row title="구글 계정으로 신청" line="이름 대신 계정으로 구분합니다."
+          ? <Row title="구글 계정으로 신청"
               value={<Button variant="second" size="sm" onClick={()=>signInWithGoogle("",undefined,ann.id)}><GoogleMark/>구글 로그인</Button>}/>
           : <Row title={owned?owned.requested_name:acct.row?.email||"구글 계정으로 로그인했습니다."} line={owned?owned.email||undefined:acct.row?.status==="pending"?"본인 확인 중":undefined}
               value={<Button variant="link" onClick={signOut}>로그아웃</Button>}/>}</div>
-        {acct.signedIn&&<p className="t12 dim reg">{owned?"구글 계정으로 신청합니다. 이 트레이너 이름은 이 계정으로만 신청할 수 있습니다."
+        {acct.signedIn&&<p className="t12 dim reg">{owned?null
           :acct.row?.status==="pending"?"운영진의 본인 확인이 끝나면 구글 계정으로 신청할 수 있습니다. 이번 신청은 이름으로 접수됩니다."
           :"신청하면 입력한 이름이 이 계정의 트레이너 이름으로 등록됩니다. 기존 기록이 있는 이름은 운영진의 본인 확인 후 연결됩니다."}</p>}
       </Question>}
@@ -437,7 +436,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
       </Question>}
       {similar.length>0&&<Question id="ff-similar" label="비슷한 이름의 기록" group>
         <div className="stack">
-          {similar.map(n=><Row key={n} title={n} line="이 이름으로 신청합니다." onClick={()=>useName(n)}/>)}
+          {similar.map(n=><Row key={n} title={n} onClick={()=>useName(n)}/>)}
         </div>
         <p className="t12 dim reg">기존 기록과 이어지려면 같은 이름으로 신청해 주세요.</p>
       </Question>}

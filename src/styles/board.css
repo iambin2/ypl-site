@@ -168,7 +168,6 @@
   .ypl:has(.page .dock) .site-foot-in { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--h-counter) + var(--s13)); }
   .ypl.is-admin:has(.page .dock) .site-foot-in { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--h-counter) + var(--s13)); }
 }
-.dock-note { margin-top: var(--s2); text-align: center; }
 
 /* ---------- a toast: an inverted 52 panel above the docked action; its one action an underlined word ---------- */
 .toast-panel { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 600; }

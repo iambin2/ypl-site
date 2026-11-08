@@ -204,7 +204,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp }) {
             <SectionHead id="streak-board" title={`${month.label} 순위`} link={`${other.label} 보기`} onLink={() => setBack(b => (b ? 0 : 1))} />
             {board === undefined ? <Podium rows={null} />
               : !rows ? <Row title="순위를 불러오지 못했습니다." line="잠시 뒤 다시 시도해 주세요." />
-              : !rows.length ? <Row title="아직 기록이 없습니다." line="1연승부터 순위에 오릅니다." />
+              : !rows.length ? <Row title="아직 기록이 없습니다." />
               : <StandTable rows={placed} placed open unit="연승" head="연승" />}
           </section>
         </div>

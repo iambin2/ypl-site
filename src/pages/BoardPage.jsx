@@ -55,7 +55,7 @@ function BoardCompose({ onClose, onSubmit, initial=null }){
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
       </div>
       <label className="bk-check"><input type="checkbox" checked={secret} onChange={e=>setSecret(e.target.checked)}/><span><Icon n="lock" size={16}/> 관리자에게만 보이기 <i>(건의, 비공개)</i></span></label>
-      {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다. 다른 방문자에게는 목록에도 표시되지 않습니다.</div>}
+      {secret&&<div className="bk-hint">이 글은 관리자만 볼 수 있습니다.</div>}
       <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>등록</Button></div>
     </div>
   </Modal>);
@@ -203,7 +203,7 @@ function FreeBoard({ admin, flash, tabs }){
       {!loadError&&!posts&&!fresh&&<Loader/>}
       {!loadError&&posts&&list.length===0&&(kw
         ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 글을 찾지 못했습니다.`}/>
-        : <Empty title="아직 글이 없습니다." desc="첫 글을 남기면 이곳에 표시됩니다."/>)}
+        : <Empty title="아직 글이 없습니다."/>)}
       {shown.map(p=>{ const cc=(p.comments||[]).length; const d=dotDay(p.createdAt);
         return <Row key={p.id} title={<span data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</span>}
           line={<>{p.secret&&"관리자 전용, "}{p.nick}{d&&<span className="bd-day"><span className="num">{d.day}</span> {d.weekday}</span>}</>}
@@ -252,10 +252,10 @@ function readLocalTeams(){
 /* 게시판에서 바로 올릴 때: 이 브라우저의 팀 빌더에 있는 팀 중에서 고른다 */
 function TeamPicker({ kind, onPick, onClose, go }){
   const teams=readLocalTeams();
-  return (<Modal title={`${KIND_LABEL[kind]} 올리기`} hint="팀 빌더에 저장된 팀에서 고릅니다." onClose={onClose}>
+  return (<Modal title={`${KIND_LABEL[kind]} 올리기`} onClose={onClose}>
     <div className="swap" key="pick">
       {teams.length===0
-        ? <p className="bk-hint">이 브라우저의 팀 빌더에 저장된 팀이 없습니다. 팀 빌더에서 팀을 만든 뒤 그곳에서 바로 올릴 수 있습니다.</p>
+        ? <p className="bk-hint">이 브라우저의 팀 빌더에 저장된 팀이 없습니다.</p>
         : <ul className="sc-pick">{teams.map(t=>(<li key={t.id}><button type="button" className="sc-pick-row" onClick={()=>onPick(t)}>
             <span className="sc-pick-main"><b>{t.name}</b><small>{ruleSummary(t)}, {t.members.length}마리</small></span>
             <PartySprites members={t.members}/>
@@ -312,7 +312,6 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       </div>
       <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder={autoTitle} maxLength={60}/></Field>
       <Field label="소개"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder={kind==="sample"?"채용 이유, 노리는 상대, 운용법을 적어 주세요.":"컨셉, 선출 방법, 주의할 상대를 적어 주세요."}/></Field>
-      <p className="bk-hint">특성, 도구, 성격, 능력 포인트, 기술이 모두 함께 올라가고, 읽는 사람이 자기 팀 빌더로 가져갈 수 있습니다.</p>
       <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy||!display} onClick={submit} loading={busy}>올리기</Button></div>
     </div>
   </Modal>);
@@ -405,13 +404,12 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
   return (<section className="bd">
     <h1 className="t32">게시판</h1>
     {tabs}
-    <p className="t12 dim reg bd-desc">{kind==="sample"?"포켓몬 한 마리의 세팅과 운용법을 나누는 곳입니다. 팀 빌더에서 바로 올리고 가져갈 수 있습니다.":"파티 전체를 소개하는 곳입니다. 마음에 드는 파티는 내 팀 빌더로 바로 가져갈 수 있습니다."}</p>
     <div className="bd-tools stack"><ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이" count={list.length}/><Button variant="main" icon="plus" onClick={()=>setPicking(true)}>{label} 올리기</Button></div>
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!posts&&!loadError?<Loader/>:<div className="stack bd-list swap">
       {list.length===0&&(kw
         ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
-        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`} desc={`팀 빌더에서 팀을 만들고 ‘게시판에 올리기’를 누르면 첫 ${FORMAT_LABEL[format]} ${label} 글이 됩니다.`}/>)}
+        : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`}/>)}
       {shown.map(post=>{ const cc=(post.comments||[]).length;
         const by=[post.nick,kind==="party"?REGULATIONS[post.team?.regulationId]?.shortName:post.names?.[0],cc>0&&`댓글 ${cc}`].filter(Boolean).join(", ");
         // 기록의 파티 줄과 같은 꼴: 제목과 회색 줄, 그리고 그림(파티는 여섯, 샘플은 한 마리를 앞에)

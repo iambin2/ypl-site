@@ -238,10 +238,10 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
           <img src={spriteUrl(pokemon.name)} alt="" onError={onSpriteError()} />
           <span className="calc-mon-copy">
             <strong className="t20">{display(pokemon)}</strong>
-            <small className="t12 reg dim">{SIDE_NAMES[index]}, 바꾸려면 누릅니다</small>
+            <small className="t12 reg dim">{SIDE_NAMES[index]}</small>
             {record && <TypeBadges types={record.types} />}
           </span>
-        </button> : <p className="pn t15 reg dim calc-side-empty">{SIDE_NAMES[index]}을 고르면 특성, 도구, 기술을 여기서 정합니다.</p>}
+        </button> : <p className="pn t15 reg dim calc-side-empty">{SIDE_NAMES[index]}을 고르세요.</p>}
         {(hasSavedTeams || pokemon) && <div className="calc-side-actions">
           {hasSavedTeams && <Button variant="link" onClick={onImport}>내 팀에서</Button>}
           {pokemon && <Button variant="link" onClick={onClear}>비우기</Button>}
@@ -431,11 +431,10 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
         </div>
       ) : (
         <div className="pn calc-speed-none">
-          <p className="t15 reg dim">기준이 될 포켓몬을 고르면 스피드 라인 안의 위치를 보여 줍니다.</p>
+          <p className="t15 reg dim">기준 포켓몬을 고르세요.</p>
           <Button variant="second" onClick={() => openPokemonPicker(basis)}>포켓몬 선택</Button>
         </div>
       )}
-      <p className="t12 reg dim">기준 포켓몬의 능력 포인트, 성격, 도구, 랭크, 순풍과 날씨는 대미지 탭의 설정을 그대로 씁니다.</p>
 
       <div className="calc-speed-controls">
         <Segmented value={spread} onChange={setSpread} ariaLabel="상대 스피드 기준" options={Object.entries(SPEED_SPREAD_LABELS)} />
@@ -490,7 +489,6 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
     return (
       <div className="tb-panel calc-dex-empty">
         <strong>도감에서 볼 포켓몬을 고르세요.</strong>
-        <span>종족값, 레벨 50 실수치 범위, 타입 상성, 챔피언스에서 배우는 기술을 한 화면에 보여 줍니다.</span>
         <Button type="button" variant="main" onClick={openPicker}>포켓몬 선택</Button>
       </div>
     );
@@ -670,7 +668,6 @@ export default function CalculatorPage() {
   return (
     <section className="sec calc-page" data-tab={tab}>
       <h1 className="t32">계산기</h1>
-      <p className="t12 dim reg tb-desc">포켓몬 챔피언스 레벨 50 기준으로 대미지, 스피드, 도감을 한 곳에서 확인합니다.</p>
       <div className="calc-body">
       <div className="calc-tabs">
         <TabsLine value={tab} onChange={setTab} label="계산기 보기" options={[["damage", "대미지"], ["speed", "스피드"], ["dex", "도감"]]} />

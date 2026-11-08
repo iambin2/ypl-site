@@ -261,7 +261,7 @@ const TypeMatchups = memo(function TypeMatchups({ team, detailData, displayPokem
         {board("offence", MATCHUP_SIDES[1], "상대 타입", "타입별로 기술이 주는 가장 큰 대미지 배율과 2배로 칠 수 있는 포켓몬 수",
           [["2배", row => row.hits, () => true]],
           row => row.offence.map(cell => [cell?.m, cell ? `${multiplierMark(cell.m) || "×1"}, ${moveName(detailData, cell.move.id)}` : ""]),
-          !anyMove ? <span className="t12 reg dim">공격 기술을 고르면 채워집니다.</span>
+          !anyMove ? null
             : gaps.length ? <><span className="t12 dim">2배로 칠 기술이 없는 타입</span>{tags(gaps)}</> : <span className="t12 reg dim">모든 타입을 2배로 칠 기술이 있습니다.</span>)}
       </div>
     </div>
@@ -403,7 +403,7 @@ function OfficialSubmissionPanel({
             inputMode="numeric"
             autoComplete="off"
           />
-          <p className="t12 reg dim">{latestSubmission ? "처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요." : "다시 제출할 때 필요합니다. 다른 사람이 내 이름으로 제출하지 못하게 막아 줍니다."}</p>
+          {latestSubmission && <p className="t12 reg dim">처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요.</p>}
         </div>}
         {ready && <Button type="button" variant="main" icon="check" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
           {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출" : "파티 제출"}
@@ -1349,7 +1349,6 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
   return (
     <section className="sec tb-page" data-step={step}>
       <header className="tb-head"><h1 className="t32">팀 빌더</h1><Button variant="link" disabled={!storageAvailable} onClick={() => openLibrary(false)}>내 팀{savedTeams.length > 0 ? ` ${savedTeams.length}` : ""}</Button></header>
-      <p className="t12 dim reg tb-desc">포켓몬 챔피언스 규정에 맞춰 엔트리를 구성하고 이 브라우저에 저장합니다.</p>
 
       <div className="tb-steps" ref={stepsRef}>
         <TabsLine value={step} onChange={changeStep} label="팀 빌더 단계" options={[["rules", "규정"], ["pool", "포켓몬 선택"], ["team", "팀 구성"]]} />
@@ -1381,7 +1380,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           <p className="t12 dim">{cupRule.name}의 타입{eventId ? " (대회 기준)" : ""}</p>
           <TypeGrid label="지정 타입" value={assignedTypeId} onChange={switchCupRuleType} types={TYPE_OPTIONS} disabled={Boolean(eventId)} />
         </div>}
-        <p className="t12 reg dim">{regulation.description}, 능력 포인트는 개별 최대 32, 총합 최대 66입니다.</p>
+        <p className="t12 reg dim">{regulation.description}</p>
       </div>
 
       <div className="tb-validation-wrap" data-tb-step="team">
@@ -1504,7 +1503,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               })}
             </div>
             <div className="tb-team-actions">
-              <span className="t12 reg dim">{draftSavedAt && draftStatus === "saved" ? `마지막 임시저장 ${new Date(draftSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}` : "변경사항은 이 브라우저에 자동 임시저장됩니다."}</span>
+              {draftSavedAt && draftStatus === "saved" && <span className="t12 reg dim">{`마지막 임시저장 ${new Date(draftSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`}</span>}
               <span className="tb-team-links">
                 {team.length > 0 && <Button variant="link" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지 저장</Button>}
                 {/* a saved team as it stands goes straight into a friendly battle (BattlePage reads ?team=) */}
@@ -1516,7 +1515,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
 
           <div className="tb-editor">
             {!selectedMember ? (
-              <div className="pn tb-editor-empty"><strong className="t15">세팅할 포켓몬을 선택해 주세요.</strong><span className="t15 reg dim">목록에서 추가하거나 위의 칸을 고르면 여기서 설정합니다.</span></div>
+              <div className="pn tb-editor-empty"><strong className="t15">세팅할 포켓몬을 선택해 주세요.</strong></div>
             ) : (
               <>
                 <div className="tb-editor-head">
@@ -1548,7 +1547,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
                       options={ALIGNMENTS.map(alignment => ({ value: alignment.id, label: alignmentDisplay(alignment) }))} />
                   </Cell>
                 </div>
-                <p className="t12 reg dim tb-field-meta">{selectedRequiredItem ? "메가폼의 도구는 자동으로 정해집니다. " : ""}{regulation.shortName}에서 쓸 수 있는 도구만, 같은 도구는 한 번만 씁니다.</p>
+                <p className="t12 reg dim tb-field-meta">{selectedRequiredItem ? "메가폼의 도구는 자동으로 정해집니다." : ""}</p>
 
                 <div className="tb-editor-section">
                   <div className="tb-subhead"><span className="t12 dim">능력 포인트</span><b className={"t12" + (STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0) > 66 ? " over" : "")}>{STAT_KEYS.reduce((sum, key) => sum + Number(selectedMember.statPoints?.[key] || 0), 0)} / 66</b></div>
@@ -1651,7 +1650,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         </div>
       </Modal>}
 
-      {libraryOpen && <Modal title="내 팀" hint="불러오기 후 수정하고 다시 저장하면 기존 팀을 덮어씁니다." onClose={() => setLibraryOpen(false)}>
+      {libraryOpen && <Modal title="내 팀" onClose={() => setLibraryOpen(false)}>
         <div className="stack tb-library-top">
           <Button variant="main" icon="plus" disabled={!storageAvailable} onClick={startNewTeam}>새 팀</Button>
           <Button variant="second" disabled={!storageAvailable || team.length === 0} onClick={duplicateCurrentTeam}>현재 팀 복제</Button>
@@ -1660,7 +1659,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
           <Cell label="현재 팀 저장"><input className="tb-team-name" maxLength={40} value={saveName} onChange={event => setSaveName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(); } }} placeholder="팀 이름" aria-label="팀 이름" /></Cell>
           <Button variant="second" disabled={!storageAvailable || team.length === 0} onClick={saveCurrentTeam}>{currentSaved ? "변경사항 저장" : "새 팀 저장"}</Button>
         </div>
-        <p className="t12 reg dim tb-library-save-meta">{regulation.name}, {currentCupRuleSummary}, {team.length}/6마리. 미완성이거나 규정을 위반한 팀도 저장할 수 있습니다.</p>
+        <p className="t12 reg dim tb-library-save-meta">{regulation.name}, {currentCupRuleSummary}, {team.length}/6마리</p>
         {saveMessage && <p className="t15 tb-save-message">{saveMessage}</p>}
         <div className="stack tb-saved-list">
           {savedTeams.map(saved => {

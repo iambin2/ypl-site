@@ -65,8 +65,7 @@ export default function ChampionsPage({ data, admin, setModal, normTeam = normal
 
   return (<section className="hof">
     <h1 className="t32">명예의 전당</h1>
-    <p className="t12 dim reg hof-desc">챔피언스 시리즈를 제패한 역대 챔피언과 그날의 우승 엔트리를 보관합니다.</p>
-    {!reigning && <Empty title="등록된 챔피언이 없습니다." desc="챔피언의 우승 기록이 등록되면 이곳에 표시됩니다." />}
+    {!reigning && <Empty title="등록된 챔피언이 없습니다." />}
     {reigning && <section className="pn hof-crown" aria-label={`현 챔피언 ${reigning.name}`}>
       <div className="hof-crown-who">
         <span className="inv t12 hof-crown-tag">현 챔피언</span>

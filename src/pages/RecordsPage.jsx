@@ -282,7 +282,7 @@ function TrainerView({ snapshot, onOpen, finding = false }) {
   const [all, setAll] = useState(false);
 
   const visible = snapshot.trainers.filter((t) => t.name.includes(query.trim()));
-  if (!snapshot.trainers.length && !finding) return <Empty title="트레이너 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
+  if (!snapshot.trainers.length && !finding) return <Empty title="트레이너 기록이 없습니다." />;
   const rows = all || query.trim() ? visible : visible.slice(0, LIST_SHOWN);
   const exact = snapshot.trainers.some((t) => t.name === query.trim());
 
@@ -309,7 +309,7 @@ function TrainerView({ snapshot, onOpen, finding = false }) {
             );
           })}
         </div>
-      </>) : finding ? null : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
+      </>) : finding ? null : <Empty title="검색 결과가 없습니다." />}
       {!all && !query.trim() && visible.length > LIST_SHOWN && (
         <div className="rc-more"><Button variant="second" onClick={() => setAll(true)}>{visible.length}명 전체 보기</Button></div>
       )}
@@ -394,7 +394,7 @@ function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
                 onClick={roster ? () => onParty({ roster }) : undefined} />;
             })}
           </div>
-        ) : <Empty title="확인 가능한 대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
+        ) : <Empty title="확인 가능한 대회 기록이 없습니다." />}
         <div className="rc-pager"><Pager page={histCur} pages={histPages} onGo={setHistPage} /></div>
       </section>
 
@@ -420,7 +420,7 @@ function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
         {favorites.length ? (
           <CountList items={favorites.slice(0, 6)} sprites={snapshot.pokemon} />
         ) : (
-          <Empty title="저장된 우승 엔트리가 없습니다." desc="대진표에서 결과를 확정하면 이곳에 자동으로 표시됩니다." />
+          <Empty title="저장된 우승 엔트리가 없습니다." />
         )}
       </section>
     </div>
@@ -432,7 +432,6 @@ function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
    쓴다. 파티 제출과 배틀은 지금처럼 이름과 비밀번호로 된다. ---- */
 const LINK_STATE = { pending: "운영진 확인을 기다리는 중입니다.", approved: "내 기록으로 연결되었습니다.", rejected: "연결 요청이 거절되었습니다." };
 // what a link gives, said once where it is asked for: the application form needs no name, and the name takes no one else's application
-const LINK_GIVES = "연결하면 대회 신청서에 이름을 쓰지 않아도 되고, 이 이름의 신청은 이 계정으로만 받습니다.";
 const findBack = (trainer = "") => `${window.location.origin}${window.location.pathname}?view=records&tab=trainer&me=1${trainer ? `&trainer=${encodeURIComponent(trainer)}` : ""}`;
 
 /* the visitor's account as it stands: whether accounts are on (player_accounts.sql run), signed in, and the account's link.
@@ -484,7 +483,7 @@ function TrainerLink({ profile, lead = false }) {
       <section className="stack rc-claim" aria-label="내 기록 연결">
         <div className={"rc-claim-head " + (known && link.status === "approved" ? "inv" : "pn")}>
           <b className="t15">{known ? LINK_STATE[link.status] || "" : asking ? `${profile.name} 님의 기록이라면` : "연결 상태를 확인하는 중입니다."}</b>
-          <span className="t12">{known ? (link.status === "approved" ? "대회 신청서에 이 이름이 채워집니다." : link.status === "pending" ? "운영진이 확인하면 이 기록이 내 계정과 이어집니다." : "다른 이름으로 다시 요청할 수 있습니다.") : LINK_GIVES}</span>
+          {known && link.status !== "approved" && <span className="t12">{link.status === "pending" ? "운영진이 확인하면 이 기록이 내 계정과 이어집니다." : "다른 이름으로 다시 요청할 수 있습니다."}</span>}
         </div>
         {asking && (signedIn
           ? <Button variant="main" icon="check" loading={busy} onClick={go}>{link ? `${link.requested_name} 대신 이 기록으로 요청` : "내 기록으로 연결"}</Button>
@@ -499,7 +498,7 @@ function TrainerLink({ profile, lead = false }) {
       <SectionHead id="rc-link-h" title="내 기록 연결" />
       <div className="stack">
         {!signedIn
-          ? <Row title="구글 계정으로 연결" line={LINK_GIVES} value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, findBack(profile.name))}><GoogleMark />구글 로그인</Button>} />
+          ? <Row title="구글 계정으로 연결" value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, findBack(profile.name))}><GoogleMark />구글 로그인</Button>} />
           : link === undefined ? <Row title="연결 상태를 확인하는 중입니다." />
           : mine ? <Row title={LINK_STATE[link.status] || ""} line={link.email || undefined} />
           : <Row title="내 기록으로 연결 요청" line={link ? `지금은 ${link.requested_name} 기록에 요청되어 있습니다.` : "운영진이 확인한 뒤 연결됩니다."}
@@ -525,7 +524,7 @@ function FindMe({ query, exact, onOpen, part = "head" }) {
   const line = !signedIn ? "목록에서 내 이름을 누르면 그 기록을 구글 계정과 연결할 수 있습니다."
     : link === undefined ? "연결 상태를 확인하는 중입니다."
     : !link ? "목록에서 내 이름을 누르거나, 기록이 아직 없으면 새 이름으로 시작합니다."
-    : link.status === "approved" ? "내 계정과 연결된 이름입니다. 대회 신청서에 이 이름이 채워집니다."
+    : link.status === "approved" ? "내 계정과 연결된 이름입니다."
     : link.status === "pending" ? "운영진이 확인하면 이 기록이 내 계정과 이어집니다."
     : "연결 요청이 거절되었습니다. 다른 이름으로 다시 요청할 수 있습니다.";
   const start = async () => {
@@ -725,7 +724,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
     return (parseInt(b.round.round) || 0) - (parseInt(a.round.round) || 0);
   });
 
-  if (!otours.length) return <Empty title="대회 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />;
+  if (!otours.length) return <Empty title="대회 기록이 없습니다." />;
 
   /* 59개 대회가 같은 블록으로 이어지지 않도록 시즌마다 장을 나눈다: 시즌 이름 20과 그 시즌의 대회 수를 32의 세그먼트로.
      시즌이 없는 옛 기록은 연도로 묶는다. items 는 이미 최신순이다. */
@@ -766,7 +765,7 @@ function TournamentArchiveView({ snapshot, data, admin, setModal, onParty }) {
           <ul className="stack rc-rounds swap">
             {withChapters(allRows, (row) => row.round, ({ tour, round, key }) => renderRound(tour, round, key, true))}
           </ul>
-        ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
+        ) : <Empty title="검색 결과가 없습니다." />}
       </>
     )}
   </>);
@@ -785,7 +784,7 @@ function PokemonView({ snapshot, onParty }) {
   const rankOf = (pokemon) => snapshot.pokemon.findIndex((p) => p.entries === pokemon.entries) + 1;
 
   if (!snapshot.pokemon.length) {
-    return <Empty title="기록에 연결된 파티 엔트리가 없습니다." desc="대진표의 파티 엔트리가 저장되면 자동으로 집계됩니다." />;
+    return <Empty title="기록에 연결된 파티 엔트리가 없습니다." />;
   }
   const rows = all || normalized ? visible : visible.slice(0, LIST_SHOWN);
 
@@ -802,7 +801,7 @@ function PokemonView({ snapshot, onParty }) {
             </button>
           ))}
         </div>
-      ) : <Empty title="검색 결과가 없습니다." desc="다른 이름으로 검색해 주세요." />}
+      ) : <Empty title="검색 결과가 없습니다." />}
       {!all && !normalized && visible.length > LIST_SHOWN && (
         <div className="rc-more"><Button variant="second" onClick={() => setAll(true)}>{visible.length}종 전체 보기</Button></div>
       )}
@@ -938,7 +937,7 @@ function PokemonSheet({ snapshot, pokemon, rank, onClose, onParty }) {
           <SectionHead id="rc-pk-pt-h" title="함께 많이 등록된 포켓몬" />
           {pokemon.partners.length
             ? <CountList items={pokemon.partners.slice(0, 8)} sprites={snapshot.pokemon} />
-            : <Empty title="동반 엔트리 기록이 없습니다." desc="파티 엔트리가 저장되면 이곳에 표시됩니다." />}
+            : <Empty title="동반 엔트리 기록이 없습니다." />}
         </section>
 
         {pokemon.champions.length > 0 && (
@@ -997,7 +996,7 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
           <Button variant="second" onClick={addEra}>누적 탭 추가</Button>
         </div>}
       </div>
-      {!view ? <Empty title="랭킹 기록이 없습니다." desc="대회 결과가 확정되면 이곳에 표시됩니다." />
+      {!view ? <Empty title="랭킹 기록이 없습니다." />
         : view.era ? <RankView era={view.era} data={data} admin={admin} setModal={setModal} onName={onName} />
         : <SeasonView s={view.season} data={data} admin={admin} setModal={setModal} onName={onName} />}
       <p className="t12 dim reg rc-note">
@@ -1036,7 +1035,7 @@ function SeasonView({ s, data, admin, setModal, onName }) {
         })}>{s.name} 성적 수정</Button></div>
       )}
       {s.rows.length ? <StandTable rows={s.rows} total={s.rows.length} onName={onName} open={open} onMore={() => setOpen(true)} />
-        : <Empty title={`${s.name} 성적은 아직 없습니다.`} desc="대회 결과가 확정되면 이곳에 표시됩니다." />}
+        : <Empty title={`${s.name} 성적은 아직 없습니다.`} />}
     </div>
   );
 }

@@ -583,7 +583,6 @@ function BracketWizard({ data, onClose, onCreate }){
         {selectedIntakeId&&<div className="field">
           <span className="field-label">대진표 리그</span>
           <Segmented value={linkedEvent.division} onChange={division=>{const event=intakeEvents.find(row=>row.division===division);if(event)selectLinkedEvent(event.id);}} ariaLabel="대진표 리그" options={intakeEvents.map(event=>[event.division,event.division==="master"?"마스터":"루키"])}/>
-          <div className="fb-note">선택한 리그의 신청자만 대진표에 포함합니다. 각 리그의 결과와 기록은 따로 반영됩니다.</div>
         </div>}
         {linkedEvent?.is_team_event&&linkedEvent.division==="master"&&<div className="bk-hint">팀전은 마스터로 진행합니다.</div>}
         {eventError&&<FormError>{eventError}</FormError>}
@@ -617,7 +616,7 @@ function BracketWizard({ data, onClose, onCreate }){
         }
       </>}
 
-      <Field label="대진 방식" hint="이 대진표의 방식을 정합니다. 생성한 뒤에는 바꿀 수 없습니다.">
+      <Field label="대진 방식" hint="생성한 뒤에는 바꿀 수 없습니다.">
         <Dropdown value={topologyKind} onChange={setTopologyKind} placeholder="대진 방식을 선택해 주세요." ariaLabel="대진 방식" options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"}]} />
       </Field>
       <Dock>
@@ -748,7 +747,6 @@ function BracketWizard({ data, onClose, onCreate }){
       </> : <>
         {eventId&&mode==="team"&&<div className="field">
           <span className="field-label">신청자 / 팀 지망</span>
-          <div className="bk-hint">신청서에 저장된 팀 지망을 참고해 아래 기존 팀 편성 입력에서 최종 배정합니다.</div>
           <div className="bk-fill">
             {eventRegs.map((reg,i)=>{
               const answers=getTeamRegistrationAnswerEntries(reg,linkedFields);
@@ -811,7 +809,7 @@ function BracketWizard({ data, onClose, onCreate }){
     {step===3&&placement&&<>
       {eventError&&<FormError>{eventError}</FormError>}
       <div className="stack bk-place-tools"><Button variant="second" onClick={redraw}>다시 추첨</Button></div>
-      <p className="t12 reg dim">이웃한 두 경기의 승자가 다음 라운드에서 만납니다. 이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다. 부전승 자리는 추첨이 정합니다.</p>
+      <p className="t12 reg dim">이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다.</p>
       <div className="stack bk-place" onPointerUp={dropPlace} onPointerLeave={()=>{ if(dragFrom.current&&!dragFrom.current.moved) dragFrom.current=null; }}>
         {placement.plan.map(([a,b],i)=><div className="pn bk-place-row" key={i}>
           <span className="t12 dim num">M{i+1}</span>{placeCell(a)}<span className="t12 dim">vs</span>{placeCell(b)}
@@ -913,7 +911,7 @@ function MatchBattle({ m, ev, battle, startable, eventId, admin=false, onChanged
   const canStart=startable&&!m.winner&&pa&&pb&&pa!==BYE&&pb!==BYE;
   const error=note&&<p className="t12 reg bk-entry-error"><span className="bang" aria-hidden="true">!</span>{note}</p>;
   if(battle&&battle.status!=="ended") return <div className="stack mb-battle">
-    <Row title="사이트 배틀" line={battle.status==="waiting"?"한 선수가 들어와 상대를 기다리는 중입니다.":"지금 배틀로 치르는 중입니다. 끝나면 승자가 대진표에 들어갑니다."} lamp="진행 중"/>
+    <Row title="사이트 배틀" line={battle.status==="waiting"?"한 선수가 들어와 상대를 기다리는 중입니다.":"지금 배틀로 치르는 중입니다."} lamp="진행 중"/>
     <Button variant="second" href={battleHref(battle.id)}>{battle.status==="waiting"?"경기 들어가기":"관전"}</Button>
     {admin&&<Button variant="link" disabled={busy} onClick={async()=>{
       if(await siteConfirm({title:"배틀 무효",body:"이 배틀을 닫습니다. 진행 중이던 배틀은 무효로 끝나 리플레이로 남고, 대진표에는 아무것도 넣지 않습니다. 승자는 결과 입력에서 정합니다.",confirmLabel:"무효",danger:true})) await run(()=>voidBattle(battle.id));
@@ -953,7 +951,7 @@ function TeamBouts({ m, ev, battles, boutCount, startable, eventId, admin=false,
   if(!startable&&!rows.some(x=>x.battle)) return null;
   const done=state.winner?"모든 판이 끝났습니다. 시리즈를 대진표에 넣는 중입니다."
     :state.aceNeeded?`일반 판이 ${state.winsA} 대 ${state.winsB} 동점입니다. 에이스 결정전으로 정합니다.`
-    :"모든 판이 끝나면 대진표에 들어갑니다.";
+    :"";
   const bout=x=>{
     const label=x.n?`${x.n}경기`:"에이스 결정전", b=x.battle, open=b&&b.status!=="ended";
     const names=`${x.a?.name||"미정"}, ${x.b?.name||"미정"}`;
@@ -1801,9 +1799,6 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   }
   return (<Modal
     title="기록에 반영"
-    hint={linked
-      ? "연결된 대회의 정보와 규칙을 기준으로 기록을 반영합니다."
-      : "수동 대회 정보를 설정해 기록에 반영합니다."}
     onClose={onClose}
   >
     <div className="swap" key="form">
@@ -2074,15 +2069,15 @@ function PrivateBracketCreate({ onClose, onCreate }){
   const submit=async()=>{
     if(busy)return;
     if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요.");return;}
-    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요.","대진표를 만든 사람으로 표시됩니다.");return;}
-    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요.","결과 입력과 삭제에 필요합니다. 다른 사람은 대진표를 보기만 합니다.");return;}
+    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요.");return;}
+    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요.");return;}
     if(names.length<2){siteAlert("참가자를 2명 이상 적어 주세요.","한 줄에 한 명씩, 또는 쉼표로 나눠 적습니다.");return;}
     if(names.length>PRIVATE_BRACKET_MAX){siteAlert(`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다.`);return;}
     setBusy(true);
     try{ await onCreate({name,host,pin,names,double:double==="double",order,note}); }
     finally{ setBusy(false); }
   };
-  return (<Modal title="새 사설 대진표" hint="공식 기록과 랭킹에 반영되지 않는 연습용 대진표입니다." onClose={onClose}>
+  return (<Modal title="새 사설 대진표" onClose={onClose}>
     <div className="swap" key="pb-create">
       <Field label="대진표 이름"><input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 동아리방 금요 연습전" maxLength={40}/></Field>
       <div className="bk-grow2">
@@ -2093,7 +2088,6 @@ function PrivateBracketCreate({ onClose, onCreate }){
         <textarea id="pb-names" value={namesText} onChange={e=>setNamesText(e.target.value)} rows={6} placeholder={"한 줄에 한 명씩 적거나 쉼표로 나눠 붙여넣어 주세요.\n지우\n이슬\n웅"}/></div>
       <div className="field"><span className="field-label">방식</span><Segmented value={double} onChange={setDouble} ariaLabel="대진 방식" options={[["single","싱글 엘리미네이션"],["double","더블 엘리미네이션"]]}/></div>
       <div className="field"><span className="field-label">대진 배치</span><Segmented value={order} onChange={setOrder} ariaLabel="대진 배치" options={[["random","무작위 추첨"],["input","적은 순서대로"]]}/></div>
-      {order==="input"&&<p className="bk-hint">1번과 2번, 3번과 4번이 차례로 만나고, 부전승은 뒤쪽 경기에 들어갑니다.</p>}
       <Field label="안내 (선택)"><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="규칙, 일정, 장소 등을 적어 주세요."/></Field>
       <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy} onClick={submit} loading={busy}>대진표 만들기</Button></div>
     </div>
@@ -2115,7 +2109,7 @@ function PrivateBracketEdit({ b, onClose, onSave }){
       participants:b.participants.map((p,i)=>({...p,name:clean[i]}))}); }
     finally{ setBusy(false); }
   };
-  return (<Modal title="대진표 수정" hint="인원과 대진은 그대로 두고 이름과 안내만 고칩니다." onClose={onClose}>
+  return (<Modal title="대진표 수정" onClose={onClose}>
     <div className="swap" key="pb-edit">
       <Field label="대진표 이름"><input value={name} onChange={e=>setName(e.target.value)} maxLength={40}/></Field>
       <Field label="개설자 닉네임"><input value={host} onChange={e=>setHost(e.target.value)} maxLength={20}/></Field>
@@ -2216,7 +2210,6 @@ function PrivateBrackets({ admin, flash, tabs }){
         <h1 className="t32 bk-open-title" data-vt={"pb-"+open.id}>{open.name}</h1>
         <p className="t12 dim reg bk-open-line">사설, {open.host?`${open.host} 개설, `:""}{pbFormat(open)}, {open.participants.length}명{open.createdAt?`, ${formatDate(open.createdAt)}`:""}</p>
         {open.note&&<div className="bk-note"><Prose text={open.note}/></div>}
-        <p className="pn2 bk-info t12 reg dim"><Icon n="info" size={20}/><span>누구나 만들 수 있는 사설 대진표입니다. 결과는 공식 기록, 랭킹, 칭호에 반영되지 않습니다.</span></p>
         <div className="stack bk-actions">
           {canEdit
             ? <>{!admin&&<Button variant="second" onClick={()=>lock(open.id)}>입력 마치기</Button>}
@@ -2228,7 +2221,6 @@ function PrivateBrackets({ admin, flash, tabs }){
           <Button variant="second" disabled={busy} onClick={startEdit}>수정</Button>
           {(canEdit||admin)&&<Button variant="second" disabled={busy} onClick={del}>삭제</Button>}
         </div>
-        {canEdit&&<p className="t12 dim reg bk-pick-hint">이긴 쪽 이름을 누르면 다음 경기로 올라갑니다. 같은 쪽을 다시 누르면 취소됩니다.</p>}
       </header>
       {drawId===open.id
         ? <BracketDraw b={open} onDone={()=>setDrawId(null)}/>
@@ -2246,13 +2238,12 @@ function PrivateBrackets({ admin, flash, tabs }){
   return (<section className="bk">
     <header className="bk-head"><h1 className="t32">대진표</h1></header>
     {tabs}
-    <p className="pn2 bk-info t12 reg dim"><Icon n="info" size={20}/><span>누구나 만들 수 있는 사설 대진표입니다. 결과는 공식 기록, 랭킹, 칭호에 반영되지 않습니다.</span></p>
     <div className="bk-new"><Button variant="main" icon="plus" onClick={()=>setCreating(true)}>새 사설 대진표</Button></div>
     <div className="bk-search"><ListSearch q={q} setQ={setQ} placeholder="대진표, 개설자, 참가자 검색" count={shown.length}/></div>
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!list&&!loadError?<Loader/>:shown.length===0
-      ? (kw?<Empty className="swap" title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 사설 대진표를 찾지 못했습니다.`}/>
-           :<Empty className="swap" title="아직 사설 대진표가 없습니다." desc="참가자 이름만 적으면 바로 대진을 추첨하고, 링크로 결과를 함께 볼 수 있습니다."/>)
+      ? (kw?<Empty className="swap" title="검색 결과가 없습니다."/>
+           :<Empty className="swap" title="아직 사설 대진표가 없습니다."/>)
       : <div className="stack bk-rows" ref={listArrived}>{shown.map((b,i)=><BracketRow key={b.id} b={b} lead={i===0&&!kw} vt={"pb-"+b.id} live={pbStatus(b)==="진행 중"}
           line={`${b.host?`${b.host} 개설, `:""}${b.participants.length}명, ${pbFormat(b)}${pbChamp(b)?`, 우승 ${pbChamp(b)}`:""}`} onOpen={()=>openBracket(b)}/>)}</div>}
     {creating&&<PrivateBracketCreate onClose={()=>setCreating(false)} onCreate={create}/>}
@@ -2568,7 +2559,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
     {!open&&!wizard&&<div className="bk-list swap" ref={listArrived}>
       {!normalizedInitialReady
         ? <Loader/>
-        : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다." desc="참가자를 등록하고 대진을 생성하면 결과가 기록에 자동으로 반영됩니다.">
+        : list.length===0&&<Empty title="아직 만들어진 대진표가 없습니다.">
             {admin&&<Button variant="second" onClick={()=>transition(()=>flushSync(()=>setWizard(true)))}>첫 대진표 만들기</Button>}
           </Empty>}
       {list.length>0&&<div className="stack bk-rows">{list.map((b,i)=><BracketRow key={b.id} b={b} lead={i===0} vt={"b-"+b.id} live={statusTag(b)==="진행 중"}

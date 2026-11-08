@@ -29,7 +29,6 @@ function usePush() {
   };
   const sheet = ask && <Modal title="새 공지를 알림으로 받습니다." onClose={() => setAsk(false)}>
     <div className="push-ask">
-      <p className="read dim">대회 공지와 결과가 올라오면 이 기기로 알려 드립니다. 언제든 더보기에서 끌 수 있습니다.</p>
       {mode === "install" && <p className="pn2 push-note t12 reg dim"><Icon n="info" size={20} /><span>아이폰과 아이패드는 Safari의 공유 버튼에서 홈 화면에 추가한 뒤, 그 앱의 공지 화면에서 알림을 켤 수 있습니다.</span></p>}
       {mode === "ready" && <Button variant="main" icon="bell" disabled={busy} onClick={flip}>알림 받기</Button>}
       <Button variant="link" className="push-later" onClick={() => setAsk(false)}>나중에</Button>

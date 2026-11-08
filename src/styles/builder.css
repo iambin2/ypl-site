@@ -7,7 +7,6 @@
 /* the page's blocks stand 20 apart; the line under the title 8 */
 .tb-page.sec, .calc-page.sec { gap: var(--s5); }
 .tb-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
-.tb-desc { margin-top: calc(var(--s3) * -1); }
 .tb-steps, .calc-tabs { margin-bottom: 0; }
 
 /* the Pokémon to pick: panels joined by the seam, the picture, the name and its types, the stats, + */

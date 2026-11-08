@@ -165,7 +165,7 @@ function RandomPick({ regs, value, onChange }) {
   return <div className="stack">
     <label className={"opt-row " + (on ? "inv" : "pn")}>
       <input type="radio" className="sr-only" name="battle-team" checked={on} onChange={() => pick(reg)} />
-      <span className="opt-copy"><b className="t15">무작위 여섯 마리</b><span className="t12 reg opt-line">배틀이 열리면 {REGULATIONS[reg] || reg} 규정 안에서 정해집니다.</span></span>
+      <span className="opt-copy"><b className="t15">무작위 여섯 마리</b><span className="t12 reg opt-line">{REGULATIONS[reg] || reg} 규정</span></span>
       {on && <Icon n="check" size={20} />}
     </label>
     {regs.length > 1 && <div className="choice stack" role="radiogroup" aria-label="랜덤 파티 규정">
@@ -441,7 +441,7 @@ function RoomHall({ rooms, onOpen, onMake }) {
     {!rooms ? <Loader />
       : !list.length ? (filtered
         ? <Empty title="조건에 맞는 방이 없습니다." desc="검색어나 조건을 바꿔 보세요." />
-        : <Empty title="기다리는 방이 없습니다." desc="방을 만들면 여기에 나오고, 누구나 들어올 수 있습니다." />)
+        : <Empty title="기다리는 방이 없습니다." />)
       : <div className="stack bt-hall-list">
         {shown.map(r => { const secret = r.room === "code";
           return <Row key={r.id} title={`${r.p1_name}의 방`} line={`${REGULATIONS[r.regulation] || ""} ${isDoubles(r.format_id) ? "더블" : "싱글"}, ${ago(r.created_at, now)}`}
@@ -527,7 +527,7 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
   const roomRow = ROOMS.find(([key]) => key === room);
   return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="저장한 팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
     foe={foe === "cpu" ? "컴퓨터" : null} foeNote={foe === "cpu" ? levelOf(level).label : ""} foeHint={roomRow[2]} foeLead={foe === "cpu" ? levelOf(level).species : null}
-    before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line={`${levelOf(saved.level ?? saved.start?.level).label}, 진행 중인 배틀을 이어서 합니다.`} lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
+    before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line={levelOf(saved.level ?? saved.start?.level).label} lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
     setup={<>
       <Question id="bt-foe" label="상대" group>
         <Choice name="bt-foe" options={OPPONENTS.map(([, label]) => label)} value={OPPONENTS.find(([key]) => key === foe)[1]} onChange={label => setFoe(OPPONENTS.find(([, l]) => l === label)[0])} />
@@ -715,10 +715,6 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
   const clock = `${Math.min(99, Math.floor(waited / 60))}:${String(waited % 60).padStart(2, "0")}`;
   const rule = `${REGULATIONS[row.regulation] || ""} ${doubles ? "더블" : "싱글"}`;
   const kind = rematch ? "다시하기" : official ? "공식 경기" : row.room === "open" ? "공개 방" : row.room === "code" ? "비밀 방" : "친선 배틀";
-  const how = rematch ? "상대가 다시하기를 누르면 바로 시작합니다."
-    : official ? "상대 선수가 들어오면 시작합니다."
-    : row.room === "open" ? "상대가 방 목록이나 링크로 들어오면 시작합니다."
-    : code ? "상대가 방 목록에서 방 코드를 넣거나 링크로 들어오면 시작합니다." : "상대가 링크로 들어오면 시작합니다.";
   return (
     <div className="bt-page">
       <h1 className="t32">배틀</h1>
@@ -737,7 +733,6 @@ export function Waiting({ row, res, team, code, rematch = false, onShare, onCanc
             {code && !rematch && <Counter label="방 코드" value={code} cells={4} h={84} />}
             <Counter label="기다린 시간" value={clock} cells={3} h={code && !rematch ? 84 : 52} />
           </div>
-          <p className="t12 dim">{how}</p>
         </div>
       </div>
     </div>
@@ -803,7 +798,6 @@ function OfficialSeat({ eventId, nodeKey, res, onOpen }) {
       {match.decided
         ? <Empty title="이미 승자가 정해진 경기입니다." desc="대진표에서 결과를 확인해 주세요." />
         : <>
-          <p className="read dim bt-intro">제출 비밀번호로 자기 자리에 앉습니다.</p>
           {match.seats
             /* a team bout: each team's members under the team's name, one of them chosen across both */
             ? ["a", "b"].map(t => {
@@ -863,7 +857,7 @@ function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
   return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`저장한 팀 (${REGULATIONS[row.regulation]})`} name={name} setName={typeName}
     foe={row.p1_name} doubles={doubles} onEnter={submit}
     setup={<>
-      <Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} line="참가하면 바로 시작합니다." lamp="참가 대기" />
+      <Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} lamp="참가 대기" />
       {askCode && <Question id="bt-code" label="방 코드">
         <input id="bt-code" className="in" inputMode="numeric" autoComplete="off" maxLength={4} enterKeyHint="go" value={code} placeholder="숫자 4자리"
           onChange={e => { setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 4)); if (error) setError(""); }}
@@ -1051,7 +1045,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     : row.applied_at ? "대진표에 반영했습니다."
     : row.apply_error ? `대진표에 넣지 못했습니다. 운영진이 확인합니다. (${row.apply_error})`
     // a team bout waits for the rest of its series (teamBouts.js); the series goes in once every bout is decided
-    : parseBoutKey(row.source_node_key) ? (row.winner === "tie" ? "무승부입니다. 이 판은 다시 치릅니다." : "이 판의 결과를 남겼습니다. 모든 판이 끝나면 대진표에 들어갑니다.")
+    : parseBoutKey(row.source_node_key) ? (row.winner === "tie" ? "무승부입니다. 이 판은 다시 치릅니다." : "이 판의 결과를 남겼습니다.")
     : "대진표에 넣는 중입니다.";
   /* where the replay lives: a battle's own page, or a battle with the computer by its record on the server (CpuRoom makes sure of it
      first, so a battle just played on this device has an address too) */
@@ -1527,11 +1521,9 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
      the games' rainbow helix (public/brand/mega-evolution.png) as given; the key inverts while it is on */
   const megaKey = off => <button type="button" className={"bt-mega" + (mega ? " on" : "")} aria-pressed={mega} disabled={off} onClick={() => setMega(!mega)}>
       <img className="bt-mega-mark" src="/brand/mega-evolution.png" alt="" draggable="false" />
-      <span className="bt-mega-say"><b>{`${active?.canMegaEvo || !holder ? who : name(holder.details)} 메가진화`}</b><small>{
-        mega ? "켜졌습니다. 기술을 고르면 메가진화합니다."
-        : active?.canMegaEvo && megaTaken ? "이번 턴에 이미 메가진화를 골랐습니다."
-        : active?.canMegaEvo ? "켜고 기술을 고르면 메가진화합니다."
-        : "나와 있을 때 켤 수 있습니다."}</small></span>
+      <span className="bt-mega-say"><b>{`${active?.canMegaEvo || !holder ? who : name(holder.details)} 메가진화`}</b>{/* only why it cannot be pressed; on or off the key says by its own light (DESIGN.md "Composing a screen" 22) */}{
+        mega || (active?.canMegaEvo && !megaTaken) ? null
+        : <small>{active?.canMegaEvo ? "이번 턴에 이미 메가진화를 골랐습니다." : "나와 있을 때 켤 수 있습니다."}</small>}</span>
       <span className="bt-mega-tick" aria-hidden="true">{mega && <Icon n="check" size={20} />}</span>
     </button>;
   // a forced switch: the bench, under the last moves (and the Mega key) standing off where they were

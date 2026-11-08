@@ -68,7 +68,7 @@ export default function AdminPage({ data, admin, go, onAdmin, save, flash, onReq
     const before = e.closesAt;
     if (await save(withClose(koreaNow()), "신청을 마감했습니다.")) flash("신청을 마감했습니다.", { label: "되돌리기", run: () => save(withClose(before), "마감을 되돌렸습니다.") });
   };
-  if (!admin) return <div className="ad-page"><h1 className="t32">운영</h1><Empty title="관리자 로그인이 필요합니다." desc="운영진 계정으로 로그인하면 할 일이 여기에 모입니다." />
+  if (!admin) return <div className="ad-page"><h1 className="t32">운영</h1><Empty title="관리자 로그인이 필요합니다." />
     <Button variant="main" onClick={onAdmin}>관리자 로그인</Button></div>;
   const tasks = adminTasks(overview);
   // the requests block reads them itself and says how many wait after each decision; until it does, the overview's count stands
@@ -95,7 +95,7 @@ export default function AdminPage({ data, admin, go, onAdmin, save, flash, onReq
           <section className="ad-block" aria-labelledby="ad-todo-h">
             <SectionHead id="ad-todo-h" title="할 일" />
             {tasks.length ? <div className="stack">{tasks.map(t => <Row key={t.key} title={t.title} line={t.line} lamp={true} onClick={() => open(t)} label={`${t.title}, ${t.line}`} />)}</div>
-              : <div className="pn ad-none"><span className="t15">지금 할 일이 없습니다.</span><span className="t12 dim">결과 입력, 대진표, 기록 반영이 생기면 여기에 섭니다.</span></div>}
+              : <div className="pn ad-none"><span className="t15">지금 할 일이 없습니다.</span></div>}
           </section>
           <section className="ad-block" aria-labelledby="ad-doors-h">
             <SectionHead id="ad-doors-h" title="편집" />
@@ -105,7 +105,7 @@ export default function AdminPage({ data, admin, go, onAdmin, save, flash, onReq
         <aside className="ad-side" aria-labelledby="ad-events-h">
           <SectionHead id="ad-events-h" title="대회 진행" />
           {events.length ? events.map((e, i) => <EventPanel key={e.id} e={e} main={i === 0} go={go} onClose={closeNow} />)
-            : <div className="pn ad-none"><span className="t15">진행 중인 대회가 없습니다.</span><span className="t12 dim">대회 공지에서 신청을 열면 여기에 섭니다.</span></div>}
+            : <div className="pn ad-none"><span className="t15">진행 중인 대회가 없습니다.</span></div>}
         </aside>
       </div>}
   </div>;

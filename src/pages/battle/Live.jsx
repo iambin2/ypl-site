@@ -113,8 +113,8 @@ export function LiveHall({ res, rows, onOpen }) {
     </div>
     {!rows ? <Loader />
       : !list.length ? (all.length
-        ? <Empty title="조건에 맞는 배틀이 없습니다." desc="조건을 바꿔 보세요." />
-        : <Empty title="지금 진행 중인 배틀이 없습니다." desc="배틀이 시작되면 여기에 나오고, 누구나 지켜볼 수 있습니다." />)
+        ? <Empty title="조건에 맞는 배틀이 없습니다." />
+        : <Empty title="지금 진행 중인 배틀이 없습니다." />)
       : <div className="stack bt-live-list">
         {list.map((r, i) => <LiveCard key={r.id} res={res} row={r} label={labels[r.id]} lead={i === 0 && r.kind === "official"} onOpen={onOpen} />)}
       </div>}
