@@ -20,10 +20,8 @@
 
 /* ---------- a Pokémon on its platform; sizes follow the stage's height so a wide stage never crops a head ---------- */
 .bs-side { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-/* only a target being picked takes a tap: a Pokémon's picture or its place never does, so a big near Pokémon over a far one's
-   place never swallows the tap meant for the far one */
+/* a Pokémon's picture or its place never takes a tap, so a big near Pokémon over a far one's place never swallows a tap */
 .bs-side, .bs-side * { pointer-events: none; }
-.bs-side .bt-pick { pointer-events: auto; }
 .bs-slot { position: absolute; transform: translateX(-50%); }
 .bs-slot[data-pos="foe"] { left: 66%; bottom: 50%; height: 42%; aspect-ratio: 1; }
 .bs-slot[data-pos="own"] { left: 30%; bottom: 5%; height: 63%; aspect-ratio: 1; }
@@ -41,12 +39,6 @@
 .bs-slot:nth-child(odd) .bs-mon { animation-delay: -1.7s; }
 .bs-side.foe .bs-mon { animation-duration: 3.8s; }
 .bs-mon img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; display: block; }
-/* the polished floor mirrors it, fading as it goes down, and the floor darkens under its feet */
-.bs-mon img.bs-mirror { position: absolute; left: 0; top: 100%; opacity: .32; transform: scaleY(-1); pointer-events: none;
-  -webkit-mask: linear-gradient(0deg, #000 0%, #0008 12%, transparent 34%); mask: linear-gradient(0deg, #000 0%, #0008 12%, transparent 34%); }
-.bs-side.own .bs-mon img.bs-mirror { transform: scale(-1, -1); }
-.bs-shadow { position: absolute; left: 12%; right: 12%; bottom: -5%; height: 12%; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(closest-side, #000000AA, #00000055 55%, transparent); }
 .bs-side.own .bs-mon img { transform: scaleX(-1); }
 @keyframes bs-idle { 50% { translate: 0 -1.5%; } }
 /* a substitute stands in the Pokémon's place: the games' stuffed plush doll, sitting full and round, drawn in flat cel fills */

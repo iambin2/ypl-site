@@ -384,10 +384,7 @@
 .bt-clock.hot > i > b { background: #FF5A50; }
 .bt-hud:has(.bt-clock) .bt-say { padding-right: calc(var(--say-h) + var(--s3)); }
 
-/* a target the player may pick: the whole Pokémon is the button, framed by a square of light, with its matchup */
-
 /* what the stage says over itself (stageFx.js): a turn or the winner across it, an ability's plate; nothing is written over a Pokémon */
-.bt-fx-flash { width: 100%; height: 100%; background: var(--lit); }
 /* a turn or the winner: a solid band across the stage */
 .bt-banner { left: 50%; top: 44%; min-width: 64%; padding: var(--s2) var(--s13); text-align: center; white-space: nowrap; background: var(--panel-2); color: var(--lit); font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
 .bs-over > .bt-popup { right: 0; top: 24%; display: grid; gap: var(--s1); min-width: 40%; max-width: 64%; padding: var(--s2) var(--s5) var(--s2) var(--s3); background: var(--panel-2); text-align: right; }

@@ -46,10 +46,6 @@ export function signOutVisitor() {
 }
 
 export const visitorSignedIn = () => Boolean(read(STORE));
-// the signed-in account's email, read from the token's own claims (for the sign-out question); "" when unknown
-export function visitorEmail() {
-  try { return JSON.parse(atob(read(STORE).access.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).email || ""; } catch { return ""; }
-}
 export const takePendingLink = () => { const p = read(PENDING); write(PENDING, null); return p?.name || ""; };
 export const takePendingForm = () => { const id = read(PENDING_FORM); write(PENDING_FORM, null); return id || ""; };
 

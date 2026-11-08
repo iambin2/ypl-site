@@ -7,9 +7,6 @@ export function championshipSettings(event = {}) {
   return settings && typeof settings === "object" ? settings : {};
 }
 
-export const CHAMPIONSHIP_QUALIFIER_FORMAT = "double_elimination";
-export const CHAMPIONSHIP_FINAL_FORMAT = "single_elimination";
-
 export function championshipPhaseLabel(event = {}) {
   if (event?.event_type !== "champions") return "";
   if (event?.championship_phase === "qualifier") return "선발전";

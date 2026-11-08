@@ -139,16 +139,6 @@ export async function listOpenRooms() {
   if (error && unreadable(error)) roomsSupported = false;
   return error ? [] : data || [];
 }
-/* 끝난 배틀의 로그(리플레이). 공식 배틀의 전체 로그와 입력 기록에는 두 선수의 파티 전부가 있어, 대회가 파티를 공개하기 전에는
-   관전 로그만 온다(full: false). 친선전과 공개된 대회, 운영진은 전체를 받는다(docs/db/battle_integration.sql battle_full_log). */
-export async function readBattleLog(id) {
-  const { data, error } = await supa.rpc("battle_full_log", { p_id: id });
-  if (!error) return data;
-  // battle_integration.sql 을 실행하기 전: 지금까지처럼 표를 읽는다
-  const old = await supa.from("battles").select("log, input_log").eq("id", id).maybeSingle();
-  if (old.error) throw new Error(old.error.message);
-  return old.data && { ...old.data, full: true };
-}
 // 바뀌었는지만 묻는 가벼운 읽기(응답 약 12바이트). 화면은 이 값이 오를 때만 전체를 다시 읽는다.
 // ponytail: 묻는 방식이다. 동시에 보는 사람이 많아지면 Supabase Realtime으로 바꾼다.
 export async function readBattleVersion(id) {

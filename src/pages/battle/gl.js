@@ -1309,4 +1309,3 @@ export function glOf(stage) {
 }
 const ON_CREATE = [];
 export const onEngine = fn => { ON_CREATE.push(fn); };
-export { F as FLAGS };
