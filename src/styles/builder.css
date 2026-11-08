@@ -38,8 +38,11 @@
 .tb-rules { display: grid; gap: var(--s5); }
 .tb-rule-group { display: grid; gap: var(--s3); }
 .tb-rule-group > p { margin: 0; }
+/* a type picker (Board.jsx TypeGrid): cells of one size, the tag centred in each. With 전체 two cells wide the board is 5 by 4 */
 .tb-type-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.tb-type-opt { display: flex; align-items: center; min-height: var(--h-control); padding: 0 var(--s3); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; transition: background-color var(--move-tone); }
+.tb-type-grid.has-all { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tb-type-grid > .all { grid-column: span 2; }
+.tb-type-opt { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: var(--h-control); padding: 0 var(--s2); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; transition: background-color var(--move-tone); }
 .tb-type-opt.inv { color: var(--ground); }
 @media (hover: hover) { .tb-type-opt.pn:not(:disabled):hover { background: var(--panel-2); } }
 
@@ -121,7 +124,7 @@
 @media (min-width: 1100px) {
   .tb-rules { grid-template-columns: minmax(0, 439fr) minmax(0, 709fr); column-gap: var(--s13); }
   .tb-rules > :is(.tb-rule-group:nth-child(3), p) { grid-column: 1 / -1; }
-  .tb-type-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tb-type-grid:not(.has-all) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
 
 /* the Pokémon to pick stand on the ground like every list: no panel around the panels */
@@ -140,8 +143,8 @@
   .tb-rules > .tb-rule-group:nth-child(-n + 2) { display: none; }
   .tb-rules:not(:has(.tb-rule-group:nth-child(3))) { grid-template-columns: minmax(0, 1fr); }
 }
-/* the type chips stand 12 under the search, the list's sort under them */
-.tb-pool-panel > .chips { flex: none; margin-top: calc(var(--s3) - (var(--h-control) - var(--h-strip)) / 2); }
+/* the type board stands 12 under the search, the list's sort under it */
+.tb-pool-panel > .tb-type-grid { flex: none; margin-top: var(--s3); }
 
 /* ---------- 타입 상성: the team against the 18 types, a board of cells joined by the seam (TeamBuilderPage.jsx TypeMatchups).
    The frame is one step up: the head row (the corner naming the rows, a member's picture, a count's word) and the head column (the

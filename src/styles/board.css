@@ -239,6 +239,11 @@
 .chips > * { position: relative; }
 .chips > ::after { content: ""; position: absolute; inset: calc((var(--h-control) - var(--h-strip)) / -2) 0; }
 /* a phone's sideways row runs on to the screen's edge, so a word cut there says the row goes on (DESIGN.md "Bars and navigation") */
+/* a mouse cannot swipe a row whose scrollbar is hidden, so with a mouse the chips wrap and every one stays in reach */
+@media (hover: hover) and (pointer: fine) {
+  .chips { flex-wrap: wrap; overflow-x: visible; }
+  .chips > ::after { inset: 0; }
+}
 @media (max-width: 859px) {
   .page :is(.tabsline, .chips:not(.sheet .chips)) { margin-right: calc(var(--gutter) * -1); padding-right: var(--gutter); }
 }

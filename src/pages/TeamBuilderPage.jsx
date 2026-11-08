@@ -1,7 +1,7 @@
 import React, { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Dropdown, Icon, Loader, Modal, Segmented, siteAlert, siteConfirm } from "../components/index.js";
-import { Bang, Cell, Chips, Choice, Dock, Mon, OptionRows, Steps, TabsLine } from "../components/common/Board.jsx";
+import { Bang, Cell, Choice, Dock, Mon, OptionRows, Steps, TabsLine, TypeGrid } from "../components/common/Board.jsx";
 import PickerSheet, { PickField } from "../components/common/PickerSheet.jsx";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { ShowcaseCompose } from "./BoardPage.jsx";
@@ -1379,14 +1379,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
         </div>
         {cupRule.kind === "monotype" && <div className="tb-rule-group">
           <p className="t12 dim">{cupRule.name}의 타입{eventId ? " (대회 기준)" : ""}</p>
-          <div className="stack tb-type-grid" role="radiogroup" aria-label="지정 타입">
-            {TYPE_OPTIONS.map(type => (
-              <button type="button" key={type.id} role="radio" aria-checked={assignedTypeId === type.id} disabled={Boolean(eventId)}
-                className={"tb-type-opt " + (assignedTypeId === type.id ? "inv" : "pn")} onClick={() => switchCupRuleType(type.id)}>
-                <span className={`tb-type type-${type.id}`}>{type.korean}</span>
-              </button>
-            ))}
-          </div>
+          <TypeGrid label="지정 타입" value={assignedTypeId} onChange={switchCupRuleType} types={TYPE_OPTIONS} disabled={Boolean(eventId)} />
         </div>}
         <p className="t12 reg dim">{regulation.description}, 능력 포인트는 개별 최대 32, 총합 최대 66입니다.</p>
       </div>
@@ -1477,10 +1470,9 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
               ))}
             </div>
           )}
-          {/* the types as chips. One type at a time; it is the search's own type condition, so the search chips show it too */}
-          <Chips label="타입으로 거르기" value={searchChips.find(chip => chip.kind === "type")?.id || ""}
-            onChange={id => setSearchChips(current => [...current.filter(chip => chip.kind !== "type"), ...(id ? [{ kind: "type", id, label: TYPE_OPTIONS.find(type => type.id === id)?.korean || id }] : [])])}
-            options={[["", `전체 ${eligiblePool.length}`], ...TYPE_OPTIONS.map(type => [type.id, type.korean])]} />
+          {/* the types as a board of cells. One type at a time; it is the search's own type condition, so the search chips show it too */}
+          <TypeGrid label="타입으로 거르기" value={searchChips.find(chip => chip.kind === "type")?.id || ""} types={TYPE_OPTIONS} all="전체"
+            onChange={id => setSearchChips(current => [...current.filter(chip => chip.kind !== "type"), ...(id ? [{ kind: "type", id, label: TYPE_OPTIONS.find(type => type.id === id)?.korean || id }] : [])])} />
           <div className="tb-sort-row">
             <Dropdown className="tb-dd" value={sortId} onChange={setSortId} ariaLabel="정렬 기준" options={BUILDER_SORTS.map(sort => ({ value: sort.id, label: sort.label }))} />
             <Button type="button" variant="link" size="lg" onClick={() => setSortReversed(current => !current)} aria-pressed={sortReversed}>

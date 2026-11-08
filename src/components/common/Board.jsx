@@ -286,3 +286,20 @@ export function Chips({ value, onChange, options, label }) {
     </div>
   );
 }
+
+/* A type picker: the 18 types as cells of one size joined by the seam, each with its colour square; the chosen one inverted. all, when
+   given, is the "every type" cell (key ""), two cells wide so the board stays a full rectangle (DESIGN.md "Composing a screen" 12). */
+export function TypeGrid({ value, onChange, types, label, all, disabled = false }) {
+  const ref = useRef(null);
+  useLightOnChange(ref, value);
+  const cell = (key, text, cls = "") => (
+    <button type="button" key={key || "all"} role="radio" aria-checked={value === key} disabled={disabled}
+      className={"tb-type-opt " + (value === key ? "inv" : "pn") + cls} onClick={() => onChange(key)}>{text}</button>
+  );
+  return (
+    <div className={"stack tb-type-grid" + (all ? " has-all" : "")} role="radiogroup" aria-label={label} ref={ref}>
+      {all && cell("", all, " all")}
+      {types.map(type => cell(type.id, <span className={`tb-type type-${type.id}`}>{type.korean}</span>))}
+    </div>
+  );
+}
