@@ -1806,11 +1806,20 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
       data-info={`mega:${species(megaWho.details)}:${megaWho.item || ""}:${megaWhy}`} data-key="m" title={narrow ? undefined : `${megaWhy || `${name(megaWho.details)} 메가진화`} (M)`}>
       <img className="bt-mega-mark" src="/brand/mega-evolution.png" alt="" draggable="false" />
     </button>;
+  /* 처음부터 다시 고르기, where a choice has more than one place (doubles): a square at the bench row's end, standing every turn and off
+     while there is nothing to take back, so the deck keeps one height. As a row of its own under the moves it came with the first
+     place's pick and went with the choice, and the phone's deck, which never shrinks within a battle, kept its room as an empty band
+     over the moves (2026-11-10, the user: "기술과 상태 표시줄 사이의 의미 없는 큰 공백") */
+  const undoOff = !picks.length || frozen;
+  const undoKey = slots.length > 1 && <button key="undo" type="button" className={"bt-mega bt-undo" + (undoOff ? " is-off" : "")} aria-disabled={undoOff || undefined}
+      onClick={() => { if (!undoOff) reset(); }} aria-label="처음부터 다시 고르기" title={narrow ? undefined : "처음부터 다시 고르기"}>
+      <Icon n="refresh" size={20} />
+    </button>;
+  const extras = (...keys) => keys.filter(Boolean);
   // a forced switch: the bench, under the last moves (and the Mega key) standing off where they were
   if (forced) return <div className={"bt-choices forced" + (locked ? " locked" : "")} ref={root}>
     {moveKeys(ghost?.active?.[at] || null, true)}
-    {bench(megaRow && megaKey(true))}
-    {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
+    {bench(extras(undoKey, megaRow && megaKey(true)))}
     {toast && <Dock toast={toast} />}
   </div>;
   /* the target picker (doubles): the move keys give way to the field as the stage shows it, the foe's two over ours, each place its
@@ -1842,8 +1851,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
   }
   return <div className={"bt-choices" + (locked ? " locked" : "")} ref={root}>
     {moveKeys(active, frozen)}
-    {picks.length > 0 && !frozen && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
-    {bench(megaRow && megaKey(!megaOpen))}
+    {bench(extras(undoKey, megaRow && megaKey(!megaOpen)))}
     {toast && <Dock toast={toast} />}
   </div>;
 }
@@ -1851,11 +1859,12 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
 
 /* the bench: a row of the brought Pokémon not out, each its picture, name and HP; one that cannot come in is muted. On a phone it is
    the deck's bench row, the Mega key at its end (extra); lit: the bench is what is asked (a forced switch, Revival Blessing) */
-function Bench({ pokemon, res, pick, narrow = false, extra = null, lit = false }) {
+// extra: the squares at the row's end (처음부터 다시 고르기 in doubles, the Mega key)
+function Bench({ pokemon, res, pick, narrow = false, extra = [], lit = false }) {
   const out = pokemon.map((mon, i) => ({ mon, i })).filter(({ mon }) => !mon.active);
-  if (!out.length && !extra) return null;
+  if (!out.length && !extra.length) return null;
   return <div className={"bt-bench" + (lit ? " lit" : "")}>
-    <div className={"stack bt-bench-row" + (extra ? " with-mega" : "")} style={{ "--n": out.length }}>
+    <div className={"stack bt-bench-row" + (extra.length ? " with-mega" : "")} style={{ "--n": out.length, "--x": extra.length }}>
       {out.map(({ mon, i }, n) => {
         const go = pick(i);
         const species = String(mon.details).split(", ")[0];

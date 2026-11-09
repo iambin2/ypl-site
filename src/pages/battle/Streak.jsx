@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import Button from "../../components/common/Button.jsx";
 import Icon from "../../components/common/Icon.jsx";
 import Seg from "../../components/common/Seg.jsx";
-import { Counter, Dock, Podium, Row, SectionHead, Toast } from "../../components/common/Board.jsx";
+import { Bang, Counter, Dock, Podium, Row, SectionHead, Toast } from "../../components/common/Board.jsx";
 import StandTable from "../../components/common/StandTable.jsx";
 import { siteConfirm } from "../../components/common/SiteDialog.jsx";
 import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
@@ -282,7 +282,9 @@ function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, block
   const chosenRow = i => chosen.has(`give:${ours[i]?.species}`);
   return <section className="streak-swap" aria-labelledby="streak-swap-title">
     <div className="stack streak-trades" role="table">
-      <b className="pn streak-trades-title" id="streak-swap-title">포켓몬 교환</b>
+      <div className="pn streak-trades-title"><b id="streak-swap-title">포켓몬 교환</b>
+        {/* the last refusal, lit where the table is read: the strip keeps its height, so nothing moves */}
+        {blocked.length > 0 && <span key={blocked.length} className="streak-trades-note" role="alert"><Bang /><span>{blocked.at(-1).why}</span></span>}</div>
       <span className="pn streak-trades-head" role="columnheader">내 파티</span>
       <span className="pn streak-trades-mark" aria-hidden="true"><Icon n="swap" size={20} /></span>
       <span className="pn streak-trades-head" role="columnheader">상대 파티</span>
@@ -364,11 +366,12 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
       await leaveNow();
       onOpen(made.id);
     } catch (e) {
-      await dark; liftDrop(); standUp(); setError(e.message); setBusy(false);
-      // a refused pair stands off and is let go; the other pairs stay chosen. Without a named pair, all are let go, so the key says
-      // 다음 판 again instead of asking the same twice
+      await dark; liftDrop(); standUp(); setBusy(false);
+      /* a refused pair stands off and is let go, and the trade table says why on its own title strip, where the eye already is; a toast
+         standing in the deck's flow pushed 다음 판 down and broke the end's row (2026-11-10, the user: "왜곡이 생겨"). The other pairs
+         stay chosen. Without a named pair the toast says it, all are let go, and the key says 다음 판 again */
       if (e.pair?.give && e.pair?.take) { setBlocked(b => [...b, { ...e.pair, why: e.message }]); setPairs(p => p.filter(x => x.give !== e.pair.give)); }
-      else setPairs([]);
+      else { setError(e.message); setPairs([]); }
     }
   };
   const brk = <section ref={box} className={"streak-break" + (away ? " away" : "")} aria-label={resting ? "다음 판" : "도전 끝"}>

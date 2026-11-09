@@ -89,7 +89,12 @@
 .streak-trades-mark { display: grid; place-items: center; color: var(--mute); }
 .streak-trades-mark.inv { color: var(--ground); }
 /* the table's name as its own top strip across all three columns, a panel like every cell under it */
-.streak-trades-title { grid-column: 1 / -1; display: flex; align-items: center; min-height: var(--h-strip); padding: 0 var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 700; color: var(--lit); }
+.streak-trades-title { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-width: 0; min-height: var(--h-strip); padding: 0 var(--pad); font-size: var(--t15); line-height: var(--l15); font-weight: 700; color: var(--lit); }
+/* why the server refused a pair (an item the party already holds), at the strip's right end: it lights as anything arrives, gives way
+   by an ellipsis and never takes a second line; the whole reason is also in the row's i */
+.streak-trades-title > b { flex: none; white-space: nowrap; }
+.streak-trades-note { display: flex; align-items: center; gap: var(--s2); min-width: 0; font-size: var(--t12); line-height: var(--l12); font-weight: 600; animation: y-rise var(--move-light) backwards; }
+.streak-trades-note > span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .streak-trades-head { display: flex; align-items: center; min-height: var(--h-strip); padding: 0 var(--pad); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
 .streak-trade { display: grid; grid-template-columns: minmax(0, 1fr) var(--h-control); min-width: 0; min-height: var(--h-control); }
 .streak-trade-key { display: flex; align-items: center; gap: var(--s2); min-width: 0; padding: 0 var(--s2); color: inherit; text-align: left; transition: background-color var(--move-tone); }

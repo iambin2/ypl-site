@@ -222,6 +222,9 @@
 .bt-end-keys > :only-child { grid-column: 1 / -1; }
 .bt-end-keys > .btn--second { padding-inline: var(--s5); }
 .bt-end > .dock { margin-top: 0; }
+/* a toast in the battle's deck stands over it, never in its flow, on every width as on a phone: in the flow it pushed the keys down
+   and broke the end's row (2026-11-10) */
+@media (min-width: 860px) { .bt-deck .dock > .toast-panel { position: absolute; left: 0; right: 0; bottom: calc(100% + var(--s3)); z-index: var(--z-sticky); margin: 0; } }
 @media (min-width: 860px) { .bt-deck .dock { margin-top: 0; } }
 
 /* the replay under the stage stands back: small square keys with their signs, a thin track to drag to any turn (the range input lies
@@ -285,7 +288,8 @@
 .bt-logkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 /* 기권: at the menu's end, a section apart from the rest, in its dark red again so it reads at once as the key that ends the match
    (2026-11-09, the user: "기권 버튼도 원래 빨간색이라 잘 보였는데 흰색으로 바뀌었네"); it stays far from the moves */
-.bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
+/* the phone's menu is a sheet, whose own key rule (.sheet .btn.btn--second) outweighed this one and left 기권 grey (2026-11-10) */
+.bt-forfeit.btn, .sheet .bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
 /* the end's other keys, side by side under 다시하기 and 나가기 */
 /* the match's choice rows (파티 정보, 연출 속도) share the column's width in equal cells: nothing in the match slides sideways */
 .bt-match .chips { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); overflow: visible; }
@@ -531,10 +535,12 @@
 .bt-eff.none { color: #FFFFFF66; font-weight: 400; }
 /* the bench under the moves: the brought Pokémon not out, one tap to switch; one that cannot come in is greyed */
 .bt-bench { display: grid; gap: var(--s2); }
-.bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
-/* on a phone the Mega key stands at the bench row's end, a square of the row's height */
-.bt-bench-row.with-mega { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) var(--h-row); }
-@media (min-width: 860px) { .bt-bench-row { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); } .bt-bench-row.with-mega { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) var(--h-row); } }
+/* one row on every width, each Pokémon a cell: two to a row on a phone put a forced switch's third (the one that fell) on a second row,
+   and the deck, which never shrinks within a battle, kept that height as an empty band over the moves (2026-11-10, the user: "기술과
+   상태 표시줄 사이의 의미 없는 큰 공백") */
+.bt-bench-row { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: var(--seam); }
+/* the squares stand at the bench row's end, each the row's height: 처음부터 다시 고르기 in doubles, then the Mega key */
+.bt-bench-row.with-mega { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) repeat(var(--x, 1), var(--h-row)); }
 .bt-bench-row > .bt-mega { justify-content: center; width: var(--h-row); min-height: var(--h-row); padding: 0; }
 .bt-bench-row > .bt-mega .bt-mega-mark { height: var(--s8); }
 .bt-mega.is-off { cursor: default; }
