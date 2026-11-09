@@ -117,11 +117,12 @@ export function seenCards(res, roster, field = {}) {
    locked: chosen and sent, waiting for the foe */
 /* onInfo (a phone): the cards are short, each with the info mark that opens its whole set; stake: a 연승 도전 game's band over the
    foe's six (Streak.jsx StreakBand) */
-export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, setPicks, onInfo = null, stake = null }) {
+export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, setPicks, onInfo = null, stake = null, keeper = false }) {
   const n = Math.min(count, pokemon.length);
   const toggle = i => setPicks(list => list.includes(i) ? list.filter(x => x !== i) : list.length < n ? [...list, i] : list);
   const cards = ownCards(res, pokemon);
-  return <div className={"bt-preview" + (onInfo ? " short" : "")}>
+  // keeper: a 도전의 탑 gatekeeper's game, whose gatekeeper's cell among the foe's six inverts (the band may stand elsewhere)
+  return <div className={"bt-preview" + (onInfo ? " short" : "") + (keeper ? " keeper" : "")}>
     {stake}
     <FoeSix res={res} species={foe} title={`${foeName}의 파티`} />
     <section className="bt-pv-own">
@@ -144,7 +145,7 @@ export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, set
 }
 
 /* the choice so far, in the order they go (on a wide screen, beside the cards), and 선출 확정 */
-export function PickDock({ res, pokemon, count, picks, setPicks, onSend, toast }) {
+export function PickDock({ res, pokemon, count, picks, setPicks, onSend, toast, locked = false }) {
   const [sending, setSending] = useState(false);
   const n = Math.min(count, pokemon.length);
   const species = i => String(pokemon[i].details).split(", ")[0];
@@ -162,7 +163,7 @@ export function PickDock({ res, pokemon, count, picks, setPicks, onSend, toast }
       </li>)}
     </ol>
     <Dock toast={toast}>
-      <Button variant="main" icon="check" loading={sending} disabled={picks.length !== n} onClick={go}>
+      <Button variant="main" icon="check" loading={sending || (locked && picks.length === n)} disabled={picks.length !== n || locked} onClick={go}>
         {picks.length === n ? "선출 확정" : `${n - picks.length}마리 더 고르기`}
       </Button>
     </Dock>

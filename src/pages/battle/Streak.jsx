@@ -163,7 +163,7 @@ function RunBoard({ run, best, approved, leader = null, month = "" }) {
   </div>;
 }
 
-export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, onPractice = null }) {
+export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, leaveNow = async () => {}, onPractice = null }) {
   const account = useAccount();
   const run = useRun();
   const [back, setBack] = useState(0);
@@ -192,6 +192,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, onP
     try {
       const made = await make();
       await enter(made.id, floorCall(dark, ".bt-lobby-main", next));
+      await leaveNow();
       onOpen(made.id);
     } catch (e) {
       await dark;
@@ -293,7 +294,7 @@ function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, fresh
    나가기). Playing the replay puts the break away (away) and the stage shows it; back at the end it lights again. The run rests after a
    win until 다음 판 opens the next game, so 나가기 loses nothing. ours, theirs: the two parties' species, as the team preview showed
    them (none after a reload: then there is no swap) */
-export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, settle = async () => {}, onInfo = null, stage = null, away = false, ours: ourSix = [], theirs: theirSix = [] }) {
+export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, leaveNow = async () => {}, settle = async () => {}, onInfo = null, stage = null, away = false, ours: ourSix = [], theirs: theirSix = [] }) {
   const seat = readSeat(id);
   const board = useBoard();
   const [busy, setBusy] = useState(false);
@@ -352,6 +353,7 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, set
     try {
       const made = await make();
       await enter(made.id, floorCall(dark, ".bt-main", next));
+      await leaveNow();
       onOpen(made.id);
     } catch (e) {
       await dark; liftDrop(); standUp(); setError(e.message); setBusy(false);

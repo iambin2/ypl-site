@@ -539,8 +539,9 @@ function Strip({ side, scene, name, res, known, onParty }) {
 
 // the message window over the bottom of the stage: the newest line lit, the one before it dim; when the game asks
 // (리자몽은 무엇을 할까?) the question is the newest
-export function Say({ said, ask }) {
-  const shown = ask ? [...said.slice(-1), ask] : said;
+// peek: a move pointed at or held says itself here in place of the question (its facts dim, what it does lit)
+export function Say({ said, ask, peek = null }) {
+  const shown = peek || (ask ? [...said.slice(-1), ask] : said);
   return <div className="bt-say" aria-live="polite">{shown.map((line, i) => <p key={`${line}-${i}-${shown.length}`}>{line}</p>)}</div>;
 }
 
@@ -560,7 +561,7 @@ function Clock({ left, mine }) {
 
 // dark: the stage stands with its lamps off from its first frame (a replay playing from its start, whose opening switches them on)
 // onFoeParty (a phone): the foe's strip is the key to the foe's party, as ours is to 내 파티 (DESIGN.md "Battle", The party)
-export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, known, onParty, onFoeParty = null, clock = null, mine = false, dark = false }) {
+export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, peek = null, known, onParty, onFoeParty = null, clock = null, mine = false, dark = false }) {
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
   /* before its first paint: a replay's arena drawn lit and dimmed a few frames later when its reading reached the start flashed as it
@@ -597,7 +598,7 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
             {chips.length > 0 && <div className="bt-fieldchips">{chips.map(([word, left]) => <span key={word}>{word}{left && <span>{left}</span>}</span>)}</div>}
           </div>
           <div className="bt-hud-own">{plates(perspective, scene, true, doubles, res, setInfo)}</div>
-          <Say said={said} ask={ask} />
+          <Say said={said} ask={ask} peek={peek} />
           <Clock left={clock} mine={mine} />
         </div>
       </div>

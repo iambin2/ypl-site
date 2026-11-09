@@ -483,13 +483,11 @@
 /* ---------- choices: the moves as cards in their type's colour, the bench as panels with the Pokémon ---------- */
 .bt-choices { display: grid; gap: var(--s5); }
 .bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
-/* a move and its info key, one panel split on the seam: the key 44 wide at the move's right end, a step darker in the type's colour,
-   so the information is never a corner of the key that sends the move (2026-11-09) */
-.bt-movebox { display: grid; grid-template-columns: minmax(0, 1fr) var(--h-control); gap: var(--seam); min-width: 0; }
-.bt-move-info { display: grid; place-items: center; color: #FFFFFFD9; background: color-mix(in srgb, var(--type) 44%, #050D1F); transition: background-color var(--move-tone); }
-@media (hover: hover) { .bt-move-info:hover { background: color-mix(in srgb, var(--type) 62%, #050D1F); color: #FFFFFF; } }
-.bt-move-info:focus-visible { outline: var(--line) solid #FFFFFF; outline-offset: calc(var(--line) * -1); }
-.bt-movebox.off > .bt-move-info { filter: grayscale(1); }
+/* a move held on a phone: a light fills along its foot as the hold counts (420, the long press), so even a tap shows that holding
+   does something; full, the message window says the move (BattlePage.jsx peek) */
+.bt-move { position: relative; }
+.bt-move::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--s1); background: #FFFFFF; transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; }
+.bt-move.holding::after { transform: scaleX(1); transition: transform 420ms linear; }
 /* a move card: one solid colour, the type's own darkened toward the night so white words read on every type */
 .bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-row2); padding: var(--s2) var(--s3); text-align: left; color: #FFFFFF;
   background: color-mix(in srgb, var(--type) 62%, #050D1F); transition: background-color var(--move-tone); }
@@ -530,7 +528,7 @@
 .bt-mega.is-off { cursor: default; }
 .bt-mega.is-off > * { opacity: var(--opacity-disabled); }
 /* one next thing lights: in a forced switch the bench is asked and the last moves stand dimmed above it */
-.bt-choices.forced .bt-moves { opacity: var(--opacity-disabled); }
+.bt-choices.forced .bt-moves { opacity: var(--opacity-disabled); transition: opacity var(--move-tone); }
 .bt-sw { display: flex; align-items: center; gap: var(--s2); min-width: 0; min-height: var(--h-row); padding: 0 var(--pad) 0 var(--s1); text-align: left; color: var(--lit); background: var(--panel); transition: background-color var(--move-tone); }
 .bt-sw img { width: var(--h-strip); height: var(--h-strip); flex: none; object-fit: contain; }
 .bt-sw-say { display: grid; min-width: 0; }
@@ -628,12 +626,22 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-card-types > .tb-type::before { width: 6px; height: 6px; }
 .bt-card-order { display: grid; place-items: center; flex: none; align-self: flex-start; width: 40px; height: 40px; background: var(--panel-2); color: var(--lit); font-size: var(--t20); line-height: var(--l20); font-weight: 700; }
 .bt-card.on .bt-card-order { background: var(--ground); }
-/* (2026-11-09 second round, the user: "선택하면 타입 칸이 잘려") on a wide screen the pick's number stands on the picture's top left
-   corner, a 32 square over the picture's own cell, so choosing takes no width from the name and the types: beside the name it left
-   the name 58 of a three-across card, cut to 한카... with its types cut under it. The phone keeps it beside the name (below) */
-@media (min-width: 601px) {
-  button.bt-card > .bt-card-head { position: relative; }
-  button.bt-card .bt-card-order { position: absolute; left: 0; top: 0; width: var(--h-strip); height: var(--h-strip); font-size: var(--t15); line-height: var(--l15); }
+/* the pick's order on a card (2026-11-10, the user: "포켓몬을 선택했을 때 뜨는 숫자가 포켓몬 이미지를 가리는데. 타입 깨지는 걸 방지하면서
+   포켓몬도 가리지 않는 최적의 구조"; before it the number stood beside the name and cut it to 한카..., then on the picture's corner and
+   covered the Pokémon). One fact, one place: from 1200 the column beside the cards lists the order with each pick's picture (1 선두, 2,
+   3), so a chosen card says only that it is chosen, by inverting, and its name, picture and types keep all their room. Where that
+   column is not shown (under 1200) the number stands beside the name only and the types run under both, as the phone has it, so
+   choosing never takes width from the types and never moves the card */
+@media (min-width: 1200px) {
+  button.bt-card .bt-card-order { display: none; }
+}
+@media (min-width: 601px) and (max-width: 1199px) {
+  button.bt-card > .bt-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: 40px auto; grid-template-areas: "pic name end" "pic types types"; column-gap: var(--s3); row-gap: var(--s1); }
+  button.bt-card .bt-card-id { display: contents; }
+  button.bt-card .bt-card-pic { grid-area: pic; }
+  button.bt-card .bt-card-name { grid-area: name; align-self: center; }
+  button.bt-card .bt-card-types { grid-area: types; }
+  button.bt-card .bt-card-order { grid-area: end; }
 }
 .bt-card-hp { display: grid; justify-items: end; gap: var(--s1); flex: none; }
 .bt-card-num { font-size: var(--t15); line-height: var(--l15); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -668,7 +676,7 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-preview.short .bt-foe-cell { padding-bottom: var(--s2); }
 /* a run's stake over the foe's six: the game and the streak riding on it, inverted on a gatekeeper's game with the gatekeeper's cell */
 .streak-band { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--h-row); padding: var(--s1) var(--pad); }
-.bt-preview:has(> .streak-band.inv) .bt-foe-cell:first-child { background: var(--lit); color: var(--ground); }
+.bt-preview:is(.keeper, :has(> .streak-band.inv)) .bt-foe-cell:first-child { background: var(--lit); color: var(--ground); }
 /* beside the stage the cards are shorter: a smaller picture and name */
 .bt-card.compact { gap: var(--s2); }
 .bt-card.compact .bt-card-pic { width: 48px; height: 48px; }
@@ -752,7 +760,9 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 /* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two
    over ours, each place a key the moves' height with the picture, the name, the HP and how the move lands there; a place the move
    cannot reach is muted. 돌아가기 under it brings the moves back */
-.bt-targets { display: grid; gap: var(--seam); }
+/* the picker takes the moves' place by light: it comes up from the locked keys' light as they go, never from nothing (2026-11-09, measured) */
+@keyframes bt-take { from { opacity: var(--opacity-disabled); } }
+.bt-targets { display: grid; gap: var(--seam); animation: bt-take var(--move-tone) backwards; }
 .bt-target-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
 .bt-target { position: relative; display: flex; align-items: center; gap: var(--s3); min-width: 0; min-height: var(--h-counter); padding: 0 var(--s3) 0 var(--s2); text-align: left; color: var(--lit); background: var(--panel-2); transition: background-color var(--move-tone); }
 .bt-target.own { background: var(--panel); }
@@ -800,3 +810,26 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 /* the info key's mark: a lowercase i in the Latin type at 20, bold, the one sign every game reads as "what is this" (2026-11-09:
    the site's boxed info icon read as a split square on a coloured key) */
 .bt-i { font-family: "Albert Sans", sans-serif; font-size: var(--t20); line-height: 1; font-weight: 700; font-style: normal; }
+
+/* the deck's keys lock and unlock by light, never in one frame (2026-11-09, measured by recording every frame: the moves and the bench
+   went dark the instant a choice went and came back the instant the next was asked; the site's disabled look has no time of its own) */
+.bt-match :is(.bt-move, .bt-sw, .bt-mega, .bt-target, .bt-rkey) { transition: background-color var(--move-tone), color var(--move-tone), opacity var(--move-tone); }
+/* the deck is drawn again for every question (Choices is keyed by the request), so a transition alone has no state to start from:
+   drawn locked, a key that was usable (data-was) starts lit and goes down to the disabled light; drawn open, every key starts at that
+   light and the usable ones come up (a move a Choice item locks out stays where it was) */
+@starting-style {
+  .bt-match .bt-choices.forced .bt-moves { opacity: 1; }
+  .bt-match .bt-choices.locked [data-was] { opacity: 1; }
+  .bt-match .bt-choices:not(.locked) :is(.bt-move, .bt-sw) { opacity: var(--opacity-disabled); }
+}
+
+/* the team preview stands in one window on a desktop (2026-11-09, measured at 1440 by 790: it stood 756 where 686 is free): in the
+   window layout the foe's pictures and the cards' pictures stand at 52, the cards' rows a little closer, the sections 12 apart */
+@media (min-width: 1200px) {
+  .bt-match .bt-preview { gap: var(--s3); }
+  .bt-match .bt-foe-cell { padding-block: var(--s2); }
+  .bt-match .bt-foe-cell > img, .bt-match .bt-foe-cell > .bt-bare { width: var(--h-row); height: var(--h-row); }
+  .bt-match .bt-preview .bt-card { gap: var(--s2); }
+  .bt-match .bt-preview .bt-card-pic { width: var(--h-row); height: var(--h-row); }
+  .bt-match .bt-preview .bt-cmove { min-height: 28px; }
+}

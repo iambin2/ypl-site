@@ -231,6 +231,18 @@ export function dimAway(els) {
   if (reduced()) return [];
   return [].concat(els).filter(Boolean).map(el => el.animate([{ opacity: 1 }, { opacity: .382 }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
 }
+/* the screen being left goes all the way out, from wherever its dimming stands, the moment before the next one takes its place (the
+   battle's going in and going back, 2026-11-09): returns the animations, so the next screen can let them go as it lights */
+export function goOut(els) {
+  if (reduced()) return [];
+  return [].concat(els).filter(Boolean).map(el => el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
+}
+/* one set of keys hands its place to another (the moves to the target picker and back, 2026-11-09): what is left dims to the locked
+   keys' light (press length), and what comes up starts from that light, so the swap is never lit keys vanishing in one frame */
+export function handOff(els) {
+  if (reduced()) return Promise.resolve();
+  return Promise.all([].concat(els).filter(Boolean).map(el => settled(el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: .382 }], { duration: DUR.press, easing: EASE_IN, fill: "forwards" }))));
+}
 /* the team preview arrives as a scene of its own (DESIGN.md "Battle", Going in): the other side's six switch on one after another,
    62 apart, as a board announces a line-up, then a beat, then ours rise into their places the same way. first, then: the elements in
    the order they light (a place may be empty: what is drawn a moment later takes its turn with elapsed, the time since the scene began).
