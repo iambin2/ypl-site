@@ -466,10 +466,9 @@
    beside it on the digits' baseline as one stepped shape rising to their height in equal steps (apart, the bars read as a signal
    meter), in the plate's own ink (climbed .382, this game lit, the rest an unlit
    bar's light), so it holds in both themes and inverted for a gatekeeper */
-/* a turn (stageFx turnMark): a light along the message window's top edge, and the turn's number in the window's right corner, the
-   clock's square, so time is told in one place; nothing stands over the Pokémon (2026-11-09 second round) */
+/* a turn (stageFx turnMark): a light along the message window's top edge; nothing stands over the Pokémon (2026-11-09 second round),
+   and the turn's number is the head's counter alone (2026-11-10) */
 .bt-turnline { position: absolute; left: 0; right: 0; top: 0; height: var(--seam); background: var(--lit); transform-origin: 0 50%; }
-.bt-turntab { position: absolute; right: 0; bottom: 0; display: grid; place-items: center; width: var(--say-h); height: var(--say-h); background: var(--panel); color: var(--lit); }
 /* an ability or an item joined to its owner's plate on the seam, the plate's own width (stageFx popup; left, width and the edge it
    hangs from are set from the plate) */
 .bs-over > .bt-popup.joined { top: auto; right: auto; min-width: 0; max-width: none; padding: var(--s2) var(--s3); text-align: left; }

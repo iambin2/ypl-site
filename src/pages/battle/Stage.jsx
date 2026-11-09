@@ -383,7 +383,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
           case "cant": show(); await fx.cant(stage, k, event.why); break;
-          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); await fx.turnMark(stage, event.turn); break;
+          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); await fx.turnMark(stage); break;
           case "end": {
             /* the end (DESIGN.md "Battle", The big moments): the camera holds on the wide shot (2026-11-06: its push onto the winner
                moved the whole screen for no reason) and the match board lights over the arena: the Pokémon each side knocked out switch

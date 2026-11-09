@@ -4,7 +4,6 @@
    말(턴, 승자, 특성, 이름)은 무대 밖의 판(.bs-over)이고 보드의 판(battle.css)이다.
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
 import { DUR, reduced } from "../../components/common/motion.js";
-import { segMarkup } from "../../components/common/seg.js";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
 import { audio } from "./cries.js";
@@ -304,21 +303,16 @@ export function weatherIn(stage, id) {
   return e.after(900);
 }
 /* a turn begins (2026-11-09 second round, the user: every popup over the battle was ugly): nothing stands over the Pokémon. A light
-   runs along the message window's top edge from left to right, and the turn's number lights in the window's right corner, the
-   square where the clock stands when a choice is owed, so time is always told in one place */
-export function turnMark(stage, turn) {
+   runs along the message window's top edge from left to right. The turn's number is the head's counter alone: lit for a second in
+   the clock's corner it read as a fault, a number that came and went where the clock stands in 도전의 탑 (2026-11-10, the user) */
+export function turnMark(stage) {
   const say = stage?.querySelector(".bt-say");
   if (!say || instant()) return Promise.resolve();
   const line = document.createElement("i");
   line.className = "bt-turnline";
-  const tab = document.createElement("i");
-  tab.className = "bt-turntab";
-  tab.innerHTML = segMarkup(String(Math.min(99, turn)).padStart(2, "0"), 32, 2);
-  say.append(line, tab);
-  const total = ms(1100);
-  const runs = line.animate([{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: 1, offset: .38 }, { transform: "scaleX(1)", opacity: 1, offset: .8 }, { transform: "scaleX(1)", opacity: 0 }], { duration: total, easing: OUT, fill: "both" });
-  const lit = tab.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none", offset: .3, easing: OUT }, { opacity: 1, transform: "none", offset: .82 }, { opacity: 0, transform: "none" }], { duration: total, fill: "both" });
-  return Promise.all([done(runs), done(lit)]).then(() => { line.remove(); tab.remove(); });
+  say.append(line);
+  const runs = line.animate([{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: 1, offset: .38 }, { transform: "scaleX(1)", opacity: 1, offset: .8 }, { transform: "scaleX(1)", opacity: 0 }], { duration: ms(1100), easing: OUT, fill: "both" });
+  return done(runs).then(() => line.remove());
 }
 function done(anim) {
   if (!anim?.finished) return Promise.resolve();
