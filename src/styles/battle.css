@@ -128,6 +128,8 @@
 /* a 연승 도전 game: its floor beside the turn, the same counter with 층 (2026-11-09), so the floor is read at every turn */
 .bt-head.floored { grid-template-columns: minmax(0, 1fr) auto auto; }
 .bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 3; }
+/* the two counters each with its word after it (1층 01턴): with the words under them their cells ran together, 1 and 01 read 101 */
+.bt-head.floored > .bt-head-turn { display: flex; align-items: center; gap: var(--s1); }
 /* on a phone the head is one line, so the stage and the moves under it come up: where the match stands, the names, the turn */
 @media (max-width: 859px) {
   .bt-head { grid-template-columns: auto minmax(0, 1fr) auto; min-height: var(--h-row); padding: var(--s1) var(--pad); }

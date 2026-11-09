@@ -12,7 +12,7 @@ import { Counter, Dock, Mon, Podium, Row, SectionHead, Toast } from "../../compo
 import StandTable from "../../components/common/StandTable.jsx";
 import { siteConfirm } from "../../components/common/SiteDialog.jsx";
 import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
-import { currentStreakGame, keepStreakStart, readBattleRow, readSeat, streakNextGame } from "../../services/battleService.js";
+import { currentStreakGame, keepStreakStart, readBattleRow, readSeat, streakNextGame, warmBattle } from "../../services/battleService.js";
 import { VISITOR_EVENT, myPlayerLink, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
 import { LEVELS } from "../../services/cpuLevels.js";
 import { STREAK_LEVELS, STREAK_STEP, floorGame, gameWords, streakFloor, streakFresh, streakLevel, streakMaster } from "../../services/streak.js";
@@ -70,6 +70,19 @@ export function StreakStake({ wins }) {
     </div>
     <FloorCells wins={wins} playing />
   </div>;
+}
+
+/* the battle function kept warm while a key that calls it stands (연승 도전 시작, 이어서 하기, 다음 판, 다시 도전), as a battle room
+   keeps it warm while its player thinks: a run started on a cold worker waited 3.9 s against 1.1 s warm (2026-11-09). A worker
+   lives about 75 seconds, so every 45 while the page is in view */
+function useWarm(on) {
+  useEffect(() => {
+    if (!on) return undefined;
+    const warm = () => { if (document.visibilityState === "visible") void warmBattle(); };
+    warm();
+    const timer = setInterval(warm, 45_000);
+    return () => clearInterval(timer);
+  }, [on]);
 }
 
 // this visitor's account, kept current as they sign in and out: undefined while read, null signed out, else { requested_name, status }
@@ -147,6 +160,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp }) {
     return () => { on = false; };
   }, [back, account?.status]);
   const approved = account?.status === "approved";
+  useWarm(approved);
   const wins = run?.wins ?? 0;
   const step = Math.min(STREAK_LEVELS.length - 1, streakFloor(wins) - 1);
   const level = LEVELS[streakLevel(wins)];
@@ -247,6 +261,7 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, set
   const level = LEVELS[streakLevel(wins)];
   const master = streakMaster(wins);
   const best = Boolean(board?.find(r => r.mine && wins > 0 && r.wins === wins));
+  useWarm(true);
   // ponytail: the species are matched by name; a party with two forms of one species cannot be drawn (one of each species)
   const swapping = resting && !streakFresh(wins) && ours.length === 6 && theirs.length === 6;
   const swap = swapping && give && take ? { give, take } : null;
@@ -260,7 +275,11 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, set
       const made = await make();
       await enter(made.id, floorCall(dark, ".bt-main", next));
       onOpen(made.id);
-    } catch (e) { await dark; standUp(); setError(e.message); setBusy(false); }
+    } catch (e) {
+      await dark; standUp(); setError(e.message); setBusy(false);
+      // a refused swap (a second species or item) lets go of the pair, so the key says 다음 판 again instead of asking the same twice
+      setGive(""); setTake("");
+    }
   };
   return <>
     <div className="stack streak-end">

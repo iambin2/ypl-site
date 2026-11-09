@@ -942,7 +942,10 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const perspective = seat && !ended ? seat.side : pov || seat?.side || "p1";
   // seen from one's own seat: the rows say 상대 and 나, and the party beside the stage is one's own whole set
   const ownView = Boolean(seat && perspective === seat.side);
-  const log = seat ? view?.log : row.spectator_log;
+  /* a 연승 도전 game lets go of its engine once it ends (streak_clear_secret), so its seat's view of it comes back with no log: that
+     seat replays the public log, which ends on the result, so a won game opened again stands on its end with 다음 판 (2026-11-09: it
+     stood on a dark empty court with no keys, and a game ended by the clock went dark under its player) */
+  const log = seat ? (ended && view && !view.log ? row.spectator_log : view?.log) : row.spectator_log;
   const doubles = isDoubles(row.format_id);
   const [speed, setSpeedChoice] = useState(readSpeed);
   useEffect(() => { setStageSpeed(speed); try { localStorage.setItem(SPEED_KEY, String(speed)); } catch { /* the next visit plays at 보통 */ } }, [speed]);
