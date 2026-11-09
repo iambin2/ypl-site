@@ -483,8 +483,8 @@
 /* ---------- choices: the moves as cards in their type's colour, the bench as panels with the Pokémon ---------- */
 .bt-choices { display: grid; gap: var(--s5); }
 .bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
-/* a move held on a phone: a light fills along its foot as the hold counts (420, the long press), so even a tap shows that holding
-   does something; full, the message window says the move (BattlePage.jsx peek) */
+/* a move held (a finger or the mouse's button): a light fills along its foot as the hold counts (420, the long press), so even a tap
+   shows that holding does something; full, the move's card stands over the deck (.bt-peek) until it is let go */
 .bt-move { position: relative; }
 .bt-move::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--s1); background: #FFFFFF; transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; }
 .bt-move.holding::after { transform: scaleX(1); transition: transform 420ms linear; }
@@ -833,3 +833,12 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   .bt-match .bt-preview .bt-card-pic { width: var(--h-row); height: var(--h-row); }
   .bt-match .bt-preview .bt-cmove { min-height: 28px; }
 }
+
+/* the held move's card stands in the deck's own room, over the moves and the bench, never past it (2026-11-10: in the message window
+   it grew over the stage past the clock); what does not fit scrolls inside it */
+.bt-console { position: relative; }
+.bt-peek { position: absolute; inset: 0; z-index: var(--z-raised); padding: var(--s3) var(--pad); overflow: hidden auto; animation: bt-take var(--move-tone) backwards; }
+.bt-peek .bt-tip { gap: var(--s2); }
+/* the hold's one-time hint stands just over the deck, never over the keys */
+.bt-console > .bt-hint { position: absolute; left: 0; right: 0; bottom: calc(100% + var(--s3)); z-index: var(--z-raised); display: flex; justify-content: center; pointer-events: none; }
+.bt-console > .bt-hint .toast-panel { position: static; }

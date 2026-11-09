@@ -80,11 +80,11 @@ export function keepStreakStart(made) {
 }
 /* 다음 판 from a won game: asked by that game's seat (the battle function's streakNext), so it can always be asked again; a next game
    this device already opened is gone to instead of asked for twice. swap: { give, take } (species), one of ours for one of the party
-   just beaten, within a floor (streak.js swapParty), a list of them, or "reroll" for a new party */
+   just beaten, one a game, a new floor's included (streak.js swapParty) */
 export async function streakNextGame(id, swap = null) {
   const seat = readSeat(id);
   if (seat?.next && readSeat(seat.next)) return { id: seat.next, side: "p1" };
-  const made = await asSeat(id, "streakNext", swap === "reroll" ? { reroll: true } : swap ? { swap } : {});
+  const made = await asSeat(id, "streakNext", swap ? { swap } : {});
   keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: made.wins, game: made.wins + 1 });
   if (seat) keepSeat(id, { ...readSeat(id), next: made.id });
   keepStreakGame(made.id);

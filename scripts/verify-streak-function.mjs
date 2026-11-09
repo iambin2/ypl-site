@@ -85,11 +85,11 @@ try {
   await assert.rejects(call({ action: "streak" }), e => e.status === 401, "no sign-in, no run");
   let seat = await call({ action: "streak" }, user);
   console.log("started", seat.id, seat.run);
-  let games = 0, choices = 0, slowest = 0, wins = 0, lastStreak = null, swappedOnce = false, rerolled = false;
+  let games = 0, choices = 0, slowest = 0, wins = 0, lastStreak = null, swappedOnce = false, keeperSwapped = false;
   const LIMIT = process.argv.includes("--sure") ? 11 : 40;
   for (; games < LIMIT; games++) {
     const player = createCpu("gen9championsbssregmc", { budgetMs: 200 });
-    // --sure: the computer's Pokémon stand at 1 HP, so a run reaches its swaps, a new party, a new floor and a gatekeeper
+    // --sure: the computer's Pokémon stand at 1 HP, so a run reaches its swaps, a gatekeeper and the floor after it
     if (process.argv.includes("--sure")) {
       const { state } = (await pg.query("select state from public.battle_secrets where battle_id = $1", [seat.id])).rows[0];
       for (const p of state.sides[1].pokemon) p.hp = Math.min(p.hp, 1);
@@ -113,34 +113,34 @@ try {
     // a won game opens no next game by itself: the run rests until its player presses 다음 판
     const opened = (await pg.query("select count(*)::int as c from public.battles where kind = 'streak' and status = 'active'")).rows[0].c;
     assert.equal(opened, 0, "no game is running while the run rests after a win");
-    /* within a floor the party goes on, and the first win swaps one of ours for one of the party beaten, tier for tier (one of another
-       tier, or one that would bring a second species or item, is refused); the second win draws a new party (reroll); a floor's
-       master beaten, the next floor draws a new party (docs/BATTLE_STREAK.md 5장) */
+    /* the party a run started with goes all the way up, a new floor's included; a won game trades one of ours for one of the party
+       beaten, tier for tier (one of another tier, two at once, or one that would bring a second species or item, is refused); after
+       a gatekeeper that party is the gatekeeper's (docs/BATTLE_STREAK.md 5장, 2026-11-10) */
     const teamOf = async id => (await pg.query("select p1_team from public.battle_secrets where battle_id = $1", [id])).rows[0].p1_team;
     const prev = await teamOf(seat.id);
-    let next = null, took = null, fresh = false;
-    if (wins % STREAK_STEP !== 0 && !swappedOnce) {
+    let next = null, took = null;
+    const gatekeeper = wins % STREAK_STEP === 0;
+    if (!swappedOnce || (gatekeeper && !keeperSwapped)) {
       const beaten = sideTeam((await pg.query("select input_log from public.battles where id = $1", [seat.id])).rows[0].input_log, "p2");
       const other = beaten.find(foe => swapTier(foe.species) !== swapTier(prev[0].species));
       if (other) await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token, swap: { give: prev[0].species, take: other.species } }),
         e => e.status === 409 && /같은 급/.test(e.message), "a swap across tiers is refused");
+      await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token, swap: [{ give: prev[0].species, take: beaten[0].species }, { give: prev[1].species, take: beaten[1].species }] }),
+        e => e.status === 409 && /한 마리/.test(e.message), "two swaps at once are refused");
       for (const foe of beaten.filter(f => swapTier(f.species) === swapTier(prev[0].species))) {
         try { next = await call({ action: "streakNext", id: seat.id, token: seat.token, swap: { give: prev[0].species, take: foe.species } }); took = foe.species; break; }
         catch (e) { assert.equal(e.status, 409, e.message); }
       }
       swappedOnce = true;
-    } else if (wins % STREAK_STEP !== 0 && !rerolled) {
-      next = await call({ action: "streakNext", id: seat.id, token: seat.token, reroll: true });
-      rerolled = fresh = true;
+      if (gatekeeper) keeperSwapped = true;
     }
     next ??= await call({ action: "streakNext", id: seat.id, token: seat.token });
     const now = await teamOf(next.id);
     const species = team => team.map(m => m.species);
-    if (wins % STREAK_STEP === 0 || fresh) assert.notDeepEqual(species(now), species(prev), "a new floor, or a reroll, draws a new party");
-    else if (took) assert.deepEqual(species(now), [took, ...species(prev).slice(1)], "the swap took the beaten one for our first");
-    else assert.deepEqual(now, prev, "the party goes on within a floor");
+    if (took) assert.deepEqual(species(now), [took, ...species(prev).slice(1)], "the swap took the beaten one for our first");
+    else assert.deepEqual(now, prev, "the party goes on, a new floor's included");
     await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token }), e => e.status === 409, "다음 판 opens once");
-    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}${took ? `, swapped ${prev[0].species} for ${took}` : ""}${fresh ? ", new party" : ""}`);
+    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}${took ? `, swapped ${prev[0].species} for ${took}` : ""}${gatekeeper ? ", past a gatekeeper" : ""}`);
     seat = next;
   }
   // a run still going after the limit is given up, so it ends as every run does
@@ -161,7 +161,7 @@ try {
   seat = await call({ action: "streak" }, user);
   const lost = await call({ action: "forfeit", id: seat.id, token: seat.token });
   assert.deepEqual([lost.status, lost.streak.status, lost.streak.wins], ["ended", "ended", 0]);
-  await assert.rejects(call({ action: "join", id: seat.id, name: "끼어들기", team: "random" }), /연승 도전에는 참가할 수 없습니다|이미 시작된/);
+  await assert.rejects(call({ action: "join", id: seat.id, name: "끼어들기", team: "random" }), /도전의 탑에는 참가할 수 없습니다|이미 시작된/);
   // a game left by its player: anyone may ask, nothing happens while its clock runs, and once it has run out the game ends on time
   seat = await call({ action: "streak" }, user);
   await assert.rejects(call({ action: "expire", id: seat.id }), e => e.status === 409, "not before the clock runs out");

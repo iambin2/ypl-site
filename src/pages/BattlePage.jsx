@@ -42,6 +42,8 @@ import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx"
 const REGULATIONS = { "m-c": "M-C", "m-b": "M-B" };
 const FORMATS = [["singles", "싱글"], ["doubles", "더블"]];
 const NAME_KEY = "ypl-battle:name";
+// the hold's one-time hint (DESIGN.md "Battle", Information at hand)
+const HINT_KEY = "ypl-battle:hold-hint";
 // a phone (under 860): the battle takes the window and the deck stands at its foot (DESIGN.md "Battle", The play screen)
 const NARROW = "(max-width: 859px)";
 function useNarrow() {
@@ -1270,13 +1272,19 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [foeOpen, setFoeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const narrow = useNarrow();
-  /* Information at hand. A move says what it is in the message window, where the battle's words are already read and no room is
-     taken (2026-11-09, the user chose it over a 44 info cell on each move: "기술 옆의 i가 지나치게 커"): on a desktop while the
-     pointer rests on it or the keyboard is on it, on a phone while it is held, a light filling along the key as the hold counts,
-     so even a tap shows that holding does something; a hold never sends the move. A team preview card and a trade side carry an
-     info key that opens the board's sheet; a long press on anything else that says what it is opens the same sheet */
+  /* Information at hand. A move held (a finger, or the mouse's button) fills a light along its key as the hold counts, and once full
+     its card stands in the deck's own place over the moves and the bench until it is let go: the deck keeps its size, nothing grows
+     over the stage, and nothing comes up because a pointer rests on a key (2026-11-10, the user: "커서만 올려놔도 계속 설명이 뜨는 것도
+     문제고 ... 타이머보다 위로 칸이 넓어지는 문제도 있어"; before it the message window said the move on hover and grew past the
+     clock). A hold never sends the move; a tap sends it at once. The first battle on a device says once that holding shows it. A team
+     preview card and a trade side carry an info key that opens the board's sheet; a long press on anything else that says what it is
+     opens the same sheet */
   const [sheetTip, setSheetTip] = useState(null);
   const [peek, setPeek] = useState(null);
+  const [hint, setHint] = useState(() => { try { return !localStorage.getItem(HINT_KEY); } catch { return false; } });
+  const hintTurns = useRef(0);
+  useEffect(() => { if (choosing && hint && ++hintTurns.current > 3) setHint(false); }, [choosing]);
+  useEffect(() => { if (!hint) try { localStorage.setItem(HINT_KEY, "1"); } catch { /* the hint shows again next time */ } }, [hint]);
   // the stage's box: a run's break between games stands in it once a game is over (Streak.jsx StreakEnd)
   const [stageBox, setStageBox] = useState(null);
   const pressing = useRef(null);
@@ -1285,11 +1293,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     const el = e.target.closest?.("[data-info]");
     clearTimeout(pressing.current?.timer);
     pressing.current = null;
-    if (!el || e.pointerType === "mouse") return;
-    const move = el.classList.contains("bt-move") ? el : null;
+    const move = el?.classList.contains("bt-move") ? el : null;
+    // a mouse holds only a move: everything else on a desktop is read in the party column or by a click
+    if (!el || (e.pointerType === "mouse" && !move)) return;
     const at = { x: e.clientX, y: e.clientY, fired: false, move };
     move?.classList.add("holding");
-    at.timer = setTimeout(() => { at.fired = true; if (move) setPeek(el.dataset.info); else setSheetTip(el.dataset.info); navigator.vibrate?.(8); }, 420);
+    at.timer = setTimeout(() => { at.fired = true; if (move) { setPeek(el.dataset.info); setHint(false); } else setSheetTip(el.dataset.info); navigator.vibrate?.(8); }, 420);
     pressing.current = at;
   };
   const pressEnd = e => {
@@ -1299,18 +1308,8 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     if (e.type === "pointermove" && !moved) return;
     clearTimeout(at.timer);
     at.move?.classList.remove("holding");
-    // a hold on a move shows it while held: letting go gives the question back
+    // a hold on a move shows it while held: letting go gives the moves back
     if (at.fired && at.move) setPeek(null);
-  };
-  // a desktop: the move under the pointer, or under the keyboard's focus, says itself in the message window
-  const pointMove = e => {
-    if (e.pointerType && e.pointerType !== "mouse") return;
-    const el = e.target.closest?.(".bt-move[data-info]");
-    // the keyboard's focus only: a tap focuses the key too, and gave back the move a hold had just let go
-    if (e.type === "focus" && !el?.matches(":focus-visible")) return;
-    // leaving a move for anything that is not that move gives the question back
-    if (e.type === "pointerout") { if (el && !el.contains(e.relatedTarget)) setPeek(null); return; }
-    setPeek(el && e.type !== "blur" ? el.dataset.info : null);
   };
   const pressClick = e => { if (pressing.current?.fired) { e.preventDefault(); e.stopPropagation(); pressing.current = null; } };
   const pressMenu = e => { if (e.target.closest?.("[data-info]")) e.preventDefault(); };
@@ -1456,7 +1455,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     foeCards: () => (scene ? seenCards(res, scene[foe].roster, moveField) : []) });
   return (
     <div className="bt-page bt-match" onPointerDown={pressStart} onPointerMove={pressEnd} onPointerUp={pressEnd} onPointerCancel={pressEnd}
-      onClickCapture={pressClick} onContextMenu={pressMenu} onPointerOver={pointMove} onPointerOut={pointMove} onFocus={pointMove} onBlur={pointMove}>
+      onClickCapture={pressClick} onContextMenu={pressMenu}>
       <div className="bt-main">
         {narrow && head}
         <div className="bt-stagebox" ref={setStageBox}>
@@ -1464,7 +1463,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
               board saying who plays, never on the team preview (2026-11-07, the user: "처음에 선택 창이 미묘하게 보이는 문제") */}
           {started || ended
             ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)} dark={Boolean(opening?.play)}
-                said={tape.said} ask={boxAsk} peek={peek ? moveSaid(res, peek) : null} known={ownView ? known.current : []} onParty={openParty} onFoeParty={narrow && scene ? () => setFoeOpen(true) : null} />
+                said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} onFoeParty={narrow && scene ? () => setFoeOpen(true) : null} />
             : seat && previewParty.current
             ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
                 locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} onInfo={narrow ? i => setSheetTip(`pick:${i}`) : null}
@@ -1506,6 +1505,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* the locked keys stay until the end takes their place: a battle that ended while its last turn still played emptied the deck,
             and on a phone the stage grew into it and drew black for a frame (2026-11-09, measured) */}
         {seat && started && !shownEnded && <div ref={consoleRef} className="bt-console">
+          {/* the held move's card, in the deck's own place over the moves and the bench, until it is let go */}
+          {peek && <div className="pn bt-peek" aria-live="polite">{tipView(peek)}</div>}
+          {hint && choosing && !peek && <div className="bt-hint"><Toast>기술을 길게 누르면 설명을 볼 수 있습니다.</Toast></div>}
           {choosing ? <Choices key={requestKey(view?.turn, request)} request={request} ghost={lastAsked.current} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
             field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} narrow={narrow} toast={error ? <Toast error>{error}</Toast> : null} />
             : lockedAsk && <Choices key="locked" locked request={lockedAsk} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
@@ -1543,19 +1545,6 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       {sheetTip && <Modal label="설명" className="bt-tipsheet" onClose={() => setSheetTip(null)}>{tipView(sheetTip)}</Modal>}
     </div>
   );
-}
-
-/* a move as the message window says it while it is pointed at or held: its name with its type, category, power, accuracy and PP on
-   the first line (dim), what it does in the games' words on the second (lit); without words of the games, the figures alone */
-function moveSaid(res, key) {
-  const [kind, id, type, power, pp] = String(key).split(":");
-  if (kind !== "move") return null;
-  const data = res.detail.moves[id] || {};
-  const facts = [res.text.types[type || data.type] || type, `${CATEGORY[data.category] || ""}${data.category !== "Status" && Number(power || data.basePower) > 0 ? ` ${power || data.basePower}` : ""}`,
-    data.category !== "Status" && (data.accuracy === true ? "필중" : data.accuracy ? `명중 ${data.accuracy}` : ""), data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : "", pp ? `PP ${pp}` : ""].filter(Boolean).join(", ");
-  const head = `${res.text.moves[id]?.name || data.name || id}, ${facts}`;
-  const says = res.info?.moves?.[id];
-  return says ? [head, says] : [head];
 }
 
 /* what a thing in the battle is, for the information bay and the long press's sheet (DESIGN.md "Battle", Information at hand).

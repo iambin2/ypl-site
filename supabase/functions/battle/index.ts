@@ -10,7 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME,
   planMatchWinner, planTeamSeries, projectRuntimeFacts, parseBoutKey, seriesFromBouts, teamBouts, STREAK_FORMAT, STREAK_REGULATION, computerTurns, streakGame,
-  sideTeam, streakFresh, swapParty,
+  sideTeam, swapParty,
 } from "./engine.bundle.mjs";
 
 const CORS = {
@@ -485,18 +485,21 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
 
   /* 다음 판: the player of a won streak game opens the run's next one, at the 난이도 its wins call for. Asked by the won game's own
      seat, so a seat lost with an answer can always ask again; the database opens it only once.
-     Within a floor the party goes on (the won game's own, as this function drew it), and swap ({ give, take }: species) trades one
-     of it for one of the party just beaten, read off the won game's input log, tier for tier; reroll draws a new party as a new floor
-     does (2026-11-09, the user: "포켓몬 리스트를 좀 더 자주 바꿀 수 있다든가"; every party is balanced, so a new one is a new hand, not
-     a better one). A new floor draws a new party (streak.js). */
-  async streakNext({ id, token, swap, reroll }) {
+     The party a run started with goes all the way up, through every gatekeeper (2026-11-10, the user: "그냥 처음 시작한 포켓몬으로
+     쭉 밀고 가는게 더 의미 있는 경험", and of the gatekeeper's reward: "수문장의 보상으로서 파티 한 마리 교체로 가자"): every next game,
+     a new floor's included, takes the won game's party (as this function drew it), and swap ({ give, take }: species) trades one of it
+     for one of the party just beaten, read off the won game's input log, tier for tier; after a gatekeeper that party is the
+     gatekeeper's. There is no new party mid-run any more (reroll was taken out the same day). */
+  async streakNext({ id, token, swap }) {
     const { battle, secret } = await read(String(id));
     const side = await seat(secret, token);
     if (battle.kind !== "streak" || side !== "p1" || battle.status !== "ended" || battle.winner !== "p1") refuse(409, "이긴 판에서만 다음 판을 열 수 있습니다.");
     const wins = Number(await rpc("streak_run_wins", { p_battle_id: battle.id })) || 0;
-    let party = !streakFresh(wins) && !reroll && Array.isArray(secret.p1_team) && secret.p1_team.length === 6 ? secret.p1_team : null;
-    // one swap ({ give, take }) or several, one a tier (2026-11-09: as many as the player wishes), applied one after another
-    const swaps = (Array.isArray(swap) ? swap : swap ? [swap] : []).filter(s => s?.give && s?.take).slice(0, 6);
+    let party = Array.isArray(secret.p1_team) && secret.p1_team.length === 6 ? secret.p1_team : null;
+    // one swap ({ give, take }) a game (2026-11-10, the user: "포켓몬을 무제한으로 바꿀 수 있는 게 너무 오피야. 한 라운드에 한 포켓몬만
+    // 바꿀 수 있게 해줘"; it was as many as there are tiers)
+    const swaps = (Array.isArray(swap) ? swap : swap ? [swap] : []).filter(s => s?.give && s?.take);
+    if (swaps.length > 1) refuse(409, "한 판이 끝날 때마다 한 마리만 바꿀 수 있습니다.");
     if (party && swaps.length) {
       const { data, error } = await db.from("battles").select("input_log").eq("id", battle.id).maybeSingle();
       if (error) throw error;

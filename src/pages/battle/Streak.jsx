@@ -17,7 +17,7 @@ import { siteConfirm } from "../../components/common/SiteDialog.jsx";
 import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
 import { currentStreakGame, keepStreakStart, readBattleRow, readSeat, streakNextGame, warmBattle } from "../../services/battleService.js";
 import { VISITOR_EVENT, myPlayerLink, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
-import { STREAK_STEP, floorGame, gameWords, streakFloor, streakFresh, streakMaster, swapTier } from "../../services/streak.js";
+import { STREAK_STEP, floorGame, gameWords, streakFloor, streakMaster, swapTier } from "../../services/streak.js";
 import { DUR, climb } from "../../components/common/motion.js";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { liftClose, liftDrop, liftMarkup } from "./lift.js";
@@ -260,14 +260,13 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
    it). Under the table 새 파티 뽑기 is a key of the row's height: on, our side goes to ? and theirs off. ours, theirs: { species, name }
    in tier order */
 const OFF_WHY = "같은 포켓몬이 둘이 되어 바꿀 수 없습니다.";
-function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, fresh, onFresh, blocked = [], onInfo = null }) {
+function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, blocked = [], onInfo = null }) {
   const whyOf = (mine, s) => blocked.find(b => (mine ? b.give : b.take) === s)?.why || OFF_WHY;
   const side = (mine, { species: s, name }) => {
-    const off = fresh ? !mine : !(mine ? matchTheirs(s) : matchOurs(s));
-    const on = !fresh && chosen.has(`${mine ? "give" : "take"}:${s}`);
-    const info = `swap:${mine ? "own" : "foe"}:${s}:${off && !fresh ? whyOf(mine, s) : ""}`;
-    if (mine && fresh) return <span key={`o${s}`} className="pn streak-trade bare"><i className="bt-bare" aria-hidden="true">?</i></span>;
-    return <span key={`${mine ? "o" : "t"}${s}`} className={"streak-trade" + (on ? " inv" : " pn") + (off ? " off" : "")}>
+    const off = !(mine ? matchTheirs(s) : matchOurs(s));
+    const on = chosen.has(`${mine ? "give" : "take"}:${s}`);
+    const info = `swap:${mine ? "own" : "foe"}:${s}:${off ? whyOf(mine, s) : ""}`;
+    return <span key={`${mine ? "o" : "t"}${s}`} className={"streak-trade" + (mine ? " ours" : " theirs") + (on ? " inv" : " pn") + (off ? " off" : "")}>
       <button type="button" className="streak-trade-key" aria-pressed={on} aria-disabled={off || undefined} data-info={info}
         onClick={() => { if (!off) onPick(mine, s); }} aria-label={`${mine ? "내" : "상대"} ${name}${off ? ", 바꿀 수 없음" : ""}`}>
         <img src={spriteUrl(s)} alt="" draggable="false" onError={onSpriteError()} />
@@ -276,13 +275,21 @@ function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, fresh
       {onInfo && <button type="button" className="streak-trade-info" onClick={() => onInfo(info)} aria-label={`${name} 세트 보기`}><b className="bt-i" aria-hidden="true">i</b></button>}
     </span>;
   };
-  return <section className="streak-swap" aria-label="교환">
+  /* read without pressing anything (2026-11-10, the user: "직접 눌러보지 않아도 화면만 보고 아 매 판 끝날 때마다 포켓몬을 바꿀 수
+     있구나! 하고 알게 해줘"): the table's name stands as its own top strip across it (포켓몬 교환; the same day, as a label over it, the
+     user: "다른 건 전부 네모 안에 있는데 이것만 날 것 텍스트라"), and between the two sides of every row stands the trade's own mark,
+     two arrows passing each other, lit on the row chosen; the head row's middle carries it too */
+  const chosenRow = i => chosen.has(`give:${ours[i]?.species}`);
+  return <section className="streak-swap" aria-labelledby="streak-swap-title">
     <div className="stack streak-trades" role="table">
+      <b className="pn streak-trades-title" id="streak-swap-title">포켓몬 교환</b>
       <span className="pn streak-trades-head" role="columnheader">내 파티</span>
+      <span className="pn streak-trades-mark" aria-hidden="true"><Icon n="swap" size={20} /></span>
       <span className="pn streak-trades-head" role="columnheader">상대 파티</span>
-      {ours.map((m, i) => <React.Fragment key={m.species}>{side(true, m)}{theirs[i] && side(false, theirs[i])}</React.Fragment>)}
+      {ours.map((m, i) => <React.Fragment key={m.species}>{side(true, m)}
+        <span className={(chosenRow(i) ? "inv" : "pn") + " streak-trades-mark"} aria-hidden="true"><Icon n="swap" size={20} /></span>
+        {theirs[i] && side(false, theirs[i])}</React.Fragment>)}
     </div>
-    <button type="button" className={(fresh ? "inv" : "pn") + " streak-fresh"} aria-pressed={fresh} onClick={onFresh}><Icon n="refresh" size={20} /><span>새 파티 뽑기</span></button>
   </section>;
 }
 
@@ -299,11 +306,10 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
   const board = useBoard();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // the swaps chosen, { give, take } each: as many as there are tiers (2026-11-09, the user: "포켓몬 교체를 좀 더 자주 하면 재밌을 것 같네")
+  // the swap chosen, { give, take }: one a game (2026-11-10, the user: "한 라운드에 한 포켓몬만 바꿀 수 있게 해줘"); kept as a list for the server's shape
   const [pairs, setPairs] = useState([]);
   // pairs the server refused (an item the party already holds can only be seen there): their rows stand off, the rest stay chosen
   const [blocked, setBlocked] = useState([]);
-  const [fresh, setFresh] = useState(false);
   const wins = seat?.wins ?? 0;
   const resting = won && !seat?.ended;
   const master = streakMaster(wins);
@@ -323,7 +329,8 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
   const byTier = list => [...list].sort((a, b) => (swapTier(a.species) ?? 9) - (swapTier(b.species) ?? 9));
   const ours = byTier(ourSix), theirs = byTier(theirSix);
   // ponytail: the species are matched by name; a party with two forms of one species cannot be drawn (one of each species)
-  const swapping = resting && !streakFresh(wins) && ours.length === 6 && theirs.length === 6;
+  // every won game offers its trade, a gatekeeper's too: the party a run started with goes all the way up (2026-11-10)
+  const swapping = resting && ours.length === 6 && theirs.length === 6;
   // tier for tier when the tiers are measured; any for any otherwise (as before the balance)
   const tiered = swapping && swapTier(ours[0].species) != null;
   // a match never brings a second species into our party (the screen sees species; the items the server settles, streak.js swapParty)
@@ -341,9 +348,10 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
     const other = matchIn(mine ? theirs : ours)(s);
     if (!other) return;
     const pair = mine ? { give: s, take: other } : { give: other, take: s };
-    setPairs([...(tiered ? pairs.filter(p => p.give !== pair.give && p.take !== pair.take) : []), pair]);
+    // one pair: choosing another row moves the choice there
+    setPairs([pair]);
   };
-  const swap = fresh ? "reroll" : swapping && pairs.length ? pairs : null;
+  const swap = swapping && pairs.length ? pairs : null;
   const goInto = async (make, next) => {
     if (busy) return;
     setBusy(true); setError("");
@@ -376,7 +384,7 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
         : place != null ? <Counter label={`${monthOf(0).label} 순위`} value={place} after={<span className="t15">위</span>} />
         : <div className="pn streak-next"><b className="t15">{gameWords(wins)}</b><FloorTrack wins={wins} lost /></div>}
     </div>
-    {swapping && <SwapTable ours={ours} theirs={theirs} fresh={fresh} onFresh={() => { setFresh(f => !f); setPairs([]); }}
+    {swapping && <SwapTable ours={ours} theirs={theirs}
       chosen={new Set(pairs.flatMap(p => [`give:${p.give}`, `take:${p.take}`]))}
       matchTheirs={matchIn(theirs)} matchOurs={matchIn(ours)} onPick={pick} blocked={blocked} onInfo={onInfo} />}
   </section>;
@@ -384,7 +392,7 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
     {stage && createPortal(brk, stage)}
     <Dock toast={error ? <Toast error>{error}</Toast> : null}>
       <div className="bt-end-keys">
-        {resting ? <Button variant="main" loading={busy} onClick={() => goInto(() => streakNextGame(id, swap), wins)}>{fresh ? "새 파티로 다음 판" : swap ? "바꾸고 다음 판" : "다음 판"}</Button>
+        {resting ? <Button variant="main" loading={busy} onClick={() => goInto(() => streakNextGame(id, swap), wins)}>{swap ? "바꾸고 다음 판" : "다음 판"}</Button>
           : <Button variant="main" icon="refresh" loading={busy} onClick={() => goInto(async () => keepStreakStart(await startStreakRun()), 0)}>다시 도전</Button>}
         <Button onClick={onOut} disabled={busy}>나가기</Button>
       </div>
