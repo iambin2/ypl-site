@@ -102,4 +102,3 @@
 .streak-trade.off .streak-trade-key > img { opacity: var(--opacity-disabled); }
 .streak-trade :focus-visible { outline: var(--line) solid currentColor; outline-offset: calc(var(--line) * -1); }
 @media (hover: hover) { .streak-trade.pn:not(.off) .streak-trade-key:hover, .streak-trade.pn .streak-trade-info:hover { background: var(--panel-2); } }
-@media (hover: hover) { 
