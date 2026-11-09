@@ -88,7 +88,7 @@ export function LiveCard({ res, row, label, lead = false, onOpen }) {
     <span className="bt-live-head">
       <i className="lamp sig" aria-hidden="true" />
       <span className="bt-live-say"><b>{KIND_WORD[row.kind] || "친선"}</b><span>{context(row, label)}</span></span>
-      {turn > 0 && <span className="bt-head-turn"><Seg value={String(Math.min(99, turn)).padStart(2, "0")} h={32} cells={2} label={`${turn}턴`} /><span className="t12 dim">턴</span></span>}
+      {turn > 0 && <span className="bt-head-turn"><Seg value={String(Math.min(99, turn)).padStart(2, "0")} h={32} cells={2} label={`${turn}턴`} /><span className="t15">턴</span></span>}
     </span>
     {strip(row.p2_name, p2, true)}
     {strip(row.p1_name, p1, false)}

@@ -58,7 +58,7 @@
 .bt-live-say { flex: 1 1 auto; display: flex; align-items: baseline; gap: var(--s2); min-width: 0; white-space: nowrap; overflow: hidden; }
 .bt-live-say > b { font-size: var(--t15); line-height: var(--l15); }
 .bt-live-say > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
-.bt-live .bt-head-turn { flex: none; display: flex; align-items: center; gap: var(--s1); margin-left: auto; }
+.bt-live .bt-head-turn { flex: none; margin-left: auto; }
 @media (hover: hover) { .bt-live:hover .bt-strip { background: var(--panel-2); } }
 .bt-live:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-hall-kind { display: inline-flex; align-items: center; gap: var(--s1); font-weight: 600; white-space: nowrap; }
@@ -117,8 +117,11 @@
 }
 /* the head: the lamp and where the match stands (선출 중, 진행 중, 종료), then the two names large */
 .bt-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s3); row-gap: var(--s1); align-items: center; padding: var(--s3) var(--pad); }
-/* the turn at the head's right end, its cells over the word */
-.bt-head-turn { grid-column: 2; grid-row: 1 / span 2; display: grid; justify-items: center; gap: var(--s1); }
+/* the turn at the head's right end: its cells and the word after them at 15 on their baseline, as a counter reads (Counter, the run's
+   stake), on every screen. A small grey word centred on the cells floated, and a spare dark cell before a floor read as 0 (01층,
+   2026-11-09): a floor has as many cells as digits */
+.bt-head-turn { grid-column: 2; grid-row: 1 / span 2; display: flex; align-items: flex-end; gap: var(--s1); }
+.bt-head-turn > .t15 { line-height: 1; }
 .bt-head > :is(.status, .bt-head-names) { grid-column: 1; }
 .bt-head > .status { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
 /* what the match is (an event's long name and round) gives way first with an ellipsis; the watchers' count keeps its place */
@@ -128,15 +131,13 @@
 /* a 연승 도전 game: its floor beside the turn, the same counter with 층 (2026-11-09), so the floor is read at every turn */
 .bt-head.floored { grid-template-columns: minmax(0, 1fr) auto auto; }
 .bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 3; }
-/* the two counters each with its word after it (1층 01턴): with the words under them their cells ran together, 1 and 01 read 101 */
-.bt-head.floored > .bt-head-turn { display: flex; align-items: center; gap: var(--s1); }
 /* on a phone the head is one line, so the stage and the moves under it come up: where the match stands, the names, the turn */
 @media (max-width: 859px) {
   .bt-head { grid-template-columns: auto minmax(0, 1fr) auto; min-height: var(--h-row); padding: var(--s1) var(--pad); }
   .bt-head > .status { grid-column: 1; grid-row: 1; }
   .bt-head > .status > .dim { display: none; }
   .bt-head > .bt-head-names { grid-column: 2; grid-row: 1; font-size: var(--t15); line-height: var(--l15); }
-  .bt-head-turn { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: var(--s1); }
+  .bt-head-turn { grid-column: 3; grid-row: 1; }
   .bt-head.floored { grid-template-columns: auto minmax(0, 1fr) auto auto; }
   .bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 4; }
 }

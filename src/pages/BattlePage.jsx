@@ -1303,8 +1303,8 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
           <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
           <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {/* the turn, announced in segment cells beside the names (it stood on the stadium's wall once, splitting the foe's plates) */}
-          {gameAt != null && <span className="bt-head-turn bt-head-floor"><Seg value={String(streakFloor(gameAt))} h={32} cells={2} label={`${streakFloor(gameAt)}층`} /><span className="t12 dim">층</span></span>}
-          {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t12 dim">턴</span></span>}
+          {gameAt != null && <span className="bt-head-turn bt-head-floor"><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /><span className="t15">층</span></span>}
+          {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t15">턴</span></span>}
         </div>
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} />}
