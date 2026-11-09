@@ -92,7 +92,9 @@ export function swapParty(party, foes, give, take) {
   let item = coming.item;
   if (rest.some(m => m.item && m.item === item)) {
     item = party[out].item;
-    if (!item || MEGA_STONE.test(item)) return "clash";
+    // "item": the one coming would hold an item the party already holds, and the one it replaces has none to hand on (2026-11-09:
+    // it was told as a second species, so the screen named the wrong reason)
+    if (!item || MEGA_STONE.test(item)) return "item";
   }
   const next = [...party];
   next[out] = { ...coming, item, name: "" };

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Chips, Dock } from "../../components/common/Board.jsx";
+import Icon from "../../components/common/Icon.jsx";
 import Button from "../../components/common/Button.jsx";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { parseHP, toID } from "../../services/battleLog.js";
@@ -13,17 +14,21 @@ import { maxPP, moveType } from "./battleWords.js";
 const STAT_ROW = [["atk", "공격"], ["def", "방어"], ["spa", "특공"], ["spd", "특방"], ["spe", "스피드"]];
 const STATUS_TYPE = { brn: "fire", par: "electric", psn: "poison", tox: "poison", slp: "normal", frz: "ice" };
 const hpTone = share => (share <= .2 ? "type-fire" : share <= .5 ? "type-electric" : "type-grass");
+const says = (res, table, id) => (id ? res.info?.[table]?.[toID(id)] || "" : "");
 const named = (res, table, id) => (id ? res.text[table]?.[toID(id)]?.name || res.detail[table]?.[toID(id)]?.name || id : "");
 const Types = ({ res, species }) => <span className="bt-card-types">
   {typesOf(res, species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}
 </span>;
 
 /* one Pokémon. moves: [{ id, pp: "12/16" or "2회" or "" }]; known: what the viewer may see (false keeps ability and item unknown);
-   pick: { order, onPick, off } when it is chosen from (the team preview) */
-export function MonCard({ res, species, hp, share, status, fainted, ability, item, moves, stats, pick, out, unseen, compact }) {
+   pick: { order, onPick, off } when it is chosen from (the team preview); short: the phone's team preview, the picture, the name, the
+   types and the item only (its full card opens from its info mark); explain: the ability and the item say what they do, in the
+   games' own words (DESIGN.md "Battle", Information at hand). A foe not yet out is its head alone (2026-11-09: a note saying it had
+   nothing to show stood six times over) */
+export function MonCard({ res, species, hp, share, status, fainted, ability, item, moves, stats, pick, out, unseen, compact, short, explain }) {
   const Box = pick ? "button" : "div";
   const label = `${nameOf(res, species)}${fainted ? ", 쓰러짐" : ""}${pick?.order ? `, ${pick.order}번째로 선출` : ""}`;
-  return <Box className={"bt-card" + (pick?.order ? " on" : "") + (pick?.off ? " off" : "") + (fainted ? " fnt" : "") + (out ? " out" : "") + (compact ? " compact" : "")}
+  return <Box className={"bt-card" + (pick?.order ? " on" : "") + (pick?.off ? " off" : "") + (fainted ? " fnt" : "") + (out ? " out" : "") + (compact ? " compact" : "") + (short ? " short" : "") + (unseen ? " unseen" : "")}
     {...(pick ? { type: "button", onClick: pick.onPick, "aria-pressed": Boolean(pick.order), disabled: pick.locked } : {})} aria-label={pick ? label : undefined}>
     <span className="bt-card-head">
       <span className="bt-card-pic"><img src={spriteUrl(species)} alt="" draggable="false" loading="lazy" onError={onSpriteError()} /></span>
@@ -38,7 +43,7 @@ export function MonCard({ res, species, hp, share, status, fainted, ability, ite
         </span>}
     </span>
     {share != null && !unseen && <span className={`bt-hp ${hpTone(share)}`} aria-hidden="true"><b style={{ "--f": Math.max(0, Math.min(1, share)) }} /></span>}
-    {unseen ? <span className="bt-card-note">아직 나오지 않았습니다.</span> : <>
+    {short ? <span className="bt-card-item">{item ? named(res, "items", item) : ""}</span> : unseen ? null : <>
       <span className="bt-card-facts">
         <span><small>특성</small><b className={ability ? "" : "unknown"}>{ability ? named(res, "abilities", ability) : "모름"}</b></span>
         <span><small>도구</small><b className={item ? "" : "unknown"}>{item ? named(res, "items", item) : item === "" ? "모름" : "없음"}</b></span>
@@ -51,6 +56,10 @@ export function MonCard({ res, species, hp, share, status, fainted, ability, ite
           </span>;
         }) : <span className="bt-card-note">아직 보인 기술이 없습니다.</span>}
       </span>
+      {explain && (says(res, "abilities", ability) || says(res, "items", item)) && <span className="bt-card-says">
+        {says(res, "abilities", ability) && <span><b>{named(res, "abilities", ability)}</b>{says(res, "abilities", ability)}</span>}
+        {says(res, "items", item) && <span><b>{named(res, "items", item)}</b>{says(res, "items", item)}</span>}
+      </span>}
       {stats && <span className="bt-card-stats">{STAT_ROW.map(([k, w]) => <span key={k}><small>{w}</small>{stats[k]}</span>)}</span>}
     </>}
   </Box>;
@@ -106,11 +115,14 @@ export function seenCards(res, roster, field = {}) {
 /* the team preview, a player's: the foe's six small along the top, our six large as the sets they are, each chosen by a tap and
    numbered in the order it will be sent. The count and 선출 확정 are PickDock, beside the cards on a wide screen and docked on a phone.
    locked: chosen and sent, waiting for the foe */
-export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, setPicks }) {
+/* onInfo (a phone): the cards are short, each with the info mark that opens its whole set; stake: a 연승 도전 game's band over the
+   foe's six (Streak.jsx StreakBand) */
+export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, setPicks, onInfo = null, stake = null }) {
   const n = Math.min(count, pokemon.length);
   const toggle = i => setPicks(list => list.includes(i) ? list.filter(x => x !== i) : list.length < n ? [...list, i] : list);
   const cards = ownCards(res, pokemon);
-  return <div className="bt-preview">
+  return <div className={"bt-preview" + (onInfo ? " short" : "")}>
+    {stake}
     <FoeSix res={res} species={foe} title={`${foeName}의 파티`} />
     <section className="bt-pv-own">
       <div className="bt-pv-head">
@@ -119,8 +131,13 @@ export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, set
       </div>
       <div className="stack bt-cards">
         {/* out={false}: the engine's preview request marks the first of the party active, but nobody is out before the choice */}
-        {cards.map(({ key, ...c }, i) => <MonCard key={key} res={res} {...c} hp={null} share={null} out={false}
-          pick={{ order: picks.indexOf(i) + 1, onPick: () => toggle(i), off: picks.length >= n && !picks.includes(i), locked }} />)}
+        {cards.map(({ key, ...c }, i) => {
+          const card = <MonCard key={key} res={res} {...c} hp={null} share={null} out={false} short={Boolean(onInfo)}
+            pick={{ order: picks.indexOf(i) + 1, onPick: () => toggle(i), off: picks.length >= n && !picks.includes(i), locked }} />;
+          return onInfo ? <div key={key} className="bt-pick" data-info={`pick:${i}`}>{card}
+            <button type="button" className="bt-info-key" onClick={() => onInfo(i)} aria-label={`${nameOf(res, c.species)} 세트 보기`}><Icon n="info" size={20} /></button>
+          </div> : card;
+        })}
       </div>
     </section>
   </div>;

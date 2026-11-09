@@ -14,6 +14,7 @@
     "font:slices": "python scripts/build-font-slices.py",
     "build:battle": "node scripts/build-battle-engine.mjs",
     "data:cpu-learn": "node scripts/learn-cpu-sets.mjs",
+    "data:battle-info": "node scripts/build-battle-info.mjs",
     "bench:cpu": "node scripts/cpu-benchmark.mjs"
   },
   "dependencies": {

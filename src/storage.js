@@ -116,7 +116,7 @@ export async function callFunction(name, body) {
     throw Object.assign(new Error("연결이 끊겼습니다. 연결을 확인하고 다시 시도해 주세요."), { status: 0 });
   }
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status, problems: json.problems });
+  if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status, problems: json.problems, pair: json.pair });
   return json;
 }
 

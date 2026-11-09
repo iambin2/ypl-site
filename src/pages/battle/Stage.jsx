@@ -522,12 +522,12 @@ function Strip({ side, scene, name, res, known, onParty }) {
   }));
   const Tag = onParty ? "button" : "div";
   return (
-    <Tag {...(onParty ? { type: "button", onClick: onParty, "aria-label": `${name}의 파티, 내 파티 열기` } : {})} className={"bt-strip" + (own ? " own" : " foe") + (onParty ? " key" : "")}>
+    <Tag {...(onParty ? { type: "button", onClick: onParty, "aria-label": `${name}의 파티 열기` } : {})} className={"bt-strip" + (own ? " own" : " foe") + (onParty ? " key" : "")}>
       <span className="bt-strip-row">
       <b className="bt-trainer">{name}</b>
       {/* a battle without a team preview shows a foe only once it comes out: the rest of the six wait as bare floors */}
       <Roster list={list} slots={own || s?.roster?.length >= SIX ? 0 : SIX} label={`${name}의 파티, ${rosterSaid(res, list)}`} />
-      {onParty && <span className="bt-strip-more" aria-hidden="true"><Icon n="chevr" size={16} />내 파티</span>}
+      {onParty && <span className="bt-strip-more" aria-hidden="true"><Icon n="chevr" size={16} />{own ? "내 파티" : "파티"}</span>}
       </span>
       {(s?.conditions || []).length > 0 && <span className="bt-conds">
         {s.conditions.map(c => <span key={c} className={`bt-cond type-${effectType(c)}`}>{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
@@ -559,7 +559,8 @@ function Clock({ left, mine }) {
 }
 
 // dark: the stage stands with its lamps off from its first frame (a replay playing from its start, whose opening switches them on)
-export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, known, onParty, clock = null, mine = false, dark = false }) {
+// onFoeParty (a phone): the foe's strip is the key to the foe's party, as ours is to 내 파티 (DESIGN.md "Battle", The party)
+export function Stage({ scene, stageRef, perspective, doubles, res, names, said, ask, known, onParty, onFoeParty = null, clock = null, mine = false, dark = false }) {
   const foe = other(perspective);
   const [info, setInfo] = useState(null);
   /* before its first paint: a replay's arena drawn lit and dimmed a few frames later when its reading reached the start flashed as it
@@ -579,7 +580,7 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
   ].filter(Boolean);
   return (
     <div className="bt-arena">
-      <Strip side={foe} scene={scene} name={names[foe]} res={res} />
+      <Strip side={foe} scene={scene} name={names[foe]} res={res} onParty={onFoeParty} />
       <div className="bs-stage hud" ref={stageRef}>
         {/* the arena, the Pokémon, every effect, the field and the camera are one GPU picture (gl.js) under these places */}
         <div className="bs-world">

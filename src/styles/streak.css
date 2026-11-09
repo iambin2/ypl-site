@@ -78,10 +78,22 @@
 
 /* the end: the swap, its two sixes a field's step apart; our six's head holds 새로 뽑기 at its right end, and a six drawn anew stands
    as bare floors with ?, as the lobby's random party does; a cell with no match of its tier is disabled */
-.streak-swap { gap: var(--s3); }
-.streak-swap-side { display: grid; gap: var(--s2); }
+/* (2026-11-09) our six over theirs, each in tier order, so a pair of one tier is a column of two cells: each cell a Pokémon on its
+   floor, the name the floor; a chosen column inverts both, an off cell mutes */
+.streak-swap { gap: var(--s2); }
 .streak-swap-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
-.streak-swap-cell { cursor: pointer; border: 0; font: inherit; color: inherit; }
+.streak-swap-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
+.streak-swap-cell { --floor: var(--s5); display: block; width: 100%; aspect-ratio: 13 / 16; cursor: pointer; border: 0; font: inherit; color: inherit; }
+.streak-swap-cell > .floor { display: grid; place-items: center; padding: 0 var(--s1); }
+.streak-swap-cell > .floor > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t12); line-height: var(--l12); font-weight: 700; }
+.streak-swap-cell > .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s1)); margin-inline: auto; }
 .streak-swap-cell.inv { background: var(--lit); color: var(--ground); }
+.streak-swap-cell.off { cursor: default; color: var(--mute); }
+.streak-swap-cell.off > .mon { opacity: var(--opacity-disabled); }
+.streak-swap-cell.bare { background: var(--panel); }
+.streak-swap-cell.bare > .bt-bare { position: absolute; inset: 0 0 var(--floor); display: grid; place-items: center; font-style: normal; color: var(--mute); font-size: var(--t20); line-height: var(--l20); font-weight: 700; }
+.streak-swap-cell:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
+@media (hover: hover) { .streak-swap-cell.pn:not(.off):hover { background: var(--panel-2); } }
+@media (min-width: 860px) { .streak-swap-cell { aspect-ratio: 1; } }
 /* beside the 32 digits of a window, the 24 glyph stands on their baseline: 8 over it makes the two one height, centred together */
 .bt-win > .streak-glyph { margin-top: var(--s2); }

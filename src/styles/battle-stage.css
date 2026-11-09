@@ -31,9 +31,12 @@
 .bs-slot[data-pos="own-d1"] { left: 64%; bottom: 4%; height: 51%; aspect-ratio: 1; }
 /* in a battle the message window lies over the bottom of the stage and our plates stand at its right over it: our Pokémon stand a
    little higher and, in doubles, a little to the left, so neither covers them (the lobby keeps the places above) */
-.bs-stage.hud .bs-slot[data-pos="own"] { left: 30%; bottom: 15%; height: 58%; }
-.bs-stage.hud .bs-slot[data-pos="own-d0"] { left: 20%; bottom: 15%; height: 46%; }
-.bs-stage.hud .bs-slot[data-pos="own-d1"] { left: 51%; bottom: 14%; height: 46%; }
+/* their feet stand on the window's top edge, never under it (2026-11-09: on a desktop the window covered our Pokémon's feet) */
+.bs-stage.hud .bs-slot[data-pos="own"] { left: 30%; bottom: calc(var(--say-h) + 1%); height: 56%; }
+.bs-stage.hud .bs-slot[data-pos="own-d0"] { left: 20%; bottom: calc(var(--say-h) + 1%); height: 44%; }
+.bs-stage.hud .bs-slot[data-pos="own-d1"] { left: 51%; bottom: calc(var(--say-h) + 1%); height: 44%; }
+/* on a phone in doubles our two one-line plates stand over the window, so our pair stands on the plates' top edge */
+@media (max-width: 859px) { .bs-stage.hud:has(.bt-hud.two) .bs-slot:is([data-pos="own-d0"], [data-pos="own-d1"]) { bottom: calc(var(--say-h) + 36px); height: 40%; } }
 /* breathing: a slow rise of 1.5% from the feet, never in step with its neighbour */
 .bs-mon { position: absolute; inset: 0; transform-origin: 50% 92%; animation: bs-idle 3.4s cubic-bezier(.45, 0, .55, 1) infinite; }
 .bs-slot:nth-child(odd) .bs-mon { animation-delay: -1.7s; }
@@ -75,3 +78,12 @@
 /* the places stay for layout and for picking a target; the pictures in them are the canvas's */
 .bs-on-gl .bs-mon { animation: none; }
 .bs-on-gl .bs-mon img, .bs-on-gl .bs-sub { visibility: hidden; }
+
+/* a phone's play screen gives the stage the height the deck leaves (battle.css, The play screen): past 4 to 3 a Pokémon sized by the
+   stage's height alone would outgrow the width, so on a tall stage each is held to a share of the width too */
+@media (max-width: 859px) {
+  .bt-stagebox .bs-stage.hud .bs-slot[data-pos="own"] { height: min(56%, 56vw); }
+  .bt-stagebox .bs-stage.hud .bs-slot[data-pos="foe"] { height: min(42%, 46vw); }
+  .bt-stagebox .bs-stage.hud .bs-slot:is([data-pos="own-d0"], [data-pos="own-d1"]) { height: min(40%, 40vw); }
+  .bt-stagebox .bs-stage.hud .bs-slot:is([data-pos="foe-d0"], [data-pos="foe-d1"]) { height: min(33%, 34vw); }
+}

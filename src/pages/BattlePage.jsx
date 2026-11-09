@@ -6,7 +6,7 @@ import Seg from "../components/common/Seg.jsx";
 import Empty from "../components/common/Empty.jsx";
 import ErrorNote from "../components/common/ErrorNote.jsx";
 import Loader, { Busy } from "../components/common/Loader.jsx";
-import { Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, SectionHead, TabsLine, Toast } from "../components/common/Board.jsx";
+import { Bang, Chips, Choice, Counter, Dock, Mon, OptionRows, Question, Row, SectionHead, TabsLine, Toast } from "../components/common/Board.jsx";
 import ListSearch from "../components/common/ListSearch.jsx";
 import Pager from "../components/common/Pager.jsx";
 import { siteConfirm } from "../components/common/SiteDialog.jsx";
@@ -31,7 +31,7 @@ import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from 
 import { claimTimeout, expireStreakGame, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
-import { StairGlyph, StreakEnd, StreakOpen, StreakStake, floorCall } from "./battle/Streak.jsx";
+import { StairGlyph, StreakBand, StreakEnd, StreakOpen, StreakStake, floorCall, useAccount } from "./battle/Streak.jsx";
 import { floorGame, gameWords, streakFloor } from "../services/streak.js";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
@@ -41,12 +41,26 @@ import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx"
 const REGULATIONS = { "m-c": "M-C", "m-b": "M-B" };
 const FORMATS = [["singles", "싱글"], ["doubles", "더블"]];
 const NAME_KEY = "ypl-battle:name";
+// the long press's one-time hint (DESIGN.md "Battle", Information at hand)
+const HINT_KEY = "ypl-battle:press-hint";
+// a phone (under 860): the battle takes the window and the deck stands at its foot (DESIGN.md "Battle", The play screen)
+const NARROW = "(max-width: 859px)";
+function useNarrow() {
+  const [on, setOn] = useState(() => window.matchMedia(NARROW).matches);
+  useEffect(() => {
+    const m = window.matchMedia(NARROW), f = () => setOn(m.matches);
+    m.addEventListener("change", f);
+    return () => m.removeEventListener("change", f);
+  }, []);
+  return on;
+}
 
 export function useResources() {
   const [res, setRes] = useState(null);
   useEffect(() => {
-    Promise.all([import("../data/battle-text-ko.json"), championsData.load()])
-      .then(([text, detail]) => setRes({ text: text.default, detail }), error => setRes({ error }));
+    // what each move, ability and item does (the games' own Korean words) loads with the rest; the battle never waits on it alone
+    Promise.all([import("../data/battle-text-ko.json"), championsData.load(), import("../data/battle-info-ko.json").catch(() => null)])
+      .then(([text, detail, info]) => setRes({ text: text.default, detail, info: info?.default || null }), error => setRes({ error }));
   }, []);
   return res;
 }
@@ -190,7 +204,7 @@ const focusName = () => document.getElementById("bt-name")?.focus();
    아래, 그 밑에 방 참가와 목록. 439에는 고르는 것(상대, 형식, 파티)이 같은 윗선에서 시작한다. 두 열은 페이지와 함께 스크롤한다.
    휴대폰은 경기장, 고르는 것, 목록 순서이고 주 행동은 아래에 붙는다. 여는 사람과 링크로 참가하는 사람이 같은 화면을 쓴다.
    foe는 참가하는 쪽에서 본 연 사람의 이름(없으면 foeHint를 흐리게), foeNote는 그 뒤의 흐린 말(컴퓨터의 난이도). */
-function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, foeHint = "링크로 참가", foeNote = "", foeLead = null, doubles, setup, action, tabs, before, after, onEnter }) {
+function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, nameError = "", foe, foeHint = "링크로 참가", foeNote = "", foeLead = null, doubles, setup, action, tabs, before, after, onEnter }) {
   const team = teams.find(t => t.id === teamId);
   const saved = teams.some(t => !t.random);
   const random = Boolean(team?.random);
@@ -207,10 +221,13 @@ function Lobby({ res, teams, teamId, setTeamId, teamLabel, name, setName, foe, f
           {/* the court for every party (2026-11-06, the user: one look for a random party and a saved team): a random party's leads are
               not drawn yet, so a light breathes on our floor where they will come out */}
           <LobbyArena res={res} foe={foe || foeHint} foeMuted={!foe} foeNote={foeNote} six={six}
-            ours={<input id="bt-name" className="bt-name" aria-label="내 이름" value={name} maxLength={20} autoComplete="nickname" enterKeyHint="go" placeholder="내 이름"
-              onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) onEnter?.(); }} />}>
+            ours={/* a field on the strip, its line always drawn and the edit mark after it, so it never reads as a caption (2026-11-09) */
+              <label className="bt-name-field"><input id="bt-name" className="bt-name" aria-label="내 이름" value={name} maxLength={20} autoComplete="nickname" enterKeyHint="go" placeholder="내 이름"
+                aria-invalid={nameError ? true : undefined} aria-describedby={nameError ? "bt-name-error" : undefined}
+                onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) onEnter?.(); }} /><Icon n="edit" size={16} /></label>}>
             <LobbyStage leads={leads} doubles={doubles} random={random} foeLead={foeLead} label={`${stageLabel}${foeLead ? `, 상대 ${nameOf(res, foeLead)}` : ""}`} />
           </LobbyArena>
+          {nameError && <p className="q-error t12 bt-name-error" id="bt-name-error" role="alert"><Bang />{nameError}</p>}
           {action}
           {after && <div className="bt-after">{after}</div>}
         </div>
@@ -480,7 +497,7 @@ function BattleOpen({ res, onOpen, go, preset }) {
   };
   const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "연승 도전"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"]]} /></div>;
   if (tab === "live") return <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<LiveHall res={res} rows={live} onOpen={onOpen} /></div>;
-  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} standUp={standUp} />;
+  if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} standUp={standUp} onPractice={() => { setFirstFoe("cpu"); changeTab("open"); }} />;
   return tab === "rooms"
     ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
     : <BattleSetup res={res} onOpen={onOpen} preset={preset} tabs={tabs} firstFoe={firstFoe} />;
@@ -488,6 +505,10 @@ function BattleOpen({ res, onOpen, go, preset }) {
 function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
   const teams = useMemo(() => [...readSavedTeams().filter(team => REGULATIONS[team.regulationId]), ...randomTeams(Object.keys(REGULATIONS))], []);
   const [name, setName] = useState(rememberedName);
+  const [nameError, setNameError] = useState("");
+  // the name starts filled: the account's trainer name when this device has none of its own yet
+  const account = useAccount();
+  useEffect(() => { if (account?.status === "approved" && account.requested_name) setName(n => n || account.requested_name); }, [account?.status]);
   const [format, setFormat] = useState("singles");
   const [foe, setFoe] = useState(firstFoe);
   const [room, setRoom] = useState("open");
@@ -500,11 +521,12 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
   const team = teams.find(t => t.id === teamId);
   const submit = async () => {
     if (busy || !team) return;
-    if (!name.trim()) { setError(NAME_MISSING); focusName(); return; }
-    const me = name.trim();
+    // a battle with the computer is played on this device and never asks for a name (it plays as 나); a room is seen by others
+    if (!name.trim() && foe !== "cpu") { setNameError(NAME_MISSING); focusName(); return; }
+    const me = name.trim() || "나";
     if (foe === "cpu") {
       if (saved?.status === "active" && !(await siteConfirm({ title: "새 배틀을 시작할까요?", body: "진행 중인 컴퓨터와의 배틀은 남지 않습니다.", confirmLabel: "새로 시작" }))) return;
-      rememberName(me);
+      if (name.trim()) rememberName(me);
       setBusy(true);
       earlyWorker?.terminate();
       earlyWorker = cpuWorker();
@@ -529,14 +551,14 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
       setBusy(false);
     }
   };
-  const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
+  const typeName = v => { setName(v); setNameError(""); };
   const roomRow = ROOMS.find(([key]) => key === room);
-  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="저장한 팀" name={name} setName={typeName} doubles={format === "doubles"} onEnter={submit}
+  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel="저장한 팀" name={name} setName={typeName} nameError={nameError} doubles={format === "doubles"} onEnter={submit}
     foe={foe === "cpu" ? "컴퓨터" : null} foeNote={foe === "cpu" ? levelOf(level).label : ""} foeHint={roomRow[2]} foeLead={foe === "cpu" ? levelOf(level).species : null}
     before={saved?.status === "active" && <Row className="bt-resume" title="컴퓨터와의 배틀" line={levelOf(saved.level ?? saved.start?.level).label} lamp="진행 중" onClick={() => onOpen(CPU_ROOM)} label="컴퓨터와의 배틀 이어서 하기" />}
     setup={<>
       <Question id="bt-foe" label="상대" group>
-        <Choice name="bt-foe" options={OPPONENTS.map(([, label]) => label)} value={OPPONENTS.find(([key]) => key === foe)[1]} onChange={label => setFoe(OPPONENTS.find(([, l]) => l === label)[0])} />
+        <Choice name="bt-foe" options={OPPONENTS.map(([, label]) => label)} value={OPPONENTS.find(([key]) => key === foe)[1]} onChange={label => { setFoe(OPPONENTS.find(([, l]) => l === label)[0]); setError(""); setNameError(""); }} />
       </Question>
       {foe === "cpu" && <Question id="bt-level" label="난이도" group>
         <Choice name="bt-level" options={LEVEL_IDS.map(id => LEVELS[id].label)} value={levelOf(level).label} onChange={label => setLevel(LEVEL_IDS.find(id => LEVELS[id].label === label))} />
@@ -919,7 +941,8 @@ function useMatchLit() {
     const main = document.getElementById("ypl-main");
     const preview = main?.querySelector(".bt-match .bt-preview");
     if (!preview?.querySelector(".bt-card")) { light(main, DUR.leave); return; }
-    light(main.querySelector(".bt-match .bt-side"), DUR.leave);
+    const side = main.querySelector(".bt-match .bt-side");
+    if (side) light(side, DUR.leave);
     // the other side's six are read from the log a frame or two after the preview mounts: ours keep their turn after the six places,
     // and the six take theirs when they are drawn
     const cells = () => [...preview.querySelectorAll(".bt-foe-cell")];
@@ -1199,6 +1222,41 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   for (const slot of request?.active || []) for (const m of slot.moves || []) if (m.maxpp != null) maxpp.current[m.id] = m.maxpp;
   const [picks, setPicks] = useState([]);
   const [partyOpen, setPartyOpen] = useState(false);
+  const [foeOpen, setFoeOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const narrow = useNarrow();
+  /* Information at hand: on a desktop what the pointer rests on (or the keyboard's focus) shows in the bay; on a phone a long press
+     opens it as a sheet, and the press that opened it chooses nothing */
+  const [tip, setTip] = useState(null);
+  const [sheetTip, setSheetTip] = useState(null);
+  const [hint, setHint] = useState(() => { try { return !localStorage.getItem(HINT_KEY); } catch { return false; } });
+  const hintTurns = useRef(0);
+  useEffect(() => { if (choosing && hint && ++hintTurns.current > 3) setHint(false); }, [choosing]);
+  useEffect(() => { if (!hint) try { localStorage.setItem(HINT_KEY, "1"); } catch { /* the hint shows again next time */ } }, [hint]);
+  const pressing = useRef(null);
+  const pressStart = e => {
+    if (e.target.closest?.("button, summary, [role=button]")) sfx("select");
+    const el = e.target.closest?.("[data-info]");
+    clearTimeout(pressing.current?.timer);
+    pressing.current = null;
+    if (!el || e.pointerType === "mouse") return;
+    const at = { x: e.clientX, y: e.clientY, fired: false };
+    at.timer = setTimeout(() => { at.fired = true; setSheetTip(el.dataset.info); setHint(false); navigator.vibrate?.(8); }, 420);
+    pressing.current = at;
+  };
+  const pressEnd = e => {
+    const at = pressing.current;
+    if (!at || at.fired) return;
+    if (e.type !== "pointermove" || Math.hypot(e.clientX - at.x, e.clientY - at.y) > 10) clearTimeout(at.timer);
+  };
+  const pressClick = e => { if (pressing.current?.fired) { e.preventDefault(); e.stopPropagation(); pressing.current = null; } };
+  const pressMenu = e => { if (e.target.closest?.("[data-info]")) e.preventDefault(); };
+  const pointAt = e => {
+    if (narrow || (e.type === "pointerover" && e.pointerType !== "mouse")) return;
+    const el = e.target.closest?.("[data-info]");
+    if (el) setTip(el.dataset.info);
+    else if (e.type === "pointerover" && !e.target.closest?.(".bt-bay")) setTip(null);
+  };
   const openParty = seat && party.current ? () => setPartyOpen(true) : null;
   const ownList = () => ownCards(res, party.current || [], {
     active: request?.active || [], maxpp: maxpp.current, field: moveField,
@@ -1281,40 +1339,84 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const rematch = onRematch && (async () => { if (again) return; setAgain(true); try { await settle(); await onRematch(); } finally { setAgain(false); } });
   const endTitle = row.ended_by === "void" ? "무효" : row.winner === "tie" || !winnerName ? "무승부" : seat ? (row.winner === seat.side ? "승리" : "패배") : `${winnerName} 승리`;
   const endLine = [row.ended_by === "void" ? "운영진이 무효로 처리했습니다." : row.ended_by === "forfeit" ? `${loserName}의 기권으로 끝났습니다.` : row.ended_by === "timeout" ? `${loserName}의 시간이 다 되어 끝났습니다.` : `${names[perspective]} 대 ${names[foe]}, ${shownTurn}턴`, bracketLine].filter(Boolean).join(" ");
-  /* one column on a phone: the head, the result, the stage (or the team preview), the replay, the choices, the party, the log.
-     On a wide screen the stage stands on the left as large as the window allows, and everything else stands in a column beside it
-     that scrolls on its own, so the stage never leaves the screen */
+  /* The play screen (DESIGN.md "Battle", The play screen, 2026-11-09): the head, the stage and the deck, always in the same places,
+     and nothing scrolls under the thumb. On a phone the battle takes the window (the site's bars step away, shell.css) with the head
+     on top and the deck at the foot; from 860 the deck stands right under the stage and the information bay under it, and the column
+     beside them holds the head, the menu, the party and the log. */
+  const waitWords = waiting && !tape.playing ? (local ? "컴퓨터 계산 중" : request?.teamPreview || !started ? "상대 선출 중" : "상대 선택 중") : "";
+  const goBack = async () => {
+    if (playing && !(await siteConfirm({ title: "배틀에서 나갈까요?", body: "배틀은 계속됩니다. 시간이 다 되면 패배로 기록됩니다.", confirmLabel: "나가기" }))) return;
+    (leave || onLeave)?.();
+  };
+  const head = <div className="bt-head">
+    {(leave || onLeave) && <button type="button" className="pn bt-head-key" onClick={goBack} aria-label="나가기" title="나가기"><Icon n="back" size={24} /></button>}
+    <div className="pn bt-head-main">
+      {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching; while the
+          other side chooses, the busy cell and whose choice is awaited, so a player always knows whether they are the one waited for */}
+      <span className="status t12">{ended ? "종료" : waitWords ? <><Busy h={32} />{waitWords}</> : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
+      <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
+    </div>
+    {gameAt != null && <span className="pn bt-win"><StairGlyph at={floorGame(gameAt)} /><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /></span>}
+    {started && <span className="pn bt-win"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /></span>}
+    {narrow && <button type="button" className="pn bt-head-key" onClick={() => setMenuOpen(true)} aria-label="메뉴" aria-haspopup="dialog"><Icon n="more" size={24} /></button>}
+  </div>;
+  const pickDock = !started && seat && previewParty.current && choosing && request?.teamPreview
+    ? <PickDock res={res} pokemon={previewParty.current} count={pickCount.current} picks={picks} setPicks={setPicks} onSend={send} toast={error ? <Toast error>{error}</Toast> : null} />
+    : null;
+  const speedLabel = (SPEEDS.find(([v]) => v === speed) || SPEEDS[1])[1];
+  const logBox = <details className="bt-logbox">
+    <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
+    <Log lines={tape.lines} />
+  </details>;
+  // the menu (The play screen): what is set once and what leaves, a sheet on a phone and standing open beside the stage on a desktop
+  const menu = <div className="stack bt-menu">
+    <Question id="bt-speed" label="연출" group>
+      <Choice name="bt-speed" options={SPEEDS.map(([, label]) => label)} value={speedLabel} onChange={label => setSpeedChoice(SPEEDS.find(([, l]) => l === label)[0])} />
+    </Question>
+    <button type="button" className="pn row switch-row bt-sound" role="switch" aria-checked={sound} onClick={toggleSound}>
+      <span className="row-main"><b className="t15">소리</b></span><span className={"sw" + (sound ? " on" : "")} aria-hidden="true"><i /></span>
+    </button>
+    {(!seat || ended) && <Question id="bt-pov" label="시점" group>
+      <Choice name="bt-pov" options={[names.p1, names.p2]} value={names[perspective]} onChange={who => turnTo(who === names.p1 ? "p1" : "p2")} />
+    </Question>}
+    {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} />}
+    {narrow && logBox}
+    <div className="bt-links">
+      {(!seat || ended) && !local && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
+      {official && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
+      {ended && log && <Button variant="link" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
+    </div>
+    {/* 기권 stands here and nowhere else: a key that ends the match is never one slip from the moves (2026-11-09) */}
+    {seat && !ended && <Button className="bt-forfeit" onClick={() => { setMenuOpen(false); giveUp(); }}>기권</Button>}
+  </div>;
+  // the information bay (desktop) and the sheet a long press opens (phone): what the key, the card or the bench cell is
+  const tipView = key => tipFor(key, { res, own: () => ownList(), picks: () => (previewParty.current ? ownCards(res, previewParty.current) : []),
+    foeCards: () => (scene ? seenCards(res, scene[foe].roster, moveField) : []) });
+  const restTip = !narrow && (started || ended) ? (() => {
+    const out = seat && ownView ? ownList().find(c => c.out) : scene && seenCards(res, scene[perspective].roster, moveField).find(c => c.out);
+    return out ? <MonCard res={res} {...out} key={out.key} explain /> : null;
+  })() : null;
   return (
-    <div className="bt-page bt-match" onPointerDown={e => { if (e.target.closest?.("button, summary, [role=button]")) sfx("select"); }}>
+    <div className="bt-page bt-match" onPointerDown={pressStart} onPointerMove={pressEnd} onPointerUp={pressEnd} onPointerCancel={pressEnd}
+      onClickCapture={pressClick} onContextMenu={pressMenu} onPointerOver={pointAt} onFocus={pointAt}>
       <div className="bt-main">
-        {/* a finished battle stands on its stage from the first moment, empty until the leads come out: its replay opens on the
-            board saying who plays, never on the team preview (2026-11-07, the user: "처음에 선택 창이 미묘하게 보이는 문제") */}
-        {started || ended
-          ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)} dark={Boolean(opening?.play)}
-              said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} />
-          : seat && previewParty.current
-          ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
-              locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} />
-          : <div className="bt-preview">
-              {[foe, perspective].map(side => <FoeSix key={side} res={res} species={preview[side].preview} title={`${names[side]}의 파티`} />)}
-            </div>}
-      </div>
-      <div className="bt-side">
-        {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
-        {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
-        {/* the head is a board of modules on the seam (2026-11-09, the user: "01층 09턴 ... 전광판 숫자와 일반 텍스트가 같이 있어서",
-            then "층이랑 턴이라고 텍스트로 명시하지 않더라도 직관적으로"): the match in words on its own panel, and each number in a
-            window of its own with no word: a run's floor beside its five steps (the stairs the run climbs everywhere, lit up to this
-            game), and the turn alone, the two cells that count up as the stage plays each turn */}
-        <div className="bt-head">
-          <div className="pn bt-head-main">
-            {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching */}
-            <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
-            <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
-          </div>
-          {gameAt != null && <span className="pn bt-win"><StairGlyph at={floorGame(gameAt)} /><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /></span>}
-          {started && <span className="pn bt-win"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /></span>}
+        {narrow && head}
+        <div className="bt-stagebox">
+          {/* a finished battle stands on its stage from the first moment, empty until the leads come out: its replay opens on the
+              board saying who plays, never on the team preview (2026-11-07, the user: "처음에 선택 창이 미묘하게 보이는 문제") */}
+          {started || ended
+            ? <Stage scene={scene} stageRef={tape.stageRef} perspective={perspective} doubles={doubles} res={res} names={names} clock={left} mine={Boolean(seat && !waiting)} dark={Boolean(opening?.play)}
+                said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} onFoeParty={narrow && scene ? () => setFoeOpen(true) : null} />
+            : seat && previewParty.current
+            ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
+                locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} onInfo={narrow ? i => setSheetTip(`pick:${i}`) : null}
+                stake={row.kind === "streak" ? <StreakBand wins={seat.wins ?? 0} /> : null} />
+            : <div className="bt-preview">
+                {[foe, perspective].map(side => <FoeSix key={side} res={res} species={preview[side].preview} title={`${names[side]}의 파티`} />)}
+              </div>}
         </div>
+        <div className="bt-deck">
+          {hint && narrow && choosing && started && <div className="bt-hint"><Toast>길게 누르면 설명을 볼 수 있습니다.</Toast></div>}
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} />}
         {watching && started && liveStops && liveStops.stops.length > 1 && <ReplayBar stops={liveStops.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
@@ -1342,56 +1444,84 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <Button size="sm" onClick={shareToBoard}>게시판에 공유</Button>
           </div>
         </section>}
-        {!started && seat && previewParty.current && choosing && request?.teamPreview && <PickDock res={res} pokemon={previewParty.current} count={pickCount.current} picks={picks} setPicks={setPicks}
-          onSend={send} toast={error ? <Toast error>{error}</Toast> : null} />}
+        {narrow && pickDock}
         {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
         {seat && !ended && started && <div ref={consoleRef} className="bt-console">
           {choosing ? <Choices key={requestKey(view?.turn, request)} request={request} ghost={lastAsked.current} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
-            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} toast={error ? <Toast error>{error}</Toast> : null} />
+            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} narrow={narrow} toast={error ? <Toast error>{error}</Toast> : null} />
             : lockedAsk && <Choices key="locked" locked request={lockedAsk} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
-            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} />}
+            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} narrow={narrow} />}
         </div>}
-        {(waiting || (error && !request)) && <Dock toast={error && !choosing ? <Toast error>{error}</Toast> : null}>
-          {waiting && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">{local ? "컴퓨터가 계산하는 중…" : request?.teamPreview && view?.chosen ? "상대의 선출을 기다리는 중…" : "상대의 선택을 기다리는 중…"}</span></div>}
-        </Dock>}
-        {/* 기권 as a key of its own, right under the choices where the thumb is, in its own dark red so it is never taken for
-            another key; it asks once before it goes (feedback 2026-11-06: the word at the page's foot was hard to find) */}
-        {seat && !ended && <Button className="bt-forfeit" onClick={giveUp}>기권</Button>}
-        {watching && leave && <Button className="bt-leave" onClick={leave}>나가기</Button>}
-        {/* a game of a 연승 도전 run, for its player: what it has at stake, the streak riding on it and the floor (Streak.jsx). Under
-            the choices and 기권, so on a phone it never pushes the moves away from the stage */}
-        {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} />}
+        {error && !choosing && <Dock toast={<Toast error>{error}</Toast>} />}
+        </div>
+      </div>
+      {!narrow && <div className="bt-side">
+        {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
+        {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
+        {head}
+        {/* what is pointed at, or our Pokémon out (Information at hand), right under the head where the eye already is */}
+        {(started || ended) && <section className="pn bt-bay" aria-live="polite" aria-label="정보">{(tip && tipView(tip)) || restTip}</section>}
+        {pickDock}
+        {menu}
         {/* a finished battle has its party beside the stage from the start: mounted with the first lead, it landed under the
             opening's board as a stop of its own (2026-11-07) */}
         {(started || (ended && scene)) && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}
-        <div className="bt-play">
-          <Chips label="연출 속도" value={String(speed)} onChange={v => setSpeedChoice(Number(v))} options={SPEEDS.map(([v, label]) => [String(v), `연출 ${label}`])} />
-          <Chips label="소리" value={sound ? "on" : ""} onChange={toggleSound} options={[["on", "소리"]]} />
-        </div>
-        {(!seat || ended) && <Chips label="시점" value={perspective} onChange={turnTo} options={[["p1", `${names.p1} 시점`], ["p2", `${names.p2} 시점`]]} />}
         {/* the other battles being played, so a watcher goes from one to the next without the lobby: the same event's first */}
         {others.length > 0 && <section className="bt-others" aria-labelledby="bt-others-h">
           <SectionHead id="bt-others-h" title="다른 중계" link="전체 보기" onLink={() => go?.("battle", { tab: "live" })} />
           <div className="stack">{others.map(r => <LiveCard key={r.id} res={res} row={r} label={labels[r.id]} onOpen={onOpen} />)}</div>
         </section>}
-        {/* the whole log behind a key the size of a row, not a grey word */}
-        <details className="bt-logbox">
-          <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
-          <Log lines={tape.lines} />
-          {/* the whole log as a file, where the log itself is read */}
-          {ended && log && <Button variant="link" className="bt-logsave" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
-        </details>
-        <div className="bt-links">
-          {!seat && !ended && !local && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
-          {official && !shownEnded && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
-          <span className="t12 mute">배틀 엔진: Pokémon Showdown (MIT)</span>
-        </div>
-      </div>
+        {logBox}
+        <span className="t12 mute">배틀 엔진: Pokémon Showdown (MIT)</span>
+      </div>}
+      {narrow && menuOpen && <Modal title="메뉴" onClose={() => setMenuOpen(false)}>{menu}</Modal>}
       {partyOpen && party.current && <Modal title="내 파티" onClose={() => setPartyOpen(false)} className="wide">
-        <div className="stack bt-cards sheet-cards">{ownList().map(({ key, ...c }) => <MonCard key={key} res={res} {...c} />)}</div>
+        <div className="stack bt-cards sheet-cards">{ownList().map(({ key, ...c }) => <MonCard key={key} res={res} {...c} explain />)}</div>
       </Modal>}
+      {foeOpen && scene && <Modal title={`${names[foe]}의 파티`} onClose={() => setFoeOpen(false)} className="wide">
+        <div className="stack bt-cards sheet-cards">{seenCards(res, scene[foe].roster, moveField).map(({ key, ...c }) => <MonCard key={key} res={res} {...c} explain />)}</div>
+      </Modal>}
+      {sheetTip && <Modal label="설명" className="bt-tipsheet" onClose={() => setSheetTip(null)}>{tipView(sheetTip)}</Modal>}
     </div>
   );
+}
+
+/* what a thing in the battle is, for the information bay and the long press's sheet (DESIGN.md "Battle", Information at hand).
+   key: move:<id>:<type>:<power>:<pp>, own:<index> (our brought party), pick:<index> (the team preview's six), mega:<species>:<item>:<why> */
+function tipFor(key, { res, own, picks, foeCards = () => [] }) {
+  const [kind, ...rest] = String(key).split(":");
+  if (kind === "swap") {
+    const [side, species, why] = rest;
+    const card = (side === "own" ? own() : foeCards()).find(c => c.species === species);
+    return card ? <div className="bt-tip">{why && <p className="bt-tip-say">{why}</p>}<MonCard res={res} {...card} key={card.key} explain /></div> : null;
+  }
+  if (kind === "own" || kind === "pick") {
+    const card = (kind === "own" ? own() : picks())[Number(rest[0])];
+    return card ? <MonCard res={res} {...card} key={card.key} explain /> : null;
+  }
+  if (kind === "move") {
+    const [id, type, power, pp] = rest;
+    const data = res.detail.moves[id] || {};
+    const cells = [["분류", CATEGORY[data.category] || ""], data.category !== "Status" && Number(power || data.basePower) > 0 && ["위력", power || String(data.basePower)],
+      ["명중", data.accuracy === true ? "필중" : String(data.accuracy || "")], data.priority ? ["우선도", `${data.priority > 0 ? "+" : ""}${data.priority}`] : null,
+      pp ? ["PP", pp] : null].filter(Boolean);
+    return <div className="bt-tip">
+      <div className="bt-tip-head"><b className="bt-tip-name">{res.text.moves[id]?.name || data.name || id}</b><span className={`tb-type type-${toID(type || data.type || "Normal")}`}>{res.text.types[type || data.type] || type}</span></div>
+      <div className="stack bt-tip-cells">{cells.map(([k, v]) => <span key={k} className="pn2"><small>{k}</small><b>{v}</b></span>)}</div>
+      {res.info?.moves?.[id] && <p className="bt-tip-say">{res.info.moves[id]}</p>}
+    </div>;
+  }
+  if (kind === "mega") {
+    const [species, item, why] = rest;
+    const form = Object.values(res.detail.pokedex || {}).find(p => /^Mega/.test(p.forme) && toID(p.requiredItem) === toID(item));
+    const ability = form?.abilities?.[0];
+    return <div className="bt-tip">
+      <div className="bt-tip-head"><b className="bt-tip-name">{`${nameOf(res, species)} 메가진화`}</b>{form && <span className="tb-types">{form.types.map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span>}</div>
+      {why && <p className="bt-tip-say">{why}</p>}
+      {ability && <div className="pn2 bt-tip-fact"><small>특성</small><b>{res.text.abilities[toID(ability)]?.name || ability}</b>{res.info?.abilities?.[toID(ability)] && <span>{res.info.abilities[toID(ability)]}</span>}</div>}
+    </div>;
+  }
+  return null;
 }
 
 /* ---------- choices: built from the request alone, as the engine asks ---------- */
@@ -1411,7 +1541,8 @@ const megaFormOf = (detail, item) => Object.values(detail?.pokedex || {}).find(p
 
 /* locked: the keys of a request already answered, shown dimmed while the turn plays; ghost: the last move request, whose keys stand
    locked over the bench in a forced switch, so the moves keep their place */
-function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast }) {
+function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast, narrow = false }) {
+  const root = useRef(null);
   const side = request.side;
   const foeSide = side.id === "p1" ? "p2" : "p1";
   const [picks, setPicks] = useState([]);
@@ -1428,6 +1559,18 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
   // a new request mounts a new Choices (keyed by the turn and the request: the engine sets no rqid, a switch after a faint keeps the turn,
   // and a locked move can ask the very same thing two turns running), so nothing chosen for the last one carries over
   useEffect(() => () => { setAsk(""); }, []);
+  /* a desktop plays from the keys as a game's pad does: 1 to 4 the moves (or the places of a target), 5 and 6 the bench, M Mega
+     Evolution (DESIGN.md "Battle", Information at hand); a key's title names its key */
+  useEffect(() => {
+    if (locked || narrow) return undefined;
+    const onKey = e => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+      const el = root.current?.querySelector(`[data-key="${e.key.toLowerCase()}"]`);
+      if (el && !el.disabled && el.getAttribute("aria-disabled") !== "true") { e.preventDefault(); el.click(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [locked, narrow]);
   const species = details => String(details).split(", ")[0];
   const name = details => nameOf(res, species(details));
   const moveName = id => res.text.moves[id]?.name || res.detail.moves[id]?.name || id;
@@ -1483,7 +1626,8 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
   const megaRow = active?.canMegaEvo || (holder && !megaSpent);
   const megaOpen = active?.canMegaEvo && !megaTaken && !frozen;
   // the bench: every brought Pokémon not out, one tap to send it in (Showdown keeps them under the moves)
-  const bench = <Bench pokemon={side.pokemon} res={res} label={reviving ? "되살릴 포켓몬" : forced ? `${who} 대신 나갈 포켓몬` : trapped ? "교체할 수 없는 상태" : "교체"}
+  const bench = extra => <Bench pokemon={side.pokemon} res={res} label={narrow ? "" : reviving ? "되살릴 포켓몬" : forced ? `${who} 대신 나갈 포켓몬` : trapped ? "교체할 수 없는 상태" : "교체"}
+    narrow={narrow} extra={extra} lit={Boolean(forced || reviving)}
     pick={i => {
       if (frozen) return null;
       const mon = side.pokemon[i];
@@ -1494,7 +1638,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
     }} />;
   /* the four keys, always four (a locked move, a recharge or Struggle asks one alone: the rest stand off beside it); off: all locked */
   const moveKeys = (entry, off) => <div className="stack bt-moves">
-      {fourMoves(entry, slots[k]?.moves).map(({ move, i }) => {
+      {fourMoves(entry, slots[k]?.moves).map(({ move, i }, n) => {
         const data = res.detail.moves[move.id] || {};
         const type = typeOf(move);
         // every foe now out, in the order they stand; shown only when one of them is not ×1
@@ -1505,6 +1649,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
           data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null, SPEED_POWER.has(move.id) && "스피드에 따라"].filter(Boolean).join(" ");
         return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}${move.disabled ? " off" : ""}`} disabled={off || move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
+          data-info={`move:${move.id}:${type}:${power > 0 ? power : ""}:${move.pp != null ? `${move.pp}/${move.maxpp}` : ""}`} data-key={n + 1} title={narrow ? undefined : `단축키 ${n + 1}`}
           aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${power > 0 ? ` 위력 ${power}${moved && data.basePower > 0 ? `, 기본 ${data.basePower}` : ""}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
           <span className="bt-move-top">
             <b className="bt-move-name">{moveName(move.id)}</b>
@@ -1579,18 +1724,21 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
   };
   /* Mega Evolution: a key the moves' width above them, set before a move is chosen, as the game asks for it first. Its emblem is
      the games' rainbow helix (public/brand/mega-evolution.png) as given; the key inverts while it is on */
-  const megaKey = off => <button type="button" className={"bt-mega" + (mega ? " on" : "")} aria-pressed={mega} disabled={off} onClick={() => setMega(!mega)}>
+  // why the key is off, said by its information, never on the key (DESIGN.md "Battle", Mega Evolution)
+  const megaWhy = mega || (active?.canMegaEvo && !megaTaken) ? "" : active?.canMegaEvo ? "이번 턴에 이미 메가진화를 골랐습니다." : "나와 있을 때 켤 수 있습니다.";
+  const megaWho = active?.canMegaEvo || !holder ? slots[k] : holder;
+  const megaKey = off => <button type="button" className={"bt-mega" + (mega ? " on" : "") + (off ? " is-off" : "")} aria-pressed={mega} aria-disabled={off || undefined}
+      onClick={() => { if (!off) setMega(!mega); }} aria-label={`${name(megaWho.details)} 메가진화`}
+      data-info={`mega:${species(megaWho.details)}:${megaWho.item || ""}:${megaWhy}`} data-key="m" title={narrow ? undefined : "단축키 M"}>
       <img className="bt-mega-mark" src="/brand/mega-evolution.png" alt="" draggable="false" />
-      <span className="bt-mega-say"><b>{`${active?.canMegaEvo || !holder ? who : name(holder.details)} 메가진화`}</b>{/* only why it cannot be pressed; on or off the key says by its own light (DESIGN.md "Composing a screen" 22) */}{
-        mega || (active?.canMegaEvo && !megaTaken) ? null
-        : <small>{active?.canMegaEvo ? "이번 턴에 이미 메가진화를 골랐습니다." : "나와 있을 때 켤 수 있습니다."}</small>}</span>
-      <span className="bt-mega-tick" aria-hidden="true">{mega && <Icon n="check" size={20} />}</span>
+      {!narrow && <span className="bt-mega-say"><b>{`${name(megaWho.details)} 메가진화`}</b></span>}
+      {!narrow && <span className="bt-mega-tick" aria-hidden="true">{mega && <Icon n="check" size={20} />}</span>}
     </button>;
   // a forced switch: the bench, under the last moves (and the Mega key) standing off where they were
-  if (forced) return <div className="bt-choices">
-    {megaRow && megaKey(true)}
+  if (forced) return <div className="bt-choices forced" ref={root}>
+    {megaRow && !narrow && megaKey(true)}
     {moveKeys(ghost?.active?.[at] || null, true)}
-    {bench}
+    {bench(narrow && megaRow && megaKey(true))}
     {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
     {toast && <Dock toast={toast} />}
   </div>;
@@ -1604,7 +1752,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
       if (!m || m.fainted) return <div key={slot} className={"bt-target empty" + (own ? " own" : "")}><span className="t12 mute">빈 자리</span></div>;
       const hp = own ? `${m.hp}/${m.maxhp}` : `${Math.max(m.hp > 0 ? 1 : 0, Math.round(m.hp / (m.maxhp || 1) * 100))}%`;
       const nm = `${own ? "" : "상대 "}${nameOf(res, m.species)}`;
-      return <button key={slot} type="button" className={"bt-target" + (own ? " own" : "")} disabled={!t || sending} onClick={t?.onPick}
+      return <button key={slot} type="button" className={"bt-target" + (own ? " own" : "")} disabled={!t || sending} onClick={t?.onPick} data-key={(own ? 3 : 1) + slot}
         aria-label={`${nm}, HP ${hp}${t?.power ? `, 위력 ${t.power}` : ""}${t?.mark != null ? `, ${EFF_WORD[t.mark] || effLabel(t.mark)}` : ""}${own && slot === at ? ", 자신" : ""}`}>
         <img src={spriteUrl(m.species)} alt="" draggable="false" onError={onSpriteError()} />
         {/* the row says whose side it is (theirs over ours), so the name stands alone; the matchup sits by the HP */}
@@ -1612,7 +1760,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
           <span className="bt-target-line">{own && slot === at ? "자신" : hp}{t?.power > 0 && <span className="bt-move-pow">{`위력 ${t.power}`}</span>}{t?.mark != null && <span className={effClass(t.mark)} aria-hidden="true">{effLabel(t.mark)}</span>}</span></span>
       </button>;
     };
-    return <div className="bt-choices">
+    return <div className="bt-choices" ref={root}>
       <div className="bt-targets" role="group" aria-label={`${moveName(aimed.id)}의 대상`}>
         <div className="stack bt-target-row">{[0, 1].map(slot => cell(foeSide, slot))}</div>
         <div className="stack bt-target-row">{[0, 1].map(slot => cell(side.id, slot))}</div>
@@ -1621,29 +1769,31 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
       {toast && <Dock toast={toast} />}
     </div>;
   }
-  return <div className="bt-choices">
-    {megaRow && megaKey(!megaOpen)}
+  return <div className="bt-choices" ref={root}>
+    {megaRow && !narrow && megaKey(!megaOpen)}
     {moveKeys(active, frozen)}
     {picks.length > 0 && !frozen && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
-    {bench}
+    {bench(narrow && megaRow && megaKey(!megaOpen))}
     {toast && <Dock toast={toast} />}
   </div>;
 }
 
 
-/* the bench: a row of the brought Pokémon not out, each its picture, name and HP; one that cannot come in is muted */
-function Bench({ pokemon, res, pick, label }) {
+/* the bench: a row of the brought Pokémon not out, each its picture, name and HP; one that cannot come in is muted. On a phone it is
+   the deck's bench row, the Mega key at its end (extra); lit: the bench is what is asked (a forced switch, Revival Blessing) */
+function Bench({ pokemon, res, pick, label, narrow = false, extra = null, lit = false }) {
   const out = pokemon.map((mon, i) => ({ mon, i })).filter(({ mon }) => !mon.active);
-  if (!out.length) return null;
-  return <div className="bt-bench">
-    <span className="t12 dim">{label}</span>
-    <div className="stack bt-bench-row">
-      {out.map(({ mon, i }) => {
+  if (!out.length && !extra) return null;
+  return <div className={"bt-bench" + (lit ? " lit" : "")}>
+    {label && <span className="t12 dim">{label}</span>}
+    <div className={"stack bt-bench-row" + (extra ? " with-mega" : "")} style={{ "--n": out.length }}>
+      {out.map(({ mon, i }, n) => {
         const go = pick(i);
         const species = String(mon.details).split(", ")[0];
         const { hp, maxhp, status } = parseHP(mon.condition);
         const fainted = status === "fnt";
-        return <button key={mon.ident + i} type="button" className="bt-sw" disabled={!go} onClick={go || undefined}
+        return <button key={mon.ident + i} type="button" className="bt-sw" disabled={!go} onClick={go || undefined} data-info={`own:${i}`}
+          data-key={n < 2 ? String(5 + n) : undefined} title={narrow || n >= 2 ? undefined : `단축키 ${5 + n}`}
           aria-label={`${nameOf(res, species)}${fainted ? ", 쓰러짐" : `, HP ${hp} / ${maxhp}`} 교체`}>
           <img src={spriteUrl(species)} alt="" draggable="false" />
           <span className="bt-sw-say">
@@ -1652,6 +1802,7 @@ function Bench({ pokemon, res, pick, label }) {
           </span>
         </button>;
       })}
+      {extra}
     </div>
   </div>;
 }

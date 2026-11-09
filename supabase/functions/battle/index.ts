@@ -503,9 +503,12 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
       const beaten = sideTeam(data?.input_log, "p2");
       for (const one of swaps) {
         const swapped = swapParty(party, beaten, String(one.give), String(one.take));
-        if (swapped === "missing") refuse(409, "바꿀 포켓몬을 찾지 못했습니다. 다시 골라 주세요.");
-        if (swapped === "tier") refuse(409, "힘이 같은 급의 포켓몬끼리만 바꿀 수 있습니다.");
-        if (swapped === "clash") refuse(409, "같은 포켓몬이 둘이 되어 바꿀 수 없습니다.");
+        // a refused pair is named, so the screen marks that column off and keeps the others (2026-11-09)
+        const pair = { give: String(one.give), take: String(one.take) };
+        if (swapped === "missing") refuse(409, "바꿀 포켓몬을 찾지 못했습니다. 다시 골라 주세요.", { pair });
+        if (swapped === "tier") refuse(409, "힘이 같은 급의 포켓몬끼리만 바꿀 수 있습니다.", { pair });
+        if (swapped === "clash") refuse(409, "같은 포켓몬이 둘이 되어 바꿀 수 없습니다.", { pair });
+        if (swapped === "item") refuse(409, "파티에 같은 도구가 있어 바꿀 수 없습니다.", { pair });
         party = swapped;
       }
       if (validateTeam(STREAK_FORMAT, party)) refuse(409, "이 교환으로는 파티가 규정에 맞지 않습니다. 다시 골라 주세요.");

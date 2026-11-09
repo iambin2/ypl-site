@@ -64,7 +64,7 @@ test("a swap is tier for tier, never brings two of a species, and an item twice 
   assert.deepEqual(swapParty(party, foes, a, b), [{ species: b, item: "Choice Scarf", name: "" }, party[1]]);
   assert.equal(swapParty(party, foes, a, foes[2].species), "tier", "another tier");
   assert.equal(swapParty(party, foes, a, c)[0].item, "Focus Sash", "a second Leftovers: it takes the item of the one it replaces");
-  assert.equal(swapParty([{ species: a, item: "Blazikenite" }, { species: other, item: "Leftovers" }], foes, a, c), "clash", "a Mega Stone is not handed on");
+  assert.equal(swapParty([{ species: a, item: "Blazikenite" }, { species: other, item: "Leftovers" }], foes, a, c), "item", "a Mega Stone is not handed on");
   assert.equal(swapParty([{ species: a, item: "Focus Sash" }, { species: b, item: "Leftovers" }], [{ species: b, item: "Life Orb" }, ...foes], a, b), "clash", "a second species");
   assert.equal(swapParty(party, foes, "Mew", b), "missing");
 });
