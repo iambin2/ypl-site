@@ -157,12 +157,12 @@ declare
 begin
   select a.requested_name into v_name from public.player_accounts a where a.auth_user_id = p_user and a.status = 'approved';
   if v_name is null then
-    raise exception using errcode = '42501', message = '이름이 승인된 Google 계정만 연승 도전을 할 수 있습니다.';
+    raise exception using errcode = '42501', message = '이름이 승인된 Google 계정만 도전의 탑에 오를 수 있습니다.';
   end if;
   perform pg_advisory_xact_lock(hashtext('streak_start'));
   -- ponytail: 사이트 전체 하루 300번이다(무료 요금제의 함수 호출 월 50만, 한 판 25번 안팎). 한 사람이 채우면 계정별 한도로 바꾼다.
   if (select count(*) from public.streak_runs r where r.started_at > now() - interval '1 day') >= 300 then
-    raise exception using errcode = 'P0001', message = '오늘의 연승 도전이 모두 찼습니다. 내일 다시 도전해 주세요.';
+    raise exception using errcode = 'P0001', message = '오늘의 도전의 탑이 모두 찼습니다. 내일 다시 도전해 주세요.';
   end if;
 
   -- 이 계정의 진행 중인 도전

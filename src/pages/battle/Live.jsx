@@ -17,10 +17,10 @@ import { Roster, rosterSaid, sceneOf } from "./Stage.jsx";
    the foe's side on top and the first player's under it, each Pokémon on its floor lit as the strips light it (out lit, bench dim,
    not shown yet muted, fainted grey). The official matches come first, then the 연승 도전 games, then friendly battles; the first
    official match leads, across the page. The list is read again every 15 seconds while the page is in view, as 방 목록 is. */
-const KINDS = [["all", "전체"], ["official", "공식"], ["streak", "연승 도전"], ["friendly", "친선"]];
+const KINDS = [["all", "전체"], ["official", "공식"], ["streak", "도전의 탑"], ["friendly", "친선"]];
 const FORMATS = [["all", "전체"], ["singles", "싱글"], ["doubles", "더블"]];
 const ORDER = { official: 0, streak: 1, friendly: 2 };
-const KIND_WORD = { official: "공식 경기", streak: "연승 도전", friendly: "친선" };
+const KIND_WORD = { official: "공식 경기", streak: "도전의 탑", friendly: "친선" };
 
 export function useLiveBoards(wanted = true) {
   const [rows, setRows] = useState(null);
@@ -106,7 +106,7 @@ export function LiveHall({ res, rows, onOpen }) {
     <div className="stack bt-hall-counts">
       <Counter label="진행 중" value={count(all.length)} cells={2} lamp={all.length > 0 ? "sig" : false} />
       <Counter label="공식 경기" value={count(all.filter(r => r.kind === "official").length)} cells={2} />
-      <Counter label="연승 도전" value={count(all.filter(r => r.kind === "streak").length)} cells={2} />
+      <Counter label="도전의 탑" value={count(all.filter(r => r.kind === "streak").length)} cells={2} />
     </div>
     <div className="bt-hall-filters">
       {[["종류", kind, setKind, KINDS], ["형식", format, setFormat, FORMATS]].map(([label, value, set, options]) =>

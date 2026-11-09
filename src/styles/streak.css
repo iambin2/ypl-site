@@ -10,65 +10,43 @@
 .streak-hero-board { display: flex; align-items: flex-end; gap: var(--s2); }
 .streak-hero-board > .t20 { line-height: 1; }
 
-/* the end of a won game: the run's wins and the next 난이도's computer on its floor, joined on the seam at 1 to 1.618, the two
-   one counter high so their lines meet; after a loss the counter stands alone */
-.streak-end { grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); }
-.streak-end:not(:has(.streak-next)) { grid-template-columns: minmax(0, 1fr); }
-.streak-next { height: var(--h-counter); padding: var(--pad); padding-top: var(--s2); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); text-align: left; }
-.streak-next .mon { right: var(--pad); height: calc(100% - var(--floor)); }
 
 /* on a wide screen the arena's top edge meets the run's panel, not the section's title over it, as the lobby's meets its first choice */
 @media (min-width: 860px) {
-  .bt-lobby:has(> .streak-side) > .bt-lobby-main { padding-top: calc(var(--l20) + var(--s3)); }
+  .bt-lobby:has(> .streak-side) > .bt-lobby-main { padding-top: calc(var(--l12) + var(--s2)); }
 }
 
-/* a floor: its five games as stairs on the seam (Streak.jsx FloorCells), each step one height of the law higher than the last, so
-   the floor's master stands highest with its 난이도's Pokémon on the top step over 주인; the number at the step's centre, the amber
-   lamp of the game being played before it; the won ones inverted, the ones still to come off */
-.streak-floor { grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; }
-.streak-cell { display: flex; align-items: center; justify-content: center; gap: var(--s1); padding: 0 var(--s1); min-width: 0; }
-.streak-cell[data-step="1"] { height: var(--h-strip); }
-.streak-cell[data-step="2"] { height: var(--h-control); }
-.streak-cell[data-step="3"] { height: var(--h-row); }
-.streak-cell[data-step="4"] { height: var(--h-row2); }
-.streak-cell[data-step="5"] { height: var(--h-counter); padding: 0; }
-.streak-cell.off { color: var(--mute); }
-/* the gatekeeper's step holds only its picture (its floor shrinks to 4, so the picture takes the step) and, while it is played, the
-   amber lamp in its top corner */
-.streak-master > .lamp { position: absolute; left: var(--s2); top: var(--s2); }
-.streak-master > .mon { left: 0; right: 0; width: auto; max-width: 100%; margin-inline: auto; height: calc(100% - var(--floor)); }
+/* ---------- the lift (lift.js, Streak.jsx LiftHall; 2026-11-09, the user: "엘리베이터 컨셉으로") ----------
+   Two doors meeting on a seam, each a panel the full height of the stage: the floor's number at 120 with the amber lamp on the left
+   door by the seam, its five games as a track on the right door by the seam. A gatekeeper's game inverts the doors. The tab's hall
+   is the stage's place with the doors shut; the car (.lift) is the same doors fixed over the page while it rides */
+.lift { position: fixed; z-index: var(--z-sticky); overflow: hidden; }
+.lift-hall { position: relative; overflow: hidden; aspect-ratio: 16 / 9; }
+.lift-door { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; width: 50%; background: var(--panel); color: var(--lit); }
+.lift-door.l { left: 0; justify-content: flex-end; }
+/* the seam the doors meet on is the left door's own edge, the ground's colour, so nothing behind them shows through it */
+.lift-door.l::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: var(--seam); background: var(--ground); }
+.lift-door.r { right: 0; justify-content: flex-start; }
+:is(.lift, .lift-hall).inv .lift-door { background: var(--lit); color: var(--ground); }
+.lift-in { display: flex; align-items: flex-end; gap: var(--s5); padding: 0 var(--s8); }
+.lift-in > .lamp { margin-bottom: var(--s3); }
+.lift-digits { display: flex; }
+.lift-door.r .lift-in { align-items: center; }
+.lift-track { display: grid; grid-template-columns: repeat(5, var(--s8)); gap: var(--seam); }
+.lift-track > i { height: var(--s3); background: currentColor; opacity: var(--off); }
+.lift-track > i.won { opacity: 1; }
+.lift-track > i.now { background: var(--signal); opacity: 1; }
+.lift-track > i.next { opacity: var(--opacity-disabled); }
+@media (max-width: 639px) {
+  .lift-in { gap: var(--s3); padding: 0 var(--s5); }
+  .lift-track { grid-template-columns: repeat(5, var(--s5)); }
+}
 
-/* the tower: three floors, the highest on top, on one grid whose lead column (the floor's number) is the golden major of a step; the
-   floor stood on is its stairs, the others one row each with the 난이도 and the master's Pokémon; the floor below won (inverted), the
-   floor above off */
-.streak-tower { grid-template-columns: minmax(0, 1.618fr) repeat(5, minmax(0, 1fr)); align-items: end; }
-.streak-tower-lead { align-self: stretch; display: flex; align-items: center; justify-content: center; min-height: var(--h-row2); padding: 0 var(--s1); }
-.streak-tower-body { grid-column: span 5; height: var(--h-row2); padding: var(--s2) var(--pad); text-align: left; }
-.streak-tower-body .mon { left: 0; right: 0; width: auto; margin-inline: auto; height: calc(100% - var(--floor)); }
-.streak-tower-body > .streak-unknown { left: 0; right: 0; justify-content: center; }
-.streak-tower .off, .streak-tower .off .dim { color: var(--mute); }
-.streak-cleared { position: absolute; right: var(--pad); top: 0; bottom: 0; display: flex; align-items: center; }
-
-/* a floor's gatekeeper (Streak.jsx Keeper): passed, its Mega as it is; the floor stood on, the Mega's own shape as a silhouette in the
-   board's dim light, standing where the picture would; above, a ? where the picture would stand */
-.streak-shadow { display: block; background: var(--dim); -webkit-mask: no-repeat 50% 100% / contain; mask: no-repeat 50% 100% / contain; }
-.inv .streak-shadow { background: var(--mute); }
-.streak-unknown { position: absolute; right: var(--pad); bottom: var(--floor); top: 0; display: flex; align-items: center; font-style: normal; color: var(--mute); font-size: var(--t32); line-height: var(--l32); font-weight: 700; }
-.streak-master > .streak-unknown { left: 0; right: 0; justify-content: center; }
-.inv .streak-unknown { color: var(--ground); }
-
-/* the steps of a floor as a glyph beside a floor's number (the battle's head): an icon on the 24 grid, five steps touching as one
-   stepped shape and rising in equal steps on the digits' baseline (apart, thin bars read as a signal meter), in the window's own ink:
-   climbed .382, this game lit, the rest an unlit bar's light */
-.streak-glyph { display: flex; align-items: flex-end; width: 24px; height: 24px; }
-.streak-glyph > i { flex: 1 1 0; background: currentColor; opacity: var(--off); }
-.streak-glyph > i:nth-child(1) { height: 20%; }
-.streak-glyph > i:nth-child(2) { height: 40%; }
-.streak-glyph > i:nth-child(3) { height: 60%; }
-.streak-glyph > i:nth-child(4) { height: 80%; }
-.streak-glyph > i:nth-child(5) { height: 100%; }
-.streak-glyph > i.won { opacity: var(--opacity-disabled); }
-.streak-glyph > i.here { opacity: 1; }
+/* the floor keys beside the hall, as a lift's panel: eight floors on the seam, the floor stood on inverted, the floors passed lit,
+   the floors above muted */
+.streak-keys { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--seam); }
+.streak-keys > span { display: grid; place-items: center; height: var(--h-row2); }
+.streak-keys > .up .seg { color: var(--mute); }
 
 /* a game of a run, beside it: which game, the streak riding on it at 32 with 연승 on the baseline, the floor joined under it on the
    seam. A floor's master inverts */
@@ -76,24 +54,51 @@
 .streak-stake-board { display: flex; align-items: flex-end; gap: var(--s2); }
 .streak-stake-board > .t15 { line-height: 1; }
 
-/* the end: the swap, its two sixes a field's step apart; our six's head holds 새로 뽑기 at its right end, and a six drawn anew stands
-   as bare floors with ?, as the lobby's random party does; a cell with no match of its tier is disabled */
-/* (2026-11-09) our six over theirs, each in tier order, so a pair of one tier is a column of two cells: each cell a Pokémon on its
-   floor, the name the floor; a chosen column inverts both, an off cell mutes */
-.streak-swap { gap: var(--s2); }
-.streak-swap-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
-.streak-swap-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
-.streak-swap-cell { --floor: var(--s5); display: block; width: 100%; aspect-ratio: 13 / 16; cursor: pointer; border: 0; font: inherit; color: inherit; }
-.streak-swap-cell > .floor { display: grid; place-items: center; padding: 0 var(--s1); }
-.streak-swap-cell > .floor > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t12); line-height: var(--l12); font-weight: 700; }
-.streak-swap-cell > .mon { left: 0; right: 0; height: calc(100% - var(--floor) - var(--s1)); margin-inline: auto; }
-.streak-swap-cell.inv { background: var(--lit); color: var(--ground); }
-.streak-swap-cell.off { cursor: default; color: var(--mute); }
-.streak-swap-cell.off > .mon { opacity: var(--opacity-disabled); }
-.streak-swap-cell.bare { background: var(--panel); }
-.streak-swap-cell.bare > .bt-bare { position: absolute; inset: 0 0 var(--floor); display: grid; place-items: center; font-style: normal; color: var(--mute); font-size: var(--t20); line-height: var(--l20); font-weight: 700; }
-.streak-swap-cell:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-@media (hover: hover) { .streak-swap-cell.pn:not(.off):hover { background: var(--panel-2); } }
-@media (min-width: 860px) { .streak-swap-cell { aspect-ratio: 1; } }
-/* beside the 32 digits of a window, the 24 glyph stands on their baseline: 8 over it makes the two one height, centred together */
-.bt-win > .streak-glyph { margin-top: var(--s2); }
+/* the head's floor window: the floor's number over its five games, small, as the lift shows them */
+.bt-win.bt-win-floor { flex-direction: column; justify-content: center; gap: var(--s1); }
+.streak-track-bar.mini { grid-template-columns: repeat(5, var(--s2)); }
+.streak-track-bar.mini > i { height: var(--s1); }
+
+/* ---------- the break between a run's games (Streak.jsx StreakEnd, 2026-11-09 second round) ----------
+   It stands in the stage's place, over the arena on the ground, so the next game and the trades are where the eye already is and
+   nothing is scrolled to; it lights as a page does and goes while the replay plays */
+.streak-break { position: absolute; inset: 0; z-index: var(--z-sticky); display: grid; align-content: center; gap: var(--s3); padding: var(--s3); overflow: hidden auto; background: var(--ground);
+  animation: y-rise var(--move-light) backwards; transition: opacity var(--move-tone); }
+.streak-break.away { opacity: 0; pointer-events: none; }
+@media (min-width: 860px) { .streak-break { padding: 0; } }
+/* its head: the run's count beside the next game, one counter high, at 1 to 1.618 */
+.streak-break-head { grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); }
+.streak-next { height: var(--h-counter); padding: var(--s2) var(--pad); display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: var(--s2); text-align: left; }
+
+/* the floor as a track: its number in segments, then five games as one bar cut on the seam, won lit, the next at .382, the one being
+   played lit, a lost one muted, the rest an unlit bar's light */
+.streak-track { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.streak-track-bar { display: grid; grid-template-columns: repeat(5, var(--s8)); gap: var(--seam); }
+.streak-track-bar > i { height: var(--s2); background: currentColor; opacity: var(--off); }
+.streak-track-bar > i.won { opacity: 1; }
+.streak-track-bar > i.now { background: var(--signal); opacity: 1; }
+.streak-track-bar > i.next { opacity: var(--opacity-disabled); }
+.streak-track-bar > i.lost { background: var(--mute); opacity: 1; }
+.streak-stake-track { display: flex; align-items: center; min-height: var(--h-row); padding: 0 var(--pad); }
+
+/* the trades: a table whose head row names the two sides and whose rows are the tiers, ours left and theirs right, so a row reads as
+   the trade it is; each side its picture, its name and its info key on the seam; a chosen row inverts both sides */
+.streak-swap { display: grid; gap: var(--seam); }
+.streak-trades { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--seam); }
+.streak-trades-head { display: flex; align-items: center; min-height: var(--h-strip); padding: 0 var(--pad); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); }
+.streak-trade { display: grid; grid-template-columns: minmax(0, 1fr) var(--h-control); min-width: 0; min-height: var(--h-control); }
+.streak-trade-key { display: flex; align-items: center; gap: var(--s2); min-width: 0; padding: 0 var(--s2); color: inherit; text-align: left; transition: background-color var(--move-tone); }
+.streak-trade-key > img { flex: none; width: var(--h-strip); height: var(--h-strip); object-fit: contain; }
+.streak-trade-key > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.streak-trade-info { display: grid; place-items: center; color: var(--dim); }
+.streak-trade.inv { background: var(--lit); color: var(--ground); }
+.streak-trade.inv .streak-trade-info { color: var(--ground); }
+.streak-trade.off .streak-trade-key { cursor: default; color: var(--mute); }
+.streak-trade.off .streak-trade-key > img { opacity: var(--opacity-disabled); }
+.streak-trade.bare { display: grid; place-items: center; }
+.streak-trade.bare > .bt-bare { font-style: normal; color: var(--mute); font-size: var(--t20); line-height: var(--l20); font-weight: 700; }
+.streak-trade :focus-visible { outline: var(--line) solid currentColor; outline-offset: calc(var(--line) * -1); }
+@media (hover: hover) { .streak-trade.pn:not(.off) .streak-trade-key:hover, .streak-trade.pn .streak-trade-info:hover { background: var(--panel-2); } }
+.streak-fresh { display: flex; align-items: center; justify-content: center; gap: var(--s2); min-height: var(--h-control); color: var(--lit); font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
+.streak-fresh.inv { background: var(--lit); color: var(--ground); }
+@media (hover: hover) { .streak-fresh.pn:hover { background: var(--panel-2); } }

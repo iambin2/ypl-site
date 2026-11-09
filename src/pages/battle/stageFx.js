@@ -5,7 +5,6 @@
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
 import { DUR, reduced } from "../../components/common/motion.js";
 import { segMarkup } from "../../components/common/seg.js";
-import { playBoard } from "./Scoreboard.jsx";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
 import { audio } from "./cries.js";
@@ -304,52 +303,22 @@ export function weatherIn(stage, id) {
   }
   return e.after(900);
 }
-// a word across the stage: 3턴, 승리
-export function banner(stage, text, { tone = "" } = {}) {
-  const over = overOf(stage);
-  if (!over || instant()) return Promise.resolve();
-  const el = document.createElement("i");
-  el.className = `bt-banner ${tone}`;
-  el.textContent = text;
-  over.appendChild(el);
-  return done(el.animate([
-    { opacity: 0, transform: "translate(-50%, -50%) translateY(12px)" },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: .25, easing: OUT },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: .8 },
-    { opacity: 0, transform: "translate(-50%, -50%)" },
-  ], { duration: ms(tone === "win" ? 1600 : 760), fill: "both" })).then(() => el.remove());
-}
-/* a 연승 도전 game called on the dark court (Streak.jsx floorCall), as an elevator calls its floor: the floor's number in segments at 84
-   and beside it, on the digits' baseline, the floor's five steps rising to the digits' height (32, 44, 52, 64, 84, as the stairs
-   everywhere), the ones climbed half lit, this game's lit, the rest off. No word (2026-11-09, the user: "2층 1번재 판이라는 팝업 자체도
-   그렇게 감각적이고 심미성이 뛰어나진 않은 것 같아"); a gatekeeper's plate inverts. climbing: the floor's first game after a
-   gatekeeper: the floor below stands first with every step climbed, then its bars switch to the new floor and the steps go out but the
-   first, the changed cell brightening once, as a board's score does */
-const plateSteps = (at, n = 5) => `<span class="bt-floor-steps">${Array.from({ length: n }, (_, i) => `<i class="${i + 1 < at ? "won" : i + 1 === at ? "here" : ""}"></i>`).join("")}</span>`;
-export function floorPlate(stage, { floor, at = 1, climbing = false, master = false }) {
-  const over = overOf(stage);
-  if (!over || instant()) return Promise.resolve();
-  const from = climbing ? floor - 1 : floor, cells = String(floor).length, h = 84;
-  const el = document.createElement("i");
-  el.className = "bt-banner bt-floor" + (master ? " inv" : "");
-  el.innerHTML = segMarkup(String(from), h, cells) + plateSteps(climbing ? 6 : at);
-  over.appendChild(el);
-  const total = ms(climbing ? 1900 : 1100);
-  if (climbing) setTimeout(() => {
-    const was = el.querySelector(".seg");
-    if (!was) return;
-    was.outerHTML = segMarkup(String(floor), h, cells);
-    el.querySelector(".bt-floor-steps").outerHTML = plateSteps(1);
-    const now = [...el.querySelectorAll(".seg .on > g")], old = String(from).padStart(cells, " "), next = String(floor).padStart(cells, " ");
-    now.forEach((g, i) => { if (old[i] !== next[i]) g.animate([{ opacity: .382 }, { opacity: 1 }], { duration: DUR.tone, easing: OUT }); });
-    sfx("select");
-  }, total * .45);
-  return done(el.animate([
-    { opacity: 0, transform: "translate(-50%, -50%) translateY(12px)" },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: climbing ? .14 : .22, easing: OUT },
-    { opacity: 1, transform: "translate(-50%, -50%)", offset: .86 },
-    { opacity: 0, transform: "translate(-50%, -50%)" },
-  ], { duration: total, fill: "both" })).then(() => el.remove());
+/* a turn begins (2026-11-09 second round, the user: every popup over the battle was ugly): nothing stands over the Pokémon. A light
+   runs along the message window's top edge from left to right, and the turn's number lights in the window's right corner, the
+   square where the clock stands when a choice is owed, so time is always told in one place */
+export function turnMark(stage, turn) {
+  const say = stage?.querySelector(".bt-say");
+  if (!say || instant()) return Promise.resolve();
+  const line = document.createElement("i");
+  line.className = "bt-turnline";
+  const tab = document.createElement("i");
+  tab.className = "bt-turntab";
+  tab.innerHTML = segMarkup(String(Math.min(99, turn)).padStart(2, "0"), 32, 2);
+  say.append(line, tab);
+  const total = ms(1100);
+  const runs = line.animate([{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: 1, offset: .38 }, { transform: "scaleX(1)", opacity: 1, offset: .8 }, { transform: "scaleX(1)", opacity: 0 }], { duration: total, easing: OUT, fill: "both" });
+  const lit = tab.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none", offset: .3, easing: OUT }, { opacity: 1, transform: "none", offset: .82 }, { opacity: 0, transform: "none" }], { duration: total, fill: "both" });
+  return Promise.all([done(runs), done(lit)]).then(() => { line.remove(); tab.remove(); });
 }
 function done(anim) {
   if (!anim?.finished) return Promise.resolve();
@@ -834,21 +803,39 @@ export async function opening(stage) {
 }
 /* the end (DESIGN.md "Battle", The big moments): the match board over the arena, the camera holding wide. The Pokémon each side knocked
    out switch on, then the winner's row inverts with 승리 and the loser's dims (a tie dims both); it stands a moment and goes */
-export async function final(stage, { players, sides, turn, winner, perspective, seated = false }) {
-  const over = overOf(stage);
-  if (!over || instant()) return;
+/* the end (2026-11-09 second round, the user: the match board over the arena was ugly): no board stands over the stage; the arena's
+   own frame says it. The losing side's strip goes out first, its words and party falling to .382 with 패배 over its name, then the
+   winner's strip switches on inverted with 승리; a tie dims both under 무승부. The message window says who won. The strips keep it
+   while the end is looked at; a jump of the replay takes it back (clearFinal) */
+export async function final(stage, { winner, perspective }) {
+  const arena = stage?.closest(".bt-arena");
+  if (!arena || instant()) return;
   const them = perspective === "p1" ? "p2" : "p1";
-  const knocked = side => Object.values(sides[side === "p1" ? "p2" : "p1"]?.team || {}).filter(m => m.fainted).length;
-  const row = (side, label) => ({ label: seated ? label : "", name: players[side] || "", score: knocked(side) });
-  const rows = [row(them, "상대"), row(perspective, "나")];
-  const sideAt = i => (i ? perspective : them);
-  // seated, the label keeps who the row is before the result (나, 승리), so the end still says which side is yours
-  const said = (r, word) => (r.label ? `${r.label}, ${word}` : word);
-  const decided = rows.map((r, i) => winner === "tie" || !winner ? { ...r, label: said(r, "무승부"), lost: true }
-    : { ...r, label: said(r, sideAt(i) === winner ? "승리" : "패배"), won: sideAt(i) === winner, lost: sideAt(i) !== winner });
-  sfx(winner === "tie" || !winner ? "draw" : !seated || winner === perspective ? "win" : "lose", { at: 580 });
-  await playBoard(over, { say: `종료, ${turn}턴`, rows: rows.map(r => ({ ...r, score: null })) },
-    [[ms(160), { rows }], [ms(420), { rows: decided, done: true }], [ms(1600), {}]]);
+  const strip = side => arena.querySelector(side === perspective ? ".bt-strip.own" : ".bt-strip.foe");
+  const tie = winner === "tie" || !winner;
+  sfx(tie ? "draw" : winner === perspective ? "win" : "lose", { at: 580 });
+  const losers = tie ? [them, perspective] : [winner === perspective ? them : perspective];
+  for (const side of losers) {
+    const el = strip(side);
+    if (!el) continue;
+    el.dataset.result = "";
+    el.style.setProperty("--result", `"${tie ? "무승부" : "패배"}"`);
+    el.dataset.lost = "";
+    [...el.children].forEach(c => c.animate([{ opacity: 1 }, { opacity: .382 }], { duration: ms(420), easing: OUT, fill: "backwards" }));
+  }
+  if (tie) return wait(900);
+  await wait(420);
+  const won = strip(winner);
+  if (!won) return;
+  won.dataset.result = "";
+  won.style.setProperty("--result", '"승리"');
+  won.dataset.won = "";
+  [...won.children].forEach(c => c.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: ms(420), easing: OUT, fill: "backwards" }));
+  await wait(900);
+}
+// a jump of the replay away from the end takes the strips' result back
+export function clearFinal(stage) {
+  stage?.closest(".bt-arena")?.querySelectorAll(".bt-strip[data-result]").forEach(el => { delete el.dataset.result; delete el.dataset.won; delete el.dataset.lost; el.style.removeProperty("--result"); });
 }
 /* sent in: the ball opens in a burst of light, a column of it rises, the Pokémon grows out of it white and settles into its colours */
 // cry: called as it appears; the entrance lasts until the cry has been heard
@@ -1081,6 +1068,9 @@ export function shield(stage, key, id = "protect") {
   return e.after(900);
 }
 // an ability or an item announced: a plate slides in on its owner's side
+/* an ability or an item (2026-11-09 second round): a cell joined to its owner's plate on the seam, the plate's own width, under the
+   foe's plate and over ours, so whose it is reads before the words do; with no plate standing (it has fallen) it comes in from its
+   side's edge as before */
 export function popup(stage, key, owner, name, own) {
   const over = overOf(stage);
   if (!over || instant()) return Promise.resolve();
@@ -1090,6 +1080,20 @@ export function popup(stage, key, owner, name, own) {
   const small = document.createElement("small"); small.textContent = owner;
   const big = document.createElement("b"); big.textContent = name;
   el.append(small, big);
+  const plate = stage.querySelector(`.bt-plate[data-bar="${key}"]:not(.out)`);
+  if (plate) {
+    const o = over.getBoundingClientRect(), p = plate.getBoundingClientRect();
+    el.classList.add("joined");
+    el.style.left = `${p.left - o.left}px`;
+    el.style.width = `${p.width}px`;
+    if (own) el.style.bottom = `${o.bottom - p.top + 2}px`; else el.style.top = `${p.bottom - o.top + 2}px`;
+    over.appendChild(el);
+    const from = `translateY(${own ? 12 : -12}px)`;
+    return done(el.animate([
+      { transform: from, opacity: 0 }, { transform: "none", opacity: 1, offset: .2, easing: OUT },
+      { transform: "none", opacity: 1, offset: .84 }, { transform: from, opacity: 0 },
+    ], { duration: ms(1500), fill: "both" })).then(() => el.remove());
+  }
   over.appendChild(el);
   const off = own ? "-110%" : "110%";
   return done(el.animate([

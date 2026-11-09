@@ -135,7 +135,7 @@ export function TeamPick({ res, foe, foeName, pokemon, count, locked, picks, set
           const card = <MonCard key={key} res={res} {...c} hp={null} share={null} out={false} short={Boolean(onInfo)}
             pick={{ order: picks.indexOf(i) + 1, onPick: () => toggle(i), off: picks.length >= n && !picks.includes(i), locked }} />;
           return onInfo ? <div key={key} className="bt-pick" data-info={`pick:${i}`}>{card}
-            <button type="button" className="bt-info-key" onClick={() => onInfo(i)} aria-label={`${nameOf(res, c.species)} 세트 보기`}><Icon n="info" size={20} /></button>
+            <button type="button" className="bt-info-key" onClick={() => onInfo(i)} aria-label={`${nameOf(res, c.species)} 세트 보기`}><b className="bt-i" aria-hidden="true">i</b></button>
           </div> : card;
         })}
       </div>

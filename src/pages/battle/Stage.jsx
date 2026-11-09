@@ -152,7 +152,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
     if (epoch !== seenEpoch.current || all.length < done.current) {
       seenEpoch.current = epoch; reset(); setLines([]); setSaid([]);
       // what a cut-off run left on the stage (a Mega Evolution's dark, the opening's hidden leads and plates) goes back first
-      if (stageRef.current) { fx.settle(stageRef.current); stageRef.current.classList.remove("bs-intro"); }
+      if (stageRef.current) { fx.clearFinal(stageRef.current); fx.settle(stageRef.current); stageRef.current.classList.remove("bs-intro"); }
     }
     const fresh = all.slice(done.current);
     if (!fresh.length) return;
@@ -376,13 +376,13 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
           case "cant": show(); await fx.cant(stage, k, event.why); break;
-          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); await fx.banner(stage, `${event.turn}턴`); break;
+          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); await fx.turnMark(stage, event.turn); break;
           case "end": {
             /* the end (DESIGN.md "Battle", The big moments): the camera holds on the wide shot (2026-11-06: its push onto the winner
                moved the whole screen for no reason) and the match board lights over the arena: the Pokémon each side knocked out switch
                on, then the winner's row inverts with 승리 and the loser's dims; that is the celebration */
             show(); await toWide();
-            await fx.final(stage, { players: R.state.players, sides: R.state.sides, turn: R.state.turn, winner: event.winner, perspective, seated: seatedRef.current });
+            await fx.final(stage, { winner: event.winner, perspective });
             break;
           }
           default: show();

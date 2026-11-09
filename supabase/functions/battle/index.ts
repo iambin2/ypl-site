@@ -364,7 +364,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
     return withRetry(async () => {
       const { battle, secret } = await read(String(id));
       if (battle.kind === "official") refuse(409, "공식 경기는 대진표의 경기에서 참가해 주세요.");
-      if (battle.kind === "streak") refuse(409, "연승 도전에는 참가할 수 없습니다. 관전만 할 수 있습니다.");
+      if (battle.kind === "streak") refuse(409, "도전의 탑에는 참가할 수 없습니다. 관전만 할 수 있습니다.");
       if (battle.status !== "waiting") refuse(409, "이미 시작된 배틀입니다.");
       // ponytail: four digits with no limit on tries; a friendly room has nothing to take, add a per-battle try count if that changes
       if (battle.room === "code" && String(code ?? "") !== secret.room_code) refuse(403, "방 코드가 맞지 않습니다.");
@@ -472,7 +472,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   async streak(_body, _again, req) {
     const user = await userOf(req!);
     const name = await rpc("streak_trainer_name", { p_user: user });
-    if (!name) refuse(403, "이름이 승인된 Google 계정만 연승 도전을 할 수 있습니다.");
+    if (!name) refuse(403, "이름이 승인된 Google 계정만 도전의 탑에 오를 수 있습니다.");
     const game = await nextGame(name, 0);
     const { data, error } = await db.rpc("streak_start", { p_user: user, ...game.args });
     if (error) {
@@ -606,7 +606,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   async expire({ id }) {
     return withRetry(async () => {
       const { battle, secret } = await read(String(id));
-      if (battle.kind !== "streak" || battle.status !== "active") refuse(409, "진행 중인 연승 도전이 아닙니다.");
+      if (battle.kind !== "streak" || battle.status !== "active") refuse(409, "진행 중인 도전의 탑 판이 아닙니다.");
       if (!(Date.now() > Date.parse(battle.deadline_at ?? "") + 1000)) refuse(409, "아직 시간이 남았습니다.");
       return (await endStreakGame(battle, secret, "p1", "timeout")) && {};
     });

@@ -96,7 +96,7 @@
    battle is left for), the head stands on top, the stage under it, and the deck at the foot over the safe area. The stage takes what
    the head and the deck leave, between 16 to 9 and 4 to 3 of the width; a taller phone gives the room to the deck's keys. */
 .bt-main { display: grid; gap: var(--s3); min-width: 0; align-content: start; }
-.bt-stagebox { min-width: 0; }
+.bt-stagebox { position: relative; min-width: 0; }
 .bt-deck { position: relative; display: grid; gap: var(--s3); min-width: 0; align-content: start; }
 .bt-deck:empty { display: none; }
 @media (max-width: 859px) {
@@ -112,15 +112,13 @@
   .bt-stagebox > .bt-arena { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; }
   .bt-stagebox .bs-stage.hud { flex: 1 1 auto; aspect-ratio: auto; min-height: 56.25vw; max-height: 112vw; }
   .bt-stagebox > .bt-preview { padding: var(--s3) var(--s3) 0; }
-  .bt-deck { flex: none; display: flex; flex-direction: column; gap: var(--s3); padding: var(--s3) var(--s3) calc(var(--s3) + env(safe-area-inset-bottom, 0px)); }
+  .bt-deck { flex: none; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--s3); padding: var(--s3) var(--s3) calc(var(--s3) + env(safe-area-inset-bottom, 0px)); }
   .bt-deck .bt-choices { gap: var(--s3); }
   /* a move key is 64 tall; a tall phone gives it the three lines a desktop key has */
   .bt-deck .bt-move { min-height: var(--h-row2); }
   /* inside the battle the docked keys stand in the deck's flow; their toast stands over the deck */
   .bt-match .dock { position: static; min-height: 0; padding: 0; background: none; box-shadow: none; }
   .bt-match .dock > .toast-panel { left: var(--s3); right: var(--s3); bottom: calc(100% + var(--s3)); z-index: 9; }
-  /* the long press's one-time hint stands over the head for the first turns, never over the stage or the keys */
-  .bt-hint { position: fixed; z-index: 9; top: env(safe-area-inset-top, 0px); left: 0; right: 0; pointer-events: none; }
   /* a long press shows what a thing is; the browser's own selection and callout never come up over the keys */
   .bt-match :is(.bt-deck, .bt-preview, .bt-strip) { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 }
@@ -131,9 +129,11 @@
   .bt-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s3); align-content: start; min-width: 0; }
   .bt-deck .bt-moves { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .bt-deck .bt-move { min-height: var(--h-counter); }
-  .bt-bay { height: 288px; padding: var(--s3) var(--pad); overflow: hidden auto; scrollbar-width: thin; }
 }
 @media (min-width: 1200px) {
+  /* the match is one window and nothing under it: no footer, so the page cannot scroll and nothing jumps when the deck changes
+     (2026-11-09 second round, the user: "배틀이 끝나면 화면이 살짝 위로 스크롤되는 오류", "기본 배틀 화면이 살짝 아래로 스크롤된 상태") */
+  .ypl:has(.bt-match) .site-foot { display: none; }
   .page.page--battle { padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); padding-bottom: var(--s5); }
   .bt-match {
     grid-template-columns: minmax(0, min(100% - 400px - var(--s8), (100svh - var(--nav-height) - 370px) * 16 / 9)) 400px;
@@ -148,7 +148,6 @@
   }
   .bt-side .bt-log { height: 320px; }
 }
-.bt-bay > .bt-card { padding: 0; background: transparent; }
 /* the head's keys: back to the battle page, and on a phone the menu */
 .bt-head-key { flex: none; display: grid; place-items: center; width: var(--h-row); min-height: var(--h-row); color: var(--lit); }
 @media (hover: hover) { .bt-head-key:hover { background: var(--panel-2); } }
@@ -192,10 +191,19 @@
   .bt-win { padding: var(--s1) var(--s2); }
 }
 
-/* the end: the result at 32 (inverted for a win and for anyone watching, a panel for a loss), how it went under it, then 다시하기 and
-   나가기 side by side, docked on a phone */
+/* the end, in the deck's own room (2026-11-09 second round): the replay keys, then one row of the result (32, inverted for a win and
+   for anyone watching, a panel for a loss, how it went under it) and the keys. On a desktop the row is a counter high (84) and the keys
+   stand its height at its right end, so the deck keeps the height the moves had; on a phone the keys stand under the result */
 .bt-end { display: grid; gap: var(--s3); min-width: 0; }
-.bt-end-head { display: grid; gap: var(--s1); padding: var(--s5) var(--pad); animation: y-rise var(--move-light) backwards; }
+.bt-end-row { display: grid; gap: var(--seam); min-width: 0; }
+.bt-end-head { display: grid; align-content: center; gap: var(--s1); min-width: 0; padding: var(--s3) var(--pad); animation: y-rise var(--move-light) backwards; }
+.bt-end-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 860px) {
+  .bt-end-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: var(--h-counter); }
+  .bt-end-row > :only-child { grid-column: 1 / -1; }
+  .bt-end-row > .dock, .bt-end-row > .dock > .bt-end-keys { height: 100%; }
+  .bt-end-row .bt-end-keys > .btn { min-height: 100%; }
+}
 .bt-end-title { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
 .bt-end-line { font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
 .bt-end-head.pn .bt-end-line { color: var(--dim); }
@@ -265,8 +273,9 @@
 .bt-logbox[open] > .bt-logkey { margin-bottom: var(--seam); }
 @media (hover: hover) { .bt-logkey:hover { background: var(--panel-2); } }
 .bt-logkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-/* 기권: a second action at the menu's end (2026-11-09: the dark red key under the bench was one slip from the moves) */
-.bt-forfeit.btn { width: 100%; }
+/* 기권: at the menu's end, a section apart from the rest, in its dark red again so it reads at once as the key that ends the match
+   (2026-11-09, the user: "기권 버튼도 원래 빨간색이라 잘 보였는데 흰색으로 바뀌었네"); it stays far from the moves */
+.bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
 /* the end's other keys, side by side under 다시하기 and 나가기 */
 /* the match's choice rows (파티 정보, 연출 속도) share the column's width in equal cells: nothing in the match slides sideways */
 .bt-match .chips { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); overflow: visible; }
@@ -443,22 +452,28 @@
 
 /* what the stage says over itself (stageFx.js): a turn or the winner across it, an ability's plate; nothing is written over a Pokémon */
 /* a turn or the winner: a solid band across the stage */
-.bt-banner { left: 50%; top: 44%; min-width: 64%; padding: var(--s2) var(--s13); text-align: center; white-space: nowrap; background: var(--panel-2); color: var(--lit); font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
 /* a 연승 도전 game's floor called on the dark court (stageFx.js floorPlate): the floor's number in segments and the floor's five steps
    beside it on the digits' baseline as one stepped shape rising to their height in equal steps (apart, the bars read as a signal
    meter), in the plate's own ink (climbed .382, this game lit, the rest an unlit
    bar's light), so it holds in both themes and inverted for a gatekeeper */
-.bt-banner.bt-floor { display: flex; align-items: flex-end; justify-content: center; gap: var(--s5); min-width: 0; padding: var(--s5) var(--s8); }
-.bt-floor-steps { display: flex; align-items: flex-end; height: var(--h-counter); }
-.bt-floor-steps > i { width: var(--s5); background: currentColor; opacity: var(--off); }
-.bt-floor-steps > i:nth-child(1) { height: 20%; }
-.bt-floor-steps > i:nth-child(2) { height: 40%; }
-.bt-floor-steps > i:nth-child(3) { height: 60%; }
-.bt-floor-steps > i:nth-child(4) { height: 80%; }
-.bt-floor-steps > i:nth-child(5) { height: 100%; }
-.bt-floor-steps > i.won { opacity: var(--opacity-disabled); }
-.bt-floor-steps > i.here { opacity: 1; }
-.bt-banner.bt-floor.inv { background: var(--lit); color: var(--ground); }
+/* a turn (stageFx turnMark): a light along the message window's top edge, and the turn's number in the window's right corner, the
+   clock's square, so time is told in one place; nothing stands over the Pokémon (2026-11-09 second round) */
+.bt-turnline { position: absolute; left: 0; right: 0; top: 0; height: var(--seam); background: var(--lit); transform-origin: 0 50%; }
+.bt-turntab { position: absolute; right: 0; bottom: 0; display: grid; place-items: center; width: var(--say-h); height: var(--say-h); background: var(--panel); color: var(--lit); }
+/* an ability or an item joined to its owner's plate on the seam, the plate's own width (stageFx popup; left, width and the edge it
+   hangs from are set from the plate) */
+.bs-over > .bt-popup.joined { top: auto; right: auto; min-width: 0; max-width: none; padding: var(--s2) var(--s3); text-align: left; }
+.bs-over > .bt-popup.joined.own { top: auto; }
+/* the end said by the arena's own frame (stageFx final): the winner's strip inverted with 승리 over its name, the loser's dimmed with
+   패배 (a tie dims both under 무승부) */
+/* the word stands before the name on the name's own line, so the strip keeps its height and the stage never moves */
+.bt-strip[data-result] .bt-trainer::before { content: var(--result); margin-right: var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 700; }
+.bt-strip.foe[data-result] .bt-trainer::before { content: none; }
+.bt-strip.foe[data-result] .bt-trainer::after { content: var(--result); margin-left: var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 700; }
+.bt-strip[data-lost] > * { opacity: var(--opacity-disabled); }
+.bt-strip[data-won] { background: var(--lit); color: var(--ground); }
+.bt-strip[data-won] :is(.bt-trainer, .bt-strip-more, .bt-who-note) { color: var(--ground); }
+.bt-strip[data-won] .bt-rm .floor { background: var(--ground); }
 .bs-over > .bt-popup { right: 0; top: 24%; display: grid; gap: var(--s1); min-width: 40%; max-width: 64%; padding: var(--s2) var(--s5) var(--s2) var(--s3); background: var(--panel-2); text-align: right; }
 .bs-over > .bt-popup.own { right: auto; left: 0; top: 52%; padding: var(--s2) var(--s3) var(--s2) var(--s5); text-align: left; }
 .bt-popup > small { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -468,6 +483,13 @@
 /* ---------- choices: the moves as cards in their type's colour, the bench as panels with the Pokémon ---------- */
 .bt-choices { display: grid; gap: var(--s5); }
 .bt-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
+/* a move and its info key, one panel split on the seam: the key 44 wide at the move's right end, a step darker in the type's colour,
+   so the information is never a corner of the key that sends the move (2026-11-09) */
+.bt-movebox { display: grid; grid-template-columns: minmax(0, 1fr) var(--h-control); gap: var(--seam); min-width: 0; }
+.bt-move-info { display: grid; place-items: center; color: #FFFFFFD9; background: color-mix(in srgb, var(--type) 44%, #050D1F); transition: background-color var(--move-tone); }
+@media (hover: hover) { .bt-move-info:hover { background: color-mix(in srgb, var(--type) 62%, #050D1F); color: #FFFFFF; } }
+.bt-move-info:focus-visible { outline: var(--line) solid #FFFFFF; outline-offset: calc(var(--line) * -1); }
+.bt-movebox.off > .bt-move-info { filter: grayscale(1); }
 /* a move card: one solid colour, the type's own darkened toward the night so white words read on every type */
 .bt-move { display: grid; align-content: center; gap: var(--s1); min-height: var(--h-row2); padding: var(--s2) var(--s3); text-align: left; color: #FFFFFF;
   background: color-mix(in srgb, var(--type) 62%, #050D1F); transition: background-color var(--move-tone); }
@@ -502,6 +524,7 @@
 .bt-bench-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--seam); }
 /* on a phone the Mega key stands at the bench row's end, a square of the row's height */
 .bt-bench-row.with-mega { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) var(--h-row); }
+@media (min-width: 860px) { .bt-bench-row { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); } .bt-bench-row.with-mega { grid-template-columns: repeat(var(--n), minmax(0, 1fr)) var(--h-row); } }
 .bt-bench-row > .bt-mega { justify-content: center; width: var(--h-row); min-height: var(--h-row); padding: 0; }
 .bt-bench-row > .bt-mega .bt-mega-mark { height: var(--s8); }
 .bt-mega.is-off { cursor: default; }
@@ -605,6 +628,13 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-card-types > .tb-type::before { width: 6px; height: 6px; }
 .bt-card-order { display: grid; place-items: center; flex: none; align-self: flex-start; width: 40px; height: 40px; background: var(--panel-2); color: var(--lit); font-size: var(--t20); line-height: var(--l20); font-weight: 700; }
 .bt-card.on .bt-card-order { background: var(--ground); }
+/* (2026-11-09 second round, the user: "선택하면 타입 칸이 잘려") on a wide screen the pick's number stands on the picture's top left
+   corner, a 32 square over the picture's own cell, so choosing takes no width from the name and the types: beside the name it left
+   the name 58 of a three-across card, cut to 한카... with its types cut under it. The phone keeps it beside the name (below) */
+@media (min-width: 601px) {
+  button.bt-card > .bt-card-head { position: relative; }
+  button.bt-card .bt-card-order { position: absolute; left: 0; top: 0; width: var(--h-strip); height: var(--h-strip); font-size: var(--t15); line-height: var(--l15); }
+}
 .bt-card-hp { display: grid; justify-items: end; gap: var(--s1); flex: none; }
 .bt-card-num { font-size: var(--t15); line-height: var(--l15); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .bt-card > .bt-hp { height: 6px; }
@@ -719,40 +749,6 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-side-title { display: none; }
 @media (min-width: 1200px) { .bt-side > .bt-side-title { display: block; order: -4; margin-bottom: calc(var(--s2) - var(--s3)); } }
 
-/* ---------- the match board (src/pages/battle/Scoreboard.jsx; DESIGN.md "Battle", The big moments): the board of the end.
-   A head strip (the lamp and what this is, what the cells count at the right), then the opponent's row above
-   ours, each a counter: the label over the name at 32, one segment cell at 40, the Pokémon it knocked out. The winner's row inverts;
-   the loser's mutes ---------- */
-/* its seams show its own ground, never the arena's lines through them */
-.bt-board { display: grid; gap: var(--seam); width: min(100% - var(--s5) * 2, 576px); background: var(--ground); }
-.bt-board-head { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-strip); padding: 0 var(--pad); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
-.bt-board-head .lamp { transition: background-color var(--move-tone); }
-.bt-board-say { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bt-board-note { flex: none; color: var(--dim); }
-.bt-board-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--s5); min-height: var(--h-counter); padding: var(--s3) var(--pad); }
-.bt-board-who { display: grid; gap: var(--s1); min-width: 0; }
-.bt-board-label { font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--dim); transition: color var(--move-tone); }
-.bt-board-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); transition: color var(--move-tone); }
-.bt-board-row.inv .bt-board-label { color: var(--ground); }
-/* the loser's row mutes as one: its label never lit over a muted name */
-.bt-board-row.lost :is(.bt-board-label, .bt-board-name, .seg) { color: var(--mute); }
-/* the end: laid on the veil over the arena, in its middle, as a dialog is laid on the veil (DESIGN.md "Sheets"). The veil
-   and the board are the site's own, in its theme, not the arena's night: in light a night board on a white veil lost its winner's
-   inverted row into the veil. The arena overrides the tokens, so the site's are handed through under their own names */
-:root {
-  --site-ground: var(--ground); --site-panel: var(--panel); --site-panel-2: var(--panel-2); --site-rule: var(--rule);
-  --site-lit: var(--lit); --site-dim: var(--dim); --site-mute: var(--mute); --site-signal: var(--signal); --site-off: var(--off); --site-veil: var(--veil);
-}
-.bt-board-host {
-  --ground: var(--site-ground); --panel: var(--site-panel); --panel-2: var(--site-panel-2); --rule: var(--site-rule);
-  --lit: var(--site-lit); --dim: var(--site-dim); --mute: var(--site-mute); --signal: var(--site-signal); --off: var(--site-off);
-  position: absolute; inset: 0; display: grid; place-items: center; background: var(--site-veil); color: var(--lit);
-}
-/* while the board stands on the stage the message window steps aside, so the board is in the middle of all the eye sees: with the
-   window under it, the court read as the stage and the board stood that window's height low, running into it (2026-11-07, the
-   user: "묘하게 중앙이 아닌 것처럼") */
-.bs-stage:has(> .bs-over > .bt-board-host) .bt-say { visibility: hidden; }
-
 /* the target picker (doubles; Choices in BattlePage.jsx): the move keys give way to the field as the stage shows it, the foe's two
    over ours, each place a key the moves' height with the picture, the name, the HP and how the move lands there; a place the move
    cannot reach is muted. 돌아가기 under it brings the moves back */
@@ -801,3 +797,6 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   .bt-end > :not(.dock):not(.bt-end-more) { grid-column: 1 / -1; }
   .bt-end > .bt-end-more > .btn { min-height: var(--h-row); }
 }
+/* the info key's mark: a lowercase i in the Latin type at 20, bold, the one sign every game reads as "what is this" (2026-11-09:
+   the site's boxed info icon read as a split square on a coloured key) */
+.bt-i { font-family: "Albert Sans", sans-serif; font-size: var(--t20); line-height: 1; font-weight: 700; font-style: normal; }

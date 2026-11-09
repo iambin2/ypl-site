@@ -31,7 +31,8 @@ import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from 
 import { claimTimeout, expireStreakGame, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
-import { StairGlyph, StreakBand, StreakEnd, StreakOpen, StreakStake, floorCall, useAccount } from "./battle/Streak.jsx";
+import { StreakBand, StreakEnd, StreakOpen, StreakStake, TrackBar, floorCall, useAccount } from "./battle/Streak.jsx";
+import { liftArrive, liftDrop } from "./battle/lift.js";
 import { floorGame, gameWords, streakFloor } from "../services/streak.js";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
@@ -41,8 +42,6 @@ import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx"
 const REGULATIONS = { "m-c": "M-C", "m-b": "M-B" };
 const FORMATS = [["singles", "싱글"], ["doubles", "더블"]];
 const NAME_KEY = "ypl-battle:name";
-// the long press's one-time hint (DESIGN.md "Battle", Information at hand)
-const HINT_KEY = "ypl-battle:press-hint";
 // a phone (under 860): the battle takes the window and the deck stands at its foot (DESIGN.md "Battle", The play screen)
 const NARROW = "(max-width: 859px)";
 function useNarrow() {
@@ -495,7 +494,7 @@ function BattleOpen({ res, onOpen, go, preset }) {
     if (t !== "open") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
     window.history.replaceState(window.history.state, "", url);
   };
-  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "연승 도전"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"]]} /></div>;
+  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "도전의 탑"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"]]} /></div>;
   if (tab === "live") return <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<LiveHall res={res} rows={live} onOpen={onOpen} /></div>;
   if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} standUp={standUp} onPractice={() => { setFirstFoe("cpu"); changeTab("open"); }} />;
   return tab === "rooms"
@@ -939,6 +938,12 @@ const TURN_BEAT = 680; // a replay's turn stands this long before the next one p
 function useMatchLit() {
   useLayoutEffect(() => {
     const main = document.getElementById("ypl-main");
+    /* a 연승 도전 game gone into by the lift (lift.js): the shut car goes to this screen's stage and opens there, and what stands under
+       it switches on as the doors part, not before (wait: the time until they start to part). The battle's own page frame is set
+       first (on a phone the site's bars step away), so the car is sent to where the stage will stand, not to where it stood a frame
+       before (2026-11-09: it went to the page's old box on a phone) */
+    main?.classList.add("page--battle");
+    const wait = liftArrive(main?.querySelector(".bt-match .bt-stagebox")) || 0;
     const preview = main?.querySelector(".bt-match .bt-preview");
     if (!preview?.querySelector(".bt-card")) { light(main, DUR.leave); return; }
     const side = main.querySelector(".bt-match .bt-side");
@@ -946,11 +951,11 @@ function useMatchLit() {
     // the other side's six are read from the log a frame or two after the preview mounts: ours keep their turn after the six places,
     // and the six take theirs when they are drawn
     const cells = () => [...preview.querySelectorAll(".bt-foe-cell")];
-    lineup([preview.querySelector(".bt-pv-foe .bt-pv-title"), ...Array(6).fill(null)], [...preview.querySelectorAll(".bt-pv-head, .bt-card")]);
+    lineup([preview.querySelector(".bt-pv-foe .bt-pv-title"), ...Array(6).fill(null)], [...preview.querySelectorAll(".bt-pv-head, .bt-card")], -wait);
     const began = performance.now();
     let frame = 0;
     const look = () => {
-      if (cells().length) { lineup([null, ...cells()], [], performance.now() - began); return; }
+      if (cells().length) { lineup([null, ...cells()], [], performance.now() - began - wait); return; }
       if (performance.now() - began < 400) frame = requestAnimationFrame(look);
     };
     look();
@@ -1181,6 +1186,18 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   }, [playing]);
   // the choices keep their place while the turn plays: the room they took stays, so nothing under them moves up and the page never jumps
   const consoleRef = useRef(null);
+  /* on a phone the deck never shrinks within a battle: it keeps the tallest it has stood (the moves and the bench), its keys at the
+     foot, so the stage over it never moves when the end takes the moves' place (2026-11-09 second round: the stage dropped 28) */
+  const deckRef = useRef(null);
+  useLayoutEffect(() => {
+    const el = deckRef.current;
+    if (!el) return;
+    if (!window.matchMedia(NARROW).matches || !(started || ended)) { el.style.minHeight = ""; return; }
+    el.style.minHeight = "";
+    const h = el.offsetHeight;
+    el.dataset.most = String(Math.max(h, Number(el.dataset.most) || 0));
+    el.style.minHeight = `${el.dataset.most}px`;
+  });
   useLayoutEffect(() => {
     const el = consoleRef.current;
     if (!el) return;
@@ -1225,14 +1242,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [foeOpen, setFoeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const narrow = useNarrow();
-  /* Information at hand: on a desktop what the pointer rests on (or the keyboard's focus) shows in the bay; on a phone a long press
-     opens it as a sheet, and the press that opened it chooses nothing */
-  const [tip, setTip] = useState(null);
+  /* Information at hand (2026-11-09 second round, the user: "기술에 i 같이 인포메이션 버튼을 추가하는 게 좋을 것 같은데"): a move,
+     a team preview card and a swap cell carry an info key that opens what it is as the board's sheet, on every width; a long press
+     on a phone opens the same sheet, and the press that opened it chooses nothing. The side bay that showed it on a desktop is gone */
   const [sheetTip, setSheetTip] = useState(null);
-  const [hint, setHint] = useState(() => { try { return !localStorage.getItem(HINT_KEY); } catch { return false; } });
-  const hintTurns = useRef(0);
-  useEffect(() => { if (choosing && hint && ++hintTurns.current > 3) setHint(false); }, [choosing]);
-  useEffect(() => { if (!hint) try { localStorage.setItem(HINT_KEY, "1"); } catch { /* the hint shows again next time */ } }, [hint]);
+  // the stage's box: a run's break between games stands in it once a game is over (Streak.jsx StreakEnd)
+  const [stageBox, setStageBox] = useState(null);
   const pressing = useRef(null);
   const pressStart = e => {
     if (e.target.closest?.("button, summary, [role=button]")) sfx("select");
@@ -1241,7 +1256,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     pressing.current = null;
     if (!el || e.pointerType === "mouse") return;
     const at = { x: e.clientX, y: e.clientY, fired: false };
-    at.timer = setTimeout(() => { at.fired = true; setSheetTip(el.dataset.info); setHint(false); navigator.vibrate?.(8); }, 420);
+    at.timer = setTimeout(() => { at.fired = true; setSheetTip(el.dataset.info); navigator.vibrate?.(8); }, 420);
     pressing.current = at;
   };
   const pressEnd = e => {
@@ -1251,12 +1266,6 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   };
   const pressClick = e => { if (pressing.current?.fired) { e.preventDefault(); e.stopPropagation(); pressing.current = null; } };
   const pressMenu = e => { if (e.target.closest?.("[data-info]")) e.preventDefault(); };
-  const pointAt = e => {
-    if (narrow || (e.type === "pointerover" && e.pointerType !== "mouse")) return;
-    const el = e.target.closest?.("[data-info]");
-    if (el) setTip(el.dataset.info);
-    else if (e.type === "pointerover" && !e.target.closest?.(".bt-bay")) setTip(null);
-  };
   const openParty = seat && party.current ? () => setPartyOpen(true) : null;
   const ownList = () => ownCards(res, party.current || [], {
     active: request?.active || [], maxpp: maxpp.current, field: moveField,
@@ -1325,7 +1334,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       const at = ids.indexOf(row.id), next = at >= 0 ? ids[at + 1] : null;
       if (next) {
         await settle();
-        await enterBattle(next, floorCall(goingIn(".bt-main"), ".bt-main", at + 1)).catch(() => {});
+        await enterBattle(next, floorCall(goingIn(".bt-main"), ".bt-main", at + 1)).catch(() => liftDrop());
         if (on) onOpen(next);
       } else if (Date.now() - from < 600_000) timer = setTimeout(look, 3000);
       else setFollowed(true);
@@ -1353,10 +1362,11 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     <div className="pn bt-head-main">
       {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching; while the
           other side chooses, the busy cell and whose choice is awaited, so a player always knows whether they are the one waited for */}
-      <span className="status t12">{ended ? "종료" : waitWords ? <><Busy h={32} />{waitWords}</> : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
+      <span className="status t12">{ended ? "종료" : waitWords ? <><Busy h={32} />{waitWords}</> : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "도전의 탑" : `도전의 탑 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
       <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
     </div>
-    {gameAt != null && <span className="pn bt-win"><StairGlyph at={floorGame(gameAt)} /><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /></span>}
+    {/* the floor as the lift shows it: its number over its five games, this one lit (2026-11-09: the stair glyph went with the stairs) */}
+    {gameAt != null && <span className="pn bt-win bt-win-floor"><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /><TrackBar at={floorGame(gameAt)} playing={!ended} mini /></span>}
     {started && <span className="pn bt-win"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /></span>}
     {narrow && <button type="button" className="pn bt-head-key" onClick={() => setMenuOpen(true)} aria-label="메뉴" aria-haspopup="dialog"><Icon n="more" size={24} /></button>}
   </div>;
@@ -1382,7 +1392,8 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} />}
     {narrow && logBox}
     <div className="bt-links">
-      {(!seat || ended) && !local && <Button variant="link" onClick={shareHere}>링크 공유</Button>}
+      {(!seat || ended) && <Button variant="link" onClick={shareHere}>{ended ? "리플레이 공유" : "링크 공유"}</Button>}
+      {ended && <Button variant="link" onClick={shareToBoard}>게시판에 공유</Button>}
       {official && <Button variant="link" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button>}
       {ended && log && <Button variant="link" onClick={() => downloadReplay({ row, log, res, perspective, names })}>기록 내려받기</Button>}
     </div>
@@ -1392,16 +1403,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   // the information bay (desktop) and the sheet a long press opens (phone): what the key, the card or the bench cell is
   const tipView = key => tipFor(key, { res, own: () => ownList(), picks: () => (previewParty.current ? ownCards(res, previewParty.current) : []),
     foeCards: () => (scene ? seenCards(res, scene[foe].roster, moveField) : []) });
-  const restTip = !narrow && (started || ended) ? (() => {
-    const out = seat && ownView ? ownList().find(c => c.out) : scene && seenCards(res, scene[perspective].roster, moveField).find(c => c.out);
-    return out ? <MonCard res={res} {...out} key={out.key} explain /> : null;
-  })() : null;
   return (
     <div className="bt-page bt-match" onPointerDown={pressStart} onPointerMove={pressEnd} onPointerUp={pressEnd} onPointerCancel={pressEnd}
-      onClickCapture={pressClick} onContextMenu={pressMenu} onPointerOver={pointAt} onFocus={pointAt}>
+      onClickCapture={pressClick} onContextMenu={pressMenu}>
       <div className="bt-main">
         {narrow && head}
-        <div className="bt-stagebox">
+        <div className="bt-stagebox" ref={setStageBox}>
           {/* a finished battle stands on its stage from the first moment, empty until the leads come out: its replay opens on the
               board saying who plays, never on the team preview (2026-11-07, the user: "처음에 선택 창이 미묘하게 보이는 문제") */}
           {started || ended
@@ -1415,42 +1422,41 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
                 {[foe, perspective].map(side => <FoeSix key={side} res={res} species={preview[side].preview} title={`${names[side]}의 파티`} />)}
               </div>}
         </div>
-        <div className="bt-deck">
-          {hint && narrow && choosing && started && <div className="bt-hint"><Toast>길게 누르면 설명을 볼 수 있습니다.</Toast></div>}
+        <div className="bt-deck" ref={deckRef}>
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} />}
         {watching && started && liveStops && liveStops.stops.length > 1 && <ReplayBar stops={liveStops.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} live={cue == null} onLive={() => jump(Infinity)} />}
         {shownEnded && <section className="bt-end" aria-label="배틀 결과">
-          {/* a player reads their own result first (승리, 패배); anyone watching reads who won. A replay playing from its start
-              keeps it until it reaches the end; the keys under it stand from the first, so the page can be left at any turn */}
-          {revealed && <div className={"bt-end-head " + (seat && row.winner !== seat.side ? "pn" : "inv")}>
-            <b className="bt-end-title">{endTitle}</b>
-            <span className="bt-end-line">{endLine}</span>
-          </div>}
           {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
           {following && !followed && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">다음 판을 기다리는 중…</span></div>}
-          {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || leave) && <Dock>
-            <div className="bt-end-keys">
-              {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
-                : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}
-              {leave && <Button onClick={leave}>나가기</Button>}
-            </div>
-          </Dock>}
-          {/* sharing what was just played, as keys under the two: the replay's link, and a board post that carries it. A battle with
-              the computer has its replay too, by its record on the server (the file of the whole log is under 전체 기록) */}
-          <div className="bt-end-more">
-            <Button size="sm" onClick={shareHere}>리플레이 공유</Button>
-            <Button size="sm" onClick={shareToBoard}>게시판에 공유</Button>
+          {/* the end in the deck's own room (2026-11-09 second round, the user: "승리했을 때 갑자기 전체화면이 되는 것도 안 좋고",
+              "스크롤을 한참 해야 다음 판 도전이 나오는 것도 어이가 없어"): the result and the keys on one row under the replay keys, so
+              the deck keeps the height it had while the moves stood and nothing moves or scrolls. A player reads their own result
+              first (승리, 패배); anyone watching reads who won; a replay playing from its start keeps it until it reaches the end.
+              Sharing went to the menu (링크 공유, 게시판에 공유), and a run's break between games stands in the stage's place */}
+          <div className="bt-end-row">
+            {revealed && <div className={"bt-end-head " + (seat && row.winner !== seat.side ? "pn" : "inv")}>
+              <b className="bt-end-title">{endTitle}</b>
+              <span className="bt-end-line">{endLine}</span>
+            </div>}
+            {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} onInfo={setSheetTip} stage={stageBox} away={autoplay || cue != null}
+              ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || leave) && <Dock>
+              <div className="bt-end-keys">
+                {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
+                  : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}
+                {leave && <Button onClick={leave}>나가기</Button>}
+              </div>
+            </Dock>}
           </div>
         </section>}
         {narrow && pickDock}
         {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
         {seat && !ended && started && <div ref={consoleRef} className="bt-console">
           {choosing ? <Choices key={requestKey(view?.turn, request)} request={request} ghost={lastAsked.current} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
-            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} narrow={narrow} toast={error ? <Toast error>{error}</Toast> : null} />
+            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} onInfo={setSheetTip} narrow={narrow} toast={error ? <Toast error>{error}</Toast> : null} />
             : lockedAsk && <Choices key="locked" locked request={lockedAsk} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
-            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} narrow={narrow} />}
+            field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onInfo={setSheetTip} narrow={narrow} />}
         </div>}
         {error && !choosing && <Dock toast={<Toast error>{error}</Toast>} />}
         </div>
@@ -1459,13 +1465,11 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
         {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
         {head}
-        {/* what is pointed at, or our Pokémon out (Information at hand), right under the head where the eye already is */}
-        {(started || ended) && <section className="pn bt-bay" aria-live="polite" aria-label="정보">{(tip && tipView(tip)) || restTip}</section>}
         {pickDock}
-        {menu}
-        {/* a finished battle has its party beside the stage from the start: mounted with the first lead, it landed under the
-            opening's board as a stop of its own (2026-11-07) */}
+        {/* the party right under the head, where the eye already is (it took the information bay's place, 2026-11-09). A finished
+            battle has it from the start: mounted with the first lead, it landed under the opening's board as a stop of its own (2026-11-07) */}
         {(started || (ended && scene)) && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}
+        {menu}
         {/* the other battles being played, so a watcher goes from one to the next without the lobby: the same event's first */}
         {others.length > 0 && <section className="bt-others" aria-labelledby="bt-others-h">
           <SectionHead id="bt-others-h" title="다른 중계" link="전체 보기" onLink={() => go?.("battle", { tab: "live" })} />
@@ -1541,7 +1545,7 @@ const megaFormOf = (detail, item) => Object.values(detail?.pokedex || {}).find(p
 
 /* locked: the keys of a request already answered, shown dimmed while the turn plays; ghost: the last move request, whose keys stand
    locked over the bench in a forced switch, so the moves keep their place */
-function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast, narrow = false }) {
+function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, onInfo = null, toast, narrow = false }) {
   const root = useRef(null);
   const side = request.side;
   const foeSide = side.id === "p1" ? "p2" : "p1";
@@ -1626,7 +1630,8 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
   const megaRow = active?.canMegaEvo || (holder && !megaSpent);
   const megaOpen = active?.canMegaEvo && !megaTaken && !frozen;
   // the bench: every brought Pokémon not out, one tap to send it in (Showdown keeps them under the moves)
-  const bench = extra => <Bench pokemon={side.pokemon} res={res} label={narrow ? "" : reviving ? "되살릴 포켓몬" : forced ? `${who} 대신 나갈 포켓몬` : trapped ? "교체할 수 없는 상태" : "교체"}
+  // no label over it: the message box asks the question (누구를 내보낼까?), and the row of pictures says it is the bench (2026-11-09)
+  const bench = extra => <Bench pokemon={side.pokemon} res={res}
     narrow={narrow} extra={extra} lit={Boolean(forced || reviving)}
     pick={i => {
       if (frozen) return null;
@@ -1648,8 +1653,9 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
         const power = powerOf(move), moved = power !== (data.basePower || 0);
         const foot = [data.category !== "Status" && data.accuracy !== true && data.accuracy < 100 && `명중 ${data.accuracy}`,
           data.priority ? `우선도 ${data.priority > 0 ? "+" : ""}${data.priority}` : null, SPEED_POWER.has(move.id) && "스피드에 따라"].filter(Boolean).join(" ");
-        return <button key={move.id} type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}${move.disabled ? " off" : ""}`} disabled={off || move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
-          data-info={`move:${move.id}:${type}:${power > 0 ? power : ""}:${move.pp != null ? `${move.pp}/${move.maxpp}` : ""}`} data-key={n + 1} title={narrow ? undefined : `단축키 ${n + 1}`}
+        const info = `move:${move.id}:${type}:${power > 0 ? power : ""}:${move.pp != null ? `${move.pp}/${move.maxpp}` : ""}`;
+        return <div key={move.id} className={`bt-movebox type-${toID(type)}${move.disabled ? " off" : ""}`}><button type="button" className={`bt-move type-${toID(type)}${aiming === i ? " on" : ""}${move.disabled ? " off" : ""}`} disabled={off || move.disabled || sending} onClick={() => choose(move, i)} aria-pressed={aiming === i}
+          data-info={info} data-key={n + 1} title={narrow ? undefined : `단축키 ${n + 1}`}
           aria-label={`${moveName(move.id)}, ${res.text.types[type] || type}, ${CATEGORY[data.category] || ""}${power > 0 ? ` 위력 ${power}${moved && data.basePower > 0 ? `, 기본 ${data.basePower}` : ""}` : ""}, ${data.accuracy === true ? "필중" : `명중 ${data.accuracy}`}${move.pp != null ? `, PP ${move.pp} / ${move.maxpp}` : ""}${shown.map(x => `, ${doubles ? x.f.name + " " : ""}${EFF_WORD[x.m] || effLabel(x.m)}`).join("")}`}>
           <span className="bt-move-top">
             <b className="bt-move-name">{moveName(move.id)}</b>
@@ -1662,7 +1668,11 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
             {/* a move locked in (Outrage, a charging move) is asked without its PP */}
             <span className="bt-move-pp">{move.pp != null ? `${move.pp}/${move.maxpp}` : ""}</span>
           </span>
-        </button>;
+        </button>
+        {/* its own cell on the seam, never a corner of the key: a move goes the moment it is tapped, so a finger reaching for the
+            information must not land on the move. It answers while the keys are locked too */}
+        {onInfo && <button type="button" className="bt-move-info" onClick={() => onInfo(info)} aria-label={`${moveName(move.id)} 설명`}><b className="bt-i" aria-hidden="true">i</b></button>}
+        </div>;
       })}
     </div>;
   /* the type a move goes out as for this Pokémon now (its ability, the weather, the terrain, its form: battleWords.js moveType); the key
@@ -1729,16 +1739,13 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
   const megaWho = active?.canMegaEvo || !holder ? slots[k] : holder;
   const megaKey = off => <button type="button" className={"bt-mega" + (mega ? " on" : "") + (off ? " is-off" : "")} aria-pressed={mega} aria-disabled={off || undefined}
       onClick={() => { if (!off) setMega(!mega); }} aria-label={`${name(megaWho.details)} 메가진화`}
-      data-info={`mega:${species(megaWho.details)}:${megaWho.item || ""}:${megaWhy}`} data-key="m" title={narrow ? undefined : "단축키 M"}>
+      data-info={`mega:${species(megaWho.details)}:${megaWho.item || ""}:${megaWhy}`} data-key="m" title={narrow ? undefined : `${megaWhy || `${name(megaWho.details)} 메가진화`} (M)`}>
       <img className="bt-mega-mark" src="/brand/mega-evolution.png" alt="" draggable="false" />
-      {!narrow && <span className="bt-mega-say"><b>{`${name(megaWho.details)} 메가진화`}</b></span>}
-      {!narrow && <span className="bt-mega-tick" aria-hidden="true">{mega && <Icon n="check" size={20} />}</span>}
     </button>;
   // a forced switch: the bench, under the last moves (and the Mega key) standing off where they were
   if (forced) return <div className="bt-choices forced" ref={root}>
-    {megaRow && !narrow && megaKey(true)}
     {moveKeys(ghost?.active?.[at] || null, true)}
-    {bench(narrow && megaRow && megaKey(true))}
+    {bench(megaRow && megaKey(true))}
     {picks.length > 0 && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
     {toast && <Dock toast={toast} />}
   </div>;
@@ -1770,10 +1777,9 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
     </div>;
   }
   return <div className="bt-choices" ref={root}>
-    {megaRow && !narrow && megaKey(!megaOpen)}
     {moveKeys(active, frozen)}
     {picks.length > 0 && !frozen && <div className="bt-tools"><Button variant="link" onClick={reset}>처음부터 다시 고르기</Button></div>}
-    {bench(narrow && megaRow && megaKey(!megaOpen))}
+    {bench(megaRow && megaKey(!megaOpen))}
     {toast && <Dock toast={toast} />}
   </div>;
 }
@@ -1781,11 +1787,10 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
 
 /* the bench: a row of the brought Pokémon not out, each its picture, name and HP; one that cannot come in is muted. On a phone it is
    the deck's bench row, the Mega key at its end (extra); lit: the bench is what is asked (a forced switch, Revival Blessing) */
-function Bench({ pokemon, res, pick, label, narrow = false, extra = null, lit = false }) {
+function Bench({ pokemon, res, pick, narrow = false, extra = null, lit = false }) {
   const out = pokemon.map((mon, i) => ({ mon, i })).filter(({ mon }) => !mon.active);
   if (!out.length && !extra) return null;
   return <div className={"bt-bench" + (lit ? " lit" : "")}>
-    {label && <span className="t12 dim">{label}</span>}
     <div className={"stack bt-bench-row" + (extra ? " with-mega" : "")} style={{ "--n": out.length }}>
       {out.map(({ mon, i }, n) => {
         const go = pick(i);
