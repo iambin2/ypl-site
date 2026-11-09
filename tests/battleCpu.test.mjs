@@ -140,7 +140,8 @@ test("a computer made afresh for every choice from the last one's memory chooses
     const options = { random, now: () => (t += 5), budgetMs: 15 };
     const kept = createCpu(formatid, options);
     let memory, carried = 0;
-    const battle = startBattle({ formatid, seed: [41, 2, 3, 4], p1: { name: "사람", team: randomTeam(formatid, random) }, p2: { name: "컴퓨터", team: randomTeam(formatid, random, { meta: true }) } });
+    // the parties as the even draw gives them for this seed: a battle in which the computer rules guesses out
+    const battle = startBattle({ formatid, seed: [41, 2, 3, 4], p1: { name: "사람", team: randomTeam(formatid, random, { even: true }) }, p2: { name: "컴퓨터", team: randomTeam(formatid, random, { meta: true, even: true }) } });
     for (let step = 0; step < 300 && !battle.ended; step++) {
       let moved = false;
       for (const side of ["p2", "p1"]) {

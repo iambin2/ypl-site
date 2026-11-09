@@ -46,7 +46,7 @@ if ("worker" in args || process.argv.includes("--worker")) {
     let n = pair * 7919 + 1;
     const rnd = () => { n = (n * 16807) % 2147483647; return n / 2147483647; };
     const teams = job.players ? [job.players[(pair * 2) % job.players.length], job.players[(pair * 2 + 1) % job.players.length]]
-      : [randomTeam(formatid, rnd), randomTeam(formatid, rnd)].map(t => (job.parties === "spiced" ? spiced(t, rnd) : t));
+      : [randomTeam(formatid, rnd, { even: true }), randomTeam(formatid, rnd, { even: true })].map(t => (job.parties === "spiced" ? spiced(t, rnd) : t));
     for (const bSide of ["p1", "p2"]) {
       const aSide = bSide === "p1" ? "p2" : "p1";
       const players = {

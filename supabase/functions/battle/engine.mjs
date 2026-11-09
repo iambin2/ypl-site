@@ -6,6 +6,7 @@ import * as champions from "@pkmn/mods/champions";
 import * as championsregmb from "@pkmn/mods/championsregmb";
 import { requestKey } from "../../../src/services/battleLog.js";
 import RANDOM_SETS from "../../../src/data/random-sets.json" with { type: "json" };
+import { BAND, MASTER_PLAN, PLAN, TIERS, balanced, ratingOf, tierOf } from "../../../src/services/partyBalance.js";
 export { requestKey };
 
 // Pinned in package.json; the deployed function runs the bundle scripts/build-battle-engine.mjs makes of this file. A battle keeps the engine it was played on, so its log can be replayed on it.
@@ -90,18 +91,38 @@ export function setPool(formatid) {
 }
 // a weighted order without repeats (Efraimidis and Spirakis): each one's key is random^(1/weight), largest first
 const weightedOrder = (list, weight, random) => list.map(entry => [Math.pow(random(), 1 / weight(entry)), entry]).sort((a, b) => b[0] - a[0]).map(([, entry]) => entry);
-/* meta: drawn by ladder usage, as the computer's party is. top: only from the most used this many, as the floor's master of a 연승 도전
-   run brings (docs/BATTLE_STREAK.md, 층의 주인) */
-export function randomTeam(formatid, random = Math.random, { meta = false, top = 0 } = {}) {
+/* Every random party is balanced (docs/BATTLE_STREAK.md 11장, src/services/partyBalance.js): one species from each of six tiers of
+   measured strength, and the six shares summing to within BAND of the plan's mean, so who draws what no longer decides a game.
+   meta: within a tier, drawn by ladder usage, as the computer's party is. master: the plan of a 연승 도전 floor's gatekeeper, a tier
+   up. ace: the gatekeeper's own Mega ({ species, stone }, or true for one of the top tier's Megas drawn at random), standing in for
+   the plan's first tier; the other five are balanced as ever.
+   even: every species alike with no balance, as before 2026-11-09 (scripts/rate-species.mjs measures the tiers on these, and the
+   computer's benchmark keeps the parties its table was measured on). top: only from the most used this many (even draws only). */
+export function randomTeam(formatid, random = Math.random, { meta = false, top = 0, even = false, master = false, ace = null } = {}) {
   const all = setPool(formatid);
+  if (!all.length) throw new Error(`no random sets for ${formatid}`);
+  if (!even && balanced(formatid)) {
+    const team = balancedTeam(formatid, all, random, meta, master ? MASTER_PLAN : PLAN, ace && aceOf(formatid, all, ace, random));
+    if (team) return team;
+  }
   const pool = top ? [...all].sort((a, b) => (b.usage || 0) - (a.usage || 0)).slice(0, top) : all;
-  if (!pool.length) throw new Error(`no random sets for ${formatid}`);
-  const dex = DEX_OF_FORMAT[formatid];
   for (let tries = 0; tries < 30; tries++) {
-    const team = [], bases = new Set(), items = new Set();
-    let mega = false;
-    for (const entry of meta ? weightedOrder(pool, e => (e.usage || 0) + 0.01, random) : shuffled(pool, random)) {
-      if (team.length === 6) break;
+    const team = drawInto(formatid, [meta ? weightedOrder(pool, e => (e.usage || 0) + 0.01, random) : shuffled(pool, random)], random);
+    if (team.length === 6 && !validateTeam(formatid, team)) return team;
+  }
+  throw new Error(`could not draw a random party for ${formatid}`);
+}
+/* one Pokémon from each list in turn (the next of the list that fits): one of each species, one set of each drawn by how often it is
+   played, at most one Mega Stone, no item twice. A single list fills all six from it */
+function drawInto(formatid, lists, random, first = null) {
+  const dex = DEX_OF_FORMAT[formatid];
+  const team = [], bases = new Set(), items = new Set();
+  let mega = false;
+  if (first) { team.push(first); bases.add(dex.species.get(first.species).baseSpecies); items.add(first.item); mega = true; }
+  for (const list of lists) {
+    const want = lists.length === 1 && !first ? 6 : team.length + 1;
+    for (const entry of list) {
+      if (team.length >= want) break;
       const base = dex.species.get(entry.species).baseSpecies;
       if (bases.has(base)) continue;
       const sets = mega ? entry.sets.filter(set => !set.mega) : entry.sets;
@@ -114,9 +135,46 @@ export function randomTeam(formatid, random = Math.random, { meta = false, top =
       if (set.mega) mega = true;
       team.push({ name: "", species: entry.species, ability: set.ability, item, moves: [...set.moves], nature: set.nature, evs: { ...set.evs }, ...(set.ivs ? { ivs: { ...set.ivs } } : {}), level: 50 });
     }
-    if (team.length === 6 && !validateTeam(formatid, team)) return team;
   }
-  throw new Error(`could not draw a random party for ${formatid}`);
+  return team;
+}
+/* a gatekeeper's Mega as a party member: its Mega set holding that stone (or a top-tier Mega drawn at random), one set drawn by how
+   often it is played */
+function aceOf(formatid, all, ace, random) {
+  const megas = all.filter(e => e.sets.some(set => set.mega));
+  const entry = ace === true ? shuffled(megas.filter(e => tierOf(formatid, e.species) === 0), random)[0] : all.find(e => e.species === ace.species);
+  const sets = entry?.sets.filter(set => set.mega && (ace === true || set.items.includes(ace.stone))) || [];
+  if (!sets.length) return null;
+  const set = weighted(sets, random);
+  const item = ace === true ? set.items[0] : ace.stone;
+  return { name: "", species: entry.species, ability: set.ability, item, moves: [...set.moves], nature: set.nature, evs: { ...set.evs }, ...(set.ivs ? { ivs: { ...set.ivs } } : {}), level: 50 };
+}
+const tierCache = new Map();
+function balancedTeam(formatid, all, random, meta, fullPlan, first = null) {
+  if (!tierCache.has(formatid)) {
+    const tiers = Array.from({ length: TIERS }, () => []);
+    for (const entry of all) tiers[tierOf(formatid, entry.species)].push(entry);
+    const mean = tiers.map(list => list.reduce((s, e) => s + ratingOf(formatid, e.species), 0) / Math.max(1, list.length));
+    tierCache.set(formatid, { tiers, mean });
+  }
+  const { tiers, mean } = tierCache.get(formatid);
+  // the gatekeeper's Mega stands in the plan's first (strongest) place; the five others are balanced against the rest of the plan
+  const plan = first ? fullPlan.slice(1) : fullPlan;
+  if (plan.some(t => !tiers[t].length)) return null;
+  const target = plan.reduce((s, t) => s + mean[t], 0);
+  let best = null, bestGap = Infinity;
+  for (let tries = 0; tries < 80; tries++) {
+    // the tiers in a new order each time, so the one Mega a party may hold is not always the strongest tier's
+    const lists = shuffled(plan, random).map(t => (meta ? weightedOrder(tiers[t], e => (e.usage || 0) + 0.01, random) : shuffled(tiers[t], random)));
+    const team = drawInto(formatid, lists, random, first);
+    if (team.length !== 6) continue;
+    const gap = Math.abs(team.filter(m => m !== first).reduce((s, m) => s + ratingOf(formatid, m.species), 0) - target);
+    if (gap > BAND && gap >= bestGap) continue;
+    if (validateTeam(formatid, team)) continue;
+    if (gap <= BAND) return team;
+    best = team; bestGap = gap;
+  }
+  return best;
 }
 
 function capture(battle) {

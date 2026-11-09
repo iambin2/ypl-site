@@ -31,8 +31,8 @@ import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from 
 import { claimTimeout, expireStreakGame, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
-import { StreakEnd, StreakOpen, StreakStake, floorCall } from "./battle/Streak.jsx";
-import { gameWords, streakFloor } from "../services/streak.js";
+import { StairGlyph, StreakEnd, StreakOpen, StreakStake, floorCall } from "./battle/Streak.jsx";
+import { floorGame, gameWords, streakFloor } from "../services/streak.js";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
@@ -291,7 +291,11 @@ let dimmed = [];
 export const goingIn = scope => {
   const page = document.querySelector(scope)?.closest(".bt-page");
   if (page) dimmed = dimAway([...page.querySelectorAll(".bt-lobby-set, .bt-lists, .bt-side")]);
-  return goIn(document.querySelector(`${scope} .bs-stage`)).catch(() => {});
+  /* going in from a page scrolled past its stage (a phone choosing a 연승 도전 swap, a rematch under the result) comes back to the
+     stage first, so the court is seen going dark and the floor called on it (2026-11-09) */
+  const stage = document.querySelector(`${scope} .bs-stage`);
+  if (stage && stage.getBoundingClientRect().top < 0) window.scrollTo(0, 0);
+  return goIn(stage).catch(() => {});
 };
 export const standUp = () => { dimmed.forEach(a => a.cancel()); dimmed = []; };
 function CpuRoom({ res, say, go, onLeave, onRestart }) {
@@ -1298,13 +1302,18 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       <div className="bt-side">
         {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
         {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
-        <div className={"pn bt-head" + (gameAt != null ? " floored" : "")}>
-          {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching */}
-          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
-          <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
-          {/* the turn, announced in segment cells beside the names (it stood on the stadium's wall once, splitting the foe's plates) */}
-          {gameAt != null && <span className="bt-head-turn bt-head-floor"><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /><span className="t15">층</span></span>}
-          {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t15">턴</span></span>}
+        {/* the head is a board of modules on the seam (2026-11-09, the user: "01층 09턴 ... 전광판 숫자와 일반 텍스트가 같이 있어서",
+            then "층이랑 턴이라고 텍스트로 명시하지 않더라도 직관적으로"): the match in words on its own panel, and each number in a
+            window of its own with no word: a run's floor beside its five steps (the stairs the run climbs everywhere, lit up to this
+            game), and the turn alone, the two cells that count up as the stage plays each turn */}
+        <div className="bt-head">
+          <div className="pn bt-head-main">
+            {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching */}
+            <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
+            <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
+          </div>
+          {gameAt != null && <span className="pn bt-win"><StairGlyph at={floorGame(gameAt)} /><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /></span>}
+          {started && <span className="pn bt-win"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /></span>}
         </div>
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} />}

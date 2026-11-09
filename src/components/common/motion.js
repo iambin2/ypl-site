@@ -249,6 +249,14 @@ export function gauge(cells, before, after, offValue) {
 }
 export const pause = ms => new Promise(resolve => setTimeout(resolve, reduced() ? 0 : ms));
 
+/* a 연승 도전 run climbs (Streak.jsx): once the board stands, what was just won brightens once in its new light (tone), then what comes
+   next lights rising the last 12, one after another 62 apart: a step of the floor, or a floor of the tower */
+export function climb(won, next) {
+  if (reduced()) return;
+  [].concat(won).forEach(el => el?.animate?.([{ opacity: .382 }, { opacity: 1 }], { duration: DUR.tone, delay: DUR.light, easing: EASE_OUT, fill: "backwards" }));
+  [].concat(next).forEach((el, i) => el?.animate?.(RISE, { duration: DUR.light, delay: DUR.light + DUR.tone + i * STAGGER.display, easing: EASE_OUT, fill: "backwards" }));
+}
+
 /* into a sheet: the pressed row stays where it is, and the sheet's title lights a beat after the sheet starts to rise */
 export function settleTitle(target) {
   if (!target || reduced() || typeof target.animate !== "function") return;

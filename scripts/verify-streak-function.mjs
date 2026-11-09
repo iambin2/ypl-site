@@ -1,7 +1,7 @@
 // Runs the real battle function (supabase/functions/battle/index.ts, transpiled) on PGlite with the real SQL, through a stand-in for
 // the few supabase-js calls it makes, and plays whole 연승 도전 runs: start, every choice, a win opening the next game, the loss,
 // a forfeit. Never connects to Supabase. Run npm run build:battle first (it plays the bundle the deploy uploads).
-//   node scripts/verify-streak-function.mjs <path-to-pglite-dist/index.js>
+//   node scripts/verify-streak-function.mjs <path-to-pglite-dist/index.js> [--sure]
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,9 +11,10 @@ import { randomUUID } from "node:crypto";
 const ROOT = pathToFileURL(resolve(".")).href + "/";
 const file = path => new URL(path, ROOT);
 const { transform } = await import("esbuild");
-const { PGlite } = await import(process.argv[2] ? pathToFileURL(resolve(process.argv[2])).href : "@electric-sql/pglite");
+const { PGlite } = await import(process.argv[2] && !process.argv[2].startsWith("--") ? pathToFileURL(resolve(process.argv[2])).href : "@electric-sql/pglite");
 const { quickChoice, createCpu } = await import(file("src/services/battleCpu.js"));
 const { loadBattle, sideTeam } = await import(file("supabase/functions/battle/engine.mjs"));
+const { STREAK_STEP, swapTier } = await import(file("src/services/streak.js"));
 
 // ---- the database: the live shape (as scripts/verify-streak-db.mjs builds it) plus battle_save, then streak_runs.sql
 const pg = new PGlite();
@@ -84,9 +85,16 @@ try {
   await assert.rejects(call({ action: "streak" }), e => e.status === 401, "no sign-in, no run");
   let seat = await call({ action: "streak" }, user);
   console.log("started", seat.id, seat.run);
-  let games = 0, choices = 0, slowest = 0, wins = 0, lastStreak = null, swappedOnce = false;
-  for (; games < 40; games++) {
+  let games = 0, choices = 0, slowest = 0, wins = 0, lastStreak = null, swappedOnce = false, rerolled = false;
+  const LIMIT = process.argv.includes("--sure") ? 11 : 40;
+  for (; games < LIMIT; games++) {
     const player = createCpu("gen9championsbssregmc", { budgetMs: 200 });
+    // --sure: the computer's Pokémon stand at 1 HP, so a run reaches its swaps, a new party, a new floor and a gatekeeper
+    if (process.argv.includes("--sure")) {
+      const { state } = (await pg.query("select state from public.battle_secrets where battle_id = $1", [seat.id])).rows[0];
+      for (const p of state.sides[1].pokemon) p.hp = Math.min(p.hp, 1);
+      await pg.query("update public.battle_secrets set state = $2::jsonb where battle_id = $1", [seat.id, JSON.stringify(state)]);
+    }
     for (let step = 0; step < 200; step++) {
       const view = await call({ action: "view", id: seat.id, token: seat.token });
       if (view.status !== "active") break;
@@ -105,29 +113,38 @@ try {
     // a won game opens no next game by itself: the run rests until its player presses 다음 판
     const opened = (await pg.query("select count(*)::int as c from public.battles where kind = 'streak' and status = 'active'")).rows[0].c;
     assert.equal(opened, 0, "no game is running while the run rests after a win");
-    /* within a floor the party goes on, and the first win swaps one of ours for one of the party beaten (a swap that would bring a
-       second species or item is refused); a floor's master beaten, the next floor draws a new party (docs/BATTLE_STREAK.md 5장) */
+    /* within a floor the party goes on, and the first win swaps one of ours for one of the party beaten, tier for tier (one of another
+       tier, or one that would bring a second species or item, is refused); the second win draws a new party (reroll); a floor's
+       master beaten, the next floor draws a new party (docs/BATTLE_STREAK.md 5장) */
     const teamOf = async id => (await pg.query("select p1_team from public.battle_secrets where battle_id = $1", [id])).rows[0].p1_team;
     const prev = await teamOf(seat.id);
-    let next = null, took = null;
-    if (wins % 7 !== 0 && !swappedOnce) {
+    let next = null, took = null, fresh = false;
+    if (wins % STREAK_STEP !== 0 && !swappedOnce) {
       const beaten = sideTeam((await pg.query("select input_log from public.battles where id = $1", [seat.id])).rows[0].input_log, "p2");
-      for (const foe of beaten) {
+      const other = beaten.find(foe => swapTier(foe.species) !== swapTier(prev[0].species));
+      if (other) await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token, swap: { give: prev[0].species, take: other.species } }),
+        e => e.status === 409 && /같은 급/.test(e.message), "a swap across tiers is refused");
+      for (const foe of beaten.filter(f => swapTier(f.species) === swapTier(prev[0].species))) {
         try { next = await call({ action: "streakNext", id: seat.id, token: seat.token, swap: { give: prev[0].species, take: foe.species } }); took = foe.species; break; }
         catch (e) { assert.equal(e.status, 409, e.message); }
       }
       swappedOnce = true;
+    } else if (wins % STREAK_STEP !== 0 && !rerolled) {
+      next = await call({ action: "streakNext", id: seat.id, token: seat.token, reroll: true });
+      rerolled = fresh = true;
     }
     next ??= await call({ action: "streakNext", id: seat.id, token: seat.token });
     const now = await teamOf(next.id);
     const species = team => team.map(m => m.species);
-    if (wins % 7 === 0) assert.notDeepEqual(species(now), species(prev), "a new floor draws a new party");
+    if (wins % STREAK_STEP === 0 || fresh) assert.notDeepEqual(species(now), species(prev), "a new floor, or a reroll, draws a new party");
     else if (took) assert.deepEqual(species(now), [took, ...species(prev).slice(1)], "the swap took the beaten one for our first");
     else assert.deepEqual(now, prev, "the party goes on within a floor");
     await assert.rejects(call({ action: "streakNext", id: seat.id, token: seat.token }), e => e.status === 409, "다음 판 opens once");
-    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}${took ? `, swapped ${prev[0].species} for ${took}` : ""}`);
+    console.log(`won game ${games + 1}: run at ${wins}, next ${next.id}${took ? `, swapped ${prev[0].species} for ${took}` : ""}${fresh ? ", new party" : ""}`);
     seat = next;
   }
+  // a run still going after the limit is given up, so it ends as every run does
+  if (lastStreak?.status === "active") lastStreak = (await call({ action: "forfeit", id: seat.id, token: seat.token })).streak;
   console.log(`games ${games + 1}, choices ${choices}, slowest request ${Math.round(slowest)} ms, run wins ${lastStreak?.wins}`);
   const run = (await pg.query("select wins, status from public.streak_runs where auth_user_id = $1", [user])).rows[0];
   assert.equal(run.wins, lastStreak.wins);
@@ -138,7 +155,8 @@ try {
   assert.equal(leftovers, 0, "ended games keep no engine state or readings");
   const ended = (await pg.query("select input_log, winner from public.battles where kind = 'streak' order by created_at")).rows;
   const { replay } = await import(file("supabase/functions/battle/engine.mjs"));
-  for (const g of ended) assert.ok(replay(g.input_log).ended, "every game replays to its end");
+  // --sure edits HP outside the input log, so those games do not replay
+  if (!process.argv.includes("--sure")) for (const g of ended) assert.ok(replay(g.input_log).ended, "every game replays to its end");
   // a new run while none is active, then a forfeit: the run ends at 0
   seat = await call({ action: "streak" }, user);
   const lost = await call({ action: "forfeit", id: seat.id, token: seat.token });

@@ -4,6 +4,7 @@
    말(턴, 승자, 특성, 이름)은 무대 밖의 판(.bs-over)이고 보드의 판(battle.css)이다.
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
 import { DUR, reduced } from "../../components/common/motion.js";
+import { segMarkup } from "../../components/common/seg.js";
 import { playBoard } from "./Scoreboard.jsx";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
@@ -317,6 +318,38 @@ export function banner(stage, text, { tone = "" } = {}) {
     { opacity: 1, transform: "translate(-50%, -50%)", offset: .8 },
     { opacity: 0, transform: "translate(-50%, -50%)" },
   ], { duration: ms(tone === "win" ? 1600 : 760), fill: "both" })).then(() => el.remove());
+}
+/* a 연승 도전 game called on the dark court (Streak.jsx floorCall), as an elevator calls its floor: the floor's number in segments at 84
+   and beside it, on the digits' baseline, the floor's five steps rising to the digits' height (32, 44, 52, 64, 84, as the stairs
+   everywhere), the ones climbed half lit, this game's lit, the rest off. No word (2026-11-09, the user: "2층 1번재 판이라는 팝업 자체도
+   그렇게 감각적이고 심미성이 뛰어나진 않은 것 같아"); a gatekeeper's plate inverts. climbing: the floor's first game after a
+   gatekeeper: the floor below stands first with every step climbed, then its bars switch to the new floor and the steps go out but the
+   first, the changed cell brightening once, as a board's score does */
+const plateSteps = (at, n = 5) => `<span class="bt-floor-steps">${Array.from({ length: n }, (_, i) => `<i class="${i + 1 < at ? "won" : i + 1 === at ? "here" : ""}"></i>`).join("")}</span>`;
+export function floorPlate(stage, { floor, at = 1, climbing = false, master = false }) {
+  const over = overOf(stage);
+  if (!over || instant()) return Promise.resolve();
+  const from = climbing ? floor - 1 : floor, cells = String(floor).length, h = 84;
+  const el = document.createElement("i");
+  el.className = "bt-banner bt-floor" + (master ? " inv" : "");
+  el.innerHTML = segMarkup(String(from), h, cells) + plateSteps(climbing ? 6 : at);
+  over.appendChild(el);
+  const total = ms(climbing ? 1900 : 1100);
+  if (climbing) setTimeout(() => {
+    const was = el.querySelector(".seg");
+    if (!was) return;
+    was.outerHTML = segMarkup(String(floor), h, cells);
+    el.querySelector(".bt-floor-steps").outerHTML = plateSteps(1);
+    const now = [...el.querySelectorAll(".seg .on > g")], old = String(from).padStart(cells, " "), next = String(floor).padStart(cells, " ");
+    now.forEach((g, i) => { if (old[i] !== next[i]) g.animate([{ opacity: .382 }, { opacity: 1 }], { duration: DUR.tone, easing: OUT }); });
+    sfx("select");
+  }, total * .45);
+  return done(el.animate([
+    { opacity: 0, transform: "translate(-50%, -50%) translateY(12px)" },
+    { opacity: 1, transform: "translate(-50%, -50%)", offset: climbing ? .14 : .22, easing: OUT },
+    { opacity: 1, transform: "translate(-50%, -50%)", offset: .86 },
+    { opacity: 0, transform: "translate(-50%, -50%)" },
+  ], { duration: total, fill: "both" })).then(() => el.remove());
 }
 function done(anim) {
   if (!anim?.finished) return Promise.resolve();

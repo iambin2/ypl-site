@@ -486,20 +486,29 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   /* 다음 판: the player of a won streak game opens the run's next one, at the 난이도 its wins call for. Asked by the won game's own
      seat, so a seat lost with an answer can always ask again; the database opens it only once.
      Within a floor the party goes on (the won game's own, as this function drew it), and swap ({ give, take }: species) trades one
-     of it for one of the party just beaten, read off the won game's input log; a new floor draws a new party (streak.js). */
-  async streakNext({ id, token, swap }) {
+     of it for one of the party just beaten, read off the won game's input log, tier for tier; reroll draws a new party as a new floor
+     does (2026-11-09, the user: "포켓몬 리스트를 좀 더 자주 바꿀 수 있다든가"; every party is balanced, so a new one is a new hand, not
+     a better one). A new floor draws a new party (streak.js). */
+  async streakNext({ id, token, swap, reroll }) {
     const { battle, secret } = await read(String(id));
     const side = await seat(secret, token);
     if (battle.kind !== "streak" || side !== "p1" || battle.status !== "ended" || battle.winner !== "p1") refuse(409, "이긴 판에서만 다음 판을 열 수 있습니다.");
     const wins = Number(await rpc("streak_run_wins", { p_battle_id: battle.id })) || 0;
-    let party = !streakFresh(wins) && Array.isArray(secret.p1_team) && secret.p1_team.length === 6 ? secret.p1_team : null;
-    if (party && swap?.give && swap?.take) {
+    let party = !streakFresh(wins) && !reroll && Array.isArray(secret.p1_team) && secret.p1_team.length === 6 ? secret.p1_team : null;
+    // one swap ({ give, take }) or several, one a tier (2026-11-09: as many as the player wishes), applied one after another
+    const swaps = (Array.isArray(swap) ? swap : swap ? [swap] : []).filter(s => s?.give && s?.take).slice(0, 6);
+    if (party && swaps.length) {
       const { data, error } = await db.from("battles").select("input_log").eq("id", battle.id).maybeSingle();
       if (error) throw error;
-      const swapped = swapParty(party, sideTeam(data?.input_log, "p2"), String(swap.give), String(swap.take));
-      if (swapped === "missing") refuse(409, "바꿀 포켓몬을 찾지 못했습니다. 다시 골라 주세요.");
-      if (swapped === "clash" || validateTeam(STREAK_FORMAT, swapped)) refuse(409, "같은 포켓몬이나 같은 도구가 둘이 되어 바꿀 수 없습니다.");
-      party = swapped;
+      const beaten = sideTeam(data?.input_log, "p2");
+      for (const one of swaps) {
+        const swapped = swapParty(party, beaten, String(one.give), String(one.take));
+        if (swapped === "missing") refuse(409, "바꿀 포켓몬을 찾지 못했습니다. 다시 골라 주세요.");
+        if (swapped === "tier") refuse(409, "힘이 같은 급의 포켓몬끼리만 바꿀 수 있습니다.");
+        if (swapped === "clash") refuse(409, "같은 포켓몬이 둘이 되어 바꿀 수 없습니다.");
+        party = swapped;
+      }
+      if (validateTeam(STREAK_FORMAT, party)) refuse(409, "이 교환으로는 파티가 규정에 맞지 않습니다. 다시 골라 주세요.");
     }
     const game = await nextGame(battle.p1_name, wins, party);
     const { error } = await db.rpc("streak_next", { p_battle_id: battle.id, ...game.args });

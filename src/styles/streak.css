@@ -10,12 +10,6 @@
 .streak-hero-board { display: flex; align-items: flex-end; gap: var(--s2); }
 .streak-hero-board > .t20 { line-height: 1; }
 
-/* the ladder: the three computers a run climbs, equal cells on the seam, each one podium column high with the 난이도's Pokémon on its
-   floor; the step the run stands on inverts */
-.streak-ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.streak-step { height: calc(var(--h-counter) + var(--h-row)); padding: var(--pad); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); text-align: left; }
-.streak-step .mon { right: var(--s2); height: calc(62% - var(--floor)); }
-
 /* the end of a won game: the run's wins and the next 난이도's computer on its floor, joined on the seam at 1 to 1.618, the two
    one counter high so their lines meet; after a loss the counter stands alone */
 .streak-end { grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); }
@@ -28,11 +22,53 @@
   .bt-lobby:has(> .streak-side) > .bt-lobby-main { padding-top: calc(var(--l20) + var(--s3)); }
 }
 
-/* a floor: its seven games as equal cells on the seam (Streak.jsx FloorCells), one strip high, the number or 주인 at the cell's centre,
-   the amber lamp of the game being played before it; the won ones inverted, the ones still to come off */
-.streak-floor { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.streak-cell { height: var(--h-strip); display: flex; align-items: center; justify-content: center; gap: var(--s1); padding: 0 var(--s1); min-width: 0; }
+/* a floor: its five games as stairs on the seam (Streak.jsx FloorCells), each step one height of the law higher than the last, so
+   the floor's master stands highest with its 난이도's Pokémon on the top step over 주인; the number at the step's centre, the amber
+   lamp of the game being played before it; the won ones inverted, the ones still to come off */
+.streak-floor { grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; }
+.streak-cell { display: flex; align-items: center; justify-content: center; gap: var(--s1); padding: 0 var(--s1); min-width: 0; }
+.streak-cell[data-step="1"] { height: var(--h-strip); }
+.streak-cell[data-step="2"] { height: var(--h-control); }
+.streak-cell[data-step="3"] { height: var(--h-row); }
+.streak-cell[data-step="4"] { height: var(--h-row2); }
+.streak-cell[data-step="5"] { height: var(--h-counter); padding: 0; }
 .streak-cell.off { color: var(--mute); }
+/* the gatekeeper's step holds only its picture (its floor shrinks to 4, so the picture takes the step) and, while it is played, the
+   amber lamp in its top corner */
+.streak-master > .lamp { position: absolute; left: var(--s2); top: var(--s2); }
+.streak-master > .mon { left: 0; right: 0; width: auto; max-width: 100%; margin-inline: auto; height: calc(100% - var(--floor)); }
+
+/* the tower: three floors, the highest on top, on one grid whose lead column (the floor's number) is the golden major of a step; the
+   floor stood on is its stairs, the others one row each with the 난이도 and the master's Pokémon; the floor below won (inverted), the
+   floor above off */
+.streak-tower { grid-template-columns: minmax(0, 1.618fr) repeat(5, minmax(0, 1fr)); align-items: end; }
+.streak-tower-lead { align-self: stretch; display: flex; align-items: center; justify-content: center; min-height: var(--h-row2); padding: 0 var(--s1); }
+.streak-tower-body { grid-column: span 5; height: var(--h-row2); padding: var(--s2) var(--pad); text-align: left; }
+.streak-tower-body .mon { left: 0; right: 0; width: auto; margin-inline: auto; height: calc(100% - var(--floor)); }
+.streak-tower-body > .streak-unknown { left: 0; right: 0; justify-content: center; }
+.streak-tower .off, .streak-tower .off .dim { color: var(--mute); }
+.streak-cleared { position: absolute; right: var(--pad); top: 0; bottom: 0; display: flex; align-items: center; }
+
+/* a floor's gatekeeper (Streak.jsx Keeper): passed, its Mega as it is; the floor stood on, the Mega's own shape as a silhouette in the
+   board's dim light, standing where the picture would; above, a ? where the picture would stand */
+.streak-shadow { display: block; background: var(--dim); -webkit-mask: no-repeat 50% 100% / contain; mask: no-repeat 50% 100% / contain; }
+.inv .streak-shadow { background: var(--mute); }
+.streak-unknown { position: absolute; right: var(--pad); bottom: var(--floor); top: 0; display: flex; align-items: center; font-style: normal; color: var(--mute); font-size: var(--t32); line-height: var(--l32); font-weight: 700; }
+.streak-master > .streak-unknown { left: 0; right: 0; justify-content: center; }
+.inv .streak-unknown { color: var(--ground); }
+
+/* the steps of a floor as a glyph beside a floor's number (the battle's head): an icon on the 24 grid, five steps touching as one
+   stepped shape and rising in equal steps on the digits' baseline (apart, thin bars read as a signal meter), in the window's own ink:
+   climbed .382, this game lit, the rest an unlit bar's light */
+.streak-glyph { display: flex; align-items: flex-end; width: 24px; height: 24px; }
+.streak-glyph > i { flex: 1 1 0; background: currentColor; opacity: var(--off); }
+.streak-glyph > i:nth-child(1) { height: 20%; }
+.streak-glyph > i:nth-child(2) { height: 40%; }
+.streak-glyph > i:nth-child(3) { height: 60%; }
+.streak-glyph > i:nth-child(4) { height: 80%; }
+.streak-glyph > i:nth-child(5) { height: 100%; }
+.streak-glyph > i.won { opacity: var(--opacity-disabled); }
+.streak-glyph > i.here { opacity: 1; }
 
 /* a game of a run, beside it: which game, the streak riding on it at 32 with 연승 on the baseline, the floor joined under it on the
    seam. A floor's master inverts */
@@ -40,8 +76,12 @@
 .streak-stake-board { display: flex; align-items: flex-end; gap: var(--s2); }
 .streak-stake-board > .t15 { line-height: 1; }
 
-/* the end: the swap, its two sixes a field's step apart */
+/* the end: the swap, its two sixes a field's step apart; our six's head holds 새로 뽑기 at its right end, and a six drawn anew stands
+   as bare floors with ?, as the lobby's random party does; a cell with no match of its tier is disabled */
 .streak-swap { gap: var(--s3); }
 .streak-swap-side { display: grid; gap: var(--s2); }
+.streak-swap-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
 .streak-swap-cell { cursor: pointer; border: 0; font: inherit; color: inherit; }
 .streak-swap-cell.inv { background: var(--lit); color: var(--ground); }
+/* beside the 32 digits of a window, the 24 glyph stands on their baseline: 8 over it makes the two one height, centred together */
+.bt-win > .streak-glyph { margin-top: var(--s2); }

@@ -58,7 +58,7 @@
 .bt-live-say { flex: 1 1 auto; display: flex; align-items: baseline; gap: var(--s2); min-width: 0; white-space: nowrap; overflow: hidden; }
 .bt-live-say > b { font-size: var(--t15); line-height: var(--l15); }
 .bt-live-say > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
-.bt-live .bt-head-turn { flex: none; margin-left: auto; }
+.bt-live .bt-win { margin-left: auto; padding: 0; }
 @media (hover: hover) { .bt-live:hover .bt-strip { background: var(--panel-2); } }
 .bt-live:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 .bt-hall-kind { display: inline-flex; align-items: center; gap: var(--s1); font-weight: 600; white-space: nowrap; }
@@ -115,31 +115,26 @@
   .bt-side .bt-log { height: 320px; }
   .bt-side .bt-rkey { width: var(--h-control); height: var(--h-control); }
 }
-/* the head: the lamp and where the match stands (선출 중, 진행 중, 종료), then the two names large */
-.bt-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s3); row-gap: var(--s1); align-items: center; padding: var(--s3) var(--pad); }
-/* the turn at the head's right end: its cells and the word after them at 15 on their baseline, as a counter reads (Counter, the run's
-   stake), on every screen. A small grey word centred on the cells floated, and a spare dark cell before a floor read as 0 (01층,
-   2026-11-09): a floor has as many cells as digits */
-.bt-head-turn { grid-column: 2; grid-row: 1 / span 2; display: flex; align-items: flex-end; gap: var(--s1); }
-.bt-head-turn > .t15 { line-height: 1; }
-.bt-head > :is(.status, .bt-head-names) { grid-column: 1; }
-.bt-head > .status { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+/* the head: a board of modules on the seam. The match in words on its own panel (the lamp and where it stands, 선출 중, 진행 중,
+   종료, then the two names large), and each number the board announces in a window of its own beside it, with no word (2026-11-09,
+   the user: "01층 09턴 ... 전광판 숫자와 일반 텍스트가 같이 있어서", "층이랑 턴이라고 텍스트로 명시하지 않더라도 직관적으로"): a
+   연승 도전 game's floor stands with its five steps beside it (Streak.jsx StairGlyph), the turn alone. The windows are one width so the
+   two stand as a pair */
+.bt-head { display: flex; gap: var(--seam); }
+.bt-head-main { flex: 1 1 auto; min-width: 0; display: grid; row-gap: var(--s1); align-content: center; padding: var(--s3) var(--pad); }
+.bt-win { flex: none; display: flex; align-items: center; justify-content: center; gap: var(--s2); min-width: var(--h-counter); padding: var(--s2) var(--s3); }
+.bt-head-main > .status { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
 /* what the match is (an event's long name and round) gives way first with an ellipsis; the watchers' count keeps its place */
-.bt-head > .status > .dim { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.bt-head > .status > .bt-head-watch { flex: none; }
+.bt-head-main > .status > .dim { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bt-head-main > .status > .bt-head-watch { flex: none; }
 .bt-head-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
-/* a 연승 도전 game: its floor beside the turn, the same counter with 층 (2026-11-09), so the floor is read at every turn */
-.bt-head.floored { grid-template-columns: minmax(0, 1fr) auto auto; }
-.bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 3; }
-/* on a phone the head is one line, so the stage and the moves under it come up: where the match stands, the names, the turn */
+/* on a phone the match is one line, so the stage and the moves under it come up: where it stands and the names, a row high */
 @media (max-width: 859px) {
-  .bt-head { grid-template-columns: auto minmax(0, 1fr) auto; min-height: var(--h-row); padding: var(--s1) var(--pad); }
-  .bt-head > .status { grid-column: 1; grid-row: 1; }
-  .bt-head > .status > .dim { display: none; }
-  .bt-head > .bt-head-names { grid-column: 2; grid-row: 1; font-size: var(--t15); line-height: var(--l15); }
-  .bt-head-turn { grid-column: 3; grid-row: 1; }
-  .bt-head.floored { grid-template-columns: auto minmax(0, 1fr) auto auto; }
-  .bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 4; }
+  .bt-head { min-height: var(--h-row); }
+  .bt-head-main { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s3); align-items: center; padding: var(--s1) var(--pad); }
+  .bt-head-main > .status > .dim { display: none; }
+  .bt-head-names { font-size: var(--t15); line-height: var(--l15); }
+  .bt-win { padding: var(--s1) var(--s2); }
 }
 
 /* the end: the result at 32 (inverted for a win and for anyone watching, a panel for a loss), how it went under it, then 다시하기 and
@@ -397,6 +392,21 @@
 /* what the stage says over itself (stageFx.js): a turn or the winner across it, an ability's plate; nothing is written over a Pokémon */
 /* a turn or the winner: a solid band across the stage */
 .bt-banner { left: 50%; top: 44%; min-width: 64%; padding: var(--s2) var(--s13); text-align: center; white-space: nowrap; background: var(--panel-2); color: var(--lit); font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
+/* a 연승 도전 game's floor called on the dark court (stageFx.js floorPlate): the floor's number in segments and the floor's five steps
+   beside it on the digits' baseline as one stepped shape rising to their height in equal steps (apart, the bars read as a signal
+   meter), in the plate's own ink (climbed .382, this game lit, the rest an unlit
+   bar's light), so it holds in both themes and inverted for a gatekeeper */
+.bt-banner.bt-floor { display: flex; align-items: flex-end; justify-content: center; gap: var(--s5); min-width: 0; padding: var(--s5) var(--s8); }
+.bt-floor-steps { display: flex; align-items: flex-end; height: var(--h-counter); }
+.bt-floor-steps > i { width: var(--s5); background: currentColor; opacity: var(--off); }
+.bt-floor-steps > i:nth-child(1) { height: 20%; }
+.bt-floor-steps > i:nth-child(2) { height: 40%; }
+.bt-floor-steps > i:nth-child(3) { height: 60%; }
+.bt-floor-steps > i:nth-child(4) { height: 80%; }
+.bt-floor-steps > i:nth-child(5) { height: 100%; }
+.bt-floor-steps > i.won { opacity: var(--opacity-disabled); }
+.bt-floor-steps > i.here { opacity: 1; }
+.bt-banner.bt-floor.inv { background: var(--lit); color: var(--ground); }
 .bs-over > .bt-popup { right: 0; top: 24%; display: grid; gap: var(--s1); min-width: 40%; max-width: 64%; padding: var(--s2) var(--s5) var(--s2) var(--s3); background: var(--panel-2); text-align: right; }
 .bs-over > .bt-popup.own { right: auto; left: 0; top: 52%; padding: var(--s2) var(--s3) var(--s2) var(--s5); text-align: left; }
 .bt-popup > small { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -568,6 +578,8 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-foe-six { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
 .bt-foe-cell { display: grid; justify-items: center; align-content: start; gap: var(--s1); min-width: 0; padding: var(--s2) 6px var(--s3); background: var(--panel); text-align: center; }
 .bt-foe-cell > img { width: 72px; height: 72px; object-fit: contain; }
+/* a cell whose Pokémon is not drawn yet (연승 도전's 새로 뽑기): a ? where the picture stands, as the lobby's random party shows it */
+.bt-foe-cell > .bt-bare { display: grid; place-items: center; width: 72px; height: 72px; font-style: normal; color: var(--mute); font-size: var(--t32); line-height: var(--l32); font-weight: 700; }
 .bt-foe-cell > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 18px; font-weight: 700; }
 .bt-foe-cell > .bt-card-types { justify-content: center; max-width: 100%; }
 .bt-preview > .dock { margin-top: 0; }
@@ -576,7 +588,7 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 @media (max-width: 859px) {
   .bt-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bt-foe-six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .bt-foe-cell > img { width: 52px; height: 52px; }
+  .bt-foe-cell > img, .bt-foe-cell > .bt-bare { width: 52px; height: 52px; }
 }
 @media (max-width: 600px) {
   .bt-card { gap: var(--s2); padding: 10px; }

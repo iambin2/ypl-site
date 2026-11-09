@@ -209,7 +209,8 @@ test("the heights: a strip, the touch floor, a row, a two-line row, a counter (T
 // ---------- seven-segment displays ----------
 test("a segment cell is real: h tall, h / phi wide, its unlit bars at --off (Seven-segment displays)", async () => {
   const { segCells, segWidth } = await import("../src/components/common/seg.js");
-  const seg = src("src/components/common/Seg.jsx");
+  // the bars are drawn in seg.js (segShapes), which Seg.jsx and the stage's floor plate both draw from
+  const seg = src("src/components/common/Seg.jsx") + src("src/components/common/seg.js");
   assert.match(seg, /Math\.round\(h \/ PHI\)/, "width is height over phi");
   assert.match(seg, /w \* \.16/, "a bar is .16 of the width");
   assert.match(seg, /w \* \.32/, "cells stand .32 of the width apart");
