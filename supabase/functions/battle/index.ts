@@ -588,6 +588,18 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
     });
   },
 
+  /* 연승 도전 on the clock (2026-11-09): the computer never owes a choice, so a run's game whose player let the time run out (closed
+     the page, say) was ended only by that player's next choice, and stood on 중계 as 진행 중 with nothing to move. Any screen on it
+     asks once its clock shows nothing left, and the game ends on time by this server's clock, as that next choice would end it. */
+  async expire({ id }) {
+    return withRetry(async () => {
+      const { battle, secret } = await read(String(id));
+      if (battle.kind !== "streak" || battle.status !== "active") refuse(409, "진행 중인 연승 도전이 아닙니다.");
+      if (!(Date.now() > Date.parse(battle.deadline_at ?? "") + 1000)) refuse(409, "아직 시간이 남았습니다.");
+      return (await endStreakGame(battle, secret, "p1", "timeout")) && {};
+    });
+  },
+
   /* An official match: a player of that match takes their side's seat with their party PIN, and plays their
      latest official party. The first one in opens the battle, the second starts it. The same player again (another phone)
      gets a new token for the same seat. */

@@ -100,7 +100,7 @@ export async function cancelBattle(id) {
   keepSeat(id, null);
 }
 
-const PUBLIC = "id, regulation, format_id, engine, status, p1_name, p2_name, turn, winner, ended_by, spectator_log, version, created_at, updated_at, kind, event_id, source_node_key, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, applied_at, apply_error";
+const PUBLIC = "id, regulation, format_id, engine, status, p1_name, p2_name, turn, winner, ended_by, spectator_log, version, created_at, updated_at, kind, event_id, source_node_key, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, applied_at, apply_error, run_id";
 const LIST = "id, status, p1_name, p2_name, turn, winner, ended_by, kind, event_id, source_node_key, p1_entry_id, p2_entry_id, p1_player_id, p2_player_id, applied_at, apply_error, updated_at";
 
 // 공개 행. 진행 중에는 관전 로그만, 끝나면 전체 로그와 입력 기록까지 있다.
@@ -131,6 +131,15 @@ export async function readBattleRow(id) {
   return data;
 }
 export const canRematch = () => rematchSupported;
+/* 중계 of a 연승 도전 run: its games in order (battles.run_id, granted by docs/db/streak_runs.sql). A run goes on only after a win, so
+   a game's place in the list is the wins before it, and the game after a won one is the one its player opened with 다음 판.
+   ponytail: a run's games older than last month are deleted (streak_start), which would undercount a run that long; the run's wins
+   as a public column is the upgrade */
+export async function runGames(runId) {
+  if (!supa || !runId) return [];
+  const { data, error } = await supa.from("battles").select("id").eq("run_id", runId).order("created_at");
+  return error ? [] : (data || []).map(r => r.id);
+}
 // ponytail: the newest 200 of the last 30 minutes, filtered and paged on the device; filter and page on the server if rooms outgrow that
 export async function listOpenRooms() {
   if (!supa || !roomsSupported) return [];

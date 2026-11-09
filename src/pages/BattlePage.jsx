@@ -20,7 +20,7 @@ import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf,
 import { goIn, prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
-import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
+import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, runGames, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
 import { parseBoutKey } from "../services/teamBouts.js";
 import { watchBattleSignal } from "../services/battleSignal.js";
 import { SPEED_POWER, currentTypes, movePower, moveType, weatherSuppressed } from "./battle/battleWords.js";
@@ -28,10 +28,11 @@ import { DEFAULT_LEVEL, LEVELS, LEVEL_IDS, levelOf } from "../services/cpuLevels
 import { collectGraphMatches, evalGraph } from "../services/bracketWinnerPlan.js";
 import { shareLink } from "../services/communityStore.js";
 import { logUpTo, nextStop, prevStop, replayStops, secondsLeft, turnStop } from "../services/battleReplay.js";
-import { claimTimeout, rememberBattle } from "../services/battleWatch.js";
+import { claimTimeout, expireStreakGame, rememberBattle } from "../services/battleWatch.js";
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
-import { StreakEnd, StreakOpen, StreakStake, streakGameLine } from "./battle/Streak.jsx";
+import { StreakEnd, StreakOpen, StreakStake, floorCall } from "./battle/Streak.jsx";
+import { gameWords, streakFloor } from "../services/streak.js";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
@@ -276,7 +277,8 @@ const partySpecies = (row, view) => [
   ...[...String(row?.spectator_log || "").matchAll(/^\|poke\|p[12]\|([^,|]+)/gm)].map(m => m[1]),
 ];
 export async function enterBattle(id, dark) {
-  const ready = Promise.all([readBattleRow(id), viewBattle(id)]).then(async ([row, view]) => {
+  // a watcher going into a run's next game has no seat there: the row is all it reads
+  const ready = Promise.all([readBattleRow(id), readSeat(id) ? viewBattle(id) : null]).then(async ([row, view]) => {
     await preloadSprites(partySpecies(row, view));
     return { row, view };
   });
@@ -1104,6 +1106,13 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     claimed.current = Date.now();
     api.timeout(row.id).then(next => next && onView(next), () => { /* not yet by the server's clock: asked again in a moment */ });
   }, [left, waiting, now]);
+  /* a run's game: its player owes every choice (the computer answers inside the player's request), so no one waited to tell the
+     server, and a game left by its player stood on 중계 forever. Whoever has it open, its player or a watcher, tells it (2026-11-09) */
+  useEffect(() => {
+    if (left !== 0 || row.kind !== "streak" || Date.now() - claimed.current < 5000) return;
+    claimed.current = Date.now();
+    expireStreakGame(row.id).catch(() => { /* not yet by the server's clock: asked again in a moment */ });
+  }, [left, now]);
   // a link to where the replay stands, and from the side being watched
   const shareHere = async () => {
     const extra = { ...(cue != null ? { turn: String(shownTurn) } : {}), ...(!ownView && perspective !== "p1" ? { side: perspective } : {}) };
@@ -1225,6 +1234,42 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     do await new Promise(resolve => requestAnimationFrame(resolve));
     while ((tapeNow.current.playing || performance.now() - from < 50) && performance.now() - from < 800);
   };
+  /* which game of a 연승 도전 run this is, as the wins before it: the seat keeps it from the game's opening, a watcher reads it from
+     the run's games (runGames). It names the game in the head and lights its floor beside the turn, so the floor is read at every
+     turn on a phone too, where the head keeps only one line (2026-11-09, the user: "매턴 몇번째 층인지 확인할 수 있게") */
+  const [runAt, setRunAt] = useState(null);
+  useEffect(() => {
+    if (row.kind !== "streak" || seat?.game) return undefined;
+    let on = true;
+    runGames(row.run_id).then(ids => { const i = ids.indexOf(row.id); if (on && i >= 0) setRunAt(i); });
+    return () => { on = false; };
+  }, [row.id, row.run_id]);
+  const gameAt = row.kind !== "streak" ? null : seat?.game ? seat.game - 1 : runAt;
+  /* 중계 of a run (2026-11-09, the user: "연승 도전 같은 경우는 계속해서 볼 수 있게 해주고. 지기 전까지"): a won game stands on its
+     end until its player opens the next one (다음 판), and the watcher goes into it as the player does, the court going dark and the
+     floor called on it. A lost game ends the run and the watching with it; a run resting longer than ten minutes is let go */
+  const following = !seat && ended && row.kind === "streak" && row.winner === "p1" && Boolean(row.run_id && onOpen);
+  const [followed, setFollowed] = useState(false);
+  useEffect(() => {
+    if (!following || !shownEnded || !revealed) return undefined;
+    let on = true, timer = null;
+    const from = Date.now();
+    const look = async () => {
+      const ids = document.visibilityState === "visible" ? await runGames(row.run_id) : [];
+      if (!on) return;
+      const at = ids.indexOf(row.id), next = at >= 0 ? ids[at + 1] : null;
+      if (next) {
+        await settle();
+        await enterBattle(next, floorCall(goingIn(".bt-main"), ".bt-main", at + 1)).catch(() => {});
+        if (on) onOpen(next);
+      } else if (Date.now() - from < 600_000) timer = setTimeout(look, 3000);
+      else setFollowed(true);
+    };
+    void look();
+    return () => { on = false; clearTimeout(timer); };
+  }, [following, shownEnded, revealed, row.id]);
+  // a watcher leaves for the 중계 tab, at any moment of the battle, not only at its end (2026-11-09)
+  const leave = !seat && onOpen ? () => onOpen(null, null, "live") : onLeave;
   const [again, setAgain] = useState(false);
   const rematch = onRematch && (async () => { if (again) return; setAgain(true); try { await settle(); await onRematch(); } finally { setAgain(false); } });
   const endTitle = row.ended_by === "void" ? "무효" : row.winner === "tie" || !winnerName ? "무승부" : seat ? (row.winner === seat.side ? "승리" : "패배") : `${winnerName} 승리`;
@@ -1250,11 +1295,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       <div className="bt-side">
         {/* on a wide screen the team preview's sections open with a title; the column beside it opens with one too, so both start on one line */}
         {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
-        <div className="pn bt-head">
+        <div className={"pn bt-head" + (gameAt != null ? " floored" : "")}>
           {/* what this match is (an official one's event and round, a run's game) and, while it is played, how many are watching */}
-          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{seat ? streakGameLine(seat) : labels[row.id] ? `연승 도전 ${labels[row.id]}` : "연승 도전"}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
+          <span className="status t12">{ended ? "종료" : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "연승 도전" : `연승 도전 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
           <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
           {/* the turn, announced in segment cells beside the names (it stood on the stadium's wall once, splitting the foe's plates) */}
+          {gameAt != null && <span className="bt-head-turn bt-head-floor"><Seg value={String(streakFloor(gameAt))} h={32} cells={2} label={`${streakFloor(gameAt)}층`} /><span className="t12 dim">층</span></span>}
           {started && <span className="bt-head-turn"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /><span className="t12 dim">턴</span></span>}
         </div>
         {shownEnded && replay && replay.stops.length > 1 && <ReplayBar stops={replay.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
@@ -1269,11 +1315,12 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             <span className="bt-end-line">{endLine}</span>
           </div>}
           {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
-          {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || onLeave) && <Dock>
+          {following && !followed && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">다음 판을 기다리는 중…</span></div>}
+          {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || leave) && <Dock>
             <div className="bt-end-keys">
               {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
                 : official ? <Button variant="main" onClick={() => go?.("bracket", { eventId: row.event_id })}>대진표</Button> : null}
-              {onLeave && <Button onClick={onLeave}>나가기</Button>}
+              {leave && <Button onClick={leave}>나가기</Button>}
             </div>
           </Dock>}
           {/* sharing what was just played, as keys under the two: the replay's link, and a board post that carries it. A battle with
@@ -1298,6 +1345,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {/* 기권 as a key of its own, right under the choices where the thumb is, in its own dark red so it is never taken for
             another key; it asks once before it goes (feedback 2026-11-06: the word at the page's foot was hard to find) */}
         {seat && !ended && <Button className="bt-forfeit" onClick={giveUp}>기권</Button>}
+        {watching && leave && <Button className="bt-leave" onClick={leave}>나가기</Button>}
         {/* a game of a 연승 도전 run, for its player: what it has at stake, the streak riding on it and the floor (Streak.jsx). Under
             the choices and 기권, so on a phone it never pushes the moves away from the stage */}
         {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} />}

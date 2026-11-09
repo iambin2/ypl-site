@@ -144,6 +144,14 @@ try {
   const lost = await call({ action: "forfeit", id: seat.id, token: seat.token });
   assert.deepEqual([lost.status, lost.streak.status, lost.streak.wins], ["ended", "ended", 0]);
   await assert.rejects(call({ action: "join", id: seat.id, name: "끼어들기", team: "random" }), /연승 도전에는 참가할 수 없습니다|이미 시작된/);
+  // a game left by its player: anyone may ask, nothing happens while its clock runs, and once it has run out the game ends on time
+  seat = await call({ action: "streak" }, user);
+  await assert.rejects(call({ action: "expire", id: seat.id }), e => e.status === 409, "not before the clock runs out");
+  await pg.query("update public.battles set deadline_at = now() - interval '5 seconds' where id = $1", [seat.id]);
+  await call({ action: "expire", id: seat.id });
+  const left = (await pg.query("select b.status, b.winner, b.ended_by, r.status as run from public.battles b join public.streak_runs r on r.id = b.run_id where b.id = $1", [seat.id])).rows[0];
+  assert.deepEqual([left.status, left.winner, left.ended_by, left.run], ["ended", "p2", "timeout", "ended"]);
+  await assert.rejects(call({ action: "expire", id: seat.id }), e => e.status === 409, "once");
   console.log("PASS the battle function plays whole 연승 도전 runs on the real SQL");
 } finally {
   globalThis.fetch = realFetch;

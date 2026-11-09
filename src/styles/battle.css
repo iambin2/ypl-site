@@ -125,6 +125,9 @@
 .bt-head > .status > .dim { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .bt-head > .status > .bt-head-watch { flex: none; }
 .bt-head-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t20); line-height: var(--l20); font-weight: 700; letter-spacing: var(--ls20); }
+/* a 연승 도전 game: its floor beside the turn, the same counter with 층 (2026-11-09), so the floor is read at every turn */
+.bt-head.floored { grid-template-columns: minmax(0, 1fr) auto auto; }
+.bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 3; }
 /* on a phone the head is one line, so the stage and the moves under it come up: where the match stands, the names, the turn */
 @media (max-width: 859px) {
   .bt-head { grid-template-columns: auto minmax(0, 1fr) auto; min-height: var(--h-row); padding: var(--s1) var(--pad); }
@@ -132,6 +135,8 @@
   .bt-head > .status > .dim { display: none; }
   .bt-head > .bt-head-names { grid-column: 2; grid-row: 1; font-size: var(--t15); line-height: var(--l15); }
   .bt-head-turn { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: var(--s1); }
+  .bt-head.floored { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+  .bt-head.floored > .bt-head-turn:not(.bt-head-floor) { grid-column: 4; }
 }
 
 /* the end: the result at 32 (inverted for a win and for anyone watching, a panel for a loss), how it went under it, then 다시하기 and
@@ -210,6 +215,8 @@
 .bt-logkey:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 /* 기권: a full key in its own dark red, the one key on the battle screen that is not navy or white */
 .bt-forfeit.btn { --btn-bg: #4A1820; --btn-bg-hover: #6A2230; --btn-fg: #FFFFFF; width: 100%; }
+/* 나가기 for one watching a battle being played, where a player's 기권 stands (2026-11-09) */
+.bt-leave.btn { width: 100%; }
 /* the end's other keys, side by side under 다시하기 and 나가기 */
 /* the match's choice rows (파티 정보, 연출 속도) share the column's width in equal cells: nothing in the match slides sideways */
 .bt-match .chips { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); overflow: visible; }
@@ -578,9 +585,22 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
   .bt-cmove { min-height: 28px; font-size: 12px; }
   .bt-card-stats > span { font-size: 12px; }
   .bt-card-types > .tb-type { height: 18px; padding: 0 4px; font-size: 11px; gap: 4px; }
-  /* two types beside a picture and the pick's number do not fit a phone's card on one line: the second goes under, never cut */
+  /* a type that does not fit goes under, never cut */
   .bt-card-types { flex-wrap: wrap; }
+  /* a card chosen from (the team preview): the pick's number stands beside the name only, and the types run under both, so choosing
+     never takes width from the types and never moves the card (2026-11-09: two types beside the number went to two lines the moment
+     a card was chosen). The name's line keeps the number's height chosen or not. Under 380 the types take the card's whole width */
+  button.bt-card > .bt-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: 32px auto; grid-template-areas: "pic name end" "pic types types"; column-gap: var(--s2); row-gap: var(--s1); }
+  button.bt-card .bt-card-id { display: contents; }
+  button.bt-card .bt-card-pic { grid-area: pic; }
+  button.bt-card .bt-card-name { grid-area: name; }
+  button.bt-card .bt-card-types { grid-area: types; }
+  button.bt-card .bt-card-order { grid-area: end; }
   .bt-cards.one .bt-card-facts, .bt-cards.one .bt-card-moves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 379px) {
+  button.bt-card > .bt-card-head { grid-template-rows: auto auto; grid-template-areas: "pic name end" "types types types"; }
 }
 
 /* the choice so far beside the cards on a wide screen: one row for each place, its number, then who goes there; on a phone only

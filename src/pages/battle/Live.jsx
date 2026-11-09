@@ -4,12 +4,11 @@ import Empty from "../../components/common/Empty.jsx";
 import Loader from "../../components/common/Loader.jsx";
 import { Chips, Counter } from "../../components/common/Board.jsx";
 import { createBattleReader } from "../../services/battleLog.js";
-import { isDoubles } from "../../services/battleService.js";
+import { isDoubles, runGames } from "../../services/battleService.js";
 import { listLiveBoards } from "../../services/battleWatch.js";
 import { listNormalizedBracketRuntimes } from "../../services/normalizedCompetitionService.js";
 import { freshRead } from "../../services/readCache.js";
 import { matchStage } from "../../services/recordsAnalytics.js";
-import { readStreakBoard } from "../../services/visitorAuth.js";
 import { gameWords } from "../../services/streak.js";
 import { Roster, rosterSaid, sceneOf } from "./Stage.jsx";
 
@@ -50,8 +49,8 @@ function sidesOf(res, row) {
 }
 
 /* what each match is, for its head's grey line: an official match's event and round (the bracket as the brackets page reads it), a
-   run's game (the month's board names the live runs with their battle). Read only when such a match is on the list; a read that
-   fails leaves the line with the format alone. */
+   run's game (its place among the run's games, runGames). Read only when such a match is on the list; a read that fails leaves the
+   line with the format alone. */
 export function useLabels(rows) {
   const [labels, setLabels] = useState({});
   const official = (rows || []).filter(r => r.kind === "official").map(r => r.id).join();
@@ -67,9 +66,11 @@ export function useLabels(rows) {
           if (b) said[r.id] = [b.name, stage].filter(Boolean).join(" ");
         }
       }),
-      streak && readStreakBoard().then(board => {
-        for (const x of board || []) if (x.battle_id) said[x.battle_id] = gameWords(x.wins);
-      }),
+      // the month's board names only each account's best run, so a run below it went unnamed: a run is named by its own games
+      streak && Promise.all(rows.filter(x => x.kind === "streak" && x.run_id).map(r => runGames(r.run_id).then(ids => {
+        const at = ids.indexOf(r.id);
+        if (at >= 0) said[r.id] = gameWords(at);
+      }))),
     ].map(p => Promise.resolve(p).catch(() => null))).then(() => { if (on) setLabels(said); });
     return () => { on = false; };
   }, [official, streak]);

@@ -48,12 +48,17 @@ export async function listBattlesById(ids) {
 export async function listLiveBoards() {
   if (!supa) return [];
   const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-  const { data, error } = await supa.from("battles").select(`${COLUMNS}, spectator_log, event_id, source_node_key`).eq("status", "active").gte("updated_at", since)
+  const { data, error } = await supa.from("battles").select(`${COLUMNS}, spectator_log, event_id, source_node_key, run_id, deadline_at`).eq("status", "active").gte("updated_at", since)
     .order("updated_at", { ascending: false }).limit(30);
-  return error ? [] : data || [];
+  /* a battle whose clock ran out a minute ago and that nobody ended has been left by its players: it can no longer move, so it is not
+     shown as being played (2026-11-09: a run's game left by its player stood on 중계 for half an hour) */
+  const gone = Date.now() - 60_000;
+  return error ? [] : (data || []).filter(r => !r.deadline_at || Date.parse(r.deadline_at) > gone);
 }
 
 // the deadline of the decision a battle waits on is read with its row (battleService.js readBattleRow)
+// a 연승 도전 game whose clock ran out is ended on time by any screen on it, its player's or a watcher's (the battle function's expire)
+export const expireStreakGame = id => callFunction("battle", { action: "expire", id });
 // the waiting player tells the server the other's time is up; the server checks the deadline by its own clock and ends the battle
 export function claimTimeout(id) {
   const seat = readSeat(id);

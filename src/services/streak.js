@@ -9,9 +9,6 @@ export const STREAK_BATTLE_FORMAT = "singles";
 // 일곱 판이 한 층(본가와 같은 묶음). 일곱 번째 판은 층의 주인이다
 export const STREAK_STEP = 7;
 export const STREAK_LEVELS = ["porygon", "porygon2", "porygonz"];
-// 층의 앞 세 판은 그 층의 난이도, 뒤 세 판과 층의 주인은 한 단계 위(마지막 단계는 그대로). 판마다 조금씩 올리는 것은 재 보니
-// 300판에서 차이가 보이지 않아 버렸다(BATTLE_COMPUTER.md 5장, 2026-11-08): 잰 단계만 쓴다
-export const STREAK_HALF = 3;
 // 층의 주인의 파티: 래더에서 가장 많이 쓰는 이만큼의 포켓몬에서만 뽑는다(randomTeam top)
 export const MASTER_TOP = 24;
 /* Edge Function에서 생각할 시간. 가장 느린 수가 예산의 약 2.2배라 400 ms면 1초 안이다(4장: 30판 324수에서 최대 815 ms).
@@ -28,12 +25,9 @@ export const streakMaster = wins => floorGame(wins) === STREAK_STEP;
 // 이 판이 층의 첫 판인가: 층마다 파티를 새로 받는다(그 안에서는 이어 가고, 이길 때마다 상대 하나와 바꿀 수 있다)
 export const streakFresh = wins => floorGame(wins) === 1;
 
-// 이 판의 난이도
-export const streakLevel = wins => {
-  const base = Math.min(STREAK_LEVELS.length - 1, streakFloor(wins) - 1);
-  const up = floorGame(wins) > STREAK_HALF ? 1 : 0;
-  return STREAK_LEVELS[Math.min(STREAK_LEVELS.length - 1, base + up)];
-};
+/* 이 판의 난이도: 한 층이 난이도 하나다(1층 폴리곤, 2층 폴리곤2, 3층부터 폴리곤Z). 층의 주인도 그 층의 난이도이고 파티로 더 세다
+   (streakFoeDraw). 2026-11-09 사용자가 주인을 폴리곤, 폴리곤2, 폴리곤Z로 맞추며 고른 규칙(BATTLE_STREAK.md 5장) */
+export const streakLevel = wins => STREAK_LEVELS[Math.min(STREAK_LEVELS.length - 1, streakFloor(wins) - 1)];
 // 이 판의 컴퓨터를 만드는 createCpu 옵션
 export const streakCpuOptions = wins => {
   const id = streakLevel(wins);

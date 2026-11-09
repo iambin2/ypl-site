@@ -10,9 +10,9 @@ test("a floor is seven games, the seventh its master, and a new floor brings a n
   assert.deepEqual([0, 1, 7, 8, 14].map(streakFresh), [true, false, true, false, true]);
 });
 
-test("the 난이도 rises at the middle of each floor, the master stands with the upper half, and the last step stays", () => {
+test("a floor is one 난이도, its master included, and the last step stays", () => {
   const ladder = [0, 2, 3, 6, 7, 9, 10, 13, 14, 16, 17, 20, 100].map(streakLevel);
-  assert.deepEqual(ladder, ["porygon", "porygon", "porygon2", "porygon2", "porygon2", "porygon2", "porygonz", "porygonz", "porygonz", "porygonz", "porygonz", "porygonz", "porygonz"]);
+  assert.deepEqual(ladder, ["porygon", "porygon", "porygon", "porygon", "porygon2", "porygon2", "porygon2", "porygon2", "porygonz", "porygonz", "porygonz", "porygonz", "porygonz"]);
   assert.ok(STREAK_LEVELS.every(id => LEVELS[id]), "every step is a 난이도 the computer knows");
 });
 

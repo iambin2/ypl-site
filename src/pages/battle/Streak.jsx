@@ -4,7 +4,7 @@
    under it), and beside it the run itself: its streak lit at 84, the floor it stands on, the floors it climbs, and the month's board.
    Its games are played as any server battle (BattleRoom), and the battle function answers as the computer; what a game's answer says
    of the run is kept with the seat (battleService.js). Going into a game is the lobby's going in: the court goes dark while the game
-   and its pictures are read (BattlePage.jsx enterBattle), and a floor's master is called on the dark court before it lights. */
+   and its pictures are read (BattlePage.jsx enterBattle), and the game's floor is called on the dark court before it lights. */
 import React, { useEffect, useState } from "react";
 import Button from "../../components/common/Button.jsx";
 import Seg from "../../components/common/Seg.jsx";
@@ -27,12 +27,10 @@ const monthOf = back => {
   if (m < 1) { m += 12; y -= 1; }
   return { key: `${y}-${String(m).padStart(2, "0")}-01`, label: `${m}월` };
 };
-// which game of the run this is, said while it is played (연승 도전 2층 4번째 판); the seat keeps it from the game's opening
-export const streakGameLine = seat => (seat?.game ? `연승 도전 ${gameWords(seat.game - 1)}` : "연승 도전");
 /* the floors a run climbs, each the games it stands for (1~7판, 8~14판, 15판부터) and its master, whose 난이도's Pokémon stands on the
-   floor under the word 주인 (streak.js: a floor's second half and its master stand one step above its first half) */
+   floor under the word 주인 (streak.js: a floor is one 난이도, its master included: 폴리곤, 폴리곤2, 폴리곤Z) */
 const STEPS = STREAK_LEVELS.map((id, i) => ({
-  id, floor: i + 1, master: streakLevel(i * STREAK_STEP + STREAK_STEP - 1),
+  id, floor: i + 1, master: id,
   games: i < STREAK_LEVELS.length - 1 ? `${i * STREAK_STEP + 1}~${(i + 1) * STREAK_STEP}판` : `${i * STREAK_STEP + 1}판부터`,
 }));
 // the month's board, read once at a game's end to know whether the run is the account's best this month (null while read or when it cannot be)
@@ -101,10 +99,12 @@ function useRun() {
   return run;
 }
 
-/* going into a floor's master: when the court has gone dark, its plate says who comes before the team preview lights (DESIGN.md
-   "Battle", 연승 도전), so the seventh game is met as a scene of its own. wins: the wins before the game gone into */
-const masterCall = (dark, scope, wins) => (!streakMaster(wins) ? dark
-  : dark.then(() => banner(document.querySelector(`${scope} .bs-stage`), `${streakFloor(wins)}층의 주인`)).catch(() => {}));
+/* going into a game of a run: when the court has gone dark, its plate says which floor and game comes before the team preview lights
+   (DESIGN.md "Battle", 연승 도전), 1층 1번째 판, and the seventh as a scene of its own, 1층의 주인. wins: the wins before the game gone
+   into; null (a game being played, gone back into) calls nothing */
+export const floorWords = wins => (streakMaster(wins) ? `${streakFloor(wins)}층의 주인` : gameWords(wins));
+export const floorCall = (dark, scope, wins) => (wins == null ? dark
+  : dark.then(() => banner(document.querySelector(`${scope} .bs-stage`), floorWords(wins))).catch(() => {}));
 
 /* the run lit: its streak at 84 (this device's run while it goes on, else the month's best of the account; dark when there is none),
    the floor the run stands on, then the floors, the one it stands on inverted. No line explains the rule; the floors show it */
@@ -159,7 +159,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp }) {
     const dark = goingIn(".bt-lobby-main");
     try {
       const made = await make();
-      await enter(made.id, masterCall(dark, ".bt-lobby-main", next));
+      await enter(made.id, floorCall(dark, ".bt-lobby-main", next));
       onOpen(made.id);
     } catch (e) {
       await dark;
@@ -258,7 +258,7 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, set
     const dark = goingIn(".bt-main");
     try {
       const made = await make();
-      await enter(made.id, masterCall(dark, ".bt-main", next));
+      await enter(made.id, floorCall(dark, ".bt-main", next));
       onOpen(made.id);
     } catch (e) { await dark; standUp(); setError(e.message); setBusy(false); }
   };
