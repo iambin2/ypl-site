@@ -824,7 +824,8 @@ export async function final(stage, { winner, perspective }) {
     [...el.children].forEach(c => c.animate([{ opacity: 1 }, { opacity: .382 }], { duration: ms(420), easing: OUT, fill: "backwards" }));
   }
   if (tie) return wait(900);
-  await wait(420);
+  /* the winner's strip lights in the same frame the loser's goes out and the message and the deck turn to the result: lit 420 after
+     them, it came late, after everything else had changed (2026-11-10, the user: "다른 것 다 전환되고 뒤늦게 따라오는 느낌") */
   const won = strip(winner);
   if (!won) return;
   won.dataset.result = "";

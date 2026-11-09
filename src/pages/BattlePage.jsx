@@ -46,10 +46,17 @@ const NAME_KEY = "ypl-battle:name";
 const HINT_KEY = "ypl-battle:hold-hint";
 // a phone (under 860): the battle takes the window and the deck stands at its foot (DESIGN.md "Battle", The play screen)
 const NARROW = "(max-width: 859px)";
-function useNarrow() {
-  const [on, setOn] = useState(() => window.matchMedia(NARROW).matches);
+/* the team preview stands in one window at every size (2026-11-10, the user: "선출화면에서 스크롤이 없도록 다시 설계해줄래?"): on a
+   desktop too short for the whole cards, the cards are the phone's short ones with the i key that opens the set (DESIGN.md "Battle",
+   The team preview). The heights are where the cards without their stats row stop fitting under the bar (from 1200), or above 선출
+   확정 under them (860 to 1199) */
+const SHORT_PICK = "(min-width: 1200px) and (max-height: 699px), (min-width: 860px) and (max-width: 1199px) and (max-height: 839px)";
+// from 1200 the column beside the stage holds the pick; under it the pick stands right under the cards
+const WIDE = "(min-width: 1200px)";
+function useNarrow(query = NARROW) {
+  const [on, setOn] = useState(() => window.matchMedia(query).matches);
   useEffect(() => {
-    const m = window.matchMedia(NARROW), f = () => setOn(m.matches);
+    const m = window.matchMedia(query), f = () => setOn(m.matches);
     m.addEventListener("change", f);
     return () => m.removeEventListener("change", f);
   }, []);
@@ -1272,6 +1279,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [foeOpen, setFoeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const narrow = useNarrow();
+  const shortPick = useNarrow(SHORT_PICK), wide = useNarrow(WIDE);
   /* Information at hand. A move held (a finger, or the mouse's button) fills a light along its key as the hold counts, and once full
      its card stands in the deck's own place over the moves and the bench until it is let go: the deck keeps its size, nothing grows
      over the stage, and nothing comes up because a pointer rests on a key (2026-11-10, the user: "커서만 올려놔도 계속 설명이 뜨는 것도
@@ -1466,7 +1474,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
                 said={tape.said} ask={boxAsk} known={ownView ? known.current : []} onParty={openParty} onFoeParty={narrow && scene ? () => setFoeOpen(true) : null} />
             : seat && previewParty.current
             ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
-                locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} onInfo={narrow ? i => setSheetTip(`pick:${i}`) : null}
+                locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} onInfo={narrow || shortPick ? i => setSheetTip(`pick:${i}`) : null}
                 stake={row.kind === "streak" && narrow ? <StreakBand wins={seat.wins ?? 0} /> : null} keeper={row.kind === "streak" && streakMaster(seat.wins ?? 0)} />
             : <div className="bt-preview">
                 {[foe, perspective].map(side => <FoeSix key={side} res={res} species={preview[side].preview} title={`${names[side]}의 파티`} />)}
@@ -1500,7 +1508,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             </Dock>}
           </div>
         </section>}
-        {narrow && pickDock}
+        {!wide && pickDock}
         {/* the game asks only once the stage has played what came before: a choice never appears over a turn still on stage */}
         {/* the locked keys stay until the end takes their place: a battle that ended while its last turn still played emptied the deck,
             and on a phone the stage grew into it and drew black for a frame (2026-11-09, measured) */}
@@ -1522,7 +1530,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {head}
         {/* a 도전의 탑 game's stake on its team preview stands under the head on a desktop, so the pick stays in one window */}
         {!started && !ended && row.kind === "streak" && seat && <StreakBand wins={seat.wins ?? 0} />}
-        {pickDock}
+        {wide && pickDock}
         {/* the party right under the head, where the eye already is (it took the information bay's place, 2026-11-09). A finished
             battle has it from the start: mounted with the first lead, it landed under the opening's board as a stop of its own (2026-11-07) */}
         {(started || (ended && scene)) && <TeamInfo key={ownView ? "seat" : `watch${perspective}`} res={res} sides={infoSides} />}

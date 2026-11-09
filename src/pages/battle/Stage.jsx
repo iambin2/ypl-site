@@ -8,7 +8,8 @@ import * as fx from "./stageFx.js";
 import * as cam from "./stageCamera.js";
 import { cry, loadCry } from "./cries.js";
 import { sfx, conditionSound } from "./sfx.js";
-import { DUR, fall, light } from "../../components/common/motion.js";
+import { DUR, EASE_OUT, fall, light, reduced } from "../../components/common/motion.js";
+import { boardOff, boardOn } from "./changeover.js";
 import { HIDDEN_VOLATILES, STAT, STATUS, currentTypes, effLabel, effectType, effectWord, effectiveness, maxPP } from "./battleWords.js";
 // the words and the matchups live in battleWords.js (plain JS, so the battle tests read them as the screen does)
 export { STATUS, effLabel, effectWord, effectiveness };
@@ -303,13 +304,19 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             const fresh = first && !stageRef.current;
             // the plates wait for the leads: on a stage already standing (a replay's start) they go out before anything is shown
             if (first && stageRef.current) stageRef.current.classList.add("bs-intro");
-            /* the team preview goes before the stage takes its place, sinking 12 as it goes dark, with the pick beside it (2026-11-08,
-               the user: the start was not natural; the lit cards cut to the dark court in one frame) */
-            if (fresh) await Promise.all([...document.querySelectorAll(".bt-match .bt-preview, .bt-match .bt-pickdock")].map(fall));
+            /* the board changes over (changeover.js): blank panels switch on over the team preview from the middle out while the pick
+               beside it sinks away, the court takes the room under them, and they switch off on it (2026-11-08, the user: the lit
+               cards cut to the dark court in one frame; 2026-11-10: a transition of its own, not the lift) */
+            const board = fresh ? await Promise.all([boardOff(document.querySelector(".bt-match .bt-stagebox")),
+              ...[...document.querySelectorAll(".bt-match .bt-pickdock")].map(fall)]).then(([b]) => b) : null;
             standing.delete(k);
             show();
+            // the panels switch off on the court once it stands, lamps off (hideAll below runs in this same frame, before their beat)
+            const uncovered = boardOn(board);
             // the column beside it is the battle's now (its moves, its party), and lights as the stage stands
             if (fresh) light(document.querySelector(".bt-match .bt-side"), DUR.leave);
+            // and so do the keys under the stage, which came with it, instead of standing at once while the panels still cover it
+            if (fresh) light(document.querySelector(".bt-match .bt-deck"), DUR.leave);
             // the stage mounts with the first lead, so it is read again here
             const st = stageRef.current;
             // the opening (DESIGN.md "Battle", The big moments): the lamps switch on, then the throws
@@ -326,7 +333,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
                 const top = (st.closest(".bt-arena") || st).getBoundingClientRect().top - bar;
                 if (top < 0) window.scrollBy({ top, behavior: "instant" });
                 // the pictures go onto the GPU one a frame while the lamps are off, so the lamps and the throws never stop for an upload
-                await fx.warm(st, ["p1", "p2"].flatMap(s => R.state.sides[s].preview.map(spriteUrl)));
+                await Promise.all([fx.warm(st, ["p1", "p2"].flatMap(s => R.state.sides[s].preview.map(spriteUrl))), uncovered]);
               }
               await fx.opening(st);
             }
@@ -381,8 +388,9 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             /* the end (DESIGN.md "Battle", The big moments): the camera holds on the wide shot (2026-11-06: its push onto the winner
                moved the whole screen for no reason) and the match board lights over the arena: the Pokémon each side knocked out switch
                on, then the winner's row inverts with 승리 and the loser's dims; that is the celebration */
-            show(); await toWide();
-            await fx.final(stage, { winner: event.winner, perspective });
+            // the strips turn with the message, not after the camera has settled
+            show();
+            await Promise.all([toWide(), fx.final(stage, { winner: event.winner, perspective })]);
             break;
           }
           default: show();
@@ -529,12 +537,40 @@ function Strip({ side, scene, name, res, known, onParty }) {
       <Roster list={list} slots={own || s?.roster?.length >= SIX ? 0 : SIX} label={`${name}의 파티, ${rosterSaid(res, list)}`} />
       {onParty && <span className="bt-strip-more" aria-hidden="true"><Icon n="chevr" size={16} />{own ? "내 파티" : "파티"}</span>}
       </span>
-      {(s?.conditions || []).length > 0 && <span className="bt-conds">
-        {s.conditions.map(c => <span key={c} className={`bt-cond type-${effectType(c)}`}>{`${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`}
-          {turnsLeft(c, s.since[c], scene.turn) && <span>{turnsLeft(c, s.since[c], scene.turn)}</span>}</span>)}
-      </span>}
     </Tag>
   );
+}
+
+/* the HUD's tags (DESIGN.md "Battle", The HUD): a side's conditions by its plates, the field's under the foe's. Each lights in as it
+   comes and goes out where it stood before it leaves, so a hazard laid or a screen ending never cuts the line (2026-11-10, the user:
+   the strip grew "전환 애니메이션 없이 갑자기 뚝 하고") */
+function Tags({ tags }) {
+  const shown = useRef([]);
+  const [, redraw] = useState(0);
+  const now = Date.now(), here = new Set(tags.map(t => t.key)), list = [...tags];
+  // a tag gone from the scene keeps its place, behind the one it followed, until it has gone out
+  shown.current.forEach((t, i) => {
+    if (here.has(t.key)) return;
+    const out = t.out || now;
+    if (now - out >= DUR.leave) return;
+    const after = shown.current.slice(0, i).reverse().find(p => list.some(m => m.key === p.key));
+    list.splice(after ? list.findIndex(m => m.key === after.key) + 1 : 0, 0, { ...t, out });
+  });
+  shown.current = list;
+  const leaving = list.some(t => t.out);
+  useEffect(() => { if (!leaving) return; const t = setTimeout(() => redraw(n => n + 1), DUR.leave); return () => clearTimeout(t); });
+  // the ones that stay slide into the room a tag left (or a ×2 took) from where they stood, never jumping
+  const box = useRef(null), at = useRef(new Map());
+  useLayoutEffect(() => {
+    const was = at.current;
+    at.current = new Map([...(box.current?.children || [])].map(el => {
+      const p = was.get(el.dataset.k), dx = p ? p[0] - el.offsetLeft : 0, dy = p ? p[1] - el.offsetTop : 0;
+      if ((dx || dy) && !reduced()) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: DUR.light, easing: EASE_OUT });
+      return [el.dataset.k, [el.offsetLeft, el.offsetTop]];
+    }));
+  });
+  return <div ref={box} className="bt-fieldchips">{list.map(t => <span key={t.key} data-k={t.key} className={(t.type ? `type-${t.type}` : "") + (t.out ? " out" : "")}>
+    {t.word}{t.left && <span>{t.left}</span>}</span>)}</div>;
 }
 
 // the message window over the bottom of the stage: the newest line lit, the one before it dim; when the game asks
@@ -575,9 +611,14 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
     fx.field(st, { weather: scene?.weather || "", fields, foe: { conditions: scene?.[foe]?.conditions || [], layers: scene?.[foe]?.layers || {} }, own: { conditions: scene?.[perspective]?.conditions || [], layers: scene?.[perspective]?.layers || {} } });
   });
   const chips = [
-    scene?.weather && [res.text.default[scene.weather]?.weatherName || scene.weather, turnsLeft(scene.weather, scene.weatherSince, scene.turn)],
-    ...fields.map(f => [effectWord(res, f), turnsLeft(f, scene.fieldSince[f], scene.turn)]),
+    scene?.weather && { key: scene.weather, word: res.text.default[scene.weather]?.weatherName || scene.weather, left: turnsLeft(scene.weather, scene.weatherSince, scene.turn) },
+    ...fields.map(f => ({ key: f, word: effectWord(res, f), left: turnsLeft(f, scene.fieldSince[f], scene.turn) })),
   ].filter(Boolean);
+  // a side's conditions with its lamp in the move's type colour, and the layers a hazard has
+  const sideTags = side => {
+    const s = scene?.[side];
+    return (s?.conditions || []).map(c => ({ key: c, type: effectType(c), word: `${effectWord(res, c)}${s.layers[c] > 1 ? ` ×${s.layers[c]}` : ""}`, left: turnsLeft(c, s.since[c], scene.turn) }));
+  };
   return (
     <div className="bt-arena">
       <Strip side={foe} scene={scene} name={names[foe]} res={res} onParty={onFoeParty} />
@@ -594,9 +635,9 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
         <div className={"bt-hud" + (doubles ? " two" : "")}>
           <div className={"bt-hud-foe" + (doubles ? " two" : "")}>
             <div className="bt-hud-plates">{plates(foe, scene, false, doubles, res, setInfo)}</div>
-            {chips.length > 0 && <div className="bt-fieldchips">{chips.map(([word, left]) => <span key={word}>{word}{left && <span>{left}</span>}</span>)}</div>}
+            <Tags tags={[...sideTags(foe), ...chips]} />
           </div>
-          <div className="bt-hud-own">{plates(perspective, scene, true, doubles, res, setInfo)}</div>
+          <div className="bt-hud-own">{plates(perspective, scene, true, doubles, res, setInfo)}<Tags tags={sideTags(perspective)} /></div>
           <Say said={said} ask={ask} />
           <Clock left={clock} mine={mine} />
         </div>

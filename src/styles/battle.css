@@ -97,6 +97,11 @@
    the head and the deck leave, between 16 to 9 and 4 to 3 of the width; a taller phone gives the room to the deck's keys. */
 .bt-main { display: grid; gap: var(--s3); min-width: 0; align-content: start; }
 .bt-stagebox { position: relative; min-width: 0; }
+/* going in, the board changes over (changeover.js): blank panels joined on the seam over the stage's room, switching on and off from
+   the middle; only their opacity moves */
+.bt-change { position: absolute; inset: 0; z-index: var(--z-sticky); display: flex; pointer-events: none; }
+.bt-change > i { flex: 1 1 0; background: var(--panel); }
+.bt-change > i + i { border-left: var(--seam) solid var(--ground); }
 .bt-deck { position: relative; display: grid; gap: var(--s3); min-width: 0; align-content: start; }
 .bt-deck:empty { display: none; }
 @media (max-width: 859px) {
@@ -135,9 +140,14 @@
      (2026-11-09 second round, the user: "배틀이 끝나면 화면이 살짝 위로 스크롤되는 오류", "기본 배틀 화면이 살짝 아래로 스크롤된 상태") */
   .ypl:has(.bt-match) .site-foot { display: none; }
   .page.page--battle { padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height) + var(--s5)); padding-bottom: var(--s5); }
-  .bt-match {
-    grid-template-columns: minmax(0, min(100% - 400px - var(--s8), (100svh - var(--nav-height) - 370px) * 16 / 9)) 400px;
-    justify-content: center; align-items: start; column-gap: var(--s8);
+  /* the match stands on the 1200 as every page does, edge to edge with the bar (2026-11-10, the user: "다른 홈페이지의 탭과 동일하게");
+     the stage keeps the column's whole width and gives up height instead, from 16 to 9 down to what leaves the two strips and the
+     deck (moves and bench) in the window: the bar and 20 over it, 20 under it. It narrowed with the window before, the whole match
+     centred in a smaller box (1065 of 1200 at 1440 by 790) */
+  .bt-match { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; column-gap: var(--s8); }
+  /* the width is set, so the ratio gives way to the height cap instead of narrowing the stage to keep 16 to 9 */
+  .bt-match .bs-stage.hud {
+    width: 100%; max-height: max(220px, 100svh - var(--nav-height) - var(--s5) * 2 - var(--h-row2) * 2 - var(--s3) - (var(--h-counter) + var(--s5) + var(--h-row)));
   }
   /* the stage and the deck stand in the window under the bar; the column beside them holds the bay under the head */
   .bt-main { position: sticky; top: calc(var(--nav-height) + var(--s5)); }
@@ -303,10 +313,9 @@
    then the party standing on their floors, each floor its HP, and the side's conditions. The strip is the arena's own night in dark,
    so the two strips and the stage read as one frame with no box round the party; light says where each Pokémon is (out lit, bench
    dim, not yet shown muted, fainted grey). The name, the party and (ours) 내 파티 are one line that never wraps: the name gives way
-   first (an ellipsis), then the party shrinks together; the side's conditions take a line under it. */
+   first (an ellipsis), then the party shrinks together. The strip keeps one height through the battle: the side's conditions stand by
+   its plates on the stage (2026-11-10: a line of them under the party grew the strip and pushed the stage down at once). */
 .bt-strip { --ball: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); width: 100%; min-height: var(--h-row); padding: var(--s1) var(--pad); text-align: left; background: var(--ground); }
-/* the side's conditions under the party keep the strip's room below them too, not a hair off its edge (2026-11-07) */
-.bt-strip:has(> .bt-conds) { padding-bottom: var(--s3); }
 :root[data-theme="light"] .bt-strip { background: var(--panel); }
 .bt-strip-row { flex: 1 0 100%; display: flex; align-items: center; gap: var(--s3); min-width: 0; max-width: 100%; }
 /* the two sides face each other as they stand on the court: ours from the left (the name, then the party), the foe's from the right
@@ -345,12 +354,6 @@
 .bt-strip.key:active:not(:disabled) { scale: 1; }
 @media (hover: hover) { .bt-strip.key:hover { background: var(--panel-2); } .bt-strip.key:hover .bt-strip-more { color: var(--lit); } }
 .bt-strip.key:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
-/* each condition a tag as the site draws a type (DESIGN.md: the side's conditions as tags): an 8 square in the type of the move
-   that laid it, then its word, standing on the strip's own ground (a panel box round the word sat tight on the strip, 2026-11-07) */
-.bt-conds { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); }
-.bt-cond { display: flex; align-items: center; gap: var(--s2); white-space: nowrap; font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
-.bt-cond::before { content: ""; width: var(--lamp); height: var(--lamp); flex: none; background: var(--type); }
-.bt-cond > span { color: var(--dim); font-weight: 400; }
 
 
 /* ---------- the HUD over the stage ---------- */
@@ -426,9 +429,16 @@
   .bt-say > p { font-size: var(--t15); line-height: 20px; }
 }
 
-/* the field's own effects and their turns, under the foe's first plate */
+/* the tags: the foe's conditions and the field's effects under the foe's plates, ours over our plates, each with its turns; a side's
+   condition leads with an 8 square in the type of the move that laid it. A tag lights in as it comes (rises 12) and goes out where it
+   stood before it leaves (Tags in Stage.jsx), so nothing on the frame grows or jumps when a hazard is laid or a screen ends */
 .bt-fieldchips { display: flex; flex-wrap: wrap; gap: var(--seam); max-width: 100%; pointer-events: none; }
-.bt-fieldchips > span { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--veil); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap; }
+.bt-fieldchips:empty { display: none; }
+.bt-fieldchips > span { display: flex; align-items: center; gap: var(--s1); height: 24px; padding: 0 var(--s2); background: var(--veil); font-size: var(--t12); line-height: var(--l12); font-weight: 700; white-space: nowrap;
+  animation: y-rise var(--move-light) backwards; transition: opacity var(--move-leave); }
+.bt-fieldchips > [class*="type-"]::before { content: ""; width: var(--lamp); height: var(--lamp); flex: none; background: var(--type); }
+.bt-fieldchips > .out { opacity: 0; }
+.bt-hud-own > .bt-fieldchips { position: absolute; right: 0; bottom: calc(100% + var(--seam)); flex-wrap: wrap-reverse; justify-content: flex-end; }
 .bt-fieldchips > span > span { color: var(--dim); font-weight: 400; }
 
 /* the message window: a solid band across the bottom of the stage */
@@ -474,6 +484,9 @@
 .bt-strip[data-won] { background: var(--lit); color: var(--ground); }
 .bt-strip[data-won] :is(.bt-trainer, .bt-strip-more, .bt-who-note) { color: var(--ground); }
 .bt-strip[data-won] .bt-rm .floor { background: var(--ground); }
+/* the winner's six stand as they are drawn: dimmed or greyed over the lit strip they read bleached (2026-11-10, the user: "승리할 때
+   포켓몬이 좀 희게 보이는 오류"); the loser's keep the dim, which suits a loss */
+.bt-strip[data-won] .bt-rm .mon { opacity: 1; filter: none; }
 .bs-over > .bt-popup { right: 0; top: 24%; display: grid; gap: var(--s1); min-width: 40%; max-width: 64%; padding: var(--s2) var(--s5) var(--s2) var(--s3); background: var(--panel-2); text-align: right; }
 .bs-over > .bt-popup.own { right: auto; left: 0; top: 52%; padding: var(--s2) var(--s3) var(--s2) var(--s5); text-align: left; }
 .bt-popup > small { display: block; font-size: var(--t12); line-height: var(--l12); color: var(--dim); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -731,6 +744,45 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 
 @media (max-width: 379px) {
   button.bt-card > .bt-card-head { grid-template-rows: auto auto; grid-template-areas: "pic name end" "types types types"; }
+}
+
+/* the team preview stands in one window at every size (2026-11-10, the user: "선출화면에서 스크롤이 없도록 다시 설계해줄래?"). As the
+   window shortens it lets go of what is read least, in steps, and nothing scrolls: on a desktop first the cards' stats row, then the
+   whole cards for the phone's short ones with the i key that opens the set (BattlePage.jsx SHORT_PICK); on a phone the foe's six
+   stand in one row of six, each type on its own line */
+@media (min-width: 1200px) and (max-height: 775px), (min-width: 860px) and (max-width: 1199px) and (max-height: 927px) {
+  .bt-preview button.bt-card .bt-card-stats { display: none; }
+}
+@media (max-width: 859px) and (max-height: 759px) {
+  .bt-preview .bt-foe-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bt-preview .bt-foe-cell { padding: var(--s1) var(--seam) var(--s2); }
+  .bt-preview .bt-foe-cell > :is(img, .bt-bare) { width: 40px; height: 40px; }
+  .bt-preview .bt-foe-cell > b { font-size: 11px; line-height: 15px; }
+  .bt-preview .bt-foe-cell > .bt-card-types { flex-direction: column; align-items: center; }
+}
+/* a short phone (a small one, or the browser's bars standing): our cards keep the name, the types and the i key; the item is in the
+   set the i key opens */
+@media (max-width: 859px) and (max-height: 659px) {
+  .bt-preview { gap: var(--s3); }
+  .bt-preview .bt-card-item { display: none; }
+  .bt-preview .bt-card { padding: var(--s2); }
+  .bt-preview .bt-card-pic { width: var(--s8); height: var(--s8); }
+  .bt-preview .bt-info-key { width: var(--s8); height: var(--s8); }
+}
+/* a 도전의 탑 game's preview carries its stake band (52) on a phone, so each step comes 52 sooner */
+@media (max-width: 859px) and (max-height: 811px) {
+  .bt-preview:has(> .streak-band) .bt-foe-six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bt-preview:has(> .streak-band) .bt-foe-cell { padding: var(--s1) var(--seam) var(--s2); }
+  .bt-preview:has(> .streak-band) .bt-foe-cell > :is(img, .bt-bare) { width: 40px; height: 40px; }
+  .bt-preview:has(> .streak-band) .bt-foe-cell > b { font-size: 11px; line-height: 15px; }
+  .bt-preview:has(> .streak-band) .bt-foe-cell > .bt-card-types { flex-direction: column; align-items: center; }
+}
+@media (max-width: 859px) and (max-height: 711px) {
+  .bt-preview:has(> .streak-band) { gap: var(--s3); }
+  .bt-preview:has(> .streak-band) .bt-card-item { display: none; }
+  .bt-preview:has(> .streak-band) .bt-card { padding: var(--s2); }
+  .bt-preview:has(> .streak-band) .bt-card-pic { width: var(--s8); height: var(--s8); }
+  .bt-preview:has(> .streak-band) .bt-info-key { width: var(--s8); height: var(--s8); }
 }
 
 /* the choice so far beside the cards on a wide screen: one row for each place, its number, then who goes there; on a phone only
