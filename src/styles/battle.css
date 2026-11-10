@@ -114,11 +114,12 @@
   .bt-match { display: block; }
   .bt-main { display: flex; flex-direction: column; gap: 0; min-height: 100dvh; }
   .bt-main > .bt-head { flex: none; padding-top: env(safe-area-inset-top, 0px); background: var(--ground); }
-  /* the stage takes what the head and the deck leave (the deck is as tall as what it holds: the moves, or the end), from 16 to 9 of
-     the width to a little taller than square; past that the ground runs on above it */
+  /* the stage takes what the head and the deck leave (the deck is as tall as what it holds: the moves, or the end), from 2 to 1 of
+     the width to a little taller than square; past that the ground runs on above it. 2 to 1 and not 16 to 9: an iPhone SE's Safari
+     window is 375 by 548, and at 16 to 9 the play screen scrolled 21 there (2026-11-10) */
   .bt-stagebox { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; }
   .bt-stagebox > .bt-arena { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; }
-  .bt-stagebox .bs-stage.hud { flex: 1 1 auto; aspect-ratio: auto; min-height: 56.25vw; max-height: 112vw; }
+  .bt-stagebox .bs-stage.hud { flex: 1 1 auto; aspect-ratio: auto; min-height: 50vw; max-height: 112vw; }
   .bt-stagebox > .bt-preview { padding: var(--s3) var(--s3) 0; }
   .bt-deck { flex: none; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--s3); padding: var(--s3) var(--s3) calc(var(--s3) + env(safe-area-inset-bottom, 0px)); }
   .bt-deck .bt-choices { gap: var(--s3); }
@@ -128,10 +129,18 @@
   .bt-match .dock { position: static; min-height: 0; padding: 0; background: none; box-shadow: none; }
   .bt-match .dock > .toast-panel { left: var(--s3); right: var(--s3); bottom: calc(100% + var(--s3)); z-index: 9; }
   /* a long press shows what a thing is; the browser's own selection and callout never come up over the keys */
-  .bt-match :is(.bt-deck, .bt-preview, .bt-strip) { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .bt-match .bt-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  /* a phone on its side: the head's keys and the deck keep clear of the notch */
+  .page.page--battle { padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px); }
+  /* the deck is one height through a battle, so the stage never moves (2026-11-10, measured at 390 by 664, an iPhone's Safari
+     window: the end stood 230 where the moves stood 218 and the doubles' targets 258, and the stage gave 12 and 40): a target is
+     as tall as a move key, and the end is the replay bar, the result at a counter's 84 and the keys, joined on the seam */
+  .bt-deck .bt-target { min-height: var(--h-row2); }
+  .bt-deck > .bt-replay + .bt-end { margin-top: calc(var(--seam) - var(--s3)); }
+  .bt-deck .bt-end-head { height: var(--h-counter); padding-block: 0; }
 }
 /* from 860 the deck stands right under the stage at its width, the information bay under it, and the column beside them */
-@media (max-width: 859px) and (min-height: 760px) { .bt-deck .bt-move { min-height: var(--h-counter); } }
+@media (max-width: 859px) and (min-height: 760px) { .bt-deck :is(.bt-move, .bt-target) { min-height: var(--h-counter); } }
 @media (min-width: 860px) {
   .bt-match { display: grid; gap: var(--s8); }
   .bt-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s3); align-content: start; min-width: 0; }
@@ -227,6 +236,10 @@
 .bt-end-line > .lamp { margin-right: var(--s2); }
 .bt-end-head.pn .bt-end-line:has(> .lamp) { color: var(--lit); }
 .bt-end-keys { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); }
+/* on a phone the tower's own strip gives its width to the name: 랜덤 파티 says nothing the six ? beside it do not */
+@media (max-width: 859px) { .bt-who-note.idle { display: none; } }
+/* why the dock's key waits, said on the dock's own ground over the key */
+.bt-gate-line { margin: 0 0 var(--s2); }
 .bt-end-keys > :only-child { grid-column: 1 / -1; }
 .bt-end-keys > .btn--second { padding-inline: var(--s5); }
 .bt-end > .dock { margin-top: 0; }
@@ -356,7 +369,8 @@
 .bt-rm-st { position: absolute; top: 0; right: 0; }
 /* the foe's strip before a battle: who it is, with a dim word after it (the computer's level) or a lamp before it (참가 대기) */
 .bt-who { flex: 0 12 auto; display: flex; align-items: center; gap: var(--s2); min-width: 0; }
-.bt-who-note { flex: none; color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 600; white-space: nowrap; }
+/* the note beside a name gives way before the name does (2026-11-10: a six-letter name was cut to three beside 랜덤 파티) */
+.bt-who-note { flex: 0 99 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--dim); font-size: var(--t15); line-height: var(--l15); font-weight: 600; white-space: nowrap; }
 /* our name, typed in our strip before a battle: the name itself on the strip, as the foe's stands (2026-11-07, the user: a box of
    another tone round it broke the strip), its line under it lit while it is typed in */
 .bt-name { flex: 0 1 auto; width: auto; min-width: 2em; max-width: 160px; field-sizing: content; height: var(--h-control); padding: 0; background: none; color: var(--lit);

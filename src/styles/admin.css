@@ -106,7 +106,7 @@
 .ed-auto { min-height: 44px; }
 @media (max-width: 639px) {
   .ch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ed-grid { grid-template-columns: minmax(0, 1.618fr) repeat(4, minmax(0, 1fr)) var(--h-control); gap: var(--s1); }
+  .ed-grid { grid-template-columns: minmax(0, 2.618fr) repeat(4, minmax(0, 1fr)) var(--h-control); gap: var(--s1); }
   .ed-r2 { grid-template-columns: 1fr; }
   .fb-q-top .dd { width: auto; flex: 1; }
 }

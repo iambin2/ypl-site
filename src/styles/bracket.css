@@ -5,6 +5,9 @@
 /* ---------- panels: submission status, Champions qualifier ---------- */
 .bk-submission { padding: 0 var(--pad); background: var(--panel); }
 .bk-qualifier { padding: var(--pad); }
+/* its rows and its second key stand one tone up from the panel that holds them, and a key is as wide as its word */
+.bk-qualifier :is(.bk-pin, .btn--second) { background: var(--panel-2); }
+.bk-qualifier .row-actions > .btn { flex: none; width: auto; }
 .bk-panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .bk-panel-head > div { display: grid; gap: var(--s1); min-width: 0; }
 .bk-panel-head h4 { font-size: var(--t15); font-weight: 700; line-height: var(--l15); }
@@ -36,21 +39,22 @@
 .bk-submission-empty { padding-bottom: var(--s5); font-size: var(--t15); color: var(--mute); }
 
 /* ---------- draw animation ---------- */
-.bk-drawwrap { display: flex; flex-direction: column; gap: var(--s5); }
-.bk-draw-h { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
-.bk-draw-h h2 { margin: 0; }
+/* the draw stands where the board will (the board's top gap), drawn with the board's own match boxes (.mb, .mb-row), so a name
+   landing changes no box and the board takes the draw's place without a jump (2026-11-10: the slots had lost their styles) */
+.bk-drawwrap { display: flex; flex-direction: column; gap: var(--s5); margin-top: var(--s8); }
+.bk-draw-h { display: flex; align-items: center; gap: var(--s5); min-height: var(--l20); }
+.bk-draw-h h2 { margin: 0 auto 0 0; }
 .bk-draw-cnt { color: var(--dim); }
-.bk-slot.dwait { color: var(--mute); }
-.bk-slot.dwait i { display: block; width: 32px; height: 4px; background: var(--panel-2); }
+/* 건너뛰기: on a desktop in the heading row, always in the window; on a phone the docked action */
+.bk-draw-skip { display: none; }
+@media (min-width: 860px) { .bk-draw-skip { display: block; } .bk-drawwrap > .dock { display: none; } }
 /* the slot being drawn is lit one tone up; the names rolling through it are its motion, so it does not breathe as well */
-.bk-slot.drolling { background: var(--panel-2); color: var(--lit); font-weight: 700; }
-.bk-slot.dset { color: var(--lit); font-weight: 600; }
+.mb-row.drolling { background: var(--panel-2); }
 /* a drawn name switches on in its slot */
-.bk-slot.dset.pop { animation: y-fade var(--move-tone); }
+.mb-row.pop { animation: y-fade var(--move-tone); }
 .bk-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s5); }
 .bk-group { padding: var(--s5); background: var(--panel); }
 .bk-group-h { margin-bottom: var(--s3); font-size: var(--t15); font-weight: 600; }
-.bk-draw-mem { display: flex; flex-direction: column; overflow: hidden; background: var(--panel-2); }
 
 /* ---------- wizard: back link, title and event, steps as panels joined by the seam, the main action docked ---------- */
 /* making a bracket is the page's one kind of thing: a sheet's width on a phone, the whole 1200 on desktop like every list page,
@@ -86,7 +90,11 @@
 .bk-participant-submission.submitted { color: var(--lit); }
 .bk-participant-submission.missing { color: var(--dim); }
 .bk-participant-absent { flex: none; font-size: var(--t12); color: var(--mute); }
-.bk-participant-added input { flex: 1; }
+/* a participant added by hand: the name's field takes the row, 삭제 is as wide as its word (2026-11-10: the field stood 24 wide) */
+.bk-participant-added input { flex: 1 1 0; min-width: 0; width: auto; }
+.bk-participant-added .btn { flex: none; width: auto; }
+/* 전체 선택, 전체 해제, 참가자 추가: one row of three equal keys */
+.bk-pin-keys { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s3); }
 .bk-team-card { display: grid; grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1.618fr); }
 @media (max-width: 639px) {
   .bk-team-card { grid-template-columns: 32px minmax(0, 1fr); }
@@ -106,10 +114,11 @@
 .bk-apply-places .spec-row dd { margin: 0; }
 .bk-apply-point { display: grid; grid-template-columns: minmax(0, 1fr) auto var(--s13); align-items: center; gap: var(--s3); min-height: var(--h-control); padding: 0 var(--pad); }
 .bk-apply-point b { text-align: right; }
-.bk-apply-actions { margin-top: var(--s8); }
 .bk-applybox { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s5); background: var(--panel-2); font-size: var(--t15); }
 /* a line's check stands before its words on the line: as a block it stood alone over the list (2026-11-10) */
 .bk-applybox > div { display: flex; align-items: center; gap: var(--s2); min-height: var(--l15); }
+.bk-applybox > div > .ic { flex: none; }
+.bk-applybox + .field { margin-top: var(--s5); }
 .bk-ab-meta { font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .bk-chg { display: grid; gap: var(--seam); }
 .bk-chg-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: var(--h-control); padding: var(--s3) var(--s5); background: var(--panel-2); font-size: var(--t15); }
@@ -122,7 +131,8 @@
 .bk-award > :not(input) { transition: opacity var(--move-tone); }
 .bk-award > .bk-chg-cnt { margin-left: auto; }
 .bk-award > input:not(:checked) ~ :not(input) { opacity: var(--opacity-disabled); }
-@media (max-width: 639px) { .bk-award > .bk-chg-cnt { flex-basis: 100%; margin-left: 28px; } }
+/* the reason starts under the name: past the 20 check and the row's 12 gap */
+@media (max-width: 639px) { .bk-award > .bk-chg-cnt { flex-basis: 100%; margin-left: calc(var(--s5) + var(--s3)); } }
 .bk-pts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
 .bk-pt { display: flex; flex-direction: column; gap: var(--s2); font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .bk-pt input { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -138,28 +148,33 @@
 .bk-bout-columns, .bk-bout-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 32px minmax(0, 1fr); align-items: center; gap: var(--s3); }
 .bk-bout-columns { margin-bottom: var(--s3); font-size: var(--t12); font-weight: 600; color: var(--mute); }
 /* team names head their columns on the picked names inside the dropdowns (dd-btn padding 20) */
-.bk-bout-columns strong { padding-left: var(--s8); color: var(--lit); }
+.bk-bout-columns strong { padding-left: var(--s5); color: var(--lit); }
 .bk-series { display: flex; flex-direction: column; gap: var(--s2); }
 .bk-series-row { padding: var(--s2); background: var(--panel-2); }
 .bk-series-no { font-size: var(--t12); font-weight: 600; line-height: 1; color: var(--mute); text-align: center; }
 .bk-series-vs { font-size: var(--t12); font-weight: 600; color: var(--mute); text-align: center; }
 .bk-bout-side { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+/* a side's team, said over its line only where the head row with the two teams is away (a phone) */
+.bk-bout-team { display: none; }
 .bk-bout-player { flex: 1; min-width: 0; }
-.bk-bout-player .dd-btn { background: var(--panel-2); min-height: var(--h-control); }
+.bk-bout-player .dd-btn { background: var(--panel-2); min-height: var(--h-control); padding-inline: var(--s3); }
 .bk-bout-win {
-  flex: none; height: var(--h-control); min-width: 52px; padding: 0 var(--s3); display: inline-flex; align-items: center; justify-content: center; gap: var(--s1);
+  flex: none; height: var(--h-control); width: var(--h-row); min-width: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: var(--s1);
   border: 0; background: var(--panel-2); font-size: var(--t12); font-weight: 600; color: var(--mute);
   transition: scale var(--move-press), background-color var(--move-tone), color var(--move-tone);
 }
 @media (hover: hover) { .bk-bout-win:not(.is-win):hover { background: var(--panel-2); color: var(--lit); } }
 .bk-bout-win.is-win { background: var(--lit); color: var(--ground); }
-.bk-ace { margin-top: var(--s5); padding: var(--s5); background: var(--panel-2); }
-.bk-ace-h { margin-bottom: var(--s3); font-size: var(--t15); font-weight: 700; color: var(--lit); }
+/* the tie-breaker's row stands on the bouts' grid: the same 8 inside, so its names and keys share their lines */
+.bk-ace { margin-top: var(--s5); padding: var(--s2); background: var(--panel-2); }
+.bk-ace-h { margin: var(--s2) var(--s2) var(--s3); font-size: var(--t15); font-weight: 700; color: var(--lit); }
 .bk-ace .bk-series-row { background: transparent; padding: 0; }
 @media (max-width: 639px) {
   .bk-bout-columns { display: none; }
   .bk-bout-row { grid-template-columns: 1fr; gap: var(--s2); }
   .bk-series-vs, .bk-bout-label-spacer { display: none; }
+  .bk-bout-side { flex-wrap: wrap; }
+  .bk-bout-team { display: block; flex-basis: 100%; }
   .bk-series-no { text-align: left; }
 }
 

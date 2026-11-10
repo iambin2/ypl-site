@@ -63,7 +63,10 @@
    and the tree stops round by round as it is swiped (the browser's own scroll, snapping) */
 @media (max-width: 639px) {
   .bk-scroll { --bk-w: calc((100vw - var(--gutter) * 2 - var(--bk-gap)) / 2); scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); }
-  .bk-scroll .bk-col2 { scroll-snap-align: start; }
+  /* the losers' columns stop as the winners' do (2026-11-10: only the tree's columns were stops, so a double's 그랜드 파이널 and 우승
+     sprang back out of view when the finger lifted), and the last column keeps the gutter at the scroll's end */
+  .bk-scroll :is(.bk-col2, .bk-col) { scroll-snap-align: start; }
+  .bk-scroll :is(.bk-tree, .bk-cols) { padding-right: var(--gutter); }
   .bk-scroll .mb-seed { display: none; }
 }
 @media (min-width: 860px) {
@@ -71,6 +74,10 @@
   /* a short tree runs the full 1200: its columns share what is left, so the tree ends on the bar's right edge like every row */
   .bk-scroll > .bk-tree { min-width: 100%; }
   .bk-tree > .bk-col2 { flex: 1 0 var(--bk-w); width: auto; }
+  /* a double's losers' rounds, its 그랜드 파이널 and its 우승 share the 1200 too (2026-11-10: at 216 each the 우승 stood past the
+     board's edge in a scroller with no bar, so a finished double named no champion in view) */
+  .bk-lb > .bk-cols { width: auto; min-width: 100%; }
+  .bk-cols > .bk-col { flex: 1 1 0; width: auto; min-width: calc(var(--s21) + var(--s8)); }
 }
 
 /* a match box: two rows of 36 with the seam between; the winner inverts, the loser mutes, a waiting slot is muted words */

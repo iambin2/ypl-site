@@ -19,8 +19,9 @@ function request(kind, options) {
 /** 알림. 닫히면 resolve 된다. */
 export const siteAlert = (title, body = "") => request("alert", { title, body });
 /** 확인. 확인이면 true, 취소나 닫기면 false. */
-export const siteConfirm = ({ title, body = "", confirmLabel = "확인", danger = false }) =>
-  request("confirm", { title, body, confirmLabel, danger });
+// cancelLabel: 확인이 "취소"라는 말을 쓰는 물음(반영 취소)에서는 물러나는 키가 닫기다
+export const siteConfirm = ({ title, body = "", confirmLabel = "확인", cancelLabel = "취소", danger = false }) =>
+  request("confirm", { title, body, confirmLabel, cancelLabel, danger });
 /** 입력. 입력값(앞뒤 공백 제거) 또는 취소 시 null. */
 export const sitePrompt = ({ title, body = "", label = "", placeholder = "", confirmLabel = "확인", secret = false, inputMode }) =>
   request("prompt", { title, body, label, placeholder, confirmLabel, secret, inputMode });
@@ -61,7 +62,7 @@ export function SiteDialogHost() {
         />
       </div>}
       <div className="modal-actions">
-        {current.kind !== "alert" && <Button variant="second" type="button" onClick={cancel}>취소</Button>}
+        {current.kind !== "alert" && <Button variant="second" type="button" onClick={cancel}>{current.cancelLabel || "취소"}</Button>}
         <Button
           type="button"
           variant="main"

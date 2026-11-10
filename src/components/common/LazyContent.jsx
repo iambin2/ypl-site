@@ -8,6 +8,8 @@ import ErrorNote from "./ErrorNote.jsx";
 const CHUNK_FAILED = /dynamically imported module|Importing a module script failed/i;
 const RELOADED_KEY = "ypl:chunk-reload-at";
 function reloadOnce() {
+  // with no connection a reload lands on the browser's own error page and the visitor cannot come back: the note with 새로고침 stands instead
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
   try {
     const last = Number(sessionStorage.getItem(RELOADED_KEY) || 0);
     if (Date.now() - last < 60_000) return false;

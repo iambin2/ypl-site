@@ -61,7 +61,7 @@ function AccountButton({ onNavigate }) {
   if (!accountsEnabled()) return null;
   const named = signed && link && link.status !== "rejected" ? link.requested_name : "";
   const open = () => onNavigate("records", { tab: "trainer", me: "1", ...(named && link.player_id ? { trainer: named } : {}) });
-  return <button type="button" className="acct" onClick={open} aria-label={named ? `${named}, 내 기록` : "내 기록 찾기, 구글 계정으로 연결"}><GoogleMark />{named || "내 기록"}</button>;
+  return <button type="button" className="acct" onClick={open} aria-label={named ? `${named}, 내 기록` : "내 기록 찾기, 구글 계정으로 연결"}><GoogleMark /><span className="acct-name">{named || "내 기록"}</span></button>;
 }
 
 /* 바는 바탕 톤에 아래 머리카락 선 하나, 움직이지 않는다. 폰은 Wing Y와 워드마크, 오른쪽 끝에 테마 버튼.

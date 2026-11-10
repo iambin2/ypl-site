@@ -4,7 +4,8 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { formatDate } from "../services/dateFormat.js";
 import { josa } from "../services/josa.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
-import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, useArrival } from "../components/common/Board.jsx";
+import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, Toast, useArrival } from "../components/common/Board.jsx";
+import { reduced } from "../components/common/motion.js";
 import { dotDate } from "../services/dateFormat.js";
 import { addBracketManualRegistration, addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, sitePlayed, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
@@ -23,7 +24,7 @@ import { battleForMatch, battleHref, battleWinnerEntry, listEventBattles, offici
 import { parseBoutKey, teamBouts } from "../services/teamBouts.js";
 import Seg from "../components/common/Seg.jsx";
 import { WORDMARK_PATH } from "../components/layout/SiteHeader.jsx";
-import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
+import { PRIVATE_BRACKETS_KEY, createCommunityItem, deleteCommunityItem, patchCommunityItem, readCommunity, readErrorText, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
 import { PRIVATE_BRACKET_MAX, buildPrivateBracketPatch, buildPrivateGraph, createPrivateBracket, parseParticipantNames } from "../services/privateBracket.js";
 import { leagueIntakeId, leagueIntakeOptions } from "../services/leagueIntake.js";
@@ -539,6 +540,7 @@ function BracketWizard({ data, onClose, onCreate }){
     : <button type="button" data-key={key} className={"bk-place-name t15 "+(held===key?"inv":"")} aria-pressed={held===key}
         onPointerDown={e=>{ if(e.pointerType==="mouse") dragFrom.current={key,x:e.clientX,y:e.clientY,moved:false}; }}
         onClick={()=>tapPlace(key)}>{placeName(key)}</button>;
+  const dragPlace=e=>{ const from=dragFrom.current; if(from&&!from.lit&&Math.hypot(e.clientX-from.x,e.clientY-from.y)>=8){ from.lit=true; setHeld(from.key); } };
   const dropPlace=e=>{
     const from=dragFrom.current; if(!from)return;
     if(Math.hypot(e.clientX-from.x,e.clientY-from.y)<8){ dragFrom.current=null; return; }
@@ -587,12 +589,7 @@ function BracketWizard({ data, onClose, onCreate }){
         </div>}
         {linkedEvent?.is_team_event&&linkedEvent.division==="master"&&<div className="bk-hint">팀전은 마스터로 진행합니다.</div>}
         {eventError&&<FormError>{eventError}</FormError>}
-        {eventId&&!eventBusy&&
-          <div className="bk-hint">
-            공지에 설정된 대회 정보와 신청자 {eventRegs.length}명의 명단을 사용합니다.
-            {mode!=="team"&&submissionStatusError&&<span style={{display:"block",color:"var(--lit)",marginTop:"var(--s1)"}}>파티 제출 상태: {submissionStatusError}</span>}
-          </div>
-        }
+        {eventId&&!eventBusy&&mode!=="team"&&submissionStatusError&&<div className="bk-hint" style={{color:"var(--lit)"}}>파티 제출 상태: {submissionStatusError}</div>}
       </div>
 
       {manualMode&&<>
@@ -633,7 +630,7 @@ function BracketWizard({ data, onClose, onCreate }){
           <span className="field-label">본선 직행자 선택</span>
           <div className="bk-hint">신청자 중 운영자가 직접 선택합니다. 직행자는 선발전 대진표에서 빠지며, 본선 참가 신청은 아직 만들지 않습니다.{directPicks.length>0&&` 시즌 랭킹 상위 신청자 ${directPicks.length}명을 추천합니다.`}</div>
           {directPicks.length>0&&!(directPicks.length===directRegistrationIds.length&&directPicks.every(pick=>directRegistrationIds.includes(pick.registrationId)))&&<Button variant="second" size="sm" onClick={takeDirectPicks}>추천대로 선택</Button>}
-          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} style={{width:"auto"}}/><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{[checked?"본선 직행":pickFor(reg.id)&&"추천",pickFor(reg.id)&&`시즌 ${pickFor(reg.id).rank}위`].filter(Boolean).join(", ")}</span></label>;})}</div>
+          <div className="bk-fill">{eventRegs.map((reg,i)=>{const checked=directRegistrationIds.includes(reg.id);return <label className="bk-pin" key={`direct-${reg.id}`} style={{animationDelay:(i*STAGGER.row)+"ms",cursor:"pointer"}}><span className="bk-pin-no gold">{i+1}</span><input type="checkbox" checked={checked} onChange={()=>{setDirectRegistrationIds(prev=>checked?prev.filter(id=>id!==reg.id):[...prev,reg.id]);setSelectedRegistrationIds(prev=>checked?prev:[...prev.filter(id=>id!==reg.id)]);}} /><span style={{flex:1,fontWeight: 600}}>{reg.registration_name}</span><span className="bk-hint" style={{margin:0}}>{[checked?"본선 직행":pickFor(reg.id)&&"추천",pickFor(reg.id)&&`시즌 ${pickFor(reg.id).rank}위`].filter(Boolean).join(", ")}</span></label>;})}</div>
         </div>}
         <div className="stack bk-counters">
           <Counter label="신청" value={eventRegs.length} cells={Math.max(2,String(eventRegs.length).length)}/>
@@ -642,9 +639,7 @@ function BracketWizard({ data, onClose, onCreate }){
         </div>
         <div className="field">
           <span className="field-label">참가자 확정</span>
-          <div className="bk-hint">
-            {linkedEvent?.championship_phase==="qualifier"?`직행자 ${directRegistrationIds.length}명은 제외하고 선발전 실제 참가자를 확정합니다. `:"신청자 중 실제 참가자를 선택합니다. "}참가 확정 {selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length}명 / 신청 {eventRegs.length}명
-          </div>
+          {linkedEvent?.championship_phase==="qualifier"&&<div className="bk-hint">직행자 {directRegistrationIds.length}명은 제외하고 선발전 실제 참가자를 확정합니다.</div>}
         </div>
 
         <div className="bk-fill bk-participant-confirm-list">
@@ -662,7 +657,7 @@ function BracketWizard({ data, onClose, onCreate }){
                       checked ? prev.filter(id=>id!==reg.id) : [...prev,reg.id]
                     );
                   }}
-                  style={{width:"auto"}}
+                  
                 />
                 <span className="bk-participant-name">{reg.registration_name}</span>
                 {submissionBadge(reg.id)}
@@ -691,8 +686,7 @@ function BracketWizard({ data, onClose, onCreate }){
           ))}
         </div>
 
-        <div className="row-actions" style={{justifyContent:"space-between",marginTop:"var(--s3)"}}>
-          <div>
+        <div className="stack bk-pin-keys">
             <Button variant="second"
               type="button"
               size="sm"
@@ -707,7 +701,6 @@ function BracketWizard({ data, onClose, onCreate }){
             >
               전체 해제
             </Button>
-          </div>
           {linkedEvent?.championship_phase ? <Button variant="second"
             type="button"
             size="sm"
@@ -808,15 +801,14 @@ function BracketWizard({ data, onClose, onCreate }){
     </>}
 
     {step===3&&placement&&<>
-      {eventError&&<FormError>{eventError}</FormError>}
       <div className="stack bk-place-tools"><Button variant="second" onClick={redraw}>다시 추첨</Button></div>
       <p className="t12 reg dim">이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다.</p>
-      <div className="stack bk-place" onPointerUp={dropPlace} onPointerLeave={()=>{ if(dragFrom.current&&!dragFrom.current.moved) dragFrom.current=null; }}>
+      <div className="stack bk-place" onPointerMove={dragPlace} onPointerUp={dropPlace} onPointerLeave={()=>{ if(dragFrom.current&&!dragFrom.current.moved) dragFrom.current=null; }}>
         {placement.plan.map(([a,b],i)=><div className="pn bk-place-row" key={i}>
           <span className="t12 dim num">M{i+1}</span>{placeCell(a)}<span className="t12 dim">vs</span>{placeCell(b)}
         </div>)}
       </div>
-      <Dock>
+      <Dock toast={eventError&&<Toast error>{eventError}</Toast>}>
         <div className="stack bk-dock">
           <Button variant="second" onClick={()=>{ setHeld(null); setStep(2); }}>이전</Button>
           <Button variant="main" icon="check" onClick={go} disabled={creating} loading={creating}>대결 확정</Button>
@@ -847,20 +839,21 @@ function TeamMatchModal({ teamA, teamB, init, onClose, onSave }){
   const decided=allPlayers&&allPlayed&&(!tie||(!!aceA&&!!aceB&&!!aceW));
   const confirm=()=>{ if(!decided){siteAlert("결과를 모두 입력해 주세요.","실제 출전 선수와 모든 대결 결과를 입력해야 저장할 수 있습니다. 동점이면 타이브레이커도 입력해 주세요.");return;}
     const result=buildTeamMatchSeries(teamA,teamB,{lineupA,lineupB,games,ace:tie?{a:aceA,b:aceB,winner:aceW}:null}); onSave(result.series,result.winnerSide); };
-  const side=(value,onChange,options,winner,onWin,label)=><div className="bk-bout-side"><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={16}/>승</>:"승"}</button></div>;
+  // team: 폰에서는 두 팀의 머리 줄이 없으므로 각 칸이 제 팀의 이름을 달고 선다
+  const side=(value,onChange,options,winner,onWin,label,team)=><div className="bk-bout-side"><span className="bk-bout-team t12 dim">{team}</span><div className="bk-bout-player"><Dropdown value={value} onChange={onChange} placeholder="선수 선택" ariaLabel={`${team} 선수`} options={options}/></div><button type="button" className={"bk-bout-win"+(winner?" is-win":"")} onClick={onWin} aria-label={label} aria-pressed={winner}>{winner?<><Icon n="check" size={16}/>승</>:"승"}</button></div>;
   const displayTeamA=teamMatchDisplayName(teamA.name),displayTeamB=teamMatchDisplayName(teamB.name);
   return (<Modal title={`${displayTeamA} vs ${displayTeamB}`} hint="실제 출전 선수를 선택하고 모든 개인전 결과를 입력해 주세요." onClose={onClose}>
     <div className="swap bk-team-match-modal">
       <div className="bk-bout-columns" aria-hidden="true"><span/><strong>{displayTeamA}</strong><span/><strong>{displayTeamB}</strong></div>
       <div className="bk-series">{Array.from({length:N}).map((_,i)=>(<div className="bk-series-row bk-bout-row" key={i}>
         <span className="bk-series-no bk-bout-label">{i+1}경기</span>
-        {side(lineupA[i],v=>setLineupA(lineupA.map((name,j)=>j===i?v:name)),optionsA,games[i]==="a",()=>setGame(i,"a"),`${i+1}경기 A팀 승리`)}
+        {side(lineupA[i],v=>setLineupA(lineupA.map((name,j)=>j===i?v:name)),optionsA,games[i]==="a",()=>setGame(i,"a"),`${i+1}경기 A팀 승리`,displayTeamA)}
         <span className="bk-series-vs">vs</span>
-        {side(lineupB[i],v=>setLineupB(lineupB.map((name,j)=>j===i?v:name)),optionsB,games[i]==="b",()=>setGame(i,"b"),`${i+1}경기 B팀 승리`)}
+        {side(lineupB[i],v=>setLineupB(lineupB.map((name,j)=>j===i?v:name)),optionsB,games[i]==="b",()=>setGame(i,"b"),`${i+1}경기 B팀 승리`,displayTeamB)}
       </div>))}</div>
       {tie&&<div className="bk-ace">
         <div className="bk-ace-h">타이브레이커</div>
-        <div className="bk-series-row bk-bout-row bk-bout-row-ace"><span className="bk-bout-label-spacer" aria-hidden="true"/>{side(aceA,setAceA,optionsA,aceW==="a",()=>setAceW(aceW==="a"?null:"a"),"타이브레이커 A팀 승리")}<span className="bk-series-vs">vs</span>{side(aceB,setAceB,optionsB,aceW==="b",()=>setAceW(aceW==="b"?null:"b"),"타이브레이커 B팀 승리")}</div>
+        <div className="bk-series-row bk-bout-row bk-bout-row-ace"><span className="bk-bout-label-spacer" aria-hidden="true"/>{side(aceA,setAceA,optionsA,aceW==="a",()=>setAceW(aceW==="a"?null:"a"),"타이브레이커 A팀 승리",displayTeamA)}<span className="bk-series-vs">vs</span>{side(aceB,setAceB,optionsB,aceW==="b",()=>setAceW(aceW==="b"?null:"b"),"타이브레이커 B팀 승리",displayTeamB)}</div>
       </div>}
       <div className="modal-actions bk-team-match-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={confirm} disabled={!decided}>대결 확정</Button></div>
     </div>
@@ -912,7 +905,7 @@ function MatchBattle({ m, ev, battle, startable, eventId, admin=false, onChanged
   const canStart=startable&&!m.winner&&pa&&pb&&pa!==BYE&&pb!==BYE;
   const error=note&&<p className="t12 reg bk-entry-error"><span className="bang" aria-hidden="true">!</span>{note}</p>;
   if(battle&&battle.status!=="ended") return <div className="stack mb-battle">
-    <Row title="사이트 배틀" line={battle.status==="waiting"?"한 선수가 들어와 상대를 기다리는 중입니다.":"지금 배틀로 치르는 중입니다."} lamp="진행 중"/>
+    <Row title="사이트 배틀" line={battle.status==="waiting"?"한 선수가 들어와 상대를 기다리는 중입니다.":"지금 배틀로 치르는 중입니다."} lamp={battle.status==="waiting"?"대기":"진행 중"} sig={battle.status!=="waiting"}/>
     <Button variant="second" href={battleHref(battle.id)}>{battle.status==="waiting"?"경기 들어가기":"관전"}</Button>
     {admin&&<Button variant="link" disabled={busy} onClick={async()=>{
       if(await siteConfirm({title:"배틀 무효",body:"이 배틀을 닫습니다. 진행 중이던 배틀은 무효로 끝나 리플레이로 남고, 대진표에는 아무것도 넣지 않습니다. 승자는 결과 입력에서 정합니다.",confirmLabel:"무효",danger:true})) await run(()=>voidBattle(battle.id));
@@ -959,15 +952,18 @@ function TeamBouts({ m, ev, battles, boutCount, startable, eventId, admin=false,
     const line=open?(b.status==="waiting"?`${label}, 상대를 기다리는 중`:`${label}, 진행 중`)
       :x.winner?`${label}, ${(x.winner==="a"?x.a:x.b)?.name||""} 승리`
       :b?`${label}, ${b.ended_by==="void"?"무효":"무승부"}, 다시 치를 판`:`${label}, 결과 전`;
-    return <div className="stack" key={x.key}>
-      <Row title={names} line={line} lamp={open?"진행 중":null} sig={open}/>
-      {open?<Button variant="second" href={battleHref(b.id)}>{b.status==="waiting"?`${label} 들어가기`:`${label} 관전`}</Button>
-        :x.winner?<Button variant="link" href={battleHref(b.id)}>{label} 리플레이</Button>
-        :startable&&<Button variant="second" href={officialBattleHref(eventId,x.key)}>{label} 배틀로 경기</Button>}
-      {admin&&open&&<Button variant="link" disabled={busy} onClick={async()=>{
+    /* 아직 아무도 앉지 않은 판은 그 판의 이름이 제목이다(미정, 미정이 아니라 3경기). 리플레이와 배틀 무효는 두 줄 사이에 뜬 글자가
+       아니라 그 줄의 오른쪽 끝에 선다 (2026-11-10) */
+    const seated=Boolean(x.a?.name||x.b?.name);
+    const voidKey=admin&&open&&<Button variant="link" disabled={busy} onClick={async()=>{
         if(!await siteConfirm({title:"배틀 무효",body:`${label}의 배틀을 닫습니다. 진행 중이던 배틀은 무효로 끝나 리플레이로 남고, 이 판은 다시 치릅니다.`,confirmLabel:"무효",danger:true})) return;
         setBusy(true); try{ await voidBattle(b.id); onChanged?.(); }finally{ setBusy(false); }
-      }}>{label} 배틀 무효</Button>}
+      }}>배틀 무효</Button>;
+    const replayKey=!open&&x.winner&&b&&<Button variant="link" href={battleHref(b.id)}>리플레이</Button>;
+    return <div className="stack" key={x.key}>
+      <Row title={seated?names:label} line={seated?line:line.slice(label.length+2)} value={voidKey||replayKey||undefined} lamp={open?"진행 중":null} sig={open}/>
+      {open?<Button variant="second" href={battleHref(b.id)}>{b.status==="waiting"?`${label} 들어가기`:`${label} 관전`}</Button>
+        :!x.winner&&startable&&<Button variant="second" href={officialBattleHref(eventId,x.key)}>{label} 배틀로 경기</Button>}
     </div>;
   };
   return <div className="stack mb-battle">
@@ -1039,7 +1035,8 @@ const stageOf=(g,m)=>{
 };
 function ResultEntry({ g, nameOf, seedOf, onPick, teamMode, onOpenTeam, busy, outcomeOn=false, onOutcome, battles=[], startable=false, eventId=null, onBattleChanged, boutsOf=()=>0 }){
   const ev=evalGraph(g);
-  const rows=collectGraphMatches(g).map(m=>({m,a:ev.sp(m.a),b:ev.sp(m.b)})).filter(x=>x.a&&x.b&&x.a!==BYE&&x.b!==BYE);
+  // the reset final exists only once the losers' side has won the grand final, as on the board
+  const rows=collectGraphMatches(g).filter(m=>m!==g.reset||g.gf?.winner==="b").map(m=>({m,a:ev.sp(m.a),b:ev.sp(m.b)})).filter(x=>x.a&&x.b&&x.a!==BYE&&x.b!==BYE);
   const [chosen,setChosen]=useState(null);
   const [draft,setDraft]=useState(null);
   const cur=rows.find(x=>x.m.id===chosen)||rows.find(x=>!x.m.winner)||rows[rows.length-1];
@@ -1586,6 +1583,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   const [awardPicks,setAwardPicks]=useState(()=>new Set());
   const [awardBusy,setAwardBusy]=useState(false);
   const [applying,setApplying]=useState(false);
+  const [guard,setGuard]=useState(""); // what stops 기록에 반영, said on the sheet
   const manualExcluded=!!curT&&(curT.key==="rookie"||/루키/.test(curT.label||""));
   const linkedPointPolicy=linkedContext
     ? (team
@@ -1617,11 +1615,11 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
     return { deltas, roundNum, willRank, willSeason };
   };
   const prepare=()=>{
-    if(qualifierEvent){siteAlert("선발전은 기록에 반영하지 않습니다.","선발전은 순위와 포인트를 기록하지 않습니다. 챔피언스 운영에서 본선 진출자를 확정한 뒤 선발전을 종료해 주세요.");return;}
-    if(!curT){siteAlert("대회를 선택해 주세요.","회차를 추가할 대회를 먼저 선택해 주세요.");return;}
-    if(linkedContextBusy){siteAlert("잠시만 기다려 주세요.","연결 대회의 시즌 정보를 불러오는 중입니다.");return;}
-    if(linkedContextError){siteAlert("연결 대회를 확인하지 못했습니다.",linkedContextError);return;}
-    if(!recordSeason){siteAlert("시즌을 선택해 주세요.","기록을 반영할 시즌을 먼저 선택해 주세요.");return;}
+    if(linkedContextBusy||linkedContextError) return; // the key is off while the linked event loads or has failed; the form says why
+    const stop=qualifierEvent?"선발전은 기록에 반영하지 않습니다. 선발전 현황에서 본선 진출자를 확정해 주세요."
+      :!curT?"회차를 추가할 대회를 먼저 선택해 주세요."
+      :!recordSeason?"기록을 반영할 시즌을 먼저 선택해 주세요.":"";
+    setGuard(stop); if(stop) return;
     setPreview(buildResult());
   };
   // 기록 반영이 끝난 뒤, 고정된 공식 파티로 칭호 조건을 확인한다. 판정 실패는 기록 반영을 막지 않는다.
@@ -1728,13 +1726,13 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
   if(preview){
     const changes=Object.entries(preview.deltas).map(([name,d])=>{ const cur=rankRows.find(r=>r.name===name); return {name,isNew:!cur,curPts:cur?.points||0,d}; });
     return (<Modal title="반영 전 확인" hint={excluded
-      ? "아래 내용으로 공식 기록에 반영합니다. 챔피언스 성적은 랭킹에 반영되지 않습니다."
+      ? (champ?"아래 내용으로 공식 기록에 반영합니다. 챔피언스 성적은 랭킹에 반영되지 않습니다.":"아래 내용으로 공식 기록에 반영합니다.")
       : "아래 내용으로 기록에 반영합니다. 포인트 변동을 확인한 뒤 진행해 주세요."} onClose={()=>{ if(!applying) setPreview(null); }}>
       <div className="swap" key="pre">
       <div className="bk-applybox">
         <div className="bk-ab-meta">{team?"팀전":"개인전"}{champ?" 챔피언스 시리즈":""}</div>
-        <div>{curT.label} <b>{preview.roundNum}회</b>{recordSeason?`, ${recordSeason}`:""}{rule.trim()?`, ${rule.trim()}`:""}</div>
-        <div>우승 <b>{nameOf(res.champ)}</b>{res.ru?<>, 준우승 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 4강 {res.sf.map(nameOf).join(", ")}</>:null}</div>
+        <div><span>{curT.label} <b>{preview.roundNum}회</b>{recordSeason?`, ${recordSeason}`:""}{rule.trim()?`, ${rule.trim()}`:""}</span></div>
+        <div><span>우승 <b>{nameOf(res.champ)}</b>{res.ru?<>, 준우승 {nameOf(res.ru)}</>:null}{res.sf.length?<>, 4강 {res.sf.map(nameOf).join(", ")}</>:null}</span></div>
       </div>
       {linked&&!team&&(
         !!identityPreviewError ||
@@ -1855,17 +1853,17 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           <div className="field">
             <span className="field-label">반영 내용</span>
             <div className="bk-applybox">
-              <div><Icon n="check" size={16}/> {curT?.label||"회차"} 기록</div>
-              <div>
+              <div><Icon n="check" size={16}/><span>{curT?.label||"회차"} 기록</span></div>
+              <div className={excluded?"dim":undefined}><Icon n={excluded?"minus":"check"} size={16}/><span>
                 {excluded
                   ? "누적 랭킹 미반영"
                   : `누적 랭킹${rankEra?.label?` (${rankEra.label})`:""}`}
-              </div>
-              <div>
+              </span></div>
+              <div className={excluded||champ?"dim":undefined}><Icon n={excluded||champ?"minus":"check"} size={16}/><span>
                 {excluded||champ
                   ? "시즌별 성적 미반영"
                   : `시즌별 성적 (${recordSeason})`}
-              </div>
+              </span></div>
             </div>
           </div>
 
@@ -1985,9 +1983,10 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
         </label>
       </>}
 
-      <div className="stack bk-dock bk-apply-actions">
+      {guard&&<FormError>{guard}</FormError>}
+      <div className="modal-actions">
         <Button variant="second" onClick={onClose}>나중에</Button>
-        <Button variant="main" icon="check" onClick={prepare} disabled={linked&&linkedContextBusy}>기록에 반영</Button>
+        <Button variant="main" icon="check" onClick={prepare} disabled={linked&&(linkedContextBusy||Boolean(linkedContextError))}>기록에 반영</Button>
       </div>
     </div>
   </Modal>);
@@ -2004,36 +2003,44 @@ function BracketDraw({ b, onDone }){
   if(group){ b.groups.forEach((g,gi)=>g.members.forEach((mem,mi)=>{ order["g"+gi+"_"+mi]=k++; })); }
   else { b.graph.rounds[0].forEach((m,mi)=>["a","b"].forEach((side,si)=>{ const s=m[side]; if(s.pid) order["m"+mi+"_"+si]=k++; })); }
   const total=k;
-  const [n,setN]=useState(0); const [roll,setRoll]=useState("");
+  // 움직임을 줄인 기기에서는 굴리지 않고 뽑힌 대진을 바로 세운다
+  const [n,setN]=useState(()=>reduced()?total:0); const [roll,setRoll]=useState("");
+  // 지금 뽑는 자리가 창 밖이면 따라간다 (2026-11-10: 13명부터는 추첨의 대부분이 화면 밖에서 일어났다)
+  const rolling=useRef(null);
+  useEffect(()=>{ rolling.current?.scrollIntoView({block:"nearest",inline:"nearest",behavior:reduced()?"auto":"smooth"}); },[n]);
   useEffect(()=>{
     if(n>=total){ const t=setTimeout(onDone,950); return ()=>clearTimeout(t); }
     let ticks=0; const iv=setInterval(()=>{ setRoll(allNames[Math.floor(Math.random()*allNames.length)]||""); if(++ticks>=9){ clearInterval(iv); const t=setTimeout(()=>setN(x=>x+1),140); return ()=>clearTimeout(t); } },70);
     return ()=>clearInterval(iv);
   },[n]); // eslint-disable-line
+  /* 대진표의 칸 그대로 그린다(.mb, .mb-row): 이름이 들어와도 칸의 크기가 바뀌지 않고, 추첨이 끝나 대진표로 바뀔 때 같은 자리에 선다.
+     아직 뽑지 않은 칸은 빈 줄, 뽑는 칸은 한 단 밝게, 부전승과 다음 라운드의 대기는 대진표와 같은 흐린 글자다. */
+  const row=(cls,text,ref)=><div className={"mb-row"+cls} ref={ref}><i className="mb-seed num t12" aria-hidden="true"/><span className="mb-name">{text}</span></div>;
   const slotFor=(key,pid,bye)=>{
-    if(bye) return <div className="bk-slot bye">부전승</div>;
+    if(bye) return row(" wait","부전승");
     const ord=order[key];
-    if(ord<n) return <div className={"bk-slot dset"+(ord===n-1?" pop":"")}>{nameOf(pid)}</div>;
-    if(ord===n) return <div className="bk-slot drolling">{roll||"…"}</div>;
-    return <div className="bk-slot dwait"><i/></div>;
+    if(ord<n) return row(ord===n-1?" pop":"",nameOf(pid));
+    if(ord===n) return row(" drolling",roll,rolling);
+    return row(" wait","");
   };
   const done=n>=total;
+  const skip=<Button variant={done?"main":"second"} size="sm" icon={done?"check":undefined} onClick={onDone}>{done?"대진 확정":"건너뛰기"}</Button>;
   return (<div className="bk-drawwrap swap">
-    <div className="bk-draw-h"><h2 className="t20">{done?"대진 확정":"대진 추첨 중"}</h2><span className="t15 bk-draw-cnt num">{Math.min(n,total)} / {total}</span></div>
+    <div className="bk-draw-h"><h2 className="t20">{done?"대진 확정":"대진 추첨 중"}</h2><span className="t15 bk-draw-cnt num">{Math.min(n,total)} / {total}</span><span className="bk-draw-skip">{skip}</span></div>
     {group ? (
       <div className="bk-groups">{b.groups.map((g,gi)=>(
         <div className="bk-group" key={g.id}><div className="bk-group-h">그룹 {g.name}</div>
-          <div className="bk-draw-mem">{g.members.map((mem,mi)=>slotFor("g"+gi+"_"+mi,mem,false))}</div>
+          <div className="mb">{g.members.map((mem,mi)=>slotFor("g"+gi+"_"+mi,mem,false))}</div>
         </div>))}</div>
     ) : (()=>{ const {centers,totalH}=treeCenters(b.graph.rounds);
       return (<div className="bk-scroll sq" role="region" aria-label="대진표" tabIndex={0}><div className="bk-tree">
         {b.graph.rounds.map((r,ri)=>(<div className="bk-col2" key={ri}>
-          <div className="bk-col-h">{b.graph.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
+          <div className="bk-col-h t12 dim">{b.graph.kind==="double"?("승자조 "+(ri+1)+"R"):rlabel(r.length)}</div>
           <div className="bk-col-body" style={{height:totalH,"--bk-pitch":(BK_PITCH0*Math.pow(2,ri))+"px"}}>
             {r.map((m,j)=>(<div className="bk-mpos" key={m.id} style={{top:(centers[ri][j]-BK_MATCH_H/2)+"px"}}>
               {ri===0
-                ? <div className="bk-match sq">{slotFor("m"+j+"_0",m.a.pid,m.a.bye)}{slotFor("m"+j+"_1",m.b.pid,m.b.bye)}</div>
-                : <div className="bk-match sq tbd"><div className="bk-slot dwait"><i/></div><div className="bk-slot dwait"><i/></div></div>}
+                ? <div className="mb">{slotFor("m"+j+"_0",m.a.pid,m.a.bye)}{slotFor("m"+j+"_1",m.b.pid,m.b.bye)}</div>
+                : <div className="mb">{row(" wait","대기")}{row(" wait","대기")}</div>}
             </div>))}
           </div>
         </div>))}
@@ -2129,7 +2136,7 @@ function PrivateBrackets({ admin, flash, tabs }){
   const listArrived=useArrival(Boolean(list));
   const [fresh,setFresh]=useState(false);
   const [loadError,setLoadError]=useState("");
-  const reload=async()=>{ try{ setList(await freshRead(PRIVATE_BRACKETS_KEY,()=>readCommunity(PRIVATE_BRACKETS_KEY))); setLoadError(""); }catch(error){ setLoadError(error?.message||"사설 대진표를 불러오지 못했습니다."); }finally{ setFresh(true); } };
+  const reload=async()=>{ try{ setList(await freshRead(PRIVATE_BRACKETS_KEY,()=>readCommunity(PRIVATE_BRACKETS_KEY))); setLoadError(""); }catch(error){ setLoadError(readErrorText(error,"사설 대진표를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.")); }finally{ setFresh(true); } };
   useEffect(()=>{ void reload(); },[]); // eslint-disable-line react-hooks/exhaustive-deps
   const [q,setQ]=useState("");
   const [creating,setCreating]=useState(false);
@@ -2165,7 +2172,7 @@ function PrivateBrackets({ admin, flash, tabs }){
   const create=async({pin,...input})=>{
     let b; try{ b=createPrivateBracket(input); }catch(error){ siteAlert("대진표를 만들 수 없습니다.",error?.message||""); return; }
     setBusy(true);
-    try{ await createCommunityItem(PRIVATE_BRACKETS_KEY,b.id,b,{pin}); await reload(); flash("사설 대진표를 만들었습니다."); }
+    try{ await createCommunityItem(PRIVATE_BRACKETS_KEY,b.id,b,{pin}); await reload(); if(b.order!=="random") flash("사설 대진표를 만들었습니다."); } // 추첨이 시작되면 화면이 말한다
     catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return; }
     finally{ setBusy(false); }
     try{ localStorage.setItem("ypl-board-nick",b.host); }catch{ /* 기억 못 해도 된다 */ }
@@ -2244,8 +2251,8 @@ function PrivateBrackets({ admin, flash, tabs }){
     {/* the search with its main action at the row's right end, as the board's 글쓰기 stands (DESIGN.md "Controls": beside a search it
         keeps its own width): alone over the search it was a white bar across the whole 1200 (2026-11-10) */}
     <div className="bd-tools stack"><ListSearch q={q} setQ={setQ} placeholder="대진표, 개설자, 참가자 검색" count={shown.length}/><Button variant="main" icon="plus" onClick={()=>setCreating(true)}>새 사설 대진표</Button></div>
-    {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
-    {!list&&!loadError?<Loader/>:shown.length===0
+    {loadError&&<ErrorNote action="다시 불러오기" onRetry={reload}>{loadError}</ErrorNote>}
+    {!list?(!loadError&&<Loader/>):shown.length===0
       ? (kw?<Empty className="swap" title="검색 결과가 없습니다."/>
            :<Empty className="swap" title="아직 사설 대진표가 없습니다."/>)
       : <div className="stack bk-rows" ref={listArrived}>{shown.map((b,i)=><BracketRow key={b.id} b={b} lead={i===0&&!kw} vt={"pb-"+b.id} live={pbStatus(b)==="진행 중"}
@@ -2280,7 +2287,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       setNormalizedLoadError("");
       return rows;
     }catch(error){
-      setNormalizedLoadError(error?.message||"대진표를 불러오지 못했습니다.");
+      setNormalizedLoadError(readErrorText(error,"잠시 뒤 다시 시도해 주세요."));
       return [];
     }finally{
       if(initial) setNormalizedInitialReady(true);
@@ -2558,7 +2565,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       <h1 className="t32">대진표</h1>
       {admin&&<Button variant="link" disabled={!!deletingId} onClick={()=>transition(()=>flushSync(()=>setWizard(true)))}>새 대진표</Button>}
     </header>}
-    {!open&&!wizard&&normalizedLoadError&&<ErrorNote>대진표를 불러오지 못했습니다. {normalizedLoadError}</ErrorNote>}
+    {!open&&!wizard&&normalizedLoadError&&<ErrorNote action="다시 불러오기" onRetry={()=>void loadNormalized({initial:true})}>대진표를 불러오지 못했습니다. {normalizedLoadError}</ErrorNote>}
     {!open&&!wizard&&tabsEl()}
     {!open&&!wizard&&<div className="bk-list swap" ref={listArrived}>
       {!normalizedInitialReady

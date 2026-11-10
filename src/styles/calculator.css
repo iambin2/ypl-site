@@ -12,6 +12,12 @@
 .calc-toggles { display: flex; flex-wrap: wrap; gap: var(--seam); }
 .calc-toggle { min-height: var(--h-strip); padding: 0 var(--s3); color: var(--dim); font-size: var(--t12); line-height: var(--l12); font-weight: 600; transition: background-color var(--move-tone), color var(--move-tone); }
 .calc-toggle.inv { color: var(--ground); }
+/* on a phone the toggles wrap: each row keeps the room a finger's 44 needs, and the target runs 6 past the chip (Controls, Chip) */
+@media (max-width: 859px) {
+  .calc-toggles { row-gap: var(--s3); }
+  .calc-toggle { position: relative; }
+  .calc-toggle::after { content: ""; position: absolute; inset: calc((var(--h-control) - var(--h-strip)) / -2) 0; }
+}
 @media (hover: hover) { .calc-toggle.pn:hover { background: var(--panel-2); color: var(--lit); } }
 
 /* ---------- who faces whom: two cells, each Pokémon on its name band ---------- */

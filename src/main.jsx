@@ -40,6 +40,14 @@ const bootDark = bootTheme();
 document.documentElement.dataset.theme = bootDark ? "dark" : "light";
 document.documentElement.style.colorScheme = bootDark ? "dark" : "light";
 
+/* 아이폰과 아이패드의 사파리는 글자가 16px보다 작은 입력 칸에 초점이 가면 화면을 확대하고 되돌리지 않는다(이 사이트의 칸은 15).
+   maximum-scale=1을 주면 그 자동 확대만 없어지고 두 손가락 확대는 그대로 된다. 안드로이드에서는 두 손가락 확대까지 막히므로
+   iOS에만 건다. (2026-11-10, 코드로 찾은 것이라 실제 아이폰에서 확인이 필요하다.) */
+if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+  const viewport = document.querySelector('meta[name="viewport"]');
+  if (viewport && !/maximum-scale/.test(viewport.content)) viewport.content += ", maximum-scale=1";
+}
+
 /* 페이지 안의 오류는 LazyContent가 받고, 여기에는 셸까지 무너진 경우만 온다. */
 class AppBoundary extends Component {
   state = { failed: false };
@@ -50,7 +58,11 @@ class AppBoundary extends Component {
 
   render() {
     if (!this.state.failed) return this.props.children;
-    return <StatusPage title="화면을 표시하지 못했습니다." desc="새로고침해 주세요. 계속되면 운영진에게 알려 주세요." onRetry={() => window.location.reload()} />;
+    return <StatusPage title="화면을 표시하지 못했습니다." desc="새로고침해 주세요. 계속되면 운영진에게 알려 주세요." onRetry={() => {
+      // the crash may be in the browser's own copy of the site's data, which a reload would draw again: it is let go first
+      try { localStorage.removeItem("ypl-seen-site"); } catch { /* the reload reads again anyway */ }
+      window.location.reload();
+    }} />;
   }
 }
 

@@ -23,7 +23,15 @@ const write = (key, value) => { try { value == null ? localStorage.removeItem(ke
 
 // called once as the app starts: a return from Google leaves its tokens after # in the address
 export function captureVisitorSession() {
-  if (typeof window === "undefined" || !window.location.hash.includes("access_token=")) return;
+  if (typeof window === "undefined") return;
+  /* a sign-in refused or failed comes back with error= after #: the name or the form that was asked for before the trip is let go
+     (2026-11-10: it stayed armed, so a later sign-in sent the link request with no key pressed), and the address is cleaned */
+  if (/[#&]error=/.test(window.location.hash)) {
+    write(PENDING, null); write(PENDING_FORM, null);
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    return;
+  }
+  if (!window.location.hash.includes("access_token=")) return;
   const params = new URLSearchParams(window.location.hash.slice(1));
   const access = params.get("access_token"), refresh = params.get("refresh_token");
   if (access && refresh) write(STORE, { access, refresh, until: Date.now() + (Number(params.get("expires_in")) || 3600) * 1000 - 60000 });
@@ -77,11 +85,16 @@ async function rest(path, { method = "GET", body, auth = true } = {}) {
 /* the feature stands only once docs/db/player_accounts.sql has run: an anonymous read of the table is refused when it exists,
    and answers that there is no such table when it does not */
 let ready = null;
+const READY = "ypl-accounts-ready";
 export function accountsReady() {
   if (!enabled()) return Promise.resolve(false);
   return ready ||= rest("player_accounts?select=auth_user_id&limit=1", { auth: false })
-    .then(() => true, error => error.status === 401 || error.status === 403 || error.code === "42501");
+    .then(() => true, error => error.status === 401 || error.status === 403 || error.code === "42501")
+    .then(ok => { write(READY, ok ? 1 : null); return ok; });
 }
+/* what the last visit's probe answered, at once: a screen that stands an account block starts from it, so the block is in the first
+   frame and never arrives a round trip later, pushing what was already drawn (2026-11-10: the trainer list dropped 192) */
+export const accountsKnown = () => enabled() && read(READY) === 1;
 
 // this visitor's own account: { requested_name, status, player_id, email } or null. approved: the name is theirs alone
 export async function myPlayerLink() {

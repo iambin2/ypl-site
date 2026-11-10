@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Empty, Icon, ListSearch, Loader, Modal, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition, ErrorNote } from "../components/index.js";
+import { Empty, FormError, Icon, ListSearch, Loader, Modal, Pager, Prose, Segmented, siteAlert, siteConfirm, sitePrompt, transition, ErrorNote } from "../components/index.js";
 import { reduced } from "../components/common/motion.js";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { saveTeamSheetImage } from "../components/teamSheetImage.js";
 import { CUP_RULES, REGULATIONS, TYPE_OPTIONS } from "../data/index.js";
 import { formatDate } from "../services/dateFormat.js";
 import { freshRead, peekRead } from "../services/readCache.js";
-import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem, newCommunityId, patchCommunityItem, readCommunity, shareLink, verifyCommunityPin } from "../services/communityStore.js";
+import { FREE_BOARD_KEY, SHOWCASE_KEY, createCommunityItem, deleteCommunityItem, newCommunityId, patchCommunityItem, readCommunity, readErrorText, shareLink, verifyCommunityPin } from "../services/communityStore.js";
 import { PIN_DENIED } from "../services/communityItems.js";
 import { DRAFT_STORAGE_KEY, INCOMING_TEAM_KEY, TEAM_STORAGE_KEY, normalizeDraft, normalizeSavedTeam, onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { takeBoardDraft } from "../services/battleService.js";
@@ -43,13 +43,14 @@ function BoardCompose({ onClose, onSubmit, initial=null }){
   const [nick,setNick]=useState(""); const [title,setTitle]=useState(initial?.title||""); const [body,setBody]=useState(initial?.body||""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
   // what is missing is said under its own field, both at once, never by a dialog over this sheet (2026-11-10)
   const [tried,setTried]=useState(false);
-  const submit=()=>{ if(!nick.trim()||!title.trim()){ setTried(true); return; }
+  const pinShort=pin.length>0&&pin.length<4;
+  const submit=()=>{ if(!nick.trim()||!title.trim()||pinShort){ setTried(true); return; }
     onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
       <div className="bk-grow2">
         <Field label="닉네임" error={tried&&!nick.trim()&&"닉네임을 입력해 주세요."}><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
-        <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
+        <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)" error={tried&&pinShort&&"비밀번호는 숫자 4자리로 입력해 주세요."}><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
       </div>
       <Field label="제목" error={tried&&!title.trim()&&"제목을 입력해 주세요."}><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력해 주세요." maxLength={60}/></Field>
       <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></Field>
@@ -85,7 +86,7 @@ function useCommunityList(key,admin,flash){
   const [posts,setPosts]=useState(()=>peekRead(key)||null);
   const [loadError,setLoadError]=useState("");
   const [fresh,setFresh]=useState(false);
-  const reload=async()=>{ try{ setPosts(await freshRead(key,()=>readCommunity(key))); setLoadError(""); }catch(error){ setLoadError(error?.message||"글을 불러오지 못했습니다."); }finally{ setFresh(true); } };
+  const reload=async()=>{ try{ setPosts(await freshRead(key,()=>readCommunity(key))); setLoadError(""); }catch(error){ setLoadError(readErrorText(error,"글을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.")); }finally{ setFresh(true); } };
   // 관리자 전용 글은 로그인한 뒤에야 내려온다.
   useEffect(()=>{ void reload(); },[admin]); // eslint-disable-line react-hooks/exhaustive-deps
   const run=async(write,done)=>{ try{ await write(); await reload(); if(done)flash(done); return true; }catch(error){ siteAlert("저장하지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); return false; } };
@@ -280,11 +281,13 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
   const sheet=sheetOf(team,display);
   const nameAt=i=>sheet[i]?.name||members[i]?.pokemonName||"";
   const autoTitle=kind==="sample"?`${nameAt(index)} 샘플`:(team?.name&&!team.working?team.name:`${nameAt(0)} 파티`);
+  const [tried,setTried]=useState(false); const [failed,setFailed]=useState("");
+  const pinShort=pin.length>0&&pin.length<4;
   const submit=async()=>{
     if(busy)return;
-    if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;}
-    if(!members.length){siteAlert("올릴 포켓몬이 없습니다.");return;}
-    setBusy(true);
+    if(!nick.trim()||pinShort){ setTried(true); return; }
+    if(!members.length){ setFailed("올릴 포켓몬이 없습니다."); return; }
+    setBusy(true); setFailed("");
     try{
       const id=newCommunityId();
       const picked=kind==="sample"?[members[index]]:members;
@@ -296,7 +299,7 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
       await createCommunityItem(SHOWCASE_KEY,id,post,{pin});
       try{ localStorage.setItem("ypl-board-nick",post.nick); }catch{ /* 기억 못 해도 된다 */ }
       onPosted?.(post);
-    }catch(error){ siteAlert("글을 올리지 못했습니다.",error?.message||"잠시 뒤 다시 시도해 주세요."); }
+    }catch(error){ setFailed(readErrorText(error,"글을 올리지 못했습니다. 잠시 뒤 다시 시도해 주세요.")); }
     finally{ setBusy(false); }
   };
   return (<Modal title={`${KIND_LABEL[kind]} 소개글 쓰기`} hint={ruleSummary(team)} onClose={onClose}>
@@ -310,11 +313,12 @@ export function ShowcaseCompose({ team, kind:initialKind="party", format:initial
           </button>))}</div></div>}
       {kind==="party"&&<div className="field"><PartySprites members={members} big/></div>}
       <div className="bk-grow2">
-        <Field label="닉네임"><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
-        <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
+        <Field label="닉네임" error={tried&&!nick.trim()&&"닉네임을 입력해 주세요."}><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
+        <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)" error={tried&&pinShort&&"비밀번호는 숫자 4자리로 입력해 주세요."}><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
       </div>
       <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder={autoTitle} maxLength={60}/></Field>
       <Field label="소개"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder={kind==="sample"?"채용 이유, 노리는 상대, 운용법을 적어 주세요.":"컨셉, 선출 방법, 주의할 상대를 적어 주세요."}/></Field>
+      {failed&&<FormError>{failed}</FormError>}
       <div className="modal-actions"><Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" disabled={busy||!display} onClick={submit} loading={busy}>올리기</Button></div>
     </div>
   </Modal>);
@@ -408,8 +412,8 @@ function ShowcaseBoard({ kind, format, setFormat, admin, flash, go, tabs }){
     <h1 className="t32">게시판</h1>
     {tabs}
     <div className="bd-tools stack"><ListSearch q={q} setQ={setQ} placeholder="제목, 포켓몬, 글쓴이" count={list.length}/><Button variant="main" icon="plus" onClick={()=>setPicking(true)}>{label} 올리기</Button></div>
-    {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
-    {!posts&&!loadError?<Loader/>:<div className="stack bd-list swap">
+    {loadError&&<ErrorNote action="다시 불러오기" onRetry={reload}>{loadError}</ErrorNote>}
+    {!posts?(!loadError&&<Loader/>):<div className="stack bd-list swap">
       {list.length===0&&(kw
         ? <Empty title="검색 결과가 없습니다." desc={`‘${kw}’에 맞는 ${FORMAT_LABEL[format]} ${label} 글을 찾지 못했습니다.`}/>
         : <Empty title={`아직 ${FORMAT_LABEL[format]} ${label} 글이 없습니다.`}/>)}

@@ -10,6 +10,9 @@ export const SHOWCASE_KEY = "ypl_showcase_v1";
 export const PRIVATE_BRACKETS_KEY = "ypl_private_brackets_v1";
 const BOARD_OF = { [FREE_BOARD_KEY]: "free", [SHOWCASE_KEY]: "showcase", [PRIVATE_BRACKETS_KEY]: "private_bracket" };
 
+// a failed read's sentence: the server's own Korean when it has one, never the browser's exception (TypeError: Failed to fetch)
+export const readErrorText = (error, fallback) => (/[가-힣]/.test(error?.message || "") ? error.message : fallback);
+
 export async function readCommunity(key) {
   if (!BOARD_OF[key]) throw new Error(`알 수 없는 저장 키: ${key}`);
   if (!supa) {

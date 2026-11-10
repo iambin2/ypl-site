@@ -137,8 +137,6 @@ const EXCEPT = {
   "space: margin, padding and gap sit on the golden scale (Space)": {
     "a hairline: the screen-reader clip": [`${T} | .sr-only | margin: -1px`],
     "the bar ends on the page's edge by the icon's ink: half of 44 less 24": ["src/styles/shell.css | .iconbtn:last-child | margin-right: calc((var(--h-control) - 24px) / -2)"],
-    "clears a fixed element by its size: a sprite, a checkbox, a status icon": [
-      `${B} | .bk-award > .bk-chg-cnt | margin-left: 28px`],
   },
 };
 

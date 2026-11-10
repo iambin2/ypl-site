@@ -73,6 +73,9 @@
   .ho:not(:has(> .ho-live)) { grid-template-areas: "next reign" "rank news" "hall hall"; }
   .ho-reign { display: flex; flex-direction: column; }
   .ho-reign .champion { flex: 1 0 auto; }
+  /* the panel may grow (event day, a deadline counter); the champion keeps its size on its floor and never grows over 6대 and the
+     name (2026-11-10: on event day at 1440 the picture stood 452 in a 439 panel) */
+  .ho-reign .champion .mon { max-height: calc(216px + var(--s13) - var(--floor)); }
   .ho-next { grid-template-rows: auto auto auto 1fr; }
   .ho-next > .ho-due { grid-row: 3; }
   .ho-next > .ho-go { grid-row: 4; align-self: end; padding-top: var(--s8); }

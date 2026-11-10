@@ -209,13 +209,16 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
   const practice = onPractice && <Button onClick={onPractice}>컴퓨터와 연습</Button>;
   const keys = account === undefined ? <Button variant="main" loading>도전 시작</Button>
     : account === null ? <><Button variant="main" onClick={() => signInWithGoogle("", window.location.href.split("#")[0])}><GoogleMark />구글 로그인</Button>{practice}</>
-    : !approved ? <><Button variant="main" disabled={account.status === "pending"} onClick={() => go?.("records")}>{account.status === "pending" ? "이름 확인 중" : "트레이너 이름 정하기"}</Button>{practice}</>
+    : !approved ? <><Button variant="main" disabled={account.status === "pending"} onClick={() => go?.("records", { tab: "trainer", me: "1" })}>{account.status === "pending" ? "이름 확인 중" : "트레이너 이름 정하기"}</Button>{practice}</>
     : run ? <><Button variant="main" onClick={resume} loading={busy}>이어서 하기</Button><Button onClick={start} disabled={busy}>새로 도전</Button></>
     : <Button variant="main" onClick={start} loading={busy}>도전 시작</Button>;
   /* what the key cannot say by itself: why it waits. Signed out it says nothing: the key is 구글 로그인 and the month's board beside it
      shows the names it keeps (2026-11-10, the user: no sentence where the form already says it; the line stood as a slab over the
      run's counter on a phone's first screen, and as a second white bar under the key on a desktop) */
-  const note = account && !approved ? (account.status === "pending" ? "운영진이 트레이너 이름을 확인하면 도전할 수 있습니다." : "기록에서 트레이너 이름을 정하면 도전할 수 있습니다.") : "";
+  /* signed in without a name the key says it too (트레이너 이름 정하기, which leads to 내 기록 찾기); only a name waiting on the
+     operators needs the sentence, and it stands as a grey line in the dock over the key that waits, never as a slab (2026-11-10:
+     for the three signed-in states the slab was still there, over the lower half of the counter) */
+  const note = account && !approved && account.status === "pending" ? "운영진이 트레이너 이름을 확인하면 도전할 수 있습니다." : "";
   // the board as the home's and the records' ranking reads it; a live run opens its game to watch
   const placed = rows?.map(r => ({ rank: r.place, name: r.trainer_name, points: r.wins, live: r.live, open: r.live && r.battle_id ? () => onOpen(r.battle_id) : null }));
   return (
@@ -225,10 +228,11 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
       <div className="bt-lobby">
         <div className="bt-lobby-main">
           <LobbyArena res={res} foe="컴퓨터" foeNote=""
-            ours={<span className="bt-who"><b className={"bt-trainer" + (approved ? "" : " mute")}>{approved ? account.requested_name : "나"}</b><span className="bt-who-note">{run ? gameWords(wins) : "랜덤 파티"}</span></span>}>
+            ours={<span className="bt-who"><b className={"bt-trainer" + (approved ? "" : " mute")}>{approved ? account.requested_name : "나"}</b><span className={"bt-who-note" + (run ? "" : " idle")}>{run ? gameWords(wins) : "랜덤 파티"}</span></span>}>
             <LiftHall key={round} wins={wins} live={Boolean(run?.playing)} />
           </LobbyArena>
-          <Dock toast={error ? <Toast error>{error}</Toast> : note ? <Toast>{note}</Toast> : null}>
+          <Dock toast={error ? <Toast error>{error}</Toast> : null}>
+            {note && <p className="t12 dim bt-gate-line">{note}</p>}
             <div className="bt-end-keys">{keys}</div>
           </Dock>
         </div>

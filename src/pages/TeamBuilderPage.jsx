@@ -338,7 +338,10 @@ function OfficialSubmissionPanel({
   const eventGate = eventContext ? getSubmissionWriteGate(eventContext) : null;
   const blocked = Boolean(eventContextError || eventContextStatus === "error" || (eventGate && !eventGate.allowed));
   const ready = !blocked && eventContextStatus === "ready" && Boolean(registration) && Boolean(eligibility?.eligible);
-  const at = justSubmitted ? 4 : !teamValid ? 1 : !registration ? 2 : 3;
+  /* the steps go on as the form does: a team the submission's own check lets through (a member short of a move) has passed step 1
+     (2026-11-10: the steps said 1 팀 고르기 while the panel under them took the PIN and submitted) */
+  const passed = teamValid || Boolean(eligibility?.eligible);
+  const at = justSubmitted ? 4 : !passed ? 1 : !registration ? 2 : 3;
   const errors = [
     ...(eventContextError ? [eventContextError] : []),
     ...(eventGate && !eventGate.allowed && !eligibility?.errors?.includes(eventGate.error) ? [eventGate.error] : []),
@@ -369,7 +372,7 @@ function OfficialSubmissionPanel({
         <span><b className="t15">제출했습니다.</b><span className="t12 reg">이 파티가 지금의 공식 파티입니다.</span></span>
       </div> : null}
       {justSubmitted ? <Button type="button" variant="second" onClick={onAgain}>다시 제출</Button> : <>
-        <p className={"tb-step-line t12" + (teamValid ? "" : " off")}>{teamValid ? <><Icon n="check" size={16} />지금 팀이 규정을 통과했습니다.</> : "팀을 구성해 규정을 통과하면 제출할 수 있습니다."}</p>
+        <p className={"tb-step-line t12" + (passed ? "" : " off")}>{passed ? <><Icon n="check" size={16} />지금 팀이 규정을 통과했습니다.</> : "팀을 구성해 규정을 통과하면 제출할 수 있습니다."}</p>
         <div className="q tb-sub-field">
           <label className="q-label t12 dim" htmlFor="tb-sub-name">신청자 이름</label>
           <div className="tb-official-lookup">
@@ -405,8 +408,8 @@ function OfficialSubmissionPanel({
           />
           {latestSubmission && <p className="t12 reg dim">처음 제출할 때 정한 비밀번호입니다. 잊었다면 운영진에게 문의해 주세요.</p>}
         </div>}
-        {ready && <Button type="button" variant="main" icon="check" onClick={onSubmit} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
-          {submissionBusy ? "제출 중…" : latestSubmission ? "다시 제출" : "파티 제출"}
+        {ready && <Button type="button" variant="main" icon="check" onClick={onSubmit} loading={submissionBusy} disabled={submissionBusy || (pinNeeded && submissionPin.length !== 4)}>
+          {latestSubmission ? "다시 제출" : "파티 제출"}
         </Button>}
       </>}
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dropdown, Empty, ErrorNote, Icon, ListSearch, Loader, Modal, Pager, StandTable, siteConfirm, sitePrompt } from "../components/index.js";
+import { Dropdown, Empty, ErrorNote, FormError, Icon, ListSearch, Loader, Modal, Pager, StandTable, siteConfirm, sitePrompt } from "../components/index.js";
 import { Chips, Counter, Mon, Row, SectionHead, TabsLine, useArrival } from "../components/common/Board.jsx";
 import { loadChampions, seenChampions } from "../components/home/homeFacts.js";
 import TeamSheet, { rosterSheet, useTeamDisplay } from "../components/common/TeamSheet.jsx";
@@ -25,7 +25,7 @@ import Seg from "../components/common/Seg.jsx";
 import { battleHref, endedByLine, listOfficialBattleLogs, listPlayerBattles } from "../services/battleService.js";
 import { battleUsage, toID as battleId } from "../services/battleLog.js";
 import { GoogleMark } from "../components/layout/SiteHeader.jsx";
-import { VISITOR_EVENT, accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
+import { VISITOR_EVENT, accountsKnown, accountsReady, myPlayerLink, requestPlayerLink, signInWithGoogle, signOutVisitor, takePendingLink, visitorSignedIn } from "../services/visitorAuth.js";
 
 /* 사이트 배틀로 치른 공식 경기(DESIGN.md "Battle"): 트레이너의 배틀 이력과 포켓몬의 실제 선출, 선봉, 승률.
    끝난 공식 배틀의 로그는 한 번만 읽어 둔다. */
@@ -437,7 +437,7 @@ const findBack = (trainer = "") => `${window.location.origin}${window.location.p
 /* the visitor's account as it stands: whether accounts are on (player_accounts.sql run), signed in, and the account's link.
    take: a name asked for before the trip to Google, sent now that the visitor is back */
 function useAccount(take) {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(accountsKnown);
   const [signedIn, setSignedIn] = useState(visitorSignedIn);
   const [link, setLink] = useState(undefined);
   const [note, setNote] = useState("");
@@ -476,6 +476,9 @@ function TrainerLink({ profile, lead = false }) {
   const go = async () => { setBusy(true); await ask(profile.name); setBusy(false); };
   const mine = Boolean(link && link.player_id === profile.playerId);
   const askedHere = Boolean(link && link.requested_name === profile.name);
+  if (signedIn && link?.status === "approved" && !mine && !askedHere) return null;
+  // a pending request can be moved to this record; a rejected or a new one simply asks
+  const moving = link?.status === "pending" && !askedHere;
   if (lead) {
     const known = signedIn && link && (mine || askedHere);
     const asking = !signedIn || link === null || (link && !known);
@@ -486,10 +489,10 @@ function TrainerLink({ profile, lead = false }) {
           {known && link.status !== "approved" && <span className="t12">{link.status === "pending" ? "운영진이 확인하면 이 기록이 내 계정과 이어집니다." : "다른 이름으로 다시 요청할 수 있습니다."}</span>}
         </div>
         {asking && (signedIn
-          ? <Button variant="main" icon="check" loading={busy} onClick={go}>{link ? `${link.requested_name} 대신 이 기록으로 요청` : "내 기록으로 연결"}</Button>
+          ? <Button variant="main" icon="check" loading={busy} onClick={go}>{moving ? `${link.requested_name} 대신 이 기록으로 요청` : "내 기록으로 연결"}</Button>
           : <Button variant="main" onClick={() => signInWithGoogle(profile.name, findBack(profile.name))}><GoogleMark />구글로 내 기록 연결</Button>)}
-        {note && <p className="t12 dim">{note}</p>}
-        {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>구글 로그아웃</Button></div>}
+        {note && <FormError>{note}</FormError>}
+        {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>로그아웃</Button></div>}
       </section>
     );
   }
@@ -501,11 +504,11 @@ function TrainerLink({ profile, lead = false }) {
           ? <Row title="구글 계정으로 연결" value={<Button variant="second" size="sm" onClick={() => signInWithGoogle(profile.name, findBack(profile.name))}><GoogleMark />구글 로그인</Button>} />
           : link === undefined ? <Row title="연결 상태를 확인하는 중입니다." />
           : mine ? <Row title={LINK_STATE[link.status] || ""} line={link.email || undefined} />
-          : <Row title="내 기록으로 연결 요청" line={link ? `지금은 ${link.requested_name} 기록에 요청되어 있습니다.` : "운영진이 확인한 뒤 연결됩니다."}
+          : <Row title="내 기록으로 연결 요청" line={moving ? `지금은 ${link.requested_name} 기록에 요청되어 있습니다.` : "운영진이 확인한 뒤 연결됩니다."}
               value={<Button variant="second" size="sm" loading={busy} onClick={go}>요청</Button>} />}
       </div>
-      {note && <p className="t12 dim">{note}</p>}
-      {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>구글 로그아웃</Button></div>}
+      {note && <FormError>{note}</FormError>}
+      {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>로그아웃</Button></div>}
     </section>
   );
 }
@@ -535,7 +538,7 @@ function FindMe({ query, exact, onOpen, part = "head" }) {
   if (part === "name") return name && !exact && !holds ? <div className="stack rc-newname">
     <Row title={`${name} 이름으로 시작`} line="기록이 아직 없는 이름입니다."
       value={<Button variant="second" size="sm" loading={busy} onClick={start}>{signedIn ? "시작" : <><GoogleMark />구글 로그인</>}</Button>} />
-    {note && <p className="t12 dim">{note}</p>}
+    {note && <FormError>{note}</FormError>}
   </div> : null;
   return (
     <div className="stack rc-find">
@@ -544,8 +547,8 @@ function FindMe({ query, exact, onOpen, part = "head" }) {
         <span className="t12">{line}</span>
       </div>
       {holds && link.player_id && <Row title="내 기록 보기" onClick={() => onOpen(link.requested_name)} value={<Icon n="chevr" size={20} />} />}
-      {note && <p className="t12 dim">{note}</p>}
-      {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>구글 로그아웃</Button></div>}
+      {note && <FormError>{note}</FormError>}
+      {signedIn && <div className="rc-more"><Button variant="link" onClick={signOutVisitor}>로그아웃</Button></div>}
     </div>
   );
 }
@@ -977,7 +980,7 @@ function RankingHub({ snapshot, data, admin, setModal, save, onName }) {
   const options = [...primary, ...(view && !primary.includes(view) ? [view] : [])].map((v) => [v.id, v.label]);
 
   const addEra = async () => {
-    const name = (await sitePrompt({ title: "누적 랭킹 탭 추가", label: "탭 이름", placeholder: "예: 클래식", confirmLabel: "추가" })) || "";
+    const name = (await sitePrompt({ title: "누적 탭 추가", label: "탭 이름", placeholder: "예: 클래식", confirmLabel: "추가" })) || "";
     if (!name) return;
     const key = "r_" + uid();
     save({ ...data, rankings: [...(data.rankings || []), { key, label: name, rows: [] }] });

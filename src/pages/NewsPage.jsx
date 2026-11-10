@@ -159,6 +159,9 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
     const facts=eventFacts(a);
     const next=facts?.next;
     const applied=a.form?.eventId&&eventResponses[a.id]?eventResponses[a.id].length:null;
+    /* the 신청 counter stands switched off from the first frame where its count is on its way (the same notices the list read asks
+       for), so the count lights in its place and nothing under it is pushed (2026-11-10: 86 px, CLS 0.071 on a phone) */
+    const counting=applied!=null||Boolean(a.form?.enabled&&a.form?.eventId&&(admin||(a.form.fields||[]).some(f=>f.public)));
     const clock=next?.dday===0?dotDate(next.raw)?.clock:"";
     // 주 행동은 하나다: 신청을 받으면 참가 신청, 아니면 파티 제출. 나머지는 패널 버튼으로 선다.
     const submits=[
@@ -179,13 +182,13 @@ export default function NewsPage({ data, admin, setModal, save, submitForm, refr
         <h1 className="t32 nw-title" data-vt={"n-"+a.id}>{a.title}</h1>
       </header>
       <aside className="nw-aside">
-        {(next||applied!=null)&&<div className="stack nw-counts">
+        {(next||counting)&&<div className="stack nw-counts">
           {next&&(next.dday===0
             ? <Counter label={`${next.k?next.k+" ":""}오늘 진행 중`} lamp="sig" value={clock||"  :  "} cells={4} after={<span className="t15">시작</span>}/>
             : <Counter label={`${next.k||"대회"}까지`} lamp value={String(next.dday).padStart(2,"0")} cells={next.dday>=100?3:2} unit="일" after={<span className="t15">일</span>}/>)}
-          {applied!=null&&<Counter label="신청" value={applied} cells={applied>=100?3:2} unit="명"/>}
+          {counting&&<Counter label="신청" value={applied} cells={applied>=100?3:2} unit="명"/>}
         </div>}
-        {facts?.rows.length>0&&<div className={"stack nw-spec"+(next||applied!=null?" joined":"")}>
+        {facts?.rows.length>0&&<div className={"stack nw-spec"+(next||counting?" joined":"")}>
           {facts.rows.map(([k,v])=><div className="pn spec-row" key={k}><span className="t12 dim">{k}</span><span className="t15">{v}</span></div>)}
         </div>}
         {(editable||seconds.length>0||a.link||a.link2)&&<div className="stack nw-more">
@@ -421,7 +424,7 @@ function FormPage({ ann, responsesOverride=null, onBack, onSubmit, onOpen, edit=
     {person&&<section className="nw-form-sec" aria-labelledby="ff-who-h">
       <SectionHead id="ff-who-h" title="참가자"/>
       {/* 구글 계정 칸: 로그인 전, 계정의 이름으로 신청, 로그인했지만 이름이 아직 계정의 것이 아닌 때. 줄 하나에 설명 한 줄. */}
-      {accountForm&&acct.ready&&<Question id="ff-account" label={owned?"참가자":"구글 계정"} group>
+      {accountForm&&acct.ready&&<Question id="ff-account" label="구글 계정" group>
         <div className="stack">{!acct.signedIn
           ? <Row title="구글 계정으로 신청"
               value={<Button variant="second" size="sm" onClick={()=>signInWithGoogle("",undefined,ann.id)}><GoogleMark/>구글 로그인</Button>}/>

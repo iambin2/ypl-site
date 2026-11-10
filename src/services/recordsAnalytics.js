@@ -128,6 +128,8 @@ export function liveMatches(bracket) {
   const { slotPlayer } = evalGraph(graph);
   const nameOf = pid => (bracket.participants || []).find(p => p.id === pid)?.name || "";
   const real = collectGraphMatches(graph)
+    // the reset final is a match only once the losers' side has won the grand final (as the board and the records count it)
+    .filter(item => !(item.reset && graph.gf?.winner !== "b"))
     .map(({ match, stage }) => ({ match, stage, a: slotPlayer(match.a), b: slotPlayer(match.b) }))
     .filter(row => row.a && row.b && row.a !== BYE && row.b !== BYE);
   const live = real.filter(row => !row.match.winner);

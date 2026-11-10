@@ -116,8 +116,13 @@ html {
   scrollbar-color: var(--mute) transparent; scrollbar-width: none;
   overscroll-behavior-x: none;
   accent-color: var(--lit); caret-color: var(--lit);
-  scroll-padding-top: var(--nav-height);
+  /* what a focus or a keyboard brings into view stops clear of the fixed bars, the phone's tab bar and docked action included */
+  scroll-padding-top: calc(env(safe-area-inset-top, 0px) + var(--nav-height));
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height));
+  /* two quick taps on a key (a stepper, the replay's keys) never zoom the page on a phone; a pinch still does */
+  touch-action: manipulation;
 }
+@media (max-width: 859px) { html:has(.page .dock) { scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--h-counter)); } }
 html::-webkit-scrollbar { display: none; }
 body {
   margin: 0; color: var(--lit); background: var(--ground);

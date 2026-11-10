@@ -165,11 +165,16 @@
 .toaster { position: fixed; z-index: var(--z-toast); left: 0; right: 0; margin-inline: auto; width: min(100% - var(--gutter) * 2, calc(var(--s21) * 4 + var(--s5))); height: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }
 .is-admin .toaster { bottom: calc(env(safe-area-inset-bottom, 0px) + calc(var(--s21) + var(--s13))); }
 @media (min-width: 860px) { .toaster { bottom: var(--s8); } .is-admin .toaster { bottom: 84px; } }
+/* over a phone's docked action, never on it (2026-11-10: the toast lay on 건너뛰기 for the whole of a short draw) */
+@media (max-width: 859px) {
+  .ypl:has(.page .dock):not(:has(.bt-match)) .toaster { bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--h-counter) + var(--s3)); }
+  .ypl.is-admin:has(.page .dock):not(:has(.bt-match)) .toaster { bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-height) + var(--admin-height) + var(--h-counter) + var(--s3)); }
+}
 .toast {
   position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: var(--s2) var(--s5); font-size: var(--t15); line-height: var(--l15); font-weight: 600;
   transition: opacity var(--move-leave);
 }
-.toast > span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.toast > span:not(.bang) { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .toast.out, .toast.behind { opacity: 0; }
 
 /* ---------- Sheet and dialog (M5, K10): one rule at 860px. Under it a sheet rises from the bottom and fills the width;

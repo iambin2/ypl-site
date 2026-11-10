@@ -20,7 +20,9 @@ let on = (() => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catc
 export const soundOn = () => on;
 export function setSoundOn(value) { on = Boolean(value); try { localStorage.setItem(SOUND_KEY, on ? "on" : "off"); } catch { /* the next visit sounds */ } if (on) audio()?.resume?.().catch(() => {}); }
 const wake = () => { if (audio()?.state !== "running") ctx.resume().catch(() => {}); };
-if (AC) { addEventListener("pointerdown", wake, { capture: true, passive: true }); addEventListener("keydown", wake, { capture: true, passive: true }); }
+/* a touch's pointerdown does not count as the user's gesture (only its end does: pointerup, touchend, click), and iOS wakes the
+   sound on nothing else, so the context is asked again when the finger lifts */
+if (AC) for (const type of ["pointerdown", "pointerup", "touchend", "click", "keydown"]) addEventListener(type, wake, { capture: true, passive: true });
 
 // fetched and decoded once a number, when the team preview names the Pokémon
 export function loadCry(num) {
