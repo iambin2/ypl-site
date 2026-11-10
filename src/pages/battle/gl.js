@@ -351,21 +351,29 @@ function buildAtlas() {
 }
 // one step of it; true while more are left (stageFx prewarm runs them)
 export const atlasStep = () => !atlasData && !atlasSteps().next().done;
+export const atlasPainted = () => Boolean(atlasData);
 function* paintAtlas() {
   const N = C * GRID, NH = C * ROWS, mk = () => { const c = document.createElement("canvas"); c.width = N; c.height = NH; return c; };
-  const shape = mk(), high = mk(), gs = shape.getContext("2d", { willReadFrequently: true }), gb = high.getContext("2d");
+  const shape = mk(), high = mk(), gs = shape.getContext("2d", { willReadFrequently: true }), gb = high.getContext("2d", { willReadFrequently: true });
   CELLS.forEach(([, draw], i) => {
     const x = (i % GRID) * C, y = Math.floor(i / GRID) * C;
     for (const g of [gs, gb]) { g.save(); g.beginPath(); g.rect(x, y, C, C); g.clip(); g.translate(x, y); g.fillStyle = "#fff"; g.strokeStyle = "#fff"; }
     draw(gs, gb);
     gs.restore(); gb.restore();
   });
-  const a = gs.getImageData(0, 0, N, NH).data, b = gb.getImageData(0, 0, N, NH).data, nz = noiseTile();
+  /* both sheets are read back from memory (the second was read back from the GPU), and each reading is a step of its own: the first
+     step, everything up to the cells' surfaces, was one stop of 155 on the first visit to the battle page (2026-11-10, measured) */
+  yield;
+  const a = gs.getImageData(0, 0, N, NH).data;
+  yield;
+  const b = gb.getImageData(0, 0, N, NH).data, nz = noiseTile();
+  yield;
   const out = new Uint8Array(N * NH * 4), nrm = new Uint8Array(N * NH * 4), jobs = [];
   for (let y = 0; y < NH; y++) for (let x = 0; x < N; x++) {
     const i = (y * N + x) * 4, cellI = Math.floor(y / C) * GRID + Math.floor(x / C);
     out[i] = a[i + 3]; out[i + 1] = nz[((y + cellI * 37) % C) * C + ((x + cellI * 53) % C)] * 255; out[i + 2] = b[i + 3]; out[i + 3] = 255;
   }
+  yield;
   CELLS.forEach(([name], ci) => {
     const x0 = (ci % GRID) * C, y0 = Math.floor(ci / GRID) * C, al = new Uint8Array(C * C);
     for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) al[y * C + x] = a[((y0 + y) * N + x0 + x) * 4 + 3];
@@ -649,11 +657,17 @@ void main(){
   o = vec4(col, 1.);
 }`;
 
-function compile(gl, vs, fs) {
-  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
-  const p = gl.createProgram();
-  gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+/* a program in two halves: started (its shaders handed over and the link asked) and finished (its result read). Every program of a
+   stage is started before any is finished, so the driver compiles them side by side; asked one by one, each waited on its own
+   (2026-11-10, measured: 93 of the first stage's 240) */
+function compileStart(gl, vs, fs) {
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+  const p = gl.createProgram(), shaders = [sh(gl.VERTEX_SHADER, vs), sh(gl.FRAGMENT_SHADER, fs)];
+  shaders.forEach(s => gl.attachShader(p, s)); gl.linkProgram(p);
+  return { p, shaders };
+}
+function compileEnd(gl, { p, shaders }) {
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(shaders.map(s => gl.getShaderInfoLog(s)).filter(Boolean).join("\n") || gl.getProgramInfoLog(p));
   const u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < n; i++) { const name = gl.getActiveUniform(p, i).name.replace(/\[0\]$/, ""); u[name] = gl.getUniformLocation(p, name); }
   return { p, u };
@@ -722,11 +736,13 @@ class Engine {
 
   setup() {
     const gl = this.gl;
-    this.prog = {
-      particle: compile(gl, PARTICLE_VS, PARTICLE_FS), strip: compile(gl, STRIP_VS, STRIP_FS), sprite: compile(gl, SPRITE_VS, SPRITE_FS),
-      down: compile(gl, FULL_VS, DOWN_FS), up: compile(gl, FULL_VS, UP_FS), comp: compile(gl, FULL_VS, COMP_FS),
+    const started = {
+      particle: compileStart(gl, PARTICLE_VS, PARTICLE_FS), strip: compileStart(gl, STRIP_VS, STRIP_FS), sprite: compileStart(gl, SPRITE_VS, SPRITE_FS),
+      down: compileStart(gl, FULL_VS, DOWN_FS), up: compileStart(gl, FULL_VS, UP_FS), comp: compileStart(gl, FULL_VS, COMP_FS),
     };
+    // the atlas is taken (or finished, when the stage came before it was painted) while the programs compile
     const atlas = buildAtlas();
+    this.prog = Object.fromEntries(Object.entries(started).map(([name, s]) => [name, compileEnd(gl, s)]));
     this.atlas = texture(gl, atlas.N, atlas.NH, atlas.out);
     gl.bindTexture(gl.TEXTURE_2D, this.atlas); gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     this.normals = texture(gl, atlas.N, atlas.NH, atlas.nrm);
@@ -1152,7 +1168,10 @@ class Engine {
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.distRT.tex[0]); gl.uniform1i(c.u.uDist, 2);
     gl.uniform1f(c.u.uBloomK, g.bloom * lerp(.62, .4, L)); gl.uniform1f(c.u.uDistK, .045 * g.dist); gl.uniform1f(c.u.uHasDist, hasDist ? 1 : 0);
     gl.uniform1f(c.u.uCA, g.ca); gl.uniform1f(c.u.uVig, 0); gl.uniform1f(c.u.uSat, g.sat);
-    gl.uniform3f(c.u.uMul, g.mR, g.mG, g.mB); gl.uniform3f(c.u.uAdd, g.aR, g.aG, g.aB); gl.uniform3f(c.u.uFlash, g.fR, g.fG, g.fB); gl.uniform1f(c.u.uFlashA, clamp(g.flashA));
+    /* a stage with its lamps down goes to the site's navy in the light theme: its pale court times the lamps alone stood as a
+       neutral charcoal box on a white page (2026-11-10). Only under the dim a fall lays (.7), so a faint keeps its colours */
+    const night = this.lightK * clamp((.7 - g.dim) / .52);
+    gl.uniform3f(c.u.uMul, g.mR * lerp(1, .3, night), g.mG * lerp(1, .75, night), g.mB * lerp(1, 1.45, night)); gl.uniform3f(c.u.uAdd, g.aR, g.aG, g.aB); gl.uniform3f(c.u.uFlash, g.fR, g.fG, g.fB); gl.uniform1f(c.u.uFlashA, clamp(g.flashA));
     gl.uniform2f(c.u.uAspect, 1, this.H / this.W);
     gl.bindVertexArray(this.quadVao); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); gl.bindVertexArray(null);
     gl.enable(gl.BLEND);
@@ -1230,6 +1249,10 @@ class Engine {
   drawStrips(view, layer = 1, under = false) {
     if (!this.strips.length) return;
     const out = this.stripData; let n = 0;
+    /* a vertex is written number by number and the last one copied in place: an array made for every vertex and a view for every
+       join were some thousands of throwaways a frame under a terrain's lines (2026-11-10, measured: a third of the frame's own work) */
+    const put = (x, y, u, v, r, g, b, a, mode, emis, occ, tile) => { const i = n * 12; out[i] = x; out[i + 1] = y; out[i + 2] = u; out[i + 3] = v; out[i + 4] = r; out[i + 5] = g; out[i + 6] = b; out[i + 7] = a; out[i + 8] = mode; out[i + 9] = emis; out[i + 10] = occ; out[i + 11] = tile; n++; };
+    const again = () => { out.copyWithin(n * 12, (n - 1) * 12, n * 12); n++; };
     const keep = [];
     for (const s of this.strips) {
       const age = this.T - s.born - (s.delay || 0);
@@ -1243,9 +1266,9 @@ class Engine {
         if (!q) continue;
         // a weather's air (s.dims) dims with the arena's lamps, as the ground under it does
         const d = s.dims ? this.grade.dim : 1, [r, g, b] = hex(s.color || "#FFFFFF").map(c => c * d), al = s.alpha ?? 1, v = [q[0], q[1], q[3], q[2]];
-        if (n) { out.set(out.subarray((n - 1) * 12, n * 12), n * 12); n++; out.set([v[0][0], v[0][1], 0, 0, r, g, b, al, 4, s.emis ?? 1, s.occ || 0, 1], n * 12); n++; }
-        for (const [x, y] of v) { out.set([x, y, 0, 0, r, g, b, al, 4, s.emis ?? 1, s.occ || 0, 1], n * 12); n++; }
-        out.set(out.subarray((n - 1) * 12, n * 12), n * 12); n++;
+        if (n) { again(); put(v[0][0], v[0][1], 0, 0, r, g, b, al, 4, s.emis ?? 1, s.occ || 0, 1); }
+        for (const [x, y] of v) put(x, y, 0, 0, r, g, b, al, 4, s.emis ?? 1, s.occ || 0, 1);
+        again();
         continue;
       }
       const pts = s.points(k, age);
@@ -1258,13 +1281,13 @@ class Engine {
         let dx = qx - px, dy = qy - py; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
         const nx = -dy * w / 2, ny = dx * w / 2, u = s.uLen ? len / s.uLen : i / (pts.length - 1);
         const alpha = al * (s.alpha ?? 1);
-        if (i === 0 && n > 0) { out.set(out.subarray((n - 1) * 12, n * 12), n * 12); n++; out.set([x + nx, y + ny, u, -1, r, g, b, alpha, mode, emis, occ, tile], n * 12); n++; }
-        out.set([x + nx, y + ny, u, -1, r, g, b, alpha, mode, emis, occ, tile], n * 12); n++;
-        out.set([x - nx, y - ny, u, 1, r, g, b, alpha, mode, emis, occ, tile], n * 12); n++;
+        if (i === 0 && n > 0) { again(); put(x + nx, y + ny, u, -1, r, g, b, alpha, mode, emis, occ, tile); }
+        put(x + nx, y + ny, u, -1, r, g, b, alpha, mode, emis, occ, tile);
+        put(x - nx, y - ny, u, 1, r, g, b, alpha, mode, emis, occ, tile);
         if (n > 5900) break;
       }
       // a degenerate join to the next strip
-      if (n) { out.set(out.subarray((n - 1) * 12, n * 12), n * 12); n++; }
+      if (n) again();
     }
     this.strips = keep;
     if (n < 4) return;

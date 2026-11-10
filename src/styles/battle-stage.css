@@ -92,3 +92,31 @@
   .bt-stagebox .bs-stage.hud .bs-slot:is([data-pos="own-d0"], [data-pos="own-d1"]) { height: min(40%, 36vw); }
   .bt-stagebox .bs-stage.hud .bs-slot:is([data-pos="foe-d0"], [data-pos="foe-d1"]) { height: min(33%, 34vw); bottom: 53%; }
 }
+
+/* ---------- 도전의 탑's tower (tower.js; DESIGN.md "Battle", 도전의 탑, The tower) ----------
+   The run's own scene, as the court is a battle's: the tower seen from its foot. tower.js places every floor (the floor stood on at
+   the bottom, each floor over it the same floor a step smaller and dimmer, about the point the tower closes on); here is what a
+   floor is made of: the lift's cell with the floor's number, four doors and the gate, wider, joined on the seam, one tone over a panel so the tower stands off the night. A door won is lit,
+   so is the lift's cell of the floor stood on and of every floor climbed; the door of the game gone into carries the amber lamp on
+   its seam, and its housing while the run rests. .tw is the scene laid over a stage; .tw-hall the same scene standing on the tab,
+   in the room the lobby's arena takes (its stage and two strips) */
+.tw { position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--lit); }
+.tw.over { z-index: var(--z-sticky); }
+.tw-hall { position: relative; inset: auto; height: 0; padding-bottom: calc(56.25% + var(--h-row) * 2); }
+.tw-stack { position: absolute; inset: 0; }
+.tw-floor { position: absolute; left: 0; top: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.618fr); gap: var(--seam); transform-origin: 0 0; }
+.tw-floor > * { position: relative; min-width: 0; background: var(--panel-2); }
+.tw-floor.ground { background: var(--panel); }
+/* the lift's cells run up the tower's side as its shaft, a tone under the doors, each floor's number muted in it; the cell of the
+   floor stood on, and of every floor climbed, is lit */
+.tw-floor > .tw-car { display: grid; place-items: center; background: var(--panel); color: var(--mute); }
+.tw-car > .seg { color: inherit; }
+.tw-floor:is(.here, .done) > .tw-car, .tw-door.won { background: var(--lit); color: var(--ground); }
+/* every door carries its lamp's housing at its head; the gate is two leaves on a seam */
+.tw-door::after { content: ""; position: absolute; top: var(--s2); left: calc(50% - var(--lamp) / 2); width: var(--lamp); height: var(--lamp); background: var(--panel); }
+.tw-door.gate::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(50% - var(--seam) / 2); width: var(--seam); background: var(--ground); }
+.tw-door.won::after { background: var(--ground); }
+.tw-door.next::after { background: var(--dim); }
+.tw-door.now::after { background: var(--signal); }
+/* the gate lights when its game is the one gone into: a gatekeeper's game inverts, here as on its doors */
+.tw-door.gate.now { background: var(--lit); }

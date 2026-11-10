@@ -16,7 +16,7 @@ import { championsData } from "../services/index.js";
 import { onSpriteError, spriteUrl } from "../services/teamBuilderCore.js";
 import { readSavedTeams, showdownTeam } from "../services/battleTeams.js";
 import { createBattleReader, fourMoves, josa, parseHP, requestKey, revives, slotPasses, toID } from "../services/battleLog.js";
-import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useStageTape } from "./battle/Stage.jsx";
+import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf, other, sceneOf, typesOf, useBox, useStageTape } from "./battle/Stage.jsx";
 import { goIn, prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
@@ -32,7 +32,7 @@ import { claimTimeout, expireStreakGame, rememberBattle } from "../services/batt
 import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Replay.jsx";
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
 import { StreakBand, StreakEnd, StreakOpen, StreakStake, TrackBar, floorCall, useAccount } from "./battle/Streak.jsx";
-import { liftArrive, liftDrop } from "./battle/lift.js";
+import { liftArrive, towerDrop } from "./battle/tower.js";
 import { floorGame, gameWords, streakFloor, streakMaster } from "../services/streak.js";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
@@ -504,9 +504,11 @@ function RoomHall({ rooms, onOpen, onMake }) {
    사람만)인지는 그 아래에서 고른다(2026-11-06, 따로 선 공개 방과 코드 방을 하나로). 두 방 모두 링크로도 들어온다. */
 const OPPONENTS = [["cpu", "컴퓨터"], ["room", "방 만들기"]];
 const ROOMS = [["open", "공개 방", "누구나 참가"], ["code", "비밀 방", "코드로 참가"]];
-/* the battle page: 배틀 열기 (the lobby), 연승 도전 (docs/BATTLE_STREAK.md), 방 목록 (every room waiting) and 중계 (every battle
-   being played, battle/Live.jsx) as page tabs; the tab is kept in the address (&tab=streak, &tab=rooms, &tab=live) */
-const BATTLE_TABS = ["open", "streak", "rooms", "live"];
+/* the battle page: 배틀 열기 (the lobby), 연승 도전 (docs/BATTLE_STREAK.md), 방 목록 (every room waiting), 중계 (every battle
+   being played, battle/Live.jsx) and 기록 (this device's battles, battle/Replay.jsx; 2026-11-10, the user: "배틀 기록이 배틀 열기
+   아래 끝도 없이 쌓이는데 ... 중계 옆의 별도 탭으로") as page tabs; the tab is kept in the address (&tab=streak, &tab=rooms, &tab=live,
+   &tab=mine) */
+const BATTLE_TABS = ["open", "streak", "rooms", "live", "mine"];
 function BattleOpen({ res, onOpen, go, preset }) {
   /* it lights as a page does when it comes, and lets go of the battle's going out (2026-11-09: going back from a battle, and the
      first load, swapped to it in one frame) */
@@ -522,8 +524,9 @@ function BattleOpen({ res, onOpen, go, preset }) {
     if (t !== "open") url.searchParams.set("tab", t); else url.searchParams.delete("tab");
     window.history.replaceState(window.history.state, "", url);
   };
-  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "도전의 탑"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"]]} /></div>;
+  const tabs = <div className="bt-tabs"><TabsLine value={tab} onChange={changeTab} label="배틀 화면" options={[["open", "배틀 열기"], ["streak", "도전의 탑"], ["rooms", rooms?.length ? `방 목록 ${rooms.length}` : "방 목록"], ["live", live?.length ? `중계 ${live.length}` : "중계"], ["mine", "기록"]]} /></div>;
   if (tab === "live") return <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<LiveHall res={res} rows={live} onOpen={onOpen} /></div>;
+  if (tab === "mine") return <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<BattleLists onOpen={onOpen} /></div>;
   if (tab === "streak") return <StreakOpen res={res} onOpen={onOpen} go={go} tabs={tabs} enter={enterBattle} goingIn={goingIn} standUp={standUp} leaveNow={leaveNow} onPractice={() => { setFirstFoe("cpu"); changeTab("open"); }} />;
   return tab === "rooms"
     ? <div className="bt-page"><h1 className="t32">배틀</h1>{tabs}<RoomHall rooms={rooms} onOpen={onOpen} onMake={() => { setFirstFoe("room"); changeTab("open"); }} /></div>
@@ -601,7 +604,7 @@ function BattleSetup({ res, onOpen, preset, tabs, firstFoe }) {
     action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
       <Button variant="main" onClick={submit} loading={busy} disabled={!team}>{foe === "cpu" ? "배틀 시작" : "방 만들기"}</Button>
     </Dock>}
-    tabs={tabs} after={<div className="bt-lists"><BattleLists onOpen={onOpen} /></div>} />;
+    tabs={tabs} />;
 }
 
 /* ---------- a battle: its version is asked on battlePollDelay's rhythm, and only a change of version reads the row ----------
@@ -935,8 +938,17 @@ function readSpeed() {
   try { const v = localStorage.getItem(SPEED_KEY); return SPEEDS.some(([s]) => String(s) === v) ? Number(v) : 1; } catch { return 1; }
 }
 
-// the whole log; it changes only when a line is added, so the stage's every step does not draw it again
-const Log = React.memo(function Log({ lines }) {
+/* the whole log behind its key. It reads its lines by itself (Stage.jsx useBox), so a line added draws the log and not the match, and
+   a log that stands shut draws no line at all: shut, it still drew every line of the battle again for each one added (2026-11-10) */
+const LogBox = React.memo(function LogBox({ box }) {
+  const [open, setOpen] = useState(false);
+  return <details className="bt-logbox" onToggle={e => setOpen(e.currentTarget.open)}>
+    <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
+    {open ? <Log box={box} /> : <div className="stack bt-log" />}
+  </details>;
+});
+function Log({ box }) {
+  const lines = useBox(box);
   const ref = useRef(null);
   // keep the newest line in view, once a frame at most and only while the log is open (a closed one costs no layout)
   useEffect(() => {
@@ -952,7 +964,7 @@ const Log = React.memo(function Log({ lines }) {
         : <p key={i} className="pn bt-line">{line.text}</p>)}
     </div>
   );
-});
+}
 
 /* api: where choices go. The server by default; the battle lab (BattleLabPage.jsx, dev only) passes its own engine. */
 const SERVER = { choose: chooseInBattle, forfeit: forfeitBattle, timeout: claimTimeout };
@@ -962,14 +974,28 @@ function useNow(on) {
   useEffect(() => { if (!on) return undefined; const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, [on]);
   return now;
 }
+// an element's height as the browser lays it out, told whenever it changes; on: while it is wanted
+function useHeight(ref, on, take) {
+  const fn = useRef(take);
+  fn.current = take;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !on) return undefined;
+    const ro = new ResizeObserver(([e]) => fn.current(e.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [on]);
+}
 const TURN_BEAT = 680; // a replay's turn stands this long before the next one plays, as a message stands
 /* a match screen lights as a page does, but the team preview is the moment a battle is met and arrives as a scene: the other side's six
-   switch on one by one, then ours (motion.js lineup), while the column beside it lights as a page (2026-11-08, the user: going into a
-   battle did not feel natural; the preview stood lit all at once after the court went dark) */
+   switch on one by one, then ours (motion.js lineup), and what stands round them (the column beside the cards, or a phone's dock)
+   lights in our cards' turns, 기권 last of all (2026-11-08, the user: going into a battle did not feel natural; the preview stood lit
+   all at once after the court went dark. 2026-11-10: the column lit as a page from the first frame, so the menu and the red 기권
+   stood lit over cards still dark) */
 function useMatchLit() {
   useLayoutEffect(() => {
     const main = document.getElementById("ypl-main");
-    /* a 연승 도전 game gone into by the lift (lift.js): the shut car goes to this screen's stage and opens there, and what stands under
+    /* a 연승 도전 game gone into through its door (tower.js): the shut doors go to this screen's stage and opens there, and what stands under
        it switches on as the doors part, not before (wait: the time until they start to part). The battle's own page frame is set
        first (on a phone the site's bars step away), so the car is sent to where the stage will stand, not to where it stood a frame
        before (2026-11-09: it went to the page's old box on a phone) */
@@ -979,7 +1005,16 @@ function useMatchLit() {
     const preview = main?.querySelector(".bt-match .bt-preview");
     if (!preview?.querySelector(".bt-card")) { light(main, DUR.leave); return; }
     const side = main.querySelector(".bt-match .bt-side");
-    if (side) light(side, DUR.leave);
+    // round the cards: the column's parts in order (the menu's own rows one by one) with 기권 at the end, or the dock under a phone's cards
+    const round = () => {
+      const forfeit = side?.querySelector(".bt-forfeit");
+      const parts = side ? [...side.children].flatMap(el => (el.classList.contains("bt-menu") ? [...el.children] : [el])).filter(el => el !== forfeit)
+        : [...main.querySelectorAll(".bt-match .bt-deck > *")];
+      return forfeit ? [...parts, forfeit] : parts;
+    };
+    /* the column's last part lights without rising: 12 under its place it reached out of the column, whose scrollbar then stood alone
+       beside the dark cards for the whole line-up */
+    lineup(Array(7).fill(null), round(), -wait, side?.lastElementChild);
     // the other side's six are read from the log a frame or two after the preview mounts: ours keep their turn after the six places,
     // and the six take theirs when they are drawn
     const cells = () => [...preview.querySelectorAll(".bt-foe-cell")];
@@ -991,7 +1026,7 @@ function useMatchLit() {
     let frame = 0;
     /* the other side's six, and our own cards when the request comes a moment after the preview mounted (a rematch: 2026-11-09, five
        cards popped in at once after the first had risen), each take their turn in the line-up when drawn */
-    const ours = () => [...preview.querySelectorAll(OURS)];
+    const ours = () => [...preview.querySelectorAll(OURS), ...round()];
     const seen = new Set(ours());
     let foeDone = false;
     const look = () => {
@@ -1238,21 +1273,6 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   /* on a phone the deck never shrinks within a battle: it keeps the tallest it has stood (the moves and the bench), its keys at the
      foot, so the stage over it never moves when the end takes the moves' place (2026-11-09 second round: the stage dropped 28) */
   const deckRef = useRef(null);
-  useLayoutEffect(() => {
-    const el = deckRef.current;
-    if (!el) return;
-    if (!window.matchMedia(NARROW).matches || !(started || ended)) { el.style.minHeight = ""; return; }
-    el.style.minHeight = "";
-    const h = el.offsetHeight;
-    el.dataset.most = String(Math.max(h, Number(el.dataset.most) || 0));
-    el.style.minHeight = `${el.dataset.most}px`;
-  });
-  useLayoutEffect(() => {
-    const el = consoleRef.current;
-    if (!el) return;
-    if (choosing) { el.style.minHeight = ""; el.dataset.h = String(el.offsetHeight); }
-    else el.style.minHeight = !ended && el.dataset.h ? `${el.dataset.h}px` : "";
-  });
   /* the last moves the player was asked: while the turn plays and the other player chooses they stand where they were, locked, so the
      keys never leave and come back (feedback 2026-11-06: on a phone the console emptied each turn and the room under it jumped) */
   const lastAsked = useRef(null);
@@ -1292,6 +1312,24 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   const [menuOpen, setMenuOpen] = useState(false);
   const narrow = useNarrow();
   const shortPick = useNarrow(SHORT_PICK), wide = useNarrow(WIDE);
+  /* both heights are told by the browser when they change (useHeight), never read after a draw: read in every draw of the match they
+     forced a layout for each line the stage played, twice (2026-11-10, measured at a phone's speed). The deck's floor only rises: with
+     it set the deck stands at least as tall, so its height is the most it has stood */
+  const deckOn = narrow && (started || ended);
+  useLayoutEffect(() => { const el = deckRef.current; if (el) el.style.minHeight = deckOn && el.dataset.most ? `${el.dataset.most}px` : ""; }, [deckOn]);
+  useHeight(deckRef, deckOn, h => {
+    const el = deckRef.current;
+    if (h > (Number(el.dataset.most) || 0)) { el.dataset.most = String(h); el.style.minHeight = `${h}px`; }
+  });
+  /* the console's height while its choices stand open, kept as its floor while the turn plays. Open, it has no floor, so the last
+     height told before the choices lock is the height they stood at */
+  const consoleOn = Boolean(seat && started && !shownEnded);
+  const consoleH = useRef(0);
+  useHeight(consoleRef, consoleOn, h => { consoleH.current = h; });
+  useLayoutEffect(() => {
+    const el = consoleRef.current;
+    if (el) el.style.minHeight = !choosing && !ended && consoleH.current ? `${consoleH.current}px` : "";
+  }, [choosing, ended, consoleOn]);
   /* Information at hand. A move held (a finger, or the mouse's button) fills a light along its key as the hold counts, and once full
      its card stands in the deck's own place over the moves and the bench until it is let go: the deck keeps its size, nothing grows
      over the stage, and nothing comes up because a pointer rests on a key (2026-11-10, the user: "커서만 올려놔도 계속 설명이 뜨는 것도
@@ -1401,8 +1439,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       const at = ids.indexOf(row.id), next = at >= 0 ? ids[at + 1] : null;
       if (next) {
         await settle();
-        await enterBattle(next, floorCall(goingIn(".bt-main"), ".bt-main", at + 1)).catch(() => liftDrop());
-        if (on) { await leaveNow(); onOpen(next); }
+        const ride = floorCall(goingIn(".bt-main"), ".bt-main", at + 1, leaveNow);
+        const read = await enterBattle(next, ride.shown).then(() => true, () => false);
+        if (read && on) { await ride.leave(); onOpen(next); } else towerDrop();
       } else if (Date.now() - from < 600_000) timer = setTimeout(look, 3000);
       else setFollowed(true);
     };
@@ -1433,7 +1472,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       <span className="status t12">{shownEnded ? "종료" : waitWords ? <><Busy h={32} />{waitWords}</> : <><i className="lamp sig" aria-hidden="true" />{started ? "진행 중" : "선출 중"}</>}{official && <span className="dim">{labels[row.id] || "공식 경기"}</span>}{row.kind === "streak" && <span className="dim">{gameAt == null ? "도전의 탑" : `도전의 탑 ${gameWords(gameAt)}`}</span>}{!ended && watchers > 0 && <span className="dim bt-head-watch">{`관전 ${watchers}`}</span>}</span>
       <b className="bt-head-names">{`${names[perspective]} 대 ${names[foe]}`}</b>
     </div>
-    {/* the floor as the lift shows it: its number over its five games, this one lit (2026-11-09: the stair glyph went with the stairs) */}
+    {/* the floor as its track: its number over its five games, this one lit (2026-11-09: the stair glyph went with the stairs) */}
     {gameAt != null && <span className="pn bt-win bt-win-floor"><Seg value={String(streakFloor(gameAt))} h={32} cells={String(streakFloor(gameAt)).length} label={`${streakFloor(gameAt)}층`} /><TrackBar at={floorGame(gameAt)} playing={!ended} mini /></span>}
     {started && <span className="pn bt-win"><Seg value={String(Math.min(99, shownTurn)).padStart(2, "0")} h={32} cells={2} label={`${shownTurn}턴`} /></span>}
     {narrow && <button type="button" className="pn bt-head-key" onClick={() => setMenuOpen(true)} aria-label="메뉴" aria-haspopup="dialog"><Icon n="more" size={24} /></button>}
@@ -1447,10 +1486,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     ? <PickDock res={res} pokemon={previewParty.current} count={pickCount.current} picks={picks} setPicks={setPicks} onSend={send} locked={!choosing} toast={error ? <Toast error>{error}</Toast> : null} />
     : null;
   const speedLabel = (SPEEDS.find(([v]) => v === speed) || SPEEDS[1])[1];
-  const logBox = <details className="bt-logbox">
-    <summary className="pn bt-logkey"><span>전체 기록</span><Icon n="chev" size={20} /></summary>
-    <Log lines={tape.lines} />
-  </details>;
+  const logBox = <LogBox box={tape.lines} />;
   // the menu (The play screen): what is set once and what leaves, a sheet on a phone and standing open beside the stage on a desktop
   const menu = <div className="stack bt-menu">
     <Question id="bt-speed" label="연출" group>
@@ -1534,7 +1570,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
           {hint && choosing && !peek && <div className="bt-hint"><Toast>기술을 길게 누르면 설명을 볼 수 있습니다.</Toast></div>}
           {choosing ? <Choices key={requestKey(view?.turn, request)} request={request} ghost={lastAsked.current} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
             field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} onAim={watch} narrow={narrow} toast={error ? <Toast error>{error}</Toast> : null} />
-            : lockedAsk && <Choices key="locked" locked request={lockedAsk} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
+            : lockedAsk && <Choices key="locked" locked fresh={!lastAsked.current} request={lockedAsk} doubles={doubles} res={res} foes={foes} typesAt={typesAt} nameAt={nameAt} monAt={monAt}
             field={moveField} perspective={perspective} onSend={send} setAsk={setAsk} narrow={narrow} />}
         </div>}
         {error && !choosing && <Dock toast={<Toast error>{error}</Toast>} />}
@@ -1630,7 +1666,7 @@ const megaFormOf = (detail, item) => Object.values(detail?.pokedex || {}).find(p
 
 /* locked: the keys of a request already answered, shown dimmed while the turn plays; ghost: the last move request, whose keys stand
    locked over the bench in a forced switch, so the moves keep their place */
-function Choices({ request, locked = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast, narrow = false }) {
+function Choices({ request, locked = false, fresh = false, ghost = null, doubles, res, foes, typesAt, nameAt, monAt, field, perspective, onSend, setAsk, onAim, toast, narrow = false }) {
   const root = useRef(null);
   const side = request.side;
   const foeSide = side.id === "p1" ? "p2" : "p1";
@@ -1836,8 +1872,10 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
       <Icon n="refresh" size={20} />
     </button>;
   const extras = (...keys) => keys.filter(Boolean);
+  // fresh: locked keys nothing was asked on yet (the stage has just taken the team preview's place) come as they are, never down from lit
+  const lockedClass = locked ? (fresh ? " locked fresh" : " locked") : "";
   // a forced switch: the bench, under the last moves (and the Mega key) standing off where they were
-  if (forced) return <div className={"bt-choices forced" + (locked ? " locked" : "")} ref={root}>
+  if (forced) return <div className={"bt-choices forced" + lockedClass} ref={root}>
     {moveKeys(ghost?.active?.[at] || null, true)}
     {bench(extras(undoKey, megaRow && megaKey(true)))}
     {toast && <Dock toast={toast} />}
@@ -1869,7 +1907,7 @@ function Choices({ request, locked = false, ghost = null, doubles, res, foes, ty
       {toast && <Dock toast={toast} />}
     </div>;
   }
-  return <div className={"bt-choices" + (locked ? " locked" : "")} ref={root}>
+  return <div className={"bt-choices" + lockedClass} ref={root}>
     {moveKeys(active, frozen)}
     {bench(extras(undoKey, megaRow && megaKey(!megaOpen)))}
     {toast && <Dock toast={toast} />}

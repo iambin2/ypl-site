@@ -1,12 +1,12 @@
 /* 연승 도전 (docs/BATTLE_STREAK.md 8장, DESIGN.md "Layout and pages" 연승 도전): the battle page's tab, what a game of a run has at
    stake while it is played, and what it says when it ends. A run climbs floors of five games, the fifth the floor's gatekeeper
-   (src/services/streak.js), and it climbs them by lift (2026-11-09, the user: "엘리베이터 컨셉으로"): the tab's stage is the lift's
-   hall, its doors shut with the floor lit on them, beside it the run's streak and the floor keys; going into a game rides the lift
-   (lift.js). Its games are played as any server battle (BattleRoom), and the battle function answers as the computer; what a game's
+   (src/services/streak.js), and the run is shown as the tower itself (tower.js; 2026-11-10, the user: the lift's hall was "너무
+   단순해. 전광판 숫자만 반복되는 느낌"): the tab's stage is the tower seen from its foot, beside it the run's streak; going into a
+   game is a scene on that tower, in through the door of the game. Its games are played as any server battle (BattleRoom), and the battle function answers as the computer; what a game's
    answer says of the run is kept with the seat (battleService.js). No gatekeeper is drawn before its game (2026-11-09, the user:
    "실루엣들이 뭔가 어정쩡하게 있다"): a gatekeeper's game is told by inverted doors and the floor's last game, and the gatekeeper is
    met on the team preview. */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "../../components/common/Button.jsx";
 import Icon from "../../components/common/Icon.jsx";
@@ -20,8 +20,7 @@ import { VISITOR_EVENT, myPlayerLink, readStreakBoard, signInWithGoogle, startSt
 import { STREAK_STEP, floorGame, gameWords, streakFloor, streakMaster, swapTier } from "../../services/streak.js";
 import { DUR, climb } from "../../components/common/motion.js";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
-import { liftClose, liftDrop, liftMarkup } from "./lift.js";
-import { LobbyArena } from "./Stage.jsx";
+import { standTower, towerDive, towerDrop, towerShow } from "./tower.js";
 
 // the board's months are the run's months in KST, as the database counts them: "2026-11-01"
 const monthOf = back => {
@@ -40,7 +39,7 @@ function useBoard() {
 /* 연승 도전 shows no 난이도 anywhere (2026-11-09, the user: "난이도 표기 자체를 연승 도전에서는 없애자"): the computer still plays each
    floor at its own (streak.js streakLevel), but the screens say only the floor and its games */
 
-/* a floor's five games as one bar cut on the seam (the lift's doors draw the same in lift.js): won lit, the game being played the
+/* a floor's five games as one bar cut on the seam (the tower draws the same as a floor's five doors, tower.js): won lit, the game being played the
    amber lamp's colour, the next one while the run rests at .382, a lost one muted, the rest an unlit bar's light. at: the game, 1 to 5 */
 export function TrackBar({ at, playing = false, lost = false, mini = false }) {
   return <span className={"streak-track-bar" + (mini ? " mini" : "")} aria-hidden="true">
@@ -56,22 +55,20 @@ function FloorTrack({ wins, lost = false, playing = false }) {
   </span>;
 }
 
-/* the lift's hall on the tab: the stage's place holds the lift's doors, shut, with the floor the run will go to lit on them (the same
-   markup the lift rides in, lift.js), so pressing the key carries this very picture into the game */
-function LiftHall({ wins, live }) {
+/* the tower on the tab (tower.js): the stage's place holds the run's own scene, the tower seen from its foot with the floor the run
+   will go to at the bottom, its doors lit as far as the run has come and the lamp's housing on the door of the next game. Pressing
+   the key plays the going in on this very picture */
+function TowerHall({ wins, live }) {
+  const ref = useRef(null);
   const floor = streakFloor(wins), at = floorGame(wins);
-  return <div className={"lift-hall" + (streakMaster(wins) ? " inv" : "")} role="img" aria-label={`${floor}층 ${gameWords(wins)}`}
-    dangerouslySetInnerHTML={{ __html: liftMarkup({ floor, at, live }) }} />;
-}
-
-/* the floor keys, as a lift's panel (2026-11-09): eight floors on the seam, the floor stood on inverted, the floors passed lit, the floors
-   above muted; past the eighth floor the panel follows the run */
-function FloorKeys({ wins }) {
-  const floor = streakFloor(wins), first = floor <= 8 ? 1 : floor - 6;
-  return <div className="stack streak-keys" role="img" aria-label={`${floor}층`}>
-    {Array.from({ length: 8 }, (_, i) => first + i).map(f =>
-      <span key={f} className={f === floor ? "inv" : "pn" + (f > floor ? " up" : "")}><Seg value={String(f)} h={32} cells={String(f).length} label="" /></span>)}
-  </div>;
+  useLayoutEffect(() => {
+    const el = ref.current, draw = () => standTower(el, { floor, at, live });
+    draw();
+    const seen = new ResizeObserver(draw);
+    seen.observe(el);
+    return () => seen.disconnect();
+  }, [floor, at, live]);
+  return <div ref={ref} className="tw tw-hall" role="img" aria-label={`${floor}층 ${gameWords(wins)}`} />;
 }
 
 /* a game of a run, beside it while it is played (the menu): which game, the streak riding on it lit at 32 with its unit, and the
@@ -137,29 +134,30 @@ function useRun() {
   return run;
 }
 
-/* going into a game of a run is a ride in the lift (lift.js): the doors shut over the stage the key was pressed under (from the tab
-   the hall's doors stand shut already) and the floor of the game gone into lights on them while the game is made and read; the next
-   screen opens them (BattlePage.jsx useMatchLit). A floor's first game after its gatekeeper climbs: the floor left switches to the new
-   one on the doors. wins: the wins before the game gone into; null (a game being played, gone back into) rides nothing */
-export const floorCall = (dark, scope, wins) => (wins == null ? dark
-  : Promise.all([dark, liftClose(document.querySelector(`${scope} .lift-hall`) || document.querySelector(`${scope} .bt-stagebox`), {
+/* going into a game of a run is a scene on the tower (tower.js): it switches on over the stage the key was pressed under (on the tab
+   it already stands), the game just won lights and the lamp steps on, or the lift rises a floor after a gatekeeper, all while the
+   game is made and read; then the view goes in through the lamp's door, which shuts as two doors, and the next screen parts them
+   (BattlePage.jsx useMatchLit). wins: the wins before the game gone into; null (a game being played, gone back into) plays nothing.
+   Returns shown (the tower has been read, and the court is dark) and leave (in through the door while the screen goes out; with
+   no scene, the screen's own going out, leaveNow) */
+export const floorCall = (dark, scope, wins, leaveNow = async () => {}) => {
+  if (wins == null) return { shown: dark, leave: leaveNow };
+  const shown = towerShow(document.querySelector(`${scope} .tw-hall`) || document.querySelector(`${scope} .bt-stagebox`), {
     floor: streakFloor(wins), at: floorGame(wins), climbing: wins > 0 && floorGame(wins) === 1, master: streakMaster(wins),
-    shut: Boolean(document.querySelector(`${scope} .lift-hall`)),
-  })]).catch(() => {}));
+  });
+  return { shown: Promise.all([dark, shown]).catch(() => {}), leave: towerDive };
+};
 
-/* the run lit: its streak at 84 (this device's run while it goes on, else the month's best of the account; dark when there is none),
-   then the tower it climbs, the floor it stands on as its stairs. No line explains the rule; the floors show it */
+/* the run lit: its streak at 84 (this device's run while it goes on, else the month's best of the account; dark when there is none).
+   No line explains the rule; the tower beside it shows it */
 function RunBoard({ run, best, approved, leader = null, month = "" }) {
   // with no run of its own, the month's first place stands lit instead of dark cells that read as 88 (2026-11-09)
   const lead = !run && !approved && leader;
   const value = run ? run.wins : approved && best != null ? best : lead ? leader.wins : null;
-  const label = run ? "진행 중인 도전" : approved ? "이번 달 내 최고 기록" : lead ? `${month} 1위 ${leader.trainer_name}` : "도전의 탑";
-  return <div className="stack">
-    <div className="pn streak-hero">
-      <span className="t12 dim streak-hero-label">{run && <i className="lamp sig" aria-hidden="true" />}{label}</span>
-      <span className="streak-hero-board"><Seg value={value == null ? "" : String(value)} h={84} cells={value == null ? 1 : 2} label={value == null ? "" : `${value}연승`} /><span className="t20">연승</span></span>
-    </div>
-    <FloorKeys wins={run?.wins ?? 0} />
+  const label = run ? gameWords(run.wins) : approved ? "이번 달 내 최고 기록" : lead ? `${month} 1위 ${leader.trainer_name}` : "도전의 탑";
+  return <div className="pn streak-hero">
+    <span className="t12 dim streak-hero-label">{run && <i className="lamp sig" aria-hidden="true" />}{label}</span>
+    <span className="streak-hero-board"><Seg value={value == null ? "" : String(value)} h={84} cells={value == null ? 1 : 2} label={value == null ? "" : `${value}연승`} /><span className="t20">연승</span></span>
   </div>;
 }
 
@@ -189,14 +187,15 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
     if (busy) return;
     setBusy(true); setError("");
     const dark = goingIn(".bt-lobby-main");
+    const ride = floorCall(dark, ".bt-lobby-main", next, leaveNow);
     try {
       const made = await make();
-      await enter(made.id, floorCall(dark, ".bt-lobby-main", next));
-      await leaveNow();
+      await enter(made.id, ride.shown);
+      await ride.leave();
       onOpen(made.id);
     } catch (e) {
       await dark;
-      liftDrop(); standUp(); setError(e.message); setBusy(false); setRound(n => n + 1);
+      towerDrop(); standUp(); setError(e.message); setBusy(false); setRound(n => n + 1);
     }
   };
   const start = async () => {
@@ -227,10 +226,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
       {tabs}
       <div className="bt-lobby">
         <div className="bt-lobby-main">
-          <LobbyArena res={res} foe="컴퓨터" foeNote=""
-            ours={<span className="bt-who"><b className={"bt-trainer" + (approved ? "" : " mute")}>{approved ? account.requested_name : "나"}</b><span className={"bt-who-note" + (run ? "" : " idle")}>{run ? gameWords(wins) : "랜덤 파티"}</span></span>}>
-            <LiftHall key={round} wins={wins} live={Boolean(run?.playing)} />
-          </LobbyArena>
+          <TowerHall key={round} wins={wins} live={Boolean(run?.playing)} />
           <Dock toast={error ? <Toast error>{error}</Toast> : null}>
             {note && <p className="t12 dim bt-gate-line">{note}</p>}
             <div className="bt-end-keys">{keys}</div>
@@ -365,13 +361,14 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
     // a replay still playing is put at its end first, so the court goes dark on the game's end (BattlePage.jsx Arena settle)
     await settle();
     const dark = goingIn(".bt-main");
+    const ride = floorCall(dark, ".bt-main", next, leaveNow);
     try {
       const made = await make();
-      await enter(made.id, floorCall(dark, ".bt-main", next));
-      await leaveNow();
+      await enter(made.id, ride.shown);
+      await ride.leave();
       onOpen(made.id);
     } catch (e) {
-      await dark; liftDrop(); standUp(); setBusy(false);
+      await dark; towerDrop(); standUp(); setBusy(false);
       /* a refused pair stands off and is let go, and the trade table says why on its own title strip, where the eye already is; a toast
          standing in the deck's flow pushed 다음 판 down and broke the end's row (2026-11-10, the user: "왜곡이 생겨"). The other pairs
          stay chosen. Without a named pair the toast says it, all are let go, and the key says 다음 판 again */

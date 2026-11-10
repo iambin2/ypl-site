@@ -257,10 +257,11 @@ export function handOff(els) {
 /* the team preview arrives as a scene of its own (DESIGN.md "Battle", Going in): the other side's six switch on one after another,
    62 apart, as a board announces a line-up, then a beat, then ours rise into their places the same way. first, then: the elements in
    the order they light (a place may be empty: what is drawn a moment later takes its turn with elapsed, the time since the scene began).
-   Reduced motion: they stand at once. */
-export function lineup(first, then, elapsed = 0) {
+   still: one of them that lights without rising (the last part of a column that scrolls: 12 under its place it reaches out of the
+   column and draws its scrollbar). Reduced motion: they stand at once. */
+export function lineup(first, then, elapsed = 0, still = null) {
   if (reduced()) return;
-  [...first, ...then].forEach((el, i) => el?.animate?.(RISE, { duration: DUR.light, delay: Math.max(0, i * STAGGER.display + (i >= first.length ? DUR.tone : 0) - elapsed), easing: EASE_OUT, fill: "backwards" }));
+  [...first, ...then].forEach((el, i) => el?.animate?.(el === still ? [{ opacity: 0 }, { opacity: 1 }] : RISE, { duration: DUR.light, delay: Math.max(0, i * STAGGER.display + (i >= first.length ? DUR.tone : 0) - elapsed), easing: EASE_OUT, fill: "backwards" }));
 }
 /* the HP gauge: changed cells switch as a score's bars do, 38 apart, from the right when it falls and from the left when it rises */
 export function gauge(cells, before, after, offValue) {

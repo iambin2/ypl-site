@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import Modal from "../../components/common/Modal.jsx";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
@@ -119,6 +119,15 @@ function aheadOf(lines) {
   }
   return ahead;
 }
+/* what the stage says and the whole log are kept outside the match's own state: a line said or logged draws only the part that reads
+   it (Say, the log), not the whole match with its deck and party again (2026-11-10, measured at a phone's speed: every line of a turn
+   drew the match two or three times, each with its layouts) */
+const makeBox = first => {
+  let value = first;
+  const subs = new Set();
+  return { get: () => value, set: next => { value = next; subs.forEach(f => f()); }, sub: f => { subs.add(f); return () => subs.delete(f); } };
+};
+export const useBox = box => useSyncExternalStore(box.sub, box.get);
 // epoch: a jump (a replay's seek, a change of side) starts the tape again from the top and catches up at once, as a page opened mid-battle does
 // live: a battle being played (not a replay); a replay at its start readies its pictures before the opening (below)
 // seated: the one watching plays it, so the end's board names the rows 상대 and 나
@@ -135,8 +144,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
   latest.current = { log, epoch };
   const stageRef = useRef(null);
   const [scene, setScene] = useState(null);
-  const [lines, setLines] = useState([]);
-  const [said, setSaid] = useState([]);
+  const [lines] = useState(() => makeBox([]));
+  const [said] = useState(() => makeBox([]));
   const [playing, setPlaying] = useState(false);
   const [kick, setKick] = useState(0);
   // a replay standing at its start readies its team's pictures before its opening plays (ready below)
@@ -151,7 +160,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
     if (running.current || log == null) return;
     const all = String(log).split("\n");
     if (epoch !== seenEpoch.current || all.length < done.current) {
-      seenEpoch.current = epoch; reset(); setLines([]); setSaid([]);
+      seenEpoch.current = epoch; reset(); lines.set([]); said.set([]);
       // what a cut-off run left on the stage (a Mega Evolution's dark, the opening's hidden leads and plates) goes back first
       if (stageRef.current) { fx.clearFinal(stageRef.current); fx.settle(stageRef.current); stageRef.current.classList.remove("bs-intro"); }
     }
@@ -165,9 +174,12 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
     (async () => {
       await null; // out of the effect: flushSync may not run inside React's own work
       let pending = [], lastSaid = [], saidAt = 0;
-      const flushLines = () => { if (pending.length) { const add = pending; pending = []; flushSync(() => setLines(list => [...list, ...add])); } };
+      const flushLines = () => { if (pending.length) { const add = pending; pending = []; flushSync(() => lines.set([...lines.get(), ...add])); } };
       const standing = new Map(); // slot → "blow" (HP at 0, still standing) or "fall" (sinking)
-      const show = () => flushSync(() => setScene(sceneOf(R.state, standing)));
+      // a scene that says what the last one said draws nothing (a line of words alone, a result the plates do not show)
+      let drawn = "";
+      const put = next => { const sig = JSON.stringify(next); if (sig === drawn) return; drawn = sig; flushSync(() => setScene(next)); };
+      const show = () => put(sceneOf(R.state, standing));
       const own = key => key.startsWith(perspective);
       // the cry of the one standing in a slot (DESIGN.md "Battle", Cries): its own as it comes out, lower as it falls
       const cryOf = (key, rate = 1) => { const mon = R.state.sides[key.slice(0, 2)].active[key.charCodeAt(2) - 97]; return cry(cryKey(res, mon?.species), rate); };
@@ -181,6 +193,9 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
       let landing = []; // HP moves of this beat started together (a spread move's targets), awaited when the beat ends
       // the camera (DESIGN.md "Battle", The camera): pushed in while a beat plays, back to wide once its words have stood
       let framed = false, shotId = 0, opened = false;
+      let leads = []; // the leads' entrances still playing
+      // the plates wait for the leads (.bs-intro), and a side's come on as its lead stands (data-up)
+      const intro = st => { st.classList.add("bs-intro"); st.querySelectorAll("[data-up]").forEach(el => { delete el.dataset.up; }); };
       const toWide = () => { shotId += 1; if (framed) { framed = false; return cam.wide(stageRef.current); } return null; };
       const push = (key, scale, duration) => { const stage = stageRef.current; if (!stage) return; shotId += 1; framed = true; cam.frame(stage, fx.spot(stage, key), scale, duration); };
       for (let i = 0; i < fresh.length; i++) {
@@ -207,13 +222,15 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
         }
         // one beat: a move and its results; the leads sent out together; the stat changes of one cause (Intimidate on both foes)
         const chain = (blow.on || /^\|move\|/.test(line)) && (RESULT.test(next) || /^\|-sideend\|/.test(next))
-          // the leads: a side's two go out together (doubles), and each side has its own throw
-          || (R.state.turn === 0 && /^\|switch\|/.test(line) && /^\|switch\|/.test(next) && part(line, 2).slice(0, 2) === part(next, 2).slice(0, 2))
+          /* the leads are one beat: a side's two go out together (doubles), and the other side's ball is thrown while ours is still
+             landing (2026-11-10, measured on a phone: 선출 확정 to the first choice took 7.7 s, each side's throw, entrance and cry
+             waited out before the next began) */
+          || (R.state.turn === 0 && /^\|switch\|/.test(line) && /^\|switch\|/.test(next))
           || (/^\|-(un)?boost\|/.test(line) && /^\|-(un)?boost\|/.test(next));
         flushLines();
         // the first lead's words wait for the opening's board (the box would say 가랏 under it before anyone is thrown)
         const opener = event?.verb === "enter" && !opened && R.state.turn === 0;
-        if (text.length && !opener) { shown = chained ? [...shown, ...text].slice(-2) : text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
+        if (text.length && !opener) { shown = chained ? [...shown, ...text].slice(-2) : text; flushSync(() => said.set(shown)); saidAt = performance.now(); }
         chained = chain;
         const stage = stageRef.current;
         const k = event?.ident ? keyOf(event.ident) : "";
@@ -267,7 +284,7 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
               }
               // a further hit of a multi-hit move lands its own blow, and its HP goes with it
               if (again) fx.burst(stage, k, blow.type, .8);
-              flushSync(() => setScene(view));
+              put(view);
               if (!was || !event.maxhp) return;
               const lost = was.hp - event.hp;
               if (!lost) return;
@@ -303,8 +320,10 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
                no board or veil over anything (2026-11-07, the user: the 배틀 시작 popup made the start stutter) */
             const fresh = first && !stageRef.current;
             // the plates wait for the leads: on a stage already standing (a replay's start) they go out before anything is shown
-            if (first && stageRef.current) stageRef.current.classList.add("bs-intro");
-            /* the board changes over (changeover.js): blank panels switch on over the team preview from the middle out while the pick
+            if (first && stageRef.current) intro(stageRef.current);
+            /* the board changes over (changeover.js; rebuilt 2026-11-10 from eight blank panels, "너무 심플해서": now the board's
+               modules run in from both edges, meet in the middle and switch off from the centre out). Before that:
+               blank panels switch on over the team preview from the middle out while the pick
                beside it sinks away, the court takes the room under them, and they switch off on it (2026-11-08, the user: the lit
                cards cut to the dark court in one frame; 2026-11-10: a transition of its own, not the lift) */
             const board = fresh ? await Promise.all([boardOff(document.querySelector(".bt-match .bt-stagebox")),
@@ -322,8 +341,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             // the opening (DESIGN.md "Battle", The big moments): the lamps switch on, then the throws
             if (first && st) {
               opened = true;
-              // the plates come in once the leads stand (the first turn, or the end of this run)
-              st.classList.add("bs-intro");
+              // each side's plates come in as its lead stands (and all of them by the first turn, or the end of this run)
+              intro(st);
               // nobody stands before their ball is thrown (the canvas draws the Pokémon, so it is the canvas that hides them), lamps off
               fx.hideAll(st, { dark: true });
               /* on a phone 선출 확정 stands at the foot of the long team preview, and the stage that replaces it was left above the
@@ -337,16 +356,24 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
               }
               await fx.opening(st);
             }
-            if (opener && text.length) { shown = text; flushSync(() => setSaid(shown)); saidAt = performance.now(); }
+            if (opener && text.length) { shown = text; flushSync(() => said.set(shown)); saidAt = performance.now(); }
            
-            /* a Pokémon sent in mid-battle is framed on its side. The leads (DESIGN.md "Battle", The big moments) are thrown one side at
-               a time with the camera close on that side, ours from behind first, then theirs, so each meets its ball; the camera goes
-               back to the wide shot of the two facing each other with the line after them */
+            /* a Pokémon sent in mid-battle is framed on its side. The leads (DESIGN.md "Battle", The big moments) are thrown ours
+               from behind first, then theirs while ours is still landing (below); the camera goes back to the wide shot of the two
+               facing each other with the line after them */
             const partnered = R.state.turn === 0 && /^\|switch\|/.test(fresh[i - 1] || "") && part(fresh[i - 1], 2).slice(0, 2) === part(line, 2).slice(0, 2);
             if (R.state.turn === 0 && !partnered) push(k, R.state.gameType === "doubles" ? 1.16 : 1.3, 360);
             else if (R.state.turn > 0 && !chain) push(k, 1.08, 420);
             const call = () => cryOf(k);
-            if (chain) { fx.enter(st, k, { cry: call }); await fx.wait(260); } else await fx.enter(st, k, { cry: call });
+            if (R.state.turn === 0 && !event.leaving) {
+              /* a lead: its side's plates switch on as it comes out of its ball, and the next lead's ball is thrown before this one
+                 has landed (its partner's 260 after, the other side's 300 after); what follows the leads waits for them all */
+              const hud = st?.querySelector(own(k) ? ".bt-hud-own" : ".bt-hud-foe");
+              const up = () => { if (hud) hud.dataset.up = ""; };
+              leads.push(fx.enter(st, k, { cry: call, out: up }).then(up, up));
+              if (/^\|switch\|/.test(next)) await fx.wait(part(next, 2).slice(0, 2) === part(line, 2).slice(0, 2) ? 260 : 300);
+              else { await Promise.all(leads); leads = []; }
+            } else if (chain) { fx.enter(st, k, { cry: call }); await fx.wait(260); } else await fx.enter(st, k, { cry: call });
             break;
           }
           case "change": {
@@ -383,7 +410,9 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
             if (event.on && event.id === "substitute") await fx.doll(stage, k, true);
             break;
           case "cant": show(); await fx.cant(stage, k, event.why); break;
-          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); await fx.turnMark(stage); break;
+          /* the turn's line runs along the message window by itself: waited out, its 1100 stood between every turn's last word and
+             the keys coming back (2026-11-10, measured: 1.1 to 1.9 s of nothing at the end of each turn) */
+          case "turn": show(); stageRef.current?.classList.remove("bs-intro"); await toWide(); sfx("turn"); fx.turnMark(stage); break;
           case "end": {
             /* the end (DESIGN.md "Battle", The big moments): the camera holds on the wide shot (2026-11-06: its push onto the winner
                moved the whole screen for no reason) and the match board lights over the arena: the Pokémon each side knocked out switch
@@ -395,9 +424,11 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
           }
           default: show();
         } } catch (err) { console.error("stage", err); show(); }
-        if (text.length && !chain) await fx.hold(saidAt, MSG_MS);
+        // an ability's or an item's plate has stood its own beat and stays over its owner: its line is not held again
+        if (text.length && !chain && event?.verb !== "ability" && event?.verb !== "item") await fx.hold(saidAt, MSG_MS);
       }
       if (landing.length) await Promise.all(landing);
+      if (leads.length) await Promise.all(leads);
       toWide();
       stageRef.current?.classList.remove("bs-intro");
       /* a replay standing at its start (the team preview read, nobody out yet): its arena waits with the lamps off, as a stadium
@@ -410,8 +441,8 @@ export function useStageTape(log, res, perspective, epoch = 0, live = false, sea
         warming.current = fx.warm(st0, ["p1", "p2"].flatMap(s => R.state.sides[s].preview.map(spriteUrl)));
       }
       flushLines();
-      if (lastSaid.length) flushSync(() => setSaid(shown.at(-1) === lastSaid.at(-1) ? shown : lastSaid));
-      flushSync(() => setScene(sceneOf(R.state)));
+      if (lastSaid.length && shown.at(-1) !== lastSaid.at(-1)) flushSync(() => said.set(lastSaid));
+      put(sceneOf(R.state));
       running.current = false;
       // the log moved on (or jumped) while this played: read it again
       if (latest.current.log !== log || latest.current.epoch !== epoch) setKick(n => n + 1);
@@ -575,7 +606,8 @@ function Tags({ tags }) {
 
 // the message window over the bottom of the stage: the newest line lit, the one before it dim; when the game asks
 // (리자몽은 무엇을 할까?) the question is the newest
-export function Say({ said, ask }) {
+export function Say({ said: box, ask }) {
+  const said = useBox(box);
   const shown = ask ? [...said.slice(-1), ask] : said;
   return <div className="bt-say" aria-live="polite">{shown.map((line, i) => <p key={`${line}-${i}-${shown.length}`}>{line}</p>)}</div>;
 }
@@ -603,13 +635,17 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
      opened (2026-11-07, the user: the arena flashed as a battle started) */
   useLayoutEffect(() => { if (dark) fx.hideAll(stageRef.current, { dark: true }); }, []);
   const fields = scene?.fields || [];
-  // the GPU stage reads who stands where after every change, and draws the field as the scene leaves it
+  /* the GPU stage reads who stands where when that changes (a Pokémon comes, goes, changes its form or its doll), and draws the field
+     as the scene leaves it. It read the stage's places after every draw of the match, a layout each time (2026-11-10); a stage that
+     changes its size is read again by the stage itself (gl.js measure) */
+  const stood = [foe, perspective].map(side => (scene?.[side]?.active || []).map(m => (m && (!m.fainted || m.standing) ? `${m.name}:${m.species}:${m.volatiles.includes("substitute")}` : "")).join()).join("/");
+  const laid = JSON.stringify([scene?.weather, fields, ...[foe, perspective].flatMap(side => [scene?.[side]?.conditions, scene?.[side]?.layers])]);
   useLayoutEffect(() => {
     const st = stageRef.current;
     if (!st) return;
     fx.sync(st);
     fx.field(st, { weather: scene?.weather || "", fields, foe: { conditions: scene?.[foe]?.conditions || [], layers: scene?.[foe]?.layers || {} }, own: { conditions: scene?.[perspective]?.conditions || [], layers: scene?.[perspective]?.layers || {} } });
-  });
+  }, [stood, laid, doubles, perspective]);
   const chips = [
     scene?.weather && { key: scene.weather, word: res.text.default[scene.weather]?.weatherName || scene.weather, left: turnsLeft(scene.weather, scene.weatherSince, scene.turn) },
     ...fields.map(f => ({ key: f, word: effectWord(res, f), left: turnsLeft(f, scene.fieldSince[f], scene.turn) })),
@@ -657,13 +693,26 @@ export function Stage({ scene, stageRef, perspective, doubles, res, names, said,
 export function LobbyStage({ leads, doubles, label, awaiting = false, random = false, foeLead = null }) {
   const ref = useRef(null);
   const scene = { p1: { active: leads.map(species => ({ name: species, species, volatiles: [] })) }, p2: { active: foeLead ? [{ name: foeLead, species: foeLead, volatiles: [] }] : [] } };
+  /* the first court of a visit comes once the stage's paintings are there (stageFx whenPainted), a few frames after its frame, and
+     switches on as it comes; every court after it stands at once. Until then nobody stands in it */
+  const [painted, setPainted] = useState(fx.painted);
+  const late = useRef(!painted);
+  useEffect(() => {
+    if (painted) return undefined;
+    let on = true;
+    fx.whenPainted().then(() => { if (on) setPainted(true); });
+    return () => { on = false; };
+  }, []);
   // before paint, so a new lead never shows for a frame before it comes out of the light
-  useLayoutEffect(() => { fx.sync(ref.current); leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot), { ball: false })); }, [leads.join("|"), doubles]);
-  useLayoutEffect(() => { fx.sync(ref.current); if (foeLead) fx.enter(ref.current, slotKey("p2", 0), { ball: false }); }, [foeLead, doubles]);
+  useLayoutEffect(() => { if (!painted) return; fx.sync(ref.current); leads.forEach((_, slot) => fx.enter(ref.current, slotKey("p1", slot), { ball: false })); }, [painted, leads.join("|"), doubles]);
+  useLayoutEffect(() => { if (!painted) return; fx.sync(ref.current); if (foeLead) fx.enter(ref.current, slotKey("p2", 0), { ball: false }); }, [painted, foeLead, doubles]);
+  useLayoutEffect(() => {
+    if (painted && late.current && !reduced()) ref.current?.querySelector(".bs-gl")?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
+  }, [painted]);
   return (
     <div className="bs-stage" ref={ref} role="img" aria-label={label}>
       <div className="bs-world">
-        {foeLead && !awaiting && <SideField side="p2" scene={scene} doubles={false} />}
+        {painted && foeLead && !awaiting && <SideField side="p2" scene={scene} doubles={false} />}
         {awaiting && <div className="bs-side foe" aria-hidden="true">
           {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`foe${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
         </div>}
@@ -671,7 +720,7 @@ export function LobbyStage({ leads, doubles, label, awaiting = false, random = f
           ? <div className="bs-side own" aria-hidden="true">
             {(doubles ? [0, 1] : [0]).map(slot => <div key={slot} className="bs-slot" data-pos={`own${doubles ? `-d${slot}` : ""}`}><i className="bs-await" /></div>)}
           </div>
-          : <SideField side="p1" scene={scene} own doubles={doubles} />}
+          : painted && <SideField side="p1" scene={scene} own doubles={doubles} />}
       </div>
       {/* a plate said on the court as it goes dark (a 연승 도전 floor's master, Streak.jsx), outside the camera as in a battle */}
       <div className="bs-over" aria-hidden="true" />
@@ -685,7 +734,9 @@ export function LobbyStage({ leads, doubles, label, awaiting = false, random = f
    or the field it is typed in. */
 export function LobbyArena({ res, foe, foeNote = "", foeMuted = false, waiting = false, ours, six = [], children }) {
   const list = six.map(species => ({ species, light: "lit", share: null }));
-  return <div className="bt-arena bt-lobby-arena">
+  /* the arena lights as one thing with the page (data-rise, motion.js light): its strips stood lit in the first frame beside panels
+     still dark, and the court's box stood black for the frame before its picture was drawn (2026-11-10, coming back from a battle) */
+  return <div className="bt-arena bt-lobby-arena" data-rise="">
     <div className="bt-strip foe">
       <span className="bt-strip-row">
         <span className="bt-who">{waiting && <i className="lamp" aria-hidden="true" />}<b className={"bt-trainer" + (foeMuted ? " mute" : "")}>{foe}</b>{foeNote && <span className="bt-who-note">{foeNote}</span>}</span>

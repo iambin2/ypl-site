@@ -5,7 +5,7 @@
    speed: 1 보통, .5 빠르게, 0 건너뛰기(연출 없이 상태만). */
 import { DUR, reduced } from "../../components/common/motion.js";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
-import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
+import { atlasPainted, atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
 import { audio, primeAudio } from "./cries.js";
 import { setField } from "./arena.js";
 import "./arena.js";
@@ -740,18 +740,23 @@ const idleMoment = () => new Promise(resolve => (typeof requestIdleCallback === 
   ? requestIdleCallback(d => resolve(() => d.timeRemaining() > 3), { timeout: 200 })
   : setTimeout(() => { const t = performance.now(); resolve(() => performance.now() - t < 8); }, 16)));
 const frameMoment = () => new Promise(resolve => requestAnimationFrame(() => { const t = performance.now(); resolve(() => performance.now() - t < 8); }));
-let prewarming = null, urgent = false;
+let prewarming = null, atlasReady = null, urgent = false;
 const ballStep = () => !ballCanvases && !ballSteps().next().done;
+const paintedBy = async step => { for (let more = true; more;) { const room = await (urgent ? frameMoment() : idleMoment()); do more = step(); while (more && room()); } };
 export function prewarm() {
   return (prewarming ||= (async () => {
     /* the sound's context is made off the page's first task, after the audio service has been woken without holding the page
        (cries.js primeAudio; 2026-11-10, measured: made here at once it held the first visit to the battle page frozen 640 of its 650) */
     primeAudio(idleMoment);
-    for (const step of [atlasStep, ballStep]) {
-      for (let more = true; more;) { const room = await (urgent ? frameMoment() : idleMoment()); do more = step(); while (more && room()); }
-    }
+    await (atlasReady = paintedBy(atlasStep));
+    await paintedBy(ballStep);
   })());
 }
+/* the first stage of a visit (the lobby's court) waits for the atlas, painted a frame's 8 ms at a time, and comes when it is there:
+   mounted before it, the stage painted the whole atlas at once inside the page's first draw (2026-11-10, measured: 120 of a 270 stop
+   on a desktop, four times that at a phone's speed) */
+export const painted = atlasPainted;
+export function whenPainted() { urgent = true; prewarm(); return atlasReady; }
 /* a replay standing at its start readies the rest before its opening (Stage.jsx): its teams' pictures on the GPU (gl.js warm), the
    Poké Ball's frames on the GPU and the sound's graph; resolves when all are there or after a moment */
 export async function warm(stage, srcs) {
@@ -794,7 +799,10 @@ export async function opening(stage) {
   /* the stage hideAll left dark comes back to its own lamps in the same turn as the lamps' tween starts at its dark end, so no frame
      draws it lit in between (2026-11-07, the user: the arena flashed as a battle started; it stood lit for the two frames waited) */
   e.gradeBase.dim = 1;
-  if (darkened) e.anim(e.grade, { dim: [.18, 1], bloom: [1.6, 1] }, { dur: 900, ease: "inout" });
+  /* bank by bank, as a stadium's lamps do (DESIGN.md "Battle", The big moments; 2026-11-10: they came up in one fade): three steps of
+     160 with 100 between them, .18 to .45 to .72 to all on */
+  if (darkened && reduced()) e.anim(e.grade, { dim: [.18, 1] }, { dur: DUR.leave });
+  else if (darkened) e.anim(e.grade, { dim: [.18, .45, .45, .72, .72, 1], bloom: [1.6, 1.4, 1.4, 1.2, 1.2, 1] }, { dur: 680, at: [0, 160 / 680, 260 / 680, 420 / 680, 520 / 680, 1], ease: "out" });
   await wait(reduced() ? 200 : 450);
 }
 /* the end (DESIGN.md "Battle", The big moments): the match board over the arena, the camera holding wide. The Pokémon each side knocked
@@ -836,7 +844,8 @@ export function clearFinal(stage) {
 }
 /* sent in: the ball opens in a burst of light, a column of it rises, the Pokémon grows out of it white and settles into its colours */
 // cry: called as it appears; the entrance lasts until the cry has been heard
-export async function enter(stage, key, { ball = true, cry = null } = {}) {
+// out: called as it comes out of its ball (the stage lights its plate then)
+export async function enter(stage, key, { ball = true, cry = null, out = null } = {}) {
   const e = E(stage);
   if (!e || instant()) return;
   e.sync();
@@ -846,6 +855,7 @@ export async function enter(stage, key, { ball = true, cry = null } = {}) {
   a.base.alpha = 0;
   await Promise.all([a.ready, ball && !reduced() ? throwBall(stage, key) : null]);
   a.base.alpha = 1;
+  out?.();
   if (ball) sfx("ballOpen", { pan: panOf(e, centre(stage, key)) });
   const heard = cry?.();
   if (reduced()) { await Promise.all([e.anim(a, { alpha: [0, 1] }, { dur: 260 }), heard]); return; }

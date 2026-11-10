@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Row, SectionHead, Status } from "../../components/common/Board.jsx";
 import Button from "../../components/common/Button.jsx";
 import Icon from "../../components/common/Icon.jsx";
+import Empty from "../../components/common/Empty.jsx";
+import Pager from "../../components/common/Pager.jsx";
 import { battleHref, endedByLine, isDoubles, readSeat } from "../../services/battleService.js";
 import { battleHistoryIds, forgetBattles, listBattlesById } from "../../services/battleWatch.js";
 import { siteConfirm } from "../../components/common/SiteDialog.jsx";
@@ -100,11 +102,15 @@ function BattleRows({ rows, onOpen }) {
       label={`${b.p1_name} 대 ${b.p2_name || "상대 대기"}, ${b.status === "active" ? "관전" : b.status === "ended" ? "리플레이 보기" : "열기"}`} />)}
   </div>;
 }
+/* the battle page's 기록 tab (2026-11-10: the list stood under 배틀 열기's form and grew without end): twelve battles a page, the
+   newest first, with the pager under them; a device with none says so on a panel */
+const PAGE = 12;
 export function BattleLists({ onOpen, onCleared }) {
-  const [mine, setMine] = useState([]);
+  const [mine, setMine] = useState(null);
+  const [page, setPage] = useState(1);
   useEffect(() => {
     let on = true;
-    listBattlesById(battleHistoryIds()).then(rows => on && setMine(rows));
+    listBattlesById(battleHistoryIds()).then(rows => on && setMine(rows), () => on && setMine([]));
     return () => { on = false; };
   }, []);
   /* 기록 삭제 picks before it deletes (2026-11-06): the link turns the rows into checks (a 20 square leading each), 취소 leaves. Only
@@ -113,7 +119,11 @@ export function BattleLists({ onOpen, onCleared }) {
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState(() => new Set());
   const open = b => b.status === "waiting" || b.status === "active";
+  if (!mine) return null;
+  if (!mine.length) return <Empty title="이 기기에서 한 배틀이 없습니다." />;
   const done = mine.filter(b => !open(b));
+  const pages = Math.ceil(mine.length / PAGE), cur = Math.min(page, pages);
+  const shown = mine.slice((cur - 1) * PAGE, cur * PAGE);
   const toggle = id => setPicked(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const all = done.length > 0 && done.every(b => picked.has(b.id));
   const leave = () => { setPicking(false); setPicked(new Set()); };
@@ -132,7 +142,7 @@ export function BattleLists({ onOpen, onCleared }) {
       <SectionHead id="bt-mine-h" title="이 기기의 배틀" link={picking ? "취소" : done.length ? "기록 삭제" : undefined} onLink={picking ? leave : () => setPicking(true)} />
       {picking ? <>
         <div className="stack" role="group" aria-label="지울 배틀">
-          {mine.map(b => {
+          {shown.map(b => {
             const can = !open(b), on = picked.has(b.id);
             return <Row key={b.id} className={"bt-pickrow" + (can ? "" : " off")} title={`${b.p1_name} 대 ${b.p2_name || "상대 대기"}`}
               line={can ? [kindLine(b), endedByLine(b)].filter(Boolean).join(", ") : "진행 중이거나 대기 중인 배틀은 남습니다"}
@@ -145,7 +155,8 @@ export function BattleLists({ onOpen, onCleared }) {
           <Button onClick={() => setPicked(all ? new Set() : new Set(done.map(b => b.id)))}>{all ? "선택 해제" : "전체 선택"}</Button>
           <Button onClick={remove} disabled={!picked.size}>{picked.size ? `${picked.size}개 삭제` : "삭제"}</Button>
         </div>
-      </> : <BattleRows rows={mine} onOpen={onOpen} />}
+      </> : <BattleRows rows={shown} onOpen={onOpen} />}
+      <div><Pager page={cur} pages={pages} onGo={setPage} /></div>
     </section>}
   </>;
 }

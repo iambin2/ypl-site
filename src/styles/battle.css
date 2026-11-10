@@ -100,11 +100,14 @@
    the head and the deck leave, between 16 to 9 and 4 to 3 of the width; a taller phone gives the room to the deck's keys. */
 .bt-main { display: grid; gap: var(--s3); min-width: 0; align-content: start; }
 .bt-stagebox { position: relative; min-width: 0; }
-/* going in, the board changes over (changeover.js): blank panels joined on the seam over the stage's room, switching on and off from
-   the middle; only their opacity moves */
-.bt-change { position: absolute; inset: 0; z-index: var(--z-sticky); display: flex; pointer-events: none; }
-.bt-change > i { flex: 1 1 0; background: var(--panel); }
-.bt-change > i + i { border-left: var(--seam) solid var(--ground); }
+/* going in, the board changes over (changeover.js): square modules joined on the seam over the stage's room. Each is a panel with
+   its own light over it (the board's white, the first thing seen as it comes on, and the ring that runs out from where the two sides
+   meet); the amber lamp of a live battle stands at the board's centre. Only opacity moves; every module's seam is its own edge, so
+   nothing under the board shows through a gap */
+.bt-change { position: absolute; inset: 0; z-index: var(--z-sticky); display: grid; pointer-events: none; }
+.bt-change > i { position: relative; background: var(--panel-2); border-left: var(--seam) solid var(--ground); border-top: var(--seam) solid var(--ground); opacity: 0; }
+.bt-change > i > b { position: absolute; inset: 0; background: var(--lit); }
+.bt-change-lamp { position: absolute; left: calc(50% - var(--lamp) / 2); top: calc(50% - var(--lamp) / 2); opacity: 0; }
 .bt-deck { position: relative; display: grid; gap: var(--s3); min-width: 0; align-content: start; }
 .bt-deck:empty { display: none; }
 @media (max-width: 859px) {
@@ -329,7 +332,7 @@
    exception is Mega Evolution's symbol. In dark the tokens are set to the night inside the arena; in light the strips, the plates
    and the message window take the site's own light tokens (2026-11-06: a night frame round a paper stage read as dark mode left on).
    ========================================================================== */
-:root:not([data-theme="light"]) .bt-arena {
+:root:not([data-theme="light"]) :is(.bt-arena, .bt-change, .tw, .lift) {
   --lit: #FFFFFF; --dim: #9FB3D8; --mute: #5C6F94; --ground: #050D1F; --panel: #0A1A3A; --panel-2: #12295A; --rule: #1B3A78; --veil: #050D1FB3;
 }
 .bt-arena {
@@ -388,8 +391,9 @@
 /* ---------- the HUD over the stage ---------- */
 .bt-hud { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
 .bt-hud-foe, .bt-hud-own { transition: opacity .4s ease; }
-/* the plates go out at once and come back over .4s: a fade going out let a lead's plate show through the opening (2026-11-07) */
-.bs-stage.bs-intro :is(.bt-hud-foe, .bt-hud-own) { opacity: 0; transition: none; }
+/* the plates go out at once and come back over .4s: a fade going out let a lead's plate show through the opening (2026-11-07). A
+   side's come back as its lead comes out of its ball (data-up, Stage.jsx), not all at the first turn (2026-11-10) */
+.bs-stage.bs-intro :is(.bt-hud-foe, .bt-hud-own):not([data-up]) { opacity: 0; transition: none; }
 .bt-hud-foe { position: absolute; top: var(--s3); left: var(--pad); right: var(--pad); display: grid; justify-items: start; gap: var(--seam); }
 /* the foe's plates as one group: in doubles the two sit seam to seam, the first standing's first, never split across the stage */
 .bt-hud-plates { display: flex; align-items: flex-start; gap: var(--seam); width: 100%; }
@@ -904,10 +908,11 @@ button.bt-card:focus-visible { outline: var(--line) solid var(--lit); outline-of
 .bt-match :is(.bt-move, .bt-sw, .bt-mega, .bt-target, .bt-rkey) { transition: background-color var(--move-tone), color var(--move-tone), opacity var(--move-tone); }
 /* the deck is drawn again for every question (Choices is keyed by the request), so a transition alone has no state to start from:
    drawn locked, a key that was usable (data-was) starts lit and goes down to the disabled light; drawn open, every key starts at that
-   light and the usable ones come up (a move a Choice item locks out stays where it was) */
+   light and the usable ones come up (a move a Choice item locks out stays where it was). Locked keys nothing was asked on yet (.fresh:
+   the stage taking the team preview's place) come at the disabled light: starting lit they flashed under the blank board (2026-11-10) */
 @starting-style {
   .bt-match .bt-choices.forced .bt-moves { opacity: 1; }
-  .bt-match .bt-choices.locked [data-was] { opacity: 1; }
+  .bt-match .bt-choices.locked:not(.fresh) [data-was] { opacity: 1; }
   .bt-match .bt-choices:not(.locked) :is(.bt-move, .bt-sw) { opacity: var(--opacity-disabled); }
 }
 

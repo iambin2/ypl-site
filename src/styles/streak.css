@@ -11,47 +11,26 @@
 .streak-hero-board > .t20 { line-height: 1; }
 
 
-/* on a wide screen the arena's top edge meets the run's panel, not the section's title over it, as the lobby's meets its first choice */
+/* on a wide screen the tower's top edge meets the run's panel, not the section's title over it, as the lobby's meets its first choice */
 @media (min-width: 860px) {
   .bt-lobby:has(> .streak-side) > .bt-lobby-main { padding-top: calc(var(--l12) + var(--s2)); }
 }
 
-/* ---------- the lift (lift.js, Streak.jsx LiftHall; 2026-11-09, the user: "엘리베이터 컨셉으로") ----------
-   Two doors meeting on a seam, each a panel the full height of the stage: the floor's number at 120 with the amber lamp on the left
-   door by the seam, its five games as a track on the right door by the seam. A gatekeeper's game inverts the doors. The tab's hall
-   is the stage's place with the doors shut; the car (.lift) is the same doors fixed over the page while it rides */
+/* ---------- the lift's doors (tower.js; DESIGN.md "Battle", 도전의 탑, The tower) ----------
+   Going into a game the view goes in through the lamp's door until the door is the stage: two leaves meeting on a seam, the amber
+   lamp on the seam at their head. They stand in the scene while they close on the stage (.in), then fixed over the window, so they
+   outlive the screen and part on the next one. A gatekeeper's game shuts in inverted doors */
 .lift { position: fixed; z-index: var(--z-sticky); overflow: hidden; }
-.lift-hall { position: relative; overflow: hidden; aspect-ratio: 16 / 9; }
-.lift-door { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; width: 50%; background: var(--panel); color: var(--lit); }
-.lift-door.l { left: 0; justify-content: flex-end; }
+.lift.in { position: absolute; inset: 0; transform-origin: 0 0; }
+.lift-door { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--panel-2); }
+.lift-door.l { left: 0; }
 /* the seam the doors meet on is the left door's own edge, the ground's colour, so nothing behind them shows through it */
 .lift-door.l::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: var(--seam); background: var(--ground); }
-.lift-door.r { right: 0; justify-content: flex-start; }
-:is(.lift, .lift-hall).inv .lift-door { background: var(--lit); color: var(--ground); }
-.lift-in { display: flex; align-items: flex-end; gap: var(--s5); padding: 0 var(--s8); }
-/* the lamp stands at the digits' head, as a lift's lamp does: at their foot it read as a decimal point (.1), and off it is its
-   housing, an unlit bar's light like the track's games beside it, never a lit square (2026-11-10) */
-.lift-in > .lamp { align-self: flex-start; }
-.lift-in > .lamp.unlit { background: currentColor; opacity: var(--off); }
-/* on a gatekeeper's inverted doors the lamp is still the amber of the game on the track beside it, not the ground's square */
-:is(.lift, .lift-hall).inv .lamp.sig { background: var(--signal); }
-.lift-digits { display: flex; }
-.lift-door.r .lift-in { align-items: center; }
-.lift-track { display: grid; grid-template-columns: repeat(5, var(--s8)); gap: var(--seam); }
-.lift-track > i { height: var(--s3); background: currentColor; opacity: var(--off); }
-.lift-track > i.won { opacity: 1; }
-.lift-track > i.now { background: var(--signal); opacity: 1; }
-.lift-track > i.next { opacity: var(--opacity-disabled); }
-@media (max-width: 639px) {
-  .lift-in { gap: var(--s3); padding: 0 var(--s5); }
-  .lift-track { grid-template-columns: repeat(5, var(--s5)); }
-}
-
-/* the floor keys beside the hall, as a lift's panel: eight floors on the seam, the floor stood on inverted, the floors passed lit,
-   the floors above muted */
-.streak-keys { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--seam); }
-.streak-keys > span { display: grid; place-items: center; height: var(--h-row2); }
-.streak-keys > .up .seg { color: var(--mute); }
+.lift-door.r { right: 0; }
+.lift.inv .lift-door { background: var(--lit); }
+.lift-lamp { position: absolute; top: var(--s3); left: calc(50% - var(--lamp) / 2); transition: opacity var(--move-tone); }
+/* on a gatekeeper's inverted doors the lamp is still amber, not the ground's square */
+.lift.inv .lamp.sig { background: var(--signal); }
 
 /* a game of a run, beside it: which game, the streak riding on it at 32 with 연승 on the baseline, the floor joined under it on the
    seam. A floor's master inverts */
