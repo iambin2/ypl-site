@@ -786,7 +786,10 @@ function PokemonView({ snapshot, onParty }) {
   if (!snapshot.pokemon.length) {
     return <Empty title="기록에 연결된 파티 엔트리가 없습니다." />;
   }
-  const rows = all || normalized ? visible : visible.slice(0, LIST_SHOWN);
+  /* the grid is three across on a phone and six on a desktop: the first screenful is a whole number of both rows, so its last line
+     never stands with empty cells (2026-11-10: 20 left two of three, and two of six) */
+  const GRID_SHOWN = 24;
+  const rows = all || normalized ? visible : visible.slice(0, GRID_SHOWN);
 
   return (
     <div className="rc-list">
@@ -802,7 +805,7 @@ function PokemonView({ snapshot, onParty }) {
           ))}
         </div>
       ) : <Empty title="검색 결과가 없습니다." />}
-      {!all && !normalized && visible.length > LIST_SHOWN && (
+      {!all && !normalized && visible.length > GRID_SHOWN && (
         <div className="rc-more"><Button variant="second" onClick={() => setAll(true)}>{visible.length}종 전체 보기</Button></div>
       )}
       {current && <PokemonSheet snapshot={snapshot} pokemon={current} rank={rankOf(current)} onClose={() => setOpen(null)} onParty={onParty} />}

@@ -57,6 +57,8 @@
 @media (min-width: 860px) { .tb-mon { height: calc(var(--h-counter) + var(--s13)); } }
 .tb-team-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .tb-team-links { display: flex; gap: var(--s5); flex: none; }
+/* an empty team has no action: the row goes with its words, so it keeps no gap under the slots */
+.tb-team-actions:has(> .tb-team-links:empty):not(:has(> .t12)) { display: none; }
 
 /* ---------- the editor: name, the spec cells, the points as bars, the moves as cells ---------- */
 .tb-editor { display: grid; gap: var(--s3); min-width: 0; }

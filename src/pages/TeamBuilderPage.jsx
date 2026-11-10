@@ -1508,7 +1508,8 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
                 {team.length > 0 && <Button variant="link" disabled={imageBusy || detailStatus === "loading"} onClick={saveTeamImage} loading={imageBusy}>이미지 저장</Button>}
                 {/* a saved team as it stands goes straight into a friendly battle (BattlePage reads ?team=) */}
                 {currentSaved && !dirty && <Button variant="link" href={`?view=battle&team=${encodeURIComponent(currentSaved.id)}`}>이 팀으로 배틀</Button>}
-                <Button variant="link" onClick={resetTeam}>초기화</Button>
+                {/* with no member there is nothing to reset: the word stood alone under six empty slots (2026-11-10) */}
+                {team.length > 0 && <Button variant="link" onClick={resetTeam}>초기화</Button>}
               </span>
             </div>
           </div>
@@ -1682,7 +1683,7 @@ export default function TeamBuilderPage({ go, flash, admin = false } = {}) {
             );
           })}
         </div>
-        {!savedTeams.length && <p className="t15 reg dim tb-library-empty">아직 저장된 팀이 없습니다.</p>}
+        {!savedTeams.length && <p className="tb-library-empty">아직 저장된 팀이 없습니다.</p>}
       </Modal>}
     </section>
   );

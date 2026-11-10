@@ -16,7 +16,17 @@ export function inkShift(alpha, w, h) {
   return [(.5 - (minX + maxX + 1) / 2 / w) * 100, (.5 - (minY + maxY + 1) / 2 / h) * 100];
 }
 
-const seen = new Map();
+/* 한 번 읽은 값은 기기에 남긴다(2026-11-10): 그림마다 캔버스에 그려 알파를 읽는 일이 목록이 처음 설 때 한 프레임에 몰려, 팀 빌더가 들어설 때
+   67ms짜리 프레임이 생겼다. 다음 방문부터는 읽지 않는다. 주소가 같으면 그림도 같다(스프라이트 주소에는 판이 들어 있다). */
+const KEPT = "ypl-ink:v1";
+const kept = (() => { try { return JSON.parse(localStorage.getItem(KEPT) || "{}"); } catch { return {}; } })();
+let keeping = 0;
+function keep(kind, src, shift) {
+  (kept[kind] ||= {})[src] = shift;
+  if (keeping) return;
+  keeping = setTimeout(() => { keeping = 0; try { localStorage.setItem(KEPT, JSON.stringify(kept)); } catch { /* 다음 방문에 다시 읽는다 */ } }, 1500);
+}
+const seen = new Map(Object.entries(kept.c || {}));
 let ctx = null;
 export function centreInk(img) {
   const { src, naturalWidth: nw, naturalHeight: nh } = img;
@@ -32,6 +42,7 @@ export function centreInk(img) {
       shift = inkShift(alpha, SIZE, SIZE);
     } catch { /* 다른 출처의 그림은 읽을 수 없다: 상자의 중앙에 둔다 */ }
     seen.set(src, shift);
+    if (shift) keep("c", src, shift); // a read that failed (a picture not yet readable) is tried again next visit
   }
   const shift = seen.get(src);
   if (shift) img.style.translate = `${shift[0].toFixed(1)}% ${shift[1].toFixed(1)}%`;
@@ -52,7 +63,7 @@ export function inkFeet(alpha, w, h) {
   if (maxX < 0) return null;
   return [(.5 - (minX + maxX + 1) / 2 / w) * 100, (1 - (maxY + 1) / h) * 100];
 }
-const feet = new Map();
+const feet = new Map(Object.entries(kept.f || {}));
 let footCtx = null;
 export function standInk(img) {
   const { src, naturalWidth: nw, naturalHeight: nh } = img;
@@ -69,6 +80,7 @@ export function standInk(img) {
     } catch { /* 다른 출처의 그림은 읽을 수 없다: 상자의 아래에 둔다 */ }
     // contain으로 줄어든 쪽은 상자보다 작게 그려진다: 그 비율만큼만 옮긴다
     feet.set(src, shift && [shift[0] * Math.min(1, nw / nh), shift[1] * Math.min(1, nh / nw)]);
+    if (feet.get(src)) keep("f", src, feet.get(src));
   }
   const shift = feet.get(src);
   if (shift) img.style.translate = `${shift[0].toFixed(2)}% ${shift[1].toFixed(2)}%`;

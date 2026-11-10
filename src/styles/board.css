@@ -265,7 +265,11 @@
 /* ---------- errors and empty (DESIGN.md "Errors and empty"): the ! square and a sentence, then one way out ---------- */
 .error-note { display: grid; gap: var(--s3); padding: var(--pad); }
 .error-say { display: flex; align-items: flex-start; gap: var(--s3); font-weight: 600; }
-.ypl-empty { display: grid; gap: var(--s1); padding: var(--s8) 0; }
+/* an empty place stands on a panel of its own, as 지금 할 일이 없습니다. and the notices' no-match do: its two lines on the open ground
+   read as words left floating (2026-11-10, the user: "텍스트 홀로 둥 떠있는 걸 안 좋아해"); on a sheet it is one step up, as every panel there */
+.ypl-empty { display: grid; gap: var(--s1); padding: var(--s5) var(--pad); background: var(--panel); }
+.sheet .ypl-empty { background: var(--panel-2); }
+.back + .ypl-empty { margin-top: var(--s5); }
 .ypl-empty b { font-size: var(--t15); line-height: var(--l15); font-weight: 700; }
 .ypl-empty p { font-size: var(--t15); line-height: var(--l-read); color: var(--dim); }
 

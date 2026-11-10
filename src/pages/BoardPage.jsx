@@ -41,15 +41,17 @@ function MediaEmbed({ url }){
 
 function BoardCompose({ onClose, onSubmit, initial=null }){
   const [nick,setNick]=useState(""); const [title,setTitle]=useState(initial?.title||""); const [body,setBody]=useState(initial?.body||""); const [pin,setPin]=useState(""); const [link,setLink]=useState(""); const [secret,setSecret]=useState(false);
-  const submit=()=>{ if(!nick.trim()){siteAlert("닉네임을 입력해 주세요.","글쓴이로 표시될 닉네임이 필요합니다.");return;} if(!title.trim()){siteAlert("제목을 입력해 주세요.");return;}
+  // what is missing is said under its own field, both at once, never by a dialog over this sheet (2026-11-10)
+  const [tried,setTried]=useState(false);
+  const submit=()=>{ if(!nick.trim()||!title.trim()){ setTried(true); return; }
     onSubmit({nick:nick.trim().slice(0,20),title:title.trim().slice(0,60),body:body.trim(),pin:pin.trim(),link:link.trim(),secret}); };
   return (<Modal title="새 글 작성" onClose={onClose}>
     <div className="swap" key="compose">
       <div className="bk-grow2">
-        <Field label="닉네임"><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
+        <Field label="닉네임" error={tried&&!nick.trim()&&"닉네임을 입력해 주세요."}><input value={nick} onChange={e=>setNick(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
         <Field label="수정, 삭제 비밀번호 (선택, 숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="예: 1234" inputMode="numeric"/></Field>
       </div>
-      <Field label="제목"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력해 주세요." maxLength={60}/></Field>
+      <Field label="제목" error={tried&&!title.trim()&&"제목을 입력해 주세요."}><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="제목을 입력해 주세요." maxLength={60}/></Field>
       <Field label="내용"><textarea value={body} onChange={e=>setBody(e.target.value)} rows={6} placeholder="자유롭게 작성해 주세요."/></Field>
       <div className="field"><label htmlFor="bd-link">이미지 또는 유튜브 링크 (선택)</label><input id="bd-link" value={link} onChange={e=>setLink(e.target.value)} placeholder="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요." aria-label="이미지 주소 또는 유튜브 링크를 붙여넣어 주세요."/>
         {link.trim()&&<div className="bd-preview"><div className="bd-preview-h">미리보기</div><MediaEmbed url={link}/></div>}
@@ -175,13 +177,14 @@ function FreeBoard({ admin, flash, tabs }){
     return (<section className="bd">
       <article>
         <BackLink to="게시판" onClick={closePost}/>
-        <p className="t12 dim reg bd-date-line">{[p.secret&&"관리자 전용",p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></p>
+        {/* a post's 수정 and 삭제 stand as its comments' do, two words at the end of its own line: as two 52 panels under the body they
+            were the largest keys on a post, for a visitor who only reads it (2026-11-10, DESIGN.md "Composing a screen" 1) */}
+        <p className="t12 dim reg bd-date-line bd-cmt-top"><span>{[p.secret&&"관리자 전용",p.nick,fmtDT(p.createdAt)].filter(Boolean).join(", ")}<Edited at={p.editedAt}/></span><button className="bd-act t12" onClick={()=>editPost(p)}>수정</button><button className="bd-act t12" onClick={()=>delPost(p)}>삭제</button></p>
         <h1 className="t32 bd-title-h" data-vt={"b-"+p.id}>{p.title||p.body||"(제목 없음)"}</h1>
         {(p.body||p.link)&&<div className="bd-body">
           <Prose text={p.body}/>
           {p.link&&<MediaEmbed url={p.link}/>}
         </div>}
-        <div className="stack bd-actions"><Button variant="second" onClick={()=>editPost(p)}>수정</Button><Button variant="second" onClick={()=>delPost(p)}>삭제</Button></div>
         <div className="bd-cmts">
           <h2 className="t20 bd-cmts-h">댓글{cc>0?<span className="dim"> {cc}</span>:""}</h2>
           {(p.comments||[]).map(c=>(<div className="pn bd-cmt" key={c.id}>
@@ -255,7 +258,7 @@ function TeamPicker({ kind, onPick, onClose, go }){
   return (<Modal title={`${KIND_LABEL[kind]} 올리기`} onClose={onClose}>
     <div className="swap" key="pick">
       {teams.length===0
-        ? <p className="bk-hint">이 브라우저의 팀 빌더에 저장된 팀이 없습니다.</p>
+        ? <p className="tb-library-empty">이 브라우저의 팀 빌더에 저장된 팀이 없습니다.</p>
         : <ul className="sc-pick">{teams.map(t=>(<li key={t.id}><button type="button" className="sc-pick-row" onClick={()=>onPick(t)}>
             <span className="sc-pick-main"><b>{t.name}</b><small>{ruleSummary(t)}, {t.members.length}마리</small></span>
             <PartySprites members={t.members}/>

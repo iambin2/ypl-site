@@ -6,7 +6,7 @@
 import { DUR, reduced } from "../../components/common/motion.js";
 import { makeDraw, recipeOf, playScript } from "./moveFx.js";
 import { atlasStep, glOf, rand, lerp, clamp, typeId, colorOf, TYPE_COLOR } from "./gl.js";
-import { audio } from "./cries.js";
+import { audio, primeAudio } from "./cries.js";
 import { setField } from "./arena.js";
 import "./arena.js";
 import { sfx, setSfxSpeed, setMoveType, warmSound } from "./sfx.js";
@@ -744,7 +744,9 @@ let prewarming = null, urgent = false;
 const ballStep = () => !ballCanvases && !ballSteps().next().done;
 export function prewarm() {
   return (prewarming ||= (async () => {
-    audio();
+    /* the sound's context is made off the page's first task, after the audio service has been woken without holding the page
+       (cries.js primeAudio; 2026-11-10, measured: made here at once it held the first visit to the battle page frozen 640 of its 650) */
+    primeAudio(idleMoment);
     for (const step of [atlasStep, ballStep]) {
       for (let more = true; more;) { const room = await (urgent ? frameMoment() : idleMoment()); do more = step(); while (more && room()); }
     }
@@ -1079,6 +1081,9 @@ export function popup(stage, key, owner, name, own) {
   if (plate) {
     const o = over.getBoundingClientRect(), p = plate.getBoundingClientRect();
     el.classList.add("joined");
+    // joined to its owner's plate, the plate names the Pokémon: the cell says only what it is, so the line is never cut on a phone's
+    // narrow plate (2026-11-10: 상대 가라도스의 특… at 112 wide)
+    small.textContent = /도구$/.test(owner) ? "도구" : "특성";
     el.style.left = `${p.left - o.left}px`;
     el.style.width = `${p.width}px`;
     if (own) el.style.bottom = `${o.bottom - p.top + 2}px`; else el.style.top = `${p.bottom - o.top + 2}px`;

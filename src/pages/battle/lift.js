@@ -24,7 +24,7 @@ let car = null;
 const trackHTML = (at, live) => `<span class="lift-track">${[1, 2, 3, 4, 5].map(i => `<i class="${i < at ? "won" : i === at ? (live ? "now" : "next") : ""}"></i>`).join("")}</span>`;
 export function liftMarkup({ floor, at, live = true, from = null }) {
   const cells = String(floor).length;
-  return `<span class="lift-door l"><span class="lift-in"><i class="lamp${live ? " sig" : ""}"></i><span class="lift-digits">${segMarkup(String(from ?? floor), 120, cells)}</span></span></span>`
+  return `<span class="lift-door l"><span class="lift-in"><i class="lamp${live ? " sig" : " unlit"}"></i><span class="lift-digits">${segMarkup(String(from ?? floor), 120, cells)}</span></span></span>`
     + `<span class="lift-door r"><span class="lift-in">${trackHTML(from != null ? 6 : at, live)}</span></span>`;
 }
 

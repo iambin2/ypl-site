@@ -241,7 +241,7 @@ function SideCard({ index, side, record, pokemon, detailData, legalItems, displa
             <small className="t12 reg dim">{SIDE_NAMES[index]}</small>
             {record && <TypeBadges types={record.types} />}
           </span>
-        </button> : <p className="pn t15 reg dim calc-side-empty">{SIDE_NAMES[index]}을 고르세요.</p>}
+        </button> : <p className="pn t15 reg dim calc-side-empty">{SIDE_NAMES[index]}을 골라 주세요.</p>}
         {(hasSavedTeams || pokemon) && <div className="calc-side-actions">
           {hasSavedTeams && <Button variant="link" onClick={onImport}>내 팀에서</Button>}
           {pokemon && <Button variant="link" onClick={onClear}>비우기</Button>}
@@ -431,7 +431,7 @@ function SpeedView({ sides, engines, pokemons, pool, detailData, display, field,
         </div>
       ) : (
         <div className="pn calc-speed-none">
-          <p className="t15 reg dim">기준 포켓몬을 고르세요.</p>
+          <p className="t15 reg dim">기준 포켓몬을 골라 주세요.</p>
           <Button variant="second" onClick={() => openPokemonPicker(basis)}>포켓몬 선택</Button>
         </div>
       )}
@@ -488,7 +488,7 @@ function DexView({ pokemon, detailData, display, openPicker, onUse }) {
   if (!pokemon || !record) {
     return (
       <div className="tb-panel calc-dex-empty">
-        <strong>도감에서 볼 포켓몬을 고르세요.</strong>
+        <strong>도감에서 볼 포켓몬을 골라 주세요.</strong>
         <Button type="button" variant="main" onClick={openPicker}>포켓몬 선택</Button>
       </div>
     );

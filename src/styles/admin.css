@@ -26,6 +26,9 @@
 }
 @media (hover: hover) { .ch-img:hover { background-color: var(--panel-2); } }
 .ch-img img { width: 82%; height: 82%; object-fit: contain; }
+/* a place with no picture yet is a strip, not a square: six empty squares stood three screens tall on a phone before a name was typed
+   (2026-11-10) */
+.ch-img:not(:has(img)) { aspect-ratio: auto; height: var(--h-control); }
 .ch-plus { display: flex; flex-direction: column; align-items: center; gap: var(--s1); font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .ch-name { min-height: var(--h-control); padding: var(--s2) var(--s3); font-size: var(--t15); }
 /* the names offered as one types need no browser arrow: the list opens under the field as it is typed */

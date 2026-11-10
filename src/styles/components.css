@@ -27,6 +27,8 @@
 .btn[aria-busy="true"] { color: transparent; }
 .btn[aria-busy="true"]:disabled { opacity: 1; }
 .btn > .y-busy { position: absolute; inset: 0; width: fit-content; height: fit-content; margin: auto; color: var(--btn-fg); }
+/* the cell's own colour (.seg is lit) would stand lit on the lit main action: a blank white key while it sends (2026-11-10) */
+.btn > .y-busy .seg { color: inherit; }
 .form-error { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--t12); line-height: var(--l12); font-weight: 600; color: var(--lit); }
 /* section and whole-page errors: what went wrong, and one way to try again */
 .field--flush { margin-bottom: 0; }
@@ -273,6 +275,9 @@
 .pick-field .dd-btn { width: 100%; }
 .pick-field:has(.pick-clear) .dd-btn { padding-right: var(--s13); }
 .pick-type { flex: none; margin-left: auto; }
+/* in a phone's two-across cells the tag's word and the clear key left a move two letters (겁나…, measured at 390: 60 of 175):
+   there the tag is its colour square alone, as a status is in the battle's strips; the word is in the list it was picked from */
+@media (max-width: 639px) { .pick-field:has(.pick-clear) .pick-type { width: var(--s5); padding: 0 0 0 calc((var(--s5) - var(--s2)) / 2); gap: var(--s3); justify-content: flex-start; overflow: hidden; white-space: nowrap; } }
 .pick-clear { right: var(--s2); }
 
 /* ---------- the case: a record on the plane, two flush planes with no frame: a light label over one navy window ---------- */

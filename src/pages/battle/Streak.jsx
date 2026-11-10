@@ -212,9 +212,10 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
     : !approved ? <><Button variant="main" disabled={account.status === "pending"} onClick={() => go?.("records")}>{account.status === "pending" ? "이름 확인 중" : "트레이너 이름 정하기"}</Button>{practice}</>
     : run ? <><Button variant="main" onClick={resume} loading={busy}>이어서 하기</Button><Button onClick={start} disabled={busy}>새로 도전</Button></>
     : <Button variant="main" onClick={start} loading={busy}>도전 시작</Button>;
-  // what the key cannot say by itself: why an account is needed, or why it waits
-  const note = account === null ? "순위에 이름이 남아 Google 계정으로 도전합니다."
-    : account && !approved ? (account.status === "pending" ? "운영진이 트레이너 이름을 확인하면 도전할 수 있습니다." : "기록에서 트레이너 이름을 정하면 도전할 수 있습니다.") : "";
+  /* what the key cannot say by itself: why it waits. Signed out it says nothing: the key is 구글 로그인 and the month's board beside it
+     shows the names it keeps (2026-11-10, the user: no sentence where the form already says it; the line stood as a slab over the
+     run's counter on a phone's first screen, and as a second white bar under the key on a desktop) */
+  const note = account && !approved ? (account.status === "pending" ? "운영진이 트레이너 이름을 확인하면 도전할 수 있습니다." : "기록에서 트레이너 이름을 정하면 도전할 수 있습니다.") : "";
   // the board as the home's and the records' ranking reads it; a live run opens its game to watch
   const placed = rows?.map(r => ({ rank: r.place, name: r.trainer_name, points: r.wins, live: r.live, open: r.live && r.battle_id ? () => onOpen(r.battle_id) : null }));
   return (
@@ -387,6 +388,17 @@ export function StreakEnd({ id, won, onOpen, onOut, enter, goingIn, standUp, lea
         : place != null ? <Counter label={`${monthOf(0).label} 순위`} value={place} after={<span className="t15">위</span>} />
         : <div className="pn streak-next"><b className="t15">{gameWords(wins)}</b><FloorTrack wins={wins} lost /></div>}
     </div>
+    {/* a lost run stands as a scene of its own: the floors it climbed as a tower, the highest on top, then the month's first three */}
+    {!resting && <div className="stack streak-tower" role="img" aria-label={`${streakFloor(wins)}층 ${gameWords(wins)}에서 끝났습니다.`}>
+      {Array.from({ length: Math.min(streakFloor(wins), 5) }, (_, i) => streakFloor(wins) - i).map(f => <span key={f} className="pn streak-tower-floor">
+        <Seg value={String(f)} h={32} cells={String(streakFloor(wins)).length} label="" />
+        <TrackBar at={f < streakFloor(wins) ? STREAK_STEP + 1 : floorGame(wins)} lost={f === streakFloor(wins)} />
+      </span>)}
+    </div>}
+    {!resting && board?.length > 0 && <section className="streak-break-board" aria-labelledby="streak-end-board">
+      <SectionHead id="streak-end-board" title={`${monthOf(0).label} 순위`} />
+      <StandTable rows={board.slice(0, 3).map(r => ({ rank: r.place, name: r.trainer_name, points: r.wins, live: r.live }))} placed unit="연승" head="연승" />
+    </section>}
     {swapping && <SwapTable ours={ours} theirs={theirs}
       chosen={new Set(pairs.flatMap(p => [`give:${p.give}`, `take:${p.take}`]))}
       matchTheirs={matchIn(theirs)} matchOurs={matchIn(ours)} onPick={pick} blocked={blocked} onInfo={onInfo} />}

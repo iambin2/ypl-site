@@ -98,7 +98,9 @@
 }
 @media (hover: hover) { .tb-pokemon-row:hover:not(:disabled) .tb-add-mark { background: var(--lit); color: var(--ground); }
 }
-.tb-pool-empty { padding: var(--s13) var(--s3); font-size: var(--t15); color: var(--dim); }
+/* an empty list is one panel holding its line, as every empty place is (board.css .ypl-empty): on a sheet one step up */
+.tb-pool-empty, .tb-library-empty { padding: var(--s5) var(--pad); background: var(--panel); font-size: var(--t15); line-height: var(--l-read); font-weight: 700; color: var(--lit); }
+.sheet :is(.tb-pool-empty, .tb-library-empty) { background: var(--panel-2); }
 
 /* ---------- a type (DESIGN.md "Colour and light", 2026-11-03): one mark for a Pokémon's type and a move's type. A square tag 24 tall,
    an 8 square in the type's colour, then its name. Square and on whole pixels, never slanted, so every tag draws alike. ---------- */
@@ -161,6 +163,10 @@
   :is(.tb-pool-panel .tb-panel-head, .tb-team-head) h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .tb-page[data-step="team"] .tb-layout { order: 1; }
   .tb-page[data-step="team"] .tb-validation-wrap { order: 2; }
+  /* 타입 상성 stands under the team and its editor, as on a desktop (DESIGN.md "Team builder": six slots always on top, 타입 상성 under
+     the team step): with no order of its own it stood first, a whole screen of chart over the six and the editor (2026-11-10,
+     measured at 390: the six began at 1055) */
+  .tb-page[data-step="team"] .tb-mx { order: 3; }
   .tb-page[data-step] .tb-layout { margin-top: 0; }
   .tb-page[data-step="pool"] .tb-pool-panel { max-height: none; }
   /* 폰: 목록은 페이지와 함께 스크롤한다(스크롤 속 스크롤 없음). 이름은 두 줄까지 넘어가고, 영문 보조줄은 검색에만 쓴다.

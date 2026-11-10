@@ -97,3 +97,5 @@
 /* the search and 글쓰기 share one row: the field takes the rest, the main action its word */
 .bd-tools { grid-template-columns: minmax(0, 1fr) auto; }
 .bd-tools .btn--main { width: auto; }
+/* the count of a search stands off the key beside it: 0건 touched + 글쓰기 (2026-11-10) */
+.bd-tools .search-count { margin-right: var(--s3); }

@@ -48,23 +48,34 @@ function revealLater(els) {
 }
 export function light(root, total = DUR.light) {
   if (!root || reduced() || typeof root.animate !== "function") return;
-  const seen = el => el.getBoundingClientRect().top < innerHeight;
+  /* what stands in a row the browser is skipping (content-visibility: auto, a long list's rows below the view) is not seen, and asking
+     where it stands would lay each skipped row out for the answer (2026-11-10: the calculator's speed tab stood frozen 430 while its
+     350 pictures were asked one by one) */
+  const skipped = el => typeof el.checkVisibility === "function" && !el.checkVisibility({ contentVisibilityAuto: true });
   const last = total - DUR.tone;
-  // a page returned to mid-scroll: what stands above the view is not seen and stays lit, so the stagger starts at the first line in view
-  const above = el => el.getBoundingClientRect().bottom <= 0;
   /* [data-rise]: a grey line under a stack (a tie, a note) lights with the stack instead of standing lit before it.
      .btn--main: the main action is an inverted panel and comes on in its place in the order, not lit before the board.
      .champion, .podium-col, .lead, .ho-col: panels that hold a display but rise as a whole, like a counter; a line score's column rises as
      one, its three cells together */
   const panels = [...root.querySelectorAll(".pn:not(:has(.seg)), .inv:not(:has(.seg)), .counter, .champion, .podium-col, .lead, .ho-col, h1, .sh, .hof-crown, .btn--main, [data-rise]")]
     .filter(el => !el.parentElement.closest(".pn, .inv, .counter, .ho-col, .hof-crown, .sheet, .stack.chips, .chips"));
+  // a counter's unit (일, 명) is a word of its display: it comes on with the lit bars, not before them
+  const displays = [...root.querySelectorAll(".seg .on, :is(.pn, .inv):has(.seg) > :not(.seg, :has(.seg)), .counter-board > :not(.seg), [data-light]")];
+  const pictures = [...root.querySelectorAll("img")];
+  /* every place is read before anything is written: a read after a write lays the whole new page out again, and the page was laid out
+     four times over as it lit (2026-11-10, measured: a notice opening held one frame 57) */
+  const box = new Map();
+  for (const el of [...panels, ...displays, ...pictures]) if (!box.has(el)) box.set(el, skipped(el) ? null : el.getBoundingClientRect());
+  const height = innerHeight;
+  const seen = el => { const r = box.get(el); return Boolean(r) && r.top < height; };
+  // a page returned to mid-scroll: what stands above the view is not seen and stays lit, so the stagger starts at the first line in view
+  const above = el => box.get(el).bottom <= 0;
   panels.filter(el => seen(el) && !above(el)).forEach((el, i) => rise(el, Math.min(i * STAGGER.row, DUR.leave)));
   revealLater(panels.filter(el => !seen(el)));
   const on = (els, start, step) => els.filter(seen).forEach((el, i) => el.animate([{ opacity: 0 }, { opacity: 1 }],
     { duration: DUR.tone, delay: Math.min(start + i * step, last), easing: EASE_OUT, fill: "backwards" }));
-  // a counter's unit (일, 명) is a word of its display: it comes on with the lit bars, not before them
-  on([...root.querySelectorAll(".seg .on, :is(.pn, .inv):has(.seg) > :not(.seg, :has(.seg)), .counter-board > :not(.seg), [data-light]")], Math.min(DUR.tone, last), STAGGER.display);
-  on([...root.querySelectorAll("img")], last, 0);
+  on(displays, Math.min(DUR.tone, last), STAGGER.display);
+  on(pictures, last, 0);
 }
 
 /* the line under the chosen word of a row of words (the top bar's pages, page tabs) belongs to the word: it is the word's own ::before,

@@ -65,8 +65,11 @@
 @media (max-width: 859px) { .bt-hall-filters { margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); } }
 /* a battle left half played stands over everything, the first thing to press */
 .bt-resume { margin-bottom: calc(var(--s3) - var(--s5)); }
-/* the waiting screen's counters side by side: the code to read out, then the time waited */
-.bt-wait-counters { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--seam); }
+/* a code room's two displays at 84 stand one over the other, the code first: side by side they are wider than the 439 column and
+   than a phone (2026-11-10, measured: 259 and 223 in two cells of 219; they ran into each other and off the edge). A display of 84
+   does not fit a counter of 84 with its label over it either, so these counters take their display's height */
+.bt-wait-counters { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--seam); }
+.bt-wait-counters > .counter { height: auto; min-height: var(--h-counter); gap: var(--s3); }
 /* under the action: 방 참가 and the device's lists, a section's step below it */
 .bt-after { display: grid; gap: var(--s8); margin-top: var(--s8); }
 @media (min-width: 860px) { .bt-lobby-main > .bt-after { margin-top: calc(var(--s13) - var(--s3)); } }
@@ -86,7 +89,7 @@
 .bt-team.inv:has(:focus-visible) { outline-color: var(--ground); }
 @media (hover: hover) { .bt-team.pn:hover { background: var(--panel-2); } }
 /* no saved team: the line under the random parties that says where teams come from */
-.bt-noteams { margin: 0; }
+.bt-noteams { width: 100%; }
 
 /* waiting for the other player: the busy cell and the sentence */
 .bt-waiting { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-row); padding: 0 var(--pad); }
@@ -197,6 +200,9 @@
   .bt-head { min-height: var(--h-row); }
   .bt-head-main { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s3); align-items: center; padding: var(--s1) var(--pad); }
   .bt-head-main > .status > .dim { display: none; }
+  /* a run's game carries its floor window too, and the two names were left one syllable (이…): the strips name both sides, so the
+     head keeps its lamp and its word and lets the names go (2026-11-10) */
+  .bt-head:has(.bt-win-floor) .bt-head-names { display: none; }
   .bt-head-names { font-size: var(--t15); line-height: var(--l15); }
   .bt-win { padding: var(--s1) var(--s2); }
 }
@@ -217,7 +223,9 @@
 .bt-end-title { font-size: var(--t32); line-height: var(--l32); font-weight: 700; letter-spacing: var(--ls32); }
 .bt-end-line { font-size: var(--t15); line-height: var(--l15); font-weight: 600; }
 .bt-end-head.pn .bt-end-line { color: var(--dim); }
-.bt-end-offer { display: flex; align-items: center; gap: var(--s2); min-height: var(--h-row); padding: 0 var(--pad); }
+/* a rematch asked for, in the result's grey line: the lamp, then the words lit */
+.bt-end-line > .lamp { margin-right: var(--s2); }
+.bt-end-head.pn .bt-end-line:has(> .lamp) { color: var(--lit); }
 .bt-end-keys { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--seam); }
 .bt-end-keys > :only-child { grid-column: 1 / -1; }
 .bt-end-keys > .btn--second { padding-inline: var(--s5); }
@@ -233,6 +241,9 @@
 .bt-rkey { display: grid; place-items: center; flex: none; width: var(--h-control); height: var(--h-control); color: var(--dim); background: var(--panel); transition: color var(--move-tone), background-color var(--move-tone); }
 .bt-rkey svg { width: 16px; height: 16px; fill: currentColor; }
 @media (max-width: 859px) { .bt-rkey { width: var(--h-row); height: var(--h-row); } .bt-rkey svg { width: 20px; height: 20px; } }
+/* on a phone six keys of 52 left the track 18 wide, a handle with nowhere to go (2026-11-10, measured at 390): the keys keep their 52
+   of height and stand 44 wide, a finger's width, so the rail has room to be dragged along */
+@media (max-width: 600px) { .bt-rkey:not(.bt-rlive) { width: var(--h-control); } .bt-replay-track { margin: 0 var(--s2); } }
 .bt-rkey.main { color: var(--lit); background: var(--panel-2); }
 .bt-rkey.main.on { color: var(--ground); background: var(--lit); }
 .bt-rkey:disabled { color: var(--mute); cursor: default; }
@@ -375,6 +386,9 @@
 .bt-hud-plates > .bt-plate { width: 30%; min-width: 120px; max-width: 260px; }
 .bt-hud-own > .bt-plate { width: 32%; min-width: 132px; max-width: 280px; }
 .bt-hud.two :is(.bt-hud-plates, .bt-hud-own) > .bt-plate { width: 28%; min-width: 108px; max-width: 230px; }
+/* on a phone in doubles ours stand one over the other in their corner, the left Pokémon's first: side by side they reached under our
+   pair and it had to stand on them, up in the far pair (2026-11-10) */
+@media (max-width: 859px) { .bt-hud.two .bt-hud-own { flex-direction: column; align-items: flex-end; } }
 @media (min-width: 860px) {
   .bt-hud-plates > .bt-plate { width: 26%; }
   .bt-hud-own > .bt-plate { width: 27%; }
@@ -382,7 +396,10 @@
 
 /* a plate: a solid panel with the name, a status, the bar with the HP, and a line of marks when there are any */
 .bt-plate { display: grid; gap: var(--s1); width: 100%; padding: var(--s2) var(--s3); text-align: left; color: var(--lit); background: var(--panel); pointer-events: auto; cursor: pointer; }
-@media (hover: hover) { .bt-plate:hover { background: var(--panel-2); } }
+/* in dark the plate is the frame's own night, as the strips and the message window are: one step off the stage's ground it had no
+   body over the sky and a dark one over the court, so the foe's plate read as words floating on the stage (2026-11-10) */
+:root:not([data-theme="light"]) .bt-plate { background: var(--ground); }
+@media (hover: hover) { .bt-plate:hover, :root:not([data-theme="light"]) .bt-plate:hover { background: var(--panel-2); } }
 .bt-plate:focus-visible { outline: var(--line) solid var(--lit); outline-offset: calc(var(--line) * -1); }
 /* a fainted Pokémon's plate goes out with it, as the games take it away; the next one sent in brings its own */
 .bt-plate.out { opacity: 0; pointer-events: none; transition: opacity var(--move-tone); }

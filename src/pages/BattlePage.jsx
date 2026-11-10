@@ -199,9 +199,11 @@ function RandomPick({ regs, value, onChange }) {
   </div>;
 }
 
-// the random party is always there, so a visitor with no saved team still sees a choice; this says where their own teams come from
+/* the random party is always there, so a visitor with no saved team still sees a choice; under 저장한 팀 the way to make one stands
+   as a key in the teams' own place (2026-11-10: a sentence and a link lay on the open ground there, and the label and the key say
+   it without the sentence) */
 function NoTeams() {
-  return <p className="t12 dim bt-noteams">팀 빌더에서 저장한 팀이 여기에 나옵니다. <Button variant="link" href="?view=builder">팀 빌더 열기</Button></p>;
+  return <Button href="?view=builder" className="bt-noteams">팀 빌더 열기</Button>;
 }
 // the name is asked on the press, not by a key that will not press: an empty name focuses the field and says why
 const NAME_MISSING = "이름을 입력해 주세요.";
@@ -909,7 +911,7 @@ function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
     }
   };
   const typeName = v => { setName(v); if (error === NAME_MISSING) setError(""); };
-  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`저장한 팀 (${REGULATIONS[row.regulation]})`} name={name} setName={typeName}
+  return <Lobby res={res} teams={teams} teamId={teamId} setTeamId={setTeamId} teamLabel={`저장한 팀 (${REGULATIONS[row.regulation]})`} name={name} setName={typeName} nameError={error === NAME_MISSING ? error : ""}
     foe={row.p1_name} doubles={doubles} onEnter={submit}
     setup={<>
       <Row title={`${REGULATIONS[row.regulation]} ${doubles ? "더블" : "싱글"} 친선 배틀`} lamp="참가 대기" />
@@ -919,7 +921,8 @@ function Join({ row, res, code: linkCode, onJoined, onRefresh }) {
           onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) submit(); }} />
       </Question>}
     </>}
-    action={<Dock toast={error ? <Toast error>{error}</Toast> : null}>
+    /* a missing name is the name field's own error under the strip, as on the opener's screen, never a toast over the choices (2026-11-10) */
+    action={<Dock toast={error && error !== NAME_MISSING ? <Toast error>{error}</Toast> : null}>
       <Button variant="main" onClick={submit} loading={busy} disabled={!team}>참가</Button>
     </Dock>} />;
 }
@@ -980,12 +983,15 @@ function useMatchLit() {
     // the other side's six are read from the log a frame or two after the preview mounts: ours keep their turn after the six places,
     // and the six take theirs when they are drawn
     const cells = () => [...preview.querySelectorAll(".bt-foe-cell")];
-    lineup([preview.querySelector(".bt-pv-foe .bt-pv-title"), ...Array(6).fill(null)], [...preview.querySelectorAll(".bt-pv-head, .bt-card")], -wait);
+    /* a card with an info key stands in .bt-pick with the key beside it: the two light as one (2026-11-10: the i keys stood lit on
+       the bare ground before their cards came) */
+    const OURS = ".bt-pv-head, .bt-pick, .bt-card:not(.bt-pick > .bt-card)";
+    lineup([preview.querySelector(".bt-pv-foe .bt-pv-title"), ...Array(6).fill(null)], [...preview.querySelectorAll(OURS)], -wait);
     const began = performance.now();
     let frame = 0;
     /* the other side's six, and our own cards when the request comes a moment after the preview mounted (a rematch: 2026-11-09, five
        cards popped in at once after the first had risen), each take their turn in the line-up when drawn */
-    const ours = () => [...preview.querySelectorAll(".bt-pv-head, .bt-card")];
+    const ours = () => [...preview.querySelectorAll(OURS)];
     const seen = new Set(ours());
     let foeDone = false;
     const look = () => {
@@ -1139,7 +1145,13 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   // a replay already knows it, so stepping through one never moves the page
   // held: the page is leaving for the next battle and its replay was put at the end (settle below), so the result stays where it is
   const [held, setHeld] = useState(false);
-  const shownEnded = ended && (held || cue != null || (tape.scene?.ended ?? true));
+  /* once the end has stood it stays the deck's: a jump to the replay's end plays the last turn out with no cue, and for that second the
+     locked moves came back into the deck in the replay keys' place (2026-11-10, measured on a desktop: the deck stood 12 taller for 96
+     frames and fell back) */
+  const endStood = useRef(null);
+  const endNow = ended && (held || cue != null || (tape.scene?.ended ?? true));
+  if (endNow) endStood.current = row.id;
+  const shownEnded = ended && (endNow || endStood.current === row.id);
   const names = { p1: row.p1_name, p2: row.p2_name };
   // a choice goes the moment it is made, as Champions sends it; false when it did not go, so the choices stay open
   // once a choice goes, the stage comes into view (on a phone the moves sit under it), so the turn is watched, not scrolled to
@@ -1428,7 +1440,10 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   </div>;
   /* the pick stands until the team preview goes, locked once it is sent (2026-11-09, measured: it vanished in the frame 선출 확정 was
      pressed and the menu jumped up into its place), and sinks with the cards */
-  const pickDock = !started && seat && previewParty.current && (!choosing || request?.teamPreview)
+  /* never in a finished battle: its replay, standing at its start, is not started either, and the pick came back into the deck under
+     the result, 52 taller, which the deck then kept for good (2026-11-10, measured: the stage dropped 27 and a dead band stood over
+     the replay keys) */
+  const pickDock = !started && !ended && seat && previewParty.current && (!choosing || request?.teamPreview)
     ? <PickDock res={res} pokemon={previewParty.current} count={pickCount.current} picks={picks} setPicks={setPicks} onSend={send} locked={!choosing} toast={error ? <Toast error>{error}</Toast> : null} />
     : null;
   const speedLabel = (SPEEDS.find(([v]) => v === speed) || SPEEDS[1])[1];
@@ -1486,7 +1501,6 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {watching && started && liveStops && liveStops.stops.length > 1 && <ReplayBar stops={liveStops.stops} at={at} playing={autoplay} onJump={jump} onStep={stepOn} onPlay={play}
           sound={sound} awake={awake} onSound={soundKey} live={cue == null} onLive={() => jump(Infinity)} />}
         {shownEnded && <section className="bt-end" aria-label="배틀 결과">
-          {offered && <div className="pn bt-end-offer"><i className="lamp" aria-hidden="true" /><span className="t15">{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</span></div>}
           {following && !followed && <div className="pn bt-waiting"><Busy h={32} /><span className="t15">다음 판을 기다리는 중…</span></div>}
           {/* the end in the deck's own room (2026-11-09 second round, the user: "승리했을 때 갑자기 전체화면이 되는 것도 안 좋고",
               "스크롤을 한참 해야 다음 판 도전이 나오는 것도 어이가 없어"): the result and the keys on one row under the replay keys, so
@@ -1496,7 +1510,9 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
           <div className="bt-end-row">
             {revealed && <div className={"bt-end-head " + (seat && row.winner !== seat.side ? "pn" : "inv")}>
               <b className="bt-end-title">{endTitle}</b>
-              <span className="bt-end-line">{endLine}</span>
+              {/* a rematch asked for is said in the result's own grey line with its lamp, in no room of its own: as a panel over the result
+                  it made the deck 54 taller the moment it came, and the stage over it dropped (2026-11-10, measured on the other phone) */}
+              <span className="bt-end-line">{offered ? <><i className="lamp" aria-hidden="true" />{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</> : endLine}</span>
             </div>}
             {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} onInfo={setSheetTip} stage={stageBox} away={autoplay || cue != null}
               ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || leave) && <Dock>
@@ -1550,7 +1566,8 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
       {foeOpen && scene && <Modal title={`${names[foe]}의 파티`} onClose={() => setFoeOpen(false)} className="wide">
         <div className="stack bt-cards sheet-cards">{seenCards(res, scene[foe].roster, moveField).map(({ key, ...c }) => <MonCard key={key} res={res} {...c} explain />)}</div>
       </Modal>}
-      {sheetTip && <Modal label="설명" className="bt-tipsheet" onClose={() => setSheetTip(null)}>{tipView(sheetTip)}</Modal>}
+      {/* a sheet never opens on nothing: a key whose thing cannot be told (a party not read after a reload) opens none */}
+      {sheetTip && tipView(sheetTip) && <Modal label="설명" className="bt-tipsheet" onClose={() => setSheetTip(null)}>{tipView(sheetTip)}</Modal>}
     </div>
   );
 }
@@ -1561,7 +1578,10 @@ function tipFor(key, { res, own, picks, foeCards = () => [] }) {
   const [kind, ...rest] = String(key).split(":");
   if (kind === "swap") {
     const [side, species, why] = rest;
-    const card = (side === "own" ? own() : foeCards()).find(c => c.species === species);
+    /* a Pokémon that changed its form in the game (a Mega) stands in the cards under its new name: it is still the one the row names
+       (2026-11-10: its i opened a sheet with nothing in it) */
+    const same = c => c.species === species || toID(c.species).startsWith(toID(species)) || toID(species).startsWith(toID(c.species));
+    const card = (side === "own" ? own() : foeCards()).find(same);
     return card ? <div className="bt-tip">{why && <p className="bt-tip-say">{why}</p>}<MonCard res={res} {...card} key={card.key} explain /></div> : null;
   }
   if (kind === "own" || kind === "pick") {

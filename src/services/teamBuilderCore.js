@@ -1,5 +1,6 @@
 import { CUP_RULES, DEFAULT_REGULATION_ID, REGULATIONS, TYPE_OPTIONS, KO } from "../data/index.js";
 import { toID } from "./championsData.js";
+import { josa } from "./josa.js";
 
 export const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"];
 export const STAT_LABELS = { hp: "HP", atk: "공격", def: "방어", spa: "특공", spd: "특방", spe: "스피드" };
@@ -898,18 +899,18 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
   if (cupRule.kind === "monotype" && assignedType && detailData) {
     for (const member of team) {
       if (!pokemonMatchesCupRule({ pokemon: member.pokemon, cupRuleId, assignedTypeId, detailData })) {
-        errors.push(`모노타입 룰 위반: ${display(member.pokemon)}은(는) ${assignedType.korean} 타입을 포함하지 않습니다.`);
+        errors.push(`모노타입 룰 위반: ${josa(display(member.pokemon), "topic")} ${assignedType.korean} 타입을 포함하지 않습니다.`);
       }
     }
   }
 
   for (const member of team) {
     if (!pokemonAllowedInRegulation({ pokemon: member.pokemon, regulation, detailData, legalItems })) {
-      errors.push(`${display(member.pokemon)}은(는) ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
+      errors.push(`${josa(display(member.pokemon), "topic")} ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
     }
     const requiredItem = requiredItemForPokemon(detailData, member.pokemon);
     if (requiredItem && member.item !== requiredItem) {
-      errors.push(`${display(member.pokemon)}은(는) ${itemName(detailData, requiredItem)}을(를) 반드시 지녀야 합니다.`);
+      errors.push(`${josa(display(member.pokemon), "topic")} ${josa(itemName(detailData, requiredItem), "object")} 반드시 지녀야 합니다.`);
     }
   }
 
@@ -930,10 +931,10 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
   for (const member of team) {
     if (!member.item) continue;
     if (legalItemIds && !legalItemIds.has(member.item)) {
-      errors.push(`${display(member.pokemon)}의 ${itemName(detailData, member.item)}은(는) ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
+      errors.push(`${display(member.pokemon)}의 ${josa(itemName(detailData, member.item), "topic")} ${regulation?.shortName || regulationId}에서 사용할 수 없습니다.`);
     }
     if (itemOwners.has(member.item)) {
-      errors.push(`같은 도구 중복 금지 위반: ${itemName(detailData, member.item)}을(를) 두 마리가 사용하고 있습니다.`);
+      errors.push(`같은 도구 중복 금지 위반: ${josa(itemName(detailData, member.item), "object")} 두 마리가 사용하고 있습니다.`);
     } else {
       itemOwners.set(member.item, member.uid);
     }
@@ -954,12 +955,12 @@ export function validateTeam({ team, regulation, regulationId, cupRuleId, assign
       const details = dexRecord(detailData, member.pokemon);
       const abilities = abilitiesFor(detailData, member.pokemon);
       if (abilities.length && member.ability && !abilities.includes(member.ability)) {
-        errors.push(`${display(member.pokemon)}이(가) 사용할 수 없는 특성입니다.`);
+        errors.push(`${josa(display(member.pokemon), "subject")} 사용할 수 없는 특성입니다.`);
       }
       const learnset = new Set(learnsetFor(detailData, member.pokemon));
       for (const move of selectedMoves) {
         if (learnset.size && !learnset.has(move)) {
-          errors.push(`${display(member.pokemon)}은(는) ${moveName(detailData, move)}을(를) 배울 수 없습니다.`);
+          errors.push(`${josa(display(member.pokemon), "topic")} ${josa(moveName(detailData, move), "object")} 배울 수 없습니다.`);
         }
       }
     }

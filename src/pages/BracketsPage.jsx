@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { backWith, popHandlers, pushHistory } from "../components/layout/history.js";
 import { formatDate } from "../services/dateFormat.js";
+import { josa } from "../services/josa.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
 import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, useArrival } from "../components/common/Board.jsx";
 import { dotDate } from "../services/dateFormat.js";
@@ -1777,7 +1778,7 @@ function BracketApply({ b, res, data, save, onClose, flash, refresh, onNormalize
           {c.d.points?<span className="bk-chg-d">+{r1(c.d.points)}</span>:null}
           {(c.d.win||c.d.ru||c.d.top4)?<span className="bk-chg-cnt">{c.d.win?`승+${c.d.win} `:""}{c.d.ru?`준+${c.d.ru} `:""}{c.d.top4?`4강+${c.d.top4}`:""}</span>:null}
         </div>)}</div>
-      </div> : <div className="bk-hint">{excluded?`${curT.label}은(는) 누적 랭킹과 시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
+      </div> : <div className="bk-hint">{excluded?`${josa(curT.label, "topic")} 누적 랭킹과 시즌별 성적에 반영되지 않고 회차 기록에만 추가됩니다.`:"누적 랭킹 반영이 꺼져 있어 회차 기록에만 추가됩니다."}</div>}
       {preview.willSeason&&<div className="bk-hint">시즌별 성적 「{recordSeason}」에도 동일한 점수와 성적이 반영됩니다.</div>}
       <div className="modal-actions">
   <Button variant="second" onClick={()=>setPreview(null)} disabled={applying}>뒤로</Button>
@@ -2066,26 +2067,28 @@ function PrivateBracketCreate({ onClose, onCreate }){
   const [pin,setPin]=useState(""); const [namesText,setNamesText]=useState(""); const [double,setDouble]=useState("single");
   const [order,setOrder]=useState("random"); const [note,setNote]=useState(""); const [busy,setBusy]=useState(false);
   const names=parseParticipantNames(namesText);
+  /* what is missing is said under its own field (DESIGN.md "Controls", Error on a field), every field at once: a dialog laid over this
+     sheet said one at a time and hid the field it was about (2026-11-10) */
+  const [tried,setTried]=useState(false);
+  const bad={ name:!name.trim()&&"대진표 이름을 입력해 주세요.", host:!host.trim()&&"개설자 닉네임을 입력해 주세요.", pin:pin.length!==4&&"숫자 4자리를 정해 주세요.",
+    names:names.length<2?"참가자를 2명 이상 적어 주세요.":names.length>PRIVATE_BRACKET_MAX&&`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다.` };
   const submit=async()=>{
     if(busy)return;
-    if(!name.trim()){siteAlert("대진표 이름을 입력해 주세요.");return;}
-    if(!host.trim()){siteAlert("개설자 닉네임을 입력해 주세요.");return;}
-    if(pin.length!==4){siteAlert("관리 비밀번호 4자리를 정해 주세요.");return;}
-    if(names.length<2){siteAlert("참가자를 2명 이상 적어 주세요.","한 줄에 한 명씩, 또는 쉼표로 나눠 적습니다.");return;}
-    if(names.length>PRIVATE_BRACKET_MAX){siteAlert(`참가자는 ${PRIVATE_BRACKET_MAX}명까지 넣을 수 있습니다.`);return;}
+    if(Object.values(bad).some(Boolean)){ setTried(true); return; }
     setBusy(true);
     try{ await onCreate({name,host,pin,names,double:double==="double",order,note}); }
     finally{ setBusy(false); }
   };
   return (<Modal title="새 사설 대진표" onClose={onClose}>
     <div className="swap" key="pb-create">
-      <Field label="대진표 이름"><input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 동아리방 금요 연습전" maxLength={40}/></Field>
+      <Field label="대진표 이름" error={tried&&bad.name}><input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 동아리방 금요 연습전" maxLength={40}/></Field>
       <div className="bk-grow2">
-        <Field label="개설자 닉네임"><input value={host} onChange={e=>setHost(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
-        <Field label="관리 비밀번호 (숫자 4자리)"><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="결과 입력에 필요" inputMode="numeric"/></Field>
+        <Field label="개설자 닉네임" error={tried&&bad.host}><input value={host} onChange={e=>setHost(e.target.value)} placeholder="예: 지나가던트레이너" maxLength={20}/></Field>
+        <Field label="관리 비밀번호 (숫자 4자리)" error={tried&&bad.pin}><input value={pin} onChange={e=>setPin(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="결과 입력에 필요" inputMode="numeric"/></Field>
       </div>
       <div className="field"><label htmlFor="pb-names">참가자 {names.length>0&&<span className="tnum">{names.length}명</span>}</label>
-        <textarea id="pb-names" value={namesText} onChange={e=>setNamesText(e.target.value)} rows={6} placeholder={"한 줄에 한 명씩 적거나 쉼표로 나눠 붙여넣어 주세요.\n지우\n이슬\n웅"}/></div>
+        <textarea id="pb-names" value={namesText} onChange={e=>setNamesText(e.target.value)} rows={6} placeholder={"한 줄에 한 명씩 적거나 쉼표로 나눠 붙여넣어 주세요.\n지우\n이슬\n웅"} aria-invalid={tried&&bad.names?true:undefined}/>
+        {tried&&bad.names&&<FormError>{bad.names}</FormError>}</div>
       <div className="field"><span className="field-label">방식</span><Segmented value={double} onChange={setDouble} ariaLabel="대진 방식" options={[["single","싱글 엘리미네이션"],["double","더블 엘리미네이션"]]}/></div>
       <div className="field"><span className="field-label">대진 배치</span><Segmented value={order} onChange={setOrder} ariaLabel="대진 배치" options={[["random","무작위 추첨"],["input","적은 순서대로"]]}/></div>
       <Field label="안내 (선택)"><textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="규칙, 일정, 장소 등을 적어 주세요."/></Field>
@@ -2238,8 +2241,9 @@ function PrivateBrackets({ admin, flash, tabs }){
   return (<section className="bk">
     <header className="bk-head"><h1 className="t32">대진표</h1></header>
     {tabs}
-    <div className="bk-new"><Button variant="main" icon="plus" onClick={()=>setCreating(true)}>새 사설 대진표</Button></div>
-    <div className="bk-search"><ListSearch q={q} setQ={setQ} placeholder="대진표, 개설자, 참가자 검색" count={shown.length}/></div>
+    {/* the search with its main action at the row's right end, as the board's 글쓰기 stands (DESIGN.md "Controls": beside a search it
+        keeps its own width): alone over the search it was a white bar across the whole 1200 (2026-11-10) */}
+    <div className="bd-tools stack"><ListSearch q={q} setQ={setQ} placeholder="대진표, 개설자, 참가자 검색" count={shown.length}/><Button variant="main" icon="plus" onClick={()=>setCreating(true)}>새 사설 대진표</Button></div>
     {loadError&&<ErrorNote onRetry={reload}>{loadError}</ErrorNote>}
     {!list&&!loadError?<Loader/>:shown.length===0
       ? (kw?<Empty className="swap" title="검색 결과가 없습니다."/>

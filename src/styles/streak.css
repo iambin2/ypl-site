@@ -29,7 +29,12 @@
 .lift-door.r { right: 0; justify-content: flex-start; }
 :is(.lift, .lift-hall).inv .lift-door { background: var(--lit); color: var(--ground); }
 .lift-in { display: flex; align-items: flex-end; gap: var(--s5); padding: 0 var(--s8); }
-.lift-in > .lamp { margin-bottom: var(--s3); }
+/* the lamp stands at the digits' head, as a lift's lamp does: at their foot it read as a decimal point (.1), and off it is its
+   housing, an unlit bar's light like the track's games beside it, never a lit square (2026-11-10) */
+.lift-in > .lamp { align-self: flex-start; }
+.lift-in > .lamp.unlit { background: currentColor; opacity: var(--off); }
+/* on a gatekeeper's inverted doors the lamp is still the amber of the game on the track beside it, not the ground's square */
+:is(.lift, .lift-hall).inv .lamp.sig { background: var(--signal); }
 .lift-digits { display: flex; }
 .lift-door.r .lift-in { align-items: center; }
 .lift-track { display: grid; grid-template-columns: repeat(5, var(--s8)); gap: var(--seam); }
@@ -65,6 +70,19 @@
 .streak-break { position: absolute; inset: 0; z-index: var(--z-sticky); display: grid; align-content: center; gap: var(--s3); padding: var(--s3); overflow: hidden auto; background: var(--ground);
   animation: y-rise var(--move-light) backwards; transition: opacity var(--move-tone); }
 .streak-break.away { opacity: 0; pointer-events: none; }
+/* with the trades it fills the stage's place: the table takes what the head leaves, its six rows sharing it up to a two-line row's
+   height, so no band lies over the head and under the table while names are cut and pictures stand at 32 (2026-11-10, measured at
+   390 by 844: 46 over and 88 under) */
+.streak-break:has(> .streak-swap) { align-content: stretch; grid-template-rows: auto minmax(0, 1fr); }
+.streak-break > .streak-swap { align-self: center; height: 100%; max-height: calc(var(--h-strip) * 2 + var(--h-row2) * 6 + var(--seam) * 7); }
+.streak-break > .streak-swap > .streak-trades { height: 100%; grid-template-rows: var(--h-strip) var(--h-strip); grid-auto-rows: minmax(var(--h-control), 1fr); }
+/* on a phone a side is 165 wide, and its name was cut at four letters (한카리…, 가라르 …): the mark's column and the side's padding step
+   down so five letters stand whole, and a longer name takes a second line at its space, which the taller row holds */
+@media (max-width: 639px) {
+  .streak-break .streak-trades { grid-template-columns: minmax(0, 1fr) var(--s5) minmax(0, 1fr); }
+  .streak-break .streak-trade-key { padding: 0 var(--s1); }
+  .streak-break .streak-trade-key > b { white-space: normal; word-break: keep-all; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+}
 @media (min-width: 860px) { .streak-break { padding: 0; } }
 /* its head: the run's count beside the next game, one counter high, at 1 to 1.618 */
 .streak-break-head { grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr); }
@@ -79,6 +97,14 @@
 .streak-track-bar > i.now { background: var(--signal); opacity: 1; }
 .streak-track-bar > i.next { opacity: var(--opacity-disabled); }
 .streak-track-bar > i.lost { background: var(--mute); opacity: 1; }
+/* a run that ended: the floors it climbed, the highest on top as a tower stands, each its number and its five games across the row,
+   the game it fell on muted; under them the month's first three. Two counters alone stood in the middle of an empty stage
+   (2026-11-10, measured at 390 by 844: 84 of 534 used) */
+.streak-tower { gap: var(--seam); }
+.streak-tower-floor { display: flex; align-items: center; gap: var(--s5); min-height: var(--h-row); padding: 0 var(--pad); }
+.streak-tower-floor > .streak-track-bar { flex: 1; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.streak-tower-floor > .streak-track-bar > i { height: var(--s3); }
+.streak-break-board { display: grid; gap: var(--s3); }
 .streak-stake-track { display: flex; align-items: center; min-height: var(--h-row); padding: 0 var(--pad); }
 
 /* the trades: a table whose head row names the two sides and whose rows are the tiers, ours left and theirs right, so a row reads as

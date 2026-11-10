@@ -108,6 +108,8 @@
 .bk-apply-point b { text-align: right; }
 .bk-apply-actions { margin-top: var(--s8); }
 .bk-applybox { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s5); background: var(--panel-2); font-size: var(--t15); }
+/* a line's check stands before its words on the line: as a block it stood alone over the list (2026-11-10) */
+.bk-applybox > div { display: flex; align-items: center; gap: var(--s2); min-height: var(--l15); }
 .bk-ab-meta { font-size: var(--t12); font-weight: 600; color: var(--mute); }
 .bk-chg { display: grid; gap: var(--seam); }
 .bk-chg-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: var(--h-control); padding: var(--s3) var(--s5); background: var(--panel-2); font-size: var(--t15); }
@@ -174,7 +176,8 @@
 /* ---------- 결과 입력: match chips, the match's head, its two players as rows; the winner inverted ---------- */
 .bk-entry { display: grid; gap: var(--s3); margin-bottom: var(--s8); }
 .bk-entry > h2 { margin: 0; }
-.bk-entry-chips { display: flex; flex-wrap: wrap; gap: var(--seam); }
+/* the matches as one even grid: with six, five stood on a line and M6, the one being entered, alone under them (2026-11-10) */
+.bk-entry-chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--s13), 1fr)); gap: var(--seam); }
 .bk-entry-chip { display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); min-width: var(--s13); min-height: var(--h-control); padding: 0 var(--s3); color: var(--dim); transition: background-color var(--move-tone); }
 .bk-entry-chip.inv { color: var(--ground); font-weight: 700; }
 .bk-entry-chip.done:not(.inv) { color: var(--lit); }

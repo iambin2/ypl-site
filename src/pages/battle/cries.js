@@ -5,6 +5,15 @@ const AC = typeof window !== "undefined" && (window.AudioContext || window.webki
 let ctx = null;
 const buffers = new Map();
 export const audio = () => (ctx ||= AC ? new AC() : null);
+/* the first AudioContext of a browser's session waits on the audio service starting: half a second with the page frozen (2026-11-10,
+   measured on Windows: 620 in the constructor, the whole first visit to the battle page). Asking for the device list first starts
+   that service without holding the page (a promise, no prompt, nothing read from it), and the context is then made in 40: primeAudio
+   resolves once it is there. The stage calls it as the battle page mounts (stageFx prewarm) */
+let primed = null;
+export function primeAudio(idle = () => Promise.resolve()) {
+  if (!AC) return Promise.resolve(null);
+  return (primed ||= Promise.resolve(ctx ? null : navigator.mediaDevices?.enumerateDevices?.()).catch(() => null).then(idle).then(() => audio()));
+}
 // the 소리 chip (BattlePage.jsx): cries and every effect sound go quiet together, remembered on the device
 const SOUND_KEY = "ypl-battle:audio"; // not the old "ypl-battle:sound", which saved "off" for every visitor of the first sound
 let on = (() => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catch { return true; } })();
