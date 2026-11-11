@@ -116,6 +116,7 @@
   --tw-cloud-far: color-mix(in srgb, var(--panel-2), var(--lit) 12%);
 }
 :root[data-theme="light"] .tw {
+  --tw-day: 1;
   --tw-a: var(--paper-2); --tw-b: var(--white); --tw-c: var(--paper-1); --tw-d: color-mix(in srgb, var(--paper-3), var(--slate) 18%); --tw-e: color-mix(in srgb, var(--paper-3), var(--slate) 45%);
   /* a pale blue day: the board's mist, deepening up */
   --tw-sky-top: color-mix(in srgb, var(--mist) 62%, var(--white)); --tw-sky-low: color-mix(in srgb, var(--mist) 12%, var(--white));
@@ -130,12 +131,13 @@
 .tw.over { z-index: var(--z-sticky); }
 .tw-hall { position: relative; inset: auto; aspect-ratio: 10 / 11; max-height: 72vh; width: 100%; }
 @media (min-width: 640px) { .tw-hall { aspect-ratio: 16 / 10; } }
-.tw > svg, .tw-cam > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.tw > svg { position: absolute; left: 0; top: 0; overflow: visible; }
 .tw-cam { position: absolute; inset: 0; transform-origin: 0 0; }
 /* the night: the sky deepening up from the horizon, a few stars, a crescent moon; the ground the tower stands on
    on the first floor; in the light theme a pale day with no stars and no moon */
 /* 2026-11-11, from the Higgsfield drawing the owner picked: the night is one flat tone and the ground another, no ramp */
-.tw-sky :is(.s0, .s1) { stop-color: var(--tw-sky-top); }
+.tw-skyfill { fill: var(--tw-sky-top); }
+.tw-plaza { fill: var(--tw-g0); }
 .tw-star { fill: var(--lit); }
 /* the crescent, one shape: no ring of light round it (2026-11-11, the user: "주변에 동심원 같은 것 없이 깔끔하게") */
 .tw-moon { fill: color-mix(in srgb, var(--lit), var(--signal) 8%); }
@@ -146,88 +148,9 @@
 /* the sky deepens the higher the run has climbed; the horizon: hills on the first floor, the sea of cloud below the terrace higher up */
 .tw-alt { fill: var(--tw-alt); }
 .tw-hills { fill: var(--tw-hills); }
-:is(.tw-sky, .tw-body) :is(.g0, .g1) { stop-color: var(--tw-g0); }
 .tw-sea { fill: var(--tw-sea); }
-/* the tower's shade on the ground at its foot, so it stands on it */
-.tw-foot { fill: var(--tw-shadow); fill-opacity: .4; }
-:root[data-theme="light"] .tw-foot { fill-opacity: .22; }
-/* the drum, lit across: the stops of tower.js's gradient, from the lit edge round to the shade */
-.tw-body .a { stop-color: var(--tw-a); }
-.tw-body .b { stop-color: var(--tw-b); }
-.tw-body .c { stop-color: var(--tw-c); }
-.tw-body .d { stop-color: var(--tw-d); }
-.tw-body .e { stop-color: var(--tw-e); }
-.tw-rim { fill: none; stroke: var(--lit); stroke-opacity: .32; }
-/* the stone's build: courses in the shade's tone, columns as the door frames' stone (one step down on the shaded side), dentils */
-.tw-stone .course { fill: none; stroke: var(--tw-shadow); stroke-opacity: .35; }
-.tw-stone .col { fill: var(--tw-stone); }
-.tw-stone .col.l { fill: color-mix(in srgb, var(--tw-stone), var(--tw-d) 45%); }
-.tw-dentils { fill: color-mix(in srgb, var(--tw-stone), var(--tw-d) 30%); }
-/* the courses of the stone, faint; the corbels under each gallery; the terrace's parapet */
-.tw-terrace .post { fill: none; stroke: var(--tw-stone); stroke-width: 1; stroke-opacity: .4; }
-.tw-terrace .rail { fill: var(--tw-stone); fill-opacity: .55; }
-.tw-night { fill: var(--ground); }
-/* the run's path: a ledge winding up the front, its groove in the shade, lit as far as the run has come */
-.tw-path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.tw-path { stroke: var(--tw-ledge); stroke-opacity: .55; }
-/* the ramp's face, lit across as the drum is, and its shade on the wall under it */
-.tw-body .ra { stop-color: color-mix(in srgb, var(--tw-ledge), var(--tw-a) 30%); }
-.tw-body .rb { stop-color: var(--tw-ledge); }
-.tw-body .rc { stop-color: color-mix(in srgb, var(--tw-ledge), var(--tw-e) 70%); }
-.tw-ramp-shade { fill: var(--tw-shadow); fill-opacity: .3; }
-/* a game's door set deep in the wall (2026-11-11 fourth pass, the user: lit doors "단색으로 칠해서" looked wrong, the stair and the
-   gate "어색하고"): its stone arch, its jamb (lit on the lit side), the room behind it in its own light, brightest at the floor, the
-   threshold, and the light a lit door throws on its landing. The room's three lights are the gradients tower.js lays in: dark, warm
-   (a won game), amber (the game gone into); resting, the next door's warm light is let half in */
-.tw-win .stone { fill: var(--tw-stone); }
-/* a lit door's light catches its own stone arch (no halo on the wall: stacked, they read as ghost arches) */
-.tw-win.won .stone { fill: color-mix(in srgb, var(--tw-stone), var(--tw-warm) 14%); }
-.tw-win .jamb { fill: color-mix(in srgb, var(--tw-pane), var(--tw-d) 55%); }
-.tw-win .jamb.l { fill: color-mix(in srgb, var(--tw-stone), var(--tw-pane) 35%); }
-.tw-win .glow { opacity: 0; transition: opacity var(--move-tone); }
-.tw-win.won .glow.warm { opacity: 1; }
-/* the next door while the run rests: its room still dark, its threshold lit warm (let half in, its light read as grey) */
-.tw-win.next .sill { stroke: var(--tw-warm); }
-.tw-win.now .glow.amber { opacity: 1; }
-.tw-win .sill { fill: none; stroke: var(--tw-stone); stroke-linecap: round; }
-.tw-win .spill { fill: var(--tw-warm); opacity: 0; }
-.tw-win.won .spill { opacity: .2; }
-.tw-win.now .spill { fill: var(--signal); opacity: .28; }
-.tw-body .in0 { stop-color: color-mix(in srgb, var(--tw-pane), black 20%); }
-.tw-body .in1 { stop-color: var(--tw-pane); }
-.tw-body .in2 { stop-color: color-mix(in srgb, var(--tw-pane), var(--rule) 40%); }
-.tw-body .warm0 { stop-color: color-mix(in srgb, var(--tw-warm), var(--tw-pane) 62%); }
-.tw-body .warm1 { stop-color: color-mix(in srgb, var(--tw-warm), var(--tw-pane) 22%); }
-.tw-body .warm2 { stop-color: var(--tw-warm); }
-.tw-body .amber0 { stop-color: color-mix(in srgb, var(--signal), var(--tw-pane) 55%); }
-.tw-body .amber1 { stop-color: color-mix(in srgb, var(--signal), var(--tw-pane) 15%); }
-.tw-body .amber2 { stop-color: color-mix(in srgb, var(--signal), var(--lit) 30%); }
-/* the gatekeeper's gate: columns with their capitals, two arches one in the other, the two leaves with their panels and seam, the
-   keystone, and the gate's lamp over it (amber while its game is played, lit once beaten) */
-/* the gate lamp's housing unlit is a tone of the stone it is set in (dark, it read as a notch cut under the gallery over it) */
-.tw-win .gate-lamp { fill: color-mix(in srgb, var(--tw-stone), var(--ground) 45%); }
-.tw-win.gate.won .gate-lamp { fill: var(--lit); }
-.tw-win.gate.next .gate-lamp { fill: var(--dim); }
-.tw-win.gate.now .gate-lamp { fill: var(--signal); }
-/* the gate's leaves in the floor's type colour, a seam of shade between them; beaten, the gate stands open on its lit hall. Over it the
-   floor's medallion: a disc in the floor's colour in a stone ring, the gate's lamp at its heart */
-.tw-win .leaves > polygon { fill: color-mix(in srgb, var(--type), var(--ground) 34%); }
-:root[data-theme="light"] .tw-win .leaves > polygon:not(.lunette) { fill: color-mix(in srgb, var(--type), var(--white) 8%); }
-.tw-win .leaves > .seam { fill: none; stroke: var(--ground); stroke-opacity: .55; }
-.tw-win .leaves > .lunette { fill: color-mix(in srgb, var(--tw-pane), var(--type) 18%); }
-.tw-win .leaves > .transom { fill: none; stroke: var(--tw-stone); }
-.tw-win.gate.won .medallion { display: none; }
-.tw-win.gate.won .leaves { display: none; }
-.tw-win.gate.now .leaves > polygon:not(.lunette) { fill: color-mix(in srgb, var(--type), var(--signal) 22%); }
-.tw-win .medallion > .ring { fill: var(--tw-stone); }
-.tw-win .medallion > .disc { fill: var(--type); }
-.tw-win .medallion > .gate-lamp { stroke: var(--ground); stroke-opacity: .5; stroke-width: 1; }
-/* the parapet's band in the floor's type colour */
-.tw-body .band { fill: none; stroke: color-mix(in srgb, var(--type), var(--ground) 20%); stroke-linecap: round; }
-/* the gallery's floor, the lightest stone of the tower; the coping of its parapet */
-.tw-body .tread { fill: var(--tw-tread); }
-.tw-rail { fill: none; stroke: var(--tw-stone); stroke-linecap: round; stroke-linejoin: round; }
-/* above the first floor the floor stood on stands on its terrace */
+/* the model (towerGL.js) painted on its canvas; its tones are read from the properties above */
+.tw-cam > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* the lamp's light running along the path when a game is won (tower.js spark) */
 .tw-spark { position: absolute; left: 0; top: 0; width: 6px; height: 6px; border-radius: 50%; will-change: transform; }
 /* the clouds the tower goes up into, drifting slowly, a glow in them where the tower stands; a few stars twinkling */
