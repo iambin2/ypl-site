@@ -110,15 +110,22 @@
   --tw-warm: color-mix(in srgb, var(--lit), var(--signal) 26%);
   --tw-stone: color-mix(in srgb, var(--rule), var(--lit) 16%); --tw-tread: color-mix(in srgb, var(--rule), var(--lit) 22%);
   --tw-shadow: var(--ground);
+  --tw-alt: color-mix(in srgb, var(--ground), black 45%); --tw-hills: color-mix(in srgb, var(--panel), var(--tw-sky-low) 25%);
+  --tw-g0: color-mix(in srgb, var(--tw-plaza), var(--tw-sky-low) 30%); --tw-g1: color-mix(in srgb, var(--tw-plaza), black 25%);
+  --tw-sea: color-mix(in srgb, var(--tw-sky-low), var(--lit) 9%);
+  --tw-cloud-far: color-mix(in srgb, var(--panel-2), var(--lit) 12%);
 }
 :root[data-theme="light"] .tw {
-  --tw-a: var(--paper-2); --tw-b: var(--white); --tw-c: var(--paper-1); --tw-d: var(--paper-3); --tw-e: color-mix(in srgb, var(--paper-3), var(--slate) 30%);
-  --tw-sky-top: color-mix(in srgb, var(--paper-2), var(--white) 30%); --tw-sky-low: var(--white);
+  --tw-a: var(--paper-2); --tw-b: var(--white); --tw-c: var(--paper-1); --tw-d: color-mix(in srgb, var(--paper-3), var(--slate) 18%); --tw-e: color-mix(in srgb, var(--paper-3), var(--slate) 45%);
+  /* a pale blue day: the board's mist, deepening up */
+  --tw-sky-top: color-mix(in srgb, var(--mist) 62%, var(--white)); --tw-sky-low: color-mix(in srgb, var(--mist) 12%, var(--white));
   --tw-pane: color-mix(in srgb, var(--slate), var(--navy) 40%); --tw-rev: var(--paper-3);
   --tw-ledge: var(--white); --tw-plaza: var(--paper-1); --tw-warm: color-mix(in srgb, var(--white), var(--amber) 22%);
   --tw-stone: var(--white); --tw-tread: var(--white);
   /* shade in the day is the slate, not the white ground */
   --tw-shadow: var(--slate);
+  --tw-alt: var(--navy); --tw-hills: var(--paper-2); --tw-g0: var(--paper-2); --tw-g1: var(--paper-1); --tw-sea: var(--white);
+  --tw-cloud-far: var(--white);
 }
 .tw.over { z-index: var(--z-sticky); }
 .tw-hall { position: relative; inset: auto; aspect-ratio: 10 / 11; max-height: 72vh; width: 100%; }
@@ -132,9 +139,16 @@
 .tw-star { fill: var(--lit); }
 /* the crescent, one shape: no ring of light round it (2026-11-11, the user: "주변에 동심원 같은 것 없이 깔끔하게") */
 .tw-moon { fill: color-mix(in srgb, var(--lit), var(--signal) 8%); }
-:root[data-theme="light"] :is(.tw-stars, .tw-moon) { display: none; }
-.tw-plaza { fill: var(--tw-plaza); }
-.tw-deep { fill: var(--tw-sky-low); }
+:root[data-theme="light"] :is(.tw-stars, .tw-moon, .tw-twinkle) { display: none; }
+/* the sun takes the moon's place in the day, on the same side, so the light falls the same way */
+.tw-sun { display: none; }
+:root[data-theme="light"] .tw-sun { display: inline; fill: color-mix(in srgb, var(--white), var(--amber) 35%); }
+/* the sky deepens the higher the run has climbed; the horizon: hills on the first floor, the sea of cloud below the terrace higher up */
+.tw-alt { fill: var(--tw-alt); }
+.tw-hills { fill: var(--tw-hills); }
+.tw-sky .g0, .tw-body .g0 { stop-color: var(--tw-g0); }
+.tw-sky .g1, .tw-body .g1 { stop-color: var(--tw-g1); }
+.tw-sea { fill: var(--tw-sea); }
 /* the tower's shade on the ground at its foot, so it stands on it */
 .tw-foot { fill: var(--tw-shadow); fill-opacity: .4; }
 /* the drum, lit across: the stops of tower.js's gradient, from the lit edge round to the shade */
@@ -143,7 +157,15 @@
 .tw-body .c { stop-color: var(--tw-c); }
 .tw-body .d { stop-color: var(--tw-d); }
 .tw-body .e { stop-color: var(--tw-e); }
-.tw-rim { fill: none; stroke: var(--lit); stroke-opacity: .28; }
+.tw-rim { fill: none; stroke: var(--lit); stroke-opacity: .32; }
+/* the courses of the stone, faint; the corbels under each gallery; the terrace's parapet */
+.tw-course { fill: none; stroke: var(--tw-shadow); stroke-opacity: .14; }
+.tw-body .corbel { fill: color-mix(in srgb, var(--tw-stone), var(--ground) 40%); }
+.tw-terrace .post { fill: none; stroke: var(--tw-stone); stroke-width: 1; stroke-opacity: .4; }
+.tw-terrace .rail { fill: var(--tw-stone); fill-opacity: .55; }
+/* the gatekeeper's crest, in the floor's type colour, toned to the night */
+.tw-win .crest { fill: color-mix(in srgb, var(--type), var(--ground) 15%); stroke: var(--tw-stone); stroke-linejoin: round; }
+:root[data-theme="light"] .tw-win .crest { fill: var(--type); }
 .tw-night { fill: var(--ground); }
 /* the run's path: a ledge winding up the front, its groove in the shade, lit as far as the run has come */
 .tw-path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -160,6 +182,8 @@
    (a won game), amber (the game gone into); resting, the next door's warm light is let half in */
 .tw-win .stone { fill: var(--tw-stone); }
 .tw-win .stone.outer { fill: color-mix(in srgb, var(--tw-stone), var(--ground) 30%); }
+/* a lit door's light catches its own stone arch (no halo on the wall: stacked, they read as ghost arches) */
+.tw-win.won .stone { fill: color-mix(in srgb, var(--tw-stone), var(--tw-warm) 14%); }
 .tw-win .jamb { fill: color-mix(in srgb, var(--tw-pane), var(--tw-d) 55%); }
 .tw-win .jamb.l { fill: color-mix(in srgb, var(--tw-stone), var(--tw-pane) 35%); }
 .tw-win .glow { opacity: 0; transition: opacity var(--move-tone); }
@@ -197,12 +221,23 @@
 .tw-rail { fill: none; stroke: var(--tw-stone); stroke-linecap: round; stroke-linejoin: round; }
 .tw-baluster { fill: none; stroke: var(--tw-stone); stroke-opacity: .7; }
 /* above the first floor the floor stood on stands on its terrace */
-.tw-terrace .top { fill: var(--tw-plaza); }
-.tw-terrace .edge { fill: var(--rule); fill-opacity: .6; }
 /* the lamp's light running along the path when a game is won (tower.js spark) */
 .tw-spark { position: absolute; left: 0; top: 0; width: 6px; height: 6px; border-radius: 50%; will-change: transform; }
-/* the month's other climbers at their floors, their names hung out at the tower's right */
-.tw-tag { position: absolute; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 4px; max-width: 40%; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--dim); white-space: nowrap; }
+/* the clouds the tower goes up into, drifting slowly, a glow in them where the tower stands; a few stars twinkling */
+.tw-clouds { position: absolute; inset: 0; pointer-events: none; }
+.tw-clouds > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+/* the night laid over the tower's top, deepening up */
+.tw-clouds .f0 { stop-color: var(--tw-sky-top); stop-opacity: 1; }
+.tw-clouds .f1 { stop-color: var(--tw-sky-top); stop-opacity: .55; }
+.tw-clouds .f2 { stop-color: var(--tw-sky-top); stop-opacity: 0; }
+.tw-twinkle { position: absolute; inset: 0; pointer-events: none; }
+.tw-twinkle > i { position: absolute; width: 2px; height: 2px; background: var(--lit); opacity: .15; animation: tw-twinkle 3.2s ease-in-out infinite alternate; }
+@keyframes tw-twinkle { from { opacity: .12; } to { opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { .tw-twinkle > i { animation: none; } }
+/* the month's other climbers at their floors: a plaque hung from the right end of their floor's gallery */
+.tw-tag { position: absolute; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 5px; max-width: 40%; padding: 2px 7px 2px 5px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--dim); white-space: nowrap; background: color-mix(in srgb, var(--panel), transparent 15%); }
+.tw-tag > .flag { flex: none; width: 7px; height: 9px; background: var(--dim); clip-path: polygon(0 0, 100% 30%, 0 60%); }
+.tw-tag > .flag.live { background: var(--signal); }
 .tw-tag > b { color: var(--lit); font-variant-numeric: tabular-nums; }
 .tw-tag.up { opacity: .62; }
 /* the party before the tower: each in its own square box, its feet on its spot (standInk moves the picture by its ink), its shadow under */
@@ -210,4 +245,7 @@
 .tw-feet > ellipse { fill: var(--tw-shadow); fill-opacity: .5; }
 :root[data-theme="light"] :is(.tw-foot, .tw-feet > ellipse) { fill-opacity: .22; }
 .tw-mon { position: absolute; display: block; }
-.tw-mon > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+.tw-mon > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
+  /* in the scene's light: a touch darker and cooler for the night, rimmed by the moon at the right */
+  filter: brightness(.84) saturate(.9) drop-shadow(1.5px -1px 0 color-mix(in srgb, var(--lit), transparent 62%)); }
+:root[data-theme="light"] .tw-mon > img { filter: drop-shadow(1.5px -1px 0 rgb(255 255 255 / .7)); }

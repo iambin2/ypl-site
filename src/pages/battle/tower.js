@@ -29,6 +29,7 @@
 import { DUR, EASE_IN, EASE_OUT, STAGGER, reduced } from "../../components/common/motion.js";
 import { spriteUrl } from "../../services/teamBuilderCore.js";
 import { standInk } from "../../components/common/inkCentre.js";
+import { floorType } from "../../services/streak.js";
 import { sfx } from "./sfx.js";
 
 const R = 0.854;            // a floor to the one under it: three floors are one phi step
@@ -46,13 +47,15 @@ const f1 = n => n.toFixed(1);
 /* ---------- the picture ---------- */
 let uid = 0;
 /* the tower in a box: the floor stood on has its foot ring at base, radius r0 and height h0; floor k is that floor scaled R^k about the
-   apex. With the party in front (the tab) the tower stands higher, so they stand on the ground before it, under its doors */
+   apex. With the party in front (the tab) the tower stands higher, so they stand on the ground before it, under its doors. The tower
+   stands a little left of the middle, the moon balancing it at the right (2026-11-11, the sixth pass: dead centre it read as a
+   specimen, not a scene) */
 function measure(W, H, hall, party = false) {
   const phone = W < 520;
   const r0 = Math.min(W * (phone ? .3 : .21), H * .29);
   const h0 = r0 * (phone ? .84 : .8);
-  const base = H * (hall && party ? .6 : .76);
-  return { W, H, r0, h0, base, ax: W / 2, ay: base - h0 / (1 - R), hall, phone, horizon: base - r0 * E * 1.4, id: ++uid };
+  const base = H * (hall && party ? .58 : .74);
+  return { W, H, r0, h0, base, ax: W * (phone ? .47 : .45), ay: base - h0 / (1 - R), hall, phone, horizon: base - r0 * E * 1.4, id: ++uid };
 }
 const sc = k => R ** k;
 const footY = (m, k) => m.ay + (m.base - m.ay) * sc(k);
@@ -68,19 +71,16 @@ const arc = (m, k, f, a, b, n = 18, out = 1) => Array.from({ length: n + 1 }, (_
 const pts = list => list.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ");
 
 /* The floor's plan (2026-11-11, fifth pass, the user: "현재 탑 디자인을 처음 보는 디자인 전문가라고 가정하고 처음부터 끝까지 완벽하게
-   아름답고 결점 없도록 ... 지금 뒤틀린 부분이 너무 많아"). A floor is a level gallery round its foot, standing out of the wall with
-   its rail, and its five doors on it; the tower is climbed inside, through the gatekeeper's gate (a stair on the outside, seen at the
-   drum's edge where everything turns away, could only read as a ladder).
-   The doors stand within the front's middle (no door past 55 degrees), so none is squeezed to a sliver at the drum's edge; the
-   gatekeeper's gate, wider and taller, stands last, turned toward us. Before this the floors were joined by a winding stair with a
-   landing at each door: its flights between doors were a few degrees long and read as teeth, and its ends stood out of the drum's
-   edge as stubs */
+   아름답고 결점 없도록 ... 지금 뒤틀린 부분이 너무 많아"). A floor is a level gallery round its foot, standing out of the wall on its
+   corbels with its rail, and its five doors on it; the tower is climbed inside, through the gatekeeper's gate (a stair on the
+   outside, seen at the drum's edge where everything turns away, could only read as a ladder). The doors stand within the front's
+   middle (no door past 55 degrees), so none is squeezed to a sliver at the drum's edge; the gatekeeper's gate, wider and taller,
+   stands last, turned toward us */
 const DOORS = [-50, -27, -5, 17, 42];            // the games' angles across the front; the fifth is the gatekeeper's gate
 const HALF = [7, 7, 7, 7, 12];                   // each door's half width, in degrees of the drum
 const TALL = [.36, .36, .36, .36, .4];           // its height to the spring of its arch, as a share of the floor
 const GF = .06;                                  // the gallery's floor, over the floor's foot (share of the floor's height)
 const GAL = 1.13, SLAB = .055, RAIL = .13;       // how far the gallery stands out, its face, its rail's height
-const CLIMB = () => GF;                          // a door's foot: the gallery's floor
 const NODE_U = DOORS.map(th => (th + 90) / 180);
 // the run's path on floor k at u (0 the left edge, 1 the right edge): along the gallery, half out from the wall
 const pathAt = (m, k, u) => at(m, k, -90 + 180 * u, GF, (1 + GAL) / 2);
@@ -102,35 +102,35 @@ function doorShape(m, k, game) {
 const windowOf = doorShape;
 // where a game's light stands (the spark runs between them, the dive goes in through it): the middle of its door
 const lampAt = (m, k, game) => { const d = doorShape(m, k, game); return [d.x, d.y - d.h * .45]; };
+// the floor's type as the class that gives its colour (team-builder.css .type-*)
+const typeClass = f => `type-${String(floorType(f)).toLowerCase()}`;
 
-/* a game's door (2026-11-11 fourth pass, the user: "문에 불이 켜지는 게 너무 어색해. 그냥 단색으로 칠해서 그런 것 같아 ... 수문장의 문도
-   너무 어색하고 특별해 보이지 않아"): a doorway set deep in the wall. Its stone arch stands round it; inside, the side of the opening
-   that faces us shows as its jamb (on the side toward the tower's middle, lit on the lit side); the room behind is dark, or lit from
-   within, brightest at the floor, and a lit door throws its light out on its landing. The gatekeeper's gate is a great double door:
-   two arches one in the other, a column each side, the keystone at its crown and the gate's own lamp over it. */
-function doorSVG(m, k, g, state, s) {
+/* a game's door: a doorway set deep in the wall. Its stone arch stands round it; inside, the side of the opening that faces us shows as
+   its jamb (on the side toward the tower's middle; lit when it faces the moon, at the right); the room behind is dark, or lit from
+   within, brightest at the floor, and a lit door lights the wall round it and throws its light out on the gallery. The gatekeeper's
+   gate is a great double door: two arches one in the other, a column each side, the keystone, and over it the floor's crest in the
+   floor's colour with the gate's own lamp on it. */
+function doorSVG(m, k, g, state, s, type) {
   const th = DOORS[g - 1], hw = HALF[g - 1], fb = GF, ft = fb + TALL[g - 1], gate = g === 5;
   const out = [];
-  const stone = archAt(m, k, th, hw * (gate ? 1.42 : 1.3), fb, ft + (gate ? .05 : .025));
   if (gate) {
-    // the columns standing at its sides, lit on the lit side
+    // the columns standing at its sides, the one facing the moon lit
     for (const side of [-1, 1]) {
       const c = th + side * hw * 1.62, w = hw * .16;
-      out.push(`<polygon class="col${side < 0 ? " l" : ""}" points="${pts([at(m, k, c - w, fb), at(m, k, c - w, ft + .1), at(m, k, c + w, ft + .1), at(m, k, c + w, fb)])}"/>`);
+      out.push(`<polygon class="col${side > 0 ? " l" : ""}" points="${pts([at(m, k, c - w, fb), at(m, k, c - w, ft + .1), at(m, k, c + w, ft + .1), at(m, k, c + w, fb)])}"/>`);
       out.push(`<polygon class="cap" points="${pts([at(m, k, c - w * 1.5, ft + .1), at(m, k, c - w * 1.5, ft + .125), at(m, k, c + w * 1.5, ft + .125), at(m, k, c + w * 1.5, ft + .1)])}"/>`);
     }
     out.push(`<polygon class="stone outer" points="${pts(archAt(m, k, th, hw * 1.42, fb, ft + .05).points)}"/>`);
     out.push(`<polygon class="stone" points="${pts(archAt(m, k, th, hw * 1.22, fb, ft + .025).points)}"/>`);
-  } else out.push(`<polygon class="stone" points="${pts(stone.points)}"/>`);
+  } else out.push(`<polygon class="stone" points="${pts(archAt(m, k, th, hw * 1.3, fb, ft + .025).points)}"/>`);
   const hole = archAt(m, k, th, hw, fb, ft);
-  out.push(`<polygon class="jamb${th < 0 ? " l" : ""}" points="${pts(hole.points)}"/>`);
+  out.push(`<polygon class="jamb${th > 0 ? " l" : ""}" points="${pts(hole.points)}"/>`);
   // the room seen through the opening: the opening less its jamb, the jamb's width as the wall turns from us
   const jw = hw * .42 * Math.abs(Math.sin(th * RAD)), lo = th < 0 ? th - hw : th - hw + jw, hi = th < 0 ? th + hw - jw : th + hw;
   const room = archAt(m, k, (lo + hi) / 2, (hi - lo) / 2, fb, ft);
   const fill = (cls, ref) => `<polygon class="${cls}" fill="url(#${ref}-${m.id})" points="${pts(room.points)}"/>`;
   out.push(fill("room", "tw-in"), fill("glow warm", "tw-warm"), fill("glow amber", "tw-amber"));
   if (gate) {
-    // the two leaves: the seam down the middle and a panel in each, the gate's lamp over its keystone
     out.push(`<polyline class="leaf" points="${pts([at(m, k, (lo + hi) / 2, fb), at(m, k, (lo + hi) / 2, room.crown)])}" stroke-width="${f1(Math.max(.8, 1.6 * s))}"/>`);
     for (const t of [-.5, .5]) {
       const c = (lo + hi) / 2 + t * (hi - lo) / 2, w = (hi - lo) * .16;
@@ -138,45 +138,80 @@ function doorSVG(m, k, g, state, s) {
     }
     const crown = archAt(m, k, th, hw * 1.42, fb, ft + .05).crown, kw = hw * .2;
     out.push(`<polygon class="key" points="${pts([at(m, k, th - kw * .7, crown - .045), at(m, k, th - kw, crown + .012), at(m, k, th + kw, crown + .012), at(m, k, th + kw * .7, crown - .045)])}"/>`);
-    const [lx, ly] = at(m, k, th, crown + .045), z = Math.max(3, 6.5 * s);
+    // the crest: a shield in the floor's colour over the keystone, the gate's lamp on it
+    const cw = hw * .5, c0 = crown + .02, c1 = crown + .13;
+    out.push(`<polygon class="crest ${type}" points="${pts([at(m, k, th - cw, c1), at(m, k, th + cw, c1), at(m, k, th + cw, c0 + .06), at(m, k, th, c0), at(m, k, th - cw, c0 + .06)])}" stroke-width="${f1(Math.max(.8, 1.4 * s))}"/>`);
+    const [lx, ly] = at(m, k, th, c0 + .075), z = Math.max(3, 6 * s);
     out.push(`<rect class="gate-lamp" x="${f1(lx - z / 2)}" y="${f1(ly - z / 2)}" width="${f1(z)}" height="${f1(z)}"/>`);
   }
-  // the threshold, and the light a lit door throws out on its landing
+  // the threshold, and the light a lit door throws out on the gallery
   out.push(`<polyline class="sill" points="${pts(arc(m, k, fb, th - hw, th + hw, 6))}" stroke-width="${f1(Math.max(.6, 1.2 * s))}"/>`);
-  out.push(`<polygon class="spill" points="${pts([at(m, k, th - hw, fb), at(m, k, th + hw, fb), at(m, k, th + hw * 1.45, fb, GAL - .02), at(m, k, th - hw * 1.45, fb, GAL - .02)])}"/>`);
+  out.push(`<polygon class="spill" points="${pts([at(m, k, th - hw, fb), at(m, k, th + hw, fb), at(m, k, th + hw * 1.6, fb, GAL - .02), at(m, k, th - hw * 1.6, fb, GAL - .02)])}"/>`);
   return `<g class="tw-win${gate ? " gate" : ""}${state ? ` ${state}` : ""}" data-g="${k === 0 ? g : ""}">${out.join("")}</g>`;
 }
-
-/* the night behind the tower, drawn once for a box: the sky deepening up from the horizon, a crescent moon, a few stars, and the ground
-   the tower stands on with the tower's own shade at its foot. Nothing else (2026-11-11, the user: "주변 배경도 의미 없는 부분이 많아.
-   깔끔하게 정리해주고, 떠있는 달도 주변에 동심원 같은 것 없이"; the city and the paving rings went) */
-function night(m, ground) {
+/* the night behind the tower: the sky deepening up from the horizon (and deeper the higher the run has climbed), the crescent moon at the
+   right (the scene's light: the tower is lit from its side), stars (more the higher), and the horizon: on the first floor low hills
+   and the plaza the tower stands on, higher up a sea of cloud far below that rises with every floor */
+// the crescent moon at the right (the scene's light) or, in the day, the sun: drawn over the night laid on the tower's top
+function moonSVG(m) {
+  const mx = m.W * (m.phone ? .84 : .86), my = m.H * .12, mr = Math.max(8, m.W * (m.phone ? .034 : .02));
+  return `<mask id="tw-moon-${m.id}"><circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(mr)}" fill="white"/><circle cx="${f1(mx + mr * .42)}" cy="${f1(my - mr * .3)}" r="${f1(mr * .86)}" fill="black"/></mask>`
+    + `<circle class="tw-moon" cx="${f1(mx)}" cy="${f1(my)}" r="${f1(mr)}" mask="url(#tw-moon-${m.id})"/><circle class="tw-sun" cx="${f1(mx)}" cy="${f1(my)}" r="${f1(mr * 1.1)}"/>`;
+}
+function night(m, floor) {
   let a = 7;
   const rnd = () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
-  const sky = `tw-sky-${m.id}`;
-  const stars = Array.from({ length: Math.round(m.W * m.H / 9000) }, () => {
+  const sky = `tw-sky-${m.id}`, ground = `tw-ground-${m.id}`;
+  const many = Math.min(2, 1 + (floor - 1) * .1);
+  const stars = Array.from({ length: Math.round(m.W * m.H / 9000 * many) }, () => {
     const s = rnd() < .12 ? 2 : 1;
     return `<rect class="tw-star" x="${f1(rnd() * m.W)}" y="${f1(rnd() * m.horizon * .8)}" width="${s}" height="${s}" opacity="${(.12 + rnd() * .4).toFixed(2)}"/>`;
   }).join("");
-  const mx = m.W * (m.phone ? .82 : .85), my = m.H * .11, mr = Math.max(8, m.W * (m.phone ? .034 : .02));
-  // the crescent: the moon's disc with a disc taken out of it by a mask, so nothing of the cut shows outside the moon
-  const moon = `<mask id="tw-moon-${m.id}"><circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(mr)}" fill="white"/><circle cx="${f1(mx + mr * .42)}" cy="${f1(my - mr * .3)}" r="${f1(mr * .86)}" fill="black"/></mask>`
-    + `<circle class="tw-moon" cx="${f1(mx)}" cy="${f1(my)}" r="${f1(mr)}" mask="url(#tw-moon-${m.id})"/>`;
   const out = [`<defs><linearGradient id="${sky}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="s0"/><stop offset="1" class="s1"/></linearGradient>`
-    + `</defs>`,
-    `<rect width="${m.W}" height="${f1(m.horizon + 1)}" fill="url(#${sky})"/>`, `<g class="tw-stars">${stars}</g>`, moon];
-  if (ground) out.push(`<rect class="tw-plaza" y="${f1(m.horizon)}" width="${m.W}" height="${f1(m.H - m.horizon)}"/>`,
-    `<ellipse class="tw-foot" cx="${f1(m.ax)}" cy="${f1(m.base + m.r0 * E * .35)}" rx="${f1(m.r0 * 1.32)}" ry="${f1(m.r0 * E * 1.45)}"/>`);
-  else out.push(`<rect class="tw-deep" y="${f1(m.horizon)}" width="${m.W}" height="${f1(m.H - m.horizon)}"/>`);
+    + `<linearGradient id="${ground}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient></defs>`,
+    `<rect width="${m.W}" height="${f1(m.horizon + 1)}" fill="url(#${sky})"/>`,
+    `<rect class="tw-alt" width="${m.W}" height="${f1(m.horizon + 1)}" opacity="${Math.min(.42, (floor - 1) * .05).toFixed(3)}"/>`,
+    `<g class="tw-stars">${stars}</g>`];
+  const wave = (amp, base, f1a, f2a, ph) => Array.from({ length: 41 }, (_, i) => {
+    const x = m.W * i / 40;
+    return [x, base - amp * (.55 + .3 * Math.sin(x / m.W * f1a + ph) + .15 * Math.sin(x / m.W * f2a + ph * 2))];
+  });
+  if (floor === 1) {
+    out.push(`<polygon class="tw-hills" points="${pts([[0, m.horizon + 1], ...wave(m.H * .05, m.horizon + 1, 5.5, 17, 1.3), [m.W, m.horizon + 1]])}"/>`);
+    out.push(`<rect fill="url(#${ground})" y="${f1(m.horizon)}" width="${m.W}" height="${f1(m.H - m.horizon)}"/>`);
+  } else {
+    // the sea of cloud far under the terrace: higher with every floor climbed
+    const amp = Math.min(m.H * .075, m.H * .014 * floor);
+    out.push(`<polygon class="tw-sea" points="${pts([[0, m.horizon + 1], ...wave(amp, m.horizon + 1, 9, 23, .4), [m.W, m.horizon + 1]])}"/>`);
+  }
   return out.join("");
 }
 
-/* the gallery round a floor's foot: its shade on the wall under it, its floor (the lightest stone, between the wall and its edge), its
-   face, its nosing (lit warm as far as the run has come along it), drawn before the doors' rail. from, to: the stretch the nosing is
-   lit (degrees), none when to <= from */
+/* where the tower goes: its upper floors dissolve into the night, the sky's own colour laid over them and deepening up, so it has no
+   top in sight and the climb has somewhere to go; the moon over it. (Banks and streaks of cloud were tried the same day: as puffs they
+   read as dark slabs, as streaks as flying discs.) */
+function cloudsHTML(m) {
+  const fade = `tw-fade-${m.id}`;
+  const body = `<defs><linearGradient id="${fade}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="f0"/><stop offset=".5" class="f1"/><stop offset="1" class="f2"/></linearGradient></defs>`
+    + `<rect width="${m.W}" height="${f1(m.H * .32)}" fill="url(#${fade})"/>` + moonSVG(m);
+  return `<div class="tw-clouds"><svg width="${m.W}" height="${m.H}" viewBox="0 0 ${m.W} ${m.H}" aria-hidden="true">${body}</svg></div>`;
+}
+// a few stars that twinkle (spans, so their light is the compositor's), placed by the same fixed draw each time
+function twinkleHTML(m) {
+  let a = 29;
+  const rnd = () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
+  return `<div class="tw-twinkle" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<i style="left:${f1(rnd() * m.W)}px;top:${f1(rnd() * m.horizon * .7)}px;animation-delay:${(i * 1.3).toFixed(1)}s"></i>`).join("")}</div>`;
+}
+
+/* the gallery round a floor's foot: its shade on the wall under it, the corbels under it, its floor (the lightest stone, between the wall
+   and its edge), its face, its nosing (lit warm as far as the run has come along it), drawn before the doors' rail. from, to: the
+   stretch the nosing is lit (degrees), none when to <= from */
 function gallerySVG(m, k, s, from, to) {
   const out = [];
   out.push(`<polygon class="tw-ramp-shade" points="${pts([...arc(m, k, GF - SLAB * .4, -90, 90, 36), ...arc(m, k, GF - SLAB * 2.6, 90, -90, 36)])}"/>`);
+  const corbels = [];
+  for (let th = -84; th <= 84; th += 12) corbels.push(`M${pts([at(m, k, th - 1.5, GF - SLAB, GAL - .01)])}L${pts([at(m, k, th + 1.5, GF - SLAB, GAL - .01)])}L${pts([at(m, k, th + .7, GF - SLAB - .08, 1)])}L${pts([at(m, k, th - .7, GF - SLAB - .08, 1)])}Z`);
+  out.push(`<path class="corbel" d="${corbels.join("")}"/>`);
   out.push(`<polygon class="tread" points="${pts([...arc(m, k, GF, -90, 90, 36), ...arc(m, k, GF, 90, -90, 36, GAL)])}"/>`);
   out.push(`<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, GF, -90, 90, 36, GAL), ...arc(m, k, GF - SLAB, 90, -90, 36, GAL)])}"/>`);
   out.push(`<polyline class="tw-path" points="${pts(arc(m, k, GF, -90, 90, 36, GAL))}" stroke-width="${f1(Math.max(.7, 1.1 * s))}"/>`);
@@ -190,41 +225,57 @@ function railSVG(m, k, s) {
   return `<path class="tw-baluster" d="${posts.join("")}" stroke-width="${f1(Math.max(.6, 1.1 * s))}"/>`
     + `<polyline class="tw-rail" points="${pts(arc(m, k, GF + RAIL, -89, 89, 36, GAL - .012))}" stroke-width="${f1(Math.max(.8, 1.8 * s))}"/>`;
 }
-// the shading of the drum, the gallery's face, and the rooms behind the doors (dark, lit warm, lit amber: brightest at the floor)
-const shadeDefs = m => `<defs><linearGradient id="tw-shade-${m.id}" x1="0" y1="0" x2="1" y2="0">${["a", "b", "c", "d", "e"].map((t, i) => `<stop offset="${[0, .22, .46, .74, 1][i]}" class="${t}"/>`).join("")}</linearGradient>`
-  + `<linearGradient id="tw-ramp-${m.id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="ra"/><stop offset=".3" class="rb"/><stop offset="1" class="rc"/></linearGradient>`
+/* the first floor stands on a stepped base, three rings of stone, each wider and lower, their treads lit as the gallery's floor and
+   their faces as its face: where the tower begins */
+function plinthSVG(m, k) {
+  const out = [];
+  for (let j = 2; j >= 0; j--) {
+    const top = -j * .036, bot = top - .036, w = 1.18 + .065 * j;
+    out.push(`<polygon class="tread" points="${pts([...arc(m, k, top, -90, 90, 36, w - .065), ...arc(m, k, top, 90, -90, 36, w)])}"/>`);
+    out.push(`<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, top, -90, 90, 36, w), ...arc(m, k, bot, 90, -90, 36, w)])}"/>`);
+  }
+  return `<g class="plinth">${out.join("")}</g>`;
+}
+// the shading of the drum, the gallery's face, and the rooms behind the doors (dark, lit warm, lit amber: brightest at the floor). Lit
+// from the right, where the moon is
+const shadeDefs = m => `<defs><linearGradient id="tw-shade-${m.id}" x1="1" y1="0" x2="0" y2="0">${["a", "b", "c", "d", "e"].map((t, i) => `<stop offset="${[0, .22, .46, .74, 1][i]}" class="${t}"/>`).join("")}</linearGradient>`
+  + `<linearGradient id="tw-ramp-${m.id}" x1="1" y1="0" x2="0" y2="0"><stop offset="0" class="ra"/><stop offset=".3" class="rb"/><stop offset="1" class="rc"/></linearGradient>`
   + ["in", "warm", "amber"].map(t => `<linearGradient id="tw-${t}-${m.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="${t}0"/><stop offset=".62" class="${t}1"/><stop offset="1" class="${t}2"/></linearGradient>`).join("")
   + `</defs>`;
 function floorSVG(m, k, st) {
   const f = st.floor + k, s = sc(k);
   if (f < 1) return "";
-  const out = [];
-  // the drum between the floor's foot ring and the next floor's, lit across, and its rim of moonlight on the lit edge
+  const out = [], type = typeClass(f);
+  if (f === 1) out.push(plinthSVG(m, k));
+  // the drum between the floor's foot ring and the next floor's, lit across from the moon's side, its rim of moonlight on that edge,
+  // and its courses of stone, faint
   out.push(`<polygon fill="url(#tw-shade-${m.id})" points="${pts([...arc(m, k, 0, -90, 90, 36), ...arc(m, k, 1, 90, -90, 36)])}"/>`);
-  out.push(`<polyline class="tw-rim" points="${pts([at(m, k, -89, GF), at(m, k, -89, 1)])}" stroke-width="${f1(Math.max(1, 1.4 * s))}"/>`);
+  out.push(`<path class="tw-course" d="${[.32, .56, .8].map(c => `M${pts(arc(m, k, c, -86, 86, 30))}`).join("")}" stroke-width="${f1(Math.max(.5, .9 * s))}"/>`);
+  out.push(`<polyline class="tw-rim" points="${pts([at(m, k, 89, GF), at(m, k, 89, 1)])}" stroke-width="${f1(Math.max(1, 1.4 * s))}"/>`);
   // the gallery's nosing is lit from where the run came onto the floor (the first door on the first floor) to the door it stands at
   const doneTo = f < st.floor || (f === st.floor && st.at >= 6) ? 90 : f === st.floor && st.at >= 1 ? DOORS[st.at - 1] : -90;
   const litFrom = f === 1 ? DOORS[0] : -90;
   out.push(gallerySVG(m, k, s, litFrom, doneTo));
   for (let g = 1; g <= 5; g++) {
     const state = f < st.floor || (f === st.floor && g < st.at) ? "won" : f === st.floor && g === st.at ? (st.live ? "now" : "next") : "";
-    out.push(doorSVG(m, k, g, state, s));
+    out.push(doorSVG(m, k, g, state, s, type));
   }
   out.push(railSVG(m, k, s));
   // laid over the floor and what stands out of it: a floor up is dimmer into the night
   const dim = 1 - lightOf(k);
-  if (dim > 0) out.push(`<polygon class="tw-night" opacity="${dim.toFixed(3)}" points="${pts([at(m, k, -90, GF - SLAB * 2.6, GAL), ...arc(m, k, GF - SLAB * 2.6, -90, 90, 36, GAL), at(m, k, 90, GF + RAIL + .01, GAL), ...arc(m, k, 1, 90, -90, 36), at(m, k, -90, GF + RAIL + .01, GAL)])}"/>`);
+  if (dim > 0) out.push(`<polygon class="tw-night" opacity="${dim.toFixed(3)}" points="${pts([at(m, k, -90, GF - SLAB - .09, GAL), ...arc(m, k, GF - SLAB - .09, -90, 90, 36, GAL), at(m, k, 90, GF + RAIL + .01, GAL), ...arc(m, k, 1, 90, -90, 36), at(m, k, -90, GF + RAIL + .01, GAL)])}"/>`);
   return `<g data-k="${k}">${out.join("")}</g>`;
 }
 
-/* above the first floor the floor stood on has its terrace, as wide as the view: its floor runs from the tower's foot to the horizon, so
-   the floors under it are out of sight and the party stands on it as it stands on the plaza (2026-11-11: as a disc round the foot
-   it was too thin to hold them, and they stood in the air before the floor under it). Drawn after the floor under it and before the
-   floor itself, so the drum stands on it */
+/* above the first floor the floor stood on has its terrace, as wide as the view: its floor runs from the tower's foot to the horizon, its
+   parapet along the far edge with the sea of cloud beyond it, so the floors under it are out of sight and the party stands on it as on
+   the plaza. Drawn after the floor under it and before the floor itself, so the drum stands on it */
 function terraceSVG(m) {
-  return `<g class="tw-terrace"><rect class="top" x="${f1(-m.W)}" y="${f1(m.horizon)}" width="${f1(m.W * 3)}" height="${f1(m.H * 3)}"/>`
-    + `<rect class="edge" x="${f1(-m.W)}" y="${f1(m.horizon)}" width="${f1(m.W * 3)}" height="2"/>`
-    + `<ellipse class="tw-foot" cx="${f1(m.ax)}" cy="${f1(m.base + m.r0 * E * .35)}" rx="${f1(m.r0 * 1.32)}" ry="${f1(m.r0 * E * 1.45)}"/></g>`;
+  const posts = [];
+  for (let x = 4; x < m.W; x += m.phone ? 10 : 14) posts.push(`M${f1(x)},${f1(m.horizon)}V${f1(m.horizon - (m.phone ? 7 : 9))}`);
+  return `<g class="tw-terrace"><rect fill="url(#tw-ground-${m.id})" class="top" x="${f1(-m.W)}" y="${f1(m.horizon)}" width="${f1(m.W * 3)}" height="${f1(m.H * 3)}"/>`
+    + `<path class="post" d="${posts.join("")}"/><rect class="rail" x="${f1(-m.W)}" y="${f1(m.horizon - (m.phone ? 8 : 10))}" width="${f1(m.W * 3)}" height="2"/>`
+    + `<ellipse class="tw-foot" cx="${f1(m.ax)}" cy="${f1(m.base + m.r0 * E * .5)}" rx="${f1(m.r0 * 1.5)}" ry="${f1(m.r0 * E * 1.6)}"/></g>`;
 }
 
 // the floors drawn: one under the floor stood on, and up to where the tower leaves the window
@@ -234,35 +285,37 @@ function floorsOf(m) {
   return ks;
 }
 
-/* the other climbers of the month at their floors (on the tab): a name hung out at the right of the tower at the window of the game they
-   reached, the amber lamp beside a run being played. Only the floors in sight; names that would touch give way */
+/* the other climbers of the month at their floors (on the tab): a small plaque hung from the right end of the gallery of the floor they
+   reached, a pennant on it (amber for a run being played), the name and the streak. Only the floors in sight and clear of the clouds;
+   plaques that would touch give way */
 function climbersHTML(m, st) {
   const tags = [];
   let last = Infinity;
   for (const c of (st.climbers || []).slice().sort((a, b) => b.wins - a.wins)) {
-    const f = Math.floor(c.wins / 5) + 1, g = (c.wins % 5) + 1, k = f - st.floor;
+    const f = Math.floor(c.wins / 5) + 1, k = f - st.floor;
     if (k < 0 || f < 1) continue;
-    const [x, y] = lampAt(m, k, g);
-    // the top of the night is the moon's
-    if (y < m.H * .2 || y > m.base - 8 || Math.abs(last - y) < 20) continue;
+    const [x, y] = at(m, k, 86, GF + RAIL, GAL);
+    if (y < m.H * .22 || y > m.base || Math.abs(last - y) < 22) continue;
     last = y;
-    const edge = m.ax + radius(m, k) + 10;
-    tags.push(`<span class="tw-tag${k > 0 ? " up" : ""}" style="left:${f1(Math.max(edge, x + 10))}px;top:${f1(y)}px"><i class="lamp${c.live ? " sig" : ""}"></i>${escapeHTML(c.name)}<b>${c.wins}</b></span>`);
+    tags.push(`<span class="tw-tag${k > 0 ? " up" : ""}" style="left:${f1(x + 4)}px;top:${f1(y)}px"><i class="flag${c.live ? " live" : ""}"></i>${escapeHTML(c.name)}<b>${c.wins}</b></span>`);
     if (tags.length >= 4) break;
   }
   return tags.join("");
 }
 const escapeHTML = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
 
-/* the run's party before the tower (the tab only), standing on the ground in a shallow arc, the nearer ones a little larger and lower,
-   each with its feet on its spot (inkCentre.js standInk) and its shadow under it (2026-11-11, the user: they "붕떠보이고" on a slab) */
+/* the run's party before the tower (the tab only), on the ground in a shallow arc a step out from the tower's foot: the lead in the
+   middle, a little larger and nearest, the others to either side in turn, each farther one a little smaller and higher; each on its
+   feet (inkCentre.js standInk) with its shadow under it, in the scene's light (rows in depth put them over the tower's base and
+   scattered them, 2026-11-11) */
+const ORDER = [0, -1, 1, -2, 2, -3];
 function partyHTML(m, st) {
   if (!m.hall || !st.party?.length) return "";
-  const n = st.party.length, rx = Math.min(m.r0 * 1.9, m.W * .4), ry = rx * E * 1.35, size = m.phone ? 54 : 78;
-  const spots = st.party.map((species, i) => {
-    const th = n === 1 ? 0 : -64 + 128 * i / (n - 1), t = th * Math.PI / 180, z = size * (.84 + .16 * Math.cos(t));
-    // a step out before the tower's foot, so the first floor's doors stand clear over their heads
-    return { species, x: m.ax + rx * Math.sin(t), y: m.base + m.r0 * E * 1.6 + ry * Math.cos(t), z };
+  const n = Math.min(6, st.party.length), size = m.phone ? 54 : 78, rx = Math.min(m.r0 * 1.95, m.W * .42), ry = rx * E * 1.3;
+  const slots = ORDER.slice(0, n), span = Math.max(1, ...slots.map(Math.abs));
+  const spots = st.party.slice(0, n).map((species, i) => {
+    const t = (slots[i] / (span + .4)) * 1.15, z = size * (i === 0 ? 1.08 : .86 + .14 * Math.cos(t));
+    return { species, x: m.ax + rx * Math.sin(t), y: m.base + m.r0 * E * 2.2 + ry * Math.cos(t), z };
   }).sort((a, b) => a.y - b.y);
   const shade = spots.map(p => `<ellipse cx="${f1(p.x)}" cy="${f1(p.y)}" rx="${f1(p.z * .3)}" ry="${f1(p.z * .07)}"/>`).join("");
   return `<div class="tw-front"><svg class="tw-feet" width="${m.W}" height="${m.H}" viewBox="0 0 ${m.W} ${m.H}" aria-hidden="true">${shade}</svg>`
@@ -278,9 +331,9 @@ export function drawTower(el, st) {
   const m = measure(W, H, el.classList.contains("tw-hall"), Boolean(st.party?.length));
   const svg = (cls, body) => `<svg class="${cls}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${body}</svg>`;
   const body = floorsOf(m).map(k => (k === 0 && st.floor > 1 ? terraceSVG(m) : "") + floorSVG(m, k, st)).join("");
-  el.innerHTML = svg("tw-sky", night(m, st.floor === 1))
-    + `<div class="tw-cam">${svg("tw-body", shadeDefs(m) + body)}${m.hall ? climbersHTML(m, st) : ""}</div>`
-    + partyHTML(m, st);
+  el.innerHTML = svg("tw-sky", night(m, st.floor)) + twinkleHTML(m)
+    + `<div class="tw-cam">${svg("tw-body", shadeDefs(m) + `<defs><linearGradient id="tw-ground-${m.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient></defs>` + body)}${m.hall ? climbersHTML(m, st) : ""}</div>`
+    + cloudsHTML(m) + partyHTML(m, st);
   for (const img of el.querySelectorAll(".tw-mon > img")) {
     img.addEventListener("error", () => { img.style.visibility = "hidden"; }, { once: true });
     if (img.complete) standInk(img); else img.addEventListener("load", () => standInk(img), { once: true });
@@ -302,7 +355,8 @@ function lightUp(el, hold = 0) {
   if (reduced()) return Promise.resolve();
   const floors = [...el.querySelectorAll(".tw-body > g")];
   const all = [
-    settled(el.querySelector(".tw-sky")?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.light, delay: hold, easing: EASE_OUT, fill: "backwards" }) ?? { finished: Promise.resolve() }),
+    // the night, the moon and the night over the tower's top together, first
+    ...[...el.querySelectorAll(".tw-sky, .tw-clouds")].map(x => settled(x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.light, delay: hold, easing: EASE_OUT, fill: "backwards" }))),
     ...floors.map((g, i) => settled(g.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.light, delay: hold + i * STAGGER.display, easing: EASE_OUT, fill: "backwards" }))),
     ...[...el.querySelectorAll(".tw-mon, .tw-tag")].map((x, i) => settled(x.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
       { duration: DUR.light, delay: hold + floors.length * STAGGER.display + i * STAGGER.row, easing: EASE_OUT, fill: "backwards" }))),
@@ -429,7 +483,7 @@ export async function towerDive() {
     sfx("swoosh", { sec: .5 });
     cam.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { opacity: 0, offset: .786 },
       { transform: `translate(${f1(m.W / 2 - x)}px,${f1(m.H / 2 - y)}px) scale(${F.toFixed(3)})`, opacity: 0 }], { duration: DIVE, easing: INOUT, fill: "forwards" });
-    for (const x2 of el.querySelectorAll(".tw-sky, .tw-front")) x2.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE * .618, easing: EASE_IN, fill: "forwards" });
+    for (const x2 of el.querySelectorAll(".tw-sky, .tw-front, .tw-clouds, .tw-twinkle")) x2.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE * .618, easing: EASE_IN, fill: "forwards" });
     await settled(doors.animate([{ transform: `translate(${f1(x - w / 2)}px,${f1(y - h / 2)}px) scale(${(w / m.W).toFixed(4)},${(h / m.H).toFixed(4)})` }, { transform: "none" }],
       { duration: DIVE, easing: INOUT, fill: "backwards" }));
   }
