@@ -149,9 +149,15 @@
 .tw-twinkle > i { position: absolute; width: 2px; height: 2px; background: var(--lit); opacity: .15; animation: tw-twinkle 3.2s ease-in-out infinite alternate; }
 @keyframes tw-twinkle { from { opacity: .12; } to { opacity: .8; } }
 @media (prefers-reduced-motion: reduce) { .tw-twinkle > i { animation: none; } }
-/* the month's other climbers at their floors: a plaque at the right end of their floor, above or below the one stood on */
-.tw-tag { position: absolute; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 5px; max-width: 40%; padding: 2px 7px 2px 5px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--dim); white-space: nowrap; background: color-mix(in srgb, var(--panel), transparent 15%); }
-.tw-tag > .flag { flex: none; width: 7px; height: 9px; background: var(--dim); clip-path: polygon(0 0, 100% 30%, 0 60%); }
-.tw-tag > .flag.live { background: var(--signal); }
-.tw-tag > b { color: var(--lit); font-variant-numeric: tabular-nums; }
-.tw-tag.up { opacity: .62; }
+/* the month's other climbers where they stand (tower.js climbersHTML): a hairline from their floor's wall out into the night, and
+   in one column to the right their name over their streak, as a drawing is labelled. No box and no mark on the tower: the line and
+   the words stand on the night. The run's own floor's are lit, the others dim; a run being played has the amber lamp by its name */
+.tw-leads { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.tw-leads path { fill: none; stroke: var(--dim); stroke-width: 1px; opacity: .5; }
+.tw-leads path.on { stroke: var(--lit); opacity: .62; }
+.tw-tag { position: absolute; transform: translateY(-50%); display: grid; max-width: 40%; color: var(--dim); white-space: nowrap; pointer-events: none; }
+.tw-tag > b { display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; font-size: 12px; line-height: 16px; font-weight: 600; }
+.tw-tag > span { font-size: 15px; line-height: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tw-tag > span > small { margin-left: 2px; font-size: 12px; font-weight: 600; }
+.tw-tag.on { color: var(--lit); }
+.tw-tag.on > b { color: var(--dim); }

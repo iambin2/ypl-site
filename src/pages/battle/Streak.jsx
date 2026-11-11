@@ -8,7 +8,6 @@
    met on the team preview. */
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
-import Modal from "../../components/common/Modal.jsx";
 import Button from "../../components/common/Button.jsx";
 import Icon from "../../components/common/Icon.jsx";
 import Seg from "../../components/common/Seg.jsx";
@@ -21,7 +20,7 @@ import { VISITOR_EVENT, myPlayerLink, pickStreakDraft, readDailyBoard, readStrea
 import { STREAK_LIVES, STREAK_STEP, floorGame, floorType, gameWords, streakFloor, streakMaster, swapTier } from "../../services/streak.js";
 import { toID } from "../../services/battleLog.js";
 import { nameOf, typesOf } from "./Stage.jsx";
-import { DUR, climb } from "../../components/common/motion.js";
+import { DUR, STAGGER, climb, light, place } from "../../components/common/motion.js";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
 import { standTower, towerDive, towerDrop, towerShow } from "./tower.js";
 import { MonCard } from "./Sets.jsx";
@@ -85,38 +84,70 @@ function TowerHall({ wins, live, climbers = null }) {
   return <div ref={ref} className="tw tw-hall" role="img" aria-label={`${floor}층 ${gameWords(wins)}`} />;
 }
 
-/* the opening draft (2026-11-11, docs/BATTLE_STREAK.md 13장): six rows, the tiers strongest first, each three candidates as a team
-   preview shows a Pokémon (its picture, name, types and item), one chosen in each row, inverted. A second Mega stands off once one
-   is chosen. Its info key opens the whole set. Nothing explains it: the six rows and the key's count say it (rule 22) */
-function DraftBoard({ res, draft, picks, onPick }) {
-  const [info, setInfo] = useState(null);
-  const megaTaken = draft.some((row, i) => row.find(c => c.species === picks[i])?.mega);
+/* the opening draft (2026-11-11, docs/BATTLE_STREAK.md 13장), in steps (rebuilt the same day, the user: "내가 어떤 포켓몬을 어떻게 얼마나
+   선택할 수 있는지, 특정 포켓몬을 선택했을 때 고르지 못하게 되는 포켓몬이 있는데 기준이 무엇인지 전혀 알 수 없어 ... 구구절절 설명을 하지
+   않더라도 사용자가 직관적으로 규칙을 알 수 있어야 해", and "i 버튼을 누르지 않더라도 바로 확인", "여러 단계로 나눠서"). The rule is
+   drawn, not written:
+   - how many: the party's six places stand as a strip over everything, empty ones numbered, so six is seen before anything is chosen;
+   - how: one place a step, the step's three candidates side by side as whole sets (picture, name, types, ability, item, four moves),
+     so nothing is chosen blind; choosing one lights it into its place and the next step's three rise in its stead; a place in the
+     strip goes back to its step;
+   - the Mega: a Mega candidate carries the Mega emblem, and the strip ends in one place of its own marked with it. Once a Mega is
+     chosen that place holds it, and every other Mega stands off with its emblem dim: the one place is taken */
+const MEGA = "/brand/mega-evolution.png";
+export function DraftBoard({ res, draft, picks, onPick }) {
+  const open = () => { const i = draft.findIndex((_, k) => !picks[k]); return i < 0 ? draft.length - 1 : i; };
+  const [step, setStep] = useState(open);
+  const strip = useRef(null), cards = useRef(null), next = useRef(0);
+  const megaAt = draft.findIndex((row, k) => row.find(c => c.species === picks[k])?.mega);
+  const mega = megaAt >= 0 ? picks[megaAt] : null;
+  // switching on: the strip's places one after another, then each step's three rising into their light
+  useLayoutEffect(() => { place([...(strip.current?.children || [])], { step: STAGGER.row }); }, []);
+  useLayoutEffect(() => { light(cards.current); }, [step]);
+  useEffect(() => () => clearTimeout(next.current), []);
+  const choose = species => {
+    const was = picks[step] === species;
+    onPick(step, species);
+    clearTimeout(next.current);
+    if (was) return;
+    // the chosen one lights in its place, and after a beat the next empty place's step comes up
+    const after = draft.findIndex((_, k) => k !== step && !picks[k]);
+    if (after >= 0) next.current = setTimeout(() => setStep(after), DUR.light);
+  };
+  const done = picks.filter(Boolean).length;
   return <section className="streak-draft" aria-labelledby="streak-draft-title">
-    <div className="stack streak-draft-rows">
-      <div className="pn streak-trades-title"><b id="streak-draft-title">파티 고르기</b><span className="t12 dim">{picks.filter(Boolean).length} / {draft.length}</span></div>
-      {draft.map((row, i) => <div key={i} className="stack streak-draft-row" role="radiogroup" aria-label={`${i + 1}번째 줄`}>
-        {row.map(c => {
-          const on = picks[i] === c.species, off = !on && c.mega && megaTaken;
-          return <span key={c.species} className={"streak-draft-cell" + (on ? " inv" : " pn") + (off ? " off" : "")}>
-            <button type="button" className="streak-draft-key" role="radio" aria-checked={on} aria-disabled={off || undefined} onClick={() => { if (!off) onPick(i, c.species); }}>
-              <img src={spriteUrl(c.species)} alt="" draggable="false" onError={onSpriteError()} />
-              <b>{nameOf(res, c.species)}</b>
-              <span className="streak-draft-types">{typesOf(res, c.species).map(t => <span key={t} className={`tb-type type-${toID(t)}`}>{res.text.types[t] || t}</span>)}</span>
-            </button>
-            <button type="button" className="streak-trade-info" onClick={() => setInfo(c)} aria-label={`${nameOf(res, c.species)} 세트 보기`}><b className="bt-i" aria-hidden="true">i</b></button>
-          </span>;
-        })}
-      </div>)}
+    <div className="pn streak-trades-title"><b id="streak-draft-title">파티 고르기</b><span className="t12 dim">{done} / {draft.length}</span></div>
+    <div className="stack streak-party" ref={strip}>
+      {draft.map((_, k) => {
+        const sp = picks[k];
+        return <button key={k} type="button" className={"streak-slot" + (sp ? " full" : "") + (k === step ? " now" : "")} aria-current={k === step ? "step" : undefined}
+          aria-label={`${k + 1}번째 자리${sp ? `, ${nameOf(res, sp)}` : ""}`} onClick={() => { clearTimeout(next.current); setStep(k); }}>
+          {sp ? <img src={spriteUrl(sp)} alt="" draggable="false" onError={onSpriteError()} /> : <span>{k + 1}</span>}
+        </button>;
+      })}
+      <span className={"streak-slot mega" + (mega ? " full" : "")} role="img" aria-label={mega ? `메가진화, ${nameOf(res, mega)}` : "메가진화 한 자리"}>
+        {mega ? <img src={spriteUrl(mega)} alt="" draggable="false" onError={onSpriteError()} /> : null}
+        <img className="streak-mega-mark" src={MEGA} alt="" draggable="false" />
+      </span>
     </div>
-    {info && <Modal label="설명" className="bt-tipsheet" onClose={() => setInfo(null)}>
-      <div className="bt-tip"><MonCard res={res} species={info.species} ability={info.ability} item={info.item} moves={info.moves.map(id => ({ id, pp: "" }))} explain /></div>
-    </Modal>}
+    <div key={step} ref={cards} className="stack streak-draft-row" role="radiogroup" aria-label={`${step + 1}번째 자리`}>
+      {draft[step].map(c => {
+        const on = picks[step] === c.species, off = !on && c.mega && megaAt >= 0 && megaAt !== step;
+        return <span key={c.species} data-rise className={"streak-pick" + (off ? " off" : "")}>
+          <MonCard res={res} species={c.species} ability={c.ability} item={c.item} moves={(c.moves || []).map(id => ({ id, pp: "" }))} compact
+            pick={{ order: on ? step + 1 : 0, onPick: () => choose(c.species), off, locked: off }} />
+          {c.mega && <img className="streak-mega-mark" src={MEGA} alt="메가진화" draggable="false" />}
+        </span>;
+      })}
+    </div>
   </section>;
 }
 
 /* the doors to the next game (2026-11-11, 13장): two doors, each with the six behind it as a team preview shows them (the even foe
    and the strong one, which lights a lamp again and lets the trade reach a tier up when beaten), or one shut door, the gatekeeper's.
-   The floor's type stands on the strip over them. One is chosen, inverted; the key goes through it */
+   Each door says what it gives beside its name, in nouns, so the choice reads as the trade-off it is (2026-11-11, the user: "보통 상대
+   강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the strong door and the gate 램프 +1 and 교환 승급, the even one 보상 없음.
+   One is chosen, inverted; the key goes through it */
 export function DoorPick({ res, wins, doors, value, onChange }) {
   if (!doors?.length) return null;
   const type = floorType(streakFloor(wins));
@@ -128,7 +159,11 @@ export function DoorPick({ res, wins, doors, value, onChange }) {
     <div className={"stack streak-door-row" + (doors.length === 1 ? " one" : "")} role="radiogroup" aria-label="다음 상대">
       {doors.map((d, i) => <button key={d.kind} type="button" role="radio" aria-checked={value === i} onClick={() => onChange(i)}
         className={"streak-door" + (value === i || d.kind === "gate" ? " inv" : " pn")}>
-        <span className="streak-door-head"><b>{word[d.kind]}{d.kind === "hard" && <span className="streak-door-gain" aria-label="이기면 램프 하나와 승급"><i className="lamp" />+</span>}</b>{chip}</span>
+        <span className="streak-door-head"><b>{word[d.kind]}</b>{chip}</span>
+        <span className="streak-door-gain" aria-label={d.kind === "even" ? "보상 없음" : "이기면 램프 하나와 교환 승급"}>
+          {d.kind === "even" ? <span className="streak-gain none">보상 없음</span>
+            : <><span className="streak-gain"><i className="lamp" aria-hidden="true" />램프 +1</span><span className="streak-gain">교환 승급</span></>}
+        </span>
         {d.species.length > 0 && <span className="streak-door-six">{d.species.map(s => <img key={s} src={spriteUrl(s)} alt={nameOf(res, s)} draggable="false" onError={onSpriteError()} />)}</span>}
       </button>)}
     </div>
@@ -209,7 +244,7 @@ function useRun(daily = false) {
 
 /* going into a game of a run is a scene on the tower (tower.js): it switches on over the stage the key was pressed under (on the tab
    it already stands), the game just won lights and the lamp steps on, or the lift rises a floor after a gatekeeper, all while the
-   game is made and read; then the view goes in through the lamp's door, which shuts as two doors, and the next screen parts them
+   game is made and read; then the camera walks in through the lamp's door into its dark, and the next screen comes up out of it
    (BattlePage.jsx useMatchLit). wins: the wins before the game gone into; null (a game being played, gone back into) plays nothing.
    again: a lost game gone into again, where no door was won.
    Returns shown (the tower has been read, and the court is dark) and leave (in through the door while the screen goes out; with
@@ -370,7 +405,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
    it). Under the table 새 파티 뽑기 is a key of the row's height: on, our side goes to ? and theirs off. ours, theirs: { species, name }
    in tier order */
 const OFF_WHY = "같은 포켓몬이 둘이 되어 바꿀 수 없습니다.";
-function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, blocked = [], onInfo = null, up = false }) {
+export function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, blocked = [], onInfo = null, up = false }) {
   const whyOf = (mine, s) => blocked.find(b => (mine ? b.give : b.take) === s)?.why || OFF_WHY;
   const side = (mine, { species: s, name }) => {
     const off = !(mine ? matchTheirs(s) : matchOurs(s));
@@ -392,12 +427,13 @@ function SwapTable({ ours, theirs, chosen, matchOurs, matchTheirs, onPick, block
   const chosenRow = i => chosen.has(`give:${ours[i]?.species}`);
   return <section className="streak-swap" aria-labelledby="streak-swap-title">
     <div className="stack streak-trades" role="table">
-      <div className="pn streak-trades-title"><b id="streak-swap-title">{up ? "포켓몬 교환 승급" : "포켓몬 교환"}</b>
-        {/* the last refusal, lit where the table is read: the strip keeps its height, so nothing moves */}
-        {blocked.length > 0 && <span key={blocked.length} className="streak-trades-note" role="alert"><Bang /><span>{blocked.at(-1).why}</span></span>}</div>
-      <span className="pn streak-trades-head" role="columnheader">내 파티</span>
+      {/* the table names itself by its head row (내 파티, the trade's mark, 상대 파티; its own strip over it was dropped 2026-11-11 so the
+          break fits the stage without a scroll, the user: "포켓몬 교환도 굳이 스크롤을 조금 해야 하고"); a trade a tier up says 승급 in it,
+          and the last refusal stands over it, lit where the table is read */}
+      {blocked.length > 0 && <div className="pn streak-trades-title"><span key={blocked.length} className="streak-trades-note" role="alert"><Bang /><span>{blocked.at(-1).why}</span></span></div>}
+      <span className="pn streak-trades-head" role="columnheader" id="streak-swap-title" aria-label={up ? "포켓몬 교환 승급, 내 파티" : "포켓몬 교환, 내 파티"}>내 파티</span>
       <span className="pn streak-trades-mark" aria-hidden="true"><Icon n="swap" size={20} /></span>
-      <span className="pn streak-trades-head" role="columnheader">상대 파티</span>
+      <span className="pn streak-trades-head" role="columnheader">상대 파티{up && <span className="streak-gain">승급</span>}</span>
       {ours.map((m, i) => <React.Fragment key={m.species}>{side(true, m)}
         <span className={(chosenRow(i) ? "inv" : "pn") + " streak-trades-mark"} aria-hidden="true"><Icon n="swap" size={20} /></span>
         {theirs[i] && side(false, theirs[i])}</React.Fragment>)}

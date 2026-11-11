@@ -996,8 +996,8 @@ const TURN_BEAT = 680; // a replay's turn stands this long before the next one p
 function useMatchLit() {
   useLayoutEffect(() => {
     const main = document.getElementById("ypl-main");
-    /* a 연승 도전 game gone into through its door (tower.js): the shut doors go to this screen's stage and opens there, and what stands under
-       it switches on as the doors part, not before (wait: the time until they start to part). The battle's own page frame is set
+    /* a 연승 도전 game gone into through its door (tower.js): the dark the camera walked into goes to this screen's stage and lifts there,
+       and what stands under it switches on as it lifts, not before (wait: the time until it starts to lift). The battle's own page frame is set
        first (on a phone the site's bars step away), so the car is sent to where the stage will stand, not to where it stood a frame
        before (2026-11-09: it went to the page's old box on a phone) */
     main?.classList.add("page--battle");

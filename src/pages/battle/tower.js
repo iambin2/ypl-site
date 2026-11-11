@@ -1,35 +1,38 @@
-/* 도전의 탑's tower (DESIGN.md "Battle", 도전의 탑, The tower). The ninth pass (2026-11-11, the user: "62점이 100점이 될 수 있도록 모든
-   것을 뜯어서 재설계해줘"): the tower is one world under one camera (towerGL.js), seen from the air beside the floor the run stands on,
-   the floors climbed going down under it with their doors lit and the ground falling away under them. This file keeps the scene
-   round the model: the night behind it (SVG: the sky, its stars, the moon), the climbers' plaques, and the scene's moves, each a
-   change of the model's camera or of its doors' light:
-     1. between games the tower switches on over the stage;
+/* 도전의 탑's tower (DESIGN.md "Battle", 도전의 탑, The tower). The tower is one world under one camera (towerGL.js), seen from the air
+   beside the floor the run stands on, the floors climbed going down under it with their doors lit and the ground falling away
+   under them. This file keeps the scene round the model: the night behind it (SVG: the sky, its stars, the moon), the climbers'
+   marks, and the scene's moves, each a move of the model's camera or a change of its doors' light, never a picture slid or laid over:
+     0. coming to the tab: the camera sweeps round the tower and rises to the run's floor while the floors climbed light one by one;
+     1. between games the tower comes up over the stage as the camera settles before it;
      2. a game won: its amber room cools to warm, the lamp's light runs along the terrace to the next door, which turns amber;
         after a gatekeeper the gate lights and the camera rises one floor (its last frame the next floor's picture, by construction)
         and the new floor's first door turns amber;
-     3. when the game is made and read, the camera goes in through the amber door's arch, the room becoming the lift's doors' tone,
-        and the doors stand there shut: only their seam and lamp switch on;
-     4. the shut doors outlive the screen, carry themselves to the next screen's stage, a chime, and they part on the team preview.
-   Until the doors stand shut the scene is inside the stage it was called on, so it scrolls with its page. Reduced motion: the
-   tower stands, then a cut. */
-import { DUR, EASE_IN, EASE_OUT, STAGGER, reduced } from "../../components/common/motion.js";
+     3. when the game is made and read, the camera comes round to stand before the amber door, then walks in through its arch into
+        the room, whose dark becomes the stage's own ground;
+     4. that dark outlives the screen, goes to the next screen's stage, and the next screen comes up out of it.
+   Until the camera is in, the scene is inside the stage it was called on, so it scrolls with its page. Reduced motion: the tower
+   stands, then a cut (2026-11-11, the user: the going in was "너무 빨라서 뭐가 뭔지도 모르겠어", its doors parting "이전의 엘리베이터
+   연출을 그대로 가져온 것 같고", and coming to the tab "그냥 로딩되는 느낌") */
+import { DUR, EASE_IN, EASE_OUT, reduced } from "../../components/common/motion.js";
 import { sfx } from "./sfx.js";
 import { DOORS, H, R, SPAN, buildModel, cameraOf, onFloor, orderOf, paletteOf, render, warmTower } from "./towerGL.js";
 
 // the model's context and program made in the first idle moment after the battle page loads this module
 if (typeof window !== "undefined") (window.requestIdleCallback || (f => setTimeout(f, 200)))(() => warmTower(), { timeout: 2000 });
 
-const SHUT = 560, MOVE = 420, BEAT = 260, READ = 420, RISE = 900, DIVE = 620, RUN = 520;
+const MOVE = 420, BEAT = 260, READ = 420, RISE = 1100, DIVE = 1400, RUN = 640, ENTRANCE = 2200, ARRIVE = 1000;
 const NEXT = 0.382;
 const INOUT = "cubic-bezier(.65,0,.35,1)";
 const inout = t => (t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const out3 = t => 1 - (1 - t) ** 3;
 const linear = t => t;
 const pause = n => new Promise(resolve => setTimeout(resolve, n));
 const settled = anim => anim.finished.catch(() => {});
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-let scene = null;           // the tower called on a stage: { el, own, master } (own: made for the call, not the tab's hall)
-let car = null;             // the shut doors, fixed over the window: { el }
-let left = [];              // the going out of the screen the doors shut on, let go when the next one stands
+const fade = (x, from, to, duration, o = {}) => settled(x.animate([{ opacity: from }, { opacity: to }], { duration, easing: EASE_OUT, fill: "both", ...o }));
+let scene = null;           // the tower called on a stage: { el, own } (own: made for the call, not the tab's hall)
+let car = null;             // the dark the camera walked into, fixed over the window: { el }
+let left = [];              // the going out of the screen the camera walked out of, let go when the next one stands
 const letGo = () => { left.forEach(a => a.cancel()); left = []; };
 const f1 = n => n.toFixed(1);
 
@@ -42,12 +45,12 @@ let uid = 0;
 function measure(W, H, hall) {
   const phone = W < 520;
   const r0 = Math.min(W * (phone ? .2 : .15), H * .23);
-  return { W, H, r0, base1: H * (hall ? .8 : .78), base2: H * (hall ? .6 : .58), ax: W * (phone ? .48 : .46), hall, phone, id: ++uid };
+  return { W, H, r0, base1: H * (hall ? .8 : .78), base2: H * (hall ? .6 : .58), ax: W * (phone ? .44 : .44), hall, phone, id: ++uid };
 }
-// the camera for floor f (a real number while climbing; the mesh's lowest floor lo), or on its way in
-const camOf = (m, f, lo, dive = null) => {
+// the camera for floor f (a real number while climbing; the mesh's lowest floor lo), on its way in, or swung round the tower
+const camOf = (m, f, lo, dive = null, orbit = null) => {
   const k = Math.min(1, Math.max(0, f - 1)), base = m.base1 + (m.base2 - m.base1) * k * k * (3 - 2 * k);
-  return cameraOf({ ...m, base }, f - lo, dive);
+  return cameraOf({ ...m, base }, f - lo, dive, orbit);
 };
 const horizonOf = (m, f) => camOf(m, f, f).horizon;
 // the floors a mesh holds for a run on floor f: a few under it (the lowest well out of the window) and the ones up into the night
@@ -86,25 +89,35 @@ function twinkleHTML(m) {
   return `<div class="tw-twinkle" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<i style="left:${f1(rnd() * m.W)}px;top:${f1(rnd() * Math.max(0, horizonOf(m, 1)) * .7)}px;animation-delay:${(i * 1.3).toFixed(1)}s"></i>`).join("")}</div>`;
 }
 
-/* the other climbers of the month at their floors (on the tab): a small plaque at the right end of the floor they reached, above
-   or below the one stood on, a pennant on it (amber for a run being played), the name and the streak. Only the floors in sight;
-   plaques that would touch give way */
+/* the other climbers of the month, marked where they stand: a hairline from the wall of the floor each reached out into the night to
+   the right, and there in one column their name and streak, as a drawing is labelled, a run being played with the amber lamp by its
+   name (2026-11-11, the user: the plaques that hung there had "미감이 없어"; then of a square where the line met the wall, "네모점은
+   없애자. 그냥 선으로만 하는 게 깔끔할 것 같아"). Only the floors in sight; labels keep apart in
+   the column, their lines bending to them. Their floor's own are lit, the others dim */
 function climbersHTML(m, st) {
-  const lo = loOf(st.floor), cam = camOf(m, st.floor, lo), tags = [];
-  const taken = [];
+  const lo = loOf(st.floor), cam = camOf(m, st.floor, lo);
+  const col = Math.min(m.W - (m.phone ? 104 : 150), m.ax + m.r0 * 1.7);
+  const marks = [];
   for (const c of (st.climbers || []).slice().sort((a, b) => b.wins - a.wins)) {
     const f = Math.floor(c.wins / 5) + 1;
     if (f < lo || f > st.floor + 3) continue;
-    const [x, y] = cam.project(onFloor(f - lo, 78, .1, 1.04));
-    if (y < m.H * .2 || y > m.H - 12 || x > m.W - 40 || taken.some(t => Math.abs(t - y) < 22)) continue;
-    taken.push(y);
-    tags.push(`<span class="tw-tag${f !== st.floor ? " up" : ""}" style="left:${f1(x + 6)}px;top:${f1(y)}px"><i class="flag${c.live ? " live" : ""}"></i>${escapeHTML(c.name)}<b>${c.wins}</b></span>`);
-    if (tags.length >= 4) break;
+    const [x, y] = cam.project(onFloor(f - lo, 64, .46, 1.0));
+    if (y < m.H * .16 || y > m.H - 16 || x > col - 16) continue;
+    marks.push({ c, f, x, y });
+    if (marks.length >= 4) break;
   }
-  return tags.join("");
+  if (!marks.length) return "";
+  marks.sort((a, b) => a.y - b.y);
+  let last = -Infinity;
+  for (const k of marks) { k.ly = Math.max(k.y, last + 28); last = k.ly; }
+  const lines = marks.map(k => `<path class="${k.f === st.floor ? "on" : ""}" d="M${f1(k.x)} ${f1(k.y)}H${f1(k.x + 14)}L${f1(col - 14)} ${f1(k.ly)}H${f1(col - 4)}"/>`).join("");
+  const labels = marks.map(k => `<span class="tw-tag${k.f === st.floor ? " on" : ""}" style="left:${f1(col)}px;top:${f1(k.ly)}px">`
+    + `<b>${k.c.live ? `<i class="lamp sig" aria-hidden="true"></i>` : ""}${escapeHTML(k.c.name)}</b><span>${k.c.wins}<small>연승</small></span></span>`).join("");
+  return `<svg class="tw-leads" width="${m.W}" height="${m.H}" viewBox="0 0 ${m.W} ${m.H}" aria-hidden="true">${lines}</svg>${labels}`;
 }
 const escapeHTML = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
 const themeOf = () => document.documentElement.dataset.theme || "";
+const marksOf = el => [...el.querySelectorAll(".tw-tag, .tw-leads")];
 
 /* each door's light for a state, by the mesh's floor j and game: 0 dark, .382 the next game while the run rests, 1 won, 2 gone into */
 function doorsOf(st, lo) {
@@ -135,7 +148,8 @@ function lightsOf(tw, j0) {
   return out.slice(0, 11);
 }
 
-/* the picture as it stands now: the model's camera at the floor stood on (and how far it has climbed, t), or on its way in */
+/* the picture as it stands now: the model's camera at the floor stood on (and how far it has climbed, t), swung round the tower
+   (orbit), or on its way in (dive) */
 function paint(el) {
   const tw = el.tower, canvas = el.querySelector("canvas.tw-body");
   if (!tw || !canvas) return;
@@ -148,7 +162,7 @@ function paint(el) {
   const j = tw.st.floor - tw.model.lo + tw.t;
   const lights = lightsOf(tw, j);
   if (tw.run) lights.push(tw.run);
-  render(canvas, tw.model, camOf(tw.m, tw.st.floor + tw.t, tw.model.lo, tw.dive), tw.pal, { doors: tw.doors, camK: j, lights, lift: tw.lift });
+  render(canvas, tw.model, camOf(tw.m, tw.st.floor + tw.t, tw.model.lo, tw.dive, tw.orbit), tw.pal, { doors: tw.doors, camK: j, lights, lift: tw.lift });
 }
 /* the scene's moves share one frame loop: each move sets what it changes, then the picture is painted once */
 function animate(el, dur, step, ease = inout) {
@@ -171,6 +185,13 @@ function animate(el, dur, step, ease = inout) {
     tw.loop = requestAnimationFrame(frame);
   });
 }
+// every move under way taken to its end at once (a game gone into while the tab's entrance still plays)
+function finish(el) {
+  const tw = el.tower;
+  if (!tw?.anims.size) return;
+  for (const a of [...tw.anims]) { a.step(a.ease(1)); tw.anims.delete(a); a.done(); }
+  paint(el);
+}
 // the doors' light going to a state's, as light does (DUR.tone), never a picture laid over another
 function tweenTo(el, st, dur = DUR.tone) {
   const tw = el.tower;
@@ -178,9 +199,8 @@ function tweenTo(el, st, dur = DUR.tone) {
   const from = tw.doors.slice(), to = doorsOf(st, tw.model.lo);
   tw.st = { ...tw.st, ...st };
   if (reduced()) { tw.doors = to; paint(el); return Promise.resolve(); }
-  return animate(el, dur, e => { for (let i = 0; i < to.length; i++) tw.doors[i] = from[i] + (to[i] - from[i]) * e; }, EASE);
+  return animate(el, dur, e => { for (let i = 0; i < to.length; i++) tw.doors[i] = from[i] + (to[i] - from[i]) * e; }, out3);
 }
-const EASE = t => 1 - (1 - t) ** 3;
 
 /* the tower drawn in el (the tab's hall, or the scene laid over a stage). floor: the floor stood on; at: its game (1 to 5, 6 the floor
    won whole, 0 none yet); live: a game is gone into or played (its door amber), else the run rests (its door at .382); hold: the
@@ -193,62 +213,92 @@ export function drawTower(el, st) {
   el.innerHTML = skySVG(m, st.floor) + twinkleHTML(m)
     + `<div class="tw-cam"><canvas class="tw-body" aria-hidden="true"></canvas>${m.hall ? climbersHTML(m, st) : ""}</div>`
     + cloudsHTML(m);
-  el.tower = { m, st: { ...st }, theme: themeOf(), pal: paletteOf(el), model: null, doors: null, t: 0, run: null, dive: null, lift: null, anims: new Set(), loop: 0 };
+  el.tower = { m, st: { ...st }, theme: themeOf(), pal: paletteOf(el), model: null, doors: null, t: 0, run: null, dive: null, orbit: null, lift: null, anims: new Set(), loop: 0 };
   paint(el);
   return true;
 }
 const sameState = (a, b) => a.floor === b.floor && a.at === b.at && a.live === b.live && !a.hold === !b.hold
   && JSON.stringify(a.climbers || []) === JSON.stringify(b.climbers || []);
-// the tab's hall draws itself and switches on the first time; a resize, a new state or the other theme draws it again where it stands
+// the tab's hall draws itself and comes in with its entrance the first time; a resize, a new state or the other theme draws it again
+// where it stands
 export function standTower(el, st) {
   const was = el.tower;
   if (was && was.m.W === el.clientWidth && was.m.H === el.clientHeight && was.theme === themeOf() && sameState(was.st, st)) return;
-  if (drawTower(el, st) && !was) lightUp(el);
+  if (drawTower(el, st) && !was) void entrance(el);
 }
 // the theme turned: every tower standing is painted again in the other one's tones
 if (typeof MutationObserver !== "undefined" && typeof document !== "undefined") {
   new MutationObserver(() => document.querySelectorAll(".tw").forEach(el => el.tower && drawTower(el, el.tower.st)))
     .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 }
-/* switching on: the night first, then the tower whole, then the climbers' plaques, each rising into its light as anything that
-   arrives does */
-function lightUp(el, hold = 0) {
-  if (reduced()) return Promise.resolve();
-  const all = [
-    ...[...el.querySelectorAll(".tw-sky, .tw-clouds")].map(x => settled(x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.light, delay: hold, easing: EASE_OUT, fill: "backwards" }))),
-    ...[...el.querySelectorAll(".tw-body")].map(x => settled(x.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: DUR.light, delay: hold + STAGGER.display, easing: EASE_OUT, fill: "backwards" }))),
-    ...[...el.querySelectorAll(".tw-tag")].map((x, i) => settled(x.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
-      { duration: DUR.light, delay: hold + STAGGER.display * 3 + i * STAGGER.row, easing: EASE_OUT, fill: "backwards" }))),
-  ];
-  return Promise.all(all);
-}
 
 /* ---------- the scene ---------- */
-/* a game won: its room cools from amber to warm while the lamp's light runs along the terrace from its door to the next one,
+/* 0. coming to the tab: the night switches on, and the camera sweeps a third of the way round the tower and draws in as it rises
+   the last floors to the run's (on the first floor it sweeps and draws in alone), while the floors climbed light one by one as it
+   passes them, each from its outer doors to its gate, and the run's own door lights last; then the climbers' marks */
+async function entrance(el) {
+  const tw = el.tower;
+  if (!tw || reduced()) return;
+  const lo = tw.model.lo, f = tw.st.floor, from = Math.max(1, f - 2), rise = f - from, target = tw.doors.slice();
+  const order = [0, 1, 2, 3, 4];               // the games' order is the doors' order from the outside in
+  const sky = el.querySelector(".tw-sky"), hz = horizonOf(tw.m, f), marks = marksOf(el);
+  marks.forEach(x => { x.style.opacity = "0"; });
+  for (const x of el.querySelectorAll(".tw-sky, .tw-clouds, .tw-twinkle")) void fade(x, 0, 1, DUR.light * 1.5);
+  void fade(el.querySelector(".tw-body"), 0, 1, DUR.light);
+  tw.doors.fill(0);
+  await animate(el, ENTRANCE, e => {
+    const q = out3(e);
+    tw.orbit = { phi: -.62 * (1 - q), k: 1 + .7 * (1 - q) * (1 - q) };
+    tw.t = -rise * (1 - q);
+    if (sky && rise) sky.style.transform = `translateY(${f1(horizonOf(tw.m, f + tw.t) - hz)}px)`;
+    for (let j = 0; j < SPAN; j++) {
+      const n = lo + j;
+      for (const g of order) {
+        const i = j * 5 + g, v = target[i];
+        if (!v) continue;
+        // a floor lights as the camera comes up past it; the run's own door (amber, or the next at .382) last of all
+        const at = v > 1 || (n === f && v < 1) ? .78 : .12 + .5 * Math.max(0, (n - from + .5) / (rise + 1)) + g * .035;
+        tw.doors[i] = v * smooth(at, at + .16, e);
+      }
+    }
+  }, linear);
+  tw.orbit = null; tw.t = 0;
+  if (sky) sky.style.transform = "";
+  paint(el);
+  if (el.tower === tw) marks.forEach((x, i) => { x.style.opacity = ""; void fade(x, 0, 1, DUR.light, { delay: i * 60 }); });
+}
+/* 1. between games: the tower comes up over the stage as the camera settles before it, drawing in from a little round the tower */
+function arrive(el) {
+  for (const x of el.querySelectorAll(".tw-sky, .tw-clouds, .tw-twinkle")) void fade(x, 0, 1, DUR.light);
+  void fade(el.querySelector(".tw-body"), 0, 1, DUR.light * .8);
+  const tw = el.tower;
+  return animate(el, ARRIVE, e => { tw.orbit = e >= 1 ? null : { phi: -.22 * (1 - e), k: 1 + .32 * (1 - e) }; }, out3);
+}
+/* 2. a game won: its room cools from amber to warm while the lamp's light runs along the terrace from its door to the next one,
    lighting the stone it passes, and the next door turns amber as the light reaches it */
 async function step(el, game) {
   const tw = el.tower, lo = tw.model.lo, j = tw.st.floor - lo, st = { ...tw.st, at: game, live: true };
   const a = DOORS[game - 2], b = DOORS[game - 1], amber = tw.pal.amber;
   sfx("select");
-  void tweenTo(el, { ...st, hold: true }, 200);
+  void tweenTo(el, { ...st, hold: true }, 240);
   const run = animate(el, RUN, e => {
     tw.run = [...onFloor(j, a + (b - a) * inout(e), .08, 1.07), .5 * R ** j, ...amber, Math.sin(Math.PI * Math.min(1, e)) ** .5];
   }, linear);
   await pause(RUN - DUR.tone);
-  await tweenTo(el, st);
+  await tweenTo(el, st, DUR.tone * 1.5);
   await run;
   tw.run = null; paint(el);
   sfx("turn");
 }
-/* the gatekeeper beaten: the gate lights, the camera rises one floor as the ground and the floors climbed sink under it, and the
-   new floor's first door turns amber */
+/* the gatekeeper beaten: the gate lights and swings open, the camera rises one floor as the ground and the floors climbed sink
+   under it, and the new floor's first door turns amber */
 async function rise(el, floor) {
   const tw = el.tower;
   sfx("select");
-  await tweenTo(el, { ...tw.st, at: 6, live: true });
-  sfx("swoosh", { sec: .7 });
-  const tags = [...el.querySelectorAll(".tw-tag")];
-  tags.forEach(x => x.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.leave, easing: EASE_IN, fill: "forwards" }));
+  await tweenTo(el, { ...tw.st, at: 6, live: true }, DUR.light);
+  sfx("swoosh", { sec: .9 });
+  const marks = marksOf(el);
+  marks.forEach(x => void fade(x, 1, 0, DUR.leave, { easing: EASE_IN }));
   // the night moves with the horizon where the framing changes (the climb from the first floor)
   const sky = el.querySelector(".tw-sky"), hz0 = horizonOf(tw.m, floor - 1);
   await animate(el, RISE, e => { tw.t = e; if (sky) sky.style.transform = `translateY(${f1(horizonOf(tw.m, floor - 1 + e) - hz0)}px)`; });
@@ -258,42 +308,43 @@ async function rise(el, floor) {
   const was = el.querySelector(".tw-sky");
   if (was) {
     was.insertAdjacentHTML("afterend", skySVG(tw.m, floor));
-    settled(was.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.light, easing: EASE_OUT, fill: "forwards" })).then(() => was.remove());
+    void fade(was, 1, 0, DUR.light).then(() => was.remove());
   }
   if (tw.m.hall) {
-    tags.forEach(x => x.remove());
+    marks.forEach(x => x.remove());
     el.querySelector(".tw-cam")?.insertAdjacentHTML("beforeend", climbersHTML(tw.m, tw.st));
+    marksOf(el).forEach(x => void fade(x, 0, 1, DUR.light));
   }
   sfx("turn");
-  await tweenTo(el, { ...tw.st, at: 1, live: true });
+  await tweenTo(el, { ...tw.st, at: 1, live: true }, DUR.tone * 1.5);
 }
 
 /* 1 and 2: the tower is shown on target for the game gone into (floor, at). hall: the tab's hall, where it already stands; otherwise
-   it switches on over the stage. climbing: the floor's first game after a gatekeeper. again: a lost game gone into again (the three
+   it comes up over the stage. climbing: the floor's first game after a gatekeeper. again: a lost game gone into again (the three
    lamps), where no lamp was won and the amber lamp stands where it stood. Resolves once it has been read */
-export async function towerShow(target, { floor, at: game, master = false, climbing = false, again = false }) {
+export async function towerShow(target, { floor, at: game, climbing = false, again = false }) {
   towerDrop(true);
   if (!target) return;
   const hall = target.classList.contains("tw-hall");
   const el = hall ? target : Object.assign(document.createElement("div"), { className: "tw over" });
   if (!hall) { el.setAttribute("aria-hidden", "true"); target.appendChild(el); }
-  scene = { el, own: !hall, master };
+  scene = { el, own: !hall };
   const keep = hall ? { climbers: el.tower?.st.climbers } : {};
   const now = { ...keep, floor, at: game, live: true };
   // the picture before the step the scene plays: the game just won still the lamp's, or the floor left with its gate still to light
   const before = hall || again ? now : climbing ? { floor: floor - 1, at: 5, live: true } : game > 1 ? { floor, at: game - 1, live: true } : now;
   if (reduced()) { drawTower(el, now); await pause(READ * 2); return; }
   if (hall) {
-    // the hall already stands on the game gone into, at the run's rest: its door turns amber where it stands
+    // the hall already stands on the game gone into, at the run's rest (its entrance, if it still plays, taken to its end): its door
+    // turns amber where it stands
+    finish(el);
     const was = el.tower?.st;
-    if (was && was.floor === floor && was.at === game) void tweenTo(el, { ...was, live: true });
+    if (was && was.floor === floor && was.at === game) void tweenTo(el, { ...was, live: true }, DUR.light);
     else drawTower(el, now);
     sfx("turn");
   } else {
     drawTower(el, before);
-    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.tone, easing: EASE_OUT });
-    void lightUp(el, DUR.tone);
-    await pause(DUR.tone + DUR.light);
+    await arrive(el);
   }
   const mine = () => scene?.el === el;
   if (mine() && before.floor !== floor) await rise(el, floor);
@@ -301,61 +352,58 @@ export async function towerShow(target, { floor, at: game, master = false, climb
   if (mine()) await pause(READ);
 }
 
-/* 3: the camera goes in through the amber door's arch while the rest of the screen goes out; the room behind becomes the lift's
-   doors' own tone, so as the arch passes the stage's edges the doors already stand there, and only their seam and lamp switch on.
-   Then the doors leave the page for the window (fixed), to outlive the screen. Resolves with the doors shut */
+/* 3. going in, as the camera walks it (DIVE, in two beats: it comes round the tower to stand before the amber door, level with it,
+   then walks in through the arch), while the rest of the screen goes out; the room's dark becomes the stage's own ground as the
+   arch passes the stage's edges, and that ground is left fixed over the window, to outlive the screen. Resolves with it standing */
 export async function towerDive() {
   if (!scene) return;
-  const { el, own, master } = scene;
+  const { el, own } = scene;
   scene = null;
   if (!reduced()) {
     // everything of the page that does not hold the scene
     const main = document.getElementById("ypl-main"), rest = [];
     for (let x = el; x && x !== main && x.parentElement; x = x.parentElement) rest.push(...[...x.parentElement.children].filter(y => y !== x && !y.classList.contains("tw")));
-    left = rest.map(x => x.animate([{ opacity: getComputedStyle(x).opacity }, { opacity: 0 }], { duration: DUR.leave, delay: DIVE - DUR.leave, easing: EASE_IN, fill: "both" }));
+    left = rest.map(x => x.animate([{ opacity: getComputedStyle(x).opacity }, { opacity: 0 }], { duration: DUR.light, delay: DIVE * .5, easing: EASE_IN, fill: "both" }));
   }
   const tw = el.tower, box = el.getBoundingClientRect();
   if (tw?.model && !reduced()) {
+    finish(el);
     const g = Math.min(Math.max(tw.st.at, 1), 5), o = orderOf(tw.st.floor), gate = g === 5;
-    const dive = { g, t: 0, depth: o.depth * (gate ? 1.7 : 1), yc: (gate ? o.gSpring : .4) * H * .6 };
+    const dive = { g, t: 0, depth: o.depth * (gate ? 1.8 : 1), yc: (gate ? o.gSpring : .4) * H * .62 };
     const door = (tw.st.floor - tw.model.lo) * 5 + g - 1;
-    sfx("swoosh", { sec: .5 });
-    // the sky stays (the camera's horizon holds still under it); the stars, the moon and the plaques, which would not turn with it, go
-    for (const x of el.querySelectorAll(".tw-stars, .tw-clouds, .tw-twinkle, .tw-tag")) x.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE * .5, easing: EASE_IN, fill: "forwards" });
-    await animate(el, DIVE, e => { tw.dive = { ...dive, t: e }; tw.lift = { door, mix: smooth(.74, .96, e), inv: master }; });
+    sfx("swoosh", { sec: .6 });
+    // the night's stars and moon and the marks, which would not turn with the camera, go as it turns; the sky stays (its horizon holds)
+    for (const x of el.querySelectorAll(".tw-stars, .tw-clouds, .tw-twinkle, .tw-tag, .tw-leads")) void fade(x, 1, 0, DIVE * .4, { easing: EASE_IN });
+    let stepped = false;
+    await animate(el, DIVE, e => {
+      tw.dive = { ...dive, t: e };
+      // inside, the room's lamp goes out at once (a slow blend from the amber to the ground went brown), leaving the dark
+      tw.lift = { door, mix: smooth(.88, .97, e) };
+      if (!stepped && e > .5) { stepped = true; sfx("swoosh", { sec: .5 }); }
+    }, linear);
   }
-  // the doors stand shut where the room's tone already is: fixed over where the stage stands, cut to the window; then the seam and
-  // the lamp switch on
-  const doors = Object.assign(document.createElement("div"), { className: "lift in" + (master ? " inv" : "") });
-  doors.setAttribute("aria-hidden", "true");
-  doors.innerHTML = `<span class="lift-door l"></span><span class="lift-door r"></span><i class="lamp sig lift-lamp"></i>`;
+  // the dark stands where the stage stood, fixed over the window and cut to it
+  const dark = Object.assign(document.createElement("div"), { className: "tw-veil" });
+  dark.setAttribute("aria-hidden", "true");
   const top = Math.max(0, box.top), bottom = Math.min(innerHeight, box.bottom);
-  Object.assign(doors.style, { left: `${box.left}px`, top: `${top}px`, width: `${box.width}px`, height: `${Math.max(0, bottom - top)}px` });
-  (document.querySelector(".ypl") || document.body).appendChild(doors);
-  requestAnimationFrame(() => requestAnimationFrame(() => doors.classList.remove("in")));
+  Object.assign(dark.style, { left: `${box.left}px`, top: `${top}px`, width: `${box.width}px`, height: `${Math.max(0, bottom - top)}px` });
+  (document.querySelector(".ypl") || document.body).appendChild(dark);
   if (own) el.remove();
-  car = { el: doors };
+  car = { el: dark };
 }
 
-// where a stage stands, cut to the window; a team preview is still drawing its cards when the doors arrive and runs past the foot
+// where a stage stands, cut to the window; a team preview is still drawing its cards when the dark arrives and runs past the foot
 // once drawn, so its box goes down to the window's foot, less the page's own bottom space
 const boxOf = el => {
   const r = el.getBoundingClientRect(), top = Math.max(0, r.top);
   const foot = parseFloat(getComputedStyle(el.closest(".page") || document.body).paddingBottom) || 0;
   return { left: r.left, top, width: r.width, height: Math.max(0, innerHeight - foot - top) };
 };
-const slide = (door, from, to) => settled(door.animate([{ transform: `translateX(${from * 101}%)` }, { transform: `translateX(${to * 101}%)` }], { duration: SHUT, easing: INOUT, fill: "forwards" }));
-const part = async el => {
-  const lampEl = el.querySelector(".lift-lamp");
-  if (lampEl) lampEl.style.opacity = "0";
-  sfx("swoosh", { sec: .5 });
-  const doors = el.querySelectorAll(".lift-door");
-  await Promise.all([slide(doors[0], 0, -1), slide(doors[1], 0, 1)]);
-  el.remove();
-};
+// the next screen comes up out of the dark, as the battle's own stage does
+const lift = el => fade(el, 1, 0, DUR.light * 1.5).then(() => el.remove());
 
-/* 4: the next screen has mounted; the doors go to its stage (target) and part. Returns the time until they start to part, so that
-   screen's arrival can wait for it, or null when no doors wait */
+/* 4. the next screen has mounted; the dark goes to its stage (target) and the screen comes up out of it. Returns the time until it
+   starts to lift, so that screen's arrival can wait for it, or null when no dark waits */
 export function liftArrive(target) {
   letGo();
   if (!car || !target) return null;
@@ -369,24 +417,22 @@ export function liftArrive(target) {
     if (moved) {
       await settled(el.animate([px(was), px(to)], { duration: MOVE, easing: INOUT, fill: "forwards" }));
       Object.assign(el.style, px(to));
-    }
-    // arrived: the chime, and the doors part (carrying themselves was the beat; standing where they shut they wait one)
+    } else await pause(BEAT);
     sfx("turn");
-    if (!moved) await pause(BEAT);
-    await part(el);
+    await lift(el);
   })();
   return moved ? MOVE : BEAT;
 }
 
-// a refusal (the game could not be made): the scene goes, or the doors part where they shut, and the screen stands again
+// a refusal (the game could not be made): the scene goes, or the dark lifts where it stands, and the screen stands again
 export function towerDrop(now = false) {
   const s = scene, c = car;
   scene = null; car = null;
   letGo();
   if (s?.own) {
     if (now || reduced()) s.el.remove();
-    else settled(s.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DUR.leave, fill: "forwards" })).then(() => s.el.remove());
+    else void fade(s.el, 1, 0, DUR.leave).then(() => s.el.remove());
   }
   if (s && !s.own && s.el.tower) drawTower(s.el, { ...s.el.tower.st, live: false });
-  if (c) { if (now || reduced()) c.el.remove(); else void part(c.el); }
+  if (c) { if (now || reduced()) c.el.remove(); else void lift(c.el); }
 }

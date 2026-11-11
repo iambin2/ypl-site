@@ -33,12 +33,12 @@ export function orderOf(n) {
     proud: 0.012 + 0.02 * t,           // how far a frame stands out of the wall
     depth: 0.07 + 0.06 * t,            // the doorways' depth
     course: n >= 2,                    // 2: a string course across the wall at the doors' spring
-    dentil: n >= 3 ? 4.5 - 1.5 * t : 0, // 3: dentils under the cornice (their spacing, degrees)
+    frieze: n >= 3,                    // 3: a frieze band under the cornice
     key: n >= 4,                       // 4: keystones at the arches' crowns
     tiers: n <= 4 ? 1 : n <= 6 ? 2 : 3, // 5 and 7: the cornice in two, then three mouldings
     arch2: n >= 6,                     // 6: the gate in two arches
     crenel: n >= 8,                    // 8: the parapet at its foot crenellated
-    gHalf: 12.5 + 2.5 * t, gSpring: 0.44 + 0.08 * t,
+    gHalf: 12.5 + 2.5 * t, gSpring: 0.42 + 0.07 * t,
   };
 }
 
@@ -60,29 +60,33 @@ export const onFloor = (j, th, y, r = 1) => { const s = scaleOf(j); return [r * 
 
 /* m: the scene's box (W, H, r0 the floor stood on's radius on screen, base its foot's height, ax the axis across). j: the floor stood
    on, in the mesh's floors (a real number while climbing). The camera floats level, out from that floor and a little over its foot;
-   lens shift puts the axis at ax and the foot at base, so every wall stands upright. dive (optional): { g, t, depth, yc } the camera
+   lens shift puts the axis at ax and the foot at base, so every wall stands upright. orbit (optional): { phi, k, lift } the camera swung
+   round the axis by phi, drawn back by k and raised by lift floors. dive (optional): { g, t, depth, yc } the camera
    on its way into door g's arch, t from 0 to 1 */
-export function cameraOf(m, j, dive = null) {
+export function cameraOf(m, j, dive = null, orbit = null) {
   const s = scaleOf(j), foot = footOf(j), asp = m.W / m.H;
   const D = FOCAL * (m.H / 2) / m.r0 * s;
   let P = [0, foot + EYE * s, D], yaw = 0;
   let sx = 2 * m.ax / m.W - 1, sy = 1 - 2 * m.base / m.H + FOCAL * EYE * s / D;
   let near = 0.02 * s;
   const horizon = (1 - sy) / 2 * m.H;
+  if (orbit) {
+    // the camera swung round the tower by phi and drawn back by k, still looking at the axis (the entrance, the arrival over a stage)
+    const d = D * orbit.k;
+    P = [d * Math.sin(orbit.phi), P[1] + (orbit.lift || 0) * s, d * Math.cos(orbit.phi)];
+    yaw = orbit.phi;
+  }
   if (dive) {
-    // a curve into the door: from where the camera stands to a point out in front of the door, then along its axis into the arch
-    const th = DOORS[dive.g - 1], t = dive.t, n = [Math.sin(th * RAD), 0, Math.cos(th * RAD)];
-    const y1 = foot + dive.yc * s, end = [n[0] * (1 - dive.depth * 0.45) * s, y1, n[2] * (1 - dive.depth * 0.45) * s];
-    const ctrl = [n[0] * 1.9 * s, lerp(P[1], y1, 0.7), n[2] * 1.9 * s];
-    const u = 1 - t;
-    P = [0, 1, 2].map(i => u * u * P[i] + 2 * u * t * ctrl[i] + t * t * end[i]);
-    // the camera turns to face the door itself the whole way, so the door holds the middle of the view as it grows
-    const aim = [n[0] * (1 - dive.depth) * s, n[2] * (1 - dive.depth) * s];
-    const look = Math.atan2(P[0] - aim[0], P[2] - aim[1]);
-    yaw = look * smooth(0, .3, t);
+    /* going in, in two beats: first the camera comes round the tower to stand before the door, level with it (a turn and a dolly
+       about the axis, so the door is met face on); then it walks in along the door's axis through the arch into the room */
+    const th = DOORS[dive.g - 1] * RAD, y1 = foot + dive.yc * s, before = 2.3 * s, inside = (1 - dive.depth * 0.45) * s;
+    const a = smooth(0, .52, dive.t), b = smooth(.46, 1, dive.t);
+    const dist = lerp(lerp(D, before, a), inside, b * b);
+    P = [dist * Math.sin(th * a), lerp(P[1], y1, a), dist * Math.cos(th * a)];
+    yaw = th * a;
     // the camera stays level and keeps its vertical shift, so the horizon holds still under the night drawn behind the model
-    sx *= u * u;
-    near = lerp(near, 0.002 * s, t);
+    sx *= 1 - a;
+    near = lerp(near, 0.002 * s, b);
   }
   const far = 4000 * s, A = (far + near) / (far - near), B = -2 * far * near / (far - near), f = FOCAL;
   const c = Math.cos(yaw), sn = Math.sin(yaw);
@@ -123,8 +127,8 @@ export function paletteOf(el) {
     warm: mix(v("--tw-warm"), amber, day ? 0.38 : 0),
     // light itself: the board's lit tone at night; in the day the words are navy, so the light is white
     lit: day ? [1, 1, 1] : v("--lit"),
-    // the lift's doors (streak.css .lift-door): what a door's room becomes as the camera goes in, so the doors stand on it
-    lift: v("--panel-2"), liftInv: v("--lit"),
+    // what a door's room becomes as the camera walks in: the stage's own ground, which the next screen comes up out of
+    lift: v("--ground"),
     light: day,
   };
   i.remove();
@@ -153,6 +157,8 @@ function mesh() {
   return M;
 }
 const TRI = [0, 1, 2, 0, 2, 3], ZERO = [0, 0];
+// a leaf's straps carry no boards' joints (the shader draws them where the height is not negative)
+const NOGRAIN = [[0, -1], [0, -1], [0, -1], [0, -1]];
 // the columns the drum is cut into: every 3 degrees bends a radius-1 drum by under a tenth of a pixel at the sizes it is drawn
 const STEP = 3;
 const NO = [-1, 0, 0, 0];
@@ -188,28 +194,41 @@ function floorMesh(M, j, n, pal) {
     }
   };
 
-  // the doors and their frames, with the second arch round the gate on the high floors
+  /* the doors. A small door is an arch cut into the wall in a stone frame standing out of it. The gatekeeper's gate is a portal: a
+     wide arch in orders stepping back into the wall (two, three from the sixth floor), each with its impost and its plinth, a
+     keystone over all, steps up to it, and two arched leaves on iron straps that swing in as the gate is reached */
   const frames = DOORS.map((thc, i) => {
-    const gate = i === 4, hw = gate ? o.gHalf : SMALL, a = Math.sin(hw * RAD), fw = gate ? o.gfw : o.fw;
-    const ao = a + fw, a2 = gate && o.arch2 ? ao + 0.05 : ao;
-    return { g: i + 1, thc, hw, a, ao, a2, fa: Math.asin(a2) / RAD, sp: (gate ? o.gSpring : SPRING) * H, gate, depth: o.depth * (gate ? 1.7 : 1) };
+    const gate = i === 4, hw = gate ? o.gHalf : SMALL, a = Math.sin(hw * RAD);
+    const K = gate ? (o.arch2 ? 3 : 2) : 1, w = gate ? 0.04 : o.fw;
+    const rings = Array.from({ length: K + 1 }, (_, k) => a + k * w);     // rings[0] the opening, rings[K] the portal's edge
+    const out = 1 + o.proud + (gate ? 0.012 : 0);
+    const faces = Array.from({ length: K }, (_, k) => out - (K - 1 - k) * 0.024); // each order's face, the inner ones deeper
+    const outer = rings[K];
+    return { g: i + 1, thc, hw, a, rings, faces, K, outer, fa: Math.asin(outer) / RAD, sp: (gate ? o.gSpring : SPRING) * H, gate, depth: o.depth * (gate ? 1.8 : 1) };
   });
+  // the columns: every STEP degrees on the wall, and round every arch evenly by its own angle, so a curve is as smooth at its springs
+  // as at its crown (cut by the wall's angle, the steep ends of an arch were long straight pieces)
   const cuts = new Set();
   for (let t = span[0]; t <= span[1] + 1e-6; t += STEP) cuts.add(+t.toFixed(4));
-  for (const d of frames) for (const sg of [-1, 1]) {
-    for (const a of [d.a, d.ao, d.a2]) cuts.add(+(d.thc + sg * Math.asin(a) / RAD).toFixed(4));
-    if (d.gate) cuts.add(d.thc);
-  }
+  const dPsi = j >= 7 ? 15 : 6;
+  for (const d of frames) for (const a of d.rings) for (let psi = 0; psi <= 180 + 1e-6; psi += dPsi) cuts.add(+(d.thc + Math.asin(a * Math.cos(psi * RAD)) / RAD).toFixed(4));
   const T = [...cuts].sort((x, y) => x - y);
   const dx = (d, th) => Math.sin((th - d.thc) * RAD);
   const arc = (d, a, th) => d.sp + Math.sqrt(Math.max(0, a * a - dx(d, th) ** 2));
   const crown = d => d.sp + d.a;
-  const fr = 1 + o.proud, fr2 = 1 + o.proud * 0.5;
   const courseY = SPRING * H * 0.98;
+  // the face of an arch at angle th and height y, turned toward the opening's middle
+  const inward = (d, a, th, y) => {
+    const u = dx(d, th) / a, v = Math.max(0, y - d.sp) / a, tg = tangent(th), L = Math.hypot(u, v) || 1;
+    return [-(tg[0] * u) / L, -v / L, -(tg[2] * u) / L];
+  };
+  const lipN = th => { const r = radial(th); return [r[0] * 0.3, 0.95, r[2] * 0.3]; };
+  const orderTone = (d, k) => (k === d.K - 1 ? stone : k === 0 && d.K > 1 ? stoneDeep : surf(mix(pal.stone, pal.wallShade, 0.12), mix(pal.stone, pal.wallShade, 0.65)));
+  const iron = surf(mix(pal.pane, pal.stone, 0.4), mix(pal.pane, pal.ground, 0.2));
 
   for (let i = 0; i < T.length - 1; i++) {
     const t0 = T[i], t1 = T[i + 1], tm = (t0 + t1) / 2;
-    const d = frames.find(x => Math.abs(dx(x, tm)) < x.a2);
+    const d = frames.find(f => Math.abs(dx(f, tm)) < f.outer);
     if (!d) {
       wallQuad(t0, t1, 0, 0, top);
       if (o.course) {
@@ -221,84 +240,86 @@ function floorMesh(M, j, n, pal) {
       }
       continue;
     }
-    const x = Math.abs(dx(d, tm)), inDoor = x < d.a, inFrame = x < d.ao;
-    const o20 = arc(d, d.a2, t0), o21 = arc(d, d.a2, t1);
-    wallQuad(t0, t1, o20, o21, top);
-    if (!inFrame) {
-      // the gate's second arch: a band between the wall and the frame
-      const f0 = arc(d, d.ao, t0), f1 = arc(d, d.ao, t1);
-      const lo0 = Math.abs(dx(d, t0)) < d.ao ? f0 : 0, lo1 = Math.abs(dx(d, t1)) < d.ao ? f1 : 0;
-      M.quad([P(fr2, t0, lo0), P(fr2, t1, lo1), P(fr2, t1, o21), P(fr2, t0, o20)], [radial(t0), radial(t1)], [stoneDeep]);
-      M.quad([P(1, t0, o20), P(1, t1, o21), P(fr2, t1, o21), P(fr2, t0, o20)], [[0, 1, 0]], [stone]);
-      continue;
+    const x = Math.abs(dx(d, tm)), inDoor = x < d.a;
+    wallQuad(t0, t1, arc(d, d.outer, t0), arc(d, d.outer, t1), top);
+    // the orders this column crosses, from the one it stands in (or the opening's arch) out to the edge, each a face and its step
+    let k0 = 0;
+    while (k0 < d.K - 1 && x >= d.rings[k0 + 1]) k0++;
+    let ya = inDoor ? arc(d, d.a, t0) : 0, yb = inDoor ? arc(d, d.a, t1) : 0;
+    for (let k = k0; k < d.K; k++) {
+      const r = d.faces[k], a1 = d.rings[k + 1], y1a = arc(d, a1, t0), y1b = arc(d, a1, t1);
+      M.quad([P(r, t0, ya), P(r, t1, yb), P(r, t1, y1b), P(r, t0, y1a)], [radial(t0), radial(t1)], [orderTone(d, k)]);
+      if (k + 1 < d.K) {
+        const rn = d.faces[k + 1];
+        M.quad([P(r, t0, y1a), P(r, t1, y1b), P(rn, t1, y1b), P(rn, t0, y1a)], [inward(d, a1, t0, y1a), inward(d, a1, t1, y1b), inward(d, a1, t1, y1b), inward(d, a1, t0, y1a)], [stone]);
+      } else {
+        M.quad([P(1, t0, y1a), P(1, t1, y1b), P(r, t1, y1b), P(r, t0, y1a)], [lipN(t0), lipN(t1)], [stone]);
+      }
+      ya = y1a; yb = y1b;
     }
-    const o0 = arc(d, d.ao, t0), o1 = arc(d, d.ao, t1);
-    if (d.a2 > d.ao) {
-      M.quad([P(fr2, t0, o0), P(fr2, t1, o1), P(fr2, t1, o21), P(fr2, t0, o20)], [radial(t0), radial(t1)], [stoneDeep]);
-      M.quad([P(1, t0, o20), P(1, t1, o21), P(fr2, t1, o21), P(fr2, t0, o20)], [[0, 1, 0]], [stone]);
+    if (d.gate && !inDoor) {
+      // the order's impost at the spring and its plinth at the foot, standing out of its face
+      const r = d.faces[k0], ri = r + 0.012, sp = d.sp;
+      for (const [y0, y1] of [[sp - 0.032, sp], [0, 0.05]]) {
+        M.quad([P(ri, t0, y0), P(ri, t1, y0), P(ri, t1, y1), P(ri, t0, y1)], [radial(t0), radial(t1)], [stone]);
+        M.quad([P(r, t0, y1), P(r, t1, y1), P(ri, t1, y1), P(ri, t0, y1)], [UP], [stone]);
+        if (y0 > 0) M.quad([P(r, t0, y0), P(r, t1, y0), P(ri, t1, y0), P(ri, t0, y0)], [DOWN], [stoneDeep]);
+      }
     }
-    // the frame's face, standing out of the wall, and its outer lip
-    const lo0 = inDoor ? arc(d, d.a, t0) : 0, lo1 = inDoor ? arc(d, d.a, t1) : 0;
-    M.quad([P(fr, t0, lo0), P(fr, t1, lo1), P(fr, t1, o1), P(fr, t0, o0)], [radial(t0), radial(t1)], [stone]);
-    const lipN = th => { const r = radial(th); return [r[0] * 0.3, 0.95, r[2] * 0.3]; };
-    const back = d.a2 > d.ao ? fr2 : 1;
-    M.quad([P(back, t0, o0), P(back, t1, o1), P(fr, t1, o1), P(fr, t0, o0)], [lipN(t0), lipN(t1)], [stone]);
     if (!inDoor) continue;
-    // the doorway: the frame's inner lip, the soffit under the arch, the room behind (or the gate's leaves before its hall)
-    const i0 = arc(d, d.a, t0), i1 = arc(d, d.a, t1), bk = 1 - d.depth, hD = crown(d);
+    // the doorway: the soffit under the arch (lit by the room) and the room behind (or the gate's leaves before its hall)
+    const i0 = arc(d, d.a, t0), i1 = arc(d, d.a, t1), r0 = d.faces[0], bk = r0 - d.depth, hD = crown(d);
     const door = role => [id(d.g), role, 0, 0];
-    M.quad([P(1, t0, i0), P(1, t1, i1), P(fr, t1, i1), P(fr, t0, i0)], [DOWN], [stone]);
-    M.quad([P(bk, t0, i0), P(bk, t1, i1), P(1, t1, i1), P(1, t0, i0)], [DOWN], [dark], [[0, i0 / hD], [0, i1 / hD], [0, i1 / hD], [0, i0 / hD]], door(2));
+    M.quad([P(bk, t0, i0), P(bk, t1, i1), P(r0, t1, i1), P(r0, t0, i0)], [inward(d, d.a, t0, i0), inward(d, d.a, t1, i1), inward(d, d.a, t1, i1), inward(d, d.a, t0, i0)], [dark],
+      [[0, i0 / hD], [0, i1 / hD], [0, i1 / hD], [0, i0 / hD]], door(2));
     M.quad([P(bk, t0, 0), P(bk, t1, 0), P(bk, t1, i1), P(bk, t0, i0)], [radial(tm)], [surf(mix(pal.pane, pal.wallShade, 0.2), pal.pane, { flat: true })],
       [[0, 0], [0, 0], [0, i1 / hD], [0, i0 / hD]], door(1));
     if (d.gate) {
-      /* the gate's two leaves to the spring, a deep tone of the stone, on three rails, hung on the jambs: they swing in as the gate
-         is reached (its light passing .55), so a gate played or beaten stands open on its hall. Over them the lunette's glass */
-      const leaf = 1 - 0.035, side = tm < d.thc ? -1 : 1, tc = mix(pal.stone, pal.pane, 0.62);
+      /* the gate's two leaves, arched as the opening is, a deep tone of the stone on three iron straps, hung on the jambs: they swing
+         in as the gate is reached (its light passing .55), so a gate played or beaten stands open on its hall */
+      const leaf = r0 - 0.03, side = tm < d.thc ? -1 : 1, tc = mix(pal.stone, pal.pane, 0.72);
       const hinge = P(leaf, d.thc + side * d.hw, 0);
       const lr = [id(d.g), side < 0 ? 3 : 4, hinge[0], hinge[2]];
       const lt = surf(mix(tc, pal.lit, 0.06), mix(tc, pal.ground, pal.light ? 0.2 : 0.45));
       const nn = th => { const r = radial(th), t = tangent(th); return [r[0] + t[0] * 0.25 * side, 0, r[2] + t[2] * 0.25 * side]; };
-      const sp = d.sp;
-      M.quad([P(leaf, t0, 0), P(leaf, t1, 0), P(leaf, t1, sp), P(leaf, t0, sp)], [nn(t0), nn(t1)], [lt], [], lr);
-      const rail = surf(mix(tc, pal.stone, 0.35), mix(tc, pal.ground, 0.3)), sh = surf(mix(tc, pal.ground, 0.5), mix(tc, pal.ground, 0.6), { flat: true });
-      for (const y of [0.06, 0.5, 0.94]) {
-        M.quad([P(leaf + 0.006, t0, sp * y - 0.008), P(leaf + 0.006, t1, sp * y - 0.008), P(leaf + 0.006, t1, sp * y + 0.008), P(leaf + 0.006, t0, sp * y + 0.008)], [nn(t0), nn(t1)], [rail], [], lr);
-        M.quad([P(leaf + 0.002, t0, sp * y - 0.016), P(leaf + 0.002, t1, sp * y - 0.016), P(leaf + 0.002, t1, sp * y - 0.008), P(leaf + 0.002, t0, sp * y - 0.008)], [nn(t0)], [sh], [], lr);
+      M.quad([P(leaf, t0, 0), P(leaf, t1, 0), P(leaf, t1, i1), P(leaf, t0, i0)], [nn(t0), nn(t1)], [lt], [[t0 * RAD, 0], [t1 * RAD, 0], [t1 * RAD, i1], [t0 * RAD, i0]], lr);
+      for (const f of [0.1, 0.4, 0.7]) {
+        const y0 = hD * f - 0.011, y1 = hD * f + 0.011;
+        if (y1 > Math.min(i0, i1) - 0.01) continue;
+        M.quad([P(leaf + 0.006, t0, y0), P(leaf + 0.006, t1, y0), P(leaf + 0.006, t1, y1), P(leaf + 0.006, t0, y1)], [nn(t0), nn(t1)], [iron], NOGRAIN, lr);
+        M.quad([P(leaf, t0, y1), P(leaf, t1, y1), P(leaf + 0.006, t1, y1), P(leaf + 0.006, t0, y1)], [UP], [iron], NOGRAIN, lr);
       }
-      const glass = surf(mix(pal.pane, pal.ground, 0.3), pal.pane, { flat: true });
-      M.quad([P(leaf, t0, sp), P(leaf, t1, sp), P(leaf, t1, i1), P(leaf, t0, i0)], [radial(t0)], [glass], [[0, 0.5], [0, 0.5], [0, 0.5], [0, 0.5]], door(5));
-      M.quad([P(leaf, t0, sp - 0.012), P(leaf + 0.004, t1, sp - 0.012), P(leaf + 0.004, t1, sp + 0.006), P(leaf, t0, sp + 0.006)], [radial(t0)], [stone]);
     }
   }
   for (const d of frames) {
+    const bk = d.faces[0] - d.depth, hD = crown(d);
     // the seam where the gate's leaves meet, lit at .382 by the hall behind while the gate is the next game
     if (d.gate) {
-      const r = 1 - 0.035 + 0.009, a = d.thc - 0.35, b = d.thc + 0.35;
-      M.quad([P(r, a, 0), P(r, b, 0), P(r, b, d.sp), P(r, a, d.sp)], [radial(d.thc)], [surf(pal.pane, pal.pane, { flat: true })], [[0, 0.3], [0, 0.3], [0, 0.3], [0, 0.3]], [id(d.g), 6, 0, 0]);
+      const r = d.faces[0] - 0.03 + 0.008, a = d.thc - 0.3, b = d.thc + 0.3;
+      M.quad([P(r, a, 0), P(r, b, 0), P(r, b, hD - 0.004), P(r, a, hD - 0.004)], [radial(d.thc)], [surf(pal.pane, pal.pane, { flat: true })], [[0, 0.3], [0, 0.3], [0, 0.3], [0, 0.3]], [id(d.g), 6, 0, 0]);
     }
-    // the keystone at the crown
-    if (o.key) {
-      const hk = d.gate ? 2.4 : 1.7, c0 = crown(d) - 0.012, c1 = d.sp + d.ao + 0.018, rk = fr + 0.008;
-      const a = d.thc - hk, b = d.thc + hk;
-      M.quad([P(rk, a, c0), P(rk, b, c0), P(rk, b + hk * 0.3, c1), P(rk, a - hk * 0.3, c1)], [radial(d.thc)], [stone]);
-      M.quad([P(fr, a - hk * 0.3, c1), P(fr, b + hk * 0.3, c1), P(rk, b + hk * 0.3, c1), P(rk, a - hk * 0.3, c1)], [UP], [stone]);
-      M.quad([P(fr, a, c0), P(rk, a, c0), P(rk, a - hk * 0.3, c1), P(fr, a - hk * 0.3, c1)], [tangent(a).map(x => -x)], [stoneDeep]);
-      M.quad([P(fr, b, c0), P(rk, b, c0), P(rk, b + hk * 0.3, c1), P(fr, b + hk * 0.3, c1)], [tangent(b)], [stoneDeep]);
+    // the keystone at the crown, over every order of the gate
+    if (o.key || d.gate) {
+      const hk = d.gate ? 3 : 1.7, c0 = hD - 0.012, c1 = Math.min(top - 0.006, d.sp + d.outer + (d.gate ? 0.03 : 0.018)), r0 = d.faces[d.K - 1], rk = r0 + 0.01;
+      const a = d.thc - hk, b = d.thc + hk, a1 = a - hk * 0.3, b1 = b + hk * 0.3;
+      M.quad([P(rk, a, c0), P(rk, b, c0), P(rk, b1, c1), P(rk, a1, c1)], [radial(d.thc)], [stone]);
+      M.quad([P(r0, a1, c1), P(r0, b1, c1), P(rk, b1, c1), P(rk, a1, c1)], [UP], [stone]);
+      M.quad([P(d.faces[0], a, c0), P(rk, a, c0), P(rk, a1, c1), P(d.faces[0], a1, c1)], [tangent(a).map(v => -v)], [stoneDeep]);
+      M.quad([P(d.faces[0], b, c0), P(rk, b, c0), P(rk, b1, c1), P(d.faces[0], b1, c1)], [tangent(b)], [stoneDeep]);
+      M.quad([P(d.faces[0], a, c0), P(d.faces[0], b, c0), P(rk, b, c0), P(rk, a, c0)], [DOWN], [stoneDeep]);
     }
-    // the jambs (lit by the room) and the frame's sides
     for (const sg of [-1, 1]) {
-      const th = d.thc + sg * d.hw, nj = tangent(th).map(v => v * -sg), bk = 1 - d.depth, hD = crown(d);
-      M.quad([P(bk, th, 0), P(fr, th, 0), P(fr, th, d.sp), P(bk, th, d.sp)], [nj], [dark], [[0, 0], [0, 0], [0, d.sp / hD], [0, d.sp / hD]], [id(d.g), 2, 0, 0]);
-      const th2 = d.thc + sg * Math.asin(d.ao) / RAD, n2 = tangent(th2).map(v => v * sg);
-      M.quad([P(d.a2 > d.ao ? fr2 : 1, th2, 0), P(fr, th2, 0), P(fr, th2, d.sp), P(d.a2 > d.ao ? fr2 : 1, th2, d.sp)], [n2], [stoneDeep]);
-      if (d.a2 > d.ao) {
-        const th3 = d.thc + sg * Math.asin(d.a2) / RAD, n3 = tangent(th3).map(v => v * sg);
-        M.quad([P(1, th3, 0), P(fr2, th3, 0), P(fr2, th3, d.sp), P(1, th3, d.sp)], [n3], [stoneDeep]);
+      // the jamb (lit by the room), each order's step facing the opening, and the portal's outer side
+      const th = d.thc + sg * d.hw, nj = tangent(th).map(v => v * -sg);
+      M.quad([P(bk, th, 0), P(d.faces[0], th, 0), P(d.faces[0], th, d.sp), P(bk, th, d.sp)], [nj], [dark], [[0, 0], [0, 0], [0, d.sp / hD], [0, d.sp / hD]], [id(d.g), 2, 0, 0]);
+      for (let k = 1; k < d.K; k++) {
+        const tk = d.thc + sg * Math.asin(d.rings[k]) / RAD, nk = tangent(tk).map(v => v * -sg);
+        M.quad([P(d.faces[k - 1], tk, 0), P(d.faces[k], tk, 0), P(d.faces[k], tk, d.sp), P(d.faces[k - 1], tk, d.sp)], [nk], [stone]);
       }
+      const tK = d.thc + sg * d.fa, nK = tangent(tK).map(v => v * sg);
+      M.quad([P(1, tK, 0), P(d.faces[d.K - 1], tK, 0), P(d.faces[d.K - 1], tK, d.sp), P(1, tK, d.sp)], [nK], [stoneDeep]);
     }
   }
-
   /* the cornice: a profile turned round the axis, its mouldings by the floor's rank, out to the roof's edge; then the roof, the
      next floor's terrace, its shade deepening to the next wall's foot */
   const lathe = (pts, a = span[0], b = span[1], step = STEP, sf = () => stone) => {
@@ -313,22 +334,33 @@ function floorMesh(M, j, n, pal) {
     }
   };
   const C = 1.06;
+  /* the dentils sit in the shade under a corona that stands out past them, so from above only the corona is seen (2026-11-11, the
+     user: "이상한 하얀색 선이 깨져 보이네": standing past a sloped moulding, their lit tops read as a broken white line) */
   const prof = o.tiers === 1
     ? [[1, top], [1, top + 0.03], [1.03, top + 0.045], [C, top + 0.07], [C, H]]
     : o.tiers === 2
-      ? [[1, top], [1.012, top], [1.012, top + 0.022], [1.026, top + 0.034], [1.026, top + 0.05], [C, top + 0.07], [C, H]]
-      : [[1, top - 0.02], [1.01, top - 0.02], [1.01, top], [1.02, top], [1.02, top + 0.022], [1.034, top + 0.034], [1.034, top + 0.05], [C + 0.01, top + 0.068], [C + 0.01, H]];
+      ? [[1, top], [1.012, top], [1.012, top + 0.03], [1.042, top + 0.03], [1.042, top + 0.05], [C, top + 0.07], [C, H]]
+      : [[1, top - 0.02], [1.01, top - 0.02], [1.01, top], [1.02, top], [1.02, top + 0.03], [1.05, top + 0.03], [1.05, top + 0.05], [C + 0.01, top + 0.068], [C + 0.01, H]];
   lathe(prof);
+  {
+    // the steps up to the gatekeeper's gate, on the terrace before it
+    const g = frames[4], out = g.faces[g.K - 1], a = g.thc - g.fa - 2, b = g.thc + g.fa + 2;
+    lathe([[out + 0.1, 0], [out + 0.1, 0.012], [out + 0.05, 0.012], [out + 0.05, 0.024], [out - 0.01, 0.024]], a, b, 1, () => tread());
+    for (const [th, sg] of [[a, -1], [b, 1]]) {
+      const nt = tangent(th).map(v => v * sg);
+      M.quad([P(out - 0.01, th, 0), P(out + 0.05, th, 0), P(out + 0.05, th, 0.024), P(out - 0.01, th, 0.024)], [nt], [stoneDeep]);
+      M.quad([P(out + 0.05, th, 0), P(out + 0.1, th, 0), P(out + 0.1, th, 0.012), P(out + 0.05, th, 0.012)], [nt], [stoneDeep]);
+    }
+  }
   const edge = prof[prof.length - 1][0];
   lathe([[edge, H, 0], [R + 0.06, H, 0], [R, H, 0.34]], span[0], span[1], STEP, () => tread());
-  if (o.dentil) {
-    for (let t = span[0] + 2; t <= span[1] - 2; t += o.dentil) {
-      const a = t - o.dentil * 0.22, b = t + o.dentil * 0.22, y0 = top + 0.006, y1 = top + 0.026, r0 = o.tiers === 3 ? 1.02 : 1.012, r1 = r0 + 0.016;
-      M.quad([P(r1, a, y0), P(r1, b, y0), P(r1, b, y1), P(r1, a, y1)], [radial(t)], [stone]);
-      M.quad([P(r0, a, y0), P(r0, b, y0), P(r1, b, y0), P(r1, a, y0)], [DOWN], [stoneDeep]);
-      M.quad([P(r0, a, y0), P(r1, a, y0), P(r1, a, y1), P(r0, a, y1)], [tangent(a).map(x => -x)], [stoneDeep]);
-      M.quad([P(r0, b, y0), P(r1, b, y0), P(r1, b, y1), P(r0, b, y1)], [tangent(b)], [stoneDeep]);
-    }
+  if (o.frieze) {
+    /* the frieze: a plain band standing out of the wall under the cornice, broken only by the gate's portal (it replaced dentils,
+       2026-11-11: at the tower's size a row of dentils read as a broken line) */
+    const y1 = o.tiers === 3 ? top - 0.03 : top - 0.01, y0 = y1 - 0.035, g = frames[4];
+    const band = [[1, y0], [1.01, y0], [1.01, y1], [1, y1]];
+    lathe(band, span[0], g.thc - g.fa - 1);
+    lathe(band, g.thc + g.fa + 1, span[1]);
   }
 
   if (n > 1) {
@@ -463,6 +495,11 @@ void main() {
       float edge = uH - .1 - .066 * uLight.y / (length(uLight.xz) * max(facing, .04)), bw = fwidth(vU.y) * 1.5;
       c = mix(c, vS, (facing > 0. ? smoothstep(edge - bw, edge + bw, vU.y) : 0.) * .75);
     }
+    if (role > 2.5 && role < 4.5 && vU.y >= 0.) {
+      // the gate's leaves are boards: their joints, upright, faded where thinner than a pixel
+      float g = vU.x / .03, w = fwidth(g), f = fract(g);
+      c *= 1. - .28 * (1. - smoothstep(0., w * 1.4, min(f, 1. - f))) * clamp(1.6 - w * 7., 0., 1.);
+    }
     // a rim of moonlight on the lit edge, where the drum turns away
     vec3 e = normalize(uEye - vW);
     float rim = pow(1. - max(0., dot(n, e)), 4.) * smoothstep(0., .5, d);
@@ -579,7 +616,7 @@ export function render(out, model, cam, pal, view) {
   gl.uniform1f(u.uCamK, view.camK); gl.uniform1f(u.uR, R); gl.uniform1f(u.uDay, pal.light ? 1 : 0);
   gl.uniform1f(u.uFogN, cam.s * 6); gl.uniform1f(u.uFogD, cam.s * (pal.light ? 26 : 18));
   const lift = view.lift || { door: -9, mix: 0 };
-  gl.uniform3fv(u.uLift, lift.inv ? pal.liftInv : pal.lift); gl.uniform1f(u.uLiftMix, lift.mix); gl.uniform1f(u.uLiftDoor, lift.door);
+  gl.uniform3fv(u.uLift, pal.lift); gl.uniform1f(u.uLiftMix, lift.mix); gl.uniform1f(u.uLiftDoor, lift.door);
   const lights = (view.lights || []).slice(0, 12), PL = new Float32Array(48), PC = new Float32Array(48);
   lights.forEach((l, i) => { PL.set(l.slice(0, 4), i * 4); PC.set(l.slice(4, 8), i * 4); });
   gl.uniform4fv(u.uPL, PL); gl.uniform4fv(u.uPC, PC); gl.uniform1i(u.uNL, lights.length);
