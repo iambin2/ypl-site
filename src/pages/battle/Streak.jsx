@@ -147,13 +147,14 @@ export function DraftBoard({ res, draft, picks, onPick }) {
    which lights the spare lamp. 15장: behind a door stands a party built for it (towerBuild.mjs); no season or rank is shown (2026-11-11,
    the user: "상대 파티 순위 표시는 불필요하므로 UI에서 완전히 제거").
    Each door says what it gives beside its name, in nouns, so the choice reads as the trade-off it is (2026-11-11, the user: "보통 상대
-   강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the gate 램프 +1 and 교환 승급, the strong door 교환 승급 (14장), the even one 보상 없음.
+   강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the gate 램프 +1 and 교환 승급, the strong door 교환 승급 (14장), the even one 없음, each after the
+   same dim 보상 so the two doors read as one line compared (2026-11-11, the user chose draft C over the hairline chips).
    One is chosen, inverted; the key goes through it */
 export function DoorPick({ res, doors, value, onChange }) {
   if (!doors?.length) return null;
   const word = { even: "보통 상대", hard: "강한 상대", gate: "수문장" };
   /* no strip of its own over the doors (2026-11-11: with it the break ran past a phone's stage and the trades lost their last row):
-     each door names itself. The even door is blue and the strong one red, as a bar on its edge, the whole door when chosen
+     each door names itself. The even door is blue and the strong one red, the whole door when chosen (no bar on its edge)
      (2026-11-11, the user: "약한 상대는 푸른 계열, 강한 상대는 붉은 계열"), in the water and fire type colours the site already has */
   return <section className="streak-doors" aria-label="다음 상대">
     <div className={"stack streak-door-row" + (doors.length === 1 ? " one" : "")} role="radiogroup" aria-label="다음 상대">
@@ -161,7 +162,8 @@ export function DoorPick({ res, doors, value, onChange }) {
         className={"streak-door" + (d.kind === "gate" ? " inv" : (d.kind === "hard" ? " type-fire" : " type-water") + (value === i ? " on" : " pn"))}>
         <span className="streak-door-head"><b>{word[d.kind]}</b></span>
         <span className="streak-door-gain" aria-label={d.kind === "even" ? "보상 없음" : d.kind === "hard" ? "이기면 교환 승급" : "이기면 램프 하나와 교환 승급"}>
-          {d.kind === "even" ? <span className="streak-gain none">보상 없음</span>
+          <span className="streak-gain-k" aria-hidden="true">보상</span>
+          {d.kind === "even" ? <span className="streak-gain none">없음</span>
             : <>{d.kind === "gate" && <span className="streak-gain"><i className="lamp" aria-hidden="true" />램프 +1</span>}<span className="streak-gain">교환 승급</span></>}
         </span>
         {d.species.length > 0 && <span className="streak-door-six">{d.species.map(s => <img key={s} src={spriteUrl(s)} alt={nameOf(res, s)} draggable="false" onError={onSpriteError()} />)}</span>}

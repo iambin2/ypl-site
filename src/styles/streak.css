@@ -180,18 +180,20 @@
 .streak-door { display: grid; align-content: space-between; gap: var(--s2); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--pad); color: var(--lit); text-align: left; transition: background-color var(--move-tone); }
 .streak-door.inv { background: var(--lit); color: var(--ground); }
 /* the even door blue and the strong one red (2026-11-11, the user asked for the two told apart by hue): the type colours' water and
-   fire as a bar on the door's left edge, and as the whole door once it is the one chosen, its words white in both themes as on a
-   move's key */
-.streak-door:is(.type-water, .type-fire) { position: relative; }
-.streak-door:is(.type-water, .type-fire)::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--s1); background: var(--type); }
+   fire as the whole door once it is the one chosen, its words white in both themes as on a move's key. No bar on the edge
+   (2026-11-11, the user: "보통 상대와 강한 상대의 상호작용 버튼 왼쪽의 색깔 줄" removed) */
 .streak-door.on { background: var(--type); color: var(--lit); }
 :root[data-theme="light"] .streak-door.on { color: var(--ground); }
 .streak-door.on .streak-gain.none { color: inherit; }
 .streak-door-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); font-size: var(--t15); line-height: var(--l15); }
 .streak-door-head > b { display: inline-flex; align-items: center; gap: var(--s2); min-width: 0; white-space: nowrap; }
-.streak-door-gain { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1); min-height: var(--s5); }
-.streak-gain { display: inline-flex; align-items: center; gap: var(--s1); height: var(--s5); padding: 0 var(--s1); outline: var(--hair) solid currentColor; outline-offset: calc(var(--hair) * -1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; white-space: nowrap; }
-.streak-gain.none { outline: none; padding: 0; color: var(--mute); }
+/* what a door gives as one line, 보상 then its value, the same on every door so the two compare in place (2026-11-11, draft C):
+   the label dim and regular, the value lit and bold; on a filled door both take the door's words and only the weight parts them */
+.streak-door-gain { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: var(--s5); font-size: var(--t12); line-height: var(--l12); }
+.streak-gain-k { color: var(--dim); white-space: nowrap; }
+.streak-door:is(.on, .inv) .streak-gain-k { color: inherit; }
+.streak-gain { display: inline-flex; align-items: center; gap: var(--s1); font-size: var(--t12); line-height: var(--l12); font-weight: 600; white-space: nowrap; }
+.streak-gain.none { color: var(--mute); }
 .streak-door.inv .streak-gain.none { color: var(--ground); opacity: var(--opacity-disabled); }
 .streak-trades-head > .streak-gain { margin-left: var(--s2); color: var(--lit); }
 .streak-door-six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--seam); }
