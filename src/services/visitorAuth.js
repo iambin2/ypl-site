@@ -130,7 +130,7 @@ async function asAccount(body) {
   }).catch(() => null);
   if (!response) throw Object.assign(new Error("연결이 끊겼습니다. 연결을 확인하고 다시 시도해 주세요."), { status: 0 });
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status, reason: json.reason });
   return json;
 }
 /* a run begins with its draft (2026-11-11, BATTLE_STREAK.md 13장): { run, draft }, the candidates of each tier. daily: 오늘의 탑 */

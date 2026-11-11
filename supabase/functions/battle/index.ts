@@ -550,7 +550,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   async streakDraft({ picks, daily }, _again, req) {
     const user = await userOf(req!);
     const run = await rpc("streak_active_run", { p_user: user, p_daily: Boolean(daily) });
-    if (!run?.offer?.draft || run.battle_id) refuse(409, "고를 파티가 없습니다. 도전을 다시 시작해 주세요.");
+    if (!run?.offer?.draft || run.battle_id) refuse(409, "고를 파티가 없습니다. 도전을 다시 시작해 주세요.", { reason: "gone" });
     const party = draftParty(STREAK_FORMAT, run.offer.draft, Array.isArray(picks) ? picks.map(String) : []);
     if (party === "pick") refuse(409, "급마다 후보 가운데 하나씩 골라 주세요.");
     if (party === "mega") refuse(409, "메가진화 포켓몬은 하나만 데려갈 수 있습니다.");

@@ -221,7 +221,7 @@ export function useAccount() {
 /* this device's run, read again from its game: playing (a game on), resting (the game ended and the run goes on: won, or lost with a
    lamp left; the next game not yet opened), or none (null). A game that ended while its player was away (the clock) has told its
    seat nothing, so the seat asks once (viewBattle keeps the run's answer) */
-function useRun(daily = false) {
+function useRun(daily = false, seen = 0) {
   const [run, setRun] = useState(null);
   useEffect(() => {
     setRun(null);
@@ -238,7 +238,7 @@ function useRun(daily = false) {
       if (on && typeof told?.won === "boolean" && !told.ended) setRun({ ...of(told, false), again: !told.won });
     }, () => {});
     return () => { on = false; };
-  }, [daily]);
+  }, [daily, seen]);
   return run;
 }
 
@@ -276,7 +276,10 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
      that day, ranked by the day. One of each may go on at once */
   const [kind, setKind] = useState("month");
   const daily = kind === "day";
-  const run = useRun(daily);
+  /* seen: this device's run and draft read again, when another tab of it changes them (a draft picked in one tab left the others
+     showing it, and their 출발 was refused) or when the battle function says the draft is gone */
+  const [seen, setSeen] = useState(0);
+  const run = useRun(daily, seen);
   const [draft, setDraft] = useState(() => readStreakDraft(false));
   const [picks, setPicks] = useState([]);
   const [door, setDoor] = useState(0);
@@ -290,6 +293,12 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
   const [round, setRound] = useState(0);
   const month = monthOf(back), other = monthOf(back ? 0 : 1);
   useEffect(() => { setDraft(readStreakDraft(daily)); setPicks([]); setDoor(0); setError(""); }, [daily]);
+  useEffect(() => {
+    const changed = e => { if (!e.key || e.key.startsWith("ypl-battle:")) setSeen(n => n + 1); };
+    window.addEventListener("storage", changed);
+    return () => window.removeEventListener("storage", changed);
+  }, []);
+  useEffect(() => { if (seen) setDraft(readStreakDraft(daily)); }, [seen]);
   useEffect(() => {
     let on = true;
     setBoard(undefined);
@@ -335,7 +344,14 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
   // the draft picked: the tower stands again with the party on its balcony, and the first game is gone into on it
   const depart = () => {
     flushSync(() => setEntering(true));
-    goInto(async () => keepStreakStart(await pickStreakDraft(picks, daily)), 0);
+    goInto(async () => {
+      try { return keepStreakStart(await pickStreakDraft(picks, daily)); } catch (e) {
+        if (e.reason !== "gone") throw e;
+        // the run left its draft (picked in another tab or on another device): drop it and show the run as it stands
+        keepStreakDraft(null, daily); setSeen(n => n + 1);
+        throw new Error("이미 출발한 도전입니다.");
+      }
+    }, 0);
   };
   const resume = () => goInto(run.playing ? async () => ({ id: run.id }) : () => streakNextGame(run.id, null, door), run.playing ? null : run.wins, Boolean(run?.again));
   /* until the account can play, a battle with the computer stands beside the key, so a first visitor plays at once instead of waiting
