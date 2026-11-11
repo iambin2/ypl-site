@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { CPU_NAME, formatId, randomTeam, readCpuRecord, readout, startBattle, choose, replay, setPool } from "../supabase/functions/battle/engine.mjs";
-import { createCpu, habit, quickChoice, revealed } from "../src/services/battleCpu.js";
+import { chanceToHit, createCpu, habit, quickChoice, revealed } from "../src/services/battleCpu.js";
 import { LEVELS } from "../src/services/cpuLevels.js";
 
 // a seeded random, so a failure plays the same again
@@ -120,6 +120,23 @@ test("the computer never plays a move that does nothing to what stands in front 
         assert.ok(choose(battle, null, side, choice).ok, `${side} ${choice}`);
       }
     }
+  }
+});
+
+test("a move that may miss is weighed by its chance to hit: with a sure finish and a 70% one, the computer takes the sure one", () => {
+  const formatid = formatId("m-c", "singles");
+  const set = (species, ability, item, moves, nature, evs) => ({ name: "", species, ability, item, moves, nature, evs, level: 50 });
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const cpu = createCpu(formatid, { random: seeded(seed), budgetMs: 60 });
+    const battle = startBattle({ formatid, seed: [seed, 2, 3, 4], p1: { name: "사람", team: [set("Kangaskhan", "Scrappy", "Leftovers", ["Tackle"], "Careful", { hp: 32, spd: 32 })] }, p2: { name: "컴퓨터", team: [
+      set("Alakazam", "Magic Guard", "Life Orb", ["Focus Blast", "Psychic"], "Timid", { spa: 32, spe: 32 }),
+    ] } });
+    choose(battle, null, "p1", "team 1"); choose(battle, null, "p2", "team 1");
+    battle.p1.active[0].hp = 1;
+    const req = battle.p2.activeRequest;
+    assert.equal(chanceToHit(battle, "p2", req, "move 1"), 0.7);
+    assert.equal(chanceToHit(battle, "p2", req, "move 2"), null);
+    assert.equal(cpu.decide(battle, "p2"), "move 2", `seed ${seed}`);
   }
 });
 

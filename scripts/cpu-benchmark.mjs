@@ -5,7 +5,8 @@
 //   node scripts/cpu-benchmark.mjs [--base HEAD] [--games 200] [--kind singles] [--ms 1400] [--parties random] [--a '{}'] [--b '{}']
 //     --base     the version A plays: any git ref (default HEAD, the last commit, so an uncommitted change meets what it changes;
 //                origin/main for what is live, as a local main may lag), or "quick" for the quick player
-//     --parties  random (sample sets), spiced (a third of the attackers holding a Choice item, as people build), or players
+//     --parties  random (sample sets), spiced (a third of the attackers holding a Choice item, as people build), tuned (each
+//                Pokémon one step off its sample set: spread, nature or a move), ranker (the ladder's top teams, singles), or players
 //                (the parties players brought against the computer, read from cpu_battles with SUPABASE_URL and
 //                SUPABASE_SERVICE_ROLE_KEY; they stay in memory, as the table is private)
 //     --a, --b   createCpu options for each side as JSON, e.g. --b '{"reads":false}'
@@ -24,7 +25,9 @@ const ROOT = new URL("../", import.meta.url);
 /* ---------- one process: plays its share of the pairs and reports each game ---------- */
 if ("worker" in args || process.argv.includes("--worker")) {
   const job = await new Promise(resolve => process.once("message", resolve));
-  const { formatId, startBattle, randomTeam } = await import(new URL("supabase/functions/battle/engine.mjs", ROOT));
+  const { formatId, startBattle, randomTeam, setPool, shuffled, validateTeam } = await import(new URL("supabase/functions/battle/engine.mjs", ROOT));
+  const { setFor, member } = await import(new URL("supabase/functions/battle/towerBuild.mjs", ROOT));
+  const { default: RANKER } = await import(new URL("src/data/ranker-teams.json", ROOT), { with: { type: "json" } });
   const { Dex } = await import("@pkmn/sim");
   const B = await import(new URL("src/services/battleCpu.js", ROOT));
   const A = job.base === "quick" ? null : await import(new URL(job.baseFile, ROOT));
@@ -42,11 +45,53 @@ if ("worker" in args || process.argv.includes("--worker")) {
       return { ...m, item };
     });
   };
+  /* tuned: every Pokémon differs from its sample set in one thing, as a person's own build does (BATTLE_COMPUTER.md 7장 4): its two
+     invested stats traded with an uninvested one, its nature turned between power and speed, or one move taken from another of its
+     sample sets. The computer still guesses from the plain sample sets, so a belief that is sure of one set is caught out */
+  const pool = new Map(setPool(formatid).map(e => [e.species, e]));
+  const NATURE = { Adamant: "Jolly", Jolly: "Adamant", Modest: "Timid", Timid: "Modest", Bold: "Calm", Calm: "Bold", Impish: "Careful", Careful: "Impish", Brave: "Adamant", Quiet: "Modest", Relaxed: "Impish", Sassy: "Careful" };
+  const STATS = ["hp", "atk", "def", "spa", "spd", "spe"];
+  const tuned = (team, rnd) => team.map(m => {
+    const evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, ...m.evs };
+    const others = (pool.get(m.species)?.sets || []).flatMap(s => s.moves).filter(x => !m.moves.includes(x));
+    const ways = [
+      () => {
+        const full = STATS.filter(s => evs[s] >= 30), empty = STATS.filter(s => evs[s] <= 2);
+        if (!full.length || !empty.length) return null;
+        const a = full[Math.floor(rnd() * full.length)], b = empty[Math.floor(rnd() * empty.length)];
+        return { ...m, evs: { ...evs, [a]: evs[b], [b]: evs[a] } };
+      },
+      () => (NATURE[m.nature] ? { ...m, nature: NATURE[m.nature] } : null),
+      () => {
+        if (!others.length) return null;
+        const at = Math.floor(rnd() * m.moves.length), move = others[Math.floor(rnd() * others.length)];
+        return { ...m, moves: m.moves.map((x, i) => (i === at ? move : x)) };
+      },
+    ];
+    for (const i of shuffled([0, 1, 2], rnd)) { const out = ways[i](); if (out) return out; }
+    return m;
+  });
+  // ranker: a whole team from the ladder's top 433 (src/data/ranker-teams.json), each Pokémon on the sample set its item points to
+  const rankerTeam = rnd => {
+    for (let tries = 0; tries < 30; tries++) {
+      const t = RANKER.teams[Math.floor(rnd() * RANKER.teams.length)];
+      const team = t.team.map(m => { const entry = pool.get(m.species), set = entry && setFor(entry, m.item, rnd); return set && member(m.species, set, m.item); });
+      if (team.every(Boolean) && !validateTeam(formatid, team)) return team;
+    }
+    throw new Error("no legal ranker team");
+  };
+  const draw = rnd => {
+    if (job.parties === "ranker") return rankerTeam(rnd);
+    const t = randomTeam(formatid, rnd, { even: true });
+    if (job.parties === "spiced") return spiced(t, rnd);
+    if (job.parties !== "tuned") return t;
+    const off = tuned(t, rnd);
+    return validateTeam(formatid, off) ? t : off;
+  };
   for (const pair of job.pairs) {
     let n = pair * 7919 + 1;
     const rnd = () => { n = (n * 16807) % 2147483647; return n / 2147483647; };
-    const teams = job.players ? [job.players[(pair * 2) % job.players.length], job.players[(pair * 2 + 1) % job.players.length]]
-      : [randomTeam(formatid, rnd, { even: true }), randomTeam(formatid, rnd, { even: true })].map(t => (job.parties === "spiced" ? spiced(t, rnd) : t));
+    const teams = job.players ? [job.players[(pair * 2) % job.players.length], job.players[(pair * 2 + 1) % job.players.length]] : [draw(rnd), draw(rnd)];
     for (const bSide of ["p1", "p2"]) {
       const aSide = bSide === "p1" ? "p2" : "p1";
       const players = {
@@ -84,6 +129,7 @@ if (base !== "quick") {
   baseFile = `src/services/.cpu-base-${base.replace(/[^\w.-]/g, "_")}.js`;
   writeFileSync(new URL(baseFile, ROOT), execFileSync("git", ["show", `${base}:src/services/battleCpu.js`], { cwd: fileURLToPath(ROOT) }));
 }
+if (parties === "ranker" && kind !== "singles") throw new Error("ranker parties are singles teams");
 let players = null;
 if (parties === "players") {
   const { fetchRecords, playerParty } = await import("./learn-cpu-sets.mjs");

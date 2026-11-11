@@ -560,12 +560,25 @@ function settle(state) {
     for (const side of open) if (!state.choose(side, bestSwitches(state, side) || "pass")) return;
   }
 }
-function play(text, side, mine, theirs, seed, rollout) {
+/* lands: our accuracy rolls in the pair's turn forced to hit (true) or miss (false), so a move's chance to miss is weighed instead of
+   settled by steady's coin (hits at 50% or more, misses under). Only the pair's turn: the greedy turn after keeps steady's luck */
+function play(text, side, mine, theirs, seed, rollout, lands) {
   const state = revive(text, seed);
   steady(state);
   const foe = other(side);
+  let forcing = lands != null;
+  if (forcing) {
+    const step = state.actions.hitStepAccuracy;
+    state.actions.hitStepAccuracy = function (targets, pokemon, move) {
+      if (!forcing || pokemon.side.id !== side) return step.call(this, targets, pokemon, move);
+      const chance = state.randomChance;
+      state.randomChance = () => lands;
+      try { return step.call(this, targets, pokemon, move); } finally { state.randomChance = chance; }
+    };
+  }
   if (!state.choose(side, mine)) return null;
   if (theirs && !state.choose(foe, theirs)) return null;
+  forcing = false;
   if (rollout && !state.ended) {
     calcOn(state);
     settle(state);
@@ -710,6 +723,7 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
     const totals = new Float64Array(own.length), counts = new Float64Array(own.length);
     const start = now(), end = start + budget;
     let width = doubles ? 7 : 10;
+    const rows = own.reduce((n, o) => n + (o.hits == null ? 1 : 2), 0);
     for (let n = 0; n < 24 && (n < 1 || now() < end); n++) {
       const state = calcOn(sample(battle, side, n === 0));
       const foeReq = state[foe].activeRequest;
@@ -723,10 +737,16 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
         const t = now();
         play(text, side, own[0].choice, theirs[0].choice, seed, rollout);
         const cell = Math.max(0.05, now() - t);
-        width = Math.max(2, Math.min(width, Math.floor((1.2 * budget) / (cell * own.length))));
+        width = Math.max(2, Math.min(width, Math.floor((1.2 * budget) / (cell * rows))));
       }
       theirs = theirs.slice(0, width);
-      const matrix = own.map(a => theirs.map(b => play(text, side, a.choice, b.choice, seed, rollout)));
+      // a choice that may miss is played both ways and weighed by its chance to hit
+      const cell = (a, b) => {
+        if (a.hits == null) return play(text, side, a.choice, b.choice, seed, rollout);
+        const hit = play(text, side, a.choice, b.choice, seed, rollout, true), miss = play(text, side, a.choice, b.choice, seed, rollout, false);
+        return hit == null || miss == null ? null : a.hits * hit + (1 - a.hits) * miss;
+      };
+      const matrix = own.map(a => theirs.map(b => cell(a, b)));
       // a choice the engine refused on this copy counts as the worst of its row, so it is never preferred for it
       const clean = matrix.map(row => { const ok = row.filter(v => v != null); const floor = ok.length ? Math.min(...ok) : -100; return row.map(v => v ?? floor); });
       const { col } = equilibrium(clean);
@@ -778,7 +798,7 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
     const playable = hinted ? all.filter(o => revive(text).choose(side, o.choice)) : all;
     // a move that does nothing to what stands in front is never played as a read on a switch; only when nothing else is left
     const live = playable.filter(o => !idle(state, side, o.choice, seedOf(random)));
-    const own = live.length ? live : playable.length ? playable : all;
+    const own = (live.length ? live : playable.length ? playable : all).map(o => ({ ...o, hits: chanceToHit(state, side, req, o.choice) }));
     if (own.length <= 1) return own[0]?.choice || "move 1";
     /* a switch has to be clearly better than staying, as a ranker sees it: the search looks one turn on, so it never sees that the
        Pokémon it brings in will want out again, and two that each lose to the foe were switched back and forth, each taking the hit
@@ -793,6 +813,21 @@ export function createCpu(formatid, { random = Math.random, budgetMs, rollout = 
   }
 
   return { decide, guesses: name => hypotheses.get(name), memory: () => ({ hypotheses: [...hypotheses], before }) };
+}
+
+/* the chance a choice's moves all land by their listed accuracy, or null when nothing in it can miss (a 70% move into a slower foe was
+   played as a sure hit, the same as a 100% one). ponytail: listed accuracy only; accuracy and evasion stages, Wide Lens, Compound Eyes,
+   weather (Thunder in rain) and Blizzard in snow are not read, and two uncertain moves in doubles share one coin (both hit or both miss) */
+export function chanceToHit(state, side, req, choice) {
+  let p = 1;
+  choice.split(", ").forEach((part, i) => {
+    const m = /^move (\d+)/.exec(part);
+    const user = state[side].active[i];
+    if (!m || !user || user.hasAbility?.("noguard")) return;
+    const move = state.dex.moves.get(req.active[i]?.moves[m[1] - 1]?.id);
+    if (typeof move.accuracy === "number" && move.accuracy < 100) p *= move.accuracy / 100;
+  });
+  return p < 1 ? p : null;
 }
 
 // every way to fill the places a forced switch leaves (a place that must pass passes)
