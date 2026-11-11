@@ -151,6 +151,13 @@ export default function Modal({ title, hint, children, onClose, className = "", 
         });
       } else slide(0, v);
     };
+    /* a finger pulling the sheet down is ours, not the browser's: left to it, the browser took the same pull as a pan (its toolbar
+       moving, pull to refresh, the scroll at the top) and cancelled our pointer mid-drag, so the sheet jumped back and forth.
+       pointermove runs first, so drag is already dropped when the pull is the body's own scroll upward */
+    const hold = e => {
+      if (!drag || e.touches.length !== 1 || !e.cancelable) return;
+      if (drag.on || e.touches[0].clientY > drag.y0) e.preventDefault();
+    };
     const swallow = e => { if (dragged) { e.stopPropagation(); e.preventDefault(); } };
     const key = e => {
       if (e.key !== "Escape") return;
@@ -159,6 +166,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
       if (live[live.length - 1] === overlay) closeRef.current?.();
     };
     sheet.addEventListener("pointerdown", down);
+    window.addEventListener("touchmove", hold, { passive: false });
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
@@ -166,6 +174,7 @@ export default function Modal({ title, hint, children, onClose, className = "", 
     window.addEventListener("keydown", key);
     return () => {
       sheet.removeEventListener("pointerdown", down);
+      window.removeEventListener("touchmove", hold);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);

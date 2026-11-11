@@ -97,6 +97,10 @@
    browser without it keeps the start) */
 .streak-break:has(> .streak-recap) { align-content: start; align-content: safe center; }
 .streak-recap { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* with the doors under it (a lost game while a lamp is left), the doors are what is pressed next: they keep their height and the
+   recap gives up its own, scrolling inside, so the doors are never under the fold (2026-11-11, at 390 the doors stood cut) */
+.streak-break:has(> .streak-recap):has(> .streak-doors) { grid-template-rows: auto minmax(0, auto) auto; }
+.streak-break > .streak-recap:has(~ .streak-doors) { min-height: 0; overflow: hidden auto; overscroll-behavior: contain; }
 .streak-recap .bt-card-hp { display: none; }
 @media (max-width: 639px) {
   .streak-recap .bt-card { gap: var(--s2); padding: var(--s2); }
@@ -175,6 +179,14 @@
 .streak-door-row.one { grid-template-columns: minmax(0, 1fr); }
 .streak-door { display: grid; align-content: space-between; gap: var(--s2); min-width: 0; min-height: var(--h-row2); padding: var(--s2) var(--pad); color: var(--lit); text-align: left; transition: background-color var(--move-tone); }
 .streak-door.inv { background: var(--lit); color: var(--ground); }
+/* the even door blue and the strong one red (2026-11-11, the user asked for the two told apart by hue): the type colours' water and
+   fire as a bar on the door's left edge, and as the whole door once it is the one chosen, its words white in both themes as on a
+   move's key */
+.streak-door:is(.type-water, .type-fire) { position: relative; }
+.streak-door:is(.type-water, .type-fire)::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--s1); background: var(--type); }
+.streak-door.on { background: var(--type); color: var(--lit); }
+:root[data-theme="light"] .streak-door.on { color: var(--ground); }
+.streak-door.on .streak-gain.none { color: inherit; }
 .streak-door-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); font-size: var(--t15); line-height: var(--l15); }
 .streak-door-head > b { display: inline-flex; align-items: center; gap: var(--s2); min-width: 0; white-space: nowrap; }
 .streak-door-gain { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1); min-height: var(--s5); }

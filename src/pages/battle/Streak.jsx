@@ -144,23 +144,22 @@ export function DraftBoard({ res, draft, picks, onPick }) {
 
 /* the doors to the next game (2026-11-11, 13장): two doors, each with the six behind it as a team preview shows them (the even foe
    and the strong one, a band of ranks up, which lets the trade reach a tier up when beaten), or one shut door, the gatekeeper's, which
-   lights the spare lamp. 14장: behind a door stands a ranker's team, its season and rank at the door's right where the floor's type
-   stood.
+   lights the spare lamp. 14장: behind a door stands a ranker's team; its season and rank are not shown (2026-11-11, the user:
+   "상대 파티 순위 표시는 불필요하므로 UI에서 완전히 제거").
    Each door says what it gives beside its name, in nouns, so the choice reads as the trade-off it is (2026-11-11, the user: "보통 상대
    강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the gate 램프 +1 and 교환 승급, the strong door 교환 승급 (14장), the even one 보상 없음.
    One is chosen, inverted; the key goes through it */
-// a ranker team named by its season and its rank there, as the open data has it (14장): M-7 32위
-const rankWords = t => `${t.season} ${t.rank}위`;
 export function DoorPick({ res, doors, value, onChange }) {
   if (!doors?.length) return null;
   const word = { even: "보통 상대", hard: "강한 상대", gate: "수문장" };
   /* no strip of its own over the doors (2026-11-11: with it the break ran past a phone's stage and the trades lost their last row):
-     each door names itself and carries its team's season and rank at its right */
+     each door names itself. The even door is blue and the strong one red, as a bar on its edge, the whole door when chosen
+     (2026-11-11, the user: "약한 상대는 푸른 계열, 강한 상대는 붉은 계열"), in the water and fire type colours the site already has */
   return <section className="streak-doors" aria-label="다음 상대">
     <div className={"stack streak-door-row" + (doors.length === 1 ? " one" : "")} role="radiogroup" aria-label="다음 상대">
       {doors.map((d, i) => <button key={d.kind} type="button" role="radio" aria-checked={value === i} onClick={() => onChange(i)}
-        className={"streak-door" + (value === i || d.kind === "gate" ? " inv" : " pn")}>
-        <span className="streak-door-head"><b>{word[d.kind]}</b>{d.rank ? <span className="t12">{rankWords(d)}</span> : null}</span>
+        className={"streak-door" + (d.kind === "gate" ? " inv" : (d.kind === "hard" ? " type-fire" : " type-water") + (value === i ? " on" : " pn"))}>
+        <span className="streak-door-head"><b>{word[d.kind]}</b></span>
         <span className="streak-door-gain" aria-label={d.kind === "even" ? "보상 없음" : d.kind === "hard" ? "이기면 교환 승급" : "이기면 램프 하나와 교환 승급"}>
           {d.kind === "even" ? <span className="streak-gain none">보상 없음</span>
             : <>{d.kind === "gate" && <span className="streak-gain"><i className="lamp" aria-hidden="true" />램프 +1</span>}<span className="streak-gain">교환 승급</span></>}
@@ -548,7 +547,7 @@ export function StreakEnd({ id, won, res = null, onOpen, onOut, enter, goingIn, 
         : <div className="pn streak-next"><b className="t15 streak-named">{gameWords(wins)}<RunLamps lives={lives} /></b><FloorTrack wins={wins} lost /></div>}
     </div>
     {recap && <div className="stack streak-recap" role="group" aria-label="상대 파티">
-      <span className="pn streak-trades-title"><b>상대 파티</b>{seat?.foeRank?.rank ? <span className="t12">{rankWords(seat.foeRank)}</span> : null}</span>
+      <span className="pn streak-trades-title"><b>상대 파티</b></span>
       {recap.map(m => <MonCard key={m.species} res={res} species={m.species} ability={m.ability} item={m.item || null} moves={(m.moves || []).map(name => ({ id: name, pp: "" }))} compact />)}
     </div>}
     {/* a lost run stands as a scene of its own: the floors it climbed as a tower, the highest on top, then the month's first three */}
