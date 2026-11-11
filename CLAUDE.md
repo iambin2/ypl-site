@@ -13,6 +13,8 @@ npm run data:champions  # rebuild the committed src/data/champions-data.json fro
                         # (refresh-champions-data.yml does this weekly and opens a PR when it changed)
 npm run font:slices     # re-cut Freesentation into unicode-range slices (needs pip install -r scripts/requirements-fonts.txt)
                         # (deploy.yml runs it before every build; the result ships but is not committed back)
+npm run build:battle    # bundle the engine into supabase/functions/battle before deploying that function
+npm run bench:cpu -- --games 300  # measure the battle computer (docs/BATTLE_COMPUTER.md)
 ```
 
 Run one test file directly — each is a standalone `node:test` module with no runner config:
@@ -21,11 +23,14 @@ Run one test file directly — each is a standalone `node:test` module with no r
 node tests/championsCore.test.mjs
 ```
 
-There is no linter and no TypeScript. `.jsx`/`.mjs` only.
+There is no linter and no TypeScript. `.jsx`/`.mjs` only, except the Edge Functions' `index.ts` (Deno).
 
 ## Deployment
 
-GitHub Pages via `.github/workflows/deploy.yml` on every push to `main`.
+GitHub Pages via `.github/workflows/deploy.yml` on every push to `main`. Work happens on `design/scoreboard` (local `main` lags behind); a deploy pushes that branch to both `origin/design/scoreboard` and `origin/main`.
+
+- When a change spans the database, the battle function and the site, it goes out in that order: the owner runs the new `docs/db/*.sql` (the Supabase MCP here is read-only; check the result read-only afterwards), then the function, then the site. Until its SQL has run, the client hides a feature rather than failing.
+- The `battle` Edge Function (rooms, official matches, 도전의 탑, the computer on the server) does not deploy with the site: `npm run build:battle`, then `npx supabase functions deploy battle --use-api --no-verify-jwt --project-ref rqffrogcverfjqzjasax`.
 
 - The site is served at the root of the custom domain `league.pokeyonsei.com` (Cloudflare CNAME `league` → `iambin2.github.io`, DNS only; GitHub Pages custom domain set in repo settings), so `vite.config.js` has `base: "/"`. Dropping the domain means going back to `"/ypl-site/"`.
 - A build-only Vite plugin (`productionVersionPlugin`) emits `version.json` and injects a head script that checks it once at page load (reloading onto a newer build) and sets `window.__YPL_BUILD__`. After that `checkBuild` in `src/components/layout/history.js` asks again on returning to the tab and every five minutes; once a newer build is out, the next in-site move (`pushHistory`) loads its address afresh, and the battle room reloads itself when that is safe. A screen file a deploy deleted makes `LazyContent` reload once. Anything touching `index.html` head order or `base` interacts with this.
@@ -45,6 +50,7 @@ React 18 + Vite SPA, no router library and no state library.
 - **`src/storage.js`** is a three-tier data adapter — `window.storage` (Claude artifact) → Supabase → `localStorage` — exposed as `STORAGE_MODE`. It serves the key/value `site_data` table only, not the normalized schema.
 - **`src/styles/`** is plain CSS, 21 files imported in order by `src/main.jsx`: `tokens.css` is the foundation (the scoreboard tokens, both themes via `<html data-theme>`, base elements, panels, lamps, motion), `board.css` the shared parts, then one file per screen. Theme is a required product feature; never hardcode a color that exists as a token.
 - **Shell** (`src/components/layout/`): top bar, phone tab bar, `history.js` (history index for back direction and scroll restore). The bars stand still; nothing is tied to the scroll. `src/components/common/Modal.jsx` is the one sheet/dialog; pages portal into `.ypl`.
+- **Battle** (`src/pages/BattlePage.jsx`, `src/pages/battle/`): Showdown's engine (`@pkmn/sim`) in the browser and in `supabase/functions/battle`; the stage is one WebGL2 canvas (`gl.js`, `arena.js`), and 도전의 탑 is its own scene (`Streak.jsx`, `tower.js`, `towerGL.js`). 도전의 탑's rules are `docs/BATTLE_STREAK.md`; its code and data keep the old name, streak (`kind` streak, `streak_runs`).
 - **Battle computer** (`src/services/battleCpu.js`, run in `src/pages/battle/cpu.worker.js`): read `docs/BATTLE_COMPUTER.md` before changing it. It is binding: every change to how the computer chooses is measured with `npm run bench:cpu -- --games 300` against the last commit, kept only by that chapter's rules, and logged in its experiment table, failures included. The weekly `learn-cpu-sets.yml` blends players' parties into `src/data/random-sets.json` through a pull request.
 
 ### Data source boundary (read `docs/ARCHITECTURE.md` before touching data code)
@@ -67,11 +73,11 @@ Client-side checks are UX guards only. The RPC/DB layer is the integrity boundar
 
 ## Product and design constraints
 
-When changing or adding UI, read `DESIGN.md` first and use only its tokens and the existing components. Its "Composing a screen" chapter (and "Judging the stage" in Battle) is the owner's eye written down: every screen is checked against it at 390 and 1440 in both themes before it is shown. If a new value or pattern seems needed, propose updating `DESIGN.md` first; never invent one in place.
+When changing or adding UI, read `DESIGN.md` first and use only its tokens and the existing components. Its "Composing a screen" chapter (and "Judging the stage", "Judging the play screen" and "Judging a game" in Battle) is the owner's eye written down: every screen is checked against it at 390 and 1440 in both themes before it is shown. If a new value or pattern seems needed, propose updating `DESIGN.md` first; never invent one in place.
 
 `PRODUCT.md` and `DESIGN.md` are binding, not background reading, and a frontend change must not alter data behavior.
 
-The visual system is **YPL Scoreboard**, live in production since 2026-11-03: a navy board switched off, facts lit on square panels joined by a 2px seam, real seven-segment numbers, one amber lamp for what is live. `DESIGN.md` is its only authority; its Philosophy chapter says why the site is a board (it reports and never decorates, what is happening now comes first, emphasis is light, hardware not graphics, it switches on and does not fly, one ratio decides). The built site is the reference; there are no drafts. `tests/designLaw.test.mjs` holds every file to the strict rules (only scoreboard tokens, lengths on the series). Screens are built from the shared parts in `src/components/common/Board.jsx` and `src/styles/board.css` (rows, counters, a Pokémon on its floor, fields, choices, tabs, chips, the dock, toasts); a new screen uses those, not new values. Every screen, the admin included, is on the scoreboard, the battle included: DESIGN.md "Battle" lets only the arena scene and its effects step aside (`battle-stage.css` is left out of `tests/designLaw.test.mjs`, and `src/pages/battle/stageFx.js` may animate on its own); everything a player reads or presses on the match is `battle.css` under every rule. Result entry's game scores and 불참 switch on once `docs/db/match_outcome.sql` is run (score columns, a trigger that clears them when a winner changes, `set_normalized_match_outcome`, and the single winner RPC accepting `forfeit`); until then the client hides them.
+The visual system is **YPL Scoreboard**, live in production since 2026-11-03: a navy board switched off, facts lit on square panels joined by a 2px seam, real seven-segment numbers, one amber lamp for what is live. `DESIGN.md` is its only authority; its Philosophy chapter says why the site is a board (it reports and never decorates, what is happening now comes first, emphasis is light, hardware not graphics, it switches on and does not fly, one ratio decides). The built site is the reference; there are no drafts. `tests/designLaw.test.mjs` holds every file to the strict rules (only scoreboard tokens, lengths on the series). Screens are built from the shared parts in `src/components/common/Board.jsx` and `src/styles/board.css` (rows, counters, a Pokémon on its floor, fields, choices, tabs, chips, the dock, toasts); a new screen uses those, not new values. Every screen, the admin included, is on the scoreboard, except the battle screen: DESIGN.md "Battle" makes it a game, so `battle.css`, `battle-stage.css` and `src/pages/battle/` are left out of `tests/designLaw.test.mjs` and keep only the site's colours (the tokens, both themes) and taste, judged by its "Judging the stage", "Judging the play screen" and "Judging a game". The sheets, dialogs and toasts over a battle, and `streak.css` (도전의 탑's page parts), stay under every rule. Result entry's game scores and 불참 switch on once `docs/db/match_outcome.sql` is run (score columns, a trigger that clears them when a winner changes, `set_normalized_match_outcome`, and the single winner RPC accepting `forfeit`); until then the client hides them.
 
 - One ratio, phi, sets every measure ("The golden law" in `DESIGN.md`): space is 4 times a Fibonacci number plus the 2px seam, four type sizes, segment cells 1 to phi, golden splits, time on the same ratio.
 - Light is the only emphasis: lit, dim, muted, off, and inverted for the one decided, current or chosen thing. One hue, navy; words are navy in light. Amber is a lamp for live things and never text. No gradient, glow, blur, shadow or radius.
@@ -83,6 +89,19 @@ The visual system is **YPL Scoreboard**, live in production since 2026-11-03: a 
 - Korean copy follows the Voice and tone chapter of `DESIGN.md`: 합니다체, noun labels, no exclamation marks, no em dashes, **no middle-dot (·) separators**.
 - `tests/designLaw.test.mjs` enforces the measurable rules on all CSS and inline styles. When it fails, fix the value; add to its `EXCEPT` only with a real reason from DESIGN.md, never to silence it.
 - Phone-first: the venue phone is the primary screen.
+
+## Working with the owner
+
+Read from the commits' `프롬프트 (사용자 지시):` sections. Design judgement lives in `DESIGN.md`; this is how the work is done and reported.
+
+- **Korean, always.** Every reply, progress line, wrap-up recap and button label is Korean, after long technical work and after an English button too; code and identifiers stay as they are. The game is 포켓몬 챔피언스, never 포챔스.
+- **Their words for the steps.** 커밋 is a commit only. 배포, 커밋하고 배포 commit and deploy (Deployment), and 전부 배포 includes what was committed earlier but not deployed. 진행해줘, 이대로 진행 mean do all of it without asking again; 남은 것도, 작게 남은 것도 mean the small leftovers too. A reported bug with 즉시 is fixed, tested and deployed in the same turn.
+- **Drafts before a new look.** A new screen or a redesign starts with 시안 the owner can see (screenshots, a contact sheet), options lettered with a recommendation; they answer with a letter ("b로 진행"). Small fixes go straight in.
+- **Scoring.** Asked to score out of 100 ("객관적인 관점에서"), judge as an expert seeing it for the first time, with no memory of earlier rounds, across the whole system (the transitions, the way in, a whole run), and list the deductions with their points. "100점이 되도록" then means rebuilding what the deductions name, not polishing around them.
+- **Use it before calling it done.** Play the battle, run 도전의 탑 through a trade and a loss, submit the form. When real play is slow, build a test environment instead (PGlite with the real SQL, a harness that always wins, fake-admin routes with writes blocked) rather than waiting ("테스트 환경을 따로 만들어서 하면 더 빠르지 않을까?"). Judge motion and stutter by recorded frames and layout by measured ink, never by a still or by reading CSS. The owner asks "완벽하게 개선했다고 확신할 수 있어?"; answer with what was measured and what was not.
+- **Fix the family.** A reported fault is fixed everywhere its kind appears, in both themes, and in both 일반 배틀 and 도전의 탑 when they share the part (DESIGN.md "Composing a screen" 11).
+- **Originals are looked at, not remembered.** Anything meant to match 포켓몬 챔피언스 (a move, a field, a sound, a battle message) is compared with real footage or recordings found by search; sound is measured as spectrograms and numbers. A download asks first with its name, source and size and stays in the scratchpad. Words only Showdown prints never reach a player.
+- **Speed and cleanup change nothing visible.** Optimisation and refactoring keep every function and every scene exactly as it was ("지금의 기능과 연출은 100% 똑같이 작동해야"). A build warning is read as a failure, and code, styles and screenshots a change leaves unused go with it.
 
 ## Commit messages
 
