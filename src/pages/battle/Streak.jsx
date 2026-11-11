@@ -15,8 +15,8 @@ import { Bang, Chips, Counter, Dock, Podium, Row, SectionHead, Toast } from "../
 import StandTable from "../../components/common/StandTable.jsx";
 import { siteConfirm } from "../../components/common/SiteDialog.jsx";
 import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
-import { currentStreakGame, keepStreakDraft, keepStreakStart, readBattleRow, readSeat, readStreakDraft, streakNextGame, viewBattle, warmBattle } from "../../services/battleService.js";
-import { VISITOR_EVENT, myPlayerLink, pickStreakDraft, readDailyBoard, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
+import { currentStreakGame, keepStreakDraft, keepStreakResume, keepStreakStart, readBattleRow, readSeat, readStreakDraft, streakNextGame, viewBattle, warmBattle } from "../../services/battleService.js";
+import { VISITOR_EVENT, myPlayerLink, pickStreakDraft, readDailyBoard, resumeStreakRun, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
 import { STREAK_LIVES, STREAK_STEP, floorGame, gameWords, streakFloor, streakMaster, swapTier } from "../../services/streak.js";
 import { nameOf, typesOf } from "./Stage.jsx";
 import { DUR, STAGGER, climb, light, place } from "../../components/common/motion.js";
@@ -298,7 +298,12 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
     window.addEventListener("storage", changed);
     return () => window.removeEventListener("storage", changed);
   }, []);
-  useEffect(() => { if (seen) setDraft(readStreakDraft(daily)); }, [seen]);
+  useEffect(() => {
+    if (!seen) return;
+    const next = readStreakDraft(daily);
+    if (next?.run?.run_id !== draft?.run?.run_id) setPicks([]);
+    setDraft(next);
+  }, [seen]);
   useEffect(() => {
     let on = true;
     setBoard(undefined);
@@ -307,6 +312,9 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
   }, [back, daily, account?.status]);
   const approved = account?.status === "approved";
   useWarm(approved);
+  // the run as the server holds it, so a run started or picked elsewhere is shown here (and 새로 도전 asks before ending it)
+  const sync = () => resumeStreakRun(daily, currentStreakGame(daily)).then(made => { if (keepStreakResume(made, daily)) setSeen(n => n + 1); }, () => {});
+  useEffect(() => { if (approved) sync(); }, [approved, daily]);
   const wins = run?.wins ?? 0;
   const rows = Array.isArray(board) ? board : null;
   const mine = back ? null : rows?.find(r => r.mine);
@@ -348,7 +356,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
       try { return keepStreakStart(await pickStreakDraft(picks, daily)); } catch (e) {
         if (e.reason !== "gone") throw e;
         // the run left its draft (picked in another tab or on another device): drop it and show the run as it stands
-        keepStreakDraft(null, daily); setSeen(n => n + 1);
+        keepStreakDraft(null, daily); setSeen(n => n + 1); sync();
         throw new Error("이미 출발한 도전입니다.");
       }
     }, 0);

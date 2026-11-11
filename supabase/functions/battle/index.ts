@@ -545,6 +545,24 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
     return { id: game.id, token: game.token, side: "p1", run: data };
   },
 
+  /* the account's run as it stands, for a device that does not hold it (2026-11-11): a run started or picked in another tab or on
+     another device left this one with a stale draft or nothing, so its 출발 was refused and its 도전 시작 ended the run unasked.
+     have: the game this device already holds; another game gets p1's seat anew (the other device's token stops working, as the
+     account's own choice). A run waiting on its draft gives the draft. Nothing in the database changes but the seat. */
+  async streakResume({ daily, have }, _again, req) {
+    const user = await userOf(req!);
+    const run = await rpc("streak_active_run", { p_user: user, p_daily: Boolean(daily) });
+    if (!run) return { run: null };
+    const shown = { run_id: run.run_id, wins: run.wins, lives: run.lives, daily: run.daily };
+    if (!run.battle_id) return run.offer?.draft ? { run: shown, draft: shownDraft(run.offer.draft) } : { run: null };
+    if (run.battle_id === String(have ?? "")) return { run: shown, id: run.battle_id, known: true };
+    const { secret } = await read(run.battle_id);
+    const token = newToken();
+    await rpc("battle_set_seat", { p_id: run.battle_id, p_side: "p1", p_entry_id: null, p_player_id: null, p_token_hash: await sha256(token) });
+    const party = Array.isArray(secret.p1_team) ? secret.p1_team.map((m: Record<string, any>) => m.species) : null;
+    return { run: shown, id: run.battle_id, token, side: "p1", wins: run.wins, lives: run.lives, daily: run.daily, party };
+  },
+
   /* the draft picked (2026-11-11): one species from each row of the run's candidates. Asked as the account (the run has no seat yet);
      the party is settled (an item taken twice goes to the set's next one) and checked, then the run's first game opens with it. */
   async streakDraft({ picks, daily }, _again, req) {

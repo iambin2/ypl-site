@@ -92,6 +92,25 @@ export function keepStreakStart(made) {
   keepStreakDraft(null, made.daily);
   return made;
 }
+/* the account's run as the server answered it (resumeStreakRun) kept on this device: a game it did not hold takes its new seat, a
+   draft replaces another run's, and a device whose run has ended drops its draft. Says whether anything changed */
+export function keepStreakResume(made, daily = false) {
+  const draft = readStreakDraft(daily);
+  if (made?.token) {
+    keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: made.wins, game: (made.wins ?? 0) + 1, lives: made.lives, daily: made.daily || null, party: made.party || null });
+    keepStreakGame(made.id, daily);
+    keepStreakDraft(null, daily);
+    return true;
+  }
+  if (made?.draft) {
+    if (draft?.run?.run_id === made.run.run_id) return false;
+    keepStreakDraft({ run: made.run, draft: made.draft }, daily);
+    return true;
+  }
+  if (made?.known || !draft) return false;
+  keepStreakDraft(null, daily);
+  return true;
+}
 /* 다음 판 from an ended game the run rests on (won, or lost with a lamp left: then the same game again): asked by that game's seat (the
    battle function's streakNext), so it can always be asked again; a next game this device already opened is gone to instead of asked
    for twice. swap: { give, take } (species), one of ours for one of the party just beaten, one a won game, a new floor's included
