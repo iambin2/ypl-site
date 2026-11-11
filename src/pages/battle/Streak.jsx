@@ -71,12 +71,12 @@ function FloorTrack({ wins, lost = false, playing = false }) {
 /* the tower on the tab (tower.js): the stage's place holds the run's own scene, the round tower at night with the floor the run will
    go to, its path lit as far as the run has come, the run's party on that floor's balcony and the month's other climbers at their
    floors. Pressing the key plays the going in on this very picture. party: species; climbers: { name, wins, live } */
-function TowerHall({ wins, live, party = null, climbers = null }) {
+function TowerHall({ wins, live, climbers = null }) {
   const ref = useRef(null);
   const floor = streakFloor(wins), at = floorGame(wins);
-  const key = `${floor}|${at}|${live}|${party || ""}|${JSON.stringify(climbers || [])}`;
+  const key = `${floor}|${at}|${live}|${JSON.stringify(climbers || [])}`;
   useLayoutEffect(() => {
-    const el = ref.current, draw = () => standTower(el, { floor, at, live, party, climbers });
+    const el = ref.current, draw = () => standTower(el, { floor, at, live, climbers });
     draw();
     const seen = new ResizeObserver(draw);
     seen.observe(el);
@@ -297,7 +297,6 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
     } catch (e) { setError(e.message); }
     setBusy(false);
   };
-  const party = drafting ? picks.filter(Boolean) : run?.party;
   // the draft picked: the tower stands again with the party on its balcony, and the first game is gone into on it
   const depart = () => {
     flushSync(() => setEntering(true));
@@ -332,7 +331,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
           <div className="streak-scene">
             {drafting && !entering
               ? <DraftBoard res={res} draft={drafting} picks={picks} onPick={(i, sp) => setPicks(p => { const n = [...p]; n[i] = n[i] === sp ? undefined : sp; return n; })} />
-              : <TowerHall key={`${kind}${round}`} wins={wins} live={Boolean(run?.playing)} party={party?.length ? party : null} climbers={climbers} />}
+              : <TowerHall key={`${kind}${round}`} wins={wins} live={Boolean(run?.playing)} climbers={climbers} />}
             {!(drafting && !entering) && <div className="streak-mode"><Chips value={kind} onChange={setKind} label="도전 종류" options={[["month", "이번 달"], ["day", "오늘의 탑"]]} /></div>}
           </div>
           {run && !run.playing && run.doors && <DoorPick res={res} wins={run.wins} doors={run.doors} value={door} onChange={setDoor} />}

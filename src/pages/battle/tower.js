@@ -15,8 +15,8 @@
      is a great double door turned toward us: columns, two arches, the keystone, and the gate's own lamp over it;
    - the stair's nosing is lit as far as the run has come;
    - behind it a sky deepening up from the horizon, a crescent moon and a few stars, nothing else; in front the plaza (above the first
-     floor the floor's wide terrace), the tower's shade at its foot, and on the tab the run's own party standing on it, each on its
-     feet with its shadow, while the month's other climbers hang their names at their floors.
+     floor the floor's wide terrace) and the tower's shade at its foot, while the month's other climbers hang their names at their
+     floors. Nothing stands before the tower (2026-11-11, the user: the party in front "오히려 좀 조잡해 보이는데, 제외하고 탑에만 집중").
    Going into a game is a scene on this picture, never a cut:
      1. between games the tower switches on over the stage, foot first;
      2. the game just won lights and a spark of the lamp runs along the path to the next lamp, which turns amber; after a gatekeeper
@@ -28,7 +28,6 @@
    picture; the camera's moves are transforms of a picture already drawn. Reduced motion: the tower stands, then a cut. */
 import { DUR, EASE_IN, EASE_OUT, STAGGER, reduced } from "../../components/common/motion.js";
 import { spriteUrl } from "../../services/teamBuilderCore.js";
-import { standInk } from "../../components/common/inkCentre.js";
 import { floorType } from "../../services/streak.js";
 import { sfx } from "./sfx.js";
 
@@ -47,14 +46,13 @@ const f1 = n => n.toFixed(1);
 /* ---------- the picture ---------- */
 let uid = 0;
 /* the tower in a box: the floor stood on has its foot ring at base, radius r0 and height h0; floor k is that floor scaled R^k about the
-   apex. With the party in front (the tab) the tower stands higher, so they stand on the ground before it, under its doors. The tower
-   stands a little left of the middle, the moon balancing it at the right (2026-11-11, the sixth pass: dead centre it read as a
+   apex. On the tab the tower stands lower in its box, the scene's subject alone. It stands a little left of the middle, the moon balancing it at the right (2026-11-11, the sixth pass: dead centre it read as a
    specimen, not a scene) */
-function measure(W, H, hall, party = false) {
+function measure(W, H, hall) {
   const phone = W < 520;
   const r0 = Math.min(W * (phone ? .3 : .21), H * .29);
   const h0 = r0 * (phone ? .84 : .8);
-  const base = H * (hall && party ? .58 : .74);
+  const base = H * (hall ? .8 : .74);
   return { W, H, r0, h0, base, ax: W * (phone ? .47 : .45), ay: base - h0 / (1 - R), hall, phone, horizon: base - r0 * E * 1.4, id: ++uid };
 }
 const sc = k => R ** k;
@@ -257,8 +255,7 @@ function floorSVG(m, k, st) {
 }
 
 /* above the first floor the floor stood on has its terrace, as wide as the view: its floor runs from the tower's foot to the horizon, its
-   parapet along the far edge with the sea of cloud beyond it, so the floors under it are out of sight and the party stands on it as on
-   the plaza. Drawn after the floor under it and before the floor itself, so the drum stands on it */
+   parapet along the far edge with the sea of cloud beyond it, so the floors under it are out of sight. Drawn after the floor under it and before the floor itself, so the drum stands on it */
 function terraceSVG(m) {
   const posts = [];
   for (let x = 4; x < m.W; x += m.phone ? 10 : 14) posts.push(`M${f1(x)},${f1(m.horizon)}V${f1(m.horizon - (m.phone ? 7 : 9))}`);
@@ -293,52 +290,30 @@ function climbersHTML(m, st) {
 }
 const escapeHTML = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
 
-/* the run's party before the tower (the tab only), on the ground in a shallow arc a step out from the tower's foot: the lead in the
-   middle, a little larger and nearest, the others to either side in turn, each farther one a little smaller and higher; each on its
-   feet (inkCentre.js standInk) with its shadow under it, in the scene's light (rows in depth put them over the tower's base and
-   scattered them, 2026-11-11) */
-const ORDER = [0, -1, 1, -2, 2, -3];
-function partyHTML(m, st) {
-  if (!m.hall || !st.party?.length) return "";
-  const n = Math.min(6, st.party.length), size = m.phone ? 54 : 78, rx = Math.min(m.r0 * 1.95, m.W * .42), ry = rx * E * 1.3;
-  const slots = ORDER.slice(0, n), span = Math.max(1, ...slots.map(Math.abs));
-  const spots = st.party.slice(0, n).map((species, i) => {
-    const t = (slots[i] / (span + .4)) * 1.15, z = size * (i === 0 ? 1.08 : .86 + .14 * Math.cos(t));
-    return { species, x: m.ax + rx * Math.sin(t), y: m.base + m.r0 * E * 2.2 + ry * Math.cos(t), z };
-  }).sort((a, b) => a.y - b.y);
-  const shade = spots.map(p => `<ellipse cx="${f1(p.x)}" cy="${f1(p.y)}" rx="${f1(p.z * .3)}" ry="${f1(p.z * .07)}"/>`).join("");
-  return `<div class="tw-front"><svg class="tw-feet" width="${m.W}" height="${m.H}" viewBox="0 0 ${m.W} ${m.H}" aria-hidden="true">${shade}</svg>`
-    + spots.map(p => `<span class="tw-mon" style="left:${f1(p.x - p.z / 2)}px;top:${f1(p.y - p.z)}px;width:${f1(p.z)}px;height:${f1(p.z)}px"><img src="${spriteUrl(p.species)}" alt="" draggable="false"></span>`).join("") + `</div>`;
-}
-
 /* the tower drawn in el (the tab's hall, or the scene laid over a stage). floor: the floor stood on; at: its game (1 to 5, 6 the floor
-   won whole); live: a game is gone into or played (its window amber) or the run rests (lit dim). The tab adds party (the run's six)
-   and climbers ({ name, wins, live }) */
+   won whole); live: a game is gone into or played (its window amber) or the run rests (lit dim). The tab adds climbers
+   ({ name, wins, live }) */
 export function drawTower(el, st) {
   const W = el.clientWidth, H = el.clientHeight;
   if (!W || !H) return false;
-  const m = measure(W, H, el.classList.contains("tw-hall"), Boolean(st.party?.length));
+  const m = measure(W, H, el.classList.contains("tw-hall"));
   const svg = (cls, body) => `<svg class="${cls}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${body}</svg>`;
   const body = floorsOf(m).map(k => (k === 0 && st.floor > 1 ? terraceSVG(m) : "") + floorSVG(m, k, st)).join("");
   el.innerHTML = svg("tw-sky", night(m, st.floor)) + twinkleHTML(m)
     + `<div class="tw-cam">${svg("tw-body", shadeDefs(m) + `<defs><linearGradient id="tw-ground-${m.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient></defs>` + body)}${m.hall ? climbersHTML(m, st) : ""}</div>`
-    + cloudsHTML(m) + partyHTML(m, st);
-  for (const img of el.querySelectorAll(".tw-mon > img")) {
-    img.addEventListener("error", () => { img.style.visibility = "hidden"; }, { once: true });
-    if (img.complete) standInk(img); else img.addEventListener("load", () => standInk(img), { once: true });
-  }
+    + cloudsHTML(m);
   el.tower = { m, st: { ...st } };
   return true;
 }
 const sameState = (a, b) => a.floor === b.floor && a.at === b.at && a.live === b.live
-  && String(a.party || "") === String(b.party || "") && JSON.stringify(a.climbers || []) === JSON.stringify(b.climbers || []);
+  && JSON.stringify(a.climbers || []) === JSON.stringify(b.climbers || []);
 // the tab's hall draws itself and lights foot first the first time; a resize or a new state draws it again where it stands
 export function standTower(el, st) {
   const was = el.tower;
   if (was && was.m.W === el.clientWidth && was.m.H === el.clientHeight && sameState(was.st, st)) return;
   if (drawTower(el, st) && !was) lightUp(el);
 }
-/* switching on: the night first, then the floors from the foot up a row's step apart, then the party on the balcony, each rising
+/* switching on: the night first, then the floors from the foot up a row's step apart, then the climbers' plaques, each rising
    into its light as anything that arrives does */
 function lightUp(el, hold = 0) {
   if (reduced()) return Promise.resolve();
@@ -347,7 +322,7 @@ function lightUp(el, hold = 0) {
     // the night, the moon and the night over the tower's top together, first
     ...[...el.querySelectorAll(".tw-sky, .tw-clouds")].map(x => settled(x.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.light, delay: hold, easing: EASE_OUT, fill: "backwards" }))),
     ...floors.map((g, i) => settled(g.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.light, delay: hold + i * STAGGER.display, easing: EASE_OUT, fill: "backwards" }))),
-    ...[...el.querySelectorAll(".tw-mon, .tw-tag")].map((x, i) => settled(x.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
+    ...[...el.querySelectorAll(".tw-tag")].map((x, i) => settled(x.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
       { duration: DUR.light, delay: hold + floors.length * STAGGER.display + i * STAGGER.row, easing: EASE_OUT, fill: "backwards" }))),
   ];
   return Promise.all(all);
@@ -417,7 +392,7 @@ export async function towerShow(target, { floor, at: game, master = false, climb
   const el = hall ? target : Object.assign(document.createElement("div"), { className: "tw over" });
   if (!hall) { el.setAttribute("aria-hidden", "true"); target.appendChild(el); }
   scene = { el, own: !hall, master };
-  const keep = hall ? { party: el.tower?.st.party, climbers: el.tower?.st.climbers } : {};
+  const keep = hall ? { climbers: el.tower?.st.climbers } : {};
   const now = { ...keep, floor, at: game, live: true };
   // the picture before the step the scene plays: the game just won still the lamp's, or the floor left with its gate still to light
   const before = hall || again ? now : climbing ? { floor: floor - 1, at: 5, live: true } : game > 1 ? { floor, at: game - 1, live: true } : now;
@@ -472,7 +447,7 @@ export async function towerDive() {
     sfx("swoosh", { sec: .5 });
     cam.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { opacity: 0, offset: .786 },
       { transform: `translate(${f1(m.W / 2 - x)}px,${f1(m.H / 2 - y)}px) scale(${F.toFixed(3)})`, opacity: 0 }], { duration: DIVE, easing: INOUT, fill: "forwards" });
-    for (const x2 of el.querySelectorAll(".tw-sky, .tw-front, .tw-clouds, .tw-twinkle")) x2.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE * .618, easing: EASE_IN, fill: "forwards" });
+    for (const x2 of el.querySelectorAll(".tw-sky, .tw-clouds, .tw-twinkle")) x2.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE * .618, easing: EASE_IN, fill: "forwards" });
     await settled(doors.animate([{ transform: `translate(${f1(x - w / 2)}px,${f1(y - h / 2)}px) scale(${(w / m.W).toFixed(4)},${(h / m.H).toFixed(4)})` }, { transform: "none" }],
       { duration: DIVE, easing: INOUT, fill: "backwards" }));
   }

@@ -130,7 +130,7 @@
 .tw.over { z-index: var(--z-sticky); }
 .tw-hall { position: relative; inset: auto; aspect-ratio: 10 / 11; max-height: 72vh; width: 100%; }
 @media (min-width: 640px) { .tw-hall { aspect-ratio: 16 / 10; } }
-.tw > svg, .tw-cam > svg, .tw-front > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.tw > svg, .tw-cam > svg { position: absolute; left: 0; top: 0; overflow: visible; }
 .tw-cam { position: absolute; inset: 0; transform-origin: 0 0; }
 /* the night: the sky deepening up from the horizon, a few stars, a crescent moon; the ground the tower stands on
    on the first floor; in the light theme a pale day with no stars and no moon */
@@ -151,6 +151,7 @@
 .tw-sea { fill: var(--tw-sea); }
 /* the tower's shade on the ground at its foot, so it stands on it */
 .tw-foot { fill: var(--tw-shadow); fill-opacity: .4; }
+:root[data-theme="light"] .tw-foot { fill-opacity: .22; }
 /* the drum, lit across: the stops of tower.js's gradient, from the lit edge round to the shade */
 .tw-body .a { stop-color: var(--tw-a); }
 .tw-body .b { stop-color: var(--tw-b); }
@@ -207,7 +208,7 @@
 /* the gate's leaves in the floor's type colour, a seam of shade between them; beaten, the gate stands open on its lit hall. Over it the
    floor's medallion: a disc in the floor's colour in a stone ring, the gate's lamp at its heart */
 .tw-win .leaves > polygon { fill: color-mix(in srgb, var(--type), var(--ground) 34%); }
-:root[data-theme="light"] .tw-win .leaves > polygon { fill: color-mix(in srgb, var(--type), var(--white) 8%); }
+:root[data-theme="light"] .tw-win .leaves > polygon:not(.lunette) { fill: color-mix(in srgb, var(--type), var(--white) 8%); }
 .tw-win .leaves > .seam { fill: none; stroke: var(--ground); stroke-opacity: .55; }
 .tw-win .leaves > .lunette { fill: color-mix(in srgb, var(--tw-pane), var(--type) 18%); }
 .tw-win .leaves > .transom { fill: none; stroke: var(--tw-stone); }
@@ -242,12 +243,3 @@
 .tw-tag > .flag.live { background: var(--signal); }
 .tw-tag > b { color: var(--lit); font-variant-numeric: tabular-nums; }
 .tw-tag.up { opacity: .62; }
-/* the party before the tower: each in its own square box, its feet on its spot (standInk moves the picture by its ink), its shadow under */
-.tw-front { position: absolute; inset: 0; pointer-events: none; }
-.tw-feet > ellipse { fill: var(--tw-shadow); fill-opacity: .5; }
-:root[data-theme="light"] :is(.tw-foot, .tw-feet > ellipse) { fill-opacity: .22; }
-.tw-mon { position: absolute; display: block; }
-.tw-mon > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
-  /* in the scene's light: a touch darker and cooler for the night, rimmed by the moon at the right */
-  filter: brightness(.84) saturate(.9) drop-shadow(1.5px -1px 0 color-mix(in srgb, var(--lit), transparent 62%)); }
-:root[data-theme="light"] .tw-mon > img { filter: drop-shadow(1.5px -1px 0 rgb(255 255 255 / .7)); }
