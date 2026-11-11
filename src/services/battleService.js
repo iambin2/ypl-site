@@ -76,8 +76,9 @@ function keepRun(id, view) {
   const won = run.won ?? !over;
   const seat = readSeat(id);
   if (over && currentStreakGame(seat?.daily) === id) keepStreakGame(null, seat?.daily);
-  // doors: the doors to the next game ({ kind, species }), reach: how far up its trade goes (2026-11-11)
-  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, lives: run.lives, won, ended: over, ...(run.foe ? { foe: run.foe } : {}), ...(run.doors ? { doors: run.doors, reach: run.reach ?? 0 } : {}) });
+  // doors: the doors to the next game ({ kind, species, season, rank }), reach: how far up its trade goes (2026-11-11); foeRank: the
+  // ranker team the game was played against, { season, rank } (14장)
+  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, lives: run.lives, won, ended: over, ...(run.foe ? { foe: run.foe } : {}), ...(run.foeRank ? { foeRank: run.foeRank } : {}), ...(run.doors ? { doors: run.doors, reach: run.reach ?? 0 } : {}) });
   return view;
 }
 export const viewBattle = id => asSeat(id, "view").then(view => keepRun(id, view));

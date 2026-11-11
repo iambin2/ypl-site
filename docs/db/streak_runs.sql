@@ -45,6 +45,8 @@ create table if not exists public.streak_runs (
 );
 -- 남은 램프. 진행 중인 도전은 하나 이상, 끝난 도전은 꺼진 채(0)이거나 새로 도전으로 끝낸 그때의 수다.
 alter table public.streak_runs add column if not exists lives integer not null default 3 check (lives between 0 and 3);
+-- 2026-11-11 (BATTLE_STREAK.md 14장): 새 도전은 램프 둘로 시작하고, 수문장을 깨면 하나가 다시 켜지되 둘까지다. 검사(0에서 3)는 그대로 둔다.
+alter table public.streak_runs alter column lives set default 2;
 -- 도전이 기다리는 선택(배틀 함수만 읽는다): 시작한 뒤의 드래프트 후보 { draft }, 끝난 판 뒤의 문 { doors, reach }. 판이 열리면 지운다.
 alter table public.streak_runs add column if not exists offer jsonb;
 -- 오늘의 탑이면 그날(KST). 비어 있으면 달의 도전이다.
@@ -219,7 +221,7 @@ begin
   values (p_user, btrim(v_name), p_format_id, (date_trunc('month', now() at time zone 'Asia/Seoul'))::date)
   returning id into v_run;
   perform public.streak_open_battle(v_run, p_id, p_regulation, p_format_id, p_engine, v_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
-  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0, 'lives', 3);
+  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0, 'lives', 2);
 end;
 $$;
 
@@ -304,7 +306,7 @@ as $$
 $$;
 
 -- 9-3. 판이 끝난 뒤(램프 셋, 2026-11-10). 이기면 연승을 하나 올리고, 깬 판이 수문장이면(p_relight, 층의 규칙은 streak.js가
---      알고 배틀 함수가 말한다) 램프 하나가 다시 켜진다(셋까지). 지면 램프 하나가 꺼지고, 남은 램프가 없으면 도전이 끝난다.
+--      알고 배틀 함수가 말한다) 램프 하나가 다시 켜진다(2026-11-11부터 둘까지, 14장). 지면 램프 하나가 꺼지고, 남은 램프가 없으면 도전이 끝난다.
 --      다음 판은 여기서 열지 않는다. 같은 판으로 두 번 불러도 한 번만 센다: 센 판은 엔진 상태가 지워져 있다.
 drop function if exists public.streak_settle(text, boolean);
 -- p_offer(2026-11-11): 도전이 이어지면 다음 판의 문과 교환이 닿는 급({ doors, reach }). 끝나면 쓰지 않는다.
@@ -328,7 +330,7 @@ begin
     perform public.streak_clear_secret(p_battle_id);
     if v_battle.winner = 'p1' then
       update public.streak_runs r
-         set wins = r.wins + 1, last_win_at = now(), lives = least(3, r.lives + case when p_relight then 1 else 0 end)
+         set wins = r.wins + 1, last_win_at = now(), lives = least(2, r.lives + case when p_relight then 1 else 0 end)
        where r.id = v_run.id returning * into v_run;
     else
       update public.streak_runs r
@@ -419,7 +421,7 @@ begin
   insert into public.streak_runs (auth_user_id, trainer_name, format_id, month, offer, daily)
   values (p_user, btrim(v_name), p_format_id, (date_trunc('month', now() at time zone 'Asia/Seoul'))::date, p_offer, v_day)
   returning id into v_run;
-  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0, 'lives', 3, 'daily', v_day);
+  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0, 'lives', 2, 'daily', v_day);
 end;
 $$;
 

@@ -2,7 +2,7 @@
    달과 순위는 DB가 정한다(docs/db/streak_runs.sql). 여기에는 층과 판, 어느 난이도가 서는지, 서버가 생각할 시간, 다음 승리가 무엇을
    바꾸는지만 있다. wins는 언제나 "이 판 전에 이긴 판 수"다. */
 import { LEVELS } from "./cpuLevels.js";
-import { tierOf } from "./partyBalance.js";
+import TOWER_TIERS from "../data/tower-tiers.json" with { type: "json" };
 
 // 싱글 랜덤 배틀 하나(4장의 측정이 모두 싱글). 규정이 바뀌면 여기만 바꾼다
 export const STREAK_REGULATION = "m-c";
@@ -12,14 +12,25 @@ export const STREAK_FORMAT_ID = "gen9championsbssregmc";
 /* 다섯 판이 한 층이고 다섯 번째 판은 층의 수문장이다. 2026-11-09 일곱에서 줄임(사용자: "주인이 등장하는 주기를 짧게", 주인은 그날 수문장이 되었다): 한 층은 높이가
    32, 44, 52, 64, 84로 오르는 다섯 계단이다(DESIGN.md의 높이 다섯, Streak.jsx FloorCells) */
 export const STREAK_STEP = 5;
-export const STREAK_LEVELS = ["porygon", "porygon2", "porygonz"];
-/* Edge Function에서 생각할 시간. 가장 느린 수가 예산의 약 2.2배라 400 ms면 1초 안이다(4장: 30판 324수에서 최대 815 ms).
+/* 탑의 컴퓨터 계단 (2026-11-11, BATTLE_STREAK.md 14.6). 상대가 랭커 구축이 되자 같은 세기의 컴퓨터끼리 드래프트 파티가 37%만 이겨, 층의
+   세기는 순위대가 아니라(순위대끼리는 잡음 안이었다) 컴퓨터가 맡는다. 아래 둘은 탑에만 있는 단계로 폴리곤보다 더 실수한다. 잰 값(드래프트
+   파티를 둔 온전한 컴퓨터가 랭커 구축을 둔 그 단계를 이긴 몫, 각 500판): tower0 73%, tower1 67%, 폴리곤 60%, 폴리곤2 49%, 폴리곤Z 37%.
+   budgetMs: Edge Function에서 생각할 시간. 가장 느린 수가 예산의 약 2.2배라 400 ms면 1초 안이다(4장: 30판 324수에서 최대 815 ms).
    폴리곤2는 휴대폰의 500 ms를 쓰면 1.1초쯤이 되어 서버에서만 줄인다 */
-export const STREAK_BUDGET_MS = { porygon: 300, porygon2: 400, porygonz: 400 };
+export const STREAK_STEPS = [
+  { id: "tower0", options: { reads: false, rollout: false, slack: 0.9, mistake: 0.6 }, budgetMs: 300 },
+  { id: "tower1", options: { reads: false, rollout: false, slack: 0.75, mistake: 0.45 }, budgetMs: 300 },
+  { id: "porygon", options: LEVELS.porygon.options, budgetMs: 300 },
+  { id: "porygon2", options: LEVELS.porygon2.options, budgetMs: 400 },
+  { id: "porygonz", options: LEVELS.porygonz.options, budgetMs: 400 },
+];
 
-/* 램프 셋 (2026-11-10, BATTLE_STREAK.md 12장): 도전은 램프 셋으로 시작한다. 진 판(패배, 기권, 시간 초과, 무승부)마다 하나가 꺼지고
-   같은 판을 새 상대와 다시 한다. 셋이 다 꺼지면 도전이 끝난다. 수문장을 깨면 하나가 다시 켜진다(셋까지). 기록은 그대로 이긴 판 수다 */
-export const STREAK_LIVES = 3;
+/* 램프 (2026-11-11, BATTLE_STREAK.md 14장, 사용자: "목숨이 3개로 바뀌면서 긴장감이 없어지고 게임이 늘어지는"): 도전은 램프 둘로
+   시작하고 둘까지만 켜진다. 진 판(패배, 기권, 시간 초과, 무승부)마다 하나가 꺼지고, 남으면 같은 판을 새 상대와 다시 한다. 다 꺼지면
+   도전이 끝난다. 수문장을 깨면 하나가 다시 켜진다: 한 층에 실수 한 번까지다. 처음에는 하나로 시작해 수문장이 예비를 켜게 했으나, 잰
+   세기로는 1층 돌파가 약 19%라 사용자가 둘로 시작을 골랐다(같은 날, 14.6). 예전(12장): 램프 셋, 수문장과 강한 문이 다시 켰다 */
+export const STREAK_LIVES = 2;
+export const STREAK_START_LIVES = 2;
 /* 탑의 세트에서 빼는 것, 양쪽 모두(같은 장): 한 번의 주사위가 판을 가르는 도구와 기술. 세트의 첫 도구가 빠지면 그 세트의 다음 도구가
    서고(engine.mjs randomTeam ban), 빠지는 기술을 가진 세트는 뽑히지 않는다. 2026-11-10 m-c 싱글 1329세트 가운데 기술 11, 도구 155
    세트가 닿고, 도구가 없어지는 세트와 사라지는 종은 없다 */
@@ -32,30 +43,22 @@ export const STREAK_BAN = {
    (engine.mjs draftOffer, draftParty). 후보는 세트 그대로라 무엇을 데려가는지 알고 고른다 */
 export const STREAK_DRAFT = 3;
 
-/* 층의 타입 (13장): 층마다 상대 파티가 한 타입으로 모인다. 급마다 그 타입의 종이 있으면 그 종이 먼저 서므로(randomTeam prefer), 거의
-   모든 층에서 여섯 가운데 대부분이 그 타입이다. 여덟 층은 그 층의 수문장을 따른다(루카리오 격투, 한카리아스 땅, 팬텀 고스트, 가디안
-   페어리, 마기라스 바위, 망나뇽 비행, 보만다 드래곤, 리자몽 불꽃). 그 위로는 남은 타입을 차례로 돈다: 같은 층은 누구에게나 같은
-   타입이라, 탑을 아는 것이 실력이다. 2026-11-11 m-c 싱글 표본에서 모든 타입이 여섯 급 가운데 다섯 급 이상에 종이 있다 */
-export const FLOOR_TYPES = ["Fighting", "Ground", "Ghost", "Fairy", "Rock", "Flying", "Dragon", "Fire"];
-const LATER_TYPES = ["Water", "Steel", "Psychic", "Dark", "Electric", "Grass", "Poison", "Ice", "Normal", "Bug"];
-export const floorType = floor => FLOOR_TYPES[floor - 1] || LATER_TYPES[(floor - FLOOR_TYPES.length - 1) % LATER_TYPES.length];
+/* 상대는 실제 랭커의 구축이다 (14장, src/data/ranker-teams.json, scripts/build-ranker-teams.mjs). 층이 오를수록 높은 순위대에서
+   하나를 뽑는다: 보통 문은 그 층의 순위대(4층부터 31-100위), 강한 문은 한 단계 위, 수문장은 두 단계 위(1-30위에서 멈춤). 예전(13장)의
+   층의 타입, 층마다 정해진 메가 수문장, 상대 계획의 계단은 없앴다(사용자: "한 층에서 한 타입만 계속 나오니까 실전을 연습할 수 없어졌어").
+   순위대는 [가장 높은 순위, 가장 낮은 순위], 쉬운 것부터 */
+export const RANK_BANDS = [[601, 1000], [301, 600], [101, 300], [31, 100], [1, 30]];
+// kind: "even", "hard" or "gate" (doorsOf); a gatekeeper's game is always its own band, whatever door led to it
+export const bandOf = (wins, kind = "even") => Math.min(RANK_BANDS.length - 1, Math.min(streakFloor(wins) - 1, 3) + (streakMaster(wins) ? 2 : kind === "hard" ? 1 : 0));
 
-/* 상대 파티의 힘 (13장): 층마다 한 계단씩 오르고, 수문장과 강한 상대의 문은 그 층보다 두 계단 위다. 한 계단은 가장 약한 자리 하나를
-   한 급 올린 것이다. 1층 수문장(두 계단)이 예전의 MASTER_PLAN 그대로라, 잰 값(11장: 같은 실력이면 수문장이 약 55%)에서 이어진다.
-   계단 하나는 그 절반, 몫으로 약 0.15다. 다섯 층부터는 더 오르지 않는다(컴퓨터의 난이도와 함께 한 달 뒤 다시 정한다) */
-const PLANS = [
-  [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 4], [0, 1, 2, 3, 3, 4], [0, 1, 2, 3, 3, 3],
-  [0, 1, 2, 2, 3, 3], [0, 1, 2, 2, 2, 3], [0, 1, 1, 2, 2, 3],
-];
-export const foeSteps = (wins, hard = false) => Math.min(PLANS.length - 1, Math.min(streakFloor(wins) - 1, 4) + (hard || streakMaster(wins) ? 2 : 0));
-export const foePlan = (wins, hard = false) => PLANS[foeSteps(wins, hard)];
-
-/* 다음 판의 문 (13장): 끝난 판 뒤에 도전이 쉬면, 다음 판은 문으로 고른다. 보통은 두 문, 상대의 여섯이 보이는 보통 상대와 두 계단 센
-   강한 상대다. 강한 상대를 이기면 수문장을 이긴 것처럼 램프 하나가 다시 켜지고(셋까지), 그 판의 교환은 한 급 위까지 닿는다. 다음
+/* 다음 판의 문 (13장): 끝난 판 뒤에 도전이 쉬면, 다음 판은 문으로 고른다. 보통은 두 문, 상대의 여섯이 보이는 보통 상대와 한 순위대 위의
+   강한 상대다. 강한 상대를 이기면 그 판의 교환이 한 급 위까지 닿는다(14장부터 램프는 켜지지 않는다). 다음
    판이 수문장이면 문은 하나, 닫힌 문이다(수문장은 판에 들어가서야 본다, 2026-11-09). wins: 다음 판 전에 이긴 판 수 */
 export const doorsOf = wins => (streakMaster(wins) ? ["gate"] : ["even", "hard"]);
-// 이긴 판이 램프를 다시 켜는가(수문장이거나 강한 상대). wins: 그 판 전에 이긴 판 수
-export const streakRelights = (wins, hard = false) => hard || streakMaster(wins);
+// 이긴 판이 예비 램프를 켜는가: 수문장뿐이다(14장, 강한 문은 교환 승급만 준다). wins: 그 판 전에 이긴 판 수
+export const streakRelights = wins => streakMaster(wins);
+// 이긴 판의 교환이 한 급 위까지 닿는가: 수문장이거나 강한 문(13장 승급)
+export const streakReach = (wins, hard = false) => hard || streakMaster(wins);
 
 // 몇 번째 층(1부터)과 그 층의 몇 번째 판(1부터 다섯)
 export const streakFloor = wins => Math.floor(Math.max(0, wins) / STREAK_STEP) + 1;
@@ -72,10 +75,10 @@ export const streakFresh = wins => floorGame(wins) === 1;
 
 /* 도전의 판들을 차례로 읽는다(중계, battleService.js runGames): 판마다 그 판 전에 이긴 판 수(at)와 그 판에 들어갈 때 켜져 있던
    램프(lives). 진 판 뒤에도 도전이 이어지므로 판의 자리가 곧 연승이 아니다. games: [{ id, status, winner }], 열린 순서.
-   over: 마지막 판이 끝났고 램프가 남지 않았다. 공개 행은 강한 상대의 문을 말하지 않아 그 문이 다시 켠 램프는 여기서 세지 못한다:
-   관전 화면은 도전의 상태를 따로 읽고(battleService.js readRunState), 그것을 읽지 못할 때만 이 over를 쓴다 */
+   over: 마지막 판이 끝났고 램프가 남지 않았다. 관전 화면은 도전의 상태를 따로 읽고(battleService.js readRunState), 그것을 읽지 못할
+   때만 이 over를 쓴다(14장 전의 도전은 램프 셋으로 시작했으므로 여기서 세면 틀린다) */
 export function runTrack(games) {
-  let at = 0, lives = STREAK_LIVES;
+  let at = 0, lives = STREAK_START_LIVES;
   const out = games.map(g => {
     const row = { id: g.id, at, lives };
     if (g.status !== "ended") return row;
@@ -85,43 +88,14 @@ export function runTrack(games) {
   return Object.assign(out, { over: lives <= 0 });
 }
 
-/* 층마다 정해진 수문장 (2026-11-09 사용자: "층마다 강력한 포켓몬을 설정하는 거야. 해당 층에 도달하면 고정으로 나오는 포켓몬. 메가진화로
-   설정하면 아마 좋겠지. 층을 올라갈 때마다 강력해지고. 특정 층 이상으로 가면 그냥 랜덤으로"). 수문장의 파티는 이 메가진화 포켓몬과,
-   층의 수문장 계획(MASTER_PLAN)에서 맨 위 급 하나를 뺀 다섯이다. 순서는 잰 몫(species-power.json, 2026-11-09 7922판: 루카리오 0.0, 한카리아스 0.19, 팬텀 0.25, 가디안 0.26, 마기라스 0.30, 망나뇽 0.55,
-   보만다 0.57, 리자몽 0.62)이 오르는 차례이고, 여덟 층 위로는
-   맨 위 급의 메가진화 하나를 판마다 뽑는다. 화면은 지금 층의 수문장을 실루엣으로, 위층은 ?로, 지나온 층은 그대로 보인다.
-   form: 메가진화한 모습(그림), stone: 그 메가스톤 */
-export const GATEKEEPERS = [
-  { species: "Lucario", stone: "Lucarionite", form: "Lucario-Mega" },
-  { species: "Garchomp", stone: "Garchompite Z", form: "Garchomp-Mega-Z" },
-  { species: "Gengar", stone: "Gengarite", form: "Gengar-Mega" },
-  { species: "Gardevoir", stone: "Gardevoirite", form: "Gardevoir-Mega" },
-  { species: "Tyranitar", stone: "Tyranitarite", form: "Tyranitar-Mega" },
-  { species: "Dragonite", stone: "Dragoninite", form: "Dragonite-Mega" },
-  { species: "Salamence", stone: "Salamencite", form: "Salamence-Mega" },
-  { species: "Charizard", stone: "Charizardite X", form: "Charizard-Mega-X" },
-];
-// 그 층의 수문장, 정해진 층 위로는 null(판마다 뽑는다)
-export const gatekeeperOf = floor => GATEKEEPERS[floor - 1] || null;
-
-/* 이 판의 난이도: 한 층이 난이도 하나다(1층 폴리곤, 2층 폴리곤2, 3층부터 폴리곤Z). 층의 수문장도 그 층의 난이도이고 파티로 더 세다
-   (streakFoeDraw). 2026-11-09 사용자가 층의 마지막 판을 폴리곤, 폴리곤2, 폴리곤Z로 맞추며 고른 규칙(BATTLE_STREAK.md 5장) */
-export const streakLevel = wins => STREAK_LEVELS[Math.min(STREAK_LEVELS.length - 1, streakFloor(wins) - 1)];
-// 이 판의 컴퓨터를 만드는 createCpu 옵션
-export const streakCpuOptions = wins => {
-  const id = streakLevel(wins);
-  return { ...LEVELS[id].options, budgetMs: STREAK_BUDGET_MS[id] };
+/* 이 판의 컴퓨터 (14.6): n층의 보통 판은 계단의 n번째, 수문장과 강한 문은 한 칸 위, 다섯 층부터는 맨 위(폴리곤Z). 예전(5장): 한 층이 폴리곤,
+   폴리곤2, 폴리곤Z 가운데 하나였다. 사람의 승률은 운영 한 주 뒤 실제 1층 돌파율로 다시 맞춘다 */
+export const streakStep = (wins, hard = false) => Math.min(STREAK_STEPS.length - 1, Math.min(streakFloor(wins) - 1, STREAK_STEPS.length - 1) + (hard || streakMaster(wins) ? 1 : 0));
+// 이 판의 컴퓨터를 만드는 createCpu 옵션. hard: 강한 문으로 들어간 판
+export const streakCpuOptions = (wins, hard = false) => {
+  const step = STREAK_STEPS[streakStep(wins, hard)];
+  return { ...step.options, budgetMs: step.budgetMs };
 };
-/* 이 판의 컴퓨터 파티를 뽑는 randomTeam 옵션: 언제나 균형 잡힌 파티(partyBalance.js)이고, 층의 수문장은 한 급 위로 당긴 계획에 그
-   층의 메가진화 포켓몬을 세운다(정해진 층 위로는 맨 위 급의 메가진화 하나를 뽑는다: ace true) */
-/* 2026-11-11: 계획은 층과 문이 정하고(foePlan), 상대는 층의 타입으로 모인다(floorType). hard: 강한 상대의 문 */
-export const streakFoeDraw = (wins, hard = false) => {
-  const draw = { meta: true, ban: STREAK_BAN, plan: foePlan(wins, hard), prefer: floorType(streakFloor(wins)) };
-  if (!streakMaster(wins)) return draw;
-  const keeper = gatekeeperOf(streakFloor(wins));
-  return { ...draw, ace: keeper ? { species: keeper.species, stone: keeper.stone } : true };
-};
-
 /* 오늘의 탑 (13장): 그날의 모든 도전이 같은 자리에서 같은 후보, 같은 문, 같은 시드를 받는다. key: 무엇을 뽑는지와 그 자리(이긴 판 수와
    지금까지 둔 판 수). 같은 열쇠는 같은 수열이다(mulberry32, 열쇠의 FNV-1a 해시가 씨앗) */
 export function seeded(key) {
@@ -149,8 +123,11 @@ const named = (species, shown) => id(species) === id(shown) || (String(shown).en
    순서로 파티를 다시 늘어놓으므로 자리로는 고를 수 없다. 같은 급끼리만 바꾼다(2026-11-09): 파티의 힘이 이겨도 오르지 않아, 층의
    수문장과의 차이가 판마다 같다. 답은 새 파티, 아니면 왜 못 바꾸는지: "missing"(그 이름의 포켓몬이 없음), "tier"(급이 다름),
    "clash"(같은 종이 둘이 됨. 같은 도구는 바뀌는 포켓몬의 도구를 받아 피한다). 서버는 그 뒤 검증기로 한 번 더 본다 */
-export const swapTier = species => tierOf(STREAK_FORMAT_ID, species);
-const MEGA_STONE = /^(?!Eviolite$).+ite( [XYZ])?$/;
+/* 2026-11-11 (14장): 급은 탑의 풀(랭커 구축에 나온 종) 안에서 나눈 것이다(src/data/tower-tiers.json). 풀 밖의 종(예전 도전의 파티)은
+   가운데 급으로 읽는다 */
+const TOWER_BY_ID = new Map(Object.entries(TOWER_TIERS).map(([k, v]) => [id(k), v]));
+export const swapTier = species => TOWER_BY_ID.get(id(species)) ?? [...TOWER_BY_ID].find(([k]) => String(species).endsWith("-*") && k.startsWith(id(String(species).slice(0, -2))))?.[1] ?? 2;
+export const MEGA_STONE = /^(?!Eviolite$).+ite( [XYZ])?$/;
 /* reach (2026-11-11, 13장 승급): 수문장이나 강한 상대를 이긴 판의 교환은 한 급 위까지 닿는다(1). 그 밖에는 같은 급끼리(0). 아래로
    내려가는 교환은 받지 않는다 */
 export function swapParty(party, foes, give, take, reach = 0) {

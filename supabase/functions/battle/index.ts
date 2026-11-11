@@ -10,7 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   ENGINE, formatId, validateTeam, randomTeam, startBattle, loadBattle, choose, forfeit, readout, readCpuRecord, replay, CPU_NAME,
   planMatchWinner, planTeamSeries, projectRuntimeFacts, parseBoutKey, seriesFromBouts, teamBouts, STREAK_FORMAT, STREAK_REGULATION, computerTurns, streakGame,
-  sideTeam, swapParty, streakMaster, streakRelights, streakDoors, shownDoors, draftOffer, draftParty, seeded, STREAK_BAN, STREAK_DRAFT,
+  sideTeam, swapParty, streakMaster, streakReach, streakRelights, streakDoors, shownDoors, draftOffer, draftParty, seeded, STREAK_BAN, STREAK_DRAFT,
 } from "./engine.bundle.mjs";
 
 const CORS = {
@@ -234,7 +234,7 @@ async function withRetry<T>(fn: () => Promise<T | undefined>) {
 const serverRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 /* what a streak game keeps for its computer (battle_secrets.cpu_memory): the run's wins before this game, which set its 난이도, and
    the computer's readings of the player's sets, carried from one choice to the next (battleCpu.js memory) */
-type StreakMemory = { wins: number; cpu?: unknown; hard?: boolean };
+type StreakMemory = { wins: number; cpu?: unknown; hard?: boolean; foe?: { season: string | null; rank: number | null } };
 async function keepMemory(id: string, memory: StreakMemory) {
   const { error } = await db.rpc("battle_set_cpu_memory", { p_id: id, p_memory: memory });
   if (error) console.error(error); // the computer only loses its readings for a choice
@@ -244,14 +244,15 @@ async function keepMemory(id: string, memory: StreakMemory) {
    own randomness. The computer's own choices are never seeded. */
 const kstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const drawFor = (daily: string | null | undefined, key: string) => (daily ? seeded(`${daily}:${key}`) : serverRandom);
-/* a new game of a run, as streak_start, streak_first and streak_next take it, with the seat its player gets. foe: the party behind
-   the door chosen (none: drawn here, as before the doors); hard: that door was the strong one; random: the run's draws */
-async function nextGame(name: string, wins: number, party: unknown[] | null = null, { foe = null, hard = false, random = serverRandom }: { foe?: unknown[] | null; hard?: boolean; random?: () => number } = {}) {
+/* a new game of a run, as streak_start, streak_first and streak_next take it, with the seat its player gets. foe: the door chosen,
+   { team, season, rank } (none: a ranker team of the game's band drawn here, 14장); hard: that door was the strong one; random: the
+   run's draws. The foe's season and rank are kept with the computer's memory, for the loss's recap */
+async function nextGame(name: string, wins: number, party: unknown[] | null = null, { foe = null, hard = false, random = serverRandom }: { foe?: Record<string, any> | null; hard?: boolean; random?: () => number } = {}) {
   const id = newId(), token = newToken();
-  const game = streakGame(name, wins, random, party, foe);
+  const game = streakGame(name, wins, random, party, foe, hard);
   const out = readout(game.engine);
   return {
-    id, token, memory: { wins, cpu: game.memory, ...(hard ? { hard: true } : {}) } as StreakMemory,
+    id, token, memory: { wins, cpu: game.memory, foe: game.foe, ...(hard ? { hard: true } : {}) } as StreakMemory,
     args: {
       p_id: id, p_regulation: STREAK_REGULATION, p_format_id: STREAK_FORMAT, p_engine: ENGINE, p_token_hash: await sha256(token),
       p_p1_team: game.p1Team, p_state: game.state, p_pending: game.pending, p_turn: out.turn, p_spectator_log: out.spectatorLog,
@@ -272,26 +273,27 @@ function foeSets(inputLog: unknown) {
    left. The next game is not opened here: its clock starts when its player presses 다음 판 (streakNext), so the run rests between
    games and leaving loses nothing. The screen gets the run's wins and lamps, whether it goes on, and after a loss the foe's sets.
    out: the ended game's winner and input log */
-/* 2026-11-11 (13장): a strong door won lights a lamp as a gatekeeper does, and the run, if it goes on, is offered the doors to its next
-   game with the reach of its trade (one tier up after a gatekeeper or a strong door), kept by the run (streak_settle p_offer) and
-   told to the screen as species only */
+/* 2026-11-11 (13장): the run, if it goes on, is offered the doors to its next game with the reach of its trade (one tier up after a
+   gatekeeper or a strong door), kept by the run (streak_settle p_offer) and told to the screen as species with the team's season and
+   rank. 14장: only a gatekeeper beaten lights the spare lamp (streak_settle caps the lamps at two); the foe's season and rank go with
+   the result (foeRank) */
 async function streakAfter(battle: Record<string, any>, memory: StreakMemory | null, out: { winner: string | null; inputLog: string }) {
   const state = await rpc("streak_run_state", { p_battle_id: battle.id });
   const before = memory?.wins ?? (Number(state?.wins) || 0);
   const won = out.winner === "p1";
   const wins = won ? before + 1 : before;
   const doors = streakDoors(wins, drawFor(state?.daily, `doors:${wins}:${Number(state?.games) || 0}`));
-  const reach = won && streakRelights(before, Boolean(memory?.hard)) ? 1 : 0;
-  const run = await rpc("streak_settle", { p_battle_id: battle.id, p_relight: streakRelights(before, Boolean(memory?.hard)), p_offer: { doors, reach } });
+  const reach = won && streakReach(before, Boolean(memory?.hard)) ? 1 : 0;
+  const run = await rpc("streak_settle", { p_battle_id: battle.id, p_relight: streakRelights(before), p_offer: { doors, reach, ...(memory?.foe?.rank ? { foe: memory.foe } : {}) } });
   const going = run?.status === "active";
   return {
-    wins: run?.wins ?? before, lives: run?.lives ?? 0, status: run?.status ?? "ended", won,
+    wins: run?.wins ?? before, lives: run?.lives ?? 0, status: run?.status ?? "ended", won, ...(memory?.foe?.rank ? { foeRank: memory.foe } : {}),
     ...(going ? { doors: shownDoors(doors), reach } : {}), ...(won ? {} : { foe: foeSets(out.inputLog) }),
   };
 }
 /* the run as an ended game's own seat reads it again (a game the clock ended, a page opened again): only from the game the run
    stands on, so an older game's seat keeps what it was told at its own end */
-async function streakSeen(battle: Record<string, any>) {
+async function streakSeen(battle: Record<string, any>, memory: StreakMemory | null = null) {
   if (battle.kind !== "streak" || battle.status !== "ended") return {};
   const run = await rpc("streak_run_state", { p_battle_id: battle.id });
   if (!run || run.battle_id !== battle.id) return {};
@@ -303,7 +305,9 @@ async function streakSeen(battle: Record<string, any>) {
     foe = foeSets(data?.input_log);
   }
   const going = run.status === "active" && run.offer?.doors;
-  return { streak: { wins: run.wins, lives: run.lives, status: run.status, won, ...(going ? { doors: shownDoors(run.offer.doors), reach: run.offer.reach ?? 0 } : {}), ...(foe ? { foe } : {}) } };
+  // the foe's season and rank: the game's memory while it stands, then the run's offer (an ended game's memory is wiped)
+  const foeRank = memory?.foe?.rank ? memory.foe : run.offer?.foe?.rank ? run.offer.foe : null;
+  return { streak: { wins: run.wins, lives: run.lives, status: run.status, won, ...(foeRank ? { foeRank } : {}), ...(going ? { doors: shownDoors(run.offer.doors), reach: run.offer.reach ?? 0 } : {}), ...(foe ? { foe } : {}) } };
 }
 // a draft as the screen shows it: each candidate's whole set, without the back-up items the party is settled with (draftParty)
 const shownDraft = (draft: Record<string, any>[][]) => draft.map(row => row.map(({ items, ...c }) => c));
@@ -451,8 +455,8 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   async view({ id, token }) {
     const { battle, secret } = await read(String(id));
     const side = await seat(secret, token);
-    if (!secret.state) return { side, version: battle.version, status: battle.status, turn: 0, winner: null, request: null, chosen: null, log: "", ...(await streakSeen(battle)) };
-    return { ...playerView(battle, secret, side), ...(await streakSeen(battle)) };
+    if (!secret.state) return { side, version: battle.version, status: battle.status, turn: 0, winner: null, request: null, chosen: null, log: "", ...(await streakSeen(battle, secret.cpu_memory as StreakMemory | null)) };
+    return { ...playerView(battle, secret, side), ...(await streakSeen(battle, secret.cpu_memory as StreakMemory | null)) };
   },
 
   // rq: requestKey of the request the choice answers (engine.mjs). A client without it is still served, unchecked.
@@ -475,7 +479,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
       }
       // a streak game: the computer answers here (streakEngine.mjs), its choice waiting as p2's pending one
       const memory = secret.cpu_memory as StreakMemory | null;
-      const turn = streak ? computerTurns(engine, memory?.wins ?? 0, memory?.cpu, serverRandom) : null;
+      const turn = streak ? computerTurns(engine, memory?.wins ?? 0, memory?.cpu, serverRandom, Boolean(memory?.hard)) : null;
       const out = readout(engine);
       const state = turn?.state ?? engine.toJSON();
       const pending = turn?.pending ?? {};
@@ -522,7 +526,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
        is answered as it was, with the first game and a party drawn here */
     if (draft) {
       const day = daily ? kstDay() : null;
-      const offer = draftOffer(STREAK_FORMAT, drawFor(day, "draft"), { ban: STREAK_BAN, count: STREAK_DRAFT });
+      const offer = draftOffer(drawFor(day, "draft"), { ban: STREAK_BAN, count: STREAK_DRAFT });
       const { data, error } = await db.rpc("streak_begin", { p_user: user, p_format_id: STREAK_FORMAT, p_offer: { draft: offer }, p_daily: Boolean(daily) });
       if (error) {
         if (error.code === "P0001" || error.code === "42501") refuse(error.code === "P0001" ? 429 : 403, error.message);
@@ -603,7 +607,7 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
     const doors = Array.isArray(run?.offer?.doors) ? run.offer.doors : null;
     const chosen = doors ? doors[Math.max(0, Math.min(doors.length - 1, Number(door) || 0))] : null;
     const game = await nextGame(battle.p1_name, wins, party, {
-      foe: chosen?.team ?? null, hard: chosen?.kind === "hard", random: drawFor(run?.daily, `game:${wins}:${Number(run?.games) || 0}`),
+      foe: chosen?.team ? chosen : null, hard: chosen?.kind === "hard", random: drawFor(run?.daily, `game:${wins}:${Number(run?.games) || 0}`),
     });
     const { data, error } = await db.rpc("streak_next", { p_battle_id: battle.id, ...game.args });
     if (error) {

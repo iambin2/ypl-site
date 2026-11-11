@@ -17,8 +17,7 @@ import { siteConfirm } from "../../components/common/SiteDialog.jsx";
 import { GoogleMark } from "../../components/layout/SiteHeader.jsx";
 import { currentStreakGame, keepStreakDraft, keepStreakStart, readBattleRow, readSeat, readStreakDraft, streakNextGame, viewBattle, warmBattle } from "../../services/battleService.js";
 import { VISITOR_EVENT, myPlayerLink, pickStreakDraft, readDailyBoard, readStreakBoard, signInWithGoogle, startStreakRun, visitorSignedIn } from "../../services/visitorAuth.js";
-import { STREAK_LIVES, STREAK_STEP, floorGame, floorType, gameWords, streakFloor, streakMaster, swapTier } from "../../services/streak.js";
-import { toID } from "../../services/battleLog.js";
+import { STREAK_LIVES, STREAK_STEP, floorGame, gameWords, streakFloor, streakMaster, swapTier } from "../../services/streak.js";
 import { nameOf, typesOf } from "./Stage.jsx";
 import { DUR, STAGGER, climb, light, place } from "../../components/common/motion.js";
 import { onSpriteError, spriteUrl } from "../../services/teamBuilderCore.js";
@@ -40,7 +39,7 @@ function useBoard(daily = false) {
 }
 
 /* 연승 도전 shows no 난이도 anywhere (2026-11-09, the user: "난이도 표기 자체를 연승 도전에서는 없애자"): the computer still plays each
-   floor at its own (streak.js streakLevel), but the screens say only the floor and its games */
+   floor at its own (streak.js streakStep), but the screens say only the floor and its games */
 
 /* a floor's five games as one bar cut on the seam (the tower draws the same as a floor's five doors, tower.js): won lit, the game being played the
    amber lamp's colour, the next one while the run rests at .382, a lost one muted, the rest an unlit bar's light. at: the game, 1 to 5 */
@@ -49,8 +48,8 @@ export function TrackBar({ at, playing = false, lost = false, mini = false }) {
     {Array.from({ length: STREAK_STEP }, (_, i) => <i key={i} data-step={i + 1} className={i + 1 < at ? "won" : i + 1 === at ? (lost ? "lost" : playing ? "now" : "next") : ""} />)}
   </span>;
 }
-/* the run's lamps (DESIGN.md 도전의 탑, The run's lamps, 2026-11-10): three, lit while left and its housing once out, at the right
-   end of the line that names the game. lives: the lamps left; none drawn while the database does not say them (before the lamps'
+/* the run's lamps (DESIGN.md 도전의 탑, The run's lamps, 2026-11-10; two since 2026-11-11, the second the spare a gatekeeper lights):
+   lit while left and its housing once out or not yet earned, at the right end of the line that names the game. lives: the lamps left; none drawn while the database does not say them (before the lamps'
    SQL has run a run still ends on its first lost game) */
 export function RunLamps({ lives }) {
   if (lives == null) return null;
@@ -144,25 +143,27 @@ export function DraftBoard({ res, draft, picks, onPick }) {
 }
 
 /* the doors to the next game (2026-11-11, 13장): two doors, each with the six behind it as a team preview shows them (the even foe
-   and the strong one, which lights a lamp again and lets the trade reach a tier up when beaten), or one shut door, the gatekeeper's.
+   and the strong one, a band of ranks up, which lets the trade reach a tier up when beaten), or one shut door, the gatekeeper's, which
+   lights the spare lamp. 14장: behind a door stands a ranker's team, its season and rank at the door's right where the floor's type
+   stood.
    Each door says what it gives beside its name, in nouns, so the choice reads as the trade-off it is (2026-11-11, the user: "보통 상대
-   강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the strong door and the gate 램프 +1 and 교환 승급, the even one 보상 없음.
+   강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the gate 램프 +1 and 교환 승급, the strong door 교환 승급 (14장), the even one 보상 없음.
    One is chosen, inverted; the key goes through it */
-export function DoorPick({ res, wins, doors, value, onChange }) {
+// a ranker team named by its season and its rank there, as the open data has it (14장): M-7 32위
+const rankWords = t => `${t.season} ${t.rank}위`;
+export function DoorPick({ res, doors, value, onChange }) {
   if (!doors?.length) return null;
-  const type = floorType(streakFloor(wins));
   const word = { even: "보통 상대", hard: "강한 상대", gate: "수문장" };
   /* no strip of its own over the doors (2026-11-11: with it the break ran past a phone's stage and the trades lost their last row):
-     each door names itself and carries the floor's type at its right */
-  const chip = <span className={`tb-type type-${toID(type)}`}>{res?.text?.types?.[type] || type}</span>;
+     each door names itself and carries its team's season and rank at its right */
   return <section className="streak-doors" aria-label="다음 상대">
     <div className={"stack streak-door-row" + (doors.length === 1 ? " one" : "")} role="radiogroup" aria-label="다음 상대">
       {doors.map((d, i) => <button key={d.kind} type="button" role="radio" aria-checked={value === i} onClick={() => onChange(i)}
         className={"streak-door" + (value === i || d.kind === "gate" ? " inv" : " pn")}>
-        <span className="streak-door-head"><b>{word[d.kind]}</b>{chip}</span>
-        <span className="streak-door-gain" aria-label={d.kind === "even" ? "보상 없음" : "이기면 램프 하나와 교환 승급"}>
+        <span className="streak-door-head"><b>{word[d.kind]}</b>{d.rank ? <span className="t12">{rankWords(d)}</span> : null}</span>
+        <span className="streak-door-gain" aria-label={d.kind === "even" ? "보상 없음" : d.kind === "hard" ? "이기면 교환 승급" : "이기면 램프 하나와 교환 승급"}>
           {d.kind === "even" ? <span className="streak-gain none">보상 없음</span>
-            : <><span className="streak-gain"><i className="lamp" aria-hidden="true" />램프 +1</span><span className="streak-gain">교환 승급</span></>}
+            : <>{d.kind === "gate" && <span className="streak-gain"><i className="lamp" aria-hidden="true" />램프 +1</span>}<span className="streak-gain">교환 승급</span></>}
         </span>
         {d.species.length > 0 && <span className="streak-door-six">{d.species.map(s => <img key={s} src={spriteUrl(s)} alt={nameOf(res, s)} draggable="false" onError={onSpriteError()} />)}</span>}
       </button>)}
@@ -369,7 +370,7 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
               : <TowerHall key={`${kind}${round}`} wins={wins} live={Boolean(run?.playing)} climbers={climbers} />}
             {!(drafting && !entering) && <div className="streak-mode"><Chips value={kind} onChange={setKind} label="도전 종류" options={[["month", "이번 달"], ["day", "오늘의 탑"]]} /></div>}
           </div>
-          {run && !run.playing && run.doors && <DoorPick res={res} wins={run.wins} doors={run.doors} value={door} onChange={setDoor} />}
+          {run && !run.playing && run.doors && <DoorPick res={res} doors={run.doors} value={door} onChange={setDoor} />}
           <Dock toast={error ? <Toast error>{error}</Toast> : null}>
             {note && <p className="t12 dim bt-gate-line">{note}</p>}
             <div className="bt-end-keys">{keys}</div>
@@ -547,7 +548,7 @@ export function StreakEnd({ id, won, res = null, onOpen, onOut, enter, goingIn, 
         : <div className="pn streak-next"><b className="t15 streak-named">{gameWords(wins)}<RunLamps lives={lives} /></b><FloorTrack wins={wins} lost /></div>}
     </div>
     {recap && <div className="stack streak-recap" role="group" aria-label="상대 파티">
-      <span className="pn streak-trades-title"><b>상대 파티</b></span>
+      <span className="pn streak-trades-title"><b>상대 파티</b>{seat?.foeRank?.rank ? <span className="t12">{rankWords(seat.foeRank)}</span> : null}</span>
       {recap.map(m => <MonCard key={m.species} res={res} species={m.species} ability={m.ability} item={m.item || null} moves={(m.moves || []).map(name => ({ id: name, pp: "" }))} compact />)}
     </div>}
     {/* a lost run stands as a scene of its own: the floors it climbed as a tower, the highest on top, then the month's first three */}
@@ -561,7 +562,7 @@ export function StreakEnd({ id, won, res = null, onOpen, onOut, enter, goingIn, 
       <SectionHead id="streak-end-board" title={`${monthOf(0).label} 순위`} />
       <StandTable rows={board.slice(0, 3).map(r => ({ rank: r.place, name: r.trainer_name, points: r.wins, live: r.live }))} placed unit="연승" head="연승" />
     </section>}
-    {resting && <DoorPick res={res} wins={wins} doors={seat?.doors} value={door} onChange={setDoor} />}
+    {resting && <DoorPick res={res} doors={seat?.doors} value={door} onChange={setDoor} />}
     {swapping && <SwapTable ours={ours} theirs={theirs} up={reach > 0}
       chosen={new Set(pairs.flatMap(p => [`give:${p.give}`, `take:${p.take}`]))}
       matchTheirs={matchIn(theirs)} matchOurs={matchIn(ours)} onPick={pick} blocked={blocked} onInfo={onInfo} />}
