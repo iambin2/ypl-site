@@ -97,12 +97,16 @@ const weightedOrder = (list, weight, random) => list.map(entry => [Math.pow(rand
    up. ace: the gatekeeper's own Mega ({ species, stone }, or true for one of the top tier's Megas drawn at random), standing in for
    the plan's first tier; the other five are balanced as ever.
    even: every species alike with no balance, as before 2026-11-09 (scripts/rate-species.mjs measures the tiers on these, and the
-   computer's benchmark keeps the parties its table was measured on). top: only from the most used this many (even draws only). */
-export function randomTeam(formatid, random = Math.random, { meta = false, top = 0, even = false, master = false, ace = null } = {}) {
-  const all = setPool(formatid);
+   computer's benchmark keeps the parties its table was measured on). top: only from the most used this many (even draws only).
+   ban: { items, moves } kept out of the party (도전의 탑, streak.js STREAK_BAN): a set with a banned move is not drawn, and a banned
+   item gives way to the set's next one. plan: the tiers to draw, strongest first (도전의 탑's floors, streak.js foePlan), instead of
+   PLAN or MASTER_PLAN. prefer: a type whose species stand first within each tier (the floor's type, streak.js floorType), so a
+   party gathers on it wherever its tiers have one. */
+export function randomTeam(formatid, random = Math.random, { meta = false, top = 0, even = false, master = false, ace = null, ban = null, plan = null, prefer = null } = {}) {
+  const all = ban ? fairPool(formatid, ban) : setPool(formatid);
   if (!all.length) throw new Error(`no random sets for ${formatid}`);
   if (!even && balanced(formatid)) {
-    const team = balancedTeam(formatid, all, random, meta, master ? MASTER_PLAN : PLAN, ace && aceOf(formatid, all, ace, random));
+    const team = balancedTeam(formatid, all, random, meta, plan || (master ? MASTER_PLAN : PLAN), ace && aceOf(formatid, all, ace, random), prefer);
     if (team) return team;
   }
   const pool = top ? [...all].sort((a, b) => (b.usage || 0) - (a.usage || 0)).slice(0, top) : all;
@@ -111,6 +115,20 @@ export function randomTeam(formatid, random = Math.random, { meta = false, top =
     if (team.length === 6 && !validateTeam(formatid, team)) return team;
   }
   throw new Error(`could not draw a random party for ${formatid}`);
+}
+// a format's pool without what a ban names, built once for each ban (the tiers are kept for each pool, balancedTeam)
+const fairPools = new Map();
+function fairPool(formatid, ban) {
+  if (!fairPools.has(ban)) fairPools.set(ban, new Map());
+  const made = fairPools.get(ban);
+  if (!made.has(formatid)) {
+    const items = new Set(ban.items), moves = new Set(ban.moves);
+    made.set(formatid, setPool(formatid).map(entry => ({
+      ...entry,
+      sets: entry.sets.filter(set => !set.moves.some(m => moves.has(m))).map(set => ({ ...set, items: set.items.filter(i => !items.has(i)) })).filter(set => set.items.length),
+    })).filter(entry => entry.sets.length));
+  }
+  return made.get(formatid);
 }
 /* one Pokémon from each list in turn (the next of the list that fits): one of each species, one set of each drawn by how often it is
    played, at most one Mega Stone, no item twice. A single list fills all six from it */
@@ -150,14 +168,21 @@ function aceOf(formatid, all, ace, random) {
   return { name: "", species: entry.species, ability: set.ability, item, moves: [...set.moves], nature: set.nature, evs: { ...set.evs }, ...(set.ivs ? { ivs: { ...set.ivs } } : {}), level: 50 };
 }
 const tierCache = new Map();
-function balancedTeam(formatid, all, random, meta, fullPlan, first = null) {
-  if (!tierCache.has(formatid)) {
+// a pool's species by tier with each tier's mean share, kept for each pool (a format's own, or its pool under a ban), not for each format
+function tiersOf(formatid, all) {
+  if (!tierCache.has(all)) {
     const tiers = Array.from({ length: TIERS }, () => []);
     for (const entry of all) tiers[tierOf(formatid, entry.species)].push(entry);
     const mean = tiers.map(list => list.reduce((s, e) => s + ratingOf(formatid, e.species), 0) / Math.max(1, list.length));
-    tierCache.set(formatid, { tiers, mean });
+    tierCache.set(all, { tiers, mean });
   }
-  const { tiers, mean } = tierCache.get(formatid);
+  return tierCache.get(all);
+}
+function balancedTeam(formatid, all, random, meta, fullPlan, first = null, prefer = null) {
+  const { tiers, mean } = tiersOf(formatid, all);
+  const dex = DEX_OF_FORMAT[formatid];
+  // the floor's type first within a tier, each part in its own drawn order
+  const typed = list => (prefer ? [...list.filter(e => dex.species.get(e.species).types.includes(prefer)), ...list.filter(e => !dex.species.get(e.species).types.includes(prefer))] : list);
   // the gatekeeper's Mega stands in the plan's first (strongest) place; the five others are balanced against the rest of the plan
   const plan = first ? fullPlan.slice(1) : fullPlan;
   if (plan.some(t => !tiers[t].length)) return null;
@@ -165,7 +190,7 @@ function balancedTeam(formatid, all, random, meta, fullPlan, first = null) {
   let best = null, bestGap = Infinity;
   for (let tries = 0; tries < 80; tries++) {
     // the tiers in a new order each time, so the one Mega a party may hold is not always the strongest tier's
-    const lists = shuffled(plan, random).map(t => (meta ? weightedOrder(tiers[t], e => (e.usage || 0) + 0.01, random) : shuffled(tiers[t], random)));
+    const lists = shuffled(plan, random).map(t => typed(meta ? weightedOrder(tiers[t], e => (e.usage || 0) + 0.01, random) : shuffled(tiers[t], random)));
     const team = drawInto(formatid, lists, random, first);
     if (team.length !== 6) continue;
     const gap = Math.abs(team.filter(m => m !== first).reduce((s, m) => s + ratingOf(formatid, m.species), 0) - target);
@@ -175,6 +200,51 @@ function balancedTeam(formatid, all, random, meta, fullPlan, first = null) {
     best = team; bestGap = gap;
   }
   return best;
+}
+
+/* 도전의 탑's opening draft (2026-11-11, docs/BATTLE_STREAK.md 13장, streak.js STREAK_DRAFT): count candidates from each tier, the
+   tiers strongest first, every candidate a whole set and of its own species. A candidate keeps the set's other items (items), so a
+   party picked from it never holds an item twice (draftParty). */
+export function draftOffer(formatid, random = Math.random, { ban = null, count = 3 } = {}) {
+  const all = ban ? fairPool(formatid, ban) : setPool(formatid);
+  const { tiers } = tiersOf(formatid, all);
+  const dex = DEX_OF_FORMAT[formatid];
+  const bases = new Set();
+  const candidate = (entry, set) => ({ species: entry.species, ability: set.ability, item: set.items[0], items: [...set.items], moves: [...set.moves], nature: set.nature, evs: { ...set.evs }, ...(set.ivs ? { ivs: { ...set.ivs } } : {}), mega: Boolean(set.mega) });
+  return tiers.map(list => {
+    const row = [], order = shuffled(list, random);
+    for (const entry of order) {
+      if (row.length >= count) break;
+      const base = dex.species.get(entry.species).baseSpecies;
+      if (bases.has(base)) continue;
+      // the row's last place is never a Mega when the others are, so every row has a choice that leaves room for one Mega in all
+      const sets = row.length === count - 1 && row.every(c => c.mega) ? entry.sets.filter(set => !set.mega) : entry.sets;
+      if (!sets.length) continue;
+      bases.add(base);
+      row.push(candidate(entry, weighted(sets, random)));
+    }
+    return row;
+  });
+}
+/* the party a draft's picks make (picks: one species from each tier's row, in the rows' order): the reason it cannot be, "pick" (not
+   one of the row's), "mega" (a second Mega Stone), "item" (no free item left for one), "illegal" (refused by the validator), or the
+   party. An item already taken goes to the set's next one, in the rows' order. */
+const SPARE_ITEMS = ["Sitrus Berry", "Lum Berry", "Leftovers", "Shell Bell", "Expert Belt", "Life Orb"];
+export function draftParty(formatid, offer, picks) {
+  if (!Array.isArray(offer) || !Array.isArray(picks) || picks.length !== offer.length) return "pick";
+  const chosen = offer.map((row, i) => row.find(c => c.species === picks[i]));
+  if (chosen.some(c => !c)) return "pick";
+  if (chosen.filter(c => c.mega).length > 1) return "mega";
+  const used = new Set(), team = [];
+  for (const c of chosen) {
+    // when every item of its set is taken, an item every party may carry that is still free (1 in 1000 random picks, 2026-11-11)
+    const item = c.items.find(name => !used.has(name)) || SPARE_ITEMS.find(name => !used.has(name));
+    if (!item) return "item";
+    used.add(item);
+    const { items, mega, ...set } = c;
+    team.push({ ...set, name: "", item, level: 50 });
+  }
+  return validateTeam(formatid, team) ? "illegal" : team;
 }
 
 function capture(battle) {

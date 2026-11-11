@@ -52,42 +52,57 @@ const asSeat = (id, action, extra = {}) => {
   if (!seat) throw new Error("이 기기에는 이 배틀의 자리가 없습니다.");
   return callFunction("battle", { action, id, token: seat.token, ...extra });
 };
-export const viewBattle = id => asSeat(id, "view");
-/* 연승 도전 (docs/BATTLE_STREAK.md): a game's answer carries the run (streak: { wins, status }). A won game leaves the run resting
-   (status active) until its player opens the next game (streakNextGame); the ended game's seat keeps what happened, so its end screen
-   and the tab's 이어서 하기 offer 다음 판 again after a reload. */
-// the game of this device's run (the one being played, or the won one the run rests on), so the 연승 도전 tab offers 이어서 하기
+/* 연승 도전 (docs/BATTLE_STREAK.md): an ended game's answer carries the run (streak: { wins, lives, status, won, foe }). The run rests
+   (status active) after a won game, and after a lost one while a lamp is left (2026-11-10, the three lamps), until its player opens
+   the next game (streakNextGame); the ended game's seat keeps what happened (wins: the wins before the next game, lives: the lamps
+   left, won, ended: the run is over, foe: the sets a lost game was lost to), so its end screen and the tab's 이어서 하기 offer the next
+   game again after a reload. A seat's own view of the game the run stands on carries the same (a game the clock ended while its
+   player was away). */
+/* the game of this device's run (the one being played, or the ended one the run rests on), so the tab offers 이어서 하기. A device
+   keeps one run of the month and one of 오늘의 탑 (daily: the seat's day, or true for that kind) */
 const STREAK_KEY = "ypl-battle:streak";
-export const currentStreakGame = () => { try { return localStorage.getItem(STREAK_KEY) || null; } catch { return null; } };
-const keepStreakGame = id => { try { if (id) localStorage.setItem(STREAK_KEY, id); else localStorage.removeItem(STREAK_KEY); } catch { /* 이어서 하기만 없다 */ } };
+const keyOf = daily => (daily ? `${STREAK_KEY}:day` : STREAK_KEY);
+export const currentStreakGame = (daily = false) => { try { return localStorage.getItem(keyOf(daily)) || null; } catch { return null; } };
+const keepStreakGame = (id, daily = false) => { try { if (id) localStorage.setItem(keyOf(daily), id); else localStorage.removeItem(keyOf(daily)); } catch { /* 이어서 하기만 없다 */ } };
+/* a run's draft while it waits to be picked (2026-11-11): { run, draft }, kept on the device for each kind so a reload finds it */
+const DRAFT_KEY = "ypl-battle:streak-draft";
+export const readStreakDraft = (daily = false) => { try { return JSON.parse(localStorage.getItem(`${DRAFT_KEY}${daily ? ":day" : ""}`) || "null"); } catch { return null; } };
+export const keepStreakDraft = (made, daily = false) => { try { if (made) localStorage.setItem(`${DRAFT_KEY}${daily ? ":day" : ""}`, JSON.stringify(made)); else localStorage.removeItem(`${DRAFT_KEY}${daily ? ":day" : ""}`); } catch { /* the draft stands for this screen only */ } };
 function keepRun(id, view) {
   const run = view?.streak;
   if (!run || view.status !== "ended") return view;
-  const won = run.status === "active";
-  if (!won) keepStreakGame(null);
+  const over = run.status !== "active";
+  // a function from before the lamps says no won: there a run went on only after a win
+  const won = run.won ?? !over;
   const seat = readSeat(id);
-  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, won, ended: !won });
+  if (over && currentStreakGame(seat?.daily) === id) keepStreakGame(null, seat?.daily);
+  // doors: the doors to the next game ({ kind, species }), reach: how far up its trade goes (2026-11-11)
+  if (seat) keepSeat(id, { ...seat, streak: true, wins: run.wins, lives: run.lives, won, ended: over, ...(run.foe ? { foe: run.foe } : {}), ...(run.doors ? { doors: run.doors, reach: run.reach ?? 0 } : {}) });
   return view;
 }
+export const viewBattle = id => asSeat(id, "view").then(view => keepRun(id, view));
 // rq: 답하는 요청의 requestKey(battleLog.js). 서버는 이미 지난 요청에 대한 선택을 막는다.
 export const chooseInBattle = (id, choice, rq) => asSeat(id, "choose", { choice, rq }).then(view => keepRun(id, view));
 export const forfeitBattle = id => asSeat(id, "forfeit").then(view => keepRun(id, view));
-// a new run's first game (visitorAuth.js startStreakRun, made as the signed-in account): its seat is this device's
+/* a new run's first game (visitorAuth.js startStreakRun, made as the signed-in account): its seat is this device's. lives: the run's
+   lamps as the database says them; before the lamps' SQL has run it says none, and no screen draws them */
 export function keepStreakStart(made) {
-  keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: 0, game: 1 });
-  keepStreakGame(made.id);
+  keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: 0, game: 1, lives: made.lives ?? made.run?.lives, daily: made.daily || null, party: made.party || null });
+  keepStreakGame(made.id, made.daily);
+  keepStreakDraft(null, made.daily);
   return made;
 }
-/* 다음 판 from a won game: asked by that game's seat (the battle function's streakNext), so it can always be asked again; a next game
-   this device already opened is gone to instead of asked for twice. swap: { give, take } (species), one of ours for one of the party
-   just beaten, one a game, a new floor's included (streak.js swapParty) */
-export async function streakNextGame(id, swap = null) {
+/* 다음 판 from an ended game the run rests on (won, or lost with a lamp left: then the same game again): asked by that game's seat (the
+   battle function's streakNext), so it can always be asked again; a next game this device already opened is gone to instead of asked
+   for twice. swap: { give, take } (species), one of ours for one of the party just beaten, one a won game, a new floor's included
+   (streak.js swapParty) */
+export async function streakNextGame(id, swap = null, door = 0) {
   const seat = readSeat(id);
   if (seat?.next && readSeat(seat.next)) return { id: seat.next, side: "p1" };
-  const made = await asSeat(id, "streakNext", swap ? { swap } : {});
-  keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: made.wins, game: made.wins + 1 });
+  const made = await asSeat(id, "streakNext", { ...(swap ? { swap } : {}), door });
+  keepSeat(made.id, { token: made.token, side: made.side, streak: true, wins: made.wins, game: made.wins + 1, lives: made.lives, daily: seat?.daily || null, hard: Boolean(made.hard), party: made.party || seat?.party || null });
   if (seat) keepSeat(id, { ...readSeat(id), next: made.id });
-  keepStreakGame(made.id);
+  keepStreakGame(made.id, seat?.daily);
   return made;
 }
 /* 생각하는 동안 서버를 데운다 (battle 함수 warm). 함수의 워커는 약 75초마다 새로 뜨고, 새 워커의 첫 요청은 0.6~1.5초가 걸린다.
@@ -131,14 +146,23 @@ export async function readBattleRow(id) {
   return data;
 }
 export const canRematch = () => rematchSupported;
-/* 중계 of a 연승 도전 run: its games in order (battles.run_id, granted by docs/db/streak_runs.sql). A run goes on only after a win, so
-   a game's place in the list is the wins before it, and the game after a won one is the one its player opened with 다음 판.
+/* 중계 of a 연승 도전 run: its games in order (battles.run_id, granted by docs/db/streak_runs.sql), each { id, status, winner }. A run
+   goes on after a lost game too while a lamp is left (2026-11-10), so a game's place in the list is not its wins: the screens read
+   the wins before each game and the lamps left off the winners (streak.js runTrack; this module imports nothing but the storage,
+   tests/battlePoll.test.mjs loads it alone).
    ponytail: a run's games older than last month are deleted (streak_start), which would undercount a run that long; the run's wins
    as a public column is the upgrade */
+/* a run's lamps and state as anyone watching reads them (streak_run_public, 2026-11-11): { wins, lives, status, daily }, or null before
+   the SQL has run */
+export async function readRunState(battleId) {
+  if (!supa || !battleId) return null;
+  const { data, error } = await supa.rpc("streak_run_public", { p_battle_id: battleId });
+  return error ? null : data;
+}
 export async function runGames(runId) {
   if (!supa || !runId) return [];
-  const { data, error } = await supa.from("battles").select("id").eq("run_id", runId).order("created_at");
-  return error ? [] : (data || []).map(r => r.id);
+  const { data, error } = await supa.from("battles").select("id, status, winner").eq("run_id", runId).order("created_at");
+  return error ? [] : data || [];
 }
 // ponytail: the newest 200 of the last 30 minutes, filtered and paged on the device; filter and page on the server if rooms outgrow that
 export async function listOpenRooms() {

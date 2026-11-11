@@ -2,7 +2,7 @@
    컴퓨터는 휴대폰의 컴퓨터와 같고(battleCpu.js), 요청마다 새로 만들어 저장된 추리(memory)를 이어 받는다. */
 import { CPU_NAME, choose, formatId, randomTeam, startBattle } from "./engine.mjs";
 import { createCpu, quickChoice } from "../../../src/services/battleCpu.js";
-import { STREAK_BATTLE_FORMAT, STREAK_REGULATION, streakCpuOptions, streakFoeDraw } from "../../../src/services/streak.js";
+import { STREAK_BAN, STREAK_BATTLE_FORMAT, STREAK_REGULATION, doorsOf, streakCpuOptions, streakFoeDraw } from "../../../src/services/streak.js";
 
 export const STREAK_FORMAT = formatId(STREAK_REGULATION, STREAK_BATTLE_FORMAT);
 
@@ -38,13 +38,21 @@ export function computerTurns(engine, wins, memory, random = Math.random) {
    floor's master from the most used only, streak.js streakFoeDraw), and the computer's team preview already chosen. name: the
    trainer's, as the battle row shows it. party: the player's, carried from the floor's last game (with a swap made); a floor's first
    game draws a new one. */
-export function streakGame(name, wins, random = Math.random, party = null) {
+export function streakGame(name, wins, random = Math.random, party = null, foe = null) {
   const seed = Array.from({ length: 4 }, () => Math.floor(random() * 0x10000));
-  const p1Team = party || randomTeam(STREAK_FORMAT, random);
+  const p1Team = party || randomTeam(STREAK_FORMAT, random, { ban: STREAK_BAN });
   const engine = startBattle({
     formatid: STREAK_FORMAT, seed,
     p1: { name, team: p1Team },
-    p2: { name: CPU_NAME, team: randomTeam(STREAK_FORMAT, random, streakFoeDraw(wins)) },
+    p2: { name: CPU_NAME, team: foe || randomTeam(STREAK_FORMAT, random, streakFoeDraw(wins)) },
   });
   return { engine, p1Team, ...computerTurns(engine, wins, undefined, random) };
 }
+
+/* the doors to the next game (2026-11-11, docs/BATTLE_STREAK.md 13장, streak.js doorsOf): a party drawn for each, kept by the run
+   until the next game is opened, and told to the player as species only, as a team preview shows them. The gatekeeper's door shows
+   nothing. wins: the wins before the next game */
+export function streakDoors(wins, random = Math.random) {
+  return doorsOf(wins).map(kind => ({ kind, team: randomTeam(STREAK_FORMAT, random, streakFoeDraw(wins, kind === "hard")) }));
+}
+export const shownDoors = doors => (doors || []).map(d => ({ kind: d.kind, species: d.kind === "gate" ? [] : d.team.map(m => m.species) }));

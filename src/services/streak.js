@@ -17,6 +17,46 @@ export const STREAK_LEVELS = ["porygon", "porygon2", "porygonz"];
    폴리곤2는 휴대폰의 500 ms를 쓰면 1.1초쯤이 되어 서버에서만 줄인다 */
 export const STREAK_BUDGET_MS = { porygon: 300, porygon2: 400, porygonz: 400 };
 
+/* 램프 셋 (2026-11-10, BATTLE_STREAK.md 12장): 도전은 램프 셋으로 시작한다. 진 판(패배, 기권, 시간 초과, 무승부)마다 하나가 꺼지고
+   같은 판을 새 상대와 다시 한다. 셋이 다 꺼지면 도전이 끝난다. 수문장을 깨면 하나가 다시 켜진다(셋까지). 기록은 그대로 이긴 판 수다 */
+export const STREAK_LIVES = 3;
+/* 탑의 세트에서 빼는 것, 양쪽 모두(같은 장): 한 번의 주사위가 판을 가르는 도구와 기술. 세트의 첫 도구가 빠지면 그 세트의 다음 도구가
+   서고(engine.mjs randomTeam ban), 빠지는 기술을 가진 세트는 뽑히지 않는다. 2026-11-10 m-c 싱글 1329세트 가운데 기술 11, 도구 155
+   세트가 닿고, 도구가 없어지는 세트와 사라지는 종은 없다 */
+export const STREAK_BAN = {
+  items: ["Bright Powder", "Quick Claw", "King's Rock", "Focus Band"],
+  moves: ["Sheer Cold", "Fissure", "Horn Drill", "Guillotine", "Double Team", "Minimize"],
+};
+
+/* 시작 드래프트 (2026-11-11, BATTLE_STREAK.md 13장): 도전을 시작하면 힘의 급마다 이만큼의 후보가 서고, 급마다 하나씩 골라 여섯을 만든다
+   (engine.mjs draftOffer, draftParty). 후보는 세트 그대로라 무엇을 데려가는지 알고 고른다 */
+export const STREAK_DRAFT = 3;
+
+/* 층의 타입 (13장): 층마다 상대 파티가 한 타입으로 모인다. 급마다 그 타입의 종이 있으면 그 종이 먼저 서므로(randomTeam prefer), 거의
+   모든 층에서 여섯 가운데 대부분이 그 타입이다. 여덟 층은 그 층의 수문장을 따른다(루카리오 격투, 한카리아스 땅, 팬텀 고스트, 가디안
+   페어리, 마기라스 바위, 망나뇽 비행, 보만다 드래곤, 리자몽 불꽃). 그 위로는 남은 타입을 차례로 돈다: 같은 층은 누구에게나 같은
+   타입이라, 탑을 아는 것이 실력이다. 2026-11-11 m-c 싱글 표본에서 모든 타입이 여섯 급 가운데 다섯 급 이상에 종이 있다 */
+export const FLOOR_TYPES = ["Fighting", "Ground", "Ghost", "Fairy", "Rock", "Flying", "Dragon", "Fire"];
+const LATER_TYPES = ["Water", "Steel", "Psychic", "Dark", "Electric", "Grass", "Poison", "Ice", "Normal", "Bug"];
+export const floorType = floor => FLOOR_TYPES[floor - 1] || LATER_TYPES[(floor - FLOOR_TYPES.length - 1) % LATER_TYPES.length];
+
+/* 상대 파티의 힘 (13장): 층마다 한 계단씩 오르고, 수문장과 강한 상대의 문은 그 층보다 두 계단 위다. 한 계단은 가장 약한 자리 하나를
+   한 급 올린 것이다. 1층 수문장(두 계단)이 예전의 MASTER_PLAN 그대로라, 잰 값(11장: 같은 실력이면 수문장이 약 55%)에서 이어진다.
+   계단 하나는 그 절반, 몫으로 약 0.15다. 다섯 층부터는 더 오르지 않는다(컴퓨터의 난이도와 함께 한 달 뒤 다시 정한다) */
+const PLANS = [
+  [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 4], [0, 1, 2, 3, 3, 4], [0, 1, 2, 3, 3, 3],
+  [0, 1, 2, 2, 3, 3], [0, 1, 2, 2, 2, 3], [0, 1, 1, 2, 2, 3],
+];
+export const foeSteps = (wins, hard = false) => Math.min(PLANS.length - 1, Math.min(streakFloor(wins) - 1, 4) + (hard || streakMaster(wins) ? 2 : 0));
+export const foePlan = (wins, hard = false) => PLANS[foeSteps(wins, hard)];
+
+/* 다음 판의 문 (13장): 끝난 판 뒤에 도전이 쉬면, 다음 판은 문으로 고른다. 보통은 두 문, 상대의 여섯이 보이는 보통 상대와 두 계단 센
+   강한 상대다. 강한 상대를 이기면 수문장을 이긴 것처럼 램프 하나가 다시 켜지고(셋까지), 그 판의 교환은 한 급 위까지 닿는다. 다음
+   판이 수문장이면 문은 하나, 닫힌 문이다(수문장은 판에 들어가서야 본다, 2026-11-09). wins: 다음 판 전에 이긴 판 수 */
+export const doorsOf = wins => (streakMaster(wins) ? ["gate"] : ["even", "hard"]);
+// 이긴 판이 램프를 다시 켜는가(수문장이거나 강한 상대). wins: 그 판 전에 이긴 판 수
+export const streakRelights = (wins, hard = false) => hard || streakMaster(wins);
+
 // 몇 번째 층(1부터)과 그 층의 몇 번째 판(1부터 다섯)
 export const streakFloor = wins => Math.floor(Math.max(0, wins) / STREAK_STEP) + 1;
 export const floorGame = wins => (Math.max(0, wins) % STREAK_STEP) + 1;
@@ -29,6 +69,21 @@ export const gameWords = wins => (streakMaster(wins) ? `${streakFloor(wins)}층 
 export const streakMaster = wins => floorGame(wins) === STREAK_STEP;
 // 이 판이 층의 첫 판인가: 층마다 파티를 새로 받는다(그 안에서는 이어 가고, 이길 때마다 상대와 같은 급끼리 바꿀 수 있다)
 export const streakFresh = wins => floorGame(wins) === 1;
+
+/* 도전의 판들을 차례로 읽는다(중계, battleService.js runGames): 판마다 그 판 전에 이긴 판 수(at)와 그 판에 들어갈 때 켜져 있던
+   램프(lives). 진 판 뒤에도 도전이 이어지므로 판의 자리가 곧 연승이 아니다. games: [{ id, status, winner }], 열린 순서.
+   over: 마지막 판이 끝났고 램프가 남지 않았다. 공개 행은 강한 상대의 문을 말하지 않아 그 문이 다시 켠 램프는 여기서 세지 못한다:
+   관전 화면은 도전의 상태를 따로 읽고(battleService.js readRunState), 그것을 읽지 못할 때만 이 over를 쓴다 */
+export function runTrack(games) {
+  let at = 0, lives = STREAK_LIVES;
+  const out = games.map(g => {
+    const row = { id: g.id, at, lives };
+    if (g.status !== "ended") return row;
+    if (g.winner === "p1") { if (streakMaster(at)) lives = Math.min(STREAK_LIVES, lives + 1); at += 1; } else lives -= 1;
+    return row;
+  });
+  return Object.assign(out, { over: lives <= 0 });
+}
 
 /* 층마다 정해진 수문장 (2026-11-09 사용자: "층마다 강력한 포켓몬을 설정하는 거야. 해당 층에 도달하면 고정으로 나오는 포켓몬. 메가진화로
    설정하면 아마 좋겠지. 층을 올라갈 때마다 강력해지고. 특정 층 이상으로 가면 그냥 랜덤으로"). 수문장의 파티는 이 메가진화 포켓몬과,
@@ -59,11 +114,28 @@ export const streakCpuOptions = wins => {
 };
 /* 이 판의 컴퓨터 파티를 뽑는 randomTeam 옵션: 언제나 균형 잡힌 파티(partyBalance.js)이고, 층의 수문장은 한 급 위로 당긴 계획에 그
    층의 메가진화 포켓몬을 세운다(정해진 층 위로는 맨 위 급의 메가진화 하나를 뽑는다: ace true) */
-export const streakFoeDraw = wins => {
-  if (!streakMaster(wins)) return { meta: true };
+/* 2026-11-11: 계획은 층과 문이 정하고(foePlan), 상대는 층의 타입으로 모인다(floorType). hard: 강한 상대의 문 */
+export const streakFoeDraw = (wins, hard = false) => {
+  const draw = { meta: true, ban: STREAK_BAN, plan: foePlan(wins, hard), prefer: floorType(streakFloor(wins)) };
+  if (!streakMaster(wins)) return draw;
   const keeper = gatekeeperOf(streakFloor(wins));
-  return { meta: true, master: true, ace: keeper ? { species: keeper.species, stone: keeper.stone } : true };
+  return { ...draw, ace: keeper ? { species: keeper.species, stone: keeper.stone } : true };
 };
+
+/* 오늘의 탑 (13장): 그날의 모든 도전이 같은 자리에서 같은 후보, 같은 문, 같은 시드를 받는다. key: 무엇을 뽑는지와 그 자리(이긴 판 수와
+   지금까지 둔 판 수). 같은 열쇠는 같은 수열이다(mulberry32, 열쇠의 FNV-1a 해시가 씨앗) */
+export function seeded(key) {
+  let h = 0x811c9dc5;
+  for (const ch of String(key)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  let a = h || 1;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32;
+  };
+}
 
 /* 화면이 아는 이름이 이 포켓몬인가. 선출 화면은 몇몇 폼을 숨겨 Gourgeist-*, Greninja-* 처럼 보이고(쇼다운 규칙), 화면은 그 이름으로
    고른다. 한 파티에 같은 종은 하나뿐이라 종으로 맞춰도 하나다 */
@@ -79,11 +151,14 @@ const named = (species, shown) => id(species) === id(shown) || (String(shown).en
    "clash"(같은 종이 둘이 됨. 같은 도구는 바뀌는 포켓몬의 도구를 받아 피한다). 서버는 그 뒤 검증기로 한 번 더 본다 */
 export const swapTier = species => tierOf(STREAK_FORMAT_ID, species);
 const MEGA_STONE = /^(?!Eviolite$).+ite( [XYZ])?$/;
-export function swapParty(party, foes, give, take) {
+/* reach (2026-11-11, 13장 승급): 수문장이나 강한 상대를 이긴 판의 교환은 한 급 위까지 닿는다(1). 그 밖에는 같은 급끼리(0). 아래로
+   내려가는 교환은 받지 않는다 */
+export function swapParty(party, foes, give, take, reach = 0) {
   const out = party.findIndex(m => named(m.species, give));
   const coming = foes.find(m => named(m.species, take));
   if (out < 0 || !coming) return "missing";
-  if (swapTier(party[out].species) !== swapTier(coming.species)) return "tier";
+  const up = swapTier(party[out].species) - swapTier(coming.species);
+  if (!(up >= 0 && up <= reach)) return "tier";
   const rest = party.filter((_, i) => i !== out);
   if (rest.some(m => id(base(m.species)) === id(base(coming.species)))) return "clash";
   /* an item already in our party: the one coming takes the item of the one it replaces, which the party never holds twice (the

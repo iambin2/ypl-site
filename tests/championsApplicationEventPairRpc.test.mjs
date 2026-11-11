@@ -93,7 +93,8 @@ test("docs/db never grants anon an admin RPC or a table write", () => {
     // A battle's replay log: a read that hides an official battle's parties until the event reveals them (battle_integration.sql).
     if (/^grant execute on function public\.battle_full_log\(/.test(statement)) continue;
     // The 연승 도전 board: a stable read of names and counts that shows no account id (streak_runs.sql); the runs table stays closed.
-    if (/^grant execute on function public\.streak_board\(/.test(statement)) continue;
+    // The day's board and a run's lamps for whoever watches its game (2026-11-11): the same kind of read, names, counts and states only.
+    if (/^grant execute on function public\.(streak_board|streak_daily_board|streak_run_public)\(/.test(statement)) continue;
     const rpc = statement.match(/^grant execute on function ypl_schema_validation\.(\w+)\(/);
     if (rpc) { assert.ok(anonRpcs.has(rpc[1]), statement); continue; }
     assert.match(statement, /^grant insert \([^)]*\) on ypl_schema_validation\.event_registrations to anon$/);

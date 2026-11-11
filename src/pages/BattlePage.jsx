@@ -20,6 +20,7 @@ import { LobbyArena, LobbyStage, STATUS, Stage, effLabel, effectiveness, nameOf,
 import { goIn, prewarm, setSpeed as setStageSpeed } from "./battle/stageFx.js";
 import { sfx } from "./battle/sfx.js";
 import { audio, setSoundOn, soundOn } from "./battle/cries.js";
+import { readRunState } from "../services/battleService.js";
 import { BOARD_DRAFT_KEY, battleHref, battlePollDelay, canRematch, cancelBattle, chooseInBattle, createBattle, recordCpuBattle, readCpuReplay, forfeitBattle, forgetSeat, isDoubles, joinBattle, listEventBattles, listOpenRooms, playerViewIsCurrent, readBattleRow, readBattleVersion, readSeat, rematchBattle, runGames, takeOfficialSeat, viewBattle, warmBattle } from "../services/battleService.js";
 import { parseBoutKey } from "../services/teamBouts.js";
 import { watchBattleSignal } from "../services/battleSignal.js";
@@ -33,7 +34,7 @@ import { BattleLists, ReplayBar, downloadReplay, replayKey } from "./battle/Repl
 import { FoeSix, MonCard, PickDock, TeamInfo, TeamPick, ownCards, seenCards } from "./battle/Sets.jsx";
 import { StreakBand, StreakEnd, StreakOpen, StreakStake, TrackBar, floorCall, useAccount } from "./battle/Streak.jsx";
 import { liftArrive, towerDrop } from "./battle/tower.js";
-import { floorGame, gameWords, streakFloor, streakMaster } from "../services/streak.js";
+import { floorGame, gameWords, runTrack, streakFloor, streakMaster } from "../services/streak.js";
 import { LiveCard, LiveHall, useLabels, useLiveBoards } from "./battle/Live.jsx";
 
 /* 배틀 (DESIGN.md "Battle"). 친선전은 팀 빌더에 저장한 팀으로 열고, 링크를 받은 사람이 참가한다.
@@ -1420,30 +1421,35 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
   useEffect(() => {
     if (row.kind !== "streak" || seat?.game) return undefined;
     let on = true;
-    runGames(row.run_id).then(ids => { const i = ids.indexOf(row.id); if (on && i >= 0) setRunAt(i); });
+    runGames(row.run_id).then(games => { const game = runTrack(games).find(g => g.id === row.id); if (on && game) setRunAt(game.at); });
     return () => { on = false; };
   }, [row.id, row.run_id]);
   const gameAt = row.kind !== "streak" ? null : seat?.game ? seat.game - 1 : runAt;
-  /* 중계 of a run (2026-11-09, the user: "연승 도전 같은 경우는 계속해서 볼 수 있게 해주고. 지기 전까지"): a won game stands on its
-     end until its player opens the next one (다음 판), and the watcher goes into it as the player does, the court going dark and the
-     floor called on it. A lost game ends the run and the watching with it; a run resting longer than ten minutes is let go */
-  const following = !seat && ended && row.kind === "streak" && row.winner === "p1" && Boolean(row.run_id && onOpen);
+  /* 중계 of a run (2026-11-09, the user: "연승 도전 같은 경우는 계속해서 볼 수 있게 해주고. 지기 전까지"): an ended game stands on its
+     end until its player opens the next one (다음 판, or the lost game again while a lamp is left, 2026-11-10), and the watcher goes
+     into it as the player does, the court going dark and the floor called on it. The game that puts out the last lamp ends the run
+     and the watching with it (runGames over); a run resting longer than ten minutes is let go */
+  const following = !seat && ended && row.kind === "streak" && Boolean(row.run_id && onOpen);
   const [followed, setFollowed] = useState(false);
   useEffect(() => {
     if (!following || !shownEnded || !revealed) return undefined;
     let on = true, timer = null;
     const from = Date.now();
     const look = async () => {
-      const ids = document.visibilityState === "visible" ? await runGames(row.run_id) : [];
+      const games = document.visibilityState === "visible" ? runTrack(await runGames(row.run_id)) : null;
       if (!on) return;
-      const at = ids.indexOf(row.id), next = at >= 0 ? ids[at + 1] : null;
+      const at = games ? games.findIndex(g => g.id === row.id) : -1, next = at >= 0 ? games[at + 1] : null;
+      // whether the run is over: its own state when the SQL gives it (a strong door's lamp is not in the public rows), else the rows'
+      const state = !next && games && row.winner !== "p1" ? await readRunState(row.id) : null;
+      if (!on) return;
+      if (state) games.over = state.status !== "active";
       if (next) {
         await settle();
-        const ride = floorCall(goingIn(".bt-main"), ".bt-main", at + 1, leaveNow);
-        const read = await enterBattle(next, ride.shown).then(() => true, () => false);
-        if (read && on) { await ride.leave(); onOpen(next); } else towerDrop();
-      } else if (Date.now() - from < 600_000) timer = setTimeout(look, 3000);
-      else setFollowed(true);
+        const ride = floorCall(goingIn(".bt-main"), ".bt-main", next.at, leaveNow);
+        const read = await enterBattle(next.id, ride.shown).then(() => true, () => false);
+        if (read && on) { await ride.leave(); onOpen(next.id); } else towerDrop();
+      } else if (games?.over || Date.now() - from >= 600_000) setFollowed(true);
+      else timer = setTimeout(look, 3000);
     };
     void look();
     return () => { on = false; clearTimeout(timer); };
@@ -1498,7 +1504,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
     {(!seat || ended) && <Question id="bt-pov" label="시점" group>
       <Choice name="bt-pov" options={[names.p1, names.p2]} value={names[perspective]} onChange={who => turnTo(who === names.p1 ? "p1" : "p2")} />
     </Question>}
-    {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} />}
+    {row.kind === "streak" && seat && !ended && <StreakStake wins={seat.wins ?? 0} lives={seat.lives} />}
     {narrow && logBox}
     <div className="bt-links">
       {(!seat || ended) && <Button variant="link" onClick={shareHere}>{ended ? "리플레이 공유" : "링크 공유"}</Button>}
@@ -1526,7 +1532,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
             : seat && previewParty.current
             ? <TeamPick res={res} foe={preview[foe].preview} foeName={names[foe]} pokemon={previewParty.current} count={pickCount.current}
                 locked={!choosing || !request?.teamPreview} picks={picks} setPicks={setPicks} onInfo={narrow || shortPick ? i => setSheetTip(`pick:${i}`) : null}
-                stake={row.kind === "streak" && narrow ? <StreakBand wins={seat.wins ?? 0} /> : null} keeper={row.kind === "streak" && streakMaster(seat.wins ?? 0)} />
+                stake={row.kind === "streak" && narrow ? <StreakBand wins={seat.wins ?? 0} lives={seat.lives} /> : null} keeper={row.kind === "streak" && streakMaster(seat.wins ?? 0)} />
             : <div className="bt-preview">
                 {[foe, perspective].map(side => <FoeSix key={side} res={res} species={preview[side].preview} title={`${names[side]}의 파티`} />)}
               </div>}
@@ -1550,7 +1556,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
                   it made the deck 54 taller the moment it came, and the stage over it dropped (2026-11-10, measured on the other phone) */}
               <span className="bt-end-line">{offered ? <><i className="lamp" aria-hidden="true" />{`${josa(names[foe], "subject")} 다시하기를 원합니다.`}</> : endLine}</span>
             </div>}
-            {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} {...streak} settle={settle} onInfo={setSheetTip} stage={stageBox} away={autoplay || cue != null}
+            {streak ? <StreakEnd id={row.id} won={row.winner === seat?.side} res={res} {...streak} settle={settle} onInfo={setSheetTip} stage={stageBox} away={autoplay || cue != null}
               ours={(preview[perspective]?.preview || []).map(mon)} theirs={(preview[foe]?.preview || []).map(mon)} /> : (rematch || official || leave) && <Dock>
               <div className="bt-end-keys">
                 {rematch ? <Button variant="main" icon="refresh" loading={again} onClick={rematch}>{offered ? "다시하기 수락" : "다시하기"}</Button>
@@ -1581,7 +1587,7 @@ export function Arena({ row, view, seat, res, onView, go, say, start, onLeave, o
         {!started && !ended && <span className="bt-pv-title bt-side-title" aria-hidden="true">경기</span>}
         {head}
         {/* a 도전의 탑 game's stake on its team preview stands under the head on a desktop, so the pick stays in one window */}
-        {!started && !ended && row.kind === "streak" && seat && <StreakBand wins={seat.wins ?? 0} />}
+        {!started && !ended && row.kind === "streak" && seat && <StreakBand wins={seat.wins ?? 0} lives={seat.lives} />}
         {wide && pickDock}
         {/* the party right under the head, where the eye already is (it took the information bay's place, 2026-11-09). A finished
             battle has it from the start: mounted with the first lead, it landed under the opening's board as a stop of its own (2026-11-07) */}

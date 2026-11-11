@@ -118,19 +118,34 @@ export async function decideLinkRequest(user, approve) {
   if (error) throw new Error(error.message || "결정을 저장하지 못했습니다.");
 }
 
-/* 연승 도전 (docs/BATTLE_STREAK.md): the start is the one battle request made as the signed-in account, since the run is the
-   account's; the battle function checks the token itself. A refusal keeps the function's own sentence. */
-export async function startStreakRun() {
+/* 연승 도전 (docs/BATTLE_STREAK.md): the start and the draft are the battle requests made as the signed-in account, since the run is
+   the account's until its first game gives it a seat; the battle function checks the token itself. A refusal keeps the function's own
+   sentence. */
+async function asAccount(body) {
   const bearer = await token();
   if (!bearer) throw Object.assign(new Error("로그인이 만료되었습니다. 다시 로그인해 주세요."), { signedOut: true });
   const response = await fetch(`${URL_BASE}functions/v1/battle`, {
     method: "POST", headers: { apikey: KEY, Authorization: `Bearer ${bearer}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "streak" }),
+    body: JSON.stringify(body),
   }).catch(() => null);
   if (!response) throw Object.assign(new Error("연결이 끊겼습니다. 연결을 확인하고 다시 시도해 주세요."), { status: 0 });
   const json = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(json.error || "잠시 뒤 다시 시도해 주세요."), { status: response.status });
   return json;
+}
+/* a run begins with its draft (2026-11-11, BATTLE_STREAK.md 13장): { run, draft }, the candidates of each tier. daily: 오늘의 탑 */
+export const startStreakRun = (daily = false) => asAccount({ action: "streak", draft: true, daily });
+// the draft picked, one species from each row: the run's first game, as streakNextGame answers a next one
+export const pickStreakDraft = (picks, daily = false) => asAccount({ action: "streakDraft", picks, daily });
+/* 오늘의 탑's board (streak_daily_board): today's, read as the account when signed in. Before the SQL has run it stands aside (null) */
+export async function readDailyBoard() {
+  const signedIn = visitorSignedIn() && Boolean(await token());
+  try {
+    return await rest("rpc/streak_daily_board", { method: "POST", body: {}, auth: signedIn });
+  } catch (error) {
+    if (error.status === 404 || error.code === "PGRST202") return null;
+    throw error;
+  }
 }
 /* a month's board (streak_board): read as the account when signed in, so the viewer's own row is marked. month: "2026-11-01", or
    none for this month. Before docs/db/streak_runs.sql has run there is no such function, and the feature stands aside (null). */

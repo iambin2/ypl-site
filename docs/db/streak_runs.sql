@@ -11,6 +11,13 @@
 --     도전 기록(streak_runs)은 작아서 남긴다. 새 도전은 사이트 전체 하루 300번까지다.
 --   - 시간이 지난 판(90초 안에 고르지 않음)을 닫는 따로 도는 작업은 없다. 누가 새 도전을 시작할 때 지난 판들을 조금씩 닫는다.
 --     그 사이에도 순위는 마감이 지난 판을 진행 중으로 보이지 않는다.
+--   - 램프 셋(2026-11-10, BATTLE_STREAK.md 12장): 도전은 램프 셋으로 시작하고, 진 판(패배, 기권, 시간 초과, 무승부)마다 하나가
+--     꺼진다. 램프가 남으면 도전은 쉬고, 같은 판을 새 상대와 다시 연다(streak_next). 셋이 다 꺼지면 끝난다. 수문장을 깨면 하나가
+--     다시 켜진다. 판 끝 처리는 streak_settle 이 한다. streak_after_battle 은 이 SQL을 실행한 뒤 새 배틀 함수를 올리기 전까지,
+--     이미 올라가 있는 함수가 부르도록 예전 그대로 둔다(한 번 지면 끝).
+--   - 2단계부터(2026-11-11, BATTLE_STREAK.md 13장): 도전은 판 없이 시작해 드래프트를 기다리고(streak_begin, streak_first), 끝난
+--     판 뒤의 다음 판은 문으로 고른다(offer). 오늘의 탑(daily)은 하루에 한 번, 그날의 모두가 같은 자리에서 같은 것을 받는다.
+--     오늘의 탑과 달의 도전은 계정마다 하나씩 따로 진행되고, 달의 순위에는 달의 도전만 든다.
 
 begin;
 
@@ -36,7 +43,16 @@ create table if not exists public.streak_runs (
   check ((status = 'ended') = (ended_at is not null)),
   check ((wins = 0) = (last_win_at is null))
 );
-create unique index if not exists streak_runs_one_active on public.streak_runs (auth_user_id) where status = 'active';
+-- 남은 램프. 진행 중인 도전은 하나 이상, 끝난 도전은 꺼진 채(0)이거나 새로 도전으로 끝낸 그때의 수다.
+alter table public.streak_runs add column if not exists lives integer not null default 3 check (lives between 0 and 3);
+-- 도전이 기다리는 선택(배틀 함수만 읽는다): 시작한 뒤의 드래프트 후보 { draft }, 끝난 판 뒤의 문 { doors, reach }. 판이 열리면 지운다.
+alter table public.streak_runs add column if not exists offer jsonb;
+-- 오늘의 탑이면 그날(KST). 비어 있으면 달의 도전이다.
+alter table public.streak_runs add column if not exists daily date;
+-- 진행 중인 도전은 계정마다 달의 도전 하나, 오늘의 탑 하나
+drop index if exists public.streak_runs_one_active;
+create unique index if not exists streak_runs_one_active_kind on public.streak_runs (auth_user_id, (daily is null)) where status = 'active';
+create unique index if not exists streak_runs_one_daily on public.streak_runs (auth_user_id, daily) where daily is not null;
 create index if not exists streak_runs_board on public.streak_runs (month, wins desc, last_win_at);
 alter table public.streak_runs enable row level security;
 revoke all on table public.streak_runs from public, anon, authenticated;
@@ -113,7 +129,8 @@ begin
   values (p_id, p_regulation, p_format_id, p_engine, 'active', 'streak', p_run, left(btrim(p_p1_name), 20), '컴퓨터', p_turn, p_spectator_log);
   insert into public.battle_secrets (battle_id, p1_token_hash, p1_team, state, pending)
   values (p_id, p_token_hash, p_p1_team, p_state, coalesce(p_pending, '{}'::jsonb));
-  update public.streak_runs r set battle_id = p_id where r.id = p_run;
+  -- 판이 열리면 도전이 기다리던 선택(드래프트, 문)은 끝났다
+  update public.streak_runs r set battle_id = p_id, offer = null where r.id = p_run;
 end;
 $$;
 
@@ -176,7 +193,8 @@ begin
     update public.streak_runs r set status = 'ended', ended_at = now() where r.id = v_stale.run_id;
   end loop;
 
-  -- 사이트의 시간이 지난 판: 90초 안에 고르지 않은 쪽이 지는 시계 규칙 그대로, 컴퓨터는 늦지 않으므로 선수가 진다
+  -- 사이트의 시간이 지난 판: 90초 안에 고르지 않은 쪽이 지는 시계 규칙 그대로, 컴퓨터는 늦지 않으므로 선수가 진다.
+  -- 진 판이므로 그 도전의 램프 하나가 꺼지고, 남은 램프가 없을 때만 도전이 끝난다(돌아온 선수는 이어서 한다)
   for v_stale in
     select b.id, b.run_id from public.battles b
      where b.kind = 'streak' and b.status = 'active' and b.deadline_at < now() - interval '1 minute'
@@ -186,7 +204,11 @@ begin
        set status = 'ended', winner = 'p2', ended_by = 'timeout', log = b.spectator_log, input_log = '', version = b.version + 1, updated_at = now()
      where b.id = v_stale.id;
     perform public.streak_clear_secret(v_stale.id);
-    update public.streak_runs r set status = 'ended', ended_at = now() where r.id = v_stale.run_id and r.status = 'active';
+    update public.streak_runs r
+       set lives = r.lives - 1,
+           status = case when r.lives <= 1 then 'ended' else 'active' end,
+           ended_at = case when r.lives <= 1 then now() end
+     where r.id = v_stale.run_id and r.status = 'active' and r.battle_id = v_stale.id;
   end loop;
 
   -- 지난달보다 오래된 연승 판. 도전 기록은 남고 그 판만 사라진다(battle_id가 비워진다)
@@ -197,7 +219,7 @@ begin
   values (p_user, btrim(v_name), p_format_id, (date_trunc('month', now() at time zone 'Asia/Seoul'))::date)
   returning id into v_run;
   perform public.streak_open_battle(v_run, p_id, p_regulation, p_format_id, p_engine, v_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
-  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0);
+  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0, 'lives', 3);
 end;
 $$;
 
@@ -240,7 +262,8 @@ begin
 end;
 $$;
 
--- 9-1. 다음 판. 이긴 판에서 선수가 다음 판을 누르면 연다: 도전이 진행 중이고, 도전의 지금 판이 그 이긴 판이며, 이미 센 판일 때만.
+-- 9-1. 다음 판. 끝난 판에서 선수가 다음 판을 누르면 연다: 도전이 진행 중이고, 도전의 지금 판이 그 끝난 판이며, 이미 센 판일 때만.
+--      이긴 판이면 다음 판이고, 진 판이면(램프가 남아 도전이 진행 중일 때만 여기까지 온다) 같은 판을 다시 한다.
 --      다음 판이 이미 열렸으면(두 번 누름, 다른 기기) 열지 않는다.
 create or replace function public.streak_next(
   p_battle_id text, p_id text, p_regulation text, p_format_id text, p_engine text,
@@ -256,8 +279,8 @@ declare
   v_run public.streak_runs%rowtype;
 begin
   select * into v_battle from public.battles b where b.id = p_battle_id;
-  if not found or v_battle.kind <> 'streak' or v_battle.status <> 'ended' or v_battle.winner is distinct from 'p1' then
-    raise exception using errcode = 'P0001', message = '이긴 판에서만 다음 판을 열 수 있습니다.';
+  if not found or v_battle.kind <> 'streak' or v_battle.status <> 'ended' then
+    raise exception using errcode = 'P0001', message = '끝난 판에서만 다음 판을 열 수 있습니다.';
   end if;
   select * into v_run from public.streak_runs r where r.id = v_battle.run_id for update;
   if v_run.status <> 'active' or v_run.battle_id is distinct from p_battle_id
@@ -265,7 +288,7 @@ begin
     raise exception using errcode = 'P0001', message = '이 도전의 다음 판은 이미 열렸거나 도전이 끝났습니다.';
   end if;
   perform public.streak_open_battle(v_run.id, p_id, p_regulation, p_format_id, p_engine, v_run.trainer_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
-  return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'battle_id', p_id);
+  return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'lives', v_run.lives, 'battle_id', p_id);
 end;
 $$;
 
@@ -278,6 +301,174 @@ security definer
 set search_path = ''
 as $$
   select r.wins from public.streak_runs r join public.battles b on b.run_id = r.id where b.id = p_battle_id;
+$$;
+
+-- 9-3. 판이 끝난 뒤(램프 셋, 2026-11-10). 이기면 연승을 하나 올리고, 깬 판이 수문장이면(p_relight, 층의 규칙은 streak.js가
+--      알고 배틀 함수가 말한다) 램프 하나가 다시 켜진다(셋까지). 지면 램프 하나가 꺼지고, 남은 램프가 없으면 도전이 끝난다.
+--      다음 판은 여기서 열지 않는다. 같은 판으로 두 번 불러도 한 번만 센다: 센 판은 엔진 상태가 지워져 있다.
+drop function if exists public.streak_settle(text, boolean);
+-- p_offer(2026-11-11): 도전이 이어지면 다음 판의 문과 교환이 닿는 급({ doors, reach }). 끝나면 쓰지 않는다.
+create or replace function public.streak_settle(p_battle_id text, p_relight boolean, p_offer jsonb default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_battle public.battles%rowtype;
+  v_run public.streak_runs%rowtype;
+begin
+  select * into v_battle from public.battles b where b.id = p_battle_id;
+  if not found or v_battle.kind <> 'streak' or v_battle.status <> 'ended' then
+    raise exception using errcode = '22023', message = 'not an ended streak battle';
+  end if;
+  select * into v_run from public.streak_runs r where r.id = v_battle.run_id for update;
+  if v_run.status = 'active' and v_run.battle_id is not distinct from p_battle_id
+     and exists (select 1 from public.battle_secrets s where s.battle_id = p_battle_id and s.state is not null) then
+    perform public.streak_clear_secret(p_battle_id);
+    if v_battle.winner = 'p1' then
+      update public.streak_runs r
+         set wins = r.wins + 1, last_win_at = now(), lives = least(3, r.lives + case when p_relight then 1 else 0 end)
+       where r.id = v_run.id returning * into v_run;
+    else
+      update public.streak_runs r
+         set lives = r.lives - 1,
+             status = case when r.lives <= 1 then 'ended' else 'active' end,
+             ended_at = case when r.lives <= 1 then now() end
+       where r.id = v_run.id returning * into v_run;
+    end if;
+    if v_run.status = 'active' then
+      update public.streak_runs r set offer = p_offer where r.id = v_run.id returning * into v_run;
+    end if;
+  end if;
+  return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'lives', v_run.lives, 'status', v_run.status);
+end;
+$$;
+
+-- 9-4. 판의 자리에서 본 도전: 연승, 남은 램프, 진행 중인지, 도전이 지금 서 있는 판. 배틀 함수가 다음 판을 만들 때와, 자리가 판을
+--      다시 읽을 때(시간 초과로 끝난 판, 다시 연 화면) 쓴다.
+create or replace function public.streak_run_state(p_battle_id text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object('run_id', r.id, 'wins', r.wins, 'lives', r.lives, 'status', r.status, 'battle_id', r.battle_id, 'offer', r.offer,
+         'daily', r.daily, 'games', (select count(*) from public.battles g where g.run_id = r.id))
+    from public.streak_runs r join public.battles b on b.run_id = r.id where b.id = p_battle_id;
+$$;
+
+-- 9-5. 시작(2026-11-11). 판을 열지 않고 도전만 세워 드래프트를 기다린다(p_offer { draft }). p_daily: 오늘의 탑. 같은 종류의 진행 중인
+--      도전은 그때까지의 연승으로 끝나고(그 판은 기권), 오늘의 탑은 하루에 한 번이다. 정리와 하루 한도는 streak_start 그대로다.
+create or replace function public.streak_begin(p_user uuid, p_format_id text, p_offer jsonb, p_daily boolean default false)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_name text;
+  v_run uuid;
+  v_day date := case when p_daily then (now() at time zone 'Asia/Seoul')::date end;
+  v_stale record;
+  v_keep_from timestamptz := (date_trunc('month', now() at time zone 'Asia/Seoul') - interval '1 month') at time zone 'Asia/Seoul';
+begin
+  select a.requested_name into v_name from public.player_accounts a where a.auth_user_id = p_user and a.status = 'approved';
+  if v_name is null then
+    raise exception using errcode = '42501', message = '이름이 승인된 Google 계정만 도전의 탑에 오를 수 있습니다.';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('streak_start'));
+  if (select count(*) from public.streak_runs r where r.started_at > now() - interval '1 day') >= 300 then
+    raise exception using errcode = 'P0001', message = '오늘의 도전의 탑이 모두 찼습니다. 내일 다시 도전해 주세요.';
+  end if;
+  if p_daily and exists (select 1 from public.streak_runs r where r.auth_user_id = p_user and r.daily = v_day) then
+    raise exception using errcode = 'P0001', message = '오늘의 탑은 하루에 한 번 오를 수 있습니다.';
+  end if;
+
+  for v_stale in
+    select r.id as run_id, r.battle_id from public.streak_runs r
+     where r.auth_user_id = p_user and r.status = 'active' and (r.daily is null) = (not p_daily) for update
+  loop
+    update public.battles b
+       set status = 'ended', winner = 'p2', ended_by = 'forfeit', log = b.spectator_log, input_log = '', version = b.version + 1, updated_at = now()
+     where b.id = v_stale.battle_id and b.status = 'active';
+    if v_stale.battle_id is not null then perform public.streak_clear_secret(v_stale.battle_id); end if;
+    update public.streak_runs r set status = 'ended', ended_at = now(), offer = null where r.id = v_stale.run_id;
+  end loop;
+
+  for v_stale in
+    select b.id, b.run_id from public.battles b
+     where b.kind = 'streak' and b.status = 'active' and b.deadline_at < now() - interval '1 minute'
+     order by b.deadline_at limit 20 for update skip locked
+  loop
+    update public.battles b
+       set status = 'ended', winner = 'p2', ended_by = 'timeout', log = b.spectator_log, input_log = '', version = b.version + 1, updated_at = now()
+     where b.id = v_stale.id;
+    perform public.streak_clear_secret(v_stale.id);
+    update public.streak_runs r
+       set lives = r.lives - 1,
+           status = case when r.lives <= 1 then 'ended' else 'active' end,
+           ended_at = case when r.lives <= 1 then now() end
+     where r.id = v_stale.run_id and r.status = 'active' and r.battle_id = v_stale.id;
+  end loop;
+
+  delete from public.battles b
+   where b.id in (select o.id from public.battles o where o.kind = 'streak' and o.status = 'ended' and o.created_at < v_keep_from limit 200);
+
+  insert into public.streak_runs (auth_user_id, trainer_name, format_id, month, offer, daily)
+  values (p_user, btrim(v_name), p_format_id, (date_trunc('month', now() at time zone 'Asia/Seoul'))::date, p_offer, v_day)
+  returning id into v_run;
+  return jsonb_build_object('run_id', v_run, 'trainer_name', btrim(v_name), 'wins', 0, 'lives', 3, 'daily', v_day);
+end;
+$$;
+
+-- 9-6. 계정의 진행 중인 도전(배틀 함수가 드래프트를 읽고 첫 판을 열 때). p_daily: 오늘의 탑 쪽.
+create or replace function public.streak_active_run(p_user uuid, p_daily boolean default false)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object('run_id', r.id, 'trainer_name', r.trainer_name, 'wins', r.wins, 'lives', r.lives, 'battle_id', r.battle_id,
+         'offer', r.offer, 'daily', r.daily, 'games', (select count(*) from public.battles g where g.run_id = r.id))
+    from public.streak_runs r
+   where r.auth_user_id = p_user and r.status = 'active' and (r.daily is null) = (not p_daily);
+$$;
+
+-- 9-7. 드래프트 뒤의 첫 판. 도전이 판 없이 드래프트를 기다릴 때만 연다.
+create or replace function public.streak_first(
+  p_run uuid, p_id text, p_regulation text, p_format_id text, p_engine text,
+  p_token_hash text, p_p1_team jsonb, p_state jsonb, p_pending jsonb, p_turn integer, p_spectator_log text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_run public.streak_runs%rowtype;
+begin
+  select * into v_run from public.streak_runs r where r.id = p_run for update;
+  if not found or v_run.status <> 'active' or v_run.battle_id is not null or v_run.offer -> 'draft' is null then
+    raise exception using errcode = 'P0001', message = '이 도전의 첫 판은 이미 열렸거나 도전이 끝났습니다.';
+  end if;
+  perform public.streak_open_battle(v_run.id, p_id, p_regulation, p_format_id, p_engine, v_run.trainer_name, p_token_hash, p_p1_team, p_state, p_pending, p_turn, p_spectator_log);
+  return jsonb_build_object('run_id', v_run.id, 'wins', 0, 'lives', v_run.lives, 'battle_id', p_id, 'daily', v_run.daily);
+end;
+$$;
+
+-- 9-8. 관전하는 화면이 읽는 도전의 지금(공개): 판 하나가 속한 도전의 연승, 남은 램프, 진행 중인지. 누구의 계정도 말하지 않는다.
+create or replace function public.streak_run_public(p_battle_id text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object('wins', r.wins, 'lives', r.lives, 'status', r.status, 'daily', r.daily is not null)
+    from public.streak_runs r join public.battles b on b.run_id = r.id where b.id = p_battle_id;
 $$;
 
 -- 10. 순위. 한 달(KST, 기본은 이번 달)의 계정별 최고 기록 하나씩, 연승이 많은 순, 같으면 먼저 닿은 순. 100명까지.
@@ -296,6 +487,7 @@ as $$
       from public.streak_runs r
       left join public.battles b on b.id = r.battle_id
      where r.month = coalesce(p_month, (date_trunc('month', now() at time zone 'Asia/Seoul'))::date)
+       and r.daily is null
   ), best as (
     select distinct on (m.auth_user_id) m.*
       from month_runs m
@@ -309,6 +501,29 @@ as $$
    limit 100;
 $$;
 
+-- 10-1. 오늘의 탑 순위(2026-11-11). 그날(KST, 기본은 오늘)의 오늘의 탑, 계정마다 하나(하루 한 번), 달의 순위와 같은 모양이다.
+create or replace function public.streak_daily_board(p_day date default null)
+returns table (place integer, trainer_name text, wins integer, live boolean, battle_id text, reached_at timestamptz, mine boolean)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with day_runs as (
+    select r.*, coalesce(r.last_win_at, r.started_at) as reached,
+           (r.status = 'active' and b.status = 'active' and b.deadline_at > now()) as is_live
+      from public.streak_runs r
+      left join public.battles b on b.id = r.battle_id
+     where r.daily = coalesce(p_day, (now() at time zone 'Asia/Seoul')::date)
+       and (r.wins > 0 or r.battle_id is not null)
+  )
+  select (row_number() over (order by d.wins desc, d.reached))::integer, d.trainer_name, d.wins, coalesce(d.is_live, false),
+         case when d.is_live then d.battle_id end, d.reached, d.auth_user_id = (select auth.uid())
+    from day_runs d
+   order by d.wins desc, d.reached
+   limit 100;
+$$;
+
 revoke all on function public.battle_set_cpu_memory(text, jsonb) from public, anon, authenticated;
 revoke all on function public.streak_open_battle(uuid, text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_clear_secret(text) from public, anon, authenticated;
@@ -317,6 +532,13 @@ revoke all on function public.streak_start(uuid, text, text, text, text, text, j
 revoke all on function public.streak_after_battle(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_next(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
 revoke all on function public.streak_run_wins(text) from public, anon, authenticated;
+revoke all on function public.streak_settle(text, boolean, jsonb) from public, anon, authenticated;
+revoke all on function public.streak_begin(uuid, text, jsonb, boolean) from public, anon, authenticated;
+revoke all on function public.streak_active_run(uuid, boolean) from public, anon, authenticated;
+revoke all on function public.streak_first(uuid, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) from public, anon, authenticated;
+revoke all on function public.streak_run_public(text) from public;
+revoke all on function public.streak_daily_board(date) from public;
+revoke all on function public.streak_run_state(text) from public, anon, authenticated;
 revoke all on function public.streak_board(date) from public;
 grant execute on function public.battle_set_cpu_memory(text, jsonb) to service_role;
 grant execute on function public.streak_trainer_name(uuid) to service_role;
@@ -324,6 +546,13 @@ grant execute on function public.streak_start(uuid, text, text, text, text, text
 grant execute on function public.streak_after_battle(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
 grant execute on function public.streak_next(text, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
 grant execute on function public.streak_run_wins(text) to service_role;
+grant execute on function public.streak_settle(text, boolean, jsonb) to service_role;
+grant execute on function public.streak_begin(uuid, text, jsonb, boolean) to service_role;
+grant execute on function public.streak_active_run(uuid, boolean) to service_role;
+grant execute on function public.streak_first(uuid, text, text, text, text, text, jsonb, jsonb, jsonb, integer, text) to service_role;
+grant execute on function public.streak_run_public(text) to anon, authenticated, service_role;
+grant execute on function public.streak_daily_board(date) to anon, authenticated, service_role;
+grant execute on function public.streak_run_state(text) to service_role;
 grant execute on function public.streak_board(date) to anon, authenticated, service_role;
 
 commit;

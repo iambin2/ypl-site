@@ -177,7 +177,7 @@ try {
     assert.equal((await one("select count(*)::int as c from public.streak_runs where auth_user_id = $1 and status = 'active'", [users.a])).c, 1);
   });
 
-  await check("a game left past its clock is lost on time when anyone next starts, and the board never shows it live", async () => {
+  await check("a game left past its clock is lost on time when anyone next starts: a lamp of its run goes out, and the board never shows it live", async () => {
     await as("service_role");
     const run = await one("select id, battle_id from public.streak_runs where auth_user_id = $1 and status = 'active'", [users.a]);
     await owned("alter table public.battles disable trigger battles_deadline");
@@ -185,8 +185,8 @@ try {
     await owned("alter table public.battles enable trigger battles_deadline");
     assert.equal((await board()).find(r => r.trainer_name === "이제빈").live, false);
     await start(users.b);
-    const closed = await one("select r.status, b.ended_by, b.winner from public.streak_runs r join public.battles b on b.id = r.battle_id where r.id = $1", [run.id]);
-    assert.deepEqual([closed.status, closed.ended_by, closed.winner], ["ended", "timeout", "p2"]);
+    const closed = await one("select r.status, r.lives, b.ended_by, b.winner from public.streak_runs r join public.battles b on b.id = r.battle_id where r.id = $1", [run.id]);
+    assert.deepEqual([closed.status, closed.lives, closed.ended_by, closed.winner], ["active", 2, "timeout", "p2"]);
   });
 
   await check("streak games older than last month are deleted when someone starts; the run stays without its game", async () => {
@@ -228,9 +228,84 @@ try {
     await assert.rejects(one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [run.battle_id, ...game(bid())]), /이미 열렸거나/);
     await end(next, "p2");
     await after(next, null);
-    await assert.rejects(one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [next, ...game(bid())]), /이긴 판에서만/);
+    // the function from before the lamps (streak_after_battle) still ends a run on its first lost game, and an ended run opens nothing
+    await assert.rejects(one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [next, ...game(bid())]), /이미 열렸거나 도전이 끝났습니다/);
     await as("anon");
     await assert.rejects(q("select public.streak_next('x', null, null, null, null, null, null, null, null, null, null)"), /permission denied/);
+  });
+
+  await check("the three lamps: a lost game puts one out and is opened again, a gatekeeper beaten lights one, the third one out ends the run", async () => {
+    await as("service_role");
+    const settle = async (id, relight = false) => (await one("select public.streak_settle($1, $2) as r", [id, relight])).r;
+    const next = async from => { const id = bid(); await one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [from, ...game(id)]); return id; };
+    const first = await start(users.d);
+    assert.equal(first.run.lives, 3);
+    await assert.rejects(settle(first.id), /not an ended streak battle/);
+    await end(first.id, "p2");
+    assert.deepEqual(await settle(first.id), { run_id: first.run.run_id, wins: 0, lives: 2, status: "active" });
+    assert.deepEqual(await settle(first.id), { run_id: first.run.run_id, wins: 0, lives: 2, status: "active" }, "counted once");
+    assert.equal((await one("select state from public.battle_secrets where battle_id = $1", [first.id])).state, null, "a lost game keeps no engine state");
+    const state = (await one("select public.streak_run_state($1) as r", [first.id])).r;
+    assert.deepEqual({ ...state, run_id: undefined }, { run_id: undefined, wins: 0, lives: 2, status: "active", battle_id: first.id, offer: null, daily: null, games: 1 });
+    // the lost game again, then won as a gatekeeper's: a lamp is lit again, and never past three
+    const again = await next(first.id);
+    await assert.rejects(next(first.id), /이미 열렸거나/);
+    await end(again, "p1");
+    assert.deepEqual(await settle(again, true), { run_id: first.run.run_id, wins: 1, lives: 3, status: "active" });
+    const third = await next(again);
+    await end(third, "p1");
+    assert.equal((await settle(third, true)).lives, 3, "never past three");
+    // three lost games, a tie among them, end the run
+    let at = third;
+    for (const [winner, lives, status] of [["p2", 2, "active"], ["tie", 1, "active"], ["p2", 0, "ended"]]) {
+      at = await next(at);
+      await end(at, winner);
+      assert.deepEqual(await settle(at), { run_id: first.run.run_id, wins: 2, lives, status });
+    }
+    await assert.rejects(next(at), /이미 열렸거나 도전이 끝났습니다/);
+    assert.ok((await one("select ended_at from public.streak_runs where id = $1", [first.run.run_id])).ended_at);
+    await as("anon");
+    await assert.rejects(q("select public.streak_settle('x', false)"), /permission denied/);
+    await assert.rejects(q("select public.streak_run_state('x')"), /permission denied/);
+  });
+
+  await check("a run begins with no game, waiting on its draft; the first game opens once; doors are kept until the next game; the daily tower is once a day and apart", async () => {
+    await as("service_role");
+    const begin = async (user, daily = false) => (await one("select public.streak_begin($1, 'gen9championsbssregmc', $2::jsonb, $3) as r", [user, JSON.stringify({ draft: [["A"]] }), daily])).r;
+    const run = await begin(users.a);
+    assert.deepEqual([run.wins, run.lives, run.daily], [0, 3, null]);
+    const active = (await one("select public.streak_active_run($1, false) as r", [users.a])).r;
+    assert.deepEqual([active.run_id, active.battle_id, active.offer, active.games], [run.run_id, null, { draft: [["A"]] }, 0]);
+    const id = bid();
+    const opened = (await one("select public.streak_first($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [run.run_id, ...game(id)])).r;
+    assert.equal(opened.battle_id, id);
+    assert.equal((await one("select offer from public.streak_runs where id = $1", [run.run_id])).offer, null, "the draft is spent with the first game");
+    await assert.rejects(one("select public.streak_first($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [run.run_id, ...game(bid())]), /이미 열렸거나/);
+    // a won game keeps the doors offered with it until the next game opens
+    await end(id, "p1");
+    const doors = { doors: [{ kind: "even" }, { kind: "hard" }], reach: 0 };
+    await one("select public.streak_settle($1, false, $2::jsonb) as r", [id, JSON.stringify(doors)]);
+    assert.deepEqual((await one("select public.streak_run_state($1) as r", [id])).r.offer, doors);
+    const next = bid();
+    await one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [id, ...game(next)]);
+    assert.equal((await one("select offer from public.streak_runs where id = $1", [run.run_id])).offer, null, "the doors are spent with the next game");
+    // the daily tower: a run of its own beside the month's, once a day, on its own board and not on the month's
+    const day = await begin(users.a, true);
+    assert.ok(day.daily);
+    assert.equal((await one("select status from public.streak_runs where id = $1", [run.run_id])).status, "active", "the month's run goes on beside the daily one");
+    await assert.rejects(begin(users.a, true), /하루에 한 번/);
+    const dayGame = bid();
+    await one("select public.streak_first($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [day.run_id, ...game(dayGame)]);
+    await end(dayGame, "p1");
+    await one("select public.streak_settle($1, false, null) as r", [dayGame]);
+    await as("anon");
+    const daily = await q("select * from public.streak_daily_board()");
+    assert.deepEqual(daily.map(r => [r.place, r.wins]), [[1, 1]]);
+    assert.ok(!(await q("select * from public.streak_board()")).some(r => r.trainer_name === daily[0].trainer_name && r.wins === 1 && !r.live), "the month's board leaves the daily run out");
+    // anyone watching reads a run's lamps and state through its game, and nothing else of it
+    assert.deepEqual((await one("select public.streak_run_public($1) as r", [dayGame])).r, { wins: 1, lives: 3, status: "active", daily: true });
+    await assert.rejects(q("select public.streak_begin($1, 'f', null, false)", [users.a]), /permission denied/);
+    await assert.rejects(q("select public.streak_active_run($1, false)", [users.a]), /permission denied/);
   });
 
   await check("streak games do not use up the friendly limits, and new runs stop at 300 a day", async () => {
@@ -238,7 +313,7 @@ try {
     for (let i = 0; i < 25; i++) await owned("select public.streak_open_battle((select id from public.streak_runs limit 1), $1, 'm-c', 'f', 'e', 'x', 'h', '[]', null, null, 0, '')", [bid()]);
     await q("select public.battle_create($1, 'm-c', 'f', 'e', '친선', 'h', '[]')", [bid()]);
     await owned("insert into public.streak_runs (auth_user_id, trainer_name, format_id, month, status, ended_at) select $1, 'x', 'f', current_date, 'ended', now() from generate_series(1, 300)", [users.b]);
-    await assert.rejects(start(users.b), /오늘의 연승 도전이 모두 찼습니다/);
+    await assert.rejects(start(users.b), /오늘의 도전의 탑이 모두 찼습니다/);
   });
 
   await check("a streak game always belongs to a run, and only a streak game does", async () => {

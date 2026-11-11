@@ -9,7 +9,7 @@ import { listLiveBoards } from "../../services/battleWatch.js";
 import { listNormalizedBracketRuntimes } from "../../services/normalizedCompetitionService.js";
 import { freshRead } from "../../services/readCache.js";
 import { matchStage } from "../../services/recordsAnalytics.js";
-import { gameWords } from "../../services/streak.js";
+import { gameWords, runTrack } from "../../services/streak.js";
 import { Roster, rosterSaid, sceneOf } from "./Stage.jsx";
 
 /* 중계 (DESIGN.md "Battle", 중계, 2026-11-07): every battle being played now, on a page of its own beside 방 목록. A match is shown,
@@ -67,9 +67,9 @@ export function useLabels(rows) {
         }
       }),
       // the month's board names only each account's best run, so a run below it went unnamed: a run is named by its own games
-      streak && Promise.all(rows.filter(x => x.kind === "streak" && x.run_id).map(r => runGames(r.run_id).then(ids => {
-        const at = ids.indexOf(r.id);
-        if (at >= 0) said[r.id] = gameWords(at);
+      streak && Promise.all(rows.filter(x => x.kind === "streak" && x.run_id).map(r => runGames(r.run_id).then(games => {
+        const game = runTrack(games).find(g => g.id === r.id);
+        if (game) said[r.id] = gameWords(game.at);
       }))),
     ].map(p => Promise.resolve(p).catch(() => null))).then(() => { if (on) setLabels(said); });
     return () => { on = false; };
