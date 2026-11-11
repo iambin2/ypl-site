@@ -76,11 +76,13 @@ const pts = list => list.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ");
    outside, seen at the drum's edge where everything turns away, could only read as a ladder). The doors stand within the front's
    middle (no door past 55 degrees), so none is squeezed to a sliver at the drum's edge; the gatekeeper's gate, wider and taller,
    stands last, turned toward us */
-const DOORS = [-50, -27, -5, 17, 42];            // the games' angles across the front; the fifth is the gatekeeper's gate
-const HALF = [7, 7, 7, 7, 12];                   // each door's half width, in degrees of the drum
-const TALL = [.36, .36, .36, .36, .4];           // its height to the spring of its arch, as a share of the floor
+/* the gatekeeper's gate is the floor's middle, and the four games' doors stand two on each side of it, in the order they are played
+   (2026-11-11 seventh pass: last at the right it was narrow and pressed against the fourth door) */
+const DOORS = [-55, -32, 32, 55, 0];             // the games' angles across the front; the fifth is the gatekeeper's gate
+const HALF = [7.5, 7.5, 7.5, 7.5, 15];           // each door's half width, in degrees of the drum
+const TALL = [.34, .34, .34, .34, .36];           // its height to the spring of its arch, as a share of the floor
 const GF = .06;                                  // the gallery's floor, over the floor's foot (share of the floor's height)
-const GAL = 1.13, SLAB = .055, RAIL = .13;       // how far the gallery stands out, its face, its rail's height
+const GAL = 1.13, SLAB = .055;                   // how far the gallery stands out, and its face
 const NODE_U = DOORS.map(th => (th + 90) / 180);
 // the run's path on floor k at u (0 the left edge, 1 the right edge): along the gallery, half out from the wall
 const pathAt = (m, k, u) => at(m, k, -90 + 180 * u, GF, (1 + GAL) / 2);
@@ -105,50 +107,50 @@ const lampAt = (m, k, game) => { const d = doorShape(m, k, game); return [d.x, d
 // the floor's type as the class that gives its colour (team-builder.css .type-*)
 const typeClass = f => `type-${String(floorType(f)).toLowerCase()}`;
 
-/* a game's door: a doorway set deep in the wall. Its stone arch stands round it; inside, the side of the opening that faces us shows as
-   its jamb (on the side toward the tower's middle; lit when it faces the moon, at the right); the room behind is dark, or lit from
-   within, brightest at the floor, and a lit door lights the wall round it and throws its light out on the gallery. The gatekeeper's
-   gate is a great double door: two arches one in the other, a column each side, the keystone, and over it the floor's crest in the
-   floor's colour with the gate's own lamp on it. */
+/* a game's door (2026-11-11, seventh pass, the user: "일반 배틀 경기장은 아주 깔끔하고 좋은데 탑이 유독 조잡하네. 특히 문 부분이.
+   수문장의 문이 너무 좁고 바로 옆 문에 낑겨 보여서 더 그래. 네가 말한 타입과 수문장 문양도 잘 안 보이고"): as the arena is, few
+   shapes and each a clear one. A door is one stone frame of even width round a deep doorway; inside, the jamb on the side toward the
+   tower's middle, and the room behind: dark, or lit from within, brightest at the floor (warm for a game won, amber for the game gone
+   into), throwing its light on the gallery.
+   The gatekeeper's gate is the floor's middle, wide and tall, the four doors two on each side of it. Its two leaves are painted in the
+   floor's type colour, so the floor is known from across the room; over it hangs the floor's medallion, a disc in that colour in a
+   stone ring with the gate's lamp at its heart (amber while its game is played, lit once beaten). Beaten, the gate stands open on its
+   lit hall. */
 function doorSVG(m, k, g, state, s, type) {
   const th = DOORS[g - 1], hw = HALF[g - 1], fb = GF, ft = fb + TALL[g - 1], gate = g === 5;
   const out = [];
-  if (gate) {
-    // the columns standing at its sides, the one facing the moon lit
-    for (const side of [-1, 1]) {
-      const c = th + side * hw * 1.62, w = hw * .16;
-      out.push(`<polygon class="col${side > 0 ? " l" : ""}" points="${pts([at(m, k, c - w, fb), at(m, k, c - w, ft + .1), at(m, k, c + w, ft + .1), at(m, k, c + w, fb)])}"/>`);
-      out.push(`<polygon class="cap" points="${pts([at(m, k, c - w * 1.5, ft + .1), at(m, k, c - w * 1.5, ft + .125), at(m, k, c + w * 1.5, ft + .125), at(m, k, c + w * 1.5, ft + .1)])}"/>`);
-    }
-    out.push(`<polygon class="stone outer" points="${pts(archAt(m, k, th, hw * 1.42, fb, ft + .05).points)}"/>`);
-    out.push(`<polygon class="stone" points="${pts(archAt(m, k, th, hw * 1.22, fb, ft + .025).points)}"/>`);
-  } else out.push(`<polygon class="stone" points="${pts(archAt(m, k, th, hw * 1.3, fb, ft + .025).points)}"/>`);
+  out.push(`<polygon class="stone" points="${pts(archAt(m, k, th, hw * (gate ? 1.16 : 1.26), fb, ft + (gate ? .035 : .028)).points)}"/>`);
   const hole = archAt(m, k, th, hw, fb, ft);
   out.push(`<polygon class="jamb${th > 0 ? " l" : ""}" points="${pts(hole.points)}"/>`);
   // the room seen through the opening: the opening less its jamb, the jamb's width as the wall turns from us
-  const jw = hw * .42 * Math.abs(Math.sin(th * RAD)), lo = th < 0 ? th - hw : th - hw + jw, hi = th < 0 ? th + hw - jw : th + hw;
-  const room = archAt(m, k, (lo + hi) / 2, (hi - lo) / 2, fb, ft);
-  const fill = (cls, ref) => `<polygon class="${cls}" fill="url(#${ref}-${m.id})" points="${pts(room.points)}"/>`;
+  const jw = hw * .4 * Math.abs(Math.sin(th * RAD)), lo = th < 0 ? th - hw : th - hw + jw, hi = th < 0 ? th + hw - jw : th + hw;
+  const mid = (lo + hi) / 2, room = archAt(m, k, mid, (hi - lo) / 2, fb, ft);
+  const fill = (cls, ref, p = room.points) => `<polygon class="${cls}" fill="url(#${ref}-${m.id})" points="${pts(p)}"/>`;
   out.push(fill("room", "tw-in"), fill("glow warm", "tw-warm"), fill("glow amber", "tw-amber"));
   if (gate) {
-    out.push(`<polyline class="leaf" points="${pts([at(m, k, (lo + hi) / 2, fb), at(m, k, (lo + hi) / 2, room.crown)])}" stroke-width="${f1(Math.max(.8, 1.6 * s))}"/>`);
-    for (const t of [-.5, .5]) {
-      const c = (lo + hi) / 2 + t * (hi - lo) / 2, w = (hi - lo) * .16;
-      out.push(`<polygon class="panel" points="${pts([at(m, k, c - w, fb + .05), at(m, k, c - w, ft - .03), at(m, k, c + w, ft - .03), at(m, k, c + w, fb + .05)])}"/>`);
-    }
-    const crown = archAt(m, k, th, hw * 1.42, fb, ft + .05).crown, kw = hw * .2;
-    out.push(`<polygon class="key" points="${pts([at(m, k, th - kw * .7, crown - .045), at(m, k, th - kw, crown + .012), at(m, k, th + kw, crown + .012), at(m, k, th + kw * .7, crown - .045)])}"/>`);
-    // the crest: a shield in the floor's colour over the keystone, the gate's lamp on it
-    const cw = hw * .5, c0 = crown + .02, c1 = crown + .13;
-    out.push(`<polygon class="crest ${type}" points="${pts([at(m, k, th - cw, c1), at(m, k, th + cw, c1), at(m, k, th + cw, c0 + .06), at(m, k, th, c0), at(m, k, th - cw, c0 + .06)])}" stroke-width="${f1(Math.max(.8, 1.4 * s))}"/>`);
-    const [lx, ly] = at(m, k, th, c0 + .075), z = Math.max(3, 6 * s);
-    out.push(`<rect class="gate-lamp" x="${f1(lx - z / 2)}" y="${f1(ly - z / 2)}" width="${f1(z)}" height="${f1(z)}"/>`);
+    /* the two leaves stand to the arch's spring, in the floor's colour with a seam of shade between them; over them the lunette, the
+       arch's own half-round, holds the floor's medallion: a disc in that colour in its stone ring, the gate's lamp at its heart (over
+       the arch it was cut by the gallery above, 2026-11-11). Beaten, leaves and lunette open on the lit hall */
+    const spring = at(m, k, mid, ft)[1], top = room.points.slice(1, 18);
+    const leafL = [at(m, k, lo, fb), at(m, k, lo, ft), ...arc(m, k, ft, lo, mid, 6).slice(1), at(m, k, mid, fb)];
+    const leafR = [at(m, k, mid, fb), ...arc(m, k, ft, mid, hi, 6), at(m, k, hi, fb)];
+    const lunette = [...top, ...arc(m, k, ft, hi, lo, 8)];
+    const archH = spring - at(m, k, mid, room.crown)[1], half = (at(m, k, hi, ft)[0] - at(m, k, lo, ft)[0]) / 2;
+    const rr = Math.min(archH * .36, half * .42), [cx] = at(m, k, mid, ft), cy = spring - archH * .44, z = Math.max(3, rr * .5);
+    out.push(`<g class="leaves ${type}"><polygon points="${pts(leafL)}"/><polygon points="${pts(leafR)}"/>`
+      + `<polyline class="seam" points="${pts([at(m, k, mid, fb), at(m, k, mid, ft)])}" stroke-width="${f1(Math.max(1, 2 * s))}"/>`
+      + `<polygon class="lunette" points="${pts(lunette)}"/>`
+      + `<polyline class="transom" points="${pts(arc(m, k, ft, lo, hi, 8))}" stroke-width="${f1(Math.max(1, 2.2 * s))}"/></g>`);
+    out.push(`<g class="medallion ${type}"><circle class="ring" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rr * 1.24)}"/>`
+      + `<circle class="disc" cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rr)}"/>`
+      + `<rect class="gate-lamp" x="${f1(cx - z / 2)}" y="${f1(cy - z / 2)}" width="${f1(z)}" height="${f1(z)}"/></g>`);
   }
   // the threshold, and the light a lit door throws out on the gallery
   out.push(`<polyline class="sill" points="${pts(arc(m, k, fb, th - hw, th + hw, 6))}" stroke-width="${f1(Math.max(.6, 1.2 * s))}"/>`);
-  out.push(`<polygon class="spill" points="${pts([at(m, k, th - hw, fb), at(m, k, th + hw, fb), at(m, k, th + hw * 1.6, fb, GAL - .02), at(m, k, th - hw * 1.6, fb, GAL - .02)])}"/>`);
+  out.push(`<polygon class="spill" points="${pts([at(m, k, th - hw, fb), at(m, k, th + hw, fb), at(m, k, th + hw * 1.5, fb, GAL - .02), at(m, k, th - hw * 1.5, fb, GAL - .02)])}"/>`);
   return `<g class="tw-win${gate ? " gate" : ""}${state ? ` ${state}` : ""}" data-g="${k === 0 ? g : ""}">${out.join("")}</g>`;
 }
+
 /* the night behind the tower: the sky deepening up from the horizon (and deeper the higher the run has climbed), the crescent moon at the
    right (the scene's light: the tower is lit from its side), stars (more the higher), and the horizon: on the first floor low hills
    and the plaza the tower stands on, higher up a sea of cloud far below that rises with every floor */
@@ -203,27 +205,19 @@ function twinkleHTML(m) {
   return `<div class="tw-twinkle" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<i style="left:${f1(rnd() * m.W)}px;top:${f1(rnd() * m.horizon * .7)}px;animation-delay:${(i * 1.3).toFixed(1)}s"></i>`).join("")}</div>`;
 }
 
-/* the gallery round a floor's foot: its shade on the wall under it, the corbels under it, its floor (the lightest stone, between the wall
-   and its edge), its face, its nosing (lit warm as far as the run has come along it), drawn before the doors' rail. from, to: the
-   stretch the nosing is lit (degrees), none when to <= from */
-function gallerySVG(m, k, s, from, to) {
-  const out = [];
-  out.push(`<polygon class="tw-ramp-shade" points="${pts([...arc(m, k, GF - SLAB * .4, -90, 90, 36), ...arc(m, k, GF - SLAB * 2.6, 90, -90, 36)])}"/>`);
-  const corbels = [];
-  for (let th = -84; th <= 84; th += 12) corbels.push(`M${pts([at(m, k, th - 1.5, GF - SLAB, GAL - .01)])}L${pts([at(m, k, th + 1.5, GF - SLAB, GAL - .01)])}L${pts([at(m, k, th + .7, GF - SLAB - .08, 1)])}L${pts([at(m, k, th - .7, GF - SLAB - .08, 1)])}Z`);
-  out.push(`<path class="corbel" d="${corbels.join("")}"/>`);
-  out.push(`<polygon class="tread" points="${pts([...arc(m, k, GF, -90, 90, 36), ...arc(m, k, GF, 90, -90, 36, GAL)])}"/>`);
-  out.push(`<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, GF, -90, 90, 36, GAL), ...arc(m, k, GF - SLAB, 90, -90, 36, GAL)])}"/>`);
-  out.push(`<polyline class="tw-path" points="${pts(arc(m, k, GF, -90, 90, 36, GAL))}" stroke-width="${f1(Math.max(.7, 1.1 * s))}"/>`);
-  if (to > from) out.push(`<polyline class="tw-path lit" points="${pts(arc(m, k, GF, from, to, 24, GAL))}" stroke-width="${f1(Math.max(1, 1.8 * s))}"/>`);
-  return out.join("");
+/* the gallery round a floor's foot: its shade on the wall under it, its floor (the lightest stone, between the wall and its edge), and
+   its face; then, after the doors, its parapet: a low solid wall along its edge with its coping lit and a band of the floor's type
+   colour along it, one clear shape where a rail of balusters and corbels under it read as clutter (2026-11-11 seventh pass) */
+function gallerySVG(m, k) {
+  return `<polygon class="tw-ramp-shade" points="${pts([...arc(m, k, GF - SLAB * .4, -90, 90, 36), ...arc(m, k, GF - SLAB * 2.6, 90, -90, 36)])}"/>`
+    + `<polygon class="tread" points="${pts([...arc(m, k, GF, -90, 90, 36), ...arc(m, k, GF, 90, -90, 36, GAL)])}"/>`
+    + `<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, GF, -90, 90, 36, GAL), ...arc(m, k, GF - SLAB, 90, -90, 36, GAL)])}"/>`;
 }
-// the gallery's rail: a baluster each few degrees and the rail over them, in front of the doors' feet
-function railSVG(m, k, s) {
-  const posts = [];
-  for (let th = -87; th <= 87; th += 6) posts.push(`M${pts([at(m, k, th, GF, GAL - .012)])}L${pts([at(m, k, th, GF + RAIL, GAL - .012)])}`);
-  return `<path class="tw-baluster" d="${posts.join("")}" stroke-width="${f1(Math.max(.6, 1.1 * s))}"/>`
-    + `<polyline class="tw-rail" points="${pts(arc(m, k, GF + RAIL, -89, 89, 36, GAL - .012))}" stroke-width="${f1(Math.max(.8, 1.8 * s))}"/>`;
+function parapetSVG(m, k, s, type) {
+  const h = .075, o = GAL - .006;
+  return `<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, GF, -90, 90, 36, o), ...arc(m, k, GF + h, 90, -90, 36, o)])}"/>`
+    + `<polyline class="band ${type}" points="${pts(arc(m, k, GF + h * .42, -89, 89, 36, o))}" stroke-width="${f1(Math.max(1.2, 2.6 * s))}"/>`
+    + `<polyline class="tw-rail" points="${pts(arc(m, k, GF + h, -89.5, 89.5, 36, o))}" stroke-width="${f1(Math.max(1, 2 * s))}"/>`;
 }
 /* the first floor stands on a stepped base, three rings of stone, each wider and lower, their treads lit as the gallery's floor and
    their faces as its face: where the tower begins */
@@ -247,23 +241,18 @@ function floorSVG(m, k, st) {
   if (f < 1) return "";
   const out = [], type = typeClass(f);
   if (f === 1) out.push(plinthSVG(m, k));
-  // the drum between the floor's foot ring and the next floor's, lit across from the moon's side, its rim of moonlight on that edge,
-  // and its courses of stone, faint
+  // the drum between the floor's foot ring and the next floor's, lit across from the moon's side, its rim of moonlight on that edge
   out.push(`<polygon fill="url(#tw-shade-${m.id})" points="${pts([...arc(m, k, 0, -90, 90, 36), ...arc(m, k, 1, 90, -90, 36)])}"/>`);
-  out.push(`<path class="tw-course" d="${[.32, .56, .8].map(c => `M${pts(arc(m, k, c, -86, 86, 30))}`).join("")}" stroke-width="${f1(Math.max(.5, .9 * s))}"/>`);
   out.push(`<polyline class="tw-rim" points="${pts([at(m, k, 89, GF), at(m, k, 89, 1)])}" stroke-width="${f1(Math.max(1, 1.4 * s))}"/>`);
-  // the gallery's nosing is lit from where the run came onto the floor (the first door on the first floor) to the door it stands at
-  const doneTo = f < st.floor || (f === st.floor && st.at >= 6) ? 90 : f === st.floor && st.at >= 1 ? DOORS[st.at - 1] : -90;
-  const litFrom = f === 1 ? DOORS[0] : -90;
-  out.push(gallerySVG(m, k, s, litFrom, doneTo));
+  out.push(gallerySVG(m, k));
   for (let g = 1; g <= 5; g++) {
     const state = f < st.floor || (f === st.floor && g < st.at) ? "won" : f === st.floor && g === st.at ? (st.live ? "now" : "next") : "";
     out.push(doorSVG(m, k, g, state, s, type));
   }
-  out.push(railSVG(m, k, s));
+  out.push(parapetSVG(m, k, s, type));
   // laid over the floor and what stands out of it: a floor up is dimmer into the night
   const dim = 1 - lightOf(k);
-  if (dim > 0) out.push(`<polygon class="tw-night" opacity="${dim.toFixed(3)}" points="${pts([at(m, k, -90, GF - SLAB - .09, GAL), ...arc(m, k, GF - SLAB - .09, -90, 90, 36, GAL), at(m, k, 90, GF + RAIL + .01, GAL), ...arc(m, k, 1, 90, -90, 36), at(m, k, -90, GF + RAIL + .01, GAL)])}"/>`);
+  if (dim > 0) out.push(`<polygon class="tw-night" opacity="${dim.toFixed(3)}" points="${pts([at(m, k, -90, GF - SLAB - .09, GAL), ...arc(m, k, GF - SLAB - .09, -90, 90, 36, GAL), at(m, k, 90, GF + .09, GAL), ...arc(m, k, 1, 90, -90, 36), at(m, k, -90, GF + .09, GAL)])}"/>`);
   return `<g data-k="${k}">${out.join("")}</g>`;
 }
 
@@ -294,7 +283,7 @@ function climbersHTML(m, st) {
   for (const c of (st.climbers || []).slice().sort((a, b) => b.wins - a.wins)) {
     const f = Math.floor(c.wins / 5) + 1, k = f - st.floor;
     if (k < 0 || f < 1) continue;
-    const [x, y] = at(m, k, 86, GF + RAIL, GAL);
+    const [x, y] = at(m, k, 86, GF + .075, GAL);
     if (y < m.H * .22 || y > m.base || Math.abs(last - y) < 22) continue;
     last = y;
     tags.push(`<span class="tw-tag${k > 0 ? " up" : ""}" style="left:${f1(x + 4)}px;top:${f1(y)}px"><i class="flag${c.live ? " live" : ""}"></i>${escapeHTML(c.name)}<b>${c.wins}</b></span>`);
