@@ -143,9 +143,9 @@ export function DraftBoard({ res, draft, picks, onPick }) {
 }
 
 /* the doors to the next game (2026-11-11, 13장): two doors, each with the six behind it as a team preview shows them (the even foe
-   and the strong one, a band of ranks up, which lets the trade reach a tier up when beaten), or one shut door, the gatekeeper's, which
-   lights the spare lamp. 14장: behind a door stands a ranker's team; its season and rank are not shown (2026-11-11, the user:
-   "상대 파티 순위 표시는 불필요하므로 UI에서 완전히 제거").
+   and the strong one, its computer a step up, which lets the trade reach a tier up when beaten), or one shut door, the gatekeeper's,
+   which lights the spare lamp. 15장: behind a door stands a party built for it (towerBuild.mjs); no season or rank is shown (2026-11-11,
+   the user: "상대 파티 순위 표시는 불필요하므로 UI에서 완전히 제거").
    Each door says what it gives beside its name, in nouns, so the choice reads as the trade-off it is (2026-11-11, the user: "보통 상대
    강한 상대도 뭐 어쩌라는 건지 와닿는 게 하나도 없어"): the gate 램프 +1 and 교환 승급, the strong door 교환 승급 (14장), the even one 보상 없음.
    One is chosen, inverted; the key goes through it */

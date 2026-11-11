@@ -1,7 +1,8 @@
 // Runs the real battle function (supabase/functions/battle/index.ts, transpiled) on PGlite with the real SQL, through a stand-in for
 // the few supabase-js calls it makes, and plays whole 연승 도전 runs: start, every choice, a win opening the next game, a lost game
 // putting out a lamp and played again, the last one ending the run, a gatekeeper lighting the spare, a forfeit, the clock.
-// Since 2026-11-11 (docs/BATTLE_STREAK.md 14장) a run starts with two lamps and holds two at most; the foes are ranker teams.
+// Since 2026-11-11 (docs/BATTLE_STREAK.md 14장) a run starts with two lamps and holds two at most; since 15장 the foes are built for each game
+// from the whole random pool, and a run's doors seldom bring back what it was shown (the offer's seen).
 // Never connects to Supabase. Run npm run build:battle first (it plays the bundle the deploy uploads).
 //   node scripts/verify-streak-function.mjs <path-to-pglite-dist/index.js> [--sure]
 import assert from "node:assert/strict";
@@ -104,7 +105,7 @@ try {
     // --sure: the computer's Pokémon stand at 1 HP, so a run reaches its swaps, a gatekeeper and the floor after it
     if (process.argv.includes("--sure")) {
       const { state } = (await pg.query("select state from public.battle_secrets where battle_id = $1", [seat.id])).rows[0];
-      for (const p of state.sides[1].pokemon) { p.hp = Math.min(p.hp, 1); p.ability = p.baseAbility = "noability"; } // no ability: Regenerator would heal a third back (ranker teams bring it, 14장)
+      for (const p of state.sides[1].pokemon) { p.hp = Math.min(p.hp, 1); p.ability = p.baseAbility = "noability"; } // no ability: Regenerator would heal a third back (the foes' sets bring it)
       await pg.query("update public.battle_secrets set state = $2::jsonb where battle_id = $1", [seat.id, JSON.stringify(state)]);
     }
     for (let step = 0; step < 200; step++) {
@@ -186,7 +187,7 @@ try {
     seat = next;
   }
   if (process.argv.includes("--sure")) /* the run passed a gatekeeper (its spare lit and its trade made), then lost a game and went on. The scripted player still loses
-     now and then to ranker teams at 1 HP (priority moves, a switch at the wrong time), so the second gatekeeper is not asked */
+     now and then to the tower's foes at 1 HP (priority moves, a switch at the wrong time), so the second gatekeeper is not asked */
   assert.ok(gaveUp && keeperSwapped && wins >= STREAK_STEP, "the sure run passed a gatekeeper, then lost a game and went on");
   // a run still going after the limit is given up until its last lamp is out, so it ends as every run does
   while (lastStreak?.status === "active") {
@@ -243,7 +244,7 @@ try {
   const stateOf = async id => (await pg.query("select state from public.battle_secrets where battle_id = $1", [id])).rows[0].state;
   const sure = async (id, side) => {
     const state = await stateOf(id);
-    for (const p of state.sides[side].pokemon) { p.hp = Math.min(p.hp, 1); p.ability = p.baseAbility = "noability"; } // no ability: Regenerator would heal a third back (ranker teams bring it, 14장)
+    for (const p of state.sides[side].pokemon) { p.hp = Math.min(p.hp, 1); p.ability = p.baseAbility = "noability"; } // no ability: Regenerator would heal a third back (the foes' sets bring it)
     await pg.query("update public.battle_secrets set state = $2::jsonb where battle_id = $1", [id, JSON.stringify(state)]);
   };
   const playOut = async at => {
@@ -265,12 +266,13 @@ try {
   let at = await call({ action: "streakDraft", picks }, user);
   assert.deepEqual([at.wins, at.lives, [...at.party].sort().join()], [0, STREAK_START_LIVES, [...picks].sort().join()]);
   await assert.rejects(call({ action: "streakDraft", picks }, user), e => e.status === 409, "the draft opens one game");
-  // the first game lost while the run holds the spare: a lamp out, and the doors to the same game again, each a ranker team named
+  // the first game lost while the run holds the spare: a lamp out, and the doors to the same game again, each six built for it (15장)
   await pg.query("update public.streak_runs set lives = 2 where battle_id = $1", [at.id]);
   let told = (await call({ action: "forfeit", id: at.id, token: at.token })).streak;
   assert.deepEqual([told.lives, told.reach, told.doors.map(d => d.kind)], [1, 0, ["even", "hard"]]);
-  assert.ok(told.doors.every(d => d.species.length === 6 && /^M-\d+$/.test(d.season) && d.rank > 0), "each door is a ranker team with its season and rank");
-  assert.ok(told.doors[0].rank > told.doors[1].rank, "the strong door is a higher rank");
+  assert.ok(told.doors.every(d => d.species.length === 6 && !("rank" in d)), "each door shows its six, no rank");
+  const kept = (await pg.query("select offer from public.streak_runs where auth_user_id = $1 and status = 'active'", [user])).rows[0].offer;
+  assert.ok(told.doors.flatMap(d => d.species).every(s => kept.seen.includes(s)), "the run keeps the species its doors showed");
   // through the strong door: its six are the game's foes; won, it lights no lamp (14장) and the trade reaches a tier up
   const strong = told.doors[1].species;
   at = await call({ action: "streakNext", id: at.id, token: at.token, door: 1 });
@@ -279,7 +281,6 @@ try {
   await sure(at.id, 1);
   told = await playOut(at);
   assert.deepEqual([told.won, told.wins, told.lives, told.reach], [true, 1, 1, 1]);
-  assert.ok(told.foeRank?.rank > 0, "the result names the ranker team it was played against");
   const mine = (await pg.query("select p1_team from public.battle_secrets where battle_id = $1", [at.id])).rows[0].p1_team;
   const beaten = sideTeam((await pg.query("select input_log from public.battles where id = $1", [at.id])).rows[0].input_log, "p2");
   let up = null;

@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { STREAK_BAN, STREAK_DRAFT, STREAK_LIVES, STREAK_START_LIVES, RANK_BANDS, bandOf, doorsOf, runTrack, seeded, streakReach, streakRelights, STREAK_BATTLE_FORMAT, STREAK_STEPS, STREAK_FORMAT_ID, STREAK_REGULATION, floorGame, streakCpuOptions, streakFloor, streakFresh, streakStep, streakMaster, swapParty, swapTier, gameWords } from "../src/services/streak.js";
+import { STREAK_BAN, STREAK_DRAFT, STREAK_LIVES, STREAK_START_LIVES, doorsOf, runTrack, seeded, streakReach, streakRelights, STREAK_BATTLE_FORMAT, STREAK_STEPS, STREAK_FORMAT_ID, STREAK_REGULATION, floorGame, streakCpuOptions, streakFloor, streakFresh, streakStep, streakMaster, swapParty, swapTier, gameWords } from "../src/services/streak.js";
 import { LEVELS } from "../src/services/cpuLevels.js";
 import TOWER_TIERS from "../src/data/tower-tiers.json" with { type: "json" };
-import RANKER from "../src/data/ranker-teams.json" with { type: "json" };
+import { ratingOf } from "../src/services/partyBalance.js";
 
 test("a floor is five games, the fifth its master, and a new floor brings a new party", () => {
   assert.deepEqual([0, 4, 5, 9, 10].map(streakFloor), [1, 1, 2, 2, 3]);
@@ -18,18 +18,10 @@ test("the screen's format id is the engine's", async () => {
 });
 
 test("a floor is one 난이도, its master included, and the last step stays", () => {
-  // a floor's even games stand on its step, its gatekeeper and a strong door one over; the fifth floor and up at the top (14.6)
-  assert.deepEqual([0, 3, 4, 5, 9, 10, 15, 20, 100].map(w => STREAK_STEPS[streakStep(w)].id), ["tower0", "tower0", "tower1", "tower1", "porygon", "porygon", "porygon2", "porygonz", "porygonz"]);
-  assert.deepEqual([0, 5, 20].map(w => STREAK_STEPS[streakStep(w, true)].id), ["tower1", "porygon", "porygonz"]);
+  // a floor's even games stand on its step, its gatekeeper and a strong door one over; the third floor and up at the top (15.7)
+  assert.deepEqual([0, 3, 4, 5, 9, 10, 15, 100].map(w => STREAK_STEPS[streakStep(w)].id), ["porygon", "porygon", "porygon2", "porygon2", "porygonz", "porygonz", "porygonz", "porygonz"]);
+  assert.deepEqual([0, 5, 20].map(w => STREAK_STEPS[streakStep(w, true)].id), ["porygon2", "porygonz", "porygonz"]);
   assert.ok(STREAK_STEPS.filter(s => s.id in LEVELS).every(s => s.options === LEVELS[s.id].options), "the site's levels are played as they are");
-});
-
-test("the foes come from rank bands: a floor's own, a strong door one up, a gatekeeper two up, the top band the ceiling (14장)", () => {
-  assert.deepEqual([0, 3, 5, 10, 15, 50].map(w => bandOf(w)), [0, 0, 1, 2, 3, 3]);
-  assert.deepEqual([0, 5, 15, 50].map(w => bandOf(w, "hard")), [1, 2, 4, 4]);
-  assert.deepEqual([4, 9, 14, 19, 54].map(w => bandOf(w)), [2, 3, 4, 4, 4], "a gatekeeper two bands over its floor");
-  // every band holds teams of the open data
-  for (const [hi, lo] of RANK_BANDS) assert.ok(RANKER.teams.some(t => t.rank >= hi && t.rank <= lo), `${hi}-${lo}`);
 });
 
 test("the doors: two before an even game, the gatekeeper's alone before its game; only a gatekeeper beaten lights the spare, a strong door reaches a tier up", () => {
@@ -83,19 +75,34 @@ test("a game is said with Korean ordinals, and the fifth is the floor's gatekeep
   assert.deepEqual([0, 1, 2, 3, 4, 5].map(gameWords), ["1층 첫 번째 판", "1층 두 번째 판", "1층 세 번째 판", "1층 네 번째 판", "1층 수문장", "2층 첫 번째 판"]);
 });
 
-test("a foe is a whole ranker team of its band, its items as the ranker held them, legal and free of the ban", async () => {
-  const { foeTeam } = await import("../supabase/functions/battle/streakEngine.mjs");
+test("a foe is built for its game: legal, free of the ban, and the second door does not bring back the first's six (15장)", async () => {
+  const { foeTeam, streakDoors, shownDoors, seenWith } = await import("../supabase/functions/battle/streakEngine.mjs");
   const { validateTeam } = await import("../supabase/functions/battle/engine.mjs");
-  for (let i = 0; i < 40; i++) for (const kind of ["even", "hard"]) {
-    const wins = (i * 3) % 30, foe = foeTeam(wins, kind, seeded(`foe:${i}:${kind}`));
-    const [hi, lo] = RANK_BANDS[bandOf(wins, kind)];
-    assert.ok(foe.rank >= hi && foe.rank <= lo, `${foe.rank} in ${hi}-${lo}`);
-    const source = RANKER.teams.find(t => t.season === foe.season && t.rank === foe.rank && t.team.every((m, j) => m.species === foe.team[j].species));
-    assert.ok(source, "the very team of the open data");
-    source.team.forEach((m, j) => { if (m.item && !STREAK_BAN.items.includes(m.item)) assert.equal(foe.team[j].item, m.item); });
+  for (let i = 0; i < 20; i++) {
+    const foe = foeTeam(seeded(`foe:${i}`));
     assert.equal(validateTeam(STREAK_FORMAT_ID, foe.team), null);
     assert.ok(foe.team.every(m => !STREAK_BAN.items.includes(m.item) && !m.moves.some(move => STREAK_BAN.moves.includes(move))));
+    const doors = streakDoors(i, seeded(`doors:${i}`));
+    assert.deepEqual(doors.map(d => d.kind), doorsOf(i));
+    if (doors.length === 2) assert.ok(doors[1].team.filter(m => doors[0].team.some(x => x.species === m.species)).length <= 1, "the doors stand apart");
+    assert.ok(shownDoors(doors).every(d => !("rank" in d) && (d.kind === "gate" ? d.species.length === 0 : d.species.length === 6)));
   }
+  assert.deepEqual(streakDoors(3, seeded("same")), streakDoors(3, seeded("same")), "a daily run's doors are the same for everyone");
+  assert.deepEqual(seenWith(["a", "b"], ["b", "c"]), ["a", "b", "c"]);
+  assert.equal(seenWith([], Array.from({ length: 50 }, (_, i) => `s${i}`)).length, 36);
+});
+
+test("a species outside the ladder's pool trades in the tier its measured share reaches, and a second Mega is refused", () => {
+  const outside = ["Arbok", "Houndstone", "Empoleon"].filter(s => !(s in TOWER_TIERS));
+  assert.ok(outside.length);
+  for (const s of outside) {
+    const t = swapTier(s);
+    const inTier = Object.keys(TOWER_TIERS).filter(x => TOWER_TIERS[x] === t).map(x => ratingOf(STREAK_FORMAT_ID, x));
+    assert.ok(ratingOf(STREAK_FORMAT_ID, s) >= Math.min(...inTier) || t === 5, `${s} in tier ${t}`);
+  }
+  const rated = Object.keys(TOWER_TIERS).filter(s => !s.includes("-"));
+  const a = rated[0], b = rated.find(s => s !== a && swapTier(s) === swapTier(a)), other = rated.find(s => swapTier(s) !== swapTier(a));
+  assert.equal(swapParty([{ species: a, item: "Leftovers" }, { species: other, item: "Gengarite" }], [{ species: b, item: "Garchompite" }], a, b), "mega");
 });
 
 test("the server's computer keeps its 난이도's play and thinks within the time that keeps its slowest choice under a second", () => {

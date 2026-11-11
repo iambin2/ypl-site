@@ -3,6 +3,7 @@
    바꾸는지만 있다. wins는 언제나 "이 판 전에 이긴 판 수"다. */
 import { LEVELS } from "./cpuLevels.js";
 import TOWER_TIERS from "../data/tower-tiers.json" with { type: "json" };
+import { ratingOf } from "./partyBalance.js";
 
 // 싱글 랜덤 배틀 하나(4장의 측정이 모두 싱글). 규정이 바뀌면 여기만 바꾼다
 export const STREAK_REGULATION = "m-c";
@@ -12,14 +13,12 @@ export const STREAK_FORMAT_ID = "gen9championsbssregmc";
 /* 다섯 판이 한 층이고 다섯 번째 판은 층의 수문장이다. 2026-11-09 일곱에서 줄임(사용자: "주인이 등장하는 주기를 짧게", 주인은 그날 수문장이 되었다): 한 층은 높이가
    32, 44, 52, 64, 84로 오르는 다섯 계단이다(DESIGN.md의 높이 다섯, Streak.jsx FloorCells) */
 export const STREAK_STEP = 5;
-/* 탑의 컴퓨터 계단 (2026-11-11, BATTLE_STREAK.md 14.6). 상대가 랭커 구축이 되자 같은 세기의 컴퓨터끼리 드래프트 파티가 37%만 이겨, 층의
-   세기는 순위대가 아니라(순위대끼리는 잡음 안이었다) 컴퓨터가 맡는다. 아래 둘은 탑에만 있는 단계로 폴리곤보다 더 실수한다. 잰 값(드래프트
-   파티를 둔 온전한 컴퓨터가 랭커 구축을 둔 그 단계를 이긴 몫, 각 500판): tower0 73%, tower1 67%, 폴리곤 60%, 폴리곤2 49%, 폴리곤Z 37%.
+/* 탑의 컴퓨터 계단 (2026-11-11, BATTLE_STREAK.md 14.6, 15.7). 층의 세기는 상대 파티가 아니라 컴퓨터가 맡는다. 잰 값(드래프트 파티를 둔
+   온전한 컴퓨터가 15장의 상대를 둔 그 단계를 이긴 몫, 각 500판): 폴리곤 77%, 폴리곤2 68%, 폴리곤Z 57%. 랭커 구축 통째로였던 14장에는
+   상대가 더 세어 폴리곤 아래에 탑만의 두 단계(tower0 73%, tower1 67%)를 두었으나, 새 상대에서는 그 둘이 84%, 80%로 너무 쉬워 뺐다.
    budgetMs: Edge Function에서 생각할 시간. 가장 느린 수가 예산의 약 2.2배라 400 ms면 1초 안이다(4장: 30판 324수에서 최대 815 ms).
    폴리곤2는 휴대폰의 500 ms를 쓰면 1.1초쯤이 되어 서버에서만 줄인다 */
 export const STREAK_STEPS = [
-  { id: "tower0", options: { reads: false, rollout: false, slack: 0.9, mistake: 0.6 }, budgetMs: 300 },
-  { id: "tower1", options: { reads: false, rollout: false, slack: 0.75, mistake: 0.45 }, budgetMs: 300 },
   { id: "porygon", options: LEVELS.porygon.options, budgetMs: 300 },
   { id: "porygon2", options: LEVELS.porygon2.options, budgetMs: 400 },
   { id: "porygonz", options: LEVELS.porygonz.options, budgetMs: 400 },
@@ -43,16 +42,12 @@ export const STREAK_BAN = {
    (engine.mjs draftOffer, draftParty). 후보는 세트 그대로라 무엇을 데려가는지 알고 고른다 */
 export const STREAK_DRAFT = 3;
 
-/* 상대는 실제 랭커의 구축이다 (14장, src/data/ranker-teams.json, scripts/build-ranker-teams.mjs). 층이 오를수록 높은 순위대에서
-   하나를 뽑는다: 보통 문은 그 층의 순위대(4층부터 31-100위), 강한 문은 한 단계 위, 수문장은 두 단계 위(1-30위에서 멈춤). 예전(13장)의
-   층의 타입, 층마다 정해진 메가 수문장, 상대 계획의 계단은 없앴다(사용자: "한 층에서 한 타입만 계속 나오니까 실전을 연습할 수 없어졌어").
-   순위대는 [가장 높은 순위, 가장 낮은 순위], 쉬운 것부터 */
-export const RANK_BANDS = [[601, 1000], [301, 600], [101, 300], [31, 100], [1, 30]];
-// kind: "even", "hard" or "gate" (doorsOf); a gatekeeper's game is always its own band, whatever door led to it
-export const bandOf = (wins, kind = "even") => Math.min(RANK_BANDS.length - 1, Math.min(streakFloor(wins) - 1, 3) + (streakMaster(wins) ? 2 : kind === "hard" ? 1 : 0));
+/* 상대는 판마다 새로 짠 구축이다 (15장, supabase/functions/battle/towerBuild.mjs): 랭커 구축에서 배운 빌더 넷 가운데 하나가 랜덤 풀 전체에서
+   짠다. 14장의 랭커 구축 통째로와 순위대(RANK_BANDS)는 없앴다(사용자: "랭커 파티가 그대로 등장하는 방식은 진부하고 다양성이 떨어짐").
+   층의 세기는 컴퓨터의 계단이 맡는다(STREAK_STEPS) */
 
-/* 다음 판의 문 (13장): 끝난 판 뒤에 도전이 쉬면, 다음 판은 문으로 고른다. 보통은 두 문, 상대의 여섯이 보이는 보통 상대와 한 순위대 위의
-   강한 상대다. 강한 상대를 이기면 그 판의 교환이 한 급 위까지 닿는다(14장부터 램프는 켜지지 않는다). 다음
+/* 다음 판의 문 (13장): 끝난 판 뒤에 도전이 쉬면, 다음 판은 문으로 고른다. 보통은 두 문, 상대의 여섯이 보이는 보통 상대와 컴퓨터가 한 칸
+   위인 강한 상대다. 강한 상대를 이기면 그 판의 교환이 한 급 위까지 닿는다(14장부터 램프는 켜지지 않는다). 다음
    판이 수문장이면 문은 하나, 닫힌 문이다(수문장은 판에 들어가서야 본다, 2026-11-09). wins: 다음 판 전에 이긴 판 수 */
 export const doorsOf = wins => (streakMaster(wins) ? ["gate"] : ["even", "hard"]);
 // 이긴 판이 예비 램프를 켜는가: 수문장뿐이다(14장, 강한 문은 교환 승급만 준다). wins: 그 판 전에 이긴 판 수
@@ -88,7 +83,7 @@ export function runTrack(games) {
   return Object.assign(out, { over: lives <= 0 });
 }
 
-/* 이 판의 컴퓨터 (14.6): n층의 보통 판은 계단의 n번째, 수문장과 강한 문은 한 칸 위, 다섯 층부터는 맨 위(폴리곤Z). 예전(5장): 한 층이 폴리곤,
+/* 이 판의 컴퓨터 (14.6, 15.7): n층의 보통 판은 계단의 n번째, 수문장과 강한 문은 한 칸 위, 세 층부터는 맨 위(폴리곤Z). 예전(5장): 한 층이 폴리곤,
    폴리곤2, 폴리곤Z 가운데 하나였다. 사람의 승률은 운영 한 주 뒤 실제 1층 돌파율로 다시 맞춘다 */
 export const streakStep = (wins, hard = false) => Math.min(STREAK_STEPS.length - 1, Math.min(streakFloor(wins) - 1, STREAK_STEPS.length - 1) + (hard || streakMaster(wins) ? 1 : 0));
 // 이 판의 컴퓨터를 만드는 createCpu 옵션. hard: 강한 문으로 들어간 판
@@ -123,10 +118,17 @@ const named = (species, shown) => id(species) === id(shown) || (String(shown).en
    순서로 파티를 다시 늘어놓으므로 자리로는 고를 수 없다. 같은 급끼리만 바꾼다(2026-11-09): 파티의 힘이 이겨도 오르지 않아, 층의
    수문장과의 차이가 판마다 같다. 답은 새 파티, 아니면 왜 못 바꾸는지: "missing"(그 이름의 포켓몬이 없음), "tier"(급이 다름),
    "clash"(같은 종이 둘이 됨. 같은 도구는 바뀌는 포켓몬의 도구를 받아 피한다). 서버는 그 뒤 검증기로 한 번 더 본다 */
-/* 2026-11-11 (14장): 급은 탑의 풀(랭커 구축에 나온 종) 안에서 나눈 것이다(src/data/tower-tiers.json). 풀 밖의 종(예전 도전의 파티)은
-   가운데 급으로 읽는다 */
+/* 2026-11-11 (14장): 급은 탑의 풀(랭커 구축에 나온 종) 안에서 나눈 것이다(src/data/tower-tiers.json). 풀 밖의 종(15장부터 상대가
+   데려오는 종, 예전 도전의 파티)은 잰 몫(partyBalance.js ratingOf)으로 그 급의 경계(급마다 가장 낮은 몫)에 끼워 넣는다(사용자가 고름) */
 const TOWER_BY_ID = new Map(Object.entries(TOWER_TIERS).map(([k, v]) => [id(k), v]));
-export const swapTier = species => TOWER_BY_ID.get(id(species)) ?? [...TOWER_BY_ID].find(([k]) => String(species).endsWith("-*") && k.startsWith(id(String(species).slice(0, -2))))?.[1] ?? 2;
+let floors = null;
+function tierByShare(species) {
+  floors ||= Array.from({ length: 6 }, (_, t) => Math.min(...Object.keys(TOWER_TIERS).filter(s => TOWER_TIERS[s] === t).map(s => ratingOf(STREAK_FORMAT_ID, s))));
+  const share = ratingOf(STREAK_FORMAT_ID, species);
+  const t = share === null ? -1 : floors.findIndex(f => share >= f);
+  return t < 0 ? floors.length - 1 : t;
+}
+export const swapTier = species => TOWER_BY_ID.get(id(species)) ?? [...TOWER_BY_ID].find(([k]) => String(species).endsWith("-*") && k.startsWith(id(String(species).slice(0, -2))))?.[1] ?? tierByShare(species);
 export const MEGA_STONE = /^(?!Eviolite$).+ite( [XYZ])?$/;
 /* reach (2026-11-11, 13장 승급): 수문장이나 강한 상대를 이긴 판의 교환은 한 급 위까지 닿는다(1). 그 밖에는 같은 급끼리(0). 아래로
    내려가는 교환은 받지 않는다 */
@@ -138,6 +140,8 @@ export function swapParty(party, foes, give, take, reach = 0) {
   if (!(up >= 0 && up <= reach)) return "tier";
   const rest = party.filter((_, i) => i !== out);
   if (rest.some(m => id(base(m.species)) === id(base(coming.species)))) return "clash";
+  // "mega": a second Mega Stone, as the draft refuses it (15장: a foe may bring one)
+  if (MEGA_STONE.test(coming.item || "") && rest.some(m => MEGA_STONE.test(m.item || ""))) return "mega";
   /* an item already in our party: the one coming takes the item of the one it replaces, which the party never holds twice (the
      screen cannot see the beaten party's items, so it could not keep a pair it offers from being refused, 2026-11-09). A Mega
      Stone is not handed on: it belongs to its species */

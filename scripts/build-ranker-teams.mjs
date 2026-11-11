@@ -1,5 +1,6 @@
-// Builds src/data/ranker-teams.json and src/data/tower-tiers.json: the top singles teams of the ladder that 도전의 탑's foes are
-// (docs/BATTLE_STREAK.md 14장), and the six strength tiers of the species they bring (the draft and the swaps read them).
+// Builds src/data/ranker-teams.json and src/data/tower-tiers.json: the top singles teams of the ladder, which 도전의 탑's foe builders
+// learn their shapes, pairs and kinds from (docs/BATTLE_STREAK.md 15장, towerBuild.mjs), and the six strength tiers of the species they
+// bring (the draft and the swaps read them, 14장).
 //
 // Source: バトルデータベース チャンピオンズ (champs.pokedb.tokyo) open data, the season's top 1000 singles teams as six species and
 // their items. Its terms allow programmatic download and ask an app with many users to keep the files on its own server, never fetch

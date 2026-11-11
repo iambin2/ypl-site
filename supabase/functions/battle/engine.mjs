@@ -97,7 +97,7 @@ const weightedOrder = (list, weight, random) => list.map(entry => [Math.pow(rand
    even: every species alike with no balance, as before 2026-11-09 (scripts/rate-species.mjs measures the tiers on these, and the
    computer's benchmark keeps the parties its table was measured on). top: only from the most used this many (even draws only).
    ban: { items, moves } kept out of the party (도전의 탑, streak.js STREAK_BAN): a set with a banned move is not drawn, and a banned
-   item gives way to the set's next one. (도전의 탑's foes are ranker teams since 2026-11-11, streakEngine.mjs.) */
+   item gives way to the set's next one. (도전의 탑's foes are built by towerBuild.mjs since 2026-11-11, 15장.) */
 export function randomTeam(formatid, random = Math.random, { meta = false, top = 0, even = false, master = false, ban = null } = {}) {
   const all = ban ? fairPool(formatid, ban) : setPool(formatid);
   if (!all.length) throw new Error(`no random sets for ${formatid}`);
