@@ -20,7 +20,7 @@ import { revives, slotPasses } from "./battleLog.js";
 
 /* tuned by self-play against the quick player (60 mirrored games a setting, 2026-11-06): the trade term from 0.1 to 0.7 and the
    human share from 0.2 to 0.8 all landed within noise of each other, so both stay in the middle */
-const TUNE = { race: 0.35, human: 0.5 };
+const TUNE = { race: 0.35, human: 0.5, answer: 0.3 };
 // one greedy turn after the pair: three measured no stronger (41 of 60 either way) and cost twice the time
 const ROLLOUT_TURNS = 1;
 // what a hard switch has to win by over staying in, in the evaluation's Pokémon (one healthy Pokémon is about 2)
@@ -410,7 +410,16 @@ function evaluate(state, side) {
     for (const a of mine) for (const b of theirs) trade += race(state, a, b);
     value += TUNE.race * trade / (mine.length * theirs.length);
   }
+  /* the way to win: for each of their Pokémon left, how well our best answer to it fares, against the same for theirs. The matchup
+     above sees only the two in front, so a position whose last foe nothing of ours can stop counted the same as one we sweep */
+  value += TUNE.answer * (cover(state, side) - cover(state, foe));
   return value;
+}
+const standing = (state, side) => state[side].pokemon.filter(p => !p.fainted && p.hp > 0);
+function cover(state, side) {
+  const ours = standing(state, side), theirs = standing(state, other(side));
+  if (!ours.length || !theirs.length) return 0;
+  return theirs.reduce((sum, b) => sum + Math.max(...ours.map(a => race(state, a, b))), 0) / theirs.length;
 }
 
 /* ---------- choices, as the request (or, for the other side, the engine's own request data) allows ---------- */
