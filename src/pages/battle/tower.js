@@ -206,8 +206,27 @@ function twinkleHTML(m) {
 /* the gallery round a floor's foot: its shade on the wall under it, its floor (the lightest stone, between the wall and its edge), and
    its face; then, after the doors, its parapet: a low solid wall along its edge with its coping lit and a band of the floor's type
    colour along it, one clear shape where a rail of balusters and corbels under it read as clutter (2026-11-11 seventh pass) */
+/* the stone's own build (2026-11-11, from the Higgsfield drawing): courses of dressed stone round the drum, a pair of columns at each
+   door's sides with a cap and a foot, and a row of dentils under the gallery's face; few shapes, each one solid */
+const COLS = DOORS.flatMap((th, i) => { const o = HALF[i] * (i === 4 ? 1.16 : 1.26) + 2.2; return [th - o, th + o]; });
+function stoneSVG(m, k, s) {
+  const courses = [.2, .36, .52, .68, .84].map(f => `<polyline class="course" points="${pts(arc(m, k, f, -88, 88, 36))}" stroke-width="${f1(Math.max(.6, s))}"/>`);
+  const top = GF + TALL[0] + .1, w = 1.1, cols = COLS.filter(a => Math.abs(a) < 80).map(a => {
+    const shaft = [at(m, k, a - w, GF), at(m, k, a - w, top), at(m, k, a + w, top), at(m, k, a + w, GF)];
+    const cap = [at(m, k, a - w * 1.7, top), at(m, k, a - w * 1.7, top + .025), at(m, k, a + w * 1.7, top + .025), at(m, k, a + w * 1.7, top)];
+    const foot = [at(m, k, a - w * 1.5, GF), at(m, k, a - w * 1.5, GF + .02), at(m, k, a + w * 1.5, GF + .02), at(m, k, a + w * 1.5, GF)];
+    return `<polygon class="col${a < 0 ? " l" : ""}" points="${pts(shaft)}"/><polygon class="col cap" points="${pts(cap)}"/><polygon class="col cap" points="${pts(foot)}"/>`;
+  });
+  return `<g class="tw-stone">${courses.join("")}${cols.join("")}</g>`;
+}
+function dentilsSVG(m, k) {
+  const out = [];
+  for (let a = -84; a <= 84; a += 5) out.push(`<polygon points="${pts([at(m, k, a - 1.3, GF - SLAB, GAL - .03), at(m, k, a - 1.3, GF - SLAB - .035, GAL - .03), at(m, k, a + 1.3, GF - SLAB - .035, GAL - .03), at(m, k, a + 1.3, GF - SLAB, GAL - .03)])}"/>`);
+  return `<g class="tw-dentils">${out.join("")}</g>`;
+}
 function gallerySVG(m, k) {
   return `<polygon class="tw-ramp-shade" points="${pts([...arc(m, k, GF - SLAB * .4, -90, 90, 36), ...arc(m, k, GF - SLAB * 2.6, 90, -90, 36)])}"/>`
+    + (k > -1 ? dentilsSVG(m, k) : "")
     + `<polygon class="tread" points="${pts([...arc(m, k, GF, -90, 90, 36), ...arc(m, k, GF, 90, -90, 36, GAL)])}"/>`
     + `<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, GF, -90, 90, 36, GAL), ...arc(m, k, GF - SLAB, 90, -90, 36, GAL)])}"/>`;
 }
@@ -221,8 +240,8 @@ function parapetSVG(m, k, s, type) {
    their faces as its face: where the tower begins */
 function plinthSVG(m, k) {
   const out = [];
-  for (let j = 2; j >= 0; j--) {
-    const top = -j * .036, bot = top - .036, w = 1.18 + .065 * j;
+  for (let j = 3; j >= 0; j--) {
+    const top = -j * .032, bot = top - .032, w = 1.18 + .06 * j;
     out.push(`<polygon class="tread" points="${pts([...arc(m, k, top, -90, 90, 36, w - .065), ...arc(m, k, top, 90, -90, 36, w)])}"/>`);
     out.push(`<polygon fill="url(#tw-ramp-${m.id})" points="${pts([...arc(m, k, top, -90, 90, 36, w), ...arc(m, k, bot, 90, -90, 36, w)])}"/>`);
   }
@@ -230,6 +249,8 @@ function plinthSVG(m, k) {
 }
 // the shading of the drum, the gallery's face, and the rooms behind the doors (dark, lit warm, lit amber: brightest at the floor). Lit
 // from the right, where the moon is
+/* (hard steps of tone, as in the Higgsfield drawing, were tried 2026-11-11: on a linear gradient they cut every floor with the same
+   straight seams and read as panels, so the drum keeps its turning light) */
 const shadeDefs = m => `<defs><linearGradient id="tw-shade-${m.id}" x1="1" y1="0" x2="0" y2="0">${["a", "b", "c", "d", "e"].map((t, i) => `<stop offset="${[0, .22, .46, .74, 1][i]}" class="${t}"/>`).join("")}</linearGradient>`
   + `<linearGradient id="tw-ramp-${m.id}" x1="1" y1="0" x2="0" y2="0"><stop offset="0" class="ra"/><stop offset=".3" class="rb"/><stop offset="1" class="rc"/></linearGradient>`
   + ["in", "warm", "amber"].map(t => `<linearGradient id="tw-${t}-${m.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="${t}0"/><stop offset=".62" class="${t}1"/><stop offset="1" class="${t}2"/></linearGradient>`).join("")
@@ -242,6 +263,7 @@ function floorSVG(m, k, st) {
   // the drum between the floor's foot ring and the next floor's, lit across from the moon's side, its rim of moonlight on that edge
   out.push(`<polygon fill="url(#tw-shade-${m.id})" points="${pts([...arc(m, k, 0, -90, 90, 36), ...arc(m, k, 1, 90, -90, 36)])}"/>`);
   out.push(`<polyline class="tw-rim" points="${pts([at(m, k, 89, GF), at(m, k, 89, 1)])}" stroke-width="${f1(Math.max(1, 1.4 * s))}"/>`);
+  out.push(stoneSVG(m, k, s));
   out.push(gallerySVG(m, k));
   for (let g = 1; g <= 5; g++) {
     const state = f < st.floor || (f === st.floor && g < st.at) ? "won" : f === st.floor && g === st.at ? (st.live ? "now" : "next") : "";

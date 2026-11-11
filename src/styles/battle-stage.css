@@ -134,8 +134,8 @@
 .tw-cam { position: absolute; inset: 0; transform-origin: 0 0; }
 /* the night: the sky deepening up from the horizon, a few stars, a crescent moon; the ground the tower stands on
    on the first floor; in the light theme a pale day with no stars and no moon */
-.tw-sky .s0 { stop-color: var(--tw-sky-top); }
-.tw-sky .s1 { stop-color: var(--tw-sky-low); }
+/* 2026-11-11, from the Higgsfield drawing the owner picked: the night is one flat tone and the ground another, no ramp */
+.tw-sky :is(.s0, .s1) { stop-color: var(--tw-sky-top); }
 .tw-star { fill: var(--lit); }
 /* the crescent, one shape: no ring of light round it (2026-11-11, the user: "주변에 동심원 같은 것 없이 깔끔하게") */
 .tw-moon { fill: color-mix(in srgb, var(--lit), var(--signal) 8%); }
@@ -146,8 +146,7 @@
 /* the sky deepens the higher the run has climbed; the horizon: hills on the first floor, the sea of cloud below the terrace higher up */
 .tw-alt { fill: var(--tw-alt); }
 .tw-hills { fill: var(--tw-hills); }
-.tw-sky .g0, .tw-body .g0 { stop-color: var(--tw-g0); }
-.tw-sky .g1, .tw-body .g1 { stop-color: var(--tw-g1); }
+:is(.tw-sky, .tw-body) :is(.g0, .g1) { stop-color: var(--tw-g0); }
 .tw-sea { fill: var(--tw-sea); }
 /* the tower's shade on the ground at its foot, so it stands on it */
 .tw-foot { fill: var(--tw-shadow); fill-opacity: .4; }
@@ -159,6 +158,11 @@
 .tw-body .d { stop-color: var(--tw-d); }
 .tw-body .e { stop-color: var(--tw-e); }
 .tw-rim { fill: none; stroke: var(--lit); stroke-opacity: .32; }
+/* the stone's build: courses in the shade's tone, columns as the door frames' stone (one step down on the shaded side), dentils */
+.tw-stone .course { fill: none; stroke: var(--tw-shadow); stroke-opacity: .35; }
+.tw-stone .col { fill: var(--tw-stone); }
+.tw-stone .col.l { fill: color-mix(in srgb, var(--tw-stone), var(--tw-d) 45%); }
+.tw-dentils { fill: color-mix(in srgb, var(--tw-stone), var(--tw-d) 30%); }
 /* the courses of the stone, faint; the corbels under each gallery; the terrace's parapet */
 .tw-terrace .post { fill: none; stroke: var(--tw-stone); stroke-width: 1; stroke-opacity: .4; }
 .tw-terrace .rail { fill: var(--tw-stone); fill-opacity: .55; }
