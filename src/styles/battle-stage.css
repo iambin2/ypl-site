@@ -93,51 +93,42 @@
   .bt-stagebox .bs-stage.hud .bs-slot:is([data-pos="foe-d0"], [data-pos="foe-d1"]) { height: min(33%, 34vw); bottom: 53%; }
 }
 
-/* ---------- 도전의 탑's tower (tower.js; DESIGN.md "Battle", 도전의 탑, The tower; redrawn 2026-11-11, twice) ----------
-   The run's own scene, as the court is a battle's: a round tower at night seen from its foot, drawn in SVG by tower.js from the
-   board's tones. Second pass the same day (the user: the squares on it "너무 튀는데", the whole "너무 닌텐도 64 탑 모델 같아. 진짜 탑처럼,
-   동시에 엄청나게 아름다워 보이도록", the party "붕떠보이고"): the drum is lit across by one light instead of four flat bands, with
-   pilasters, a cornice and its shade on each floor and a rim of moonlight; the games are windows set in the wall, lit from inside;
-   the sky deepens up from the horizon under a crescent moon; the party stands on the paving with its shadows. The scene's own tones
-   are mixed from the board's (none of them a new hue). .tw is the scene laid over a stage; .tw-hall the same scene on the tab */
+/* ---------- 도전의 탑's tower (tower.js, towerGL.js; DESIGN.md "Battle", 도전의 탑, The tower; the ninth pass 2026-11-11) ----------
+   The run's own scene, as the court is a battle's: a round stone tower at night seen from the air beside the floor the run stands
+   on, modelled in 3D by towerGL.js from these tones and drawn over the night tower.js lays behind it. The scene's own tones are
+   mixed from the board's (none of them a new hue): the wall lit (b) and shaded (e), the stone, the treads, the doorways' dark (pane)
+   and a won room's warm, the sky from its top to the horizon's tone the ground's fog closes into, the plaza (g0) and the fields (g1),
+   the tower's shade on the plaza. .tw is the scene laid over a stage; .tw-hall the same scene on the tab */
 .tw {
   position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--lit);
-  --tw-a: var(--panel-2); --tw-b: color-mix(in srgb, var(--rule), var(--lit) 12%); --tw-c: color-mix(in srgb, var(--rule), var(--panel-2) 45%);
-  --tw-d: var(--panel); --tw-e: color-mix(in srgb, var(--panel), var(--ground) 70%);
+  --tw-b: color-mix(in srgb, var(--rule), var(--lit) 12%); --tw-e: color-mix(in srgb, var(--panel), var(--ground) 70%);
   --tw-sky-top: color-mix(in srgb, var(--ground), black 28%); --tw-sky-low: color-mix(in srgb, var(--panel-2), var(--rule) 40%);
-  --tw-pane: color-mix(in srgb, var(--ground), black 30%); --tw-rev: color-mix(in srgb, var(--rule), var(--ground) 35%);
-  --tw-ledge: color-mix(in srgb, var(--rule), var(--lit) 8%); --tw-plaza: color-mix(in srgb, var(--panel), var(--ground) 30%);
-  --tw-warm: color-mix(in srgb, var(--lit), var(--signal) 26%);
+  --tw-pane: color-mix(in srgb, var(--ground), black 30%); --tw-warm: color-mix(in srgb, var(--lit), var(--signal) 26%);
   --tw-stone: color-mix(in srgb, var(--rule), var(--lit) 16%); --tw-tread: color-mix(in srgb, var(--rule), var(--lit) 22%);
-  --tw-shadow: var(--ground);
-  --tw-alt: color-mix(in srgb, var(--ground), black 45%); --tw-hills: color-mix(in srgb, var(--panel), var(--tw-sky-low) 25%);
+  --tw-shadow: var(--ground); --tw-plaza: color-mix(in srgb, var(--panel), var(--ground) 30%);
   --tw-g0: color-mix(in srgb, var(--tw-plaza), var(--tw-sky-low) 30%); --tw-g1: color-mix(in srgb, var(--tw-plaza), black 25%);
-  --tw-sea: color-mix(in srgb, var(--tw-sky-low), var(--lit) 9%);
-  --tw-cloud-far: color-mix(in srgb, var(--panel-2), var(--lit) 12%);
 }
 :root[data-theme="light"] .tw {
   --tw-day: 1;
-  --tw-a: var(--paper-2); --tw-b: var(--white); --tw-c: var(--paper-1); --tw-d: color-mix(in srgb, var(--paper-3), var(--slate) 18%); --tw-e: color-mix(in srgb, var(--paper-3), var(--slate) 45%);
+  --tw-b: var(--white); --tw-e: color-mix(in srgb, var(--paper-3), var(--slate) 45%);
   /* a pale blue day: the board's mist, deepening up */
   --tw-sky-top: color-mix(in srgb, var(--mist) 62%, var(--white)); --tw-sky-low: color-mix(in srgb, var(--mist) 12%, var(--white));
-  --tw-pane: color-mix(in srgb, var(--slate), var(--navy) 40%); --tw-rev: var(--paper-3);
-  --tw-ledge: var(--white); --tw-plaza: var(--paper-1); --tw-warm: color-mix(in srgb, var(--white), var(--amber) 22%);
+  --tw-pane: color-mix(in srgb, var(--slate), var(--navy) 40%); --tw-warm: color-mix(in srgb, var(--white), var(--amber) 22%);
   --tw-stone: var(--white); --tw-tread: var(--white);
   /* shade in the day is the slate, not the white ground */
-  --tw-shadow: var(--slate);
-  --tw-alt: var(--navy); --tw-hills: var(--paper-2); --tw-g0: var(--paper-2); --tw-g1: var(--paper-1); --tw-sea: var(--white);
-  --tw-cloud-far: var(--white);
+  --tw-shadow: var(--slate); --tw-g0: var(--paper-2); --tw-g1: var(--paper-1);
 }
 .tw.over { z-index: var(--z-sticky); }
 .tw-hall { position: relative; inset: auto; aspect-ratio: 10 / 11; max-height: 72vh; width: 100%; }
 @media (min-width: 640px) { .tw-hall { aspect-ratio: 16 / 10; } }
 .tw > svg { position: absolute; left: 0; top: 0; overflow: visible; }
 .tw-cam { position: absolute; inset: 0; transform-origin: 0 0; }
-/* the night: the sky deepening up from the horizon, a few stars, a crescent moon; the ground the tower stands on
-   on the first floor; in the light theme a pale day with no stars and no moon */
-/* 2026-11-11, from the Higgsfield drawing the owner picked: the night is one flat tone and the ground another, no ramp */
-.tw-skyfill { fill: var(--tw-sky-top); }
-.tw-plaza { fill: var(--tw-g0); }
+/* the night (the ninth pass): the sky deepening up from the horizon's tone, which the ground's fog closes into, a few stars, a
+   crescent moon; under the horizon the fog's own tone, where the model's ground ends; in the light theme a pale day with no stars
+   and no moon */
+.tw-sky .s0 { stop-color: var(--tw-sky-top); }
+.tw-sky .s1 { stop-color: var(--tw-sky-low); }
+.tw-fog { fill: var(--tw-sky-low); }
 .tw-star { fill: var(--lit); }
 /* the crescent, one shape: no ring of light round it (2026-11-11, the user: "주변에 동심원 같은 것 없이 깔끔하게") */
 .tw-moon { fill: color-mix(in srgb, var(--lit), var(--signal) 8%); }
@@ -145,14 +136,8 @@
 /* the sun takes the moon's place in the day, on the same side, so the light falls the same way */
 .tw-sun { display: none; }
 :root[data-theme="light"] .tw-sun { display: inline; fill: color-mix(in srgb, var(--white), var(--amber) 35%); }
-/* the sky deepens the higher the run has climbed; the horizon: hills on the first floor, the sea of cloud below the terrace higher up */
-.tw-alt { fill: var(--tw-alt); }
-.tw-hills { fill: var(--tw-hills); }
-.tw-sea { fill: var(--tw-sea); }
 /* the model (towerGL.js) painted on its canvas; its tones are read from the properties above */
 .tw-cam > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* the lamp's light running along the path when a game is won (tower.js spark) */
-.tw-spark { position: absolute; left: 0; top: 0; width: 6px; height: 6px; border-radius: 50%; will-change: transform; }
 /* the clouds the tower goes up into, drifting slowly, a glow in them where the tower stands; a few stars twinkling */
 .tw-clouds { position: absolute; inset: 0; pointer-events: none; }
 .tw-clouds > svg { position: absolute; left: 0; top: 0; overflow: visible; }
@@ -164,7 +149,7 @@
 .tw-twinkle > i { position: absolute; width: 2px; height: 2px; background: var(--lit); opacity: .15; animation: tw-twinkle 3.2s ease-in-out infinite alternate; }
 @keyframes tw-twinkle { from { opacity: .12; } to { opacity: .8; } }
 @media (prefers-reduced-motion: reduce) { .tw-twinkle > i { animation: none; } }
-/* the month's other climbers at their floors: a plaque hung from the right end of their floor's gallery */
+/* the month's other climbers at their floors: a plaque at the right end of their floor, above or below the one stood on */
 .tw-tag { position: absolute; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 5px; max-width: 40%; padding: 2px 7px 2px 5px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--dim); white-space: nowrap; background: color-mix(in srgb, var(--panel), transparent 15%); }
 .tw-tag > .flag { flex: none; width: 7px; height: 9px; background: var(--dim); clip-path: polygon(0 0, 100% 30%, 0 60%); }
 .tw-tag > .flag.live { background: var(--signal); }

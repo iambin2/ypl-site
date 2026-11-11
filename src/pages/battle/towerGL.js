@@ -1,66 +1,100 @@
-/* 도전의 탑's tower modelled in 3D (DESIGN.md "Battle", The tower, the eighth pass; 2026-11-11, the user: the SVG tower still read as
-   "파워포인트 기본 도형을 마구 덧붙여서 만든 미완성품", and asked for a tower out of a finished game). One WebGL2 context, shared and
-   never on the page: each draw renders the tower into it and copies the picture into the scene's own 2D canvas, so a scene costs no
-   context of its own and a removed one leaves nothing behind.
+/* 도전의 탑's tower modelled in 3D (DESIGN.md "Battle", The tower, the ninth pass; 2026-11-11, the user: "62점이 100점이 될 수 있도록
+   모든 것을 뜯어서 재설계해줘", choosing the view from the air, the games from the outside in, and floors that rise in rank). One WebGL2
+   context, shared and never on the page: each draw renders into it and copies the picture into the scene's own 2D canvas, so a scene
+   costs no context of its own and a removed one leaves nothing behind.
 
-   The model is a turned solid, so it is smooth at every size and in true perspective:
-   - floors are upright drums, each the one under it scaled R about the point A on the axis the tower would close on, so each floor's
-     roof is the next one's terrace (its parapet at the roof's edge);
-   - the five games are arched doorways cut into the drum with real depth (jambs, soffit, the room behind), each in a stone frame
-     standing out of the wall; the gatekeeper's is the wide one in the middle, its two leaves shut until it is beaten;
-   - a cornice with dentils under each roof, courses of stone drawn in the shader, a stepped base under the first floor;
-   - one light from the moon's side, the board's tones as the lit and the shaded colour of each surface, the floors up fading into
-     the night by the floor's own light (lightOf), a rim of moonlight on the lit edge.
-   The camera is level with lens shift, so the drums stand upright and every ring curves as the eye sees it: down under the eye,
-   up over it. Climbing a floor is a real move: the whole tower scaled by R^-t about A, which at t = 1 is the picture one floor up. */
+   One world: the tower is self-similar, so a mesh is built in the units of its lowest floor (that floor's radius 1, its foot at 0)
+   and every floor above is the one under it scaled R about the axis. Every floor is modelled by the same rule, so the picture is a
+   function of the camera alone: the climb is the camera rising, and its last frame is the next floor's picture by construction.
+   The mesh holds the stone only; which doors are lit is a uniform per door (uDoor), so a lamp changing is a value going from one
+   to the other, never a new mesh. */
 
-export const R = 0.854;
-const H = 0.8;                         // a floor's height to its radius
-export const YA = H / (1 - R);         // the point the tower closes on
-const EYE = 0.42;                      // the eye over the floor stood on
+export const R = 0.92;
+export const H = 1.0;                  // a floor's height to its radius
+export const YA = H / (1 - R);         // the point the tower would close on
+const EYE = 0.62;                      // the eye over the foot of the floor stood on, in its units
 const FOCAL = 3.2;                     // 1 / tan(half the vertical field)
 const RAD = Math.PI / 180;
+export const SPAN = 16;                // floors a mesh holds (uDoor holds five a floor)
 
-/* the games' doors across the front, degrees (the fifth the gatekeeper's gate, the floor's middle), their half widths, and the height
-   of each arch's spring over the floor, as a share of the floor's height */
-export const DOORS = [-52, -29, 29, 52, 0];
-const HALF = [7.4, 7.4, 7.4, 7.4, 13.5];
-const SPRING = [.36, .36, .36, .36, .42];
-const DEPTH = .085, PROUD = .02, CORNICE = 1.05;
-const PARAPET = CORNICE / R;           // a floor's parapet stands at the edge of the roof under it, in its own units
+/* the five games' doors, by game: from the outside in, closing on the gatekeeper's gate in the middle (2026-11-11, the user chose
+   "바깥에서 안으로": 1 far left, 2 far right, 3 inner left, 4 inner right, 5 the gate) */
+export const DOORS = [-57, 57, -33, 33, 0];
+const SMALL = 7.4, SPRING = 0.4;
+
+/* a floor's rank: floor by floor to the eighth, the last whose gatekeeper is set, the building grows (DESIGN.md, Floors that rise in
+   rank): each floor adds one thing the one under it has not, while its frames, doorways and gate grow a little. From the ninth up
+   every floor is the eighth's. No number, word or colour says the floor */
+export function orderOf(n) {
+  const t = Math.min(1, Math.max(0, (n - 1) / 7));
+  return {
+    fw: 0.042 + 0.02 * t,              // a small door's frame
+    gfw: 0.06 + 0.022 * t,             // the gate's frame
+    proud: 0.012 + 0.02 * t,           // how far a frame stands out of the wall
+    depth: 0.07 + 0.06 * t,            // the doorways' depth
+    course: n >= 2,                    // 2: a string course across the wall at the doors' spring
+    dentil: n >= 3 ? 4.5 - 1.5 * t : 0, // 3: dentils under the cornice (their spacing, degrees)
+    key: n >= 4,                       // 4: keystones at the arches' crowns
+    tiers: n <= 4 ? 1 : n <= 6 ? 2 : 3, // 5 and 7: the cornice in two, then three mouldings
+    arch2: n >= 6,                     // 6: the gate in two arches
+    crenel: n >= 8,                    // 8: the parapet at its foot crenellated
+    gHalf: 12.5 + 2.5 * t, gSpring: 0.44 + 0.08 * t,
+  };
+}
 
 /* ---------- the camera ---------- */
-/* m: the scene's box (W, H, r0 the floor stood on's radius on screen, base its foot's height, ax the axis across). The camera stands
-   at (0, EYE, D) looking down -z; lens shift (sx, sy) puts the axis at ax and the foot at base */
-export function cameraOf(m) {
-  const D = FOCAL * (m.H / 2) / m.r0, asp = m.W / m.H;
-  const sx = 2 * m.ax / m.W - 1, sy = 1 - 2 * m.base / m.H + FOCAL * EYE / D;
-  const near = .05, far = 600, A = (far + near) / (far - near), B = -2 * far * near / (far - near);
-  const f = FOCAL;
-  const vp = new Float32Array([f / asp, 0, 0, 0, 0, f, 0, 0, -sx, -sy, -A, -1, sx * D, sy * D - f * EYE, A * D + B, D]);
-  const project = ([x, y, z]) => {
-    const w = D - z;
-    return [(f / asp * x / w + sx + 1) / 2 * m.W, (1 - (f * (y - EYE) / w + sy)) / 2 * m.H];
-  };
-  return { D, vp, project, horizon: (1 - sy) / 2 * m.H, pos: [0, EYE, D] };
-}
-// floor k's local point (radius 1, foot 0) in the world
-const scaleOf = k => R ** k;
-const footOf = k => YA * (1 - R ** k);
-export const worldOf = (k, [x, y, z]) => { const s = scaleOf(k); return [x * s, footOf(k) + y * s, z * s]; };
-// a point on floor k's surface: angle th (degrees, 0 the front), height y (local), radius r (local)
-export const onFloor = (k, th, y, r = 1) => worldOf(k, [r * Math.sin(th * RAD), y, r * Math.cos(th * RAD)]);
-// a door's local outline (its arch at the wall's face): points round it, foot to foot over the crown
-export function doorOutline(g, n = 20) {
-  const thc = DOORS[g - 1], hw = HALF[g - 1], a = Math.sin(hw * RAD), sp = SPRING[g - 1] * H, out = [[thc - hw, 0]];
-  for (let i = 0; i <= n; i++) {
-    const t = -1 + 2 * i / n, th = thc + Math.asin(a * t) / RAD;
-    out.push([th, sp + a * Math.sqrt(1 - t * t)]);
+const mul4 = (a, b) => {
+  const o = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+    let s = 0;
+    for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+    o[c * 4 + r] = s;
   }
-  out.push([thc + hw, 0]);
-  return out;
+  return o;
+};
+const lerp = (a, b, t) => a + (b - a) * t;
+const scaleOf = j => R ** j;
+const footOf = j => YA * (1 - R ** j);
+// a point of floor j (in the mesh's floors, 0 its lowest; any real number) at angle th (degrees, 0 the front), height y, radius r
+export const onFloor = (j, th, y, r = 1) => { const s = scaleOf(j); return [r * s * Math.sin(th * RAD), footOf(j) + y * s, r * s * Math.cos(th * RAD)]; };
+
+/* m: the scene's box (W, H, r0 the floor stood on's radius on screen, base its foot's height, ax the axis across). j: the floor stood
+   on, in the mesh's floors (a real number while climbing). The camera floats level, out from that floor and a little over its foot;
+   lens shift puts the axis at ax and the foot at base, so every wall stands upright. dive (optional): { g, t, depth, yc } the camera
+   on its way into door g's arch, t from 0 to 1 */
+export function cameraOf(m, j, dive = null) {
+  const s = scaleOf(j), foot = footOf(j), asp = m.W / m.H;
+  const D = FOCAL * (m.H / 2) / m.r0 * s;
+  let P = [0, foot + EYE * s, D], yaw = 0;
+  let sx = 2 * m.ax / m.W - 1, sy = 1 - 2 * m.base / m.H + FOCAL * EYE * s / D;
+  let near = 0.02 * s;
+  const horizon = (1 - sy) / 2 * m.H;
+  if (dive) {
+    // a curve into the door: from where the camera stands to a point out in front of the door, then along its axis into the arch
+    const th = DOORS[dive.g - 1], t = dive.t, n = [Math.sin(th * RAD), 0, Math.cos(th * RAD)];
+    const y1 = foot + dive.yc * s, end = [n[0] * (1 - dive.depth * 0.45) * s, y1, n[2] * (1 - dive.depth * 0.45) * s];
+    const ctrl = [n[0] * 1.9 * s, lerp(P[1], y1, 0.7), n[2] * 1.9 * s];
+    const u = 1 - t;
+    P = [0, 1, 2].map(i => u * u * P[i] + 2 * u * t * ctrl[i] + t * t * end[i]);
+    // the camera turns to face the door itself the whole way, so the door holds the middle of the view as it grows
+    const aim = [n[0] * (1 - dive.depth) * s, n[2] * (1 - dive.depth) * s];
+    const look = Math.atan2(P[0] - aim[0], P[2] - aim[1]);
+    yaw = look * smooth(0, .3, t);
+    // the camera stays level and keeps its vertical shift, so the horizon holds still under the night drawn behind the model
+    sx *= u * u;
+    near = lerp(near, 0.002 * s, t);
+  }
+  const far = 4000 * s, A = (far + near) / (far - near), B = -2 * far * near / (far - near), f = FOCAL;
+  const c = Math.cos(yaw), sn = Math.sin(yaw);
+  const view = [c, 0, sn, 0, 0, 1, 0, 0, -sn, 0, c, 0, -(c * P[0] - sn * P[2]), -P[1], -(sn * P[0] + c * P[2]), 1];
+  const proj = [f / asp, 0, 0, 0, 0, f, 0, 0, -sx, -sy, -A, -1, 0, 0, B, 0];
+  const vp = mul4(proj, view);
+  const project = ([x, y, z]) => {
+    const X = vp[0] * x + vp[4] * y + vp[8] * z + vp[12], Y = vp[1] * x + vp[5] * y + vp[9] * z + vp[13], W = vp[3] * x + vp[7] * y + vp[11] * z + vp[15];
+    return [(X / W + 1) / 2 * m.W, (1 - Y / W) / 2 * m.H];
+  };
+  return { vp, project, pos: P, horizon, s, foot, j };
 }
-export const doorCrown = g => SPRING[g - 1] * H + Math.sin(HALF[g - 1] * RAD);
 
 /* ---------- colour ---------- */
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
@@ -78,222 +112,341 @@ export function paletteOf(el) {
     return [d[0] / 255, d[1] / 255, d[2] / 255];
   };
   const v = name => read(`var(${name})`);
+  const day = style.getPropertyValue("--tw-day").trim() === "1";
+  // a lamp is the amber itself in both themes (the day's --signal is the deeper amber words are set in)
+  const amber = v(day ? "--amber" : "--signal");
   const p = {
-    stone: v("--tw-stone"), wallLit: v("--tw-b"), wallMid: v("--tw-a"), wallShade: v("--tw-e"), tread: v("--tw-tread"),
-    pane: v("--tw-pane"), warm: v("--tw-warm"),
-    // a lamp is the amber itself in both themes (the day's --signal is the deeper amber words are set in)
-    signal: v(style.getPropertyValue("--tw-day").trim() === "1" ? "--amber" : "--signal"), sky: v("--tw-sky-top"), g0: v("--tw-g0"), g1: v("--tw-g1"),
+    stone: v("--tw-stone"), wallLit: v("--tw-b"), wallShade: v("--tw-e"), tread: v("--tw-tread"),
+    pane: v("--tw-pane"), amber, sky: v("--tw-sky-top"), fog: v("--tw-sky-low"), g0: v("--tw-g0"), g1: v("--tw-g1"),
     shadow: v("--tw-shadow"), ground: v("--ground"),
+    // a won room's light: warm; in the day deepened toward the amber so a won door still reads on white stone
+    warm: mix(v("--tw-warm"), amber, day ? 0.38 : 0),
     // light itself: the board's lit tone at night; in the day the words are navy, so the light is white
-    lit: style.getPropertyValue("--tw-day").trim() === "1" ? [1, 1, 1] : v("--lit"),
-    light: style.getPropertyValue("--tw-day").trim() === "1",
+    lit: day ? [1, 1, 1] : v("--lit"),
+    // the lift's doors (streak.css .lift-door): what a door's room becomes as the camera goes in, so the doors stand on it
+    lift: v("--panel-2"), liftInv: v("--lit"),
+    light: day,
   };
   i.remove();
   return p;
 }
 
 /* ---------- the mesh ---------- */
-/* a vertex: position 3, normal 3, lit colour 4 (alpha), shade colour 3, x: ao, courses, floor, flat; uv 2 (local arc length, height) */
-const STRIDE = 19;
+/* a vertex: position 3, normal 3, lit colour 4 (alpha), shade colour 3, x 4 (ao, courses, floor, flat), uv 2 (arc length, height:
+   in a doorway its share of the door's height), door 4 (its id or -1, its role, the hinge x z of a gate's leaf).
+   Roles: 1 a room's back, 2 a jamb or soffit (lit by its room), 3 and 4 the gate's left and right leaf (they swing open as the
+   gate is reached), 5 the lunette's glass (lit as the room), 6 the seam between the leaves (gone once they open) */
+const STRIDE = 23;
+// the vertices written straight into a typed array that grows as it fills
 function mesh() {
-  const a = [];
-  const v = (p, n, s, uv = [0, 0]) => a.push(...p, ...n, ...s.lit, s.alpha ?? 1, ...s.shade, s.ao ?? 0, s.course ? 1 : 0, s.k, s.flat ? 1 : 0, ...uv);
-  // a quad p0 p1 p2 p3 (any winding), each with its normal and surface (surface may differ per corner)
-  const quad = (ps, ns, ss, uvs = []) => { [0, 1, 2, 0, 2, 3].forEach(i => v(ps[i], ns[i] || ns[0], ss[i] || ss[0], uvs[i])); };
-  return { a, v, quad };
+  const M = { a: new Float32Array(STRIDE * 6 * 4096), n: 0 };
+  const put = (x) => { M.a[M.n++] = x; };
+  const v = (p, nn, s, uv = ZERO, d = NO) => {
+    if (M.n + STRIDE > M.a.length) { const b = new Float32Array(M.a.length * 2); b.set(M.a); M.a = b; }
+    put(p[0]); put(p[1]); put(p[2]); put(nn[0]); put(nn[1]); put(nn[2]);
+    put(s.lit[0]); put(s.lit[1]); put(s.lit[2]); put(s.alpha ?? 1); put(s.shade[0]); put(s.shade[1]); put(s.shade[2]);
+    put(s.ao ?? 0); put(s.course ? 1 : 0); put(s.k); put(s.flat ? 1 : 0); put(uv[0]); put(uv[1]); put(d[0]); put(d[1]); put(d[2]); put(d[3]);
+  };
+  // a quad p0 p1 p2 p3 (any winding), with a normal and surface per corner (or one for all)
+  M.quad = (ps, ns, ss, uvs = [], d = NO) => { for (const i of TRI) v(ps[i], ns[i] || ns[0], ss[i] || ss[0], uvs[i] || ZERO, d); };
+  M.done = () => M.a.slice(0, M.n);
+  return M;
 }
+const TRI = [0, 1, 2, 0, 2, 3], ZERO = [0, 0];
+// the columns the drum is cut into: every 3 degrees bends a radius-1 drum by under a tenth of a pixel at the sizes it is drawn
+const STEP = 3;
+const NO = [-1, 0, 0, 0];
 const radial = th => [Math.sin(th * RAD), 0, Math.cos(th * RAD)];
 const tangent = th => [Math.cos(th * RAD), 0, -Math.sin(th * RAD)];
 const UP = [0, 1, 0], DOWN = [0, -1, 0];
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-/* floor k of the model: f its number in the run, doors: each game's state ("", "won", "now", "next"), first: the floor the run begins on
-   (it stands on its stepped base), stood: the floor stood on (its terrace is the ground's) */
-function floorMesh(M, S, k, { doors, base, terrace }, pal) {
-  const W = (p) => worldOf(k, p), P = (r, th, y) => W([r * Math.sin(th * RAD), y, r * Math.cos(th * RAD)]);
-  const surf = (lit, shade, o = {}) => ({ lit, shade, k, ...o });
-  const wall = surf(pal.wallLit, pal.wallShade, { course: true });
-  const stone = surf(pal.stone, mix(pal.stone, pal.wallShade, .55));
-  const tread = surf(pal.tread, mix(pal.tread, pal.wallShade, .4));
-  const top = H - .1;                         // the cornice's foot
-  const span = [-104, 104];
+/* floor j of the mesh (n its number in the tower): its wall, its doors, its cornice and roof, its parapet (at the edge of the roof
+   under it, so every floor but the first has one), and under the first floor the stepped base */
+function floorMesh(M, j, n, pal) {
+  const o = orderOf(n), s = scaleOf(j), foot = footOf(j);
+  const P = (r, th, y) => [r * s * Math.sin(th * RAD), foot + y * s, r * s * Math.cos(th * RAD)];
+  const surf = (lit, shade, x = {}) => ({ lit, shade, k: j, ...x });
+  const wall = (ao = 0) => surf(pal.wallLit, pal.wallShade, { course: true, ao });
+  const stone = surf(pal.stone, mix(pal.stone, pal.wallShade, 0.55));
+  const stoneDeep = surf(mix(pal.stone, pal.wallShade, 0.25), mix(pal.stone, pal.wallShade, 0.75));
+  const tread = (ao = 0) => surf(pal.tread, mix(pal.tread, pal.wallShade, 0.4), { ao });
+  const dark = surf(mix(pal.pane, pal.wallShade, 0.25), pal.pane);
+  const top = H - 0.1;                         // the cornice's foot
+  const span = [-130, 130];
+  const id = g => j * 5 + g - 1;
 
-  // the columns of the drum: one every 1.5 degrees, plus every door's and frame's edge, so each edge is exact
+  /* the wall's shade, baked where stone meets stone: at its foot on the terrace and under the cornice */
+  const aoAt = y => Math.max(0.26 * (1 - y / 0.07), 0.3 * smooth(top - 0.13, top, y));
+  const wallQuad = (t0, t1, y0a, y0b, y1, r = 1) => {
+    const cuts = [0.07, top - 0.13].filter(y => y > Math.max(y0a, y0b) + 1e-4 && y < y1 - 1e-4);
+    let a0 = y0a, b0 = y0b;
+    for (const y of [...cuts, y1]) {
+      M.quad([P(r, t0, a0), P(r, t1, b0), P(r, t1, y), P(r, t0, y)], [radial(t0), radial(t1), radial(t1), radial(t0)],
+        [wall(aoAt(a0)), wall(aoAt(b0)), wall(aoAt(y)), wall(aoAt(y))], [[t0 * RAD, a0], [t1 * RAD, b0], [t1 * RAD, y], [t0 * RAD, y]]);
+      a0 = y; b0 = y;
+    }
+  };
+
+  // the doors and their frames, with the second arch round the gate on the high floors
   const frames = DOORS.map((thc, i) => {
-    const hw = HALF[i], a = Math.sin(hw * RAD), fw = i === 4 ? .07 : .05, ao = a + fw;
-    return { thc, hw, a, ao, fa: Math.asin(ao) / RAD, sp: SPRING[i] * H, gate: i === 4, state: doors[i] };
+    const gate = i === 4, hw = gate ? o.gHalf : SMALL, a = Math.sin(hw * RAD), fw = gate ? o.gfw : o.fw;
+    const ao = a + fw, a2 = gate && o.arch2 ? ao + 0.05 : ao;
+    return { g: i + 1, thc, hw, a, ao, a2, fa: Math.asin(a2) / RAD, sp: (gate ? o.gSpring : SPRING) * H, gate, depth: o.depth * (gate ? 1.7 : 1) };
   });
   const cuts = new Set();
-  for (let t = span[0]; t <= span[1] + 1e-6; t += 1.5) cuts.add(+t.toFixed(4));
-  for (const d of frames) for (const s of [-1, 1]) { cuts.add(+(d.thc + s * d.hw).toFixed(4)); cuts.add(+(d.thc + s * d.fa).toFixed(4)); if (d.gate) cuts.add(d.thc); }
+  for (let t = span[0]; t <= span[1] + 1e-6; t += STEP) cuts.add(+t.toFixed(4));
+  for (const d of frames) for (const sg of [-1, 1]) {
+    for (const a of [d.a, d.ao, d.a2]) cuts.add(+(d.thc + sg * Math.asin(a) / RAD).toFixed(4));
+    if (d.gate) cuts.add(d.thc);
+  }
   const T = [...cuts].sort((x, y) => x - y);
   const dx = (d, th) => Math.sin((th - d.thc) * RAD);
-  const inner = (d, th) => d.sp + Math.sqrt(Math.max(0, d.a * d.a - dx(d, th) ** 2));
-  const outer = (d, th) => d.sp + Math.sqrt(Math.max(0, d.ao * d.ao - dx(d, th) ** 2));
-  const uvAt = (th, y, r = 1) => [th * RAD * r, y];
-  const wallQuad = (t0, t1, y0a, y0b, y1, r = 1, s = wall) => M.quad(
-    [P(r, t0, y0a), P(r, t1, y0b), P(r, t1, y1), P(r, t0, y1)],
-    [radial(t0), radial(t1), radial(t1), radial(t0)], [s], [uvAt(t0, y0a), uvAt(t1, y0b), uvAt(t1, y1), uvAt(t0, y1)]);
+  const arc = (d, a, th) => d.sp + Math.sqrt(Math.max(0, a * a - dx(d, th) ** 2));
+  const crown = d => d.sp + d.a;
+  const fr = 1 + o.proud, fr2 = 1 + o.proud * 0.5;
+  const courseY = SPRING * H * 0.98;
 
   for (let i = 0; i < T.length - 1; i++) {
     const t0 = T[i], t1 = T[i + 1], tm = (t0 + t1) / 2;
-    const d = frames.find(x => Math.abs(tm - x.thc) < x.fa);
-    if (!d) { wallQuad(t0, t1, 0, 0, top); continue; }
-    const inDoor = Math.abs(tm - d.thc) < d.hw;
-    const o0 = outer(d, t0), o1 = outer(d, t1);
-    // the wall over the frame
-    wallQuad(t0, t1, o0, o1, top);
-    // the frame's face, standing PROUD out of the wall, and its outer lip
-    const lo0 = inDoor ? inner(d, t0) : 0, lo1 = inDoor ? inner(d, t1) : 0;
-    const fr = 1 + PROUD;
-    M.quad([P(fr, t0, lo0), P(fr, t1, lo1), P(fr, t1, o1), P(fr, t0, o0)], [radial(t0), radial(t1), radial(t1), radial(t0)], [stone]);
-    const lipN = th => { const n = radial(th); return [n[0] * .3, .95, n[2] * .3]; };
-    M.quad([P(1, t0, o0), P(1, t1, o1), P(fr, t1, o1), P(fr, t0, o0)], [lipN(t0), lipN(t1)], [stone]);
-    if (!inDoor) continue;
-    // the doorway: the frame's inner lip, the soffit under the arch, the room behind
-    const i0 = inner(d, t0), i1 = inner(d, t1), back = 1 - DEPTH;
-    const lit = d.state === "won" || d.state === "now" || (d.gate && d.state === "won");
-    const glow = d.state === "now" ? mix(pal.signal, pal.lit, .3) : pal.warm;
-    const inside = lit ? surf(mix(mix(pal.pane, pal.wallShade, .5), glow, .45), mix(pal.pane, glow, .25)) : surf(mix(pal.wallShade, pal.pane, .4), mix(pal.pane, pal.wallShade, .3));
-    M.quad([P(1, t0, i0), P(1, t1, i1), P(fr, t1, i1), P(fr, t0, i0)], [DOWN], [stone]);
-    M.quad([P(back, t0, i0), P(back, t1, i1), P(1, t1, i1), P(1, t0, i0)], [DOWN], [inside]);
-    if (d.gate && !lit) {
-      /* the gate's two leaves to the spring, a deep tone of the stone, each turned a little so the light tells them apart, and the
-         dark lunette over them, each leaf in two panels on its rails. Played or beaten, the gate stands open on its lit hall. No type colour: the floor's type
-         is said by the doors that offer the game (2026-11-11, the user: "꼭 타입을 표시해야 하나? ... 지금은 너무 조잡해보여") */
-      const leaf = 1 - DEPTH * .4, side = tm < d.thc ? -1 : 1, tc = mix(pal.stone, pal.pane, .62);
-      const lt = surf(mix(tc, pal.lit, .06), mix(tc, pal.ground, pal.light ? .2 : .45));
-      const n = th => { const r = radial(th), t = tangent(th); return [r[0] + t[0] * .25 * side, 0, r[2] + t[2] * .25 * side]; };
-      const sp = d.sp;
-      M.quad([P(leaf, t0, 0), P(leaf, t1, 0), P(leaf, t1, sp), P(leaf, t0, sp)], [n(t0), n(t1)], [lt]);
-      // the rails across each leaf, standing a little out of it, with their shade under them
-      const rail = surf(mix(tc, pal.stone, .35), mix(tc, pal.ground, .3)), dark = surf(mix(tc, pal.ground, .5), mix(tc, pal.ground, .6), { flat: true });
-      for (const y of [.06, .5, .94]) {
-        M.quad([P(leaf + .006, t0, sp * y - .008), P(leaf + .006, t1, sp * y - .008), P(leaf + .006, t1, sp * y + .008), P(leaf + .006, t0, sp * y + .008)], [n(t0), n(t1)], [rail]);
-        M.quad([P(leaf + .002, t0, sp * y - .016), P(leaf + .002, t1, sp * y - .016), P(leaf + .002, t1, sp * y - .008), P(leaf + .002, t0, sp * y - .008)], [n(t0)], [dark]);
+    const d = frames.find(x => Math.abs(dx(x, tm)) < x.a2);
+    if (!d) {
+      wallQuad(t0, t1, 0, 0, top);
+      if (o.course) {
+        // the string course: a band standing out of the wall at the doors' spring, its top lit
+        const y0 = courseY, y1 = courseY + 0.03, rc = 1.014;
+        M.quad([P(rc, t0, y0), P(rc, t1, y0), P(rc, t1, y1), P(rc, t0, y1)], [radial(t0), radial(t1)], [stone]);
+        M.quad([P(1, t0, y1), P(1, t1, y1), P(rc, t1, y1), P(rc, t0, y1)], [UP], [stone]);
+        M.quad([P(1, t0, y0), P(1, t1, y0), P(rc, t1, y0), P(rc, t0, y0)], [DOWN], [stoneDeep]);
       }
-      const glass = surf(mix(pal.pane, pal.ground, .3), pal.pane, { flat: true });
-      M.quad([P(leaf, t0, sp), P(leaf, t1, sp), P(leaf, t1, i1), P(leaf, t0, i0)], [radial(t0), radial(t1)], [glass]);
-      M.quad([P(leaf, t0, sp - .012), P(leaf + .004, t1, sp - .012), P(leaf + .004, t1, sp + .006), P(leaf, t0, sp + .006)], [radial(t0)], [stone]);
-    } else {
-      // the room behind: dark, or lit from within, brightest at the floor
-      const room = lit
-        ? [surf(mix(glow, pal.lit, d.state === "now" ? .1 : .25), glow, { flat: true }), surf(mix(glow, pal.pane, .62), glow, { flat: true })]
-        : [surf(mix(pal.pane, pal.wallShade, .25), pal.pane, { flat: true }), surf(mix(pal.pane, pal.ground, .5), pal.pane, { flat: true })];
-      M.quad([P(back, t0, 0), P(back, t1, 0), P(back, t1, i1), P(back, t0, i0)], [radial(t0)], [room[0], room[0], room[1], room[1]]);
+      continue;
+    }
+    const x = Math.abs(dx(d, tm)), inDoor = x < d.a, inFrame = x < d.ao;
+    const o20 = arc(d, d.a2, t0), o21 = arc(d, d.a2, t1);
+    wallQuad(t0, t1, o20, o21, top);
+    if (!inFrame) {
+      // the gate's second arch: a band between the wall and the frame
+      const f0 = arc(d, d.ao, t0), f1 = arc(d, d.ao, t1);
+      const lo0 = Math.abs(dx(d, t0)) < d.ao ? f0 : 0, lo1 = Math.abs(dx(d, t1)) < d.ao ? f1 : 0;
+      M.quad([P(fr2, t0, lo0), P(fr2, t1, lo1), P(fr2, t1, o21), P(fr2, t0, o20)], [radial(t0), radial(t1)], [stoneDeep]);
+      M.quad([P(1, t0, o20), P(1, t1, o21), P(fr2, t1, o21), P(fr2, t0, o20)], [[0, 1, 0]], [stone]);
+      continue;
+    }
+    const o0 = arc(d, d.ao, t0), o1 = arc(d, d.ao, t1);
+    if (d.a2 > d.ao) {
+      M.quad([P(fr2, t0, o0), P(fr2, t1, o1), P(fr2, t1, o21), P(fr2, t0, o20)], [radial(t0), radial(t1)], [stoneDeep]);
+      M.quad([P(1, t0, o20), P(1, t1, o21), P(fr2, t1, o21), P(fr2, t0, o20)], [[0, 1, 0]], [stone]);
+    }
+    // the frame's face, standing out of the wall, and its outer lip
+    const lo0 = inDoor ? arc(d, d.a, t0) : 0, lo1 = inDoor ? arc(d, d.a, t1) : 0;
+    M.quad([P(fr, t0, lo0), P(fr, t1, lo1), P(fr, t1, o1), P(fr, t0, o0)], [radial(t0), radial(t1)], [stone]);
+    const lipN = th => { const r = radial(th); return [r[0] * 0.3, 0.95, r[2] * 0.3]; };
+    const back = d.a2 > d.ao ? fr2 : 1;
+    M.quad([P(back, t0, o0), P(back, t1, o1), P(fr, t1, o1), P(fr, t0, o0)], [lipN(t0), lipN(t1)], [stone]);
+    if (!inDoor) continue;
+    // the doorway: the frame's inner lip, the soffit under the arch, the room behind (or the gate's leaves before its hall)
+    const i0 = arc(d, d.a, t0), i1 = arc(d, d.a, t1), bk = 1 - d.depth, hD = crown(d);
+    const door = role => [id(d.g), role, 0, 0];
+    M.quad([P(1, t0, i0), P(1, t1, i1), P(fr, t1, i1), P(fr, t0, i0)], [DOWN], [stone]);
+    M.quad([P(bk, t0, i0), P(bk, t1, i1), P(1, t1, i1), P(1, t0, i0)], [DOWN], [dark], [[0, i0 / hD], [0, i1 / hD], [0, i1 / hD], [0, i0 / hD]], door(2));
+    M.quad([P(bk, t0, 0), P(bk, t1, 0), P(bk, t1, i1), P(bk, t0, i0)], [radial(tm)], [surf(mix(pal.pane, pal.wallShade, 0.2), pal.pane, { flat: true })],
+      [[0, 0], [0, 0], [0, i1 / hD], [0, i0 / hD]], door(1));
+    if (d.gate) {
+      /* the gate's two leaves to the spring, a deep tone of the stone, on three rails, hung on the jambs: they swing in as the gate
+         is reached (its light passing .55), so a gate played or beaten stands open on its hall. Over them the lunette's glass */
+      const leaf = 1 - 0.035, side = tm < d.thc ? -1 : 1, tc = mix(pal.stone, pal.pane, 0.62);
+      const hinge = P(leaf, d.thc + side * d.hw, 0);
+      const lr = [id(d.g), side < 0 ? 3 : 4, hinge[0], hinge[2]];
+      const lt = surf(mix(tc, pal.lit, 0.06), mix(tc, pal.ground, pal.light ? 0.2 : 0.45));
+      const nn = th => { const r = radial(th), t = tangent(th); return [r[0] + t[0] * 0.25 * side, 0, r[2] + t[2] * 0.25 * side]; };
+      const sp = d.sp;
+      M.quad([P(leaf, t0, 0), P(leaf, t1, 0), P(leaf, t1, sp), P(leaf, t0, sp)], [nn(t0), nn(t1)], [lt], [], lr);
+      const rail = surf(mix(tc, pal.stone, 0.35), mix(tc, pal.ground, 0.3)), sh = surf(mix(tc, pal.ground, 0.5), mix(tc, pal.ground, 0.6), { flat: true });
+      for (const y of [0.06, 0.5, 0.94]) {
+        M.quad([P(leaf + 0.006, t0, sp * y - 0.008), P(leaf + 0.006, t1, sp * y - 0.008), P(leaf + 0.006, t1, sp * y + 0.008), P(leaf + 0.006, t0, sp * y + 0.008)], [nn(t0), nn(t1)], [rail], [], lr);
+        M.quad([P(leaf + 0.002, t0, sp * y - 0.016), P(leaf + 0.002, t1, sp * y - 0.016), P(leaf + 0.002, t1, sp * y - 0.008), P(leaf + 0.002, t0, sp * y - 0.008)], [nn(t0)], [sh], [], lr);
+      }
+      const glass = surf(mix(pal.pane, pal.ground, 0.3), pal.pane, { flat: true });
+      M.quad([P(leaf, t0, sp), P(leaf, t1, sp), P(leaf, t1, i1), P(leaf, t0, i0)], [radial(t0)], [glass], [[0, 0.5], [0, 0.5], [0, 0.5], [0, 0.5]], door(5));
+      M.quad([P(leaf, t0, sp - 0.012), P(leaf + 0.004, t1, sp - 0.012), P(leaf + 0.004, t1, sp + 0.006), P(leaf, t0, sp + 0.006)], [radial(t0)], [stone]);
     }
   }
-  // the seam where the gate's leaves meet
-  for (const d of frames) if (d.gate && !(d.state === "won" || d.state === "now")) {
-    const leaf = 1 - DEPTH * .4 + .008, a = d.thc - .35, b = d.thc + .35, dark = surf(pal.pane, pal.pane, { flat: true });
-    M.quad([P(leaf, a, 0), P(leaf, b, 0), P(leaf, b, d.sp), P(leaf, a, d.sp)], [radial(d.thc)], [dark]);
-  }
-  // the jambs and the frame's sides: upright faces at each door's and frame's edges
-  for (const d of frames) for (const s of [-1, 1]) {
-    const th = d.thc + s * d.hw, n = tangent(th).map(v => v * -s);
-    const lit = d.state === "won" || d.state === "now";
-    const glow = d.state === "now" ? pal.signal : pal.warm;
-    // the jamb in the doorway's own shade; a lit room's light falls on it, brightest at the floor as the room's is
-    const jamb = lit
-      ? [surf(mix(glow, pal.pane, .3), glow, { flat: true }), surf(mix(pal.pane, glow, .25), pal.pane, { flat: true })]
-      : [surf(mix(pal.wallShade, pal.pane, .35), mix(pal.pane, pal.wallShade, .2))];
-    M.quad([P(1 - DEPTH, th, 0), P(1 + PROUD, th, 0), P(1 + PROUD, th, d.sp), P(1 - DEPTH, th, d.sp)], [n], lit ? [jamb[0], jamb[0], jamb[1], jamb[1]] : jamb);
-    const th2 = d.thc + s * d.fa, n2 = tangent(th2).map(v => v * s);
-    M.quad([P(1, th2, 0), P(1 + PROUD, th2, 0), P(1 + PROUD, th2, d.sp), P(1, th2, d.sp)], [n2], [stone]);
-    // a light falls out on the floor in front of a lit door (seen only where the eye is over the floor: the floor stood on)
-    if (lit && k === 0) {
-      const g = surf(mix(glow, pal.lit, .2), glow, { flat: true, alpha: .18 }), g0 = { ...g, alpha: 0 };
-      const y = .004, a = d.thc - d.hw, b = d.thc + d.hw;
-      if (s === 1) S.quad([P(1, a, y), P(1, b, y), P(1.3, d.thc + d.hw * 1.6, y), P(1.3, d.thc - d.hw * 1.6, y)], [UP], [g, g, g0, g0]);
+  for (const d of frames) {
+    // the seam where the gate's leaves meet, lit at .382 by the hall behind while the gate is the next game
+    if (d.gate) {
+      const r = 1 - 0.035 + 0.009, a = d.thc - 0.35, b = d.thc + 0.35;
+      M.quad([P(r, a, 0), P(r, b, 0), P(r, b, d.sp), P(r, a, d.sp)], [radial(d.thc)], [surf(pal.pane, pal.pane, { flat: true })], [[0, 0.3], [0, 0.3], [0, 0.3], [0, 0.3]], [id(d.g), 6, 0, 0]);
+    }
+    // the keystone at the crown
+    if (o.key) {
+      const hk = d.gate ? 2.4 : 1.7, c0 = crown(d) - 0.012, c1 = d.sp + d.ao + 0.018, rk = fr + 0.008;
+      const a = d.thc - hk, b = d.thc + hk;
+      M.quad([P(rk, a, c0), P(rk, b, c0), P(rk, b + hk * 0.3, c1), P(rk, a - hk * 0.3, c1)], [radial(d.thc)], [stone]);
+      M.quad([P(fr, a - hk * 0.3, c1), P(fr, b + hk * 0.3, c1), P(rk, b + hk * 0.3, c1), P(rk, a - hk * 0.3, c1)], [UP], [stone]);
+      M.quad([P(fr, a, c0), P(rk, a, c0), P(rk, a - hk * 0.3, c1), P(fr, a - hk * 0.3, c1)], [tangent(a).map(x => -x)], [stoneDeep]);
+      M.quad([P(fr, b, c0), P(rk, b, c0), P(rk, b + hk * 0.3, c1), P(fr, b + hk * 0.3, c1)], [tangent(b)], [stoneDeep]);
+    }
+    // the jambs (lit by the room) and the frame's sides
+    for (const sg of [-1, 1]) {
+      const th = d.thc + sg * d.hw, nj = tangent(th).map(v => v * -sg), bk = 1 - d.depth, hD = crown(d);
+      M.quad([P(bk, th, 0), P(fr, th, 0), P(fr, th, d.sp), P(bk, th, d.sp)], [nj], [dark], [[0, 0], [0, 0], [0, d.sp / hD], [0, d.sp / hD]], [id(d.g), 2, 0, 0]);
+      const th2 = d.thc + sg * Math.asin(d.ao) / RAD, n2 = tangent(th2).map(v => v * sg);
+      M.quad([P(d.a2 > d.ao ? fr2 : 1, th2, 0), P(fr, th2, 0), P(fr, th2, d.sp), P(d.a2 > d.ao ? fr2 : 1, th2, d.sp)], [n2], [stoneDeep]);
+      if (d.a2 > d.ao) {
+        const th3 = d.thc + sg * Math.asin(d.a2) / RAD, n3 = tangent(th3).map(v => v * sg);
+        M.quad([P(1, th3, 0), P(fr2, th3, 0), P(fr2, th3, d.sp), P(1, th3, d.sp)], [n3], [stoneDeep]);
+      }
     }
   }
 
-  // the cornice under the roof: a band, its moulding standing out, the dentils under it, the roof's edge
-  const ring = (r0, y0, r1, y1, s, n0, n1, a = span[0], b = span[1], step = 1.5) => {
-    for (let t = a; t < b - 1e-6; t += step) {
-      const u = Math.min(b, t + step);
-      M.quad([P(r0, t, y0), P(r0, u, y0), P(r1, u, y1), P(r1, t, y1)], [n0(t), n0(u), n1(u), n1(t)], [s]);
+  /* the cornice: a profile turned round the axis, its mouldings by the floor's rank, out to the roof's edge; then the roof, the
+     next floor's terrace, its shade deepening to the next wall's foot */
+  const lathe = (pts, a = span[0], b = span[1], step = STEP, sf = () => stone) => {
+    for (let q = 0; q < pts.length - 1; q++) {
+      const [r0, y0, ao0 = 0] = pts[q], [r1, y1, ao1 = 0] = pts[q + 1];
+      const dr = r1 - r0, dy = y1 - y0, L = Math.hypot(dr, dy) || 1, nr = dy / L, ny = -dr / L;
+      const s0 = { ...sf(q), ao: ao0 }, s1 = { ...sf(q), ao: ao1 };
+      for (let t = a; t < b - 1e-6; t += step) {
+        const u = Math.min(b, t + step), N = th => { const r = radial(th); return [r[0] * nr, ny, r[2] * nr]; };
+        M.quad([P(r0, t, y0), P(r0, u, y0), P(r1, u, y1), P(r1, t, y1)], [N(t), N(u), N(u), N(t)], [s0, s0, s1, s1]);
+      }
     }
   };
-  const tilt = (dy) => th => { const r = radial(th); return [r[0], dy, r[2]]; };
-  ring(1, top, 1, top + .03, stone, radial, radial);
-  ring(1, top + .03, 1.03, top + .045, stone, tilt(-1.4), tilt(-1.4));      // the moulding's underside, facing down
-  ring(1.03, top + .045, CORNICE, top + .07, stone, tilt(-.6), tilt(-.6));
-  ring(CORNICE, top + .07, CORNICE, H, stone, radial, radial);
-  ring(CORNICE, H, R * .98, H, tread, () => UP, () => UP);                    // the roof, the next floor's terrace (to under its wall)
-  for (let t = span[0] + 2; t <= span[1] - 2; t += 4) {
-    const a = t - .9, b = t + .9, y0 = top + .012, y1 = top + .03, r1 = 1.022;
-    M.quad([P(r1, a, y0), P(r1, b, y0), P(r1, b, y1), P(r1, a, y1)], [radial(t)], [stone]);
-    M.quad([P(1, a, y0), P(1, b, y0), P(r1, b, y0), P(r1, a, y0)], [DOWN], [stone]);
-    M.quad([P(1, a, y0), P(r1, a, y0), P(r1, a, y1), P(1, a, y1)], [tangent(a).map(x => -x)], [stone]);
-    M.quad([P(1, b, y0), P(r1, b, y0), P(r1, b, y1), P(1, b, y1)], [tangent(b)], [stone]);
+  const C = 1.06;
+  const prof = o.tiers === 1
+    ? [[1, top], [1, top + 0.03], [1.03, top + 0.045], [C, top + 0.07], [C, H]]
+    : o.tiers === 2
+      ? [[1, top], [1.012, top], [1.012, top + 0.022], [1.026, top + 0.034], [1.026, top + 0.05], [C, top + 0.07], [C, H]]
+      : [[1, top - 0.02], [1.01, top - 0.02], [1.01, top], [1.02, top], [1.02, top + 0.022], [1.034, top + 0.034], [1.034, top + 0.05], [C + 0.01, top + 0.068], [C + 0.01, H]];
+  lathe(prof);
+  const edge = prof[prof.length - 1][0];
+  lathe([[edge, H, 0], [R + 0.06, H, 0], [R, H, 0.34]], span[0], span[1], STEP, () => tread());
+  if (o.dentil) {
+    for (let t = span[0] + 2; t <= span[1] - 2; t += o.dentil) {
+      const a = t - o.dentil * 0.22, b = t + o.dentil * 0.22, y0 = top + 0.006, y1 = top + 0.026, r0 = o.tiers === 3 ? 1.02 : 1.012, r1 = r0 + 0.016;
+      M.quad([P(r1, a, y0), P(r1, b, y0), P(r1, b, y1), P(r1, a, y1)], [radial(t)], [stone]);
+      M.quad([P(r0, a, y0), P(r0, b, y0), P(r1, b, y0), P(r1, a, y0)], [DOWN], [stoneDeep]);
+      M.quad([P(r0, a, y0), P(r1, a, y0), P(r1, a, y1), P(r0, a, y1)], [tangent(a).map(x => -x)], [stoneDeep]);
+      M.quad([P(r0, b, y0), P(r1, b, y0), P(r1, b, y1), P(r0, b, y1)], [tangent(b)], [stoneDeep]);
+    }
   }
 
-  if (!terrace) {
-    // the parapet at the edge of the roof under this floor: its face and its coping
-    const rp = PARAPET, h = .085;
-    ring(rp, 0, rp, h, stone, radial, radial);
-    ring(rp + .012, h, rp + .012, h + .02, stone, radial, radial);
-    ring(rp - .02, h + .02, rp + .012, h + .02, tread, () => UP, () => UP);
-    ring(rp, h, rp + .012, h, stone, () => DOWN, () => DOWN);
-  }
-  if (base) {
+  if (n > 1) {
+    // the parapet at the edge of the roof under this floor (that roof's edge, in this floor's units): its faces and coping
+    const below = orderOf(n - 1), e = (below.tiers === 3 ? C + 0.01 : C) / R, h = 0.08;
+    lathe([[e - 0.026, 0], [e - 0.026, h], [e - 0.03, h + 0.016], [e + 0.012, h + 0.016], [e + 0.012, h], [e, h], [e, 0]]);
+    if (o.crenel) {
+      // the merlons on the coping: a block every six degrees, its face, its top and its sides
+      const y0 = h + 0.016, y1 = y0 + 0.034, ri = e - 0.026, ro = e + 0.012;
+      for (let t = span[0] + 3; t <= span[1] - 3; t += 6) {
+        const a = t - 1.6, b = t + 1.6;
+        M.quad([P(ro, a, y0), P(ro, b, y0), P(ro, b, y1), P(ro, a, y1)], [radial(t)], [stone]);
+        M.quad([P(ri, a, y1), P(ri, b, y1), P(ro, b, y1), P(ro, a, y1)], [UP], [tread()]);
+        M.quad([P(ri, a, y0), P(ro, a, y0), P(ro, a, y1), P(ri, a, y1)], [tangent(a).map(x => -x)], [stoneDeep]);
+        M.quad([P(ri, b, y0), P(ro, b, y0), P(ro, b, y1), P(ri, b, y1)], [tangent(b)], [stoneDeep]);
+        M.quad([P(ri, a, y0), P(ri, b, y0), P(ri, b, y1), P(ri, a, y1)], [radial(t).map(x => -x)], [stoneDeep]);
+      }
+    }
+  } else {
     // the stepped base the first floor stands on: three rings of stone, each wider and lower
-    for (let j = 0; j < 3; j++) {
-      const r = 1.1 + .085 * j, y1 = -.045 * j, y0 = y1 - .045;
-      ring(r, y0, r, y1, stone, radial, radial, -180, 180, 3);
-      ring(r - .085, y1, r, y1, tread, () => UP, () => UP, -180, 180, 3);
+    for (let q = 0; q < 3; q++) {
+      const r = 1.1 + 0.085 * q, y1 = -0.045 * q, y0 = y1 - 0.045;
+      lathe([[r, y0], [r, y1]], -180, 180, 3);
+      lathe([[r - 0.085, y1, q === 0 ? 0.3 : 0.12], [r - 0.06, y1, 0], [r, y1, 0]], -180, 180, 3, () => tread());
     }
   }
 }
 
-/* the ground. On the first floor the plaza is the night's own (tower.js), and the model only lays the tower's shade on it, deepest at
-   its foot; above it the terrace of the floor stood on is the model's, out to the sea of cloud on the horizon (a parapet at its edge
-   was tried and met the horizon as a wedge) */
-function groundMesh(M, S, first, pal) {
-  const P = (r, th, y) => [r * Math.sin(th * RAD), y, r * Math.cos(th * RAD)];
-  const deep = pal.light ? .22 : .5;
-  if (first) {
-    const rings = [1.2, 1.45, 1.8, 2.3, 3];
-    const s = r => ({ lit: pal.shadow, shade: pal.shadow, k: 0, flat: true, alpha: deep * (1 - (r - 1.2) / 1.8) ** 2 });
-    for (let i = 0; i < rings.length - 1; i++) for (let t = -180; t < 180; t += 3) {
-      const a = rings[i], b = rings[i + 1], y = -.133;
-      S.quad([P(a, t, y), P(a, t + 3, y), P(b, t + 3, y), P(b, t, y)], [UP], [s(a), s(a), s(b), s(b)]);
-    }
-    return;
-  }
-  const rings = [0, 1, 1.25, 1.6, 2.2, 3.2, 5, 9, 18, 40, 120, 400];
-  const s = r => ({ lit: pal.g0, shade: pal.g0, k: 0, flat: true, ao: deep * .8 * Math.exp(-Math.max(0, r - 1) * 1.8) });
-  for (let i = 0; i < rings.length - 1; i++) for (let t = -180; t < 180; t += 2) {
+/* the ground, under the first floor: the plaza round the base, its shade deepest at the tower's foot, out to fields that close
+   into the night's own colour (the fog does that, so the ground needs no edge) */
+function groundMesh(M, S, lo, pal) {
+  const s = scaleOf(1 - lo), y = footOf(1 - lo) - 0.133 * s;
+  const P = (r, th) => [r * s * Math.sin(th * RAD), y, r * s * Math.cos(th * RAD)];
+  const rings = [0, 1.36, 1.8, 2.6, 4, 7, 14, 30, 70, 160, 400, 1000, 3000];
+  const sf = r => ({ lit: r < 3 ? pal.g0 : pal.g1, shade: r < 3 ? pal.g0 : pal.g1, k: -99, flat: true });
+  for (let i = 0; i < rings.length - 1; i++) for (let t = -180; t < 180; t += 6) {
     const a = rings[i], b = rings[i + 1];
-    M.quad([P(a, t, 0), P(a, t + 2, 0), P(b, t + 2, 0), P(b, t, 0)], [UP], [s(a), s(a), s(b), s(b)]);
+    M.quad([P(a, t), P(a, t + 6), P(b, t + 6), P(b, t)], [UP], [sf(a), sf(a), sf(b), sf(b)]);
   }
+  // the tower's shade on the plaza
+  const deep = pal.light ? 0.22 : 0.5, shade = [1.36, 1.46, 1.58, 1.72, 1.88, 2.06, 2.26, 2.5, 2.78, 3.08, 3.4];
+  const sh = r => ({ lit: pal.shadow, shade: pal.shadow, k: -99, flat: true, alpha: deep * (1 - (r - 1.36) / 2.04) ** 2 });
+  const P2 = (r, th) => { const p = P(r, th); p[1] += 0.002 * s; return p; };
+  for (let i = 0; i < shade.length - 1; i++) for (let t = -180; t < 180; t += 6) {
+    const a = shade[i], b = shade[i + 1];
+    S.quad([P2(a, t), P2(a, t + 6), P2(b, t + 6), P2(b, t)], [UP], [sh(a), sh(a), sh(b), sh(b)]);
+  }
+}
+
+/* the mesh for floors lo to hi (numbers in the tower), lo the mesh's unit. It holds no state (doors are lit by uniforms) and no size
+   (the camera makes it any size), so one is kept for each range and palette and a redraw or a resize builds nothing */
+const built = new Map();
+export function buildModel(lo, hi, pal) {
+  const key = `${lo}:${hi}:${JSON.stringify(pal)}`;
+  if (built.has(key)) return built.get(key);
+  const M = mesh(), S = mesh();
+  for (let n = lo; n <= hi; n++) floorMesh(M, n - lo, n, pal);
+  groundMesh(M, S, lo, pal);
+  const model = { lo, hi, solid: M.done(), soft: S.done() };
+  if (built.size >= 4) built.delete(built.keys().next().value);
+  built.set(key, model);
+  return model;
 }
 
 /* ---------- the shaders ---------- */
 const VS = `#version 300 es
-in vec3 aP; in vec3 aN; in vec4 aL; in vec3 aS; in vec4 aX; in vec2 aU;
-uniform mat4 uVP; uniform float uS, uYA;
-out vec3 vN, vS, vW; out vec4 vL, vX; out vec2 vU;
+in vec3 aP; in vec3 aN; in vec4 aL; in vec3 aS; in vec4 aX; in vec2 aU; in vec4 aD;
+uniform mat4 uVP; uniform float uDoor[${SPAN * 5}];
+out vec3 vN, vS, vW; out vec4 vL, vX, vD; out vec2 vU; out float vV;
 void main() {
-  vec3 p = vec3(aP.x * uS, uYA + (aP.y - uYA) * uS, aP.z * uS);
-  vW = p; vN = aN; vL = aL; vS = aS; vX = aX; vU = aU;
+  vec3 p = aP, n = aN;
+  float v = aD.x >= 0. ? uDoor[int(aD.x + .5)] : 0.;
+  if (aD.y > 2.5 && aD.y < 4.5) {
+    // a leaf of the gate swings in about its hinge as the gate is reached
+    float a = smoothstep(.55, 1., v) * 1.7 * (aD.y < 3.5 ? 1. : -1.), c = cos(a), s = sin(a);
+    vec2 r = p.xz - aD.zw;
+    p.xz = aD.zw + vec2(r.x * c + r.y * s, -r.x * s + r.y * c);
+    n.xz = vec2(n.x * c + n.z * s, -n.x * s + n.z * c);
+  }
+  vW = p; vN = n; vL = aL; vS = aS; vX = aX; vU = aU; vD = aD; vV = v;
   gl_Position = uVP * vec4(p, 1.);
 }`;
 const FS = `#version 300 es
 precision highp float;
-in vec3 vN, vS, vW; in vec4 vL, vX; in vec2 vU;
-uniform vec3 uLight, uEye, uSky, uRim; uniform float uClimb, uR, uDay;
+in vec3 vN, vS, vW; in vec4 vL, vX, vD; in vec2 vU; in float vV;
+uniform vec3 uLight, uEye, uSky, uRim, uFog, uWarm, uAmber, uLift;
+uniform float uCamK, uR, uDay, uFogN, uFogD, uLiftMix, uLiftDoor;
+uniform vec4 uPL[12], uPC[12]; uniform int uNL;
+uniform float uYA, uJN, uH;
 out vec4 o;
 float lightOf(float k) { return k <= 0. ? 1. : max(.16, pow(uR, 1.7 * k)); }
+/* the drums' shadow along the moonlight: whether the way from p toward the light passes inside a drum above p (each floor j an
+   upright drum of radius R^j from its foot to its roof), soft at its edge */
+float drums(vec3 p) {
+  vec2 v = uLight.xz / uLight.y;
+  float sh = 0.;
+  for (int k = 0; k < 18; k++) {
+    float j = float(k);
+    if (j > uJN) break;
+    float s = pow(uR, j), f = uYA * (1. - s), ya = max(f, p.y + 1e-4), yb = f + uH * s;
+    if (yb <= ya) continue;
+    float tm = clamp(-dot(p.xz, v) / dot(v, v), ya - p.y, yb - p.y), r = s * 1.04;
+    // the further the shadow falls from what casts it, the softer its edge and the fainter it lies
+    float far = tm * length(v) / s, soft = .03 + .05 * far;
+    sh = max(sh, (1. - smoothstep(r * (1. - soft), r * (1. + soft), length(p.xz + v * tm))) * (1. - smoothstep(.8, 4.5, far)));
+  }
+  return sh;
+}
 void main() {
-  vec3 c;
+  float role = vD.y, v = vV;
+  if (role > 5.5 && v > .6) discard;
+  vec3 n = normalize(vN), c;
   if (vX.w > .5) c = vL.rgb;
   else {
-    vec3 n = normalize(vN);
     float d = dot(n, uLight);
     // the light turning round the drum, its terminator kept a little firm, as a painted stone is
-    float t = smoothstep(-.35, .75, d);
-    t = mix(t, smoothstep(.2, .8, t), .35);
+    float t = smoothstep(-.4, .8, d);
+    t = mix(t, smoothstep(.2, .8, t), .4);
     c = mix(vS, vL.rgb, t);
     if (vX.y > .5) {
       // courses of dressed stone: joints in the shader, faded out where they would be thinner than a pixel
@@ -305,20 +458,46 @@ void main() {
       float jx = 1. - smoothstep(0., w.x * 1.4, min(f.x, 1. - f.x));
       float fade = clamp(1.6 - max(w.x, w.y) * 7., 0., 1.);
       c *= 1. - (.1 + .06 * uDay) * max(jx, jy) * fade;
+      // the cornice's shadow on the wall under it, longer where the light grazes the drum
+      float facing = dot(normalize(n.xz + 1e-5), normalize(uLight.xz));
+      float edge = uH - .1 - .066 * uLight.y / (length(uLight.xz) * max(facing, .04)), bw = fwidth(vU.y) * 1.5;
+      c = mix(c, vS, (facing > 0. ? smoothstep(edge - bw, edge + bw, vU.y) : 0.) * .75);
     }
     // a rim of moonlight on the lit edge, where the drum turns away
-    vec3 v = normalize(uEye - vW);
-    float rim = pow(1. - max(0., dot(n, v)), 4.) * smoothstep(0., .5, dot(n, uLight));
+    vec3 e = normalize(uEye - vW);
+    float rim = pow(1. - max(0., dot(n, e)), 4.) * smoothstep(0., .5, d);
     c = mix(c, uRim, rim * .35);
   }
   c *= 1. - vX.x;
-  c = mix(c, uSky, 1. - lightOf(vX.z - uClimb));
+  // what faces up (the terraces, the plaza) lies in the drums' shadow away from the moon
+  if (n.y > .5) c *= 1. - drums(vW) * (uDay > .5 ? .26 : .42);
+  // a doorway's light: dark, .382 for the next game, warm won, amber gone into; brightest at the floor
+  if ((role > .5 && role < 2.5) || role > 4.5) {
+    float g = mix(1., .62, clamp(vU.y, 0., 1.)) * (role > 1.5 && role < 2.5 ? .78 : 1.);
+    vec3 glow = v <= 1. ? uWarm : mix(uWarm, uAmber, v - 1.);
+    c = mix(c, glow * g, clamp(v, 0., 1.) * (role > 1.5 && role < 2.5 ? .7 : 1.));
+  }
+  // the lit doors' light on the stone round them, and the run's light going along the terrace
+  for (int i = 0; i < 12; i++) {
+    if (i >= uNL) break;
+    vec3 d = uPL[i].xyz - vW;
+    float L = length(d), a = max(0., 1. - L / uPL[i].w);
+    float lam = vX.w > .5 ? 1. : max(0., dot(n, d / max(L, 1e-5))) * .8 + .2;
+    c = mix(c, uPC[i].rgb, clamp(a * a * lam * uPC[i].a, 0., 1.));
+  }
+  // distance closes into the night; the floors still to climb go up into it
+  float dist = length(vW - uEye);
+  c = mix(c, uFog, 1. - exp(-max(0., dist - uFogN) / uFogD));
+  c = mix(c, uSky, 1. - lightOf(vX.z - uCamK));
+  // going in: the room gone into becomes the lift's doors' own tone
+  if (abs(vD.x - uLiftDoor) < .5 && role > .5 && role < 2.5) c = mix(c, uLift, uLiftMix);
   o = vec4(c * vL.a, vL.a);
 }`;
 
 let ctx = null;
 function context() {
   if (ctx && !ctx.gl.isContextLost()) return ctx;
+  ctx = null;
   const canvas = document.createElement("canvas");
   const gl = canvas.getContext("webgl2", { antialias: true, alpha: true, premultipliedAlpha: true, preserveDrawingBuffer: true });
   if (!gl) return null;
@@ -328,38 +507,59 @@ function context() {
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(p)); return null; }
   const vao = gl.createVertexArray(), buf = gl.createBuffer();
   gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  [["aP", 3, 0], ["aN", 3, 3], ["aL", 4, 6], ["aS", 3, 10], ["aX", 4, 13], ["aU", 2, 17]].forEach(([n, size, off]) => {
+  [["aP", 3, 0], ["aN", 3, 3], ["aL", 4, 6], ["aS", 3, 10], ["aX", 4, 13], ["aU", 2, 17], ["aD", 4, 19]].forEach(([n, size, off]) => {
     const l = gl.getAttribLocation(p, n);
     if (l < 0) return;
     gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, STRIDE * 4, off * 4);
   });
-  const u = Object.fromEntries(["uVP", "uS", "uYA", "uLight", "uEye", "uSky", "uRim", "uClimb", "uR", "uDay"].map(n => [n, gl.getUniformLocation(p, n)]));
+  const names = ["uVP", "uDoor", "uLight", "uEye", "uSky", "uRim", "uFog", "uWarm", "uAmber", "uLift", "uCamK", "uR", "uDay", "uFogN", "uFogD", "uLiftMix", "uLiftDoor", "uPL", "uPC", "uNL", "uYA", "uJN", "uH"];
+  const u = Object.fromEntries(names.map(n => [n, gl.getUniformLocation(p, n)]));
   ctx = { canvas, gl, p, vao, buf, u, key: null, solid: 0, soft: 0 };
   return ctx;
 }
-
-/* the model for a state: floors 0 up to where the tower leaves the window (and one more, for the climb), each with its doors' states */
-export function buildModel(st, ks, pal) {
-  const M = mesh(), S = mesh();
-  groundMesh(M, S, st.floor === 1, pal);
-  for (const k of ks) {
-    const f = st.floor + k;
-    if (f < 1) continue;
-    const doors = [1, 2, 3, 4, 5].map(g => (st.hold && f === st.floor && g === st.at) ? ""
-      : f < st.floor || (f === st.floor && g < st.at) ? "won" : f === st.floor && g === st.at ? (st.live ? "now" : "next") : "");
-    floorMesh(M, S, k, { doors, base: f === 1, terrace: k === 0 }, pal);
-  }
-  return { solid: new Float32Array(M.a), soft: new Float32Array(S.a) };
+/* the context made and the program compiled and drawn once in an idle moment before any tower is asked for (the battle page loads
+   this module), so the first tower drawn pays only for its mesh */
+export function warmTower() {
+  const c = context();
+  if (!c) return;
+  const { gl } = c;
+  gl.useProgram(c.p); gl.bindVertexArray(c.vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, c.buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(STRIDE * 3), gl.STATIC_DRAW);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  c.key = null;
 }
 
-/* render the model into out (a 2D canvas the scene shows) with the camera cam, the tower climbed by t (0 to 1) */
-export function render(out, model, cam, pal, t = 0) {
-  const c = context();
-  if (!c) return false;
-  const { gl, canvas, u } = c;
+/* the picture without WebGL2: each floor's drum and its doors, flat in their tones, from the same camera */
+function flat(out, model, cam, pal, view) {
+  const g = out.getContext("2d"), w = out.width, h = out.height, k = w / (out.clientWidth || w);
+  const css = c => `rgb(${c.map(x => Math.round(x * 255)).join(",")})`;
+  g.clearRect(0, 0, w, h);
+  g.save(); g.scale(k, k);
+  for (let j = 0; j <= model.hi - model.lo; j++) {
+    const poly = [];
+    for (let th = -90; th <= 90; th += 6) poly.push(cam.project(onFloor(j, th, 0)));
+    for (let th = 90; th >= -90; th -= 6) poly.push(cam.project(onFloor(j, th, H)));
+    g.fillStyle = css(mix(pal.wallLit, pal.sky, 1 - Math.max(0.16, R ** (1.7 * Math.max(0, j - view.camK)))));
+    g.beginPath(); poly.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.fill();
+    DOORS.forEach((th, i) => {
+      const v = view.doors[j * 5 + i], [x0, y0] = cam.project(onFloor(j, th - SMALL, 0)), [x1, y1] = cam.project(onFloor(j, th + SMALL, SPRING * H + 0.13));
+      g.fillStyle = css(v <= 0 ? pal.pane : v <= 1 ? mix(pal.pane, pal.warm, v) : mix(pal.warm, pal.amber, v - 1));
+      g.fillRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
+    });
+  }
+  g.restore();
+}
+
+/* render the model into out (a 2D canvas the scene shows) with the camera cam. view: { doors (the lit value of each door, by
+   j * 5 + game - 1), camK (the floor stood on, in the mesh's floors), lights ([x, y, z, radius, r, g, b, strength]), lift ({ door,
+   mix, inv }) } */
+export function render(out, model, cam, pal, view) {
   const dpr = Math.min(2, window.devicePixelRatio || 1), w = Math.round(out.clientWidth * dpr) || out.width, h = Math.round(out.clientHeight * dpr) || out.height;
-  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
+  const c = context();
+  if (!c) { flat(out, model, cam, pal, view); return false; }
+  const { gl, canvas, u } = c;
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   if (c.key !== model) {
     const all = new Float32Array(model.solid.length + model.soft.length);
     all.set(model.solid); all.set(model.soft, model.solid.length);
@@ -370,10 +570,19 @@ export function render(out, model, cam, pal, t = 0) {
   gl.depthMask(true); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.useProgram(c.p); gl.bindVertexArray(c.vao);
   gl.uniformMatrix4fv(u.uVP, false, cam.vp);
-  gl.uniform1f(u.uS, R ** -t); gl.uniform1f(u.uYA, YA); gl.uniform1f(u.uClimb, t); gl.uniform1f(u.uR, R);
-  const L = [.62, .42, .66], n = Math.hypot(...L);
+  gl.uniform1fv(u.uDoor, view.doors);
+  const L = [0.62, 0.46, 0.64], n = Math.hypot(...L);
   gl.uniform3f(u.uLight, L[0] / n, L[1] / n, L[2] / n);
-  gl.uniform3fv(u.uEye, cam.pos); gl.uniform3fv(u.uSky, pal.sky); gl.uniform3fv(u.uRim, pal.lit); gl.uniform1f(u.uDay, pal.light ? 1 : 0);
+  gl.uniform3fv(u.uEye, cam.pos); gl.uniform3fv(u.uSky, pal.sky); gl.uniform3fv(u.uRim, pal.lit); gl.uniform3fv(u.uFog, pal.fog);
+  gl.uniform3fv(u.uWarm, pal.warm); gl.uniform3fv(u.uAmber, pal.amber);
+  gl.uniform1f(u.uYA, YA); gl.uniform1f(u.uJN, model.hi - model.lo); gl.uniform1f(u.uH, H);
+  gl.uniform1f(u.uCamK, view.camK); gl.uniform1f(u.uR, R); gl.uniform1f(u.uDay, pal.light ? 1 : 0);
+  gl.uniform1f(u.uFogN, cam.s * 6); gl.uniform1f(u.uFogD, cam.s * (pal.light ? 26 : 18));
+  const lift = view.lift || { door: -9, mix: 0 };
+  gl.uniform3fv(u.uLift, lift.inv ? pal.liftInv : pal.lift); gl.uniform1f(u.uLiftMix, lift.mix); gl.uniform1f(u.uLiftDoor, lift.door);
+  const lights = (view.lights || []).slice(0, 12), PL = new Float32Array(48), PC = new Float32Array(48);
+  lights.forEach((l, i) => { PL.set(l.slice(0, 4), i * 4); PC.set(l.slice(4, 8), i * 4); });
+  gl.uniform4fv(u.uPL, PL); gl.uniform4fv(u.uPC, PC); gl.uniform1i(u.uNL, lights.length);
   gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.disable(gl.CULL_FACE);
   gl.disable(gl.BLEND); gl.depthMask(true);
   gl.drawArrays(gl.TRIANGLES, 0, c.solid);

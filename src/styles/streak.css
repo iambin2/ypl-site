@@ -17,15 +17,16 @@
 }
 
 /* ---------- the lift's doors (tower.js; DESIGN.md "Battle", 도전의 탑, The tower) ----------
-   Going into a game the view goes in through the lamp's door until the door is the stage: two leaves meeting on a seam, the amber
-   lamp on the seam at their head. They stand in the scene while they close on the stage (.in), then fixed over the window, so they
-   outlive the screen and part on the next one. A gatekeeper's game shuts in inverted doors */
+   Going into a game the camera goes in through the lamp's door and its room becomes the doors' tone: two leaves meeting on a seam,
+   the amber lamp on the seam at their head. They stand fixed over the window where the stage stood, first as the room's tone alone
+   (.in), then their seam and lamp switch on; they outlive the screen and part on the next one. A gatekeeper's game shuts in
+   inverted doors */
 .lift { position: fixed; z-index: var(--z-sticky); overflow: hidden; }
-.lift.in { position: absolute; inset: 0; transform-origin: 0 0; }
+.lift.in .lift-lamp, .lift.in .lift-door.l::after { opacity: 0; }
 .lift-door { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--panel-2); }
 .lift-door.l { left: 0; }
 /* the seam the doors meet on is the left door's own edge, the ground's colour, so nothing behind them shows through it */
-.lift-door.l::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: var(--seam); background: var(--ground); }
+.lift-door.l::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: var(--seam); background: var(--ground); transition: opacity var(--move-tone); }
 .lift-door.r { right: 0; }
 .lift.inv .lift-door { background: var(--lit); }
 .lift-lamp { position: absolute; top: var(--s3); left: calc(50% - var(--lamp) / 2); transition: opacity var(--move-tone); }
