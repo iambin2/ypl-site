@@ -115,11 +115,16 @@
 /* only a real pointer lifts a row, so only a real pointer steps its tags down: a finger's tap leaves no hover behind */
 @media (hover: hover) { :is(.tb-pokemon-row:hover, .cell:hover) { --tag-bg: var(--ground); } }
 .tb-type-opt .tb-type { --tag-bg: transparent; padding: 0; color: inherit; }
-.type-normal{--type:#9FA19F}.type-fire{--type:#E62829}.type-water{--type:#2980EF}.type-electric{--type:#FAC000}
-.type-grass{--type:#3FA129}.type-ice{--type:#3FD8FF}.type-fighting{--type:#FF8000}.type-poison{--type:#9141CB}
-.type-ground{--type:#915121}.type-flying{--type:#81B9EF}.type-psychic{--type:#EF4179}.type-bug{--type:#91A119}
-.type-rock{--type:#AFA981}.type-ghost{--type:#704170}.type-dragon{--type:#5060E1}.type-dark{--type:#624D4E}
-.type-steel{--type:#60A1B8}.type-fairy{--type:#EF70EF}
+/* the colours themselves live in tokens.css (content colours); each type names its own, and the words that read on it */
+.type-normal{--type:var(--type-normal);--type-ink:var(--on-type-dark)}.type-fire{--type:var(--type-fire);--type-ink:var(--on-type-light)}
+.type-water{--type:var(--type-water);--type-ink:var(--on-type-dark)}.type-electric{--type:var(--type-electric);--type-ink:var(--on-type-dark)}
+.type-grass{--type:var(--type-grass);--type-ink:var(--on-type-dark)}.type-ice{--type:var(--type-ice);--type-ink:var(--on-type-dark)}
+.type-fighting{--type:var(--type-fighting);--type-ink:var(--on-type-dark)}.type-poison{--type:var(--type-poison);--type-ink:var(--on-type-light)}
+.type-ground{--type:var(--type-ground);--type-ink:var(--on-type-light)}.type-flying{--type:var(--type-flying);--type-ink:var(--on-type-dark)}
+.type-psychic{--type:var(--type-psychic);--type-ink:var(--on-type-dark)}.type-bug{--type:var(--type-bug);--type-ink:var(--on-type-dark)}
+.type-rock{--type:var(--type-rock);--type-ink:var(--on-type-dark)}.type-ghost{--type:var(--type-ghost);--type-ink:var(--on-type-light)}
+.type-dragon{--type:var(--type-dragon);--type-ink:var(--on-type-light)}.type-dark{--type:var(--type-dark);--type-ink:var(--on-type-light)}
+.type-steel{--type:var(--type-steel);--type-ink:var(--on-type-dark)}.type-fairy{--type:var(--type-fairy);--type-ink:var(--on-type-dark)}
 
 /* ---------- editor ---------- */
 .tb-editor-section { margin-top: var(--s8); }

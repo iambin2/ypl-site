@@ -1,18 +1,12 @@
 /* =============================================================================
-   YPL Scoreboard: titles, hall of fame, about (TitlesPage.jsx, ChampionsPage.jsx, AboutPage.jsx, ChampionSheet.jsx).
-   Generations as rows with the figure first, the current holder inverted;
-   the champion's party as six cells standing on their name bands; past champions as rows with their six small.
+   YPL Scoreboard: the titles' page frame, hall of fame, about (TitlesPage.jsx, ChampionsPage.jsx, AboutPage.jsx, ChampionSheet.jsx).
+   The titles' faces live in titles.css; the champion's party as six cells standing on their name bands.
    ========================================================================== */
 
-/* ---------- titles ---------- */
+/* ---------- titles: the page's frame ---------- */
 .tt-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s5); }
 .tt-tabs { margin-top: var(--s8); }
-.tt-desc, .tt-add { margin-top: var(--s5); }
-.tt-rows { margin-top: var(--s3); }
-.tt-gen { display: flex; align-items: baseline; justify-content: center; gap: var(--s1); }
-.tt-rows .row-lead { width: 64px; flex: none; }
-.tt-rows .row-value { padding-right: var(--pad); }
-.tt-off .row-main > b { color: var(--mute); }
+.tt-add { margin-top: var(--s5); }
 
 /* ---------- hall of fame: one reign large, the rest hung on a wall (2026-11-03) ---------- */
 /* the crown: the reigning champion's board. The generation lights in segments, the name at 32, the six large with their names */

@@ -17,7 +17,8 @@ import {
 } from "../services/normalizedRecordsService.js";
 import { syncTournamentRounds } from "../services/recordSync.js";
 import { leagueTitle, recordRoundTitle } from "../services/eventName.js";
-import { generationText } from "../services/seasonLabel.js";
+import { generationNumberFromLegacyLabel, generationText } from "../services/seasonLabel.js";
+import { TrainerTitles } from "../components/TitleFaces.jsx";
 import Button from "../components/common/Button.jsx";
 import LinkRequests from "../components/LinkRequests.jsx";
 import { popHandlers } from "../components/layout/history.js";
@@ -368,14 +369,12 @@ function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
       {finding && <TrainerLink profile={profile} lead />}
       {snapshot.seasons.length > 0 && <div className="rc-seasons"><Chips label="시즌" value={season} onChange={(value) => { setSeason(value); setHistPage(1); }}
         options={[["", "전체 기록"], ...snapshot.seasons.map((name) => [name, name])]} /></div>}
-      {(profile.champions.length > 0 || restTitles.length > 0) && <section className="rc-sec" aria-labelledby="rc-title-h">
-        <SectionHead id="rc-title-h" title="칭호" />
-        <div className="chips rc-titles">
-          {/* a title is one look; a reign leads the row by its place, never by inversion, which is kept for the one chosen thing */}
-          {profile.champions.map((c, i) => <span key={`c${i}`} className="pn">{genLabel(c.gen)}</span>)}
-          {restTitles.map((title, i) => <span key={`t${i}`} className="pn">{title.name}</span>)}
-        </div>
-      </section>}
+      {/* the trainer's titles as the titles page draws them (DESIGN.md "Titles and hall of fame"): their own faces first, a reign by
+          its place, then the type and region boards with only what they hold lit, so the empty places show too */}
+      <section className="rc-sec" aria-labelledby="rc-title-h">
+        <SectionHead id="rc-title-h" title={`칭호 ${profile.champions.length + restTitles.length}개`} />
+        <TrainerTitles champions={profile.champions.map((c) => generationNumberFromLegacyLabel(generationText(c.gen))).filter(Boolean)} titles={restTitles} />
+      </section>
 
       <section className="rc-sec" aria-labelledby="rc-hist-h">
         <SectionHead id="rc-hist-h" title="최근 대회" />

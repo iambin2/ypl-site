@@ -61,18 +61,30 @@
   --navy: #081C3D; --navy-1: #0E2449; --navy-2: #12294F; --navy-3: #1D365F; --white: #FFFFFF;
   --mist: #A8B8D3; --haze: #8196B9; --amber: #FFB21A;
   --paper-1: #E8ECF2; --paper-2: #DDE2EA; --paper-3: #CED5E0; --slate: #46536C; --slate-2: #56637A; --amber-deep: #B36F00;
+  --gold-1: #D9B45A; --gold-2: #7A5C12;
+}
+/* ---------- content colours: drawn as the games draw them, the same in both themes (DESIGN.md "Colour and light", "Titles") ----------
+   The eighteen Pokémon types, the words that read on each (white or navy, whichever reads better), and the Mega emblem's helix. */
+:root {
+  --type-normal: #9FA19F; --type-fire: #E62829; --type-water: #2980EF; --type-electric: #FAC000; --type-grass: #3FA129; --type-ice: #3FD8FF;
+  --type-fighting: #FF8000; --type-poison: #9141CB; --type-ground: #915121; --type-flying: #81B9EF; --type-psychic: #EF4179; --type-bug: #91A119;
+  --type-rock: #AFA981; --type-ghost: #704170; --type-dragon: #5060E1; --type-dark: #624D4E; --type-steel: #60A1B8; --type-fairy: #EF70EF;
+  --on-type-light: #FFFFFF; --on-type-dark: #081C3D;
+  --mega-1: #DC8700; --mega-2: #93A800; --mega-3: #00B0D2; --mega-4: #0052B4; --mega-5: #B40069;
 }
 /* ---------- semantic: what components read (DESIGN.md "Colour and light"). Dark here, light below. ---------- */
 :root {
   color-scheme: dark;
   --ground: var(--navy); --panel: var(--navy-1); --panel-2: var(--navy-2); --rule: var(--navy-3);
   --lit: var(--white); --dim: var(--mist); --mute: var(--haze); --signal: var(--amber); --off: .08;
+  --gold: var(--gold-1);
   --veil: rgb(8 28 61 / .72);
 }
 :root[data-theme="light"] {
   color-scheme: light;
   --ground: var(--white); --panel: var(--paper-1); --panel-2: var(--paper-2); --rule: var(--paper-3);
   --lit: var(--navy); --dim: var(--slate); --mute: var(--slate-2); --signal: var(--amber-deep); --off: .06;
+  --gold: var(--gold-2);
   --veil: rgb(255 255 255 / .72);
 }
 
@@ -84,7 +96,7 @@
   /* four sizes, each line on the 4 grid; reading paragraphs take 15/24 */
   --t12: .75rem; --t15: .9375rem; --t20: 1.25rem; --t32: 2rem;
   --l12: 16px; --l15: 20px; --l20: 28px; --l32: 40px; --l-read: 24px;
-  --ls20: -.01em; --ls32: -.02em;
+  --ls20: -.01em; --ls32: -.02em; --ls-banner: .12em;
   /* a strip, the touch floor, a row, a two-line row, a counter */
   --h-strip: 32px; --h-control: 44px; --h-row: 52px; --h-row2: 64px; --h-counter: 84px;
   --hair: 1px; --line: 2px; --lamp: 8px;

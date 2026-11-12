@@ -114,11 +114,16 @@ const RULES = {
 
 // ---------- deliberate exceptions, by rule and reason ----------
 const C = "src/styles/components.css", P = "src/styles/pages.css", T = "src/styles/tokens.css";
-const B = "src/styles/bracket.css", R = "src/styles/records.css", TB = "src/styles/team-builder.css";
-const TYPES = ["normal: #9FA19F", "fire: #E62829", "water: #2980EF", "electric: #FAC000", "grass: #3FA129", "ice: #3FD8FF", "fighting: #FF8000", "poison: #9141CB", "ground: #915121",
-  "flying: #81B9EF", "psychic: #EF4179", "bug: #91A119", "rock: #AFA981", "ghost: #704170", "dragon: #5060E1", "dark: #624D4E", "steel: #60A1B8", "fairy: #EF70EF"]
-  .map(t => `${TB} | .type-${t.split(":")[0]} | --type:${t.split(":")[1]}`);
+const B = "src/styles/bracket.css", R = "src/styles/records.css";
+const TL = "src/styles/titles.css";
 const EXCEPT = {
+  "colour: solid only, no gradient (Colour and light)": {
+    // DESIGN.md "Titles and hall of fame" (2026-11-12, the owner: the edges between a title's colours melt, as the Mega emblem's do)
+    "a title's colours melt into each other round the colour wheel; the Mega emblem's ground is its own helix": [
+      `${TL} | .tl-melt.n2 | background: linear-gradient(105deg in oklch, var(--c1) 25%, var(--c2) 75%)`,
+      `${TL} | .tl-melt.n3 | background: linear-gradient(105deg in oklch, var(--c1) 16.7%, var(--c2) 50%, var(--c3) 83.3%)`,
+      `${TL} | .tl-paint-mega | background: linear-gradient(160deg in oklab, var(--mega-1) 8%, var(--mega-2) 30%, var(--mega-3) 52%, var(--mega-4) 74%, var(--mega-5) 94%)`],
+  },
   "panels: no line between rows; a hairline edges only the bars, the dock, a tab row, a sheet and the footer (Panels)": {
     "the edges DESIGN.md names (Panels 2)": [
       "src/styles/shell.css | .topbar | box-shadow: inset 0 -1px 0 var(--rule)", "src/styles/shell.css | .tabbar | box-shadow: inset 0 1px 0 var(--rule)",
@@ -131,7 +136,6 @@ const EXCEPT = {
   "opacity: 0, 1, a token, or an unlit bar (Colour and light)": {
   },
   "colour: literals live only in tokens.css (Colour and light)": {
-    "Pokémon type colours are content, not chrome": TYPES,
     "a video letterbox is black in both themes": ["src/styles/posts.css | .bd-yt | background: #000"],
   },
   "space: margin, padding and gap sit on the golden scale (Space)": {

@@ -9,6 +9,8 @@ import { listAvailableChampionshipEditions } from "../../services/normalizedComp
 import { isAutoCheckedTitle } from "../../services/titleAwards.js";
 import { loadHallOfFameArtworkLookup, resolveHallOfFameArtwork } from "../../services/hallOfFamePresentation.js";
 import { loadRecordsPokemonDirectory } from "../../services/recordsPokemon.js";
+import { MAX_BANDS, TITLE_TYPES, normalizeTitleLook, titleLook } from "../../services/titleLooks.js";
+import { Emblem, useTitleArtwork } from "../../components/TitleFaces.jsx";
 import { copyEventRules, eventNameBase, eventSubtitleOf, formatEventName, isEventLinked } from "../../services/eventName.js";
 import { formatDate } from "../../services/dateFormat.js";
 import { missingAnnouncementTimes } from "../../services/announcementTimes.js";
@@ -82,8 +84,40 @@ function HolderPicker({ id, names, value, onChange, placeholder }) {
   </div>);
 }
 
+/* 고유 칭호의 문장(DESIGN.md "Titles and hall of fame"): 색은 1~3개 필수, 그림은 포켓몬(띠마다 하나까지) 또는 메가진화 문양 또는 없음 */
+function TitleLookPicker({ look, onChange }) {
+  const art=useTitleArtwork();
+  const [mons,setMons]=useState([]);
+  useEffect(()=>{ let on=true; loadRecordsPokemonDirectory().then(d=>on&&setMons([...new Set([...d.values()].map(r=>r.displayName).filter(Boolean))]),()=>{}); return ()=>{ on=false; }; },[]);
+  const picture=look.mark==="mega"?"mega":look.mons.some(Boolean)||look.picks?"mon":"none";
+  const set=patch=>onChange({...look,...patch});
+  const toggle=id=>{
+    const bands=look.bands.includes(id)?look.bands.filter(x=>x!==id):[...look.bands,id].slice(-MAX_BANDS);
+    set({bands,mons:look.mons.slice(0,bands.length)});
+  };
+  const preview=normalizeTitleLook(look);
+  return (<>
+    <div className="field"><span className="field-label">그림</span>
+      <Segmented value={picture} onChange={v=>set(v==="mega"?{mark:"mega",mons:[],picks:false}:{mark:undefined,mons:v==="mon"?look.mons:[],picks:v==="mon"})}
+        ariaLabel="칭호의 그림" options={[["mon","포켓몬"],["mega","메가진화 문양"],["none","없음"]]}/></div>
+    {picture!=="mega"&&<div className="field"><span className="field-label">색 (1~{MAX_BANDS}개, 고른 순서대로 왼쪽부터)</span>
+      <div className="chips tl-look-types">{TITLE_TYPES.map(t=>{ const at=look.bands.indexOf(t.id);
+        return <button type="button" key={t.id} className={at>=0?"inv":"pn"} aria-pressed={at>=0} onClick={()=>toggle(t.id)}>{at>=0?`${at+1} `:""}{t.korean}</button>; })}</div></div>}
+    {picture==="mon"&&look.bands.map((id,i)=><Field key={id} label={`${TITLE_TYPES.find(t=>t.id===id)?.korean} 띠의 포켓몬 (선택)`}>
+      <input list="title-look-mons" value={look.mons[i]||""} placeholder="예: 피카츄"
+        onChange={e=>{ const next=[...look.mons]; next[i]=e.target.value; set({mons:next}); }}/></Field>)}
+    <datalist id="title-look-mons">{mons.map(n=><option key={n} value={n}/>)}</datalist>
+    <div className="field"><span className="field-label">미리보기</span>
+      {preview?<div className="tl-sheet-face"><Emblem item={{look:preview}} on art={art}/></div>:<div className="bk-hint">색을 하나 이상 고르면 문장이 보입니다.</div>}</div>
+  </>);
+}
+
 export function TitleItemEditor({ groupKey, item, data, onClose, onSave, onDelete }) {
   const partner=groupKey==="partner";
+  // 타입, 지방, 챔피언, 파트너의 얼굴은 이름에서 정해진다. 그 밖의 칭호만 문장을 고른다.
+  const ownFace=!["champion","type","region","partner"].includes(groupKey);
+  // the face it has now, its own or its preset, so the operator starts from what the page shows
+  const [look,setLook]=useState(()=>{ const now=titleLook(item||{}); return {...now,picks:now.mons.length>0}; });
   const [name,setName]=useState(item?.name||""),[desc,setDesc]=useState(item?.desc||""),[holders,setHolders]=useState(item?.holders||[]);
   // 고를 이름: 파트너는 포켓몬 이름, 그 밖은 기록의 트레이너(이미 칭호를 받은 이름과 챔피언을 먼저, 기록을 읽으면 더한다)
   const [names,setNames]=useState(()=>partner?[]:[...new Set([...(data?.titleGroups||[]).flatMap(g=>g.key==="partner"?[]:(g.items||[]).flatMap(t=>t.holders||[])),...(data?.champions||[]).map(c=>c.name)].filter(Boolean))]);
@@ -99,13 +133,18 @@ export function TitleItemEditor({ groupKey, item, data, onClose, onSave, onDelet
     }catch{ /* 고를 이름이 적을 뿐, 직접 칠 수 있다 */ } })();
     return ()=>{ on=false; };
   },[]);
-  const submit=()=>onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders});
+  const submit=()=>{
+    const saved=ownFace?normalizeTitleLook(look):null;
+    if(ownFace&&!saved){ siteAlert("칭호의 색을 하나 이상 골라 주세요."); return; }
+    onSave({id:item?.id||uid(),name:name.trim(),desc:desc.trim()||undefined,holders,...(saved?{look:saved}:{})});
+  };
   return (<Modal title={item?"칭호 수정":"칭호 추가"} onClose={onClose}>
     <Field label={partner?"트레이너":"칭호 이름"}><input value={name} onChange={e=>setName(e.target.value)}/></Field>
     {!partner&&<Field label="설명 (선택)"><input value={desc} onChange={e=>setDesc(e.target.value)}/></Field>}
     <div className="field"><label htmlFor="title-holder">{partner?"파트너 포켓몬":"해당자"}</label>
       <HolderPicker id="title-holder" names={names} value={holders} onChange={setHolders} placeholder={partner?"예: 한카리아스":"예: 정두호"}/></div>
     {isAutoCheckedTitle(groupKey,name.trim())&&<div className="bk-hint fb-reveal">기록 반영 때 조건을 자동으로 확인하는 칭호입니다.</div>}
+    {ownFace&&<TitleLookPicker look={look} onChange={setLook}/>}
     <div className="modal-actions">{onDelete&&<Button variant="second" onClick={onDelete}>삭제</Button>}<Button variant="second" onClick={onClose}>취소</Button><Button variant="main" icon="check" onClick={submit}>저장</Button></div>
   </Modal>);
 }

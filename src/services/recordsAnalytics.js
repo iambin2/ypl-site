@@ -815,7 +815,8 @@ function titleRecordsFor(data, name) {
     for (const item of group.items || []) {
       if (group.key === "partner") {
         if (cleanName(item.name) === name) {
-          for (const pokemon of item.holders || []) items.push({ group: group.name, icon: group.icon, name: `파트너 ${pokemon}`, desc: group.desc || "" });
+          // key and pokemon let the trainer's sheet draw each title as its own face (TitleFaces.jsx)
+          for (const pokemon of item.holders || []) items.push({ group: group.name, icon: group.icon, name: `파트너 ${pokemon}`, desc: group.desc || "", key: group.key, pokemon });
         }
         continue;
       }
@@ -825,6 +826,8 @@ function titleRecordsFor(data, name) {
           icon: group.icon,
           name: item.name,
           desc: item.desc || "",
+          key: group.key,
+          ...(item.look ? { look: item.look } : {}),
         });
       }
     }

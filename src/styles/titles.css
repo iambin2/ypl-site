@@ -1,0 +1,151 @@
+/* =============================================================================
+   Titles (DESIGN.md "Titles and hall of fame", 2026-11-12): every title stands as its own face. TitlesPage.jsx, TitleFaces.jsx.
+   The one place the board takes the colours of its content as surfaces: a type's colour, an emblem's bands, the champions' gold.
+   ========================================================================== */
+
+.tl-defs { position: absolute; width: 0; height: 0; }
+.tl-sil-flood { flood-color: var(--rule); }
+.tl-light-flood { flood-color: var(--on-type-light); }
+.mon.sil, .tl-pic.sil { filter: url(#tl-sil); }
+@media (hover: hover) { :is(button, a):hover:not(:disabled) .mon.sil { transform: none; } }
+
+.tl-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s8); }
+.tl-board { margin-top: var(--s5); }
+.tt-add + .tl-board { margin-top: var(--s3); }
+/* the group's rule, as a strip the board hangs from */
+.tl-rule { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-control); padding: var(--s3) var(--pad); }
+.tl-rule > span { flex: none; }
+.tl-rule > b { min-width: 0; font-weight: 700; }
+
+/* ---------- the champions: one gold rail, a banner a generation hung from it, the reign last, longest and lit ---------- */
+.tl-rafters { position: relative; padding-top: var(--s5); }
+.tl-rail { position: absolute; left: 0; right: 0; top: var(--s5); height: var(--line); background: var(--gold); }
+.tl-banners { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: var(--s2); align-items: start; }
+/* square where it hangs, cut to a swallowtail at its foot */
+.tl-banner {
+  --cut: var(--s5); position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--s3); min-width: 0;
+  height: 216px; padding: var(--s5) 0 calc(var(--cut) + var(--s3)); text-align: center;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--cut)), 0 100%);
+}
+.tl-banner.reign { height: calc(216px + var(--s21)); }
+.tl-cap { position: absolute; left: 0; right: 0; top: 0; height: var(--s1); background: var(--gold); }
+.tl-banner .seg, .tl-banner-gen > :last-child { color: var(--gold); }
+.tl-banner-gen > :last-child { line-height: 1; }
+.tl-banner.reign .seg, .tl-banner.reign .tl-banner-gen > :last-child { color: var(--ground); }
+/* the name runs down the banner, as a banner's lettering does */
+.tl-banner-name { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: var(--ls-banner); font-weight: 700; }
+.tl-banner-foot { margin-top: auto; max-width: 100%; padding: 0 var(--s1); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-banner.reign .tl-banner-foot { color: var(--ground); font-weight: 700; }
+@media (min-width: 860px) {
+  .tl-rafters { padding-top: var(--s8); }
+  .tl-rail { top: var(--s8); }
+  .tl-banners { gap: var(--s8); }
+  .tl-banner { --cut: var(--s8); height: calc(240px + var(--s21) + var(--s8)); padding-top: var(--s8); gap: var(--s5); }
+  .tl-banner.reign { height: calc(240px * 2 - var(--s8)); }
+}
+
+/* ---------- type experts: eighteen cells, lit in the type's colour once held; unheld, the cell is off with its colour as a square ---------- */
+.tl-types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tl-type { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; height: var(--h-counter); padding: var(--s2) var(--pad); text-align: left; }
+.tl-type-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s2); }
+.tl-type-name { display: flex; align-items: center; gap: var(--s2); padding-top: var(--s1); font-weight: 700; }
+.tl-type.on { background: var(--type); color: var(--type-ink); }
+.tl-type.on .seg { color: var(--type-ink); }
+.tl-type.pn .tl-type-name { color: var(--mute); }
+.tl-type.pn .tl-type-name::before { content: ""; width: var(--s2); height: var(--s2); flex: none; background: var(--type); }
+.tl-holders { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-type:disabled { opacity: 1; cursor: default; }
+@media (min-width: 860px) {
+  .tl-types { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tl-type { height: calc(var(--h-counter) + var(--h-row)); padding: var(--pad); }
+}
+
+/* ---------- region elites: ten cells, each its first game's cover Pokémon; unheld, its silhouette ---------- */
+.tl-regions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tl-region { display: block; height: calc(var(--h-counter) + var(--h-row)); text-align: left; }
+.tl-region-who { position: absolute; z-index: var(--z-raised); top: var(--pad); left: var(--pad); right: var(--pad); display: grid; gap: var(--s1); }
+.tl-region-who > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-region .mon { right: var(--s2); height: calc(100% - var(--s13) - var(--s1)); }
+.tl-region.off .tl-region-who b { color: var(--mute); }
+.tl-region:disabled { opacity: 1; cursor: default; }
+@media (min-width: 860px) {
+  .tl-regions { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .tl-region { height: 216px; }
+  .tl-region .mon { height: calc(100% - var(--s21)); right: var(--pad); }
+}
+
+/* ---------- partners: a cell a Pokémon, its name and its trainer ---------- */
+.tl-partners { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+.tl-partner { display: block; height: calc(var(--h-counter) + var(--h-row)); text-align: left; }
+.tl-partner-who { position: absolute; z-index: var(--z-raised); left: var(--pad); bottom: var(--pad); display: grid; gap: var(--s1); }
+.tl-partner .mon { right: var(--s2); height: calc(100% - var(--s5)); }
+@media (min-width: 860px) {
+  .tl-partner { height: 216px; }
+  .tl-partner .mon { right: var(--pad); height: calc(100% - var(--s8)); }
+}
+
+/* ---------- a title of its own: its emblem over its plate ---------- */
+.tl-owns { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+.tl-own { display: flex; flex-direction: column; min-width: 0; height: 216px; text-align: left; }
+/* the emblem: one to three bands of type colour; several melt into each other round the colour wheel, never meeting at a line */
+.tl-emblem { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); flex: 1; min-height: 0; background: var(--type); }
+.tl-emblem.off { background: var(--panel-2); }
+.tl-melt.n2 { background: linear-gradient(105deg in oklch, var(--c1) 25%, var(--c2) 75%); }
+.tl-melt.n3 { background: linear-gradient(105deg in oklch, var(--c1) 16.7%, var(--c2) 50%, var(--c3) 83.3%); }
+/* the Mega emblem's own helix, in the order it runs, and the emblem on it in white */
+.tl-paint-mega { background: linear-gradient(160deg in oklab, var(--mega-1) 8%, var(--mega-2) 30%, var(--mega-3) 52%, var(--mega-4) 74%, var(--mega-5) 94%); }
+.tl-emblem.off:is(.tl-melt, .tl-paint-mega) { background: var(--panel-2); }
+.tl-band { position: relative; container-type: size; }
+/* a picture stands in the middle of its band, as large as the band allows; centred by its ink (inkCentre.js) */
+.tl-band-stand { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(78cqh, 92cqw); aspect-ratio: 1; }
+.tl-pic { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tl-mark { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(64cqh, 80cqw); aspect-ratio: 1; object-fit: contain; filter: url(#tl-onlight); }
+/* the plate: every word of the title, one height for all so a row's emblems meet on one line; the count at its right */
+.tl-plate { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); height: var(--h-counter); padding: var(--s3) var(--pad); }
+.tl-plate-words { display: grid; gap: var(--s1); min-width: 0; }
+.tl-plate-words > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-own-name { font-weight: 700; }
+.tl-own-holders { color: var(--dim); }
+.tl-own.off .tl-own-name { color: var(--mute); }
+/* on desktop the emblem keeps room for its picture beside the 84 plate */
+@media (min-width: 860px) { .tl-own { height: calc(216px + var(--s13)); } }
+.tl-own-count { flex: none; align-self: center; }
+.tl-own-count > .t15 { line-height: 1; }
+
+/* ---------- a title's sheet: its face, then its holders in the order they took it ---------- */
+.tl-sheet-face { display: flex; height: 132px; }
+.tl-sheet-face > .tl-emblem { flex: 1; }
+.tl-cover { background: var(--panel-2); }
+/* a type's sheet: the type's name on its colour, in the words that read on it */
+.tl-logo { position: absolute; inset: 0; display: grid; place-items: center; color: var(--type-ink); }
+.tl-sheet-sec { margin-top: var(--s8); }
+.tl-sheet-face + .tl-sheet-sec { margin-top: var(--s5); }
+.tl-ord { display: flex; align-items: baseline; justify-content: center; gap: var(--s1); width: 64px; }
+.tl-ord.stand { align-self: stretch; --floor: var(--s1); }
+.tl-ord.stand .mon { left: 0; right: 0; margin: auto; height: calc(100% - var(--s1)); }
+
+/* ---------- the trainer's sheet: titles of their own as small cells, then the type and region boards ---------- */
+.tl-mine { display: grid; gap: var(--s3); }
+.tl-mregions { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tl-mbadge, .tl-mregion { position: relative; aspect-ratio: 1; min-width: 0; overflow: hidden; }
+.tl-mown { display: flex; flex-direction: column; }
+.tl-memblem { flex: 1; min-height: 0; }
+.tl-mpic { display: block; flex: 1; }
+.tl-mname { flex: none; display: flex; align-items: center; justify-content: center; height: var(--s5); padding: 0 var(--s1); font-style: normal; font-weight: 700; color: var(--lit); white-space: nowrap; overflow: hidden; }
+/* the reign, small: the gold cap and the gold generation */
+.tl-mchamp { display: flex; flex-direction: column; }
+.tl-mchamp::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--s1); background: var(--gold); }
+.tl-mchamp > .counter-board { flex: 1; align-items: center; justify-content: center; }
+.tl-mchamp .seg, .tl-mchamp .counter-board > .t15 { color: var(--gold); }
+.tl-mchamp .counter-board > .t15 { line-height: 1; }
+.tl-mtypes { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.tl-mtype { display: flex; align-items: center; justify-content: center; height: var(--h-strip); background: var(--panel-2); color: var(--mute); font-size: var(--t12); line-height: var(--l12); font-weight: 600; }
+.tl-mtype.on { background: var(--type); color: var(--type-ink); font-weight: 700; }
+.tl-mregion { --floor: var(--s5); }
+.tl-mregion .floor { display: flex; align-items: center; justify-content: center; color: var(--lit); font-style: normal; }
+.tl-mregion.off .floor { color: var(--mute); }
+.tl-mregion .mon { left: 0; right: 0; margin: auto; height: calc(100% - var(--floor) - var(--s1)); }
+@media (min-width: 860px) {
+  .tl-mtypes { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+  .tl-mregions { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+}
