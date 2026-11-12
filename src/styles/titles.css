@@ -90,10 +90,19 @@
 /* the emblem: one to three bands of type colour; several melt into each other round the colour wheel, never meeting at a line */
 .tl-emblem { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); flex: 1; min-height: 0; background: var(--type); }
 .tl-emblem.off { background: var(--panel-2); }
-.tl-melt.n2 { background: linear-gradient(105deg in oklch, var(--c1) 25%, var(--c2) 75%); }
-.tl-melt.n3 { background: linear-gradient(105deg in oklch, var(--c1) 16.7%, var(--c2) 50%, var(--c3) 83.3%); }
+/* held back (2026-11-12, the owner: "너무 시강에 지나치게 화려한데 조금만 절제해줄래"): every stop is mixed into the ground by
+   --melt, so the colours stay but settle into the board (darker in dark, paler in light) instead of shining over it */
+.tl-melt, .tl-paint-mega { --melt: 70%; }
+.tl-melt { --m1: color-mix(in oklab, var(--c1) var(--melt), var(--ground)); --m2: color-mix(in oklab, var(--c2) var(--melt), var(--ground)); --m3: color-mix(in oklab, var(--c3, var(--c2)) var(--melt), var(--ground)); }
+.tl-melt.n2 { background: linear-gradient(105deg in oklch, var(--m1) 25%, var(--m2) 75%); }
+.tl-melt.n3 { background: linear-gradient(105deg in oklch, var(--m1) 16.7%, var(--m2) 50%, var(--m3) 83.3%); }
 /* the Mega emblem's own helix, in the order it runs, and the emblem on it in white */
-.tl-paint-mega { background: linear-gradient(160deg in oklab, var(--mega-1) 8%, var(--mega-2) 30%, var(--mega-3) 52%, var(--mega-4) 74%, var(--mega-5) 94%); }
+.tl-paint-mega {
+  --g1: color-mix(in oklab, var(--mega-1) var(--melt), var(--ground)); --g2: color-mix(in oklab, var(--mega-2) var(--melt), var(--ground));
+  --g3: color-mix(in oklab, var(--mega-3) var(--melt), var(--ground)); --g4: color-mix(in oklab, var(--mega-4) var(--melt), var(--ground));
+  --g5: color-mix(in oklab, var(--mega-5) var(--melt), var(--ground));
+  background: linear-gradient(160deg in oklab, var(--g1) 8%, var(--g2) 30%, var(--g3) 52%, var(--g4) 74%, var(--g5) 94%);
+}
 .tl-emblem.off:is(.tl-melt, .tl-paint-mega) { background: var(--panel-2); }
 .tl-band { position: relative; container-type: size; }
 /* a picture stands in the middle of its band, as large as the band allows; centred by its ink (inkCentre.js) */

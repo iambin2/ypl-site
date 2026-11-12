@@ -120,9 +120,9 @@ const EXCEPT = {
   "colour: solid only, no gradient (Colour and light)": {
     // DESIGN.md "Titles and hall of fame" (2026-11-12, the owner: the edges between a title's colours melt, as the Mega emblem's do)
     "a title's colours melt into each other round the colour wheel; the Mega emblem's ground is its own helix": [
-      `${TL} | .tl-melt.n2 | background: linear-gradient(105deg in oklch, var(--c1) 25%, var(--c2) 75%)`,
-      `${TL} | .tl-melt.n3 | background: linear-gradient(105deg in oklch, var(--c1) 16.7%, var(--c2) 50%, var(--c3) 83.3%)`,
-      `${TL} | .tl-paint-mega | background: linear-gradient(160deg in oklab, var(--mega-1) 8%, var(--mega-2) 30%, var(--mega-3) 52%, var(--mega-4) 74%, var(--mega-5) 94%)`],
+      `${TL} | .tl-melt.n2 | background: linear-gradient(105deg in oklch, var(--m1) 25%, var(--m2) 75%)`,
+      `${TL} | .tl-melt.n3 | background: linear-gradient(105deg in oklch, var(--m1) 16.7%, var(--m2) 50%, var(--m3) 83.3%)`,
+      `${TL} | .tl-paint-mega | background: linear-gradient(160deg in oklab, var(--g1) 8%, var(--g2) 30%, var(--g3) 52%, var(--g4) 74%, var(--g5) 94%)`],
   },
   "panels: no line between rows; a hairline edges only the bars, the dock, a tab row, a sheet and the footer (Panels)": {
     "the edges DESIGN.md names (Panels 2)": [
