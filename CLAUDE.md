@@ -10,6 +10,8 @@ npm run build    # production build → dist/
 npm run preview  # serve the built dist/
 npm test         # full suite: node --test "tests/*.test.mjs"  (including the design law)
 npm run data:champions  # rebuild the committed src/data/champions-data.json from Showdown + PokeAPI
+STATS_CACHE=<dir> node scripts/tune-sets.mjs  # M-C sample sets: the ladder's (src/data/random-sets.ladder.json, scripts/build-random-sets.mjs)
+                        # with stat points spent by targets into src/data/random-sets.json; then node scripts/render-sample-sets.mjs (docs/SAMPLE_SETS.md)
 node scripts/build-ranker-teams.mjs  # rebuild src/data/ranker-teams.json and tower-tiers.json (what 도전의 탑's foe builders learn from, and its draft pool)
                         # from champs.pokedb.tokyo's open top-team files; rerun when a season's file comes out (docs/BATTLE_STREAK.md 14장)
                         # (refresh-champions-data.yml does this weekly and opens a PR when it changed)

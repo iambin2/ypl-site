@@ -1,5 +1,6 @@
-// Builds src/data/random-sets.json: the sample sets a random party is drawn from, and what the computer opponent believes a
-// Pokémon carries until the battle shows otherwise.
+// Builds src/data/random-sets.ladder.json: the ladder's own sets, kept as the original that scripts/tune-sets.mjs spends the
+// current regulation's stat points of again (into src/data/random-sets.json, what a random party is drawn from and what the computer
+// believes a Pokémon carries). After a rebuild, run tune-sets.mjs; until then random-sets.json keeps its sets.
 //
 // Every set comes from how the top of the ladder plays 포켓몬 챔피언스: Smogon's monthly usage statistics ("chaos") for each
 // regulation and format, rating 1760 and up first, then all ratings, then the neighbouring formats for a Pokémon too rare there.
@@ -17,7 +18,7 @@ import { Dex, toID } from "@pkmn/sim";
 import { validateTeam, formatId } from "../supabase/functions/battle/engine.mjs";
 import { ALLY_ONLY, idleMoves } from "./setFit.mjs";
 
-const OUT = new URL("../src/data/random-sets.json", import.meta.url);
+const OUT = new URL("../src/data/random-sets.ladder.json", import.meta.url);
 // the newest month of each regulation's ladder (M-B was the ladder's regulation until September)
 const MONTH = { "m-c": "2026-10", "m-b": "2026-09" };
 const MOD = { "m-c": "champions", "m-b": "championsregmb" };

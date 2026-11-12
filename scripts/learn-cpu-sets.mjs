@@ -7,7 +7,8 @@
 // most of their sets (the same team again, or with a Pokémon or two changed) count as one player, and each player has one vote per
 // Pokémon, split among the sets they tried. The ladder stays the base: YPL's share for a Pokémon grows with how many players brought it
 // and never passes RATE. A set the ladder does not have joins once MIN_SEEN players brought it. Every run starts again from the
-// ladder's weights (kept as baseWeight), so it can run every week without drifting, and build-random-sets.mjs resets it all.
+// ladder's weights (kept as baseWeight), so it can run every week without drifting, and tune-sets.mjs (after build-random-sets.mjs)
+// resets it all.
 // ponytail: a player is guessed from party likeness; one person with many unlike teams still counts as many. An anonymous device id on
 // each record (docs/db/cpu_battles.sql, the battle function, CpuRoom) is the upgrade if that is seen.
 //
