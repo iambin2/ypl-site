@@ -373,7 +373,7 @@ function TrainerProfile({ snapshot, profile, onParty, finding = false }) {
           its place, then the type and region boards with only what they hold lit, so the empty places show too */}
       <section className="rc-sec" aria-labelledby="rc-title-h">
         <SectionHead id="rc-title-h" title={`칭호 ${profile.champions.length + restTitles.length}개`} />
-        <TrainerTitles champions={profile.champions.map((c) => generationNumberFromLegacyLabel(generationText(c.gen))).filter(Boolean)} titles={restTitles} />
+        <TrainerTitles champions={profile.champions.map((c) => ({ gen: generationNumberFromLegacyLabel(generationText(c.gen)), season: c.season })).filter((c) => c.gen)} titles={restTitles} />
       </section>
 
       <section className="rc-sec" aria-labelledby="rc-hist-h">

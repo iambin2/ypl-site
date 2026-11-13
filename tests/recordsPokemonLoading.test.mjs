@@ -4,7 +4,7 @@ import test from "node:test";
 import { buildDirectoryJson } from "../scripts/build-champions-data.mjs";
 
 test("concurrent directories preserve localized values and independent maps from one small request", async t => {
-  const bundle = JSON.stringify({ pikachu: [25, "Pikachu", "Pikachu", "", "피카츄"] });
+  const bundle = JSON.stringify({ pikachu: [25, "Pikachu", "Pikachu", "", "피카츄", "electric"] });
   const urls = [];
   let fail = false;
   t.mock.method(globalThis, "fetch", async url => {
@@ -24,7 +24,7 @@ test("concurrent directories preserve localized values and independent maps from
   // The names only, never the 822 KB battle data.
   assert.match(urls[1], /\/src\/data\/records-pokemon\.json$/);
   assert.deepEqual(first, second);
-  assert.deepEqual(first.get("pikachu"), { pokemonId: "pikachu", dexNumber: 25, canonicalName: "Pikachu", baseSpecies: "Pikachu", forme: "", displayName: "피카츄" });
+  assert.deepEqual(first.get("pikachu"), { pokemonId: "pikachu", dexNumber: 25, canonicalName: "Pikachu", baseSpecies: "Pikachu", forme: "", displayName: "피카츄", type: "electric" });
   first.get("pikachu").displayName = "caller mutation";
   assert.equal(second.get("pikachu").displayName, "피카츄");
   assert.equal((await load()).get("pikachu").displayName, "피카츄");

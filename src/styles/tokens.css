@@ -71,6 +71,8 @@
   --type-rock: #AFA981; --type-ghost: #704170; --type-dragon: #5060E1; --type-dark: #624D4E; --type-steel: #60A1B8; --type-fairy: #EF70EF;
   --on-type-light: #FFFFFF; --on-type-dark: #081C3D;
   --mega-1: #DC8700; --mega-2: #93A800; --mega-3: #00B0D2; --mega-4: #0052B4; --mega-5: #B40069;
+  /* the titles' medals (Titles and hall of fame): each metal's field and its frosted relief, and the champions' enamel */
+  --medal-silver: #DBDEE3; --medal-silver-frost: #EDEDF0; --medal-gold: #FFCC70; --medal-gold-frost: #FFD680; --medal-enamel: #0B2350;
 }
 /* ---------- semantic: what components read (DESIGN.md "Colour and light"). Dark here, light below. ---------- */
 :root {

@@ -53,6 +53,8 @@ export function buildRecordsPokemonDirectory(detailData, speciesNames) {
       canonicalName,
       baseSpecies: clean(record?.baseSpecies),
       forme: clean(record?.forme),
+      /* a partner medal's colour: its type, the one that is not 노말 when it has two */
+      type: String((record?.types || []).find(t => t !== "Normal") || record?.types?.[0] || "").toLowerCase(),
       displayName: builderNames.get(id) || formDisplayName({ ...record, id }, korean),
     });
   }
@@ -86,6 +88,6 @@ export async function loadRecordsPokemonDirectory() {
     .then(response => { if (!response.ok) throw new Error(`${response.status} ${DIRECTORY_URL}`); return response.text(); })
     .catch(error => { sourcePromise = null; throw error; });
   const rows = JSON.parse(await source);
-  return new Map(Object.entries(rows).map(([id, [dexNumber, canonicalName, baseSpecies, forme, displayName]]) =>
-    [id, { pokemonId: id, dexNumber, canonicalName, baseSpecies, forme, displayName }]));
+  return new Map(Object.entries(rows).map(([id, [dexNumber, canonicalName, baseSpecies, forme, displayName, type = ""]]) =>
+    [id, { pokemonId: id, dexNumber, canonicalName, baseSpecies, forme, displayName, type }]));
 }

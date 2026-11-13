@@ -46,7 +46,7 @@ export function buildDirectoryJson(data) {
     koreanByEnglish: new Map(Object.entries(data.speciesNames.koreanByEnglish)),
   };
   const rows = {};
-  for (const [id, r] of buildRecordsPokemonDirectory(data, names)) rows[id] = [r.dexNumber, r.canonicalName, r.baseSpecies, r.forme, r.displayName];
+  for (const [id, r] of buildRecordsPokemonDirectory(data, names)) rows[id] = [r.dexNumber, r.canonicalName, r.baseSpecies, r.forme, r.displayName, r.type];
   return JSON.stringify(rows);
 }
 
