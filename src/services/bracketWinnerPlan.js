@@ -1,5 +1,6 @@
 import { buildBracketMatchSyncPlan, buildEventBracketMatchSnapshot, NORMALIZED_BRACKET_RUNTIME_SOURCE, resolveBracketMatchParentIds } from "./bracketMatchSnapshot.js";
-import { projectNormalizedDoubleEliminationBracket, projectNormalizedSingleEliminationBracket } from "./bracketProjection.js";
+import { projectNormalizedDoubleEliminationBracket, projectNormalizedGroupBracket, projectNormalizedSingleEliminationBracket } from "./bracketProjection.js";
+import { GROUP_TOPOLOGY } from "./groupBracketCore.js";
 import { buildTeamMatchSeries } from "./bracketTeamParticipants.js";
 import { deriveQualifierSurvivorState, isChampionshipQualifier } from "./championsCore.js";
 
@@ -90,7 +91,7 @@ export function projectRuntimeFacts(runtime, event, {
   const failed = [slotsResult, entriesResult, participantsResult, matchesResult].find(result => result.error);
   if (failed) fail(failed.error, "대진표 기준 데이터를 불러오지 못했습니다.");
 
-  if (!["single_elimination", "double_elimination"].includes(runtime.topology_kind) || runtime.projection_version !== 1) {
+  if (!["single_elimination", "double_elimination", GROUP_TOPOLOGY].includes(runtime.topology_kind) || runtime.projection_version !== 1) {
     throw new Error("지원하지 않는 대진표 구조나 버전입니다.");
   }
   const registrationIds = new Set((participantsResult.data || []).map(row => row.registration_id).filter(Boolean));
@@ -104,7 +105,13 @@ export function projectRuntimeFacts(runtime, event, {
     ...row,
     registration_name: registrationNames.get(row.registration_id) || null,
   }));
-  const bracket = runtime.topology_kind === "double_elimination"
+  const bracket = runtime.topology_kind === GROUP_TOPOLOGY
+    ? projectNormalizedGroupBracket({
+        event,runtimeId:runtime.id,entries:entriesResult.data||[],entryParticipants,
+        entrySlots:slotsResult.data||[],matches:matchesResult.data||[],
+        advance:runtime.group_advance,finalFormat:runtime.group_final_format,
+      })
+    : runtime.topology_kind === "double_elimination"
     ? projectNormalizedDoubleEliminationBracket({
       event,
       runtimeId: runtime.id,
@@ -166,7 +173,18 @@ export function guardQualifierRows(event, participants, desiredRows, previousRow
 export function planMatchWinner(facts, sourceNodeKey, winnerEntryId, nowIso, loserEntryId = null) {
   const { bracket, event, runtime, matches } = facts;
   if (event.is_team_event) throw new Error("팀전 경기는 배틀 결과로 정하지 않습니다.");
-  const graph = bracket.graph;
+  const groupMatch = bracket.groups?.flatMap(group=>[...group.matches,...(group.playoffs||[])]).find(m=>m.id===sourceNodeKey);
+  if (groupMatch) {
+    const a=groupMatch.a.pid,b=groupMatch.b.pid;
+    if (groupMatch.winner || ![a,b].includes(winnerEntryId) ||
+        (loserEntryId && loserEntryId !== (winnerEntryId===a?b:a))) throw new Error("조별 경기의 두 선수 또는 결과가 바뀌었습니다.");
+    const previous=matches.find(m=>m.source_node_key===sourceNodeKey);
+    if(!previous) throw new Error("확정된 조별 경기를 찾을 수 없습니다.");
+    return {mode:"double",runtimeId:runtime.id,eventId:event.id,sourceNodeKey,winnerEntryId,
+      updates:[{id:previous.id,payload:{...previous,winner_entry_id:winnerEntryId,resolution:"played",played_at:nowIso}}],
+      inserts:[],deleteIds:[]};
+  }
+  const graph = bracket.knockout || bracket.graph;
   const match = collectGraphMatches(graph).find(m => m.id === sourceNodeKey);
   if (!match) throw new Error("대진표에서 이 경기를 찾을 수 없습니다.");
   if (match.winner) throw new Error("이미 승자가 정해진 경기입니다.");
@@ -177,9 +195,10 @@ export function planMatchWinner(facts, sourceNodeKey, winnerEntryId, nowIso, los
   if (runtime.topology_kind === "single_elimination") {
     return { mode: "single", runtimeId: runtime.id, eventId: event.id, sourceNodeKey, winnerEntryId };
   }
-  const previousRows = (matches || []).filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE);
+  const finalOnly = row => bracket.format !== "group" || /^(single|double):/.test(row.source_node_key);
+  const previousRows = (matches || []).filter(row => row.source === NORMALIZED_BRACKET_RUNTIME_SOURCE && finalOnly(row));
   const participants = bracket.participants || [];
-  let desiredRows = buildEventBracketMatchSnapshot(withPick(bracket, sourceNodeKey, side));
+  let desiredRows = buildEventBracketMatchSnapshot(withPick(bracket, sourceNodeKey, side)).filter(finalOnly);
   desiredRows = guardQualifierRows(event, participants, desiredRows, previousRows);
   const plan = buildBracketMatchSyncPlan(previousRows.filter(row => row.match_kind === "bracket"), desiredRows.filter(row => row.match_kind === "bracket"), nowIso);
   const decided = desiredRows.find(row => row.source_node_key === sourceNodeKey);

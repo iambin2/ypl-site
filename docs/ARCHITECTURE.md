@@ -58,6 +58,21 @@ Season
 - bracket graph, BYE, unresolved future Match, advancement edge, loser movement, GF/reset activation은 persisted graph가 아니라 pure projection이다.
 - BracketDraw animation은 저장된 projection을 읽는 presentation-only UI다. 추첨, slot 변경, Match write를 하지 않는다.
 
+공식 개인전은 `groups_then_elimination`을 선택할 수 있다. 같은 Event와 Entry를 사용하고,
+`BracketEntrySlot`의 group 단계에는 조별 배치, elimination 2단계에는 확정된 본선 배치를 저장한다.
+조별 풀리그, 단판 순위 결정전, 본선은 각각 `group:`, `playoff:`, `single:` 또는 `double:` 경기 키로 구분한다.
+순위는 조별 전체 승수, 동률자 간 승수, 남은 동률 집단에 같은 규칙 재적용 순이다.
+동률 집단 전체가 진출하거나 탈락할 때는 공동 순위를 유지한다. 본선은 순위별 시드 없이 추첨한다.
+진출선에 걸친 동률만 동률 집단에서 두 명을 서버가 추첨해 단판으로 한 명씩 가른다.
+이 결과는 조별 승수에 포함하지 않는다. 본선 이후 조별 결과는 잠그고, 필요하면 본선 결과와 배치를 먼저 취소한다.
+최종 입상과 포인트는 기존 기록 반영 단계에서 한 번만 반영한다.
+
+통합 접수의 같은 회차 루키 우승자는 기록이 확정된 경우 마스터 대진표의 기본 선택 후보로 읽는다.
+최종 대진 확정에서만 서버가 우승 이력을 다시 확인하고 같은 Player의 마스터 Registration과 Entry를 함께 저장한다.
+루키 대회의 등록과 파티는 그대로 유지한다. 적용 SQL은 `docs/db/group_brackets_and_rookie_candidates.sql`이다.
+배포 시 DB 변경을 먼저 적용한 뒤, `npm run build:battle`로 새 projection을 포함한 배틀 함수를 빌드해 배포하고,
+대응 프런트엔드를 배포한다. 세 구성 요소가 같은 단계 구조를 읽어야 사이트 배틀 승자 자동 반영까지 동작한다.
+
 새 active bracket을 `public.site_data / ypl_data_v4.brackets`에 저장하거나 legacy graph를 fallback source로 사용하지 않는다. active runtime의 legacy dependency는 0이어야 한다.
 
 방문자 공간(자유게시판, 샘플과 파티 소개글, 사설 대진표)은 `public.community_items`에 행 단위로만 저장한다(`src/services/communityStore.js`, `docs/db/visitor_gates.sql`). 쓰기는 `community_write` 함수뿐이고, 비공개 글은 RLS가 가리며, 비밀번호는 방문자가 읽을 수 없는 `public.visitor_pins`에서 서버가 대조한다. 이 데이터는 Event, Registration, Result, RankingAward, 칭호, 명예의 전당과 어떤 경로로도 연결하지 않으며, 사설 대진표는 기록 반영 흐름을 갖지 않는다(`tests/community.test.mjs`).

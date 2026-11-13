@@ -26,12 +26,14 @@ import { draftSubtitle, eventNameBase, formatEventName } from "./eventName.js";
 import { partyDeadlines } from "./announcementTimes.js";
 import {
   projectNormalizedDoubleEliminationBracket,
+  projectNormalizedGroupBracket,
   projectNormalizedSingleEliminationBracket,
   drawPlan,
   slotsFromPlan,
 } from "./bracketProjection.js";
 import { readAll } from "./pagedRead.js";
-import { guardQualifierRows, projectRuntimeFacts } from "./bracketWinnerPlan.js";
+import { collectGraphMatches, evalGraph, guardQualifierRows, projectRuntimeFacts, withPick } from "./bracketWinnerPlan.js";
+import { GROUP_TOPOLOGY } from "./groupBracketCore.js";
 import {
   buildAnnouncementDeletionPreflight,
   emptyAnnouncementDeletionCounts,
@@ -145,7 +147,7 @@ export function normalizedBracketRuntimeEnabled() {
 
 const NORMALIZED_SINGLE_RUNTIME_SELECT = `
   id, event_id, topology_kind, projection_version, previous_event_status,
-  created_at, updated_at
+  created_at, updated_at, group_advance, group_final_format
 `;
 const NORMALIZED_SINGLE_SLOT_SELECT = `
   bracket_runtime_id, event_id, stage_kind, stage_no, pool_no, slot_no, entry_id,
@@ -174,7 +176,7 @@ async function readNormalizedBracketRuntimeFacts(eventId, runtimeId = null) {
       .eq("bracket_runtime_id", runtime.id).eq("event_id", eventId).order("slot_no"),
     db().from("entries").select(NORMALIZED_SINGLE_ENTRY_SELECT).eq("event_id", eventId),
     db().from("entry_participants").select(NORMALIZED_SINGLE_PARTICIPANT_SELECT).eq("event_id", eventId),
-    db().from("matches").select(EVENT_RUNTIME_MATCH_SELECT).eq("event_id", eventId),
+    readAll(() => db().from("matches").select(EVENT_RUNTIME_MATCH_SELECT).eq("event_id", eventId)),
     db().from("event_registrations").select("id, registration_name").eq("event_id", eventId),
   ]);
   return projectRuntimeFacts(runtime, event, { slots, entries, participants, matches, registrations });
@@ -187,11 +189,11 @@ export async function fetchNormalizedSingleBracketRuntime(eventId, runtimeId = n
 
 // 관람 화면의 15초 확인용. 경기 사실이 그대로면 대진표 전체(7개 요청)를 다시 읽지 않는다.
 export async function readBracketMatchStamp(eventId) {
-  const { data, error } = await db().from("matches")
+  const { data, error } = await readAll(() => db().from("matches")
     .select("id, entry_a_id, entry_b_id, winner_entry_id, winner_player_id, updated_at")
-    .eq("event_id", eventId).order("id");
+    .eq("event_id", eventId));
   if (error) fail(error, "대진표를 불러오지 못했습니다.");
-  return JSON.stringify(data || []);
+  return JSON.stringify((data || []).sort((a,b)=>a.id.localeCompare(b.id)));
 }
 
 export async function fetchNormalizedBracketRuntime(eventId, runtimeId = null) {
@@ -326,6 +328,77 @@ export async function createNormalizedSingleBracketRuntime({ runtimeId, eventId,
   });
   if (error) fail(error, "싱글 토너먼트 대진표를 생성하지 못했습니다.");
   return Array.isArray(data) ? data[0] || null : data || null;
+}
+
+export async function listSameRoundRookieChampions(eventId) {
+  const {data,error} = await db().rpc("list_same_round_rookie_champions",{p_event_id:eventId});
+  if(error) fail(error,"이번 회차 루키 우승자를 확인하지 못했습니다.");
+  return data || [];
+}
+
+async function groupMutation(name, parameters, message) {
+  const {data,error} = await db().rpc(name,parameters);
+  if(error) fail(error,message);
+  return data;
+}
+
+export async function createIndividualBracketDraw({eventId,attempt,topology,groupPlan,advance,finalFormat,rookiePlayers=[]}) {
+  await assertChampionshipFinalRuntimePreflight(eventId);
+  const entryOf = new Map(attempt.participants.map(p=>[p.participant_key,p.entry_id]));
+  const slots = topology === GROUP_TOPOLOGY
+    ? groupPlan.flatMap((pool,i)=>pool.map((key,j)=>({pool_no:i+1,slot_no:j+1,entry_id:entryOf.get(key)})))
+    : attempt.slots;
+  const initialMatches = topology === "double_elimination"
+    ? buildEventBracketMatchSnapshot(projectNormalizedDoubleEliminationBracket({
+        event:{id:eventId,competition_format:topology,is_team_event:false,status:"running"},runtimeId:attempt.runtimeId,
+        entries:attempt.participants.map(p=>({id:p.entry_id,event_id:eventId,entry_type:"individual",display_name:p.display_name,status:"active"})),
+        entryParticipants:attempt.participants.map(p=>({id:p.entry_participant_id,event_id:eventId,entry_id:p.entry_id,
+          registration_id:p.registration_id,player_id:p.player_id,member_order:1})),
+        entrySlots:slots.map(s=>({...s,event_id:eventId,bracket_runtime_id:attempt.runtimeId,stage_kind:"elimination",stage_no:1,pool_no:0})),
+        matches:[],
+      }))
+    : [];
+  return groupMutation("create_individual_bracket_draw",{
+    p_event_id:eventId,p_runtime_id:attempt.runtimeId,p_topology:topology,p_participants:attempt.participants,p_slots:slots,
+    p_advance:advance??null,p_final_format:finalFormat??null,p_rookie_players:rookiePlayers,
+    p_initial_matches:initialMatches,
+  },"대진표를 생성하지 못했습니다.");
+}
+
+const groupArgs = b => ({p_event_id:b.eventId,p_runtime_id:b.projection.runtimeId});
+export const setGroupStageWinner = (b,match,winner) => groupMutation("set_group_stage_winner",{
+  ...groupArgs(b),p_key:match.id,p_winner:winner,p_expected_winner:match.winner?match[match.winner].pid:null,
+},"조별 경기 승자를 저장하지 못했습니다.");
+export const createGroupPlayoff = (b,pool) => groupMutation("create_group_playoff",{...groupArgs(b),p_pool:pool},"순위 결정전을 만들지 못했습니다.");
+export const reopenGroupStage = (b,pool=null) => groupMutation("reopen_group_stage",{...groupArgs(b),p_pool:pool},"조별 결과 수정을 열지 못했습니다.");
+
+export async function createGroupFinal(b) {
+  const facts = await fetchNormalizedBracketRuntime(b.eventId,b.projection.runtimeId);
+  if (!facts?.bracket.groupCfg?.ready || facts.bracket.knockout) throw new Error("조별 진출자 또는 본선 상태가 변경되었습니다.");
+  const {runtime,event,entries,entryParticipants,entrySlots,matches} = facts;
+  const qualified = facts.bracket.groupCfg.qualified;
+  const slots = slotsFromPlan(drawPlan(qualified),new Map(qualified.map(id=>[id,id])));
+  const view = projectNormalizedGroupBracket({event,runtimeId:runtime.id,entries,entryParticipants,matches,
+    entrySlots:[...entrySlots,...slots.map(s=>({...s,bracket_runtime_id:runtime.id,event_id:event.id,stage_kind:"elimination",stage_no:2,pool_no:0}))],
+    advance:runtime.group_advance,finalFormat:runtime.group_final_format});
+  const rows = buildEventBracketMatchSnapshot(view).filter(m=>/^(single|double):/.test(m.source_node_key));
+  return groupMutation("create_group_final",{...groupArgs(b),p_slots:slots,p_matches:rows},"본선 대진표를 만들지 못했습니다.");
+}
+
+export async function setGroupFinalWinner(b,matchId,side) {
+  const facts = await fetchNormalizedBracketRuntime(b.eventId,b.projection.runtimeId);
+  const current = collectGraphMatches(facts?.bracket.knockout).find(m=>m.id===matchId);
+  const shown = collectGraphMatches(b.knockout).find(m=>m.id===matchId);
+  if (!current || !shown || current.winner!==shown.winner ||
+      ["a","b"].some(key=>evalGraph(facts.bracket.knockout).sp(current[key])!==evalGraph(b.knockout).sp(shown[key]))) {
+    throw new Error("경기 참가자 또는 결과가 변경되었습니다. 새로고침해 주세요.");
+  }
+  const previous = facts.matches.filter(m=>/^(single|double):/.test(m.source_node_key));
+  const desired = buildEventBracketMatchSnapshot(withPick(facts.bracket,matchId,side)).filter(m=>/^(single|double):/.test(m.source_node_key));
+  const plan = buildBracketMatchSyncPlan(previous,desired,new Date().toISOString());
+  return groupMutation("save_group_final_matches",{...groupArgs(b),
+    p_expected:previous,p_updates:plan.updates,p_inserts:plan.inserts,p_deletes:plan.deleteIds,
+  },"본선 경기 승자를 저장하지 못했습니다.");
 }
 
 export async function createNormalizedBracketRuntime({ runtimeId, eventId, topologyKind, participants, slots } = {}) {

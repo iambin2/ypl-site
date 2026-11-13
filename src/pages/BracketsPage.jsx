@@ -7,7 +7,7 @@ import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch,
 import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, Toast, useArrival } from "../components/common/Board.jsx";
 import { reduced } from "../components/common/motion.js";
 import { dotDate } from "../services/dateFormat.js";
-import { addBracketManualRegistration, addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventParticipantsForBracket, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, createNormalizedSingleBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, sitePlayed, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
+import { addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, sitePlayed, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
 import { buildDefaultTeamMatchLineups, buildTeamMatchSeries, getTeamMatchLineupOptions, getTeamRegistrationAnswerEntries } from "../services/bracketTeamParticipants.js";
 import { getTeamPlacementPointPolicy } from "../services/bracketRankingAwardSnapshot.js";
 import { buildBracketSubmissionStatusModel, playerNameKey } from "../services/teamBuilderCore.js";
@@ -18,6 +18,8 @@ import { applyTitleAwards, evaluateTitleAwards, revertTitleAwards } from "../ser
 import { loadRecordsPokemonDirectory } from "../services/recordsPokemon.js";
 import { freshRead, peekRead } from "../services/readCache.js";
 import { drawPlan } from "../services/bracketProjection.js";
+import { GROUP_TOPOLOGY, groupDraw, validateGroupConfig } from "../services/groupBracketCore.js";
+import { createGroupFinal, createGroupPlayoff, createIndividualBracketDraw, listSameRoundRookieChampions, reopenGroupStage, setGroupFinalWinner, setGroupStageWinner } from "../services/normalizedCompetitionService.js";
 import { BYE, clearedByPick, collectGraphMatches, evalGraph, withPick, withSeries } from "../services/bracketWinnerPlan.js";
 import { matchStage } from "../services/recordsAnalytics.js";
 import { battleForMatch, battleHref, battleWinnerEntry, listEventBattles, officialBattleHref, retryBattleApply, voidBattle } from "../services/battleService.js";
@@ -56,6 +58,7 @@ function elimResult(g){
   return {champ:clean(champ), ru:clean(ru), sf, done:!!clean(champ)};
 }
 function groupStandings(group){
+  if(group.standing) return group.standing.rows.map(row=>({name:row.id,wins:row.wins}));
   const w={}; group.members.forEach(m=>w[m]=0);
   group.matches.forEach(mt=>{ if(mt.winner==="a")w[mt.a.pid]++; else if(mt.winner==="b")w[mt.b.pid]++; });
   return [...group.members].sort((x,y)=>w[y]-w[x]).map(name=>({name,wins:w[name]}));
@@ -242,11 +245,12 @@ function BracketWizard({ data, onClose, onCreate }){
   const [name,setName]=useState("");
   const [mode,setMode]=useState("single");      // single=개인전, team=팀전
   const [topologyKind,setTopologyKind]=useState("");
+  const [groupFinalFormat,setGroupFinalFormat]=useState("single_elimination");
   const dbl=topologyKind==="double_elimination";
   const [format,setFormat]=useState("elim");     // elim | group
   const [countStr,setCountStr]=useState("8");
   const count=Math.max(0,parseInt(countStr)||0);
-  const [groups,setGroups]=useState("4");
+  const [groups,setGroups]=useState("2");
   const [adv,setAdv]=useState("2");
   const [names,setNames]=useState(Array(8).fill(""));
   const [teams,setTeams]=useState(Array(8).fill(null).map(()=>({name:"",members:""})));
@@ -313,17 +317,29 @@ function BracketWizard({ data, onClose, onCreate }){
 
     setEventBusy(true);
     try{
-      const [registrationResult, directSelectionResult] = await Promise.allSettled([
+      const [registrationResult, directSelectionResult, championResult] = await Promise.allSettled([
         listEventRegistrations(id),
         event.championship_phase === "qualifier" ? listChampionshipQualifierDirectSelectionIds(id) : Promise.resolve([]),
+        leagueIntakeId(event)&&event.division==="master" ? listSameRoundRookieChampions(id) : Promise.resolve([]),
       ]);
       if (registrationResult.status === "rejected") throw registrationResult.reason;
       // 팀 지망 같은 비공개 답은 운영진만 읽는 표에서 따로 온다(docs/db/private_answers.sql)
       const loaded = registrationResult.value || [];
+      if(championResult.status==="rejected") throw championResult.reason;
+      const champions=championResult.value||[];
+      const championIds=new Set(champions.map(row=>row.player_id));
       const hidden = await loadPrivateAnswers(loaded.map(r=>r.id));
-      const regs = loaded.map(r=>hidden.has(r.id)?{...r,registration_data:{...r.registration_data,answers:{...r.registration_data?.answers,...hidden.get(r.id)}}}:r);
+      const realRegs = loaded.map(r=>({
+        ...r,
+        ...(hidden.has(r.id)?{registration_data:{...r.registration_data,answers:{...r.registration_data?.answers,...hidden.get(r.id)}}}:{}),
+        rookieChampion:championIds.has(r.player_id),
+      }));
+      const regs=[...realRegs,...champions.filter(c=>!loaded.some(r=>r.id===c.registration_id||r.player_id===c.player_id)).map(c=>({
+        id:`rookie:${c.player_id}`,player_id:c.player_id,registration_name:c.registration_name||c.display_name,
+        rookieChampion:true,candidateOnly:true,
+      }))];
       let statuses=[];
-      try{ statuses=await listEventRegistrationSubmissionStatuses(id,regs); }
+      try{ statuses=await listEventRegistrationSubmissionStatuses(id,realRegs); }
       catch(statusError){ if(request===eventRequestRef.current)setSubmissionStatusError(statusError?.message || "제출 상태를 불러오지 못했습니다."); }
       if(request!==eventRequestRef.current)return;
       setEventRegs(regs);
@@ -360,7 +376,7 @@ function BracketWizard({ data, onClose, onCreate }){
   const setCnt=(v)=>{ const s=String(v).replace(/[^0-9]/g,"").slice(0,2); setCountStr(s); const n=parseInt(s)||0;
     if(n>=1&&n<=64){ setNames(p=>{const a=Array(n).fill("");for(let i=0;i<n;i++)a[i]=p[i]||"";return a;});
       setTeams(p=>{const a=[];for(let i=0;i<n;i++)a.push(p[i]||{name:"",members:""});return a;}); } };
-  const gN=Math.max(2,parseInt(groups)||2), aN=Math.max(1,parseInt(adv)||1);
+  const gN=Number(groups), aN=Number(adv);
   const buildParticipants=()=>{
     if(mode==="team") return teams.map(t=>({
       id:uid(),
@@ -374,8 +390,9 @@ function BracketWizard({ data, onClose, onCreate }){
         .map(r=>({
           id:uid(),
           name:(r.registration_name||"").trim(),
-          registrationId:r.id,
-          playerId:r.player_id||null
+          registrationId:r.candidateOnly?null:r.id,
+          playerId:r.player_id||null,
+          rookieChampion:r.candidateOnly
         }))
         .filter(p=>p.name);
 
@@ -400,7 +417,11 @@ function BracketWizard({ data, onClose, onCreate }){
     }
     let parts=(step===3&&placement?.parts)||buildParticipants();
     if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
-    if(format!=="elim"){ setEventError("진행 중인 대회의 대진표는 토너먼트 방식만 지원합니다."); return; }
+    if(!eventId){setEventError("대회와 연결된 대진표를 만들어 주세요.");return;}
+    if(format==="group"){
+      try{validateGroupConfig(parts.length,gN,aN,groupFinalFormat);}
+      catch(error){setEventError(error.message);return;}
+    }
     if(linkedEvent?.championship_phase === "final"){
       try{
         const preflight=await preflightChampionshipFinalBracket(linkedEvent.id);
@@ -413,25 +434,18 @@ function BracketWizard({ data, onClose, onCreate }){
     setCreating(true);
     let created=false;
     try{
-      if(eventId&&mode==="single"&&!linkedEvent?.championship_phase){
-        const resolved=[];
-        for(const participant of parts){
-          if(participant.registrationId){resolved.push(participant);continue;}
-          const registration=await addBracketManualRegistration(eventId,participant.name);
-          resolved.push({...participant,name:registration.registration_name,registrationId:registration.id,playerId:registration.player_id});
-        }
-        parts=resolved;
-      }
       let normalizedAttempt=null;
       if(eventId&&mode==="single"){
-        const attemptKey=JSON.stringify([parts.map(p=>[p.registrationId||null,p.name]),(step===3&&placement?.plan)||null]);
+        const attemptKey=JSON.stringify([topologyKind,format==="group"?[gN,aN,groupFinalFormat]:null,
+          parts.map(p=>[p.registrationId||null,p.playerId||null,p.name]),(step===3&&placement?.plan)||null]);
         if(!normalizedAttemptRef.current||normalizedAttemptRef.current.attemptKey!==attemptKey){
-          normalizedAttemptRef.current={attemptKey,...buildNormalizedSingleCreateAttempt(parts,{plan:(step===3&&placement?.plan)||null})};
+          normalizedAttemptRef.current={attemptKey,...buildNormalizedSingleCreateAttempt(parts,{plan:format==="elim"?(step===3&&placement?.plan)||null:null})};
         }
         normalizedAttempt=normalizedAttemptRef.current;
       }
       created=await onCreate({ id:uid(), name:name.trim()||"새 대회", createdAt:new Date().toISOString().slice(0,10),
-        mode, double:useDbl, format, groupCfg:format==="group"?{groups:gN,adv:aN}:null,
+        mode, double:useDbl, format, groupCfg:format==="group"?{groups:gN,adv:aN,finalFormat:groupFinalFormat}:null,
+        rookiePlayers:parts.filter(p=>p.rookieChampion).map(p=>p.playerId),
         eventId:eventId||null,
         participants:normalizedAttempt
           ? normalizedAttempt.participants.map(p=>({
@@ -519,19 +533,23 @@ function BracketWizard({ data, onClose, onCreate }){
     finally{ setChampionshipManualBusy(false); }
   };
   const confirmedCount=selectedRegistrationIds.filter(id=>!directRegistrationIds.includes(id)).length;
-  const placeable=Boolean(eventId)&&format==="elim";
+  const placeable=Boolean(eventId);
   const startPlacement=()=>{
     if(!topologyKind){setEventError("대진 방식을 선택해 주세요.");return;}
     const parts=buildParticipants();
+    if(format==="group"){
+      try{validateGroupConfig(parts.length,gN,aN,groupFinalFormat);}
+      catch(error){setEventError(error.message);return;}
+    }
     if(dbl&&parts.length<3){setEventError("더블 엘리미네이션은 참가자가 3명 이상이어야 합니다.");return;}
     if(new Set(parts.map(p=>playerNameKey(p.name))).size!==parts.length){setEventError("같은 이름의 참가자가 중복되어 있습니다.");return;}
     if(parts.length<2){ setEventError(linkedEvent?.championship_phase==="final"?"본선 진출자를 먼저 확정해 주세요.":"참가자(팀)를 2개 이상 입력해 주세요."); return; }
     setEventError("");
     setHeld(null);
-    setPlacement({parts,plan:drawPlan(parts.map(p=>p.id))});
+    setPlacement({parts,plan:format==="group"?groupDraw(parts.map(p=>p.id),gN):drawPlan(parts.map(p=>p.id))});
     setStep(3);
   };
-  const redraw=()=>{ setHeld(null); setPlacement(p=>p&&{...p,plan:drawPlan(p.parts.map(x=>x.id))}); };
+  const redraw=()=>{ setHeld(null); setPlacement(p=>p&&{...p,plan:format==="group"?groupDraw(p.parts.map(x=>x.id),gN):drawPlan(p.parts.map(x=>x.id))}); };
   const swapPlaces=(x,y)=>{ if(!x||!y||x===y)return; setPlacement(p=>({...p,plan:p.plan.map(pair=>pair.map(k=>k===x?y:k===y?x:k))})); };
   const placeName=key=>placement?.parts.find(p=>p.id===key)?.name||"";
   const tapPlace=key=>{ if(dragFrom.current?.moved){ dragFrom.current=null; return; } if(held==null) setHeld(key); else { swapPlaces(held,key); setHeld(null); } };
@@ -568,6 +586,8 @@ function BracketWizard({ data, onClose, onCreate }){
               normalizedAttemptRef.current=null;
               setEventId("");
               setEventRegs([]);
+              setFormat("elim");
+              setTopologyKind("");
               setEventError("");
               return;
             }
@@ -600,23 +620,20 @@ function BracketWizard({ data, onClose, onCreate }){
           <Choice name="bk-mode" options={["개인전","팀전"]} value={mode==="team"?"팀전":"개인전"} onChange={v=>setMode(v==="팀전"?"team":"single")}/>
         </div>
 
-        <div className="field">
-          <span className="field-label">대진 형식</span>
-          <Choice name="bk-format" options={["토너먼트","조별예선 + 본선"]} value={format==="group"?"조별예선 + 본선":"토너먼트"} onChange={v=>setFormat(v==="토너먼트"?"elim":"group")}/>
-        </div>
-
-
-        {format==="group"&&
-          <div className="bk-grow2">
-            <Field label="그룹 수"><input type="text" inputMode="numeric" value={groups} onChange={e=>setGroups(e.target.value.replace(/[^0-9]/g,"").slice(0,2))} placeholder="예: 4"/></Field>
-            <Field label="그룹별 본선 진출"><input type="text" inputMode="numeric" value={adv} onChange={e=>setAdv(e.target.value.replace(/[^0-9]/g,"").slice(0,2))} placeholder="예: 2"/></Field>
-          </div>
-        }
       </>}
 
       <Field label="대진 방식" hint="생성한 뒤에는 바꿀 수 없습니다.">
-        <Dropdown value={topologyKind} onChange={setTopologyKind} placeholder="대진 방식을 선택해 주세요." ariaLabel="대진 방식" options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"}]} />
+        <Dropdown value={topologyKind} onChange={value=>{setTopologyKind(value);setFormat(value===GROUP_TOPOLOGY?"group":"elim");}} placeholder="대진 방식을 선택해 주세요." ariaLabel="대진 방식" options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"},...(linkedEvent&&!linkedEvent.is_team_event&&!linkedEvent.championship_phase?[{value:GROUP_TOPOLOGY,label:"조별리그 후 본선"}]:[])]} />
       </Field>
+      {topologyKind===GROUP_TOPOLOGY&&<>
+        <div className="bk-grow2">
+          <Field label="조 수"><input type="number" min="1" max="32" value={groups} onChange={e=>setGroups(e.target.value)}/></Field>
+          <Field label="조별 진출 인원"><input type="number" min="1" max="63" value={adv} onChange={e=>setAdv(e.target.value)}/></Field>
+        </div>
+        <Field label="본선 방식" hint="진출자는 조 순위에 따른 시드 없이 본선을 추첨합니다.">
+          <Dropdown ariaLabel="본선 방식" value={groupFinalFormat} onChange={setGroupFinalFormat} options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"}]}/>
+        </Field>
+      </>}
       <Dock>
         <div className="stack bk-dock">
           <Button variant="second" onClick={onClose}>취소</Button>
@@ -660,6 +677,7 @@ function BracketWizard({ data, onClose, onCreate }){
                   
                 />
                 <span className="bk-participant-name">{reg.registration_name}</span>
+                {reg.rookieChampion&&<span className="bk-hint">이번 회차 루키 우승자</span>}
                 {submissionBadge(reg.id)}
                 {!checked&&<span className="bk-hint bk-participant-absent">불참</span>}
               </label>
@@ -804,7 +822,10 @@ function BracketWizard({ data, onClose, onCreate }){
       <div className="stack bk-place-tools"><Button variant="second" onClick={redraw}>다시 추첨</Button></div>
       <p className="t12 reg dim">이름을 끌어 다른 이름에 놓거나, 두 이름을 차례로 누르면 자리가 바뀝니다.</p>
       <div className="stack bk-place" onPointerMove={dragPlace} onPointerUp={dropPlace} onPointerLeave={()=>{ if(dragFrom.current&&!dragFrom.current.moved) dragFrom.current=null; }}>
-        {placement.plan.map(([a,b],i)=><div className="pn bk-place-row" key={i}>
+        {format==="group"?placement.plan.map((pool,i)=><section className="stack" key={i}>
+          <h2 className="t20">{i+1}조</h2>
+          {pool.map(key=><div className="pn" key={key}>{placeCell(key)}</div>)}
+        </section>):placement.plan.map(([a,b],i)=><div className="pn bk-place-row" key={i}>
           <span className="t12 dim num">M{i+1}</span>{placeCell(a)}<span className="t12 dim">vs</span>{placeCell(b)}
         </div>)}
       </div>
@@ -1096,6 +1117,10 @@ const BK_ROW_H=36, BK_MATCH_H=BK_ROW_H*2+2, BK_PITCH0=BK_MATCH_H+20;
 const roundName=(len)=>({1:"결승",2:"4강",4:"8강",8:"16강",16:"32강"})[len]||`${len*2}강`;
 /* 진행 중인 단일 토너먼트의 지금 라운드: 승자가 정해지지 않은 첫 라운드와 그 라운드에서 끝난 경기 수 (상태 띠) */
 function liveProgress(b){
+  if(b.format==="group"&&!b.knockout&&b.groups?.length){
+    const games=b.groups.flatMap(g=>g.matches);
+    return `조별 경기 ${games.filter(m=>m.winner).length}/${games.length} 종료`;
+  }
   const g=b.format==="group"?b.knockout:b.graph;
   if(!g||g.kind==="double"||!g.rounds?.length) return "";
   const ev=evalGraph(g);
@@ -1257,6 +1282,47 @@ function SubmissionStatusPanel({ model, busy, error, expanded, onToggle, onRefre
   );
 }
 
+function GroupStageBoard({b,admin,busy,run,nameOf,battles,startable,refresh}){
+  const roundRobin = {sp:slot=>slot?.pid};
+  const renderMatch=(match,editable)=><div className="stack pn" key={match.id}>
+    <Row title={`${nameOf(match.a.pid)} vs ${nameOf(match.b.pid)}`} line={match.winner?`승자 ${nameOf(match[match.winner].pid)}`:"경기 전"}/>
+    {editable&&<div className="stack bk-dock">
+      {["a","b"].map(side=><Button key={side} variant={match.winner===side?"main":"second"} disabled={busy}
+        onClick={()=>run(()=>setGroupStageWinner(b,match,match.winner===side?null:match[side].pid))}>
+        {match.winner===side?`${nameOf(match[side].pid)} 승자 취소`:`${nameOf(match[side].pid)} 승리`}
+      </Button>)}
+    </div>}
+    <MatchBattle m={match} ev={roundRobin} battle={battleForMatch(battles,match.id,[match.a.pid,match.b.pid])} startable={startable&&!b.knockout}
+      eventId={b.eventId} admin={admin} onChanged={refresh}/>
+  </div>;
+  return <div className="stack">
+    {b.groups.map(group=>{
+      const {rows,ready,next,cutoff,complete,qualified}=group.standing;
+      return <section className="stack" key={group.id}>
+        <h2 className="t20">{group.name}조</h2>
+        {rows.map(row=><Row key={row.id} title={nameOf(row.id)}
+          line={[complete?(row.tied?`공동 ${row.rank}위`:`${row.rank}위`):null,`${row.wins}승`,row.reason==="승자승"?row.reason:null].filter(Boolean).join(", ")}
+          value={ready?(qualified.includes(row.id)?"본선 진출":"조별 탈락"):null}/>)}
+        {group.matches.map(match=>renderMatch(match,admin&&!b.knockout&&!group.playoffs.length?true:admin?false:undefined))}
+        {cutoff&&<Row title="순위 결정전" line={ready?"진출자가 확정되었습니다.":`동률 선수 ${cutoff.ids.length}명 중 ${cutoff.places}명이 진출합니다.`}/>}
+        {group.playoffs.map((match,i)=>renderMatch(match,admin&&!b.knockout&&i===group.playoffs.length-1?true:admin?false:undefined))}
+        {admin&&!b.knockout&&next&&<Button variant="second" disabled={busy} onClick={()=>run(()=>createGroupPlayoff(b,group.id))}>단판 결정전 추첨</Button>}
+        {admin&&group.playoffs.length>0&&!b.knockout&&<Button variant="link" disabled={busy} onClick={async()=>{
+          if(await siteConfirm({title:"순위 결정전 초기화",body:"이 조의 결정전과 결과를 지우고 조별 결과 수정을 엽니다.",confirmLabel:"초기화",danger:true})){
+            await run(()=>reopenGroupStage(b,group.id));
+          }
+        }}>결정전 초기화</Button>}
+      </section>;
+    })}
+    {admin&&!b.knockout&&b.groupCfg.ready&&<Button variant="main" disabled={busy} onClick={()=>run(()=>createGroupFinal(b))}>본선 추첨 및 확정</Button>}
+    {admin&&b.knockout&&<Button variant="link" disabled={busy} onClick={async()=>{
+      if(await siteConfirm({title:"본선 배치 취소",body:"아직 결과가 없는 본선 배치를 지우고 조별 단계로 돌아갑니다.",confirmLabel:"배치 취소",danger:true})){
+        await run(()=>reopenGroupStage(b));
+      }
+    }}>본선 배치 취소</Button>}
+  </div>;
+}
+
 function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false, refreshNormalized, onNormalizedReverted, data, save }){
   const nameOf=(pid)=>{ const p=(b.participants||[]).find(x=>x.id===pid); return p?p.name:pid; };
   const teamMode=b.mode==="team";
@@ -1279,6 +1345,20 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
   // a team match has as many bouts as the larger team has members (buildDefaultTeamMatchLineups)
   const boutsOf=(m,ev)=>{ const size=id=>(b.participants||[]).find(x=>x.id===id)?.members?.length||0; return Math.max(size(ev.sp(m.a)),size(ev.sp(m.b))); };
   const battleStartable=Boolean(b.eventId&&b.projection?.runtimeId&&!locked&&b.status!=="done"&&championshipEvent?.status==="running"&&!championshipEvent.record_applied_at&&sitePlayed(championshipEvent));
+  const runGroup=async(action)=>{
+    if(!admin||locked||matchMutationBusyRef.current)return;
+    matchMutationBusyRef.current=true;
+    setMatchMutationBusy(true);
+    try{await action();await refreshNormalized?.();}
+    catch(error){flash(error?.message||"대진표를 저장하지 못했습니다.");await refreshNormalized?.();}
+    finally{matchMutationBusyRef.current=false;setMatchMutationBusy(false);}
+  };
+  const pickGroupFinal=async(matchId,side)=>{
+    if(!admin||locked||matchMutationBusyRef.current)return;
+    const cleared=clearedByPick(b,matchId,side);
+    if(cleared.length&&!(await siteConfirm({title:"본선 결과 변경",body:`이어진 경기 ${cleared.length}개의 결과가 지워집니다.`,confirmLabel:"변경",danger:true})))return;
+    await runGroup(()=>setGroupFinalWinner(b,matchId,side));
+  };
   useEffect(()=>{
     let cancelled=false;
     if(!b.eventId){ setChampionshipEvent(null); return undefined; }
@@ -1456,6 +1536,15 @@ function BracketBoard({ b, admin, flash, onApply, deleting=false, readOnly=false
       showLate={admin}
     />}
     {admin&&championshipEvent?.championship_phase==="qualifier"&&<ChampionsBracketControls eventId={b.eventId} placement="qualifier" refreshKey={championshipRefreshKey} onChanged={()=>void refreshNormalized?.()}/>}
+    {b.projection?.topology===GROUP_TOPOLOGY&&<GroupStageBoard b={b} admin={admin&&!locked} busy={matchMutationBusy}
+      run={runGroup} nameOf={nameOf} battles={battles} startable={battleStartable} refresh={()=>void refreshNormalized?.()}/>}
+    {b.projection?.topology===GROUP_TOPOLOGY&&b.knockout&&<>
+      <h2 className="t20">본선</h2>
+      {editAdmin&&!(res&&res.done)&&<ResultEntry g={b.knockout} nameOf={nameOf} busy={matchMutationBusy} onPick={pickGroupFinal}
+        battles={battles} startable={battleStartable} eventId={b.eventId} onBattleChanged={()=>void refreshNormalized?.()}/>}
+      <ElimBoard g={b.knockout} nameOf={nameOf} admin={editAdmin} onPick={pickGroupFinal} battles={battles}
+        startable={battleStartable} eventId={b.eventId}/>
+    </>}
     {admin&&!locked&&b.format==="elim"&&b.graph&&!(res&&res.done)&&<ResultEntry g={b.graph} nameOf={nameOf} busy={matchMutationBusy} onPick={pick} teamMode={teamMode} onOpenTeam={openTeam} outcomeOn={Boolean(outcomes)} onOutcome={saveOutcome}
       battles={battles} startable={battleStartable} eventId={b.eventId} onBattleChanged={()=>void refreshNormalized?.()} boutsOf={boutsOf}
       seedOf={(pid)=>{const i=(b.participants||[]).findIndex(x=>x.id===pid);return i>=0?i+1:null;}}/>}
@@ -2369,10 +2458,10 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
   },[]);
   const create=async(b)=>{
     const normalizedCandidate=Boolean(
-      b.eventId&&b.format==="elim"&&(b.mode==="single"||b.mode==="team")
+      b.eventId&&(b.mode==="single"||(b.mode==="team"&&b.format==="elim"))
     );
     if(!normalizedCandidate){
-      flash("대회와 연결된 싱글, 더블, 팀전 대진표만 만들 수 있습니다.");
+      flash("공식 대진표는 대회를 선택한 뒤 만들 수 있습니다.");
       return false;
     }
     if(normalizedCandidate){
@@ -2381,23 +2470,17 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
         return false;
       }
 
-      // The existing Single RPC owns identity creation. Team and Double use
-      // the confirmed Entry/EntryParticipant graph, then persist only the
-      // runtime draw and identity ownership through the generic RPC.
-      if(b.mode==="single"&&!b.double){
+      // Individual registration, slots and formed matches are saved together.
+      // The existing team confirmation and runtime path stays separate.
+      if(b.mode==="single"){
       try{
         const attempt=b.normalizedAttempt||buildNormalizedSingleCreateAttempt(b.participants||[]);
-        await createNormalizedSingleBracketRuntime({
-          runtimeId:attempt.runtimeId,
-          eventId:b.eventId,
-          participants:attempt.participants,
-          slots:attempt.slots,
+        await createIndividualBracketDraw({eventId:b.eventId,attempt,
+          topology:b.format==="group"?GROUP_TOPOLOGY:b.double?"double_elimination":"single_elimination",
+          groupPlan:b.plan,advance:b.groupCfg?.adv,finalFormat:b.groupCfg?.finalFormat,rookiePlayers:b.rookiePlayers,
         });
         const loaded=await fetchNormalizedSingleBracketRuntime(b.eventId,attempt.runtimeId);
         if(!loaded) throw new Error("만든 대진표를 다시 불러오지 못했습니다.");
-        // The Single create RPC already persists its BYE closure and every
-        // formed Match. Do not run the generic sync here: it can overwrite
-        // canonical sequence_no values for formed downstream nodes.
         const presentation=beginNormalizedBracketDraw(loaded.bracket);
         setNormalizedBrackets(previous=>[
           ...previous.filter(row=>row.eventId!==b.eventId),
@@ -2418,9 +2501,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
       let createdRuntime=false;
       let runtimeId=null;
       try{
-        confirmation=b.mode==="team"
-          ? await confirmEventTeamsForBracket(b.eventId,b.participants||[])
-          : await confirmEventParticipantsForBracket(b.eventId,b.participants||[]);
+        confirmation=await confirmEventTeamsForBracket(b.eventId,b.participants||[]);
         const confirmedParticipants=confirmation.participants||[];
         const identityChangeByEntryParticipantId=new Map((confirmation.identityChanges||[]).map(change=>[change.entryParticipantId,change]));
         const withChange=(member, base)=>{
@@ -2435,8 +2516,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
             entry_participant_was_created:true,
           };
         };
-        const runtimeParticipants=b.mode==="team"
-          ? confirmedParticipants.flatMap(team=>(team.memberIdentities||[]).map(member=>({
+        const runtimeParticipants=confirmedParticipants.flatMap(team=>(team.memberIdentities||[]).map(member=>({
               ...withChange(member,{
                 participant_key:`${team.id}:${member.entryParticipantId}`,
                 display_name:team.name,
@@ -2448,19 +2528,7 @@ export default function BracketsPage({ data, admin, save, flash, refresh }){
                 member_order:member.memberOrder,
                 role:member.role,
               }),
-            })))
-          : confirmedParticipants.map(participant=>({
-              ...withChange(participant,{
-                participant_key:participant.id,
-                display_name:participant.name,
-                entry_type:"individual",
-                player_id:participant.playerId,
-                registration_id:participant.registrationId,
-                entry_id:participant.entryId,
-                entry_participant_id:participant.entryParticipantId,
-                member_order:1,
-              }),
-            }));
+            })));
         const attempt=buildNormalizedRuntimeCreateAttempt(confirmedParticipants,{plan:b.plan||null});
         runtimeId=attempt.runtimeId;
         await createNormalizedBracketRuntime({

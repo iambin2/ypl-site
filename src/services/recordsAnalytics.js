@@ -115,18 +115,32 @@ function stageLabel(graph, stage) {
 }
 // the round a match of a bracket stands in (8강, 결승, 승자조 2라운드), by its id: 중계 names an official battle's match with it
 export function matchStage(bracket, id) {
+  for (const pool of bracket?.groups || []) {
+    if ((pool.playoffs || []).some(m=>m.id===id)) return `${pool.name}조 순위 결정전`;
+    if ((pool.matches || []).some(m=>m.id===id)) return `${pool.name}조`;
+  }
   // a team bout (teamBouts.js) is said as its match and the bout: "결승 2경기", "결승 에이스 결정전"
   const bout = parseBoutKey(id);
-  const graph = bracket?.graph;
+  const graph = bracket?.knockout || bracket?.graph;
   const row = graph && collectGraphMatches(graph).find(({ match }) => match.id === (bout ? bout.parent : id));
   if (!row) return "";
   return bout ? `${stageLabel(graph, row.stage)} ${bout.ace ? "에이스 결정전" : `${bout.bout}경기`}` : stageLabel(graph, row.stage);
 }
 export function liveMatches(bracket) {
-  const graph = bracket?.graph;
+  const nameOf = pid => (bracket.participants || []).find(p => p.id === pid)?.name || "";
+  if (bracket?.groups?.length && !bracket.knockout) {
+    const poolGames=bracket.groups.flatMap(pool=>[
+      ...pool.matches.map(match=>({match,stage:`${pool.name}조`})),
+      ...(pool.playoffs || []).map(match=>({match,stage:`${pool.name}조 순위 결정전`})),
+    ]);
+    const live=poolGames.filter(({match})=>!match.winner).map(({match,stage})=>({
+      id:match.id,stage,a:nameOf(match.a.pid),b:nameOf(match.b.pid),
+    }));
+    return {live,stage:"조별리그",done:poolGames.length-live.length,total:poolGames.length};
+  }
+  const graph = bracket?.knockout || bracket?.graph;
   if (!graph) return { live: [], stage: "", done: 0, total: 0 };
   const { slotPlayer } = evalGraph(graph);
-  const nameOf = pid => (bracket.participants || []).find(p => p.id === pid)?.name || "";
   const real = collectGraphMatches(graph)
     // the reset final is a match only once the losers' side has won the grand final (as the board and the records count it)
     .filter(item => !(item.reset && graph.gf?.winner !== "b"))

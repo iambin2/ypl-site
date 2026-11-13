@@ -36,7 +36,7 @@ test("successful Event application creation refetches only that Event registrati
 });
 
 test("bracket Event selection reuses loaded registrations for submission status", () => {
-  assert.match(bracketsPage, /statuses=await listEventRegistrationSubmissionStatuses\(id,regs\)/);
+  assert.match(bracketsPage, /statuses=await listEventRegistrationSubmissionStatuses\(id,realRegs\)/);
   assert.match(service, /listEventRegistrationSubmissionStatuses\(eventId, knownRegistrations = null\)/);
   assert.match(service, /if\(!Array\.isArray\(registrationRows\)\)/);
 });

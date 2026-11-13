@@ -102,7 +102,7 @@ test("create persists ownership and the complete already-formed BYE closure", ()
 });
 
 test("Single create keeps RPC-formed BYE Matches and skips generic sync", () => {
-  const singleCreateStart = bracketsPage.indexOf('if(b.mode==="single"&&!b.double)');
+  const singleCreateStart = bracketsPage.indexOf("await createIndividualBracketDraw");
   const genericCreateStart = bracketsPage.indexOf("let confirmation=null", singleCreateStart);
   assert.ok(singleCreateStart >= 0 && genericCreateStart > singleCreateStart);
   const singleCreate = bracketsPage.slice(singleCreateStart, genericCreateStart);

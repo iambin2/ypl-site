@@ -268,7 +268,7 @@ export function buildEventBracketMatchSnapshot(bracket) {
   let sequenceNo = 1;
 
   for (const group of bracket?.groups || []) {
-    for (const match of group?.matches || []) {
+    for (const match of [...(group?.matches || []), ...(group?.playoffs || [])]) {
       const row = makeSnapshotRow(
         match,
         match?.a?.pid || null,
@@ -276,7 +276,7 @@ export function buildEventBracketMatchSnapshot(bracket) {
         entryByParticipantId,
         {
           roundNumber: null,
-          stageLabel: `${group?.name || "?"}조`,
+          stageLabel: `${group?.name || "?"}조${match.id.startsWith("playoff:") ? " 순위 결정전" : ""}`,
           sequenceNo,
         }
       );

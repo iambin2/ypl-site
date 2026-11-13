@@ -13,6 +13,8 @@
  *   facts and are not persisted Match rows.
  */
 
+import { GROUP_TOPOLOGY, groupFixtureKeys, groupStandingState, validateGroupConfig } from "./groupBracketCore.js";
+
 export const SINGLE_BRACKET_PROJECTION_VERSION = 1;
 export const SINGLE_BRACKET_MATCH_SOURCE_NODE_KEY = "single:r{round}:m{match}";
 export const DOUBLE_BRACKET_PROJECTION_VERSION = 1;
@@ -697,6 +699,76 @@ function projectNormalizedEliminationBracket({ event, runtimeId, entries, entryP
  * consumed by the existing bracket UI. The function never reads a legacy
  * Bracket object and never mutates its input.
  */
+export function projectNormalizedGroupBracket({event, runtimeId, entries, entryParticipants, entrySlots, matches, advance, finalFormat}) {
+  const normalizedEvent = normalizeEvent(event, {competitionFormat: GROUP_TOPOLOGY});
+  const normalizedEntries = normalizeEntries(event.id, entries, "individual");
+  normalizeEntryParticipants(event.id, normalizedEntries, entryParticipants, "individual");
+  const names = new Map(entryParticipants.map(row => [row.registration_id, row.registration_name]).filter(row => row[1]));
+  const participants = buildParticipants(normalizedEntries, entryParticipants, {registrationNames: names});
+  const pools = new Map();
+  const finalSlots = [];
+  for (const slot of entrySlots) {
+    if (slot.bracket_runtime_id !== runtimeId || slot.event_id !== event.id) fail("조별 배치의 대회 소속이 다릅니다.");
+    if (slot.stage_kind === "group" && slot.stage_no === 1 && Number.isInteger(slot.pool_no) && slot.pool_no > 0) {
+      if (!pools.has(slot.pool_no)) pools.set(slot.pool_no, []);
+      pools.get(slot.pool_no).push(slot);
+    } else if (slot.stage_kind === "elimination" && slot.stage_no === 2 && slot.pool_no === 0) {
+      finalSlots.push({...slot, stage_no: 1});
+    } else fail("지원하지 않는 조별 대진 단계입니다.");
+  }
+  validateGroupConfig(participants.length, pools.size, advance, finalFormat);
+  const grouped = [...pools.values()].flat().map(s => s.entry_id);
+  if (grouped.length !== participants.length || new Set(grouped).size !== grouped.length ||
+      participants.some(p => !grouped.includes(p.entryId))) fail("조마다 참가자 배치가 정확해야 합니다.");
+  const groups = [];
+  const prelim = matches.filter(m => /^(group|playoff):/.test(m.source_node_key));
+  const used = new Set();
+  for (let pool = 1; pool <= pools.size; pool++) {
+    const slots = (pools.get(pool) || []).sort((a,b) => a.slot_no-b.slot_no);
+    if (slots.length <= advance || slots.some((s,i) => s.slot_no !== i+1)) fail("조별 배치 번호가 연속적이지 않습니다.");
+    const members = slots.map(s => s.entry_id);
+    const fixtures = groupFixtureKeys(pool,members);
+    const playoffRows = prelim.filter(m => m.source_node_key.startsWith(`playoff:g${pool}:`)).sort((a,b) => a.sequence_no-b.sequence_no);
+    const playoffKeys = playoffRows.map((_,i) => `playoff:g${pool}:m${i+1}`);
+    const rows = prelim.filter(m => m.source_node_key.startsWith(`group:g${pool}:`) || m.source_node_key.startsWith(`playoff:g${pool}:`));
+    const byKey = normalizeMatches(event.id,[...fixtures.map(m=>m.id),...playoffKeys],rows,members,"조별리그");
+    const overlay = match => {
+      const row = byKey.get(match.id);
+      if (!row || row.entry_a_id !== match.a.pid || row.entry_b_id !== match.b.pid) fail("조별 경기 참가자가 배치와 다릅니다.");
+      used.add(match.id);
+      return {...match, winner: row.winner_entry_id === row.entry_a_id ? "a" : row.winner_entry_id === row.entry_b_id ? "b" : null};
+    };
+    const games = fixtures.map(overlay);
+    const playoffs = playoffRows.map((m,i) => {
+      if (m.source_node_key !== playoffKeys[i]) fail("순위 결정전 순서가 올바르지 않습니다.");
+      return overlay({id:m.source_node_key,a:{pid:m.entry_a_id},b:{pid:m.entry_b_id}});
+    });
+    const standing = groupStandingState(members,games,advance,playoffs);
+    groups.push({id:pool,name:String(pool),members,matches:games,playoffs,standing});
+  }
+  if (used.size !== prelim.length) fail("조별 경기의 소속이 일치하지 않습니다.");
+  const ready = groups.every(g => g.standing.ready);
+  const qualified = groups.flatMap(g => g.standing.qualified);
+  const finalMatches = matches.filter(m => !used.has(m.source_node_key));
+  let knockout = null;
+  if (finalSlots.length) {
+    const ids = new Set(finalSlots.map(s => s.entry_id));
+    if (!ready || ids.size !== qualified.length || qualified.some(id => !ids.has(id))) fail("본선 배치와 조별 진출자가 다릅니다.");
+    const project = finalFormat === "single_elimination" ? projectNormalizedSingleEliminationBracket : projectNormalizedDoubleEliminationBracket;
+    knockout = project({
+      event:{...event,competition_format:finalFormat}, runtimeId,
+      entries:entries.filter(e=>ids.has(e.id)),entryParticipants:entryParticipants.filter(ep=>ids.has(ep.entry_id)),
+      entrySlots:finalSlots,matches:finalMatches,
+    }).graph;
+  } else if (finalMatches.length) fail("본선 배치 없이 저장된 경기가 있습니다.");
+  return {
+    id:`normalized:event:${event.id}:group`,eventId:event.id,name:event.name,mode:"single",format:"group",
+    double:finalFormat==="double_elimination",createdAt:event.held_on||event.created_at||null,status:normalizedEvent.status==="completed"?"done":"active",
+    participants,groups,knockout,graph:null,groupCfg:{advance,finalFormat,ready,qualified},applied:null,
+    projection:{source:"normalized",version:1,topology:GROUP_TOPOLOGY,runtimeId},
+  };
+}
+
 export function projectNormalizedSingleEliminationBracket({
   event,
   runtimeId,
