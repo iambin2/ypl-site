@@ -177,7 +177,9 @@ try {
     assert.equal((await one("select count(*)::int as c from public.streak_runs where auth_user_id = $1 and status = 'active'", [users.a])).c, 1);
   });
 
-  await check("a game left past its clock is lost on time when anyone next starts: a lamp of its run goes out, and the board never shows it live", async () => {
+  /* since 2026-11-13 the start only closes the game; the lamp is counted by the battle function (streak_settle, its engine state kept)
+     when the seat reads it again, so the run that goes on is offered its doors */
+  await check("a game left past its clock is lost on time when anyone next starts, left for the function to count, and the board never shows it live", async () => {
     await as("service_role");
     const run = await one("select id, battle_id from public.streak_runs where auth_user_id = $1 and status = 'active'", [users.a]);
     await owned("alter table public.battles disable trigger battles_deadline");
@@ -185,8 +187,11 @@ try {
     await owned("alter table public.battles enable trigger battles_deadline");
     assert.equal((await board()).find(r => r.trainer_name === "이제빈").live, false);
     await start(users.b);
-    const closed = await one("select r.status, r.lives, b.ended_by, b.winner from public.streak_runs r join public.battles b on b.id = r.battle_id where r.id = $1", [run.id]);
-    assert.deepEqual([closed.status, closed.lives, closed.ended_by, closed.winner], ["active", 1, "timeout", "p2"]);
+    const closed = await one("select r.status, r.lives, b.ended_by, b.winner, s.state is not null as kept from public.streak_runs r join public.battles b on b.id = r.battle_id join public.battle_secrets s on s.battle_id = b.id where r.id = $1", [run.id]);
+    assert.deepEqual([closed.status, closed.lives, closed.ended_by, closed.winner, closed.kept], ["active", 2, "timeout", "p2", true]);
+    const counted = await one("select public.streak_settle($1, false, '{\"doors\": []}'::jsonb) as r", [run.battle_id]);
+    assert.deepEqual([counted.r.status, counted.r.lives, counted.r.offer.doors], ["active", 1, []], "counted once by the function, with its doors");
+    assert.equal((await one("select public.streak_settle($1, false, null) as r", [run.battle_id])).r.lives, 1, "and only once");
   });
 
   await check("streak games older than last month are deleted when someone starts; the run stays without its game", async () => {
@@ -236,7 +241,8 @@ try {
 
   await check("the lamps (14장): two to start, a lost game puts one out and is opened again, a gatekeeper beaten lights one and never past two, the last one out ends the run", async () => {
     await as("service_role");
-    const settle = async (id, relight = false) => (await one("select public.streak_settle($1, $2) as r", [id, relight])).r;
+    // the offer it answers (2026-11-13) is none here: these games are settled without doors
+    const settle = async (id, relight = false) => { const { offer, ...run } = (await one("select public.streak_settle($1, $2) as r", [id, relight])).r; assert.equal(offer ?? null, null); return run; };
     const next = async from => { const id = bid(); await one("select public.streak_next($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as r", [from, ...game(id)]); return id; };
     const first = await start(users.d);
     assert.equal(first.run.lives, 2);

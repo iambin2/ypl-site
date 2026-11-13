@@ -30,6 +30,9 @@ await pg.exec(timer.slice(timer.indexOf("alter table public.battles add column i
 const battles = readFileSync(file("docs/db/battles.sql"), "utf8");
 await pg.exec(battles.slice(battles.indexOf("create or replace function public.battle_save"), battles.indexOf("revoke all on function public.battle_create")));
 await pg.exec(readFileSync(file("docs/db/streak_runs.sql"), "utf8"));
+// the seat taken anew (streakResume) is written by battle_set_seat
+const links = readFileSync(file("docs/db/battle_links.sql"), "utf8").replace(/\r\n/g, "\n");
+await pg.exec(links.slice(links.indexOf("create or replace function public.battle_set_seat"), links.indexOf("-- 6. ")));
 const user = randomUUID();
 await pg.query("insert into auth.users values ($1)", [user]);
 await pg.query("insert into public.player_accounts values ($1, '이제빈', 'approved')", [user]);
@@ -238,7 +241,10 @@ try {
   await pg.query("insert into public.player_accounts values ($1, '다른 선수', 'approved')", [other]);
   await call({ action: "streak" }, other);
   const swept = (await pg.query("select b.status, b.ended_by, r.status as run, r.lives from public.battles b join public.streak_runs r on r.id = b.run_id where b.id = $1", [seat.id])).rows[0];
-  assert.deepEqual([swept.status, swept.ended_by, swept.run, swept.lives], ["ended", "timeout", "ended", 0]);
+  // since 2026-11-13 the sweep only closes the game; its run is counted by the function when the seat reads it again
+  assert.deepEqual([swept.status, swept.ended_by, swept.run, swept.lives], ["ended", "timeout", "active", 1]);
+  const sweptSeen = (await call({ action: "view", id: seat.id, token: seat.token })).streak;
+  assert.deepEqual([sweptSeen.status, sweptSeen.lives, sweptSeen.won], ["ended", 0, false], "the swept game counted on its seat's return");
   /* 2026-11-11 (docs/BATTLE_STREAK.md 13장): a run begins with its draft; an ended game offers its doors; a strong door won lights a
      lamp and lets the trade reach a tier up; 오늘의 탑 is once a day and the same for everyone that day */
   const stateOf = async id => (await pg.query("select state from public.battle_secrets where battle_id = $1", [id])).rows[0].state;
@@ -304,6 +310,41 @@ try {
   assert.deepEqual((await stateOf(dayGame.id)).sides[1].pokemon.map(p => p.set.species), (await stateOf(friendGame.id)).sides[1].pokemon.map(p => p.set.species), "the same first foe");
   assert.equal(dayGame.daily, friendGame.daily);
   console.log("PASS the draft, the doors, the strong door and 오늘의 탑");
+
+  /* 2026-11-13, a player away and back: a game ended but never counted (the request stopped between saving the end and
+     streak_settle), a game the sweep closed while a lamp was left, a seat another device took, and yesterday's 오늘의 탑 */
+  const away = randomUUID();
+  await pg.query("insert into auth.users values ($1)", [away]);
+  await pg.query("insert into public.player_accounts values ($1, '복귀', 'approved')", [away]);
+  const awayDraft = await call({ action: "streak", draft: true }, away);
+  let g = await call({ action: "streakDraft", picks: awayDraft.draft.map(row => (row.find(c => !c.mega) || row[0]).species) }, away);
+  await pg.query("update public.battles set status = 'ended', winner = 'p2', ended_by = 'battle', log = spectator_log, input_log = '', version = version + 1 where id = $1", [g.id]);
+  const [v1, v2] = await Promise.all([call({ action: "view", id: g.id, token: g.token }), call({ action: "view", id: g.id, token: g.token })]);
+  assert.deepEqual([v1.streak.status, v1.streak.lives, v1.streak.won], ["active", STREAK_START_LIVES - 1, false], "an uncounted loss is counted on view");
+  assert.deepEqual(v1.streak.doors, v2.streak.doors, "two requests counting one game tell the same doors");
+  const lamp = (await pg.query("select lives from public.streak_runs where auth_user_id = $1 and status = 'active'", [away])).rows[0].lives;
+  assert.equal(lamp, STREAK_START_LIVES - 1, "counted once");
+  const hardSix = v1.streak.doors[1].species;
+  g = await call({ action: "streakNext", id: g.id, token: g.token, door: 1 });
+  assert.deepEqual((await stateOf(g.id)).sides[1].pokemon.map(p => p.set.species).sort(), [...hardSix].sort(), "the door told is the door opened");
+  // the sweep closes this game while a lamp is left: the seat back finds the doors and the recap, and goes on
+  await pg.query("update public.streak_runs set lives = 2 where battle_id = $1", [g.id]);
+  await pg.query("update public.battles set deadline_at = now() - interval '5 minutes' where id = $1", [g.id]);
+  await call({ action: "streak", draft: true }, other);
+  const back2 = (await call({ action: "view", id: g.id, token: g.token })).streak;
+  assert.deepEqual([back2.status, back2.lives, back2.won, back2.doors?.length], ["active", 1, false, 2], "a swept game with a lamp left gives its doors");
+  assert.ok(Array.isArray(back2.foe));
+  // a seat another device took: the old token is not known, and the account is given the seat back
+  const taken = await call({ action: "streakResume", have: g.id, token: "stale" }, away);
+  assert.ok(taken.token && taken.id === g.id, "a stale seat is given a new token");
+  const kept2 = await call({ action: "streakResume", have: g.id, token: taken.token }, away);
+  assert.equal(kept2.known, true, "a seat that opens the game is known");
+  // yesterday's 오늘의 탑 is over for the tab
+  await pg.query("update public.streak_runs set daily = daily - 1 where auth_user_id = $1 and daily is not null", [friend]);
+  assert.deepEqual(await call({ action: "streakResume", daily: true }, friend), { run: null }, "an earlier day's 오늘의 탑 is not offered");
+  const fresh = await call({ action: "streak", draft: true, daily: true }, friend);
+  assert.ok(fresh.draft, "today's 오늘의 탑 starts over yesterday's");
+  console.log("PASS away and back: an uncounted game, a swept game, a taken seat, yesterday's 오늘의 탑");
 
   console.log("PASS the battle function plays whole 연승 도전 runs on the real SQL");
 } finally {

@@ -66,6 +66,10 @@ do $$ begin
     alter table public.battles add constraint battles_run_fk foreign key (run_id) references public.streak_runs (id) on delete set null;
   end if;
 end $$;
+-- 도전의 판을 찾는 길(2026-11-13): 판마다 부르는 streak_run_state 와 streak_active_run 이 도전의 판 수를 세고, 중계가 도전의 판들을
+-- 읽고, 순위가 도전의 지금 판을 잇는다. 둘 다 없으면 battles 와 streak_runs 를 통째로 훑는다(어드바이저의 unindexed foreign key)
+create index if not exists battles_run_id on public.battles (run_id) where run_id is not null;
+create index if not exists streak_runs_battle_id on public.streak_runs (battle_id) where battle_id is not null;
 alter table public.battles drop constraint if exists battles_run_kind;
 alter table public.battles add constraint battles_run_kind check ((kind = 'streak') = (run_id is not null));
 -- 방문자는 battles 를 열마다 허락받아 읽는다(battle_column_grants.sql)
@@ -196,7 +200,8 @@ begin
   end loop;
 
   -- 사이트의 시간이 지난 판: 90초 안에 고르지 않은 쪽이 지는 시계 규칙 그대로, 컴퓨터는 늦지 않으므로 선수가 진다.
-  -- 진 판이므로 그 도전의 램프 하나가 꺼지고, 남은 램프가 없을 때만 도전이 끝난다(돌아온 선수는 이어서 한다)
+  -- 판만 닫는다. 램프와 다음 판의 문은 돌아온 선수의 자리가 판을 다시 읽을 때 배틀 함수가 센다(streak_settle, 엔진 상태가 남아 있어야
+  -- 센다). 2026-11-13까지는 여기서 램프를 끄고 엔진 상태를 지워, 남은 램프로 이어 가는 도전에 문도 복기도 없었다
   for v_stale in
     select b.id, b.run_id from public.battles b
      where b.kind = 'streak' and b.status = 'active' and b.deadline_at < now() - interval '1 minute'
@@ -205,12 +210,6 @@ begin
     update public.battles b
        set status = 'ended', winner = 'p2', ended_by = 'timeout', log = b.spectator_log, input_log = '', version = b.version + 1, updated_at = now()
      where b.id = v_stale.id;
-    perform public.streak_clear_secret(v_stale.id);
-    update public.streak_runs r
-       set lives = r.lives - 1,
-           status = case when r.lives <= 1 then 'ended' else 'active' end,
-           ended_at = case when r.lives <= 1 then now() end
-     where r.id = v_stale.run_id and r.status = 'active' and r.battle_id = v_stale.id;
   end loop;
 
   -- 지난달보다 오래된 연승 판. 도전 기록은 남고 그 판만 사라진다(battle_id가 비워진다)
@@ -343,7 +342,8 @@ begin
       update public.streak_runs r set offer = p_offer where r.id = v_run.id returning * into v_run;
     end if;
   end if;
-  return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'lives', v_run.lives, 'status', v_run.status);
+  -- offer(2026-11-13): 도전이 지닌 문. 같은 판을 두 요청이 함께 세면 먼저 센 쪽의 문만 남으므로, 배틀 함수는 이것을 보인다
+  return jsonb_build_object('run_id', v_run.id, 'wins', v_run.wins, 'lives', v_run.lives, 'status', v_run.status, 'offer', v_run.offer);
 end;
 $$;
 
@@ -399,6 +399,7 @@ begin
     update public.streak_runs r set status = 'ended', ended_at = now(), offer = null where r.id = v_stale.run_id;
   end loop;
 
+  -- 시간이 지난 판은 streak_start 처럼 판만 닫는다(램프는 배틀 함수가 센다)
   for v_stale in
     select b.id, b.run_id from public.battles b
      where b.kind = 'streak' and b.status = 'active' and b.deadline_at < now() - interval '1 minute'
@@ -407,12 +408,6 @@ begin
     update public.battles b
        set status = 'ended', winner = 'p2', ended_by = 'timeout', log = b.spectator_log, input_log = '', version = b.version + 1, updated_at = now()
      where b.id = v_stale.id;
-    perform public.streak_clear_secret(v_stale.id);
-    update public.streak_runs r
-       set lives = r.lives - 1,
-           status = case when r.lives <= 1 then 'ended' else 'active' end,
-           ended_at = case when r.lives <= 1 then now() end
-     where r.id = v_stale.run_id and r.status = 'active' and r.battle_id = v_stale.id;
   end loop;
 
   delete from public.battles b

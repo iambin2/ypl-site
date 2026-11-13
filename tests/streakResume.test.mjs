@@ -34,3 +34,15 @@ test("no run on the server drops a stale draft; a game this device holds changes
   assert.equal(keepStreakResume({ run: { run_id: "r" }, id: "g1", known: true }), false);
   assert.equal(keepStreakResume({ run: null }), false);
 });
+
+test("no run on the server forgets the game this device remembers, so its tab stops offering 이어서 하기", () => {
+  store.clear();
+  localStorage.setItem("ypl-battle:streak", "g1");
+  localStorage.setItem("ypl-battle:streak:day", "d1");
+  assert.equal(keepStreakResume({ run: null }), true);
+  assert.equal(currentStreakGame(), null);
+  assert.equal(currentStreakGame(true), "d1", "the other kind's game stays");
+  assert.equal(keepStreakResume({ run: null }, true), true);
+  assert.equal(currentStreakGame(true), null);
+  assert.equal(keepStreakResume({ run: null }), false, "nothing left to forget");
+});

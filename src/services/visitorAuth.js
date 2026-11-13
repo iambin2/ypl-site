@@ -137,8 +137,9 @@ async function asAccount(body) {
 export const startStreakRun = (daily = false) => asAccount({ action: "streak", draft: true, daily });
 // the draft picked, one species from each row: the run's first game, as streakNextGame answers a next one
 export const pickStreakDraft = (picks, daily = false) => asAccount({ action: "streakDraft", picks, daily });
-// the account's run as the server holds it (battle streakResume): have, the game this device holds, so its seat is not taken anew
-export const resumeStreakRun = (daily = false, have = null) => asAccount({ action: "streakResume", daily, have });
+/* the account's run as the server holds it (battle streakResume): have, the game this device holds, and token, its seat there, so a seat
+   that still opens it is not taken anew and one another device took is given back */
+export const resumeStreakRun = (daily = false, have = null, token = "") => asAccount({ action: "streakResume", daily, have, token });
 /* 오늘의 탑's board (streak_daily_board): today's, read as the account when signed in. Before the SQL has run it stands aside (null) */
 export async function readDailyBoard() {
   const signedIn = visitorSignedIn() && Boolean(await token());

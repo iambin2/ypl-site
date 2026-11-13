@@ -107,8 +107,13 @@ export function keepStreakResume(made, daily = false) {
     keepStreakDraft({ run: made.run, draft: made.draft }, daily);
     return true;
   }
-  if (made?.known || !draft) return false;
+  if (made?.known) return false;
+  /* no run of this kind on the server (ended on another device, or a 오늘의 탑 of an earlier day): the game this device remembers goes
+     too, else its tab kept offering 이어서 하기 and the server refused it every time (2026-11-13) */
+  const game = currentStreakGame(daily);
+  if (!draft && !game) return false;
   keepStreakDraft(null, daily);
+  keepStreakGame(null, daily);
   return true;
 }
 /* 다음 판 from an ended game the run rests on (won, or lost with a lamp left: then the same game again): asked by that game's seat (the

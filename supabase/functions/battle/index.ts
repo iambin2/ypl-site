@@ -289,24 +289,32 @@ async function streakAfter(battle: Record<string, any>, memory: StreakMemory | n
   const offer = { doors, reach, ...(state?.daily ? {} : { seen: seenWith(seen, shownDoors(doors).flatMap(d => d.species)) }) };
   const run = await rpc("streak_settle", { p_battle_id: battle.id, p_relight: streakRelights(before), p_offer: offer });
   const going = run?.status === "active";
+  /* the doors the run keeps (streak_settle answers its offer, 2026-11-13): two requests settling one game (its own answer and a seat's
+     view, below) both draw doors, and only the first is kept; the second told its own and the door chosen opened another foe */
+  const kept = going && Array.isArray(run?.offer?.doors) ? run.offer : { doors, reach };
   return {
     wins: run?.wins ?? before, lives: run?.lives ?? 0, status: run?.status ?? "ended", won,
-    ...(going ? { doors: shownDoors(doors), reach } : {}), ...(won ? {} : { foe: foeSets(out.inputLog) }),
+    ...(going ? { doors: shownDoors(kept.doors), reach: kept.reach ?? 0 } : {}), ...(won ? {} : { foe: foeSets(out.inputLog) }),
   };
 }
 /* the run as an ended game's own seat reads it again (a game the clock ended, a page opened again): only from the game the run
-   stands on, so an older game's seat keeps what it was told at its own end */
-async function streakSeen(battle: Record<string, any>, memory: StreakMemory | null = null) {
+   stands on, so an older game's seat keeps what it was told at its own end. A game ended but never counted (the request that ended
+   it stopped between saving the end and streak_settle, or streak_begin closed it on time, 2026-11-13) is counted here: until then
+   its run stood with no doors, its lamp lit, and streak_next refused it, so the run could neither go on nor end */
+async function streakSeen(battle: Record<string, any>, secret: Record<string, any>) {
   if (battle.kind !== "streak" || battle.status !== "ended") return {};
   const run = await rpc("streak_run_state", { p_battle_id: battle.id });
   if (!run || run.battle_id !== battle.id) return {};
   const won = battle.winner === "p1";
-  let foe: unknown[] | null = null;
-  if (!won) {
+  const uncounted = Boolean(secret.state) && run.status === "active";
+  let inputLog = "";
+  if (!won || uncounted) {
     const { data, error } = await db.from("battles").select("input_log").eq("id", battle.id).maybeSingle();
     if (error) throw error;
-    foe = foeSets(data?.input_log);
+    inputLog = data?.input_log ?? "";
   }
+  if (uncounted) return { streak: await streakAfter(battle, secret.cpu_memory as StreakMemory | null, { winner: battle.winner, inputLog }) };
+  const foe = won ? null : foeSets(inputLog);
   const going = run.status === "active" && run.offer?.doors;
   return { streak: { wins: run.wins, lives: run.lives, status: run.status, won, ...(going ? { doors: shownDoors(run.offer.doors), reach: run.offer.reach ?? 0 } : {}), ...(foe ? { foe } : {}) } };
 }
@@ -456,8 +464,8 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
   async view({ id, token }) {
     const { battle, secret } = await read(String(id));
     const side = await seat(secret, token);
-    if (!secret.state) return { side, version: battle.version, status: battle.status, turn: 0, winner: null, request: null, chosen: null, log: "", ...(await streakSeen(battle, secret.cpu_memory as StreakMemory | null)) };
-    return { ...playerView(battle, secret, side), ...(await streakSeen(battle, secret.cpu_memory as StreakMemory | null)) };
+    if (!secret.state) return { side, version: battle.version, status: battle.status, turn: 0, winner: null, request: null, chosen: null, log: "", ...(await streakSeen(battle, secret)) };
+    return { ...playerView(battle, secret, side), ...(await streakSeen(battle, secret)) };
   },
 
   // rq: requestKey of the request the choice answers (engine.mjs). A client without it is still served, unchecked.
@@ -491,7 +499,9 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
       const view = playerView({ status: out.ended ? "ended" : "active", winner: out.winner, version: battle.version + 1 }, { state, pending }, side, out);
       if (!streak) return view;
       if (out.ended) return { ...view, streak: await streakAfter(battle, memory, out) };
-      await keepMemory(battle.id, { ...memory, wins: memory?.wins ?? 0, cpu: turn!.memory });
+      /* the readings are kept after the answer (2026-11-13): one round trip less before the player sees the turn. The next choice comes
+         only after this answer and a person's thought, so it reads them; at worst the computer loses its readings for a choice */
+      later(keepMemory(battle.id, { ...memory, wins: memory?.wins ?? 0, cpu: turn!.memory }));
       return { ...view, streak: { wins: memory?.wins ?? 0, status: "active" } };
     });
   },
@@ -549,14 +559,19 @@ const actions: Record<string, (body: Record<string, any>, again?: boolean, req?:
      another device left this one with a stale draft or nothing, so its 출발 was refused and its 도전 시작 ended the run unasked.
      have: the game this device already holds; another game gets p1's seat anew (the other device's token stops working, as the
      account's own choice). A run waiting on its draft gives the draft. Nothing in the database changes but the seat. */
-  async streakResume({ daily, have }, _again, req) {
+  /* token (2026-11-13): the seat this device holds for have. A device whose seat another one had taken still named the game, was told
+     known, and kept a token that no longer opens it, so its tab showed no run and 도전 시작 ended it unasked. Only a token that opens
+     the game is known now. A 오늘의 탑 run of an earlier day (KST) is over for the tab: today's is once a day, and the old one stood in its
+     way with no 새로 도전 key until all its lamps went out (streak_begin closes it when today's starts) */
+  async streakResume({ daily, have, token: held }, _again, req) {
     const user = await userOf(req!);
     const run = await rpc("streak_active_run", { p_user: user, p_daily: Boolean(daily) });
-    if (!run) return { run: null };
+    if (!run || (run.daily && String(run.daily) < kstDay())) return { run: null };
     const shown = { run_id: run.run_id, wins: run.wins, lives: run.lives, daily: run.daily };
     if (!run.battle_id) return run.offer?.draft ? { run: shown, draft: shownDraft(run.offer.draft) } : { run: null };
-    if (run.battle_id === String(have ?? "")) return { run: shown, id: run.battle_id, known: true };
     const { secret } = await read(run.battle_id);
+    // a screen from before the token check sends none, and is answered as before
+    if (run.battle_id === String(have ?? "") && (held == null || (await sha256(String(held))) === secret.p1_token_hash)) return { run: shown, id: run.battle_id, known: true };
     const token = newToken();
     await rpc("battle_set_seat", { p_id: run.battle_id, p_side: "p1", p_entry_id: null, p_player_id: null, p_token_hash: await sha256(token) });
     const party = Array.isArray(secret.p1_team) ? secret.p1_team.map((m: Record<string, any>) => m.species) : null;

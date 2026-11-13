@@ -31,6 +31,8 @@ const monthOf = back => {
   if (m < 1) { m += 12; y -= 1; }
   return { key: `${y}-${String(m).padStart(2, "0")}-01`, label: `${m}월` };
 };
+// today in KST as the database writes a 오늘의 탑 run's day: "2026-11-13"
+const kstToday = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 // the month's board, read once at a game's end to know whether the run is the account's best this month (null while read or when it cannot be)
 function useBoard(daily = false) {
   const [board, setBoard] = useState(null);
@@ -230,7 +232,8 @@ function useRun(daily = false, seen = 0) {
     let on = true;
     const id = currentStreakGame(daily);
     const seat = id && readSeat(id);
-    if (!seat) return undefined;
+    // a 오늘의 탑 run of an earlier day is over for the tab (2026-11-13): it stood in the way of today's, with no key to leave it
+    if (!seat || (daily && seat.daily && String(seat.daily) < kstToday())) return undefined;
     const of = (s, playing) => ({ id, wins: s.wins ?? 0, lives: s.lives, game: s.game ?? (s.wins ?? 0) + 1, playing, party: s.party || null, doors: playing ? null : s.doors || null });
     readBattleRow(id).then(async row => {
       if (row?.status === "active") { if (on) setRun(of(seat, true)); return; }
@@ -315,7 +318,8 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
   const approved = account?.status === "approved";
   useWarm(approved);
   // the run as the server holds it, so a run started or picked elsewhere is shown here (and 새로 도전 asks before ending it)
-  const sync = () => resumeStreakRun(daily, currentStreakGame(daily)).then(made => { if (keepStreakResume(made, daily)) setSeen(n => n + 1); }, () => {});
+  // the seat's token goes with the game it names, so a seat another device has taken since is given back (2026-11-13)
+  const sync = () => resumeStreakRun(daily, currentStreakGame(daily), readSeat(currentStreakGame(daily))?.token ?? "").then(made => { if (keepStreakResume(made, daily)) setSeen(n => n + 1); }, () => {});
   useEffect(() => { if (approved) sync(); }, [approved, daily]);
   const wins = run?.wins ?? 0;
   const rows = Array.isArray(board) ? board : null;
@@ -337,6 +341,8 @@ export function StreakOpen({ res, onOpen, go, tabs, enter, goingIn, standUp, lea
     } catch (e) {
       await dark;
       towerDrop(); standUp(); setError(e.message); setBusy(false); setEntering(false); setRound(n => n + 1);
+      // refused because the run moved elsewhere (ended, or its next game opened on another device): show it as the server holds it
+      if (approved) sync();
     }
   };
   // a run begins with its draft (no game yet, so nothing goes dark): the candidates stand in the tower's place
@@ -598,7 +604,9 @@ export function StreakEnd({ id, won, res = null, onOpen, onOut, enter, goingIn, 
       <div className="bt-end-keys">
         {resting ? <Button variant="main" loading={busy} onClick={() => goInto(() => streakNextGame(id, swap, door), wins)}>{!won ? "이어서 하기" : swap ? "바꾸고 다음 판" : "다음 판"}</Button>
           /* a new run begins with its draft, on the tab (2026-11-11); 오늘의 탑 is once a day, so its end has no 다시 도전 */
-          : !seat?.daily && <Button variant="main" icon="refresh" loading={busy} onClick={async () => {
+          /* a lost game the seat has not been told of yet (the clock, before its view comes back) may still have a lamp: 다시 도전 there
+             would end the run unasked (2026-11-13), so it waits for the run's answer */
+          : !seat?.daily && typeof seat?.won === "boolean" && <Button variant="main" icon="refresh" loading={busy} onClick={async () => {
             setBusy(true);
             try { keepStreakDraft(await startStreakRun(false), false); onOut(); } catch (e) { setError(e.message); setBusy(false); }
           }}>다시 도전</Button>}
