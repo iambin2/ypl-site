@@ -41,7 +41,11 @@ export const GLYPHS = {
 const drawGlyph = (ctx, id, cx, cy, size) => { const g = GLYPHS[id] || GLYPHS.normal; ctx.save(); ctx.translate(cx - size / 2, cy - size / 2); ctx.scale(size / 100, size / 100); ctx.strokeStyle = ctx.fillStyle; g(ctx); ctx.restore(); };
 
 /* ---------- the height field ---------- */
-const S = 512, C = S / 2, R = 250;
+/* drawn in a 512 space at 1.5 times its pixels, so every edge and every line of the turning is finer than a screen pixel */
+const BASE = 512, S = 768, K = S / BASE, C = BASE / 2, R = 250;
+const layer = () => { const c = Object.assign(document.createElement("canvas"), { width: S, height: S }).getContext("2d"); c.scale(K, K); return c; };
+/* lay one full-size canvas over another, whatever the transform of the one beneath */
+const lay = (ctx, src, op = "source-over", alpha = 1) => { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = op; ctx.globalAlpha = alpha; ctx.drawImage(src, 0, 0); ctx.restore(); };
 const grey = v => `rgb(${v},${v},${v})`;
 const disc = (ctx, r, v) => { ctx.fillStyle = grey(v); ctx.beginPath(); ctx.arc(C, C, r, 0, Math.PI * 2); ctx.fill(); };
 function arcText(ctx, text, r, top, px, family) {
@@ -57,17 +61,20 @@ function arcText(ctx, text, r, top, px, family) {
   });
 }
 function laurel(ctx, side) {
-  const r = .585 * R, from = side < 0 ? 100 : 80, to = side < 0 ? 208 : -28, n = 9;
-  ctx.lineWidth = 3; ctx.beginPath();
-  for (let i = 0; i <= 40; i++) { const t = (from + (to - from) * i / 40) * Math.PI / 180; const x = C + r * Math.cos(t), y = C + r * Math.sin(t); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
-  ctx.stroke();
-  for (let i = 0; i < n; i++) {
-    const t = (from + (to - from) * (i + .5) / n) * Math.PI / 180, sz = 15 - i * .7;
-    for (const out of [-1, 1]) {
-      const x = C + (r + out * 9) * Math.cos(t), y = C + (r + out * 9) * Math.sin(t);
-      ctx.save(); ctx.translate(x, y); ctx.rotate(t + (side < 0 ? -1 : 1) * Math.PI / 2 * -1 + out * .5 * side); ctx.beginPath(); ctx.ellipse(0, 0, sz, sz * .42, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    }
+  /* a branch along the field from the foot up its side: a tapering stem, pointed leaves in pairs leaning out from it, smaller toward the tip */
+  const r = .585 * R, from = side < 0 ? 102 : 78, to = side < 0 ? 212 : -32, dir = Math.sign(to - from), n = 11;
+  const at = t => [C + r * Math.cos(t), C + r * Math.sin(t)];
+  for (let i = 0; i < 24; i++) {
+    const t0 = (from + (to - from) * i / 24) * Math.PI / 180, t1 = (from + (to - from) * (i + 1) / 24) * Math.PI / 180;
+    ctx.lineWidth = 3.6 - 2 * i / 24; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(...at(t0)); ctx.lineTo(...at(t1)); ctx.stroke();
   }
+  const leaf = (x, y, ang, len, wid) => { ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(len * .45, -wid, len, 0); ctx.quadraticCurveTo(len * .45, wid, 0, 0); ctx.fill(); ctx.restore(); };
+  for (let i = 0; i < n; i++) {
+    const f = (i + .35) / n, t = (from + (to - from) * f) * Math.PI / 180, [x, y] = at(t), len = 22 - 9 * f, wid = len * .4;
+    const gx = -Math.sin(t) * dir, gy = Math.cos(t) * dir;
+    for (const out of [-1, 1]) { const vx = gx + .62 * out * Math.cos(t), vy = gy + .62 * out * Math.sin(t); leaf(x, y, Math.atan2(vy, vx), len, wid); }
+  }
+  const tt = to * Math.PI / 180, [ex, ey] = at(tt); leaf(ex, ey, Math.atan2(Math.cos(tt) * dir, -Math.sin(tt) * dir), 14, 5);
 }
 /* ---------- devices drawn for single titles (original, in a 100 box) ---------- */
 const DEVICES = {
@@ -113,7 +120,7 @@ const DEVICES = {
   bus: c => {
     c.fill(P("M18 14Q18 6 26 6L74 6Q82 6 82 14L82 82L18 82Z M22 82L34 82L34 94L22 94Z M66 82L78 82L78 94L66 94Z"));
     c.save(); c.globalCompositeOperation = "destination-out";
-    c.fill(P("M24 18L76 18L76 48L24 48Z M30 10L70 10L70 14L30 14Z" + circ(30, 66, 6) + circ(70, 66, 6) + "M40 64L60 64L60 68L40 68Z M40 72L60 72L60 76L40 76Z"));
+    c.fill(P("M28 22L72 22L72 46L28 46Z" + circ(31, 64, 4.6) + circ(69, 64, 4.6) + "M42 62L58 62L58 65L42 65Z M42 70L58 70L58 73L42 73Z"));
     c.restore();
   },
   /* 청출어람: the indigo leaf and the drop of blue that comes out of it, deeper than the leaf */
@@ -164,38 +171,35 @@ const loadImage = src => { if (!images.has(src)) images.set(src, new Promise(res
 /* a supplied mark (the Mega emblem, the YPL wing) used as it is: its ink becomes the relief */
 function drawMark(ctx, img, cx, cy, size, fill) {
   if (!img) return;
-  const t = Object.assign(document.createElement("canvas"), { width: S, height: S }).getContext("2d");
+  const t = layer();
   const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height, k = size / Math.max(iw, ih);
-  t.drawImage(img, cx - iw * k / 2, cy - ih * k / 2, iw * k, ih * k);
-  t.globalCompositeOperation = "source-in"; t.fillStyle = fill; t.fillRect(0, 0, S, S);
-  ctx.drawImage(t.canvas, 0, 0);
+  t.imageSmoothingQuality = "high"; t.drawImage(img, cx - iw * k / 2, cy - ih * k / 2, iw * k, ih * k);
+  t.globalCompositeOperation = "source-in"; t.fillStyle = fill; t.fillRect(0, 0, BASE, BASE);
+  lay(ctx, t.canvas);
 }
 
 async function heightField(spec) {
-  const h = Object.assign(document.createElement("canvas"), { width: S, height: S }).getContext("2d");
-  const e = Object.assign(document.createElement("canvas"), { width: S, height: S }).getContext("2d");
+  const h = layer(), e = layer();
   const lat = "'Albert Sans'";
   const mark = spec.mark ? await loadImage(spec.mark) : null;
-  h.fillStyle = "#000"; h.fillRect(0, 0, S, S);
+  h.fillStyle = "#000"; h.fillRect(0, 0, BASE, BASE);
   /* rim: a rounded edge with a milled outer band */
   const g = h.createRadialGradient(C, C, .84 * R, C, C, R);
   g.addColorStop(0, grey(196)); g.addColorStop(.55, grey(214)); g.addColorStop(.86, grey(200)); g.addColorStop(1, grey(120));
   h.fillStyle = g; h.beginPath(); h.arc(C, C, R, 0, Math.PI * 2); h.fill();
-  h.strokeStyle = grey(150); h.lineWidth = 1.6;
-  for (let i = 0; i < 220; i++) { const t = i / 220 * Math.PI * 2; h.beginPath(); h.moveTo(C + .955 * R * Math.cos(t), C + .955 * R * Math.sin(t)); h.lineTo(C + R * Math.cos(t), C + R * Math.sin(t)); h.stroke(); }
+  h.strokeStyle = grey(176); h.lineWidth = 1.1;
+  for (let i = 0; i < 260; i++) { const t = i / 260 * Math.PI * 2; h.beginPath(); h.moveTo(C + .955 * R * Math.cos(t), C + .955 * R * Math.sin(t)); h.lineTo(C + R * Math.cos(t), C + R * Math.sin(t)); h.stroke(); }
   /* the band: beads, the league below, a run of small stars above */
   disc(h, .87 * R, 168);
   h.fillStyle = grey(206);
-  for (let i = 0; i < 96; i++) { const t = i / 96 * Math.PI * 2; h.beginPath(); h.arc(C + .845 * R * Math.cos(t), C + .845 * R * Math.sin(t), 2.4, 0, Math.PI * 2); h.fill(); }
+  for (let i = 0; i < 132; i++) { const t = i / 132 * Math.PI * 2; h.beginPath(); h.arc(C + .846 * R * Math.cos(t), C + .846 * R * Math.sin(t), 1.9, 0, Math.PI * 2); h.fill(); }
   h.fillStyle = grey(222);
   arcText(h, "YONSEI POKÉMON LEAGUE", .755 * R, false, 17, lat);
   for (let i = -3; i <= 3; i++) { const t = -Math.PI / 2 + i * .2; h.save(); h.translate(C + .755 * R * Math.cos(t), C + .755 * R * Math.sin(t)); h.fill(P(star(5, i ? 6 : 9, i ? 2.4 : 3.6, 0, 0))); h.restore(); }
   for (const t of [Math.PI, 0]) { h.save(); h.translate(C + .755 * R * Math.cos(t), C + .755 * R * Math.sin(t)); h.fill(P(circ(0, 0, 3))); h.restore(); }
-  /* the field: a recessed mirror crossed by a fine engine turning */
+  /* the field: a recessed mirror, polished flat */
   h.strokeStyle = grey(218); h.lineWidth = 4; h.beginPath(); h.arc(C, C, .69 * R, 0, Math.PI * 2); h.stroke();
   disc(h, .675 * R, 132);
-  h.strokeStyle = grey(140); h.lineWidth = 1;
-  for (let k = 0; k < 36; k++) { h.beginPath(); for (let i = 0; i <= 180; i++) { const t = i / 180 * Math.PI * 2, rr = .675 * R * (.55 + .45 * Math.abs(Math.sin(3 * t + k * Math.PI / 36))); const x = C + rr * Math.cos(t), y = C + rr * Math.sin(t); if (i) h.lineTo(x, y); else h.moveTo(x, y); } h.stroke(); }
   h.fillStyle = grey(200); h.strokeStyle = grey(196);
   laurel(h, -1); laurel(h, 1);
   h.fillStyle = grey(214);
@@ -225,13 +229,14 @@ async function heightField(spec) {
     const places = n === 1 ? [[C, cy, 132]] : n === 2 ? [[C - 44, cy, 78], [C + 44, cy, 78]] : [[C, cy - 40, 66], [C - 46, cy + 34, 66], [C + 46, cy + 34, 66]];
     ctx.fillStyle = ink; ids.forEach((id, i) => drawGlyph(ctx, id, ...places[i]));
   };
-  device(h, grey(246));
-  e.globalCompositeOperation = "destination-out"; e.lineWidth = 9; device(e, "#000"); e.globalCompositeOperation = "source-over";
-  /* soften every edge into a bevel; a wide blur for the occlusion of hollows */
-  const soft = Object.assign(document.createElement("canvas"), { width: S, height: S }).getContext("2d");
-  soft.filter = "blur(1.3px)"; soft.drawImage(h.canvas, 0, 0);
-  const wide = Object.assign(document.createElement("canvas"), { width: S, height: S }).getContext("2d");
-  wide.filter = "blur(7px)"; wide.drawImage(h.canvas, 0, 0);
+  /* the device is struck on a layer of its own: what is cut out of it (a bus's windows, a ring's middle) lies on the enamel, never through the medal */
+  const relief = layer(); device(relief, grey(246)); lay(h, relief.canvas);
+  const cut = layer(); device(cut, "#000"); lay(e, cut.canvas, "destination-out");
+  /* every edge rounded as a die rounds it: a fine bevel, and a broader shoulder under it */
+  const soft = layer(); soft.filter = `blur(${1.1 * K}px)`; lay(soft, h.canvas);
+  const shoulder = layer(); shoulder.filter = `blur(${3.2 * K}px)`; lay(shoulder, h.canvas);
+  lay(soft, shoulder.canvas, "source-over", .38);
+  const wide = layer(); wide.filter = `blur(${7 * K}px)`; lay(wide, h.canvas);
   return { height: soft.canvas, wide: wide.canvas, enamel: e.canvas };
 }
 
@@ -255,8 +260,9 @@ vec3 env(vec3 r, float shin) {
 void main() {
   float d = 1. / uS;
   float h = texture(uH, vUv).r;
-  float hx = texture(uH, vUv + vec2(d, 0.)).r - texture(uH, vUv - vec2(d, 0.)).r;
-  float hy = texture(uH, vUv + vec2(0., d)).r - texture(uH, vUv - vec2(0., d)).r;
+  #define T(x, y) texture(uH, vUv + vec2(x, y) * d).r
+  float hx = (T(1., -1.) + 2. * T(1., 0.) + T(1., 1.) - T(-1., -1.) - 2. * T(-1., 0.) - T(-1., 1.)) * .25;
+  float hy = (T(-1., 1.) + 2. * T(0., 1.) + T(1., 1.) - T(-1., -1.) - 2. * T(0., -1.) - T(1., -1.)) * .25;
   vec3 n = normalize(vec3(-hx * uDepth, -hy * uDepth, 1.));
   vec2 q = vUv * 2. - 1.; float rad = length(q);
   float a = 1. - smoothstep(.977 - 2.5 * d, .977, rad);
@@ -330,7 +336,7 @@ export function medalUrl(spec, off = false) {
     const ts = [tex(0, f.height), tex(1, f.wide), tex(2, f.enamel)];
     const u = (n, ...x) => g[`uniform${x.length === 1 ? "1f" : "3f"}`](g.getUniformLocation(prog, n), ...x);
     g.uniform1i(g.getUniformLocation(prog, "uH"), 0); g.uniform1i(g.getUniformLocation(prog, "uB"), 1); g.uniform1i(g.getUniformLocation(prog, "uE"), 2);
-    u("uS", S); u("uDepth", 11); u("uAO", fin.ao); u("uThr", .63); u("uShinF", fin.shinF); u("uShinR", fin.shinR); u("uEnamel", fin.enamel); u("uAmb", fin.amb);
+    u("uS", S); u("uDepth", 11 * K); u("uAO", fin.ao); u("uThr", .63); u("uShinF", fin.shinF); u("uShinR", fin.shinR); u("uEnamel", fin.enamel); u("uAmb", fin.amb);
     u("uF0F", ...fin.F0F); u("uF0R", ...fin.F0R);
     /* the room the metal reflects: the board's own navy in dark, paper in light */
     u("uSky", ...(dark ? tok.ground.map(x => x * .55 + .3) : [1, 1, 1])); u("uFloor", ...(dark ? tok.ground.map(x => x * .9) : tok.panel2.map(x => x * .86)));
