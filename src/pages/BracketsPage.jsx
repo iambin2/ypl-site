@@ -4,7 +4,7 @@ import { backWith, popHandlers, pushHistory } from "../components/layout/history
 import { formatDate } from "../services/dateFormat.js";
 import { josa } from "../services/josa.js";
 import { Button, Dropdown, Empty, ErrorNote, Field, FormError, Icon, ListSearch, Loader, Modal, Prose, STAGGER, Segmented, siteAlert, siteConfirm, sitePrompt, transition } from "../components/index.js";
-import { BackLink, Choice, Counter, Dock, Lead, Row, Status, Steps, TabsLine, Toast, useArrival } from "../components/common/Board.jsx";
+import { BackLink, Counter, Dock, Lead, Row, Status, Steps, TabsLine, Toast, useArrival } from "../components/common/Board.jsx";
 import { reduced } from "../components/common/motion.js";
 import { dotDate } from "../services/dateFormat.js";
 import { addChampionshipQualifierManualRegistration, applyEventRecord, recommendChampionshipDirectEntrants, resetSubmissionPin, revertEventRecord, championsData, fetchPlayerChampionRosters, fetchRegistrationFinalRosters, buildChampionshipRecordApplyCompletionOptions, buildNormalizedRuntimeCreateAttempt, buildNormalizedSingleCreateAttempt, championshipEventPickerLabel, confirmEventTeamsForBracket, createChampionshipAdvancement, createNormalizedBracketRuntime, deleteNormalizedBracketRuntime, deleteNormalizedSingleBracketRuntime, ensureChampionshipHallOfFameEntry, listChampionshipManualParticipantCandidates, fetchNormalizedBracketRuntime, fetchNormalizedSingleBracketRuntime, readBracketMatchStamp, getEvent, sitePlayed, getEventRecordContext, getIndividualPlacementPointPolicy, inspectEventParticipantIdentities, lastPlacementPoints, isRecordApplyCompletionConfirmed, listChampionshipQualifierDirectSelectionIds, listEventRegistrationSubmissionStatuses, listEventRegistrations, listNormalizedBracketRuntimes, loadPrivateAnswers, listSubmissionEvents, preflightChampionshipFinalBracket, rollbackEventParticipantIdentityChanges, setChampionshipQualifierDirectSelections, setNormalizedSingleBracketWinner, readMatchOutcomes, setNormalizedMatchOutcome, syncNormalizedBracketMatches, validateEventParticipantEntries, validateEventTeamEntries } from "../services/index.js";
@@ -252,11 +252,10 @@ function BracketWizard({ data, onClose, onCreate }){
   const count=Math.max(0,parseInt(countStr)||0);
   const [groups,setGroups]=useState("2");
   const [adv,setAdv]=useState("2");
-  const [names,setNames]=useState(Array(8).fill(""));
   const [teams,setTeams]=useState(Array(8).fill(null).map(()=>({name:"",members:""})));
   const [events,setEvents]=useState([]);
+  const [eventListLoading,setEventListLoading]=useState(true);
   const [eventId,setEventId]=useState("");
-  const [manualMode,setManualMode]=useState(false);
   const [eventRegs,setEventRegs]=useState([]);
   const [eventBusy,setEventBusy]=useState(false);
   const [eventError,setEventError]=useState("");
@@ -286,7 +285,8 @@ function BracketWizard({ data, onClose, onCreate }){
         const phaseDiff=phaseOrder(a.championship_phase)-phaseOrder(b.championship_phase);
         return phaseDiff||String(a.name||"").localeCompare(String(b.name||""),"ko");
       })); })
-      .catch(error=>{ if(!cancelled) setEventError(error?.message||"대회 목록을 불러오지 못했습니다."); });
+      .catch(error=>{ if(!cancelled) setEventError(error?.message||"대회 목록을 불러오지 못했습니다."); })
+      .finally(()=>{ if(!cancelled) setEventListLoading(false); });
     return ()=>{ cancelled=true; };
   },[]);
   const selectLinkedEvent=async(id,{preserveDirectIds=null,preserveSelectedIds=null}={})=>{
@@ -355,12 +355,7 @@ function BracketWizard({ data, onClose, onCreate }){
       setSelectedRegistrationIds(nextSelectedIds);
       setAddedParticipants([]);
 
-      if(!event.is_team_event){
-        const participantNames=(regs||[]).map(r=>r.registration_name||"").filter(Boolean);
-        const n=Math.max(2,participantNames.length);
-        setCountStr(String(n));
-        setNames(Array.from({length:n},(_,i)=>participantNames[i]||""));
-      }else{
+      if(event.is_team_event){
         setCountStr("8");
         setTeams(Array(8).fill(null).map(()=>({name:"",members:""})));
       }
@@ -374,7 +369,7 @@ function BracketWizard({ data, onClose, onCreate }){
   };
 
   const setCnt=(v)=>{ const s=String(v).replace(/[^0-9]/g,"").slice(0,2); setCountStr(s); const n=parseInt(s)||0;
-    if(n>=1&&n<=64){ setNames(p=>{const a=Array(n).fill("");for(let i=0;i<n;i++)a[i]=p[i]||"";return a;});
+    if(n>=1&&n<=64){
       setTeams(p=>{const a=[];for(let i=0;i<n;i++)a.push(p[i]||{name:"",members:""});return a;}); } };
   const gN=Number(groups), aN=Number(adv);
   const buildParticipants=()=>{
@@ -403,9 +398,7 @@ function BracketWizard({ data, onClose, onCreate }){
       return [...registered,...added];
     }
 
-    return names
-      .map(n=>({id:uid(),name:(n||"").trim()}))
-      .filter(p=>p.name);
+    return [];
   };
   const go=async()=>{
     if(creating)return;
@@ -482,6 +475,7 @@ function BracketWizard({ data, onClose, onCreate }){
     );
   };
   const linkedEvent=events.find(event=>event.id===eventId)||null;
+  const groupAvailable=Boolean(linkedEvent&&!linkedEvent.is_team_event&&!linkedEvent.championship_phase&&linkedEvent.event_type!=="champions");
   /* 직행 추천: 시즌 랭킹 상위 4명 가운데 신청한 사람(docs/db/champions_direct_recommendation.sql). 고르는 것은 운영자다 */
   const [directPicks,setDirectPicks]=useState([]);
   const qualifierId=linkedEvent?.championship_phase==="qualifier"?linkedEvent.id:null;
@@ -573,35 +567,24 @@ function BracketWizard({ data, onClose, onCreate }){
     <Steps labels={placeable?["대회 설정","참가자 확정","대진 배치"]:["대회 설정","참가자 확정"]} at={step}/>
     <div className="form-card swap" key={step}>
     {step===1&&<>
+      {eventListLoading?<Loader/>:!events.length?<>
+        {eventError?<ErrorNote>{eventError}</ErrorNote>:<Empty title="연결할 대회가 없습니다."
+          desc="공지에서 대회를 연결한 신청서를 먼저 등록해 주세요. 기록을 반영한 대회는 이 목록에 표시하지 않습니다."/>}
+        <Dock><Button variant="second" onClick={onClose}>대진표로 돌아가기</Button></Dock>
+      </>:<>
       <div className="field">
         <label htmlFor="bk-reg-event">신청 대회 선택</label>
         <Dropdown
           id="bk-reg-event"
-          value={manualMode?"__manual__":selectedIntakeId?`intake:${selectedIntakeId}`:eventId}
+          value={selectedIntakeId?`intake:${selectedIntakeId}`:eventId}
           onChange={v=>{
-            if(v==="__manual__"){
-              setManualMode(true);
-              eventRequestRef.current++;
-              setEventBusy(false);
-              normalizedAttemptRef.current=null;
-              setEventId("");
-              setEventRegs([]);
-              setFormat("elim");
-              setTopologyKind("");
-              setEventError("");
-              return;
-            }
-            setManualMode(false);
             const selected=v.startsWith("intake:")
               ? events.find(event=>leagueIntakeId(event)===v.slice(7)&&event.division==="master")||events.find(event=>leagueIntakeId(event)===v.slice(7))
               : events.find(event=>event.id===v);
             selectLinkedEvent(selected?.id||"");
           }}
           placeholder={eventBusy?"불러오는 중…":"대회를 선택해 주세요."}
-          options={[
-            ...leagueIntakeOptions(events).map(option=>({value:option.value,label:option.label||championshipEventPickerLabel(option.event)})),
-            {value:"__manual__",label:"연결하지 않고 새로 만들기"}
-          ]}
+          options={leagueIntakeOptions(events).map(option=>({value:option.value,label:option.label||championshipEventPickerLabel(option.event)}))}
         />
         {selectedIntakeId&&<div className="field">
           <span className="field-label">대진표 리그</span>
@@ -612,18 +595,8 @@ function BracketWizard({ data, onClose, onCreate }){
         {eventId&&!eventBusy&&mode!=="team"&&submissionStatusError&&<div className="bk-hint" style={{color:"var(--lit)"}}>파티 제출 상태: {submissionStatusError}</div>}
       </div>
 
-      {manualMode&&<>
-        <Field label="대회명"><input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 37회 파이컵"/></Field>
-
-        <div className="field">
-          <span className="field-label">경기 방식</span>
-          <Choice name="bk-mode" options={["개인전","팀전"]} value={mode==="team"?"팀전":"개인전"} onChange={v=>setMode(v==="팀전"?"team":"single")}/>
-        </div>
-
-      </>}
-
-      <Field label="대진 방식" hint="생성한 뒤에는 바꿀 수 없습니다.">
-        <Dropdown value={topologyKind} onChange={value=>{setTopologyKind(value);setFormat(value===GROUP_TOPOLOGY?"group":"elim");}} placeholder="대진 방식을 선택해 주세요." ariaLabel="대진 방식" options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"},...(linkedEvent&&!linkedEvent.is_team_event&&!linkedEvent.championship_phase?[{value:GROUP_TOPOLOGY,label:"조별리그 후 본선"}]:[])]} />
+      <Field label="대진 방식" hint={!linkedEvent?"신청 대회를 먼저 선택해 주세요.":groupAvailable?"생성한 뒤에는 바꿀 수 없습니다.":linkedEvent.is_team_event?"팀전은 싱글 또는 더블 엘리미네이션으로 진행합니다.":"챔피언스는 선발전과 본선에서 각각 싱글 또는 더블 엘리미네이션을 선택합니다."}>
+        <Dropdown disabled={!linkedEvent} value={topologyKind} onChange={value=>{setTopologyKind(value);setFormat(value===GROUP_TOPOLOGY?"group":"elim");}} placeholder="대진 방식을 선택해 주세요." ariaLabel="대진 방식" options={[{value:"single_elimination",label:"싱글 엘리미네이션"},{value:"double_elimination",label:"더블 엘리미네이션"},...(groupAvailable?[{value:GROUP_TOPOLOGY,label:"조별리그 후 본선"}]:[])]} />
       </Field>
       {topologyKind===GROUP_TOPOLOGY&&<>
         <div className="bk-grow2">
@@ -637,9 +610,10 @@ function BracketWizard({ data, onClose, onCreate }){
       <Dock>
         <div className="stack bk-dock">
           <Button variant="second" onClick={onClose}>취소</Button>
-          <Button variant="main" onClick={()=>setStep(2)} disabled={!topologyKind||(!manualMode&&(!eventId||eventBusy))}>다음</Button>
+          <Button variant="main" onClick={()=>setStep(2)} disabled={!topologyKind||!eventId||eventBusy}>다음</Button>
         </div>
       </Dock>
+      </>}
     </>}    {step===2&&<>
       {eventError&&<FormError>{eventError}</FormError>}
       {eventId&&mode!=="team" ? <>
@@ -795,15 +769,10 @@ function BracketWizard({ data, onClose, onCreate }){
         </div>
 
         <div className="bk-fill">
-          {mode==="team"
-            ? teams.map((t,i)=>(<div className="bk-team-card" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
+          {teams.map((t,i)=>(<div className="bk-team-card" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
                 <span className="bk-pin-no gold">{i+1}</span>
                 <input className="bk-tc-name" value={t.name} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder={`팀 ${i+1} 이름`} aria-label={`팀 ${i+1} 이름`}/>
                 <input className="bk-tc-mem" value={t.members} onChange={e=>setTeams(teams.map((x,j)=>j===i?{...x,members:e.target.value}:x))} placeholder="팀원 (쉼표로 구분)" aria-label="팀원 (쉼표로 구분)"/>
-              </div>))
-            : names.map((n,i)=>(<div className="bk-pin" key={i} style={{animationDelay:(i*STAGGER.row)+"ms"}}>
-                <span className="bk-pin-no">{i+1}</span>
-                <input value={n} onChange={e=>setNames(names.map((x,j)=>j===i?e.target.value:x))} placeholder={`참가자 ${i+1}`} aria-label={`참가자 ${i+1}`}/>
               </div>))}
         </div>
       </>}
